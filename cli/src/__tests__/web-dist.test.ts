@@ -1,7 +1,6 @@
 import {
   afterAll,
   afterEach,
-  beforeEach,
   describe,
   expect,
   mock,
@@ -11,19 +10,12 @@ import {
 import * as childProcess from "node:child_process";
 import {
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
-import {
-  readAppBuiltSha,
-  stampAppBuiltSha,
-  stampRootProcess,
-} from "../lib/assistant-config.js";
 import { resolveClientDists } from "../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
@@ -40,34 +32,21 @@ afterAll(() => {
   mock.module("node:child_process", () => realChildProcess);
 });
 
-/**
- * The HEAD sha the fixture's git boundary reports. null = a git-less tree
- * (rev-parse fails), which keeps staleness detection inert.
- */
-let fixtureHeadSha: string | null = null;
+/** The fingerprint stamp web-dist writes inside each dist it builds. */
+const STAMP_FILENAME = ".cadet-source-sha";
 
-// The built-sha stamp lives in the CLI lockfile now — each test redirects it
-// to a temp dir (the root-process-lockfile.test.ts pattern).
-const lockfileDirs: string[] = [];
+function distStamp(distDir: string): string {
+  return readFileSync(join(distDir, STAMP_FILENAME), "utf-8");
+}
 
-beforeEach(() => {
-  lockfileDirs.push(mkdtempSync(join(tmpdir(), "web-dist-lockfile-")));
-  process.env.XDG_CONFIG_HOME = lockfileDirs.at(-1);
-});
+/** A stamp value no real source hash can equal — forces the stale branch. */
+const STALE_STAMP = `${"b".repeat(64)}\n`;
 
 afterEach(() => {
-  delete process.env.XDG_CONFIG_HOME;
   spawnMock.mockReset();
   spawnMock.mockImplementation(realChildProcess.spawn);
-  fixtureHeadSha = null;
   rmSync(webDistDir(), { recursive: true, force: true });
   rmSync(appDistDir(), { recursive: true, force: true });
-});
-
-afterAll(() => {
-  for (const dir of lockfileDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
 });
 
 /**
@@ -87,37 +66,28 @@ function appDistDir(): string {
   return join(appPackageDir, "dist", "standalone");
 }
 
-/** A git child that answers rev-parse with the fixture HEAD, or fails. */
-function fakeGitChild(): childProcess.ChildProcess {
-  const child = new childProcess.ChildProcess();
-  if (fixtureHeadSha === null) {
-    Object.defineProperty(child, "stdout", { value: null });
-    setTimeout(() => child.emit("exit", 128), 0);
-    return child;
-  }
-  const stream = new PassThrough();
-  Object.defineProperty(child, "stdout", { value: stream });
-  setTimeout(() => {
-    stream.write(`${fixtureHeadSha}\n`);
-    stream.end();
-    child.emit("exit", 0);
-  }, 0);
-  return child;
+function seedWebDist(): string {
+  mkdirSync(webDistDir(), { recursive: true });
+  writeFileSync(join(webDistDir(), "index.html"), "<html></html>");
+  return webDistDir();
+}
+
+function seedAppDist(): string {
+  mkdirSync(appDistDir(), { recursive: true });
+  writeFileSync(join(appDistDir(), "index.html"), "<html></html>");
+  return appDistDir();
 }
 
 /**
- * The process-boundary fake: git rev-parse answers with the fixture HEAD,
- * and bun spawns run the fake build — optionally "landing" the bundle files
- * where the real build would write them — then exit with the given code.
+ * The process-boundary fake: bun spawns run the fake build — optionally
+ * "landing" the bundle files where the real build would write them — then
+ * exit with the given code.
  */
 function fakeSpawn(
   landBun?: () => void,
   bunCode = 0,
 ): typeof childProcess.spawn {
   return ((command: string) => {
-    if (command === "git") {
-      return fakeGitChild();
-    }
     landBun?.();
     const child = new childProcess.ChildProcess();
     // The real build spawn pipes both streams (the resolve captures the
@@ -141,23 +111,8 @@ function bunCalls(): Array<Parameters<typeof childProcess.spawn>> {
   >;
 }
 
-function seedWebDist(): string {
-  mkdirSync(webDistDir(), { recursive: true });
-  writeFileSync(join(webDistDir(), "index.html"), "<html></html>");
-  return webDistDir();
-}
-
-function seedAppDist(): string {
-  mkdirSync(appDistDir(), { recursive: true });
-  writeFileSync(join(appDistDir(), "index.html"), "<html></html>");
-  return appDistDir();
-}
-
 describe("resolveClientDists", () => {
-  test("builds both missing bundles once and stamps the lockfile's app record", async () => {
-    fixtureHeadSha = "a".repeat(40);
-    // The stamp rides the edge's own record; a running edge is what's there.
-    stampRootProcess("app", { pid: 4321, port: 7840 });
+  test("builds both missing bundles once and stamps each dist directory", async () => {
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(
       fakeSpawn(() => {
@@ -171,7 +126,6 @@ describe("resolveClientDists", () => {
     expect(resolved).toEqual({
       webDistDir: webDistDir(),
       appDistDir: appDistDir(),
-      builtSha: fixtureHeadSha ?? "",
     });
     const builds = bunCalls();
     expect(builds).toHaveLength(2);
@@ -179,30 +133,26 @@ describe("resolveClientDists", () => {
       expect(command).toBe("bun");
       expect(args).toEqual(["run", "build"]);
     }
-    // The stamp is the commit both bundles consumed, recorded on the
-    // lockfile's `app` entry.
-    expect(readAppBuiltSha()).toBe(fixtureHeadSha);
-    const rawLockfile = JSON.parse(
-      readFileSync(
-        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
-        "utf-8",
-      ),
-    );
-    expect(rawLockfile.app.builtSha).toBe(fixtureHeadSha);
+    // The stamp is the fingerprint both bundles consumed, recorded in the
+    // dist itself — a hex source hash, not a git sha (a git-less checkout
+    // still stamps).
+    for (const dist of [webDistDir(), appDistDir()]) {
+      expect(distStamp(dist)).toMatch(/^[0-9a-f]{64}\n$/);
+    }
     logSpy.mockRestore();
 
-    // The second resolve finds a fresh stamp and does not rebuild.
+    // The second resolve finds fresh stamps and does not rebuild — even with
+    // spawns rigged to fail, proving nothing tries to build.
+    spawnMock.mockImplementation(fakeSpawn(undefined, 1));
     expect(await resolveClientDists()).toEqual(resolved);
     expect(bunCalls()).toHaveLength(2);
   });
 
-  test("rebuilds both bundles when the checkout moved past the stamp", async () => {
+  test("rebuilds both bundles when a dist's stamp disagrees with the source", async () => {
     seedWebDist();
     seedAppDist();
-    stampRootProcess("app", { pid: 4321, port: 7840 });
-    stampAppBuiltSha("b".repeat(40));
-    // The pull moved HEAD past the stamped build.
-    fixtureHeadSha = "c".repeat(40);
+    writeFileSync(join(webDistDir(), STAMP_FILENAME), STALE_STAMP);
+    writeFileSync(join(appDistDir(), STAMP_FILENAME), STALE_STAMP);
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
@@ -223,33 +173,14 @@ describe("resolveClientDists", () => {
       ),
     ).toBe(true);
     logSpy.mockRestore();
-    expect(readAppBuiltSha()).toBe(fixtureHeadSha);
+    // The stale stamp is replaced by the checkout's own fingerprint.
+    expect(distStamp(appDistDir())).not.toBe(STALE_STAMP);
+    expect(distStamp(webDistDir())).not.toBe(STALE_STAMP);
   });
 
-  test("serves fresh bundles without rebuilding", async () => {
-    const webDist = seedWebDist();
-    const appDist = seedAppDist();
-    fixtureHeadSha = "d".repeat(40);
-    stampRootProcess("app", { pid: 4321, port: 7840 });
-    stampAppBuiltSha(fixtureHeadSha);
-    spawnMock.mockImplementation(fakeSpawn());
-
-    const resolved = await resolveClientDists();
-
-    expect(resolved).toEqual({
-      webDistDir: webDist,
-      appDistDir: appDist,
-      builtSha: fixtureHeadSha ?? "",
-    });
-    expect(bunCalls()).toHaveLength(0);
-  });
-
-  test("rebuilds bundles that predate the stamp once", async () => {
+  test("rebuilds a dist that predates stamping once (pre-stamp bootstrap)", async () => {
     seedWebDist();
     seedAppDist();
-    fixtureHeadSha = "e".repeat(40);
-    // The post-build stamp lands only on an existing edge record.
-    stampRootProcess("app", { pid: 4321, port: 7840 });
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
@@ -257,22 +188,11 @@ describe("resolveClientDists", () => {
 
     expect(resolved.webDistDir).toBe(webDistDir());
     expect(bunCalls()).toHaveLength(2);
-    expect(
-      logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("Building app client..."),
-      ),
-    ).toBe(true);
-    expect(
-      logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("web client built."),
-      ),
-    ).toBe(true);
     logSpy.mockRestore();
-    expect(readAppBuiltSha()).toBe(fixtureHeadSha);
+    expect(distStamp(appDistDir())).toMatch(/^[0-9a-f]{64}\n$/);
   });
 
   test("reports a failed source build with the captured output", async () => {
-    fixtureHeadSha = "f".repeat(40);
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn(undefined, 1));
 
@@ -282,20 +202,16 @@ describe("resolveClientDists", () => {
     logSpy.mockRestore();
   });
 
-  test("records the stamp only after both builds succeed", async () => {
-    fixtureHeadSha = "1".repeat(40);
+  test("stamps each dist as its own build lands, never for a failed one", async () => {
     let builds = 0;
-    spawnMock.mockImplementation(((command: string) => {
-      if (command === "git") {
-        return fakeGitChild();
-      }
+    spawnMock.mockImplementation((() => {
       builds++;
       const child = new childProcess.ChildProcess();
       const stdout = new PassThrough();
       const stderr = new PassThrough();
       Object.defineProperty(child, "stdout", { value: stdout });
       Object.defineProperty(child, "stderr", { value: stderr });
-      // The app build lands; the web build fails — a half-stamped state
+      // The app build lands; the web build fails — the half-resolved state
       // must never pretend the second bundle is fresh.
       if (builds === 1) {
         seedAppDist();
@@ -318,6 +234,9 @@ describe("resolveClientDists", () => {
       "the web bundle failed to build",
     );
 
-    expect(readAppBuiltSha()).toBeUndefined();
+    // The app dist carries its own stamp; the web dist has none and reads
+    // stale on the next resolve.
+    expect(distStamp(appDistDir())).toMatch(/^[0-9a-f]{64}\n$/);
+    expect(() => distStamp(webDistDir())).toThrow();
   });
 });

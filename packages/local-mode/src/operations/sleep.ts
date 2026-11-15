@@ -66,7 +66,7 @@ export async function sleepAssistant(
   const wasRunning = await isAssistantHealthy(entry);
   try {
     if (entry.cloud === "docker") {
-      await sleepDocker(entry, { wait: options.wait, log: options.log });
+      await sleepDocker(entry, { log: options.log });
       return { ok: true, kind: "containers", wasRunning };
     }
     if (entry.cloud === "local") {

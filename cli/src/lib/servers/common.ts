@@ -464,25 +464,12 @@ export interface AppServerStartedResult {
   /** SPA dist directory served by the app server. */
   webDistDir: string;
   version: string;
-  /**
-   * The checkout HEAD the dists were built at (the empty string when the
-   * checkout has no git anchor), so the server's lockfile record carries the
-   * build stamp from birth — `stampAppProcessEntry` replaces the record
-   * wholesale, and a stamp that only lands via `stampAppBuiltSha` before
-   * the record exists is dropped.
-   */
-  builtSha: string;
 }
 
 export interface AppServerAlreadyRunningResult {
   status: "already-running";
   /** Recorded listen port of the running server (requested port when no state is recorded). */
   listenPort: number;
-  /**
-   * The surviving server's own build stamp, when its lockfile record has one —
-   * carried so `stampAppProcessEntry` re-stamps the record without losing it.
-   */
-  builtSha?: string;
 }
 
 export interface AppServerWebDistMissingResult {
@@ -524,7 +511,7 @@ export async function startAppServer(): Promise<StartAppServerResult> {
   if (recorded) {
     listenPort = recorded.listenPort;
   }
-  const { webDistDir, appDistDir, builtSha } = await resolveClientDists();
+  const { webDistDir, appDistDir } = await resolveClientDists();
   if (!webDistDir) {
     return { status: "web-dist-missing" };
   }
@@ -545,14 +532,9 @@ export async function startAppServer(): Promise<StartAppServerResult> {
   // A record without a fingerprint predates the field and counts as drifted
   // (see AppServerState).
   const configMatches = recorded?.remoteWebConfigHash === fingerprint;
-  // The surviving server's lockfile record holds its own build stamp; carrying
-  // it on the result means `stampAppProcessEntry` re-stamps without losing it
-  // (it replaces the record wholesale).
-  const survivingBuiltSha = readRootProcesses().app?.builtSha;
   const alreadyRunning = (): AppServerAlreadyRunningResult => ({
     status: "already-running",
     listenPort: recorded?.listenPort ?? listenPort,
-    ...(survivingBuiltSha ? { builtSha: survivingBuiltSha } : {}),
   });
   // An unmatched fingerprint on a live server means the dists or the CLI
   // version moved under it — the reuse contract only covers a server whose
@@ -657,7 +639,6 @@ export async function startAppServer(): Promise<StartAppServerResult> {
         listenPort,
         webDistDir,
         version,
-        builtSha,
       };
     }
     if (Date.now() >= deadline) {
@@ -679,15 +660,10 @@ function stampAppProcessEntry(
 ): void {
   const pid = getAppServerPid();
   if (pid === null) return;
-  // `stampRootProcess` replaces the record wholesale, so the build stamp
-  // rides the result — a fresh start carries the resolve's sha, an
-  // already-running server its own record's. Without it a fresh record reads
-  // "no build stamp" and the next dist resolve rebuilds.
   stampRootProcess("app", {
     pid,
     startedAt: new Date().toISOString(),
     port: result.listenPort,
-    builtSha: result.builtSha,
   });
 }
 

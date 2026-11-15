@@ -2,8 +2,7 @@
  * The overview's drill-down section list: a stable order, with nothing gated
  * on backend capability or platform. Whatever the backend reports and
  * whatever shell the app runs in, the list is the same, so a phone user
- * reaches every section. Email is the one addition, and only where the
- * inbox exists.
+ * reaches every section — Email included, always last.
  */
 import { describe, expect, test } from "bun:test";
 
@@ -21,17 +20,18 @@ describe("buildIdentitySections", () => {
       "workspace",
       "contacts",
       "channels",
+      "email",
     ]);
   });
 
-  test("draws Email after Channels only when asked", () => {
-    const withEmail = buildIdentitySections({ email: true });
-    const emailIndex = withEmail.findIndex((s) => s.key === "email");
+  test("draws Email after Channels, always", () => {
+    const sections = buildIdentitySections();
+    const emailIndex = sections.findIndex((s) => s.key === "email");
+    expect(emailIndex).toBeGreaterThan(-1);
     expect(emailIndex).toBe(
-      withEmail.findIndex((s) => s.key === "channels") + 1,
+      sections.findIndex((s) => s.key === "channels") + 1,
     );
-    expect(withEmail[emailIndex]?.to).toBe("/assistant/inbox");
-    expect(buildIdentitySections().some((s) => s.key === "email")).toBe(false);
+    expect(sections[emailIndex]?.to).toBe("/assistant/inbox");
   });
 
   test("every section carries a label, description and path", () => {

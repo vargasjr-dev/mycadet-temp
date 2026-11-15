@@ -20,6 +20,7 @@ import {
   resolveConfigDir,
   resolveDataDir,
   resolveLogDir,
+  type LockfileAssistant,
 } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
@@ -30,8 +31,9 @@ const ORIGINAL_ARGV = process.argv;
 // (docker teardown), and uninstall is the only importer in its graph.
 // Mocked module-wide so tests pin WHEN it runs — never before the
 // confirmation gate — as much as whether it runs.
-const retireDockerCalls: string[] = [];
-let onRetireDocker: ((name: string) => void) | undefined;
+// The retirement legs take the whole lockfile entry now (post-#824).
+const retireDockerCalls: LockfileAssistant[] = [];
+let onRetireDocker: ((entry: LockfileAssistant) => void) | undefined;
 
 // uninstall imports the retirement legs from the package now; the mock
 // replaces retireDocker at that seam (the one retirement path with
@@ -39,9 +41,9 @@ let onRetireDocker: ((name: string) => void) | undefined;
 const realLocalMode = { ...(await import("@mycadet/local-mode")) };
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
-  retireDocker: (name: string) => {
-    retireDockerCalls.push(name);
-    onRetireDocker?.(name);
+  retireDocker: (entry: LockfileAssistant) => {
+    retireDockerCalls.push(entry);
+    onRetireDocker?.(entry);
   },
 }));
 
@@ -203,7 +205,9 @@ describe("cadet uninstall", () => {
       process.argv = ["bun", "cadet", "uninstall", "--yes"];
       await uninstall();
 
-      expect(retireDockerCalls).toEqual(["docker-assistant"]);
+      expect(retireDockerCalls).toEqual([
+        expect.objectContaining({ assistantId: "docker-assistant" }),
+      ]);
       expect(outputAtRetire).toContain("It will permanently delete:");
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining("will be retired as part of this uninstall"),

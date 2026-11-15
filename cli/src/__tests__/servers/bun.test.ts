@@ -811,7 +811,6 @@ function mockDistsPresent(fixture: HandlerFixture): void {
   resolveClientDistsMock.mockResolvedValue({
     webDistDir: fixture.webDistDir,
     appDistDir: fixture.appDistDir,
-    builtSha: "abc1234",
   });
 }
 
@@ -883,7 +882,6 @@ describe("startAppServer", () => {
     }
     expect(result.listenPort).toBeGreaterThanOrEqual(DEFAULT_APP_SERVER_PORT);
     expect(result.webDistDir).toBe(fixture.webDistDir);
-    expect(result.builtSha).toBe("abc1234");
     expect(result.version).toBe("1.2.3");
 
     // The child is spawned detached, straight off this module, with the

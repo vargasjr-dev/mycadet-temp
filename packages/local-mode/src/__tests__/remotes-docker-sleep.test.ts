@@ -64,20 +64,7 @@ test("the docker leg narrates the containers-stopped line itself", async () => {
   expect(lines).toEqual(["Docker containers stopped."]);
 });
 
-test("the docker leg narrates that --wait is unsupported when asked", async () => {
-  const lines: string[] = [];
-  await sleepDocker(entry, {
-    wait: true,
-    log: (line) => lines.push(line),
-  });
-
-  expect(lines).toEqual([
-    "--wait is not supported for Docker assistants yet — stopping containers now.",
-    "Docker containers stopped.",
-  ]);
-});
-
 test("the docker leg stays silent for headless hosts (no log)", async () => {
-  await sleepDocker(entry, { wait: true });
+  await sleepDocker(entry, {});
   expect(execMock).toHaveBeenCalled();
 });

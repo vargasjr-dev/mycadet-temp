@@ -6,9 +6,7 @@ import { z } from "zod";
 
 import {
   clearRootProcess,
-  readAppBuiltSha,
   readRootProcesses,
-  stampAppBuiltSha,
   stampRootProcess,
 } from "../lib/assistant-config.js";
 import { clearAppProcessRecord } from "@mycadet/local-mode";
@@ -90,22 +88,18 @@ describe("root process lockfile entries", () => {
   });
 });
 
-describe("the app entry's built-sha stamp", () => {
-  test("a stamp with no edge record is a no-op", () => {
-    stampAppBuiltSha("a".repeat(40));
-    // The stamp rides the edge's record: nothing to carry it, nothing lands.
-    expect(readAppBuiltSha()).toBeUndefined();
-    expect(readRootProcesses()).toEqual({});
-  });
-
-  test("clearing the edge's process entry takes its built-sha stamp with it", () => {
+describe("the app entry's process record", () => {
+  test("clearing the edge's process entry clears the record", () => {
     stampRootProcess("app", { pid: 5, port: 7841, startedAt: "t" });
-    stampAppBuiltSha("b".repeat(40));
-    expect(readAppBuiltSha()).toBe("b".repeat(40));
+    expect(readRootProcesses().app).toEqual({
+      pid: 5,
+      port: 7841,
+      startedAt: "t",
+    });
 
     clearAppProcessRecord();
-    // Record and stamp go together: the next resolve rebuilds.
+    // Record goes with the process: the dist stamp outlives it (the next
+    // resolve reads the fingerprint from the dist directory).
     expect(readRootProcesses()).toEqual({});
-    expect(readAppBuiltSha()).toBeUndefined();
   });
 });

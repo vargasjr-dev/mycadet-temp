@@ -85,9 +85,8 @@ function section(key: Exclude<IdentitySectionKey, "personality" | "email">) {
 /**
  * Every section shows on every platform, the phone included. The overview
  * card is the way into a section, so a rough mobile surface is a reason to
- * polish it, not to hide it: an unpolished way in beats no way in. Email
- * is the exception, and only because the inbox itself does not exist off
- * the cloud.
+ * polish it, not to hide it: an unpolished way in beats no way in — Email
+ * included, always last.
  */
 export function buildIdentitySections(): IdentitySection[] {
   return [

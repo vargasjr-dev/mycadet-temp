@@ -14,7 +14,9 @@ export async function removeContainer(containerName: string): Promise<void> {
 }
 
 export async function retireDocker(entry: DockerAssistant): Promise<void> {
-  console.log(`\u{1F5D1}\ufe0f  Stopping Docker containers for '${name}'...\n`);
+  console.log(
+    `\u{1F5D1}\ufe0f  Stopping Docker containers for '${entry.assistantId}'...\n`,
+  );
 
   // Stop the file watcher process if one is tracked for this instance.
   const watcherPid =

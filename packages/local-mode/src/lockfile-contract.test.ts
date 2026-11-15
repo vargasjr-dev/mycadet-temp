@@ -339,7 +339,9 @@ describe("parseLockfile", () => {
       app: { pid: 51, port: 7840, builtSha: "abc1234" },
     };
     expect(parseLockfile(raw).tunnel).toEqual(raw.tunnel);
-    expect(parseLockfile(raw).app).toEqual(raw.app);
+    // builtSha is a retired field — pre-rename lockfiles still parse, the
+    // stale key just drops (the fingerprint lives in the dist directory now).
+    expect(parseLockfile(raw).app).toEqual({ pid: 51, port: 7840 });
   });
 
   test("drops a mistyped root process record, never the file", () => {

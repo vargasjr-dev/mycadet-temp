@@ -28,6 +28,7 @@ import {
 import {
   getOrCreatePersistedDeviceId,
   leaseGuardianToken,
+  parseGuardianToken,
 } from "@mycadet/local-mode";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import { withPreconnect } from "./helpers/http.js";
@@ -347,6 +348,46 @@ describe("refreshGuardianToken", () => {
     expect((err as Error).message).toBe(
       "the gateway's pair output did not match the expected payload shape",
     );
+  });
+
+  test("a malformed refresh response names the unusable fields and is a 502", async () => {
+    seed(future());
+    globalThis.fetch = withPreconnect(async () =>
+      Response.json({
+        guardianPrincipalId: "principal-lease",
+        accessToken: 42,
+        refreshToken: "refresh-lease",
+      }),
+    );
+
+    // The refresh route answers with the credential contract; a body that
+    // fails the schema is the gateway's own contract breaking — 502, and the
+    // parse's field names surface in the thrown permanent error.
+    const malformedBody = {
+      guardianPrincipalId: "principal-lease",
+      accessToken: 42,
+      refreshToken: "refresh-lease",
+    };
+    const parseError = await Promise.resolve()
+      .then(() => parseGuardianToken(malformedBody))
+      .then(
+        () => null,
+        (e: unknown) => e,
+      );
+    expect(parseError).toBeInstanceOf(GuardianLeasePermanentError);
+    expect((parseError as Error).message).toContain("malformed token response");
+    expect((parseError as Error).message).toContain(
+      "expected string, received undefined",
+    );
+    expect((parseError as Error).message).toContain("→ at accessToken");
+
+    expect(
+      await refreshGuardianTokenResult("https://gw.example.com", "px"),
+    ).toEqual({
+      ok: false,
+      status: 502,
+      error: "Assistant gateway returned a malformed token refresh response",
+    });
   });
 
   test("returns null without calling the gateway when the refresh token is expired", async () => {

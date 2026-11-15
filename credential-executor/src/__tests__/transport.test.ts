@@ -24,7 +24,8 @@ import {
   type RpcEnvelope,
 } from "@mycadet/service-contracts/credential-rpc";
 
-import { getCesDataRoot, getCesSocketPath, getHealthPort } from "../paths.js";
+import { getCesDataRoot, getHealthPort } from "../paths.js";
+import { getCesSocketPath } from "@mycadet/ces-client/socket-path";
 import { CesRpcServer, type RpcHandlerRegistry } from "../server.js";
 
 // ---------------------------------------------------------------------------

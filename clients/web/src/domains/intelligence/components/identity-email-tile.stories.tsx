@@ -28,9 +28,7 @@ const STATS: Record<string, { text: string } | undefined> = {
 };
 
 function Pill() {
-  const email = buildIdentitySections({ email: true }).find(
-    (s) => s.key === "email",
-  )!;
+  const email = buildIdentitySections().find((s) => s.key === "email")!;
   return (
     <span
       className="inline-flex h-10 shrink-0 items-center gap-1 rounded-full pr-1.5 pl-4 text-body-medium-default text-[var(--content-default)]"

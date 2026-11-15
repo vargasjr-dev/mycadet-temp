@@ -484,12 +484,6 @@ export const AppProcessRecordSchema = z.object({
   startedAt: z.string().optional(),
   /** Listening port for the app server. */
   port: z.number(),
-  /**
-   * The commit the edge's source-built client bundles were last built from
-   * — the auto-build staleness stamp. Rides the running edge's record: a
-   * build only stamps when an edge record exists to carry it.
-   */
-  builtSha: z.string().optional(),
 });
 export type AppProcessRecord = z.infer<typeof AppProcessRecordSchema>;
 

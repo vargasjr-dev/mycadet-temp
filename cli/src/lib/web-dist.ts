@@ -3,10 +3,8 @@ import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 
-import { readAppBuiltSha, stampAppBuiltSha } from "./assistant-config.js";
-import { readdir } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
 
 const loadModule = createRequire(import.meta.url);
 
@@ -205,6 +203,15 @@ interface DistArm {
 async function resolveDistArm(kind: "web" | "app"): Promise<DistArm> {
   const existing = kind === "web" ? findWebDistDir() : findAppDistDir();
   const sourceDir = findSourcePackageDir(kind);
+  const sourceBuilt =
+    sourceDir !== null && existing === sourceDistDir(kind, sourceDir);
+
+  // An installed/packaged dist is owned by its release — served as-is, even
+  // when the release ships no source tree (an npm install has no
+  // `clients/<kind>` to rebuild from, and no build script to run).
+  if (existing && !sourceBuilt) {
+    return { distDir: existing, sourceDir: sourceDir ?? "", sourceBuilt };
+  }
   if (!sourceDir) {
     throw new Error(`Failed to find source for ${kind}`);
   }
@@ -215,8 +222,7 @@ async function resolveDistArm(kind: "web" | "app"): Promise<DistArm> {
     return {
       distDir: existing,
       sourceDir,
-      sourceBuilt:
-        sourceDir !== null && existing === sourceDistDir(kind, sourceDir),
+      sourceBuilt,
     };
   }
   return {
@@ -226,18 +232,34 @@ async function resolveDistArm(kind: "web" | "app"): Promise<DistArm> {
   };
 }
 
+/** The fingerprint stamp file a source-built dist directory carries. */
+const DIST_SHA_FILENAME = ".cadet-source-sha";
+
+/** The dist's recorded fingerprint, or undefined when it has none. */
+async function readDistSha(distDir: string): Promise<string | undefined> {
+  try {
+    const raw = await readFile(join(distDir, DIST_SHA_FILENAME), "utf8");
+    return raw.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Record the fingerprint a dist was built from, inside the dist itself. */
+async function stampDistSha(distDir: string, sourceSha: string): Promise<void> {
+  await writeFile(join(distDir, DIST_SHA_FILENAME), `${sourceSha}\n`);
+}
+
 /**
  * Stale means: this arm's dist is the source checkout's own build output and
- * the lockfile's recorded built-sha disagrees with the checkout's HEAD (or is
- * missing — a pre-stamp bootstrap rebuilds once). Installed/packaged arms
- * and git-less trees never read as stale.
+ * the fingerprint recorded inside the dist disagrees with the checkout's
+ * current source hash (missing — a pre-stamp bootstrap rebuilds once).
+ * Installed/packaged arms never read as stale: their dist is owned by its
+ * release and served as-is.
  */
-function isStale(
-  arm: DistArm,
-  headSha: string | null,
-  recordedSha: string | undefined,
-): boolean {
-  return arm.sourceBuilt && headSha !== null && recordedSha !== headSha;
+async function isStale(arm: DistArm, sourceSha: string): Promise<boolean> {
+  if (!arm.sourceBuilt || arm.distDir === null) return false;
+  return (await readDistSha(arm.distDir)) !== sourceSha;
 }
 
 const DEFAULT_IGNORES = [
@@ -300,25 +322,30 @@ async function getSourceSha(sourceDir: string): Promise<string> {
 export async function resolveClientDists(): Promise<{
   webDistDir: string;
   appDistDir: string;
-  builtSha: string;
 }> {
   const arms = {
     web: await resolveDistArm("web"),
     app: await resolveDistArm("app"),
   };
-  const anchor = arms.app.sourceDir;
-  const sourceSha = await getSourceSha(anchor);
-  const recordedSha = readAppBuiltSha();
+  // Both arms of a checkout share one fingerprint, anchored at the app
+  // package: a source change that stale-dates one stale-dates both, so one
+  // hash answers for both dists. A release with no source tree (npm install)
+  // skips the hash entirely — its dists are served as-is.
+  const anchor = arms.app.sourceDir || arms.web.sourceDir;
+  const sourceSha = anchor ? await getSourceSha(anchor) : null;
 
   async function buildClientDist(kind: "web" | "app"): Promise<string> {
     console.log(`Building ${kind} client...`);
 
     const arm = arms[kind];
-    const sourceDir = arm.sourceDir;
-    if (arm.distDir !== null && !isStale(arm, sourceSha, recordedSha))
+    if (
+      arm.distDir !== null &&
+      (sourceSha === null || !(await isStale(arm, sourceSha)))
+    )
       return arm.distDir;
 
-    const dist = await buildDistFromSource(kind, sourceDir);
+    const dist = await buildDistFromSource(kind, arm.sourceDir);
+    if (sourceSha !== null) await stampDistSha(dist, sourceSha);
     console.log(`${kind} client built.`);
     return dist;
   }
@@ -326,12 +353,10 @@ export async function resolveClientDists(): Promise<{
   const appDistDir = await buildClientDist("app");
   const webDistDir = await buildClientDist("web");
 
-  stampAppBuiltSha(sourceSha);
-  console.log("Saved", sourceSha);
+  if (sourceSha !== null) console.log("Stamped", sourceSha);
 
   return {
     webDistDir: arms.web.distDir ?? webDistDir,
     appDistDir: arms.app.distDir ?? appDistDir,
-    builtSha: sourceSha,
   };
 }

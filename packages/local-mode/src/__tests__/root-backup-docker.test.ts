@@ -128,10 +128,9 @@ beforeEach(async () => {
   );
   commands.on(
     "docker",
-    (args) => args[0] === "kill",
+    (args) => args[0] === "stop",
     ({ args }) => {
-      expect(args[1]).toBe("--signal=SIGTERM");
-      running.set(args.at(-1)!, false);
+      running.set(args[1]!, false);
       return {};
     },
   );
@@ -205,7 +204,7 @@ test("Docker subprocess round-trip preserves every root, private files and clear
     await expect(readFile(join(directory, root, "stale"))).rejects.toThrow();
   }
   expect(writes).toBe(4);
-  expect(commands.calls.filter((call) => call.args[0] === "kill")).toHaveLength(
+  expect(commands.calls.filter((call) => call.args[0] === "stop")).toHaveLength(
     3,
   );
 });
@@ -232,17 +231,12 @@ test("failure during Docker replacement recovers prior roots before restarting",
   }
 });
 
-test("default Docker sleep aborts a graceful timeout without forcing termination", async () => {
-  commands.on(
-    "docker",
-    (args) => args[0] === "kill",
-    () => ({}),
-  );
-  await expect(sleepDocker(entry, { timeoutMs: 0 })).rejects.toThrow(
-    "did not stop gracefully",
-  );
-  expect(running.get(names.assistantContainer)).toBe(true);
-  expect(commands.calls.some((call) => call.args[0] === "stop")).toBe(false);
+test("default Docker sleep stops containers without forcing them", async () => {
+  // No kill handler is registered — a forced kill would fail the fake.
+  await sleepDocker(entry);
+  for (const container of containers)
+    expect(running.get(container)).toBe(false);
+  expect(commands.calls.some((call) => call.args[0] === "kill")).toBe(false);
   expect(
     commands.calls
       .filter((call) => call.args[0] === "kill")

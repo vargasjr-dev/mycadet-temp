@@ -97,33 +97,6 @@ export function readRootProcesses(): RootProcessRecords {
   return { tunnel: data.tunnel, app: data.app };
 }
 
-/**
- * The edge's recorded built-sha stamp (the auto-build staleness marker the
- * resolver compares against the checkout's HEAD), or undefined when none is
- * recorded yet.
- */
-export function readAppBuiltSha(): string | undefined {
-  return readRootProcesses().app?.builtSha;
-}
-
-/**
- * Record the built-sha stamp on the `app` entry, creating a stamp-only entry
- * when the edge has not stamped its process yet (the stamp is written as
- * soon as a build lands, before the edge process exists).
- */
-export function stampAppBuiltSha(builtSha: string): void {
-  withCliLockfileLock(() => {
-    const data = readLockfile();
-    // The stamp rides the edge's own record: no record (the edge never
-    // started, or was cleared since) means nothing to stamp — the next
-    // resolve reads no stamp and rebuilds.
-    if (data.app) {
-      data.app.builtSha = builtSha;
-    }
-    writeLockfileUnlocked(data);
-  });
-}
-
 import {
   formatAssistantLookupError,
   getActiveAssistant,

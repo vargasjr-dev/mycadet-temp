@@ -43,9 +43,9 @@ const cloudAuthHeadersMock = mock(async () => ({
 }));
 const retireLocalMock = mock(
   async (
-    assistantId: string,
+    entry: LockfileAssistant,
   ): Promise<{ assistantId: string; archived: boolean }> => ({
-    assistantId,
+    assistantId: entry.assistantId,
     archived: false,
   }),
 );
@@ -170,7 +170,10 @@ describe("retireAssistant — the headless dispatch", () => {
     const result = await retireAssistant(entry);
 
     expect(result).toEqual({ ok: true });
-    expect(retireDockerMock).toHaveBeenCalledWith("asst-docker");
+    // The dispatch hands the whole lockfile entry to the docker leg.
+    expect(retireDockerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ assistantId: "asst-docker" }),
+    );
     expect(readLockfile().assistants).toEqual([]);
   });
 
@@ -282,8 +285,8 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     )!.route.run({ assistantId: "asst-local" });
 
     expect(response?.status).toBe(204);
+    // The dispatch hands the whole lockfile entry to the local leg.
     expect(retireLocalMock).toHaveBeenCalledWith(
-      "asst-local",
       expect.objectContaining({ assistantId: "asst-local" }),
     );
   });
