@@ -14,14 +14,6 @@ import type {
   ProviderConnection,
 } from "@/generated/daemon/types.gen";
 
-/**
- * Providers whose runtime lives on the user's own machine, so a
- * cloud-hosted assistant has nothing to reach. Pickers keep listing them
- * and disable the row instead of dropping it: an absent row reads as "not
- * supported yet" rather than "not applicable to this assistant".
- */
-const LOCAL_ONLY_PROVIDERS = new Set<string>(["ollama"]);
-
 /** Every provider the model catalog knows, in catalog order. */
 export const CATALOG_PROVIDERS = Object.keys(MODELS_BY_PROVIDER) as Array<
   keyof typeof MODELS_BY_PROVIDER
@@ -50,22 +42,14 @@ export function connectionServesProvider(
   );
 }
 
-export function isProviderSelectableForAssistant(provider: string): boolean {
-  return !LOCAL_ONLY_PROVIDERS.has(provider);
-}
-
 export function selectableInferenceProvidersForAssistant(): Array<
   (typeof INFERENCE_PROVIDERS)[number]
 > {
-  return INFERENCE_PROVIDERS.filter((provider) =>
-    isProviderSelectableForAssistant(provider),
-  );
+  return [...INFERENCE_PROVIDERS];
 }
 
 export function selectableConnectionProvidersForAssistant(): ConnectionProvider[] {
-  return CONNECTION_PROVIDERS.filter((provider) =>
-    isProviderSelectableForAssistant(provider),
-  );
+  return [...CONNECTION_PROVIDERS];
 }
 
 /**

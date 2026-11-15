@@ -33,7 +33,6 @@ import {
   CATALOG_PROVIDERS,
   entryPickerValue,
   expandEndpointEntries,
-  isProviderSelectableForAssistant,
   parseEntryPickerValue,
   providersServedByConnections,
   unconnectedProviders,
@@ -193,11 +192,7 @@ function unconnectedCandidate(
 }
 
 function selectableKinds(input: ModelFirstInput): CandidateKinds {
-  const { kinds, connected } = candidateKinds(input.connections);
-  return {
-    kinds: kinds.filter((kind) => isProviderSelectableForAssistant(kind)),
-    connected,
-  };
+  return candidateKinds(input.connections);
 }
 
 interface CatalogEntry {

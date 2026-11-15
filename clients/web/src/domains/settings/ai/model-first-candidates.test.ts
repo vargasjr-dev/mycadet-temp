@@ -298,9 +298,4 @@ describe("customModelProviderCandidates", () => {
       candidates.some((candidate) => candidate.connectionName === "lm-studio"),
     ).toBe(true);
   });
-
-  test("drops routes the active assistant cannot reach", () => {
-    const candidates = customModelProviderCandidates(input([]), "local-model");
-    expect(providersOf(candidates)).not.toContain("ollama");
-  });
 });
