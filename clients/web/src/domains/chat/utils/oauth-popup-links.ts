@@ -50,7 +50,6 @@ export function shouldOpenMarkdownLinkInOAuthPopup(
 export function getSameOriginRoutePath(
   href: string | undefined,
 ): string | null {
-
   const url = parseHttpUrl(href);
   if (!url || url.origin !== window.location.origin) {
     return null;

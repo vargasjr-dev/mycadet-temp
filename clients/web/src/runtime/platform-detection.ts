@@ -20,7 +20,6 @@ import { isNativePlatform } from "@/runtime/native-platform";
  * Ref: https://developer.apple.com/forums/thread/119186
  */
 export function isIOSBrowser(): boolean {
-
   const ua = navigator.userAgent;
   if (/iPhone|iPod/.test(ua)) {
     return true;

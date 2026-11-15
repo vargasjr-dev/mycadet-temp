@@ -2,10 +2,7 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
 
-import {
-  useEmailAddressStatus,
-  useEmails,
-} from "@/lib/email-api";
+import { useEmailAddressStatus, useEmails } from "@/lib/email-api";
 import {
   emailAttachmentlistGet,
   emailDownloadGet,

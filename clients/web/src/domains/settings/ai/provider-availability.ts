@@ -70,7 +70,7 @@ export function selectableConnectionProvidersForAssistant(): ConnectionProvider[
 
 /**
  * Inference providers the active assistant can dispatch through. Picker
- * option lists offer the full catalog (see `useProviderPickerAvailability`);
+ * option lists offer the full catalog;
  * this narrower set is for choosing a default, which must land on a provider
  * the assistant can actually use.
  */

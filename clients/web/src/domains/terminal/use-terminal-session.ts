@@ -162,12 +162,13 @@ export function useTerminalSession({
 
       let sessionId: string;
       try {
-        const { data, error, response } =
-          await assistantTerminalSessionsCreate({
+        const { data, error, response } = await assistantTerminalSessionsCreate(
+          {
             path: { assistant_id: assistantId },
             body: apiOptions,
             throwOnError: false,
-          });
+          },
+        );
 
         if (!response || !response.ok) {
           const detail =

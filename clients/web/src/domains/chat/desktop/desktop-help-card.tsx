@@ -6,7 +6,6 @@ import { useTranslation } from "@/i18n";
 import { QuestionEntry } from "@mycadet/assistant-api";
 
 import { useDesktopPreviewStore } from "./desktop-preview-store";
-import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
 import { useOverflows } from "@/hooks/use-overflows";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
@@ -29,19 +28,16 @@ export function DesktopHelpCard({
       paused: expanded,
     });
   const assistantId = useActiveAssistantId();
-  const enabled = useVirtualDesktopEnabled();
   const session = useDesktopPreviewStore.use.session();
   const attachPreview = useCallback(
     (container: HTMLDivElement | null) => {
       useDesktopPreviewStore
         .getState()
         .setInlinePreview(
-          container && assistantId && enabled
-            ? { assistantId, container }
-            : null,
+          container && assistantId ? { assistantId, container } : null,
         );
     },
-    [assistantId, enabled],
+    [assistantId],
   );
 
   return (
@@ -76,7 +72,7 @@ export function DesktopHelpCard({
           </Button>
         )}
       </div>
-      {enabled && assistantId ? (
+      {assistantId ? (
         <div
           ref={attachPreview}
           className="aspect-video w-full overflow-hidden bg-black"
@@ -104,7 +100,7 @@ export function DesktopHelpCard({
           size="compact"
           expandOnMobile={false}
           variant="outlined"
-          disabled={isSubmitting || !enabled || !assistantId}
+          disabled={isSubmitting || !assistantId}
           onClick={() => {
             if (assistantId) {
               useDesktopPreviewStore.getState().openFullscreen(assistantId);

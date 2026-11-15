@@ -457,10 +457,6 @@ describe("AssistantDesktopAffordance", () => {
   });
 });
 
-
-
-
-
 const { DesktopHelpCard } = await import("./desktop-help-card");
 const { normalizeQuestionRequest } =
   await import("@/domains/chat/api/event-types");

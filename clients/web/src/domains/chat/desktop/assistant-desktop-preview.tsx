@@ -11,7 +11,6 @@ import { usePointerCoarse } from "@/utils/pointer";
 
 import { DesktopPreviewFrame } from "./desktop-preview-frame";
 import { useDesktopPreviewStore } from "./desktop-preview-store";
-import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 const DesktopPreviewContent = lazy(() =>
@@ -21,7 +20,6 @@ const DesktopPreviewContent = lazy(() =>
 );
 
 export function AssistantDesktopPreview() {
-  const enabled = useVirtualDesktopEnabled();
   const assistantId = useActiveAssistantId();
   const session = useDesktopPreviewStore.use.session();
   const inlinePreview = useDesktopPreviewStore.use.inlinePreview();
@@ -46,9 +44,9 @@ export function AssistantDesktopPreview() {
 
   useEffect(() => {
     return () => useDesktopPreviewStore.getState().close();
-  }, [assistantId, enabled]);
+  }, [assistantId]);
 
-  if (enabled !== true || assistantId === null || !attended) {
+  if (assistantId === null || !attended) {
     return null;
   }
 

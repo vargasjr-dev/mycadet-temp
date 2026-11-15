@@ -235,9 +235,7 @@ describe("ShareFeedbackModal", () => {
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(2));
     expect(
-      feedbackRequests.map((request) =>
-        (request as FormData).get("client"),
-      ),
+      feedbackRequests.map((request) => (request as FormData).get("client")),
     ).toEqual(["android", "web"]);
   });
 

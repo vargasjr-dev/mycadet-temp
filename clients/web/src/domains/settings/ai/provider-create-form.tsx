@@ -46,7 +46,6 @@ import {
   warnOnFailedEndpointCheck,
 } from "@/domains/settings/ai/provider-editor-constants";
 import { useSelectableConnectionProviders } from "@/domains/settings/ai/provider-availability";
-import { useProviderPickerAvailability } from "@/domains/settings/ai/provider-picker-availability";
 import { secretPlaceholder } from "@/domains/settings/ai/secret-placeholder";
 import { useProviderCredentialsList } from "@/domains/settings/ai/use-provider-credentials-list";
 
@@ -112,7 +111,6 @@ export function ProviderCreateForm({
 }: ProviderCreateFormProps) {
   const { t } = useTranslation("settings");
   const selectableConnectionProviders = useSelectableConnectionProviders();
-  const providerAvailability = useProviderPickerAvailability();
   // A provider this assistant cannot reach is offered as a disabled row, so
   // the seed and the empty-picker fallback both land on one it can.
   const initialProvider: ConnectionProvider =
@@ -443,7 +441,6 @@ export function ProviderCreateForm({
                 .map((p) => ({
                   value: p,
                   label: PROVIDER_DISPLAY_NAMES[p],
-                  ...providerAvailability(p),
                 })),
               ...(connectionProviderOptions.includes("openai-compatible")
                 ? [

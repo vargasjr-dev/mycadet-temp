@@ -184,7 +184,6 @@ function activeOrgSelection(perOrgPrefix: string): string | null {
  * inter-key dependencies.
  */
 export function runStorageMigrations(): void {
-
   // -- Static key renames ------------------------------------------------
 
   // Unprefixed → cadet: (these escaped cleanup entirely before)

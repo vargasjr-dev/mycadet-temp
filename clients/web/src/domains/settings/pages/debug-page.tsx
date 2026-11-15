@@ -52,8 +52,9 @@ export function DebugPage() {
   );
 
   // Every tab renders now; an unknown deep-link falls back to General.
-  const activeTab: DebugTabId = (ALL_TABS as readonly { id: string }[])
-    .some((tab) => tab.id === tabId)
+  const activeTab: DebugTabId = (ALL_TABS as readonly { id: string }[]).some(
+    (tab) => tab.id === tabId,
+  )
     ? (tabId as DebugTabId)
     : DEFAULT_TAB;
 

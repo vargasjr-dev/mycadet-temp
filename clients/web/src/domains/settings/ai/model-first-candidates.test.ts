@@ -300,10 +300,7 @@ describe("customModelProviderCandidates", () => {
   });
 
   test("drops routes the active assistant cannot reach", () => {
-    const candidates = customModelProviderCandidates(
-      input([]),
-      "local-model",
-    );
+    const candidates = customModelProviderCandidates(input([]), "local-model");
     expect(providersOf(candidates)).not.toContain("ollama");
   });
 });

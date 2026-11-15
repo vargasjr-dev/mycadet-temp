@@ -366,7 +366,10 @@ beforeEach(() => {
 });
 
 afterAll(() => {
-  mock.module("@/domains/chat/voice/live-voice/connection", () => realConnection);
+  mock.module(
+    "@/domains/chat/voice/live-voice/connection",
+    () => realConnection,
+  );
 });
 
 afterEach(() => {

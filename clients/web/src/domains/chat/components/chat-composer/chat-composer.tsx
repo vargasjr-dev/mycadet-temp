@@ -521,16 +521,11 @@ export function ChatComposer({
   // Cursor position for the emoji popup's trigger text.
   const cursorRef = useRef(input.length);
 
-  const searchSlashCommands = useCallback(
-    (filter: string) => filteredCommands(filter),
-    [filteredCommands],
-  );
-
   // Slash and emoji popups — state is derived from the input text, not stored.
   const slash = useTextPopup({
     text: input,
     trigger: SLASH_PREFIX_RE,
-    search: searchSlashCommands,
+    search: filteredCommands,
   });
 
   // DOM-tracked via onSelect — state would re-render on every cursor move.

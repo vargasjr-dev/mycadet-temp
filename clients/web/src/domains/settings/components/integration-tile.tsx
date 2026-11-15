@@ -70,21 +70,8 @@ export interface IntegrationTileProps {
   plan: ConnectPlan;
   state: TileConnectState;
   layout?: IntegrationListLayout;
-  /**
-   * Puts a chevron beside the connect action for the other ways in — the
-   * choice between the provider's server, Cadet's hosted sign-in, and your
-   * own OAuth app is a real one the user is expected to make. With one
-   * method there is nothing to choose, so the button stays plain whatever
-   * this says.
-   */
   showAlternatives?: boolean;
-  /**
-   * Blocks this tile's connect action while another integration holds the
-   * attempt. There is one sign-in machine per assistant, so a second click
-   * elsewhere would be swallowed rather than served.
-   */
   disabled?: boolean;
-  /** The plan's primary method, or an alternative picked from the menu. */
   onConnect: (method: ConnectMethod) => void;
   onLogin: () => void;
   onCancel: () => void;
@@ -114,11 +101,8 @@ export interface IntegrationTileProps {
  * have decided; on a phone it is worth less than knowing there is a sign-in
  * waiting for them in another tab.
  *
- * On a cloud-hosted assistant the other ways to connect stay out of sight
- * until the recommended one fails: offering the choice up front asks every
- * user to understand our plumbing to answer a question that answers itself
- * nearly every time. A self-hosted assistant sets `showAlternatives`, and the
- * connect action grows a chevron for them.
+ * `showAlternatives` grows the connect action a chevron for the other ways
+ * in.
  *
  * Purely presentational. Every side effect is a prop.
  */

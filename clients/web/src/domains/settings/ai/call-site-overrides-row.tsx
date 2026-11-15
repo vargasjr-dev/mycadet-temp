@@ -32,7 +32,6 @@ import {
   connectionServesProvider,
   useSelectableInferenceProviders,
 } from "@/domains/settings/ai/provider-availability";
-import { useProviderPickerAvailability } from "@/domains/settings/ai/provider-picker-availability";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,7 +94,6 @@ export function CallSiteOverrideRow({
 
   const isCustom = profileVal === CUSTOM_SENTINEL;
   const selectableInferenceProviders = useSelectableInferenceProviders();
-  const providerAvailability = useProviderPickerAvailability();
   // The chatgpt identity joins the picker when the workspace holds the
   // subscription row (provider "chatgpt"; only daemons that understand the
   // identity return that shape). Migration 144 also writes chatgpt drafts,
@@ -178,7 +176,6 @@ export function CallSiteOverrideRow({
     ...pickableProviders.map((p) => ({
       value: p,
       label: PROVIDER_DISPLAY_NAMES[p] ?? p,
-      ...providerAvailability(p),
     })),
     // Keeps the trigger honest and gives the user a way out: the row
     // renders its real pin, and choosing any other provider is a genuine

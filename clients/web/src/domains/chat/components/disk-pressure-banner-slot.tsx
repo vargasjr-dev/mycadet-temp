@@ -22,8 +22,6 @@ import {
   type DiskPressureBannerMode,
 } from "@/components/disk-pressure-banner";
 import type { UseDiskPressureMonitorResult } from "@/assistant/use-disk-pressure-monitor";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { openExternalUrl } from "@/runtime/browser";
 import {
   getLocalBool,
   removeLocalSetting,
@@ -185,7 +183,6 @@ export function DiskPressureBannerSlot({
         onReviewWorkspaceData={() =>
           void navigate(`${routes.workspace}?sort=size`)
         }
-        onUpgradeStorage={() => void openExternalUrl(cloudAccountBillingUrl())}
       />
     </div>
   );

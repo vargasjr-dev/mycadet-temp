@@ -1001,9 +1001,7 @@ describe("ChatBody — generic chat error Notice (dismiss UX)", () => {
         {...baseProps({
           genericChatError: {
             message: "Model doesn't support image input.",
-            actions: (
-              <a href="/account/doctor">Go to Doctor</a>
-            ),
+            actions: <a href="/account/doctor">Go to Doctor</a>,
           },
           onDismissChatError: () => {},
         })}

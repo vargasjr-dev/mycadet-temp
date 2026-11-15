@@ -229,7 +229,6 @@ describe("the default locale", () => {
       expect(formatLocale()).toBe("en");
     });
   });
-
 });
 
 describe("seconds-resolution timestamps", () => {

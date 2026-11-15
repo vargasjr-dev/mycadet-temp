@@ -45,21 +45,14 @@ async function fetchList<T extends z.ZodTypeAny>(
   if (!response?.ok) {
     throw new Error(`The domain dial failed (${response?.status})`);
   }
-  const body = z
-    .object({ results: z.array(rowSchema) })
-    .parse(data);
+  const body = z.object({ results: z.array(rowSchema) }).parse(data);
   return body.results;
 }
 
-async function dial(
-  path: string,
-  init?: RequestInit,
-): Promise<unknown> {
+async function dial(path: string, init?: RequestInit): Promise<unknown> {
   const { response, data, detail } = await dialCore(path, init);
   if (!response?.ok) {
-    throw new Error(
-      detail ?? `The domain dial failed (${response?.status})`,
-    );
+    throw new Error(detail ?? `The domain dial failed (${response?.status})`);
   }
   return data;
 }
@@ -82,7 +75,8 @@ export function useDomains(assistantId: string) {
   return useQuery({
     queryKey: domainKeys.domains(assistantId),
     enabled: !!assistantId,
-    queryFn: () => fetchList(scoped(assistantId, "domains/"), AssistantDomainSchema),
+    queryFn: () =>
+      fetchList(scoped(assistantId, "domains/"), AssistantDomainSchema),
   });
 }
 
@@ -106,7 +100,12 @@ export function useDomainVerificationStatus(
     refetchOnWindowFocus: opts?.refetchOnWindowFocus,
     queryFn: async () =>
       DomainVerificationStatusSchema.parse(
-        await dial(scoped(assistantId, `domains/${encodeURIComponent(domainId ?? "")}/verification-status/`)),
+        await dial(
+          scoped(
+            assistantId,
+            `domains/${encodeURIComponent(domainId ?? "")}/verification-status/`,
+          ),
+        ),
       ),
   });
 }
@@ -147,9 +146,15 @@ export function useProvisionDomain(assistantId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (domainId: string) =>
-      dial(scoped(assistantId, `domains/${encodeURIComponent(domainId)}/provision/`), {
-        method: "POST",
-      }),
+      dial(
+        scoped(
+          assistantId,
+          `domains/${encodeURIComponent(domainId)}/provision/`,
+        ),
+        {
+          method: "POST",
+        },
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: domainKeys.domains(assistantId),

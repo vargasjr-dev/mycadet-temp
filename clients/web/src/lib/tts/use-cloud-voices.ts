@@ -85,9 +85,7 @@ export function useUnscopedCloudVoices(
       // identity hints the catalog read does not need.
       const { response, data } = await dial("/v1/cloud-speech/tts/voices/");
       if (!response?.ok) {
-        throw new Error(
-          `The voice catalog dial failed (${response?.status})`,
-        );
+        throw new Error(`The voice catalog dial failed (${response?.status})`);
       }
       return data as VoiceCatalogResponse;
     },

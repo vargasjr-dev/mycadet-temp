@@ -29,7 +29,6 @@ const warningStatus: DiskPressureStatus = {
 
 describe("DiskPressureBanner warning variant", () => {
   test("renders the storage-low copy and CTA labels", () => {
-    const onUpgradeStorage = mock(() => {});
     const onReviewWorkspaceData = mock(() => {});
 
     render(
@@ -37,7 +36,6 @@ describe("DiskPressureBanner warning variant", () => {
         status={warningStatus}
         mode="warning"
         onAcknowledge={() => {}}
-        onUpgradeStorage={onUpgradeStorage}
         onReviewWorkspaceData={onReviewWorkspaceData}
       />,
     );
@@ -52,25 +50,7 @@ describe("DiskPressureBanner warning variant", () => {
     expect(screen.getByRole("button", { name: "Upgrade" })).toBeTruthy();
   });
 
-  test("invokes onUpgradeStorage when Upgrade is clicked", () => {
-    const onUpgradeStorage = mock(() => {});
-
-    render(
-      <DiskPressureBanner
-        status={warningStatus}
-        mode="warning"
-        onAcknowledge={() => {}}
-        onUpgradeStorage={onUpgradeStorage}
-        onReviewWorkspaceData={() => {}}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Upgrade" }));
-
-    expect(onUpgradeStorage).toHaveBeenCalledTimes(1);
-  });
-
-  test("omits purchase copy and action when storage upgrades are unavailable", () => {
+  test("renders the Upgrade action on the warning banner", () => {
     render(
       <DiskPressureBanner
         status={warningStatus}
@@ -80,9 +60,6 @@ describe("DiskPressureBanner warning variant", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Free up space to avoid interruptions."),
-    ).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Upgrade" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Upgrade" })).toBeTruthy();
   });
 });

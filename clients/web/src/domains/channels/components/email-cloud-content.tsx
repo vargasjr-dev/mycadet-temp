@@ -6,7 +6,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { useDestroyEmailAddress, useEmailAddressStatus, useEmailAddresses, emailKeys } from "@/lib/email-api";
+import {
+  useDestroyEmailAddress,
+  useEmailAddressStatus,
+  useEmailAddresses,
+  emailKeys,
+} from "@/lib/email-api";
 import {
   useDestroyDomain,
   useDomains,
@@ -234,13 +239,7 @@ export function EmailCloudContent({ emailRootDomain }: EmailCloudContentProps) {
       captureError(err, { context: "email_domain_release" });
       toast.error(t("emailCloudContent.domainReleaseFailedToast"));
     }
-  }, [
-    address,
-    deleteDomain,
-    domain?.id,
-    invalidateEmailQueries,
-    t,
-  ]);
+  }, [address, deleteDomain, domain?.id, invalidateEmailQueries, t]);
 
   // -- Render ----------------------------------------------------------------
   /* The address is created from the Assistant Inbox's own setup card, the

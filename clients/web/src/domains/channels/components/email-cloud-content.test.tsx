@@ -50,10 +50,7 @@ let provisionImpl: () => Promise<Record<string, unknown> | Response>;
 const emailScope = `/v1/assistants/${ASSISTANT_ID}`;
 
 /** The wire: the four reads answer from fixtures, the provision POST records. */
-async function serveMail(
-  url: string,
-  init?: RequestInit,
-): Promise<Response> {
+async function serveMail(url: string, init?: RequestInit): Promise<Response> {
   const path = url.replace(/^https?:\/\/[^/]+/, "").split("?")[0];
   if (path === `${emailScope}/domains/` && (init?.method ?? "GET") === "GET") {
     return Response.json({ results: [makeDomain()] });
@@ -65,15 +62,13 @@ async function serveMail(
     return Response.json({ results: [makeAddress()] });
   }
   if (
-    path ===
-      `${emailScope}/domains/${DOMAIN_ID}/verification-status/` &&
+    path === `${emailScope}/domains/${DOMAIN_ID}/verification-status/` &&
     (init?.method ?? "GET") === "GET"
   ) {
     return Response.json(verificationStatus);
   }
   if (
-    path ===
-      `${emailScope}/email-addresses/${ADDRESS_ID}/status/` &&
+    path === `${emailScope}/email-addresses/${ADDRESS_ID}/status/` &&
     (init?.method ?? "GET") === "GET"
   ) {
     return Response.json(makeAddressStatus());
@@ -86,9 +81,7 @@ async function serveMail(
     const result = await provisionImpl();
     // A test failure returns the refusal body itself, so the dial reads
     // the detail out of it the way the real 400 flows.
-    return result instanceof Response
-      ? result
-      : Response.json(result);
+    return result instanceof Response ? result : Response.json(result);
   }
   throw new Error(`unexpected dial in test: ${init?.method ?? "GET"} ${path}`);
 }
@@ -311,9 +304,7 @@ describe("EmailCloudContent domain setup repair", () => {
     });
 
     const call = provisionCalls[0];
-    expect(call.url).toBe(
-      `${emailScope}/domains/${DOMAIN_ID}/provision/`,
-    );
+    expect(call.url).toBe(`${emailScope}/domains/${DOMAIN_ID}/provision/`);
     expect(call.init?.method).toBe("POST");
     expect(call.init?.body).toBeUndefined();
   });

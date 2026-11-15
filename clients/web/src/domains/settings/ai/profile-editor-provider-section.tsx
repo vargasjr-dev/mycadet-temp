@@ -29,10 +29,7 @@ import {
   parseEntryPickerValue,
   providersServedByConnections,
 } from "@/domains/settings/ai/provider-availability";
-import {
-  PickerMeta,
-  useProviderPickerAvailability,
-} from "@/domains/settings/ai/provider-picker-availability";
+import { PickerMeta } from "@/domains/settings/ai/provider-picker-availability";
 import type {
   ConnectionModel,
   ConnectionProvider,
@@ -150,8 +147,6 @@ export function ProfileEditorProviderSection({
     }
     onModelChange(value);
   }
-
-  const providerAvailability = useProviderPickerAvailability();
 
   // Providers backed by at least one connection — picking a provider with zero
   // connections binds a profile to a route the daemon can't dispatch through.
@@ -355,7 +350,6 @@ export function ProfileEditorProviderSection({
       value,
       label,
       suffix: meta ? <PickerMeta text={meta} /> : undefined,
-      ...providerAvailability(value),
     }));
     // A bound endpoint whose row was deleted still renders on the
     // trigger; the warning below explains the state.
@@ -390,7 +384,6 @@ export function ProfileEditorProviderSection({
     provider,
     providerConnection,
     defaultEntryMetaLabel,
-    providerAvailability,
     t,
   ]);
 

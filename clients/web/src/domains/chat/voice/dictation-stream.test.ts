@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-
 import type {
   LiveVoiceAudioCaptureOptions,
   LiveVoiceCaptureResult,
@@ -150,16 +149,18 @@ describe("resolveDictationStreamWsUrl", () => {
 
   beforeEach(() => {
     captured = null;
-    const storyFetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
-      captured = {
-        url: input instanceof Request ? input.url : String(input),
-        init: init ?? {},
-      };
-      return Response.json(
-        { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
-        { status: 200 },
-      );
-    });
+    const storyFetch = mock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        captured = {
+          url: input instanceof Request ? input.url : String(input),
+          init: init ?? {},
+        };
+        return Response.json(
+          { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
+          { status: 200 },
+        );
+      },
+    );
     globalThis.fetch = Object.assign(storyFetch, {
       preconnect: () => {},
     }) as typeof globalThis.fetch;

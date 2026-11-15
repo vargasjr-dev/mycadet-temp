@@ -31,15 +31,17 @@ function LocationProbe() {
 function renderEntitled({
   domain,
 }: {
-  domain: { id: string; subdomain: string; created: string; modified: string } | null;
+  domain: {
+    id: string;
+    subdomain: string;
+    created: string;
+    modified: string;
+  } | null;
 }) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  client.setQueryData(
-    domainKeys.domains(ASSISTANT_ID),
-    domain ? [domain] : [],
-  );
+  client.setQueryData(domainKeys.domains(ASSISTANT_ID), domain ? [domain] : []);
   client.setQueryData(emailKeys.emailAddresses(ASSISTANT_ID), []);
   // Seeded under the generated cache's key shape without importing the sdk.
   client.setQueryData([{ _id: "assistantsList" }], {
@@ -78,7 +80,12 @@ describe("EmailCloudContent · entitled, no address", () => {
       domain: {
         domain: "example.com",
         subdomain: "ada",
-      } as unknown as { id: string; subdomain: string; created: string; modified: string },
+      } as unknown as {
+        id: string;
+        subdomain: string;
+        created: string;
+        modified: string;
+      },
     });
 
     // The domain row, with its release action, is still this page's.

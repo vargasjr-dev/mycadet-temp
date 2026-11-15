@@ -8,7 +8,6 @@ import { usePointerCoarse } from "@/utils/pointer";
 import { AVATAR_ACCENT } from "../components/streaming-shimmer-text";
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 import { useDesktopSetupStatus } from "./use-desktop-setup";
-import { useVirtualDesktopEnabled } from "./use-virtual-desktop-enabled";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function AssistantDesktopAffordance({
@@ -17,13 +16,12 @@ export function AssistantDesktopAffordance({
   onToggle?: () => void;
 }) {
   const { t } = useTranslation("chat");
-  const enabled = useVirtualDesktopEnabled();
   const assistantId = useActiveAssistantId();
   const assistantName = useAssistantName(assistantId);
   const session = useDesktopPreviewStore.use.session();
   const fullscreenOnly = usePointerCoarse();
 
-  if (enabled !== true || assistantId === null) {
+  if (assistantId === null) {
     return null;
   }
 

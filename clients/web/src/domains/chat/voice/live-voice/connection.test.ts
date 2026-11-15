@@ -44,13 +44,15 @@ beforeEach(() => {
     { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
     { status: 200 },
   );
-  const storyFetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
-    captured = {
-      url: input instanceof Request ? input.url : String(input),
-      init: init ?? {},
-    };
-    return nextMintResponse;
-  });
+  const storyFetch = mock(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      captured = {
+        url: input instanceof Request ? input.url : String(input),
+        init: init ?? {},
+      };
+      return nextMintResponse;
+    },
+  );
   globalThis.fetch = Object.assign(storyFetch, {
     preconnect: () => {},
   }) as typeof globalThis.fetch;
@@ -283,5 +285,4 @@ describe("resolveLiveVoiceWsUrl", () => {
 
     expect(new URL(raw).searchParams.has("conversationId")).toBe(false);
   });
-
 });

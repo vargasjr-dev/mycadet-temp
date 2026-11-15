@@ -47,7 +47,6 @@ let mcpAuthFails = false;
 let mcpAuthCompletes = false;
 let heldPluginRemoval: (() => void) | null = null;
 let holdPluginRemoval = false;
-let cloudHosted = true;
 let hydrated = true;
 let managedStatus: "idle" | "attempting" | "connected" = "attempting";
 let managedError: string | null = null;
@@ -153,9 +152,6 @@ mock.module("@/domains/settings/oauth-connections", () => ({
     isLoading: false,
     isError: false,
   }),
-}));
-mock.module("@/assistant/hosting", () => ({
-  useActiveAssistantIsCloudHosted: () => cloudHosted,
 }));
 mock.module("@/lib/auth/hard-navigate", () => ({
   hardNavigate,
@@ -384,7 +380,6 @@ afterEach(() => {
   mcpAuthCompletes = false;
   holdPluginRemoval = false;
   heldPluginRemoval = null;
-  cloudHosted = true;
   managedStatus = "attempting";
   managedError = null;
   hydrated = true;
@@ -685,7 +680,6 @@ describe("IntegrationsPage", () => {
   });
 
   test("gives a self-hosted assistant the split connect action", async () => {
-    cloudHosted = false;
     seededProviders = [provider()];
     seededCatalog = [
       catalogMatch({
@@ -753,7 +747,6 @@ describe("IntegrationsPage", () => {
 
   test("replaces a failed method with the alternative picked after it", async () => {
     mcpAuthFails = true;
-    cloudHosted = false;
     seededProviders = [provider()];
     seededCatalog = [
       catalogMatch({
@@ -783,27 +776,6 @@ describe("IntegrationsPage", () => {
       screen.queryByRole("button", { name: "Retry connecting Notion" }),
     ).toBeNull();
     await settle();
-  });
-
-  test("keeps the other ways out of sight on a cloud-hosted assistant", async () => {
-    seededProviders = [provider()];
-    seededCatalog = [
-      catalogMatch({
-        name: "notion-mcp",
-        integration: {
-          ...catalogMatch().integration!,
-          displayName: "Notion",
-          oauthProvider: "notion",
-          logo: "notion.png",
-        },
-      }),
-    ];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByText("Notion");
-    expect(
-      screen.queryByRole("button", { name: "Other ways to connect Notion" }),
-    ).toBeNull();
   });
 
   test("groups an installed plugin with its mapped provider", async () => {
@@ -838,7 +810,6 @@ describe("IntegrationsPage", () => {
   });
 
   test("MCP connections remain available on a self-hosted assistant", async () => {
-    cloudHosted = false;
     seededServers = [server()];
     render(<IntegrationsPage />, { wrapper: Wrapper });
     await screen.findByText("example-integration");
@@ -904,7 +875,6 @@ describe("IntegrationsPage", () => {
   });
 
   test("provider deep links open after the unified page is already mounted", async () => {
-    cloudHosted = false;
     seededProviders = [provider()];
     render(
       <>
@@ -924,7 +894,6 @@ describe("IntegrationsPage", () => {
   });
 
   test("closing a provider deep link allows the same link to reopen", async () => {
-    cloudHosted = false;
     seededProviders = [provider()];
     render(
       <>

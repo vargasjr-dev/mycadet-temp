@@ -67,24 +67,24 @@ export function subscribeTerminalEvents(
 
     let streamError: Error | null = null;
     try {
-      const { stream } = await client.sse.get<
-        Record<string, unknown> | string
-      >({
-        url: "/v1/assistants/{assistant_id}/terminal/sessions/{session_id}/events/",
-        path: { assistant_id: assistantId, session_id: sessionId },
-        headers: {
-          Accept: "text/event-stream, application/json",
-          ...getClientRegistrationHeaders(),
+      const { stream } = await client.sse.get<Record<string, unknown> | string>(
+        {
+          url: "/v1/assistants/{assistant_id}/terminal/sessions/{session_id}/events/",
+          path: { assistant_id: assistantId, session_id: sessionId },
+          headers: {
+            Accept: "text/event-stream, application/json",
+            ...getClientRegistrationHeaders(),
+          },
+          signal: abortController.signal,
+          // All retry behavior is owned by useTerminalSession's
+          // reconnect state machine. SDK-level retries would be
+          // invisible to the consumer's status tracking.
+          sseMaxRetryAttempts: 0,
+          onSseError: (error) => {
+            streamError = toError(error, "Terminal stream disconnected");
+          },
         },
-        signal: abortController.signal,
-        // All retry behavior is owned by useTerminalSession's
-        // reconnect state machine. SDK-level retries would be
-        // invisible to the consumer's status tracking.
-        sseMaxRetryAttempts: 0,
-        onSseError: (error) => {
-          streamError = toError(error, "Terminal stream disconnected");
-        },
-      });
+      );
 
       for await (const payload of stream) {
         if (cancelled) {

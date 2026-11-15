@@ -57,21 +57,14 @@ async function fetchList<T extends z.ZodTypeAny>(
   if (!response?.ok) {
     throw new Error(`The email dial failed (${response?.status})`);
   }
-  const body = z
-    .object({ results: z.array(rowSchema) })
-    .parse(data);
+  const body = z.object({ results: z.array(rowSchema) }).parse(data);
   return body.results;
 }
 
-async function dial(
-  path: string,
-  init?: RequestInit,
-): Promise<unknown> {
+async function dial(path: string, init?: RequestInit): Promise<unknown> {
   const { response, data, detail } = await dialCore(path, init);
   if (!response?.ok) {
-    throw new Error(
-      detail ?? `The email dial failed (${response?.status})`,
-    );
+    throw new Error(detail ?? `The email dial failed (${response?.status})`);
   }
   return data;
 }
@@ -93,7 +86,11 @@ export const emailKeys = {
 
 export function useEmails(
   assistantId: string,
-  query?: { direction?: "inbound" | "outbound"; limit?: number; enabled?: boolean },
+  query?: {
+    direction?: "inbound" | "outbound";
+    limit?: number;
+    enabled?: boolean;
+  },
 ) {
   const { enabled, ...params } = query ?? {};
   return useQuery({
@@ -133,7 +130,12 @@ export function useEmailAddressStatus(
     refetchOnWindowFocus: opts?.refetchOnWindowFocus,
     queryFn: async () =>
       EmailAddressStatusSchema.parse(
-        await dial(scoped(assistantId, `email-addresses/${encodeURIComponent(addressId ?? "")}/status/`)),
+        await dial(
+          scoped(
+            assistantId,
+            `email-addresses/${encodeURIComponent(addressId ?? "")}/status/`,
+          ),
+        ),
       ),
   });
 }
@@ -160,7 +162,10 @@ export function useDestroyEmailAddress(assistantId: string) {
   return useMutation({
     mutationFn: async (addressId: string) =>
       dial(
-        scoped(assistantId, `email-addresses/${encodeURIComponent(addressId)}/`),
+        scoped(
+          assistantId,
+          `email-addresses/${encodeURIComponent(addressId)}/`,
+        ),
         { method: "DELETE" },
       ),
     onSuccess: () => {

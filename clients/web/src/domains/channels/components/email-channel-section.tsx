@@ -14,7 +14,6 @@ import { Select } from "@mycadet/design-library/components/select";
 import { toast } from "@mycadet/design-library/components/toast";
 
 import { Trans, useTranslation } from "@/i18n";
-import { ByoServiceCard } from "@/components/byo-service-card";
 import { ServiceCard } from "@/components/service-card";
 import { SaveButton } from "@/components/service-form-controls";
 import {
@@ -188,7 +187,6 @@ export function EmailChannelSection() {
       </div>
     </div>
   );
-
 
   return (
     <ServiceCard

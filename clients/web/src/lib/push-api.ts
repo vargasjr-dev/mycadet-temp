@@ -57,7 +57,10 @@ async function dial(
   const { response, networkError } = await dialCore(path, init);
   if (networkError) {
     return {
-      error: networkError instanceof Error ? networkError : new Error(String(networkError)),
+      error:
+        networkError instanceof Error
+          ? networkError
+          : new Error(String(networkError)),
     };
   }
   if (!response?.ok) {
@@ -111,7 +114,10 @@ export function deleteLiveActivityToken(
   deviceToken: string,
 ): Promise<{ error: Error | null }> {
   return dial(
-    scoped(assistantId, `live-activity/tokens/${encodeURIComponent(deviceToken)}/`),
+    scoped(
+      assistantId,
+      `live-activity/tokens/${encodeURIComponent(deviceToken)}/`,
+    ),
     { method: "DELETE" },
   );
 }

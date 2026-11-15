@@ -46,7 +46,6 @@
  * default.
  */
 export function systemLocales(): string[] {
-
   // `navigator.languages` is the full ordered preference list. Safari and some
   // WebViews have historically left it empty or absent, so `navigator.language`
   // (always present) is the single-entry fallback.

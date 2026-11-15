@@ -158,17 +158,19 @@ describe("registerLiveActivityPushToken content state", () => {
       releaseFirst = resolve;
     });
     let calls = 0;
-    upsertMock.mockImplementation(async (assistantId: string, body: UpsertBody) => {
-      lastUpsert = { assistantId, body };
-      calls += 1;
-      // Hold the first request open past the point the second is issued, so
-      // an unserialized implementation would let the second overtake it.
-      if (calls === 1) {
-        await firstInFlight;
-      }
-      arrived.push(body.muted);
-      return { error: null };
-    });
+    upsertMock.mockImplementation(
+      async (assistantId: string, body: UpsertBody) => {
+        lastUpsert = { assistantId, body };
+        calls += 1;
+        // Hold the first request open past the point the second is issued, so
+        // an unserialized implementation would let the second overtake it.
+        if (calls === 1) {
+          await firstInFlight;
+        }
+        arrived.push(body.muted);
+        return { error: null };
+      },
+    );
 
     const first = registerLiveActivityPushToken({
       ...REGISTRATION,

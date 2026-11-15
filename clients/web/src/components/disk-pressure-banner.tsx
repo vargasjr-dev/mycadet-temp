@@ -1,7 +1,9 @@
 import { AlertTriangle, Package } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { formatDiskPressureUsage } from "@/assistant/disk-pressure";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { useTranslation } from "@/i18n";
 import type { DiskPressureStatus } from "@mycadet/assistant-api";
 import { Button, Checkbox, Modal, Notice } from "@mycadet/design-library";
@@ -25,7 +27,6 @@ export interface DiskPressureBannerProps {
    */
   onDismissWarning?: (permanent: boolean) => void;
   onReviewWorkspaceData?: () => void;
-  onUpgradeStorage?: (() => void) | null;
 }
 
 export function DiskPressureBanner(props: DiskPressureBannerProps) {
@@ -37,10 +38,12 @@ export function DiskPressureBanner(props: DiskPressureBannerProps) {
     onAcknowledge,
     onDismissWarning,
     onReviewWorkspaceData,
-    onUpgradeStorage,
   } = props;
   const { t } = useTranslation();
   const [showAcknowledgeModal, setShowAcknowledgeModal] = useState(false);
+  const handleUpgradeStorage = useCallback(() => {
+    void openExternalUrl(cloudAccountBillingUrl());
+  }, []);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const formattedUsage = formatDiskPressureUsage(status);
 
@@ -74,9 +77,7 @@ export function DiskPressureBanner(props: DiskPressureBannerProps) {
             </span>
           </div>
           <p className="m-0">
-            {onUpgradeStorage
-              ? t("diskPressureBanner.warningBodyWithUpgrade")
-              : t("diskPressureBanner.warningBody")}
+            {t("diskPressureBanner.warningBodyWithUpgrade")}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {onReviewWorkspaceData && (
@@ -88,15 +89,13 @@ export function DiskPressureBanner(props: DiskPressureBannerProps) {
                 {t("diskPressureBanner.manageStorage")}
               </Button>
             )}
-            {onUpgradeStorage && (
-              <Button
-                variant="outlined"
-                size="compact"
-                onClick={onUpgradeStorage}
-              >
-                {t("diskPressureBanner.upgrade")}
-              </Button>
-            )}
+            <Button
+              variant="outlined"
+              size="compact"
+              onClick={handleUpgradeStorage}
+            >
+              {t("diskPressureBanner.upgrade")}
+            </Button>
             {onDismissWarning ? (
               <Checkbox
                 className="ml-auto"
@@ -149,15 +148,13 @@ export function DiskPressureBanner(props: DiskPressureBannerProps) {
                 {t("diskPressureBanner.manageStorage")}
               </Button>
             )}
-            {onUpgradeStorage && (
-              <Button
-                variant="outlined"
-                size="compact"
-                onClick={onUpgradeStorage}
-              >
-                {t("diskPressureBanner.upgrade")}
-              </Button>
-            )}
+            <Button
+              variant="outlined"
+              size="compact"
+              onClick={handleUpgradeStorage}
+            >
+              {t("diskPressureBanner.upgrade")}
+            </Button>
           </div>
         </div>
       </Notice>
@@ -226,17 +223,15 @@ export function DiskPressureBanner(props: DiskPressureBannerProps) {
             </Modal.Description>
           </Modal.Body>
           <Modal.Footer>
-            {onUpgradeStorage && (
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setShowAcknowledgeModal(false);
-                  onUpgradeStorage();
-                }}
-              >
-                {t("diskPressureBanner.upgrade")}
-              </Button>
-            )}
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setShowAcknowledgeModal(false);
+                handleUpgradeStorage();
+              }}
+            >
+              {t("diskPressureBanner.upgrade")}
+            </Button>
             <Button
               variant="primary"
               disabled={isAcknowledging}

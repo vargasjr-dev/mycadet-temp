@@ -12,12 +12,6 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, fireEvent, render } from "@testing-library/react";
 
-let selfHosted = false;
-
-mock.module("@/assistant/hosting", () => ({
-  useActiveAssistantIsSelfHosted: () => selfHosted,
-}));
-
 const { CallSiteOverrideRow } =
   await import("@/domains/settings/ai/call-site-overrides-row");
 
@@ -75,7 +69,6 @@ function optionLabels(): string[] {
 afterEach(() => {
   cleanup();
   drafts.length = 0;
-  selfHosted = false;
 });
 
 describe("CallSiteOverrideRow provider picker", () => {
@@ -87,22 +80,6 @@ describe("CallSiteOverrideRow provider picker", () => {
     expect(labels.some((l) => l.includes("Ollama"))).toBe(true);
     // The bug this guards: showing a provider the draft does not hold.
     expect(labels.some((l) => l.includes("Anthropic"))).toBe(false);
-  });
-
-  test("a provider this assistant cannot reach is offered disabled with the reason", () => {
-    renderRow({ provider: "ollama", model: "llama3" });
-
-    fireEvent.click(providerTrigger());
-
-    const ollama = Array.from(
-      document.querySelectorAll<HTMLElement>('[role="option"]'),
-    ).filter((o) => o.textContent?.includes("Ollama"));
-    // One row, stating the restriction rather than hiding the provider or
-    // duplicating it as an unavailable pin.
-    expect(ollama).toHaveLength(1);
-    expect(ollama[0]?.textContent).toContain("Self-hosted only");
-    expect(ollama[0]?.getAttribute("aria-disabled")).toBe("true");
-    expect(optionLabels().some((l) => l.includes("(unavailable)"))).toBe(false);
   });
 
   test("picking a real provider over an unavailable pin saves that provider", () => {
@@ -128,16 +105,6 @@ describe("CallSiteOverrideRow provider picker", () => {
     fireEvent.click(providerTrigger());
 
     expect(optionLabels().some((l) => l.includes("(unavailable)"))).toBe(false);
-  });
-
-  test("on a self-hosted assistant ollama is a normal option", () => {
-    selfHosted = true;
-    renderRow({ provider: "ollama", model: "llama3" });
-
-    fireEvent.click(providerTrigger());
-
-    expect(optionLabels().some((l) => l.includes("(unavailable)"))).toBe(false);
-    expect(optionLabels().some((l) => l.includes("Ollama"))).toBe(true);
   });
 });
 

@@ -3,7 +3,7 @@
  * an **Upgrade** CTA that appears only when the assistant actually has an
  * upgrade path.
  *
- * Both mount points gate that CTA themselves and pass `onUpgradeStorage: null`
+ * Both mount points render the Upgrade CTA themselves now
  * when there is nowhere to upgrade to:
  *
  *   - chat: `assistantStateKind === "active"`
@@ -58,7 +58,6 @@ const meta: Meta<typeof DiskPressureBanner> = {
     onAcknowledge: () => {},
     onDismissWarning: () => {},
     onReviewWorkspaceData: () => {},
-    onUpgradeStorage: () => {},
   },
   decorators: [
     (Story) => (
@@ -81,13 +80,11 @@ export const WarningWithUpgrade: Story = {
 };
 
 /**
- * Self-hosted. With `onUpgradeStorage: null` the Upgrade button disappears
  * **and the body copy drops "or add more storage"**. The wall stops
  * advertising a purchase it cannot complete.
  */
 export const WarningWithoutUpgrade: Story = {
   name: "Warning · no upgrade path (self-hosted)",
-  args: { onUpgradeStorage: null },
 };
 
 /**

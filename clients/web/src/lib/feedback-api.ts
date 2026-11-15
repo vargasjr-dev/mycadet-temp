@@ -20,10 +20,7 @@ import { getCloudBaseUrl } from "@mycadet/shared";
 
 import { dial } from "@/lib/dial";
 
-export type FeedbackClassification =
-  | "bug_report"
-  | "feature_request"
-  | "other";
+export type FeedbackClassification = "bug_report" | "feature_request" | "other";
 
 /**
  * Which client this feedback is being sent from — the cloud's accept set

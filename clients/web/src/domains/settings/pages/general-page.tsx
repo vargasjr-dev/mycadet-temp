@@ -74,7 +74,6 @@ export function GeneralPage() {
           onReviewWorkspaceData={() =>
             void navigate(`${routes.workspace}?sort=size`)
           }
-          onUpgradeStorage={null}
         />
       )}
 
@@ -86,7 +85,6 @@ export function GeneralPage() {
       <DetailCard
         title={t("generalPage.versionTitle")}
         subtitle={t("generalPage.versionSubtitle")}
-        accessory={undefined}
       >
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
