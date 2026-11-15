@@ -327,17 +327,16 @@ export async function resolveClientDists(): Promise<{
     web: await resolveDistArm("web"),
     app: await resolveDistArm("app"),
   };
-  // Both arms of a checkout share one fingerprint, anchored at the app
-  // package: a source change that stale-dates one stale-dates both, so one
-  // hash answers for both dists. A release with no source tree (npm install)
-  // skips the hash entirely — its dists are served as-is.
-  const anchor = arms.app.sourceDir || arms.web.sourceDir;
-  const sourceSha = anchor ? await getSourceSha(anchor) : null;
 
   async function buildClientDist(kind: "web" | "app"): Promise<string> {
     console.log(`Building ${kind} client...`);
 
     const arm = arms[kind];
+    // Each arm hashes its own source package and stamps its own dist: an
+    // edit to one client's source stale-dates only that client's bundle. A
+    // release with no source tree (npm install) skips hashing entirely — its
+    // dist is served as-is.
+    const sourceSha = arm.sourceDir ? await getSourceSha(arm.sourceDir) : null;
     if (
       arm.distDir !== null &&
       (sourceSha === null || !(await isStale(arm, sourceSha)))
@@ -345,15 +344,16 @@ export async function resolveClientDists(): Promise<{
       return arm.distDir;
 
     const dist = await buildDistFromSource(kind, arm.sourceDir);
-    if (sourceSha !== null) await stampDistSha(dist, sourceSha);
+    if (sourceSha !== null) {
+      await stampDistSha(dist, sourceSha);
+      console.log("Stamped", sourceSha);
+    }
     console.log(`${kind} client built.`);
     return dist;
   }
 
   const appDistDir = await buildClientDist("app");
   const webDistDir = await buildClientDist("web");
-
-  if (sourceSha !== null) console.log("Stamped", sourceSha);
 
   return {
     webDistDir: arms.web.distDir ?? webDistDir,

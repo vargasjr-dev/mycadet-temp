@@ -133,9 +133,9 @@ describe("resolveClientDists", () => {
       expect(command).toBe("bun");
       expect(args).toEqual(["run", "build"]);
     }
-    // The stamp is the fingerprint both bundles consumed, recorded in the
-    // dist itself — a hex source hash, not a git sha (a git-less checkout
-    // still stamps).
+    // The stamp is the fingerprint the bundle's own source hashed to,
+    // recorded in the dist itself — a hex source hash, not a git sha (a
+    // git-less checkout still stamps).
     for (const dist of [webDistDir(), appDistDir()]) {
       expect(distStamp(dist)).toMatch(/^[0-9a-f]{64}\n$/);
     }

@@ -50,7 +50,7 @@ import {
   getMetadataStore,
   initMetadataStore,
 } from "./records/metadata-store.js";
-import { getCesSocketPath } from "@mycadet/ces-client/socket-path";
+import { getCesSocketPath } from "@mycadet/ces-client";
 
 // ---------------------------------------------------------------------------
 // Logging (module-level for early bootstrap + structured logging post-init)

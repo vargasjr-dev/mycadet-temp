@@ -35,6 +35,7 @@ import type { CesTransport } from "../rpc-client.js";
 
 describe("package independence", () => {
   const sourceFiles = [
+    "../index.ts",
     "../http-credentials.ts",
     "../http-log-export.ts",
     "../rpc-client.ts",
