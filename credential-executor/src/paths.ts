@@ -63,24 +63,6 @@ export function getCesLogDir(): string {
 }
 
 // ---------------------------------------------------------------------------
-// CES socket path (local sibling and managed sidecar)
-// ---------------------------------------------------------------------------
-
-/**
- * The path to the CES Unix socket used in every environment.
- *
- * Local siblings and managed sidecars share this resolver — it lives in
- * `@mycadet/ces-client/socket-path` so the assistant, gateway, and CLI dial
- * the same path CES binds without depending on this package. The directory
- * comes from `CES_SOCKET_DIR` (default `/run/ces-ipc`) and is a sibling of
- * the CES data dir, never inside it.
- */
-export {
-  getCesSocketPath,
-  getCesSocketDir,
-} from "@mycadet/ces-client/socket-path";
-
-// ---------------------------------------------------------------------------
 // Health port (managed mode only)
 // ---------------------------------------------------------------------------
 

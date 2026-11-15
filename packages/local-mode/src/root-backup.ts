@@ -20,8 +20,10 @@ import { dirname, join, posix, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
-import { dockerResourceNames } from "./remotes/docker/retire";
-import { isNoSuchContainerError } from "./remotes/docker/common";
+import {
+  dockerResourceNames,
+  isNoSuchContainerError,
+} from "./remotes/docker/common";
 import { isDockerEntry } from "./lockfile-contract";
 import { DOCKER_STATEFUL_SET_SPEC } from "./remotes/docker/statefulset";
 import { getLocalInstanceDir } from "./remotes/local/instance";

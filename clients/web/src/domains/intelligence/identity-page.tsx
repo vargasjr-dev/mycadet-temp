@@ -50,7 +50,6 @@ import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useElementSize } from "@/hooks/use-element-size";
 import { useTranslation } from "@/i18n";
 import { useEmailPinned } from "@/hooks/use-email-pinned";
-import { useAssistantHosting } from "@/assistant/hosting";
 import { useSupportsPluginsSurface } from "@/lib/backwards-compat/plugins-surface";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
@@ -280,11 +279,8 @@ export function IdentityPage() {
     invalidateAvatar();
   }, [invalidateAvatar]);
 
-  /* The Email card is the way into the Assistant Inbox, which exists only
-     on the cloud. */
-  const showsEmail = useAssistantHosting() === "cloud";
   const emailPin = useEmailPinned(assistantId);
-  const sections = buildIdentitySections({ email: showsEmail });
+  const sections = buildIdentitySections();
   const emailTrailing = (
     <button
       type="button"

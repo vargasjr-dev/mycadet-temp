@@ -176,8 +176,9 @@ export {
   getRetiredDir,
   getMetadataPath,
 } from "./remotes/local/archive";
-export { dockerResourceNames, retireDocker } from "./remotes/docker/retire";
+export { retireDocker } from "./remotes/docker/retire";
 export { pullImage } from "./remotes/docker/hatch";
+export { dockerResourceNames } from "./remotes/docker/common";
 export { exec, execOutput, execWithStdin, buildExecErrorMessage } from "./exec";
 export {
   isCadetCommandLine,

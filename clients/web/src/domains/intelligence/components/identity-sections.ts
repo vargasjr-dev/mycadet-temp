@@ -82,15 +82,6 @@ function section(key: Exclude<IdentitySectionKey, "personality" | "email">) {
   } satisfies IdentitySection;
 }
 
-export interface BuildIdentitySectionsOptions {
-  /**
-   * Draw the Email card, after Channels. Absent when the assistant is
-   * not cloud-hosted — the one section that depends on the cloud,
-   * since the mail lives there.
-   */
-  email?: boolean;
-}
-
 /**
  * Every section shows on every platform, the phone included. The overview
  * card is the way into a section, so a rough mobile surface is a reason to
@@ -98,21 +89,7 @@ export interface BuildIdentitySectionsOptions {
  * is the exception, and only because the inbox itself does not exist off
  * the cloud.
  */
-export function buildIdentitySections({
-  email,
-}: BuildIdentitySectionsOptions = {}): IdentitySection[] {
-  const emailSection: IdentitySection[] = email
-    ? [
-        {
-          key: "email",
-          label: t(SECTION_COPY_KEY.email.label, { ns: "intelligence" }),
-          description: t(SECTION_COPY_KEY.email.description, {
-            ns: "intelligence",
-          }),
-          to: routes.assistantInbox,
-        },
-      ]
-    : [];
+export function buildIdentitySections(): IdentitySection[] {
   return [
     // Personality renders bare (full-bleed stage chrome), so it is not a
     // registry section. The overview links it directly.
@@ -134,6 +111,13 @@ export function buildIdentitySections({
     section("workspace"),
     section("contacts"),
     section("channels"),
-    ...emailSection,
+    {
+      key: "email",
+      label: t(SECTION_COPY_KEY.email.label, { ns: "intelligence" }),
+      description: t(SECTION_COPY_KEY.email.description, {
+        ns: "intelligence",
+      }),
+      to: routes.assistantInbox,
+    },
   ];
 }

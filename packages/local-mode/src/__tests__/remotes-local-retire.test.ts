@@ -128,7 +128,7 @@ describe("retireLocal — CES sibling stop", () => {
       instanceDir,
     });
     const entry = readLocalEntry("test-assistant");
-    await retireLocal("test-assistant", entry, {
+    await retireLocal(entry, {
       progress: () => {},
       log: () => {},
       warn: () => {},
@@ -162,7 +162,7 @@ describe("retireLocal — CES sibling stop", () => {
   test("gives the daemon its full stop budget, not the default grace", async () => {
     makeEntry({ assistantId: "test-assistant" });
     const entry = readLocalEntry("test-assistant");
-    await retireLocal("test-assistant", entry, {
+    await retireLocal(entry, {
       progress: () => {},
       log: () => {},
       warn: () => {},
@@ -194,7 +194,7 @@ describe("retireLocal — CES sibling stop", () => {
       instanceDir,
     });
     const entry = readLocalEntry("test-assistant");
-    await retireLocal("test-assistant", entry, {
+    await retireLocal(entry, {
       progress: () => {},
       log: () => {},
       warn: () => {},
@@ -293,7 +293,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
     readCloudTokenMock.mockReturnValue("session-token");
     const entry = readLocalEntry("test-assistant");
 
-    await retireLocal("test-assistant", entry, silentReporter);
+    await retireLocal(entry, silentReporter);
 
     // The cloud record resolves from the entry + env — no gateway credential
     // store is consulted.
@@ -319,7 +319,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
     readCloudTokenMock.mockReturnValue("session-token");
     const entry = readLocalEntry("test-assistant");
 
-    await retireLocal("test-assistant", entry, silentReporter);
+    await retireLocal(entry, silentReporter);
 
     expect(cloudAuthHeadersMock).toHaveBeenCalledWith("session-token");
     expect(authHeadersForKnownOrganizationMock).not.toHaveBeenCalled();
@@ -343,7 +343,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
     readCloudTokenMock.mockReturnValue("session-token");
     const entry = readLocalEntry("test-assistant");
 
-    await retireLocal("test-assistant", entry, silentReporter);
+    await retireLocal(entry, silentReporter);
 
     expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
   });
@@ -359,7 +359,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
     readCloudTokenMock.mockReturnValue(null);
     const entry = readLocalEntry("test-assistant");
 
-    await retireLocal("test-assistant", entry, silentReporter);
+    await retireLocal(entry, silentReporter);
 
     expect(loopbackSafeFetchMock).toHaveBeenCalledWith(
       "https://platform.example.test/v1/assistants/cloud-asst-1/retire/",
@@ -394,7 +394,7 @@ describe("retireLocal — the self-hosted platform unregister", () => {
     );
 
     try {
-      await retireLocal("test-assistant", entry, silentReporter);
+      await retireLocal(entry, silentReporter);
     } finally {
       warnSpy.mockRestore();
     }

@@ -5,12 +5,12 @@ import {
   resolveOwnImageRefs,
   ensureDockerInstalled,
 } from "../../remotes/docker/hatch";
-import { dockerResourceNames } from "../../remotes/docker/retire";
 import { getDefaultPorts, findOpenPort } from "../../ports";
 import { saveLockfileAssistant } from "../../lockfile";
 import { initializeRootArchive } from "../../root-backup";
 import { ownVersion } from "../../environment";
 import type { DockerAssistant } from "../../lockfile-contract";
+import { dockerResourceNames } from "./common";
 
 /**
  * Initialize a fresh teleport target's docker placement WITHOUT creating

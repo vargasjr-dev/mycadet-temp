@@ -18,7 +18,7 @@ export const CES_SOCKET_DIR_DEFAULT = "/run/ces-ipc";
  * The directory holding `ces.sock`: `CES_SOCKET_DIR` when set, otherwise
  * `/run/ces-ipc`.
  */
-export function getCesSocketDir(): string {
+function getCesSocketDir(): string {
   return process.env["CES_SOCKET_DIR"]?.trim() || CES_SOCKET_DIR_DEFAULT;
 }
 

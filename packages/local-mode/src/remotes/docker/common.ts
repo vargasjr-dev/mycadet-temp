@@ -2,6 +2,24 @@ import { join } from "node:path";
 
 import { exec } from "../../exec";
 
+/**
+ * The full docker topology
+ */
+export function dockerResourceNames(instanceName: string) {
+  return {
+    assistantContainer: `${instanceName}-assistant`,
+    assistantIpcVolume: `${instanceName}-assistant-ipc`,
+    cesContainer: `${instanceName}-credential-executor`,
+    cesSecurityVolume: `${instanceName}-ces-sec`,
+    gatewayContainer: `${instanceName}-gateway`,
+    gatewayIpcVolume: `${instanceName}-gateway-ipc`,
+    gatewaySecurityVolume: `${instanceName}-gateway-sec`,
+    network: `${instanceName}-net`,
+    socketVolume: `${instanceName}-socket`,
+    workspaceVolume: `${instanceName}-workspace`,
+  };
+}
+
 /** Directory for user-local binary installs (no sudo required). */
 export const LOCAL_BIN_DIR = join(
   process.env.HOME || process.env.USERPROFILE || ".",

@@ -5,13 +5,11 @@ import { exec } from "../../exec";
 import { saveLockfileAssistant } from "../../lockfile";
 import { getOrCreateHostDeviceId } from "../../device-id";
 import { ASSISTANT_INTERNAL_PORT } from "../../ports";
-import { dockerResourceNames } from "./retire";
-import { ensureDockerDaemonRunning, isNoSuchContainerError } from "./common";
+import { ensureDockerDaemonRunning, isNoSuchContainerError, dockerResourceNames } from "./common";
 import { pullImage } from "./hatch";
 import {
   buildServiceRunArgs,
   resolveAvatarDevicePath,
-  stopContainers,
   type ServiceName,
 } from "./statefulset";
 import { waitForReady } from "../../daemon-readiness";
@@ -29,8 +27,6 @@ import type { WakeResult } from "../../operations/wake";
  * carrying the docker error.
  */
 export interface WakeDockerOptions {
-  /** Recreate the group from these images instead of the entry's recorded ones (the upgrade's fresh stamps). */
-  imageTags?: Record<ServiceName, string>;
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort?: number;
@@ -122,10 +118,7 @@ async function recreateDockerContainers(
   entry: DockerAssistant,
   options: WakeDockerOptions = {},
 ): Promise<void> {
-  const info = entry.containerInfo;
-  const assistantImage = options.imageTags?.assistant ?? info?.assistantImage;
-  const gatewayImage = options.imageTags?.gateway ?? info?.gatewayImage;
-  const cesImage = options.imageTags?.["credential-executor"] ?? info?.cesImage;
+  const { assistantImage, gatewayImage, cesImage } = entry.containerInfo ?? {};
   if (!assistantImage || !gatewayImage || !cesImage) {
     throw new Error(
       `no container images recorded for '${entry.assistantId}' — re-hatch or run \`cadet upgrade\` to set them`,
@@ -138,10 +131,6 @@ async function recreateDockerContainers(
   };
   const res = dockerResourceNames(entry.assistantId);
   const log = options.log ?? ((msg: string): void => console.log(msg));
-
-  // Clean slate for the create: an existing container (even a stopped one)
-  // would collide with `docker run --name` (the upgrade path does the same).
-  await stopContainers(res);
 
   try {
     await exec("docker", ["network", "inspect", res.network]);
@@ -176,7 +165,6 @@ async function recreateDockerContainers(
   }
 
   const gatewayPort = options.gatewayPort ?? entry.port;
-  const assistantPort = ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   const runArgs = buildServiceRunArgs({
     extraAssistantEnv: {
@@ -190,11 +178,9 @@ async function recreateDockerContainers(
     res,
     avatarDevicePath: resolveAvatarDevicePath(),
   });
-  // The assistant owns the instance's network namespace — the gateway and
-  // credential-executor sidecars join it with `--network=container:` — so it
-  // starts alone and the two sidecars start together (see
-  // startAssistantThenSidecars).
-  await startAssistantThenSidecars(runArgs, async (service) => {
+
+  // The assistant owns the instance's network namespace, so it starts first
+  await startAssistantThenSidecars(async (service) => {
     log(`Starting ${service} container...`);
     await exec("docker", runArgs[service]());
   });
@@ -205,9 +191,8 @@ async function recreateDockerContainers(
   saveLockfileAssistant({
     ...entry,
     port: gatewayPort,
-    daemonPort: entry.daemonPort ?? assistantPort,
+    daemonPort: entry.daemonPort ?? ASSISTANT_INTERNAL_PORT,
     containerInfo: {
-      ...info,
       assistantImage: images.assistant,
       gatewayImage: images.gateway,
       cesImage: images["credential-executor"],
@@ -216,14 +201,9 @@ async function recreateDockerContainers(
 }
 
 /**
- * Start the three service containers. The assistant owns the instance's
- * network namespace — the gateway and credential-executor sidecars join it
- * with `--network=container:` — so it starts alone and the two sidecars,
- * independent of each other, start together. `docker run -d` returns once
- * the container runs, which is all a namespace join needs.
+ * The assistant owns the instance's network namespace, so it starts first
  */
 async function startAssistantThenSidecars(
-  runArgs: Record<ServiceName, () => string[]>,
   start: (service: ServiceName) => Promise<void>,
 ): Promise<void> {
   await start("assistant");
@@ -251,7 +231,7 @@ async function runServiceContainers(
     ...opts,
     avatarDevicePath: resolveAvatarDevicePath(),
   });
-  await startAssistantThenSidecars(runArgs, async (service) => {
+  await startAssistantThenSidecars(async (service) => {
     const args = runArgs[service]();
     if (mode === "create") {
       args[0] = "create";

@@ -11,7 +11,6 @@
  * mechanics a serving host can run.
  */
 
-import { randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { arch, platform } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -43,6 +42,7 @@ import type {
 import { getGatewayUrl } from "../../lockfile-contract";
 import { getOrCreateHostDeviceId } from "../../device-id";
 import {
+  dockerResourceNames,
   ensureLocalBinOnPath,
   LOCAL_BIN_DIR,
   startColimaAndAwaitDaemon,
@@ -51,12 +51,7 @@ import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
-import { dockerResourceNames } from "./retire";
-import {
-  type DockerResourceNames,
-  type ServiceName,
-  stopContainers,
-} from "./statefulset";
+import { type ServiceName } from "./statefulset";
 import { startContainers } from "./wake";
 import {
   HOST_IMAGE_LOADER_URL,
@@ -408,6 +403,13 @@ export async function pullImage(
   execFn: typeof exec = exec,
 ): Promise<void> {
   try {
+    await execFn("docker", ["image", "inspect", ref]);
+    console.log("Already found", ref, "skipping pull...");
+    return;
+  } catch {
+    console.log("Image", ref, "not found, pulling...");
+  }
+  try {
     await execFn("docker", ["pull", ref]);
     return;
   } catch (err) {
@@ -666,13 +668,7 @@ export async function hatchDocker(
       }
     }
 
-    // Allocate the assistant HTTP API host port. Same dynamic-allocation
-    // strategy as the gateway port: the env-default (production 7821 /
-    // non-prod overrides) is the *preferred* starting point, and we walk
-    // upward until we find a free port. Without this, two concurrent
-    // `cadet hatch --remote docker` on the same host collide on a fixed
-    // 7821 bind ("port is already allocated"). Unused when netnsContainer
-    // is set — no host ports are published in that mode.
+    // Allocate the assistant HTTP API host port.
     let assistantPort: number;
     if (params.netnsContainer) {
       assistantPort = ASSISTANT_INTERNAL_PORT;
@@ -958,7 +954,7 @@ export async function hatchDocker(
         watcherPid: process.pid,
       };
       saveLockfileAssistant(watching);
-      const stopWatcher = startFileWatcher({
+      startFileWatcher({
         extraAssistantEnv,
         extraGatewayEnv,
         gatewayPort,
@@ -968,36 +964,6 @@ export async function hatchDocker(
         res,
         netnsContainer: params.netnsContainer,
         assistantCaCertPath: params.assistantCaCertPath,
-      });
-
-      await new Promise<void>((resolve) => {
-        const cleanup = async () => {
-          log("\n🛑 Shutting down...");
-          stopWatcher();
-          await stopContainers(res);
-          const unwatched: LockfileAssistant = {
-            ...dockerEntry,
-            watcherPid: undefined,
-          };
-          saveLockfileAssistant(unwatched);
-          log("✅ Docker instance stopped.");
-          resolve();
-        };
-
-        // SIGINT (Ctrl+C): full cleanup including stopping containers.
-        process.on("SIGINT", () => void cleanup());
-
-        // SIGTERM (from `cadet retire`): exit quickly — the caller
-        // handles container teardown, so we only need to close the
-        // file watchers and let the process terminate.
-        process.on("SIGTERM", () => {
-          stopWatcher();
-          saveLockfileAssistant({
-            ...dockerEntry,
-            watcherPid: undefined,
-          });
-          resolve();
-        });
       });
     }
 

@@ -1,37 +1,11 @@
 import { exec } from "../../exec";
 import { stopProcess, isCadetProcess } from "../../process";
-import { isDockerEntry } from "../../lockfile-contract";
-import { findAssistantByName } from "../../operations/lookup";
-
-/**
- * The docker topology's retire leg: stop the instance's file watcher, remove
- * its containers, network, and volumes. Resource naming is derived from the
- * instance name alone (`dockerResourceNames`) — the same table the hatch and
- * ps surfaces use, re-exported through the CLI's docker module.
- */
-
-export function dockerResourceNames(instanceName: string) {
-  return {
-    assistantContainer: `${instanceName}-assistant`,
-    assistantIpcVolume: `${instanceName}-assistant-ipc`,
-    cesContainer: `${instanceName}-credential-executor`,
-    cesSecurityVolume: `${instanceName}-ces-sec`,
-    gatewayContainer: `${instanceName}-gateway`,
-    gatewayIpcVolume: `${instanceName}-gateway-ipc`,
-    gatewaySecurityVolume: `${instanceName}-gateway-sec`,
-    network: `${instanceName}-net`,
-    socketVolume: `${instanceName}-socket`,
-    workspaceVolume: `${instanceName}-workspace`,
-  };
-}
+import { DockerAssistant, isDockerEntry } from "../../lockfile-contract";
+import { dockerResourceNames } from "./common";
+import { sleepDocker } from "./sleep";
 
 /** Silently attempt to stop and remove a Docker container. */
 export async function removeContainer(containerName: string): Promise<void> {
-  try {
-    await exec("docker", ["stop", containerName]);
-  } catch {
-    // container may not exist or already stopped
-  }
   try {
     await exec("docker", ["rm", containerName]);
   } catch {
@@ -39,11 +13,10 @@ export async function removeContainer(containerName: string): Promise<void> {
   }
 }
 
-export async function retireDocker(name: string): Promise<void> {
+export async function retireDocker(entry: DockerAssistant): Promise<void> {
   console.log(`\u{1F5D1}\ufe0f  Stopping Docker containers for '${name}'...\n`);
 
   // Stop the file watcher process if one is tracked for this instance.
-  const entry = findAssistantByName(name);
   const watcherPid =
     entry && isDockerEntry(entry) && typeof entry.watcherPid === "number"
       ? entry.watcherPid
@@ -58,14 +31,13 @@ export async function retireDocker(name: string): Promise<void> {
     }
   }
 
-  const res = dockerResourceNames(name);
+  await sleepDocker(entry);
+
+  const res = dockerResourceNames(entry.assistantId);
 
   await removeContainer(res.cesContainer);
   await removeContainer(res.gatewayContainer);
   await removeContainer(res.assistantContainer);
-
-  // Also clean up a legacy single-container instance if it exists
-  await removeContainer(name);
 
   // Remove network and volumes
   try {

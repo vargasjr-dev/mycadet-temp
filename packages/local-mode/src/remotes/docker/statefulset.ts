@@ -7,8 +7,6 @@
  */
 
 import { existsSync } from "node:fs";
-import { exec } from "../../exec";
-import { type dockerResourceNames, removeContainer } from "./retire";
 
 import { ASSISTANT_INTERNAL_PORT, GATEWAY_INTERNAL_PORT } from "../../ports";
 import { PROVIDER_ENV_VAR_NAMES } from "../../provider-env-vars";
@@ -134,7 +132,7 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
 
   volumeClaimTemplates: [
     { name: "assistant-workspace",  dockerVolume: (n) => `${n}-workspace` },
-    { name: "ces-ipc-socket", dockerVolume: (n) => `${n}-socket` },
+    { name: "ces-ipc-socket",       dockerVolume: (n) => `${n}-socket` },
     { name: "assistant-ipc-socket", dockerVolume: (n) => `${n}-assistant-ipc` },
     { name: "gateway-ipc-socket",   dockerVolume: (n) => `${n}-gateway-ipc` },
     { name: "gateway-security",     dockerVolume: (n) => `${n}-gateway-sec` },
@@ -161,16 +159,16 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
       ],
       env: [
         { kind: "static", name: "IS_CONTAINERIZED",         value: "true" },
-        { kind: "static", name: "DEBUG_STDOUT_LOGS",         value: "1" },
+        { kind: "static", name: "DEBUG_STDOUT_LOGS",        value: "1" },
         { kind: "static", name: "CADET_CLOUD",              value: "docker" },
-        { kind: "static", name: "RUNTIME_HTTP_HOST",         value: "0.0.0.0" },
-        { kind: "static", name: "RUNTIME_HTTP_PORT",         value: `${ASSISTANT_INTERNAL_PORT}` },
+        { kind: "static", name: "RUNTIME_HTTP_HOST",        value: "0.0.0.0" },
+        { kind: "static", name: "RUNTIME_HTTP_PORT",        value: `${ASSISTANT_INTERNAL_PORT}` },
         { kind: "static", name: "CADET_WORKSPACE_DIR",      value: "/workspace" },
         { kind: "static", name: "CADET_BACKUP_DIR",         value: "/workspace/.backups" },
         { kind: "static", name: "CADET_BACKUP_KEY_PATH",    value: "/workspace/.backup.key" },
-        { kind: "static", name: "CES_SOCKET_DIR",  value: "/run/ces-ipc" },
-        { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
-        { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR",  value: "/run/assistant-ipc" },
+        { kind: "static", name: "CES_SOCKET_DIR",           value: "/run/ces-ipc" },
+        { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",   value: "/run/gateway-ipc" },
+        { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR", value: "/run/assistant-ipc" },
         // Provider API keys — forwarded from host if set
         ...Object.values(PROVIDER_ENV_VAR_NAMES).map(
           (v): HostEnv => ({ kind: "host", name: v }),
@@ -472,13 +470,4 @@ export function resolveAvatarDevicePath(
   return override && override.length > 0
     ? override
     : DEFAULT_AVATAR_DEVICE_PATH;
-}
-
-/** Stop and remove all three containers (ignoring errors). */
-export async function stopContainers(
-  res: ReturnType<typeof dockerResourceNames>,
-): Promise<void> {
-  await removeContainer(res.cesContainer);
-  await removeContainer(res.gatewayContainer);
-  await removeContainer(res.assistantContainer);
 }

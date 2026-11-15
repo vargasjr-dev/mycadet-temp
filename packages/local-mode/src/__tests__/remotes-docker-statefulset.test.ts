@@ -8,9 +8,9 @@ import {
   type DockerStatefulSetSpec,
   type ServiceName,
 } from "../remotes/docker/statefulset";
-import { dockerResourceNames } from "../remotes/docker/retire";
 import { ASSISTANT_INTERNAL_PORT } from "../ports";
 import { PROVIDER_ENV_VAR_NAMES } from "../provider-env-vars";
+import { dockerResourceNames } from "../remotes/docker/common";
 
 const instanceName = "test-instance";
 const imageTags: Record<ServiceName, string> = {

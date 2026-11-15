@@ -1,9 +1,12 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { readAppBuiltSha, stampAppBuiltSha } from "./assistant-config.js";
+import { readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
 const loadModule = createRequire(import.meta.url);
 
@@ -105,6 +108,10 @@ function findSourcePackageDir(kind: "web" | "app"): string | null {
     if (existsSync(packageJson)) {
       return dirname(packageJson);
     }
+    const npmPackageJson = join(dir, kind, "package.json");
+    if (existsSync(npmPackageJson)) {
+      return dirname(npmPackageJson);
+    }
     const parent = dirname(dir);
     if (parent === dir) {
       break;
@@ -163,25 +170,6 @@ function sourceDistDir(kind: "web" | "app", sourceDir: string): string {
   return kind === "web"
     ? join(sourceDir, "dist")
     : join(sourceDir, "dist", "standalone");
-}
-
-/** HEAD commit of the checkout containing sourceDir */
-function gitHeadSha(sourceDir: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("git", ["rev-parse", "HEAD"], {
-      cwd: sourceDir,
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    let stdout = "";
-    child.stdout?.on("data", (chunk: Buffer) => {
-      stdout += chunk.toString();
-    });
-    child.on("error", (error) => reject(error));
-    child.on("exit", (code) => {
-      if (code === 0) resolve(stdout.trim());
-      else reject(new Error(`git exited with error code ${code}`));
-    });
-  });
 }
 
 /** Install deps (a pull may have moved the lockfile), then build the bundle. */
@@ -252,6 +240,60 @@ function isStale(
   return arm.sourceBuilt && headSha !== null && recordedSha !== headSha;
 }
 
+const DEFAULT_IGNORES = [
+  /(^|\/)(node_modules|\.git|dist|build|coverage|\.next|\.nuxt|\.cache)(\/|$)/i,
+  /(^|\/)(__tests__|__mocks__|tests?|e2e|playwright-report|test-results)(\/|$)/i,
+  /(^|\/)([^/]+\.)?(test|spec)\.[^/]+$/i,
+  /\.(snap|log|tsbuildinfo)$/i,
+  /(^|\/)(\.DS_Store|Thumbs\.db)$/i,
+];
+
+async function getSourceSha(sourceDir: string): Promise<string> {
+  const root = resolve(sourceDir);
+  const files: string[] = [];
+
+  async function walk(relativeDir = ""): Promise<void> {
+    const entries = await readdir(join(root, relativeDir), {
+      withFileTypes: true,
+    });
+
+    for (const entry of entries) {
+      const relativePath = relativeDir
+        ? `${relativeDir}/${entry.name}`
+        : entry.name;
+
+      if (
+        DEFAULT_IGNORES.some((regex) => {
+          regex.lastIndex = 0; // Support regexes with g/y flags.
+          return regex.test(relativePath);
+        })
+      )
+        continue;
+
+      if (entry.isDirectory()) await walk(relativePath);
+      else if (entry.isFile()) files.push(relativePath);
+    }
+  }
+
+  await walk();
+  files.sort();
+
+  const hash = createHash("sha256");
+
+  // Length-prefix each field to avoid ambiguous concatenation.
+  function add(data: Buffer): void {
+    hash.update(`${data.length}:`);
+    hash.update(data);
+  }
+
+  for (const file of files) {
+    add(Buffer.from(file, "utf8"));
+    add(await readFile(join(root, file)));
+  }
+
+  return hash.digest("hex");
+}
+
 /**
  * Build both client bundles
  */
@@ -265,7 +307,7 @@ export async function resolveClientDists(): Promise<{
     app: await resolveDistArm("app"),
   };
   const anchor = arms.app.sourceDir;
-  const headSha = await gitHeadSha(anchor);
+  const sourceSha = await getSourceSha(anchor);
   const recordedSha = readAppBuiltSha();
 
   async function buildClientDist(kind: "web" | "app"): Promise<string> {
@@ -273,7 +315,7 @@ export async function resolveClientDists(): Promise<{
 
     const arm = arms[kind];
     const sourceDir = arm.sourceDir;
-    if (arm.distDir !== null && !isStale(arm, headSha, recordedSha))
+    if (arm.distDir !== null && !isStale(arm, sourceSha, recordedSha))
       return arm.distDir;
 
     const dist = await buildDistFromSource(kind, sourceDir);
@@ -284,12 +326,12 @@ export async function resolveClientDists(): Promise<{
   const appDistDir = await buildClientDist("app");
   const webDistDir = await buildClientDist("web");
 
-  stampAppBuiltSha(headSha);
-  console.log("Saved", headSha);
+  stampAppBuiltSha(sourceSha);
+  console.log("Saved", sourceSha);
 
   return {
     webDistDir: arms.web.distDir ?? webDistDir,
     appDistDir: arms.app.distDir ?? appDistDir,
-    builtSha: headSha,
+    builtSha: sourceSha,
   };
 }

@@ -95,7 +95,6 @@ test("failed-state recovery restores tar roots while stopped before restarting o
       entry,
       backupPath: "pre-upgrade.tar.gz",
       backupLabel: "pre-upgrade",
-      res,
       containerOptions,
     }),
   ).toEqual({ restored: true, ready: true });
@@ -118,7 +117,6 @@ test("failed root restore does not restart a partial installation", async () => 
       entry,
       backupPath: "pre-upgrade.tar.gz",
       backupLabel: "pre-upgrade",
-      res,
       containerOptions,
     }),
   ).toEqual({ restored: false, ready: false });

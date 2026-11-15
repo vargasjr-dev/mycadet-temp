@@ -302,9 +302,9 @@ export const uninstall = Object.assign(
         // sweep never reaches (containers, processes) and archives the
         // instance as a safety net before the sweep deletes the originals.
         if (entry.cloud === "docker") {
-          await retireDocker(entry.assistantId);
+          await retireDocker(entry);
         } else if (isLocalEntry(entry)) {
-          await retireLocal(entry.assistantId, entry);
+          await retireLocal(entry);
         }
       } catch (err) {
         console.error(

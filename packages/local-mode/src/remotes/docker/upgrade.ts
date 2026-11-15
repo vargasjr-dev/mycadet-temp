@@ -9,7 +9,6 @@ import { platform } from "node:os";
 
 import { pullImage, resolveImageRefs } from "./hatch";
 import { dockerResourceNames } from "./retire";
-import { ensureDockerDaemonRunning } from "./common";
 import { sleepDocker } from "./sleep";
 import { type ServiceName } from "./statefulset";
 import { saveLockfileAssistant } from "../../lockfile";
@@ -64,8 +63,7 @@ export async function upgradeDocker(
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
 
-  const versionTag =
-    version ?? (params.cliVersion ? `v${params.cliVersion}` : "latest");
+  const versionTag = version ?? params.cliVersion ?? "latest";
 
   // Capture current migration state and running version for rollback targeting
   // and version guards. Must happen while the daemon is still running (before
@@ -246,6 +244,12 @@ export async function upgradeDocker(
 
   log("🛑 Stopping existing containers...");
   await sleepDocker(entry);
+  entry.containerInfo = {
+    assistantImage: imageTags.assistant,
+    gatewayImage: imageTags.gateway,
+    cesImage: imageTags["credential-executor"],
+  };
+  saveLockfileAssistant(entry);
   log("✅ Containers stopped\n");
 
   log("🚀 Starting upgraded containers...");
@@ -253,7 +257,6 @@ export async function upgradeDocker(
     extraAssistantEnv,
     extraGatewayEnv,
     gatewayPort,
-    imageTags,
     waitUntilReady: true,
     log: (msg) => log(msg),
   });
@@ -333,12 +336,17 @@ export async function upgradeDocker(
         }
 
         await sleepDocker(entry);
+        entry.containerInfo = {
+          assistantImage: previousImageRefs.assistant,
+          gatewayImage: previousImageRefs.gateway,
+          cesImage: previousImageRefs["credential-executor"],
+        };
+        saveLockfileAssistant(entry);
 
         const rollbackWake = await wakeDocker(entry, {
           extraAssistantEnv,
           extraGatewayEnv,
           gatewayPort,
-          imageTags: previousImageRefs,
           waitUntilReady: true,
           log: (msg) => log(msg),
         });
@@ -350,7 +358,6 @@ export async function upgradeDocker(
             entry,
             backupPath,
             backupLabel: "pre-upgrade",
-            res,
             containerOptions: {
               extraAssistantEnv,
               extraGatewayEnv,

@@ -91,7 +91,6 @@ export function getRetireArchiveCommand(
 }
 
 export async function retireLocal(
-  name: string,
   entry: LockfileAssistant,
   reporter: LifecycleReporter = consoleLifecycleReporter,
 ): Promise<RetireLocalResult> {
@@ -114,21 +113,6 @@ export async function retireLocal(
     throw new Error(`'${name}' is not a local assistant.`);
   }
   const cadetDir = getLocalInstanceDir(entry);
-
-  // Check whether another local assistant shares the same data directory.
-  const otherSharesDir = loadAllAssistants().some((other) => {
-    if (other.cloud !== "local") return false;
-    if (other.assistantId === name) return false;
-    return other.instanceDir === cadetDir;
-  });
-
-  if (otherSharesDir) {
-    reporter.log(
-      `   Skipping process stop and archive — another local assistant shares ${cadetDir}.`,
-    );
-    reporter.log("\u2705 Local instance retired (config entry removed only).");
-    return { assistantId: name, archived: false, sharedDataDir: true };
-  }
 
   await stopProcessByPidFile(
     getDaemonPidPath(entry),
@@ -155,8 +139,8 @@ export async function retireLocal(
 
   // Move the data directory out of the way so the path is immediately available
   // for the next hatch, then kick off the tar archive in the background.
-  const archivePath = getArchivePath(name);
-  const metadataPath = getMetadataPath(name);
+  const archivePath = getArchivePath(entry.assistantId);
+  const metadataPath = getMetadataPath(entry.assistantId);
   const stagingDir = `${archivePath}.staging`;
 
   if (!existsSync(dirToArchive)) {
@@ -164,7 +148,7 @@ export async function retireLocal(
       `   No data directory at ${dirToArchive} — nothing to archive.`,
     );
     reporter.log("\u2705 Local instance retired.");
-    return { assistantId: name, archived: false };
+    return { assistantId: entry.assistantId, archived: false };
   }
 
   // Ensure the retired archive directory exists before attempting the rename
@@ -199,5 +183,5 @@ export async function retireLocal(
   reporter.log(`📦 Archiving to ${archivePath} in the background.`);
   reporter.log("\u2705 Local instance retired.");
 
-  return { assistantId: name, archived: true, archivePath };
+  return { assistantId: entry.assistantId, archived: true, archivePath };
 }

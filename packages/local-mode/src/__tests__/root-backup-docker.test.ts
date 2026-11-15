@@ -22,12 +22,12 @@ import {
 } from "../root-backup";
 import { createContainers } from "../remotes/docker/wake";
 import { sleepDocker } from "../remotes/docker/sleep";
-import { dockerResourceNames } from "../remotes/docker/retire";
 import type { LockfileAssistant } from "../lockfile-contract";
 // The subprocess-fake harness stays cli-side (its other consumers are the
 // CLI's teleport tests); this docker-flow test is a monorepo-level one and
 // reaches across for it.
 import { mockCommands } from "../../../../cli/src/__tests__/commands-mock.js";
+import { dockerResourceNames } from "../remotes/docker/common";
 
 // The sleep operation probes the gateway's health itself now — the flow's
 // restart signal rides the sleep result. A loopback listener stands in for

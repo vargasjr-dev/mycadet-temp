@@ -12,14 +12,10 @@ import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops";
 import { captureImageRefs } from "./remotes/docker/upgrade";
 import { createContainers, wakeDocker } from "./remotes/docker/wake";
 import { pullImage, resolveImageRefs } from "./remotes/docker/hatch";
-import {
-  getBuilderManagedEnvKeys,
-  stopContainers,
-} from "./remotes/docker/statefulset";
+import { getBuilderManagedEnvKeys } from "./remotes/docker/statefulset";
 import { startContainers } from "./remotes/docker/wake";
 import { getOrCreateHostDeviceId } from "./device-id";
 import { GATEWAY_INTERNAL_PORT } from "./ports";
-import { dockerResourceNames } from "./remotes/docker/retire";
 import { sleepDocker } from "./remotes/docker/sleep";
 import { resolveDataDir } from "./config";
 import { loadGuardianToken } from "./guardian-token";
@@ -40,6 +36,7 @@ import {
 import { execOutput } from "./exec";
 import { compareVersions } from "./version-compat";
 import { stripVersionPrefix } from "./version";
+import { dockerResourceNames } from "./remotes/docker/common";
 
 /**
  * A typed upgrade failure: the legs throw it where the CLI used to call
@@ -447,7 +444,6 @@ export async function attemptFailedStateRestore(opts: {
   backupPath: string;
   /** Label for log lines, e.g. "pre-upgrade" or "pre-rollback". */
   backupLabel: string;
-  res: Parameters<typeof stopContainers>[0];
   containerOptions: Parameters<typeof startContainers>[0];
 }): Promise<{ restored: boolean; ready: boolean }> {
   console.log(
@@ -805,7 +801,6 @@ export async function performDockerRollback(
             entry,
             backupPath: preRollbackBackupPath,
             backupLabel: "pre-rollback",
-            res,
             containerOptions: {
               extraAssistantEnv,
               extraGatewayEnv,

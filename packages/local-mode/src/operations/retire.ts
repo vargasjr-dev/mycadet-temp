@@ -52,9 +52,9 @@ export async function retireAssistant(
     if (cloud === "apple-container") {
       await retireAppleContainer(assistantId, entry);
     } else if (cloud === "docker") {
-      await retireDocker(assistantId);
+      await retireDocker(entry);
     } else if (cloud === "local") {
-      await retireLocal(assistantId, entry);
+      await retireLocal(entry);
     } else if (cloud === "baseten") {
       await retireBaseten(entry);
     } else if (cloud === "custom") {

@@ -1,8 +1,11 @@
 import { spawn } from "node:child_process";
 
-import type { ExecCommandOptions, ExecCommandResult } from "../../operations/exec";
+import type {
+  ExecCommandOptions,
+  ExecCommandResult,
+} from "../../operations/exec";
 import type { DockerAssistant } from "../../lockfile-contract";
-import { dockerResourceNames } from "./retire";
+import { dockerResourceNames } from "./common";
 
 /**
  * The docker topology's exec leg: `docker exec` into the service's container

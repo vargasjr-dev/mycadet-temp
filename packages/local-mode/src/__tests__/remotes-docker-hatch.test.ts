@@ -19,9 +19,9 @@ import {
   resolveDockerHatchMode,
   resolveDockerProviderCredentialSetupAction,
 } from "../remotes/docker/hatch";
-import { dockerResourceNames } from "../remotes/docker/retire";
 import { collectWatchTargets } from "../remotes/docker/watch";
 import { ASSISTANT_INTERNAL_PORT } from "../ports";
+import { dockerResourceNames } from "../remotes/docker/common";
 
 const instanceName = "test-instance";
 const imageTags: Record<ServiceName, string> = {

@@ -5,9 +5,9 @@ import {
   type PairOperationResult,
 } from "../../operations/pair";
 import type { LockfileAssistant } from "../../lockfile-contract";
-import { dockerResourceNames } from "./retire";
 import type { GuardianTokenData } from "../../guardian-token";
 import { GuardianTokenFileSchema } from "../../guardian-token";
+import { dockerResourceNames } from "./common";
 
 /**
  * Pair by running the gateway's OWN CLI inside the container (docker

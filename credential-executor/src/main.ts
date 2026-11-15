@@ -36,7 +36,6 @@ import {
   pruneOldLogFiles,
 } from "./logger.js";
 import {
-  getCesSocketPath,
   getCesDataRoot,
   getCesLogDir,
   getHealthPort,
@@ -51,6 +50,7 @@ import {
   getMetadataStore,
   initMetadataStore,
 } from "./records/metadata-store.js";
+import { getCesSocketPath } from "@mycadet/ces-client";
 
 // ---------------------------------------------------------------------------
 // Logging (module-level for early bootstrap + structured logging post-init)
