@@ -2,7 +2,7 @@ import { AlertTriangle, Clock, Inbox, Loader2, Send } from "lucide-react";
 import { type ReactNode } from "react";
 import { Link } from "react-router";
 
-import { Tag, TextLink } from "@mycadet/design-library";
+import { Button, Tag, TextLink } from "@mycadet/design-library";
 
 import {
   useEmailAddressStatus,
@@ -88,15 +88,15 @@ function ErrorRetryRow({
     <MessageBox tone="error">
       <div className="flex items-center justify-between gap-3">
         <span>{message}</span>
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="compact"
+          className="h-auto px-0 text-body-small-default underline"
           onClick={onRetry}
           disabled={retrying}
-          className="text-body-small-default underline disabled:opacity-50"
-          style={{ color: "var(--content-default)" }}
         >
           {retrying ? t("errorRetryRow.retrying") : t("errorRetryRow.retry")}
-        </button>
+        </Button>
       </div>
     </MessageBox>
   );
