@@ -43,6 +43,7 @@ import {
 } from "@/lib/streaming/stream-transport";
 import { isNativeMobile } from "@/runtime/platform-detection";
 import { useSSEConnectedStore } from "@/stores/sse-connected-store";
+import { armUnloadDisconnect } from "@/lib/unload-disconnect";
 
 const RESUME_DEDUP_WINDOW_MS = 1000;
 
@@ -235,6 +236,11 @@ export const sseService: SseService = {
       if (cancelled || current) {
         return;
       }
+      // First connection this page opens: arm the unload beacon that
+      // unregisters this page's client id from the daemon on refresh /
+      // navigation / tab close (see `unload-disconnect.ts`). Idempotent —
+      // the listener registers once per page, not per connection.
+      armUnloadDisconnect();
       const causeAtOpen = nextOpenCause;
       nextOpenCause = "resume";
       // Did THIS stream ever genuinely establish (a frame arrived)? A transport
