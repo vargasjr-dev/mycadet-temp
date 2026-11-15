@@ -13,6 +13,11 @@ describe("pullImage", () => {
     let pulls = 0;
     const exec = async (cmd: string, args: string[] = []): Promise<void> => {
       calls.push({ cmd, args });
+      if (cmd === "docker" && args[0] === "image" && args[1] === "inspect") {
+        // The daemon's inspect rejects a missing image — the pull path's
+        // fast-exit must not trigger in this fake.
+        throw new Error(`No such image: ${args[2] ?? ""}`);
+      }
       if (cmd === "docker" && args[0] === "pull") {
         pulls++;
         if (opts.failAllPullsWith) throw new Error(opts.failAllPullsWith);
