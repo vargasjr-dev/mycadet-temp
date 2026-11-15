@@ -13,8 +13,8 @@
  * the daemon predates the guard that broadcasts it.
  *
  * New behavior (>= MIN_VERSION): the route exists and the monitor polls
- * it (still only for cloud-hosted assistants; the call site ANDs
- * this gate with `useActiveAssistantIsCloudHosted()`).
+ * it (the hosting check that used to AND with this gate died with the
+ * de-cloud sweep).
  *
  * MIN_VERSION invariant: no build with a base version below 0.11.5
  * carries the route (0.11.4 and earlier lines lack it entirely).

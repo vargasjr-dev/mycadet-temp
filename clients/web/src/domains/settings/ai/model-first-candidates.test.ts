@@ -36,7 +36,6 @@ function input(
 ): ModelFirstInput {
   return {
     connections,
-    activeAssistantIsSelfHosted: true,
     labelFor: (provider) => PROVIDER_DISPLAY_NAMES[provider] ?? provider,
     defaultEntryMetaLabel: "Default",
     ...overrides,
@@ -148,18 +147,6 @@ describe("resolveModelFirstOptions", () => {
     );
     expect(option.candidates).toHaveLength(3);
     expect(new Set(providersOf(option.candidates)).size).toBe(1);
-  });
-
-  test("drops a route the active assistant cannot reach, and with it a model nothing else serves", () => {
-    const cloudHosted = resolveModelFirstOptions(
-      input([], { activeAssistantIsSelfHosted: false }),
-    );
-    expect(cloudHosted.map((option) => option.displayName)).not.toContain(
-      "Llama 3.2",
-    );
-
-    const selfHosted = optionFor([], "Llama 3.2");
-    expect(providersOf(selfHosted.candidates)).toEqual(["ollama"]);
   });
 
   test("offers a custom endpoint only for the models its own row lists", () => {
@@ -314,7 +301,7 @@ describe("customModelProviderCandidates", () => {
 
   test("drops routes the active assistant cannot reach", () => {
     const candidates = customModelProviderCandidates(
-      input([], { activeAssistantIsSelfHosted: false }),
+      input([]),
       "local-model",
     );
     expect(providersOf(candidates)).not.toContain("ollama");

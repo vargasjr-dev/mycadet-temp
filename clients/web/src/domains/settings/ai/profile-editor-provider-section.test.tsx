@@ -8,10 +8,6 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-mock.module("@/assistant/hosting", () => ({
-  useActiveAssistantIsSelfHosted: () => false,
-}));
-
 const { ProfileEditorProviderSection } =
   await import("@/domains/settings/ai/profile-editor-provider-section");
 

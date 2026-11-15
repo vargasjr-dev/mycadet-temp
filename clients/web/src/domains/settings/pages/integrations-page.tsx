@@ -23,7 +23,6 @@ import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useOauthConnectionsQuery } from "@/domains/settings/oauth-connections";
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTranslation } from "@/i18n";
 import { openExternalUrl } from "@/runtime/browser";
@@ -119,7 +118,6 @@ function IntegrationsPanelInner() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
   // The store IS the resolution — the entry is the one assistant fact,
   // resolved before the first render; there is nothing to await.
   const assistant = getResolvedAssistant();
@@ -210,10 +208,7 @@ function IntegrationsPanelInner() {
 
   const oauthUnavailable =
     providers.isError || connections.isError || !assistant;
-  const oauthReady =
-    !oauthUnavailable &&
-    Boolean(providers.data) &&
-    (!isCloudHosted || Boolean(connections.data));
+  const oauthReady = !oauthUnavailable && Boolean(providers.data) && true;
   const allItems = useMemo(
     () =>
       buildIntegrationItems(
@@ -273,7 +268,7 @@ function IntegrationsPanelInner() {
         continue;
       }
       const plan = buildConnectPlan(item, {
-        ownOAuthAvailable: !isCloudHosted,
+        ownOAuthAvailable: true,
         mcpServersLoaded: mcp.list.isSuccess,
       });
       if (plan) {
@@ -281,7 +276,7 @@ function IntegrationsPanelInner() {
       }
     }
     return byItemId;
-  }, [allItems, isCloudHosted, mcp.list.isSuccess]);
+  }, [allItems, mcp.list.isSuccess]);
   // A tile is for what is still to connect, plus whatever is being connected
   // right now with no dialog of its own to report it: a plugin counts as
   // configured the moment it installs, and an integration must not change
@@ -412,7 +407,7 @@ function IntegrationsPanelInner() {
           state={connect.stateFor(item.id, plan.name)}
           // The choice between the provider's own server and your own OAuth
           // app is only a real one on a self-hosted assistant.
-          showAlternatives={!isCloudHosted}
+          showAlternatives
           disabled={connect.isBusyElsewhere(item.id)}
           onConnect={(method) => connect.start(item, plan, method)}
           onLogin={startLogin}

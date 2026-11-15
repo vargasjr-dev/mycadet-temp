@@ -85,7 +85,6 @@ import { useIsNativePlatform } from "@/runtime/native-platform";
 import { isNativeIOS, useIsNativeAndroid } from "@/runtime/platform-detection";
 import { isPointerCoarse, usePointerCoarse } from "@/utils/pointer";
 import { routes } from "@/utils/routes";
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { Button, cn, Notice, Popover } from "@mycadet/design-library";
 
@@ -522,18 +521,9 @@ export function ChatComposer({
   // Cursor position for the emoji popup's trigger text.
   const cursorRef = useRef(input.length);
 
-  // The Doctor is cloud-hosted only, so `/doctor` is not offered when the
-  // active assistant is self-hosted (the Doctor tab doesn't exist there).
-  const doctorGated = useActiveAssistantIsSelfHosted();
   const searchSlashCommands = useCallback(
-    (filter: string) => {
-      const commands = filteredCommands(filter);
-      if (!doctorGated) {
-        return commands;
-      }
-      return commands.filter((command) => command.name !== "doctor");
-    },
-    [doctorGated],
+    (filter: string) => filteredCommands(filter),
+    [filteredCommands],
   );
 
   // Slash and emoji popups — state is derived from the input text, not stored.

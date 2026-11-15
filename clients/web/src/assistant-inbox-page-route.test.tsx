@@ -22,7 +22,6 @@ import type { AssistantDomain } from "@/lib/assistant-domains";
 import type { EmailAddress } from "@/lib/email-api";
 import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
-import * as cloudGate from "@/assistant/hosting";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
@@ -30,12 +29,6 @@ const ASSISTANT_ID = "assistant-1";
 mock.module("@/assistant/use-active-assistant-id", () => ({
   ...activeAssistantIdModule,
   useActiveAssistantId: () => ASSISTANT_ID,
-}));
-
-mock.module("@/assistant/hosting", () => ({
-  ...cloudGate,
-  useActiveAssistantIsCloudHosted: () => true,
-  useAssistantHosting: () => "cloud",
 }));
 
 mock.module("@/hooks/use-assistant-avatar", () => ({

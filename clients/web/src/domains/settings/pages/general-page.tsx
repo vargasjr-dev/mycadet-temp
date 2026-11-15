@@ -16,24 +16,18 @@ import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card"
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
 import { TimezoneSection } from "@/domains/settings/components/timezone-section";
 import { ThisDeviceSection } from "@/domains/settings/components/this-device-section";
-import { UpdateWindowModal } from "@/domains/settings/components/update-window-modal";
 import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
 import { Button } from "@mycadet/design-library/components/button";
 
-import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { isElectron } from "@/runtime/is-electron";
 import { useTranslation } from "@/i18n";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { openExternalUrl } from "@/runtime/browser";
 import { routes } from "@/utils/routes";
 
 export function GeneralPage() {
   const { t } = useTranslation("settings");
   const { healthz, healthzLoading } = useAssistantWithHealthz();
   const navigate = useNavigate();
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor();
-  const [updateWindowOpen, setUpdateWindowOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -80,11 +74,7 @@ export function GeneralPage() {
           onReviewWorkspaceData={() =>
             void navigate(`${routes.workspace}?sort=size`)
           }
-          onUpgradeStorage={
-            isCloudHosted
-              ? () => void openExternalUrl(cloudAccountBillingUrl())
-              : null
-          }
+          onUpgradeStorage={null}
         />
       )}
 
@@ -96,16 +86,7 @@ export function GeneralPage() {
       <DetailCard
         title={t("generalPage.versionTitle")}
         subtitle={t("generalPage.versionSubtitle")}
-        accessory={
-          isCloudHosted ? (
-            <Button
-              variant="outlined"
-              onClick={() => setUpdateWindowOpen(true)}
-            >
-              {t("generalPage.updateWindow")}
-            </Button>
-          ) : undefined
-        }
+        accessory={undefined}
       >
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
@@ -124,13 +105,6 @@ export function GeneralPage() {
           </div>
         </div>
       </DetailCard>
-      {isCloudHosted && (
-        <UpdateWindowModal
-          open={updateWindowOpen}
-          onClose={() => setUpdateWindowOpen(false)}
-        />
-      )}
-
       <DetailCard
         title={t("generalPage.preferencesTitle")}
         subtitle={t("generalPage.preferencesSubtitle")}

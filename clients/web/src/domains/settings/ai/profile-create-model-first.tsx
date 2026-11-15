@@ -32,7 +32,6 @@ import { entryPickerValue } from "@/domains/settings/ai/provider-availability";
 import { PickerMeta } from "@/domains/settings/ai/provider-picker-availability";
 import { ProviderCreateForm } from "@/domains/settings/ai/provider-create-form";
 import type { ProfileEditor } from "@/domains/settings/ai/use-profile-editor";
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation, type TFunction } from "@/i18n";
 
 /**
@@ -127,21 +126,15 @@ export function ProfileCreateModelFirst({
   menuBoundary,
 }: ProfileCreateModelFirstProps) {
   const { t } = useTranslation("settings");
-  const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
   const defaultEntryMetaLabel = t("aiProviderPicker.defaultEntryMeta");
 
   const resolverInput = useMemo<ModelFirstInput>(
     () => ({
       connections: editor.effectiveConnections,
-      activeAssistantIsSelfHosted,
       labelFor: (provider) => PROVIDER_DISPLAY_NAMES[provider] ?? provider,
       defaultEntryMetaLabel,
     }),
-    [
-      editor.effectiveConnections,
-      activeAssistantIsSelfHosted,
-      defaultEntryMetaLabel,
-    ],
+    [editor.effectiveConnections, defaultEntryMetaLabel],
   );
 
   const groups = useMemo(

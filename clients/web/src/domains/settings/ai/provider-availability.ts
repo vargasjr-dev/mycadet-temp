@@ -1,5 +1,4 @@
 import { MODELS_BY_PROVIDER } from "@/assistant/llm-model-catalog";
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 
 import {
   CHATGPT_CONNECTION_PROVIDER,
@@ -51,26 +50,21 @@ export function connectionServesProvider(
   );
 }
 
-export function isProviderSelectableForAssistant(
-  provider: string,
-  activeAssistantIsSelfHosted: boolean,
-): boolean {
-  return !LOCAL_ONLY_PROVIDERS.has(provider) || activeAssistantIsSelfHosted;
+export function isProviderSelectableForAssistant(provider: string): boolean {
+  return !LOCAL_ONLY_PROVIDERS.has(provider);
 }
 
-export function selectableInferenceProvidersForAssistant(
-  activeAssistantIsSelfHosted: boolean,
-): Array<(typeof INFERENCE_PROVIDERS)[number]> {
+export function selectableInferenceProvidersForAssistant(): Array<
+  (typeof INFERENCE_PROVIDERS)[number]
+> {
   return INFERENCE_PROVIDERS.filter((provider) =>
-    isProviderSelectableForAssistant(provider, activeAssistantIsSelfHosted),
+    isProviderSelectableForAssistant(provider),
   );
 }
 
-export function selectableConnectionProvidersForAssistant(
-  activeAssistantIsSelfHosted: boolean,
-): ConnectionProvider[] {
+export function selectableConnectionProvidersForAssistant(): ConnectionProvider[] {
   return CONNECTION_PROVIDERS.filter((provider) =>
-    isProviderSelectableForAssistant(provider, activeAssistantIsSelfHosted),
+    isProviderSelectableForAssistant(provider),
   );
 }
 
@@ -83,14 +77,12 @@ export function selectableConnectionProvidersForAssistant(
 export function useSelectableInferenceProviders(): Array<
   (typeof INFERENCE_PROVIDERS)[number]
 > {
-  const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
-  return selectableInferenceProvidersForAssistant(activeAssistantIsSelfHosted);
+  return selectableInferenceProvidersForAssistant();
 }
 
 /** Connection providers the active assistant can connect, for defaulting. */
 export function useSelectableConnectionProviders(): ConnectionProvider[] {
-  const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
-  return selectableConnectionProvidersForAssistant(activeAssistantIsSelfHosted);
+  return selectableConnectionProvidersForAssistant();
 }
 
 /**

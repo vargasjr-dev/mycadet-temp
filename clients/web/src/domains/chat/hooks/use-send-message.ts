@@ -29,7 +29,6 @@ import {
   parseDoctorCommand,
 } from "@/domains/chat/components/chat-composer/slash-command-catalog";
 import { requestDoctorPage } from "@/lib/doctor-handoff-writer";
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { saveContextWindowUsage } from "@/domains/chat/utils/context-window-storage";
 import type { ContextWindowUsage } from "@/domains/chat/components/context-window-indicator";
@@ -195,10 +194,6 @@ export function useSendMessage({
   // serving shell stamps it before the first render, so it is always a
   // string here (use-active-assistant-id's contract).
   const assistantId = useActiveAssistantId();
-  // The Doctor is cloud-hosted only; when the active assistant is
-  // self-hosted the Doctor tab doesn't exist, so `/doctor` must fall through
-  // to a normal send rather than navigating to a doomed, empty tab.
-  const isSelfHosted = useActiveAssistantIsSelfHosted();
   const addOptimisticSend = useChatSessionStore.use.addOptimisticSend();
   const setOptimisticSends = useChatSessionStore.use.setOptimisticSends();
   const setError = useChatSessionStore.use.setError();
@@ -773,14 +768,6 @@ export function useSendMessage({
         if (activeConversationId !== null && !sendScopeIsCurrent()) {
           return;
         }
-        // The Doctor is cloud-hosted only. On a self-hosted assistant its
-        // tab doesn't exist, so the command is disabled: clear the input and
-        // surface a notice rather than sending "/doctor …" as a normal turn.
-        if (isSelfHosted) {
-          useComposerStore.getState().setInput("");
-          toast.info(t("chat:useSendMessage.doctorUnavailable"));
-          return;
-        }
         useComposerStore.getState().setInput("");
         requestDoctorPage(doctorPrompt ?? undefined);
         return;
@@ -1171,7 +1158,6 @@ export function useSendMessage({
     [
       activeConversationId,
       assistantId,
-      isSelfHosted,
       navigate,
       diskPressureChatBlockReason,
       uiContextRef,

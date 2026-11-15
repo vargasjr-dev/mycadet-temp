@@ -9,7 +9,6 @@
  * runtime's own conversation-list failure.
  */
 
-import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { Button } from "@mycadet/design-library";
 
@@ -19,18 +18,17 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export function ChatPage() {
   const { t } = useTranslation("chat");
-  const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
   const assistantId = useActiveAssistantId();
 
-  // Conversation list query — needed for the self-hosted error guard below.
+  // Conversation list query — needed for the error guard below.
   // TanStack Query deduplicates with the same query in ActiveChatView.
   const { isError: conversationListIsError, refetch: refetchConversationList } =
     useConversationListQuery(assistantId);
 
-  // Self-hosted runtime call failed — land on a terminal error state with a
+  // The runtime call failed — land on a terminal error state with a
   // retry button instead of leaving the sidebar + transcript stuck in the
   // seeded `isLoadingHistory` skeleton.
-  if (activeAssistantIsSelfHosted && conversationListIsError) {
+  if (conversationListIsError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-[var(--content-secondary)]">

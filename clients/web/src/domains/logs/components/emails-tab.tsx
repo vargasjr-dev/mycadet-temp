@@ -188,27 +188,17 @@ function EmailRow({ email }: { email: EmailMessage }) {
 
 interface EmailsTabProps {
   assistantId: string;
-  isCloudHosted: boolean;
 }
 
-export function EmailsTab({ assistantId, isCloudHosted }: EmailsTabProps) {
+export function EmailsTab({ assistantId }: EmailsTabProps) {
   const { t } = useTranslation("logs");
 
-  const addressesQuery = useEmailAddresses(assistantId, {
-    enabled: isCloudHosted,
-  });
+  const addressesQuery = useEmailAddresses(assistantId);
   const address = addressesQuery.data?.[0];
 
-  const statusQuery = useEmailAddressStatus(
-    assistantId,
-    address?.id,
-    { enabled: isCloudHosted },
-  );
+  const statusQuery = useEmailAddressStatus(assistantId, address?.id);
 
-  const emailsQuery = useEmails(assistantId, {
-    limit: 10,
-    enabled: isCloudHosted,
-  });
+  const emailsQuery = useEmails(assistantId, { limit: 10 });
 
   const usage: EmailAddressStatus["usage"] | undefined = statusQuery.data?.usage;
   const emails: EmailMessage[] = emailsQuery.data ?? [];

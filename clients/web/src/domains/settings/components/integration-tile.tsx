@@ -71,11 +71,9 @@ export interface IntegrationTileProps {
   state: TileConnectState;
   layout?: IntegrationListLayout;
   /**
-   * Puts a chevron beside the connect action for the other ways in. For a
-   * self-hosted assistant, where the choice between the provider's server,
-   * Cadet's hosted sign-in, and your own OAuth app is a real one the user is
-   * expected to make, so a caller reads it from
-   * `useActiveAssistantIsSelfHosted()` (`@/assistant/hosting`). With one
+   * Puts a chevron beside the connect action for the other ways in — the
+   * choice between the provider's server, Cadet's hosted sign-in, and your
+   * own OAuth app is a real one the user is expected to make. With one
    * method there is nothing to choose, so the button stays plain whatever
    * this says.
    */
