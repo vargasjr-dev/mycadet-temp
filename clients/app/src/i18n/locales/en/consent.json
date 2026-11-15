@@ -2,7 +2,7 @@
   "consentControls": {
     "whatsChanged": "What's changed",
     "agreements": "Agreements",
-    "agreeTo": "I agree to the <link>{policy}</link>"
+    "agreeTo": "I agree to the <0>{policy}</0>"
   },
   "actions": {
     "continue": "Continue",

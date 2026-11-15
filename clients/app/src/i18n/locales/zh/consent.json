@@ -2,7 +2,7 @@
   "consentControls": {
     "whatsChanged": "更新内容",
     "agreements": "协议",
-    "agreeTo": "我同意<link>{policy}</link>"
+    "agreeTo": "我同意<0>{policy}</0>"
   },
   "actions": {
     "continue": "继续",

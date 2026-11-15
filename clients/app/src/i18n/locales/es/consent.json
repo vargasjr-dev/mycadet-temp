@@ -1,6 +1,6 @@
 {
   "consentControls": {
-    "agreeTo": "Acepto <link>{policy}</link>",
+    "agreeTo": "Acepto <0>{policy}</0>",
     "whatsChanged": "Qué ha cambiado",
     "agreements": "Acuerdos"
   },

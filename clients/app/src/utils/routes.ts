@@ -33,6 +33,10 @@ export const routes = {
   docs: {
     hostingOptions: "/docs/hosting-options",
     localHosting: "/docs/hosting-options/local-hosting",
+    legal: {
+      privacyPolicy: "/docs/privacy-policy",
+      termsOfUse: "/docs/terms-of-use",
+    },
   },
 } as const;
 

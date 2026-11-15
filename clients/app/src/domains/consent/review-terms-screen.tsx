@@ -5,9 +5,10 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "@mycadet/design-library/components/button";
 import { Checkbox } from "@mycadet/design-library/components/checkbox";
 
-import { useTranslation } from "@app/i18n";
+import { Trans, useTranslation } from "@app/i18n";
+import { ExternalAnchor } from "@app/components/external-anchor";
 import { sanitizeReturnTo } from "@app/utils/return-to";
-import { routes } from "@app/utils/routes";
+import { docsUrl, routes } from "@app/utils/routes";
 import { useAuthStore } from "@app/stores/auth-store";
 
 import {
@@ -17,6 +18,33 @@ import {
   saveConsent,
 } from "./consent-persistence";
 import { privacyChangeNotes, tosChangeNotes } from "./consent-changelog";
+
+/**
+ * One "I agree to the {policy}" agreement row's sentence: the locale renders
+ * its rich-text tag as a real anchor around the policy name, so the tag text
+ * never leaks (the tag must stay a numbered <0> in the catalogs — this fork's
+ * Trans splits named-tag children around the component).
+ */
+export function AgreementSentence({
+  href,
+  policy,
+}: {
+  href: string;
+  policy: string;
+}) {
+  return (
+    <span className="text-body-medium-lighter">
+      <Trans
+        i18nKey="consentControls.agreeTo"
+        ns="consent"
+        values={{ policy }}
+        components={[
+          <ExternalAnchor href={href} tone="quiet" glyph={false} />,
+        ]}
+      />
+    </span>
+  );
+}
 
 /**
  * The shell's consent screen: first consent AND stale-version re-reviews
@@ -98,9 +126,10 @@ export function ReviewTermsScreen() {
                 checked={tosAccepted}
                 onCheckedChange={(checked) => setTosAccepted(checked === true)}
               />
-              <span className="text-body-medium-lighter">
-                {t("consentControls.agreeTo", { policy: "Terms of Service" })}
-              </span>
+              <AgreementSentence
+                href={docsUrl(routes.docs.legal.termsOfUse)}
+                policy="Terms of Service"
+              />
             </label>
           )}
           {showPrivacy && (
@@ -109,9 +138,10 @@ export function ReviewTermsScreen() {
                 checked={privacyConsent}
                 onCheckedChange={(checked) => setPrivacyConsent(checked === true)}
               />
-              <span className="text-body-medium-lighter">
-                {t("consentControls.agreeTo", { policy: "the Privacy Policy" })}
-              </span>
+              <AgreementSentence
+                href={docsUrl(routes.docs.legal.privacyPolicy)}
+                policy="the Privacy Policy"
+              />
             </label>
           )}
           {!isFirstConsent &&
