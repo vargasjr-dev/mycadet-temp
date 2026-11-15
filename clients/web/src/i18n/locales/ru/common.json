@@ -1,10 +1,4 @@
 {
-  "aboutPage": {
-    "build": "Сборка",
-    "taglineMacOS": "ИИ-ассистент для вашего Mac",
-    "taglineWindows": "ИИ-ассистент для вашего ПК",
-    "version": "Версия"
-  },
   "copyButton": {
     "copied": "Скопировано",
     "copyFailed": "Не удалось скопировать в буфер обмена."

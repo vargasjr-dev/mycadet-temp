@@ -1,10 +1,4 @@
 {
-  "aboutPage": {
-    "build": "Compilación",
-    "taglineMacOS": "Asistente de IA para tu Mac",
-    "taglineWindows": "Asistente de IA para tu PC",
-    "version": "Versión"
-  },
   "addCredentialModal": {
     "cancel": "Cancelar",
     "credentialSaved": "Credencial guardada.",

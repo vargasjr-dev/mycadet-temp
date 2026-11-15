@@ -1,10 +1,4 @@
 {
-  "aboutPage": {
-    "build": "Build",
-    "taglineMacOS": "AI assistant for your Mac",
-    "taglineWindows": "AI assistant for your PC",
-    "version": "Version"
-  },
   "addCredentialModal": {
     "cancel": "Cancel",
     "credentialSaved": "Credential saved.",

@@ -1,10 +1,4 @@
 {
-  "aboutPage": {
-    "build": "建置",
-    "taglineMacOS": "您 Mac 的 AI 助理",
-    "taglineWindows": "您 Windows PC 的 AI 助理",
-    "version": "版本"
-  },
   "addCredentialModal": {
     "cancel": "取消",
     "credentialSaved": "憑證已儲存。",
