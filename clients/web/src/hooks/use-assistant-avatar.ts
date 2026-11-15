@@ -13,10 +13,7 @@ import { useSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-st
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import { createGenerationGuard } from "@/lib/generation-guard";
 import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
-import {
-  getActiveAssistantId,
-  useResolvedAssistantStore,
-} from "@/stores/resolved-assistant-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import type {
   AvatarRead,
   AvatarState,
