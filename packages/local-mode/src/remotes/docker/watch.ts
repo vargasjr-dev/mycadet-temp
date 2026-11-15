@@ -8,7 +8,8 @@
 import { existsSync, readdirSync, watch as fsWatch } from "node:fs";
 import { join } from "node:path";
 import { exec } from "../../exec";
-import { dockerResourceNames, removeContainer } from "./retire";
+import { dockerResourceNames } from "./common";
+import { removeContainer } from "./retire";
 import {
   type ServiceName,
   buildServiceRunArgs,

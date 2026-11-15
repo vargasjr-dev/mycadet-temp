@@ -8,7 +8,7 @@
 import { platform } from "node:os";
 
 import { pullImage, resolveImageRefs } from "./hatch";
-import { dockerResourceNames } from "./retire";
+import { dockerResourceNames } from "./common";
 import { sleepDocker } from "./sleep";
 import { type ServiceName } from "./statefulset";
 import { saveLockfileAssistant } from "../../lockfile";
