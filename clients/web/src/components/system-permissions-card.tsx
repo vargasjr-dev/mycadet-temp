@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation, type TFunction } from "@/i18n";
-import {
-  resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationCloudId,
-} from "@/hooks/use-assistant-avatar";
+import { resolveAssistantNotificationCloudId } from "@/hooks/use-assistant-avatar";
 import {
   getUnreadBadgeSurface,
   setDockBadge,
@@ -14,6 +11,7 @@ import { detectElectronHostOS } from "@/runtime/platform-detection";
 import {
   createNotificationIdentity,
   getNotificationIdentitySnapshot,
+  resolveNotificationIdentityScope,
 } from "@/runtime/notification-avatar";
 import {
   openSystemPermissionSettings,
@@ -342,9 +340,8 @@ export function SystemPermissionsCard({
         if (meta.sourceKind !== "notifications" || hostOS !== "macos") {
           return undefined;
         }
-        const scopeId = resolveAssistantAvatarOwnerScopeId(
-          assistant,
-          globalThis.location.href,
+        const scopeId = resolveNotificationIdentityScope(
+          assistant?.assistantId ?? null,
         );
         if (!assistant || !scopeId) {
           return undefined;

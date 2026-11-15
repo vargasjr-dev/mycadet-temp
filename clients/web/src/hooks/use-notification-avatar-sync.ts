@@ -17,7 +17,6 @@ import {
   supersedePreparedNotificationIdentity,
   type NotificationIdentityOwner,
   type NotificationIdentityPublication,
-  type NotificationIdentityScopeInput,
 } from "@/runtime/notification-avatar";
 import { isPopoutWindowLifetime } from "@/runtime/popout-window";
 import { installSenderNotificationIdentityAdapter } from "@/runtime/sender-notification";
@@ -36,8 +35,6 @@ import {
 } from "@mycadet/avatar-manifest/notification-avatar";
 import type { NotificationAvatar } from "@mycadet/ipc-contract";
 
-export type NotificationAvatarScope = NotificationIdentityScopeInput;
-
 export interface NotificationAvatarSyncOptions {
   scopeId: string | null;
   cloudAssistantId?: string | null;
@@ -53,13 +50,6 @@ interface CachedPreparedAvatar {
   pictureKey: string;
   png: Uint8Array<ArrayBuffer>;
   avatar: NotificationAvatar;
-}
-
-/** Opaque deterministic account or normalized connection-origin scope. */
-export function resolveNotificationAvatarScope(
-  scope: NotificationAvatarScope | null,
-): string | null {
-  return resolveNotificationIdentityScope(scope);
 }
 
 function ownerMatches(
@@ -94,13 +84,7 @@ export function useNotificationAvatarSync(
   const legacyEnabled = isElectron() && !isPopoutWindowLifetime();
   const scopeId = options
     ? options.scopeId
-    : resolveNotificationIdentityScope({
-        kind: "connection",
-        url:
-          typeof globalThis.location === "undefined"
-            ? null
-            : globalThis.location.href,
-      });
+    : resolveNotificationIdentityScope(assistantId);
   const identity = useMemo(
     () =>
       assistantId && scopeId

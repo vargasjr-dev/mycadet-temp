@@ -4,10 +4,8 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 
 import type { NotificationIdentity } from "@mycadet/ipc-contract";
 
-import {
-  resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationCloudId,
-} from "@/hooks/use-assistant-avatar";
+import { resolveAssistantNotificationCloudId } from "@/hooks/use-assistant-avatar";
+import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import { __resetForTesting, subscribe } from "@/lib/event-bus";
 import { createNotificationIdentity } from "@/runtime/notification-avatar";
 import {
@@ -42,10 +40,7 @@ const { useNotificationTapNavigation } =
 function platformIdentity(
   assistant: LockfileAssistant = ASSISTANT_A,
 ): NotificationIdentity {
-  const scopeId = resolveAssistantAvatarOwnerScopeId(
-    assistant,
-    window.location.href,
-  );
+  const scopeId = resolveNotificationIdentityScope(assistant.assistantId);
   const identity = scopeId
     ? createNotificationIdentity(
         scopeId,

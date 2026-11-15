@@ -23,7 +23,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 
 import { identityGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
-import { resolveAssistantAvatarOwnerScopeId } from "@/hooks/use-assistant-avatar";
+import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import { __resetForTesting, publish } from "@/lib/event-bus";
 import {
   browserNotificationConversationKey,
@@ -215,9 +215,8 @@ function expectNotified() {
 }
 
 function platformScopeId(): string {
-  const scopeId = resolveAssistantAvatarOwnerScopeId(
-    PLATFORM_ASSISTANT,
-    window.location.href,
+  const scopeId = resolveNotificationIdentityScope(
+    PLATFORM_ASSISTANT.assistantId,
   );
   if (!scopeId) {
     throw new Error("Expected a cloud notification scope");
@@ -356,12 +355,12 @@ describe("useNotificationIntentSync", () => {
   });
 
   test("threads the optional event name and exact scoped identity query name", () => {
+    mountAt(routes.assistant);
     const scopeId = platformScopeId();
     queryClient.setQueryData(identityQueryKey("assistant-1", scopeId), {
       name: "Scoped Name",
       version: "1.0.0",
     });
-    mountAt(routes.assistant);
 
     publishNotificationIntent({ assistantName: "Event Name" });
 
@@ -375,21 +374,19 @@ describe("useNotificationIntentSync", () => {
       name: "Scoped Name",
     });
   });
-
   test("does not relabel a name cached for the same assistant in another scope", () => {
+    mountAt(routes.assistant);
     const currentScopeId = platformScopeId();
     queryClient.setQueryData(
       identityQueryKey("assistant-1", "notification:scope:old"),
       { name: "Old Scope Name", version: "1.0.0" },
     );
-    mountAt(routes.assistant);
 
     publishNotificationIntent({});
 
     expect(postedArgs[0]?.identity?.scopeId).toBe(currentScopeId);
     expect(postedArgs[0]?.identityStoreName).toBeNull();
   });
-
   test("logout cancels a queued browser delivery", () => {
     mountAt(routes.assistant);
     publishNotificationIntent({});
@@ -432,10 +429,7 @@ describe("useNotificationIntentSync", () => {
 
     expect(postedArgs[0]?.canDeliver?.()).toBe(false);
     expect(originA).toMatchObject({
-      scopeId: resolveAssistantAvatarOwnerScopeId(
-        assistantA,
-        window.location.href,
-      ),
+      scopeId: resolveNotificationIdentityScope(assistantA.assistantId),
       assistantId: assistantA.assistantId,
     });
     expect(originA?.nativeSenderId.startsWith("local:")).toBe(true);

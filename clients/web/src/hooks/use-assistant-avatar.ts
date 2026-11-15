@@ -8,17 +8,15 @@ import {
   fetchAvatarImageUrlResult,
   fetchCharacterTraitsResult,
 } from "@/assistant/avatar-api";
+import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import { useSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-state-manifest";
 import { trackBlobUrl } from "@/lib/blob-url-tracker";
 import { createGenerationGuard } from "@/lib/generation-guard";
 import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
-import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import {
   getActiveAssistantId,
   useResolvedAssistantStore,
 } from "@/stores/resolved-assistant-store";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type {
   AvatarRead,
   AvatarState,
@@ -26,6 +24,7 @@ import type {
   CharacterTraits,
 } from "@/types/avatar";
 import { resolveAvatarAccentHex } from "@/utils/avatar-accent";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { isUuid } from "@/utils/uuid";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
@@ -88,33 +87,6 @@ export function releaseAssistantAvatarUrl(assistantId: string): void {
   fetchGenerations.invalidate(assistantId);
   trackBlobUrl(activeBlobUrls, assistantId, null);
   activeOwners.delete(assistantId);
-}
-
-/**
- * Resolve the complete connection/account owner shared by display and
- * notification avatar consumers. The account arm keys on the organization
- * alone — the avatar belongs to the assistant, and the assistant's own id
- * rides the query key and the identity triple, not the scope — so the
- * scope needs no auth-store read.
- */
-export function resolveAssistantAvatarOwnerScopeId(
-  assistant: LockfileAssistant | null | undefined,
-  connectionFallback: string | null,
-): string | null {
-  if (!assistant) {
-    return null;
-  }
-  // The org rides the served entry — a lockfile fact, not a store web
-  // would manage.
-  return assistant.cloud === "cloud"
-    ? resolveNotificationIdentityScope({
-        kind: "account",
-        organizationId: assistant.cloudOrganizationId ?? null,
-      })
-    : resolveNotificationIdentityScope({
-        kind: "connection",
-        url: getGatewayUrl(assistant) ?? connectionFallback,
-      });
 }
 
 /** Resolve the cloud UUID shared by remote and local sender identities. */
@@ -394,12 +366,7 @@ export function useAssistantAvatar(options?: AssistantAvatarOptions) {
   const queryClient = useQueryClient();
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
-  const assistant = useResolvedAssistantStore.use.assistant();
-  const connectionFallback = globalThis.location.href;
-  const canonicalScopeId = resolveAssistantAvatarOwnerScopeId(
-    assistant,
-    connectionFallback,
-  );
+  const canonicalScopeId = resolveNotificationIdentityScope(assistantId);
   const scopeId =
     options?.ownerScopeId === undefined
       ? canonicalScopeId

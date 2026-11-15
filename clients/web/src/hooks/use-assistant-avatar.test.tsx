@@ -13,11 +13,11 @@ import type {
 } from "@/types/avatar";
 import {
   avatarQueryKey,
-  resolveAssistantAvatarOwnerScopeId,
   resolveAssistantNotificationCloudId,
   shouldRetainAvatarPlaceholder,
   type AvatarData,
 } from "@/hooks/use-assistant-avatar";
+import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import { MIN_VERSION } from "@/lib/backwards-compat/avatar-state-manifest";
 import { chooserRowAvatarCacheQueryKey } from "@/lib/persist-last-seen-avatar";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -240,73 +240,12 @@ describe("useAssistantAvatar", () => {
     ).toBe(false);
   });
 
-  test("an origin change removes the old scoped query and refetches when switching back", async () => {
-    fetchAvatarState.mockResolvedValue(imageState);
-    fetchAvatarImageUrlResult
-      .mockResolvedValueOnce(found("blob:first-origin"))
-      .mockResolvedValueOnce(found("blob:second-origin"))
-      .mockResolvedValueOnce(found("blob:first-origin-return"));
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const firstScope = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
-    const secondAssistant = {
-      ...assistantOne,
-      port: 9102,
-      daemonPort: 9102,
-    };
-    const secondScope = resolveAssistantAvatarOwnerScopeId(
-      secondAssistant,
-      null,
-    )!;
-
-    const { result } = renderHook(() => useAssistantAvatar(), {
-      wrapper: createWrapper(queryClient),
-    });
-    await waitFor(() => {
-      expect(result.current.customImageUrl).toBe("blob:first-origin");
-    });
-    expect(result.current.owner?.scopeId).toBe(firstScope);
-
-    act(() => {
-      useResolvedAssistantStore.getState().setAssistant(secondAssistant);
-    });
-    await waitFor(() => {
-      expect(result.current.customImageUrl).toBe("blob:second-origin");
-    });
-    expect(result.current.owner?.scopeId).toBe(secondScope);
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:first-origin");
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: avatarQueryKey("asst-1") })
-        .some((query) =>
-          query.queryKey.some(
-            (part) =>
-              typeof part === "object" &&
-              part !== null &&
-              "ownerScopeId" in part &&
-              (part as { ownerScopeId?: unknown }).ownerScopeId === firstScope,
-          ),
-        ),
-    ).toBe(false);
-
-    act(() => {
-      useResolvedAssistantStore.getState().setAssistant(assistantOne);
-    });
-    await waitFor(() => {
-      expect(result.current.customImageUrl).toBe("blob:first-origin-return");
-    });
-    expect(fetchAvatarState).toHaveBeenCalledTimes(3);
-    expect(result.current.owner?.scopeId).toBe(firstScope);
-  });
-
   test("Root-style and default callers share one fully scoped query", async () => {
     fetchAvatarState.mockResolvedValue(characterState);
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const scopeId = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
+    const scopeId = resolveNotificationIdentityScope(assistantOne.assistantId)!;
 
     const { result } = renderHook(
       () => ({
@@ -345,7 +284,7 @@ describe("useAssistantAvatar", () => {
       customImageUrl: null,
       state: characterState,
     } satisfies AvatarData);
-    const scopeId = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
+    const scopeId = resolveNotificationIdentityScope(assistantOne.assistantId)!;
 
     const { result } = renderHook(
       () => useAssistantAvatar({ ownerScopeId: scopeId }),

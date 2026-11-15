@@ -58,10 +58,6 @@ interface PublicationScope {
   revisions: Map<string, { revision: number; active: boolean }>;
 }
 
-export type NotificationIdentityScopeInput =
-  | { kind: "account"; organizationId: string | null }
-  | { kind: "connection"; url: string | null };
-
 export interface NotificationIdentityOwner {
   scopeId: string;
   assistantId: string;
@@ -112,6 +108,26 @@ function createPublisherSessionId(): string {
 }
 
 const publisherSessionId = createPublisherSessionId();
+
+/**
+ * The notification identity scope: one assistant viewed from one app
+ * install. The origin namespaces the assistant id per bundle surface, so
+ * the same assistant opened from two hosts keeps two independent identity
+ * snapshots.
+ */
+export function resolveNotificationIdentityScope(
+  assistantId: string | null | undefined,
+): string | null {
+  const normalized = assistantId?.trim();
+  const origin =
+    typeof globalThis.location === "undefined"
+      ? null
+      : globalThis.location.origin;
+  if (!normalized || !origin || origin === "null") {
+    return null;
+  }
+  return `scope:v1:${sha256Text(JSON.stringify([normalized, origin]))}`;
+}
 
 /** Stable, collision-free key for a scope and its assistant-local id. */
 export function notificationIdentityKey(
@@ -209,42 +225,6 @@ function sha256Text(value: string): string {
 }
 
 /** Derive an opaque deterministic scope without exposing its trusted inputs. */
-export function resolveNotificationIdentityScope(
-  scope: NotificationIdentityScopeInput | null,
-): string | null {
-  if (!scope) {
-    return null;
-  }
-  let canonical: string | null = null;
-  if (scope.kind === "account") {
-    const organizationId = scope.organizationId?.trim();
-    if (organizationId) {
-      canonical = JSON.stringify(["account", organizationId]);
-    }
-  } else {
-    const rawUrl = scope.url?.trim();
-    if (rawUrl) {
-      try {
-        const origin = new URL(
-          rawUrl,
-          typeof globalThis.location === "undefined"
-            ? undefined
-            : globalThis.location.href,
-        ).origin;
-        if (origin !== "null") {
-          canonical = JSON.stringify(["connection", origin]);
-        }
-      } catch {
-        canonical = null;
-      }
-    }
-  }
-  if (!canonical || canonical.length > 4096) {
-    return null;
-  }
-  return `scope:v1:${sha256Text(canonical)}`;
-}
-
 function compactStableHash(value: string): string {
   const hashes = [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35];
   for (let index = 0; index < value.length; index++) {

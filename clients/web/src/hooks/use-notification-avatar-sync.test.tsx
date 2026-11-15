@@ -16,7 +16,6 @@ import type {
   CharacterComponents,
   CharacterTraits,
 } from "@/types/avatar";
-import type { NotificationAvatarScope } from "@/hooks/use-notification-avatar-sync";
 
 const AVATAR_PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
 
@@ -64,8 +63,10 @@ const {
   setNotificationIdentityNativeAdapter,
   sha256Hex,
 } = await import("@/runtime/notification-avatar");
-const { resolveNotificationAvatarScope, useNotificationAvatarSync } =
+const { useNotificationAvatarSync } =
   await import("@/hooks/use-notification-avatar-sync");
+const { resolveNotificationIdentityScope } =
+  await import("@/runtime/notification-avatar");
 
 const ASSISTANT_ID = "assistant-1";
 const IMAGE_URL = "blob:avatar-1";
@@ -75,28 +76,26 @@ const IMAGE_META: AvatarImageMeta = {
   updatedAt: "2026-01-01T00:00:00.000Z",
   etag: "etag-a",
 };
-const CONNECTION_SCOPE = {
-  kind: "connection" as const,
-  url: "https://assistant.example.com/v1",
-};
+/** The scope the hook computes for ASSISTANT_ID under the test origin. */
+const CONNECTION_SCOPE = ASSISTANT_ID;
 
 function preparedIdentity(
   assistantId = ASSISTANT_ID,
-  scope: NotificationAvatarScope = CONNECTION_SCOPE,
+  scope: string = CONNECTION_SCOPE,
   cloudAssistantId?: string,
 ) {
-  const scopeId = resolveNotificationAvatarScope(scope)!;
+  const scopeId = resolveNotificationIdentityScope(scope)!;
   return createNotificationIdentity(scopeId, assistantId, cloudAssistantId)!;
 }
 
 const preparedOptions = (
   assistantName = "Assistant One",
   avatarReady = true,
-  scope: NotificationAvatarScope = CONNECTION_SCOPE,
+  scope: string = CONNECTION_SCOPE,
   cloudAssistantId?: string,
   ownerAssistantId = ASSISTANT_ID,
 ) => {
-  const scopeId = resolveNotificationAvatarScope(scope)!;
+  const scopeId = resolveNotificationIdentityScope(scope)!;
   return {
     scopeId,
     cloudAssistantId,
@@ -628,11 +627,8 @@ describe("scoped notification identity preparation", () => {
   });
 
   test("does not publish avatar or name data owned by another scope", async () => {
-    const scopeId = resolveNotificationAvatarScope(CONNECTION_SCOPE)!;
-    const wrongScopeId = resolveNotificationAvatarScope({
-      kind: "connection",
-      url: "https://other.example.com",
-    })!;
+    const scopeId = resolveNotificationIdentityScope(CONNECTION_SCOPE)!;
+    const wrongScopeId = resolveNotificationIdentityScope("assistant-2")!;
     const { rerender } = renderHook(
       ({ ownerScopeId }: { ownerScopeId: string }) =>
         useNotificationAvatarSync(
@@ -929,15 +925,9 @@ describe("scoped notification identity preparation", () => {
     expect(prepares.at(-1)!.scopeEpoch).toBeGreaterThan(resets[0]!.scopeEpoch);
   });
 
-  test("a self-hosted origin change retires the old scope", async () => {
-    const firstScope = {
-      kind: "connection" as const,
-      url: "https://first.example.com/path",
-    };
-    const secondScope = {
-      kind: "connection" as const,
-      url: "https://second.example.com/other",
-    };
+  test("an assistant switch retires the old scope", async () => {
+    const firstScope = "assistant-1";
+    const secondScope = "assistant-2";
     const nativeResets: Array<{ scopeId: string; assistantId?: string }> = [];
     setNotificationIdentityNativeAdapter({
       resetIdentities: (payload) => {
@@ -945,15 +935,9 @@ describe("scoped notification identity preparation", () => {
       },
     });
     const { rerender } = renderHook(
-      ({
-        scope,
-        ownerScope,
-      }: {
-        scope: NotificationAvatarScope;
-        ownerScope: NotificationAvatarScope;
-      }) => {
+      ({ scope, ownerScope }: { scope: string; ownerScope: string }) => {
         const options = preparedOptions("Assistant One", true, scope);
-        const ownerScopeId = resolveNotificationAvatarScope(ownerScope)!;
+        const ownerScopeId = resolveNotificationIdentityScope(ownerScope)!;
         useEffect(() => {
           reconcilePreparedNotificationIdentityOwners([
             { scopeId: options.scopeId, assistantId: ASSISTANT_ID },
@@ -985,8 +969,8 @@ describe("scoped notification identity preparation", () => {
       ).toBeDefined();
     });
 
-    const secondScopeId = resolveNotificationAvatarScope(secondScope)!;
-    const firstScopeId = resolveNotificationAvatarScope(firstScope)!;
+    const secondScopeId = resolveNotificationIdentityScope(secondScope)!;
+    const firstScopeId = resolveNotificationIdentityScope(firstScope)!;
     rerender({ scope: secondScope, ownerScope: firstScope });
     const secondIdentity = preparedIdentity(ASSISTANT_ID, secondScope);
     await act(async () => {});
@@ -1047,11 +1031,7 @@ describe("scoped notification identity preparation", () => {
     );
   });
 
-  test("uses account/org isolation and preserves an explicit platform sender id", async () => {
-    const accountScope: NotificationAvatarScope = {
-      kind: "account",
-      organizationId: "org-abc",
-    };
+  test("scopes by assistant and preserves an explicit platform sender id", async () => {
     const nativeId = "00000000-0000-4000-8000-000000000001";
     const nativeScopes: string[] = [];
     setNotificationIdentityNativeAdapter({
@@ -1067,33 +1047,21 @@ describe("scoped notification identity preparation", () => {
         null,
         null,
         ACCENT,
-        preparedOptions("Assistant One", true, accountScope, nativeId),
+        preparedOptions("Assistant One", true, CONNECTION_SCOPE, nativeId),
       ),
     );
-    const identity = preparedIdentity(ASSISTANT_ID, accountScope, nativeId);
+    const identity = preparedIdentity(ASSISTANT_ID, CONNECTION_SCOPE, nativeId);
 
     await waitFor(() => {
       expect(getNotificationIdentitySnapshot(identity)?.avatar).toBeDefined();
     });
     expect(identity.nativeSenderId).toBe(nativeId);
-    expect(nativeScopes).not.toContain(
-      JSON.stringify(["account", "user-123", "org-abc"]),
-    );
     expect(
       nativeScopes.every((scopeId) => /^scope:v1:[a-f0-9]{64}$/.test(scopeId)),
     ).toBe(true);
-    expect(resolveNotificationAvatarScope(accountScope)).not.toBe(
-      resolveNotificationAvatarScope({
-        ...accountScope,
-        organizationId: "org-other",
-      }),
+    expect(resolveNotificationIdentityScope("assistant-2")).not.toBe(
+      resolveNotificationIdentityScope(ASSISTANT_ID),
     );
-    expect(
-      resolveNotificationAvatarScope({
-        kind: "connection",
-        url: "https://assistant.example.com/another/path",
-      }),
-    ).toBe(resolveNotificationAvatarScope(CONNECTION_SCOPE));
   });
 });
 

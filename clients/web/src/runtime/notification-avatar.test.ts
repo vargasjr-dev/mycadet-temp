@@ -25,6 +25,7 @@ import {
   setNotificationIdentityNativeAdapter,
 } from "@/runtime/notification-avatar";
 
+const OPAQUE_SCOPE_PATTERN = /^scope:v1:[a-f0-9]{64}$/;
 const HASH = "a".repeat(64);
 const AVATAR = { avatarBase64: "iVBORw==", avatarHash: HASH };
 const PLATFORM_ASSISTANT_ID = "00000000-0000-4000-8000-000000000001";
@@ -51,31 +52,16 @@ beforeEach(() => {
 });
 
 describe("notification identities", () => {
-  test("derives deterministic opaque SHA-256 scopes from canonical owners", () => {
-    const connection = resolveNotificationIdentityScope({
-      kind: "connection",
-      url: "https://assistant.example.com/path?token=secret",
-    });
-    const sameOrigin = resolveNotificationIdentityScope({
-      kind: "connection",
-      url: "https://assistant.example.com/another-path",
-    });
-    const account = resolveNotificationIdentityScope({
-      kind: "account",
-      organizationId: "org-abc",
-    });
+  test("derives deterministic opaque SHA-256 scopes from the assistant and the origin", () => {
+    const scope = resolveNotificationIdentityScope("asst-1");
+    const same = resolveNotificationIdentityScope("asst-1");
+    const other = resolveNotificationIdentityScope("asst-2");
 
-    expect(connection).toBe(
-      "scope:v1:2bb3ad9851fe377a7de7dd843d37ef21c31438cf39a02346b51030456e4e7ce1",
-    );
-    expect(sameOrigin).toBe(connection);
-    expect(account).toBe(
-      "scope:v1:b86c769bdc8b0579383b98d35b9da4e72db0aac40f4566a8a92751e8bf2ea356",
-    );
-    expect(account).not.toContain("org-abc");
-    expect(connection).not.toContain("assistant.example.com");
+    expect(scope).toBe(same);
+    expect(other).not.toBe(scope);
+    expect(scope).toMatch(OPAQUE_SCOPE_PATTERN);
+    expect(scope).not.toContain("asst-1");
   });
-
   test("keeps platform sender ids and namespaces local ids unambiguously", () => {
     const platform = identity(
       "local-assistant",
@@ -327,10 +313,7 @@ describe("notification identities", () => {
   });
 
   test("reconcile force-clears a snapshot-only scope exactly once", () => {
-    const scopeId = resolveNotificationIdentityScope({
-      kind: "connection",
-      url: "https://snapshot-only.example.com",
-    })!;
+    const scopeId = resolveNotificationIdentityScope("snapshot-only")!;
     const snapshotOnly = identity("snapshot-only", scopeId);
     const resetIdentities = mock(() => {});
     setNotificationIdentityNativeAdapter({ resetIdentities });
@@ -352,10 +335,7 @@ describe("notification identities", () => {
   });
 
   test("queues native publication behind eager publisher registration", async () => {
-    const scopeId = resolveNotificationIdentityScope({
-      kind: "connection",
-      url: "https://registered.example.com",
-    })!;
+    const scopeId = resolveNotificationIdentityScope("registered")!;
     let finishRegistration: (registered: boolean) => void = () => undefined;
     const registration = new Promise<boolean>((resolve) => {
       finishRegistration = resolve;
