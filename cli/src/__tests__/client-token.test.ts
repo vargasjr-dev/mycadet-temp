@@ -1,6 +1,7 @@
 /**
- * Tests for `cadet client --token <jwt> --url <gateway>`: an ephemeral session
- * that authenticates with a handed-over token and needs no lockfile entry.
+ * Tests for `cadet client`'s arg parsing: the assistant comes from the
+ * positional name or the active assistant — there is no --url/--token escape
+ * hatch. What remains overridable is the assistant id segment.
  */
 import {
   afterAll,
@@ -17,24 +18,28 @@ import { join } from "node:path";
 // NB: do NOT mock.module("../lib/guardian-token.js") here — that mock is
 // process-global in Bun and leaks into other test files (it dropped the
 // module's other exports and broke guardian-token-paths / setup suites in CI).
-// The "--token skips the credential lookup" behavior is enforced structurally
-// in parseArgs (the lookup is gated on the override) and reviewed there.
 
-// An EMPTY temp dir so there is no lockfile entry — the ephemeral path must
-// work without one. Env mutation is scoped to each test and restored after, so
-// it can't leak into other test files in the same Bun run.
 const testDir = mkdtempSync(join(tmpdir(), "client-token-test-"));
 const ORIGINAL_XDG_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
 import { parseArgs } from "../commands/client.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 
-// A clearly non-local URL so maybeSwapToLocalhost won't rewrite it to 127.0.0.1.
-const REMOTE_URL = "http://192.0.2.50:7830";
+// A clearly non-local recorded host so getGatewayUrl yields a remote URL
+// and the test pins that the runtime URL comes from the ENTRY, not flags.
+const ENTRY = {
+  assistantId: "remote-xyz",
+  name: "Remote Pal",
+  cloud: "custom" as const,
+  ipAddress: "192.0.2.50",
+  port: 7830,
+};
 
-describe("client --token (ephemeral)", () => {
+describe("client arg parsing", () => {
   beforeEach(() => {
     process.env.XDG_CONFIG_HOME = testDir;
+    saveLockfileAssistant(ENTRY);
   });
 
   afterEach(() => {
@@ -50,38 +55,29 @@ describe("client --token (ephemeral)", () => {
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  test("--url + --token resolves to a bearer session with no lockfile entry", () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "client",
-      "--url",
-      REMOTE_URL,
-      "--token",
-      "test-jwt-token",
-    ];
+  test("the runtime URL and bearer come from the entry's persisted state", () => {
+    process.argv = ["bun", "cadet", "client", "Remote Pal"];
     const parsed = parseArgs();
 
-    expect(parsed.runtimeUrl).toBe(REMOTE_URL);
-    expect(parsed.assistantId).toBe("self"); // DAEMON_INTERNAL_ASSISTANT_ID
-    expect(parsed.bearerToken).toBe("test-jwt-token");
+    expect(parsed.runtimeUrl).toBe("https://192.0.2.50:7830");
+    expect(parsed.assistantId).toBe("remote-xyz");
+    expect(parsed.assistantName).toBe("Remote Pal");
+    // No stored guardian token was seeded, so no bearer is invented.
+    expect(parsed.bearerToken).toBeUndefined();
     expect(parsed.cloudToken).toBeUndefined();
   });
 
-  test("--assistant-id overrides the default 'self' segment", () => {
+  test("--assistant-id overrides the entry's id segment", () => {
     process.argv = [
       "bun",
       "cadet",
       "client",
-      "--url",
-      REMOTE_URL,
-      "--token",
-      "tok",
+      "Remote Pal",
       "--assistant-id",
-      "remote-xyz",
+      "remote-abc",
     ];
     const parsed = parseArgs();
-    expect(parsed.assistantId).toBe("remote-xyz");
-    expect(parsed.bearerToken).toBe("tok");
+    expect(parsed.assistantId).toBe("remote-abc");
+    expect(parsed.assistantName).toBeUndefined();
   });
 });

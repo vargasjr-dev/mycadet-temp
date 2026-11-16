@@ -1,10 +1,7 @@
 import { resolveAssistant } from "../lib/assistant-config.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand, loadFreshGuardianToken } from "@mycadet/local-mode";
-import {
-  ensureProviderApiKey,
-  formatProviderName,
-} from "@mycadet/local-mode";
+import { ensureProviderApiKey, formatProviderName } from "@mycadet/local-mode";
 import { yellow } from "../lib/color.js";
 
 function parseSetupArgs(args: string[]): { provider?: string } {
@@ -126,9 +123,6 @@ export const setup = Object.assign(
     }
 
     const gatewayUrl = getGatewayUrl(entry);
-    // The one door: a fresh stored lease comes back unchanged; a due one
-    // re-invokes the pair flow and persists the fresh pair; a failed re-pair
-    // still hands back the stored token when it has life left.
     const freshToken = await loadFreshGuardianToken(entry.assistantId);
     const bearerToken = freshToken?.accessToken;
 

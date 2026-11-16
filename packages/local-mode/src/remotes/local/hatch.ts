@@ -21,7 +21,7 @@ import { findAvailablePort, getDefaultPorts } from "../../ports";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
-  webviewCookieFeed,
+  getGuardianTokenAsCookies,
 } from "../../guardian-token";
 import { configureHatchProviderApiKey } from "../../provider-credentials";
 import { readCloudToken } from "../../cloud-auth";
@@ -195,7 +195,7 @@ export async function hatchLocal(params: {
       // hatch response so the page's requests authenticate through the
       // gateway's own middleware. Same host as this response (loopback), so
       // the host-scoped jar applies.
-      cookies.push(...webviewCookieFeed(tokenData));
+      cookies.push(...getGuardianTokenAsCookies(tokenData));
       break;
     } catch (err) {
       if (

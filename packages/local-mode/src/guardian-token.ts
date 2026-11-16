@@ -353,7 +353,7 @@ export function guardianTokenDueForRenewal(token: GuardianTokenData): boolean {
  * host-scoped, so a remote gateway's origin (baseten's preview URL) can
  * never see this jar.
  */
-export function webviewCookieFeed(token: GuardianTokenData): string[] {
+export function getGuardianTokenAsCookies(token: GuardianTokenData): string[] {
   return [
     `cadet_web_access=${encodeURIComponent(token.accessToken)}; HttpOnly; Path=/; SameSite=Strict`,
     `cadet_web_refresh=${encodeURIComponent(token.refreshToken)}; HttpOnly; Path=/; SameSite=Strict`,

@@ -27,7 +27,7 @@ import {
 } from "../../ports";
 import {
   leaseGuardianToken,
-  webviewCookieFeed,
+  getGuardianTokenAsCookies,
   type GuardianTokenData,
 } from "../../guardian-token";
 import type { HatchAssistantResult } from "../../operations/types";
@@ -967,7 +967,7 @@ export async function hatchDocker(
       // The lease's fresh pair IS the webview's jar, same as the local leg:
       // the docker gateway answers on the same host as this response
       // (loopback port map), so the host-scoped jar applies.
-      cookies: guardianToken ? webviewCookieFeed(guardianToken) : [],
+      cookies: guardianToken ? getGuardianTokenAsCookies(guardianToken) : [],
     };
   } catch (error) {
     return {

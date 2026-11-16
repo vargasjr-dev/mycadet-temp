@@ -1,7 +1,6 @@
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   findAssistantByName,
-  resolveAssistant,
   resolveConversationKey,
 } from "../lib/assistant-config";
 import {
@@ -15,7 +14,6 @@ import {
   readCloudToken,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
-import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 
 import { normalizeRuntimeUrl } from "../lib/runtime-url";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
@@ -50,12 +48,8 @@ export function parseArgs(): ParsedArgs {
   const args = process.argv.slice(3);
 
   const positionalName = parseAssistantTargetArg(args, [
-    "--url",
-    "-u",
     "--assistant-id",
     "-a",
-    "--token",
-    "-t",
   ]);
   const flagArgs: string[] = [];
   for (let i = 0; i < args.length; i++) {
@@ -63,21 +57,12 @@ export function parseArgs(): ParsedArgs {
     if (arg === "--help" || arg === "-h") {
       printUsage();
       process.exit(0);
-    } else if (
-      (arg === "--url" ||
-        arg === "-u" ||
-        arg === "--assistant-id" ||
-        arg === "-a" ||
-        arg === "--token" ||
-        arg === "-t") &&
-      args[i + 1]
-    ) {
+    } else if ((arg === "--assistant-id" || arg === "-a") && args[i + 1]) {
       flagArgs.push(arg, args[++i]);
     }
   }
 
   let entry: LockfileAssistant | null = null;
-  const hasExplicitUrl = flagArgs.includes("--url") || flagArgs.includes("-u");
   if (positionalName) {
     const result = lookupAssistantByIdentifier(positionalName);
     if (result.status !== "found") {
@@ -92,76 +77,44 @@ export function parseArgs(): ParsedArgs {
       if (result.status === "found") {
         entry = result.entry;
       }
-      if (!entry && !hasExplicitUrl) {
+      if (!entry) {
         console.error(
           `Active assistant '${active}' not found in lockfile. Set an active assistant with 'cadet use <name-or-id>'.`,
         );
         process.exit(1);
       }
     }
-    if (!entry && hasExplicitUrl) {
-      // URL provided but active assistant missing or unset — resolve for remaining defaults
-      entry = resolveAssistant();
-    } else if (!entry) {
+    if (!entry) {
       console.error(
         "No active assistant set. Set one with 'cadet use <name-or-id>' or specify one: 'cadet client <name-or-id>'.",
       );
       process.exit(1);
     }
   }
-
-  if (!entry && !hasExplicitUrl) {
+  if (!entry) {
     console.error("No assistant found. Hatch one first with 'cadet hatch'.");
     process.exit(1);
   }
 
-  // An explicit --url with no lockfile entry is the ephemeral session (the
-  // handed-over --token authenticates it) — the overrides below supply the
-  // url and the "self" assistant id, so no entry is required.
-  let runtimeUrl = entry
-    ? getGatewayUrl(entry)
-    : `http://127.0.0.1:${GATEWAY_PORT}`;
-  let assistantId = entry?.assistantId ?? DAEMON_INTERNAL_ASSISTANT_ID;
-  let assistantName = entry ? getAssistantDisplayName(entry) : undefined;
-  const cloud = entry?.cloud;
-
-  // Ephemeral auth: a handed-over token (e.g. from `cadet pair`) used for this
-  // session only. Resolve it BEFORE the credential lookup below so an ephemeral
-  // session never reads (or writes) the local token store.
-  let bearerTokenOverride: string | undefined;
-  for (let i = 0; i < flagArgs.length; i++) {
-    if (
-      (flagArgs[i] === "--token" || flagArgs[i] === "-t") &&
-      flagArgs[i + 1]
-    ) {
-      bearerTokenOverride = flagArgs[i + 1];
-    }
-  }
+  const runtimeUrl = getGatewayUrl(entry);
+  let assistantId = entry.assistantId;
+  let assistantName: string | undefined = getAssistantDisplayName(entry);
+  const cloud = entry.cloud;
 
   // Platform-hosted assistants (cloud "cadet") use a session token; every
-  // other topology — local, docker, and "paired" (a remote assistant paired
-  // from another machine) — uses a bearer guardian JWT. Both are skipped
-  // entirely when --token supplies the credential, so no saved creds are read.
-  const cloudToken = bearerTokenOverride
-    ? undefined
-    : cloud === "cloud"
-      ? (readCloudToken() ?? undefined)
-      : undefined;
-  const bearerToken = bearerTokenOverride
-    ? bearerTokenOverride
-    : cloud === "cloud"
+  // other topology — local, docker, and "paired" — uses a bearer guardian JWT.
+  const cloudToken =
+    cloud === "cloud" ? (readCloudToken() ?? undefined) : undefined;
+  const bearerToken =
+    cloud === "cloud"
       ? undefined
-      : (loadGuardianToken(entry?.assistantId ?? "")?.accessToken ?? undefined);
+      : (loadGuardianToken(entry.assistantId)?.accessToken ?? undefined);
 
   for (let i = 0; i < flagArgs.length; i++) {
     const flag = flagArgs[i];
-    if ((flag === "--url" || flag === "-u") && flagArgs[i + 1]) {
-      runtimeUrl = flagArgs[++i];
-    } else if (
-      (flag === "--assistant-id" || flag === "-a") &&
-      flagArgs[i + 1]
-    ) {
-      assistantId = flagArgs[++i];
+    const value = flagArgs[i + 1];
+    if ((flag === "--assistant-id" || flag === "-a") && value) {
+      assistantId = value;
       assistantName = undefined;
     }
   }
@@ -186,24 +139,12 @@ ${ANSI.bold}ARGUMENTS:${ANSI.reset}
     [name-or-id]               Assistant display name or ID (default: active)
 
 ${ANSI.bold}OPTIONS:${ANSI.reset}
-    -u, --url <url>            Runtime URL
-    -t, --token <jwt>          Bearer token to use for this session (e.g. from
-                              'cadet pair'). Overrides the stored token and is
-                              not persisted.
     -a, --assistant-id <id>    Assistant ID
     -h, --help                 Show this help message
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}
     cadet client
     cadet client mycadet-foo
-    # Remote assistants must be reached over https (e.g. a tunnel) — the
-    # guardian refresh token is only sent over https or a loopback address:
-    cadet client --url https://your-tunnel.example
-    cadet client mycadet-foo --url http://localhost:${GATEWAY_PORT}
-
-    # Ephemeral: connect to another machine's assistant with a paired token
-    # (no lockfile entry, nothing persisted):
-    cadet client --url https://your-tunnel.example --token <jwt>
 
 `);
 }
@@ -280,16 +221,7 @@ export const client = Object.assign(
         ...getClientRegistrationHeaders(CLI_INTERFACE_ID),
       };
     } else {
-      // Proactively renew a stale STORED guardian token before opening the
-      // TUI, so launching after the access token expired renews transparently
-      // rather than erroring. The one door: a fresh stored lease comes back
-      // unchanged, a due one re-invokes the pair flow, and a failed re-pair
-      // still hands back the stored token when it has life left. A
-      // caller-supplied `--token` survives (the pair flow talks only to the
-      // lockfile's persisted entry, and a null door result falls back to it).
-      // (Mid-session expiry — the token dying while the TUI is already open —
-      // is a separate follow-up, since the TUI threads a static auth object
-      // through React.)
+      // Renew a stale stored lease through the one door before the TUI opens.
       const fresh = await loadFreshGuardianToken(assistantId);
       const token = fresh?.accessToken ?? bearerToken;
       auth = {
