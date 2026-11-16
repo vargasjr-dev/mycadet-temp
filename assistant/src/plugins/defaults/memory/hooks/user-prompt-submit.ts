@@ -53,6 +53,7 @@ import {
 import { resolveTrustClass } from "../../../../daemon/trust-context.js";
 import { timeLatencySubSpan } from "../../../../daemon/turn-latency-sub-spans.js";
 import { broadcastMessage } from "../../../../runtime/assistant-event-hub.js";
+import { isMemoryInjectionOff } from "../conversation-mode-store.js";
 import type { GraphMemoryResult } from "../graph/conversation-graph-memory.js";
 import { recordMemoryRecallLog } from "../memory-recall-log-store.js";
 import { stripTailInjectionsForReinjection } from "../tail-reinjection-strip.js";
@@ -277,10 +278,15 @@ const userPromptSubmitMemoryRetrieval: HookFunction<
   // fallback — a v3 empty/failed selection yields no NEW injected memory that
   // turn (prior turns' frozen v3 sections still ride history).
   const memoryV3Live = isMemoryV3Live(config);
-  const retrieveMemory = shouldRetrieveTurnMemory({
-    callSite: conversation?.currentCallSite,
-    skipMemoryRetrieval: conversation?.currentTurnSkipMemoryRetrieval,
-  });
+  const retrieveMemory =
+    shouldRetrieveTurnMemory({
+      callSite: conversation?.currentCallSite,
+      skipMemoryRetrieval: conversation?.currentTurnSkipMemoryRetrieval,
+    }) &&
+    // Per-conversation opt-out (plugin-owned): a conversation whose memory
+    // mode is "off" gets no fresh retrieval of any engine this turn. The
+    // static/PKB injectors gate on the same store, so nothing injects.
+    !isMemoryInjectionOff(ctx.conversationId);
   if (!retrieveMemory && conversation) {
     conversation.graphMemory.recordPkbQueryVectors(undefined, undefined);
   }

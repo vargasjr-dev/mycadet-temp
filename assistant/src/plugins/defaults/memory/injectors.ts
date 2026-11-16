@@ -37,6 +37,7 @@ import {
 import { hasInjectedUserTextBlock } from "../injection-presence.js";
 import { DEFAULT_INJECTOR_ORDER } from "../injector-order.js";
 import { getMemoryConfig } from "./config.js";
+import { isMemoryInjectionOff } from "./conversation-mode-store.js";
 import { getLiveGraphMemory } from "./graph/conversation-graph-memory.js";
 import { getLogger } from "./logging.js";
 import { getSandboxWorkingDir } from "./paths.js";
@@ -115,6 +116,11 @@ const pkbContextInjector: Injector = {
       return null;
     }
     if (isPkbInjectionSilenced()) {
+      return null;
+    }
+    // Per-conversation opt-out (plugin-owned store): PKB context is personal
+    // memory content, so an opted-out conversation gets none.
+    if (isMemoryInjectionOff(ctx.conversationId)) {
       return null;
     }
     const content = readGatedPkbContext(ctx.trust);
@@ -372,6 +378,11 @@ const memoryV2StaticInjector: Injector = {
   ): Promise<InjectionBlock | null> {
     const mode = ctx.mode ?? "full";
     if (mode !== "full") {
+      return null;
+    }
+    // Per-conversation opt-out (plugin-owned store): an opted-out
+    // conversation gets no static memory block on any turn.
+    if (isMemoryInjectionOff(ctx.conversationId)) {
       return null;
     }
     // The consolidation run already carries its pass's buffer entries in

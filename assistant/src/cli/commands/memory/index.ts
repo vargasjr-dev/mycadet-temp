@@ -9,6 +9,7 @@ import { registerMemoryRetrospectiveCommand } from "./memory-retrospective.js";
 import { registerMemoryV2Command } from "./memory-v2.js";
 import { registerMemoryV3Command } from "./memory-v3.js";
 import { registerMemoryValidateCommand } from "./memory-validate.js";
+import { registerMemoryModeCommand } from "./memory-mode.js";
 import { registerMemoryNodesCommand } from "./nodes.js";
 import { registerMemoryWorkerCommand } from "./worker.js";
 
@@ -26,6 +27,7 @@ export function registerMemoryCommand(program: Command): void {
       registerMemoryV3Command(memory);
       registerMemoryIngestCommand(memory);
       registerMemoryValidateCommand(memory);
+      registerMemoryModeCommand(memory);
       registerMemoryRetrospectiveCommand(memory);
       registerMemoryWorkerCommand(memory);
     },
