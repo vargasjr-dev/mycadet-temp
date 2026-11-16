@@ -238,6 +238,7 @@ export {
   getGuardianAccessToken,
   isConfidentialRefreshUrl,
   saveGuardianToken,
+  getGuardianTokenAsCookies,
   loadGuardianToken,
 } from "./guardian-token";
 export type { TokenResult, GuardianTokenData } from "./guardian-token";

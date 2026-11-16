@@ -10,6 +10,8 @@ import { getDeviceId } from "./device-id";
 import {
   forwardOperatorRequest,
   getGuardianAccessToken,
+  getGuardianTokenAsCookies,
+  loadGuardianToken,
   readLockfile,
   resolveLocalConfigFromEnv,
   servedConfigFromLockfile,
@@ -31,10 +33,24 @@ const RENDERER_MOUNT = "/assistant";
 const HATCH_PATH = "/v1/assistants/hatch";
 
 /**
- * The gateway's browser access cookie (#576 cookie custody): the webview
- * presents it and the gateway's edge never needs a token in page JS.
+ * The lease's pair as the webview's jar entries — the same feed the hatch
+ * response ships as Set-Cookie headers (which Electron's protocol handler
+ * does not store), crossed into the session's cookie jar here instead.
  */
-const GATEWAY_ACCESS_COOKIE = "cadet_web_access";
+function leaseCookieJarEntries(assistantId: string): Promise<string[]> {
+  // The stored pair (local/docker) ships whole — both jar entries the
+  // gateway's own feed spells. Baseten holds a sandbox token instead of a
+  // guardian pair: the access half alone still authenticates the dials.
+  const pair = loadGuardianToken?.(assistantId);
+  if (pair) return Promise.resolve(getGuardianTokenAsCookies(pair));
+  return getGuardianAccessToken(assistantId).then((result) =>
+    result.ok
+      ? [
+          `cadet_web_access=${encodeURIComponent(result.accessToken)}; HttpOnly; Path=/; SameSite=Strict`,
+        ]
+      : [],
+  );
+}
 
 /** The cookie jar the webview's requests ride (Electron's `Cookies`). */
 export interface PairingCookieSink {
@@ -99,12 +115,9 @@ export async function shipPairingCookie(
   request: Request,
   response: Response,
   sink: PairingCookieSink,
-  accessToken: (assistantId: string) => Promise<string | null> = async (
+  accessTokenCookies: (assistantId: string) => Promise<string[]> = async (
     assistantId,
-  ) => {
-    const result = await getGuardianAccessToken(assistantId);
-    return result.ok ? result.accessToken : null;
-  },
+  ) => leaseCookieJarEntries(assistantId),
 ): Promise<void> {
   const url = new URL(request.url);
   if (request.method !== "POST" || url.pathname !== HATCH_PATH) {
@@ -119,26 +132,33 @@ export async function shipPairingCookie(
   if (!assistantId) {
     return;
   }
-  let token: string | null = null;
+  let cookies: string[] = [];
   try {
-    token = await accessToken(assistantId);
+    cookies = await accessTokenCookies(assistantId);
   } catch (err) {
     log.warn("[pairing-cookie] guardian token read failed:", err);
     return;
   }
-  if (!token) {
-    return;
-  }
-  try {
-    await sink.set({
-      url: `${APP_PROTOCOL}://${APP_HOST}/`,
-      name: GATEWAY_ACCESS_COOKIE,
-      value: token,
-      httpOnly: true,
-      path: "/",
-    });
-  } catch (err) {
-    log.warn("[pairing-cookie] cookie set failed:", err);
+  for (const cookie of cookies) {
+    // Each feed entry is the gateway's own Set-Cookie spelling:
+    // name=<value>; attrs.
+    const eq = cookie.indexOf("=");
+    const semi = cookie.indexOf(";");
+    if (eq <= 0) continue;
+    const name = cookie.slice(0, eq).trim();
+    const value = cookie.slice(eq + 1, semi === -1 ? undefined : semi).trim();
+    if (!name || !value) continue;
+    try {
+      await sink.set({
+        url: `${APP_PROTOCOL}://${APP_HOST}/`,
+        name,
+        value,
+        httpOnly: cookie.toLowerCase().includes("httponly"),
+        path: "/",
+      });
+    } catch (err) {
+      log.warn("[pairing-cookie] cookie set failed:", err);
+    }
   }
 }
 
