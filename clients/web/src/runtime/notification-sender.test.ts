@@ -28,7 +28,7 @@ function identity(
     throw new Error("test identity must be valid");
   }
   return result;
-};
+}
 
 function resolve(overrides: Partial<ResolveNotificationSenderInput> = {}) {
   const owner = identity("assistant-a");

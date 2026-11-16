@@ -58,9 +58,7 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
 import { useViewerStore } from "@/stores/viewer-store";
-import {
-  useAssistantAvatar,
-} from "@/hooks/use-assistant-avatar";
+import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useAvatarAccentVar } from "@/hooks/use-avatar-accent-var";
 import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useCompanionMirror } from "@/domains/chat/hooks/use-companion-mirror";
