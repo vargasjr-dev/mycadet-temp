@@ -145,10 +145,10 @@ describe("getCloudBaseUrl resolution order", () => {
     expect(getCloudBaseUrl()).toBe("https://env.mycadet.ai");
   });
 
-  test("falls back to the dev seed when no environment is set", () => {
-    // CADET_ENVIRONMENT is unset → the dev seed (the env-only reader's
-    // fallback — browser bundles have no channel file to consult).
-    expect(getCloudBaseUrl()).toBe("https://dev.mycadet.ai");
+  test("falls back to production when nothing signals an environment", () => {
+    // No CADET_ENVIRONMENT, no version channel suffix, no persisted default —
+    // resolveEnvironmentName's last step is the production seed.
+    expect(getCloudBaseUrl()).toBe("https://mycadet.ai");
   });
 
   test("falls back to the dev seed URL when CADET_ENVIRONMENT=dev", () => {
