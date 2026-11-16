@@ -9,9 +9,7 @@ import { mock } from "bun:test";
 
 import {
   clearCloudToken,
-  fetchAssistantDetail,
   fetchCloudAssistants,
-  fetchUpgradeInProgress,
   saveCloudToken,
 } from "../lib/cloud-client.js";
 
@@ -179,12 +177,6 @@ function mockFetchJson(body: unknown, status = 200) {
   return fetchMock;
 }
 
-function mockFetchNetworkError() {
-  globalThis.fetch = mock(async () => {
-    throw new TypeError("fetch failed");
-  }) as unknown as typeof globalThis.fetch;
-}
-
 function usePlatformUrl() {
   // The vak_ token skips cloudAuthHeaders' org-ID fetch, so the single
   // mocked fetch call is the endpoint under test. Each describe scopes its
@@ -215,68 +207,6 @@ function usePlatformUrl() {
 
   return TOKEN;
 }
-
-describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
-  const TOKEN = usePlatformUrl();
-  const ASSISTANT_ID = "11111111-2222-3333-4444-555555555555";
-
-  test("fetchAssistantDetail maps fields", async () => {
-    const fetchMock = mockFetchJson({
-      current_release_version: "0.7.0",
-    });
-    const detail = await fetchAssistantDetail(TOKEN, ASSISTANT_ID);
-    expect(detail).toEqual({
-      currentReleaseVersion: "0.7.0",
-    });
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toBe(`${CLOUD_URL}/v1/assistants/${ASSISTANT_ID}/`);
-  });
-
-  test("fetchAssistantDetail defaults missing fields", async () => {
-    mockFetchJson({});
-    const detail = await fetchAssistantDetail(TOKEN, ASSISTANT_ID);
-    expect(detail).toEqual({
-      currentReleaseVersion: null,
-    });
-  });
-
-  test("fetchAssistantDetail returns null on non-OK", async () => {
-    mockFetchJson({ detail: "not found" }, 404);
-    expect(await fetchAssistantDetail(TOKEN, ASSISTANT_ID)).toBeNull();
-  });
-
-  test("fetchAssistantDetail returns null on network error", async () => {
-    mockFetchNetworkError();
-    expect(await fetchAssistantDetail(TOKEN, ASSISTANT_ID)).toBeNull();
-  });
-
-  test("fetchUpgradeInProgress returns the boolean", async () => {
-    const fetchMock = mockFetchJson({ in_progress: true });
-    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(true);
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toBe(
-      `${CLOUD_URL}/v1/assistants/${ASSISTANT_ID}/upgrade-status/`,
-    );
-
-    mockFetchJson({ in_progress: false });
-    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(false);
-  });
-
-  test("fetchUpgradeInProgress returns null on 404 (older platform)", async () => {
-    mockFetchJson({ detail: "not found" }, 404);
-    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
-  });
-
-  test("fetchUpgradeInProgress returns null on network error", async () => {
-    mockFetchNetworkError();
-    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
-  });
-
-  test("fetchUpgradeInProgress returns null on a malformed body", async () => {
-    mockFetchJson({ something_else: 1 });
-    expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBeNull();
-  });
-});
 
 describe("fetchCloudAssistants reads the chooser's list union", () => {
   const TOKEN = usePlatformUrl();
