@@ -59,7 +59,6 @@ import { useConversationStore } from "@/stores/conversation-store";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
 import { useViewerStore } from "@/stores/viewer-store";
 import {
-  resolveAssistantNotificationCloudId,
   useAssistantAvatar,
 } from "@/hooks/use-assistant-avatar";
 import { useAvatarAccentVar } from "@/hooks/use-avatar-accent-var";
@@ -147,8 +146,6 @@ export function RootLayout() {
   const notificationScopeId = resolveNotificationIdentityScope(
     activeAssistant?.assistantId ?? null,
   );
-  const notificationCloudAssistantId =
-    resolveAssistantNotificationCloudId(activeAssistant);
   const activeConversationId = useConversationStore.use.activeConversationId();
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
@@ -244,8 +241,6 @@ export function RootLayout() {
     avatar.traits,
     avatar.accentHex,
     {
-      scopeId: notificationScopeId,
-      cloudAssistantId: notificationCloudAssistantId,
       assistantName: notificationName?.name ?? null,
       assistantNameOwner: notificationName?.owner ?? null,
       avatarOwner: avatar.owner ?? null,

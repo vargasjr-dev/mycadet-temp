@@ -28,18 +28,12 @@ import {
 const OPAQUE_SCOPE_PATTERN = /^scope:v1:[a-f0-9]{64}$/;
 const HASH = "a".repeat(64);
 const AVATAR = { avatarBase64: "iVBORw==", avatarHash: HASH };
-const PLATFORM_ASSISTANT_ID = "00000000-0000-4000-8000-000000000001";
 
 function identity(
   assistantId: string,
   scopeId = "connection:one",
-  cloudAssistantId?: string,
 ): NotificationIdentity {
-  const result = createNotificationIdentity(
-    scopeId,
-    assistantId,
-    cloudAssistantId,
-  );
+  const result = createNotificationIdentity(scopeId, assistantId);
   if (!result) {
     throw new Error("test identity must be valid");
   }
@@ -62,35 +56,21 @@ describe("notification identities", () => {
     expect(scope).toMatch(OPAQUE_SCOPE_PATTERN);
     expect(scope).not.toContain("asst-1");
   });
-  test("keeps platform sender ids and namespaces local ids unambiguously", () => {
-    const platform = identity(
-      "local-assistant",
-      "connection:one",
-      PLATFORM_ASSISTANT_ID,
-    );
+  test("uses the assistant id as the native sender, scoped per connection", () => {
+    const platform = identity("assistant-a", "connection:one");
     const local = identity("self", "connection:one");
     const reloaded = identity("self", "connection:one");
     const otherConnection = identity("self", "connection:two");
 
-    expect(platform.nativeSenderId).toBe(PLATFORM_ASSISTANT_ID);
+    // The scope already namespaces per assistant and origin, so the native
+    // sender is the assistant id itself — distinct assistants get distinct
+    // senders and re-resolving is stable across reloads.
+    expect(platform.nativeSenderId).toBe("assistant-a");
+    expect(local.nativeSenderId).toBe("self");
     expect(local.nativeSenderId).toBe(reloaded.nativeSenderId);
-    expect(local.nativeSenderId).not.toBe(otherConnection.nativeSenderId);
-    expect(identity("c", "a:b").nativeSenderId).not.toBe(
-      identity("b:c", "a").nativeSenderId,
-    );
+    expect(local.scopeId).toBe(reloaded.scopeId);
+    expect(otherConnection.scopeId).not.toBe(local.scopeId);
     expect(createNotificationIdentity(" ", "self")).toBeNull();
-  });
-
-  test("rejects a non-UUID platform sender id in the runtime constructor", () => {
-    const invalidPlatform = identity(
-      "assistant-a",
-      "connection:one",
-      "not-a-platform-uuid",
-    );
-    const local = identity("assistant-a", "connection:one");
-
-    expect(invalidPlatform.nativeSenderId).toBe(local.nativeSenderId);
-    expect(invalidPlatform.nativeSenderId).not.toBe("not-a-platform-uuid");
   });
 
   test("uses scope and assistant together as the snapshot owner", () => {
@@ -180,15 +160,10 @@ describe("notification identities", () => {
     });
   });
 
-  test("rejects stale revisions and accepts a newer native sender mapping", () => {
-    const localOwner = identity("assistant-a");
-    const platformOwner = identity(
-      "assistant-a",
-      "connection:one",
-      PLATFORM_ASSISTANT_ID,
-    );
+  test("rejects stale revisions and accepts a newer revision of one identity", () => {
+    const owner = identity("assistant-a");
     publishNotificationIdentitySnapshot({
-      identity: localOwner,
+      identity: owner,
       scopeEpoch: 1,
       identityRevision: 4,
       name: "Current",
@@ -198,31 +173,27 @@ describe("notification identities", () => {
 
     expect(
       publishNotificationIdentitySnapshot({
-        identity: platformOwner,
+        identity: owner,
         scopeEpoch: 1,
         identityRevision: 3,
         name: "Stale",
         nameProvenance: "event",
       }),
     ).toBe(false);
-    expect(getNotificationIdentitySnapshot(localOwner)?.name).toBe("Current");
+    expect(getNotificationIdentitySnapshot(owner)?.name).toBe("Current");
 
     expect(
       publishNotificationIdentitySnapshot({
-        identity: platformOwner,
+        identity: owner,
         scopeEpoch: 1,
         identityRevision: 5,
-        name: "Mapped",
+        name: "Current",
         nameProvenance: "identity-store",
       }),
     ).toBe(true);
-    expect(getNotificationIdentitySnapshot(localOwner)).toBeNull();
-    expect(getNotificationIdentitySnapshot(platformOwner)).toMatchObject({
-      name: "Mapped",
+    expect(getNotificationIdentitySnapshot(owner)).toMatchObject({
+      name: "Current",
     });
-    expect(getNotificationIdentitySnapshot(platformOwner)).not.toHaveProperty(
-      "avatar",
-    );
   });
 
   test("resets one owner without clearing its sibling", () => {

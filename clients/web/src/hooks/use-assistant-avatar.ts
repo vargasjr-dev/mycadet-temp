@@ -21,8 +21,6 @@ import type {
   CharacterTraits,
 } from "@/types/avatar";
 import { resolveAvatarAccentHex } from "@/utils/avatar-accent";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
-import { isUuid } from "@/utils/uuid";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 export const AVATAR_QUERY_KEY_PREFIX = "assistantAvatar";
@@ -87,17 +85,6 @@ export function releaseAssistantAvatarUrl(assistantId: string): void {
 }
 
 /** Resolve the cloud UUID shared by remote and local sender identities. */
-export function resolveAssistantNotificationCloudId(
-  assistant: LockfileAssistant | null | undefined,
-): string | null {
-  if (assistant?.cloudAssistantId && isUuid(assistant.cloudAssistantId)) {
-    return assistant.cloudAssistantId;
-  }
-  return assistant?.cloud === "cloud" && isUuid(assistant.assistantId)
-    ? assistant.assistantId
-    : null;
-}
-
 interface AvatarOwner {
   assistantId: string;
   scopeId: string;

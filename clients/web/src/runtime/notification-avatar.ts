@@ -1,5 +1,4 @@
 import { encodeBase64Bytes } from "@/utils/base64";
-import { isUuid } from "@/utils/uuid";
 import {
   NOTIFICATION_AVATAR_BASE64_MAX_CHARS,
   NOTIFICATION_AVATAR_HASH_PATTERN,
@@ -224,57 +223,27 @@ function sha256Text(value: string): string {
   );
 }
 
-/** Derive an opaque deterministic scope without exposing its trusted inputs. */
-function compactStableHash(value: string): string {
-  const hashes = [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35];
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index);
-    for (let lane = 0; lane < hashes.length; lane++) {
-      hashes[lane] = Math.imul(hashes[lane]! ^ code, 0x01000193) >>> 0;
-    }
-  }
-  return hashes.map((hash) => hash.toString(16).padStart(8, "0")).join("");
-}
-
-function localNativeSenderId(scopeId: string, assistantId: string): string {
-  const owner = JSON.stringify([scopeId, assistantId]);
-  const encoded = encodeBase64Bytes(new TextEncoder().encode(owner))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-  const namespaced = `local:${encoded}`;
-  if (namespaced.length <= NOTIFICATION_IDENTITY_MAX_CHARS) {
-    return namespaced;
-  }
-  return `local:hash:${compactStableHash(owner)}`;
-}
-
 /**
  * Build the routing identity captured before notification work becomes async.
- * A platform id stays byte-for-byte compatible with remote notifications;
- * local ids are namespaced by their connection scope.
+ * The native sender id is the assistant id itself; the scope namespaces per
+ * connection.
  */
 export function createNotificationIdentity(
   scopeId: string,
   assistantId: string,
-  cloudAssistantId?: string | null,
 ): NotificationIdentity | null {
   const normalizedScopeId = boundedIdentityPart(scopeId);
   const normalizedAssistantId = boundedIdentityPart(assistantId);
-  const platformIdCandidate = cloudAssistantId?.trim();
-  const normalizedCloudId =
-    platformIdCandidate && isUuid(platformIdCandidate)
-      ? platformIdCandidate
-      : null;
   if (!normalizedScopeId || !normalizedAssistantId) {
     return null;
   }
   return {
     scopeId: normalizedScopeId,
     assistantId: normalizedAssistantId,
-    nativeSenderId:
-      normalizedCloudId ??
-      localNativeSenderId(normalizedScopeId, normalizedAssistantId),
+    // The scope already namespaces per assistant and origin, so the native
+    // sender is the assistant id itself — no separate platform/cloud id and
+    // no local re-derivation.
+    nativeSenderId: normalizedAssistantId,
   };
 }
 

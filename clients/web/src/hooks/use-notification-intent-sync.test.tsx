@@ -289,7 +289,7 @@ describe("useNotificationIntentSync", () => {
     expect(postedArgs[0]?.identity).toEqual({
       scopeId: platformScopeId(),
       assistantId: "assistant-1",
-      nativeSenderId: PLATFORM_ASSISTANT_ID,
+      nativeSenderId: "assistant-1",
     });
     expect(postedArgs[0]?.identity?.scopeId).not.toContain("account-1");
     expect(postedArgs[0]?.identity?.scopeId).not.toContain("org-1");
@@ -432,7 +432,7 @@ describe("useNotificationIntentSync", () => {
       scopeId: resolveNotificationIdentityScope(assistantA.assistantId),
       assistantId: assistantA.assistantId,
     });
-    expect(originA?.nativeSenderId.startsWith("local:")).toBe(true);
+    expect(originA?.nativeSenderId).toBe(assistantA.assistantId);
     expect(postedArgs[0]?.assistantId).toBe(assistantA.assistantId);
     expect(postedArgs[0]?.assistantName).toBe("Origin A");
   });

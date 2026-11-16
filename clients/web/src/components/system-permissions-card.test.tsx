@@ -29,20 +29,10 @@ let preparedSnapshot: {
     avatarHash: "b".repeat(64),
   },
 };
-const assistants = [
-  {
-    id: "assistant-a",
-    isLocal: false,
-    isCloudHosted: true,
-    isPaired: false,
-  },
-];
-
 const openSystemPermissionSettings = mock(async () => null);
 const requestSystemPermission = mock(async () => null);
 const refresh = mock(async () => state);
 const setDockBadge = mock(() => undefined);
-const resolveAssistantAvatarOwnerScopeId = mock(() => ownerScopeId);
 
 function item(
   kind: SystemPermissionKind,
@@ -102,31 +92,23 @@ mock.module("@/runtime/platform-detection", () => ({
 mock.module("@/stores/resolved-assistant-store", () => ({
   useResolvedAssistantStore: {
     use: {
-      assistant: () =>
-        selectedAssistantId
-          ? { cloud: "local", assistantId: selectedAssistantId, port: 7830 }
-          : null,
+      assistant: () => ({
+        cloud: "local",
+        assistantId: selectedAssistantId ?? "",
+        port: 7830,
+      }),
     },
   },
 }));
 
-mock.module("@/hooks/use-assistant-avatar", () => ({
-  resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationCloudId: () =>
-    "123e4567-e89b-42d3-a456-426614174000",
-}));
-
 mock.module("@/runtime/notification-avatar", () => ({
-  createNotificationIdentity: (
-    scopeId: string,
-    assistantId: string,
-    cloudAssistantId: string,
-  ) => ({
+  createNotificationIdentity: (scopeId: string, assistantId: string) => ({
     scopeId,
     assistantId,
-    nativeSenderId: cloudAssistantId,
+    nativeSenderId: assistantId,
   }),
   getNotificationIdentitySnapshot: () => preparedSnapshot,
+  resolveNotificationIdentityScope: () => ownerScopeId,
 }));
 
 const { SystemPermissionsCard } = await import("./system-permissions-card");
@@ -151,7 +133,6 @@ beforeEach(() => {
   requestSystemPermission.mockClear();
   refresh.mockClear();
   setDockBadge.mockClear();
-  resolveAssistantAvatarOwnerScopeId.mockClear();
 });
 
 afterEach(() => {
@@ -246,23 +227,15 @@ describe("SystemPermissionsCard", () => {
     await waitFor(() => {
       expect(requestSystemPermission).toHaveBeenCalledTimes(1);
     });
-    expect(resolveAssistantAvatarOwnerScopeId).toHaveBeenCalledWith(
-      assistants[0] && {
-        cloud: "local",
-        assistantId: assistants[0].id,
-        port: 7830,
-      },
-      expect.any(String),
-    );
     expect(requestSystemPermission).toHaveBeenCalledWith("notifications", {
       presentation: "assistant",
       identity: {
         scopeId: ownerScopeId,
         assistantId: "assistant-a",
-        nativeSenderId: "123e4567-e89b-42d3-a456-426614174000",
+        nativeSenderId: "assistant-a",
       },
       sender: {
-        id: "123e4567-e89b-42d3-a456-426614174000",
+        id: "assistant-a",
         name: "Alice",
         avatarBase64: preparedSnapshot!.avatar!.avatarBase64,
         avatarHash: preparedSnapshot!.avatar!.avatarHash,
@@ -293,6 +266,5 @@ describe("SystemPermissionsCard", () => {
       expect(requestSystemPermission).toHaveBeenCalledWith("microphone");
     });
     expect(requestSystemPermission.mock.calls[0]).toHaveLength(1);
-    expect(resolveAssistantAvatarOwnerScopeId).not.toHaveBeenCalled();
   });
 });

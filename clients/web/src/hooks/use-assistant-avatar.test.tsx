@@ -13,7 +13,6 @@ import type {
 } from "@/types/avatar";
 import {
   avatarQueryKey,
-  resolveAssistantNotificationCloudId,
   shouldRetainAvatarPlaceholder,
   type AvatarData,
 } from "@/hooks/use-assistant-avatar";
@@ -169,28 +168,6 @@ afterEach(() => {
 });
 
 describe("useAssistantAvatar", () => {
-  test("resolves only verified platform UUIDs for notification senders", () => {
-    const platformId = "123e4567-e89b-12d3-a456-426614174000";
-    expect(
-      resolveAssistantNotificationCloudId({
-        ...assistantOne,
-        cloudAssistantId: platformId,
-      }),
-    ).toBe(platformId);
-    expect(
-      resolveAssistantNotificationCloudId({
-        assistantId: platformId,
-        cloud: "cloud",
-      }),
-    ).toBe(platformId);
-    expect(
-      resolveAssistantNotificationCloudId({
-        ...assistantOne,
-        cloudAssistantId: "not-a-uuid",
-      }),
-    ).toBeNull();
-  });
-
   test("does not fetch before an explicit notification owner resolves", async () => {
     const { result } = renderHook(
       () => useAssistantAvatar({ ownerScopeId: null }),

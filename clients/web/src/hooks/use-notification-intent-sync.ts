@@ -29,7 +29,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router";
 
 import { identityGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
-import { resolveAssistantNotificationCloudId } from "@/hooks/use-assistant-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { supportsGuardianNotificationTargeting } from "@/lib/backwards-compat/guardian-notification-targeting";
 import { getSoundManager } from "@/lib/sounds/sound-manager";
@@ -72,13 +71,12 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const scopeId = assistant
     ? resolveNotificationIdentityScope(assistant.assistantId)
     : null;
-  const cloudAssistantId = resolveAssistantNotificationCloudId(assistant);
   const notificationIdentity = useMemo(
     () =>
       assistantId && scopeId
-        ? createNotificationIdentity(scopeId, assistantId, cloudAssistantId)
+        ? createNotificationIdentity(scopeId, assistantId)
         : null,
-    [assistantId, cloudAssistantId, scopeId],
+    [assistantId, scopeId],
   );
 
   const deliveryOwner = useRef(notificationIdentity);

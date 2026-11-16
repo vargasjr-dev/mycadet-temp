@@ -22,18 +22,13 @@ const AVATAR = { avatarBase64: "iVBORw==", avatarHash: HASH };
 function identity(
   assistantId: string,
   scopeId = "connection:one",
-  nativeSenderId = `native:${scopeId}:${assistantId}`,
 ): NotificationIdentity {
-  const result = createNotificationIdentity(
-    scopeId,
-    assistantId,
-    nativeSenderId,
-  );
+  const result = createNotificationIdentity(scopeId, assistantId);
   if (!result) {
     throw new Error("test identity must be valid");
   }
   return result;
-}
+};
 
 function resolve(overrides: Partial<ResolveNotificationSenderInput> = {}) {
   const owner = identity("assistant-a");
@@ -259,32 +254,6 @@ describe("resolveNotificationSender", () => {
       name: "Alice",
       nameProvenance: "identity-store",
     });
-    expect(result).not.toHaveProperty("sender");
-  });
-
-  test("rejects same-key memory carrying another native sender id", () => {
-    const owner = identity(
-      "assistant-a",
-      "connection:one",
-      "11111111-1111-4111-8111-111111111111",
-    );
-    const staleMapping = identity(
-      "assistant-a",
-      owner.scopeId,
-      "22222222-2222-4222-8222-222222222222",
-    );
-    const result = resolve({
-      identity: owner,
-      assistantName: "Alice",
-      verifiedSnapshot: {
-        identity: staleMapping,
-        scopeEpoch: 0,
-        identityRevision: 0,
-        avatar: AVATAR,
-      },
-    });
-
-    expect(result).toMatchObject({ presentation: "assistant", name: "Alice" });
     expect(result).not.toHaveProperty("sender");
   });
 

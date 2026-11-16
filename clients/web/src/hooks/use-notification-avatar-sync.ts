@@ -36,8 +36,6 @@ import {
 import type { NotificationAvatar } from "@mycadet/ipc-contract";
 
 export interface NotificationAvatarSyncOptions {
-  scopeId: string | null;
-  cloudAssistantId?: string | null;
   assistantName?: string | null;
   assistantNameOwner?: NotificationIdentityOwner | null;
   avatarOwner?: NotificationIdentityOwner | null;
@@ -82,19 +80,16 @@ export function useNotificationAvatarSync(
   options?: NotificationAvatarSyncOptions,
 ): void {
   const legacyEnabled = isElectron() && !isPopoutWindowLifetime();
-  const scopeId = options
-    ? options.scopeId
-    : resolveNotificationIdentityScope(assistantId);
+  // The scope keys on the resolved assistant and the current origin — the
+  // hook resolves it itself so callers can never drift from the identity the
+  // rest of the notification path computes.
+  const scopeId = resolveNotificationIdentityScope(assistantId);
   const identity = useMemo(
     () =>
       assistantId && scopeId
-        ? createNotificationIdentity(
-            scopeId,
-            assistantId,
-            options?.cloudAssistantId,
-          )
+        ? createNotificationIdentity(scopeId, assistantId)
         : null,
-    [assistantId, options?.cloudAssistantId, scopeId],
+    [assistantId, scopeId],
   );
   const identityKey = identity
     ? JSON.stringify([

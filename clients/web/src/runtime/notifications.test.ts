@@ -237,13 +237,8 @@ const baseArgs = {
 function testIdentity(
   scopeId = "notification:scope:test",
   assistantId = "assistant-1",
-  nativeSenderId = "123e4567-e89b-12d3-a456-426614174000",
 ): NotificationIdentity {
-  const identity = createNotificationIdentity(
-    scopeId,
-    assistantId,
-    nativeSenderId,
-  );
+  const identity = createNotificationIdentity(scopeId, assistantId);
   if (!identity) {
     throw new Error("Expected a notification identity");
   }
@@ -1550,11 +1545,7 @@ describe("postLocalNotification browser avatar icons", () => {
 
   test("keeps prepared avatars isolated to their exact assistant identity", async () => {
     const first = testIdentity();
-    const second = testIdentity(
-      "notification:scope:test",
-      "assistant-2",
-      "123e4567-e89b-12d3-a456-426614174002",
-    );
+    const second = testIdentity("notification:scope:test", "assistant-2");
     prepareIdentity(second);
 
     await withBrowserNotificationMock(async (calls) => {

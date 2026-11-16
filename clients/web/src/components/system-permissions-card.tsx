@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation, type TFunction } from "@/i18n";
-import { resolveAssistantNotificationCloudId } from "@/hooks/use-assistant-avatar";
 import {
   getUnreadBadgeSurface,
   setDockBadge,
@@ -341,15 +340,14 @@ export function SystemPermissionsCard({
           return undefined;
         }
         const scopeId = resolveNotificationIdentityScope(
-          assistant?.assistantId ?? null,
+          assistant.assistantId,
         );
-        if (!assistant || !scopeId) {
+        if (!scopeId) {
           return undefined;
         }
         const identity = createNotificationIdentity(
           scopeId,
           assistant.assistantId,
-          resolveAssistantNotificationCloudId(assistant),
         );
         if (!identity) {
           return undefined;

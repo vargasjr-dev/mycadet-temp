@@ -4,7 +4,6 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 
 import type { NotificationIdentity } from "@mycadet/ipc-contract";
 
-import { resolveAssistantNotificationCloudId } from "@/hooks/use-assistant-avatar";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
 import { __resetForTesting, subscribe } from "@/lib/event-bus";
 import { createNotificationIdentity } from "@/runtime/notification-avatar";
@@ -42,11 +41,7 @@ function platformIdentity(
 ): NotificationIdentity {
   const scopeId = resolveNotificationIdentityScope(assistant.assistantId);
   const identity = scopeId
-    ? createNotificationIdentity(
-        scopeId,
-        assistant.assistantId,
-        resolveAssistantNotificationCloudId(assistant),
-      )
+    ? createNotificationIdentity(scopeId, assistant.assistantId)
     : null;
   if (!identity) {
     throw new Error("expected notification identity");
