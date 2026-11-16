@@ -1,10 +1,10 @@
-import type { LockfileAssistant } from "../lockfile-contract";
 import type { LifecycleReporter } from "../lifecycle-reporter";
 import { ensureLockfile } from "../lockfile";
 import { hatchCloud } from "../remotes/cloud/hatch";
 import { hatchDocker } from "../remotes/docker/hatch";
 import { hatchLocal } from "../remotes/local/hatch";
 import { hatchBaseten } from "../remotes/baseten/hatch";
+import { HatchAssistantResult } from "./types";
 
 /**
  * The hatch operation: the scoped surface's provision door. Unlike the
@@ -52,23 +52,6 @@ export interface HatchAssistantParams {
   reporter?: LifecycleReporter;
 }
 
-export type HatchAssistantResult =
-  | {
-      ok: true;
-      assistant: LockfileAssistant;
-      /**
-       * Whether the leg confirmed the assistant is up and serving — the
-       * gate for the CLI's next-steps narration. The cloud and baseten
-       * legs return before anything is confirmed ready (the platform
-       * provisions asynchronously; the sandbox wakes itself), so they
-       * report false.
-       */
-      ready: boolean;
-      /** The hatched assistant's platform status (the cloud leg). */
-      status?: string;
-    }
-  | { ok: false; status: number; error: string; assistantId?: string };
-
 export async function hatchAssistant(
   params: HatchAssistantParams,
 ): Promise<HatchAssistantResult> {
@@ -95,7 +78,7 @@ async function hatchRemote(
         precollectedApiKey,
         reporter,
       } = params;
-      const result = await hatchLocal({
+      return await hatchLocal({
         name,
         watch,
         configValues,
@@ -105,8 +88,6 @@ async function hatchRemote(
         precollectedApiKey,
         reporter,
       });
-      if (!result.ok) return result;
-      return { ok: true, assistant: result.entry, ready: true };
     }
     case "docker": {
       const {
@@ -122,7 +103,7 @@ async function hatchRemote(
         precollectedApiKey,
         reporter,
       } = params;
-      const result = await hatchDocker({
+      return await hatchDocker({
         name,
         watch,
         configValues,
@@ -135,30 +116,19 @@ async function hatchRemote(
         precollectedApiKey,
         reporter,
       });
-      if (!result.ok) return result;
-      return { ok: true, assistant: result.entry, ready: result.ready };
     }
     case "baseten": {
       const { name, configValues, verbose, version, reporter } = params;
-      const result = await hatchBaseten({
+      return await hatchBaseten({
         name: name ?? undefined,
         configValues,
         verbose,
         version,
         reporter,
       });
-      if (!result.ok) return result;
-      return { ok: true, assistant: result.entry, ready: false };
     }
     case "cloud": {
-      const result = await hatchCloud();
-      if (!result.ok) return result;
-      return {
-        ok: true,
-        assistant: result.entry,
-        ready: false,
-        status: result.assistant.status,
-      };
+      return await hatchCloud();
     }
     default:
       return {

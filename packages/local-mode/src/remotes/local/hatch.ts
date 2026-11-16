@@ -27,6 +27,7 @@ import {
   fetchCurrentUser,
   registerLocalAssistantWithCloud,
 } from "../../cloud-registration";
+import { HatchAssistantResult } from "../../operations/types";
 
 /**
  * Allocate an isolated placement for a named local instance: its data root
@@ -58,21 +59,6 @@ export async function allocateLocalPlacement(
   };
 }
 
-/**
- * The hatch operation's local provision core: allocate the instance, write
- * the fresh daemon's first-boot workspace config, wake it, and persist the
- * entry — all under the machine-wide local hatch lock, because port
- * availability is machine-wide and allocation must stay exclusive until the
- * new services have bound their ports and the entry is on disk. The
- * guardian-token lease, the provider credential setup, and the cloud
- * registration are the same post-hatch mechanics the docker leg runs, so
- * they live here too; only the interactive provider prompt stays at the
- * CLI's command layer (it needs a TTY).
- */
-export type HatchResult =
-  | { ok: true; entry: LocalAssistant }
-  | { ok: false; status: number; error: string; assistantId?: string };
-
 export async function hatchLocal(params: {
   name?: string | null;
   watch?: boolean;
@@ -86,7 +72,7 @@ export async function hatchLocal(params: {
   precollectedApiKey?: string;
   /** The narration sink (defaults to the console reporter). */
   reporter?: LifecycleReporter;
-}): Promise<HatchResult> {
+}): Promise<HatchAssistantResult> {
   const {
     name,
     watch = false,
@@ -188,10 +174,15 @@ export async function hatchLocal(params: {
   // instead of hitting /v1/guardian/init itself.
   const maxLeaseAttempts = 3;
   let guardianAccessToken: string | undefined;
+  const cookies: string[] = [];
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
       const tokenData = await leaseGuardianToken(entry);
       guardianAccessToken = tokenData.accessToken;
+      cookies.push(
+        `cadet_access_token=${tokenData.accessToken}`,
+        `cadet_refresh_token=${tokenData.refreshToken}`,
+      )
       break;
     } catch (err) {
       if (
@@ -251,7 +242,7 @@ export async function hatchLocal(params: {
     }
   }
 
-  return { ok: true, entry };
+  return { ok: true, assistant: entry, ready: true, cookies };
 }
 
 export class HatchConflict extends Error {}

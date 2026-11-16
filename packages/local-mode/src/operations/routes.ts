@@ -193,10 +193,14 @@ async function runWakeRoute(
   });
 }
 
-const json = (body: unknown, status = 200): Response =>
+const json = (
+  body: unknown,
+  status = 200,
+  headers: Record<string, string | string[]> = {},
+): Response =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...headers },
   });
 
 /**
@@ -289,7 +293,11 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
   try {
     const result = await hatchAssistant({ remote });
     if (result.ok) {
-      return json({ ok: true, assistantId: result.assistant.assistantId });
+      return json(
+        { ok: true, assistantId: result.assistant.assistantId },
+        200,
+        { "Set-Cookie": result.cookies },
+      );
     }
     return json({ ok: false, error: result.error }, result.status);
   } catch (err) {
