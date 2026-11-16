@@ -24,6 +24,7 @@ import {
   setNotificationAvatar,
   setNotificationIdentityNativeAdapter,
 } from "@/runtime/notification-avatar";
+import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 const OPAQUE_SCOPE_PATTERN = /^scope:v1:[a-f0-9]{64}$/;
 const HASH = "a".repeat(64);
@@ -47,9 +48,15 @@ beforeEach(() => {
 
 describe("notification identities", () => {
   test("derives deterministic opaque SHA-256 scopes from the assistant and the origin", () => {
-    const scope = resolveNotificationIdentityScope("asst-1");
-    const same = resolveNotificationIdentityScope("asst-1");
-    const other = resolveNotificationIdentityScope("asst-2");
+    const setActive = (assistantId: string) =>
+      useResolvedAssistantStore
+        .getState()
+        .setAssistant({ cloud: "cloud", assistantId });
+    setActive("asst-1");
+    const scope = resolveNotificationIdentityScope();
+    const same = resolveNotificationIdentityScope();
+    setActive("asst-2");
+    const other = resolveNotificationIdentityScope();
 
     expect(scope).toBe(same);
     expect(other).not.toBe(scope);
@@ -284,7 +291,10 @@ describe("notification identities", () => {
   });
 
   test("reconcile force-clears a snapshot-only scope exactly once", () => {
-    const scopeId = resolveNotificationIdentityScope("snapshot-only")!;
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant({ cloud: "cloud", assistantId: "snapshot-only" });
+    const scopeId = resolveNotificationIdentityScope()!;
     const snapshotOnly = identity("snapshot-only", scopeId);
     const resetIdentities = mock(() => {});
     setNotificationIdentityNativeAdapter({ resetIdentities });
@@ -306,7 +316,10 @@ describe("notification identities", () => {
   });
 
   test("queues native publication behind eager publisher registration", async () => {
-    const scopeId = resolveNotificationIdentityScope("registered")!;
+    useResolvedAssistantStore
+      .getState()
+      .setAssistant({ cloud: "cloud", assistantId: "registered" });
+    const scopeId = resolveNotificationIdentityScope()!;
     let finishRegistration: (registered: boolean) => void = () => undefined;
     const registration = new Promise<boolean>((resolve) => {
       finishRegistration = resolve;

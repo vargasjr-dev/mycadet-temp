@@ -141,9 +141,7 @@ export function RootLayout() {
   const assistantVersion = useAssistantIdentityStore.use.version();
   // The scope is keyed on the resolved assistant — a resolved assistant is
   // the whole fact; there is no separate session question to ask first.
-  const notificationScopeId = resolveNotificationIdentityScope(
-    activeAssistant?.assistantId ?? null,
-  );
+  const notificationScopeId = resolveNotificationIdentityScope();
   const activeConversationId = useConversationStore.use.activeConversationId();
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
@@ -198,9 +196,7 @@ export function RootLayout() {
     if (!activeAssistant) {
       return [];
     }
-    const scopeId = resolveNotificationIdentityScope(
-      activeAssistant.assistantId,
-    );
+    const scopeId = resolveNotificationIdentityScope();
     return scopeId
       ? [{ scopeId, assistantId: activeAssistant.assistantId }]
       : [];
@@ -232,7 +228,6 @@ export function RootLayout() {
   // Prepare the same avatar and exact identity for local notification senders
   // across web, native mobile, and Electron surfaces.
   useNotificationAvatarSync(
-    assistantId,
     avatar.customImageUrl,
     avatar.state?.image ?? null,
     avatar.components,

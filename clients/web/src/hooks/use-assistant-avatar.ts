@@ -350,7 +350,7 @@ export function useAssistantAvatar(options?: AssistantAvatarOptions) {
   const queryClient = useQueryClient();
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
-  const canonicalScopeId = resolveNotificationIdentityScope(assistantId);
+  const canonicalScopeId = resolveNotificationIdentityScope();
   const scopeId =
     options?.ownerScopeId === undefined
       ? canonicalScopeId

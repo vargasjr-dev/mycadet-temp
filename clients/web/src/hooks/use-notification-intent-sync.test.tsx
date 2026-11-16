@@ -215,9 +215,8 @@ function expectNotified() {
 }
 
 function platformScopeId(): string {
-  const scopeId = resolveNotificationIdentityScope(
-    PLATFORM_ASSISTANT.assistantId,
-  );
+  useResolvedAssistantStore.getState().setAssistant(PLATFORM_ASSISTANT);
+  const scopeId = resolveNotificationIdentityScope();
   if (!scopeId) {
     throw new Error("Expected a cloud notification scope");
   }
@@ -414,6 +413,7 @@ describe("useNotificationIntentSync", () => {
 
     publishNotificationIntent({ assistantName: "Origin A" });
     const originA = postedArgs[0]?.identity;
+    const originAScopeId = resolveNotificationIdentityScope();
     expect(postedArgs[0]?.canDeliver?.()).toBe(true);
 
     const assistantB: LockfileAssistant = {
@@ -429,7 +429,7 @@ describe("useNotificationIntentSync", () => {
 
     expect(postedArgs[0]?.canDeliver?.()).toBe(false);
     expect(originA).toMatchObject({
-      scopeId: resolveNotificationIdentityScope(assistantA.assistantId),
+      scopeId: originAScopeId,
       assistantId: assistantA.assistantId,
     });
     expect(originA?.nativeSenderId).toBe(assistantA.assistantId);

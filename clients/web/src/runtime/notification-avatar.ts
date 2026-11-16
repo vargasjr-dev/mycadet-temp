@@ -1,4 +1,5 @@
 import { encodeBase64Bytes } from "@/utils/base64";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import {
   NOTIFICATION_AVATAR_BASE64_MAX_CHARS,
   NOTIFICATION_AVATAR_HASH_PATTERN,
@@ -112,9 +113,14 @@ const publisherSessionId = createPublisherSessionId();
  * The notification identity scope: one assistant viewed from one app
  * install. The origin namespaces the assistant id per bundle surface, so
  * the same assistant opened from two hosts keeps two independent identity
- * snapshots.
+ * snapshots. The active assistant is the whole fact — callers never thread
+ * the id in.
  */
-export function resolveNotificationIdentityScope(
+export function resolveNotificationIdentityScope(): string | null {
+  return deriveNotificationIdentityScope(getActiveAssistantId());
+}
+
+function deriveNotificationIdentityScope(
   assistantId: string | null | undefined,
 ): string | null {
   const normalized = assistantId?.trim();

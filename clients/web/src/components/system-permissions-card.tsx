@@ -339,7 +339,7 @@ export function SystemPermissionsCard({
         if (meta.sourceKind !== "notifications" || hostOS !== "macos") {
           return undefined;
         }
-        const scopeId = resolveNotificationIdentityScope(assistant.assistantId);
+        const scopeId = resolveNotificationIdentityScope();
         if (!scopeId) {
           return undefined;
         }

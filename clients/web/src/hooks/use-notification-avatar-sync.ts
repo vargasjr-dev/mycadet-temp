@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { isElectron } from "@/runtime/is-electron";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import {
   beginNotificationIdentityPublication,
   clearNotificationAvatar,
@@ -71,7 +72,6 @@ function ownerMatches(
  * it also feeds the existing dock/tray notification path.
  */
 export function useNotificationAvatarSync(
-  assistantId: string | null,
   customImageUrl: string | null,
   imageMeta: AvatarImageMeta | null,
   components: CharacterComponents | null,
@@ -80,10 +80,12 @@ export function useNotificationAvatarSync(
   options?: NotificationAvatarSyncOptions,
 ): void {
   const legacyEnabled = isElectron() && !isPopoutWindowLifetime();
-  // The scope keys on the resolved assistant and the current origin — the
-  // hook resolves it itself so callers can never drift from the identity the
-  // rest of the notification path computes.
-  const scopeId = resolveNotificationIdentityScope(assistantId);
+  // The active assistant is guaranteed truthy — the web bundle exists only
+  // for a resolved assistant — and the scope keys on it plus the current
+  // origin, so the hook resolves both itself and callers never drift from
+  // the identity the rest of the notification path computes.
+  const assistantId = useActiveAssistantId();
+  const scopeId = resolveNotificationIdentityScope();
   const identity = useMemo(
     () =>
       assistantId && scopeId

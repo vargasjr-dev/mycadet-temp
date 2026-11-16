@@ -39,7 +39,12 @@ const { useNotificationTapNavigation } =
 function platformIdentity(
   assistant: LockfileAssistant = ASSISTANT_A,
 ): NotificationIdentity {
-  const scopeId = resolveNotificationIdentityScope(assistant.assistantId);
+  // The resolver reads the served assistant, so borrow the store briefly to
+  // derive a foreign identity and put this surface's assistant back.
+  const previous = useResolvedAssistantStore.getState().assistant;
+  useResolvedAssistantStore.getState().setAssistant(assistant);
+  const scopeId = resolveNotificationIdentityScope();
+  useResolvedAssistantStore.getState().setAssistant(previous);
   const identity = scopeId
     ? createNotificationIdentity(scopeId, assistant.assistantId)
     : null;
@@ -137,6 +142,7 @@ describe("useNotificationTapNavigation", () => {
   });
 
   test("a tap for another assistant has no answer in this surface", async () => {
+    useResolvedAssistantStore.getState().setAssistant(ASSISTANT_A);
     renderHook(() => useNotificationTapNavigation());
     const received = collectThreadOpens();
 

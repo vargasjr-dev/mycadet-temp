@@ -222,7 +222,8 @@ describe("useAssistantAvatar", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const scopeId = resolveNotificationIdentityScope(assistantOne.assistantId)!;
+    useResolvedAssistantStore.getState().setAssistant(assistantOne);
+    const scopeId = resolveNotificationIdentityScope()!;
 
     const { result } = renderHook(
       () => ({
@@ -261,7 +262,8 @@ describe("useAssistantAvatar", () => {
       customImageUrl: null,
       state: characterState,
     } satisfies AvatarData);
-    const scopeId = resolveNotificationIdentityScope(assistantOne.assistantId)!;
+    useResolvedAssistantStore.getState().setAssistant(assistantOne);
+    const scopeId = resolveNotificationIdentityScope()!;
 
     const { result } = renderHook(
       () => useAssistantAvatar({ ownerScopeId: scopeId }),
