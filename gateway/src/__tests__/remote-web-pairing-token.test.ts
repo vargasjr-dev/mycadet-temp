@@ -36,7 +36,7 @@ const {
   contacts,
   contactChannels,
 } = await import("../db/schema.js");
-const { rotateBrowserCredentialsByRefreshToken } =
+const { rotateRefreshTokenByCookie } =
   await import("../auth/guardian-refresh.js");
 const { handleGuardianRefresh } =
   await import("../http/routes/guardian-refresh.js");
@@ -101,17 +101,6 @@ function makeRefreshRequest(
       headers,
     },
   );
-}
-
-function makeDeviceRefreshRequest(params: {
-  refreshToken: string;
-  deviceId: string;
-}): Request {
-  return new Request("https://paired.example.com/v1/guardian/refresh", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(params),
-  });
 }
 
 function setCookies(res: Response): string[] {
@@ -434,7 +423,7 @@ describe("remote web pairing token exchange", () => {
     ).not.toBe(refererRefreshToken);
   });
 
-  test("browser refresh rejects missing fetch metadata without a same-origin fallback", async () => {
+  test("a non-browser holder with no fetch metadata rotates by cookie", async () => {
     const challenge = createRemoteWebPairingChallenge(
       PUBLIC_BASE_URL,
       TEST_REQUESTER,
@@ -451,8 +440,18 @@ describe("remote web pairing token exchange", () => {
       "cadet_web_refresh",
     );
 
+    // No fetch-site, origin, or referer: a non-browser holder presenting its
+    // own Cookie header — CSRF has nothing to ride on, so it rotates.
+    const refresh = await handleGuardianRefresh(
+      makeRefreshRequest(originalRefreshToken, { secFetchSite: null }),
+    );
+
+    expect(refresh.status).toBe(200);
+    expect(setCookies(refresh).length).toBe(2);
+
+    // Positive cross-site signals still refuse — the browser-attached
+    // metadata is what a cross-site page cannot fake.
     for (const opts of [
-      { secFetchSite: null },
       {
         origin: "https://attacker.example.com",
         secFetchSite: null,
@@ -461,28 +460,31 @@ describe("remote web pairing token exchange", () => {
         referer: "https://attacker.example.com/assistant/",
         secFetchSite: null,
       },
+      { secFetchSite: "cross-site" },
     ]) {
-      const refresh = await handleGuardianRefresh(
+      const refused = await handleGuardianRefresh(
         makeRefreshRequest(originalRefreshToken, opts),
       );
 
-      expect(refresh.status).toBe(403);
-      expect(await refresh.json()).toEqual({
+      expect(refused.status).toBe(403);
+      expect(await refused.json()).toEqual({
         error: {
           code: "FORBIDDEN",
           message: "Browser refresh requires a same-origin request",
         },
       });
-      expect(setCookies(refresh)).toHaveLength(0);
+      expect(setCookies(refused)).toHaveLength(0);
     }
 
     expect(activeRefreshTokens()).toHaveLength(1);
-    expect(activeRefreshTokens()[0].tokenHash).toBe(
+    // The no-metadata rotation succeeded, so the active record holds the
+    // ROTATED token — the original is retired.
+    expect(activeRefreshTokens()[0].tokenHash).not.toBe(
       hashToken(originalRefreshToken),
     );
   });
 
-  test("device-bound refresh path does not require fetch metadata", async () => {
+  test("device-bound credentials rotate by cookie, the new token riding only Set-Cookie", async () => {
     const pair = mintAndRecordDeviceBoundTokenPair({
       guardianPrincipalId: GUARDIAN_ID,
       deviceId: "legacy-device",
@@ -490,40 +492,17 @@ describe("remote web pairing token exchange", () => {
     });
 
     const refresh = await handleGuardianRefresh(
-      makeDeviceRefreshRequest({
-        refreshToken: pair.refreshToken,
-        deviceId: "legacy-device",
-      }),
+      makeRefreshRequest(pair.refreshToken, { secFetchSite: null }),
     );
 
     expect(refresh.status).toBe(200);
     const body = (await refresh.json()) as Record<string, unknown>;
-    // The device refresh answers with the same credential contract the
-    // pairing mint emits (ISO strings, deviceId echoed) — one schema parses
-    // both.
-    expect(body.deviceId).toBe("legacy-device");
-    expect(typeof body.refreshAfter).toBe("string");
-    expect(typeof body.leasedAt).toBe("string");
-    expect(setCookies(refresh)).toHaveLength(0);
-  });
-
-  test("cookie refresh rejects legacy device-bound refresh tokens", async () => {
-    const legacyPair = mintAndRecordDeviceBoundTokenPair({
-      guardianPrincipalId: GUARDIAN_ID,
-      deviceId: "legacy-device",
-      platform: "cli",
-    });
-
-    const refresh = await handleGuardianRefresh(
-      makeRefreshRequest(legacyPair.refreshToken),
-    );
-
-    expect(refresh.status).toBe(401);
-    expect(await refresh.json()).toEqual({ error: "refresh_invalid" });
-    const refreshTokens = activeRefreshTokens();
-    expect(refreshTokens).toHaveLength(1);
-    expect(refreshTokens[0].tokenHash).toBe(hashToken(legacyPair.refreshToken));
-    expect(refreshTokens[0].browserRefreshCookiePath).toBeNull();
+    expect(typeof body.accessToken).toBe("string");
+    expect(typeof body.refreshAfter).toBe("number");
+    // The secret never appears in a body: the rotated refresh token rides
+    // Set-Cookie alone.
+    expect(body.refreshToken).toBeUndefined();
+    expect(setCookies(refresh)).toHaveLength(2);
   });
 
   test("assistant mirror failure does not fail the gateway-committed binding", async () => {
@@ -725,7 +704,6 @@ describe("remote web pairing token exchange", () => {
     );
     expect(refreshTokens[0].hashedDeviceId).toBe(hashedDeviceId);
     expect(refreshTokens[0].platform).toBe("cli");
-    expect(refreshTokens[0].browserRefreshCookiePath).toBeNull();
   });
 
   test("only allowlisted platforms are recorded, defaulting to desktop", async () => {
@@ -763,7 +741,7 @@ describe("remote web pairing token exchange", () => {
     }
   });
 
-  test("device-bound pairing refreshes by device id, never by cookie", async () => {
+  test("a device-bound pairing rotates by cookie like any holder", async () => {
     const challenge = createRemoteWebPairingChallenge(
       PUBLIC_BASE_URL,
       TEST_REQUESTER,
@@ -782,27 +760,14 @@ describe("remote web pairing token exchange", () => {
       refreshToken: string;
     };
 
-    // No browser cookie path was recorded, so the cookie rotation refuses it.
-    expect(rotateBrowserCredentialsByRefreshToken({ refreshToken })).toEqual({
+    const rotated = rotateRefreshTokenByCookie({ refreshToken });
+    expect(rotated.ok).toBe(true);
+    // Rotation revokes the presented record — a second presentation of the
+    // same token trips reuse-detection.
+    expect(rotateRefreshTokenByCookie({ refreshToken })).toEqual({
       ok: false,
-      error: "refresh_invalid",
+      error: "refresh_reuse_detected",
     });
-    expect(activeRefreshTokens()[0].tokenHash).toBe(hashToken(refreshToken));
-
-    const refresh = await handleGuardianRefresh(
-      makeDeviceRefreshRequest({ refreshToken, deviceId: "importer-device" }),
-    );
-
-    expect(refresh.status).toBe(200);
-    expect(setCookies(refresh)).toHaveLength(0);
-    const body = (await refresh.json()) as Record<string, unknown>;
-    expect(typeof body.accessToken).toBe("string");
-    expect(typeof body.refreshToken).toBe("string");
-    expect(body.refreshToken).not.toBe(refreshToken);
-    expect(activeRefreshTokens()).toHaveLength(1);
-    expect(activeRefreshTokens()[0].tokenHash).toBe(
-      hashToken(body.refreshToken as string),
-    );
   });
 
   test("expired device code does not mint credentials", async () => {
@@ -851,34 +816,6 @@ describe("remote web pairing token exchange", () => {
     });
     expect(setCookies(res)).toHaveLength(0);
     expect(activeTokens()).toHaveLength(0);
-  });
-
-  test("a padded deviceId records the binding a trimmed refresh matches", async () => {
-    const challenge = createRemoteWebPairingChallenge(
-      PUBLIC_BASE_URL,
-      TEST_REQUESTER,
-    );
-    expect(approveRemoteWebPairingChallenge(challenge.userCode).status).toBe(
-      "approved",
-    );
-
-    const exchange = await handleRemoteWebPairingToken(
-      makeTokenRequest({
-        deviceCode: challenge.deviceCode,
-        deviceId: "  padded-device  ",
-      }),
-    );
-    expect(exchange.status).toBe(200);
-    const { refreshToken } = (await exchange.json()) as {
-      refreshToken: string;
-    };
-
-    expect(activeTokens()[0].hashedDeviceId).toBe(hashToken("padded-device"));
-
-    const refresh = await handleGuardianRefresh(
-      makeDeviceRefreshRequest({ refreshToken, deviceId: "padded-device" }),
-    );
-    expect(refresh.status).toBe(200);
   });
 
   test("a missing deviceCode returns the deviceCode is required 400", async () => {

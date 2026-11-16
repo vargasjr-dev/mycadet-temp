@@ -111,6 +111,7 @@ export {
   GuardianLeasePermanentError,
   leaseGuardianToken,
   parseGuardianToken,
+  parseRotatedGuardianToken,
 } from "./guardian-token";
 export {
   configureHatchProviderApiKey,

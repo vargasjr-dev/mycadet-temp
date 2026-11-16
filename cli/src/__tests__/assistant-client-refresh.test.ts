@@ -76,18 +76,18 @@ function stubFetch(handler: (url: string, calls: Call[]) => Response): Call[] {
 const isRefresh = (url: string) => url.includes("/v1/guardian/refresh");
 
 function refreshResponse(): Response {
+  const headers = new Headers({ "content-type": "application/json" });
+  headers.append("Set-Cookie", "cadet_web_access=new-acc; HttpOnly; Path=/");
+  headers.append("Set-Cookie", "cadet_web_refresh=new-ref; HttpOnly; Path=/");
   return new Response(
     JSON.stringify({
       guardianPrincipalId: "imported",
       accessToken: "new-acc",
-      accessTokenExpiresAt: FUTURE,
-      refreshToken: "new-ref",
-      refreshTokenExpiresAt: FUTURE,
-      refreshAfter: FUTURE,
-      deviceId: "dev",
-      leasedAt: new Date().toISOString(),
+      accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+      refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+      refreshAfter: Date.now() + 60 * 60 * 1000,
     }),
-    { status: 200, headers: { "content-type": "application/json" } },
+    { status: 200, headers },
   );
 }
 

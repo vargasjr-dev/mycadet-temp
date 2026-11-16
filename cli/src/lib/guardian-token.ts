@@ -15,10 +15,15 @@ import {
   isConfidentialRefreshUrl,
   loadGuardianToken,
   loopbackSafeFetch,
-  parseGuardianToken,
+  parseRotatedGuardianToken,
   saveGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
+import {
+  GUARDIAN_ACCESS_COOKIE,
+  GUARDIAN_REFRESH_COOKIE,
+  parseSetCookieValues,
+} from "@mycadet/shared";
 
 /** Abort the refresh POST if the gateway is slow/unreachable (it's now on the
  *  hot request path, so it must never hang indefinitely). */
@@ -303,16 +308,11 @@ export async function refreshGuardianTokenResult(
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokenData.accessToken}`,
+          // The refresh token travels as a cookie — never in a request
+          // body — so the secret cannot land in body logs or traces. The
+          // gateway answers the same way: rotated tokens ride Set-Cookie.
+          Cookie: `${GUARDIAN_REFRESH_COOKIE}=${encodeURIComponent(tokenData.refreshToken)}`,
         },
-        body: JSON.stringify({
-          refreshToken: tokenData.refreshToken,
-          // The refresh token is device-bound; send the device id used at init
-          // (falling back to a fresh computation for tokens persisted before the
-          // field was stored) so the gateway can verify the binding.
-          deviceId: tokenData.deviceId || computeDeviceId(),
-        }),
         signal: AbortSignal.timeout(REFRESH_FETCH_TIMEOUT_MS),
       },
     );
@@ -320,11 +320,19 @@ export async function refreshGuardianTokenResult(
       return classifyRefreshHttpStatus(response.status);
     }
 
-    // The refresh endpoint answers with the full guardian credential
-    // contract — the same shape the pairing mint emits — so one schema
-    // parses the credential from mint to rotation to token file. A
-    // malformed body throws and the surrounding catch classifies it.
-    const refreshed = parseGuardianToken(await response.json());
+    // The rotation body carries only metadata; the token VALUES ride the
+    // Set-Cookie headers. A malformed answer throws and the surrounding
+    // catch classifies it.
+    const setCookies = response.headers.getSetCookie?.() ?? [];
+    const cookieValues = parseSetCookieValues(setCookies);
+    const refreshed = parseRotatedGuardianToken(
+      await response.json(),
+      {
+        accessToken: cookieValues[GUARDIAN_ACCESS_COOKIE] ?? "",
+        refreshToken: cookieValues[GUARDIAN_REFRESH_COOKIE] ?? "",
+      },
+      tokenData.deviceId || computeDeviceId(),
+    );
     saveGuardianToken(assistantId, refreshed);
     return { ok: true, token: refreshed };
   } catch (error) {

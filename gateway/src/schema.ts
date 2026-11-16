@@ -2440,30 +2440,29 @@ export function buildSchema(): Record<string, unknown> {
       },
       "/v1/guardian/refresh": {
         post: {
-          summary: "Refresh guardian access token",
+          summary: "Refresh guardian credentials",
           description:
-            "Refreshes an expired guardian access token. Accepts expired JWTs (signature, audience, and policy epoch are still verified — only the expiration check is relaxed). Requires `refreshToken` and the `deviceId` the token was issued to; the refresh token is device-bound and is rejected if the device does not match.",
+            "Rotates the guardian credential pair. Cookie-only: every holder presents the refresh token as the `cadet_web_refresh` cookie — never in a request body, so the secret cannot land in body logs. The rotated tokens ride the Set-Cookie response headers; the body carries only metadata.",
           operationId: "guardianRefresh",
-          security: [{ BearerAuth: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: { type: "object", additionalProperties: true },
-              },
+          security: [{ CookieAuth: [] }],
+          parameters: [
+            {
+              name: "cadet_web_refresh",
+              in: "cookie",
+              required: true,
+              schema: { type: "string" },
+              description: "The refresh token to rotate.",
             },
-          },
+          ],
           responses: {
-            "200": { description: "New access token returned" },
-            "400": {
-              description: "Missing required field: refreshToken or deviceId",
+            "200": { description: "New credential pair set via Set-Cookie" },
+            "401": {
+              description: "Unauthorized — missing, invalid, or expired cookie",
             },
-            "401": { description: "Unauthorized — invalid token" },
             "403": {
               description:
-                "Refresh token revoked, reused, or presented from a non-matching device",
+                "Refresh token revoked or reused, or a cross-site browser request",
             },
-            "502": { description: "Failed to reach assistant runtime" },
           },
         },
       },
@@ -4873,17 +4872,17 @@ export function buildSchema(): Record<string, unknown> {
     },
     components: {
       schemas: {
-      UserProfile: {
-        type: "object",
-        properties: {
-          id: { type: "string" },
-          username: { type: "string" },
-          email: { type: "string" },
-          first_name: { type: "string" },
-          last_name: { type: "string" },
+        UserProfile: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            username: { type: "string" },
+            email: { type: "string" },
+            first_name: { type: "string" },
+            last_name: { type: "string" },
+          },
+          required: ["id", "username", "email", "first_name", "last_name"],
         },
-        required: ["id", "username", "email", "first_name", "last_name"],
-      },
         BackupSnapshot: {
           type: "object",
           required: [
@@ -5225,6 +5224,11 @@ export function buildSchema(): Record<string, unknown> {
         BearerAuth: {
           type: "http",
           scheme: "bearer",
+        },
+        CookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "cadet_web_refresh",
         },
         TelegramWebhookSecret: {
           type: "apiKey",

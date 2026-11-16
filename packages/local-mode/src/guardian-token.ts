@@ -26,10 +26,15 @@ const guardianTokenRefreshes = new Map<string, Promise<TokenResult>>();
 
 import {
   GuardianTokenFileSchema,
+  GuardianRotationPayloadSchema,
   type GuardianTokenData,
 } from "./guardian-contract";
 
-export { GuardianTokenFileSchema, type GuardianTokenData };
+export {
+  GuardianTokenFileSchema,
+  GuardianRotationPayloadSchema,
+  type GuardianTokenData,
+};
 
 /**
  * Persist an assistant's guardian token where every host-seam reader resolves
@@ -454,6 +459,41 @@ export function parseGuardianToken(raw: unknown): GuardianTokenData {
     );
   }
   return parsed.data;
+}
+
+/**
+ * Parse a cookie rotation's answer into the token data the lease persists.
+ * The rotation body carries only metadata (the token VALUES ride Set-Cookie
+ * headers — secrets never land in a body), so the caller hands over the
+ * cookie-parsed values alongside it. A malformed body throws a
+ * {@link GuardianLeasePermanentError}; it will not fix itself on retry.
+ */
+export function parseRotatedGuardianToken(
+  raw: unknown,
+  cookies: { accessToken: string; refreshToken: string },
+  deviceId: string,
+): GuardianTokenData {
+  const parsed = GuardianRotationPayloadSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new GuardianLeasePermanentError(
+      `guardian rotation returned a malformed token response — ${z.prettifyError(parsed.error)}`,
+    );
+  }
+  if (!cookies.accessToken.trim() || !cookies.refreshToken.trim()) {
+    throw new GuardianLeasePermanentError(
+      "guardian rotation answered without its credential cookies",
+    );
+  }
+  return GuardianTokenFileSchema.parse({
+    guardianPrincipalId: parsed.data.guardianPrincipalId,
+    accessToken: cookies.accessToken,
+    accessTokenExpiresAt: parsed.data.accessTokenExpiresAt,
+    refreshToken: cookies.refreshToken,
+    refreshTokenExpiresAt: parsed.data.refreshTokenExpiresAt,
+    refreshAfter: new Date(parsed.data.refreshAfter).toISOString(),
+    deviceId,
+    leasedAt: new Date().toISOString(),
+  });
 }
 
 const DEVICE_ID_SALT = "mycadet-host-id";

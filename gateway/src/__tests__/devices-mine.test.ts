@@ -104,7 +104,6 @@ describe("GET /v1/devices/mine", () => {
     const pair = mintAndRecordBrowserTokenPair({
       guardianPrincipalId: GUARDIAN_ID,
       platform: "web",
-      browserRefreshCookiePath: "/",
       identity: { pairingUserAgent: "Mozilla/5.0 TestBrowser" },
     });
 
@@ -124,7 +123,6 @@ describe("GET /v1/devices/mine", () => {
     const pair = mintAndRecordBrowserTokenPair({
       guardianPrincipalId: GUARDIAN_ID,
       platform: "web",
-      browserRefreshCookiePath: "/",
     });
     const stored = rowForToken(pair.accessToken);
     expect(stored).toBeTruthy();

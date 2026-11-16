@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
+  GUARDIAN_ACCESS_COOKIE,
+  GUARDIAN_REFRESH_COOKIE,
+} from "@mycadet/shared";
+import {
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -254,30 +258,49 @@ describe("refreshGuardianToken", () => {
     rmSync(tempHome, { recursive: true, force: true });
   });
 
+  function rotationResponse(
+    accessToken = "new-acc",
+    refreshToken = "new-ref",
+  ): Response {
+    const headers = new Headers({ "content-type": "application/json" });
+    headers.append(
+      "Set-Cookie",
+      `${GUARDIAN_ACCESS_COOKIE}=${encodeURIComponent(accessToken)}; HttpOnly; Secure; Path=/`,
+    );
+    headers.append(
+      "Set-Cookie",
+      `${GUARDIAN_REFRESH_COOKIE}=${encodeURIComponent(refreshToken)}; HttpOnly; Secure; Path=/`,
+    );
+    return new Response(
+      JSON.stringify({
+        guardianPrincipalId: "imported",
+        accessToken,
+        accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+        refreshTokenExpiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        refreshAfter: Date.now() + 60 * 60 * 1000,
+      }),
+      { status: 200, headers },
+    );
+  }
+
   test("refreshes, persists the rotated token, sends an abort signal, releases the lock", async () => {
     seed(future());
     let sawSignal = false;
+    let sawCookie = "";
     globalThis.fetch = withPreconnect(
       async (_url: unknown, init?: RequestInit) => {
         sawSignal = init?.signal instanceof AbortSignal;
-        return new Response(
-          JSON.stringify({
-            guardianPrincipalId: "imported",
-            accessToken: "new-acc",
-            accessTokenExpiresAt: future(),
-            refreshToken: "new-ref",
-            refreshTokenExpiresAt: future(),
-            refreshAfter: future(),
-            deviceId: "dev",
-            leasedAt: new Date().toISOString(),
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
+        sawCookie = (new Headers(init?.headers).get("cookie") as string) ?? "";
+        return rotationResponse();
       },
     );
 
     const result = await refreshGuardianToken("https://gw.example.com", "px");
 
+    // The refresh token travels as a cookie — never in a body.
+    expect(sawCookie).toBe(
+      `${GUARDIAN_REFRESH_COOKIE}=${encodeURIComponent("old-ref")}`,
+    );
     expect(result?.accessToken).toBe("new-acc");
     expect(loadGuardianToken("px")?.accessToken).toBe("new-acc");
     expect(loadGuardianToken("px")?.refreshToken).toBe("new-ref");
@@ -433,23 +456,7 @@ describe("refreshGuardianToken", () => {
     utimesSync(lp, old, old);
 
     globalThis.fetch = withPreconnect(
-      async (_url: unknown, _init?: RequestInit) =>
-        new Response(
-          JSON.stringify({
-            guardianPrincipalId: "imported",
-            accessToken: "new-acc",
-            accessTokenExpiresAt: future(),
-            refreshToken: "new-ref",
-            refreshTokenExpiresAt: future(),
-            refreshAfter: future(),
-            deviceId: "dev",
-            leasedAt: new Date().toISOString(),
-          }),
-          {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          },
-        ),
+      async (_url: unknown, _init?: RequestInit) => rotationResponse(),
     );
 
     const result = await refreshGuardianToken("https://gw.example.com", "px");
@@ -472,22 +479,7 @@ describe("refreshGuardianToken", () => {
       globalThis.fetch = withPreconnect(
         async (_url: unknown, _init?: RequestInit) => {
           called = true;
-          return new Response(
-            JSON.stringify({
-              guardianPrincipalId: "imported",
-              accessToken: "new-acc",
-              accessTokenExpiresAt: future(),
-              refreshToken: "new-ref",
-              refreshTokenExpiresAt: future(),
-              refreshAfter: future(),
-              deviceId: "dev",
-              leasedAt: new Date().toISOString(),
-            }),
-            {
-              status: 200,
-              headers: { "content-type": "application/json" },
-            },
-          );
+          return rotationResponse();
         },
       );
 

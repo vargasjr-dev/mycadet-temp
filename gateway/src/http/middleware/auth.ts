@@ -9,7 +9,7 @@ import {
 } from "../../auth/scopes.js";
 import { parseSub } from "../../auth/subject.js";
 import { validateEdgeToken } from "../../auth/token-exchange.js";
-import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
+import { getGuardianAccessCookie } from "@mycadet/shared";
 import type { Scope, TokenClaims } from "../../auth/types.js";
 import type { AuthRateLimiter } from "../../auth-rate-limiter.js";
 import { getIsCloud } from "../../cloud-url.js";
@@ -476,7 +476,7 @@ export function extractBearerToken(req: Request): string | null {
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
     return authHeader.slice(7);
   }
-  const cookieToken = getRemoteWebAccessCookie(req);
+  const cookieToken = getGuardianAccessCookie(req);
   return cookieToken || null;
 }
 

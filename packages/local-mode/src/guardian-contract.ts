@@ -34,3 +34,20 @@ export const GuardianTokenFileSchema = z.object({
 });
 
 export type GuardianTokenData = z.infer<typeof GuardianTokenFileSchema>;
+
+/**
+ * The cookie-rotation response's shape: the token VALUES ride Set-Cookie
+ * headers (never a body), and the body carries only the metadata —
+ * epoch-ms instants and the principal id.
+ */
+export const GuardianRotationPayloadSchema = z.object({
+  guardianPrincipalId: z.string(),
+  accessToken: z.string(),
+  accessTokenExpiresAt: z.number(),
+  refreshTokenExpiresAt: z.number(),
+  refreshAfter: z.number(),
+});
+
+export type GuardianRotationPayload = z.infer<
+  typeof GuardianRotationPayloadSchema
+>;

@@ -37,7 +37,6 @@ export type RefreshErrorCode =
   | "refresh_invalid"
   | "refresh_expired"
   | "refresh_reuse_detected"
-  | "device_binding_mismatch"
   | "revoked"
   | "guardian_repair_required";
 
@@ -187,7 +186,6 @@ function mintRefreshTokenInFamily(params: {
   identity: DeviceIdentityInput;
   familyId: string;
   absoluteExpiresAt: number;
-  browserRefreshCookiePath?: string;
 }): {
   refreshToken: string;
   refreshTokenExpiresAt: number;
@@ -215,7 +213,6 @@ function mintRefreshTokenInFamily(params: {
       absoluteExpiresAt: params.absoluteExpiresAt,
       inactivityExpiresAt,
       lastUsedAt: null,
-      browserRefreshCookiePath: params.browserRefreshCookiePath,
       createdAt: now,
       updatedAt: now,
     })
@@ -317,7 +314,6 @@ function rotateRefreshTokenRecord(
       identity,
       familyId: record.familyId,
       absoluteExpiresAt: record.absoluteExpiresAt,
-      browserRefreshCookiePath: record.browserRefreshCookiePath ?? undefined,
     });
 
     log.info(
@@ -344,50 +340,15 @@ function rotateRefreshTokenRecord(
 // ---------------------------------------------------------------------------
 
 /**
- * Rotate credentials: validate refresh token, revoke old, mint new pair.
- *
- * All token operations run against the gateway's SQLite database.
- *
- * The refresh token is bound to the device it was issued to: the caller must
- * supply the hashed device id, and it must match the record's stored binding.
- * This ensures a leaked refresh token cannot be redeemed from a different
- * device. The binding is checked before any side effects (rotation, family
- * revocation) so a request from a non-matching device cannot disturb the
- * legitimate token family.
+ * The one rotation door: the caller presents the refresh token as a cookie —
+ * never in a request body, so the secret never lands in logs or traces. The
+ * refresh token is the bearer credential and the stored binding (a real
+ * device id for device holders, a server-side random binding for browsers)
+ * is metadata and a revocation handle, not a rotation proof: holders that
+ * share a machine each own their own independently-rotating token family,
+ * so a stale presentation trips reuse-detection instead of a binding check.
  */
-export function rotateCredentials(params: {
-  refreshToken: string;
-  hashedDeviceId: string;
-}):
-  | { ok: true; result: RotateResult }
-  | { ok: false; error: RefreshErrorCode } {
-  const refreshTokenHash = hashToken(params.refreshToken);
-  const record = findRefreshByHash(refreshTokenHash);
-
-  if (!record) {
-    return { ok: false, error: "refresh_invalid" };
-  }
-
-  if (record.hashedDeviceId !== params.hashedDeviceId) {
-    log.warn(
-      { familyId: record.familyId },
-      "Refresh rejected — device binding mismatch",
-    );
-    return { ok: false, error: "device_binding_mismatch" };
-  }
-
-  return rotateRefreshTokenRecord(refreshTokenHash, record);
-}
-
-/**
- * Browser refresh rotates using only the refresh token. The refresh token is the
- * bearer credential and the stored binding is recovered from its DB record.
- *
- * Only refresh-token records minted for the browser flow carry a browser cookie
- * path. Legacy CLI/macOS records still require the explicit device-bound
- * `rotateCredentials` path until that contract is migrated intentionally.
- */
-export function rotateBrowserCredentialsByRefreshToken(params: {
+export function rotateRefreshTokenByCookie(params: {
   refreshToken: string;
 }):
   | { ok: true; result: RotateResult }
@@ -396,10 +357,6 @@ export function rotateBrowserCredentialsByRefreshToken(params: {
   const record = findRefreshByHash(refreshTokenHash);
 
   if (!record) {
-    return { ok: false, error: "refresh_invalid" };
-  }
-
-  if (!record.browserRefreshCookiePath) {
     return { ok: false, error: "refresh_invalid" };
   }
 
