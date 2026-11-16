@@ -163,7 +163,7 @@ describe("getCloudBaseUrl resolution order", () => {
 });
 
 // Shared fetch stubs — pure module-scope helpers, no env coupling.
-const PLATFORM_URL = "https://platform.test";
+const CLOUD_URL = "https://test.mycadet.ai";
 const originalFetch = globalThis.fetch;
 
 afterEach(() => {
@@ -196,7 +196,7 @@ function usePlatformUrl() {
   beforeEach(() => {
     savedCloudUrl = process.env.CADET_CLOUD_URL;
     savedEnv = process.env.CADET_ENVIRONMENT;
-    process.env.CADET_CLOUD_URL = PLATFORM_URL;
+    process.env.CADET_CLOUD_URL = CLOUD_URL;
     delete process.env.CADET_ENVIRONMENT;
   });
 
@@ -229,7 +229,7 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
       currentReleaseVersion: "0.7.0",
     });
     const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toBe(`${PLATFORM_URL}/v1/assistants/${ASSISTANT_ID}/`);
+    expect(url).toBe(`${CLOUD_URL}/v1/assistants/${ASSISTANT_ID}/`);
   });
 
   test("fetchAssistantDetail defaults missing fields", async () => {
@@ -255,7 +255,7 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
     expect(await fetchUpgradeInProgress(TOKEN, ASSISTANT_ID)).toBe(true);
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toBe(
-      `${PLATFORM_URL}/v1/assistants/${ASSISTANT_ID}/upgrade-status/`,
+      `${CLOUD_URL}/v1/assistants/${ASSISTANT_ID}/upgrade-status/`,
     );
 
     mockFetchJson({ in_progress: false });
@@ -318,30 +318,6 @@ describe("fetchCloudAssistants reads the chooser's list union", () => {
   test("the empty arm is an empty list", async () => {
     mockFetchJson({ status: "empty" });
     expect(await fetchCloudAssistants(TOKEN)).toEqual([]);
-  });
-
-  test("the conductor's legacy {results} vocabulary still filters to active", async () => {
-    mockFetchJson({
-      results: [
-        {
-          id: "00000000-0000-7000-8000-000000000007",
-          name: "Cadet 1",
-          status: "active",
-        },
-        {
-          id: "00000000-0000-7000-8000-000000000008",
-          name: "Cadet 2",
-          status: "archived",
-        },
-      ],
-    });
-    expect(await fetchCloudAssistants(TOKEN)).toEqual([
-      {
-        id: "00000000-0000-7000-8000-000000000007",
-        name: "Cadet 1",
-        status: "active",
-      },
-    ]);
   });
 
   test("an unparseable body is a non-fatal empty list", async () => {

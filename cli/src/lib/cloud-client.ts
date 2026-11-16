@@ -43,12 +43,6 @@ export interface HatchedAssistant {
   status: string;
 }
 
-const HatchedAssistantSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  status: z.string(),
-});
-
 // The operator contract's list union (local-mode runListRoute): every row
 // the account owns as a choice, or the empty arm. The list's rows are
 // usable choices — readiness verdicts come from the scoped dial, not the
@@ -61,26 +55,18 @@ const AssistantListUnionSchema = z.discriminatedUnion("status", [
   }),
 ]);
 
-// The conductor's pre-union vocabulary — still tolerated so a CLI from this
-// release keeps working against deploys that predate the list union.
-const LegacyListResponseSchema = z.object({
-  results: z.array(HatchedAssistantSchema).optional(),
-});
-
+// The chooser's list body: rows are usable choices — a non-union body (or
+// the empty arm) is a non-fatal empty list.
 function decodeAssistantList(body: unknown): HatchedAssistant[] {
   const union = AssistantListUnionSchema.safeParse(body);
-  if (union.success) {
-    return union.data.status === "selection"
-      ? union.data.assistants.map((row) => ({
-          id: row.id,
-          name: row.name,
-          status: "active",
-        }))
-      : [];
-  }
-  const legacy = LegacyListResponseSchema.safeParse(body);
-  const results = legacy.success ? (legacy.data.results ?? []) : [];
-  return results.filter((assistant) => assistant.status === "active");
+  if (!union.success) return [];
+  return union.data.status === "selection"
+    ? union.data.assistants.map((row) => ({
+        id: row.id,
+        name: row.name,
+        status: "active",
+      }))
+    : [];
 }
 
 const AssistantDetailResponseSchema = z.object({
@@ -98,9 +84,8 @@ const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Fetch the authenticated user's cloud assistants — the operator contract's
- * list union (local-mode runListRoute), with the conductor's legacy
- * `{results}` vocabulary still tolerated for older deploys. Returns an empty
- * array on failure (non-fatal).
+ * list union (local-mode runListRoute). Returns an empty array on failure
+ * (non-fatal).
  */
 export async function fetchCloudAssistants(
   token: string,
