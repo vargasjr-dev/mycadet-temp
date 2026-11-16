@@ -5,7 +5,6 @@
 import {
   cloudAuthHeaders,
   invalidateOrgIdCache,
-  guardianTokenDueForRenewal,
   loadFreshGuardianToken,
   loadGuardianToken,
   loopbackSafeFetch,

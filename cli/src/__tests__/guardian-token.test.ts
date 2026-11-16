@@ -1,35 +1,19 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  utimesSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import {
+  getOrCreatePersistedDeviceId,
+  guardianTokenDueForRenewal,
   guardianTokenPath,
   loadGuardianToken,
   resolveConfigDir,
   saveGuardianToken,
   type PairDeviceIdentity,
   type PairOperationResult,
+  type GuardianTokenData,
 } from "@mycadet/local-mode";
-
-import {
-  getOrCreatePersistedDeviceId,
-  guardianTokenDueForRenewal,
-  GuardianLeasePermanentError,
-  leaseGuardianToken,
-  parseGuardianToken,
-} from "@mycadet/local-mode";
-import type { GuardianTokenData } from "@mycadet/local-mode";
-import { withPreconnect } from "./helpers/http.js";
-import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
 // The lease's pair door is the package operation — mock it at the seam and
 // feed the gateway's real pair shapes through it. The exec transports that

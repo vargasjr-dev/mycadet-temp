@@ -98,7 +98,6 @@ function isGuardianAccessTokenUsable(
 
 async function resolveSetupBearerToken(
   entry: LockfileAssistant,
-  gatewayUrl: string,
 ): Promise<string | undefined> {
   // The one door: a usable stored lease comes back unchanged; a due or
   // expired one re-invokes the pair flow and persists the fresh pair. A
@@ -166,7 +165,7 @@ export const setup = Object.assign(
     }
 
     const gatewayUrl = getGatewayUrl(entry);
-    const bearerToken = await resolveSetupBearerToken(entry, gatewayUrl);
+    const bearerToken = await resolveSetupBearerToken(entry);
 
     // Respect the assistant's configured default provider (e.g. Cadet Cloud
     // chosen at hatch) unless the caller named one explicitly — the runtime's
