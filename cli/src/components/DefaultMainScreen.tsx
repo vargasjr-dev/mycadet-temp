@@ -7,6 +7,7 @@ import {
   type ReactElement,
 } from "react";
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
+import { z } from "zod";
 
 import { checkHealth, getAssistantDisplayName } from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
@@ -165,9 +166,13 @@ interface HealthResponse {
 /** Extract human-readable message from a daemon JSON error response. */
 function friendlyErrorMessage(status: number, body: string): string {
   try {
-    const parsed = JSON.parse(body) as { error?: { message?: string } };
-    if (parsed?.error?.message) {
-      return parsed.error.message;
+    const parsed = z
+      .object({ error: z.object({ message: z.string() }).partial() })
+      .partial()
+      .safeParse(JSON.parse(body));
+    const message = parsed.success ? parsed.data.error?.message : undefined;
+    if (message) {
+      return message;
     }
   } catch {
     // Not JSON — fall through
@@ -233,7 +238,9 @@ async function runtimeRequest<T>(
       headers: {
         "Content-Type": "application/json",
         ...auth,
-        ...(init?.headers as Record<string, string> | undefined),
+        ...(init?.headers
+          ? Object.fromEntries(new Headers(init?.headers).entries())
+          : undefined),
       },
     });
 
@@ -335,17 +342,17 @@ async function setRuntimeConfigValue(
 }
 
 /** Resolve a dotted config path within the fetched config object. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function resolveConfigPath(config: unknown, dottedPath: string): unknown {
   let current: unknown = config;
   for (const segment of dottedPath.split(".")) {
-    if (
-      current === null ||
-      typeof current !== "object" ||
-      !(segment in (current as Record<string, unknown>))
-    ) {
+    if (!isRecord(current) || !(segment in current)) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[segment];
+    current = current[segment];
   }
   return current;
 }
@@ -1298,8 +1305,9 @@ function ChatApp({
 
   const visibleWindow = useMemo(() => {
     if (feed.length === 0) {
+      const items: FeedItem[] = [];
       return {
-        items: [] as FeedItem[],
+        items,
         startIndex: 0,
         endIndex: 0,
         hiddenAbove: 0,
@@ -2356,10 +2364,7 @@ function ChatApp({
           }
           if (item.type === "status") {
             return (
-              <Text
-                key={feedIndex}
-                color={item.color as "green" | "yellow" | "red" | undefined}
-              >
+              <Text key={feedIndex} color={item.color}>
                 {item.text}
               </Text>
             );

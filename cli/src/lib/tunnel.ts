@@ -120,6 +120,11 @@ const providers: Record<TunnelProviderName, TunnelProvider> = {
 };
 const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 
+/** Whether `value` names a tunnel provider the CLI can drive. */
+export function isTunnelProvider(value: string): value is TunnelProviderName {
+  return providerNameSchema.safeParse(value).success;
+}
+
 /**
  * A tunnelable assistant plus the gateway port and workspace the app server fronts.
  */

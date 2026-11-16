@@ -231,7 +231,7 @@ export function startLoopbackListener(
         rejectListener(new Error("Failed to start local server."));
         return;
       }
-      const { port } = addr as AddressInfo;
+      const { port } = addr;
       resolveListener({
         redirectUri: `http://127.0.0.1:${port}${CALLBACK_PATH}`,
         waitForCode,

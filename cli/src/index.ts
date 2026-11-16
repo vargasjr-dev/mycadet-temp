@@ -86,6 +86,10 @@ const commands = {
 
 type CommandName = keyof typeof commands;
 
+function isCommandName(name: string): name is CommandName {
+  return name in commands;
+}
+
 function printHelp(): void {
   console.log("Usage: cadet <command> [options]");
   console.log("");
@@ -238,7 +242,7 @@ async function main() {
     process.exit(0);
   }
 
-  const command = commands[commandName as CommandName];
+  const command = isCommandName(commandName) ? commands[commandName] : undefined;
 
   if (!command) {
     console.error(red(`Unknown command: ${commandName}`));

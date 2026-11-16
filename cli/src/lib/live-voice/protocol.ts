@@ -14,6 +14,8 @@
  * leniently, so a newer daemon adding fields never breaks an older CLI.
  */
 
+import { z } from "zod";
+
 /**
  * Capture format, declared on the `start` frame.
  *
@@ -187,7 +189,7 @@ export function parseServerFrame(payload: string): LiveVoiceServerFrame {
   if (typeof value !== "object" || value === null) {
     return { type: "malformed", raw: payload };
   }
-  const frameType = (value as { type?: unknown }).type;
+  const frameType = z.object({ type: z.unknown() }).partial().catch({}).parse(value).type;
   if (typeof frameType !== "string") {
     return { type: "malformed", raw: payload };
   }

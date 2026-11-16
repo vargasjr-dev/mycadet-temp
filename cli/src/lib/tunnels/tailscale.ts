@@ -10,6 +10,8 @@ import type {
 import { spawnSync } from "node:child_process";
 import { win32 } from "node:path";
 
+import { z } from "zod";
+
 import { GATEWAY_PORT } from "../constants.js";
 import { cliCommand } from "@mycadet/local-mode";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
@@ -150,11 +152,6 @@ function realTailscaleDeps(): TailscaleDeps {
 
 // ── Status parsing ──────────────────────────────────────────────────────────
 
-interface TailscaleStatus {
-  BackendState?: string;
-  Self?: { DNSName?: string; Online?: boolean };
-}
-
 /** Trim the trailing dot tailscale appends to MagicDNS names. */
 export function normalizeDnsName(dnsName: string): string {
   return dnsName.replace(/\.$/, "");
@@ -165,10 +162,19 @@ export function normalizeDnsName(dnsName: string): string {
  * (without trailing dot) this machine serves at. Throws a clear error when the
  * daemon is logged out or otherwise not ready to serve.
  */
+const TailscaleStatusSchema = z.looseObject({
+  BackendState: z.string().optional(),
+  Self: z
+    .looseObject({ DNSName: z.string().optional(), Online: z.boolean().optional() })
+    .optional(),
+});
+
+type TailscaleStatus = z.infer<typeof TailscaleStatusSchema>;
+
 export function resolveServeHostname(statusJson: string): string {
   let status: TailscaleStatus;
   try {
-    status = JSON.parse(statusJson) as TailscaleStatus;
+    status = TailscaleStatusSchema.parse(JSON.parse(statusJson));
   } catch {
     throw new Error("Could not parse `tailscale status --json` output.");
   }

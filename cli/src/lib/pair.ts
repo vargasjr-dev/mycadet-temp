@@ -10,6 +10,7 @@
 
 import { resolveEnvironmentName } from "@mycadet/local-mode";
 import { REMOTE_WEB_PAIRING_CODE_TTL_MS } from "@mycadet/service-contracts/remote-web-pairing";
+import { z } from "zod";
 
 const CODE_TTL_MINUTES = Math.round(REMOTE_WEB_PAIRING_CODE_TTL_MS / 60_000);
 
@@ -18,19 +19,19 @@ const CODE_TTL_MINUTES = Math.round(REMOTE_WEB_PAIRING_CODE_TTL_MS / 60_000);
  * (`{"error":{"code":...,"message":...}}`). Returns null when the body is not
  * JSON or carries no string code.
  */
+const GatewayErrorEnvelopeSchema = z
+  .object({ error: z.object({ code: z.string() }).partial() })
+  .partial();
+
 export function parseGatewayErrorCode(body: string): string | null {
-  let parsed: unknown;
+  let raw: unknown;
   try {
-    parsed = JSON.parse(body);
+    raw = JSON.parse(body);
   } catch {
     return null;
   }
-  if (typeof parsed !== "object" || parsed === null || !("error" in parsed))
-    return null;
-  const { error } = parsed;
-  if (typeof error !== "object" || error === null || !("code" in error))
-    return null;
-  return typeof error.code === "string" ? error.code : null;
+  const parsed = GatewayErrorEnvelopeSchema.safeParse(raw);
+  return parsed.success ? (parsed.data.error?.code ?? null) : null;
 }
 
 /**

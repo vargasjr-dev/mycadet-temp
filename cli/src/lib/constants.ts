@@ -23,6 +23,11 @@ export const VALID_REMOTE_HOSTS = [
   "baseten",
 ] as const;
 export type RemoteHost = (typeof VALID_REMOTE_HOSTS)[number];
+
+/** Whether `value` names a remote host the CLI can target. */
+export function isRemoteHost(value: string): value is RemoteHost {
+  return VALID_REMOTE_HOSTS.some((host) => host === value);
+}
 const ANSI = {
   reset: "\x1b[0m",
   bold: "\x1b[1m",

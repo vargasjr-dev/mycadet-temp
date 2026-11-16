@@ -8,21 +8,31 @@
  */
 
 /** Known error categories emitted by CLI commands. */
-export type CliErrorCategory =
-  | "CLI_UPDATE_FAILED"
-  | "DOCKER_NOT_RUNNING"
-  | "IMAGE_PULL_FAILED"
-  | "MISSING_VERSION"
-  | "READINESS_TIMEOUT"
-  | "ROLLBACK_FAILED"
-  | "ROLLBACK_NO_STATE"
-  | "VERSION_DIRECTION"
-  | "AUTH_FAILED"
-  | "NETWORK_ERROR"
-  | "UNSUPPORTED_TOPOLOGY"
-  | "ASSISTANT_NOT_FOUND"
-  | "CLOUD_API_ERROR"
-  | "UNKNOWN";
+export const CLI_ERROR_CATEGORIES = [
+  "CLI_UPDATE_FAILED",
+  "DOCKER_NOT_RUNNING",
+  "IMAGE_PULL_FAILED",
+  "MISSING_VERSION",
+  "READINESS_TIMEOUT",
+  "ROLLBACK_FAILED",
+  "ROLLBACK_NO_STATE",
+  "VERSION_DIRECTION",
+  "AUTH_FAILED",
+  "NETWORK_ERROR",
+  "UNSUPPORTED_TOPOLOGY",
+  "ASSISTANT_NOT_FOUND",
+  "CLOUD_API_ERROR",
+  "UNKNOWN",
+] as const;
+
+export type CliErrorCategory = (typeof CLI_ERROR_CATEGORIES)[number];
+
+/** Whether `value` is a category CLI commands may emit. */
+export function isCliErrorCategory(
+  value: string | undefined,
+): value is CliErrorCategory {
+  return CLI_ERROR_CATEGORIES.some((category) => category === value);
+}
 
 interface CliErrorPayload {
   error: CliErrorCategory;

@@ -177,7 +177,7 @@ async function listDevices(
   } catch (err) {
     console.error(
       `Error: could not reach the gateway for '${displayName}' at ${base}: ${
-        (err as Error).message
+        err instanceof Error ? err.message : String(err)
       }`,
     );
     process.exit(1);
@@ -307,7 +307,7 @@ async function revokeDevice(
   } catch (err) {
     console.error(
       `Error: could not reach the gateway for '${displayName}' at ${base}: ${
-        (err as Error).message
+        err instanceof Error ? err.message : String(err)
       }`,
     );
     process.exit(1);

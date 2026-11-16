@@ -30,6 +30,7 @@
 
 import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 import { cloudAuthHeaders } from "@mycadet/local-mode";
+import { z } from "zod";
 
 /** Production tunnel, when the cloud host implies nothing more specific. */
 const DEFAULT_TUNNEL_HOST = "tunnel.mycadet.ai";
@@ -116,10 +117,10 @@ export function buildTunnelLiveVoiceUrl(args: {
   return url.toString();
 }
 
-interface LiveVoiceTokenResponse {
-  token?: unknown;
-  expiresAt?: unknown;
-}
+const LiveVoiceTokenResponseSchema = z.object({
+  token: z.string().optional(),
+  expiresAt: z.unknown(),
+});
 
 /**
  * Mint a single-use tunnel WS token for one assistant.
@@ -170,10 +171,10 @@ export async function mintTunnelWsToken(args: {
     );
   }
 
-  const body = (await response.json().catch(() => ({}))) as
-    | LiveVoiceTokenResponse
-    | undefined;
-  const token = typeof body?.token === "string" ? body.token.trim() : "";
+  const body = LiveVoiceTokenResponseSchema.safeParse(
+    await response.json().catch(() => ({})),
+  );
+  const token = body.success ? (body.data.token?.trim() ?? "") : "";
   if (!token) {
     throw new TunnelWsTokenError(
       response.status,

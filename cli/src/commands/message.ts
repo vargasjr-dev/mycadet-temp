@@ -8,6 +8,8 @@
 
 import { readFileSync } from "node:fs";
 
+import { z } from "zod";
+
 import { extractFlag } from "../lib/arg-utils.js";
 import { AssistantClient } from "../lib/assistant-client.js";
 
@@ -184,10 +186,9 @@ export const message = Object.assign(
       process.exit(1);
     }
 
-    const result = (await response.json()) as {
-      accepted: boolean;
-      messageId: string;
-    };
+    const result = z
+      .object({ accepted: z.boolean(), messageId: z.string() })
+      .parse(await response.json());
 
     if (jsonOutput) {
       console.log(JSON.stringify(result, null, 2));

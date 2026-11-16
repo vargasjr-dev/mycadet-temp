@@ -83,6 +83,13 @@ export interface RemoteWebPairingVerificationRequest {
  * The gateway maps the `expired` / `invalid` outcomes to error responses, so
  * the only success shape on the wire is the approved variant.
  */
+export const RemoteWebPairingVerificationResponseSchema = z.object({
+  status: z.literal("approved"),
+  verificationUri: z.string(),
+  /** ISO-8601 instant the approved challenge expires. */
+  expiresAt: z.string(),
+}) satisfies z.ZodType<RemoteWebPairingVerificationResponse>;
+
 export interface RemoteWebPairingVerificationResponse {
   status: "approved";
   verificationUri: string;

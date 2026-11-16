@@ -23,7 +23,7 @@ import {
 import {
   emitCliError,
   categorizeUpgradeError,
-  type CliErrorCategory,
+  isCliErrorCategory,
 } from "../lib/cli-error.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 
@@ -209,7 +209,9 @@ function reportUpgradeFailure(result: {
   const msg = `Error: Upgrade failed: ${result.error ?? "unknown error"}`;
   console.error(`\n❌ ${msg}`);
   emitCliError(
-    (result.code as CliErrorCategory) ?? categorizeUpgradeError(result.error),
+    isCliErrorCategory(result.code)
+      ? result.code
+      : categorizeUpgradeError(result.error),
     msg,
   );
   process.exit(1);

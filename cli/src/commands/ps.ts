@@ -2,11 +2,8 @@ import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { getAppServerPaths } from "../lib/servers/common.js";
 import { join } from "path";
 
-import {
-  TUNNEL_PROVIDERS,
-  type TunnelProviderName,
-} from "@mycadet/service-contracts/ingress";
-import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
+import type { TunnelProviderName } from "@mycadet/service-contracts/ingress";
+import { DEFAULT_TUNNEL_PROVIDER, isTunnelProvider } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import {
   checkHealth,
@@ -368,10 +365,7 @@ export async function printRootProcessDetail(
   }
 
   const provider: string | null = tunnel?.provider ?? null;
-  if (
-    name === "tunnel" ||
-    TUNNEL_PROVIDERS.includes(name as TunnelProviderName)
-  ) {
+  if (name === "tunnel" || isTunnelProvider(name)) {
     console.log(
       name === "tunnel" ? "Tunnel agent:" : `Tunnel agent (${name}):`,
     );

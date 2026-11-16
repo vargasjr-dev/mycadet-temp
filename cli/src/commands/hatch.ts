@@ -22,7 +22,7 @@ import {
   shouldPromptForHatchProvider,
 } from "../lib/provider-secrets.js";
 import { green } from "../lib/color";
-import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
+import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS, isRemoteHost } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { logHatchNextSteps } from "../lib/hatch-next-steps.js";
 import { printInstanceDetails } from "../lib/instance-details.js";
@@ -117,13 +117,13 @@ function parseArgs(): HatchArgs {
       i++;
     } else if (arg === "--remote") {
       const next = args[i + 1];
-      if (!next || !VALID_REMOTE_HOSTS.includes(next as RemoteHost)) {
+      if (!next || !isRemoteHost(next)) {
         console.error(
           `Error: --remote requires one of: ${VALID_REMOTE_HOSTS.join(", ")}`,
         );
         process.exit(1);
       }
-      remote = next as RemoteHost;
+      remote = next;
       i++;
     } else if (arg === "--config") {
       const next = args[i + 1];

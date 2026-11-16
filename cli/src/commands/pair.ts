@@ -26,9 +26,9 @@ import {
 
 import {
   buildRemoteWebPairingUrl,
+  RemoteWebPairingVerificationResponseSchema,
   type RemoteWebPairingChallengeResponse,
   type RemoteWebPairingVerificationRequest,
-  type RemoteWebPairingVerificationResponse,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import {
@@ -357,8 +357,9 @@ export const pair = Object.assign(
         );
         process.exit(1);
       }
-      const result =
-        (await response.json()) as RemoteWebPairingVerificationResponse;
+      const result = RemoteWebPairingVerificationResponseSchema.parse(
+        await response.json(),
+      );
       if (jsonOutput) {
         console.log(JSON.stringify(result, null, 2));
         return;

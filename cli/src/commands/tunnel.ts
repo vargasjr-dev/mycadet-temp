@@ -10,6 +10,7 @@ import {
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
   clearReservedDomain,
+  isTunnelProvider,
   providerSupportsReservedDomain,
   runProviderTunnel,
   stopTunnelProcess,
@@ -134,7 +135,7 @@ function parseArgs(): TunnelArgs {
         );
         process.exit(1);
       }
-      if (!TUNNEL_PROVIDERS.includes(next as TunnelProviderName)) {
+      if (!isTunnelProvider(next)) {
         console.error(
           `Error: unknown tunnel provider '${next}'. Valid providers: ${TUNNEL_PROVIDERS.join(", ")}.`,
         );
@@ -143,7 +144,7 @@ function parseArgs(): TunnelArgs {
         );
         process.exit(1);
       }
-      provider = next as TunnelProviderName;
+      provider = next;
       i++;
     } else if (arg === "--domain") {
       const next = args[i + 1];
