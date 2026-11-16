@@ -238,8 +238,8 @@ describe("provider secret helpers", () => {
     };
 
     const resultPromise = promptSecret("Enter key: ", {
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
     });
     input.emit("data", Buffer.from("test-provider-key\n"));
 
@@ -258,7 +258,7 @@ describe("provider secret helpers", () => {
 
     await expect(
       promptSecret("Enter key: ", {
-        input: input as unknown as NodeJS.ReadStream,
+        input: promptInput(input),
       }),
     ).rejects.toThrow("requires an interactive terminal");
     expect(input.listenerCount("data")).toBe(0);
@@ -274,8 +274,8 @@ describe("provider secret helpers", () => {
 
     await expect(
       promptSecret("Enter key: ", {
-        input: input as unknown as NodeJS.ReadStream,
-        output: output as unknown as NodeJS.WriteStream,
+        input: promptInput(input),
+        output: promptOutput(output),
       }),
     ).rejects.toThrow("output unavailable");
     expect(input.rawModes).toEqual([true, false]);
@@ -333,14 +333,26 @@ function fakeOutput(): { write: (text: string) => boolean; text: string } {
   return state;
 }
 
+// The prompt seam: promptSecret/promptLine read their streams through a
+// narrow surface (isTTY, setRawMode, the emitter, write) that these fakes
+// implement exactly — the double casts to the full NodeJS stream interfaces
+// live here and nowhere else.
+function promptInput(input: FakePromptInput): NodeJS.ReadStream {
+  return input as unknown as NodeJS.ReadStream;
+}
+
+function promptOutput(output: { write: (text: string) => unknown }): NodeJS.WriteStream {
+  return output as unknown as NodeJS.WriteStream;
+}
+
 describe("promptLine", () => {
   test("resolves on newline", async () => {
     const input = new FakePromptInput();
     const output = fakeOutput();
 
     const resultPromise = promptLine("Pick one: ", {
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
     });
     input.emit("data", Buffer.from("2\n"));
 
@@ -354,8 +366,8 @@ describe("promptLine", () => {
     const output = fakeOutput();
 
     const resultPromise = promptLine("Pick one: ", {
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
     });
     input.emit("data", Buffer.from("1"));
     input.emit("data", Buffer.from("0"));
@@ -370,8 +382,8 @@ describe("promptLine", () => {
     const output = fakeOutput();
 
     const resultPromise = promptLine("Pick one: ", {
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
     });
     input.emit("end");
 
@@ -387,8 +399,8 @@ describe("promptProviderChoice", () => {
     const output = fakeOutput();
 
     const resultPromise = promptProviderChoice({
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
       choices,
     });
     input.emit("data", Buffer.from("2\n"));
@@ -403,8 +415,8 @@ describe("promptProviderChoice", () => {
     const output = fakeOutput();
 
     const resultPromise = promptProviderChoice({
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
       choices,
     });
     input.emit("data", Buffer.from("nope\n"));
@@ -422,8 +434,8 @@ describe("promptProviderChoice", () => {
     const output = fakeOutput();
 
     const resultPromise = promptProviderChoice({
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
       choices,
     });
     // A paste can deliver several lines in one "data" event, all before the
@@ -438,8 +450,8 @@ describe("promptProviderChoice", () => {
     const output = fakeOutput();
 
     const resultPromise = promptProviderChoice({
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
       choices,
     });
     input.emit("data", Buffer.from("\n"));
@@ -452,8 +464,8 @@ describe("promptProviderChoice", () => {
     const output = fakeOutput();
 
     const resultPromise = promptProviderChoice({
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
       choices,
     });
     input.emit("end");
@@ -466,8 +478,8 @@ describe("promptProviderChoice", () => {
     const output = fakeOutput();
 
     const resultPromise = promptProviderChoice({
-      input: input as unknown as NodeJS.ReadStream,
-      output: output as unknown as NodeJS.WriteStream,
+      input: promptInput(input),
+      output: promptOutput(output),
       choices: ["anthropic", "openai"],
     });
     input.emit("data", Buffer.from("3\n"));
