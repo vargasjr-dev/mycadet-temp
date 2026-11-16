@@ -43,8 +43,9 @@ export async function runResolveRoute(
   if (!health.version) {
     // The gateway answered nothing (unreachable, still booting, or
     // older than the identity payload) — the assistant is not ready to
-    // mount.
-    return resolutionResponse({ status: "notReady" });
+    // mount. The 409 carries the verdict for clients that read codes;
+    // the body names the arm for clients that read the union.
+    return resolutionResponse({ status: "notReady" }, 409);
   }
   return resolutionResponse({
     status: "ready",

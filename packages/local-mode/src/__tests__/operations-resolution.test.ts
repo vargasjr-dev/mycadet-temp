@@ -293,6 +293,7 @@ describe("runResolveRoute — the lockfile arms", () => {
 
     const response = await runResolution();
 
+    expect(response.status).toBe(409);
     expect(await resolutionBody(response)).toEqual({ status: "notReady" });
   });
 
