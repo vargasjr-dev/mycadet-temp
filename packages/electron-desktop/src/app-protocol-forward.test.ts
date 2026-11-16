@@ -47,15 +47,10 @@ mock.module("./about", () => ({
 mock.module("./app-logger", () => ({
   default: { error: mock(), warning: mock(), info: mock(), warn: mock() },
 }));
-let guardianToken: string | null = null;
 mock.module("@mycadet/local-mode", () => ({
   resolveLocalConfigFromEnv: () => ({ cloudUrl: "https://cloud.example.com" }),
   readLockfile: () => ({}),
   servedConfigFromLockfile: () => ({ assistantName: "A<ria" }),
-  getGuardianAccessToken: async (assistantId: string) =>
-    guardianToken === null
-      ? { ok: false as const, status: 404, error: "not found" }
-      : { ok: true as const, accessToken: guardianToken, assistantId },
 }));
 
 const { registerAppProtocol } = await import("./app-protocol-forward");
@@ -97,7 +92,6 @@ afterEach(async () => {
   forwardOperator.mockResolvedValue(null);
   forwardCloud.mockResolvedValue(null);
   cookieSet.mockClear();
-  guardianToken = null;
   isPackaged = false;
   delete (process as unknown as { resourcesPath?: string }).resourcesPath;
   Object.defineProperty(process, "platform", ORIGINAL_PLATFORM_DESCRIPTOR);
@@ -234,12 +228,22 @@ describe("registerAppProtocol", () => {
     expect(await shell.text()).toContain("<body>shell</body>");
   });
 
-  test("a hatched pairing ships the guardian token as the browser access cookie", async () => {
+  test("a response's set-cookie headers land in the session jar", async () => {
     await setupDev();
     await register();
-    guardianToken = "edge-token-1";
+    const headers = new Headers();
+    headers.append(
+      "Set-Cookie",
+      "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+    );
+    headers.append(
+      "Set-Cookie",
+      "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict",
+    );
     forwardOperator.mockResolvedValue(
-      Response.json({ ok: true, assistantId: "local-1" }),
+      new Response(JSON.stringify({ ok: true, assistantId: "local-1" }), {
+        headers,
+      }),
     );
     const response = await handler!(
       new Request("app://mycadet.ai/v1/assistants/hatch", {
@@ -249,31 +253,49 @@ describe("registerAppProtocol", () => {
     );
     expect(await response.json()).toEqual({ ok: true, assistantId: "local-1" });
     expect(cookieSet).toHaveBeenCalledWith({
-      url: "app://mycadet.ai/",
+      url: "app://mycadet.ai/v1/assistants/hatch",
       name: "cadet_web_access",
       value: "edge-token-1",
       httpOnly: true,
       path: "/",
+      sameSite: "strict",
+    });
+    expect(cookieSet).toHaveBeenCalledWith({
+      url: "app://mycadet.ai/v1/assistants/hatch",
+      name: "cadet_web_refresh",
+      value: "edge-token-2",
+      httpOnly: true,
+      path: "/",
+      sameSite: "strict",
     });
   });
 
-  test("a hatch without a leased token ships no cookie", async () => {
+  test("set-cookie lands whatever the route — the behavior is generic", async () => {
     await setupDev();
     await register();
+    const headers = new Headers();
+    headers.append(
+      "Set-Cookie",
+      "cadet_web_access=rotated-1; HttpOnly; Path=/; SameSite=Strict; Max-Age=60",
+    );
     forwardOperator.mockResolvedValue(
-      Response.json({ ok: true, assistantId: "local-1" }),
+      new Response(JSON.stringify({ status: "ready" }), { headers }),
     );
-    const response = await handler!(
-      new Request("app://mycadet.ai/v1/assistants/hatch", { method: "POST" }),
+    await handler!(new Request("app://mycadet.ai/v1/assistant"));
+    expect(cookieSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "cadet_web_access",
+        value: "rotated-1",
+        httpOnly: true,
+        path: "/",
+        sameSite: "strict",
+      }),
     );
-    expect(await response.json()).toEqual({ ok: true, assistantId: "local-1" });
-    expect(cookieSet).not.toHaveBeenCalled();
   });
 
-  test("non-hatch operator responses ship no cookie", async () => {
+  test("a response without set-cookie touches no jar", async () => {
     await setupDev();
     await register();
-    guardianToken = "edge-token-2";
     forwardOperator.mockResolvedValue(
       Response.json({ status: "ready", assistant: { id: "local-1" } }),
     );

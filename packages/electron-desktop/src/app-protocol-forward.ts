@@ -9,9 +9,6 @@ import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
 import {
   forwardOperatorRequest,
-  getGuardianAccessToken,
-  getGuardianTokenAsCookies,
-  loadGuardianToken,
   readLockfile,
   resolveLocalConfigFromEnv,
   servedConfigFromLockfile,
@@ -29,38 +26,78 @@ const APP_PROTOCOL = "app";
 const APP_HOST = "mycadet.ai";
 const RENDERER_MOUNT = "/assistant";
 
-/** The hatch row's operator path — the pairing cookie ships off its 200. */
-const HATCH_PATH = "/v1/assistants/hatch";
-
 /**
- * The lease's pair as the webview's jar entries — the same feed the hatch
- * response ships as Set-Cookie headers (which Electron's protocol handler
- * does not store), crossed into the session's cookie jar here instead.
+ * Browser-like cookie custody for the single-origin protocol: Electron's
+ * `protocol.handle` does not store a response's Set-Cookie headers into
+ * the session's cookie jar — the headers ride the wire but never land —
+ * so the handler does what the browser would have done: every response
+ * through the pass has its Set-Cookie applied to the jar for the
+ * request's own origin. The hatch's pairing feed, the gateway's rotation
+ * refreshes — anything a forward hands back — lands.
+ *
+ * Best-effort: a cookie that fails to set never fails the response.
  */
-function leaseCookieJarEntries(assistantId: string): Promise<string[]> {
-  // The stored pair (local/docker) ships whole — both jar entries the
-  // gateway's own feed spells. Baseten holds a sandbox token instead of a
-  // guardian pair: the access half alone still authenticates the dials.
-  const pair = loadGuardianToken?.(assistantId);
-  if (pair) return Promise.resolve(getGuardianTokenAsCookies(pair));
-  return getGuardianAccessToken(assistantId).then((result) =>
-    result.ok
-      ? [
-          `cadet_web_access=${encodeURIComponent(result.accessToken)}; HttpOnly; Path=/; SameSite=Strict`,
-        ]
-      : [],
-  );
+async function applyResponseCookies(
+  request: Request,
+  response: Response,
+): Promise<void> {
+  for (const raw of response.headers.getSetCookie()) {
+    const details = cookieJarDetails(request.url, raw);
+    if (!details) continue;
+    try {
+      await session.defaultSession.cookies.set(details);
+    } catch (err) {
+      log.warn("[protocol-cookies] set failed:", err);
+    }
+  }
 }
 
-/** The cookie jar the webview's requests ride (Electron's `Cookies`). */
-export interface PairingCookieSink {
-  set: (details: {
-    url: string;
-    name: string;
-    value: string;
-    httpOnly?: boolean;
-    path?: string;
-  }) => Promise<void>;
+function cookieJarDetails(
+  url: string,
+  raw: string,
+): Electron.CookiesSetDetails | null {
+  const [pair, ...attrs] = raw.split(";");
+  const eq = pair.indexOf("=");
+  if (eq <= 0) return null;
+  const name = pair.slice(0, eq).trim();
+  const value = pair.slice(eq + 1).trim();
+  if (!name) return null;
+  const details: Electron.CookiesSetDetails = { url, name, value };
+  let maxAge: number | undefined;
+  for (const attr of attrs) {
+    const sep = attr.indexOf("=");
+    const attrName = (sep === -1 ? attr : attr.slice(0, sep))
+      .trim()
+      .toLowerCase();
+    const attrValue = sep === -1 ? "" : attr.slice(sep + 1).trim();
+    if (attrName === "path") {
+      details.path = attrValue || undefined;
+    } else if (attrName === "secure") {
+      details.secure = true;
+    } else if (attrName === "httponly") {
+      details.httpOnly = true;
+    } else if (attrName === "samesite") {
+      const site = attrValue.toLowerCase();
+      details.sameSite =
+        site === "strict"
+          ? "strict"
+          : site === "lax"
+            ? "lax"
+            : site === "none"
+              ? "no_restriction"
+              : "unspecified";
+    } else if (attrName === "max-age") {
+      const parsed = Number(attrValue);
+      if (Number.isFinite(parsed)) maxAge = parsed;
+    } else if (attrName === "expires" && details.expirationDate === undefined) {
+      const parsed = Date.parse(attrValue);
+      if (Number.isFinite(parsed)) details.expirationDate = parsed / 1000;
+    }
+  }
+  if (maxAge !== undefined) {
+    details.expirationDate = Math.floor(Date.now() / 1000) + maxAge;
+  }
+  return details;
 }
 
 const appOrigin = (): AllowedOrigin => ({
@@ -97,71 +134,6 @@ const resolveWebDistRoot = (): string => {
   return path.join(repoRoot(), "clients", "web", "dist");
 };
 
-/**
- * Ship the hatch's pairing credential up to the client: a successful
- * local/docker hatch leases a guardian token (the pairing), and the
- * webview's subsequent same-origin calls — the boot resolution's
- * `GET /v1/assistant` first among them — authenticate only when the
- * browser presents it. The main process owns the lease's import (the
- * renderer never sees the token in JS), so the credential crosses into
- * the webview as the gateway's browser access cookie (#576 cookie
- * custody) instead of any page-reachable handle.
- *
- * Everything here is best-effort: a hatch whose cookie ship fails still
- * succeeds (the response passes through untouched), and requests that are
- * not the hatch row pass straight through.
- */
-export async function shipPairingCookie(
-  request: Request,
-  response: Response,
-  sink: PairingCookieSink,
-  accessTokenCookies: (assistantId: string) => Promise<string[]> = async (
-    assistantId,
-  ) => leaseCookieJarEntries(assistantId),
-): Promise<void> {
-  const url = new URL(request.url);
-  if (request.method !== "POST" || url.pathname !== HATCH_PATH) {
-    return;
-  }
-  const body = (await response
-    .clone()
-    .json()
-    .catch(() => null)) as { ok?: boolean; assistantId?: unknown } | null;
-  const assistantId =
-    body?.ok && typeof body.assistantId === "string" ? body.assistantId : null;
-  if (!assistantId) {
-    return;
-  }
-  let cookies: string[] = [];
-  try {
-    cookies = await accessTokenCookies(assistantId);
-  } catch (err) {
-    log.warn("[pairing-cookie] guardian token read failed:", err);
-    return;
-  }
-  for (const cookie of cookies) {
-    // Each feed entry is the gateway's own Set-Cookie spelling:
-    // name=<value>; attrs.
-    const eq = cookie.indexOf("=");
-    const semi = cookie.indexOf(";");
-    if (eq <= 0) continue;
-    const name = cookie.slice(0, eq).trim();
-    const value = cookie.slice(eq + 1, semi === -1 ? undefined : semi).trim();
-    if (!name || !value) continue;
-    try {
-      await sink.set({
-        url: `${APP_PROTOCOL}://${APP_HOST}/`,
-        name,
-        value,
-        httpOnly: cookie.toLowerCase().includes("httponly"),
-        path: "/",
-      });
-    } catch (err) {
-      log.warn("[pairing-cookie] cookie set failed:", err);
-    }
-  }
-}
-
 export function registerAppProtocol(): void {
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
@@ -179,7 +151,7 @@ export function registerAppProtocol(): void {
     ...servedConfigFromLockfile(readLockfile()),
   }).replace(/</g, "\\u003c");
 
-  protocol.handle(APP_PROTOCOL, async (request) => {
+  const respond = async (request: Request): Promise<Response> => {
     if (new URL(request.url).host !== APP_HOST) {
       return new Response("Forbidden", { status: 403 });
     }
@@ -193,12 +165,6 @@ export function registerAppProtocol(): void {
     // The operator routes ride ahead of the gateway proxy.
     const operated = await forwardOperatorRequest(request);
     if (operated) {
-      // A hatched pairing leases a guardian token — cross it into the
-      // webview's cookie jar before the response lands, so the caller's
-      // very next resolution dial presents it.
-      await shipPairingCookie(request, operated, {
-        set: (details) => session.defaultSession.cookies.set(details),
-      });
       return operated;
     }
 
@@ -247,5 +213,11 @@ export function registerAppProtocol(): void {
       return new Response(finalHtml, { status: response.status, headers });
     }
     return new Response("Not Found", { status: 404 });
+  };
+
+  protocol.handle(APP_PROTOCOL, async (request) => {
+    const response = await respond(request);
+    await applyResponseCookies(request, response);
+    return response;
   });
 }
