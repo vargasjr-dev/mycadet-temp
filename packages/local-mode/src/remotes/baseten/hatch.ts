@@ -232,6 +232,13 @@ export async function hatchBaseten(
         log(
           `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,
         );
+        // cookies stay empty on purpose: a Set-Cookie on the hatch response
+        // lands in the hatch host's jar, and a cookie is host-scoped — the
+        // baseten gateway answers on its preview origin, which this jar can
+        // never reach. The browser earns its baseten cookie with one
+        // authenticated open on the preview edge instead. The local and
+        // docker legs feed the jar because their gateways answer on the same
+        // loopback host as the hatch response.
         return { ok: true, assistant: entry, ready: false, cookies: [] };
       }
       log(

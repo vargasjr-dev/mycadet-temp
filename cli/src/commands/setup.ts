@@ -1,14 +1,9 @@
 import { resolveAssistant } from "../lib/assistant-config.js";
-import {
-  getGatewayUrl,
-  type LockfileAssistant,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand, loadFreshGuardianToken } from "@mycadet/local-mode";
 import {
   ensureProviderApiKey,
   formatProviderName,
-  leaseGuardianToken,
-  type GuardianTokenData,
 } from "@mycadet/local-mode";
 import { yellow } from "../lib/color.js";
 
@@ -86,40 +81,6 @@ async function resolveDefaultProvider(
   }
 }
 
-function isGuardianAccessTokenUsable(
-  tokenData: GuardianTokenData | null,
-): tokenData is GuardianTokenData {
-  if (!tokenData?.accessToken) {
-    return false;
-  }
-  const expiresAt = new Date(tokenData.accessTokenExpiresAt).getTime();
-  return Number.isFinite(expiresAt) && expiresAt > Date.now();
-}
-
-async function resolveSetupBearerToken(
-  entry: LockfileAssistant,
-): Promise<string | undefined> {
-  // The one door: a usable stored lease comes back unchanged; a due or
-  // expired one re-invokes the pair flow and persists the fresh pair. A
-  // failed re-pair falls back to the stored token when it still has life.
-  const guardianToken = await loadFreshGuardianToken(entry.assistantId);
-  if (isGuardianAccessTokenUsable(guardianToken)) {
-    return guardianToken.accessToken;
-  }
-
-  try {
-    const leasedToken = await leaseGuardianToken(entry);
-    if (isGuardianAccessTokenUsable(leasedToken)) {
-      return leasedToken.accessToken;
-    }
-  } catch {
-    // Fall through, or let the setup request surface the gateway's auth
-    // error below.
-  }
-
-  return undefined;
-}
-
 export const setup = Object.assign(
   async function setup(): Promise<void> {
     const args = process.argv.slice(3);
@@ -165,7 +126,11 @@ export const setup = Object.assign(
     }
 
     const gatewayUrl = getGatewayUrl(entry);
-    const bearerToken = await resolveSetupBearerToken(entry);
+    // The one door: a fresh stored lease comes back unchanged; a due one
+    // re-invokes the pair flow and persists the fresh pair; a failed re-pair
+    // still hands back the stored token when it has life left.
+    const freshToken = await loadFreshGuardianToken(entry.assistantId);
+    const bearerToken = freshToken?.accessToken;
 
     // Respect the assistant's configured default provider (e.g. Cadet Cloud
     // chosen at hatch) unless the caller named one explicitly — the runtime's

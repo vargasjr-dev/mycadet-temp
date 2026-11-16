@@ -82,7 +82,11 @@ export async function resolveLiveVoiceConnection(
   parsed.protocol = parsed.protocol === "https:" ? "wss:" : "ws:";
   parsed.pathname = "/v1/live-voice";
 
-  const token = await resolveGuardianAccessToken(entry.assistantId);
+  // The one door: a due lease re-invokes the pair flow; a failed re-pair
+  // still hands back the stored token when it has life left
+  // (`refreshAfter` deliberately precedes expiry).
+  const fresh = await loadFreshGuardianToken(entry.assistantId);
+  const token = fresh?.accessToken;
   if (!token) {
     throw new LiveVoiceConnectionError(
       `No credential for '${entry.assistantId}'. Run 'cadet wake ` +
@@ -160,14 +164,4 @@ function resolveNamedAssistant(identifier: string) {
     );
   }
   return result.entry;
-}
-
-async function resolveGuardianAccessToken(
-  assistantId: string,
-): Promise<string | undefined> {
-  // The one door: a due lease re-invokes the pair flow; a failed re-pair
-  // still hands back the stored token when it has life left
-  // (`refreshAfter` deliberately precedes expiry).
-  const fresh = await loadFreshGuardianToken(assistantId);
-  return fresh?.accessToken;
 }

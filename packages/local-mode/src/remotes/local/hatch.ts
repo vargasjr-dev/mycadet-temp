@@ -21,6 +21,7 @@ import { findAvailablePort, getDefaultPorts } from "../../ports";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
+  webviewCookieFeed,
 } from "../../guardian-token";
 import { configureHatchProviderApiKey } from "../../provider-credentials";
 import { readCloudToken } from "../../cloud-auth";
@@ -190,15 +191,11 @@ export async function hatchLocal(params: {
     try {
       const tokenData = await leaseGuardianToken(entry);
       guardianAccessToken = tokenData.accessToken;
-      // The lease's fresh pair IS the webview's jar: feed it as cookies so
-      // the hatch response ships credentials the gateway's own middleware
-      // reads — no bearer token in page JavaScript. HttpOnly and no Secure:
-      // the local feed runs over loopback http, where a Secure cookie
-      // would be refused by the jar (the iOS replay lesson).
-      cookies.push(
-        `cadet_web_access=${encodeURIComponent(tokenData.accessToken)}; HttpOnly; Path=/; SameSite=Strict`,
-        `cadet_web_refresh=${encodeURIComponent(tokenData.refreshToken)}; HttpOnly; Path=/; SameSite=Strict`,
-      );
+      // The lease's fresh pair IS the webview's jar — fed as cookies on the
+      // hatch response so the page's requests authenticate through the
+      // gateway's own middleware. Same host as this response (loopback), so
+      // the host-scoped jar applies.
+      cookies.push(...webviewCookieFeed(tokenData));
       break;
     } catch (err) {
       if (

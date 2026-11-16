@@ -25,7 +25,11 @@ import {
   findOpenPort,
   getDefaultPorts,
 } from "../../ports";
-import { leaseGuardianToken } from "../../guardian-token";
+import {
+  leaseGuardianToken,
+  webviewCookieFeed,
+  type GuardianTokenData,
+} from "../../guardian-token";
 import type { HatchAssistantResult } from "../../operations/types";
 import {
   classifyReadyzResponse,
@@ -872,7 +876,7 @@ export async function hatchDocker(
 
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;
-    const { ready, guardianAccessToken, notReadyReason } =
+    const { ready, guardianToken, notReadyReason } =
       await waitForGatewayAndLease({
         entry: dockerEntry,
         containerName: res.assistantContainer,
@@ -897,6 +901,7 @@ export async function hatchDocker(
     if (ready) {
       // The hatch's config values go through the assistant's public config
       // API — the same route the web client and a local hatch use.
+      const guardianAccessToken = guardianToken?.accessToken;
       await applyHatchConfig({
         gatewayUrl,
         bearerToken: guardianAccessToken,
@@ -959,7 +964,10 @@ export async function hatchDocker(
       ok: true,
       assistant: dockerEntry,
       ready,
-      cookies: [],
+      // The lease's fresh pair IS the webview's jar, same as the local leg:
+      // the docker gateway answers on the same host as this response
+      // (loopback port map), so the host-scoped jar applies.
+      cookies: guardianToken ? webviewCookieFeed(guardianToken) : [],
     };
   } catch (error) {
     return {
@@ -984,7 +992,8 @@ async function waitForGatewayAndLease(opts: {
   containersUpAt: number;
 }): Promise<{
   ready: boolean;
-  guardianAccessToken?: string;
+  /** The full leased pair — the access half doubles as the callers' bearer. */
+  guardianToken?: GuardianTokenData;
   /** Present when readiness was not reached because migrations terminally
    * failed (returned in seconds, unlike an actual timeout). */
   notReadyReason?: "migrations_failed";
@@ -1003,17 +1012,16 @@ async function waitForGatewayAndLease(opts: {
     // the gateway. The lease retries silently since the gateway may need a
     // moment to accept connections after the container starts.
     const leaseDeadline = containersUpAt + DOCKER_READY_TIMEOUT_MS;
-    let guardianAccessToken: string | undefined;
+    let guardianToken: GuardianTokenData | undefined;
     while (Date.now() < leaseDeadline) {
       try {
-        const tokenData = await leaseGuardianToken(entry);
-        guardianAccessToken = tokenData.accessToken;
+        guardianToken = await leaseGuardianToken(entry);
         break;
       } catch {
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
-    if (!guardianAccessToken) {
+    if (!guardianToken) {
       log(
         `⚠️  Guardian token lease failed after ${DOCKER_READY_TIMEOUT_MS / 1000}s.\n` +
           `   The assistant is running but CLI commands (cadet ps, cadet exec) will not authenticate.\n` +
@@ -1032,15 +1040,15 @@ async function waitForGatewayAndLease(opts: {
     if (detachedReadiness === "failed") {
       return {
         ready: false,
-        guardianAccessToken,
+        guardianToken,
         notReadyReason: "migrations_failed",
       };
     }
     if (detachedReadiness === "timeout") {
-      return { ready: false, guardianAccessToken };
+      return { ready: false, guardianToken };
     }
 
-    return { ready: true, guardianAccessToken };
+    return { ready: true, guardianToken };
   }
 
   log(`  Container: ${containerName}`);
@@ -1049,6 +1057,7 @@ async function waitForGatewayAndLease(opts: {
   log("Waiting for assistant to become ready...");
 
   const start = containersUpAt;
+  let guardianToken: GuardianTokenData | undefined;
   // Readiness is classified from the /readyz BODY: the assistant returns 200
   // with `ready: false` while DB migrations run (the k8s keep-the-pod
   // contract), so `resp.ok` alone would declare readiness mid-migration and
@@ -1072,6 +1081,7 @@ async function waitForGatewayAndLease(opts: {
     log("");
     return {
       ready: false,
+      guardianToken,
       ...(readiness === "failed"
         ? { notReadyReason: "migrations_failed" as const }
         : {}),
@@ -1096,12 +1106,10 @@ async function waitForGatewayAndLease(opts: {
   const leaseDeadline = start + DOCKER_READY_TIMEOUT_MS;
   let leaseSuccess = false;
   let lastLeaseError: string | undefined;
-  let guardianAccessToken: string | undefined;
 
   while (Date.now() < leaseDeadline) {
     try {
-      const tokenData = await leaseGuardianToken(entry);
-      guardianAccessToken = tokenData.accessToken;
+      guardianToken = await leaseGuardianToken(entry);
       leaseSuccess = true;
       break;
     } catch (err) {
@@ -1123,7 +1131,7 @@ async function waitForGatewayAndLease(opts: {
   log("");
   log("✅ Docker containers are up and running!");
   log("");
-  return { ready: true, guardianAccessToken };
+  return { ready: true, guardianToken };
 }
 
 /**

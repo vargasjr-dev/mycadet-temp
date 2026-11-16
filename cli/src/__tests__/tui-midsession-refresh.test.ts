@@ -1,8 +1,10 @@
 /**
- * Tests for maybeRefreshAuthHeaders: the TUI's mid-session 401 -> refresh of a
- * PAIRED assistant's guardian token, mutating the shared auth headers in place.
- * Scoped to cloud:"paired"; skips local/docker, platform session auth, ephemeral
- * --token, and access-only tokens.
+ * Tests for maybeRefreshAuthHeaders: the TUI's mid-session 401 -> renew of the
+ * assistant's guardian credential through the one door (loadFreshGuardianToken
+ * — a due lease re-invokes the pair flow; the re-pair itself is pinned by the
+ * door's own tests where the transport mocks live). What the TUI owns is the
+ * swap: the header takes the door's token unless it already has it, and no
+ * request is made to the (possibly poisoned) baseUrl to fetch one.
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -106,17 +108,20 @@ describe("maybeRefreshAuthHeaders", () => {
     rmSync(tempHome, { recursive: true, force: true });
   });
 
-  test("refreshes a paired assistant and mutates the auth header in place", async () => {
+  test("swaps a 401ing bearer for the store's lease, in place", async () => {
+    // The store holds a still-fresh lease the header doesn't know about —
+    // the mid-session self-heal: the header takes the store's token without
+    // any request to the (possibly poisoned) baseUrl.
     seedEntry("paired");
-    seedToken("old-acc", "ref");
+    seedToken("stored-acc", "ref", { due: false });
     const refresh = stubRefresh(true);
-    const auth = { Authorization: "Bearer old-acc" };
+    const auth = { Authorization: "Bearer stale-acc" };
 
     const ok = await maybeRefreshAuthHeaders(RUNTIME, "px", auth);
 
     expect(ok).toBe(true);
-    expect(auth.Authorization).toBe("Bearer new-acc");
-    expect(refresh.hit()).toBe(true);
+    expect(auth.Authorization).toBe("Bearer stored-acc");
+    expect(refresh.hit()).toBe(false); // the door fetched nothing anywhere
   });
 
   test("does NOT refresh against an overridden/poisoned baseUrl (no credential leak)", async () => {
@@ -161,16 +166,18 @@ describe("maybeRefreshAuthHeaders", () => {
     expect(refresh.hit()).toBe(false);
   });
 
-  test("skips an ephemeral token that does not match the store", async () => {
+  test("keeps the header when it already holds the store's token", async () => {
+    // The equality check IS the no-op guard: a token that matches the
+    // store's lease swaps for nothing, whatever the 401 said.
     seedEntry("paired");
-    seedToken("stored-acc", "ref");
+    seedToken("stored-acc", "ref", { due: false });
     const refresh = stubRefresh(true);
-    const auth = { Authorization: "Bearer ephemeral-acc" };
+    const auth = { Authorization: "Bearer stored-acc" };
 
     const ok = await maybeRefreshAuthHeaders(RUNTIME, "px", auth);
 
     expect(ok).toBe(false);
-    expect(auth.Authorization).toBe("Bearer ephemeral-acc");
+    expect(auth.Authorization).toBe("Bearer stored-acc");
     expect(refresh.hit()).toBe(false);
   });
 

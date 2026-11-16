@@ -307,7 +307,7 @@ export async function getGuardianAccessToken(
   // Due, not dead: the refresh IS a re-pair — the pairing mint revokes the
   // device's old tokens and issues a fresh pair, persisted by the lease. No
   // refresh API is called and no long-lived token travels over HTTP.
-  const refresh = refreshToken(assistantId).finally(() => {
+  const refresh = leaseGuardianTokenFromLockfile(assistantId).finally(() => {
     if (guardianTokenRefreshes.get(tokenPath) === refresh) {
       guardianTokenRefreshes.delete(tokenPath);
     }
@@ -328,13 +328,6 @@ function isBasetenAssistant(assistantId: string): boolean {
   );
 }
 
-function refreshToken(assistantId: string): Promise<TokenResult> {
-  // The refresh IS a re-pair: the pairing mint revokes the device's old
-  // tokens and issues a fresh pair, persisted by the lease. No refresh API
-  // is called and no long-lived token travels over HTTP.
-  return leaseGuardianTokenFromLockfile(assistantId);
-}
-
 /**
  * True when a stored guardian token has reached its renewal point: now is
  * at/after `refreshAfter` (preferred) or `accessTokenExpiresAt`. Unparseable
@@ -348,6 +341,23 @@ export function guardianTokenDueForRenewal(token: GuardianTokenData): boolean {
     return false;
   }
   return at <= Date.now();
+}
+
+/**
+ * The lease's pair as the webview's cookie feed: the hatch response ships
+ * these as Set-Cookie headers so the page's requests authenticate through
+ * the gateway's own middleware — no bearer token in page JavaScript.
+ * HttpOnly and no Secure: the loopback http feeds would have a Secure
+ * cookie refused by the jar (the iOS replay lesson). Only meaningful when
+ * the gateway answers on the SAME host as the hatch response — a cookie is
+ * host-scoped, so a remote gateway's origin (baseten's preview URL) can
+ * never see this jar.
+ */
+export function webviewCookieFeed(token: GuardianTokenData): string[] {
+  return [
+    `cadet_web_access=${encodeURIComponent(token.accessToken)}; HttpOnly; Path=/; SameSite=Strict`,
+    `cadet_web_refresh=${encodeURIComponent(token.refreshToken)}; HttpOnly; Path=/; SameSite=Strict`,
+  ];
 }
 
 /**

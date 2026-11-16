@@ -14,7 +14,6 @@ import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   loadFreshGuardianToken,
-  loadGuardianToken,
   lookupAssistantByIdentifier,
 } from "@mycadet/local-mode";
 import { appendHistory, loadHistory } from "../lib/input-history";
@@ -207,16 +206,11 @@ export async function maybeRefreshAuthHeaders(
   const bearer = auth["Authorization"]?.replace(/^Bearer /, "");
   if (!bearer) return false;
 
-  // Renew only the stored lease (an ephemeral bearer won't match).
-  const stored = loadGuardianToken(assistantId);
-  if (!stored || stored.accessToken !== bearer) {
-    return false;
-  }
-
   // The one door: a due lease re-invokes the pair flow (which talks only to
   // the lockfile's persisted entry — a poisoned `baseUrl` never receives a
   // credential), and a still-fresh token comes back unchanged, so a forged
-  // 401 on a valid token moves nothing.
+  // 401 on a valid token moves nothing. A token that was never a stored
+  // lease comes back null and leaves the headers untouched.
   const fresh = await loadFreshGuardianToken(assistantId);
   if (!fresh?.accessToken || fresh.accessToken === bearer) return false;
   auth["Authorization"] = `Bearer ${fresh.accessToken}`;

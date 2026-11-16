@@ -241,34 +241,6 @@ async function maybeHydrateCloudAssistantName(
   }
 }
 
-/**
- * Return a possibly-renewed bearer token for the TUI's startup auth.
- *
- * Only a STORED guardian token participates: platform session auth
- * (`cloud === "cloud"`) and ephemeral `--token` overrides (whose token won't
- * match the store) are left untouched, as is a token that's still fresh. When
- * the stored token has passed its `refreshAfter` (or expiry), renew through
- * the one door — the pair flow, which talks only to the lockfile's persisted
- * entry, so a caller-supplied `--url` never receives a credential. Falls back
- * to the existing token if renewal isn't possible/fails — the session still
- * starts (same as before).
- */
-export async function resolveFreshBearerToken(
-  _runtimeUrl: string,
-  assistantId: string,
-  bearerToken: string | undefined,
-  cloud: string | undefined,
-): Promise<string | undefined> {
-  if (cloud === "cloud" || !bearerToken || !assistantId) return bearerToken;
-
-  // Renew only the stored token (an ephemeral --token won't match).
-  const stored = loadGuardianToken(assistantId);
-  if (!stored || stored.accessToken !== bearerToken) return bearerToken;
-
-  const fresh = await loadFreshGuardianToken(assistantId);
-  return fresh?.accessToken ?? bearerToken;
-}
-
 export const client = Object.assign(
   async function client(): Promise<void> {
     const {
@@ -308,17 +280,18 @@ export const client = Object.assign(
         ...getClientRegistrationHeaders(CLI_INTERFACE_ID),
       };
     } else {
-      // Proactively refresh a stale STORED guardian token before opening the TUI,
-      // so launching after the access token expired renews transparently rather
-      // than erroring. (Mid-session expiry — the token dying while the TUI is
-      // already open — is a separate follow-up, since the TUI threads a static
-      // auth object through React.)
-      const token = await resolveFreshBearerToken(
-        runtimeUrl,
-        assistantId,
-        bearerToken,
-        cloud,
-      );
+      // Proactively renew a stale STORED guardian token before opening the
+      // TUI, so launching after the access token expired renews transparently
+      // rather than erroring. The one door: a fresh stored lease comes back
+      // unchanged, a due one re-invokes the pair flow, and a failed re-pair
+      // still hands back the stored token when it has life left. A
+      // caller-supplied `--token` survives (the pair flow talks only to the
+      // lockfile's persisted entry, and a null door result falls back to it).
+      // (Mid-session expiry — the token dying while the TUI is already open —
+      // is a separate follow-up, since the TUI threads a static auth object
+      // through React.)
+      const fresh = await loadFreshGuardianToken(assistantId);
+      const token = fresh?.accessToken ?? bearerToken;
       auth = {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...getClientRegistrationHeaders(CLI_INTERFACE_ID),
