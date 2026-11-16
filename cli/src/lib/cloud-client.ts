@@ -49,9 +49,39 @@ const HatchedAssistantSchema = z.object({
   status: z.string(),
 });
 
-const HatchedListResponseSchema = z.object({
+// The operator contract's list union (local-mode runListRoute): every row
+// the account owns as a choice, or the empty arm. The list's rows are
+// usable choices — readiness verdicts come from the scoped dial, not the
+// list — so each listed row reads back as active.
+const AssistantListUnionSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("empty") }),
+  z.object({
+    status: z.literal("selection"),
+    assistants: z.array(z.object({ id: z.string(), name: z.string() })),
+  }),
+]);
+
+// The conductor's pre-union vocabulary — still tolerated so a CLI from this
+// release keeps working against deploys that predate the list union.
+const LegacyListResponseSchema = z.object({
   results: z.array(HatchedAssistantSchema).optional(),
 });
+
+function decodeAssistantList(body: unknown): HatchedAssistant[] {
+  const union = AssistantListUnionSchema.safeParse(body);
+  if (union.success) {
+    return union.data.status === "selection"
+      ? union.data.assistants.map((row) => ({
+          id: row.id,
+          name: row.name,
+          status: "active",
+        }))
+      : [];
+  }
+  const legacy = LegacyListResponseSchema.safeParse(body);
+  const results = legacy.success ? (legacy.data.results ?? []) : [];
+  return results.filter((assistant) => assistant.status === "active");
+}
 
 const AssistantDetailResponseSchema = z.object({
   current_release_version: z.string().nullable().optional(),
@@ -67,47 +97,10 @@ const VersionCheckResponseSchema = z
 const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
 /**
- * Lightweight pre-check: returns the first active cloud assistant for the
- * authenticated user, or `null` if none exists. Calls `GET /v1/assistants/`
- * and looks for any assistant with status "active".
- *
- * Used by the teleport flow to block BEFORE the expensive GCS upload when
- * the user already has a cloud assistant.
- */
-export async function checkExistingCloudAssistant(
-  token: string,
-): Promise<HatchedAssistant | null> {
-  const resolvedUrl = getCloudBaseUrl();
-  const url = `${resolvedUrl}/v1/assistants/`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    CLOUD_FETCH_TIMEOUT_MS,
-  );
-
-  try {
-    const response = await loopbackSafeFetch(url, {
-      signal: controller.signal,
-      headers: await cloudAuthHeaders(token),
-    });
-
-    if (!response.ok) {
-      // Non-fatal: if the list call fails, fall through and let hatch handle it.
-      return null;
-    }
-
-    const parsed = HatchedListResponseSchema.safeParse(await response.json());
-    const results = parsed.success ? parsed.data.results : undefined;
-    return results?.find((a) => a.status === "active") ?? null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * Fetch all active assistants for the authenticated user from the cloud.
- * Returns an empty array on failure (non-fatal).
+ * Fetch the authenticated user's cloud assistants — the operator contract's
+ * list union (local-mode runListRoute), with the conductor's legacy
+ * `{results}` vocabulary still tolerated for older deploys. Returns an empty
+ * array on failure (non-fatal).
  */
 export async function fetchCloudAssistants(
   token: string,
@@ -129,10 +122,7 @@ export async function fetchCloudAssistants(
 
     if (!response.ok) return [];
 
-    const parsed = HatchedListResponseSchema.safeParse(await response.json());
-    const results = parsed.success ? (parsed.data.results ?? []) : [];
-
-    return results.filter((a) => a.status === "active");
+    return decodeAssistantList(await response.json().catch(() => null));
   } finally {
     clearTimeout(timeoutId);
   }
