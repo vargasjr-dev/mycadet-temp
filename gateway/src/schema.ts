@@ -2438,6 +2438,24 @@ export function buildSchema(): Record<string, unknown> {
           },
         },
       },
+      "/v1/guardian/webview-pair": {
+        post: {
+          summary: "Mint a webview credential pair",
+          description:
+            "Mints a browser-class credential pair for a webview the caller (a hatched assistant's daemon) already holds a guardian lease for. The tokens ride the Set-Cookie response headers — the webview starts with a jar of its own token family, independent of the daemon's lease.",
+          operationId: "guardianWebviewPair",
+          security: [{ BearerAuth: [] }],
+          responses: {
+            "200": {
+              description: "Webview credential pair set via Set-Cookie",
+            },
+            "401": { description: "Unauthorized — invalid bearer token" },
+            "503": {
+              description: "Guardian binding requires repair before minting",
+            },
+          },
+        },
+      },
       "/v1/guardian/refresh": {
         post: {
           summary: "Refresh guardian credentials",

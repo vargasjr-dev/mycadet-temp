@@ -5,6 +5,7 @@ import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
 import { readLockfileAssistantAvatar } from "../avatar";
 import { hatchAssistant } from "./hatch";
+import { mintWebviewCredentialCookies } from "../guardian-token";
 import { upgradeAssistant } from "./upgrade";
 import { consoleLifecycleReporter } from "../lifecycle-reporter";
 import { ownVersion } from "../environment";
@@ -289,7 +290,24 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
   try {
     const result = await hatchAssistant({ remote });
     if (result.ok) {
-      return json({ ok: true, assistantId: result.assistant.assistantId });
+      // The hatched assistant's webview starts with a credential jar of its
+      // own: the local gateway mints a browser-class pair (a token family
+      // independent of this daemon's lease) and these headers ship verbatim.
+      // Best-effort — no cookies just means the webview re-pairs through
+      // the challenge flow.
+      const setCookies = await mintWebviewCredentialCookies(
+        result.assistant.assistantId,
+        getGatewayUrl(result.assistant),
+      );
+      const headers = new Headers({ "content-type": "application/json" });
+      for (const cookie of setCookies) headers.append("Set-Cookie", cookie);
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          assistantId: result.assistant.assistantId,
+        }),
+        { headers },
+      );
     }
     return json({ ok: false, error: result.error }, result.status);
   } catch (err) {

@@ -112,6 +112,7 @@ export {
   leaseGuardianToken,
   parseGuardianToken,
   parseRotatedGuardianToken,
+  mintWebviewCredentialCookies,
 } from "./guardian-token";
 export {
   configureHatchProviderApiKey,

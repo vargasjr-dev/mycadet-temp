@@ -10,6 +10,8 @@ import { z } from "zod";
 
 import { isDnsIndependentLoopbackUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
+import { loopbackSafeFetch } from "./loopback-fetch";
+
 import {
   basetenTokenPath,
   guardianTokenPath,
@@ -468,6 +470,37 @@ export function parseGuardianToken(raw: unknown): GuardianTokenData {
  * cookie-parsed values alongside it. A malformed body throws a
  * {@link GuardianLeasePermanentError}; it will not fix itself on retry.
  */
+/**
+ * Mint a webview credential pair for a hatched assistant and return the
+ * Set-Cookie headers to forward verbatim: the local gateway's webview-pair
+ * door mints a browser-class pair (a token family of the webview's own,
+ * independent of this daemon's lease) and the caller's response ships the
+ * cookies to the webview's jar. Best-effort — a mint failure degrades to no
+ * cookies and the webview re-pairs through the challenge flow; the hatch
+ * itself never fails over this.
+ */
+export async function mintWebviewCredentialCookies(
+  assistantId: string,
+  gatewayUrl: string,
+): Promise<string[]> {
+  try {
+    const lease = loadGuardianToken(assistantId);
+    if (!lease) return [];
+    const response = await loopbackSafeFetch(
+      `${gatewayUrl.replace(/\/+$/, "")}/v1/guardian/webview-pair`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lease.accessToken}` },
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    if (!response.ok) return [];
+    return response.headers.getSetCookie?.() ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export function parseRotatedGuardianToken(
   raw: unknown,
   cookies: { accessToken: string; refreshToken: string },
