@@ -130,7 +130,8 @@ export const machine = Object.assign(
         `Machine policy for '${entry.assistantId}' (${entry.cloud} assistant):`,
       );
       for (const p of paths) {
-        const leaf = p.split(".")[1] as "max" | "high";
+        const leaf = p.split(".")[1];
+        if (leaf !== "max" && leaf !== "high") continue;
         console.log(storedLine(p, result.machine?.memory?.[leaf]));
       }
       return;

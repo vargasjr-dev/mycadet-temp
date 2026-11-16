@@ -9,6 +9,8 @@
  * would otherwise hang waiting for an interactive user.
  */
 
+import { z } from "zod";
+
 import { extractFlag } from "../lib/arg-utils.js";
 import { AssistantClient } from "../lib/assistant-client.js";
 
@@ -131,7 +133,9 @@ export const confirm = Object.assign(
       process.exit(1);
     }
 
-    const result = (await response.json()) as { accepted: boolean };
+    const result = z
+      .object({ accepted: z.boolean() })
+      .parse(await response.json());
 
     if (jsonOutput) {
       console.log(JSON.stringify(result, null, 2));

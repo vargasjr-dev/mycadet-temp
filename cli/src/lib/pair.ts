@@ -19,12 +19,18 @@ const CODE_TTL_MINUTES = Math.round(REMOTE_WEB_PAIRING_CODE_TTL_MS / 60_000);
  * JSON or carries no string code.
  */
 export function parseGatewayErrorCode(body: string): string | null {
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(body) as { error?: { code?: unknown } };
-    return typeof parsed.error?.code === "string" ? parsed.error.code : null;
+    parsed = JSON.parse(body);
   } catch {
     return null;
   }
+  if (typeof parsed !== "object" || parsed === null || !("error" in parsed))
+    return null;
+  const { error } = parsed;
+  if (typeof error !== "object" || error === null || !("code" in error))
+    return null;
+  return typeof error.code === "string" ? error.code : null;
 }
 
 /**
