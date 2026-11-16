@@ -136,13 +136,26 @@ final class SameOriginAPIHandler: NSObject, WKURLSchemeHandler {
             return
         }
         let tlsTarget = target.scheme?.lowercased() == "https"
+        // The cookie parser applies the browser setter policy and drops
+        // `Secure` cookies for insecure URLs outright — so on a plain-http
+        // target the gateway's session cookies never reach the jar at all
+        // (the post-pairing 401). Parse against the target's TLS twin and
+        // let `replayable` carry the transport adjustment onto the rebuilt
+        // cookie instead.
+        let parseTarget = tlsTarget ? target : Self.tlsTwin(of: target)
         let cookies = HTTPCookie
-            .cookies(withResponseHeaderFields: fields, for: target)
+            .cookies(withResponseHeaderFields: fields, for: parseTarget)
             .map { Self.replayable($0, overTLS: tlsTarget) }
         guard !cookies.isEmpty else {
             return
         }
         HTTPCookieStorage.shared.setCookies(cookies, for: target, mainDocumentURL: target)
+    }
+
+    private static func tlsTwin(of url: URL) -> URL {
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.scheme = "https"
+        return components?.url ?? url
     }
 
     /// A `Secure` cookie never matches an http URL on the jar's read side —
