@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import type { HatchAssistantResult } from "../../operations/types";
 import { cloudAuthHeaders, readCloudToken } from "../../cloud-auth";
 import { getCloudBaseUrl } from "@mycadet/shared";
 import { loopbackSafeFetch } from "../../loopback-fetch";
@@ -28,11 +29,7 @@ export interface HatchedCloudAssistant {
   status: string;
 }
 
-export type HatchCloudResult =
-  | { ok: true; entry: LockfileAssistant; assistant: HatchedCloudAssistant }
-  | { ok: false; status: number; error: string };
-
-export async function hatchCloud(): Promise<HatchCloudResult> {
+export async function hatchCloud(): Promise<HatchAssistantResult> {
   // The token is the caller's stored platform login — readCloudToken is the
   // same credential every cloud command rides, so the hatch derives it here
   // instead of making callers thread it through.
@@ -67,7 +64,13 @@ export async function hatchCloud(): Promise<HatchCloudResult> {
       };
       // The active-assistant switch rides the same locked write.
       saveLockfileAssistant(entry, entry.assistantId);
-      return { ok: true, entry, assistant };
+      return {
+        ok: true,
+        assistant: entry,
+        ready: false,
+        status: assistant.status,
+        cookies: [],
+      };
     }
 
     if (response.status === 401 || response.status === 403) {

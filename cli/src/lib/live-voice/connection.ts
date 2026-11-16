@@ -5,7 +5,7 @@
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
-  loadGuardianToken,
+  loadFreshGuardianToken,
   lookupAssistantByIdentifier,
   readCloudToken,
 } from "@mycadet/local-mode";
@@ -13,10 +13,6 @@ import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveTargetAssistant } from "../assistant-config.js";
-import {
-  guardianTokenDueForRenewal,
-  refreshGuardianToken,
-} from "../guardian-token.js";
 import {
   buildTunnelLiveVoiceUrl,
   mintTunnelWsToken,
@@ -86,7 +82,7 @@ export async function resolveLiveVoiceConnection(
   parsed.protocol = parsed.protocol === "https:" ? "wss:" : "ws:";
   parsed.pathname = "/v1/live-voice";
 
-  const token = await resolveGuardianAccessToken(entry.assistantId, baseUrl);
+  const token = await resolveGuardianAccessToken(entry.assistantId);
   if (!token) {
     throw new LiveVoiceConnectionError(
       `No credential for '${entry.assistantId}'. Run 'cadet wake ` +
@@ -168,18 +164,10 @@ function resolveNamedAssistant(identifier: string) {
 
 async function resolveGuardianAccessToken(
   assistantId: string,
-  gatewayUrl: string,
 ): Promise<string | undefined> {
-  const stored = loadGuardianToken(assistantId);
-  if (!stored?.accessToken) {
-    return undefined;
-  }
-  if (!guardianTokenDueForRenewal(stored)) {
-    return stored.accessToken;
-  }
-  const refreshed = await refreshGuardianToken(gatewayUrl, assistantId);
-  // A failed refresh is not fatal on its own: the stored token may still have
-  // life left (`refreshAfter` deliberately precedes expiry), so try it rather
-  // than refusing to open a session that would have worked.
-  return refreshed?.accessToken ?? stored.accessToken;
+  // The one door: a due lease re-invokes the pair flow; a failed re-pair
+  // still hands back the stored token when it has life left
+  // (`refreshAfter` deliberately precedes expiry).
+  const fresh = await loadFreshGuardianToken(assistantId);
+  return fresh?.accessToken;
 }

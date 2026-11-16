@@ -7,8 +7,6 @@ import { configureCliPaths } from "../cli-invocation";
 
 import {
   getGuardianAccessToken,
-  formatGuardianRefreshCliFailure,
-  parseGuardianRefreshCliFailure,
   isConfidentialRefreshUrl,
   saveBasetenSandboxToken,
   saveGuardianToken,
@@ -107,47 +105,6 @@ describe("getGuardianAccessToken", () => {
       status: 401,
       error:
         "Guardian token expired. Re-run `cadet hatch`, `cadet wake`, or `cadet pair`.",
-    });
-  });
-});
-
-describe("parseGuardianRefreshCliFailure", () => {
-  test("reads a labeled 401 from stderr", () => {
-    expect(
-      parseGuardianRefreshCliFailure(
-        "",
-        `Failed to refresh guardian token.\n${formatGuardianRefreshCliFailure(401, "Failed to refresh guardian token")}\n`,
-      ),
-    ).toEqual({
-      ok: false,
-      status: 401,
-      error: "Failed to refresh guardian token",
-    });
-  });
-
-  test("reads a labeled 503 from stderr", () => {
-    expect(
-      parseGuardianRefreshCliFailure(
-        "",
-        formatGuardianRefreshCliFailure(
-          503,
-          "Assistant gateway is unreachable",
-        ),
-      ),
-    ).toEqual({
-      ok: false,
-      status: 503,
-      error: "Assistant gateway is unreachable",
-    });
-  });
-
-  test("an unlabeled non-zero CLI exit is a 503, not a 401", () => {
-    expect(
-      parseGuardianRefreshCliFailure("", "Failed to refresh guardian token."),
-    ).toEqual({
-      ok: false,
-      status: 503,
-      error: "Failed to refresh guardian token",
     });
   });
 });

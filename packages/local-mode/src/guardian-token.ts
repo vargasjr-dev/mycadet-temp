@@ -20,23 +20,15 @@ import {
 import type { LockfileAssistant } from "./lockfile-contract";
 import { readLockfile } from "./lockfile";
 import { pairDevice } from "./operations/pair";
-import type { CliInvocation } from "./util";
-import { resolveCliInvocation } from "./cli-invocation";
 
-const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
 const guardianTokenRefreshes = new Map<string, Promise<TokenResult>>();
 
 import {
   GuardianTokenFileSchema,
-  GuardianRotationPayloadSchema,
   type GuardianTokenData,
 } from "./guardian-contract";
 
-export {
-  GuardianTokenFileSchema,
-  GuardianRotationPayloadSchema,
-  type GuardianTokenData,
-};
+export { GuardianTokenFileSchema, type GuardianTokenData };
 
 /**
  * Persist an assistant's guardian token where every host-seam reader resolves
@@ -212,71 +204,38 @@ export type TokenResult =
   | { ok: false; status: number; error: string };
 
 /**
- * Prefix of the machine-readable line `cadet gateway token refresh` writes
- * to stderr on failure so hosts can distinguish a spent credential (401)
- * from an unreachable gateway (503) without scraping the human message.
+ * Re-invoke the pair flow for an assistant and persist the fresh pair.
+ * The daemon-side refresh path: the same `gateway pairing mint` the CLI's
+ * lease runs, resolved against the lockfile's persisted entry.
  */
-const GUARDIAN_REFRESH_ERROR_PREFIX = "CADET_REFRESH_ERROR=";
-
-/** Encode a structured refresh failure for the CLI's stderr. */
-export function formatGuardianRefreshCliFailure(
-  status: number,
-  error: string,
-): string {
-  return `${GUARDIAN_REFRESH_ERROR_PREFIX}${JSON.stringify({ status, error })}`;
-}
-
-/**
- * Read the structured status out of a failed `cadet gateway token refresh`.
- * An unlabeled non-zero exit defaults to 503: this spawn only runs when the
- * on-disk refresh token is still unexpired, so a bare CLI failure is an
- * unreachable or still-starting gateway, not a spent credential.
- */
-export function parseGuardianRefreshCliFailure(
-  stdout: string,
-  stderr: string,
-): TokenResult {
-  const blob = `${stderr}\n${stdout}`;
-  for (const line of blob.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith(GUARDIAN_REFRESH_ERROR_PREFIX)) {
-      continue;
-    }
-    try {
-      const parsed: unknown = JSON.parse(
-        trimmed.slice(GUARDIAN_REFRESH_ERROR_PREFIX.length),
-      );
-      if (
-        parsed === null ||
-        typeof parsed !== "object" ||
-        !("status" in parsed) ||
-        typeof (parsed as { status: unknown }).status !== "number"
-      ) {
-        continue;
-      }
-      const status = (parsed as { status: number }).status;
-      if (status < 400 || status > 599) {
-        continue;
-      }
-      const errorText =
-        "error" in parsed &&
-        typeof (parsed as { error: unknown }).error === "string" &&
-        (parsed as { error: string }).error.trim() !== ""
-          ? (parsed as { error: string }).error
-          : "Failed to refresh guardian token";
-      return { ok: false, status, error: errorText };
-    } catch {
-      // Keep scanning; a later well-formed line still wins.
-    }
+async function leaseGuardianTokenFromLockfile(
+  assistantId: string,
+): Promise<TokenResult> {
+  const entry = readLockfile().assistants.find(
+    (a) => a.assistantId === assistantId,
+  );
+  if (!entry) {
+    return {
+      ok: false,
+      status: 404,
+      error: "Guardian token not found",
+    };
   }
-  return {
-    ok: false,
-    status: 503,
-    error: "Failed to refresh guardian token",
-  };
+  try {
+    const tokenData = await leaseGuardianToken(entry);
+    return { ok: true, accessToken: tokenData.accessToken };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 401,
+      error:
+        err instanceof Error
+          ? `Guardian re-pair failed: ${err.message}`
+          : "Guardian re-pair failed",
+    };
+  }
 }
 
-/** The persisted shape of an assistant's guardian token file. */
 /**
  * The guardian access token for an assistant, from its xdg token file —
  * the only argument is the assistant id, everything else is on disk.
@@ -288,20 +247,19 @@ export function parseGuardianRefreshCliFailure(
 export async function getGuardianAccessToken(
   assistantId: string,
 ): Promise<TokenResult> {
-  const invocation = await resolveCliInvocation();
   if (isBasetenAssistant(assistantId)) {
-    return Promise.resolve(readBasetenSandboxToken(assistantId));
+    return readBasetenSandboxToken(assistantId);
   }
 
   let tokenPath: string;
   try {
     tokenPath = guardianTokenPath(assistantId);
   } catch {
-    return Promise.resolve({
+    return {
       ok: false,
       status: 400,
       error: "Invalid assistant ID",
-    });
+    };
   }
 
   let raw: string | undefined;
@@ -311,42 +269,45 @@ export async function getGuardianAccessToken(
     // Not found at the one canonical location.
   }
   if (raw === undefined) {
-    return Promise.resolve({
+    return {
       ok: false,
       status: 404,
       error: "Guardian token not found",
-    });
+    };
   }
 
   let data: GuardianTokenData;
   try {
     data = JSON.parse(raw) as GuardianTokenData;
   } catch {
-    return Promise.resolve({
+    return {
       ok: false,
       status: 500,
       error: "Malformed guardian token file",
-    });
+    };
   }
 
   if (!isAccessTokenExpired(data)) {
-    return Promise.resolve({ ok: true, accessToken: data.accessToken });
+    return { ok: true, accessToken: data.accessToken };
   }
 
   if (isRefreshTokenExpired(data)) {
-    return Promise.resolve({
+    return {
       ok: false,
       status: 401,
       error:
         "Guardian token expired. Re-run `cadet hatch`, `cadet wake`, or `cadet pair`.",
-    });
+    };
   }
 
   const existingRefresh = guardianTokenRefreshes.get(tokenPath);
   if (existingRefresh) {
     return existingRefresh;
   }
-  const refresh = refreshToken(assistantId, invocation).finally(() => {
+  // Due, not dead: the refresh IS a re-pair — the pairing mint revokes the
+  // device's old tokens and issues a fresh pair, persisted by the lease. No
+  // refresh API is called and no long-lived token travels over HTTP.
+  const refresh = refreshToken(assistantId).finally(() => {
     if (guardianTokenRefreshes.get(tokenPath) === refresh) {
       guardianTokenRefreshes.delete(tokenPath);
     }
@@ -367,76 +328,57 @@ function isBasetenAssistant(assistantId: string): boolean {
   );
 }
 
-function refreshToken(
+function refreshToken(assistantId: string): Promise<TokenResult> {
+  // The refresh IS a re-pair: the pairing mint revokes the device's old
+  // tokens and issues a fresh pair, persisted by the lease. No refresh API
+  // is called and no long-lived token travels over HTTP.
+  return leaseGuardianTokenFromLockfile(assistantId);
+}
+
+/**
+ * True when a stored guardian token has reached its renewal point: now is
+ * at/after `refreshAfter` (preferred) or `accessTokenExpiresAt`. Unparseable
+ * timestamps → not due, so a forged/synthetic 401 can't coax a credential
+ * movement.
+ */
+export function guardianTokenDueForRenewal(token: GuardianTokenData): boolean {
+  const raw = token.refreshAfter || token.accessTokenExpiresAt;
+  const at = new Date(raw).getTime();
+  if (!Number.isFinite(at)) {
+    return false;
+  }
+  return at <= Date.now();
+}
+
+/**
+ * The ONE guardian-token door for host-side consumers: read the stored
+ * lease, and when it is due for renewal re-invoke the pair flow instead of
+ * calling a refresh API — the pairing mint revokes the device's old tokens
+ * and issues a fresh pair, so "refresh" and "pair" are the same operation
+ * and no long-lived refresh token ever travels over an HTTP request. A
+ * failed re-pair is not fatal when the stored token still has life left
+ * (the `refreshAfter` marker deliberately precedes expiry); consumers fall
+ * back to it.
+ */
+export async function loadFreshGuardianToken(
   assistantId: string,
-  invocation: CliInvocation,
-): Promise<TokenResult> {
-  return new Promise((resolve) => {
-    const child = spawn(
-      invocation.command,
-      [...invocation.baseArgs, "gateway", "token", "refresh", assistantId],
-      {
-        stdio: ["ignore", "pipe", "pipe"],
-        windowsHide: true,
-        env: { ...process.env },
-      },
-    );
+): Promise<GuardianTokenData | null> {
+  const stored = loadGuardianToken(assistantId);
+  if (stored && !guardianTokenDueForRenewal(stored)) {
+    return stored;
+  }
 
-    let stdout = "";
-    let stderr = "";
-    let done = false;
-
-    const finish = (result: TokenResult) => {
-      if (done) {
-        return;
-      }
-      done = true;
-      clearTimeout(timeout);
-      resolve(result);
-    };
-
-    const timeout = setTimeout(() => {
-      child.kill("SIGTERM");
-      finish({
-        ok: false,
-        status: 500,
-        error: "Guardian token refresh timed out",
-      });
-    }, GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS);
-
-    child.stdout.on("data", (chunk: Buffer) => {
-      stdout += chunk.toString();
-    });
-
-    child.stderr.on("data", (chunk: Buffer) => {
-      stderr += chunk.toString();
-    });
-
-    child.on("close", (code) => {
-      if (code === 0) {
-        const accessToken = stdout.trim();
-        if (accessToken) {
-          finish({ ok: true, accessToken });
-        } else {
-          finish({ ok: false, status: 500, error: "CLI returned empty token" });
-        }
-      } else {
-        // This spawn only runs when the on-disk refresh token is still
-        // unexpired. A non-zero CLI exit is therefore a transport or
-        // gateway-availability failure unless the CLI labels a spent
-        // credential (401) or a local confidentiality refusal (403).
-        finish(parseGuardianRefreshCliFailure(stdout, stderr));
-      }
-    });
-
-    child.on("error", (err) => {
-      finish({
-        ok: false,
-        status: 500,
-        error: `Failed to spawn CLI: ${err.message}`,
-      });
-    });
-  });
+  const entry = readLockfile().assistants.find(
+    (a) => a.assistantId === assistantId,
+  );
+  if (!entry) {
+    return stored ?? null;
+  }
+  try {
+    return await leaseGuardianToken(entry);
+  } catch {
+    return stored ?? null;
+  }
 }
 
 // ─── The guardian-token lease ────────────────────────────────────────────
@@ -461,72 +403,6 @@ export function parseGuardianToken(raw: unknown): GuardianTokenData {
     );
   }
   return parsed.data;
-}
-
-/**
- * Parse a cookie rotation's answer into the token data the lease persists.
- * The rotation body carries only metadata (the token VALUES ride Set-Cookie
- * headers — secrets never land in a body), so the caller hands over the
- * cookie-parsed values alongside it. A malformed body throws a
- * {@link GuardianLeasePermanentError}; it will not fix itself on retry.
- */
-/**
- * Mint a webview credential pair for a hatched assistant and return the
- * Set-Cookie headers to forward verbatim: the local gateway's webview-pair
- * door mints a browser-class pair (a token family of the webview's own,
- * independent of this daemon's lease) and the caller's response ships the
- * cookies to the webview's jar. Best-effort — a mint failure degrades to no
- * cookies and the webview re-pairs through the challenge flow; the hatch
- * itself never fails over this.
- */
-export async function mintWebviewCredentialCookies(
-  assistantId: string,
-  gatewayUrl: string,
-): Promise<string[]> {
-  try {
-    const lease = loadGuardianToken(assistantId);
-    if (!lease) return [];
-    const response = await loopbackSafeFetch(
-      `${gatewayUrl.replace(/\/+$/, "")}/v1/guardian/webview-pair`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${lease.accessToken}` },
-        signal: AbortSignal.timeout(15_000),
-      },
-    );
-    if (!response.ok) return [];
-    return response.headers.getSetCookie?.() ?? [];
-  } catch {
-    return [];
-  }
-}
-
-export function parseRotatedGuardianToken(
-  raw: unknown,
-  cookies: { accessToken: string; refreshToken: string },
-  deviceId: string,
-): GuardianTokenData {
-  const parsed = GuardianRotationPayloadSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new GuardianLeasePermanentError(
-      `guardian rotation returned a malformed token response — ${z.prettifyError(parsed.error)}`,
-    );
-  }
-  if (!cookies.accessToken.trim() || !cookies.refreshToken.trim()) {
-    throw new GuardianLeasePermanentError(
-      "guardian rotation answered without its credential cookies",
-    );
-  }
-  return GuardianTokenFileSchema.parse({
-    guardianPrincipalId: parsed.data.guardianPrincipalId,
-    accessToken: cookies.accessToken,
-    accessTokenExpiresAt: parsed.data.accessTokenExpiresAt,
-    refreshToken: cookies.refreshToken,
-    refreshTokenExpiresAt: parsed.data.refreshTokenExpiresAt,
-    refreshAfter: new Date(parsed.data.refreshAfter).toISOString(),
-    deviceId,
-    leasedAt: new Date().toISOString(),
-  });
 }
 
 const DEVICE_ID_SALT = "mycadet-host-id";

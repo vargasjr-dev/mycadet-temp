@@ -76,31 +76,3 @@ function maybeSwapToLocalhost(url: string): string {
 export function normalizeRuntimeUrl(url: string): string {
   return maybeSwapToLocalhost(url.replace(/\/+$/, ""));
 }
-
-/**
- * SECURITY: decide whether a guardian-token refresh may be sent to
- * `candidateUrl`, and to which URL it should actually go.
- *
- * `cadet client` lets `--url`/`-u` override the runtime URL while still reusing
- * the selected entry's stored guardian token, so a victim pointed at an
- * attacker-controlled (or poisoned/redirected) URL must NOT cause us to POST the
- * long-lived refreshToken + deviceId there. Refresh is permitted only when
- * `candidateUrl` normalizes to the entry's own gateway address — the one
- * {@link getGatewayUrl} derives.
- *
- * Returns the trusted gateway URL that the candidate matched — never the
- * caller-supplied `candidateUrl` verbatim — so credentials only ever reach a
- * trusted origin even if a caller forgets to use this return value. Returns
- * `null` when the candidate is untrusted (caller must skip the refresh).
- */
-export function trustedRefreshUrl(
-  entry: LockfileAssistant,
-  candidateUrl: string,
-): string | null {
-  const candidate = normalizeRuntimeUrl(candidateUrl);
-  const trusted = getGatewayUrl(entry);
-  if (normalizeRuntimeUrl(trusted) === candidate) {
-    return trusted;
-  }
-  return null;
-}

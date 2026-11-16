@@ -8,20 +8,15 @@ import {
 } from "react";
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
+import { checkHealth, getAssistantDisplayName } from "@mycadet/local-mode";
+import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
-  checkHealth,
-  getAssistantDisplayName,
+  loadFreshGuardianToken,
   loadGuardianToken,
   lookupAssistantByIdentifier,
 } from "@mycadet/local-mode";
-import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  guardianTokenDueForRenewal,
-  refreshGuardianToken,
-} from "../lib/guardian-token";
-import { trustedRefreshUrl } from "../lib/runtime-url";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { appendHistory, loadHistory } from "../lib/input-history";
 import { tuiLog } from "../lib/tui-log";
 import {
@@ -212,30 +207,19 @@ export async function maybeRefreshAuthHeaders(
   const bearer = auth["Authorization"]?.replace(/^Bearer /, "");
   if (!bearer) return false;
 
-  // The guardian-token lookup below gates what can refresh; refresh
-  // mechanics that outgrow the stored refresh token come later.
-  const lookup = lookupAssistantByIdentifier(assistantId);
-  if (lookup.status !== "found") {
-    return false;
-  }
-
-  // Bind the refresh origin to the persisted paired entry: refuse (and never
-  // leak credentials) if `baseUrl` was overridden via --url or poisoned to an
-  // origin that isn't one of the entry's persisted URLs. `refreshUrl` is the
-  // trusted persisted URL we actually send to.
-  const refreshUrl = trustedRefreshUrl(lookup.entry, baseUrl);
-  if (!refreshUrl) return false;
-
+  // Renew only the stored lease (an ephemeral bearer won't match).
   const stored = loadGuardianToken(assistantId);
-  if (!stored || stored.accessToken !== bearer || !stored.refreshToken) {
+  if (!stored || stored.accessToken !== bearer) {
     return false;
   }
-  // Only refresh once the token is actually due for renewal, so a forged 401
-  // on a still-valid token can't coax out the long-lived refresh credential.
-  if (!guardianTokenDueForRenewal(stored)) return false;
-  const refreshed = await refreshGuardianToken(refreshUrl, assistantId);
-  if (!refreshed?.accessToken) return false;
-  auth["Authorization"] = `Bearer ${refreshed.accessToken}`;
+
+  // The one door: a due lease re-invokes the pair flow (which talks only to
+  // the lockfile's persisted entry — a poisoned `baseUrl` never receives a
+  // credential), and a still-fresh token comes back unchanged, so a forged
+  // 401 on a valid token moves nothing.
+  const fresh = await loadFreshGuardianToken(assistantId);
+  if (!fresh?.accessToken || fresh.accessToken === bearer) return false;
+  auth["Authorization"] = `Bearer ${fresh.accessToken}`;
   return true;
 }
 

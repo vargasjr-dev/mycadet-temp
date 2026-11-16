@@ -3,8 +3,7 @@ import {
   getGatewayUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
-import { cliCommand, loadGuardianToken } from "@mycadet/local-mode";
-import { refreshGuardianToken } from "../lib/guardian-token.js";
+import { cliCommand, loadFreshGuardianToken } from "@mycadet/local-mode";
 import {
   ensureProviderApiKey,
   formatProviderName,
@@ -101,19 +100,12 @@ async function resolveSetupBearerToken(
   entry: LockfileAssistant,
   gatewayUrl: string,
 ): Promise<string | undefined> {
-  const guardianToken = loadGuardianToken(entry.assistantId);
+  // The one door: a usable stored lease comes back unchanged; a due or
+  // expired one re-invokes the pair flow and persists the fresh pair. A
+  // failed re-pair falls back to the stored token when it still has life.
+  const guardianToken = await loadFreshGuardianToken(entry.assistantId);
   if (isGuardianAccessTokenUsable(guardianToken)) {
     return guardianToken.accessToken;
-  }
-
-  if (guardianToken) {
-    const refreshedToken = await refreshGuardianToken(
-      gatewayUrl,
-      entry.assistantId,
-    );
-    if (isGuardianAccessTokenUsable(refreshedToken)) {
-      return refreshedToken.accessToken;
-    }
   }
 
   try {

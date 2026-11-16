@@ -5,6 +5,8 @@
 import {
   cloudAuthHeaders,
   invalidateOrgIdCache,
+  guardianTokenDueForRenewal,
+  loadFreshGuardianToken,
   loadGuardianToken,
   loopbackSafeFetch,
   readCloudToken,
@@ -12,10 +14,6 @@ import {
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
-import {
-  refreshGuardianToken,
-  guardianTokenDueForRenewal,
-} from "./guardian-token.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -312,19 +310,15 @@ export class AssistantClient {
         return doFetch();
       }
 
-      // Otherwise only disclose the long-lived refresh token when our access
-      // token is actually due for renewal. A 401 on a still-valid token (e.g. a
-      // forged 401 from an impostor endpoint trying to coax out the refresh
-      // credential) is surfaced as-is, not refreshed.
-      if (stored?.refreshToken && guardianTokenDueForRenewal(stored)) {
-        const refreshed = await refreshGuardianToken(
-          this.runtimeUrl,
-          this._assistantId,
-        );
-        if (refreshed?.accessToken) {
-          this.token = refreshed.accessToken;
-          return doFetch();
-        }
+      // Otherwise renew through the one door: a due lease re-invokes the
+      // pair flow (the mint revokes and reissues — no refresh token ever
+      // travels over HTTP), and a still-fresh token comes back unchanged, so
+      // a forged 401 from an impostor endpoint moves nothing and is
+      // surfaced as-is.
+      const fresh = await loadFreshGuardianToken(this._assistantId);
+      if (fresh?.accessToken && fresh.accessToken !== this.token) {
+        this.token = fresh.accessToken;
+        return doFetch();
       }
     }
 

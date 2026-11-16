@@ -1,17 +1,19 @@
-import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import { mock } from "bun:test";
-import {
-  type HatchDockerParams,
-  type HatchDockerResult,
-} from "../remotes/docker/hatch";
-import {
-  type HatchBasetenParams,
-  type HatchBasetenResult,
-} from "../remotes/baseten/hatch";
+import { type HatchDockerParams } from "../remotes/docker/hatch";
+import { type HatchBasetenParams } from "../remotes/baseten/hatch";
+import { type HatchAssistantResult } from "../operations/types";
 import { hatchAssistant } from "../operations/hatch";
 import { existsSync } from "node:fs";
 import { resolveLockfilePath } from "../config";
@@ -19,16 +21,17 @@ import { readLockfile, saveLockfileAssistant } from "../lockfile";
 import { findAssistantByName } from "../operations/lookup";
 
 const hatchDockerMock = mock<
-  (params: HatchDockerParams) => Promise<HatchDockerResult>
+  (params: HatchDockerParams) => Promise<HatchAssistantResult>
 >(async () => ({
   ok: true,
-  entry: {
+  assistant: {
     assistantId: "leg-entry",
     cloud: "docker",
     port: 7830,
     daemonPort: 7821,
   },
   ready: true,
+  cookies: [],
 }));
 const realDockerHatch = { ...(await import("../remotes/docker/hatch")) };
 const realBasetenHatch = { ...(await import("../remotes/baseten/hatch")) };
@@ -39,10 +42,10 @@ mock.module("../remotes/docker/hatch", () => ({
 }));
 
 const basetenMock = mock<
-  (params: HatchBasetenParams) => Promise<HatchBasetenResult>
+  (params: HatchBasetenParams) => Promise<HatchAssistantResult>
 >(async () => ({
   ok: true,
-  entry: {
+  assistant: {
     assistantId: "baseten-entry",
     name: "sandbox-entry",
     cloud: "baseten",
@@ -50,6 +53,7 @@ const basetenMock = mock<
     port: 7830,
   },
   ready: false,
+  cookies: [],
 }));
 mock.module("../remotes/baseten/hatch", () => ({
   ...realBasetenHatch,

@@ -7,8 +7,17 @@ import {
   mock,
   test,
 } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import type { LocalAssistant, LockfileAssistant } from "../lockfile-contract";
-import type { GuardianTokenData } from "../guardian-token";
+import {
+  getGuardianAccessToken,
+  loadFreshGuardianToken,
+  saveGuardianToken,
+  type GuardianTokenData,
+} from "../guardian-token";
+import { saveLockfileAssistant } from "../lockfile";
 import type {
   PairDeviceIdentity,
   PairOperationResult,
@@ -162,5 +171,109 @@ describe("pairDevice — the credential door routes by remote", () => {
     expect(result.error).toBe(
       "guardian pair failed (no response): gateway vanished",
     );
+  });
+});
+
+/**
+ * The ONE renewal door: a due or expired stored lease re-invokes the pair
+ * flow (the transport mocks above answer in the transports' stead), a fresh
+ * lease comes back untouched, and a failed re-pair degrades to the stored
+ * token. Co-located with the transport mocks so the shared-loader's
+ * module-mock lifetime can't hijack the lease seam mid-run.
+ */
+describe("loadFreshGuardianToken — the one renewal door", () => {
+  let home: string;
+
+  beforeEach(() => {
+    home = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-door-test-"));
+    process.env.XDG_CONFIG_HOME = home;
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
+    fs.rmSync(home, { recursive: true, force: true });
+  });
+
+  const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const PAST = new Date(Date.now() - 60_000).toISOString();
+
+  const storedToken = (
+    over: Partial<GuardianTokenData>,
+  ): GuardianTokenData => ({
+    guardianPrincipalId: "principal-stored",
+    accessToken: "stored-access",
+    accessTokenExpiresAt: FUTURE,
+    refreshToken: "stored-refresh",
+    refreshTokenExpiresAt: FUTURE,
+    refreshAfter: FUTURE,
+    deviceId: "device-stored",
+    leasedAt: new Date().toISOString(),
+    ...over,
+  });
+
+  const freshPair = {
+    ok: true as const,
+    response: {
+      guardianPrincipalId: "principal-fresh",
+      accessToken: "fresh-access",
+      accessTokenExpiresAt: FUTURE,
+      refreshToken: "fresh-refresh",
+      refreshTokenExpiresAt: FUTURE,
+      refreshAfter: FUTURE,
+      deviceId: "device-fresh",
+      leasedAt: new Date().toISOString(),
+    },
+  };
+
+  function seedEntry(): void {
+    saveLockfileAssistant({
+      assistantId: "asst-door",
+      cloud: "local",
+      instanceDir: path.join(home, "instance"),
+      port: 7830,
+      daemonPort: 7821,
+      cesPort: 7822,
+    } as unknown as LocalAssistant);
+  }
+
+  test("the holder refreshes a due token by re-pairing, not by calling a refresh API", async () => {
+    seedEntry();
+    saveGuardianToken(
+      "asst-door",
+      storedToken({ accessTokenExpiresAt: PAST, refreshAfter: PAST }),
+    );
+    pairLocalMock.mockResolvedValue(freshPair);
+
+    const result = await getGuardianAccessToken("asst-door");
+
+    expect(pairLocalMock).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ ok: true, accessToken: "fresh-access" });
+  });
+
+  test("a failed re-pair degrades to the stored token", async () => {
+    seedEntry();
+    saveGuardianToken(
+      "asst-door",
+      storedToken({ accessTokenExpiresAt: PAST, refreshAfter: PAST }),
+    );
+    pairLocalMock.mockResolvedValue({
+      ok: false,
+      status: 503,
+      error: "gateway unreachable",
+    });
+
+    const degraded = await loadFreshGuardianToken("asst-door");
+
+    expect(degraded?.accessToken).toBe("stored-access");
+  });
+
+  test("a fresh stored lease never triggers a pair", async () => {
+    seedEntry();
+    saveGuardianToken("asst-door", storedToken({}));
+
+    const fresh = await loadFreshGuardianToken("asst-door");
+
+    expect(fresh?.accessToken).toBe("stored-access");
+    expect(pairLocalMock).not.toHaveBeenCalled();
   });
 });

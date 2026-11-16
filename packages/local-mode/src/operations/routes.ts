@@ -5,7 +5,6 @@ import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
 import { readLockfileAssistantAvatar } from "../avatar";
 import { hatchAssistant } from "./hatch";
-import { mintWebviewCredentialCookies } from "../guardian-token";
 import { upgradeAssistant } from "./upgrade";
 import { consoleLifecycleReporter } from "../lifecycle-reporter";
 import { ownVersion } from "../environment";
@@ -194,10 +193,14 @@ async function runWakeRoute(
   });
 }
 
-const json = (body: unknown, status = 200): Response =>
+const json = (
+  body: unknown,
+  status = 200,
+  headers: Record<string, string | string[]> = {},
+): Response =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...headers },
   });
 
 /**
@@ -290,23 +293,12 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
   try {
     const result = await hatchAssistant({ remote });
     if (result.ok) {
-      // The hatched assistant's webview starts with a credential jar of its
-      // own: the local gateway mints a browser-class pair (a token family
-      // independent of this daemon's lease) and these headers ship verbatim.
-      // Best-effort — no cookies just means the webview re-pairs through
-      // the challenge flow.
-      const setCookies = await mintWebviewCredentialCookies(
-        result.assistant.assistantId,
-        getGatewayUrl(result.assistant),
-      );
-      const headers = new Headers({ "content-type": "application/json" });
-      for (const cookie of setCookies) headers.append("Set-Cookie", cookie);
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          assistantId: result.assistant.assistantId,
-        }),
-        { headers },
+      // The leg's own lease minted the webview's credential pair — the
+      // hatch feeds it to the webview as cookies on this response.
+      return json(
+        { ok: true, assistantId: result.assistant.assistantId },
+        200,
+        { "Set-Cookie": result.cookies },
       );
     }
     return json({ ok: false, error: result.error }, result.status);

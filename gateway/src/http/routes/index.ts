@@ -15,7 +15,6 @@ import { ROUTES as credentialRequestRoutes } from "./credential-requests.js";
 import { ROUTES as devicesMineRoutes } from "./devices-mine.js";
 import { ROUTES as channelVerificationRoutes } from "./channel-verification-session-proxy.js";
 import { ROUTES as guardianRefreshRoutes } from "./guardian-refresh.js";
-import { ROUTES as guardianWebviewPairRoutes } from "./guardian-webview-pair.js";
 import { ROUTES as twilioControlPlaneRoutes } from "./twilio-control-plane-proxy.js";
 import { ROUTES as slackControlPlaneRoutes } from "./slack-control-plane-proxy.js";
 import { ROUTES as oauthProviderRoutes } from "./oauth-providers-proxy.js";
@@ -63,7 +62,6 @@ export const ROUTES: readonly RouteDefinition[] = [
   ...devicesMineRoutes,
   ...channelVerificationRoutes,
   ...guardianRefreshRoutes,
-  ...guardianWebviewPairRoutes,
   ...twilioControlPlaneRoutes,
   ...slackControlPlaneRoutes,
   ...oauthProviderRoutes,

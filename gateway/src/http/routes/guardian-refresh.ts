@@ -1,14 +1,18 @@
+import { hashDeviceId } from "../../auth/guardian-bootstrap.js";
 import {
-  rotateRefreshTokenByCookie,
+  rotateCredentials,
+  rotateBrowserCredentialsByRefreshToken,
   type RefreshErrorCode,
 } from "../../auth/guardian-refresh.js";
 import { getLogger } from "../../logger.js";
 import {
-  buildGuardianAuthCookies,
-  getGuardianRefreshCookie,
-} from "@mycadet/shared";
+  buildRemoteWebBrowserAuthCookies,
+  getRemoteWebRefreshCookie,
+} from "../browser-auth-cookies.js";
 import type { RouteDefinition } from "./types.js";
 import { getAuthRateLimiter } from "../../auth-rate-limiter.js";
+import { validateEdgeToken } from "../../auth/token-exchange.js";
+import { hasRemoteWebRefreshCookie } from "../browser-auth-cookies.js";
 
 const log = getLogger("guardian-refresh-route");
 const REQUIRED_BROWSER_REFRESH_FETCH_SITE = "same-origin";
@@ -20,10 +24,14 @@ const BROWSER_REFRESH_FORBIDDEN_RESPONSE = {
 };
 
 function refreshFailureResponse(error: RefreshErrorCode): Response {
-  // 403 for tokens that are valid-but-forbidden (revoked or reused); 401
-  // for invalid/expired tokens and for guardian_repair_required (the status
-  // clients treat as repairable).
-  const forbidden: RefreshErrorCode[] = ["refresh_reuse_detected", "revoked"];
+  // 403 for tokens that are valid-but-forbidden (revoked, reused, or presented
+  // from the wrong device); 401 for invalid/expired tokens and for
+  // guardian_repair_required (the status clients treat as repairable).
+  const forbidden: RefreshErrorCode[] = [
+    "refresh_reuse_detected",
+    "device_binding_mismatch",
+    "revoked",
+  ];
   const statusCode = forbidden.includes(error) ? 403 : 401;
 
   log.warn({ error }, "Refresh token rotation failed");
@@ -32,12 +40,12 @@ function refreshFailureResponse(error: RefreshErrorCode): Response {
 
 function browserRefreshResponse(
   result: Extract<
-    ReturnType<typeof rotateRefreshTokenByCookie>,
+    ReturnType<typeof rotateBrowserCredentialsByRefreshToken>,
     { ok: true }
   >["result"],
 ): Response {
   const headers = new Headers({ "Cache-Control": "no-store" });
-  for (const cookie of buildGuardianAuthCookies({
+  for (const cookie of buildRemoteWebBrowserAuthCookies({
     accessToken: result.accessToken,
     accessTokenExpiresAtMs: result.accessTokenExpiresAt,
     refreshToken: result.refreshToken,
@@ -51,7 +59,6 @@ function browserRefreshResponse(
       guardianPrincipalId: result.guardianPrincipalId,
       accessToken: result.accessToken,
       accessTokenExpiresAt: result.accessTokenExpiresAt,
-      refreshTokenExpiresAt: result.refreshTokenExpiresAt,
       refreshAfter: result.refreshAfter,
     },
     { headers },
@@ -76,6 +83,14 @@ function sameEffectiveOrigin(req: Request, url: URL): boolean {
   return target.protocol === "http:" && url.protocol === "https:";
 }
 
+function browserRefreshOriginFallbackAllows(req: Request): boolean {
+  const origin = parseHttpUrl(req.headers.get("origin"));
+  if (origin && sameEffectiveOrigin(req, origin)) return true;
+
+  const referer = parseHttpUrl(req.headers.get("referer"));
+  return !!referer && sameEffectiveOrigin(req, referer);
+}
+
 function browserRefreshFetchMetadataGuard(req: Request): Response | null {
   const fetchSite = req.headers.get("sec-fetch-site");
   if (fetchSite) {
@@ -83,44 +98,71 @@ function browserRefreshFetchMetadataGuard(req: Request): Response | null {
     return Response.json(BROWSER_REFRESH_FORBIDDEN_RESPONSE, { status: 403 });
   }
 
-  // Older browsers skip the fetch-metadata headers but still announce where
-  // the request came from; a same-effective-origin value passes and anything
-  // else is cross-site.
-  const origin = parseHttpUrl(req.headers.get("origin"));
-  if (origin) {
-    return sameEffectiveOrigin(req, origin)
-      ? null
-      : Response.json(BROWSER_REFRESH_FORBIDDEN_RESPONSE, { status: 403 });
-  }
-  const referer = parseHttpUrl(req.headers.get("referer"));
-  if (referer) {
-    return sameEffectiveOrigin(req, referer)
-      ? null
-      : Response.json(BROWSER_REFRESH_FORBIDDEN_RESPONSE, { status: 403 });
-  }
+  if (browserRefreshOriginFallbackAllows(req)) return null;
 
-  // No browser signals at all: a non-browser holder (the CLI, the daemon's
-  // token file) presenting its own Cookie header. CSRF has nothing to ride
-  // on — a web page cannot make another process's fetch — so it passes.
-  return null;
+  return Response.json(BROWSER_REFRESH_FORBIDDEN_RESPONSE, { status: 403 });
 }
 
 export async function handleGuardianRefresh(req: Request): Promise<Response> {
   try {
-    const refreshToken = getGuardianRefreshCookie(req);
+    const browserRefreshToken = getRemoteWebRefreshCookie(req);
+    if (browserRefreshToken) {
+      const metadataError = browserRefreshFetchMetadataGuard(req);
+      if (metadataError) return metadataError;
+
+      const result = rotateBrowserCredentialsByRefreshToken({
+        refreshToken: browserRefreshToken,
+      });
+      if (!result.ok) return refreshFailureResponse(result.error);
+
+      log.info(
+        {
+          guardianPrincipalId: result.result.guardianPrincipalId,
+        },
+        "Browser refresh token rotation succeeded",
+      );
+      return browserRefreshResponse(result.result);
+    }
+
+    const body = (await req.json()) as Record<string, unknown>;
+    const refreshToken =
+      typeof body.refreshToken === "string" ? body.refreshToken : "";
+    const deviceId =
+      typeof body.deviceId === "string" ? body.deviceId.trim() : "";
+
     if (!refreshToken) {
       return Response.json(
-        { error: { code: "UNAUTHORIZED", message: "Missing refresh cookie" } },
-        { status: 401 },
+        {
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: refreshToken",
+          },
+        },
+        { status: 400 },
       );
     }
 
-    const metadataError = browserRefreshFetchMetadataGuard(req);
-    if (metadataError) return metadataError;
+    // The refresh token is bound to the device it was issued to. Require
+    // legacy non-browser callers to prove the device so a leaked refresh token
+    // cannot be redeemed from a different device.
+    if (!deviceId) {
+      return Response.json(
+        {
+          error: {
+            code: "BAD_REQUEST",
+            message: "Missing required field: deviceId",
+          },
+        },
+        { status: 400 },
+      );
+    }
 
-    const result = rotateRefreshTokenByCookie({ refreshToken });
+    const result = rotateCredentials({
+      refreshToken,
+      hashedDeviceId: hashDeviceId(deviceId),
+    });
+
     if (!result.ok) {
-      getAuthRateLimiter().recordFailure(new URL(req.url).hostname);
       return refreshFailureResponse(result.error);
     }
 
@@ -130,7 +172,27 @@ export async function handleGuardianRefresh(req: Request): Promise<Response> {
       },
       "Refresh token rotation succeeded",
     );
-    return browserRefreshResponse(result.result);
+    // The device refresh answers with the full guardian credential
+    // contract — the same shape the pairing mint emits — so the client
+    // parses both with one schema and persists the rotation as-is. The
+    // browser arm above keeps its 4-field cookie contract.
+    const rotated = result.result;
+    return Response.json({
+      guardianPrincipalId: rotated.guardianPrincipalId,
+      accessToken: rotated.accessToken,
+      accessTokenExpiresAt: new Date(
+        rotated.accessTokenExpiresAt,
+      ).toISOString(),
+      refreshToken: rotated.refreshToken,
+      refreshTokenExpiresAt: new Date(
+        rotated.refreshTokenExpiresAt,
+      ).toISOString(),
+      refreshAfter: new Date(rotated.refreshAfter).toISOString(),
+      // The refresh token is bound to the device that presented it; echo
+      // the binding so the client's persisted credential stays whole.
+      deviceId,
+      leasedAt: new Date().toISOString(),
+    });
   } catch (err) {
     log.error({ err }, "Guardian refresh failed");
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -141,11 +203,36 @@ export const ROUTES: RouteDefinition[] = [
   {
     // The refresh endpoint's purpose is to obtain a new access token,
     // so rejecting expired tokens would create a deadlock once the JWT
-    // expires. Cookie-only: every holder presents the refresh token as a
-    // cookie, so the secret never appears in a request body.
+    // expires. Signature, audience, and policy epoch are still verified
+    // — only the expiration check is relaxed.
     path: "/guardian/refresh",
     method: "post",
     auth: "custom",
-    handler: (req) => handleGuardianRefresh(req),
+    handler: (req, _params, getClientIp) => {
+      if (hasRemoteWebRefreshCookie(req)) {
+        return handleGuardianRefresh(req);
+      }
+
+      const authHeader = req.headers.get("authorization");
+      if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+        getAuthRateLimiter().recordFailure(getClientIp());
+        log.warn(
+          { path: new URL(req.url).pathname },
+          "Guardian refresh auth rejected: missing or malformed Authorization header",
+        );
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const token = authHeader.slice(7);
+      const result = validateEdgeToken(token, { allowExpired: true });
+      if (!result.ok) {
+        getAuthRateLimiter().recordFailure(getClientIp());
+        log.warn(
+          { path: new URL(req.url).pathname, reason: result.reason },
+          "Guardian refresh auth rejected: token validation failed",
+        );
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return handleGuardianRefresh(req);
+    },
   },
 ];

@@ -884,6 +884,7 @@ function mintRefreshToken(
   hashedDeviceId: string,
   platform: string,
   role: TokenPrincipalRole,
+  options: { browserRefreshCookiePath?: string } = {},
   identity?: DeviceIdentityInput,
 ): {
   refreshToken: string;
@@ -913,6 +914,7 @@ function mintRefreshToken(
       absoluteExpiresAt,
       inactivityExpiresAt,
       lastUsedAt: null,
+      browserRefreshCookiePath: options.browserRefreshCookiePath,
       createdAt: now,
       updatedAt: now,
     })
@@ -968,6 +970,7 @@ export function mintAndRecordDeviceBoundTokenPair(params: {
     hashedDeviceId,
     params.platform,
     role,
+    {},
     params.identity,
   );
 
@@ -988,6 +991,7 @@ export function mintAndRecordDeviceBoundTokenPair(params: {
 export function mintAndRecordBrowserTokenPair(params: {
   guardianPrincipalId: string;
   platform: string;
+  browserRefreshCookiePath: string;
   identity?: DeviceIdentityInput;
   role?: TokenPrincipalRole;
 }): RefreshableTokenPair {
@@ -1008,6 +1012,7 @@ export function mintAndRecordBrowserTokenPair(params: {
     hashedDeviceId,
     params.platform,
     role,
+    { browserRefreshCookiePath: params.browserRefreshCookiePath },
     params.identity,
   );
 

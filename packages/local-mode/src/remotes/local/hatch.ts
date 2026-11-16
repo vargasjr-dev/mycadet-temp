@@ -3,6 +3,7 @@ import {
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
 import { findAssistantByName } from "../../operations/lookup";
+import type { HatchAssistantResult } from "../../operations/types";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";
 import { getGatewayUrl } from "../../lockfile-contract";
@@ -69,10 +70,6 @@ export async function allocateLocalPlacement(
  * they live here too; only the interactive provider prompt stays at the
  * CLI's command layer (it needs a TTY).
  */
-export type HatchResult =
-  | { ok: true; entry: LocalAssistant }
-  | { ok: false; status: number; error: string; assistantId?: string };
-
 export async function hatchLocal(params: {
   name?: string | null;
   watch?: boolean;
@@ -86,7 +83,7 @@ export async function hatchLocal(params: {
   precollectedApiKey?: string;
   /** The narration sink (defaults to the console reporter). */
   reporter?: LifecycleReporter;
-}): Promise<HatchResult> {
+}): Promise<HatchAssistantResult> {
   const {
     name,
     watch = false,
@@ -188,10 +185,20 @@ export async function hatchLocal(params: {
   // instead of hitting /v1/guardian/init itself.
   const maxLeaseAttempts = 3;
   let guardianAccessToken: string | undefined;
+  const cookies: string[] = [];
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
       const tokenData = await leaseGuardianToken(entry);
       guardianAccessToken = tokenData.accessToken;
+      // The lease's fresh pair IS the webview's jar: feed it as cookies so
+      // the hatch response ships credentials the gateway's own middleware
+      // reads — no bearer token in page JavaScript. HttpOnly and no Secure:
+      // the local feed runs over loopback http, where a Secure cookie
+      // would be refused by the jar (the iOS replay lesson).
+      cookies.push(
+        `cadet_web_access=${encodeURIComponent(tokenData.accessToken)}; HttpOnly; Path=/; SameSite=Strict`,
+        `cadet_web_refresh=${encodeURIComponent(tokenData.refreshToken)}; HttpOnly; Path=/; SameSite=Strict`,
+      );
       break;
     } catch (err) {
       if (
@@ -251,7 +258,7 @@ export async function hatchLocal(params: {
     }
   }
 
-  return { ok: true, entry };
+  return { ok: true, assistant: entry, ready: true, cookies };
 }
 
 export class HatchConflict extends Error {}

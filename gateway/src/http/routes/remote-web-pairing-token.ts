@@ -17,7 +17,10 @@ import {
   completeRemoteWebPairingChallengeExchange,
   releaseRemoteWebPairingChallengeExchange,
 } from "../../remote-web/pairing-challenge-store.js";
-import { buildGuardianAuthCookies } from "@mycadet/shared";
+import {
+  BROWSER_REFRESH_COOKIE_PATH,
+  buildRemoteWebBrowserAuthCookies,
+} from "../browser-auth-cookies.js";
 import { errorResponse } from "../loopback-guard.js";
 import {
   jsonStringField,
@@ -119,6 +122,7 @@ export async function handleRemoteWebPairingToken(
       pair = mintAndRecordBrowserTokenPair({
         guardianPrincipalId,
         platform: REMOTE_WEB_PLATFORM,
+        browserRefreshCookiePath: BROWSER_REFRESH_COOKIE_PATH,
         identity,
       });
     }
@@ -164,7 +168,7 @@ export async function handleRemoteWebPairingToken(
       pair.refreshTokenExpiresAt,
     ).toISOString();
   } else {
-    for (const cookie of buildGuardianAuthCookies({
+    for (const cookie of buildRemoteWebBrowserAuthCookies({
       accessToken: pair.accessToken,
       accessTokenExpiresAtMs: pair.accessTokenExpiresAt,
       refreshToken: pair.refreshToken,

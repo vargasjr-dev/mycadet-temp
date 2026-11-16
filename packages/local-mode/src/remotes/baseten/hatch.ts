@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HatchAssistantResult } from "../../operations/types";
 import type { LockfileAssistant } from "../../lockfile-contract";
 import { GATEWAY_PORT, getGatewayUrl } from "../../lockfile-contract";
 import { readLockfile, saveLockfileAssistant } from "../../lockfile";
@@ -76,10 +77,22 @@ export const BASETEN_STATE_VOLUME_MOUNT_PATH = "/data";
  * the volume moves the assistant's instance dir, lockfile, tokens, and logs
  * onto it wholesale. Plain envs: they are configuration, not credentials.
  */
-function sandboxStateVolumeEnvs(): Array<{ name: string; value: string; secret: boolean }> {
+function sandboxStateVolumeEnvs(): Array<{
+  name: string;
+  value: string;
+  secret: boolean;
+}> {
   return [
-    { name: "XDG_DATA_HOME", value: `${BASETEN_STATE_VOLUME_MOUNT_PATH}/xdg-data`, secret: false },
-    { name: "XDG_CONFIG_HOME", value: `${BASETEN_STATE_VOLUME_MOUNT_PATH}/xdg-config`, secret: false },
+    {
+      name: "XDG_DATA_HOME",
+      value: `${BASETEN_STATE_VOLUME_MOUNT_PATH}/xdg-data`,
+      secret: false,
+    },
+    {
+      name: "XDG_CONFIG_HOME",
+      value: `${BASETEN_STATE_VOLUME_MOUNT_PATH}/xdg-config`,
+      secret: false,
+    },
   ];
 }
 
@@ -159,13 +172,9 @@ export type HatchBasetenParams = {
   reporter?: LifecycleReporter;
 };
 
-export type HatchBasetenResult =
-  | { ok: true; entry: LockfileAssistant; ready: boolean }
-  | { ok: false; status: number; error: string };
-
 export async function hatchBaseten(
   params: HatchBasetenParams,
-): Promise<HatchBasetenResult> {
+): Promise<HatchAssistantResult> {
   const { name, verbose = false } = params;
   const reporter = params.reporter ?? consoleLifecycleReporter;
   const log = (msg: string) => reporter.log(msg);
@@ -223,7 +232,7 @@ export async function hatchBaseten(
         log(
           `   Exec into it:  baseten sandbox exec --name ${sandboxName} -- 'cadet ps'`,
         );
-        return { ok: true, entry, ready: false };
+        return { ok: true, assistant: entry, ready: false, cookies: [] };
       }
       log(
         "   ⚠️  The sandbox returned no URL — nothing recorded in the lockfile.",

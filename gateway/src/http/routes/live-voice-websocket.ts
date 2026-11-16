@@ -10,7 +10,7 @@ import { parseSub } from "../../auth/subject.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
 import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
-import { getGuardianAccessCookie } from "@mycadet/shared";
+import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
 import {
   extractTunnelAttestedContext,
   acceptsTunnelAttestation,
@@ -158,7 +158,7 @@ async function checkLiveVoiceAuth(
       : null
     : // Cookie custody: a served-gateway browser's upgrade carries its
       // credential as the cadet_web_access cookie and no header.
-      (queryToken ?? getGuardianAccessCookie(req));
+      (queryToken ?? getRemoteWebAccessCookie(req));
 
   if (!rawToken) {
     log.warn("Live voice WS: no token provided");

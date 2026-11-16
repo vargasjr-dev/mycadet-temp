@@ -26,6 +26,7 @@ import {
   getDefaultPorts,
 } from "../../ports";
 import { leaseGuardianToken } from "../../guardian-token";
+import type { HatchAssistantResult } from "../../operations/types";
 import {
   classifyReadyzResponse,
   DOCKER_READY_TIMEOUT_MS,
@@ -613,22 +614,9 @@ export interface HatchDockerParams {
   reporter?: LifecycleReporter;
 }
 
-export type HatchDockerResult =
-  | {
-      ok: true;
-      entry: DockerAssistant;
-      /**
-       * False when the readiness wait timed out in watch mode (where the
-       * watcher's rebuilds retry it).
-       */
-      ready: boolean;
-      guardianAccessToken?: string;
-    }
-  | { ok: false; status: number; error: string; assistantId?: string };
-
 export async function hatchDocker(
   params: HatchDockerParams,
-): Promise<HatchDockerResult> {
+): Promise<HatchAssistantResult> {
   const { name = null, configValues = {} } = params;
   let watch = params.watch ?? false;
   const reporter = params.reporter ?? consoleLifecycleReporter;
@@ -967,7 +955,12 @@ export async function hatchDocker(
       });
     }
 
-    return { ok: true, entry: dockerEntry, ready, guardianAccessToken };
+    return {
+      ok: true,
+      assistant: dockerEntry,
+      ready,
+      cookies: [],
+    };
   } catch (error) {
     return {
       ok: false,

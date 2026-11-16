@@ -292,6 +292,7 @@ describe("minted token role", () => {
     const pair = mintAndRecordBrowserTokenPair({
       guardianPrincipalId: "contact-principal-2",
       platform: "remote-web",
+      browserRefreshCookiePath: "/v1/guardian/refresh",
       role: "contact",
     });
 

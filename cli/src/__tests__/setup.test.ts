@@ -368,79 +368,41 @@ describe("setup command", () => {
     );
   });
 
-  test("refreshes an expired guardian token before the setup request", async () => {
+  test("renews an expired guardian token by re-pairing before the setup request", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
-    // longer carries a platform base — the explicit override pins the host.
-    process.env.CADET_CLOUD_URL = "https://assistant.example";
-    writeFullLockfile({
-      assistants: [
-        {
-          assistantId: "assistant-123",
-          cloud: "cloud",
-        },
-      ],
-      activeAssistant: "assistant-123",
+    writeLockfile({
+      assistantId: "assistant-123",
+      cloud: "local",
+      instanceDir: testDir,
+      port: 3000,
+      daemonPort: 8501,
+      cesPort: 9002,
     });
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({
         accessToken: "expired-guardian-token",
         accessTokenExpiresAt: new Date(Date.now() - 60_000).toISOString(),
+        refreshAfter: new Date(Date.now() - 60_000).toISOString(),
       }),
     );
-    installFetchStub({
-      refreshedToken: guardianTokenFixture({
-        accessToken: "fresh-guardian-token",
-      }),
+    // The renewal re-invokes the pair flow — no refresh endpoint is called.
+    pairDeviceMock.mockResolvedValue({
+      ok: true,
+      response: guardianTokenFixture({ accessToken: "fresh-guardian-token" }),
     });
+    installFetchStub();
 
     await setup();
 
+    expect(pairDeviceMock).toHaveBeenCalledTimes(1);
+    expect(
+      fetchCalls.filter((c) => c.url.endsWith("/v1/guardian/refresh")),
+    ).toHaveLength(0);
     expect(fetchCalls[0].url).toBe(
-      "https://assistant.example/v1/guardian/refresh",
+      "http://127.0.0.1:3000/v1/config/llm/default-provider",
     );
     expect(fetchCalls[0].headers.get("Authorization")).toBe(
-      "Bearer expired-guardian-token",
-    );
-    expect(fetchCalls[1].headers.get("Authorization")).toBe(
-      "Bearer fresh-guardian-token",
-    );
-  });
-
-  test("uses a refreshed guardian token before lockfile fallback", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    // The cloud address rides `getCloudBaseUrl()` since the lockfile no
-    // longer carries a platform base — the explicit override pins the host.
-    process.env.CADET_CLOUD_URL = "https://assistant.example";
-    writeFullLockfile({
-      assistants: [
-        {
-          assistantId: "assistant-123",
-          cloud: "cloud",
-        },
-      ],
-      activeAssistant: "assistant-123",
-    });
-    saveGuardianToken(
-      "assistant-123",
-      guardianTokenFixture({
-        accessToken: "expired-guardian-token",
-        accessTokenExpiresAt: new Date(Date.now() - 60_000).toISOString(),
-      }),
-    );
-    installFetchStub({
-      refreshedToken: guardianTokenFixture({
-        accessToken: "fresh-guardian-token",
-      }),
-    });
-
-    await setup();
-
-    expect(fetchCalls[0].url).toBe(
-      "https://assistant.example/v1/guardian/refresh",
-    );
-    expect(fetchCalls[1].headers.get("Authorization")).toBe(
       "Bearer fresh-guardian-token",
     );
   });
