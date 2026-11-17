@@ -8,6 +8,7 @@ let appPath = process.cwd();
 
 const protocolHandle = mock(() => undefined);
 const cookieSet = mock(async () => undefined);
+const cookieGet = mock(async (_filter: { url: string }) => []);
 const netFetch = mock(async (url: string) => {
   const file = decodeURIComponent(new URL(url).pathname);
   const body = await fs.readFile(file, "utf8");
@@ -25,7 +26,9 @@ mock.module("electron", () => ({
   },
   net: { fetch: netFetch },
   protocol: { handle: protocolHandle },
-  session: { defaultSession: { cookies: { set: cookieSet } } },
+  session: {
+    defaultSession: { cookies: { set: cookieSet, get: cookieGet } },
+  },
 }));
 
 import * as realLocalMode from "@mycadet/local-mode";
@@ -302,6 +305,29 @@ describe("registerAppProtocol", () => {
     expect(cookieSet).not.toHaveBeenCalled();
     // The response passes through untouched.
     expect(response.headers.getSetCookie()).toHaveLength(1);
+  });
+
+  test("the operator forward carries the session-jar bridge for the proxy dial", async () => {
+    await setupDev();
+    await register();
+    cookieGet.mockResolvedValue([
+      { name: "cadet_web_access", value: "edge-token-1" },
+      { name: "cadet_web_refresh", value: "edge-token-2" },
+    ] as never);
+    forwardOperator.mockResolvedValueOnce(new Response("ok"));
+    await handler!(new Request("app://mycadet.ai/v1/conversations"));
+    const [, options] = (forwardOperator.mock.calls.at(-1) ??
+      []) as unknown as [
+      Request,
+      { cookiesFor: (origin: string) => Promise<string | null> },
+    ];
+    expect(options.cookiesFor).toBeInstanceOf(Function);
+    // The bridge reads the jar for the dial's own origin and serializes
+    // the pair the way a browser's Cookie header prints.
+    expect(await options.cookiesFor("http://127.0.0.1:7830")).toBe(
+      "cadet_web_access=edge-token-1; cadet_web_refresh=edge-token-2",
+    );
+    expect(cookieGet).toHaveBeenCalledWith({ url: "http://127.0.0.1:7830" });
   });
 
   test("a response without set-cookie touches no jar", async () => {

@@ -90,6 +90,16 @@ export interface OperatorRequest {
    * down. Absent (direct `run` calls in tests) reads as no signal.
    */
   signal?: AbortSignal | null;
+  /**
+   * The host's session-jar bridge for the proxy row's gateway dial: the
+   * answer to "what would the browser attach as `Cookie` for this
+   * origin?". The desktop's renderer can hold no cookies for `app://`
+   * (the cookie store refuses non-`http(s)` schemes), so its host
+   * supplies the jar lookup; hosts without a jar (the CLI edge, the dev
+   * server — whose browser callers bring their own cookies) leave it
+   * unset and nothing is attached.
+   */
+  cookiesFor?: (origin: string) => Promise<string | null>;
 }
 
 export interface OperatorRoute {
@@ -644,11 +654,20 @@ async function runProxyRoute(
   }
   const method = request.method ?? "GET";
   const target = new URL(request.path ?? "/", getGatewayUrl(entry));
+  const gatewayOrigin = target.origin;
   const hasBody = method !== "GET" && method !== "HEAD";
   const headers = normalizeForwardHeaders(
     request.headers,
     request.peer ?? null,
   );
+  // The caller's own Cookie wins (the CLI's browser jar holds the live
+  // pair); the host's session jar fills the absence — the desktop's
+  // renderer can hold no cookies for `app://`, so its jar IS the
+  // browser-equivalent store.
+  if (!headers.has("cookie") && request.cookiesFor) {
+    const jarCookies = await request.cookiesFor(gatewayOrigin);
+    if (jarCookies) headers.set("cookie", jarCookies);
+  }
   if (process.env.ASSISTANT_PROXY_TRANSPORT === "ipc") {
     headers.set("x-cadet-proxy-server", "ipc");
   }
@@ -665,6 +684,13 @@ async function runProxyRoute(
     if (lower === "content-length" || lower === "content-encoding") return;
     outHeaders.append(key, value);
   });
+  // A rotation response tags where the NEW pair lives — the gateway
+  // origin — so the desktop's pass jars it there and the next dial
+  // attaches the fresh pair. Hosts without the jar pass the headers
+  // through untouched; their browser callers jar natively.
+  if (upstream.headers.getSetCookie().length > 0) {
+    outHeaders.set(COOKIE_ORIGIN_HEADER, gatewayOrigin);
+  }
   return new Response(upstream.body, {
     status: upstream.status,
     headers: outHeaders,
@@ -873,7 +899,10 @@ export function matchOperatorRequest(
  */
 export async function forwardOperatorRequest(
   request: Request,
-  options?: { peer?: string | null },
+  options?: {
+    peer?: string | null;
+    cookiesFor?: (origin: string) => Promise<string | null>;
+  },
 ): Promise<Response | null> {
   const match = matchOperatorRequest(
     new URL(request.url).pathname,
@@ -891,5 +920,6 @@ export async function forwardOperatorRequest(
     body: request.body,
     signal: request.signal,
     ...(options?.peer !== undefined ? { peer: options.peer } : {}),
+    ...(options?.cookiesFor ? { cookiesFor: options.cookiesFor } : {}),
   });
 }

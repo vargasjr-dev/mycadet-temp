@@ -39,17 +39,21 @@ const RENDERER_MOUNT = "/assistant";
  * through `net.fetch` jars its own response's cookies against the real
  * upstream origin (the network stack does it, browser-like — the handler
  * must not repeat it), while an in-process response — the hatch's
- * pairing feed — tags itself with `x-cadet-cookie-origin` (the route
- * table knows its gateway), and this applies the pair to the jar for
- * that origin. The tag is stripped either way; the Set-Cookie headers
- * stay visible for QA.
+ * pairing feed, or a gateway dial's rotation — tags itself with
+ * `x-cadet-cookie-origin` (the route table knows its gateway), and this
+ * applies the pair to the jar for that origin. The tag is stripped
+ * either way; the Set-Cookie headers stay visible for QA.
+ *
+ * The attach side is the mirror: the proxy row's gateway dial asks the
+ * jar (`jarCookiesFor`) what the browser would have attached, since the
+ * renderer can hold nothing for `app://`.
  *
  * Best-effort: a cookie that fails to set never fails the response.
  */
 async function applyResponseCookies(response: Response): Promise<Response> {
   const jarOrigin = response.headers.get(COOKIE_ORIGIN_HEADER);
-  if (!jarOrigin) return response;
   const setCookies = response.headers.getSetCookie();
+  if (!jarOrigin || setCookies.length === 0) return response;
   // Responses carry an immutable header guard — rebuild without the
   // private tag. A Headers copy preserves the per-cookie Set-Cookie
   // entries, so the renderer still sees exactly what was shipped.
@@ -126,6 +130,21 @@ function cookieJarDetails(
   return details;
 }
 
+/**
+ * The session-jar bridge the proxy row dials through: the renderer can
+ * hold no cookies for `app://`, so the forward asks the jar what the
+ * browser would have attached for the gateway's own origin.
+ */
+const jarCookiesFor = async (origin: string): Promise<string | null> => {
+  try {
+    const cookies = await session.defaultSession.cookies.get({ url: origin });
+    if (cookies.length === 0) return null;
+    return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+  } catch {
+    return null;
+  }
+};
+
 const appOrigin = (): AllowedOrigin => ({
   protocol: `${APP_PROTOCOL}:`,
   host: APP_HOST,
@@ -188,8 +207,12 @@ export function registerAppProtocol(): void {
       });
     }
 
-    // The operator routes ride ahead of the gateway proxy.
-    const operated = await forwardOperatorRequest(request);
+    // The operator routes ride ahead of the gateway proxy. The jar
+    // bridge is the proxy row's cookie source: the pair the hatch
+    // jarred (and every rotation since) attaches on each gateway dial.
+    const operated = await forwardOperatorRequest(request, {
+      cookiesFor: jarCookiesFor,
+    });
     if (operated) {
       return operated;
     }
