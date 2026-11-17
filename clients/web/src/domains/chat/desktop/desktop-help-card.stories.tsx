@@ -13,13 +13,11 @@ function PreviewFixture() {
   const session = useDesktopPreviewStore.use.session();
   useLayoutEffect(() => {
     const initialSession = useDesktopPreviewStore.getState().session;
-    const previousAssistant = useResolvedAssistantStore.getState().assistant;
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "assistant-example" },
-    });
+    const previousAssistantId = useResolvedAssistantStore.getState().assistantId;
+    useResolvedAssistantStore.setState({ assistantId: "assistant-example" });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });
-      useResolvedAssistantStore.setState({ assistant: previousAssistant });
+      useResolvedAssistantStore.setState({ assistantId: previousAssistantId });
     };
   }, []);
   return (

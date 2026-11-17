@@ -162,12 +162,7 @@ beforeEach(() => {
   useAssistantIdentityStore.setState({ name: "Ziggy" });
   // The store IS the listing: the handle the setup card offers is the
   // entry's id until a domain lands.
-  useResolvedAssistantStore.getState().setAssistant({
-    cloud: "cloud",
-    assistantId: "bright-vole-02a64h",
-    name: "Ziggy",
-    hatchedAt: "2026-09-22T00:00:00Z",
-  });
+  useResolvedAssistantStore.getState().setAssistantId("bright-vole-02a64h");
 });
 
 afterEach(() => {

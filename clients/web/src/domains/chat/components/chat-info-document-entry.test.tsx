@@ -235,9 +235,7 @@ describe("mobile Chat Info document entry", () => {
         if (reason === "close") {
           fireEvent.click(screen.getByLabelText("Close chat info"));
         } else {
-          useResolvedAssistantStore.setState({
-            assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
-          });
+          useResolvedAssistantStore.setState({ assistantId: "assistant-2" });
         }
       });
       await act(async () => finishLoad(DOCUMENT));

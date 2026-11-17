@@ -26,19 +26,15 @@ import {
 import { useSetupLocalAssistant } from "@/testing/use-setup-local-assistant";
 
 let supportsPairingRoutes = true;
-let selectedAssistant: {
-  assistantId: string;
-  cloud: string;
-  name?: string;
-} = { assistantId: "self", cloud: "local" };
+let assistantName: string | undefined;
 
 // Spread the real module so transitive consumers keep every export; only the
-// resolved-assistant read the tests drive is overridden. The pairing client
-// reads the store (the one assistant this surface serves), not the lib.
+// shell-stamped name the tests drive is overridden. The pairing client reads
+// the store (the one assistant this surface serves), not the lib.
 const actualStore = await import("@/stores/resolved-assistant-store");
 mock.module("@/stores/resolved-assistant-store", () => ({
   ...actualStore,
-  getResolvedAssistant: () => selectedAssistant,
+  getAssistantName: () => assistantName,
 }));
 
 mock.module("@/lib/backwards-compat/remote-web-pairing-gate", () => ({
@@ -180,7 +176,7 @@ function recheckButton(): HTMLElement | null {
 
 beforeEach(() => {
   supportsPairingRoutes = true;
-  selectedAssistant = { assistantId: "self", cloud: "local" };
+  assistantName = undefined;
   resetFetchLog();
   localStorage.clear();
   resetProbe();
@@ -206,7 +202,6 @@ describe("PairDeviceCard", () => {
   test("renders the section for any resolved assistant — no gateway address required", () => {
     // Device pairing works for every assistant entry: the scoped data plane
     // is plain same-origin /v1, so platform/remote entries pair too.
-    selectedAssistant = { assistantId: "self", cloud: "cloud" };
     renderCard();
     expect(screen.getByText("Pair a device")).toBeTruthy();
   });
@@ -318,11 +313,7 @@ describe("PairDeviceCard", () => {
   });
 
   test("names the assistant it pairs in the subtitle", () => {
-    selectedAssistant = {
-      assistantId: "self",
-      cloud: "local",
-      name: "My Assistant",
-    };
+    assistantName = "My Assistant";
     renderCard();
 
     expect(
@@ -404,10 +395,6 @@ describe("PairDeviceCard: tunnel status", () => {
   });
 
   test("prefills the URL field from the daemon's address, not the recorded one", async () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-    };
     probeAnswers(healthyStatus());
     renderCard();
 
@@ -421,10 +408,6 @@ describe("PairDeviceCard: tunnel status", () => {
   test("keeps the first-run notice for the daemon's own unconfigured verdict", async () => {
     // The daemon is the authority once it answers: a recorded URL it no longer
     // reports is stale, so it does not suppress the notice or fill the field.
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-    };
     probeAnswers({ state: "unconfigured" });
     renderCard();
 
@@ -606,10 +589,6 @@ describe("PairDeviceCard: tunnel status", () => {
   // Reachable after ingress is switched off with no tunnel left on record.
   // The daemon answered, so its verdict stands.
   test("trusts a stopped verdict the daemon remembers no tunnel for", async () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-    };
     probeAnswers({ state: "stopped" });
     renderCard();
 
@@ -636,11 +615,7 @@ describe("PairDeviceCard: tunnel status", () => {
   });
 
   test("tells an unreachable tunnel how to start again, naming the assistant", async () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-      name: "My Assistant",
-    };
+    assistantName = "My Assistant";
     probeAnswers({
       state: "unreachable",
       publicBaseUrl: TUNNEL_URL,
@@ -660,11 +635,7 @@ describe("PairDeviceCard: tunnel status", () => {
   });
 
   test("names the assistant in the first-run tunnel command", async () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-      name: "My Assistant",
-    };
+    assistantName = "My Assistant";
     probeAnswers({ state: "unconfigured" });
     renderCard();
 

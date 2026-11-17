@@ -240,7 +240,7 @@ export function SystemPermissionsCard({
   const { pendingKind, run } = usePendingKind();
   const [notificationBadgesEnabled, setNotificationBadgesEnabled] =
     useNotificationBadgesEnabled();
-  const assistant = useResolvedAssistantStore.use.assistant();
+  const assistantId = useResolvedAssistantStore.use.assistantId();
 
   const hostOS = detectElectronHostOS();
   const isWindowsHost = hostOS === "windows";
@@ -340,13 +340,10 @@ export function SystemPermissionsCard({
           return undefined;
         }
         const scopeId = resolveNotificationIdentityScope();
-        if (!scopeId) {
+        if (!scopeId || !assistantId) {
           return undefined;
         }
-        const identity = createNotificationIdentity(
-          scopeId,
-          assistant.assistantId,
-        );
+        const identity = createNotificationIdentity(scopeId, assistantId);
         if (!identity) {
           return undefined;
         }

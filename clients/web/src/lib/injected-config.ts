@@ -1,10 +1,14 @@
-import { RemoteSchema } from "@mycadet/local-mode/contract";
 import z from "zod";
 
 /**
  * The runtime config a shell injects (`window.__CADET_CONFIG__`). This schema
  * is the single shape: hosts stamp it, served bundles parse the window
  * through it instead of re-declaring per-file object types.
+ *
+ * Deliberately remote-agnostic: the config carries the identity a served
+ * surface needs (which assistant, its name, the shell's version, the
+ * Electron device id) and nothing about which kind of host serves it — the
+ * bundle's transport is same-origin regardless.
  *
  * The URL fields are distinct origins in the topology, not synonyms:
  * `cloudUrl` is the cloud API base and `hubUrl` the cloud hub SPA the
@@ -14,8 +18,6 @@ import z from "zod";
  * origins a served bundle can't infer.
  */
 export const InjectedConfigSchema = z.object({
-  /** Nothing injected (SSR) or an unparseable config means the local cadet. */
-  remote: RemoteSchema.catch("local"),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */
@@ -30,8 +32,7 @@ type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
 
 /**
  * The parsed injected config, or `undefined` when nothing usable was
- * injected (a host that injects nothing, or a config that doesn't parse). The `remote` default lives in the schema, so any returned config
- * always carries one.
+ * injected (a host that injects nothing, or a config that doesn't parse).
  */
 export function readInjectedConfig(): InjectedConfig | undefined {
   const parsed = InjectedConfigSchema.safeParse(window.__CADET_CONFIG__);

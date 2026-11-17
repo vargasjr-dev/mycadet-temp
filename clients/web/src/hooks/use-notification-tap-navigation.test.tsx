@@ -1,4 +1,3 @@
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
@@ -14,12 +13,7 @@ import {
 } from "@/runtime/notification-taps";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
-const ASSISTANT_A: LockfileAssistant = {
-  assistantId: "assistant-a",
-  cloudAssistantId: "123e4567-e89b-12d3-a456-426614174000",
-  cloud: "cloud",
-  cloudOrganizationId: "org-1",
-};
+const ASSISTANT_A = "assistant-a";
 
 let capturedHandler: NotificationTapHandler | null = null;
 const setNotificationTapHandlerMock = mock(
@@ -37,16 +31,16 @@ const { useNotificationTapNavigation } =
   await import("./use-notification-tap-navigation");
 
 function platformIdentity(
-  assistant: LockfileAssistant = ASSISTANT_A,
+  assistant: string = ASSISTANT_A,
 ): NotificationIdentity {
   // The resolver reads the served assistant, so borrow the store briefly to
   // derive a foreign identity and put this surface's assistant back.
-  const previous = useResolvedAssistantStore.getState().assistant;
-  useResolvedAssistantStore.getState().setAssistant(assistant);
+  const previous = useResolvedAssistantStore.getState().assistantId;
+  useResolvedAssistantStore.getState().setAssistantId(assistant);
   const scopeId = resolveNotificationIdentityScope();
-  useResolvedAssistantStore.getState().setAssistant(previous);
+  useResolvedAssistantStore.getState().setAssistantId(previous);
   const identity = scopeId
-    ? createNotificationIdentity(scopeId, assistant.assistantId)
+    ? createNotificationIdentity(scopeId, assistant)
     : null;
   if (!identity) {
     throw new Error("expected notification identity");
@@ -79,7 +73,7 @@ beforeEach(() => {
   setNotificationTapHandlerMock.mockClear();
   postLocalNotificationMock.mockClear();
   window.history.pushState(null, "", "/");
-  useResolvedAssistantStore.getState().setAssistant(ASSISTANT_A);
+  useResolvedAssistantStore.getState().setAssistantId(ASSISTANT_A);
 });
 
 afterEach(() => {
@@ -142,19 +136,14 @@ describe("useNotificationTapNavigation", () => {
   });
 
   test("a tap for another assistant has no answer in this surface", async () => {
-    useResolvedAssistantStore.getState().setAssistant(ASSISTANT_A);
+    useResolvedAssistantStore.getState().setAssistantId(ASSISTANT_A);
     renderHook(() => useNotificationTapNavigation());
     const received = collectThreadOpens();
 
     await sendTap({
       conversationId: "conv-other",
       sourceEventName: "reminder.fired",
-      identity: platformIdentity({
-        assistantId: "assistant-other",
-        cloud: "cloud",
-        cloudAssistantId: "123e4567-e89b-12d3-a456-426614174001",
-        cloudOrganizationId: "org-1",
-      }),
+      identity: platformIdentity("assistant-other"),
     });
 
     expect(received).toEqual([]);

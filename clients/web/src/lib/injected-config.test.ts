@@ -12,20 +12,21 @@ afterEach(() => {
 });
 
 describe("injected config", () => {
-  test("uses the existing remote field for the assistant topology", () => {
-    expect(
-      InjectedConfigSchema.parse({ remote: "docker", assistantId: "example" })
-        .remote,
-    ).toBe("docker");
-  });
-
-  test("an unknown topology preserves the rest of a newer host's stamp", () => {
+  test("parses the identity a host stamps", () => {
     const config = InjectedConfigSchema.parse({
-      remote: "future-topology",
       assistantId: "example",
       assistantName: "Example Assistant",
     });
-    expect(config.remote).toBe("local");
+    expect(config.assistantId).toBe("example");
+    expect(config.assistantName).toBe("Example Assistant");
+  });
+
+  test("an unknown field from a newer host's stamp is dropped, the rest preserved", () => {
+    const config = InjectedConfigSchema.parse({
+      futureField: "whatever",
+      assistantId: "example",
+      assistantName: "Example Assistant",
+    });
     expect(config.assistantId).toBe("example");
     expect(config.assistantName).toBe("Example Assistant");
   });

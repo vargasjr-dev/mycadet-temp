@@ -33,20 +33,18 @@ mock.module("@/utils/pointer", () => ({
 }));
 
 const servedRef = {
-  value: { cloud: "local", assistantId: "asst-1", name: "Alice" } as {
-    cloud: "local";
-    assistantId: string;
-    name?: string;
-  } | null,
+  value: "asst-1" as string | null,
 };
 mock.module("@/stores/resolved-assistant-store", () => ({
+  getAssistantName: () =>
+    ({ "asst-1": "Alice", "asst-2": "Bob" })[servedRef.value ?? ""],
   useResolvedAssistantStore: {
     use: {
-      assistant: () => servedRef.value,
+      assistantId: () => servedRef.value,
     },
     // lifecycle-service reads getState() + subscribe() outside React render;
     // the mock store mirrors the real store's surface.
-    getState: () => ({ assistant: servedRef.value }),
+    getState: () => ({ assistantId: servedRef.value }),
     subscribe: () => () => {},
   },
 }));
@@ -101,7 +99,7 @@ beforeEach(() => {
     submittedHelpRequests: {},
   });
   panelUnmounts = 0;
-  servedRef.value = { cloud: "local", assistantId: "asst-1", name: "Alice" };
+  servedRef.value = "asst-1";
   useDesktopPreviewStore.getState().close();
 });
 
@@ -123,11 +121,7 @@ describe("AssistantDesktopAffordance", () => {
         name: "Open Example Assistant's virtual desktop",
       }),
     ).not.toBeNull();
-    servedRef.value = {
-      cloud: "local",
-      assistantId: "asst-2",
-      name: "Bob",
-    };
+    servedRef.value = "asst-2";
     rerender(<DesktopHarness />);
     expect(
       screen.getByRole("button", { name: "Open Bob's virtual desktop" }),
@@ -447,11 +441,11 @@ describe("AssistantDesktopAffordance", () => {
     await waitFor(() =>
       expect(screen.getByTestId("desktop-panel")).not.toBeNull(),
     );
-    servedRef.value = { cloud: "local", assistantId: "asst-2", name: "Bob" };
+    servedRef.value = "asst-2";
     rerender(<DesktopHarness />);
     expect(screen.queryByTestId("desktop-panel") === null).toBe(true);
     expect(panelUnmounts).toBe(1);
-    servedRef.value = { cloud: "local", assistantId: "asst-1", name: "Alice" };
+    servedRef.value = "asst-1";
     rerender(<DesktopHarness />);
     expect(screen.queryByTestId("desktop-panel") === null).toBe(true);
   });

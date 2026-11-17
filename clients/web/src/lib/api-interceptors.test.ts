@@ -13,16 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import type * as LocalMode from "@/lib/local-mode";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
-
-const isCadetCloudRemoteMock = mock(() => false);
-mock.module(
-  "@/lib/local-mode",
-  (): Partial<typeof LocalMode> => ({
-    isCadetCloudRemote: isCadetCloudRemoteMock,
-  }),
-);
 
 // Error reporting, stubbed so a failed in-place recovery doesn't touch the
 // real client. The failure evidence lives on the durable lifecycle ring.

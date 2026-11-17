@@ -3,7 +3,10 @@ import { useCallback } from "react";
 
 import { useEmailAddresses, emailKeys } from "@/lib/email-api";
 import { useDomains, domainKeys } from "@/lib/assistant-domains";
-import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
+import {
+  getActiveAssistantId,
+  getAssistantName,
+} from "@/stores/resolved-assistant-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
 import { resolveInboxStatus, type InboxStatus } from "../resolve-inbox-status";
@@ -16,12 +19,6 @@ export interface AssistantInboxState {
   assistantName: string;
   /** The public handle, which is the subdomain of the address. */
   handle: string;
-  /**
-   * When the cloud made the assistant, as an ISO instant; `null` until
-   * the listing has answered. What says whether a user was here before a
-   * feature landed.
-   */
-  createdAt: string | null;
   /** Whether a domain row exists already, so setup knows what to create. */
   hasDomain: boolean;
   /** The registered address, once there is one. */
@@ -48,8 +45,7 @@ export function useAssistantInboxState(
 
   // The store IS the cloud's record of this assistant — its name, handle,
   // id, and creation instant come from there, not from a listing scan.
-  const assistant = getResolvedAssistant();
-  const assistantId = assistant.assistantId;
+  const assistantId = getActiveAssistantId();
 
   const addressesQuery = useEmailAddresses(assistantId);
   const domainsQuery = useDomains(assistantId);
@@ -74,9 +70,8 @@ export function useAssistantInboxState(
       domainsSettled: domainsQuery.isFetched,
     }),
     assistantId,
-    assistantName: assistant.name || fallbackName,
+    assistantName: getAssistantName() || fallbackName,
     handle: domain?.subdomain ?? assistantId,
-    createdAt: assistant.hatchedAt ?? null,
     hasDomain: !!domain,
     address: addresses?.[0]?.address ?? null,
     addressId: addresses?.[0]?.id ?? null,

@@ -6,11 +6,8 @@ const authRef = {
   hasCloudSession: true,
 };
 const resolvedRef = {
-  assistant: {
-    cloud: "local",
-    assistantId: "assistant-1",
-    name: "Primary",
-  } as { cloud: "local"; assistantId: string; name?: string } | null,
+  assistantId: "assistant-1" as string | null,
+  name: "Primary" as string | undefined,
 };
 
 mock.module("@/hooks/use-app-theme", () => ({
@@ -37,24 +34,18 @@ mock.module("@/hooks/conversation-queries", () => ({
   useConversationListQuery: useConversationListQueryMock,
 }));
 
-const localModeModule = await import("@/lib/local-mode");
-mock.module("@/lib/local-mode", () => ({
-  ...localModeModule,
-  isServedGatewayRuntime: () => undefined,
-  isLocalClient: () => false,
-  isGatewaySessionLive: () => false,
-  setActiveLockfileAssistant: async () => undefined,
-}));
-
 mock.module("@/stores/resolved-assistant-store", () => {
   const useResolvedAssistantStore = () => null;
   useResolvedAssistantStore.use = {
-    assistant: () => resolvedRef.assistant,
+    assistantId: () => resolvedRef.assistantId,
   };
   useResolvedAssistantStore.getState = () => ({
-    assistant: resolvedRef.assistant,
+    assistantId: resolvedRef.assistantId,
   });
-  return { useResolvedAssistantStore };
+  return {
+    useResolvedAssistantStore,
+    getAssistantName: () => resolvedRef.name,
+  };
 });
 
 const useCommandPaletteSectionsMock = mock((_params: unknown) => ({
@@ -85,11 +76,8 @@ const { CommandPaletteWindowPage } =
 beforeEach(() => {
   authRef.sessionStatus = "authenticated";
   authRef.hasCloudSession = true;
-  resolvedRef.assistant = {
-    cloud: "local",
-    assistantId: "assistant-1",
-    name: "Primary",
-  };
+  resolvedRef.assistantId = "assistant-1";
+  resolvedRef.name = "Primary";
 
   useConversationListQueryMock.mockClear();
   useCommandPaletteSectionsMock.mockClear();
@@ -111,11 +99,8 @@ describe("CommandPaletteWindowPage", () => {
   });
 
   test("binds the palette to the served assistant's id", () => {
-    resolvedRef.assistant = {
-      cloud: "local",
-      assistantId: "assistant-2",
-      name: "Secondary",
-    };
+    resolvedRef.assistantId = "assistant-2";
+    resolvedRef.name = "Secondary";
 
     render(<CommandPaletteWindowPage />);
 

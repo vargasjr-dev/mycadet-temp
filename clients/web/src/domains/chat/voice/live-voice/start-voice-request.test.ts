@@ -151,9 +151,7 @@ function identityHydrated(version: string = SUPPORTED_VERSION): void {
     version,
     name: "Ada",
   });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-  });
+  useResolvedAssistantStore.setState({ assistantId: "assistant-1" });
 }
 
 /**

@@ -64,13 +64,14 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const { pathname } = useLocation();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
-  const entry = useResolvedAssistantStore.use.assistant();
-  const assistant = entry && entry.assistantId === assistantId ? entry : null;
+  const resolvedAssistantId = useResolvedAssistantStore.use.assistantId();
   // Keyed on the resolved assistant — a resolved assistant is the whole
   // fact; there is no separate session question to ask first. The scope
-  // reads the active assistant internally, and `assistant` is that same
-  // store entry filtered to the subscribed id.
-  const scopeId = assistant ? resolveNotificationIdentityScope() : null;
+  // reads the active assistant internally; the gate checks the subscribed
+  // id is the one this surface serves.
+  const servesAssistant =
+    resolvedAssistantId !== null && resolvedAssistantId === assistantId;
+  const scopeId = servesAssistant ? resolveNotificationIdentityScope() : null;
   const notificationIdentity = useMemo(
     () =>
       assistantId && scopeId

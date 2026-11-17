@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
@@ -67,7 +66,7 @@ export function resizePollInterval(
 }
 
 export interface AssistantWithHealthz {
-  assistant: LockfileAssistant;
+  assistantId: string | null;
   healthz: HealthzGetResponse | null;
   healthzLoading: boolean;
   /** True while a request is in flight, including a refresh over existing values. */
@@ -89,14 +88,14 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
   // panel's shape — no fetch, no loading window. The selector returns the
   // entry itself (a stable reference); the projection runs outside it, so a
   // fresh mapped object can never re-trigger the subscription.
-  const assistant = useResolvedAssistantStore((s) => s.assistant);
+  const assistantId = useResolvedAssistantStore((s) => s.assistantId);
   /* Keyed on the active id rather than on the resolved record, so this read
      and the record's own go out together. The record can only ever report the
      id the hook already holds, so waiting for it would buy nothing and cost a
      round trip on a tunnel. */
   const healthzQueryOptions = useMemo(
-    () => healthzGetOptions({ path: { assistant_id: assistant.assistantId } }),
-    [assistant.assistantId],
+    () => healthzGetOptions({ path: { assistant_id: assistantId ?? "" } }),
+    [assistantId],
   );
   const [resizeWatch, setResizeWatch] = useState<ResizeWatch | null>(null);
   const {
@@ -169,7 +168,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
      left running would hold the next assistant's resize controls disabled. */
   useEffect(() => {
     setResizeWatch(null);
-  }, [assistant.assistantId]);
+  }, [assistantId]);
 
   /* Opens the watch; the query polls from there. The machine-size tag comes
      from the assistant record — the store's entry, live without a fetch. */
@@ -181,7 +180,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
   );
 
   return {
-    assistant,
+    assistantId,
     healthz,
     healthzLoading: healthzQueryLoading,
     healthzFetching,

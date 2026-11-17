@@ -245,7 +245,7 @@ export function useLiveVoiceSessionController(
   // the consume and stops.
   useEffect(() => {
     return useResolvedAssistantStore.subscribe((state, prevState) => {
-      if (state.assistant === prevState.assistant) {
+      if (state.assistantId === prevState.assistantId) {
         return;
       }
       void drainPendingVoiceStart((to, navigateOptions) =>

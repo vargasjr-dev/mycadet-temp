@@ -1,10 +1,13 @@
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import {
+  getAssistantName,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 
 function resolveAssistantName(
   assistantId: string | null,
   identity: { assistantId: string | null; name: string | null },
-  entry: { assistantId: string; name?: string } | null,
+  shellStamp: { assistantId: string | null; name?: string },
 ): string | null {
   if (!assistantId) {
     return null;
@@ -15,18 +18,18 @@ function resolveAssistantName(
       return name;
     }
   }
-  return entry && entry.assistantId === assistantId
-    ? entry.name?.trim() || null
+  return shellStamp.assistantId === assistantId
+    ? shellStamp.name?.trim() || null
     : null;
 }
 
 export function useAssistantName(assistantId: string | null): string | null {
   const name = useAssistantIdentityStore.use.name();
   const identityAssistantId = useAssistantIdentityStore.use.assistantId();
-  const entry = useResolvedAssistantStore.use.assistant();
+  const resolvedAssistantId = useResolvedAssistantStore.use.assistantId();
   return resolveAssistantName(
     assistantId,
     { assistantId: identityAssistantId, name },
-    entry,
+    { assistantId: resolvedAssistantId, name: getAssistantName() },
   );
 }

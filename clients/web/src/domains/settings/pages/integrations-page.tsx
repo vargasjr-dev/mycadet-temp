@@ -20,7 +20,7 @@ import {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 
-import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useOauthConnectionsQuery } from "@/domains/settings/oauth-connections";
 import { usePluginsList } from "@/hooks/use-plugins-list";
@@ -120,8 +120,7 @@ function IntegrationsPanelInner() {
   const location = useLocation();
   // The store IS the resolution — the entry is the one assistant fact,
   // resolved before the first render; there is nothing to await.
-  const assistant = getResolvedAssistant();
-  const assistantId = assistant.assistantId;
+  const assistantId = getActiveAssistantId();
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState<IntegrationCategory | null>(null);
   const providerParam = searchParams.get("provider");
@@ -207,7 +206,7 @@ function IntegrationsPanelInner() {
   }, [searchParams, navigate, t]);
 
   const oauthUnavailable =
-    providers.isError || connections.isError || !assistant;
+    providers.isError || connections.isError || !assistantId;
   const oauthReady = !oauthUnavailable && Boolean(providers.data) && true;
   const allItems = useMemo(
     () =>
@@ -297,7 +296,7 @@ function IntegrationsPanelInner() {
     .filter(isAvailable)
     .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   const loading =
-    !assistant ||
+    !assistantId ||
     providers.isLoading ||
     connections.isLoading ||
     mcp.list.isLoading ||

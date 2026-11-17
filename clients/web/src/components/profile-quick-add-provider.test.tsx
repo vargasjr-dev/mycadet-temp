@@ -27,11 +27,7 @@ const NEW_PROFILE_NAME = "fast-cheap";
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    assistant: () => ({
-      cloud: "local",
-      assistantId: "assistant-1",
-      port: 7830,
-    }),
+    assistantId: () => "assistant-1",
   };
   return { useResolvedAssistantStore: store };
 });

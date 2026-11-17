@@ -92,11 +92,7 @@ mock.module("@/runtime/platform-detection", () => ({
 mock.module("@/stores/resolved-assistant-store", () => ({
   useResolvedAssistantStore: {
     use: {
-      assistant: () => ({
-        cloud: "local",
-        assistantId: selectedAssistantId ?? "",
-        port: 7830,
-      }),
+      assistantId: () => selectedAssistantId ?? null,
     },
   },
 }));

@@ -78,7 +78,7 @@ const IMAGE_META: AvatarImageMeta = {
 const setActiveAssistant = (assistantId: string) =>
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "cloud", assistantId });
+    .setAssistantId(assistantId);
 
 function preparedIdentity(assistantId = ASSISTANT_ID) {
   setActiveAssistant(assistantId);

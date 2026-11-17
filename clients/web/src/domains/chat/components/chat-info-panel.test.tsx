@@ -205,7 +205,7 @@ const {
   loadApp: realLoadApp,
   loadDocument: realLoadDocument,
 } = useViewerStore.getState();
-const realAssistant = useResolvedAssistantStore.getState().assistant;
+const realAssistantId = useResolvedAssistantStore.getState().assistantId;
 
 interface Seed {
   apps?: AppSummary[];
@@ -304,7 +304,7 @@ afterAll(() => {
     loadApp: realLoadApp,
     loadDocument: realLoadDocument,
   });
-  useResolvedAssistantStore.setState({ assistant: realAssistant });
+  useResolvedAssistantStore.setState({ assistantId: realAssistantId });
   restoreDomStubs();
   mock.restore();
 });

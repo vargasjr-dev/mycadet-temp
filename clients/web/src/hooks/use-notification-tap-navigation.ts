@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { publish } from "@/lib/event-bus";
 import { setNotificationTapHandler } from "@/runtime/notifications";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
-import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 
 /**
  * The assistant a tap targets, if it is the one this surface serves. The
@@ -18,8 +18,7 @@ function resolveCurrentTapAssistant(payload: NotificationTapPayload): boolean {
   if (!identity) {
     return false;
   }
-  const entry = getResolvedAssistant();
-  return entry?.assistantId === identity.assistantId;
+  return getActiveAssistantId() === identity.assistantId;
 }
 
 /**

@@ -266,9 +266,7 @@ export function useWorkflowAgentAvatarSeeds(runId: string): string[] {
  */
 export function useWorkflowCardData(runId: string): ToolCallCardData | null {
   const entry = useWorkflowStore((state) => state.byId[runId]);
-  const assistantId = useResolvedAssistantStore(
-    (s) => s.assistant?.assistantId ?? null,
-  );
+  const assistantId = useResolvedAssistantStore((s) => s.assistantId);
 
   useEffect(() => {
     if (!entry && assistantId) {

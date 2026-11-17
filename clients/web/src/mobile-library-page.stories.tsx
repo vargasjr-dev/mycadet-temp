@@ -106,7 +106,7 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
   const [client] = useState(createStoryClient);
   const [previousState] = useState(() => {
     const previous = {
-      entry: useResolvedAssistantStore.getState().assistant,
+      assistantId: useResolvedAssistantStore.getState().assistantId,
       identity: {
         name: useAssistantIdentityStore.getState().name,
         version: useAssistantIdentityStore.getState().version,
@@ -115,9 +115,7 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
       nativePlatform: document.documentElement.dataset.nativePlatform,
     };
 
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
-    });
+    useResolvedAssistantStore.setState({ assistantId: ASSISTANT_ID });
     useAssistantIdentityStore
       .getState()
       .setIdentity("Example Assistant", "1.0.0", ASSISTANT_ID);
@@ -144,7 +142,7 @@ const withLibraryFixture: Decorator = function WithLibraryFixture(Story) {
   useEffect(() => {
     return () => {
       useResolvedAssistantStore.setState({
-        assistant: previousState.entry,
+        assistantId: previousState.assistantId,
       });
       useAssistantIdentityStore
         .getState()

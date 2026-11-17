@@ -310,7 +310,7 @@ describe("unknown-id reconcile kick", () => {
   function activate() {
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "local", port: 0, assistantId: "asst-1" });
+      .setAssistantId("asst-1");
     useConversationStore.getState().setActiveConversationId(PARENT);
   }
 

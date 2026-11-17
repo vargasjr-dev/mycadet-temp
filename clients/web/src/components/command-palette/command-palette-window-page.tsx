@@ -12,7 +12,10 @@ import {
   selectCommandPaletteCommand,
 } from "@/runtime/command-palette-window";
 import { CadetCommand } from "@mycadet/ipc-contract";
-import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
+import {
+  getAssistantName,
+  useResolvedAssistantStore,
+} from "@/stores/resolved-assistant-store";
 
 const noop = (): void => undefined;
 const noopNavigate = (_to: string | number): void => undefined;
@@ -57,8 +60,8 @@ export function CommandPaletteWindowPage() {
   // flags so CSS custom properties resolve to the user's stored preference.
   useAppTheme();
 
-  const assistant = useResolvedAssistantStore.use.assistant();
-  const assistantId = assistant.assistantId;
+  const assistantId =
+    useResolvedAssistantStore.use.assistantId() ?? "";
   const { conversations } = useConversationListQuery(assistantId, true);
 
   const handleItemSelect = useCallback((item: CommandPaletteItemData) => {
@@ -74,7 +77,7 @@ export function CommandPaletteWindowPage() {
     handleItemSelect: selectItem,
   } = useCommandPaletteSections({
     assistantId,
-    assistantName: assistant?.name,
+    assistantName: getAssistantName(),
     conversations,
     activeConversationId: undefined,
     startNewConversation: noop,

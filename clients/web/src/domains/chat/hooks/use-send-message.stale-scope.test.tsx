@@ -218,7 +218,7 @@ beforeEach(() => {
   });
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+    .setAssistantId("assistant-1");
   // The draft map is module state shared across tests; reloading it for the
   // assistant from an empty localStorage is how the store itself resets it.
   localStorage.clear();
@@ -559,7 +559,7 @@ describe("useSendMessage: a switch during the POST", () => {
       useChatSessionStore.getState().resetForLogout();
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+        .setAssistantId("assistant-1");
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -613,7 +613,7 @@ describe("useSendMessage: a switch during the POST", () => {
       useChatSessionStore.getState().resetForLogout();
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+        .setAssistantId("assistant-1");
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -682,7 +682,7 @@ describe("useSendMessage: a switch during the POST", () => {
       useChatSessionStore.getState().resetForLogout();
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+        .setAssistantId("assistant-1");
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);

@@ -35,8 +35,8 @@ useResolvedAssistantStore.subscribe((state, previous) => {
   // a logout. The assistant id itself never switches within a live bundle,
   // so a real-to-real stamp is none of the drains' business.
   if (
-    state.assistant.assistantId === "" &&
-    previous.assistant.assistantId !== ""
+    (state.assistantId ?? "") === "" &&
+    (previous.assistantId ?? "") !== ""
   ) {
     sessionGeneration += 1;
     pendingSaves.clear();

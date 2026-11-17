@@ -113,7 +113,7 @@ describe("SubagentSpawnGroup", () => {
     // closed control fetches nothing and opening it fetches every member.
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "cloud", assistantId: "assistant-1" });
+      .setAssistantId("assistant-1");
     const ids = ["sa-done-0", "sa-done-1"];
     for (const id of ids) {
       useSubagentStore.getState().spawnSubagent({

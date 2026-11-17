@@ -31,11 +31,7 @@ mock.module("@/lib/backwards-compat/use-supports-credentials-settings", () => ({
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    assistant: () => ({
-      cloud: "local",
-      assistantId: "asst-active",
-      port: 7830,
-    }),
+    assistantId: () => "asst-active",
   };
   return { useResolvedAssistantStore: store };
 });

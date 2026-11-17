@@ -29,7 +29,6 @@ import {
   stubModule,
 } from "@/utils/module-mock.test-helper";
 import type { toast } from "@mycadet/design-library";
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
 const HEALTHZ: HealthzGetResponse = {
   version: "1.2.3",
@@ -122,11 +121,7 @@ beforeEach(() => {
   captureErrorMock.mockClear();
   toastErrorMock.mockClear();
   // The store IS the resolution: the panel reads its entry, no fetch.
-  storeModule.useResolvedAssistantStore.getState().setAssistant({
-    cloud: "cloud",
-    assistantId: "a-1",
-    name: "Assistant",
-  } as LockfileAssistant);
+  storeModule.useResolvedAssistantStore.getState().setAssistantId("a-1");
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

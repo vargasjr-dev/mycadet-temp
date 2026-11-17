@@ -26,7 +26,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import { setHosting } from "@/assistant/hosting.test-helper";
+import { setResolvedAssistant } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { ApiError } from "@/utils/api-errors";
@@ -660,7 +660,7 @@ describe("ProfileEditorModal create mode — model-first", () => {
   });
 
   test("Ollama connections offer the bundled local models", () => {
-    setHosting("local");
+    setResolvedAssistant();
     renderCreate([makeConnection("ollama", "ollama")]);
 
     selectModel("Llama 3.2");

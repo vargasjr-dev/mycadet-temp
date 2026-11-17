@@ -137,7 +137,7 @@ export function RootLayout() {
   useCallChords();
 
   const assistantId = useActiveAssistantId();
-  const activeAssistant = useResolvedAssistantStore.use.assistant();
+  const activeAssistantId = useResolvedAssistantStore.use.assistantId();
   const assistantVersion = useAssistantIdentityStore.use.version();
   // The scope is keyed on the resolved assistant — a resolved assistant is
   // the whole fact; there is no separate session question to ask first.
@@ -193,14 +193,14 @@ export function RootLayout() {
     // Keyed on the served assistant: until the shell stamps it there is
     // nothing to key scopes on. The web bundle exists only for a resolved
     // assistant, so there is no resolution state to wait on.
-    if (!activeAssistant) {
+    if (!activeAssistantId) {
       return [];
     }
     const scopeId = resolveNotificationIdentityScope();
     return scopeId
-      ? [{ scopeId, assistantId: activeAssistant.assistantId }]
+      ? [{ scopeId, assistantId: activeAssistantId }]
       : [];
-  }, [activeAssistant]);
+  }, [activeAssistantId]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {
       return;

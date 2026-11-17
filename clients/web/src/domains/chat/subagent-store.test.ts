@@ -2787,7 +2787,7 @@ describe("reconcileFromDaemon", () => {
   });
 
   it("discards a snapshot when the assistant changes without a conversation reset", async () => {
-    const previous = useResolvedAssistantStore.getState().assistant;
+    const previous = useResolvedAssistantStore.getState().assistantId;
     useSetupLocalAssistant("assistant-1");
     try {
       reconcileReply = {
@@ -2802,7 +2802,7 @@ describe("reconcileFromDaemon", () => {
       await pending;
       expect(getState().byId["sa-old"]).toBeUndefined();
     } finally {
-      useResolvedAssistantStore.setState({ assistant: previous });
+      useResolvedAssistantStore.setState({ assistantId: previous });
     }
   });
 

@@ -129,7 +129,7 @@ const onActionCalls: unknown[][] = [];
 function renderSurface() {
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "local", port: 0, assistantId: ASSISTANT_ID });
+    .setAssistantId(ASSISTANT_ID);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

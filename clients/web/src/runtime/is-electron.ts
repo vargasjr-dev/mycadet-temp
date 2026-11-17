@@ -13,10 +13,6 @@
  * uses `localStorage` — so consumers stay platform-agnostic.
  */
 import type {
-  Lockfile,
-  LockfileWriteResult,
-} from "@mycadet/local-mode/contract";
-import type {
   AppVersionInfo,
   BundleScanData,
   CompanionAnnotationPhase,
@@ -200,12 +196,10 @@ declare global {
           error?: string;
         }>;
         listDevices?(assistantId: string): Promise<LocalListDevicesResult>;
-        readLockfile(): Promise<Lockfile>;
         revokeDevice?(
           assistantId: string,
           hashedDeviceId: string,
         ): Promise<LocalRevokeDeviceResult>;
-        unpair?(assistantId: string): Promise<LockfileWriteResult>;
         pairingStart?(address: string): Promise<LocalPairingStartResult>;
         pairingPoll?(
           handle: string,

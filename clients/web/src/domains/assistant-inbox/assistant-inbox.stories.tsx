@@ -96,9 +96,7 @@ const withInboxQueryCache = withQueryCache((client) => {
 function seedStores(): void {
   saveViewMode(ASSISTANT_ID, "all");
   useSidebarLayoutStore.setState({ assistantId: null });
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
-  });
+  useResolvedAssistantStore.setState({ assistantId: ASSISTANT_ID });
 }
 
 interface InboxStoryArgs {

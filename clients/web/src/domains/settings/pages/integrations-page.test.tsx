@@ -356,11 +356,7 @@ function installedPlugin(
 }
 
 beforeEach(() => {
-  useResolvedAssistantStore.getState().setAssistant({
-    cloud: "cloud",
-    assistantId: "mcp-assistant-123",
-    name: "MCP Assistant",
-  });
+  useResolvedAssistantStore.getState().setAssistantId("mcp-assistant-123");
 });
 
 afterEach(() => {

@@ -146,7 +146,7 @@ describe("mobile chat document entry", () => {
     act(() =>
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "local", port: 0, assistantId: "assistant-2" }),
+        .setAssistantId("assistant-2"),
     );
     await act(async () => {
       resolveLoad({ data: documentData });
@@ -181,11 +181,7 @@ describe("mobile chat document entry", () => {
         expect(load).not.toHaveBeenCalled();
         if (cancelled) {
           act(() =>
-            useResolvedAssistantStore.getState().setAssistant({
-              cloud: "local",
-              port: 0,
-              assistantId: "assistant-2",
-            }),
+            useResolvedAssistantStore.getState().setAssistantId("assistant-2"),
           );
         }
       } finally {

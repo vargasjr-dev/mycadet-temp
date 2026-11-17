@@ -973,13 +973,7 @@ describe("document session chat handoff", () => {
           if (outcome === "closed") {
             useViewerStore.getState().closeDocument();
           } else {
-            useResolvedAssistantStore.setState({
-              assistant: {
-                cloud: "local",
-                port: 0,
-                assistantId: "assistant-2",
-              },
-            });
+            useResolvedAssistantStore.setState({ assistantId: "assistant-2" });
           }
           finishWrite();
         }
@@ -1074,11 +1068,7 @@ describe("document PDF export saves", () => {
           );
         } else {
           act(() =>
-            useResolvedAssistantStore.getState().setAssistant({
-              cloud: "local",
-              port: 0,
-              assistantId: "assistant-2",
-            }),
+            useResolvedAssistantStore.getState().setAssistantId("assistant-2"),
           );
         }
         await act(async () => finishWrite());
@@ -1176,11 +1166,7 @@ describe("desktop document feedback", () => {
         fireEvent.click(screen.getByRole("button", { name: "Close document" }));
       } else if (action === "assistant switch") {
         act(() =>
-          useResolvedAssistantStore.getState().setAssistant({
-            cloud: "local",
-            port: 0,
-            assistantId: "assistant-2",
-          }),
+          useResolvedAssistantStore.getState().setAssistantId("assistant-2"),
         );
       } else {
         act(() =>

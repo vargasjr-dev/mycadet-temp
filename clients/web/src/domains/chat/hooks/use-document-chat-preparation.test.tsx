@@ -207,9 +207,7 @@ describe("shared document preparation and composer submit", () => {
           useViewerStore.getState().toggleAppMinimized();
         }
         if (change === "assistant") {
-          useResolvedAssistantStore.setState({
-            assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
-          });
+          useResolvedAssistantStore.setState({ assistantId: "assistant-2" });
         }
         if (change === "conversation") {
           useConversationStore.setState({
@@ -376,9 +374,7 @@ describe("shared document preparation and composer submit", () => {
       await waitFor(() => expect(flush).toHaveBeenCalledTimes(1));
       act(() => {
         if (change === "assistant") {
-          useResolvedAssistantStore.setState({
-            assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
-          });
+          useResolvedAssistantStore.setState({ assistantId: "assistant-2" });
         }
         if (change === "conversation") {
           useConversationStore.setState({

@@ -223,25 +223,17 @@ describe("document conversation entry", () => {
 
   test("a store change cannot flip the scope — only dispose cancels it", () => {
     const scope = documentRequestScope();
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "assistant-2" },
-    });
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "assistant-2" });
+    useResolvedAssistantStore.setState({ assistantId: "assistant-1" });
     expect(scope.isCurrent()).toBe(true);
     scope.dispose();
     expect(scope.isCurrent()).toBe(false);
   });
 
   test("a scope created under the unresolved shell never goes current", () => {
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "cloud", assistantId: "" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "" });
     const scope = documentRequestScope();
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "assistant-1" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "assistant-1" });
     expect(scope.isCurrent()).toBe(false);
     scope.dispose();
   });

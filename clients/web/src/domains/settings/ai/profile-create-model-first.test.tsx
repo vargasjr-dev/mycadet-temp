@@ -31,7 +31,7 @@ import {
   SEARCHABLE_SELECT_MENU_REACH,
 } from "@mycadet/design-library/components/searchable-select";
 
-import { setHosting } from "@/assistant/hosting.test-helper";
+import { setResolvedAssistant } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -751,7 +751,7 @@ describe("a route with no connection yet", () => {
 
   test("re-keys the connect form when the lone route changes", () => {
     // Ollama is a local runtime, so only a self-hosted assistant offers it.
-    setHosting("local");
+    setResolvedAssistant();
     renderCreate([makeConnection("anthropic-personal")]);
 
     selectModel("Gemini 3.6 Flash");

@@ -1,4 +1,3 @@
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -115,19 +114,9 @@ const { releaseAssistantAvatarUrl, useAssistantAvatar } =
 const revokeObjectURL = mock((_url: string) => {});
 URL.revokeObjectURL = revokeObjectURL;
 
-const assistantOne: LockfileAssistant = {
-  assistantId: "asst-1",
-  cloud: "local",
-  port: 9101,
-  daemonPort: 9101,
-};
+const assistantOne = "asst-1";
 
-const assistantTwo: LockfileAssistant = {
-  ...assistantOne,
-  assistantId: "asst-2",
-  port: 9102,
-  daemonPort: 9102,
-};
+const assistantTwo = "asst-2";
 
 function createWrapper(
   queryClient = new QueryClient({
@@ -145,7 +134,7 @@ beforeEach(() => {
   // Default to a manifest-capable assistant so the `/avatar/state` path is
   // exercised; legacy-path tests override the version explicitly.
   useAssistantIdentityStore.getState().setIdentity("test-asst", MIN_VERSION);
-  useResolvedAssistantStore.getState().setAssistant(assistantOne);
+  useResolvedAssistantStore.getState().setAssistantId(assistantOne);
 });
 
 afterEach(() => {
@@ -222,7 +211,7 @@ describe("useAssistantAvatar", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    useResolvedAssistantStore.getState().setAssistant(assistantOne);
+    useResolvedAssistantStore.getState().setAssistantId(assistantOne);
     const scopeId = resolveNotificationIdentityScope()!;
 
     const { result } = renderHook(
@@ -262,7 +251,7 @@ describe("useAssistantAvatar", () => {
       customImageUrl: null,
       state: characterState,
     } satisfies AvatarData);
-    useResolvedAssistantStore.getState().setAssistant(assistantOne);
+    useResolvedAssistantStore.getState().setAssistantId(assistantOne);
     const scopeId = resolveNotificationIdentityScope()!;
 
     const { result } = renderHook(
@@ -303,7 +292,7 @@ describe("useAssistantAvatar", () => {
     });
 
     act(() => {
-      useResolvedAssistantStore.getState().setAssistant(assistantTwo);
+      useResolvedAssistantStore.getState().setAssistantId(assistantTwo);
     });
     await waitFor(() => {
       expect(result.current.customImageUrl).toBe("blob:assistant-b");

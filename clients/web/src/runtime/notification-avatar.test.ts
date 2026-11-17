@@ -51,7 +51,7 @@ describe("notification identities", () => {
     const setActive = (assistantId: string) =>
       useResolvedAssistantStore
         .getState()
-        .setAssistant({ cloud: "cloud", assistantId });
+        .setAssistantId(assistantId);
     setActive("asst-1");
     const scope = resolveNotificationIdentityScope();
     const same = resolveNotificationIdentityScope();
@@ -293,7 +293,7 @@ describe("notification identities", () => {
   test("reconcile force-clears a snapshot-only scope exactly once", () => {
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "cloud", assistantId: "snapshot-only" });
+      .setAssistantId("snapshot-only");
     const scopeId = resolveNotificationIdentityScope()!;
     const snapshotOnly = identity("snapshot-only", scopeId);
     const resetIdentities = mock(() => {});
@@ -318,7 +318,7 @@ describe("notification identities", () => {
   test("queues native publication behind eager publisher registration", async () => {
     useResolvedAssistantStore
       .getState()
-      .setAssistant({ cloud: "cloud", assistantId: "registered" });
+      .setAssistantId("registered");
     const scopeId = resolveNotificationIdentityScope()!;
     let finishRegistration: (registered: boolean) => void = () => undefined;
     const registration = new Promise<boolean>((resolve) => {

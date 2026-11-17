@@ -1,4 +1,3 @@
-import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 /**
  * `useNotificationIntentSync` forwards `notification_intent` SSE events to
  * `postLocalNotification`, including remote-push acceptance metadata, and
@@ -37,13 +36,7 @@ import { isClientAttended } from "@/runtime/window-attention";
 import { isConversationChatPath, routes } from "@/utils/routes";
 
 const CONVERSATION_ID = "conv-1";
-const PLATFORM_ASSISTANT_ID = "123e4567-e89b-12d3-a456-426614174000";
-const PLATFORM_ASSISTANT: LockfileAssistant = {
-  assistantId: "assistant-1",
-  cloudAssistantId: PLATFORM_ASSISTANT_ID,
-  cloud: "cloud",
-  cloudOrganizationId: "org-1",
-};
+const PLATFORM_ASSISTANT_ID_TO_SERVE = "assistant-1";
 
 const postedArgs: PostLocalNotificationArgs[] = [];
 let soundDisposition: "web-sound" | "native-owned" = "web-sound";
@@ -215,7 +208,7 @@ function expectNotified() {
 }
 
 function platformScopeId(): string {
-  useResolvedAssistantStore.getState().setAssistant(PLATFORM_ASSISTANT);
+  useResolvedAssistantStore.getState().setAssistantId(PLATFORM_ASSISTANT_ID_TO_SERVE);
   const scopeId = resolveNotificationIdentityScope();
   if (!scopeId) {
     throw new Error("Expected a cloud notification scope");
@@ -236,7 +229,7 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   __resetForTesting();
-  useResolvedAssistantStore.getState().setAssistant(PLATFORM_ASSISTANT);
+  useResolvedAssistantStore.getState().setAssistantId(PLATFORM_ASSISTANT_ID_TO_SERVE);
   useConversationStore.getState().reset();
   setVisibilityState("visible");
   postedArgs.length = 0;
@@ -398,17 +391,12 @@ describe("useNotificationIntentSync", () => {
   });
 
   test("delayed work stays bound to the origin that minted it after the served assistant changes", () => {
-    const assistantA: LockfileAssistant = {
-      assistantId: "local-a",
-      cloud: "local",
-      port: 9101,
-      daemonPort: 9101,
-    };
-    useResolvedAssistantStore.getState().setAssistant(assistantA);
+    const assistantA = "local-a";
+    useResolvedAssistantStore.getState().setAssistantId(assistantA);
     const mounted = mountAt(
       routes.assistant,
       undefined,
-      assistantA.assistantId,
+      assistantA,
     );
 
     publishNotificationIntent({ assistantName: "Origin A" });
@@ -416,24 +404,19 @@ describe("useNotificationIntentSync", () => {
     const originAScopeId = resolveNotificationIdentityScope();
     expect(postedArgs[0]?.canDeliver?.()).toBe(true);
 
-    const assistantB: LockfileAssistant = {
-      assistantId: "local-b",
-      cloud: "local",
-      port: 9102,
-      daemonPort: 9102,
-    };
+    const assistantB = "local-b";
     act(() => {
-      useResolvedAssistantStore.getState().setAssistant(assistantB);
-      mounted.rerender({ assistantId: assistantB.assistantId });
+      useResolvedAssistantStore.getState().setAssistantId(assistantB);
+      mounted.rerender({ assistantId: assistantB });
     });
 
     expect(postedArgs[0]?.canDeliver?.()).toBe(false);
     expect(originA).toMatchObject({
       scopeId: originAScopeId,
-      assistantId: assistantA.assistantId,
+      assistantId: assistantA,
     });
-    expect(originA?.nativeSenderId).toBe(assistantA.assistantId);
-    expect(postedArgs[0]?.assistantId).toBe(assistantA.assistantId);
+    expect(originA?.nativeSenderId).toBe(assistantA);
+    expect(postedArgs[0]?.assistantId).toBe(assistantA);
     expect(postedArgs[0]?.assistantName).toBe("Origin A");
   });
 });

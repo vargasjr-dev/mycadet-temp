@@ -633,7 +633,7 @@ function openSession(
    */
   subscriptions.push(
     useResolvedAssistantStore.subscribe((state) => {
-      if (state.assistant?.assistantId !== ownerAssistantId) {
+      if (state.assistantId !== ownerAssistantId) {
         console.info(
           "watch-controller: ending the session, its assistant is no longer active",
         );

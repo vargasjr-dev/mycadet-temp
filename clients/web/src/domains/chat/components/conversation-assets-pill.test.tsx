@@ -274,9 +274,7 @@ beforeEach(() => {
   useViewerStore.getState().reset();
   // The composed tests render the real panel, whose assistant-scoped reads
   // go through the active id.
-  useResolvedAssistantStore.setState({
-    assistant: { cloud: "local", port: 0, assistantId: ASSISTANT_ID },
-  });
+  useResolvedAssistantStore.setState({ assistantId: ASSISTANT_ID });
 });
 
 afterEach(() => {

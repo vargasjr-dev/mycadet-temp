@@ -489,10 +489,7 @@ const activeAssistantIdRef: { value: string } = { value: "assistant-1" };
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    assistant: () =>
-      activeAssistantIdRef.value
-        ? { cloud: "local", port: 0, assistantId: activeAssistantIdRef.value }
-        : { cloud: "cloud", assistantId: "" },
+    assistantId: () => activeAssistantIdRef.value ?? null,
   };
   return { useResolvedAssistantStore: store };
 });

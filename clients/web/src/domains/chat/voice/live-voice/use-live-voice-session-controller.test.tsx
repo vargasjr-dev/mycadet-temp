@@ -347,9 +347,7 @@ describe("re-draining on an assistant switch", () => {
   /** Resolved, active, and new enough to serve live voice. */
   function activeAssistant(assistantId: string): void {
     useAssistantIdentityStore.setState({ assistantId, version: "0.10.12" });
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: assistantId },
-    });
+    useResolvedAssistantStore.setState({ assistantId: assistantId });
   }
 
   /**

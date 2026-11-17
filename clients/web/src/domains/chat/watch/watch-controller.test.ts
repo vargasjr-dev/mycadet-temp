@@ -85,15 +85,9 @@ const assistantListeners = new Set<(state: unknown) => void>();
 
 mock.module("@/stores/resolved-assistant-store", () => ({
   getActiveAssistantId: () => activeAssistantId,
-  getResolvedAssistant: () =>
-    activeAssistantId
-      ? { cloud: "local", assistantId: activeAssistantId, port: 7830 }
-      : null,
   useResolvedAssistantStore: {
     getState: () => ({
-      assistant: activeAssistantId
-        ? { cloud: "local", assistantId: activeAssistantId, port: 7830 }
-        : null,
+      assistantId: activeAssistantId ?? null,
     }),
     subscribe: (listener: (state: unknown) => void) => {
       assistantListeners.add(listener);
@@ -142,11 +136,7 @@ const activate = (
     .getState()
     .setIdentity("test-asst", version, assistantId);
   for (const listener of [...assistantListeners]) {
-    listener({
-      assistant: activeAssistantId
-        ? { cloud: "local", assistantId: activeAssistantId, port: 7830 }
-        : null,
-    });
+    listener({ assistantId: activeAssistantId ?? null });
   }
 };
 

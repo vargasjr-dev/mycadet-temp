@@ -29,7 +29,7 @@ import { Modal } from "@mycadet/design-library/components/modal";
 import { createElement, type ReactNode } from "react";
 
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
-import { setHosting } from "@/assistant/hosting.test-helper";
+import { setResolvedAssistant } from "@/assistant/hosting.test-helper";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 
@@ -401,7 +401,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama creates a keyless connection without saving a secret", async () => {
-    setHosting("local");
+    setResolvedAssistant();
     render(
       <ModalWrapper>
         <ProviderCreateForm
@@ -435,7 +435,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama create form shows an optional Base URL field", async () => {
-    setHosting("local");
+    setResolvedAssistant();
     render(
       <ModalWrapper>
         <ProviderCreateForm
@@ -455,7 +455,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama create posts a filled Base URL", async () => {
-    setHosting("local");
+    setResolvedAssistant();
     render(
       <ModalWrapper>
         <ProviderCreateForm
@@ -484,8 +484,8 @@ describe("ProviderCreateForm submit sequence", () => {
     });
   });
 
-  test("the Ollama default provider seed lands on cloud-hosted assistants too", () => {
-    setHosting("cloud");
+  test("the Ollama default provider seed lands on the served assistant", () => {
+    setResolvedAssistant();
     render(
       <ModalWrapper>
         <ProviderCreateForm

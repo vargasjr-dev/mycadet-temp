@@ -21,7 +21,10 @@ import type {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
-import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
+import {
+  getActiveAssistantId,
+  getAssistantName,
+} from "@/stores/resolved-assistant-store";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
 import { buildRemoteWebPairingUrl } from "@mycadet/service-contracts/remote-web-pairing";
@@ -85,17 +88,17 @@ export interface PairDeviceTarget {
  * visibility gate.
  */
 export function resolvePairDeviceTarget(): PairDeviceTarget | null {
-  const assistant = getResolvedAssistant();
+  const assistantId = getActiveAssistantId();
   // The shell's empty id = the not-yet-resolved pre-projection window —
   // exactly the null the docblock describes.
-  if (assistant.assistantId === "") {
+  if (assistantId === "") {
     return null;
   }
   return {
     base: `${window.location.origin}/v1/assistants/${encodeURIComponent(
-      assistant.assistantId,
+      assistantId,
     )}/remote-web`,
-    assistantName: assistant.name?.trim() || null,
+    assistantName: getAssistantName()?.trim() || null,
   };
 }
 

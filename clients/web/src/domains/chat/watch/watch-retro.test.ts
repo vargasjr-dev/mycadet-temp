@@ -26,7 +26,7 @@ const activate = (assistantId: string | null) => {
   }
   useResolvedAssistantStore
     .getState()
-    .setAssistant({ cloud: "local", port: 0, assistantId });
+    .setAssistantId(assistantId);
 };
 
 /** The runtime's announcement, in the shape the event stream carries it. */

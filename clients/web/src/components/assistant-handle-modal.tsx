@@ -3,7 +3,7 @@ import { useCallback, useState, type ReactNode } from "react";
 import { Modal } from "@mycadet/design-library";
 
 import { AssistantHandleSection } from "@/components/profile-card";
-import { getResolvedAssistant } from "@/stores/resolved-assistant-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useTranslation } from "@/i18n";
 
 export interface AssistantHandleModalProps {
@@ -67,7 +67,7 @@ export interface AssistantHandleModalControl {
 export function useAssistantHandleModal(): AssistantHandleModalControl {
   const [open, setOpen] = useState(false);
   // The store IS the record — the handle is the entry's id.
-  const handle = getResolvedAssistant().assistantId;
+  const handle = getActiveAssistantId();
 
   const openModal = useCallback(() => setOpen(true), []);
 

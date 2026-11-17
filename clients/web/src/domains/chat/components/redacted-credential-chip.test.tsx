@@ -46,9 +46,7 @@ afterEach(() => {
 describe("RedactedCredentialChip reveal scoping", () => {
   test("reveals against the transcript assistantId, not the active assistant", async () => {
     // Active assistant is a DIFFERENT assistant than the transcript owner.
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "active-assistant" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "active-assistant" });
 
     const { getAllByLabelText } = render(
       <RedactedCredentialChip
@@ -64,9 +62,7 @@ describe("RedactedCredentialChip reveal scoping", () => {
   });
 
   test("falls back to the active assistant when no assistantId prop is passed", async () => {
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "active-assistant" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "active-assistant" });
 
     const { getAllByLabelText } = render(
       <RedactedCredentialChip {...ENRICHED} />,
@@ -81,9 +77,7 @@ describe("RedactedCredentialChip reveal scoping", () => {
   test("is not revealable when the transcript assistantId is explicitly null", () => {
     // An explicit null owner (pre-active transcript) must not fall through to
     // the active assistant — the chip stays a non-revealable badge.
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "active-assistant" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "active-assistant" });
 
     const { queryAllByLabelText } = render(
       <RedactedCredentialChip {...ENRICHED} assistantId={null} />,
@@ -96,9 +90,7 @@ describe("RedactedCredentialChip reveal scoping", () => {
     // Even when enriched-looking props ride along, `neutralized` wins: the
     // daemon refused to vouch for this span, so nothing it claims (type,
     // service, field) may be displayed or made interactive.
-    useResolvedAssistantStore.setState({
-      assistant: { cloud: "local", port: 0, assistantId: "active-assistant" },
-    });
+    useResolvedAssistantStore.setState({ assistantId: "active-assistant" });
 
     const { container, queryAllByLabelText, getByText } = render(
       <RedactedCredentialChip

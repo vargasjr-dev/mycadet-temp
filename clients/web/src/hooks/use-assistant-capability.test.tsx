@@ -28,8 +28,7 @@ mock.module("@/lib/assistant-status-api", () => ({
 mock.module("@/stores/resolved-assistant-store", () => ({
   useResolvedAssistantStore: {
     use: {
-      assistant: () =>
-        assistantId ? { cloud: "local", port: 0, assistantId } : null,
+      assistantId: () => assistantId,
     },
   },
 }));

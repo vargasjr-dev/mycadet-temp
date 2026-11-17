@@ -126,7 +126,7 @@ function releaseOwnerSubscription(): void {
 function bindToOwner(assistantId: string): void {
   releaseOwnerSubscription();
   ownerSubscription = useResolvedAssistantStore.subscribe((state) => {
-    if (state.assistant?.assistantId !== assistantId) {
+    if (state.assistantId !== assistantId) {
       console.info(
         "watch-retro: dropping the session summary, its assistant is no longer active",
       );

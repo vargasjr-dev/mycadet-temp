@@ -26,7 +26,7 @@ mock.module("@/components/layout/chat-layout-slots-store", () => {
 mock.module("@/stores/resolved-assistant-store", () => {
   const store = () => null;
   store.use = {
-    assistant: () => ({ cloud: "local", assistantId: "asst-1", port: 7830 }),
+    assistantId: () => "asst-1",
   };
   return { useResolvedAssistantStore: store };
 });

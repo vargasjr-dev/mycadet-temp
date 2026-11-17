@@ -32,12 +32,7 @@ const { useSidebarState } = await import("@/domains/chat/use-sidebar-state");
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 beforeEach(() => {
-  useResolvedAssistantStore.getState().setAssistant({
-    cloud: "cloud",
-    assistantId: "asst-1",
-    name: "Ast",
-    hatchedAt: "1970-01-01T00:00:00.000Z",
-  });
+  useResolvedAssistantStore.getState().setAssistantId("asst-1");
 });
 
 function makeConversation(

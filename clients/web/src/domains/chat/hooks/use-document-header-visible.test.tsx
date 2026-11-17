@@ -28,7 +28,7 @@ import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
-import { setHosting } from "@/assistant/hosting.test-helper";
+import { setResolvedAssistant } from "@/assistant/hosting.test-helper";
 
 import type * as ActiveChat from "../active-chat-view";
 import { ChatLayoutHeader } from "../chat-layout-header";
@@ -186,7 +186,7 @@ describe("document navigation header handoff", () => {
     "keeps navigation before the document host mounts during %s",
     (guard) => {
       if (guard.startsWith("self-hosted")) {
-        setHosting("local");
+        setResolvedAssistant();
       }
       if (guard === "self-hosted-error") {
         conversationListError = true;

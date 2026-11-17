@@ -173,12 +173,7 @@ beforeEach(() => {
   localStorage.clear();
   localStorage.setItem("cadet:sidebar-view-mode:asst-1", "grouped");
   // The menu reads the active assistant from the store, not a prop.
-  useResolvedAssistantStore.getState().setAssistant({
-    cloud: "cloud",
-    assistantId: "asst-1",
-    name: "Ast",
-    hatchedAt: "1970-01-01T00:00:00.000Z",
-  });
+  useResolvedAssistantStore.getState().setAssistantId("asst-1");
   useSidebarLayoutStore.setState({
     assistantId: null,
     sectionOrder: [],
