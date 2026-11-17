@@ -3,40 +3,40 @@
  *
  * Per-conversation memory-injection opt-out. Runs directly in the CLI
  * process — no IPC, no daemon required: each subcommand imports the memory
- * plugin's mode store (`conversation-mode-store.ts`) and calls it against
- * the workspace's on-disk memory database. The daemon re-reads the mode on
- * every turn, so a change takes effect immediately.
+ * plugin's store (`memory-injection-store.ts`) and calls it against the
+ * workspace's on-disk memory database. The daemon re-reads the flag on every
+ * turn, so a change takes effect immediately.
  *
  * Subcommands:
  *
- *   - `enable <conversationId>` — restore standard injection (the default).
- *   - `disable <conversationId>` — inject no memory for the conversation: no
- *     fresh retrieval of any engine, no static essentials/threads block, no
- *     PKB context. Prior turns' already-cached blocks ride history untouched.
- *   - `list` — every conversation with an explicit mode.
+ *   - `enable <conversationId>` — turn memory injection on (the default).
+ *   - `disable <conversationId>` — turn memory injection off: the plugin
+ *     attaches no memory for the conversation — no fresh retrieval of any
+ *     engine, no static essentials/threads block, no PKB context. Prior
+ *     turns' already-cached blocks ride history untouched.
+ *   - `list` — every conversation with injection turned off.
  */
 
 import type { Command } from "commander";
 
-import type { ConversationMemoryMode } from "../../../plugins/defaults/memory/conversation-mode-store.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
 
 export function registerMemoryInjectionCommand(memory: Command): void {
   const injection = subcommand(memory, "injection");
 
-  const setMode = async (
+  const setOff = async (
     conversationId: string,
-    mode: ConversationMemoryMode,
+    off: boolean,
     verb: string,
   ): Promise<void> => {
     // Deferred: loads the memory plugin's store (and the memory connection)
     // into this process — the same direct invocation as
     // `assistant memory retrospective`.
-    const { setConversationMemoryMode } = await import(
-      "../../../plugins/defaults/memory/conversation-mode-store.js"
+    const { setMemoryInjectionOff } = await import(
+      "../../../plugins/defaults/memory/memory-injection-store.js"
     );
-    if (!setConversationMemoryMode(conversationId, mode)) {
+    if (!setMemoryInjectionOff(conversationId, off)) {
       log.error(
         `${conversationId}: memory injection not ${verb}d (memory database unavailable)`,
       );
@@ -50,7 +50,7 @@ export function registerMemoryInjectionCommand(memory: Command): void {
 
   subcommand(injection, "enable").action(
     async (conversationId: string, _opts: unknown, _cmd: Command) => {
-      await setMode(conversationId, "standard", "enable");
+      await setOff(conversationId, false, "enable");
     },
   );
 
@@ -58,23 +58,23 @@ export function registerMemoryInjectionCommand(memory: Command): void {
 
   subcommand(injection, "disable").action(
     async (conversationId: string, _opts: unknown, _cmd: Command) => {
-      await setMode(conversationId, "off", "disable");
+      await setOff(conversationId, true, "disable");
     },
   );
 
   // ── list ───────────────────────────────────────────────────────────────
 
   subcommand(injection, "list").action(async () => {
-    const { listConversationMemoryModes } = await import(
-      "../../../plugins/defaults/memory/conversation-mode-store.js"
+    const { listMemoryInjectionOffConversations } = await import(
+      "../../../plugins/defaults/memory/memory-injection-store.js"
     );
-    const modes = listConversationMemoryModes();
-    if (modes.length === 0) {
-      log.info("No conversations with an explicit memory-injection mode.");
+    const conversations = listMemoryInjectionOffConversations();
+    if (conversations.length === 0) {
+      log.info("Memory injection is on for every conversation.");
       return;
     }
-    for (const row of modes) {
-      log.info(`${row.conversationId}: ${row.mode}`);
+    for (const conversationId of conversations) {
+      log.info(`${conversationId}: off`);
     }
   });
 }

@@ -212,8 +212,6 @@ function turnIsEligible(ctx: TurnContext): boolean {
   if (!isPersonalMemoryAllowed(ctx.trust)) {
     return false;
   }
-  // The per-conversation opt-out rides `shouldRetrieveTurnMemory` (the
-  // engine-independent gate every retrieval caller shares).
   return shouldRetrieveTurnMemory(ctx);
 }
 

@@ -30,8 +30,8 @@ test("fresh retrieval defaults on, except for front-door and explicitly skipped 
 });
 
 test("a conversation without an explicit opt-out never gates retrieval", () => {
-  // The per-conversation mode resolves fail-open (`conversation-mode-store.ts`):
-  // an unreadable memory database or a conversation with no mode is standard,
+  // The opt-out resolves fail-open (`memory-injection-store.ts`): an
+  // unreadable memory database or a conversation with no flag never gates,
   // so the helper's verdict is unchanged for it.
   expect(
     shouldRetrieveTurnMemory({ conversationId: "conv-a", callSite: "callAgent" }),
