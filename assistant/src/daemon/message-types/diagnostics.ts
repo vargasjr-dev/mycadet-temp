@@ -10,7 +10,3 @@ export interface DictationRequest {
   context: DictationContext;
   profileId?: string;
 }
-
-// --- Domain-level union aliases (consumed by the barrel file) ---
-
-type _DiagnosticsClientMessages = DictationRequest;

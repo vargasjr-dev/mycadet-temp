@@ -46,7 +46,6 @@ interface DeliverApprovalReplyParams {
    * sees the message. Used to keep approval-related noise out of shared
    * channels.
    */
-  /** Restricts the reply to one reader. Absent means the room. */
   audience?: MessageAudience;
 }
 
@@ -121,7 +120,6 @@ export interface DeliverStaleApprovalReplyParams {
    * When set, deliver via `chat.postEphemeral` so only this Slack user
    * sees the message. Keeps approval noise out of shared channels.
    */
-  /** Restricts the reply to one reader. Absent means the room. */
   audience?: MessageAudience;
 }
 

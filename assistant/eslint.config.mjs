@@ -1,14 +1,11 @@
-import { noEmptyImports } from "@mycadet/shared/eslint/no-empty-imports";
-import { noReExports } from "@mycadet/shared/eslint/no-re-exports";
-import { defineConfig, globalIgnores } from "eslint/config";
+import { baseEslintConfig } from "@mycadet/shared/eslint/base";
+import { defineConfig } from "eslint/config";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
-import tseslint from "typescript-eslint";
 
 import cliNoDaemonInternals from "./eslint-rules/cli-no-daemon-internals.js";
 
 const eslintConfig = defineConfig([
-  ...tseslint.configs.recommended,
-  globalIgnores(["dist/**", "drizzle/**"]),
+  ...baseEslintConfig({ ignores: ["drizzle/**"] }),
   {
     plugins: {
       "simple-import-sort": simpleImportSort,
@@ -32,10 +29,6 @@ const eslintConfig = defineConfig([
         },
       ],
       "simple-import-sort/exports": "error",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
       "@typescript-eslint/no-explicit-any": "error",
       // Flag `mock.module` at warning level: the lint script pins
       // --max-warnings to the current count and each PR chips away at it
@@ -157,17 +150,8 @@ const eslintConfig = defineConfig([
     rules: { "cli/no-daemon-internals": "error" },
   },
   {
-    // Re-export shims are outlawed: consumers import from the defining
-    // module, and only index files aggregate a public surface. Warning
-    // level with a pinned count — each PR chips away at the remainder.
-    plugins: {
-      "@mycadet": {
-        rules: {
-          "no-re-exports": noReExports,
-          "no-empty-imports": noEmptyImports,
-        },
-      },
-    },
+    // The plugin ships from baseEslintConfig; here the daemon opts into the
+    // empty-import ban alongside the repo-wide re-export ban.
     rules: {
       "@mycadet/no-re-exports": "error",
       "@mycadet/no-empty-imports": "error",
