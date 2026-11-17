@@ -63,7 +63,6 @@ describe("servedConfigFromLockfile", () => {
     expect(servedConfigFromLockfile(lockfile)).toEqual({
       assistantId: "active",
       assistantName: "Example Assistant",
-      remote: "docker",
     });
     // The entry carries no bearer at all — the token lives in its xdg
     // file, never in the lockfile the renderer boundary reads.
@@ -117,7 +116,6 @@ describe("servedConfigFromLockfile", () => {
       activeAssistant: "paired",
     });
     expect(config.assistantId).toBe("paired");
-    expect(config.remote).toBe("local");
     // The stamp carries public identity only - no address, no secrets.
     expect(JSON.stringify(config)).not.toContain("example-host-token");
   });

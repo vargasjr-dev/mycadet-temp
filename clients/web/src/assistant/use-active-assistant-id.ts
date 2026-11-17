@@ -10,5 +10,5 @@
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 
 export function useActiveAssistantId(): string {
-  return useResolvedAssistantStore.use.assistantId() ?? "";
+  return useResolvedAssistantStore.use.assistantId();
 }

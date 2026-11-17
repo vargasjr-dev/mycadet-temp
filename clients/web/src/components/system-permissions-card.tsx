@@ -340,7 +340,7 @@ export function SystemPermissionsCard({
           return undefined;
         }
         const scopeId = resolveNotificationIdentityScope();
-        if (!scopeId || !assistantId) {
+        if (!scopeId) {
           return undefined;
         }
         const identity = createNotificationIdentity(scopeId, assistantId);

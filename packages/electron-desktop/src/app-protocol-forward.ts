@@ -2,7 +2,6 @@ import { app, net, protocol, session } from "electron";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
-import { getVersionInfo } from "./about";
 import log from "./app-logger";
 import { type AllowedOrigin } from "./app-origin";
 import { forwardCloudRequest } from "./cloud-forward";
@@ -147,7 +146,6 @@ export function registerAppProtocol(): void {
   const configJson = JSON.stringify({
     baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
     deviceId: getDeviceId() ?? undefined,
-    version: getVersionInfo().version,
     ...servedConfigFromLockfile(readLockfile()),
   }).replace(/</g, "\\u003c");
 

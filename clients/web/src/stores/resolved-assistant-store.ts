@@ -12,13 +12,12 @@
  * so no surface ever needed the topology fields a full assistant entry
  * would drag in.
  *
- * The one state where the id is `null` is the cloud platform's own SPA
- * before its projection lands: the platform serves this bundle for
- * account/auth surfaces where no assistant has been resolved yet, and the
- * id only becomes real when the projection stamps it. Assistant-scoped
- * surfaces read the id reactively, so they re-render with the real identity
- * in the same tick the projection lands; pre-resolution they observe the
- * empty id and skip their requests.
+ * The id is non-nullable: there is no "unresolved" state to model, only the
+ * empty id the cloud platform's own SPA observes before its projection
+ * stamps — the platform serves this bundle for account/auth surfaces where
+ * no assistant has been resolved yet, and the projection replaces the shell
+ * wholesale in the same tick it lands. Assistant-scoped surfaces never see
+ * the empty id: they mount only under a projected shell.
  */
 
 import { create } from "zustand";
@@ -28,8 +27,8 @@ import { readInjectedConfig } from "@/lib/injected-config";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 interface ResolvedAssistantState {
-  /** The id of the one assistant this surface serves; `null` when unresolved. */
-  assistantId: string | null;
+  /** The id of the one assistant this surface serves; empty pre-projection. */
+  assistantId: string;
 }
 
 interface ResolvedAssistantActions {
@@ -38,7 +37,7 @@ interface ResolvedAssistantActions {
    * (`resetAssistant`) is the projection's job and the test reset's; a
    * production surface never clears the store.
    */
-  setAssistantId: (assistantId: string | null) => void;
+  setAssistantId: (assistantId: string) => void;
   /** Back to unresolved — the test reset. */
   resetAssistant: () => void;
 }
@@ -50,9 +49,9 @@ const useResolvedAssistantStoreBase = create<
   // config — read regardless of which host serves it, since the stamp is
   // the truth everywhere. A host fronting no assistant (the cloud SPA's
   // account surfaces) leaves the shell for the projection to replace.
-  assistantId: readInjectedConfig()?.assistantId ?? null,
+  assistantId: readInjectedConfig()?.assistantId ?? "",
   setAssistantId: (assistantId) => set({ assistantId }),
-  resetAssistant: () => set({ assistantId: null }),
+  resetAssistant: () => set({ assistantId: "" }),
 }));
 
 export const useResolvedAssistantStore = createSelectors(
@@ -61,7 +60,7 @@ export const useResolvedAssistantStore = createSelectors(
 
 /** Non-reactive read of the served assistant's id. */
 export function getActiveAssistantId(): string {
-  return useResolvedAssistantStoreBase.getState().assistantId ?? "";
+  return useResolvedAssistantStoreBase.getState().assistantId;
 }
 
 function nonEmptyString(value: string | undefined): string | undefined {

@@ -52,7 +52,6 @@ import { useLegacyPinMigration } from "@/hooks/use-legacy-pin-migration";
 import { useWorkspaceTheme } from "@/hooks/use-workspace-theme";
 import {
   getActiveAssistantId,
-  useResolvedAssistantStore,
 } from "@/stores/resolved-assistant-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -137,7 +136,6 @@ export function RootLayout() {
   useCallChords();
 
   const assistantId = useActiveAssistantId();
-  const activeAssistantId = useResolvedAssistantStore.use.assistantId();
   const assistantVersion = useAssistantIdentityStore.use.version();
   // The scope is keyed on the resolved assistant — a resolved assistant is
   // the whole fact; there is no separate session question to ask first.
@@ -190,17 +188,12 @@ export function RootLayout() {
   // (and any future accent-tinted UI) can read it from plain CSS.
   useAvatarAccentVar(avatar.accentHex);
   const retainedNotificationIdentityOwners = useMemo(() => {
-    // Keyed on the served assistant: until the shell stamps it there is
-    // nothing to key scopes on. The web bundle exists only for a resolved
-    // assistant, so there is no resolution state to wait on.
-    if (!activeAssistantId) {
-      return [];
-    }
+    // Keyed on the served assistant — the bundle exists only for a resolved
+    // assistant, so the id is the whole fact and there is no resolution
+    // state to wait on.
     const scopeId = resolveNotificationIdentityScope();
-    return scopeId
-      ? [{ scopeId, assistantId: activeAssistantId }]
-      : [];
-  }, [activeAssistantId]);
+    return scopeId ? [{ scopeId, assistantId }] : [];
+  }, [assistantId]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {
       return;

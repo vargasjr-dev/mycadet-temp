@@ -52,13 +52,6 @@ import type {
   HelperState,
   HotkeyEvent,
   HotkeySelectionResult,
-  LocalAssistantStatusResult,
-  LocalListDevicesResult,
-  LocalPairingPollResult,
-  LocalPairingStartResult,
-  LocalReadAssistantAvatarResult,
-  LocalRevokeDeviceResult,
-  LocalUpgradeOptions,
   NotificationActionEvent,
   PowerEvent,
   VoiceModeChord,
@@ -188,33 +181,6 @@ declare global {
       menu: {
         titles?(): Promise<Array<{ id: string; label: string }>>;
         popup?(id: string, x: number, y: number): Promise<void>;
-      };
-      localMode: {
-        hatch(remote?: string): Promise<{
-          ok: boolean;
-          assistantId?: string;
-          error?: string;
-        }>;
-        listDevices?(assistantId: string): Promise<LocalListDevicesResult>;
-        revokeDevice?(
-          assistantId: string,
-          hashedDeviceId: string,
-        ): Promise<LocalRevokeDeviceResult>;
-        pairingStart?(address: string): Promise<LocalPairingStartResult>;
-        pairingPoll?(
-          handle: string,
-          name?: string,
-        ): Promise<LocalPairingPollResult>;
-        pairingCancel?(handle: string): Promise<{ ok: boolean }>;
-        sleep?(assistantId: string): Promise<{ ok: boolean; error?: string }>;
-        upgrade?(
-          assistantId: string,
-          options?: LocalUpgradeOptions,
-        ): Promise<{ ok: boolean; version?: string; error?: string }>;
-        status?(assistantId: string): Promise<LocalAssistantStatusResult>;
-        readAssistantAvatar?(
-          assistantId: string,
-        ): Promise<LocalReadAssistantAvatarResult>;
       };
       auth?: {
         startOAuth(options: {

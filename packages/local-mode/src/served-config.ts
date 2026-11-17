@@ -23,6 +23,5 @@ export function servedConfigFromLockfile(lockfile: Lockfile) {
   return {
     assistantId: served?.assistantId,
     assistantName: served?.name,
-    remote: served?.cloud,
   };
 }

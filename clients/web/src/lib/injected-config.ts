@@ -6,7 +6,7 @@ import z from "zod";
  * through it instead of re-declaring per-file object types.
  *
  * Deliberately remote-agnostic: the config carries the identity a served
- * surface needs (which assistant, its name, the shell's version, the
+ * surface needs (which assistant, its name, the
  * Electron device id) and nothing about which kind of host serves it — the
  * bundle's transport is same-origin regardless.
  *
@@ -20,8 +20,6 @@ import z from "zod";
 export const InjectedConfigSchema = z.object({
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
-  /** Version of the shell bundle serving this page (stamped by the host). */
-  version: z.string().optional(),
   /** Serving assistant's id, stamped by every host that fronts one assistant. */
   assistantId: z.string().optional(),
   /** Serving assistant's display name, stamped by every host that fronts one assistant. */
