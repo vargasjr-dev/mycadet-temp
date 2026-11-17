@@ -426,7 +426,7 @@ describe("SocketWatchdog", () => {
 
     // First recovery cycle.
     unlinkSync(socketPath);
-    let deadline = Date.now() + 500;
+    const deadline = Date.now() + 500;
     while (harness.rebinds.length < 1 && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 5));
     }

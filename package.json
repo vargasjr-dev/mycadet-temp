@@ -2,7 +2,8 @@
   "name": "cadet-workspace",
   "private": true,
   "scripts": {
-    "postinstall": "bash scripts/postinstall.sh"
+    "postinstall": "bash scripts/postinstall.sh",
+    "lint:packages": "eslint packages --max-warnings 105"
   },
   "workspaces": [
     "assistant",
@@ -81,5 +82,10 @@
     "storybook@10.4.0": "patches/storybook@10.4.0.patch",
     "@capacitor-community/camera-preview@8.0.1": "patches/@capacitor-community%2Fcamera-preview@8.0.1.patch",
     "@capawesome/capacitor-file-picker@8.0.4": "patches/@capawesome%2Fcapacitor-file-picker@8.0.4.patch"
+  },
+  "devDependencies": {
+    "@mycadet/shared": "workspace:*",
+    "eslint": "10.1.0",
+    "eslint-plugin-react-hooks": "7.1.1"
   }
 }

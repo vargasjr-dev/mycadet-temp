@@ -7,7 +7,7 @@ const TEST_DIR = path.join(os.tmpdir(), `device-id-test-${process.pid}`);
 const DEVICE_FILE = path.join(TEST_DIR, "device.json");
 
 // Stub @mycadet/local-mode so we control the resolved paths.
-let mockEnvironment = "dev";
+const mockEnvironment = "dev";
 mock.module("@mycadet/local-mode", () => ({
   resolveConfigDir: () => TEST_DIR,
   resolveEnvironmentName: () => mockEnvironment,

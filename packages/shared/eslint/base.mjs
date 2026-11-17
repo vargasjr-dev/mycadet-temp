@@ -31,14 +31,17 @@ export const mycadetPlugin = {
  * Warning-level countdowns (cast bans, mock.module, namespace imports)
  * stay per-service — their pins are local.
  *
- * @param {{ ignores?: string[] }} [options]
+ * @param {{ ignores?: string[], recommended?: boolean }} [options]
  * Extra global ignores for service build output (e.g. `drizzle/**`).
- * `dist/**` is always ignored.
+ * `dist/**` is always ignored. Set `recommended: false` when the service's
+ * own dependency graph already registers the `@typescript-eslint` plugin
+ * (e.g. docs' next config) — a second registration from shared's copy of
+ * the package is a different object identity, which flat config rejects.
  */
 export function baseEslintConfig(options = {}) {
-  const { ignores = [] } = options;
-  return defineConfig([
-    ...tseslint.configs.recommended,
+  const { ignores = [], recommended = true } = options;
+  const items = recommended ? [...tseslint.configs.recommended] : [];
+  items.push(
     globalIgnores(["dist/**", ...ignores]),
     {
       plugins: { "@mycadet": mycadetPlugin },
@@ -53,5 +56,6 @@ export function baseEslintConfig(options = {}) {
         "@mycadet/no-re-exports": "error",
       },
     },
-  ]);
+  );
+  return defineConfig(items);
 }

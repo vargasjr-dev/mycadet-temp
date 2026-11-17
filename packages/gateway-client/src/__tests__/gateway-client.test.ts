@@ -39,8 +39,8 @@ describe("package independence", () => {
 
   for (const file of sourceFiles) {
     test(`${file} does not import from assistant/ or gateway/`, () => {
-      const src = require("node:fs").readFileSync(
-        require("node:path").resolve(__dirname, file),
+      const src = readFileSync(
+        join(__dirname, file),
         "utf-8",
       );
       expect(src).not.toMatch(/from\s+['"].*assistant\//);

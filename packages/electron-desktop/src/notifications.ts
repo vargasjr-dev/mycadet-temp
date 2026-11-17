@@ -561,7 +561,6 @@ const showNotification = (payload: ShowPayload): Promise<ShowResult> => {
   // more than once, so guard with `settled`.
   return new Promise<ShowResult>((resolve) => {
     let settled = false;
-    let timer: ReturnType<typeof setTimeout>;
     const settle = (result: ShowResult): void => {
       if (settled) return;
       settled = true;
@@ -569,7 +568,7 @@ const showNotification = (payload: ShowPayload): Promise<ShowResult> => {
       resolve(result);
     };
 
-    timer = setTimeout(() => {
+    const timer = setTimeout(() => {
       // Neither event fired in time — e.g. the user never answered the
       // first-run permission prompt, or the OS dropped it. Report failure
       // conservatively so the audit trail doesn't record a phantom delivery.

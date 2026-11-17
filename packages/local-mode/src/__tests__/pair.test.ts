@@ -468,7 +468,7 @@ describe("pairAssistant", () => {
     expect(result.assistantId).toMatch(/^paired-[A-Za-z0-9_-]{21}$/);
   });
 
-  (test("re-pairing the same gateway is refused with the entry and token untouched", () => {
+  test("re-pairing the same gateway is refused with the entry and token untouched", () => {
     const first = pairAndRegister(configDir, {
       credentials: credentials({ deviceId: "dev-one", token: "t1" }),
     });
@@ -489,7 +489,7 @@ describe("pairAssistant", () => {
     expect(second.assistantId).toBe(first.assistantId);
     expect(readLockfileFromDisk().assistants).toHaveLength(1);
     expect(readGuardianToken(first.assistantId).accessToken).toBe("t1");
-  }),
+  });
     test("two path-prefixed deployments on one host get distinct ids", () => {
       // `normalizePairingBaseUrl` keeps a deployment path prefix, so these are
       // two different assistants reached through one host. An id keyed on the
@@ -542,9 +542,9 @@ describe("pairAssistant", () => {
         "paired (gw.example.com/assistant-1)",
         "paired (gw.example.com/assistant-2)",
       ]);
-    }));
+    });
 
-  (test("a trailing slash names the same deployment as no path at all", () => {
+  test("a trailing slash names the same deployment as no path at all", () => {
     const bare = pairAndRegister(configDir, {
       credentials: credentials({ gatewayUrl: "https://gw.example.com" }),
     });
@@ -559,7 +559,7 @@ describe("pairAssistant", () => {
     }
     // The refusal names the id the slash-variant derives: the same deployment.
     expect(slashed.assistantId).toBe(bare.assistantId);
-  }),
+  });
     test("a --name still wins over the gateway-derived default", () => {
       const result = pairAssistant({
         credentials: credentials(),
@@ -571,7 +571,7 @@ describe("pairAssistant", () => {
         return;
       }
       expect(result.assistantId).toBe("desk");
-    }));
+    });
 
   test("refuses to clobber an existing non-paired assistant", () => {
     writeLockfile({
@@ -609,7 +609,7 @@ describe("pairAssistant", () => {
     expect(fs.existsSync(guardianTokenPath("desk"))).toBe(false);
   });
 
-  (test("re-importing under the same name is refused with the old address intact", () => {
+  test("re-importing under the same name is refused with the old address intact", () => {
     const first = pairAndRegister(configDir, {
       credentials: credentials({ deviceId: "dev-re", token: "t1" }),
       name: "desk",
@@ -637,7 +637,7 @@ describe("pairAssistant", () => {
     expect(assistants[0]!.ipAddress).toBe("10.0.0.5");
     expect(assistants[0]!.port).toBe(7830);
     expect(readGuardianToken("desk").accessToken).toBe("t1");
-  }),
+  });
     test("a guardian-token write failure surfaces as a 500 with nothing left behind", () => {
       // A config home that is a regular file makes the ambient token-path
       // resolution fail deterministically (unlike chmod, which root ignores).
@@ -659,7 +659,7 @@ describe("pairAssistant", () => {
       expect(fs.existsSync(tokenPath)).toBe(false);
       // The per-assistant directory is cleaned up too.
       expect(fs.existsSync(path.dirname(tokenPath))).toBe(false);
-    }));
+    });
 
   test("an unparseable gatewayUrl is refused, not thrown", () => {
     const result = pairAssistant({
@@ -1222,7 +1222,7 @@ describe("pairingPoll", () => {
     expect(fetchCalls).toHaveLength(1);
   });
 
-  (test("re-pairing the same assistant with no name is refused", async () => {
+  test("re-pairing the same assistant with no name is refused", async () => {
     respond = () => json(200, approvedBody({ accessToken: "acc-1" }));
     const first = await pollAndRegister(configDir, {
       handle: await startFromLink(),
@@ -1245,7 +1245,7 @@ describe("pairingPoll", () => {
     expect(second.status).toBe(409);
     expect(readLockfileFromDisk().assistants).toHaveLength(1);
     expect(readGuardianToken(first.assistantId).accessToken).toBe("acc-1");
-  }),
+  });
     test("records the cloud the caller names, defaulting to desktop", async () => {
       respond = () => json(202, pendingBody());
 
@@ -1262,7 +1262,7 @@ describe("pairingPoll", () => {
         platform: "toaster",
       });
       expect(fetchCalls[1]!.body.platform).toBe("desktop");
-    }));
+    });
 
   test("an expired challenge is refused without spending a request", async () => {
     respond = () =>

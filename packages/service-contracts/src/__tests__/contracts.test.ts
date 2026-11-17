@@ -7,6 +7,9 @@
  * 3. The transport message union correctly discriminates by `type`.
  */
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, test } from "bun:test";
 import {
   CES_PROTOCOL_VERSION,
@@ -38,8 +41,8 @@ describe("package independence", () => {
 
   for (const file of sourceFiles) {
     test(`${file} does not import from assistant/ or credential-executor/`, () => {
-      const src = require("node:fs").readFileSync(
-        require("node:path").resolve(__dirname, file),
+      const src = readFileSync(
+        resolve(__dirname, file),
         "utf-8",
       );
       expect(src).not.toMatch(/from\s+['"].*assistant\//);

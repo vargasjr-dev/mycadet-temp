@@ -1088,7 +1088,6 @@ export async function startCes(
     CES_HEALTH_PORT: String(cesHealthPort),
   };
 
-  let ces;
   // credential-executor always runs from source through bun: the packaged
   // runtime ships its source beside the bundled bun, and dev/bunx installs
   // resolve it from the source tree or node_modules.
@@ -1096,7 +1095,7 @@ export async function startCes(
   const cesEntry = join(cesDir, "src/main.ts");
   const bunArgs = watch ? ["--watch", "run", cesEntry] : ["run", cesEntry];
   const cesLogFd = openLogFile("hatch.log");
-  ces = spawn(resolveBunExecutable(), bunArgs, {
+  const ces = spawn(resolveBunExecutable(), bunArgs, {
     cwd: spawnStateRoot(),
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],

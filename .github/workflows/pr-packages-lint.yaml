@@ -1,0 +1,41 @@
+name: PR Packages Lint
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    paths:
+      # The floor's inputs: the packages the lane lints, the config and
+      # pin that drive it, and the lockfile that installs them.
+      - "package.json"
+      - "bun.lock"
+      - "eslint.config.mjs"
+      - "packages/*/src/**"
+      - "packages/shared/eslint/**"
+      - ".github/workflows/pr-packages-lint.yaml"
+  workflow_dispatch:
+concurrency:
+  group: pr-packages-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Packages Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 200
+          fetch-tags: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint packages
+        run: bun run lint:packages
