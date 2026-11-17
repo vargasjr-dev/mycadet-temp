@@ -54,7 +54,11 @@ mock.module("@/lib/streaming/stream-transport", () => ({
 // The hidden-teardown grace is platform-dependent, so the specs below flip
 // this flag to choose which default the service resolves.
 let nativeMobile = false;
+// Spread the real module so transitive consumers keep every export (some
+// import `detectBrowserInfo`); only the mobile flip the tests drive changes.
+const actualPlatformDetection = await import("@/runtime/platform-detection");
 mock.module("@/runtime/platform-detection", () => ({
+  ...actualPlatformDetection,
   isNativeMobile: () => nativeMobile,
 }));
 
