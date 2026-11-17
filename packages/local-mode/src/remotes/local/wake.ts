@@ -5,7 +5,6 @@ import type {
   LockfileAssistant,
 } from "../../lockfile-contract";
 import { isLocalEntry } from "../../lockfile-contract";
-import { findAvailablePort, getDefaultPorts } from "../../ports";
 import { isProcessAlive } from "../../process";
 import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
@@ -62,8 +61,8 @@ async function wakeLocalSteps(
 ): Promise<WakeResult> {
   const { watch } = opts;
 
-  const basePorts = getDefaultPorts();
-  const daemonPort = await findAvailablePort(basePorts.daemon);
+  const daemonPort =
+    entry.daemonPort ?? Number(process.env.RUNTIME_HTTP_PORT || "7821");
 
   const portHeal = await healConflictedLocalPorts(entry);
   if (portHeal) {

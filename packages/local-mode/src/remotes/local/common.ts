@@ -1366,8 +1366,8 @@ export async function startLocalDaemon(
   entry: LocalAssistant,
   options?: DaemonStartOptions,
 ): Promise<void> {
-  const basePorts = getDefaultPorts();
-  const daemonPort = await findAvailablePort(basePorts.daemon);
+  const daemonPort =
+    entry.daemonPort ?? Number(process.env.RUNTIME_HTTP_PORT || "7821");
 
   // The assistant daemon always runs from source through bun: the packaged
   // runtime ships assistant source beside the bundled bun, and dev/bunx
