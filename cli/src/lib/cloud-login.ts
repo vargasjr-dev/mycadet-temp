@@ -11,7 +11,6 @@ import { fetchCurrentUser, readCloudToken } from "@mycadet/local-mode";
 import { getCloudBaseUrl } from "@mycadet/shared";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
-import type { AddressInfo } from "net";
 
 import { openBrowser } from "./open-browser.js";
 import { saveCloudToken } from "./cloud-client.js";
