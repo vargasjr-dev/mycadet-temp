@@ -5,9 +5,7 @@
     "title": "Advisor"
   },
   "aiProviderPicker": {
-    "defaultEntryMeta": "Default",
-    "selfHostedOnlyMeta": "Self-hosted only",
-    "selfHostedOnlyTooltip": "{name} runs on your own machine, so it is only available to self-hosted assistants."
+    "defaultEntryMeta": "Default"
   },
   "allConversationsView": {
     "archive": "Archive",
@@ -238,7 +236,6 @@
     "preferencesTitle": "Preferences",
     "switchAssistantSubtitle": "Choose which assistant this device is connected to.",
     "switchAssistantTitle": "Switch Assistant",
-    "updateWindow": "Update Window",
     "versionSubtitle": "Manage your assistant's software version and updates.",
     "versionTitle": "Version"
   },
@@ -1006,37 +1003,6 @@
     "stoppedStatus": "The tunnel is stopped, so other devices cannot reach this assistant.",
     "unpairableStatus": "This address answers, but it is not serving the pairing app. Start a tunnel with the web app enabled so pairing links open.",
     "unreachableStatus": "This address is not answering right now."
-  },
-  "updateWindowModal": {
-    "description": "Configure when automatic updates are applied.",
-    "title": "Update Window"
-  },
-  "updateWindowPolicy": {
-    "automaticUpdates": "Automatic updates",
-    "automaticUpdatesHelper": "Update automatically during a configured time window",
-    "daily": "Daily",
-    "dayFri": "Fri",
-    "dayMon": "Mon",
-    "daySat": "Sat",
-    "daySun": "Sun",
-    "dayThu": "Thu",
-    "dayTue": "Tue",
-    "dayWed": "Wed",
-    "daysOfMonth": "Day(s) of month",
-    "daysOfMonthHelper": "Comma-separated day numbers (1-31)",
-    "daysOfMonthPlaceholder": "e.g. 1, 15",
-    "daysOfWeek": "Day(s) of week",
-    "frequency": "Frequency",
-    "loadError": "Failed to load update window policy. Refresh the page to try again.",
-    "loading": "Loading update window settings...",
-    "monthly": "Monthly",
-    "savePolicy": "Save policy",
-    "to": "to",
-    "toastSaveFailed": "Failed to save policy. Please try again.",
-    "toastSaved": "Auto-update policy saved.",
-    "updateWindow": "Update window",
-    "updateWindowWithTz": "Update window ({tz})",
-    "weekly": "Weekly"
   },
   "usageTab": {
     "analyzeCostsButton": "Analyze costs with assistant",

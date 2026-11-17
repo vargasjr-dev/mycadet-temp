@@ -385,7 +385,6 @@
     "manageStorage": "Gestionar almacenamiento",
     "review": "Revisar",
     "upgrade": "Mejorar plan",
-    "warningBody": "Libera espacio para evitar interrupciones.",
     "warningBodyWithUpgrade": "Libera espacio o añade más almacenamiento para evitar interrupciones.",
     "warningTitle": "Tu almacenamiento está casi lleno"
   },

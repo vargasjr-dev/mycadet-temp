@@ -387,7 +387,6 @@
     "manageStorage": "管理存储",
     "review": "查看",
     "upgrade": "升级",
-    "warningBody": "释放空间以避免中断。",
     "warningBodyWithUpgrade": "释放空间或增加更多存储空间以避免中断。",
     "warningTitle": "您的存储空间即将耗尽"
   },

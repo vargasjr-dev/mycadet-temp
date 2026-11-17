@@ -5,9 +5,7 @@
     "title": "顾问"
   },
   "aiProviderPicker": {
-    "defaultEntryMeta": "默认",
-    "selfHostedOnlyMeta": "仅限自托管",
-    "selfHostedOnlyTooltip": "{name} 在您自己的机器上运行，因此仅适用于自托管助手。"
+    "defaultEntryMeta": "默认"
   },
   "allConversationsView": {
     "archive": "归档",
@@ -232,7 +230,6 @@
     "preferencesTitle": "偏好设置",
     "switchAssistantSubtitle": "选择此设备连接的助手。",
     "switchAssistantTitle": "切换助手",
-    "updateWindow": "更新窗口",
     "versionSubtitle": "管理助手的软件版本和更新。",
     "versionTitle": "版本"
   },
@@ -915,37 +912,6 @@
     "stoppedStatus": "隧道已停止，因此其他设备无法访问此助手。",
     "unpairableStatus": "此地址有响应，但未提供配对应用服务。请启动一个启用 Web 应用的隧道，以便打开配对链接。",
     "unreachableStatus": "此地址当前无响应。"
-  },
-  "updateWindowModal": {
-    "description": "配置自动更新的应用时间。",
-    "title": "更新窗口"
-  },
-  "updateWindowPolicy": {
-    "automaticUpdates": "自动更新",
-    "automaticUpdatesHelper": "在配置的时间窗口内自动更新",
-    "daily": "每日",
-    "dayFri": "周五",
-    "dayMon": "周一",
-    "daySat": "周六",
-    "daySun": "周日",
-    "dayThu": "周四",
-    "dayTue": "周二",
-    "dayWed": "周三",
-    "daysOfMonth": "每月日期",
-    "daysOfMonthHelper": "逗号分隔的日期数字 (1-31)",
-    "daysOfMonthPlaceholder": "例如 1, 15",
-    "daysOfWeek": "每周日期",
-    "frequency": "频率",
-    "loadError": "加载更新窗口策略失败。请刷新页面重试。",
-    "loading": "正在加载更新窗口设置...",
-    "monthly": "每月",
-    "savePolicy": "保存策略",
-    "to": "至",
-    "toastSaveFailed": "保存策略失败。请重试。",
-    "toastSaved": "自动更新策略已保存。",
-    "updateWindow": "更新窗口",
-    "updateWindowWithTz": "更新窗口 ({tz})",
-    "weekly": "每周"
   },
   "usageTab": {
     "analyzeCostsButton": "使用助手分析成本",

@@ -387,7 +387,6 @@
     "manageStorage": "管理儲存空間",
     "review": "檢閱",
     "upgrade": "升級",
-    "warningBody": "釋出空間以避免中斷。",
     "warningBodyWithUpgrade": "釋出空間或增加更多儲存空間以避免中斷。",
     "warningTitle": "您的儲存空間即將用盡"
   },

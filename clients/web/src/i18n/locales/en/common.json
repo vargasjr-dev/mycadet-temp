@@ -387,7 +387,6 @@
     "manageStorage": "Manage Storage",
     "review": "Review",
     "upgrade": "Upgrade",
-    "warningBody": "Free up space to avoid interruptions.",
     "warningBodyWithUpgrade": "Free up space or add more storage to avoid interruptions.",
     "warningTitle": "Your storage is almost full"
   },

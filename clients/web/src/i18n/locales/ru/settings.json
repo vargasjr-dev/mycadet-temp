@@ -5,9 +5,7 @@
     "title": "Советник"
   },
   "aiProviderPicker": {
-    "defaultEntryMeta": "По умолчанию",
-    "selfHostedOnlyMeta": "Только свой хостинг",
-    "selfHostedOnlyTooltip": "{name} работает на вашей машине, поэтому доступен только ассистентам на своём хостинге."
+    "defaultEntryMeta": "По умолчанию"
   },
   "allConversationsView": {
     "archive": "В архив",
@@ -218,7 +216,6 @@
     "preferencesTitle": "Предпочтения",
     "switchAssistantSubtitle": "Выбор ассистента, к которому подключено это устройство.",
     "switchAssistantTitle": "Сменить ассистента",
-    "updateWindow": "Окно обновления",
     "versionSubtitle": "Управление версией ПО ассистента и обновлениями.",
     "versionTitle": "Версия"
   },
@@ -915,37 +912,6 @@
     "stoppedStatus": "Туннель остановлен, поэтому другие устройства не достучатся до этого ассистента.",
     "unpairableStatus": "Этот адрес отвечает, но не отдаёт приложение привязки. Запуск туннеля с включённым веб-приложением, чтобы ссылки привязки открывались.",
     "unreachableStatus": "Этот адрес сейчас не отвечает."
-  },
-  "updateWindowModal": {
-    "description": "Настройка расписания автоматических обновлений.",
-    "title": "Окно обновления"
-  },
-  "updateWindowPolicy": {
-    "automaticUpdates": "Автоматические обновления",
-    "automaticUpdatesHelper": "Обновляться автоматически в заданном окне времени",
-    "daily": "Ежедневно",
-    "dayFri": "Пт",
-    "dayMon": "Пн",
-    "daySat": "Сб",
-    "daySun": "Вс",
-    "dayThu": "Чт",
-    "dayTue": "Вт",
-    "dayWed": "Ср",
-    "daysOfMonth": "День(дни) месяца",
-    "daysOfMonthHelper": "Номера дней через запятую (1-31)",
-    "daysOfMonthPlaceholder": "например, 1, 15",
-    "daysOfWeek": "День(дни) недели",
-    "frequency": "Частота",
-    "loadError": "Не удалось загрузить политику окна обновления. Обновите страницу и повторите попытку.",
-    "loading": "Загрузка настроек окна обновления...",
-    "monthly": "Ежемесячно",
-    "savePolicy": "Сохранить политику",
-    "to": "до",
-    "toastSaveFailed": "Не удалось сохранить политику. Повторите попытку.",
-    "toastSaved": "Политика автообновления сохранена.",
-    "updateWindow": "Окно обновления",
-    "updateWindowWithTz": "Окно обновления ({tz})",
-    "weekly": "Еженедельно"
   },
   "usageTab": {
     "analyzeCostsButton": "Разобрать расходы с ассистентом",

@@ -5,9 +5,7 @@
     "title": "Asesor"
   },
   "aiProviderPicker": {
-    "defaultEntryMeta": "Predeterminado",
-    "selfHostedOnlyMeta": "Solo autoalojado",
-    "selfHostedOnlyTooltip": "{name} se ejecuta en tu propia máquina, por lo que solo está disponible para asistentes autoalojados."
+    "defaultEntryMeta": "Predeterminado"
   },
   "allConversationsView": {
     "archive": "Archivar",
@@ -232,7 +230,6 @@
     "preferencesTitle": "Preferencias",
     "switchAssistantSubtitle": "Elige a qué asistente está conectado este dispositivo.",
     "switchAssistantTitle": "Cambiar asistente",
-    "updateWindow": "Ventana de actualización",
     "versionSubtitle": "Administra la versión de software de tu asistente y las actualizaciones.",
     "versionTitle": "Versión"
   },
@@ -937,37 +934,6 @@
     "stoppedStatus": "El túnel está detenido, por lo que otros dispositivos no pueden alcanzar este asistente.",
     "unpairableStatus": "Esta dirección responde, pero no está sirviendo la aplicación de vinculación. Inicia un túnel con la aplicación web habilitada para que los enlaces de vinculación se abran.",
     "unreachableStatus": "Esta dirección no responde ahora mismo."
-  },
-  "updateWindowModal": {
-    "description": "Configura cuándo se aplican las actualizaciones automáticas.",
-    "title": "Ventana de actualización"
-  },
-  "updateWindowPolicy": {
-    "automaticUpdates": "Actualizaciones automáticas",
-    "automaticUpdatesHelper": "Actualizar automáticamente durante una ventana de tiempo configurada",
-    "daily": "Diaria",
-    "dayFri": "Vie",
-    "dayMon": "Lun",
-    "daySat": "Sáb",
-    "daySun": "Dom",
-    "dayThu": "Jue",
-    "dayTue": "Mar",
-    "dayWed": "Mié",
-    "daysOfMonth": "Día(s) del mes",
-    "daysOfMonthHelper": "Números de día separados por comas (1-31)",
-    "daysOfMonthPlaceholder": "p. ej. 1, 15",
-    "daysOfWeek": "Día(s) de la semana",
-    "frequency": "Frecuencia",
-    "loadError": "No se pudo cargar la política de ventana de actualización. Actualiza la página para intentarlo de nuevo.",
-    "loading": "Cargando ajustes de la ventana de actualización...",
-    "monthly": "Mensual",
-    "savePolicy": "Guardar política",
-    "to": "a",
-    "toastSaveFailed": "No se pudo guardar la política. Inténtalo de nuevo.",
-    "toastSaved": "Política de actualización automática guardada.",
-    "updateWindow": "Ventana de actualización",
-    "updateWindowWithTz": "Ventana de actualización ({tz})",
-    "weekly": "Semanal"
   },
   "usageTab": {
     "analyzeCostsButton": "Analizar costos con el asistente",

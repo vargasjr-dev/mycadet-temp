@@ -1213,8 +1213,7 @@
     "retryFailed": "無法重試回應"
   },
   "useSendMessage": {
-    "commandFailed": "無法執行該指令。請再試一次。",
-    "doctorUnavailable": "此助理不提供醫生功能。"
+    "commandFailed": "無法執行該指令。請再試一次。"
   },
   "cadetFileActionModal": {
     "downloadFile": "下載檔案",

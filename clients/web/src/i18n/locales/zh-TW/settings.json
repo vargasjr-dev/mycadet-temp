@@ -5,9 +5,7 @@
     "title": "顧問"
   },
   "aiProviderPicker": {
-    "defaultEntryMeta": "預設",
-    "selfHostedOnlyMeta": "僅限自行託管",
-    "selfHostedOnlyTooltip": "{name} 在您自己的機器上執行，因此僅適用於自行託管的助理。"
+    "defaultEntryMeta": "預設"
   },
   "allConversationsView": {
     "archive": "封存",
@@ -232,7 +230,6 @@
     "preferencesTitle": "偏好設定",
     "switchAssistantSubtitle": "選擇此裝置連接的助理。",
     "switchAssistantTitle": "切換助理",
-    "updateWindow": "更新視窗",
     "versionSubtitle": "管理助理的軟體版本和更新。",
     "versionTitle": "版本"
   },
@@ -915,37 +912,6 @@
     "stoppedStatus": "通道已停止，因此其他裝置無法連線到此助理。",
     "unpairableStatus": "此位址有回應，但未提供配對應用程式服務。請啟動一個已啟用網路應用程式的通道，以便開啟配對連結。",
     "unreachableStatus": "此位址目前沒有回應。"
-  },
-  "updateWindowModal": {
-    "description": "設定自動更新的套用時間。",
-    "title": "更新視窗"
-  },
-  "updateWindowPolicy": {
-    "automaticUpdates": "自動更新",
-    "automaticUpdatesHelper": "在設定的時間視窗內自動更新",
-    "daily": "每日",
-    "dayFri": "週五",
-    "dayMon": "週一",
-    "daySat": "週六",
-    "daySun": "週日",
-    "dayThu": "週四",
-    "dayTue": "週二",
-    "dayWed": "週三",
-    "daysOfMonth": "每月日期",
-    "daysOfMonthHelper": "以逗號分隔的日期數字 (1-31)",
-    "daysOfMonthPlaceholder": "例如 1, 15",
-    "daysOfWeek": "每週日期",
-    "frequency": "頻率",
-    "loadError": "載入更新視窗政策失敗。請重新整理頁面再試一次。",
-    "loading": "正在載入更新視窗設定...",
-    "monthly": "每月",
-    "savePolicy": "儲存政策",
-    "to": "至",
-    "toastSaveFailed": "儲存政策失敗。請再試一次。",
-    "toastSaved": "自動更新政策已儲存。",
-    "updateWindow": "更新視窗",
-    "updateWindowWithTz": "更新視窗 ({tz})",
-    "weekly": "每週"
   },
   "usageTab": {
     "analyzeCostsButton": "使用助理分析成本",

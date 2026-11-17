@@ -1219,8 +1219,7 @@
     "retryFailed": "No se pudo reintentar la respuesta"
   },
   "useSendMessage": {
-    "commandFailed": "No se pudo ejecutar ese comando. Inténtalo de nuevo.",
-    "doctorUnavailable": "El Doctor no está disponible en este asistente."
+    "commandFailed": "No se pudo ejecutar ese comando. Inténtalo de nuevo."
   },
   "cadetFileActionModal": {
     "downloadFile": "Descargar archivo",

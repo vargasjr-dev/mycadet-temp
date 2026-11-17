@@ -484,7 +484,7 @@ describe("ProviderCreateForm submit sequence", () => {
     });
   });
 
-  test("cloud-hosted assistants ignore an Ollama default provider seed", () => {
+  test("the Ollama default provider seed lands on cloud-hosted assistants too", () => {
     setHosting("cloud");
     render(
       <ModalWrapper>
@@ -498,27 +498,15 @@ describe("ProviderCreateForm submit sequence", () => {
       </ModalWrapper>,
     );
 
-    // Ollama isn't selectable on cloud-hosted assistants, so the picker
-    // falls back to the first selectable provider: a keyed one, so the API
-    // key field renders (adding a provider always means your own key;
-    // cloud-managed routing is the Cadet row, not a per-provider choice).
-    expect(getInputByPlaceholder("Enter your API key")).toBeDefined();
-
-    // It stays on the menu, disabled and stating why, so the restriction
-    // reads as a restriction rather than missing support.
-    const providerTrigger = document.querySelector<HTMLButtonElement>(
-      'button[role="combobox"][aria-label="Provider"]',
-    );
-    if (!providerTrigger) {
-      throw new Error('expected a "Provider" dropdown trigger');
-    }
-    fireEvent.click(providerTrigger);
-    const ollama = Array.from(
-      document.querySelectorAll<HTMLElement>('[role="option"]'),
-    ).find((o) => o.textContent?.includes("Ollama"));
-    expect(ollama).toBeDefined();
-    expect(ollama?.textContent).toContain("Self-hosted only");
-    expect(ollama?.getAttribute("aria-disabled")).toBe("true");
+    // The hosting seam is gone (#830): ollama is selectable on every
+    // assistant, so the seed lands as-is and the form opens on the keyless
+    // ollama path — no API key field, the optional base URL present.
+    expect(
+      Array.from(document.querySelectorAll<HTMLInputElement>("input")).some(
+        (input) => input.placeholder === "Enter your API key",
+      ),
+    ).toBe(false);
+    expect(getInputByPlaceholder("http://127.0.0.1:11434/v1")).toBeDefined();
   });
 
   test("selecting ChatGPT shows the sign-in flow instead of Save", () => {

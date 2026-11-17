@@ -1213,8 +1213,7 @@
     "retryFailed": "无法重试响应"
   },
   "useSendMessage": {
-    "commandFailed": "无法运行该命令。请重试。",
-    "doctorUnavailable": "此助手上无法使用医生功能。"
+    "commandFailed": "无法运行该命令。请重试。"
   },
   "cadetFileActionModal": {
     "downloadFile": "下载文件",
