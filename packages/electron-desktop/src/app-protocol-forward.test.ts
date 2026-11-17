@@ -48,6 +48,7 @@ mock.module("./app-logger", () => ({
   default: { error: mock(), warning: mock(), info: mock(), warn: mock() },
 }));
 mock.module("@mycadet/local-mode", () => ({
+  COOKIE_ORIGIN_HEADER: "x-cadet-cookie-origin",
   resolveLocalConfigFromEnv: () => ({ cloudUrl: "https://cloud.example.com" }),
   readLockfile: () => ({}),
   servedConfigFromLockfile: () => ({ assistantName: "A<ria" }),
@@ -228,7 +229,7 @@ describe("registerAppProtocol", () => {
     expect(await shell.text()).toContain("<body>shell</body>");
   });
 
-  test("a response's set-cookie headers land in the session jar", async () => {
+  test("a tagged response jars its cookies for the declared origin", async () => {
     await setupDev();
     await register();
     const headers = new Headers();
@@ -238,8 +239,9 @@ describe("registerAppProtocol", () => {
     );
     headers.append(
       "Set-Cookie",
-      "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict",
+      "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=60",
     );
+    headers.set("x-cadet-cookie-origin", "http://127.0.0.1:7833");
     forwardOperator.mockResolvedValue(
       new Response(JSON.stringify({ ok: true, assistantId: "local-1" }), {
         headers,
@@ -252,25 +254,37 @@ describe("registerAppProtocol", () => {
       }),
     );
     expect(await response.json()).toEqual({ ok: true, assistantId: "local-1" });
+    // `app://` itself is refused by the cookie store
+    // (EXCLUDE_NONCOOKIEABLE_SCHEME) — the pair jars for the origin the
+    // response declared: the entry's gateway, the origin the proxy row
+    // dials.
+    const url = "http://127.0.0.1:7833/";
     expect(cookieSet).toHaveBeenCalledWith({
-      url: "app://mycadet.ai/v1/assistants/hatch",
+      url,
       name: "cadet_web_access",
       value: "edge-token-1",
       httpOnly: true,
       path: "/",
       sameSite: "strict",
     });
-    expect(cookieSet).toHaveBeenCalledWith({
-      url: "app://mycadet.ai/v1/assistants/hatch",
-      name: "cadet_web_refresh",
-      value: "edge-token-2",
-      httpOnly: true,
-      path: "/",
-      sameSite: "strict",
-    });
+    expect(cookieSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url,
+        name: "cadet_web_refresh",
+        value: "edge-token-2",
+        httpOnly: true,
+        path: "/",
+        sameSite: "strict",
+        expirationDate: expect.any(Number),
+      }),
+    );
+    // The private tag never reaches the renderer; the pair stays visible
+    // for QA.
+    expect(response.headers.get("x-cadet-cookie-origin")).toBeNull();
+    expect(response.headers.getSetCookie()).toHaveLength(2);
   });
 
-  test("set-cookie lands whatever the route — the behavior is generic", async () => {
+  test("an untagged set-cookie response touches no jar — net.fetch jarred it", async () => {
     await setupDev();
     await register();
     const headers = new Headers();
@@ -281,16 +295,13 @@ describe("registerAppProtocol", () => {
     forwardOperator.mockResolvedValue(
       new Response(JSON.stringify({ status: "ready" }), { headers }),
     );
-    await handler!(new Request("app://mycadet.ai/v1/assistant"));
-    expect(cookieSet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: "cadet_web_access",
-        value: "rotated-1",
-        httpOnly: true,
-        path: "/",
-        sameSite: "strict",
-      }),
+    const response = await handler!(
+      new Request("app://mycadet.ai/v1/assistant"),
     );
+    expect(await response.json()).toEqual({ status: "ready" });
+    expect(cookieSet).not.toHaveBeenCalled();
+    // The response passes through untouched.
+    expect(response.headers.getSetCookie()).toHaveLength(1);
   });
 
   test("a response without set-cookie touches no jar", async () => {

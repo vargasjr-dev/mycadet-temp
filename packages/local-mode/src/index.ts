@@ -90,6 +90,7 @@ export { configureCliPaths, resolveCliInvocation } from "./cli-invocation";
 export {
   matchOperatorRequest,
   forwardOperatorRequest,
+  COOKIE_ORIGIN_HEADER,
 } from "./operations/routes";
 
 export { retireAssistant } from "./operations/retire";

@@ -28,7 +28,7 @@ import { runResolveRoute } from "./resolve";
 import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
 import { z } from "zod";
-import { getGatewayUrl } from "../lockfile-contract";
+import { getGatewayUrl, type LockfileAssistant } from "../lockfile-contract";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -193,15 +193,35 @@ async function runWakeRoute(
   });
 }
 
+/**
+ * The response header an operation row sets when its cookies belong to an
+ * origin OTHER than the request's own: the origin the row's upstream (an
+ * entry's gateway) actually serves on. The serving shell (the desktop's
+ * `app://` pass) reads it to put the pair in the session jar for that
+ * origin — Chromium's cookie store refuses non-`http(s)` schemes, so the
+ * request's own `app://` origin can never hold them — and strips the tag
+ * before the renderer sees it.
+ */
+export const COOKIE_ORIGIN_HEADER = "x-cadet-cookie-origin";
+
 const json = (
   body: unknown,
   status = 200,
   headers: Record<string, string | string[]> = {},
-): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json", ...headers },
-  });
+): Response => {
+  // Array values append per element — the Headers record constructor
+  // comma-joins them, which corrupts `Set-Cookie` (cookies carry commas
+  // in their Expires attributes, and the pair would ride as one value).
+  const out = new Headers({ "content-type": "application/json" });
+  for (const [name, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      for (const item of value) out.append(name, item);
+    } else {
+      out.append(name, value);
+    }
+  }
+  return new Response(JSON.stringify(body), { status, headers: out });
+};
 
 /**
  * Buffer and parse a JSON request body. An empty body resolves to `{}` (the
@@ -294,16 +314,34 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
     const result = await hatchAssistant({ remote });
     if (result.ok) {
       // The leg's own lease minted the webview's credential pair — the
-      // hatch feeds it to the webview as cookies on this response.
+      // hatch feeds it to the webview as cookies on this response, and
+      // tags WHERE they live: the entry's gateway, the origin the proxy
+      // row dials (`getGatewayUrl`) and the only origin a cookie store
+      // will hold them for. A desktop shell puts the pair in its session
+      // jar for that origin; a browser jarring them natively ignores the
+      // tag. Best-effort: an unresolvable origin still ships the pair.
+      const jarOrigin = jarOriginFor(result.assistant);
       return json(
         { ok: true, assistantId: result.assistant.assistantId },
         200,
-        { "Set-Cookie": result.cookies },
+        {
+          "Set-Cookie": result.cookies,
+          ...(jarOrigin ? { [COOKIE_ORIGIN_HEADER]: jarOrigin } : {}),
+        },
       );
     }
     return json({ ok: false, error: result.error }, result.status);
   } catch (err) {
     return json({ ok: false, error: (err as Error).message });
+  }
+}
+
+/** The origin the entry's gateway serves on, or null when unresolvable. */
+function jarOriginFor(entry: LockfileAssistant): string | null {
+  try {
+    return new URL(getGatewayUrl(entry)).origin;
+  } catch {
+    return null;
   }
 }
 

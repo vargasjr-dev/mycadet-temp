@@ -25,9 +25,22 @@ const hatchAssistantMock = mock(
   async (_options: {
     remote: string;
   }): Promise<
-    | { ok: true; assistant: { assistantId: string }; ready: boolean }
+    | {
+        ok: true;
+        assistant: { assistantId: string; cloud?: string; port?: number };
+        ready: boolean;
+        cookies: string[];
+      }
     | { ok: false; status: number; error: string }
-  > => ({ ok: true, assistant: { assistantId: "hatched-1" }, ready: true }),
+  > => ({
+    ok: true,
+    assistant: { assistantId: "hatched-1" },
+    ready: true,
+    cookies: [
+      "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+      "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=3600",
+    ],
+  }),
 );
 const runDevicesListMock = mock(async (_assistantId: string) => ({
   ok: true as const,
@@ -161,6 +174,10 @@ beforeEach(() => {
       ok: true as const,
       assistant: { assistantId: "hatched-1" },
       ready: true,
+      cookies: [
+        "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+        "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=3600",
+      ],
     }),
   );
   runDevicesListMock.mockImplementation(async () => ({
@@ -323,6 +340,51 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
       ok: false,
       error: "docker daemon unreachable",
     });
+  });
+
+  test("the hatch tags the pair's jar origin — the entry's gateway", async () => {
+    hatchAssistantMock.mockImplementation(async () => ({
+      ok: true as const,
+      assistant: { assistantId: "hatched-1", cloud: "local", port: 7833 },
+      ready: true,
+      cookies: [
+        "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+        "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=3600",
+      ],
+    }));
+
+    const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {
+      remote: "local",
+    });
+
+    // The origin the proxy row dials (`getGatewayUrl`) — the only origin
+    // a cookie store holds the pair for; `app://` itself is refused.
+    expect(response.headers.get("x-cadet-cookie-origin")).toBe(
+      "http://127.0.0.1:7833",
+    );
+    // Per-cookie entries, NOT one comma-joined value — a joined pair
+    // would corrupt every Expires-carrying cookie.
+    const cookies = response.headers.getSetCookie();
+    expect(cookies).toHaveLength(2);
+    expect(cookies[0].startsWith("cadet_web_access=")).toBe(true);
+    expect(cookies[1].startsWith("cadet_web_refresh=")).toBe(true);
+  });
+
+  test("an unresolvable gateway origin ships the pair headerless", async () => {
+    hatchAssistantMock.mockImplementation(async () => ({
+      ok: true as const,
+      assistant: { assistantId: "hatched-1" },
+      ready: true,
+      cookies: [
+        "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+      ],
+    }));
+
+    const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {});
+
+    expect(response.headers.get("x-cadet-cookie-origin")).toBeNull();
+    expect(response.headers.getSetCookie()).toHaveLength(1);
+    expect((await response.json()).ok).toBe(true);
   });
 });
 

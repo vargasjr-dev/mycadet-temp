@@ -8,6 +8,7 @@ import { type AllowedOrigin } from "./app-origin";
 import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
 import {
+  COOKIE_ORIGIN_HEADER,
   forwardOperatorRequest,
   readLockfile,
   resolveLocalConfigFromEnv,
@@ -29,20 +30,44 @@ const RENDERER_MOUNT = "/assistant";
 /**
  * Browser-like cookie custody for the single-origin protocol: Electron's
  * `protocol.handle` does not store a response's Set-Cookie headers into
- * the session's cookie jar — the headers ride the wire but never land —
- * so the handler does what the browser would have done: every response
- * through the pass has its Set-Cookie applied to the jar for the
- * request's own origin. The hatch's pairing feed, the gateway's rotation
- * refreshes — anything a forward hands back — lands.
+ * the session's cookie jar — the headers ride the wire but never land.
+ * And the request's own `app://` origin can never hold them: Chromium's
+ * cookie store only accepts `http(s)` schemes (a `cookies.set` against
+ * `app://` fails with `EXCLUDE_NONCOOKIEABLE_SCHEME`).
+ *
+ * So the jar write targets where the cookies actually live: a forward
+ * through `net.fetch` jars its own response's cookies against the real
+ * upstream origin (the network stack does it, browser-like — the handler
+ * must not repeat it), while an in-process response — the hatch's
+ * pairing feed — tags itself with `x-cadet-cookie-origin` (the route
+ * table knows its gateway), and this applies the pair to the jar for
+ * that origin. The tag is stripped either way; the Set-Cookie headers
+ * stay visible for QA.
  *
  * Best-effort: a cookie that fails to set never fails the response.
  */
-async function applyResponseCookies(
-  request: Request,
-  response: Response,
-): Promise<void> {
-  for (const raw of response.headers.getSetCookie()) {
-    const details = cookieJarDetails(request.url, raw);
+async function applyResponseCookies(response: Response): Promise<Response> {
+  const jarOrigin = response.headers.get(COOKIE_ORIGIN_HEADER);
+  if (!jarOrigin) return response;
+  const setCookies = response.headers.getSetCookie();
+  // Responses carry an immutable header guard — rebuild without the
+  // private tag. A Headers copy preserves the per-cookie Set-Cookie
+  // entries, so the renderer still sees exactly what was shipped.
+  const headers = new Headers(response.headers);
+  headers.delete(COOKIE_ORIGIN_HEADER);
+  const rendererResponse = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+  let jarUrl: URL;
+  try {
+    jarUrl = new URL(jarOrigin);
+  } catch {
+    return rendererResponse;
+  }
+  for (const raw of setCookies) {
+    const details = cookieJarDetails(jarUrl.href, raw);
     if (!details) continue;
     try {
       await session.defaultSession.cookies.set(details);
@@ -50,6 +75,7 @@ async function applyResponseCookies(
       log.warn("[protocol-cookies] set failed:", err);
     }
   }
+  return rendererResponse;
 }
 
 function cookieJarDetails(
@@ -216,8 +242,6 @@ export function registerAppProtocol(): void {
   };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
-    const response = await respond(request);
-    await applyResponseCookies(request, response);
-    return response;
+    return applyResponseCookies(await respond(request));
   });
 }
