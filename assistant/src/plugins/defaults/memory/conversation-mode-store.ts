@@ -1,18 +1,25 @@
 import { getLogger } from "./logging.js";
 import { type MemorySqlite, memorySqliteOrNull } from "./memory-db.js";
-import { ensureOncePerConnection } from "./v3/plugin-schema.js";
 
 const log = getLogger("conversation-mode-store");
 
 /**
  * Per-conversation memory-injection mode, owned by the memory plugin.
  *
- * Backed by `conversation_memory_modes` on the dedicated memory connection
- * (`assistant-memory.db`) — plugin storage the same way the v3 stores are:
- * created idempotently by the plugin, never by the global migration chain,
- * and read fail-open. This is deliberately NOT a column on the main
- * `conversations` table: memory settings live inside the memory plugin,
- * decoupled from main-agent infrastructure.
+ * The mode rides the `activation_sessions` table's per-conversation row on
+ * the dedicated memory connection (`assistant-memory.db`) as a nullable
+ * `memory_mode` column — NOT a table of its own (a new conversation-keyed
+ * table would need its own purge/clear-all wiring) and NOT a column on the
+ * main `conversations` table (memory settings live inside the memory plugin,
+ * decoupled from main-agent infrastructure). `activation_sessions` is the
+ * memory connection's per-conversation marker table, already swept by the
+ * conversation-delete purge and the clear-all reset, so the mode inherits
+ * that lifecycle for free: deleting a conversation deletes its mode, and
+ * clearing all memory resets every mode to the default.
+ *
+ * Fork semantics follow the host table's: fork copies never touch
+ * `activation_sessions`, so a fork starts `"standard"` — the opt-out is a
+ * per-conversation setting, not an inherited one.
  *
  * Semantics of `"off"`: the plugin injects no memory for this conversation —
  * no dynamic `<memory>`/section block (both the v2 activation engine and the
@@ -20,7 +27,7 @@ const log = getLogger("conversation-mode-store");
  * no PKB context. Prior turns' already-cached blocks ride history untouched
  * (cache-stable, forward-looking), and engine-wide jobs (consolidation,
  * filing, retrospectives) are unchanged. `"standard"` is the default for any
- * conversation without a row.
+ * conversation whose row has no mode (or an unrecognized one).
  *
  * Engine-independent by construction: every engine's gate resolves the mode
  * from this store, so a future engine inherits the opt-out by asking it.
@@ -30,24 +37,39 @@ export const CONVERSATION_MEMORY_MODES = ["standard", "off"] as const;
 
 export type ConversationMemoryMode = (typeof CONVERSATION_MEMORY_MODES)[number];
 
-export const CONVERSATION_MEMORY_MODES_TABLE = "conversation_memory_modes";
+/** The host table's per-conversation mode column (`NULL` = the default). */
+const MODE_COLUMN = "memory_mode";
 
-function ensure(memoryRaw: MemorySqlite): void {
-  memoryRaw.run(
-    `CREATE TABLE IF NOT EXISTS ${CONVERSATION_MEMORY_MODES_TABLE} (
+const HOST_TABLE = "activation_sessions";
+
+/** Schema ensure, once per raw connection: the host table exists on every
+ *  migrated memory database (migration 339), but the mode column may predate
+ *  this build, and a bare test database may lack both. */
+const ensuredConnections = new WeakSet<object>();
+
+function ensure(raw: MemorySqlite): void {
+  if (ensuredConnections.has(raw)) {
+    return;
+  }
+  raw.run(`CREATE TABLE IF NOT EXISTS ${HOST_TABLE} (
       conversation_id TEXT PRIMARY KEY,
-      mode TEXT NOT NULL DEFAULT 'standard',
-      updated_at INTEGER NOT NULL
-    )`,
-  );
+      created_at INTEGER NOT NULL
+    )`);
+  try {
+    raw.run(`ALTER TABLE ${HOST_TABLE} ADD COLUMN ${MODE_COLUMN} TEXT`);
+  } catch (err) {
+    // The column already exists on a database written by an earlier ensure —
+    // the only tolerated failure; anything else is a real schema error.
+    if (!/duplicate column name/i.test(String(err))) {
+      throw err;
+    }
+  }
+  ensuredConnections.add(raw);
 }
 
-const ensureOnce = ensureOncePerConnection(
-  ensure,
-  "conversation_memory_modes unavailable; per-conversation memory modes degraded to 'standard'",
-);
-
-function isMode(value: string | null | undefined): value is ConversationMemoryMode {
+function isMode(
+  value: string | null | undefined,
+): value is ConversationMemoryMode {
   return value === "standard" || value === "off";
 }
 
@@ -67,13 +89,13 @@ export function getConversationMemoryMode(
     return "standard";
   }
   try {
-    ensureOnce(raw);
+    ensure(raw);
     const row = raw
       .query(
-        `SELECT mode FROM ${CONVERSATION_MEMORY_MODES_TABLE} WHERE conversation_id = ?`,
+        `SELECT ${MODE_COLUMN} FROM ${HOST_TABLE} WHERE conversation_id = ?`,
       )
-      .get(conversationId) as { mode: string } | null;
-    return row?.mode === "off" ? "off" : "standard";
+      .get(conversationId) as { memory_mode: string | null } | null;
+    return row?.memory_mode === "off" ? "off" : "standard";
   } catch (err) {
     log.warn(
       { err, conversationId },
@@ -92,7 +114,11 @@ export function isMemoryInjectionOff(
 
 /**
  * Persist a conversation's mode. Unknown mode values are rejected (`false`)
- * rather than coerced, so a typo cannot silently re-enable memory.
+ * rather than coerced, so a typo cannot silently re-enable memory. A
+ * conversation with an existing activation marker row keeps it — only the
+ * mode column moves; a conversation without one gets a marker row stamped
+ * now (its `created_at` is the activation funnel's first-seen time, and a
+ * mode-only row simply first appears when the mode is set).
  */
 export function setConversationMemoryMode(
   conversationId: string,
@@ -110,17 +136,20 @@ export function setConversationMemoryMode(
     return false;
   }
   try {
-    ensureOnce(raw);
+    ensure(raw);
     raw
       .query(
-        `INSERT INTO ${CONVERSATION_MEMORY_MODES_TABLE} (conversation_id, mode, updated_at)
+        `INSERT INTO ${HOST_TABLE} (conversation_id, created_at, ${MODE_COLUMN})
          VALUES (?, ?, ?)
-         ON CONFLICT(conversation_id) DO UPDATE SET mode = excluded.mode, updated_at = excluded.updated_at`,
+         ON CONFLICT(conversation_id) DO UPDATE SET ${MODE_COLUMN} = excluded.${MODE_COLUMN}`,
       )
-      .run(conversationId, mode, Date.now());
+      .run(conversationId, Date.now(), mode);
     return true;
   } catch (err) {
-    log.warn({ err, conversationId, mode }, "Failed to persist conversation memory mode");
+    log.warn(
+      { err, conversationId, mode },
+      "Failed to persist conversation memory mode",
+    );
     return false;
   }
 }
@@ -129,33 +158,27 @@ export function setConversationMemoryMode(
 export function listConversationMemoryModes(): Array<{
   conversationId: string;
   mode: ConversationMemoryMode;
-  updatedAt: number;
 }> {
   const raw = memorySqliteOrNull("listConversationMemoryModes");
   if (!raw) {
     return [];
   }
   try {
-    ensureOnce(raw);
+    ensure(raw);
     const rows = raw
       .query(
-        `SELECT conversation_id, mode, updated_at FROM ${CONVERSATION_MEMORY_MODES_TABLE} ORDER BY updated_at DESC`,
+        `SELECT conversation_id, ${MODE_COLUMN} FROM ${HOST_TABLE} WHERE ${MODE_COLUMN} IS NOT NULL ORDER BY created_at DESC`,
       )
-      .all() as Array<{ conversation_id: string; mode: string; updated_at: number }>;
+      .all() as Array<{ conversation_id: string; memory_mode: string }>;
     const modes: Array<{
       conversationId: string;
       mode: ConversationMemoryMode;
-      updatedAt: number;
     }> = [];
     for (const row of rows) {
-      if (!isMode(row.mode)) {
+      if (!isMode(row.memory_mode)) {
         continue;
       }
-      modes.push({
-        conversationId: row.conversation_id,
-        mode: row.mode,
-        updatedAt: row.updated_at,
-      });
+      modes.push({ conversationId: row.conversation_id, mode: row.memory_mode });
     }
     return modes;
   } catch (err) {

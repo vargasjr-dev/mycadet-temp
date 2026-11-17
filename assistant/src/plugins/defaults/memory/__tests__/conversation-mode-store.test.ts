@@ -1,30 +1,32 @@
 /**
  * Tests for `conversation-mode-store.ts`, the memory plugin's per-conversation
- * injection mode:
+ * injection mode (a `memory_mode` column on the memory connection's
+ * `activation_sessions` row):
  *   - default `"standard"` for a conversation with no row (and for a missing
  *     conversation id), so a degraded read never silences memory;
  *   - `set`/`get` round-trip, re-set overwriting, and unknown-mode rejection;
- *   - `list` returning explicit rows newest-first;
+ *   - the mode riding the host table's per-conversation row (an existing
+ *     activation marker row is updated in place, not duplicated);
+ *   - `list` returning explicit rows;
  *   - fail-soft: an unavailable memory database resolves `"standard"` on read
  *     and reports failure on write rather than throwing.
  *
  * The memory connection is stubbed to an in-memory DB exactly like
  * `../v3/ever-injected-store.test.ts` — `mock.module` is process-global, so
  * the stub delegates to the real implementation unless this test is running
- * (`storeMockActive` toggled in beforeEach/afterAll).
+ * (`storeMockActive` toggled in beforeEach/afterAll). The store ensures its
+ * own schema idempotently, so the bare in-memory db is enough.
  */
 
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
-  CONVERSATION_MEMORY_MODES_TABLE,
   getConversationMemoryMode,
   isMemoryInjectionOff,
   listConversationMemoryModes,
   setConversationMemoryMode,
 } from "../conversation-mode-store.js";
-import { ensureOncePerConnection } from "../v3/plugin-schema.js";
 
 const realDb = {
   ...(await import("../../../../persistence/db-connection.js")),
@@ -37,19 +39,6 @@ let memorySqlite: Database;
 function makeDb() {
   memorySqlite = new Database(":memory:");
 }
-
-// The store ensures its own schema idempotently — run the same ensure the
-// production store runs so the in-memory db carries the table.
-const ensureTable = ensureOncePerConnection(
-  (raw) => {
-    raw.run(`CREATE TABLE IF NOT EXISTS ${CONVERSATION_MEMORY_MODES_TABLE} (
-      conversation_id TEXT PRIMARY KEY,
-      mode TEXT NOT NULL DEFAULT 'standard',
-      updated_at INTEGER NOT NULL
-    )`);
-  },
-  "test ensure failed",
-);
 
 mock.module("../../../../persistence/db-connection.js", () => ({
   ...realDb,
@@ -105,14 +94,40 @@ describe("conversation memory mode store", () => {
     expect(listConversationMemoryModes()).toEqual([]);
   });
 
+  test("the mode rides the host activation-sessions row, not a table of its own", () => {
+    // The store ensures its own schema; touch it once so the bare in-memory
+    // db carries the host table before the direct inserts below.
+    expect(getConversationMemoryMode("conv-a")).toBe("standard");
+    // A conversation that already has an activation marker row keeps it —
+    // only the mode column moves.
+    memorySqlite
+      .query(
+        "INSERT INTO activation_sessions (conversation_id, created_at) VALUES (?, ?)",
+      )
+      .run("conv-a", 1234);
+    expect(setConversationMemoryMode("conv-a", "off")).toBe(true);
+    const rows = memorySqlite
+      .query("SELECT conversation_id, memory_mode FROM activation_sessions")
+      .all() as Array<{ conversation_id: string; memory_mode: string | null }>;
+    expect(rows).toEqual([{ conversation_id: "conv-a", memory_mode: "off" }]);
+
+    // A conversation with no marker row gets one, stamped now.
+    expect(setConversationMemoryMode("conv-b", "standard")).toBe(true);
+    const created = memorySqlite
+      .query("SELECT created_at FROM activation_sessions WHERE conversation_id = ?")
+      .get("conv-b") as { created_at: number };
+    expect(created.created_at).toBeGreaterThan(0);
+  });
+
   test("list returns the explicit rows", () => {
     setConversationMemoryMode("conv-a", "off");
     setConversationMemoryMode("conv-b", "standard");
-    const rows = listConversationMemoryModes();
-    // Same-millisecond writes make updated_at ties possible, so the recency
+    // Same-millisecond writes make created_at ties possible, so the recency
     // order between the two rows is not deterministic — compare as a set.
     expect(
-      rows.map((r) => [r.conversationId, r.mode]).sort((a, b) => a[0].localeCompare(b[0])),
+      listConversationMemoryModes()
+        .map((r) => [r.conversationId, r.mode])
+        .sort((a, b) => a[0].localeCompare(b[0])),
     ).toEqual([
       ["conv-a", "off"],
       ["conv-b", "standard"],

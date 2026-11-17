@@ -77,7 +77,6 @@ import {
   type Injector,
   type TurnContext,
 } from "../../../types.js";
-import { isMemoryInjectionOff } from "../conversation-mode-store.js";
 import { getLogger } from "../logging.js";
 import { wrapMemoryBlock, wrapMemoryPointerBlock } from "../memory-marker.js";
 import { renderedBytes } from "../substrate/injected-block-slugs.js";
@@ -213,10 +212,8 @@ function turnIsEligible(ctx: TurnContext): boolean {
   if (!isPersonalMemoryAllowed(ctx.trust)) {
     return false;
   }
-  // Per-conversation opt-out (plugin-owned store, engine-independent).
-  if (isMemoryInjectionOff(ctx.conversationId)) {
-    return false;
-  }
+  // The per-conversation opt-out rides `shouldRetrieveTurnMemory` (the
+  // engine-independent gate every retrieval caller shares).
   return shouldRetrieveTurnMemory(ctx);
 }
 

@@ -830,6 +830,38 @@ Examples:
   $ cat pages.json | assistant memory ingest --json`,
     },
     {
+      name: "injection",
+      description:
+        "Per-conversation memory-injection opt-out (direct, no IPC)",
+      helpText: `
+Enable or disable memory injection per conversation, directly against the
+workspace's memory database — no running daemon required. A conversation with
+injection disabled gets no fresh memory retrieval of any engine, no static
+essentials/threads block, and no PKB context; prior turns' already-cached
+blocks ride history untouched.
+
+Examples:
+  $ assistant memory injection disable <conversationId>
+  $ assistant memory injection enable <conversationId>
+  $ assistant memory injection list`,
+      subcommands: [
+        {
+          name: "enable",
+          args: "<conversationId>",
+          description: "Inject memory into the conversation (the default)",
+        },
+        {
+          name: "disable",
+          args: "<conversationId>",
+          description: "Inject no memory into the conversation",
+        },
+        {
+          name: "list",
+          description: "List conversations with an explicit injection mode",
+        },
+      ],
+    },
+    {
       name: "retrospective",
       description: "Run and inspect memory retrospectives (direct, no IPC)",
       helpText: `
