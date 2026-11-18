@@ -10,13 +10,18 @@ import {
 import * as childProcess from "node:child_process";
 import {
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { PassThrough } from "node:stream";
-import { resolveClientDists } from "../lib/web-dist.js";
+import {
+  findSourcePackageDir,
+  resolveClientDists,
+} from "../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
 const spawnMock = mock(childProcess.spawn);
@@ -238,5 +243,53 @@ describe("resolveClientDists", () => {
     // stale on the next resolve.
     expect(distStamp(appDistDir())).toMatch(/^[0-9a-f]{64}\n$/);
     expect(() => distStamp(webDistDir())).toThrow();
+  });
+});
+
+describe("findSourcePackageDir", () => {
+  // The installed-package arm: `@mycadet/<kind>` lands at
+  // `node_modules/@mycadet/<kind>` — an ancestor's `<kind>/package.json`.
+  // Its published manifest strips scripts, so it must never read as the
+  // checkout arm (the dev-release "Script not found 'build'" startup
+  // failure was exactly this misclassification).
+  test("classifies an installed @mycadet package as the non-checkout arm", () => {
+    const root = mkdtempSync(join(tmpdir(), "web-dist-arm-"));
+    const appPackage = join(root, "node_modules", "@mycadet", "app");
+    mkdirSync(join(appPackage, "dist", "standalone"), { recursive: true });
+    writeFileSync(
+      join(appPackage, "package.json"),
+      JSON.stringify({ name: "@mycadet/app", version: "0.0.0" }),
+    );
+    writeFileSync(join(appPackage, "dist", "standalone", "index.html"), "<html></html>");
+    try {
+      const found = findSourcePackageDir(
+        "app",
+        join(root, "node_modules", "@mycadet", "cli", "src", "lib"),
+      );
+      expect(found?.dir).toBe(appPackage);
+      expect(found?.isCheckout).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("classifies the repo checkout as the checkout arm", () => {
+    const root = mkdtempSync(join(tmpdir(), "web-dist-arm-"));
+    const appPackage = join(root, "clients", "app");
+    mkdirSync(appPackage, { recursive: true });
+    writeFileSync(
+      join(appPackage, "package.json"),
+      JSON.stringify({ name: "@mycadet/app", scripts: { build: "true" } }),
+    );
+    try {
+      const found = findSourcePackageDir(
+        "app",
+        join(root, "cli", "src", "lib"),
+      );
+      expect(found?.dir).toBe(appPackage);
+      expect(found?.isCheckout).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

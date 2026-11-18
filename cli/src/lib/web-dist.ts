@@ -98,17 +98,35 @@ export interface DistBuildOptions {
   resolvePackage?: () => string;
 }
 
+/**
+ * A located `clients/<kind>`-style package, and whether it is the checkout
+ * arm (a real `clients/<kind>` source package that owns a build script) or
+ * the installed-package arm (an npm-installed `@mycadet/<kind>` dist
+ * carrier, whose published manifest strips scripts).
+ */
+interface SourcePackage {
+  dir: string;
+  isCheckout: boolean;
+}
+
 /** Locate the `clients/<kind>` package of the checkout this CLI runs from. */
-function findSourcePackageDir(kind: "web" | "app"): string | null {
-  let dir = import.meta.dir;
+export function findSourcePackageDir(
+  kind: "web" | "app",
+  startDir: string = import.meta.dir,
+): SourcePackage | null {
+  let dir = startDir;
   for (let depth = 0; depth < 8; depth++) {
     const packageJson = join(dir, "clients", kind, "package.json");
     if (existsSync(packageJson)) {
-      return dirname(packageJson);
+      return { dir: dirname(packageJson), isCheckout: true };
     }
     const npmPackageJson = join(dir, kind, "package.json");
     if (existsSync(npmPackageJson)) {
-      return dirname(npmPackageJson);
+      // The `@mycadet/<kind>` package installs at
+      // `node_modules/@mycadet/<kind>` — exactly this arm. Its dist is
+      // owned by its release (the published manifest ships no scripts),
+      // so it is never a rebuild target.
+      return { dir: dirname(npmPackageJson), isCheckout: false };
     }
     const parent = dirname(dir);
     if (parent === dir) {
@@ -202,9 +220,13 @@ interface DistArm {
 
 async function resolveDistArm(kind: "web" | "app"): Promise<DistArm> {
   const existing = kind === "web" ? findWebDistDir() : findAppDistDir();
-  const sourceDir = findSourcePackageDir(kind);
+  const source = findSourcePackageDir(kind);
+  // Only the checkout arm can be source-built: an installed package's dist
+  // is its release's artifact (and its manifest has no build script), so it
+  // always serves as-is — a dev release never rebuilds.
+  const sourceDir = source?.dir ?? null;
   const sourceBuilt =
-    sourceDir !== null && existing === sourceDistDir(kind, sourceDir);
+    source?.isCheckout === true && existing === sourceDistDir(kind, source.dir);
 
   // An installed/packaged dist is owned by its release — served as-is, even
   // when the release ships no source tree (an npm install has no
