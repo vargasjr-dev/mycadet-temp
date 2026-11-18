@@ -1,5 +1,3 @@
-import type { IncomingHttpHeaders } from "node:http";
-
 import { isActiveAssistant, readLockfile } from "../lockfile";
 import { pairingCancel, pairingPoll, pairingStart } from "../pair";
 import { runDevicesList, runDevicesRevoke } from "../devices";
@@ -30,7 +28,7 @@ import { wakeAssistant } from "./wake";
 import { z } from "zod";
 import { getGatewayUrl, type LockfileAssistant } from "../lockfile-contract";
 import { cookieHeader, parseSetCookie, type CookieJar } from "./cookie-jar";
-import { runCloudForwardArm } from "./cloud-forward";
+import { forwardCloudRequest } from "./cloud-forward";
 import type { Fetch } from "@mycadet/shared/fetch";
 
 /**
@@ -68,19 +66,16 @@ export interface OperatorRequest {
    */
   path?: string;
   /**
-   * The raw peer address off the mount's server handle (Bun exposes it off
-   * the handle, not the Request), carried for the proxy row's client-ip
-   * fallback. Absent reads as a chain-less local caller (127.0.0.1).
+   * The caller's headers, already normalized and cookied by the
+   * dispatcher: host and hop-by-hop stripped, the client-ip stamp
+   * derived, and the host jar's cookies for the entry's gateway origin
+   * attached when the caller brought none. Every row receives the same
+   * ready `Headers` — the credential-judging rows (the resolution's
+   * health check, the proxy row's dial) send the caller's own proof
+   * upstream, a verdict read host-side without them would be the host's,
+   * not the caller's.
    */
-  peer?: string | null;
-  /**
-   * The caller's own headers, forwarded so a credential-judging operation can
-   * send the caller's own proof upstream — a verdict read host-side without
-   * them would be the host's, not the caller's. Passed raw, whatever the
-   * mount holds (a fetch Request's Headers, or the connect record).
-   * Absent (direct `run` calls in tests) forwards nothing.
-   */
-  headers?: Headers | IncomingHttpHeaders;
+  headers: Headers;
   /**
    * The caller's body stream, carried for the body-carrying rows (hatch,
    * devices, pairing, upgrade) to read their JSON off. Absent (GET/HEAD,
@@ -95,14 +90,14 @@ export interface OperatorRequest {
   signal?: AbortSignal | null;
   /**
    * The host's cookie jar, the custody seam for the cookie-carrying rows:
-   * the hatch row stores the pair it mints for the entry's gateway origin,
-   * and the proxy row attaches the jar's cookies on its dial (when the
-   * caller brings none) and re-stores every rotation the gateway sends
-   * back. The desktop's renderer can hold no cookies for `app://` (the
-   * cookie store refuses non-`http(s)` schemes), so its host supplies the
-   * session jar; hosts without one (the CLI edge, the dev server — whose
-   * browser callers jar natively) leave it unset and nothing is stored or
-   * attached.
+   * the dispatcher attaches the jar's gateway-origin cookies onto the
+   * headers it hands every row, the hatch row stores the pair it mints
+   * for the entry's gateway origin, and the proxy row re-stores every
+   * rotation the gateway sends back. The desktop's renderer can hold no
+   * cookies for `app://` (the cookie store refuses non-`http(s)`
+   * schemes), so its host supplies the session jar; hosts without one
+   * (the CLI edge, the dev server — whose browser callers jar natively)
+   * leave it unset and nothing is stored or attached.
    */
   cookieJar?: CookieJar;
 }
@@ -118,8 +113,8 @@ export interface OperatorRoute {
   /**
    * Answer the request. Returning null means PASS: the request is not this
    * host's to answer (unknown id, or an entry the host cannot retire) and
-   * the pre-existing chain answers instead — the cloud's 404 for a stale
-   * id, the data-plane forward for a platform-hosted entry.
+   * the dispatcher's chain answers instead — the cloud arm for the cloud's
+   * own paths, the serving host's chain (assets, static) otherwise.
    */
   run: (request: OperatorRequest) => Promise<Response | null>;
 }
@@ -591,34 +586,23 @@ const HOP_BY_HOP_HEADERS = new Set([
 ]);
 
 /**
- * The caller's headers, normalized for the forward: whatever the mount held
- * (a fetch Request's Headers, or the connect record's IncomingHttpHeaders)
- * becomes a real Headers — undefined values dropped, list values
- * comma-joined — with the host and the hop-by-hop wiring stripped. The
- * gateway's client-ip stamp is re-derived here: the rightmost
- * X-Forwarded-For entry is the edge-observed client (tunnel providers append
- * one; tailscale serve sets it); a chain-less caller of the local operator
- * is 127.0.0.1.
+ * The dispatcher's header normalization: the mount's Request Headers
+ * become the one `Headers` every row handles — the host and the
+ * hop-by-hop wiring stripped. The gateway's client-ip stamp is re-derived
+ * here: the rightmost X-Forwarded-For entry is the edge-observed client
+ * (tunnel providers append one; tailscale serve sets it); a chain-less
+ * caller of the local operator is 127.0.0.1.
  */
 function normalizeForwardHeaders(
-  input: Headers | IncomingHttpHeaders | undefined,
+  input: Headers | undefined,
   peer: string | null,
 ): Headers {
   const headers = new Headers();
-  if (input instanceof Headers) {
-    input.forEach((value, key) => {
-      const lower = key.toLowerCase();
-      if (lower === "host" || HOP_BY_HOP_HEADERS.has(lower)) return;
-      headers.append(lower, value);
-    });
-  } else if (input) {
-    for (const [key, value] of Object.entries(input)) {
-      const lower = key.toLowerCase();
-      if (lower === "host" || HOP_BY_HOP_HEADERS.has(lower)) continue;
-      if (value === undefined) continue;
-      headers.append(lower, Array.isArray(value) ? value.join(", ") : value);
-    }
-  }
+  input?.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (lower === "host" || HOP_BY_HOP_HEADERS.has(lower)) return;
+    headers.append(lower, value);
+  });
   const forwarded = headers.get("x-forwarded-for");
   headers.set(
     "X-Cadet-Client-Ip",
@@ -655,18 +639,10 @@ async function runProxyRoute(
   const target = new URL(request.path ?? "/", getGatewayUrl(entry));
   const gatewayOrigin = target.origin;
   const hasBody = method !== "GET" && method !== "HEAD";
-  const headers = normalizeForwardHeaders(
-    request.headers,
-    request.peer ?? null,
-  );
-  // The caller's own Cookie wins (the CLI's browser jar holds the live
-  // pair); the host's jar fills the absence — the desktop's renderer can
-  // hold no cookies for `app://`, so its jar IS the browser-equivalent
-  // store.
-  if (!headers.has("cookie") && request.cookieJar) {
-    const jarCookies = await request.cookieJar.get(gatewayOrigin);
-    if (jarCookies.length > 0) headers.set("cookie", cookieHeader(jarCookies));
-  }
+  // The dispatcher hands every row ready headers — normalized, with the
+  // host jar's cookies for this gateway origin attached when the caller
+  // brought none.
+  const headers = request.headers;
   if (process.env.ASSISTANT_PROXY_TRANSPORT === "ipc") {
     headers.set("x-cadet-proxy-server", "ipc");
   }
@@ -889,22 +865,19 @@ export function matchOperatorRequest(
 
 /**
  * The shared operator dispatcher: match a request against the route table
- * and run the matched route, threading the caller's own headers through.
- * The table's rows are the OPERATIONS; the platform's own surfaces — the
- * account paths (`/_allauth`, `/accounts`) and the `/v1` user surfaces the
- * rows don't claim, plus the stale-id pass the route table documents — are
- * the dispatcher's fallthrough arm, which forwards them to the cloud
- * (`runCloudForwardArm`; `null` for anything else, so the serving host's
- * pre-existing chain — assets, static — answers as before). Returning null
- * means PASS: no row owns the request and it is not a cloud surface. The
- * serving hosts (the Electron `app://` handler, the Vite dev middleware,
- * the CLI edge's operation server) all dispatch through this one function
- * so their mounts cannot drift. Mounts whose server handle exposes the raw
- * peer address (Bun's does, off the handle rather than the Request) pass
- * it through `options.peer` so the proxy row's client-ip stamp names the
- * real caller; a host with a process-boundary network stack passes it
- * through `options.fetch` so the platform arm dials through it (the
- * desktop's `net.fetch` — system proxy, cert store).
+ * and run the matched route. The dispatcher prepares EVERY row's inputs —
+ * headers come out normalized (host and hop-by-hop stripped, the
+ * client-ip stamp derived from `options.peer`) and cookied (the host
+ * jar's cookies for the matched entry's gateway origin, when the caller
+ * brought none and the host supplies a jar) — so operations only handle
+ * `Headers`. What the rows don't claim ends at the cloud arm
+ * (`forwardCloudRequest`): an unmatched request, and a row's pass (a
+ * stale id, an entry this host can't retire), forwarded when the path is
+ * the cloud's own (`/_allauth`, `/accounts`) and answered `null` — the
+ * serving host's pre-existing chain — otherwise. The serving hosts (the
+ * Electron `app://` handler, the Vite dev middleware, the CLI edge's
+ * operation server) all dispatch through this one function so their
+ * mounts cannot drift.
  */
 export async function forwardOperatorRequest(
   request: Request,
@@ -918,22 +891,34 @@ export async function forwardOperatorRequest(
     new URL(request.url).pathname,
     request.method,
   );
-  if (!match) {
-    return runCloudForwardArm(request, options?.fetch);
+  if (match) {
+    const headers = normalizeForwardHeaders(
+      request.headers,
+      options?.peer ?? null,
+    );
+    if (!headers.has("cookie") && options?.cookieJar) {
+      const entry = findAssistantByName(match.assistantId);
+      if (entry) {
+        const jarOrigin = new URL(getGatewayUrl(entry)).origin;
+        const jarCookies = await options.cookieJar.get(jarOrigin);
+        if (jarCookies.length > 0) {
+          headers.set("cookie", cookieHeader(jarCookies));
+        }
+      }
+    }
+    const url = new URL(request.url);
+    const response = await match.route.run({
+      assistantId: match.assistantId,
+      method: request.method,
+      path: url.pathname + url.search,
+      headers,
+      body: request.body,
+      signal: request.signal,
+      ...(options?.cookieJar ? { cookieJar: options.cookieJar } : {}),
+    });
+    if (response) {
+      return response;
+    }
   }
-  const url = new URL(request.url);
-  const response = await match.route.run({
-    assistantId: match.assistantId,
-    method: request.method,
-    path: url.pathname + url.search,
-    headers: request.headers,
-    body: request.body,
-    signal: request.signal,
-    ...(options?.peer !== undefined ? { peer: options.peer } : {}),
-    ...(options?.cookieJar ? { cookieJar: options.cookieJar } : {}),
-  });
-  if (response) {
-    return response;
-  }
-  return runCloudForwardArm(request, options?.fetch);
+  return forwardCloudRequest(request, options?.fetch);
 }

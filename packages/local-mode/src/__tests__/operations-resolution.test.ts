@@ -48,7 +48,11 @@ afterAll(() => {
 });
 
 import { readLockfile } from "../lockfile";
-import { OPERATOR_ROUTES, matchOperatorRequest } from "../operations/routes";
+import {
+  forwardOperatorRequest,
+  OPERATOR_ROUTES,
+  matchOperatorRequest,
+} from "../operations/routes";
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -92,13 +96,13 @@ const runResolution = async (
   headers: Record<string, string> = {},
   requestPath = "/v1/assistant",
 ): Promise<Response> => {
-  const match = matchOperatorRequest(requestPath, "GET");
-  if (!match) throw new Error("the resolution row did not match");
   callerHeaders = new Headers(headers);
-  return (await match.route.run({
-    assistantId: match.assistantId,
+  const request = new Request(`http://operator.test${requestPath}`, {
     headers: callerHeaders,
-  }))!;
+  });
+  const response = await forwardOperatorRequest(request);
+  if (!response) throw new Error("the resolution row did not answer");
+  return response;
 };
 
 const resolutionBody = async (response: Response): Promise<unknown> =>
@@ -230,11 +234,10 @@ describe("runResolveRoute — the lockfile arms", () => {
       assistant: { id: "a1", version: "0.13.0" },
     });
     // The health read rides the ENTRY (the gateway url is resolved inside),
-    // and the caller's credential headers are forwarded so the verdict is
-    // the caller's.
-    // The caller's headers ride VERBATIM — the instance the caller sent,
-    // no flattening in between.
-    expect(sentHeaders()).toBe(callerHeaders);
+    // and the caller's credential headers ride so the verdict is the
+    // caller's — the dispatcher hands the row its own normalized Headers
+    // instance carrying them.
+    expect(sentHeaders().get("cookie")).toBe(callerHeaders.get("cookie"));
     expect(callerHeaders.get("cookie")).toBe("cadet_web_access=tok");
   });
 
@@ -323,7 +326,8 @@ describe("runResolveRoute — the lockfile arms", () => {
 
     await runResolution();
 
-    expect(sentHeaders()).toBe(callerHeaders);
+    expect(sentHeaders().get("cookie")).toBeNull();
+    expect(sentHeaders().get("authorization")).toBeNull();
     expect([...callerHeaders]).toEqual([]);
   });
 
@@ -333,7 +337,9 @@ describe("runResolveRoute — the lockfile arms", () => {
       activeAssistant: null,
     });
 
-    const response = await runResolution({}, "/v1/assistants/ghost/");
+    const response = await forwardOperatorRequest(
+      new Request("http://operator.test/v1/assistants/ghost/"),
+    );
 
     expect(response).toBeNull();
   });
@@ -360,12 +366,10 @@ describe("runResolveRoute — the cloud leg", () => {
       status: "ready",
       assistant: { id: "c1", version: "9.9.9" },
     });
-    // The health read rides the ENTRY — the platform's own gateway address
-    // is resolved inside, the caller's credential headers forwarded so the
-    // verdict is the caller's.
-    // The caller's headers ride VERBATIM — the instance the caller sent,
-    // no flattening in between.
-    expect(sentHeaders()).toBe(callerHeaders);
+    // The health read rides the ENTRY — the cloud base's own address is
+    // resolved inside, the caller's credential headers ride so the verdict
+    // is the caller's.
+    expect(sentHeaders().get("cookie")).toBe(callerHeaders.get("cookie"));
     expect(callerHeaders.get("cookie")).toBe("session=abc");
     expect(callerHeaders.get("authorization")).toBe("Bearer tok");
   });

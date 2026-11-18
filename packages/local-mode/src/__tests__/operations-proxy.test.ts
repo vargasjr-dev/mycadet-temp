@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { matchOperatorRequest } from "../operations/routes";
+import { forwardOperatorRequest } from "../operations/routes";
 import { MemoryCookieJar } from "./helpers/memory-cookie-jar";
 
 // The proxy row forwards through globalThis.fetch; the real one stays
@@ -74,27 +74,25 @@ const stubGatewayFetch = (
   return calls;
 };
 
-/** The proxy row's run, addressed to the seeded entry's scoped surface. */
+/** Dispatches the scoped proxy surface through the real dispatcher. */
 const runProxy = async (
   tail: string,
   init?: {
     method?: string;
-    headers?: Headers | IncomingHttpHeaders;
+    headers?: Headers;
     body?: ReadableStream | null;
     peer?: string | null;
     cookieJar?: MemoryCookieJar;
   },
 ): Promise<Response> => {
   const path = `/v1/assistants/asst-local/${tail}`;
-  const match = matchOperatorRequest(path, init?.method ?? "GET");
-  expect(match?.route.method).toBe("ALL");
-  const response = await match!.route.run({
-    assistantId: "asst-local",
+  const request = new Request(`http://operator.test${path}`, {
     method: init?.method ?? "GET",
-    path,
-    peer: init?.peer,
     headers: init?.headers,
     body: init?.body ?? null,
+  });
+  const response = await forwardOperatorRequest(request, {
+    peer: init?.peer ?? null,
     ...(init?.cookieJar ? { cookieJar: init.cookieJar } : {}),
   });
   expect(response).not.toBeNull();
@@ -199,19 +197,16 @@ describe("the operator route table — the proxy catch-all", () => {
     expect(calls[1]!.headers.get("x-cadet-client-ip")).toBe("127.0.0.1");
   });
 
-  test("the connect record's raw headers normalize: lists comma-join, undefined drops", async () => {
+  test("the mount's Headers normalize: lists comma-join, undefined drops", async () => {
     seedLocalEntry();
     const calls = stubGatewayFetch();
-    await runProxy("things", {
-      headers: {
-        "x-forwarded-for": ["203.0.113.9", "198.51.100.7"],
-        "accept-language": undefined,
-        authorization: "Bearer device-token",
-      } as IncomingHttpHeaders,
-    });
+    const caller = new Headers();
+    caller.append("x-forwarded-for", "203.0.113.9");
+    caller.append("x-forwarded-for", "198.51.100.7");
+    caller.set("authorization", "Bearer device-token");
+    await runProxy("things", { headers: caller });
     const headers = calls[0]!.headers;
     expect(headers.get("x-cadet-client-ip")).toBe("198.51.100.7");
-    expect(headers.get("accept-language")).toBeNull();
     expect(headers.get("authorization")).toBe("Bearer device-token");
   });
 
@@ -302,15 +297,9 @@ describe("the operator route table — the proxy catch-all", () => {
   test("an unknown id still passes — the pre-existing chain answers instead", async () => {
     seedLocalEntry();
     const calls = stubGatewayFetch();
-    const match = matchOperatorRequest(
-      "/v1/assistants/asst-ghost/things",
-      "GET",
+    const response = await forwardOperatorRequest(
+      new Request("http://operator.test/v1/assistants/asst-ghost/things"),
     );
-    const response = await match!.route.run({
-      assistantId: "asst-ghost",
-      method: "GET",
-      path: "/v1/assistants/asst-ghost/things",
-    });
     expect(response).toBeNull();
     expect(calls).toHaveLength(0);
   });

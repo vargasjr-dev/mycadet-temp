@@ -32,8 +32,8 @@ export async function runResolveRoute(
   }
   const entry = findAssistantByName(request.assistantId);
   if (!entry) {
-    // Not this host's to name: the pre-existing chain answers — the cloud
-    // 404s a stale id, the data-plane forward owns a platform-hosted one.
+    // Not this host's to name: the dispatcher's chain answers (the cloud
+    // arm for the cloud's own paths, the host's chain otherwise).
     return null;
   }
   const health = await checkHealth(entry, { headers });

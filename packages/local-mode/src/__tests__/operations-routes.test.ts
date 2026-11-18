@@ -111,8 +111,8 @@ const pairingPollMock = mock(
 );
 const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 
-
 import { readLockfile } from "../lockfile";
+import { forwardOperatorRequest } from "../operations/routes";
 import { stripSensitiveFields } from "../util";
 import { matchOperatorRequest } from "../operations/routes";
 import { MemoryCookieJar } from "./helpers/memory-cookie-jar";
@@ -257,9 +257,7 @@ const dispatch = (
     body:
       body === undefined || method === "GET" ? undefined : JSON.stringify(body),
   });
-  return match.route.run({
-    assistantId: match.assistantId,
-    body: request.body,
+  return forwardOperatorRequest(request, {
     ...(cookieJar ? { cookieJar } : {}),
   });
 };
@@ -574,10 +572,7 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
         headers: { "content-type": "application/json" },
         body: "{not json",
       });
-      const response = await match.route.run({
-        assistantId: match.assistantId,
-        body: request.body,
-      });
+      const response = await forwardOperatorRequest(request);
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({
         ok: false,

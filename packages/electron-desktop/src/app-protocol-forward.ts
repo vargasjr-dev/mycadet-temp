@@ -16,8 +16,8 @@ import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protoco
 /**
  * The `app://` protocol handler all three desktop clients share: one
  * ordered pass — host check, `/__config`, operator routes (whose
- * fallthrough arm forwards the cloud's own surfaces — `/_allauth`,
- * `/accounts`, and the `/v1` user paths), then renderer assets (web
+ * fallthrough arm forwards the cloud's own account paths — `/_allauth`
+ * and `/accounts`), then renderer assets (web
  * bundle on `/assistant`, app shell everywhere else) with an index.html
  * fallback that carries the injected config.
  */

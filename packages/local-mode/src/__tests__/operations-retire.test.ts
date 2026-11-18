@@ -282,7 +282,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     const response = await matchOperatorRequest(
       "/v1/assistants/asst-local/retire/",
       "DELETE",
-    )!.route.run({ assistantId: "asst-local" });
+    )!.route.run({ assistantId: "asst-local", headers: new Headers() });
 
     expect(response?.status).toBe(204);
     // The dispatch hands the whole lockfile entry to the local leg.
@@ -298,7 +298,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     const response = await matchOperatorRequest(
       "/v1/assistants/asst-docker/retire/",
       "DELETE",
-    )!.route.run({ assistantId: "asst-docker" });
+    )!.route.run({ assistantId: "asst-docker", headers: new Headers() });
 
     expect(response?.status).toBe(500);
     expect(await response?.json()).toEqual({ detail: "no such assistant" });
@@ -315,7 +315,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
       await matchOperatorRequest(
         "/v1/assistants/asst-cloud/retire/",
         "DELETE",
-      )!.route.run({ assistantId: "asst-cloud" }),
+      )!.route.run({ assistantId: "asst-cloud", headers: new Headers() }),
     ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
     expect(retireDockerMock).not.toHaveBeenCalled();
@@ -327,7 +327,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     const response = await matchOperatorRequest(
       "/v1/assistants/asst-paired/retire/",
       "DELETE",
-    )!.route.run({ assistantId: "asst-paired" });
+    )!.route.run({ assistantId: "asst-paired", headers: new Headers() });
 
     expect(response?.status).toBe(204);
     expect(execMock.mock.calls[0]![0]).toBe("ssh");
@@ -341,7 +341,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
       await matchOperatorRequest(
         "/v1/assistants/ghost/retire/",
         "DELETE",
-      )!.route.run({ assistantId: "ghost" }),
+      )!.route.run({ headers: new Headers(), assistantId: "ghost" }),
     ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
   });

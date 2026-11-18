@@ -3,14 +3,14 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { forwardOperatorRequest } from "../operations/routes";
 import {
   buildProxyNetworkErrorResponse,
+  forwardCloudRequest,
   isTransientNetworkError,
   PROXY_ERROR_HEADER,
   PROXY_NETWORK_ERROR_CODE,
-  runCloudForwardArm,
 } from "../operations/cloud-forward";
 import type { Fetch } from "@mycadet/shared/fetch";
 
-const PLATFORM = "https://cloud.mycadet.ai";
+const CLOUD = "https://cloud.mycadet.ai";
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 const request = (
@@ -48,11 +48,11 @@ const dispatch = (req: Request, fetcher?: Fetch): Promise<Response | null> =>
   forwardOperatorRequest(req, { fetch: fetcher });
 
 // The arm resolves its target through getCloudBaseUrl at request time —
-// pin it to the platform base for every test (the afterEach restores the
+// pin it to the cloud base for every test (the afterEach restores the
 // ambient env; the staging/local cases overwrite it explicitly).
 const SAVED_CLOUD_URL = process.env.CADET_CLOUD_URL;
 const setPlatform = (): void => {
-  process.env.CADET_CLOUD_URL = PLATFORM;
+  process.env.CADET_CLOUD_URL = CLOUD;
 };
 beforeEach(setPlatform);
 afterEach(() => {
@@ -63,7 +63,7 @@ afterEach(() => {
   }
 });
 
-describe("the operator's cloud-forward arm", () => {
+describe("the operator's cloud arm", () => {
   test("passes non-cloud requests through to the host chain", async () => {
     const { calls, fetcher } = recorder();
     expect(
@@ -82,26 +82,39 @@ describe("the operator's cloud-forward arm", () => {
 
   test("does not forward paths that merely start with a prefix string", async () => {
     const { calls, fetcher } = recorder();
-    expect(await dispatch(request("/v1something/else"), fetcher)).toBeNull();
+    expect(await dispatch(request("/_allauthx/none"), fetcher)).toBeNull();
     expect(await dispatch(request("/accountsettings"), fetcher)).toBeNull();
     expect(calls).toHaveLength(0);
   });
 
-  test("forwards unclaimed /v1 user surfaces to the cloud", async () => {
+  test("passes the operator's /v1 proxy arm through — rows own it", async () => {
     const { calls, fetcher } = recorder();
-    const response = await dispatch(request("/v1/releases/"), fetcher);
-    expect(response?.status).toBe(200);
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/releases/");
-    expect(calls[0]?.init?.method).toBe("GET");
+    expect(await dispatch(request("/v1/releases/"), fetcher)).toBeNull();
+    expect(await dispatch(request("/v1"), fetcher)).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  test("a row's pass on a /v1 path hands back to the host chain", async () => {
+    const { calls, fetcher } = recorder();
+    // The catch-all matches the stale id and passes; the cloud arm only
+    // owns the account paths, so the host chain answers.
+    expect(
+      await dispatch(request("/v1/assistants/ghost/conversations"), fetcher),
+    ).toBeNull();
+    expect(calls).toHaveLength(0);
   });
 
   test("forwards /_allauth/* requests to the cloud", async () => {
     const { calls, fetcher } = recorder();
-    await dispatch(request("/_allauth/browser/v1/auth/session"), fetcher);
+    const response = await dispatch(
+      request("/_allauth/browser/v1/auth/session"),
+      fetcher,
+    );
+    expect(response?.status).toBe(200);
     expect(calls[0]?.url).toBe(
       "https://cloud.mycadet.ai/_allauth/browser/v1/auth/session",
     );
+    expect(calls[0]?.init?.method).toBe("GET");
   });
 
   test("forwards /accounts/* requests to the cloud", async () => {
@@ -110,24 +123,24 @@ describe("the operator's cloud-forward arm", () => {
     expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/accounts/login");
   });
 
-  test("forwards the exact version prefix without a trailing slash", async () => {
+  test("forwards the exact account prefixes without a trailing slash", async () => {
     const { calls, fetcher } = recorder();
-    await dispatch(request("/v1"), fetcher);
-    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1");
+    await dispatch(request("/_allauth"), fetcher);
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/_allauth");
   });
 
   test("preserves query string on forwarded requests", async () => {
     const { calls, fetcher } = recorder();
-    await dispatch(request("/v1/releases/?page=2&limit=10"), fetcher);
+    await dispatch(request("/accounts/login?next=/dashboard"), fetcher);
     expect(calls[0]?.url).toBe(
-      "https://cloud.mycadet.ai/v1/releases/?page=2&limit=10",
+      "https://cloud.mycadet.ai/accounts/login?next=/dashboard",
     );
   });
 
   test("rewrites Origin from app:// to the cloud origin", async () => {
     const { calls, fetcher } = recorder();
     await dispatch(
-      request("/v1/user/mfa/factors/verify/", {
+      request("/_allauth/browser/v1/auth/session", {
         method: "POST",
         origin: "app://mycadet.ai",
       }),
@@ -138,15 +151,15 @@ describe("the operator's cloud-forward arm", () => {
 
   test("sets a cloud Origin even when the renderer sent none", async () => {
     const { calls, fetcher } = recorder();
-    await dispatch(request("/v1/releases/"), fetcher);
+    await dispatch(request("/_allauth/browser/v1/config"), fetcher);
     expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
   });
 
-  test("forwards with manual redirects and omitted credentials", async () => {
+  test("forwards with manual redirects and the ambient credentials mode", async () => {
     const { calls, fetcher } = recorder();
-    await dispatch(request("/v1/releases/"), fetcher);
+    await dispatch(request("/_allauth/browser/v1/config"), fetcher);
     expect(calls[0]?.init?.redirect).toBe("manual");
-    expect(calls[0]?.init?.credentials).toBe("omit");
+    expect(calls[0]?.init?.credentials).toBeUndefined();
   });
 
   test("forwards unsafe requests from the trusted app origin", async () => {
@@ -192,8 +205,8 @@ describe("the operator's cloud-forward arm", () => {
   test("trusts source-less unsafe requests with renderer-origin marker", async () => {
     const { calls, fetcher } = recorder();
     await dispatch(
-      request("/v1/feedback/", {
-        method: "POST",
+      request("/_allauth/app/v1/auth/sessions", {
+        method: "DELETE",
         headers: { [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai" },
       }),
       fetcher,
@@ -205,8 +218,8 @@ describe("the operator's cloud-forward arm", () => {
   test("trusts source-less unsafe requests with Sec-Fetch-Site same-origin", async () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
-      request("/v1/feedback/", {
-        method: "POST",
+      request("/_allauth/app/v1/auth/sessions", {
+        method: "DELETE",
         headers: { "sec-fetch-site": "same-origin" },
       }),
       fetcher,
@@ -217,8 +230,8 @@ describe("the operator's cloud-forward arm", () => {
   test("rejects source-less unsafe requests with cross-site fetch metadata", async () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
-      request("/v1/feedback/", {
-        method: "POST",
+      request("/_allauth/app/v1/auth/sessions", {
+        method: "DELETE",
         headers: { "sec-fetch-site": "cross-site" },
       }),
       fetcher,
@@ -230,7 +243,7 @@ describe("the operator's cloud-forward arm", () => {
   test("rejects source-less unsafe requests without any trust signal", async () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
-      request("/v1/feedback/", { method: "POST" }),
+      request("/_allauth/app/v1/auth/sessions", { method: "DELETE" }),
       fetcher,
     );
     expect(response?.status).toBe(403);
@@ -240,8 +253,8 @@ describe("the operator's cloud-forward arm", () => {
   test("rejects source-less unsafe requests from a foreign request URL", async () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
-      new Request("app://evil.example/v1/feedback", {
-        method: "POST",
+      new Request("app://evil.example/_allauth/app/v1/auth/sessions", {
+        method: "DELETE",
         headers: new Headers({
           [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai",
         }),
@@ -256,7 +269,7 @@ describe("the operator's cloud-forward arm", () => {
   test("forwards source-less safe cloud requests", async () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
-      request("/v1/releases/", { method: "GET" }),
+      request("/_allauth/browser/v1/config", { method: "GET" }),
       fetcher,
     );
     expect(response?.status).toBe(200);
@@ -285,7 +298,10 @@ describe("the operator's cloud-forward arm", () => {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
       const { calls, fetcher } = recorder();
       await dispatch(
-        request("/v1/feedback/", { method, origin: "app://mycadet.ai" }),
+        request("/_allauth/app/v1/auth/sessions", {
+          method,
+          origin: "app://mycadet.ai",
+        }),
         fetcher,
       );
       expect(calls[0]?.init?.body).toBeNull();
@@ -295,7 +311,10 @@ describe("the operator's cloud-forward arm", () => {
     }
     for (const method of ["GET", "HEAD"]) {
       const { calls, fetcher } = recorder();
-      await dispatch(request("/v1/feedback/", { method }), fetcher);
+      await dispatch(
+        request("/_allauth/app/v1/auth/sessions", { method }),
+        fetcher,
+      );
       expect(calls[0]?.init?.body).toBeUndefined();
       expect(
         (calls[0]?.init as { duplex?: unknown } | undefined)?.duplex,
@@ -306,8 +325,10 @@ describe("the operator's cloud-forward arm", () => {
   test("resolves the target through the same CADET_CLOUD_URL override (staging)", async () => {
     process.env.CADET_CLOUD_URL = "https://staging-cloud.mycadet.ai";
     const { calls, fetcher } = recorder();
-    await dispatch(request("/v1/releases/"), fetcher);
-    expect(calls[0]?.url).toBe("https://staging-cloud.mycadet.ai/v1/releases/");
+    await dispatch(request("/_allauth/browser/v1/config"), fetcher);
+    expect(calls[0]?.url).toBe(
+      "https://staging-cloud.mycadet.ai/_allauth/browser/v1/config",
+    );
     expect(header(calls[0]?.init, "origin")).toBe(
       "https://staging-cloud.mycadet.ai",
     );
@@ -316,22 +337,11 @@ describe("the operator's cloud-forward arm", () => {
   test("resolves the target through a local cloud URL override", async () => {
     process.env.CADET_CLOUD_URL = "http://localhost:8000";
     const { calls, fetcher } = recorder();
-    await dispatch(request("/v1/releases/"), fetcher);
-    expect(calls[0]?.url).toBe("http://localhost:8000/v1/releases/");
-    expect(header(calls[0]?.init, "origin")).toBe("http://localhost:8000");
-  });
-
-  test("a row's pass falls through to the arm — the stale-id cloud 404", async () => {
-    const { calls, fetcher } = recorder();
-    const response = await dispatch(
-      request("/v1/assistants/ghost/conversations"),
-      fetcher,
-    );
-    expect(response?.status).toBe(200);
-    expect(calls).toHaveLength(1);
+    await dispatch(request("/_allauth/browser/v1/config"), fetcher);
     expect(calls[0]?.url).toBe(
-      "https://cloud.mycadet.ai/v1/assistants/ghost/conversations",
+      "http://localhost:8000/_allauth/browser/v1/config",
     );
+    expect(header(calls[0]?.init, "origin")).toBe("http://localhost:8000");
   });
 
   test("a row's answer wins over the arm", async () => {
@@ -349,7 +359,7 @@ describe("the operator's cloud-forward arm", () => {
       errors.push(args.map(String).join(" "));
     };
     try {
-      await runCloudForwardArm(request("/v1/releases/"), () =>
+      await forwardCloudRequest(request("/_allauth/browser/v1/config"), () =>
         Promise.reject(new Error("boom")),
       );
     } finally {
@@ -357,7 +367,9 @@ describe("the operator's cloud-forward arm", () => {
     }
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain("[cloud-forward] fetch failed (attempt 1)");
-    expect(errors[0]).toContain("GET https://cloud.mycadet.ai/v1/releases/");
+    expect(errors[0]).toContain(
+      "GET https://cloud.mycadet.ai/_allauth/browser/v1/config",
+    );
   });
 
   test("transient net failures log as warnings, the rest as errors", async () => {
@@ -367,18 +379,18 @@ describe("the operator's cloud-forward arm", () => {
     console.warn = () => levels.push("warning");
     console.error = () => levels.push("error");
     try {
-      // POST never retries — one attempt each, so the level selection is
-      // the pin, not the retry count.
-      await runCloudForwardArm(
-        request("/v1/feedback/", {
-          method: "POST",
+      // DELETE never retries — one attempt each, so the level selection
+      // is the pin, not the retry count.
+      await forwardCloudRequest(
+        request("/_allauth/app/v1/auth/sessions", {
+          method: "DELETE",
           origin: "app://mycadet.ai",
         }),
         () => Promise.reject(new Error("net::ERR_NETWORK_CHANGED")),
       );
-      await runCloudForwardArm(
-        request("/v1/feedback/", {
-          method: "POST",
+      await forwardCloudRequest(
+        request("/_allauth/app/v1/auth/sessions", {
+          method: "DELETE",
           origin: "app://mycadet.ai",
         }),
         () => Promise.reject(new Error("boom")),
@@ -400,15 +412,18 @@ describe("the arm's transient-failure retry", () => {
       if (attempts === 1) throw new Error("net::ERR_NETWORK_CHANGED");
       return fetcher(url, init);
     };
-    const response = await runCloudForwardArm(request("/v1/releases/"), flaky);
+    const response = await forwardCloudRequest(
+      request("/_allauth/browser/v1/config"),
+      flaky,
+    );
     expect(response?.status).toBe(200);
     expect(attempts).toBe(2);
   });
 
   test("returns the structured 502 after exhausting retries", async () => {
     let attempts = 0;
-    const response = await runCloudForwardArm(
-      request("/v1/releases/"),
+    const response = await forwardCloudRequest(
+      request("/_allauth/browser/v1/config"),
       async () => {
         attempts += 1;
         throw new Error("net::ERR_NETWORK_CHANGED");
@@ -422,8 +437,11 @@ describe("the arm's transient-failure retry", () => {
 
   test("does not retry requests with a body — their stream is single-use", async () => {
     let attempts = 0;
-    const response = await runCloudForwardArm(
-      request("/v1/feedback/", { method: "POST", origin: "app://mycadet.ai" }),
+    const response = await forwardCloudRequest(
+      request("/_allauth/browser/v1/auth/session", {
+        method: "POST",
+        origin: "app://mycadet.ai",
+      }),
       async () => {
         attempts += 1;
         throw new Error("net::ERR_NETWORK_CHANGED");
@@ -435,8 +453,8 @@ describe("the arm's transient-failure retry", () => {
 
   test("does not retry non-transient failures", async () => {
     let attempts = 0;
-    const response = await runCloudForwardArm(
-      request("/v1/releases/"),
+    const response = await forwardCloudRequest(
+      request("/_allauth/browser/v1/config"),
       async () => {
         attempts += 1;
         throw new Error("net::ERR_CERT_AUTHORITY_INVALID");
@@ -448,8 +466,8 @@ describe("the arm's transient-failure retry", () => {
 
   test("a successful response passes through untouched on the first attempt", async () => {
     const upstream = new Response("hello", { status: 201 });
-    const response = await runCloudForwardArm(
-      request("/v1/releases/"),
+    const response = await forwardCloudRequest(
+      request("/_allauth/browser/v1/config"),
       async () => upstream,
     );
     expect(response).toBe(upstream);

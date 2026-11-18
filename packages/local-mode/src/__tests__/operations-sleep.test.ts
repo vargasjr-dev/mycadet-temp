@@ -478,6 +478,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     );
     expect(match).not.toBeNull();
     const response = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
     });
     expect(response?.status).toBe(204);
@@ -496,6 +497,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     );
     expect(match).not.toBeNull();
     const response = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
     });
     expect(response?.status).toBe(400);
@@ -513,7 +515,10 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     );
     expect(match).not.toBeNull();
     expect(
-      await match!.route.run({ assistantId: match!.assistantId }),
+      await match!.route.run({
+        assistantId: match!.assistantId,
+        headers: new Headers(),
+      }),
     ).toBeNull();
     expect(sleepDockerMock).not.toHaveBeenCalled();
   });
@@ -534,6 +539,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       "POST",
     );
     const response = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
     });
     expect(response?.status).toBe(409);

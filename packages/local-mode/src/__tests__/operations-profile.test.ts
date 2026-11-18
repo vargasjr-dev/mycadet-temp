@@ -11,6 +11,7 @@ describe("the operator availability check", () => {
     );
     expect(match).not.toBeNull();
     const res = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
       path: "/v1/assistant/user/username-available/?username=grace",
     });
@@ -27,6 +28,7 @@ describe("the operator availability check", () => {
       "GET",
     );
     const res = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
       path: "/v1/assistant/user/username-available/?username=ab",
     });
@@ -44,6 +46,7 @@ describe("the operator availability check", () => {
     );
     expect(match).not.toBeNull();
     const res = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
       path: "/v1/assistants/any-entry/user/username-available/?username=12345",
     });

@@ -315,6 +315,7 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     );
     expect(match).not.toBeNull();
     const response = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
     });
     expect(response).not.toBeNull();
@@ -326,6 +327,7 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     const match = matchOperatorRequest("/v1/assistants/nobody/wake/", "POST");
     expect(match).not.toBeNull();
     const response = await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
     });
     expect(response).toBeNull();
@@ -343,6 +345,7 @@ describe("the operator route table — the scoped surface's wake arm", () => {
       "POST",
     );
     const response = (await match!.route.run({
+      headers: new Headers(),
       assistantId: match!.assistantId,
     }))!;
     expect(response.status).toBe(500);
