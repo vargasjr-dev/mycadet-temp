@@ -288,10 +288,6 @@ test("native creation sends the current session token without browser CSRF", asy
   expect(init?.body).toBe("{}");
   const headers = new Headers(init?.headers);
   expect(headers.get("X-Session-Token")).toBe("native-session-token");
-  // The renderer-origin marker is gone: its only reader (the arm's trust
-  // gate) trusted the unforgeable Sec-Fetch-Site instead, and a forgeable
-  // header was a liability, not a signal.
-  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBeNull();
   expect(headers.get("X-CSRFToken")).toBeNull();
 });
 

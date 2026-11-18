@@ -214,17 +214,10 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
 }
 
 /**
- * The operator routes: the host-served local-mode operations the dev server
- * answers in-process — the headless lifecycle cores (retire/sleep/wake), the
- * lockfile read, hatch, unpair, the pairing exchange, and device management.
- * The same-origin guard fronts the EXECUTION: a cross-origin retire DELETE is
- * refused here, never executed, never forwarded. The dispatch is the
- * package's one dispatcher — the same `forwardOperatorRequest` the Electron
- * `app://` handler rides, so the mounts cannot drift. A pass (unknown id, an
- * entry this host can't answer) falls through: the dispatcher's cloud arm
- * answers the cloud's own paths in-process, everything else reaches the
- * gateway proxy, whose cloud forward keeps the bundle's one endpoint holding
- * for every entry type.
+ * The operator routes: the dev server dispatches through the package's one
+ * dispatcher (`forwardOperatorRequest` — the same seam as the Electron
+ * `app://` handler, so the mounts cannot drift), guarded by the same-origin
+ * gate. A pass falls through to the gateway proxy.
  */
 function operatorMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {

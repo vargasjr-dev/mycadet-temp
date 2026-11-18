@@ -9,7 +9,6 @@ import { ownVersion } from "../environment";
 import { unpairAssistant } from "../unpair";
 import { servedConfigFromLockfile } from "../served-config";
 import { runListRoute } from "./list";
-import { runReleasesRoute } from "./releases";
 import { findAssistantByName } from "./lookup";
 import { retireAssistant } from "./retire";
 import { runUsernameAvailableRoute } from "./profile";
@@ -92,13 +91,17 @@ export interface OperatorRequest {
 }
 
 /**
- * The response header a row sets to name the origin its Set-Cookie pair
- * belongs to — the hatch row's mint chooses the entry's gateway port, a
- * fact the dispatcher cannot derive from the request (the path carries no
- * id). The dispatcher's re-store reads it, stores the response's
- * set-cookies there, and strips it: it never leaves the host.
+ * The host custody a row may need: the session jar, for the rows that
+ * WRITE cookies (the hatch row stores the pair it minted for the minted
+ * entry's gateway origin; the proxy row re-stores the gateway's
+ * rotations). Host infrastructure, not caller data — so it rides the run
+ * call, never the request schema. Hosts without a jar pass none and the
+ * rows skip their writes (their answers' Set-Cookie headers still ride
+ * for natively-jarring browser callers).
  */
-export const JAR_ORIGIN_HEADER = "X-Cadet-Jar-Origin";
+export interface OperatorCustody {
+  cookieJar: CookieJar;
+}
 
 export interface OperatorRoute {
   method: HTTPMethod | "ALL";
@@ -114,7 +117,10 @@ export interface OperatorRoute {
    * the dispatcher's chain answers instead — the cloud arm for the cloud's
    * own paths, the serving host's chain (assets, static) otherwise.
    */
-  run: (request: OperatorRequest) => Promise<Response | null>;
+  run: (
+    request: OperatorRequest,
+    custody?: OperatorCustody,
+  ) => Promise<Response | null>;
 }
 
 /**
@@ -305,25 +311,33 @@ const UpgradeBodySchema = z
  * a hatched local assistant runs its own daemon, and the serving host only
  * ever invokes the CLI as a subprocess.
  */
-async function runHatchRoute(request: OperatorRequest): Promise<Response> {
+async function runHatchRoute(
+  request: OperatorRequest,
+  custody?: OperatorCustody,
+): Promise<Response> {
   const { remote } = HatchBodySchema.parse(await readJsonBody(request.body));
   try {
     const result = await hatchAssistant({ remote });
     if (result.ok) {
-      // The leg's own lease minted the webview's credential pair. The
-      // pair rides the response as Set-Cookie headers — for the
-      // native-browser flow (the CLI edge, the dev server), for QA
-      // visibility, and for the dispatcher's re-store, which needs the
-      // minted entry's gateway origin (the mint chose the port — a fact
-      // the request can't derive). The row names that origin for the
-      // dispatcher's custody write; hosts without a jar just don't store.
+      // The leg's own lease minted the webview's credential pair. A host
+      // with a jar stores it for the minted entry's gateway origin — the
+      // origin the proxy row dials, and the only origin a cookie store
+      // accepts (Chromium refuses `app://`). Hosts without one skip it;
+      // either way the pair still rides the response as Set-Cookie
+      // headers for the native-browser flow (the CLI edge, the dev
+      // server) and for QA visibility.
       const jarOrigin = gatewayOriginFor(result.assistant);
+      if (custody?.cookieJar && jarOrigin) {
+        for (const raw of result.cookies) {
+          const cookie = parseSetCookie(raw);
+          if (cookie) await custody.cookieJar.set(jarOrigin, cookie);
+        }
+      }
       return json(
         { ok: true, assistantId: result.assistant.assistantId },
         200,
         {
           "Set-Cookie": result.cookies,
-          ...(jarOrigin ? { [JAR_ORIGIN_HEADER]: jarOrigin } : {}),
         },
       );
     }
@@ -623,6 +637,7 @@ function normalizeForwardHeaders(
  */
 async function runProxyRoute(
   request: OperatorRequest,
+  custody?: OperatorCustody,
 ): Promise<Response | null> {
   const entry = findAssistantByName(request.assistantId);
   if (!entry) {
@@ -652,8 +667,16 @@ async function runProxyRoute(
     if (lower === "content-length" || lower === "content-encoding") return;
     outHeaders.append(key, value);
   });
-  // The Set-Cookie headers ride for native browser jars; the dispatcher's
-  // custody write re-stores them for this entry's gateway origin.
+  // A rotation response re-stores the fresh pair for the gateway origin
+  // via the host's custody jar, so the next dial attaches it. Hosts
+  // without the jar skip it; their browser callers jar the forwarded
+  // Set-Cookie headers natively.
+  if (custody?.cookieJar) {
+    for (const raw of upstream.headers.getSetCookie()) {
+      const cookie = parseSetCookie(raw);
+      if (cookie) await custody.cookieJar.set(gatewayOrigin, cookie);
+    }
+  }
   return new Response(upstream.body, {
     status: upstream.status,
     headers: outHeaders,
@@ -674,14 +697,6 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     method: "GET",
     pattern: v1Friendly(/^assistants$/),
     run: runListRoute,
-  },
-  // The releases row: the upgrade shelf's catalog read, host-served so the
-  // desktop's app:// renderer can fetch it same-origin (bearer-token cloud
-  // dial, the doctor rows' precedent).
-  {
-    method: "GET",
-    pattern: v1Friendly(/^releases$/),
-    run: runReleasesRoute,
   },
   {
     method: "GET",
@@ -907,55 +922,20 @@ export async function forwardOperatorRequest(
       }
     }
     const url = new URL(request.url);
-    const response = await match.route.run({
-      assistantId: match.assistantId,
-      method: request.method as HTTPMethod,
-      path: url.pathname + url.search,
-      headers,
-      body: request.body,
-      signal: request.signal,
-    });
+    const response = await match.route.run(
+      {
+        assistantId: match.assistantId,
+        method: request.method as HTTPMethod,
+        path: url.pathname + url.search,
+        headers,
+        body: request.body,
+        signal: request.signal,
+      },
+      options?.cookieJar ? { cookieJar: options.cookieJar } : undefined,
+    );
     if (response) {
-      return reStoreResponseCookies(response, options?.cookieJar, jarOrigin);
+      return response;
     }
   }
   return forwardCloudRequest(request, options?.fetch);
-}
-
-/**
- * The dispatcher's custody write: every set-cookie a row's answer carries
- * re-stores into the host's jar — the proxy row's rotations for the
- * matched entry's gateway origin, the hatch row's minted pair for the
- * origin the row named (`JAR_ORIGIN_HEADER`, consumed and stripped here —
- * it never leaves the host). Hosts without a jar skip it; their browser
- * callers jar the Set-Cookie headers natively.
- */
-async function reStoreResponseCookies(
-  response: Response,
-  cookieJar: CookieJar | undefined,
-  jarOrigin: string | null,
-): Promise<Response> {
-  const named = response.headers.get(JAR_ORIGIN_HEADER);
-  if (named === null) {
-    if (cookieJar && jarOrigin) {
-      for (const raw of response.headers.getSetCookie()) {
-        const cookie = parseSetCookie(raw);
-        if (cookie) await cookieJar.set(jarOrigin, cookie);
-      }
-    }
-    return response;
-  }
-  const headers = new Headers(response.headers);
-  headers.delete(JAR_ORIGIN_HEADER);
-  const stripped = new Response(response.body, {
-    status: response.status,
-    headers,
-  });
-  if (cookieJar && named) {
-    for (const raw of stripped.headers.getSetCookie()) {
-      const cookie = parseSetCookie(raw);
-      if (cookie) await cookieJar.set(named, cookie);
-    }
-  }
-  return stripped;
 }

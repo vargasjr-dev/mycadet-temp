@@ -4,19 +4,17 @@ import type { Fetch } from "@mycadet/shared/fetch";
 /**
  * The operator's CLOUD ARM: what the route table's rows don't claim, the
  * cloud answers. The renderer's auth is same-origin naive (the generated
- * allauth SDK speaks `/_allauth`, and `/accounts` hosts the full-page
- * flows) — the hosts that re-origin those paths forward them here.
+ * allauth SDK speaks `/_allauth`, `/accounts` hosts the full-page flows,
+ * and the releases catalog is the cloud's own read, auth riding the
+ * caller's own headers) — the hosts that re-origin those paths forward
+ * them here.
  */
-const CLOUD_PREFIXES = ["/_allauth", "/accounts"] as const;
+const CLOUD_PREFIXES = ["/_allauth", "/accounts", "/v1/releases"] as const;
 
 export function isCloudPath(pathname: string): boolean {
   return CLOUD_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
-}
-
-function isUnsafeMethod(method: string): boolean {
-  return !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase());
 }
 
 function isSameOriginSource(value: string | null, url: URL): boolean {
@@ -33,20 +31,25 @@ function isSameOriginSource(value: string | null, url: URL): boolean {
 }
 
 /**
- * The initiator-trust verdict for an unsafe request: the unforgeable
- * signals only. A PRESENT `Origin` or `Referer` must name this origin —
- * the browser sets both and page JS can fake neither, so a foreign value
- * IS the attack signal. Source-less requests (the desktop's renderer:
+ * The initiator-trust verdict, whole request in: safe methods are
+ * trivially trusted; unsafe methods trust only the unforgeable signals —
+ * a PRESENT `Origin` or `Referer` must name the request's origin (the
+ * browser sets both and page JS can fake neither, so a foreign value IS
+ * the attack signal), and source-less requests (the desktop's renderer:
  * Chromium omits `Origin` on `app://`) trust only `sec-fetch-site:
- * same-origin` — fetch metadata the browser's network stack computes and
- * a page cannot claim.
+ * same-origin` — fetch metadata the network stack computes and a page
+ * cannot claim.
  */
-function isTrustedUnsafeRequest(url: URL, headers: Headers): boolean {
-  const source = headers.get("origin") ?? headers.get("referer");
+function isTrustedRequest(req: Request): boolean {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method.toUpperCase())) {
+    return true;
+  }
+  const url = new URL(req.url);
+  const source = req.headers.get("origin") ?? req.headers.get("referer");
   if (source !== null) {
     return isSameOriginSource(source, url);
   }
-  return headers.get("sec-fetch-site") === "same-origin";
+  return req.headers.get("sec-fetch-site") === "same-origin";
 }
 
 /**
@@ -124,8 +127,7 @@ export async function forwardCloudRequest(
     return null;
   }
 
-  const unsafe = isUnsafeMethod(request.method);
-  if (unsafe && !isTrustedUnsafeRequest(url, request.headers)) {
+  if (!isTrustedRequest(request)) {
     return new Response("Forbidden cloud proxy request", { status: 403 });
   }
 

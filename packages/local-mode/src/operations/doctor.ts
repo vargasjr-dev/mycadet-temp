@@ -68,7 +68,7 @@ async function proxyToCloud(
   }
 
   const headers: Record<string, string> = operatorCloudHeaders(entry, token);
-  const callerHeaders = new Headers(request.headers as HeadersInit | undefined);
+  const callerHeaders = new Headers(request.headers);
   const lastEventId = callerHeaders.get("last-event-id");
   if (lastEventId) {
     headers["Last-Event-ID"] = lastEventId;

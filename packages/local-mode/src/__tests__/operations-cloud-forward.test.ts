@@ -86,16 +86,14 @@ describe("the operator's cloud arm", () => {
     expect(calls).toHaveLength(0);
   });
 
-  test("passes the operator's /v1 surface through — the rows own it", async () => {
+  test("forwards the releases catalog; the bare /v1 rides the host chain", async () => {
     const { calls, fetcher } = recorder();
-    // The releases row owns the catalog path now (its answer is its own
-    // suite's business — here, that the ARM never dialed); the bare /v1
-    // rides the host chain.
-    delete process.env.CADET_CLOUD_TOKEN;
-    const releases = await dispatch(request("/v1/releases/"), fetcher);
-    expect(releases).not.toBeNull();
+    // The catalog is the cloud's own read — the caller's auth rides the
+    // forward. The bare /v1 is nobody's path here; the host chain answers.
+    expect(await dispatch(request("/v1/releases/"), fetcher)).not.toBeNull();
     expect(await dispatch(request("/v1"), fetcher)).toBeNull();
-    expect(calls).toHaveLength(0);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/releases/");
   });
 
   test("a row's pass on a /v1 path hands back to the host chain", async () => {
