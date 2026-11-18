@@ -12,7 +12,7 @@ import {
 } from "@mycadet/local-mode";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { resolveAssistant } from "./assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -70,7 +70,7 @@ export class AssistantClient {
    * @throws If no matching assistant is found.
    */
   constructor(opts?: AssistantClientOpts) {
-    const entry = resolveAssistant(opts?.assistantId);
+    const entry = findAssistant(opts?.assistantId);
 
     if (!entry) {
       throw new Error(

@@ -1,4 +1,4 @@
-import { resolveAssistant } from "../lib/assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand, loadFreshGuardianToken } from "@mycadet/local-mode";
 import { ensureProviderApiKey, formatProviderName } from "@mycadet/local-mode";
@@ -114,7 +114,7 @@ export const setup = Object.assign(
       process.exit(1);
     }
 
-    const entry = resolveAssistant();
+    const entry = findAssistant();
     if (!entry) {
       console.error(
         "Error: No active assistant found. Run `cadet hatch` first.",

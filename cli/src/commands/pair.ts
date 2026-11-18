@@ -43,7 +43,7 @@ import {
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { resolveAssistant } from "../lib/assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 
 import { appleContainerPair } from "@mycadet/local-mode";
 
@@ -321,7 +321,7 @@ export const pair = Object.assign(
       }
       entry = result.entry;
     } else {
-      entry = resolveAssistant();
+      entry = findAssistant();
       if (!entry) {
         console.error("No assistant instance found. Run `cadet hatch` first.");
         process.exit(1);

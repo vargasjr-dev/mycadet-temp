@@ -7,7 +7,7 @@ import {
 
 import { red } from "../lib/color";
 
-import { resolveAssistant } from "../lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
@@ -131,7 +131,7 @@ export const exec = Object.assign(
 
     const service = normalizeService(serviceRaw);
 
-    const entry = resolveAssistant(nameArg);
+    const entry = findAssistant(nameArg);
 
     if (!entry) {
       if (nameArg) {

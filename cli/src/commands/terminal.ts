@@ -22,7 +22,7 @@ import { getCloudBaseUrl } from "@mycadet/shared";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { spawn } from "child_process";
 
-import { resolveAssistant } from "../lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 
 import {
   closeTerminalSession,
@@ -266,7 +266,7 @@ export const terminal = Object.assign(
     }
 
     // Default: interactive shell, dispatched by the assistant's cloud type.
-    const entry = resolveAssistant(assistantName);
+    const entry = findAssistant(assistantName);
 
     if (!entry) {
       if (assistantName) {

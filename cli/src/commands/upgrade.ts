@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import cliPkg from "../../package.json";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { findAssistant } from "../lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 import {
   broadcastUpgradeEvent,
   buildCompleteEvent,

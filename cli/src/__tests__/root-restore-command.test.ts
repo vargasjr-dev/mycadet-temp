@@ -11,7 +11,7 @@ const directory = await mkdtemp(join(tmpdir(), "root-restore-command-"));
 const file = join(directory, "backup.tar.gz");
 await writeFile(file, Buffer.alloc(32, 1));
 const argv = [...process.argv];
-const lookup = spyOn(config, "findAssistant");
+const lookup = spyOn(localMode, "findAssistant");
 const restoreOp = spyOn(localMode, "restoreAssistant");
 
 beforeEach(() => {

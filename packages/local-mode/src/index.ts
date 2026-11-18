@@ -161,6 +161,7 @@ export {
 export { parseWaitDuration } from "./remotes/local/drain";
 export {
   loadAllAssistants,
+  findAssistant,
   lookupAssistantByIdentifier,
   formatAssistantLookupError,
   getAssistantDisplayName,

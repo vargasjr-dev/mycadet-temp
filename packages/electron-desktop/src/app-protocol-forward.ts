@@ -115,13 +115,9 @@ export function registerAppProtocol(): void {
 
     // The operator routes ride ahead of the gateway proxy. The session
     // jar is the rows' cookie source and sink: the pair the hatch jars
-    // (and every rotation since) attaches on each gateway dial. The
-    // forward's fallthrough arm carries the cloud's own surfaces, dialed
-    // through the main process's network stack (`net.fetch` — system
-    // proxy, cert store).
+    // (and every rotation since) attaches on each gateway dial.
     const operated = await forwardOperatorRequest(request, {
       cookieJar: sessionCookieJar,
-      fetch: net.fetch,
     });
     if (operated) {
       return operated;

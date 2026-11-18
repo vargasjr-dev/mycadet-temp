@@ -9,7 +9,7 @@ import { readCloudToken } from "@mycadet/local-mode";
 import { getCloudBaseUrl } from "@mycadet/shared";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import type { ResolvedManagedAssistant } from "@mycadet/local-mode";
-import { resolveAssistant } from "./assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 
 // ---------------------------------------------------------------------------
 // Resolver
@@ -23,7 +23,7 @@ import { resolveAssistant } from "./assistant-config.js";
 export function resolveManagedAssistant(
   nameArg?: string,
 ): ResolvedManagedAssistant {
-  const entry = resolveAssistant(nameArg);
+  const entry = findAssistant(nameArg);
 
   if (!entry) {
     if (nameArg) {
@@ -66,4 +66,3 @@ export function resolveManagedAssistant(
     cloudUrl: getCloudBaseUrl(),
   };
 }
-

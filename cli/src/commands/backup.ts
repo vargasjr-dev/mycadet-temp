@@ -1,6 +1,6 @@
 import { cliCommand, formatSize } from "@mycadet/local-mode";
 import { stat } from "node:fs/promises";
-import { findAssistant } from "../lib/assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 import { backupAssistant } from "@mycadet/local-mode";
 
 export const backup = Object.assign(

@@ -10,7 +10,7 @@ import { backup } from "../commands/backup.js";
 const directory = mkdtempSync(join(tmpdir(), "backup-command-test-"));
 const archive = join(directory, "test.tar.gz");
 const argv = [...process.argv];
-const lookup = spyOn(config, "findAssistant");
+const lookup = spyOn(localMode, "findAssistant");
 const backupOp = spyOn(localMode, "backupAssistant");
 
 beforeEach(() => {

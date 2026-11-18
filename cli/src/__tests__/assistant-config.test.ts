@@ -22,7 +22,7 @@ const testDir = mkdtempSync(join(tmpdir(), "cli-assistant-config-test-"));
 const prevConfigHome = process.env.XDG_CONFIG_HOME;
 process.env.XDG_CONFIG_HOME = testDir;
 
-import { findAssistant, loadLatestAssistant } from "../lib/assistant-config.js";
+import { loadLatestAssistant } from "../lib/assistant-config.js";
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
@@ -137,28 +137,12 @@ describe("assistant-config", () => {
     }
   });
 
-  test("findAssistant returns matching entry", () => {
-    makeEntry({ assistantId: "alpha" });
-    makeEntry({ assistantId: "beta" });
-    const result = findAssistant("beta");
-    expect(result).not.toBeNull();
-    expect(result!.assistantId).toBe("beta");
-  });
-
   test("getAssistantDisplayName prefers the entry's name", () => {
     makeEntry({ assistantId: "assistant-1", name: "Alice" });
     expect(getAssistantDisplayName(readEntry("assistant-1")!)).toBe("Alice");
     expect(
       getAssistantDisplayName(makeEntryObject({ assistantId: "assistant-3" })),
     ).toBe("assistant-3");
-  });
-
-  test("findAssistant only resolves assistant IDs", () => {
-    makeEntry({ assistantId: "assistant-1", name: "Alice" });
-    makeEntry({ assistantId: "assistant-2", name: "Bob" });
-
-    expect(findAssistant("Alice")).toBeNull();
-    expect(findAssistant("assistant-1")?.assistantId).toBe("assistant-1");
   });
 
   test("lookupAssistantByIdentifier resolves a unique display name", () => {
@@ -189,18 +173,12 @@ describe("assistant-config", () => {
 
     const result = lookupAssistantByIdentifier("Alice");
     expect(result.status).toBe("ambiguous");
-    expect(findAssistant("Alice")).toBeNull();
     expect(formatAssistantLookupError("Alice", result)).toContain(
       "assistant-1",
     );
     expect(formatAssistantLookupError("Alice", result)).toContain(
       "assistant-2",
     );
-  });
-
-  test("findAssistant returns null for non-existent name", () => {
-    makeEntry({ assistantId: "alpha" });
-    expect(findAssistant("missing")).toBeNull();
   });
 
   test("removeLockfileAssistant removes matching entry", () => {

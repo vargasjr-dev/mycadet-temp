@@ -33,7 +33,7 @@ import {
   forwardCloudRequest,
   isCloudPath,
 } from "./cloud-forward";
-import type { Fetch, HTTPMethod } from "@mycadet/shared/fetch";
+import type { HTTPMethod } from "@mycadet/shared/fetch";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -64,12 +64,6 @@ export interface OperatorRequest {
    */
   method: HTTPMethod;
   /**
-   * The caller's original request URL, host-qualified — the cloud arm's
-   * row rebuilds its forward from it so the same-origin CSRF check judges
-   * the caller against the mount's own origin, not a synthetic one.
-   */
-  url: string;
-  /**
    * The caller's pathname + search, carried for the proxy row, which
    * forwards it verbatim to the entry's gateway. The dispatcher derives
    * it off the mount's Request.
@@ -98,13 +92,6 @@ export interface OperatorRequest {
    * down. Absent reads as no signal.
    */
   signal?: AbortSignal | null;
-  /**
-   * The host's fetch, carried for the cloud arm's row — the desktop dials
-   * through its main process's network stack (`net.fetch`: system proxy,
-   * cert store) while every other host rides the ambient fetch. Absent
-   * reads as the ambient one.
-   */
-  fetch?: Fetch;
 }
 
 export interface OperatorRoute {
@@ -666,26 +653,8 @@ async function runProxyRoute(
 }
 
 /**
- * The cloud arm's row: the caller's request rides to the cloud verbatim.
- * The forward rebuilds a Request off the operator request's ORIGINAL url —
- * the arm's same-origin CSRF check judges the caller against the mount's
- * own origin, which only the original url carries.
+ * The operator route table, in match order.
  */
-function runCloudArmRoute(request: OperatorRequest): Promise<Response | null> {
-  const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  return forwardCloudRequest(
-    new Request(request.url, {
-      method: request.method,
-      headers: request.headers,
-      body: hasBody ? request.body : undefined,
-      ...(hasBody ? { duplex: "half" as const } : {}),
-      signal: request.signal ?? undefined,
-    }),
-    request.fetch,
-  );
-}
-
-/** The operator route table, in match order. */
 export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // The shell's resolution: the assistant reference's bare tail answers the
   // whole union (scoped to an explicit id, or the active one unscoped).
@@ -827,15 +796,14 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     run: runProxyRoute,
   },
   // The cloud's own surfaces as just another arm: the pattern is the
-  // OR-union of the cloud's own prefixes, the run the verbatim cloud
-  // forward (the caller's session headers authenticate it; the host's
-  // fetch dials it). Last in match order — everything the operator rows
-  // don't claim rides here, and the dispatcher's null (a row's pass, or
-  // no match at all) hands the serving host's chain its turn.
+  // OR-union of the cloud's own prefixes, the run the cloud forward
+  // itself. Last in match order — everything the operator rows don't
+  // claim rides here, and the dispatcher's null (a row's pass, or no
+  // match at all) hands the serving host's chain its turn.
   {
     method: "ALL",
     pattern: CLOUD_ARM_PATTERN,
-    run: runCloudArmRoute,
+    run: forwardCloudRequest,
   },
 ];
 
@@ -913,7 +881,6 @@ export async function forwardOperatorRequest(
   options?: {
     peer?: string | null;
     cookieJar?: CookieJar;
-    fetch?: Fetch;
   },
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
@@ -986,12 +953,10 @@ export async function forwardOperatorRequest(
         ? ""
         : (servedConfigFromLockfile(readLockfile()).assistantId ?? "")),
     method: request.method as HTTPMethod,
-    url: request.url,
     path: url.pathname + url.search,
     headers,
     body: request.body,
     signal: request.signal,
-    ...(options?.fetch ? { fetch: options.fetch } : {}),
   });
   if (response) {
     // The jar's writes are the dispatcher's, one route-agnostic layer

@@ -122,7 +122,7 @@ const setupPackaged = async (): Promise<void> => {
 };
 
 describe("registerAppProtocol", () => {
-  test("the operator pass carries the session jar and the net dial", async () => {
+  test("the operator pass carries the session jar", async () => {
     await setupDev();
     await register();
     forwardOperator.mockResolvedValueOnce(new Response("retired"));
@@ -132,15 +132,13 @@ describe("registerAppProtocol", () => {
     const response = await handler!(request);
     expect(await response.text()).toBe("retired");
     // The cloud surfaces (`/_allauth`, `/accounts`, the `/v1` user paths)
-    // ride the forward's own fallthrough arm — tested in local-mode. Here
-    // the contract is the OPTIONS: the session jar is the rows' cookie
-    // source and sink, and the arm dials through the main process's
-    // network stack (the same `net.fetch` the asset reads use).
+    // ride the forward's own arm row — tested in local-mode. Here the
+    // contract is the OPTIONS: the session jar is the rows' cookie source
+    // and sink; the dialing itself is local-mode's (the ambient fetch).
     expect(forwardOperator).toHaveBeenCalledWith(
       request,
       expect.objectContaining({
         cookieJar: expect.anything(),
-        fetch: netFetch,
       }),
     );
   });

@@ -1,6 +1,7 @@
 import { existsSync, statSync } from "fs";
 
-import { findAssistant } from "../lib/assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
+import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { cliCommand, restoreAssistant } from "@mycadet/local-mode";
 
 function printUsage(): void {
@@ -148,15 +149,16 @@ export const restore = Object.assign(
     }
 
     // Without --from: recover a retired assistant from its retire archive.
-    let entry: ReturnType<typeof findAssistant>;
+    let entry: LockfileAssistant;
     if (fromPath) {
       // Look up the instance
-      entry = findAssistant(name);
-      if (!entry) {
+      const found = findAssistant(name);
+      if (!found) {
         console.error(`Error: No assistant found with name '${name}'.`);
         console.error(`Run '${cliCommand()} ps' to see available assistants.`);
         process.exit(1);
       }
+      entry = found;
 
       // Verify .tar.gz file exists
       if (!existsSync(fromPath)) {

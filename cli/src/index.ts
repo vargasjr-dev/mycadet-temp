@@ -43,7 +43,8 @@ import { use } from "./commands/use";
 import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
-import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
+import { setActiveAssistant } from "./lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 // Report where the source tree lives for local file resolution
 if (typeof import.meta.dir === "string") {
   setLocalSourceRoot(join(import.meta.dir, "..", ".."));
@@ -177,7 +178,7 @@ function loadConfigDotenv(): void {
  * Otherwise return false so the caller can fall back to help text.
  */
 async function tryLaunchClient(): Promise<boolean> {
-  const entry = resolveAssistant();
+  const entry = findAssistant();
 
   if (!entry) return false;
 
@@ -242,7 +243,9 @@ async function main() {
     process.exit(0);
   }
 
-  const command = isCommandName(commandName) ? commands[commandName] : undefined;
+  const command = isCommandName(commandName)
+    ? commands[commandName]
+    : undefined;
 
   if (!command) {
     console.error(red(`Unknown command: ${commandName}`));

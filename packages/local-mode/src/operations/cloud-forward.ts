@@ -1,5 +1,5 @@
 import { cloudOrigin } from "./cloud-proxy";
-import type { Fetch } from "@mycadet/shared/fetch";
+import type { OperatorRequest } from "./routes";
 
 /**
  * The operator's CLOUD ARM: what the route table's rows don't claim, the
@@ -24,41 +24,6 @@ export function isCloudPath(pathname: string): boolean {
   return CLOUD_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
-}
-
-function isSameOriginSource(value: string | null, url: URL): boolean {
-  if (!value) return false;
-  try {
-    const parsed = new URL(value);
-    // Protocol and host separately: `.origin` is the opaque "null" for
-    // non-special schemes (`app://`), so origin-string equality can't
-    // express same-source for the desktop's handler.
-    return parsed.protocol === url.protocol && parsed.host === url.host;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * The initiator-trust verdict, whole request in: safe methods are
- * trivially trusted; unsafe methods trust only the unforgeable signals —
- * a PRESENT `Origin` or `Referer` must name the request's origin (the
- * browser sets both and page JS can fake neither, so a foreign value IS
- * the attack signal), and source-less requests (the desktop's renderer:
- * Chromium omits `Origin` on `app://`) trust only `sec-fetch-site:
- * same-origin` — fetch metadata the network stack computes and a page
- * cannot claim.
- */
-function isTrustedRequest(req: Request): boolean {
-  if (["GET", "HEAD", "OPTIONS"].includes(req.method.toUpperCase())) {
-    return true;
-  }
-  const url = new URL(req.url);
-  const source = req.headers.get("origin") ?? req.headers.get("referer");
-  if (source !== null) {
-    return isSameOriginSource(source, url);
-  }
-  return req.headers.get("sec-fetch-site") === "same-origin";
 }
 
 /**
@@ -127,35 +92,34 @@ export function buildProxyNetworkErrorResponse(): Response {
  * requests retry — a body streams `request.body`, which is single-use,
  * and non-idempotent methods must not be silently replayed.
  */
+/**
+ * The arm's run, reached only through the operator route table — the row's
+ * pattern is the only path in, so there is nothing here to re-check: no
+ * cloud-path test (the pattern already matched) and no caller CSRF gate
+ * (the arm's auth rides the caller's own session headers, which a
+ * cross-site page cannot forge, and the serving hosts' CORS wrappers gate
+ * the browser). Forwards verbatim: the caller's headers, the caller's
+ * body stream, the caller's abort signal.
+ */
 export async function forwardCloudRequest(
-  request: Request,
-  fetcher?: Fetch,
+  request: OperatorRequest,
 ): Promise<Response | null> {
-  const url = new URL(request.url);
-  if (!isCloudPath(url.pathname)) {
-    return null;
-  }
-
-  if (!isTrustedRequest(request)) {
-    return new Response("Forbidden cloud proxy request", { status: 403 });
-  }
-
   const target = cloudOrigin();
   const headers = new Headers(request.headers);
   headers.set("origin", new URL(target).origin);
-  const forwardUrl = `${target}${url.pathname}${url.search}`;
+  const forwardUrl = `${target}${request.path}`;
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   const retryable =
     !hasBody && ["GET", "HEAD"].includes(request.method.toUpperCase());
-  const doFetch = fetcher ?? fetch;
 
   for (let attempt = 0; ; attempt++) {
     try {
-      return await doFetch(forwardUrl, {
+      return await fetch(forwardUrl, {
         method: request.method,
         headers,
         body: hasBody ? request.body : undefined,
         ...(hasBody ? { duplex: "half" as const } : {}),
+        signal: request.signal ?? undefined,
         redirect: "manual",
       });
     } catch (err) {

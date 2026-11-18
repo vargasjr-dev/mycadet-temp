@@ -5,7 +5,7 @@ import { watch } from "fs";
 import { join } from "path";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { resolveAssistant } from "../lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 
 import {
   cliCommand,
@@ -486,7 +486,7 @@ export const logs = Object.assign(
   async function logs(): Promise<void> {
     const opts = parseArgs();
 
-    const entry = resolveAssistant(opts.name);
+    const entry = findAssistant(opts.name);
 
     if (!entry) {
       if (opts.name) {

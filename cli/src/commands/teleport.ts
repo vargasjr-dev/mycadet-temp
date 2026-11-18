@@ -1,6 +1,6 @@
 import { cliCommand, teleportAssistant } from "@mycadet/local-mode";
 
-import { findAssistant } from "../lib/assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 
 function printHelp(): void {
   console.log(

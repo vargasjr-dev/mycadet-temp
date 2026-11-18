@@ -22,7 +22,7 @@ const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
 import { connectImport } from "../commands/connect/import.js";
-import { findAssistant } from "../lib/assistant-config.js";
+import { findAssistant } from "@mycadet/local-mode";
 import { loadGuardianToken, saveLockfileAssistant } from "@mycadet/local-mode";
 import { z } from "zod";
 import { withPreconnect } from "./helpers/http.js";

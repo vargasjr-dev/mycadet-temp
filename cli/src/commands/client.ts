@@ -1,5 +1,6 @@
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { findAssistant, resolveConversationKey } from "../lib/assistant-config";
+import { resolveConversationKey } from "../lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 import {
   fetchOrganizationId,
   formatAssistantLookupError,

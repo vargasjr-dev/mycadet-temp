@@ -11,7 +11,7 @@ const entry: LockfileAssistant = {
   port: 7830,
   hatchedAt: "2026-01-01T00:00:00Z",
 };
-const find = spyOn(assistants, "findAssistant");
+const find = spyOn(localMode, "findAssistant");
 const teleportOp = spyOn(localMode, "teleportAssistant");
 const exit = spyOn(process, "exit").mockImplementation((code): never => {
   throw new Error(`exit:${code}`);

@@ -23,7 +23,8 @@ import {
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { findAssistant, readRootProcesses } from "../lib/assistant-config";
+import { readRootProcesses } from "../lib/assistant-config";
+import { findAssistant } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 
 import { withStatusEmoji } from "../lib/status-emoji";
