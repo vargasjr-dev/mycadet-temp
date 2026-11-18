@@ -2,8 +2,7 @@
  * The memory plugin's single host-path channel. Every module in this plugin
  * resolves filesystem locations here rather than importing host
  * `util/layout` directly, so the host import below is the plugin's sole
- * path escape (tracked by `plugin-import-boundary-guard.test.ts`), mirroring
- * `logging.ts`.
+ * path escape, mirroring `logging.ts`.
  *
  * A plain forward is deliberate: `@mycadet/plugin-api` has no workspace-dir
  * facet today (identity facets take the workspace dir as a parameter), and
