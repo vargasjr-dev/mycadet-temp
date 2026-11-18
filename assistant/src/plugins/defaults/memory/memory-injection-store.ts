@@ -7,40 +7,17 @@ import { memoryDbOrNull,type MemorySqlite } from "./memory-db.js";
 const log = getLogger("memory-injection-store");
 
 /**
- * The memory plugin's per-conversation memory-injection opt-out.
- *
- * State is a single boolean on the memory connection's per-conversation
- * `activation_sessions` row (the activation-rail marker table — see the
- * `activationSessions` schema object in `persistence/schema/memory-injection.ts`):
- * injection is ON for every conversation by default, and a row flagged
- * `memory_injection_off = 1` turns it OFF for that conversation — no dynamic
- * `<memory>`/section block (both the v2 activation engine and the v3
- * orchestrator skip fresh retrieval), no static essentials/threads block, no
- * PKB context. Prior turns' already-cached blocks ride history untouched
- * (cache-stable, forward-looking), and engine-wide jobs (consolidation,
- * filing, retrospectives) are unchanged.
- *
- * The flag lives on the memory connection's own table — deliberately NOT a
- * column on the main `conversations` table (memory settings stay inside the
- * memory plugin, decoupled from main-agent infrastructure) — and inherits the
- * host table's lifecycle for free: the conversation-delete purge and the
- * clear-all reset sweep `activation_sessions`, so deleting a conversation
- * deletes its flag and clearing all memory re-enables injection everywhere.
- * Fork copies never touch `activation_sessions`, so a fork starts ON.
- *
- * Engine-independent by construction: every engine's gate asks this store, so
- * a future engine inherits the opt-out by asking it.
- *
- * Fail-open reads / fail-soft writes: an unavailable memory database or a
- * failed statement only logs a warning — a degraded read must never silence
- * memory, and a failed write must never abort a turn.
+ * The memory plugin's per-conversation memory-injection opt-out: a
+ * `memory_injection_off` flag on the memory connection's `activation_sessions`
+ * row (schema in `persistence/schema/memory-injection.ts`). Fail-open reads,
+ * fail-soft writes; the host row's purge/clear-all lifecycle applies, and
+ * forks (which never copy `activation_sessions`) start with injection on.
  */
 
-/** The schema ensure, once per raw connection: the host table exists on every
- *  migrated memory database (migration 339), but the flag column may predate
- *  this build, and a bare test database may lack both. */
 const ensuredConnections = new WeakSet<object>();
 
+/** The flag column postdates the table (migration 339); a bare test db may
+ *  lack both. */
 function ensureSchema(raw: MemorySqlite): void {
   if (ensuredConnections.has(raw)) {
     return;
@@ -52,8 +29,6 @@ function ensureSchema(raw: MemorySqlite): void {
   try {
     raw.run("ALTER TABLE activation_sessions ADD COLUMN memory_injection_off INTEGER");
   } catch (err) {
-    // The column already exists on a database written by an earlier ensure —
-    // the only tolerated failure; anything else is a real schema error.
     if (!/duplicate column name/i.test(String(err))) {
       throw err;
     }
@@ -69,11 +44,8 @@ function memoryDb(context: string): ReturnType<typeof memoryDbOrNull> {
   return mdb;
 }
 
-/**
- * Whether the plugin must inject no memory for this conversation. Fail-open:
- * an unavailable memory database, a missing table, or any read error resolves
- * `false` (injection on) — a degraded read must never silence memory.
- */
+/** Whether the plugin must inject no memory for this conversation. A degraded
+ *  read resolves `false` — it must never silence memory. */
 export function isMemoryInjectionOff(
   conversationId: string | null | undefined,
 ): boolean {
@@ -97,28 +69,22 @@ export function isMemoryInjectionOff(
   }
 }
 
-/**
- * Turn the conversation's memory injection off or on. A conversation with an
- * existing activation marker row keeps it — only the flag column moves; a
- * conversation without one gets a marker row stamped now (its `created_at`
- * is the activation funnel's first-seen time, and an opt-out row simply
- * first appears when the flag is set). Best-effort: an unavailable memory
- * database or a failed statement reports `false` and leaves the flag as it
- * was.
- */
+/** Turn the conversation's memory injection off or on, stamping an
+ *  `activation_sessions` row if the conversation has none yet. Reports
+ *  `false` when the write failed and the flag moved nowhere. */
 export function setMemoryInjectionOff(
   conversationId: string,
   off: boolean,
 ): boolean {
-  const mdb = memoryDb("setMemoryInjectionOff");
-  if (!mdb) {
-    log.warn(
-      { conversationId },
-      "memory database unavailable; injection flag not persisted",
-    );
-    return false;
-  }
   try {
+    const mdb = memoryDb("setMemoryInjectionOff");
+    if (!mdb) {
+      log.warn(
+        { conversationId },
+        "memory database unavailable; injection flag not persisted",
+      );
+      return false;
+    }
     mdb
       .insert(activationSessions)
       .values({

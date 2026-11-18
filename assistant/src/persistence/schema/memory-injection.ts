@@ -69,18 +69,6 @@ export const memoryV3Selections = sqliteTable(
   ],
 );
 
-// The memory connection's per-conversation activation-rail marker (migration
-// 339 moved it here from main), carrying the memory plugin's per-conversation
-// memory-injection opt-out: `memory_injection_off` is 1 when the plugin must
-// inject no memory for the conversation — no fresh retrieval of any engine,
-// no static essentials/threads block, no PKB context — and absent or 0 for
-// the default-on. Plugin-owned like the rest of this file: the memory
-// plugin's schema ensure (`memory-injection-store.ts`) adds the column to a
-// table created before it existed, not the migration chain. No FK to
-// conversations.id (SQLite foreign keys cannot span database files); the
-// conversation-delete purge and the clear-all reset sweep it explicitly
-// (`conversation-memory-purge.ts`). Fork copies never touch this table, so a
-// fork starts with injection on.
 export const activationSessions = sqliteTable("activation_sessions", {
   conversationId: text("conversation_id").primaryKey(),
   createdAt: integer("created_at").notNull(),
