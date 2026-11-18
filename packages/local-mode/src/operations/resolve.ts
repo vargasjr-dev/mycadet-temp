@@ -1,6 +1,6 @@
 import { checkHealth } from "../daemon-readiness";
 import { runListRoute } from "./list";
-import { findAssistantByName } from "./lookup";
+import { findAssistant } from "./lookup";
 import type { OperatorRequest } from "./routes";
 
 function resolutionResponse(body: unknown, status = 200): Response {
@@ -30,7 +30,7 @@ export async function runResolveRoute(
     // account chooser.
     return runListRoute();
   }
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     // Not this host's to name: the dispatcher's chain answers (the cloud
     // arm for the cloud's own paths, the host's chain otherwise).

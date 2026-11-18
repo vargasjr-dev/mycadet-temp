@@ -18,7 +18,7 @@ import { hatchAssistant } from "../operations/hatch";
 import { existsSync } from "node:fs";
 import { resolveLockfilePath } from "../config";
 import { readLockfile, saveLockfileAssistant } from "../lockfile";
-import { findAssistantByName } from "../operations/lookup";
+import { findAssistant } from "../operations/lookup";
 
 const hatchDockerMock = mock<
   (params: HatchDockerParams) => Promise<HatchAssistantResult>
@@ -94,7 +94,7 @@ describe("hatchAssistant", () => {
       expect(result.status).toBe(400);
       expect(result.error).toContain(remote);
     }
-    expect(findAssistantByName("custom")).toBeNull();
+    expect(findAssistant("custom")).toBeNull();
     // The refusal still leaves the lockfile behind: an empty registry the
     // next hatch (or any writer) builds on.
     expect(existsSync(resolveLockfilePath())).toBe(true);

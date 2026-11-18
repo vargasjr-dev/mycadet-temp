@@ -11,7 +11,7 @@ const entry: LockfileAssistant = {
   port: 7830,
   hatchedAt: "2026-01-01T00:00:00Z",
 };
-const find = spyOn(assistants, "findAssistantByName");
+const find = spyOn(assistants, "findAssistant");
 const teleportOp = spyOn(localMode, "teleportAssistant");
 const exit = spyOn(process, "exit").mockImplementation((code): never => {
   throw new Error(`exit:${code}`);
@@ -22,14 +22,7 @@ beforeEach(() => {
   find.mockReturnValue(entry);
   teleportOp.mockReset();
   errors.mockClear();
-  process.argv = [
-    "bun",
-    "cadet",
-    "teleport",
-    "--from",
-    "source",
-    "--docker",
-  ];
+  process.argv = ["bun", "cadet", "teleport", "--from", "source", "--docker"];
 });
 afterEach(() => {
   process.argv = argv;

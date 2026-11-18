@@ -1,6 +1,6 @@
 import { cliCommand, teleportAssistant } from "@mycadet/local-mode";
 
-import { findAssistantByName } from "../lib/assistant-config.js";
+import { findAssistant } from "../lib/assistant-config.js";
 
 function printHelp(): void {
   console.log(
@@ -68,7 +68,7 @@ export const teleport = Object.assign(
     }
 
     // Look up source assistant
-    const fromEntry = findAssistantByName(from);
+    const fromEntry = findAssistant(from);
     if (!fromEntry) {
       console.error(
         `Assistant '${from}' not found in lockfile. Run \`cadet ps\` to see available assistants.`,

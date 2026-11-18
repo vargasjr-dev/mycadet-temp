@@ -17,7 +17,7 @@
 
 import { loopbackSafeFetch } from "../loopback-fetch";
 import type { LockfileAssistant } from "../lockfile-contract";
-import { findAssistantByName } from "./lookup";
+import { findAssistant } from "./lookup";
 import type { OperatorRequest } from "./routes";
 import {
   UPSTREAM_TIMEOUT_MS,
@@ -48,7 +48,7 @@ async function proxyToCloud(
   tailPath: string,
   opts?: { streaming?: boolean },
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }

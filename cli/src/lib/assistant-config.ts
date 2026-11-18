@@ -117,7 +117,7 @@ export function loadLatestAssistant(): LockfileAssistant | null {
   return sorted[0];
 }
 
-export function findAssistantByName(name: string): LockfileAssistant | null {
+export function findAssistant(name: string): LockfileAssistant | null {
   return (
     loadAllAssistants().find((entry) => entry.assistantId === name) ?? null
   );
@@ -142,12 +142,12 @@ export function setActiveAssistant(assistantId: string): void {
  */
 export function resolveAssistant(nameArg?: string): LockfileAssistant | null {
   if (nameArg) {
-    return findAssistantByName(nameArg);
+    return findAssistant(nameArg);
   }
 
   const active = getActiveAssistant();
   if (active) {
-    const entry = findAssistantByName(active);
+    const entry = findAssistant(active);
     if (entry) return entry;
     // Active assistant no longer exists in lockfile — fall through
   }

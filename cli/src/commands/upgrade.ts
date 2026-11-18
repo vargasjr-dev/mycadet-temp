@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import cliPkg from "../../package.json";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { findAssistantByName } from "../lib/assistant-config";
+import { findAssistant } from "../lib/assistant-config";
 import {
   broadcastUpgradeEvent,
   buildCompleteEvent,
@@ -178,7 +178,7 @@ function resolveTargetAssistant(nameArg: string | null): LockfileAssistant {
 
   const active = getActiveAssistant();
   if (active) {
-    const entry = findAssistantByName(active);
+    const entry = findAssistant(active);
     if (entry) return entry;
   }
 

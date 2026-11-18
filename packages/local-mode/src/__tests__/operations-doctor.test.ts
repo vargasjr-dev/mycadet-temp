@@ -62,7 +62,7 @@ const UNREGISTERED_ENTRY = {
 
 mock.module("../operations/lookup", () => ({
   ...realLookup,
-  findAssistantByName: (name: string) => {
+  findAssistant: (name: string) => {
     if (name === ENTRY.assistantId) return ENTRY;
     if (name === UNREGISTERED_ENTRY.assistantId) return UNREGISTERED_ENTRY;
     return null;
@@ -219,7 +219,7 @@ describe("the doctor operator rows", () => {
     // other tests.
     mock.module("../operations/lookup", () => ({
       ...realLookup,
-      findAssistantByName: (name: string) =>
+      findAssistant: (name: string) =>
         name === "never-registered"
           ? {
               ...ENTRY,

@@ -99,7 +99,7 @@ test("a fresh local target installs the archive, then persists", async () => {
     cesPort: 7832,
   } as never);
   let saved: { assistantId: string; hatchedAt?: string } | undefined;
-  const findEntry = spyOn(lookup, "findAssistantByName").mockImplementation(
+  const findEntry = spyOn(lookup, "findAssistant").mockImplementation(
     () => (saved ?? null) as never,
   );
   const localArchive = spyOn(

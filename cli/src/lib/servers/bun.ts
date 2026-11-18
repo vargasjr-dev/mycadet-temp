@@ -9,7 +9,6 @@ import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/in
 
 import {
   forwardOperatorRequest,
-  matchOperatorRequest,
   servedAssistantFromLockfile,
   servedConfigFromLockfile,
   readLockfile,
@@ -342,16 +341,6 @@ export function createAppServerHandler(
 
     if ((request.headers.get("upgrade") ?? "") !== "" && server) {
       return upgradeToGateway(request, server);
-    }
-
-    if (request.method === "OPTIONS") {
-      if (matchOperatorRequest(pathname, "GET")) {
-        return withAppOriginCors(
-          new Response(null, { status: 204 }),
-          request,
-          allowedOrigins,
-        );
-      }
     }
 
     const operated = await forwardOperatorRequest(request, {

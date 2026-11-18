@@ -1,6 +1,6 @@
 import type { LockfileAssistant, Remote } from "../lockfile-contract";
 import { checkHealth } from "../daemon-readiness";
-import { findAssistantByName } from "./lookup";
+import { findAssistant } from "./lookup";
 import { compareVersions } from "../version-compat";
 import { ownVersion } from "../environment";
 import { createBackup, pruneOldBackups } from "../backup-ops";
@@ -142,8 +142,7 @@ async function performTeleport(
       // its save landed before the throw. The original failure is the one
       // worth surfacing, plus where the data lives.
       const built =
-        target ??
-        (sourceRetired ? findAssistantByName(source.assistantId) : null);
+        target ?? (sourceRetired ? findAssistant(source.assistantId) : null);
       if (built) {
         await sleepAssistant(built);
         const retired = await retireAssistant(built);

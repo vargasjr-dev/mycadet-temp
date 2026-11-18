@@ -11,6 +11,15 @@ import type { Fetch } from "@mycadet/shared/fetch";
  */
 const CLOUD_PREFIXES = ["/_allauth", "/accounts", "/v1/releases"] as const;
 
+/**
+ * The cloud arm's row pattern: the OR-union of the cloud's own prefixes —
+ * the arm is just another operator row, last in match order, so the
+ * dispatcher has no special-cased cloud tail.
+ */
+export const CLOUD_ARM_PATTERN = new RegExp(
+  `^(?:${CLOUD_PREFIXES.map((prefix) => prefix.replace(/\//g, "\\/")).join("|")})(?:$|/)`,
+);
+
 export function isCloudPath(pathname: string): boolean {
   return CLOUD_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),

@@ -1,5 +1,5 @@
 import type { LockfileAssistant } from "../../lockfile-contract";
-import { findAssistantByName } from "../../operations/lookup";
+import { findAssistant } from "../../operations/lookup";
 import { allocateLocalPlacement } from "../../remotes/local/hatch";
 import { withLocalHatchLock } from "../../remotes/local/hatch-lock";
 import { initializeRootArchive } from "../../root-backup";
@@ -27,7 +27,7 @@ export async function initializeLocalTeleportTarget(
     entry.hatchedAt = new Date().toISOString();
     saveLockfileAssistant(entry, instanceName);
   });
-  const entry = findAssistantByName(instanceName);
+  const entry = findAssistant(instanceName);
   if (!entry) {
     throw new Error("Could not find the newly initialized teleport target.");
   }

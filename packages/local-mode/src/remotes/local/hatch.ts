@@ -2,7 +2,7 @@ import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
-import { findAssistantByName } from "../../operations/lookup";
+import { findAssistant } from "../../operations/lookup";
 import type { HatchAssistantResult } from "../../operations/types";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";
@@ -105,7 +105,7 @@ export async function hatchLocal(params: {
   let entry: LocalAssistant;
   try {
     const hatched = await withLocalHatchLock(async () => {
-      const existing = findAssistantByName(instanceName);
+      const existing = findAssistant(instanceName);
       if (existing && (!existing.cloud || existing.cloud === "local")) {
         throw new HatchConflict(
           `An assistant named "${instanceName}" is already hatched.\n` +

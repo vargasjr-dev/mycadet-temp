@@ -1,8 +1,5 @@
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  findAssistantByName,
-  resolveConversationKey,
-} from "../lib/assistant-config";
+import { findAssistant, resolveConversationKey } from "../lib/assistant-config";
 import {
   fetchOrganizationId,
   formatAssistantLookupError,
@@ -168,7 +165,7 @@ async function maybeHydrateCloudAssistantName(
       return assistantName;
     }
 
-    const entry = findAssistantByName(assistantId);
+    const entry = findAssistant(assistantId);
     if (entry && entry.name !== hydratedName) {
       saveLockfileAssistant({
         ...entry,

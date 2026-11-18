@@ -20,7 +20,7 @@ import { getGatewayUrl, type LockfileAssistant } from "./lockfile-contract";
 import { loopbackSafeFetch } from "./loopback-fetch";
 import { checkHealth } from "./daemon-readiness";
 import {
-  findAssistantByName,
+  findAssistant,
   getActiveAssistant,
   loadAllAssistants,
 } from "./operations/lookup";
@@ -35,7 +35,7 @@ function guardianBearer(assistantId: string): string | undefined {
 function resolveAssistant(): LockfileAssistant | null {
   const active = getActiveAssistant();
   if (active) {
-    const entry = findAssistantByName(active);
+    const entry = findAssistant(active);
     if (entry) return entry;
   }
   const all = loadAllAssistants();

@@ -22,7 +22,7 @@ const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
 import { connectImport } from "../commands/connect/import.js";
-import { findAssistantByName } from "../lib/assistant-config.js";
+import { findAssistant } from "../lib/assistant-config.js";
 import { loadGuardianToken, saveLockfileAssistant } from "@mycadet/local-mode";
 import { z } from "zod";
 import { withPreconnect } from "./helpers/http.js";
@@ -201,7 +201,7 @@ describe("connect import", () => {
     expect(typeof calls[0].body.deviceId).toBe("string");
     expect(calls[0].body.platform).toBe("cli");
 
-    const entry = findAssistantByName("link-box");
+    const entry = findAssistant("link-box");
     expect(entry).not.toBeNull();
     expect(entry!.cloud).toBe("custom");
     expect(entry!.cloud === "custom" ? entry!.ipAddress : undefined).toBe(
@@ -542,7 +542,7 @@ describe("connect import", () => {
     expect(exited).toBe(true);
     expect(out).toContain("unknown option '--frobnicate'");
     expect(fetched).toBe(false);
-    expect(findAssistantByName("guarded-box")).toBeNull();
+    expect(findAssistant("guarded-box")).toBeNull();
   });
 
   test("does not overwrite an existing non-paired assistant", async () => {
@@ -569,7 +569,7 @@ describe("connect import", () => {
     // Refused BEFORE the exchange: the one-time code is never spent, so the
     // host records no orphaned device and the link stays usable.
     expect(calls).toHaveLength(0);
-    const entry = findAssistantByName("desk");
+    const entry = findAssistant("desk");
     expect(entry!.cloud).toBe("local");
   });
 });

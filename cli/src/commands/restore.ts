@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "fs";
 
-import { findAssistantByName } from "../lib/assistant-config.js";
+import { findAssistant } from "../lib/assistant-config.js";
 import { cliCommand, restoreAssistant } from "@mycadet/local-mode";
 
 function printUsage(): void {
@@ -148,10 +148,10 @@ export const restore = Object.assign(
     }
 
     // Without --from: recover a retired assistant from its retire archive.
-    let entry: ReturnType<typeof findAssistantByName>;
+    let entry: ReturnType<typeof findAssistant>;
     if (fromPath) {
       // Look up the instance
-      entry = findAssistantByName(name);
+      entry = findAssistant(name);
       if (!entry) {
         console.error(`Error: No assistant found with name '${name}'.`);
         console.error(`Run '${cliCommand()} ps' to see available assistants.`);

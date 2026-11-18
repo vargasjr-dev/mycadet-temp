@@ -31,7 +31,7 @@ writeFileSync(
   join(root, "gateway-security", "actor-token-signing-key"),
   Buffer.from("07".repeat(32), "hex"),
 );
-const lookup = spyOn(config, "findAssistantByName").mockReturnValue(entry);
+const lookup = spyOn(config, "findAssistant").mockReturnValue(entry);
 const location = spyOn(backups, "getBackupsDir").mockReturnValue(backupDir);
 const save = spyOn(localMode, "saveLockfileAssistant").mockImplementation(
   () => ({ ok: true, lockfile: { assistants: [] } as never }),

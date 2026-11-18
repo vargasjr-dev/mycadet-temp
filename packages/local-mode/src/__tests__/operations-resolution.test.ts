@@ -211,6 +211,16 @@ describe("the dispatcher — the four prefixes", () => {
         expect(derived).toBe("^\\/webhooks(?:\\/.*)?$");
         continue;
       }
+      if (derived.startsWith("^(?:\\/_allauth")) {
+        // The cloud arm's row is the OR-union of the cloud's own
+        // prefixes — absolute paths (like the webhook row), no version
+        // arm, no tail hygiene. Pinned exactly so no other row sneaks
+        // past the derivation unversioned.
+        expect(derived).toBe(
+          "^(?:\\/_allauth|\\/accounts|\\/v1\\/releases)(?:$|\\/)",
+        );
+        continue;
+      }
       if (derived.includes("(?<id>")) {
         // An assistant row: helper 2's id capture plus helper 1's required
         // version arm. Rows declare relative patterns, so the scoping arm

@@ -20,10 +20,22 @@ export function loadAllAssistants(): LockfileAssistant[] {
   return readLockfile().assistants;
 }
 
-export function findAssistantByName(name: string): LockfileAssistant | null {
-  return (
-    loadAllAssistants().find((entry) => entry.assistantId === name) ?? null
-  );
+export function findAssistant(id?: string | null): LockfileAssistant | null {
+  const lockfile = readLockfile();
+  if (!id) {
+    // The bare spelling rides the operator backend's active assistant —
+    // its first entry when no active pointer is set. The hatch leg
+    // switches active to the freshly minted entry inside its locked
+    // write, so this resolution names the entry a hatch just created too.
+    return (
+      lockfile.assistants.find(
+        (entry) => entry.assistantId === lockfile.activeAssistant,
+      ) ??
+      lockfile.assistants[0] ??
+      null
+    );
+  }
+  return lockfile.assistants.find((entry) => entry.assistantId === id) ?? null;
 }
 
 export function getAssistantDisplayName(entry: LockfileAssistant): string {

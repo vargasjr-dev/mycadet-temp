@@ -18,7 +18,7 @@ const pruneSpy = spyOn(backupOps, "pruneOldBackups").mockImplementation(
   (() => {}) as never,
 );
 const healthSpy = spyOn(readiness, "checkHealth");
-const findAssistant = spyOn(lookup, "findAssistantByName");
+const findAssistant = spyOn(lookup, "findAssistant");
 
 const source: LockfileAssistant = {
   assistantId: "source",

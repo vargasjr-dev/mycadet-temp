@@ -23,10 +23,7 @@ import {
 } from "@mycadet/local-mode";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import {
-  findAssistantByName,
-  readRootProcesses,
-} from "../lib/assistant-config";
+import { findAssistant, readRootProcesses } from "../lib/assistant-config";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 
 import { withStatusEmoji } from "../lib/status-emoji";
@@ -462,7 +459,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
   const assistants = loadAllAssistants();
   const activeId = getActiveAssistant();
   const activeAssistantId = activeId
-    ? (findAssistantByName(activeId)?.assistantId ?? activeId)
+    ? (findAssistant(activeId)?.assistantId ?? activeId)
     : null;
 
   if (assistants.length === 0) {

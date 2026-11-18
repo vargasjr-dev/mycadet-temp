@@ -1,6 +1,6 @@
 import { cliCommand, formatSize } from "@mycadet/local-mode";
 import { stat } from "node:fs/promises";
-import { findAssistantByName } from "../lib/assistant-config.js";
+import { findAssistant } from "../lib/assistant-config.js";
 import { backupAssistant } from "@mycadet/local-mode";
 
 export const backup = Object.assign(
@@ -21,7 +21,7 @@ export const backup = Object.assign(
     if (!name || name.startsWith("-"))
       throw new Error(`Usage: ${cliCommand()} backup <name>`);
     if (args.length > 1) throw new Error(`Unknown backup option: ${args[1]}`);
-    const entry = findAssistantByName(name);
+    const entry = findAssistant(name);
     if (!entry) throw new Error(`No assistant found with name '${name}'.`);
     const result = await backupAssistant(entry);
     if (!result.ok) throw new Error(result.error);

@@ -9,7 +9,7 @@ import { ownVersion } from "../environment";
 import { unpairAssistant } from "../unpair";
 import { servedConfigFromLockfile } from "../served-config";
 import { runListRoute } from "./list";
-import { findAssistantByName } from "./lookup";
+import { findAssistant } from "./lookup";
 import { retireAssistant } from "./retire";
 import { runUsernameAvailableRoute } from "./profile";
 import {
@@ -28,7 +28,11 @@ import { wakeAssistant } from "./wake";
 import { z } from "zod";
 import { getGatewayUrl, type LockfileAssistant } from "../lockfile-contract";
 import { cookieHeader, parseSetCookie, type CookieJar } from "./cookie-jar";
-import { forwardCloudRequest } from "./cloud-forward";
+import {
+  CLOUD_ARM_PATTERN,
+  forwardCloudRequest,
+  isCloudPath,
+} from "./cloud-forward";
 import type { Fetch, HTTPMethod } from "@mycadet/shared/fetch";
 
 /**
@@ -60,6 +64,12 @@ export interface OperatorRequest {
    */
   method: HTTPMethod;
   /**
+   * The caller's original request URL, host-qualified — the cloud arm's
+   * row rebuilds its forward from it so the same-origin CSRF check judges
+   * the caller against the mount's own origin, not a synthetic one.
+   */
+  url: string;
+  /**
    * The caller's pathname + search, carried for the proxy row, which
    * forwards it verbatim to the entry's gateway. The dispatcher derives
    * it off the mount's Request.
@@ -88,6 +98,13 @@ export interface OperatorRequest {
    * down. Absent reads as no signal.
    */
   signal?: AbortSignal | null;
+  /**
+   * The host's fetch, carried for the cloud arm's row — the desktop dials
+   * through its main process's network stack (`net.fetch`: system proxy,
+   * cert store) while every other host rides the ambient fetch. Absent
+   * reads as the ambient one.
+   */
+  fetch?: Fetch;
 }
 
 export interface OperatorRoute {
@@ -119,7 +136,7 @@ export interface OperatorRoute {
 async function runRetireRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -152,7 +169,7 @@ async function runRetireRoute(
 async function runSleepRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -177,7 +194,7 @@ async function runSleepRoute(
 async function runWakeRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -320,7 +337,10 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
 }
 
 /** The origin the entry's gateway serves on, or null when unresolvable. */
-function gatewayOriginFor(entry: LockfileAssistant): string | null {
+function gatewayOriginFor(entry: LockfileAssistant | null): string | null {
+  if (!entry) {
+    return null;
+  }
   try {
     return new URL(getGatewayUrl(entry)).origin;
   } catch {
@@ -338,7 +358,7 @@ function gatewayOriginFor(entry: LockfileAssistant): string | null {
 async function runUnpairRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -494,7 +514,7 @@ async function runUpgradeRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
   const assistantId = request.assistantId;
-  const entry = findAssistantByName(assistantId);
+  const entry = findAssistant(assistantId);
   if (!entry) {
     return null;
   }
@@ -542,7 +562,7 @@ async function runUpgradeRoute(
 async function runAvatarRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -610,7 +630,7 @@ function normalizeForwardHeaders(
 async function runProxyRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistantByName(request.assistantId);
+  const entry = findAssistant(request.assistantId);
   if (!entry) {
     return null;
   }
@@ -643,6 +663,26 @@ async function runProxyRoute(
     status: upstream.status,
     headers: outHeaders,
   });
+}
+
+/**
+ * The cloud arm's row: the caller's request rides to the cloud verbatim.
+ * The forward rebuilds a Request off the operator request's ORIGINAL url —
+ * the arm's same-origin CSRF check judges the caller against the mount's
+ * own origin, which only the original url carries.
+ */
+function runCloudArmRoute(request: OperatorRequest): Promise<Response | null> {
+  const hasBody = request.method !== "GET" && request.method !== "HEAD";
+  return forwardCloudRequest(
+    new Request(request.url, {
+      method: request.method,
+      headers: request.headers,
+      body: hasBody ? request.body : undefined,
+      ...(hasBody ? { duplex: "half" as const } : {}),
+      signal: request.signal ?? undefined,
+    }),
+    request.fetch,
+  );
 }
 
 /** The operator route table, in match order. */
@@ -786,20 +826,30 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
     pattern: scopedAssistant(/^.+$/),
     run: runProxyRoute,
   },
+  // The cloud's own surfaces as just another arm: the pattern is the
+  // OR-union of the cloud's own prefixes, the run the verbatim cloud
+  // forward (the caller's session headers authenticate it; the host's
+  // fetch dials it). Last in match order — everything the operator rows
+  // don't claim rides here, and the dispatcher's null (a row's pass, or
+  // no match at all) hands the serving host's chain its turn.
+  {
+    method: "ALL",
+    pattern: CLOUD_ARM_PATTERN,
+    run: runCloudArmRoute,
+  },
 ];
 
 /** A matched operator request: the route and its decoded target id. */
 export interface OperatorMatch {
   route: OperatorRoute;
-  assistantId: string;
   /**
-   * Whether the URL itself named the assistant (an id-scoped spelling)
-   * rather than riding the operator backend's active-assistant shorthand.
-   * The dispatcher answers a named id that is not an entry on this machine
-   * with a 404; the shorthand stays answerable (the empty roster, the
-   * first hatch).
+   * The assistant the request names: an id-scoped URL names its own entry
+   * (a string); the bare spelling rides the operator backend's active
+   * assistant (`null` — `findAssistant` resolves the active ?? first, and
+   * a hatch's locked write has already switched active to the minted
+   * entry by the time anything resolves post-run).
    */
-  scoped: boolean;
+  assistantId: string | null;
 }
 
 /**
@@ -807,15 +857,21 @@ export interface OperatorMatch {
  * pattern and method agree — one exec per row, no prefix walk, no surface
  * bookkeeping. Matching stays pure in the URL — the hot path of every
  * non-operator request (static assets, gateway forwards, pairing) pays a
- * regex pass and no I/O. Only a matched request reads the lockfile (to
- * resolve an unscoped match's active assistant id).
+ * regex pass and no I/O; only the dispatcher reads the lockfile, after a
+ * match. An OPTIONS agrees with any row whose pattern matches regardless
+ * of the row's method — the dispatcher answers the preflight 204 without
+ * running the row (a preflight must not dial a gateway).
  */
-export function matchOperatorRequest(
+function matchOperatorRequest(
   pathname: string,
   method: string,
 ): OperatorMatch | null {
   for (const route of OPERATOR_ROUTES) {
-    if (method !== route.method && route.method !== "ALL") {
+    if (
+      method !== "OPTIONS" &&
+      method !== route.method &&
+      route.method !== "ALL"
+    ) {
       continue;
     }
     const match = route.pattern.exec(pathname);
@@ -824,16 +880,10 @@ export function matchOperatorRequest(
     }
     const id = match.groups?.id;
     if (!id) {
-      // An unscoped match names the operator backend's active assistant —
-      // the lockfile's active or sole entry, empty when there is none.
-      return {
-        route,
-        assistantId: servedConfigFromLockfile(readLockfile()).assistantId ?? "",
-        scoped: false,
-      };
+      return { route, assistantId: null };
     }
     try {
-      return { route, assistantId: decodeURIComponent(id), scoped: true };
+      return { route, assistantId: decodeURIComponent(id) };
     } catch {
       // Malformed percent-encoding: not this host's request.
       return null;
@@ -849,11 +899,11 @@ export function matchOperatorRequest(
  * client-ip stamp derived from `options.peer`) and cookied (the host
  * jar's cookies for the matched entry's gateway origin, when the caller
  * brought none and the host supplies a jar) — so operations only handle
- * `Headers`. What the rows don't claim ends at the cloud arm
- * (`forwardCloudRequest`): an unmatched request, and a row's pass (a
- * stale id, an entry this host can't retire), forwarded when the path is
- * the cloud's own (`/_allauth`, `/accounts`) and answered `null` — the
- * serving host's pre-existing chain — otherwise. The serving hosts (the
+ * `Headers`. The cloud's own surfaces are just the table's last row (an
+ * OR-union of its prefixes); a CORS preflight is answered 204 before any
+ * row runs, and whatever the rows don't claim (no match at all, a row's
+ * pass — a stale id, an entry this host can't retire) comes back `null`
+ * for the serving host's pre-existing chain. The serving hosts (the
  * Electron `app://` handler, the Vite dev middleware, the CLI edge's
  * operation server) all dispatch through this one function so their
  * mounts cannot drift.
@@ -866,41 +916,50 @@ export async function forwardOperatorRequest(
     fetch?: Fetch;
   },
 ): Promise<Response | null> {
-  const match = matchOperatorRequest(
-    new URL(request.url).pathname,
-    request.method,
-  );
+  const pathname = new URL(request.url).pathname;
+  const match = matchOperatorRequest(pathname, request.method);
   if (!match) {
-    return forwardCloudRequest(request, options?.fetch);
+    return null;
   }
+  // A CORS preflight names an operator surface but carries no intent of
+  // its own — answer 204 and let the serving host wrap its CORS headers.
+  // It must never reach a row: a preflight dialing a gateway is nonsense.
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204 });
+  }
+  // The cloud's own surfaces are the arm's row: no entry resolves for
+  // them, no gateway cookies attach (the arm authenticates with the
+  // caller's own session headers, and the entry's pair must not leak to
+  // the cloud), and no jar mirror runs (an account answer sets no gateway
+  // cookies).
+  const cloudArm = isCloudPath(pathname);
   // The entry the request rides: a URL that names an assistant must be an
   // entry on this machine — an unknown id (or one whose gateway URL does
   // not resolve) is a 404, not a fall-through into whatever the host chain
-  // answers for a path it has never heard of. The active-assistant
-  // shorthand stays answerable with no entry: the empty roster, the first
-  // hatch.
-  const entry = findAssistantByName(match.assistantId);
+  // answers for a path it has never heard of. The bare spelling resolves
+  // active ?? first and stays answerable with no entry: the empty roster,
+  // the first hatch.
+  const entry = cloudArm ? null : findAssistant(match.assistantId);
   let jarOrigin: string | null = null;
-  if (match.scoped) {
-    if (!entry) {
-      return json(
-        { error: `no assistant "${match.assistantId}" on this host` },
-        404,
-      );
-    }
+  if (match.assistantId !== null && !entry) {
+    return json(
+      { error: `no assistant "${match.assistantId}" on this host` },
+      404,
+    );
+  }
+  if (entry) {
     try {
       jarOrigin = new URL(getGatewayUrl(entry)).origin;
     } catch {
-      return json(
-        { error: `assistant "${match.assistantId}" has no resolvable gateway` },
-        404,
-      );
-    }
-  } else if (entry) {
-    try {
-      jarOrigin = new URL(getGatewayUrl(entry)).origin;
-    } catch {
-      jarOrigin = null;
+      if (match.assistantId !== null) {
+        return json(
+          {
+            error: `assistant "${match.assistantId}" has no resolvable gateway`,
+          },
+          404,
+        );
+      }
+      // The shorthand's unresolvable origin: the jar attach skips.
     }
   }
   const headers = normalizeForwardHeaders(
@@ -915,29 +974,36 @@ export async function forwardOperatorRequest(
   }
   const url = new URL(request.url);
   const response = await match.route.run({
-    assistantId: match.assistantId,
+    // The match's own id when the URL named an assistant; the bare
+    // spelling rides the operator backend's served assistant — the
+    // active one, its sole entry before a selection, empty when neither
+    // names anything (the empty roster, the choice rows for the account
+    // chooser). Rows re-resolve through `findAssistant`, the same
+    // active ?? first rule the dispatcher's jar work used.
+    assistantId:
+      match.assistantId ??
+      (cloudArm
+        ? ""
+        : (servedConfigFromLockfile(readLockfile()).assistantId ?? "")),
     method: request.method as HTTPMethod,
+    url: request.url,
     path: url.pathname + url.search,
     headers,
     body: request.body,
     signal: request.signal,
+    ...(options?.fetch ? { fetch: options.fetch } : {}),
   });
   if (response) {
     // The jar's writes are the dispatcher's, one route-agnostic layer
     // above the rows: an answer that mints or rotates carries Set-Cookie
-    // headers, and the pair belongs to the assistant it was minted for.
-    // A scoped answer names its own entry; the shorthand re-resolves the
-    // lockfile's active post-run — which a hatch has just switched to the
-    // entry it minted. Best-effort per the jar's contract: the headers
-    // still ride the answer for natively-jarring browser callers.
+    // headers, and the pair belongs to the assistant it was minted for —
+    // `findAssistant` with the match's id (null re-resolves the lockfile's
+    // active post-run, which a hatch has just switched to the entry it
+    // minted). Best-effort per the jar's contract: the headers still ride
+    // the answer for natively-jarring browser callers.
     const setCookies = response.headers.getSetCookie();
-    if (options?.cookieJar && setCookies.length > 0) {
-      const target = match.scoped
-        ? entry
-        : findAssistantByName(
-            servedConfigFromLockfile(readLockfile()).assistantId ?? "",
-          );
-      const origin = target ? gatewayOriginFor(target) : null;
+    if (options?.cookieJar && !cloudArm && setCookies.length > 0) {
+      const origin = gatewayOriginFor(findAssistant(match.assistantId));
       if (origin) {
         for (const raw of setCookies) {
           const cookie = parseSetCookie(raw);
@@ -947,5 +1013,8 @@ export async function forwardOperatorRequest(
     }
     return response;
   }
-  return forwardCloudRequest(request, options?.fetch);
+  // A row's pass (an entry the host cannot retire, the proxy's declined
+  // dial) is not this host's to answer — the serving host's chain takes
+  // over.
+  return null;
 }
