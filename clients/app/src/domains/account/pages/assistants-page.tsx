@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useParams } from "react-router";
 
 import { AssistantBackupsTable } from "@app/domains/account/assistants/assistant-backups-table";
 import { AssistantUpgradesPanel } from "@app/domains/account/assistants/assistant-upgrades-panel";
@@ -19,7 +20,12 @@ import { Button } from "@design/components/button";
 export function AssistantsPage() {
   const { t } = useTranslation("account");
   const { state, retry } = useAssistantChoices();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // A deep link (`/account/assistants/:assistantId`, e.g. from the settings
+  // page's Manage Assistant button) preselects that assistant; an explicit
+  // row click then takes precedence for the session.
+  const { assistantId: deepLinkId } = useParams();
+  const [clickedId, setClickedId] = useState<string | null>(null);
+  const selectedId = clickedId ?? deepLinkId ?? null;
 
   if (state.status === "loading" || state.status === "error") {
     return (
@@ -81,7 +87,7 @@ export function AssistantsPage() {
                 <button
                   key={assistant.id}
                   type="button"
-                  onClick={() => setSelectedId(assistant.id)}
+                  onClick={() => setClickedId(assistant.id)}
                   className={[
                     "cursor-pointer rounded-lg border px-3 py-1.5 text-sm transition-colors",
                     selected?.id === assistant.id

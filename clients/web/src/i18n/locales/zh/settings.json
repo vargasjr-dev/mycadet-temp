@@ -231,7 +231,10 @@
     "switchAssistantSubtitle": "选择此设备连接的助手。",
     "switchAssistantTitle": "切换助手",
     "versionSubtitle": "管理助手的软件版本和更新。",
-    "versionTitle": "版本"
+    "versionTitle": "版本",
+    "accountTitle": "账户管理",
+    "accountSubtitle": "升级、备份和导出功能位于您的账户页面。",
+    "accountManage": "管理助手"
   },
   "imageGenerationCard": {
     "activeModelLabel": "活动模型",

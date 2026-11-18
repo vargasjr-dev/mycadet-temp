@@ -51,8 +51,9 @@ export const accountRoute = {
             {
               // Assistants management: the account's operator surfaces —
               // backups, upgrades, the export flow — for each assistant the
-              // operator account holds.
-              path: "assistants",
+              // operator account holds. `assistants/:assistantId` deep-links
+              // one assistant (the settings page's Manage Assistant button).
+              path: "assistants/:assistantId?",
               lazy: {
                 Component: () =>
                   import("@app/domains/account/pages/assistants-page").then(

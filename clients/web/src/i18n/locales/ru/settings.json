@@ -217,7 +217,10 @@
     "switchAssistantSubtitle": "Выбор ассистента, к которому подключено это устройство.",
     "switchAssistantTitle": "Сменить ассистента",
     "versionSubtitle": "Управление версией ПО ассистента и обновлениями.",
-    "versionTitle": "Версия"
+    "versionTitle": "Версия",
+    "accountTitle": "Управление аккаунтом",
+    "accountSubtitle": "Обновления, резервные копии и экспорт находятся на странице аккаунта.",
+    "accountManage": "Управлять ассистентом"
   },
   "imageGenerationCard": {
     "activeModelLabel": "Активная модель",

@@ -237,7 +237,10 @@
     "switchAssistantSubtitle": "Choose which assistant this device is connected to.",
     "switchAssistantTitle": "Switch Assistant",
     "versionSubtitle": "Manage your assistant's software version and updates.",
-    "versionTitle": "Version"
+    "versionTitle": "Version",
+    "accountTitle": "Account Management",
+    "accountSubtitle": "Upgrades, backups, and export live on your account page.",
+    "accountManage": "Manage Assistant"
   },
   "imageGenerationCard": {
     "activeModelLabel": "Active Model",

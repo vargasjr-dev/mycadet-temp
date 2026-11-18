@@ -25,7 +25,7 @@ import { routes } from "@/utils/routes";
 
 export function GeneralPage() {
   const { t } = useTranslation("settings");
-  const { healthz, healthzLoading } = useAssistantWithHealthz();
+  const { assistantId, healthz, healthzLoading } = useAssistantWithHealthz();
   const navigate = useNavigate();
   const diskPressure = useDiskPressureMonitor();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -103,6 +103,23 @@ export function GeneralPage() {
           </div>
         </div>
       </DetailCard>
+      <DetailCard
+        title={t("generalPage.accountTitle")}
+        subtitle={t("generalPage.accountSubtitle")}
+        accessory={
+          <Button
+            variant="outlined"
+            disabled={!assistantId}
+            onClick={() =>
+              assistantId &&
+              void navigate(routes.account.assistantDetail(assistantId))
+            }
+          >
+            {t("generalPage.accountManage")}
+          </Button>
+        }
+      />
+
       <DetailCard
         title={t("generalPage.preferencesTitle")}
         subtitle={t("generalPage.preferencesSubtitle")}

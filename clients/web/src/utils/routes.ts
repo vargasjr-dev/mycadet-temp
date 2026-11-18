@@ -108,6 +108,11 @@ export const routes = {
     // revocation). They fall through to the app bundle through the shell.
     login: r("/account/login"),
     logout: r("/logout"),
+    // Account-level assistant management (backups, upgrades, export) — an
+    // app-bundle page; `assistantDetail` deep-links the current assistant.
+    assistants: r("/account/assistants"),
+    assistantDetail: (assistantId: string) =>
+      dyn(r("/account/assistants"), assistantId),
   },
 
   // The local front door renders in the app bundle; this constant stays for

@@ -20,6 +20,9 @@ export const routes = {
     doctor: "/account/doctor",
     selectAssistant: "/account/select-assistant",
     assistants: "/account/assistants",
+    // Deep link to one assistant's management surface (backups, upgrades,
+    // export) — the settings page's Manage Assistant button lands here.
+    assistantDetail: (assistantId: string) => `/account/assistants/${assistantId}`,
     signup: "/account/signup",
     pair: "/account/pair",
     providerSignup: "/account/provider/signup",
