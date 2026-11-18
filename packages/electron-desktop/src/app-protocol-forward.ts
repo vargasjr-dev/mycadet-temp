@@ -8,11 +8,11 @@ import { type AllowedOrigin } from "./app-origin";
 import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
 import {
-  COOKIE_ORIGIN_HEADER,
   forwardOperatorRequest,
   readLockfile,
   resolveLocalConfigFromEnv,
   servedConfigFromLockfile,
+  type CookieJar,
 } from "@mycadet/local-mode";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 
@@ -28,121 +28,32 @@ const APP_HOST = "mycadet.ai";
 const RENDERER_MOUNT = "/assistant";
 
 /**
- * Browser-like cookie custody for the single-origin protocol: Electron's
- * `protocol.handle` does not store a response's Set-Cookie headers into
- * the session's cookie jar — the headers ride the wire but never land.
- * And the request's own `app://` origin can never hold them: Chromium's
- * cookie store only accepts `http(s)` schemes (a `cookies.set` against
- * `app://` fails with `EXCLUDE_NONCOOKIEABLE_SCHEME`).
- *
- * So the jar write targets where the cookies actually live: a forward
- * through `net.fetch` jars its own response's cookies against the real
- * upstream origin (the network stack does it, browser-like — the handler
- * must not repeat it), while an in-process response — the hatch's
- * pairing feed, or a gateway dial's rotation — tags itself with
- * `x-cadet-cookie-origin` (the route table knows its gateway), and this
- * applies the pair to the jar for that origin. The tag is stripped
- * either way; the Set-Cookie headers stay visible for QA.
- *
- * The attach side is the mirror: the proxy row's gateway dial asks the
- * jar (`jarCookiesFor`) what the browser would have attached, since the
- * renderer can hold nothing for `app://`.
- *
- * Best-effort: a cookie that fails to set never fails the response.
+ * The session jar, as the `CookieJar` the operator route table speaks.
+ * The pair the hatch mints (and every gateway rotation since) must live
+ * in Chromium's store for the entry's gateway origin — the renderer's
+ * `app://` origin can hold no cookies (the store refuses non-`http(s)`
+ * schemes) and `protocol.handle` jars nothing on its own — while the
+ * proxy row's dial, made host-side, can no more see that store than the
+ * renderer can: this adapter is the bridge in both directions. Best-effort
+ * both ways, per the jar's contract: a refused write degrades to a
+ * warning (the next dial just reads unauthenticated), a failed read to an
+ * empty jar.
  */
-async function applyResponseCookies(response: Response): Promise<Response> {
-  const jarOrigin = response.headers.get(COOKIE_ORIGIN_HEADER);
-  const setCookies = response.headers.getSetCookie();
-  if (!jarOrigin || setCookies.length === 0) return response;
-  // Responses carry an immutable header guard — rebuild without the
-  // private tag. A Headers copy preserves the per-cookie Set-Cookie
-  // entries, so the renderer still sees exactly what was shipped.
-  const headers = new Headers(response.headers);
-  headers.delete(COOKIE_ORIGIN_HEADER);
-  const rendererResponse = new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-  let jarUrl: URL;
-  try {
-    jarUrl = new URL(jarOrigin);
-  } catch {
-    return rendererResponse;
-  }
-  for (const raw of setCookies) {
-    const details = cookieJarDetails(jarUrl.href, raw);
-    if (!details) continue;
+const sessionCookieJar: CookieJar = {
+  get: async (url) => {
     try {
-      await session.defaultSession.cookies.set(details);
+      return await session.defaultSession.cookies.get({ url });
+    } catch {
+      return [];
+    }
+  },
+  set: async (url, cookie) => {
+    try {
+      await session.defaultSession.cookies.set({ ...cookie, url });
     } catch (err) {
       log.warn("[protocol-cookies] set failed:", err);
     }
-  }
-  return rendererResponse;
-}
-
-function cookieJarDetails(
-  url: string,
-  raw: string,
-): Electron.CookiesSetDetails | null {
-  const [pair, ...attrs] = raw.split(";");
-  const eq = pair.indexOf("=");
-  if (eq <= 0) return null;
-  const name = pair.slice(0, eq).trim();
-  const value = pair.slice(eq + 1).trim();
-  if (!name) return null;
-  const details: Electron.CookiesSetDetails = { url, name, value };
-  let maxAge: number | undefined;
-  for (const attr of attrs) {
-    const sep = attr.indexOf("=");
-    const attrName = (sep === -1 ? attr : attr.slice(0, sep))
-      .trim()
-      .toLowerCase();
-    const attrValue = sep === -1 ? "" : attr.slice(sep + 1).trim();
-    if (attrName === "path") {
-      details.path = attrValue || undefined;
-    } else if (attrName === "secure") {
-      details.secure = true;
-    } else if (attrName === "httponly") {
-      details.httpOnly = true;
-    } else if (attrName === "samesite") {
-      const site = attrValue.toLowerCase();
-      details.sameSite =
-        site === "strict"
-          ? "strict"
-          : site === "lax"
-            ? "lax"
-            : site === "none"
-              ? "no_restriction"
-              : "unspecified";
-    } else if (attrName === "max-age") {
-      const parsed = Number(attrValue);
-      if (Number.isFinite(parsed)) maxAge = parsed;
-    } else if (attrName === "expires" && details.expirationDate === undefined) {
-      const parsed = Date.parse(attrValue);
-      if (Number.isFinite(parsed)) details.expirationDate = parsed / 1000;
-    }
-  }
-  if (maxAge !== undefined) {
-    details.expirationDate = Math.floor(Date.now() / 1000) + maxAge;
-  }
-  return details;
-}
-
-/**
- * The session-jar bridge the proxy row dials through: the renderer can
- * hold no cookies for `app://`, so the forward asks the jar what the
- * browser would have attached for the gateway's own origin.
- */
-const jarCookiesFor = async (origin: string): Promise<string | null> => {
-  try {
-    const cookies = await session.defaultSession.cookies.get({ url: origin });
-    if (cookies.length === 0) return null;
-    return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
-  } catch {
-    return null;
-  }
+  },
 };
 
 const appOrigin = (): AllowedOrigin => ({
@@ -207,11 +118,11 @@ export function registerAppProtocol(): void {
       });
     }
 
-    // The operator routes ride ahead of the gateway proxy. The jar
-    // bridge is the proxy row's cookie source: the pair the hatch
-    // jarred (and every rotation since) attaches on each gateway dial.
+    // The operator routes ride ahead of the gateway proxy. The session
+    // jar is the rows' cookie source and sink: the pair the hatch jars
+    // (and every rotation since) attaches on each gateway dial.
     const operated = await forwardOperatorRequest(request, {
-      cookiesFor: jarCookiesFor,
+      cookieJar: sessionCookieJar,
     });
     if (operated) {
       return operated;
@@ -264,7 +175,5 @@ export function registerAppProtocol(): void {
     return new Response("Not Found", { status: 404 });
   };
 
-  protocol.handle(APP_PROTOCOL, async (request) => {
-    return applyResponseCookies(await respond(request));
-  });
+  protocol.handle(APP_PROTOCOL, (request) => respond(request));
 }

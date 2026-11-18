@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { matchOperatorRequest } from "../operations/routes";
+import { MemoryCookieJar } from "./helpers/memory-cookie-jar";
 
 // The proxy row forwards through globalThis.fetch; the real one stays
 // snapshotted for the per-test restore (bun runs every test file in one
@@ -81,7 +82,7 @@ const runProxy = async (
     headers?: Headers | IncomingHttpHeaders;
     body?: ReadableStream | null;
     peer?: string | null;
-    cookiesFor?: (origin: string) => Promise<string | null>;
+    cookieJar?: MemoryCookieJar;
   },
 ): Promise<Response> => {
   const path = `/v1/assistants/asst-local/${tail}`;
@@ -94,7 +95,7 @@ const runProxy = async (
     peer: init?.peer,
     headers: init?.headers,
     body: init?.body ?? null,
-    ...(init?.cookiesFor ? { cookiesFor: init.cookiesFor } : {}),
+    ...(init?.cookieJar ? { cookieJar: init.cookieJar } : {}),
   });
   expect(response).not.toBeNull();
   return response!;
@@ -116,12 +117,16 @@ describe("the operator route table — the proxy catch-all", () => {
   test("the dial carries the host's jar cookies when the caller brings none", async () => {
     seedLocalEntry();
     const calls = stubGatewayFetch();
-    await runProxy("conversations", {
-      cookiesFor: async (origin) =>
-        origin === "http://127.0.0.1:7830"
-          ? "cadet_web_access=edge-token-1; cadet_web_refresh=edge-token-2"
-          : null,
+    const jar = new MemoryCookieJar();
+    await jar.set("http://127.0.0.1:7830", {
+      name: "cadet_web_access",
+      value: "edge-token-1",
     });
+    await jar.set("http://127.0.0.1:7830", {
+      name: "cadet_web_refresh",
+      value: "edge-token-2",
+    });
+    await runProxy("conversations", { cookieJar: jar });
     expect(calls[0]!.headers.get("cookie")).toBe(
       "cadet_web_access=edge-token-1; cadet_web_refresh=edge-token-2",
     );
@@ -130,16 +135,48 @@ describe("the operator route table — the proxy catch-all", () => {
   test("a caller's own cookie wins — the jar never double-attaches", async () => {
     seedLocalEntry();
     const calls = stubGatewayFetch();
+    const jar = new MemoryCookieJar();
+    await jar.set("http://127.0.0.1:7830", {
+      name: "cadet_web_access",
+      value: "jar-copy",
+    });
     await runProxy("conversations", {
       headers: new Headers({ cookie: "cadet_web_access=browser-pair" }),
-      cookiesFor: async () => "cadet_web_access=jar-copy",
+      cookieJar: jar,
     });
     expect(calls[0]!.headers.get("cookie")).toBe(
       "cadet_web_access=browser-pair",
     );
   });
 
-  test("a rotation response tags the gateway origin so the host jars it", async () => {
+  test("a rotation response re-stores the fresh pair for the gateway origin", async () => {
+    seedLocalEntry();
+    const jar = new MemoryCookieJar();
+    stubGatewayFetch(() => {
+      const headers = new Headers();
+      headers.append(
+        "set-cookie",
+        "cadet_web_access=rotated-1; HttpOnly; Path=/; SameSite=Strict",
+      );
+      return new Response("ok", { headers });
+    });
+    const response = await runProxy("conversations", { cookieJar: jar });
+    // The row parsed the Set-Cookie value into the store's grain and
+    // stored it for the origin the next dial attaches.
+    expect(jar.store.get("http://127.0.0.1:7830")).toEqual([
+      {
+        name: "cadet_web_access",
+        value: "rotated-1",
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+      },
+    ]);
+    // The Set-Cookie headers still ride for native browser jars.
+    expect(response.headers.getSetCookie()).toHaveLength(1);
+  });
+
+  test("a host without a jar forwards the rotation untouched — its browser jars natively", async () => {
     seedLocalEntry();
     stubGatewayFetch(() => {
       const headers = new Headers();
@@ -150,17 +187,7 @@ describe("the operator route table — the proxy catch-all", () => {
       return new Response("ok", { headers });
     });
     const response = await runProxy("conversations");
-    expect(response.headers.get("x-cadet-cookie-origin")).toBe(
-      "http://127.0.0.1:7830",
-    );
     expect(response.headers.getSetCookie()).toHaveLength(1);
-  });
-
-  test("a cookie-free gateway response carries no origin tag", async () => {
-    seedLocalEntry();
-    stubGatewayFetch();
-    const response = await runProxy("conversations");
-    expect(response.headers.get("x-cadet-cookie-origin")).toBeNull();
   });
 
   test("the client-ip stamp falls back to the raw peer, then the loopback default", async () => {

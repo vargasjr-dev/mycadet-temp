@@ -115,6 +115,7 @@ const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 import { readLockfile } from "../lockfile";
 import { stripSensitiveFields } from "../util";
 import { matchOperatorRequest } from "../operations/routes";
+import { MemoryCookieJar } from "./helpers/memory-cookie-jar";
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -243,6 +244,7 @@ const dispatch = (
   pathname: string,
   method: string,
   body?: unknown,
+  cookieJar?: MemoryCookieJar,
 ): Promise<Response | null> => {
   const match = matchOperatorRequest(pathname, method);
   if (!match) {
@@ -258,6 +260,7 @@ const dispatch = (
   return match.route.run({
     assistantId: match.assistantId,
     body: request.body,
+    ...(cookieJar ? { cookieJar } : {}),
   });
 };
 
@@ -266,8 +269,9 @@ const dispatchAnswered = async (
   pathname: string,
   method: string,
   body?: unknown,
+  cookieJar?: MemoryCookieJar,
 ): Promise<Response> => {
-  const response = await dispatch(pathname, method, body);
+  const response = await dispatch(pathname, method, body, cookieJar);
   if (!response) {
     throw new Error(`${method} ${pathname} passed through; expected an answer`);
   }
@@ -342,7 +346,7 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
     });
   });
 
-  test("the hatch tags the pair's jar origin — the entry's gateway", async () => {
+  test("the hatch jars the pair for the entry's gateway origin", async () => {
     hatchAssistantMock.mockImplementation(async () => ({
       ok: true as const,
       assistant: { assistantId: "hatched-1", cloud: "local", port: 7833 },
@@ -352,28 +356,43 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
         "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=3600",
       ],
     }));
+    const jar = new MemoryCookieJar();
 
-    const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {
-      remote: "local",
-    });
+    const response = await dispatchAnswered(
+      "/v1/assistants/hatch",
+      "POST",
+      { remote: "local" },
+      jar,
+    );
 
     // The origin the proxy row dials (`getGatewayUrl`) — the only origin
-    // a cookie store holds the pair for; `app://` itself is refused.
-    expect(response.headers.get("x-cadet-cookie-origin")).toBe(
-      "http://127.0.0.1:7833",
-    );
-    // Per-cookie entries, NOT one comma-joined value — a joined pair
-    // would corrupt every Expires-carrying cookie.
+    // a cookie store holds the pair for; `app://` itself is refused. The
+    // row parsed each Set-Cookie value into the store's grain.
+    const stored = jar.store.get("http://127.0.0.1:7833");
+    expect(stored?.map((cookie) => cookie.name)).toEqual([
+      "cadet_web_access",
+      "cadet_web_refresh",
+    ]);
+    const refresh = stored?.find((c) => c.name === "cadet_web_refresh");
+    expect(refresh).toMatchObject({
+      value: "edge-token-2",
+      path: "/",
+      httpOnly: true,
+      sameSite: "strict",
+    });
+    expect(refresh?.expirationDate).toBe(Math.floor(Date.now() / 1000) + 3600);
+    // The pair still rides the response — the CLI edge's and dev server's
+    // browser callers jar natively, and the headers stay visible for QA.
     const cookies = response.headers.getSetCookie();
     expect(cookies).toHaveLength(2);
     expect(cookies[0].startsWith("cadet_web_access=")).toBe(true);
     expect(cookies[1].startsWith("cadet_web_refresh=")).toBe(true);
   });
 
-  test("an unresolvable gateway origin ships the pair headerless", async () => {
+  test("a host without a jar still ships the pair as Set-Cookie headers", async () => {
     hatchAssistantMock.mockImplementation(async () => ({
       ok: true as const,
-      assistant: { assistantId: "hatched-1" },
+      assistant: { assistantId: "hatched-1", cloud: "local", port: 7833 },
       ready: true,
       cookies: [
         "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
@@ -382,7 +401,29 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
 
     const response = await dispatchAnswered("/v1/assistants/hatch", "POST", {});
 
-    expect(response.headers.get("x-cadet-cookie-origin")).toBeNull();
+    expect(response.headers.getSetCookie()).toHaveLength(1);
+    expect((await response.json()).ok).toBe(true);
+  });
+
+  test("an unresolvable gateway origin jars nothing but still ships the pair", async () => {
+    hatchAssistantMock.mockImplementation(async () => ({
+      ok: true as const,
+      assistant: { assistantId: "hatched-1" },
+      ready: true,
+      cookies: [
+        "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+      ],
+    }));
+    const jar = new MemoryCookieJar();
+
+    const response = await dispatchAnswered(
+      "/v1/assistants/hatch",
+      "POST",
+      {},
+      jar,
+    );
+
+    expect(jar.store.size).toBe(0);
     expect(response.headers.getSetCookie()).toHaveLength(1);
     expect((await response.json()).ok).toBe(true);
   });

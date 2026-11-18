@@ -29,6 +29,7 @@ import { sleepAssistant } from "./sleep";
 import { wakeAssistant } from "./wake";
 import { z } from "zod";
 import { getGatewayUrl, type LockfileAssistant } from "../lockfile-contract";
+import { cookieHeader, parseSetCookie, type CookieJar } from "./cookie-jar";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -91,15 +92,17 @@ export interface OperatorRequest {
    */
   signal?: AbortSignal | null;
   /**
-   * The host's session-jar bridge for the proxy row's gateway dial: the
-   * answer to "what would the browser attach as `Cookie` for this
-   * origin?". The desktop's renderer can hold no cookies for `app://`
-   * (the cookie store refuses non-`http(s)` schemes), so its host
-   * supplies the jar lookup; hosts without a jar (the CLI edge, the dev
-   * server — whose browser callers bring their own cookies) leave it
-   * unset and nothing is attached.
+   * The host's cookie jar, the custody seam for the cookie-carrying rows:
+   * the hatch row stores the pair it mints for the entry's gateway origin,
+   * and the proxy row attaches the jar's cookies on its dial (when the
+   * caller brings none) and re-stores every rotation the gateway sends
+   * back. The desktop's renderer can hold no cookies for `app://` (the
+   * cookie store refuses non-`http(s)` schemes), so its host supplies the
+   * session jar; hosts without one (the CLI edge, the dev server — whose
+   * browser callers jar natively) leave it unset and nothing is stored or
+   * attached.
    */
-  cookiesFor?: (origin: string) => Promise<string | null>;
+  cookieJar?: CookieJar;
 }
 
 export interface OperatorRoute {
@@ -202,17 +205,6 @@ async function runWakeRoute(
     headers: { "content-type": "application/json" },
   });
 }
-
-/**
- * The response header an operation row sets when its cookies belong to an
- * origin OTHER than the request's own: the origin the row's upstream (an
- * entry's gateway) actually serves on. The serving shell (the desktop's
- * `app://` pass) reads it to put the pair in the session jar for that
- * origin — Chromium's cookie store refuses non-`http(s)` schemes, so the
- * request's own `app://` origin can never hold them — and strips the tag
- * before the renderer sees it.
- */
-export const COOKIE_ORIGIN_HEADER = "x-cadet-cookie-origin";
 
 const json = (
   body: unknown,
@@ -323,22 +315,23 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
   try {
     const result = await hatchAssistant({ remote });
     if (result.ok) {
-      // The leg's own lease minted the webview's credential pair — the
-      // hatch feeds it to the webview as cookies on this response, and
-      // tags WHERE they live: the entry's gateway, the origin the proxy
-      // row dials (`getGatewayUrl`) and the only origin a cookie store
-      // will hold them for. A desktop shell puts the pair in its session
-      // jar for that origin; a browser jarring them natively ignores the
-      // tag. Best-effort: an unresolvable origin still ships the pair.
-      const jarOrigin = jarOriginFor(result.assistant);
-      return json(
-        { ok: true, assistantId: result.assistant.assistantId },
-        200,
-        {
-          "Set-Cookie": result.cookies,
-          ...(jarOrigin ? { [COOKIE_ORIGIN_HEADER]: jarOrigin } : {}),
-        },
-      );
+      // The leg's own lease minted the webview's credential pair. A host
+      // with a jar stores it for the entry's gateway origin — the origin
+      // the proxy row dials, and the only origin a cookie store accepts
+      // (Chromium refuses `app://`). Hosts without one skip it; either
+      // way the pair still rides the response as Set-Cookie headers for
+      // the native-browser flow (the CLI edge, the dev server) and for
+      // QA visibility.
+      const jarOrigin = gatewayOriginFor(result.assistant);
+      if (request.cookieJar && jarOrigin) {
+        for (const raw of result.cookies) {
+          const cookie = parseSetCookie(raw);
+          if (cookie) await request.cookieJar.set(jarOrigin, cookie);
+        }
+      }
+      return json({ ok: true, assistantId: result.assistant.assistantId }, 200, {
+        "Set-Cookie": result.cookies,
+      });
     }
     return json({ ok: false, error: result.error }, result.status);
   } catch (err) {
@@ -347,7 +340,7 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
 }
 
 /** The origin the entry's gateway serves on, or null when unresolvable. */
-function jarOriginFor(entry: LockfileAssistant): string | null {
+function gatewayOriginFor(entry: LockfileAssistant): string | null {
   try {
     return new URL(getGatewayUrl(entry)).origin;
   } catch {
@@ -661,12 +654,12 @@ async function runProxyRoute(
     request.peer ?? null,
   );
   // The caller's own Cookie wins (the CLI's browser jar holds the live
-  // pair); the host's session jar fills the absence — the desktop's
-  // renderer can hold no cookies for `app://`, so its jar IS the
-  // browser-equivalent store.
-  if (!headers.has("cookie") && request.cookiesFor) {
-    const jarCookies = await request.cookiesFor(gatewayOrigin);
-    if (jarCookies) headers.set("cookie", jarCookies);
+  // pair); the host's jar fills the absence — the desktop's renderer can
+  // hold no cookies for `app://`, so its jar IS the browser-equivalent
+  // store.
+  if (!headers.has("cookie") && request.cookieJar) {
+    const jarCookies = await request.cookieJar.get(gatewayOrigin);
+    if (jarCookies.length > 0) headers.set("cookie", cookieHeader(jarCookies));
   }
   if (process.env.ASSISTANT_PROXY_TRANSPORT === "ipc") {
     headers.set("x-cadet-proxy-server", "ipc");
@@ -684,12 +677,15 @@ async function runProxyRoute(
     if (lower === "content-length" || lower === "content-encoding") return;
     outHeaders.append(key, value);
   });
-  // A rotation response tags where the NEW pair lives — the gateway
-  // origin — so the desktop's pass jars it there and the next dial
-  // attaches the fresh pair. Hosts without the jar pass the headers
-  // through untouched; their browser callers jar natively.
-  if (upstream.headers.getSetCookie().length > 0) {
-    outHeaders.set(COOKIE_ORIGIN_HEADER, gatewayOrigin);
+  // A rotation response re-stores the fresh pair for the gateway origin
+  // via the host's jar, so the next dial attaches it. Hosts without the
+  // jar skip it; their browser callers jar the forwarded Set-Cookie
+  // headers natively.
+  if (request.cookieJar) {
+    for (const raw of upstream.headers.getSetCookie()) {
+      const cookie = parseSetCookie(raw);
+      if (cookie) await request.cookieJar.set(gatewayOrigin, cookie);
+    }
   }
   return new Response(upstream.body, {
     status: upstream.status,
@@ -901,7 +897,7 @@ export async function forwardOperatorRequest(
   request: Request,
   options?: {
     peer?: string | null;
-    cookiesFor?: (origin: string) => Promise<string | null>;
+    cookieJar?: CookieJar;
   },
 ): Promise<Response | null> {
   const match = matchOperatorRequest(
@@ -920,6 +916,6 @@ export async function forwardOperatorRequest(
     body: request.body,
     signal: request.signal,
     ...(options?.peer !== undefined ? { peer: options.peer } : {}),
-    ...(options?.cookiesFor ? { cookiesFor: options.cookiesFor } : {}),
+    ...(options?.cookieJar ? { cookieJar: options.cookieJar } : {}),
   });
 }

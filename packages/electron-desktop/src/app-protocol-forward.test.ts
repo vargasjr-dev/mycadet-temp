@@ -51,7 +51,6 @@ mock.module("./app-logger", () => ({
   default: { error: mock(), warning: mock(), info: mock(), warn: mock() },
 }));
 mock.module("@mycadet/local-mode", () => ({
-  COOKIE_ORIGIN_HEADER: "x-cadet-cookie-origin",
   resolveLocalConfigFromEnv: () => ({ cloudUrl: "https://cloud.example.com" }),
   readLockfile: () => ({}),
   servedConfigFromLockfile: () => ({ assistantName: "A<ria" }),
@@ -232,82 +231,7 @@ describe("registerAppProtocol", () => {
     expect(await shell.text()).toContain("<body>shell</body>");
   });
 
-  test("a tagged response jars its cookies for the declared origin", async () => {
-    await setupDev();
-    await register();
-    const headers = new Headers();
-    headers.append(
-      "Set-Cookie",
-      "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
-    );
-    headers.append(
-      "Set-Cookie",
-      "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=60",
-    );
-    headers.set("x-cadet-cookie-origin", "http://127.0.0.1:7833");
-    forwardOperator.mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, assistantId: "local-1" }), {
-        headers,
-      }),
-    );
-    const response = await handler!(
-      new Request("app://mycadet.ai/v1/assistants/hatch", {
-        method: "POST",
-        body: JSON.stringify({ remote: "local" }),
-      }),
-    );
-    expect(await response.json()).toEqual({ ok: true, assistantId: "local-1" });
-    // `app://` itself is refused by the cookie store
-    // (EXCLUDE_NONCOOKIEABLE_SCHEME) — the pair jars for the origin the
-    // response declared: the entry's gateway, the origin the proxy row
-    // dials.
-    const url = "http://127.0.0.1:7833/";
-    expect(cookieSet).toHaveBeenCalledWith({
-      url,
-      name: "cadet_web_access",
-      value: "edge-token-1",
-      httpOnly: true,
-      path: "/",
-      sameSite: "strict",
-    });
-    expect(cookieSet).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url,
-        name: "cadet_web_refresh",
-        value: "edge-token-2",
-        httpOnly: true,
-        path: "/",
-        sameSite: "strict",
-        expirationDate: expect.any(Number),
-      }),
-    );
-    // The private tag never reaches the renderer; the pair stays visible
-    // for QA.
-    expect(response.headers.get("x-cadet-cookie-origin")).toBeNull();
-    expect(response.headers.getSetCookie()).toHaveLength(2);
-  });
-
-  test("an untagged set-cookie response touches no jar — net.fetch jarred it", async () => {
-    await setupDev();
-    await register();
-    const headers = new Headers();
-    headers.append(
-      "Set-Cookie",
-      "cadet_web_access=rotated-1; HttpOnly; Path=/; SameSite=Strict; Max-Age=60",
-    );
-    forwardOperator.mockResolvedValue(
-      new Response(JSON.stringify({ status: "ready" }), { headers }),
-    );
-    const response = await handler!(
-      new Request("app://mycadet.ai/v1/assistant"),
-    );
-    expect(await response.json()).toEqual({ status: "ready" });
-    expect(cookieSet).not.toHaveBeenCalled();
-    // The response passes through untouched.
-    expect(response.headers.getSetCookie()).toHaveLength(1);
-  });
-
-  test("the operator forward carries the session-jar bridge for the proxy dial", async () => {
+  test("the operator forward carries the session jar as its cookie source and sink", async () => {
     await setupDev();
     await register();
     cookieGet.mockResolvedValue([
@@ -319,30 +243,51 @@ describe("registerAppProtocol", () => {
     const [, options] = (forwardOperator.mock.calls.at(-1) ??
       []) as unknown as [
       Request,
-      { cookiesFor: (origin: string) => Promise<string | null> },
+      { cookieJar: { get: (url: string) => Promise<unknown[]>; set: unknown } },
     ];
-    expect(options.cookiesFor).toBeInstanceOf(Function);
-    // The bridge reads the jar for the dial's own origin and serializes
-    // the pair the way a browser's Cookie header prints.
-    expect(await options.cookiesFor("http://127.0.0.1:7830")).toBe(
-      "cadet_web_access=edge-token-1; cadet_web_refresh=edge-token-2",
-    );
+    expect(typeof options.cookieJar.get).toBe("function");
+    expect(typeof options.cookieJar.set).toBe("function");
+    // `get` reads the Chromium store for the dial's own origin — the pair
+    // comes back in the store's grain, exactly as the store held it.
+    expect(await options.cookieJar.get("http://127.0.0.1:7830")).toEqual([
+      { name: "cadet_web_access", value: "edge-token-1" },
+      { name: "cadet_web_refresh", value: "edge-token-2" },
+    ]);
     expect(cookieGet).toHaveBeenCalledWith({ url: "http://127.0.0.1:7830" });
   });
 
-  test("a response without set-cookie touches no jar", async () => {
+  test("the jar adapter writes through to the cookie store, best-effort", async () => {
     await setupDev();
     await register();
-    forwardOperator.mockResolvedValue(
-      Response.json({ status: "ready", assistant: { id: "local-1" } }),
-    );
-    const response = await handler!(
-      new Request("app://mycadet.ai/v1/assistant"),
-    );
-    expect(await response.json()).toEqual({
-      status: "ready",
-      assistant: { id: "local-1" },
+    forwardOperator.mockResolvedValueOnce(new Response("ok"));
+    await handler!(new Request("app://mycadet.ai/v1/conversations"));
+    const [, options] = (forwardOperator.mock.calls.at(-1) ??
+      []) as unknown as [
+      Request,
+      { cookieJar: { set: (url: string, cookie: unknown) => Promise<void> } },
+    ];
+    await options.cookieJar.set("http://127.0.0.1:7833", {
+      name: "cadet_web_access",
+      value: "edge-token-1",
+      httpOnly: true,
+      path: "/",
+      sameSite: "strict",
     });
-    expect(cookieSet).not.toHaveBeenCalled();
+    expect(cookieSet).toHaveBeenCalledWith({
+      url: "http://127.0.0.1:7833",
+      name: "cadet_web_access",
+      value: "edge-token-1",
+      httpOnly: true,
+      path: "/",
+      sameSite: "strict",
+    });
+    // A refusing store (here: the `app://` scheme Chromium rejects) never
+    // fails the row — the jar's contract is best-effort custody.
+    cookieSet.mockRejectedValueOnce(
+      new Error("Failed to set cookie - EXCLUDE_NONCOOKIEABLE_SCHEME"),
+    );
+    await expect(
+      options.cookieJar.set("app://mycadet.ai", { name: "x", value: "y" }),
+    ).resolves.toBeUndefined();
   });
 });
