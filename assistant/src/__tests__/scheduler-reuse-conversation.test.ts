@@ -95,6 +95,7 @@ mock.module("../daemon/process-message.js", () => ({
     processMessageImpl(conversationId, message),
 }));
 
+import { loadRawConfig, saveRawConfig } from "../config/loader.js";
 import { deleteConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
@@ -440,6 +441,51 @@ describe("scheduler conversation reuse", () => {
     expect(runs2[0].status).toBe("error");
     expect(runs2[0].error).toContain("provider_error");
   });
+
+  test("reuse path times out a turn that never finishes", async () => {
+    /**
+     * A wedged reused-conversation turn is bounded by the schedule turn
+     * timeout, so it cannot hold the worker (and every other schedule) forever.
+     */
+
+    // GIVEN a recurring reuse schedule whose first run succeeds
+    const rruleExpr = buildEveryMinuteRrule();
+    const schedule = await createSchedule({
+      name: "Stuck Reuse",
+      cronExpression: rruleExpr,
+      message: "Do the thing",
+      syntax: "rrule",
+      expression: rruleExpr,
+      reuseConversation: true,
+    });
+    forceScheduleDue(schedule.id);
+    await runDueSchedulesOnce();
+
+    // AND a 1s turn timeout
+    const originalConfig = loadRawConfig();
+    saveRawConfig({
+      ...originalConfig,
+      timeouts: {
+        ...(originalConfig.timeouts as object | undefined),
+        scheduleTurnTimeoutSec: 1,
+      },
+    });
+
+    try {
+      // WHEN the next run's turn never finishes
+      forceScheduleDue(schedule.id);
+      processMessageImpl = () => new Promise<never>(() => {});
+
+      await runDueSchedulesOnce();
+
+      // THEN the run is recorded as a timeout error
+      const runs = getScheduleRuns(schedule.id);
+      expect(runs.length).toBe(2);
+      expect(runs[0].status).toBe("error");
+    } finally {
+      saveRawConfig(originalConfig);
+    }
+  }, 10_000);
 });
 
 describe("scheduler talk-mode runner option propagation", () => {

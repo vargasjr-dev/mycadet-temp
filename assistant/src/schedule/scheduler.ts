@@ -1118,26 +1118,37 @@ export async function runDueSchedulesOnce(
         scheduleJobId: job.id,
         title: job.name,
       });
+      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        const { turnFailure } = await dispatchScheduleMessage(
-          conversationId,
-          job.message,
-          {
-            trustClass: "guardian",
-            cronRunId: runId,
-            ...(job.inferenceProfile
-              ? { overrideProfile: job.inferenceProfile }
-              : {}),
-          },
-        );
-        // A failed LLM call (e.g. an invalid provider) ends the turn without
-        // throwing, so treat a reported turn failure as a run error rather
-        // than recording "ok".
-        if (turnFailure) {
+        const dispatch = dispatchScheduleMessage(conversationId, job.message, {
+          trustClass: "guardian",
+          cronRunId: runId,
+          ...(job.inferenceProfile
+            ? { overrideProfile: job.inferenceProfile }
+            : {}),
+        });
+        dispatch.catch(() => {});
+        // Same ceiling as the fresh path: a wedged turn must not hold the
+        // worker, and with it every other schedule.
+        const timedOut = new Promise<"timeout">((resolve) => {
+          timer = setTimeout(
+            () => resolve("timeout"),
+            getConfig().timeouts.scheduleTurnTimeoutSec * 1000,
+          );
+        });
+        const outcome = await Promise.race([dispatch, timedOut]);
+        if (outcome === "timeout") {
           ok = false;
-          errorMsg = describeTurnFailure(turnFailure);
+          errorKind = "timeout";
+          errorMsg = "Scheduled work did not finish before its time limit";
+        } else if (outcome.turnFailure) {
+          // A failed LLM call (e.g. an invalid provider) ends the turn without
+          // throwing, so treat a reported turn failure as a run error rather
+          // than recording "ok".
+          ok = false;
+          errorMsg = describeTurnFailure(outcome.turnFailure);
           errorKind = "model_provider";
-          failedTurn = turnFailure;
+          failedTurn = outcome.turnFailure;
         } else {
           ok = true;
         }
@@ -1145,6 +1156,8 @@ export async function runDueSchedulesOnce(
         ok = false;
         errorMsg = err instanceof Error ? err.message : String(err);
         errorKind = "exception";
+      } finally {
+        clearTimeout(timer);
       }
     } else {
       // Fresh-bootstrap path: route through the shared runner for the
