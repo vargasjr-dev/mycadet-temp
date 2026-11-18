@@ -34,14 +34,10 @@ mock.module("electron", () => ({
 import * as realLocalMode from "@mycadet/local-mode";
 
 const forwardOperator = mock(async (): Promise<Response | null> => null);
-const forwardCloud = mock(async (): Promise<Response | null> => null);
 
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   forwardOperatorRequest: forwardOperator,
-}));
-mock.module("./cloud-forward", () => ({
-  forwardCloudRequest: forwardCloud,
 }));
 mock.module("./device-id", () => ({ getDeviceId: () => "device-7" }));
 mock.module("./about", () => ({
@@ -51,7 +47,6 @@ mock.module("./app-logger", () => ({
   default: { error: mock(), warning: mock(), info: mock(), warn: mock() },
 }));
 mock.module("@mycadet/local-mode", () => ({
-  resolveLocalConfigFromEnv: () => ({ cloudUrl: "https://cloud.example.com" }),
   readLockfile: () => ({}),
   servedConfigFromLockfile: () => ({ assistantName: "A<ria" }),
 }));
@@ -91,9 +86,7 @@ const writeRenderer = async (root: string, body: string): Promise<void> => {
 
 afterEach(async () => {
   forwardOperator.mockClear();
-  forwardCloud.mockClear();
   forwardOperator.mockResolvedValue(null);
-  forwardCloud.mockResolvedValue(null);
   cookieSet.mockClear();
   isPackaged = false;
   delete (process as unknown as { resourcesPath?: string }).resourcesPath;
@@ -129,27 +122,41 @@ const setupPackaged = async (): Promise<void> => {
 };
 
 describe("registerAppProtocol", () => {
-  test("the operator answer wins over the cloud forward", async () => {
+  test("the operator pass carries the session jar and the net dial", async () => {
     await setupDev();
     await register();
     forwardOperator.mockResolvedValueOnce(new Response("retired"));
-    const response = await handler!(
-      new Request("app://mycadet.ai/v1/assistants/a/retire/", {
-        method: "DELETE",
+    const request = new Request("app://mycadet.ai/v1/assistants/a/retire/", {
+      method: "DELETE",
+    });
+    const response = await handler!(request);
+    expect(await response.text()).toBe("retired");
+    // The cloud surfaces (`/_allauth`, `/accounts`, the `/v1` user paths)
+    // ride the forward's own fallthrough arm — tested in local-mode. Here
+    // the contract is the OPTIONS: the session jar is the rows' cookie
+    // source and sink, and the arm dials through the main process's
+    // network stack (the same `net.fetch` the asset reads use).
+    expect(forwardOperator).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({
+        cookieJar: expect.anything(),
+        fetch: netFetch,
       }),
     );
-    expect(await response.text()).toBe("retired");
-    expect(forwardCloud).not.toHaveBeenCalled();
   });
 
-  test("the cloud forward answers what the operator passes", async () => {
+  test("an operator pass hands back to the renderer assets", async () => {
     await setupDev();
     await register();
-    forwardCloud.mockResolvedValueOnce(new Response("cloud"));
+    // The real forward's arm answers cloud paths; the mocked pass here
+    // returns null for everything, so this pins the ORDER — the pass is
+    // the only API surface, and what it passes reaches the asset chain's
+    // SPA fallback, not an API error.
     const response = await handler!(
       new Request("app://mycadet.ai/v1/assistants/a/conversations"),
     );
-    expect(await response.text()).toBe("cloud");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("<body>shell</body>");
   });
 
   test("unmatched requests 404", async () => {

@@ -91,12 +91,7 @@ export {
   matchOperatorRequest,
   forwardOperatorRequest,
 } from "./operations/routes";
-export {
-  cookieHeader,
-  parseSetCookie,
-  type CookieJar,
-  type OriginCookie,
-} from "./operations/cookie-jar";
+export type { CookieJar } from "./operations/cookie-jar";
 
 export { retireAssistant } from "./operations/retire";
 export { sleepAssistant, type SleepOptions } from "./operations/sleep";

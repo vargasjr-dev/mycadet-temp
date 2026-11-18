@@ -4,12 +4,10 @@ import path from "node:path";
 
 import log from "./app-logger";
 import { type AllowedOrigin } from "./app-origin";
-import { forwardCloudRequest } from "./cloud-forward";
 import { getDeviceId } from "./device-id";
 import {
   forwardOperatorRequest,
   readLockfile,
-  resolveLocalConfigFromEnv,
   servedConfigFromLockfile,
   type CookieJar,
 } from "@mycadet/local-mode";
@@ -17,10 +15,11 @@ import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protoco
 
 /**
  * The `app://` protocol handler all three desktop clients share: one
- * ordered pass — host check, `/__config`, operator routes, gateway
- * proxy, cloud forward, then renderer assets (web bundle on
- * `/assistant`, app shell everywhere else) with an index.html fallback
- * that carries the injected config.
+ * ordered pass — host check, `/__config`, operator routes (whose
+ * fallthrough arm forwards the cloud's own surfaces — `/_allauth`,
+ * `/accounts`, and the `/v1` user paths), then renderer assets (web
+ * bundle on `/assistant`, app shell everywhere else) with an index.html
+ * fallback that carries the injected config.
  */
 const APP_PROTOCOL = "app";
 const APP_HOST = "mycadet.ai";
@@ -94,11 +93,9 @@ export function registerAppProtocol(): void {
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const appDistRoot = resolveAppDistRoot();
   const appIndexHtml = path.join(appDistRoot, "index.html");
-  const cloudUrl = resolveLocalConfigFromEnv().cloudUrl;
   // Single origin: the injected config carries THIS host's origin as
   // `baseUrl` — the renderer's one origin for API, auth, and the assistant
-  // mount. `cloudUrl` stays a host-side forward target only; it never
-  // crosses into the renderer.
+  // mount.
   const configJson = JSON.stringify({
     baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
     deviceId: getDeviceId() ?? undefined,
@@ -118,25 +115,16 @@ export function registerAppProtocol(): void {
 
     // The operator routes ride ahead of the gateway proxy. The session
     // jar is the rows' cookie source and sink: the pair the hatch jars
-    // (and every rotation since) attaches on each gateway dial.
+    // (and every rotation since) attaches on each gateway dial. The
+    // forward's fallthrough arm carries the cloud's own surfaces, dialed
+    // through the main process's network stack (`net.fetch` — system
+    // proxy, cert store).
     const operated = await forwardOperatorRequest(request, {
       cookieJar: sessionCookieJar,
+      fetch: net.fetch,
     });
     if (operated) {
       return operated;
-    }
-
-    // `/v1/*`, `/_allauth/*`, `/accounts/*` forward to the
-    // cloud so managed mode and desktop replay ingest work.
-    const cloudProxied = await forwardCloudRequest({
-      request,
-      cloudBase: cloudUrl,
-      fetcher: net.fetch,
-      allowedOrigin: appOrigin(),
-      log,
-    });
-    if (cloudProxied) {
-      return cloudProxied;
     }
 
     // The `/assistant` mount serves the web bundle; every other path
@@ -173,5 +161,5 @@ export function registerAppProtocol(): void {
     return new Response("Not Found", { status: 404 });
   };
 
-  protocol.handle(APP_PROTOCOL, (request) => respond(request));
+  protocol.handle(APP_PROTOCOL, respond);
 }

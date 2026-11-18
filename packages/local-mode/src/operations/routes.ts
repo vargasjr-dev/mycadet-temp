@@ -30,6 +30,8 @@ import { wakeAssistant } from "./wake";
 import { z } from "zod";
 import { getGatewayUrl, type LockfileAssistant } from "../lockfile-contract";
 import { cookieHeader, parseSetCookie, type CookieJar } from "./cookie-jar";
+import { runCloudForwardArm } from "./cloud-forward";
+import type { Fetch } from "@mycadet/shared/fetch";
 
 /**
  * The operator ROUTE TABLE: the host-served operations — the headless
@@ -329,9 +331,13 @@ async function runHatchRoute(request: OperatorRequest): Promise<Response> {
           if (cookie) await request.cookieJar.set(jarOrigin, cookie);
         }
       }
-      return json({ ok: true, assistantId: result.assistant.assistantId }, 200, {
-        "Set-Cookie": result.cookies,
-      });
+      return json(
+        { ok: true, assistantId: result.assistant.assistantId },
+        200,
+        {
+          "Set-Cookie": result.cookies,
+        },
+      );
     }
     return json({ ok: false, error: result.error }, result.status);
   } catch (err) {
@@ -884,20 +890,28 @@ export function matchOperatorRequest(
 /**
  * The shared operator dispatcher: match a request against the route table
  * and run the matched route, threading the caller's own headers through.
- * Returning null means PASS — the request is not an operator request (or no
- * route owns it) and the serving host's pre-existing chain answers instead.
- * The serving hosts (the Electron `app://` handler, the Vite dev
- * middleware, the CLI edge's operation server) all dispatch through this
- * one function so their mounts cannot drift. Mounts whose server handle
- * exposes the raw peer address (Bun's does, off the handle rather than the
- * Request) pass it through `options.peer` so the proxy row's client-ip
- * stamp names the real caller.
+ * The table's rows are the OPERATIONS; the platform's own surfaces — the
+ * account paths (`/_allauth`, `/accounts`) and the `/v1` user surfaces the
+ * rows don't claim, plus the stale-id pass the route table documents — are
+ * the dispatcher's fallthrough arm, which forwards them to the cloud
+ * (`runCloudForwardArm`; `null` for anything else, so the serving host's
+ * pre-existing chain — assets, static — answers as before). Returning null
+ * means PASS: no row owns the request and it is not a cloud surface. The
+ * serving hosts (the Electron `app://` handler, the Vite dev middleware,
+ * the CLI edge's operation server) all dispatch through this one function
+ * so their mounts cannot drift. Mounts whose server handle exposes the raw
+ * peer address (Bun's does, off the handle rather than the Request) pass
+ * it through `options.peer` so the proxy row's client-ip stamp names the
+ * real caller; a host with a process-boundary network stack passes it
+ * through `options.fetch` so the platform arm dials through it (the
+ * desktop's `net.fetch` — system proxy, cert store).
  */
 export async function forwardOperatorRequest(
   request: Request,
   options?: {
     peer?: string | null;
     cookieJar?: CookieJar;
+    fetch?: Fetch;
   },
 ): Promise<Response | null> {
   const match = matchOperatorRequest(
@@ -905,10 +919,10 @@ export async function forwardOperatorRequest(
     request.method,
   );
   if (!match) {
-    return null;
+    return runCloudForwardArm(request, options?.fetch);
   }
   const url = new URL(request.url);
-  return match.route.run({
+  const response = await match.route.run({
     assistantId: match.assistantId,
     method: request.method,
     path: url.pathname + url.search,
@@ -918,4 +932,8 @@ export async function forwardOperatorRequest(
     ...(options?.peer !== undefined ? { peer: options.peer } : {}),
     ...(options?.cookieJar ? { cookieJar: options.cookieJar } : {}),
   });
+  if (response) {
+    return response;
+  }
+  return runCloudForwardArm(request, options?.fetch);
 }
