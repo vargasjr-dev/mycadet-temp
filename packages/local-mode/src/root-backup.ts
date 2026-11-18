@@ -596,8 +596,11 @@ function storageFor(entry: LockfileAssistant): RootStorage {
 
 // A failed wake throws so the cycle's finally retries the recovery wake —
 // the old resume's throw path, kept.
-async function wakeOrFail(entry: LockfileAssistant): Promise<void> {
-  const woken = await wakeAssistant(entry);
+async function wakeOrFail(
+  entry: LockfileAssistant,
+  options: { log?: (line: string) => void } = {},
+): Promise<void> {
+  const woken = await wakeAssistant(entry, options);
   if (!woken.ok) throw new Error(woken.error);
 }
 
@@ -640,8 +643,9 @@ export async function withRootOperationLock<T>(
 export async function createRootBackup(
   entry: LockfileAssistant,
   output: string,
+  options: { log?: (line: string) => void } = {},
 ): Promise<void> {
-  return withRootOperationLock(entry, () => captureBackup(entry, output));
+  return withRootOperationLock(entry, () => captureBackup(entry, output, options));
 }
 
 /**
@@ -659,7 +663,9 @@ export function newRootBackupPath(entry: LockfileAssistant): string {
 async function captureBackup(
   entry: LockfileAssistant,
   output: string,
+  options: { log?: (line: string) => void } = {},
 ): Promise<void> {
+  const log = options.log ?? ((line: string): void => console.log(line));
   const storage = storageFor(entry);
   storage.assertBackupTarget(output);
   const stage = await mkdtemp(join(tmpdir(), "cadet-backup-"));
@@ -672,19 +678,24 @@ async function captureBackup(
     // variant — result or structured error. The sleep itself runs
     // unconditionally (it is idempotent) and its structured failure throws
     // its own error.
-    const slept = await sleepAssistant(entry);
+    log("Stopping services for a consistent snapshot...");
+    const slept = await sleepAssistant(entry, { log });
     if (!slept.ok) throw new Error(slept.error);
     running = slept.wasRunning;
     stopped = true;
+    log("Archiving workspace and databases (this can take a while)...");
     await storage.capture(stage);
+    log(`Snapshot staged at ${stage}`);
     if (running) {
-      await wakeOrFail(entry);
+      log("Restarting services...");
+      await wakeOrFail(entry, { log });
       stopped = false;
     }
+    log("Packing backup archive...");
     await packRoot(stage, output);
   } finally {
     try {
-      if (running && stopped) await wakeOrFail(entry);
+      if (running && stopped) await wakeOrFail(entry, { log });
     } finally {
       await rm(stage, { recursive: true, force: true });
     }

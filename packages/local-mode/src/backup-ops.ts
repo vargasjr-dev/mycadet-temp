@@ -20,7 +20,12 @@ export function formatSize(bytes: number): string {
 /** Internal safety backup callers resolve their registered host topology, never runtime auth. */
 export async function createBackup(
   assistantId: string,
-  options?: { prefix?: string; description?: string; timeoutMs?: number },
+  options?: {
+    prefix?: string;
+    description?: string;
+    timeoutMs?: number;
+    log?: (line: string) => void;
+  },
 ): Promise<string | null> {
   try {
     const entry = findAssistantByName(assistantId);
@@ -33,7 +38,7 @@ export async function createBackup(
       getBackupsDir(),
       `${prefix}-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz`,
     );
-    await createRootBackup(entry, path);
+    await createRootBackup(entry, path, { log: options?.log });
     return path;
   } catch (error) {
     console.warn(

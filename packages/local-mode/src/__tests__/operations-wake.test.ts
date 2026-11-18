@@ -219,7 +219,7 @@ describe("the wake operation — a remote -> method router", () => {
     );
   });
 
-  test("the docker leg never sees the launch opts — its containers run detached", async () => {
+  test("the docker leg never sees the launch signal — its containers run detached", async () => {
     await wakeAssistant(
       {
         assistantId: "asst-docker",
@@ -229,9 +229,17 @@ describe("the wake operation — a remote -> method router", () => {
       { watch: true },
     );
 
+    // The leg may receive the narration sink, but never the caller's
+    // control surface: no AbortSignal rides into the docker leg.
     expect(wakeDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
+      expect.anything(),
     );
+    const opts = (
+    wakeDockerMock.mock.calls as unknown as Array<[unknown, unknown]>
+  )[0][1] as Record<string, unknown>;
+    expect(opts?.signal).toBeUndefined();
+    expect(opts?.watch).toBeUndefined();
   });
 
   test("a failed local wake carries the structured failure through", async () => {
@@ -260,8 +268,10 @@ describe("the wake operation — a remote -> method router", () => {
     } as LockfileAssistant);
 
     expect(result).toEqual({ ok: true });
+    // No opts were passed: the default no-narration call.
     expect(wakeDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
+      expect.anything(),
     );
   });
 

@@ -61,7 +61,17 @@ test("the docker leg narrates the containers-stopped line itself", async () => {
   const lines: string[] = [];
   await sleepDocker(entry, { log: (line) => lines.push(line) });
 
-  expect(lines).toEqual(["Docker containers stopped."]);
+  // Per-container progress (each `docker stop` can wait out a grace period)
+  // followed by the group-down line the leg has always narrated.
+  expect(lines).toEqual([
+    "Stopping docker-1-assistant...",
+    "Stopped docker-1-assistant.",
+    "Stopping docker-1-gateway...",
+    "Stopped docker-1-gateway.",
+    "Stopping docker-1-credential-executor...",
+    "Stopped docker-1-credential-executor.",
+    "Docker containers stopped.",
+  ]);
 });
 
 test("the docker leg stays silent for headless hosts (no log)", async () => {

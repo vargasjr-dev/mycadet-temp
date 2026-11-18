@@ -22,6 +22,8 @@ export type WakeResult =
 /** The local daemon's launch modes; the docker containers run detached. */
 export interface WakeAssistantOptions {
   watch?: boolean;
+  /** Progress narration for the long legs (docker pull/start streams). */
+  log?: (line: string) => void;
 }
 
 export async function wakeAssistant(
@@ -32,7 +34,9 @@ export async function wakeAssistant(
     case "local":
       return await wakeLocal(entry, opts);
     case "docker":
-      return await wakeDocker(entry);
+      // The docker leg is detached from the caller's control surface: it
+      // gets the narration sink only — never the watch flag or a signal.
+      return await wakeDocker(entry, { log: opts.log });
     case "baseten":
       return await wakeBaseten(entry);
     default:

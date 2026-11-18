@@ -225,6 +225,7 @@ export async function upgradeDocker(
   const backupPath = await createBackup(entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion ?? "unknown"} → ${versionTag}`,
+    log,
   });
   if (backupPath) {
     log(`   Backup saved: ${backupPath}\n`);

@@ -26,6 +26,13 @@ import {
   isCliErrorCategory,
 } from "../lib/cli-error.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
+import {
+  ensureAppServer,
+  isAppServerRunning,
+  stopAppServer,
+} from "../lib/servers/common.js";
+import { readRootProcesses } from "../lib/assistant-config.js";
+import { runProviderTunnel } from "../lib/tunnel.js";
 
 interface UpgradeArgs {
   name: string | null;
@@ -217,6 +224,68 @@ function reportUpgradeFailure(result: {
   process.exit(1);
 }
 
+/**
+ * Keep the upgrade running when the controlling terminal closes (an ssh
+ * drop mid-upgrade): the default SIGHUP disposition kills the process and
+ * strands the assistant between versions. Ignoring it lets the flow run
+ * headless to completion; writes to the dead pty are swallowed so the
+ * closed stdout cannot take the process down either.
+ */
+function ignoreHangupSignals(): void {
+  try {
+    process.on("SIGHUP", () => {});
+    process.stdout?.on?.("error", () => {});
+    process.stderr?.on?.("error", () => {});
+  } catch {
+    // Signal handling is best-effort; the upgrade works without it.
+  }
+}
+
+/**
+ * Post-upgrade restart of the app server when one is running: an upgrade
+ * swaps the served dists, and a running server keeps its old build until
+ * restarted. Best-effort — a failed restart warns but never fails the
+ * upgrade.
+ */
+async function restartAppServerAfterUpgrade(): Promise<void> {
+  if (!isAppServerRunning()) return;
+  try {
+    console.log("🔄 Restarting the app server on the upgraded build...");
+    await stopAppServer();
+    await ensureAppServer();
+    console.log("✅ App server restarted.");
+  } catch (err) {
+    console.warn(
+      `⚠️  App server restart failed — run '${cliCommand()} app restart' manually: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  }
+}
+
+/**
+ * Post-upgrade restore of a Cadet-managed tunnel: the recorded tunnel agent
+ * dies with the stopped edge mid-upgrade, so bring it back on the
+ * restarted app server (the saved domain is standing intent and is reused).
+ * Best-effort — a failed restore warns but never fails the upgrade.
+ */
+async function restoreTunnelAfterUpgrade(): Promise<void> {
+  const record = readRootProcesses().tunnel;
+  if (!record) return;
+  try {
+    console.log("🔄 Restoring the tunnel...");
+    const edge = await ensureAppServer();
+    await runProviderTunnel(record.provider, { port: edge.port });
+    console.log(`✅ Tunnel restored: ${record.publicUrl}`);
+  } catch (err) {
+    console.warn(
+      `⚠️  Tunnel restore failed — run '${cliCommand()} tunnel start' manually: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  }
+}
+
 const cliVersionTag = cliPkg.version ? `v${cliPkg.version}` : undefined;
 
 /**
@@ -301,6 +370,7 @@ async function resolveLatestAndMaybeSelfUpdate(
 
 export const upgrade = Object.assign(
   async function upgrade(): Promise<void> {
+    ignoreHangupSignals();
     const { name, version, latest, prepare, finalize, noWait, force } =
       parseArgs();
     const entry = resolveTargetAssistant(name);
@@ -351,6 +421,8 @@ export const upgrade = Object.assign(
       reporter: consoleLifecycleReporter,
     });
     if (result.ok) {
+      await restartAppServerAfterUpgrade();
+      await restoreTunnelAfterUpgrade();
       return;
     }
 

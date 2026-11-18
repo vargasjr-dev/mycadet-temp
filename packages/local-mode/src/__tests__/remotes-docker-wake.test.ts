@@ -45,11 +45,33 @@ const execModuleMock = mock(
     }
   },
 );
+const execOutputModuleMock = mock(
+  async (_cmd: string, args: string[] = []): Promise<string> => {
+    if (args[0] === "inspect" && args[2] === "{{.Config.Image}}") {
+      dockerCalls.push({ cmd: "docker", args: [...args] });
+      // Answer per container so the probe's service-by-service comparison
+      // sees each service's own image (the default beforeEach sets "no
+      // drift": every container reports its lockfile image).
+      const container = args[3] ?? "";
+      if (container.endsWith("-gateway")) {
+        return "mycadet/mycadet-gateway:v0.12.7";
+      }
+      if (container.endsWith("-credential-executor")) {
+        return "mycadet/mycadet-credential-executor:v0.12.7";
+      }
+      return inspectedImage;
+    }
+    throw new Error(`unexpected execOutput: ${args.join(" ")}`);
+  },
+);
+/** The image the drift probe sees on the existing containers. */
+let inspectedImage: string;
 let logSpy: ReturnType<typeof spyOn>;
 
 mock.module("../exec", () => ({
   ...realExecModule,
   exec: execModuleMock,
+  execOutput: execOutputModuleMock,
 }));
 mock.module("../remotes/docker/common", () => ({
   ...realDockerCommon,
@@ -93,6 +115,9 @@ beforeEach(() => {
   dockerCalls = [];
   startFailures = [];
   recreateFailure = undefined;
+  // Default: the existing containers run exactly what the lockfile says —
+  // the plain-start wake. Drift tests override this.
+  inspectedImage = "mycadet/mycadet-assistant:v0.12.7";
 });
 
 afterEach(() => {
@@ -162,5 +187,36 @@ describe("wakeDocker — the docker wake leg", () => {
       status: 500,
       error: "Cannot connect to the Docker daemon",
     });
+  });
+
+  test("a container whose image drifted from the lockfile is recreated from the lockfile", async () => {
+    // The hand-edited-lockfile case: `docker start` would resurrect the
+    // creation-time image; the wake must pull and recreate instead.
+    inspectedImage = "mycadet/mycadet-assistant:v0.13.0-dev";
+
+    const result = await wakeDocker(makeEntry());
+
+    expect(result).toEqual({ ok: true });
+    expect(startedContainers()).toBe(3);
+    expect(logSpy).toHaveBeenCalledWith(
+      "Containers for 'docker-1' don't match the lockfile's images — recreating...",
+    );
+  });
+
+  test("an unreadable image probe keeps the legacy plain-start wake", async () => {
+    // Drift detection is best-effort: when the image probe cannot answer,
+    // the leg falls back to `docker start` (whose own failure, if any,
+    // surfaces raw).
+    execOutputModuleMock.mockImplementation(async () => {
+      throw new Error("docker inspect blew up");
+    });
+
+    const result = await wakeDocker(makeEntry());
+
+    expect(result).toEqual({ ok: true });
+    expect(startedContainers()).toBe(3);
+    expect(logSpy).not.toHaveBeenCalledWith(
+      "Containers for 'docker-1' don't match the lockfile's images — recreating...",
+    );
   });
 });

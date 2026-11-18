@@ -36,7 +36,9 @@ export async function sleepDocker(
       if (status !== "running")
         throw new Error(`${container} is ${status}; cannot stop gracefully.`);
 
+      options.log?.(`Stopping ${container}...`);
       await exec("docker", ["stop", container]);
+      options.log?.(`Stopped ${container}.`);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message.toLowerCase() : String(err);

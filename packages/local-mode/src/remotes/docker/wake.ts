@@ -1,7 +1,7 @@
 import { platform } from "node:os";
 
 import type { DockerAssistant } from "../../lockfile-contract";
-import { exec } from "../../exec";
+import { exec, execOutput } from "../../exec";
 import { saveLockfileAssistant } from "../../lockfile";
 import { getOrCreateHostDeviceId } from "../../device-id";
 import { ASSISTANT_INTERNAL_PORT } from "../../ports";
@@ -54,8 +54,18 @@ export async function wakeDocker(
     if (platform() !== "linux") {
       await ensureDockerDaemonRunning();
     }
-    await startAll();
-    log("Docker containers started.");
+    if (await containersDriftFromLockfile(entry)) {
+      log(
+        `Containers for '${entry.assistantId}' don't match the lockfile's images — recreating...`,
+      );
+      await removeServiceContainers(entry);
+      await recreateDockerContainers(entry, options);
+      await startAll();
+      log("Docker containers started.");
+    } else {
+      await startAll();
+      log("Docker containers started.");
+    }
   } catch (err) {
     if (!isNoSuchContainerError(err)) {
       return {
@@ -96,6 +106,61 @@ export async function wakeDocker(
     }
   }
   return { ok: true };
+}
+
+/**
+ * Whether an EXISTING container runs an image other than the lockfile's
+ * `containerInfo` — `docker start` would resurrect the creation-time image,
+ * so a drift (a hand-edited lockfile, an interrupted upgrade) must recreate
+ * instead. Containers that don't exist are NOT drift: the no-such-container
+ * wake path recreates them from the lockfile wholesale. A missing
+ * containerInfo is also not drift — there is nothing to reconcile against
+ * (legacy entries keep the plain-start behavior).
+ */
+async function containersDriftFromLockfile(
+  entry: DockerAssistant,
+): Promise<boolean> {
+  const { assistantImage, gatewayImage, cesImage } = entry.containerInfo ?? {};
+  if (!assistantImage || !gatewayImage || !cesImage) return false;
+  const res = dockerResourceNames(entry.assistantId);
+  const expected: Record<ServiceName, string> = {
+    assistant: assistantImage,
+    gateway: gatewayImage,
+    "credential-executor": cesImage,
+  };
+  for (const [service, container] of [
+    ["assistant", res.assistantContainer],
+    ["gateway", res.gatewayContainer],
+    ["credential-executor", res.cesContainer],
+  ] as const) {
+    try {
+      const image = await execOutput("docker", [
+        "inspect",
+        "--format",
+        "{{.Config.Image}}",
+        container,
+      ]);
+      if (image.trim() !== expected[service]) return true;
+    } catch {
+      // An unreadable container image means drift cannot be judged — keep
+      // the legacy plain-start behavior rather than guessing (a real docker
+      // failure surfaces from the start below).
+      return false;
+    }
+  }
+  return false;
+}
+
+/** Force-remove the three service containers (recreation's precursor). */
+async function removeServiceContainers(entry: DockerAssistant): Promise<void> {
+  const res = dockerResourceNames(entry.assistantId);
+  for (const container of [
+    res.assistantContainer,
+    res.gatewayContainer,
+    res.cesContainer,
+  ]) {
+    await exec("docker", ["rm", "--force", container]).catch(() => {});
+  }
 }
 
 /**
