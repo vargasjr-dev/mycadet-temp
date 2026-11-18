@@ -12,7 +12,7 @@
  * right, the registrations at the bottom of the module do the rest.
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
 
 // Error reporting, stubbed so a failed in-place recovery doesn't touch the

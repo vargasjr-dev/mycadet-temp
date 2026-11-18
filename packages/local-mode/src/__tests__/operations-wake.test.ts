@@ -323,10 +323,10 @@ describe("the operator route table — the scoped surface's wake arm", () => {
     expect(response!.status).toBe(204);
   });
 
-  test("a wake for an unknown id passes through untouched", async () => {
+  test("a wake for an unknown id answers 404", async () => {
     seedEntry({ assistantId: "asst-local", cloud: "local", port: 7830 });
     const response = await dispatch("/v1/assistants/nobody/wake/", "POST");
-    expect(response).toBeNull();
+    expect(response?.status).toBe(404);
   });
 
   test("a failed wake surfaces the operation's error as the cloud detail shape", async () => {

@@ -96,13 +96,15 @@ describe("the operator's cloud arm", () => {
     expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/releases/");
   });
 
-  test("a row's pass on a /v1 path hands back to the host chain", async () => {
+  test("a scoped request for an unknown id answers 404 from the dispatcher", async () => {
     const { calls, fetcher } = recorder();
-    // The catch-all matches the stale id and passes; the cloud arm only
-    // owns the account paths, so the host chain answers.
-    expect(
-      await dispatch(request("/v1/assistants/ghost/conversations"), fetcher),
-    ).toBeNull();
+    // The catch-all matches the stale id, but the dispatcher refuses to
+    // pass an id it cannot resolve — no row run, no arm dial.
+    const response = await dispatch(
+      request("/v1/assistants/ghost/conversations"),
+      fetcher,
+    );
+    expect(response?.status).toBe(404);
     expect(calls).toHaveLength(0);
   });
 

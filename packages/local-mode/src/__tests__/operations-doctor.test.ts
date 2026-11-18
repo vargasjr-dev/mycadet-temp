@@ -47,14 +47,26 @@ mock.module("../cloud-auth", () => ({
 const ENTRY = {
   assistantId: "test-assistant",
   cloud: "local",
+  port: 7830,
   cloudAssistantId: "33333333-3333-4333-8333-333333333333",
   cloudOrganizationId: "org-123",
 };
 
+// Exists on this machine but never registered with the cloud — the
+// doctor row's own gate answers it (503), not the dispatcher's 404.
+const UNREGISTERED_ENTRY = {
+  assistantId: "never-registered",
+  cloud: "local",
+  port: 7830,
+};
+
 mock.module("../operations/lookup", () => ({
   ...realLookup,
-  findAssistantByName: (name: string) =>
-    name === ENTRY.assistantId ? ENTRY : null,
+  findAssistantByName: (name: string) => {
+    if (name === ENTRY.assistantId) return ENTRY;
+    if (name === UNREGISTERED_ENTRY.assistantId) return UNREGISTERED_ENTRY;
+    return null;
+  },
 }));
 
 const { forwardOperatorRequest } = await import("../operations/routes");

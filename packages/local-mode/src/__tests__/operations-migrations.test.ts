@@ -138,7 +138,7 @@ describe("the migrations operator row", () => {
     expect(fetchCalls.length).toBe(0);
   });
 
-  test("an unknown assistant leaves the row unmatched", async () => {
+  test("an unknown assistant answers 404 from the dispatcher", async () => {
     fs.writeFileSync(
       path.join(tmpDir, "cadet", "lockfile.json"),
       JSON.stringify({ assistants: [], activeAssistant: null }),
@@ -149,7 +149,7 @@ describe("the migrations operator row", () => {
       "/v1/assistants/who-is-this/migrations/signed-url/",
       { body: "{}" },
     );
-    expect(res).toBeNull();
+    expect(res?.status).toBe(404);
   });
 
   test("an unreachable cloud answers 502 with the body shape the web reads", async () => {

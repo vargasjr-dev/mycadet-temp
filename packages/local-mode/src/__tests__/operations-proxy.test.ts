@@ -159,8 +159,8 @@ describe("the operator route table — the proxy catch-all", () => {
       return new Response("ok", { headers });
     });
     const response = await runProxy("conversations", { cookieJar: jar });
-    // The row parsed the Set-Cookie value into the store's grain and
-    // stored it for the origin the next dial attaches.
+    // The dispatcher parsed the Set-Cookie value into the store's grain
+    // and stored it for the origin the next dial attaches.
     expect(jar.store.get("http://127.0.0.1:7830")).toEqual([
       {
         name: "cadet_web_access",
@@ -294,13 +294,13 @@ describe("the operator route table — the proxy catch-all", () => {
     expect(await response.text()).toBe("<html>gateway html</html>");
   });
 
-  test("an unknown id still passes — the pre-existing chain answers instead", async () => {
+  test("an unknown id answers 404 — the dispatcher does not pass it down", async () => {
     seedLocalEntry();
     const calls = stubGatewayFetch();
     const response = await forwardOperatorRequest(
       new Request("http://operator.test/v1/assistants/asst-ghost/things"),
     );
-    expect(response).toBeNull();
+    expect(response?.status).toBe(404);
     expect(calls).toHaveLength(0);
   });
 });

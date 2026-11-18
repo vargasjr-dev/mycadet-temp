@@ -343,10 +343,11 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     expect(readLockfile().assistants.map((a) => a.assistantId)).toEqual([]);
   });
 
-  test("an id the lockfile does not know passes", async () => {
+  test("an id the lockfile does not know answers 404", async () => {
     writeLockfile({ assistants: [localEntry], activeAssistant: null });
 
-    expect(await dispatch("/v1/assistants/ghost/retire/", "DELETE")).toBeNull();
+    const response = await dispatch("/v1/assistants/ghost/retire/", "DELETE");
+    expect(response?.status).toBe(404);
     expect(retireLocalMock).not.toHaveBeenCalled();
   });
 });

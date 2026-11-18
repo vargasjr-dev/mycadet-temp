@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { forwardOperatorRequest } from "../operations/routes";
@@ -36,13 +39,30 @@ describe("the operator availability check", () => {
   });
 
   test("the scoped spelling answers the same check", async () => {
-    const res = await dispatch(
-      "/v1/assistants/any-entry/user/username-available/?username=12345",
-    );
-    expect((await res!.json()) as unknown).toMatchObject({
-      available: false,
-      code: "all_digits",
-    });
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-profile-op-"));
+    process.env.XDG_CONFIG_HOME = tmpDir;
+    try {
+      fs.mkdirSync(path.join(tmpDir, "cadet"), { recursive: true });
+      fs.writeFileSync(
+        path.join(tmpDir, "cadet", "lockfile.json"),
+        JSON.stringify({
+          assistants: [
+            { assistantId: "any-entry", cloud: "local", port: 7830 },
+          ],
+          activeAssistant: null,
+        }),
+      );
+      const res = await dispatch(
+        "/v1/assistants/any-entry/user/username-available/?username=12345",
+      );
+      expect((await res!.json()) as unknown).toMatchObject({
+        available: false,
+        code: "all_digits",
+      });
+    } finally {
+      delete process.env.XDG_CONFIG_HOME;
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 
   test("the rule set is the canonical code list", () => {

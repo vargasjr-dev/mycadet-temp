@@ -340,15 +340,24 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
   });
 
   test("the hatch jars the pair for the entry's gateway origin", async () => {
-    hatchAssistantMock.mockImplementation(async () => ({
-      ok: true as const,
-      assistant: { assistantId: "hatched-1", cloud: "local", port: 7833 },
-      ready: true,
-      cookies: [
-        "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
-        "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=3600",
-      ],
-    }));
+    hatchAssistantMock.mockImplementation(async () => {
+      // The leg's locked write registers the minted entry and switches the
+      // active pointer before the operation resolves — the dispatcher's
+      // post-run resolution reads exactly that state.
+      writeLockfile({
+        assistants: [{ assistantId: "hatched-1", cloud: "local", port: 7833 }],
+        activeAssistant: "hatched-1",
+      });
+      return {
+        ok: true as const,
+        assistant: { assistantId: "hatched-1", cloud: "local", port: 7833 },
+        ready: true,
+        cookies: [
+          "cadet_web_access=edge-token-1; HttpOnly; Path=/; SameSite=Strict",
+          "cadet_web_refresh=edge-token-2; HttpOnly; Path=/; SameSite=Strict; Max-Age=3600",
+        ],
+      };
+    });
     const jar = new MemoryCookieJar();
 
     const response = await dispatchAnswered(
@@ -416,6 +425,9 @@ describe("the hatch row — POST /v1/assistants/hatch", () => {
       jar,
     );
 
+    // The lockfile never learned the minted entry (the leg failed before
+    // its locked write), so the dispatcher has no assistant id to resolve
+    // an origin from — the pair is not jarred, and the headers still ride.
     expect(jar.store.size).toBe(0);
     expect(response.headers.getSetCookie()).toHaveLength(1);
     expect((await response.json()).ok).toBe(true);
@@ -440,10 +452,10 @@ describe("the unpair row — POST /v1/assistants/{id}/unpair", () => {
     expect(unpairAssistantMock).toHaveBeenCalledWith("asst-1");
   });
 
-  test("an id that is not an entry on this machine passes through", async () => {
+  test("an id that is not an entry on this machine answers 404", async () => {
     const response = await dispatch("/v1/assistants/ghost/unpair", "POST", {});
 
-    expect(response).toBeNull();
+    expect(response?.status).toBe(404);
     expect(unpairAssistantMock).not.toHaveBeenCalled();
   });
 
@@ -677,14 +689,14 @@ describe("the upgrade row — POST /v1/assistants/{id}/upgrade", () => {
     expect(upgradeAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("an id that is not an entry on this machine passes through", async () => {
+  test("an id that is not an entry on this machine answers 404", async () => {
     const response = await dispatch(
       "/v1/assistants/cloud-id/upgrade",
       "POST",
       {},
     );
 
-    expect(response).toBeNull();
+    expect(response?.status).toBe(404);
     expect(upgradeAssistantMock).not.toHaveBeenCalled();
   });
 });
@@ -706,9 +718,9 @@ describe("the avatar row — GET /v1/assistants/{id}/avatar/get", () => {
     expect(readLockfileAssistantAvatarMock).toHaveBeenCalledWith("asst-1");
   });
 
-  test("an id that is not an entry on this machine passes through", async () => {
+  test("an id that is not an entry on this machine answers 404", async () => {
     const response = await dispatch("/v1/assistants/ghost/avatar/get", "GET");
-    expect(response).toBeNull();
+    expect(response?.status).toBe(404);
     expect(readLockfileAssistantAvatarMock).not.toHaveBeenCalled();
   });
 });
@@ -764,7 +776,17 @@ describe("the webhook row — /webhooks/* bridges to the fronted gateway", () =>
 
   test("near-miss roots match no row", async () => {
     seedEntry({ assistantId: "assistant-1", cloud: "local", port: 7830 });
-    expect(await dispatch("/webhooks/telegram", "POST")).not.toBeNull();
+    // The matching assert dispatches for real — the webhook row owns the
+    // root, so the dial rides the same mock as the bridge test above.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async () => new Response("bridged"),
+    ) as unknown as typeof fetch;
+    try {
+      expect(await dispatch("/webhooks/telegram", "POST")).not.toBeNull();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
     expect(await dispatch("/hooks/telegram", "POST")).toBeNull();
     expect(await dispatch("/webhookss/telegram", "POST")).toBeNull();
   });

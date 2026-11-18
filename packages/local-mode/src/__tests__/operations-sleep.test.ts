@@ -504,10 +504,12 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     expect(sleepDockerMock).not.toHaveBeenCalled();
   });
 
-  test("an unknown id passes through to the pre-existing chain", async () => {
-    expect(
-      await dispatch("/v1/assistants/no-such-assistant/sleep/", "POST"),
-    ).toBeNull();
+  test("an unknown id answers 404 from the dispatcher", async () => {
+    const response = await dispatch(
+      "/v1/assistants/no-such-assistant/sleep/",
+      "POST",
+    );
+    expect(response?.status).toBe(404);
     expect(sleepDockerMock).not.toHaveBeenCalled();
   });
 

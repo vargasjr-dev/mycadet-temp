@@ -354,7 +354,7 @@ describe("runResolveRoute — the lockfile arms", () => {
     expect([...callerHeaders]).toEqual([]);
   });
 
-  test("an id the lockfile does not know passes (null)", async () => {
+  test("an id the lockfile does not know answers 404", async () => {
     writeLockfile({
       assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
       activeAssistant: null,
@@ -364,7 +364,7 @@ describe("runResolveRoute — the lockfile arms", () => {
       new Request("http://operator.test/v1/assistants/ghost/"),
     );
 
-    expect(response).toBeNull();
+    expect(response?.status).toBe(404);
   });
 });
 
