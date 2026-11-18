@@ -78,6 +78,7 @@ const BASELINE: Record<string, readonly string[]> = {
   "image-recovery": ["src/daemon/conversation-error.ts"],
   memory: [
     "src/cli/commands/memory/memory-ingest.ts",
+    "src/cli/commands/memory/memory-injection.ts",
     "src/cli/commands/memory/memory-retrospective.ts",
     "src/cli/commands/memory/memory-v2-compare-render.ts",
     "src/cli/commands/memory/memory-v2.ts",
