@@ -831,8 +831,7 @@ Examples:
     },
     {
       name: "injection",
-      description:
-        "Per-conversation memory-injection opt-out (direct, no IPC)",
+      description: "Per-conversation memory-injection opt-out (direct, no IPC)",
       helpText: `
 Enable or disable memory injection per conversation, directly against the
 workspace's memory database — no running daemon required. A conversation with

@@ -33,9 +33,8 @@ export function registerMemoryInjectionCommand(memory: Command): void {
     // Deferred: loads the memory plugin's store (and the memory connection)
     // into this process — the same direct invocation as
     // `assistant memory retrospective`.
-    const { setMemoryInjectionOff } = await import(
-      "../../../plugins/defaults/memory/memory-injection-store.js"
-    );
+    const { setMemoryInjectionOff } =
+      await import("../../../plugins/defaults/memory/memory-injection-store.js");
     if (!setMemoryInjectionOff(conversationId, off)) {
       log.error(
         `${conversationId}: memory injection not ${verb}d (memory database unavailable)`,
@@ -65,9 +64,8 @@ export function registerMemoryInjectionCommand(memory: Command): void {
   // ── list ───────────────────────────────────────────────────────────────
 
   subcommand(injection, "list").action(async () => {
-    const { listMemoryInjectionOffConversations } = await import(
-      "../../../plugins/defaults/memory/memory-injection-store.js"
-    );
+    const { listMemoryInjectionOffConversations } =
+      await import("../../../plugins/defaults/memory/memory-injection-store.js");
     const conversations = listMemoryInjectionOffConversations();
     if (conversations.length === 0) {
       log.info("Memory injection is on for every conversation.");

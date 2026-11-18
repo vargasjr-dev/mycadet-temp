@@ -21,7 +21,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { getMemorySqlite, resetDb } from "../../../../persistence/db-connection.js";
+import {
+  getMemorySqlite,
+  resetDb,
+} from "../../../../persistence/db-connection.js";
 import {
   isMemoryInjectionOff,
   listMemoryInjectionOffConversations,
@@ -80,12 +83,16 @@ describe("memory injection store", () => {
       conversation_id: string;
       memory_injection_off: number | null;
     }>;
-    expect(rows).toEqual([{ conversation_id: "conv-a", memory_injection_off: 1 }]);
+    expect(rows).toEqual([
+      { conversation_id: "conv-a", memory_injection_off: 1 },
+    ]);
 
     // A conversation with no marker row gets one, stamped now.
     expect(setMemoryInjectionOff("conv-b", false)).toBe(true);
     const created = getMemorySqlite()
-      ?.query("SELECT created_at FROM activation_sessions WHERE conversation_id = ?")
+      ?.query(
+        "SELECT created_at FROM activation_sessions WHERE conversation_id = ?",
+      )
       .get("conv-b") as { created_at: number };
     expect(created.created_at).toBeGreaterThan(0);
   });

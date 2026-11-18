@@ -2,7 +2,7 @@ import { desc, eq } from "drizzle-orm";
 
 import { activationSessions } from "../../../persistence/schema/index.js";
 import { getLogger } from "./logging.js";
-import { memoryDbOrNull,type MemorySqlite } from "./memory-db.js";
+import { memoryDbOrNull, type MemorySqlite } from "./memory-db.js";
 
 const log = getLogger("memory-injection-store");
 
@@ -27,7 +27,9 @@ function ensureSchema(raw: MemorySqlite): void {
       created_at INTEGER NOT NULL
     )`);
   try {
-    raw.run("ALTER TABLE activation_sessions ADD COLUMN memory_injection_off INTEGER");
+    raw.run(
+      "ALTER TABLE activation_sessions ADD COLUMN memory_injection_off INTEGER",
+    );
   } catch (err) {
     if (!/duplicate column name/i.test(String(err))) {
       throw err;
@@ -99,7 +101,10 @@ export function setMemoryInjectionOff(
       .run();
     return true;
   } catch (err) {
-    log.warn({ err, conversationId, off }, "Failed to persist the injection flag");
+    log.warn(
+      { err, conversationId, off },
+      "Failed to persist the injection flag",
+    );
     return false;
   }
 }

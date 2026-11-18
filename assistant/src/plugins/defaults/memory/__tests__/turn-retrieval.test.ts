@@ -5,7 +5,10 @@ import { shouldRetrieveTurnMemory } from "../turn-retrieval.js";
 test("fresh retrieval defaults on, except for front-door and explicitly skipped turns", () => {
   expect(shouldRetrieveTurnMemory({ conversationId: "conv-a" })).toBe(true);
   expect(
-    shouldRetrieveTurnMemory({ conversationId: "conv-a", callSite: "callAgent" }),
+    shouldRetrieveTurnMemory({
+      conversationId: "conv-a",
+      callSite: "callAgent",
+    }),
   ).toBe(true);
   expect(
     shouldRetrieveTurnMemory({
@@ -34,6 +37,9 @@ test("a conversation without an explicit opt-out never gates retrieval", () => {
   // unreadable memory database or a conversation with no flag never gates,
   // so the helper's verdict is unchanged for it.
   expect(
-    shouldRetrieveTurnMemory({ conversationId: "conv-a", callSite: "callAgent" }),
+    shouldRetrieveTurnMemory({
+      conversationId: "conv-a",
+      callSite: "callAgent",
+    }),
   ).toBe(true);
 });
