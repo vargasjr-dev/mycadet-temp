@@ -6,8 +6,8 @@
  *     originating tab/interface to the daemon. Required by self-echo
  *     suppression: the daemon echoes the client id back on the resulting
  *     `sync_changed` so the originator's SSE subscriber can be skipped.
- *   - `Cadet-Device-Id` + the Electron renderer-origin marker on mutating
- *     requests — the daemon's platform-path identity.
+ *   - `Cadet-Device-Id` on mutating requests — the daemon's platform-path
+ *     identity.
  *
  * Import this module for its side effects in the app entrypoint
  * (`boot.tsx`) so interceptors are installed before any API call fires.
@@ -25,14 +25,6 @@ import { ApiError, toApiError } from "@/utils/api-errors";
 import { currentLocale } from "@/i18n";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { getDeviceId } from "@/runtime/device-id";
-import { isElectron } from "@/runtime/is-electron";
-
-const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
-
-function getRendererTupleOrigin(): string {
-  return `${window.location.protocol}//${window.location.host}`;
-}
 
 /**
  * Builds a request interceptor for a HeyAPI client. Every remaining
@@ -54,13 +46,6 @@ function createRequestInterceptor() {
     }
 
     newRequest.headers.set("Accept-Language", currentLocale());
-
-    if (isElectron() && MUTATING_METHODS.has(request.method)) {
-      newRequest.headers.set(
-        ELECTRON_RENDERER_ORIGIN_HEADER,
-        getRendererTupleOrigin(),
-      );
-    }
 
     const deviceId = getDeviceId();
     if (deviceId) {

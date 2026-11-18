@@ -138,7 +138,16 @@ let wakeAssistant: typeof import("../operations/wake").wakeAssistant;
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
 
-import { matchOperatorRequest } from "../operations/routes";
+import { forwardOperatorRequest } from "../operations/routes";
+
+/**
+ * Dispatches through the real dispatcher — the rows are its internals, so
+ * the tests speak the mount's API, not the match/run seam.
+ */
+const dispatch = (path: string, method = "GET"): Promise<Response | null> =>
+  forwardOperatorRequest(
+    new Request(`http://operator.test${path}`, { method }),
+  );
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -309,27 +318,14 @@ describe("the operator route table — the scoped surface's wake arm", () => {
 
   test("POST wake matches the table and answers 204 on success", async () => {
     seedEntry({ assistantId: "asst-local", cloud: "local", port: 7830 });
-    const match = matchOperatorRequest(
-      "/v1/assistants/asst-local/wake/",
-      "POST",
-    );
-    expect(match).not.toBeNull();
-    const response = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-    });
+    const response = await dispatch("/v1/assistants/asst-local/wake/", "POST");
     expect(response).not.toBeNull();
     expect(response!.status).toBe(204);
   });
 
   test("a wake for an unknown id passes through untouched", async () => {
     seedEntry({ assistantId: "asst-local", cloud: "local", port: 7830 });
-    const match = matchOperatorRequest("/v1/assistants/nobody/wake/", "POST");
-    expect(match).not.toBeNull();
-    const response = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-    });
+    const response = await dispatch("/v1/assistants/nobody/wake/", "POST");
     expect(response).toBeNull();
   });
 
@@ -340,29 +336,30 @@ describe("the operator route table — the scoped surface's wake arm", () => {
       status: 500,
       error: "wake blew up",
     });
-    const match = matchOperatorRequest(
+    const response = (await dispatch(
       "/v1/assistants/asst-local/wake/",
       "POST",
-    );
-    const response = (await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-    }))!;
+    ))!;
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ detail: "wake blew up" });
   });
 
-  test("the proxy catch-all answers GET and the retire path", () => {
-    // The wake row is POST-only; other methods ride the ALL proxy row.
-    expect(
-      matchOperatorRequest("/v1/assistants/a/wake/", "GET")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistants/a/wake/", "DELETE")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
-    ).toBe("ALL");
+  test("the proxy catch-all answers GET and the retire path — never the wake leg", async () => {
+    // The wake row is POST-only; other methods ride the ALL proxy row,
+    // which dials the gateway (stubbed) instead of waking anything.
+    seedEntry({ assistantId: "asst-docker", cloud: "docker", port: 7831 });
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async (input: unknown, init?: unknown) => new Response("gateway"),
+    ) as unknown as typeof fetch;
+    try {
+      await dispatch("/v1/assistants/asst-docker/wake/", "GET");
+      await dispatch("/v1/assistants/asst-docker/wake/", "DELETE");
+      await dispatch("/v1/assistants/asst-docker/retire/", "POST");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(wakeDockerMock).not.toHaveBeenCalled();
   });
 });
 

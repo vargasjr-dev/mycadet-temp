@@ -13,7 +13,7 @@ import {
   hasSameOriginCredentialProof,
   readLockfile,
   servedConfigFromLockfile,
-  matchOperatorRequest,
+  forwardOperatorRequest,
 } from "@mycadet/local-mode";
 import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
@@ -217,40 +217,31 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
  * The operator routes: the host-served local-mode operations the dev server
  * answers in-process — the headless lifecycle cores (retire/sleep/wake), the
  * lockfile read, hatch, unpair, the pairing exchange, and device management.
- * The match is pure in the URL — the hot path of every other request never
- * touches the lockfile — and the same-origin guard fronts the EXECUTION: a
- * cross-origin retire DELETE is refused here, never executed, never
- * forwarded. The dispatch is the package's shared table directly — match,
- * then `match.route.run` with the caller's own headers and the assistant id
- * (the Electron `app://` handler rides the `forwardOperatorRequest`
- * wrapper of the same seam, so the mounts cannot drift). A pass
- * (unknown id, platform-hosted entry) falls through to the gateway proxy,
- * whose cloud forward keeps the bundle's one endpoint holding for every
- * entry type.
+ * The same-origin guard fronts the EXECUTION: a cross-origin retire DELETE is
+ * refused here, never executed, never forwarded. The dispatch is the
+ * package's one dispatcher — the same `forwardOperatorRequest` the Electron
+ * `app://` handler rides, so the mounts cannot drift. A pass (unknown id, an
+ * entry this host can't answer) falls through: the dispatcher's cloud arm
+ * answers the cloud's own paths in-process, everything else reaches the
+ * gateway proxy, whose cloud forward keeps the bundle's one endpoint holding
+ * for every entry type.
  */
 function operatorMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
-    const match = matchOperatorRequest(
-      requestPathname(req),
-      req.method ?? "GET",
-    );
-    if (!match) {
-      return next();
-    }
-
     if (rejectUnlessLocalEndpointRequest(req, res)) {
       return;
     }
 
-    // The caller's own headers and body ride as-is; the stream is lazy, so
-    // a row that PASSES (unknown id) leaves the request untouched for the
-    // gateway proxy's forward.
-    void match.route
-      .run({
-        assistantId: match.assistantId,
-        headers: req.headers,
-        body: Readable.toWeb(req),
-      })
+    const method = req.method ?? "GET";
+    const hasBody = method !== "GET" && method !== "HEAD";
+    const request = new Request(`http://operator.test${requestPathname(req)}`, {
+      method,
+      headers: req.headers,
+      ...(hasBody
+        ? { body: Readable.toWeb(req), duplex: "half" as const }
+        : {}),
+    });
+    void forwardOperatorRequest(request)
       .then((response) => {
         if (!response) {
           return next();

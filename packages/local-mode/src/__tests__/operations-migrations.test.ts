@@ -18,7 +18,7 @@ import path from "node:path";
 // seeded lockfile resolves the entry, the env token authenticates the
 // operator, the env cloud URL points the hop, and the HTTP boundary is the
 // one thing faked — the global fetch, restored after every test.
-const { matchOperatorRequest } = await import("../operations/routes");
+const { forwardOperatorRequest } = await import("../operations/routes");
 
 const ENTRY = {
   assistantId: "test-assistant",
@@ -87,15 +87,14 @@ async function dial(
   path: string,
   init?: { headers?: Record<string, string>; body?: string },
 ): Promise<Response | null> {
-  const match = matchOperatorRequest(path, method);
-  if (!match) return null;
-  return match.route.run({
-    assistantId: match.assistantId,
-    method,
-    path,
-    headers: new Headers(init?.headers),
-    body: init?.body ? new Blob([init.body]).stream() : null,
-  });
+  return forwardOperatorRequest(
+    new Request(`http://operator.test${path}`, {
+      method,
+      headers: init?.headers,
+      body: init?.body ? new Blob([init.body]).stream() : undefined,
+      ...(init?.body ? { duplex: "half" as const } : {}),
+    }),
+  );
 }
 
 describe("the migrations operator row", () => {

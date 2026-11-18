@@ -11,7 +11,6 @@ import {
 import type { Fetch } from "@mycadet/shared/fetch";
 
 const CLOUD = "https://cloud.mycadet.ai";
-const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 const request = (
   pathname: string,
@@ -87,9 +86,14 @@ describe("the operator's cloud arm", () => {
     expect(calls).toHaveLength(0);
   });
 
-  test("passes the operator's /v1 proxy arm through — rows own it", async () => {
+  test("passes the operator's /v1 surface through — the rows own it", async () => {
     const { calls, fetcher } = recorder();
-    expect(await dispatch(request("/v1/releases/"), fetcher)).toBeNull();
+    // The releases row owns the catalog path now (its answer is its own
+    // suite's business — here, that the ARM never dialed); the bare /v1
+    // rides the host chain.
+    delete process.env.CADET_CLOUD_TOKEN;
+    const releases = await dispatch(request("/v1/releases/"), fetcher);
+    expect(releases).not.toBeNull();
     expect(await dispatch(request("/v1"), fetcher)).toBeNull();
     expect(calls).toHaveLength(0);
   });
@@ -202,19 +206,6 @@ describe("the operator's cloud arm", () => {
     expect(calls).toHaveLength(0);
   });
 
-  test("trusts source-less unsafe requests with renderer-origin marker", async () => {
-    const { calls, fetcher } = recorder();
-    await dispatch(
-      request("/_allauth/app/v1/auth/sessions", {
-        method: "DELETE",
-        headers: { [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai" },
-      }),
-      fetcher,
-    );
-    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
-    expect(header(calls[0]?.init, ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
-  });
-
   test("trusts source-less unsafe requests with Sec-Fetch-Site same-origin", async () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
@@ -244,22 +235,6 @@ describe("the operator's cloud arm", () => {
     const { calls, fetcher } = recorder();
     const response = await dispatch(
       request("/_allauth/app/v1/auth/sessions", { method: "DELETE" }),
-      fetcher,
-    );
-    expect(response?.status).toBe(403);
-    expect(calls).toHaveLength(0);
-  });
-
-  test("rejects source-less unsafe requests from a foreign request URL", async () => {
-    const { calls, fetcher } = recorder();
-    const response = await dispatch(
-      new Request("app://evil.example/_allauth/app/v1/auth/sessions", {
-        method: "DELETE",
-        headers: new Headers({
-          [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai",
-        }),
-        body: null,
-      }),
       fetcher,
     );
     expect(response?.status).toBe(403);

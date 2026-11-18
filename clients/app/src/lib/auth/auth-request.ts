@@ -2,11 +2,11 @@ import { z } from "zod";
 import { currentLocale } from "@app/i18n";
 import { ensureCsrfCookie, getCsrfToken } from "@app/lib/auth/csrf";
 import { authEndpoint } from "@app/lib/auth/auth-endpoint";
+import { getElectronBridge } from "@app/runtime/electron-bridge";
 import {
   authErrorResult,
   type AllauthResult,
 } from "@app/lib/auth/auth-response";
-import { getElectronBridge } from "@app/runtime/electron-bridge";
 import { getElectronSessionToken } from "@app/runtime/session-token";
 
 export async function requestAccount<T>(
@@ -25,12 +25,7 @@ export async function requestAccount<T>(
     if (token) headers.set("X-Session-Token", token);
     if (method !== "GET") {
       if (body !== undefined) headers.set("Content-Type", "application/json");
-      if (getElectronBridge()) {
-        headers.set(
-          "X-Cadet-Electron-Renderer-Origin",
-          `${window.location.protocol}//${window.location.host}`,
-        );
-      } else {
+      if (!getElectronBridge()) {
         await ensureCsrfCookie();
         const csrf = getCsrfToken();
         if (csrf) headers.set("X-CSRFToken", csrf);

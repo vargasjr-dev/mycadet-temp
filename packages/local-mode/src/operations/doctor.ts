@@ -68,9 +68,7 @@ async function proxyToCloud(
   }
 
   const headers: Record<string, string> = operatorCloudHeaders(entry, token);
-  const callerHeaders = new Headers(
-    request.headers as HeadersInit | undefined,
-  );
+  const callerHeaders = new Headers(request.headers as HeadersInit | undefined);
   const lastEventId = callerHeaders.get("last-event-id");
   if (lastEventId) {
     headers["Last-Event-ID"] = lastEventId;
@@ -84,7 +82,7 @@ async function proxyToCloud(
     return await loopbackSafeFetch(
       `${cloudOrigin()}/v1/assistants/${encodeURIComponent(cloudAssistantId)}${tailPath}`,
       {
-        method: request.method ?? "GET",
+        method: request.method,
         headers,
         body:
           request.method === "GET" || request.method === "HEAD"
@@ -132,7 +130,7 @@ export async function runDoctorHistoryListRoute(
 export async function runDoctorHistoryRetrieveRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const match = /\/doctor\/history\/([^\/?#]+)\/?$/.exec(request.path ?? "");
+  const match = /\/doctor\/history\/([^\/?#]+)\/?$/.exec(request.path);
   if (!match?.[1]) {
     return null;
   }
@@ -151,7 +149,7 @@ export async function runDoctorSessionsCreateRoute(
 export async function runDoctorSessionsDestroyRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const sessionId = sessionIdFromBarePath(request.path ?? "");
+  const sessionId = sessionIdFromBarePath(request.path);
   if (!sessionId) {
     return null;
   }
@@ -164,7 +162,7 @@ export async function runDoctorSessionsDestroyRoute(
 export async function runDoctorSessionsEventsRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const sessionId = sessionIdFrom(request.path ?? "", "events");
+  const sessionId = sessionIdFrom(request.path, "events");
   if (!sessionId) {
     return null;
   }
@@ -178,7 +176,7 @@ export async function runDoctorSessionsEventsRoute(
 export async function runDoctorSessionsMessagesRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const sessionId = sessionIdFrom(request.path ?? "", "messages");
+  const sessionId = sessionIdFrom(request.path, "messages");
   if (!sessionId) {
     return null;
   }
@@ -191,7 +189,7 @@ export async function runDoctorSessionsMessagesRoute(
 export async function runDoctorSessionsUserOutcomeRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const sessionId = sessionIdFrom(request.path ?? "", "user-outcome");
+  const sessionId = sessionIdFrom(request.path, "user-outcome");
   if (!sessionId) {
     return null;
   }

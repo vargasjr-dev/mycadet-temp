@@ -12,9 +12,7 @@ afterAll(() => fetchSpy.mockRestore());
 afterEach(() => {
   fetchSpy.mockReset();
   document.cookie = "csrftoken=; max-age=0; path=/";
-  for (const [key, descriptor] of [
-    ["cadet", originalBridge],
-  ] as const) {
+  for (const [key, descriptor] of [["cadet", originalBridge]] as const) {
     if (descriptor) Object.defineProperty(window, key, descriptor);
     else Reflect.deleteProperty(window, key);
   }
@@ -98,9 +96,7 @@ test("Electron mutations carry native token and renderer origin without CSRF", a
   );
   const headers = new Headers(fetchSpy.mock.calls[0]?.[1]?.headers);
   expect(headers.get("X-Session-Token")).toBe("session123");
-  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBe(
-    `${window.location.protocol}//${window.location.host}`,
-  );
+  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBeNull();
   expect(headers.has("X-CSRFToken")).toBe(false);
 });
 

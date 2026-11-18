@@ -8,7 +8,6 @@ import type { Fetch } from "@mycadet/shared/fetch";
  * flows) — the hosts that re-origin those paths forward them here.
  */
 const CLOUD_PREFIXES = ["/_allauth", "/accounts"] as const;
-const RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 export function isCloudPath(pathname: string): boolean {
   return CLOUD_PREFIXES.some(
@@ -34,23 +33,20 @@ function isSameOriginSource(value: string | null, url: URL): boolean {
 }
 
 /**
- * The initiator-trust verdict for an unsafe request: `trusted` forwards,
- * `untrusted` falls through to the sourceless signals (Chromium's missing
- * `Origin` case), `rejected` answers 403 — a PRESENT Origin or Referer
- * that names a DIFFERENT origin is itself the attack signal.
+ * The initiator-trust verdict for an unsafe request: the unforgeable
+ * signals only. A PRESENT `Origin` or `Referer` must name this origin —
+ * the browser sets both and page JS can fake neither, so a foreign value
+ * IS the attack signal. Source-less requests (the desktop's renderer:
+ * Chromium omits `Origin` on `app://`) trust only `sec-fetch-site:
+ * same-origin` — fetch metadata the browser's network stack computes and
+ * a page cannot claim.
  */
-function getInitiatorTrust(
-  url: URL,
-  headers: Headers,
-): "trusted" | "untrusted" | "rejected" {
+function isTrustedUnsafeRequest(url: URL, headers: Headers): boolean {
   const source = headers.get("origin") ?? headers.get("referer");
   if (source !== null) {
-    return isSameOriginSource(source, url) ? "trusted" : "rejected";
+    return isSameOriginSource(source, url);
   }
-  const sourceless =
-    headers.get(RENDERER_ORIGIN_HEADER) === `${url.protocol}//${url.host}` ||
-    headers.get("sec-fetch-site") === "same-origin";
-  return sourceless ? "trusted" : "untrusted";
+  return headers.get("sec-fetch-site") === "same-origin";
 }
 
 /**
@@ -129,13 +125,12 @@ export async function forwardCloudRequest(
   }
 
   const unsafe = isUnsafeMethod(request.method);
-  if (unsafe && getInitiatorTrust(url, request.headers) !== "trusted") {
+  if (unsafe && !isTrustedUnsafeRequest(url, request.headers)) {
     return new Response("Forbidden cloud proxy request", { status: 403 });
   }
 
   const target = cloudOrigin();
   const headers = new Headers(request.headers);
-  headers.delete(RENDERER_ORIGIN_HEADER);
   headers.set("origin", new URL(target).origin);
   const forwardUrl = `${target}${url.pathname}${url.search}`;
   const hasBody = request.method !== "GET" && request.method !== "HEAD";

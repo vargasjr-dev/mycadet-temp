@@ -1,20 +1,22 @@
 import { describe, expect, test } from "bun:test";
 
-import { matchOperatorRequest } from "../operations/routes";
+import { forwardOperatorRequest } from "../operations/routes";
+
+/**
+ * Dispatches through the real dispatcher — the rows are its internals, so
+ * the tests speak the mount's API, not the match/run seam.
+ */
+const dispatch = (path: string, method = "GET"): Promise<Response | null> =>
+  forwardOperatorRequest(
+    new Request(`http://operator.test${path}`, { method }),
+  );
 import { checkUsernameRule } from "../operations/profile";
 
 describe("the operator availability check", () => {
   test("valid handles are available — the single-user assumption means no namespace to collide with", async () => {
-    const match = matchOperatorRequest(
-      "/v1/assistant/user/username-available/",
-      "GET",
+    const res = await dispatch(
+      "/v1/assistant/user/username-available/?username=grace",
     );
-    expect(match).not.toBeNull();
-    const res = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-      path: "/v1/assistant/user/username-available/?username=grace",
-    });
     expect((await res!.json()) as unknown).toEqual({
       available: true,
       code: null,
@@ -23,15 +25,9 @@ describe("the operator availability check", () => {
   });
 
   test("an invalid handle carries the canonical code and copy", async () => {
-    const match = matchOperatorRequest(
-      "/v1/assistant/user/username-available/",
-      "GET",
+    const res = await dispatch(
+      "/v1/assistant/user/username-available/?username=ab",
     );
-    const res = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-      path: "/v1/assistant/user/username-available/?username=ab",
-    });
     expect((await res!.json()) as unknown).toEqual({
       available: false,
       code: "too_short",
@@ -40,16 +36,9 @@ describe("the operator availability check", () => {
   });
 
   test("the scoped spelling answers the same check", async () => {
-    const match = matchOperatorRequest(
-      "/v1/assistants/any-entry/user/username-available/",
-      "GET",
+    const res = await dispatch(
+      "/v1/assistants/any-entry/user/username-available/?username=12345",
     );
-    expect(match).not.toBeNull();
-    const res = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-      path: "/v1/assistants/any-entry/user/username-available/?username=12345",
-    });
     expect((await res!.json()) as unknown).toMatchObject({
       available: false,
       code: "all_digits",

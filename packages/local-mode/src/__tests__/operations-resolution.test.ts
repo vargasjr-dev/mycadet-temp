@@ -48,11 +48,16 @@ afterAll(() => {
 });
 
 import { readLockfile } from "../lockfile";
-import {
-  forwardOperatorRequest,
-  OPERATOR_ROUTES,
-  matchOperatorRequest,
-} from "../operations/routes";
+import { forwardOperatorRequest, OPERATOR_ROUTES } from "../operations/routes";
+
+/**
+ * Dispatches through the real dispatcher — the rows are its internals, so
+ * the tests speak the mount's API, not the match/run seam.
+ */
+const dispatch = (path: string, method = "GET"): Promise<Response | null> =>
+  forwardOperatorRequest(
+    new Request(`http://operator.test${path}`, { method }),
+  );
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -108,8 +113,12 @@ const runResolution = async (
 const resolutionBody = async (response: Response): Promise<unknown> =>
   (await response.json()) as unknown;
 
-describe("matchOperatorRequest — the four prefixes", () => {
-  test("the resolution answers every versioned assistant-reference spelling", () => {
+describe("the dispatcher — the four prefixes", () => {
+  test("the resolution answers every versioned assistant-reference spelling", async () => {
+    writeLockfile({
+      assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
+      activeAssistant: null,
+    });
     for (const requestPath of [
       "/v1/assistant",
       "/v1/assistant/",
@@ -120,22 +129,22 @@ describe("matchOperatorRequest — the four prefixes", () => {
       "/api/assistants/a1",
       "/api/assistants/a1/",
     ]) {
-      expect(matchOperatorRequest(requestPath, "GET")).not.toBeNull();
+      expect(await dispatch(requestPath)).not.toBeNull();
     }
     // The bare spellings are gone on purpose: api routes nest under a
     // version prefix, or they collide with the frontend routes.
     for (const requestPath of ["/assistant", "/assistant/", "/assistants/a1"]) {
-      expect(matchOperatorRequest(requestPath, "GET")).toBeNull();
+      expect(await dispatch(requestPath)).toBeNull();
     }
   });
 
-  test("every route answers both trailing-slash spellings", () => {
+  test("every route answers both trailing-slash spellings", async () => {
     // Helper 1 owns the trailing slash and makes it optional — the bare
     // spellings match the same rows their slashed forms do. The list row
     // previously REQUIRED the slash, so the bare /v1/assistants fell
     // through to the static surface's 404.
     for (const requestPath of ["/v1/assistants", "/v1/assistants/"]) {
-      expect(matchOperatorRequest(requestPath, "GET")).not.toBeNull();
+      expect(await dispatch(requestPath)).not.toBeNull();
     }
     for (const requestPath of [
       "/v1/devices",
@@ -143,11 +152,11 @@ describe("matchOperatorRequest — the four prefixes", () => {
       "/v1/remote-web/pairing-start",
       "/v1/remote-web/pairing-start/",
     ]) {
-      expect(matchOperatorRequest(requestPath, "POST")).not.toBeNull();
+      expect(await dispatch(requestPath, "POST")).not.toBeNull();
     }
   });
 
-  test("a scoped match carries the decoded id; an unscoped one names the active entry", () => {
+  test("a scoped dispatch resolves the named entry; an unscoped one the active entry", async () => {
     writeLockfile({
       assistants: [
         { assistantId: "a1", cloud: "local", port: 7830 },
@@ -155,26 +164,40 @@ describe("matchOperatorRequest — the four prefixes", () => {
       ],
       activeAssistant: "a2",
     });
-    expect(matchOperatorRequest("/v1/assistants/a1/", "GET")?.assistantId).toBe(
-      "a1",
-    );
+    await dispatch("/v1/assistants/a1/");
+    expect(
+      (checkHealthMock.mock.calls.at(-1)?.[0] as { assistantId: string })
+        .assistantId,
+    ).toBe("a1");
     // Unscoped: the operator backend's active assistant, from the lockfile.
-    expect(matchOperatorRequest("/v1/assistant", "GET")?.assistantId).toBe(
-      "a2",
-    );
+    await dispatch("/v1/assistant");
+    expect(
+      (checkHealthMock.mock.calls.at(-1)?.[0] as { assistantId: string })
+        .assistantId,
+    ).toBe("a2");
   });
 
-  test("the proxy catch-all owns foreign methods and tails", () => {
+  test("the proxy catch-all owns foreign methods and tails", async () => {
     // The bare shared form has no tail for the proxy row's `.+`, so it
-    // genuinely passes; anything scoped now falls to the ALL proxy row.
-    expect(matchOperatorRequest("/v1/assistant", "POST")).toBeNull();
-    expect(matchOperatorRequest("/v1/assistant", "DELETE")).toBeNull();
-    expect(
-      matchOperatorRequest("/v1/assistant/meta", "GET")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistant/meta", "DELETE")?.route.method,
-    ).toBe("ALL");
+    // genuinely passes; anything scoped falls to the ALL proxy row, which
+    // dials the matched entry (stubbed here) instead of answering
+    // host-side.
+    writeLockfile({
+      assistants: [{ assistantId: "a1", cloud: "local", port: 7830 }],
+      activeAssistant: null,
+    });
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async (input: unknown, init?: unknown) => new Response("gateway"),
+    ) as unknown as typeof fetch;
+    try {
+      expect(await dispatch("/v1/assistant", "POST")).toBeNull();
+      expect(await dispatch("/v1/assistant", "DELETE")).toBeNull();
+      expect(await dispatch("/v1/assistant/meta", "GET")).not.toBeNull();
+      expect(await dispatch("/v1/assistant/meta", "DELETE")).not.toBeNull();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 
   test("the derivation helpers give every row both versioned spellings", () => {

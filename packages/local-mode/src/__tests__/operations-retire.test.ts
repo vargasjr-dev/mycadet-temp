@@ -102,7 +102,16 @@ afterAll(() => {
 import { readLockfile } from "../lockfile";
 import type { LockfileAssistant } from "../lockfile-contract";
 import { retireAssistant } from "../operations/retire";
-import { matchOperatorRequest } from "../operations/routes";
+import { forwardOperatorRequest } from "../operations/routes";
+
+/**
+ * Dispatches through the real dispatcher — the rows are its internals, so
+ * the tests speak the mount's API, not the match/run seam.
+ */
+const dispatch = (path: string, method = "GET"): Promise<Response | null> =>
+  forwardOperatorRequest(
+    new Request(`http://operator.test${path}`, { method }),
+  );
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -253,36 +262,39 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     port: 7830,
   };
 
-  test("foreign methods and paths fall to the proxy catch-all", () => {
+  test("foreign methods and paths never run the retire operation", async () => {
     // The retire row is DELETE-only; other methods on its path (and other
-    // paths on DELETE) ride the ALL proxy row to the gateway. The bare
-    // unscoped form has no tail, so it genuinely passes.
-    expect(
-      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistants/a/retire/", "GET")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistants/a/conversations", "DELETE")?.route
-        .method,
-    ).toBe("ALL");
-    expect(matchOperatorRequest("/v1/assistants/", "DELETE")).toBeNull();
-  });
-
-  test("a malformed id decode passes", () => {
-    expect(
-      matchOperatorRequest("/v1/assistants/%zz/retire/", "DELETE"),
-    ).toBeNull();
+    // paths on DELETE) ride the ALL proxy row to the gateway — dialing,
+    // not retiring. The bare unscoped form has no tail, so it genuinely
+    // passes.
+    writeLockfile({ assistants: [localEntry], activeAssistant: null });
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async (input: unknown, init?: unknown) => new Response("gateway"),
+    ) as unknown as typeof fetch;
+    try {
+      for (const [path, method] of [
+        ["/v1/assistants/asst-local/retire/", "POST"],
+        ["/v1/assistants/asst-local/retire/", "GET"],
+        ["/v1/assistants/asst-local/conversations", "DELETE"],
+        ["/v1/assistants/", "DELETE"],
+        ["/v1/assistants/%zz/retire/", "DELETE"],
+      ] as const) {
+        await dispatch(path, method);
+        expect(retireLocalMock).not.toHaveBeenCalled();
+      }
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 
   test("a host-executable entry's DELETE runs the retire operation", async () => {
     writeLockfile({ assistants: [localEntry], activeAssistant: null });
 
-    const response = await matchOperatorRequest(
+    const response = await dispatch(
       "/v1/assistants/asst-local/retire/",
       "DELETE",
-    )!.route.run({ assistantId: "asst-local", headers: new Headers() });
+    );
 
     expect(response?.status).toBe(204);
     // The dispatch hands the whole lockfile entry to the local leg.
@@ -295,10 +307,10 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     writeLockfile({ assistants: [dockerEntry], activeAssistant: null });
     retireDockerMock.mockRejectedValueOnce(new Error("no such assistant"));
 
-    const response = await matchOperatorRequest(
+    const response = await dispatch(
       "/v1/assistants/asst-docker/retire/",
       "DELETE",
-    )!.route.run({ assistantId: "asst-docker", headers: new Headers() });
+    );
 
     expect(response?.status).toBe(500);
     expect(await response?.json()).toEqual({ detail: "no such assistant" });
@@ -312,10 +324,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     // cloud leg here could only fail. The pass lets the pre-existing chain's
     // forward carry the bundle's session to the platform instead.
     expect(
-      await matchOperatorRequest(
-        "/v1/assistants/asst-cloud/retire/",
-        "DELETE",
-      )!.route.run({ assistantId: "asst-cloud", headers: new Headers() }),
+      await dispatch("/v1/assistants/asst-cloud/retire/", "DELETE"),
     ).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
     expect(retireDockerMock).not.toHaveBeenCalled();
@@ -324,10 +333,10 @@ describe("the operator route table — the scoped surface's retire arm", () => {
   test("a paired entry retires through its ssh leg", async () => {
     writeLockfile({ assistants: [pairedEntry], activeAssistant: null });
 
-    const response = await matchOperatorRequest(
+    const response = await dispatch(
       "/v1/assistants/asst-paired/retire/",
       "DELETE",
-    )!.route.run({ assistantId: "asst-paired", headers: new Headers() });
+    );
 
     expect(response?.status).toBe(204);
     expect(execMock.mock.calls[0]![0]).toBe("ssh");
@@ -337,12 +346,7 @@ describe("the operator route table — the scoped surface's retire arm", () => {
   test("an id the lockfile does not know passes", async () => {
     writeLockfile({ assistants: [localEntry], activeAssistant: null });
 
-    expect(
-      await matchOperatorRequest(
-        "/v1/assistants/ghost/retire/",
-        "DELETE",
-      )!.route.run({ headers: new Headers(), assistantId: "ghost" }),
-    ).toBeNull();
+    expect(await dispatch("/v1/assistants/ghost/retire/", "DELETE")).toBeNull();
     expect(retireLocalMock).not.toHaveBeenCalled();
   });
 });

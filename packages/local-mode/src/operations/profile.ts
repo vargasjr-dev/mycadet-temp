@@ -68,7 +68,7 @@ export function checkUsernameRule(username: string): UsernameErrorCode | null {
 export async function runUsernameAvailableRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const url = new URL(request.path ?? "/", "http://localhost");
+  const url = new URL(request.path, "http://localhost");
   const username = url.searchParams.get("username") ?? "";
   const code = checkUsernameRule(username);
   if (!code) {

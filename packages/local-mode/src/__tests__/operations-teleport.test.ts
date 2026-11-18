@@ -75,7 +75,11 @@ beforeEach(() => {
   healthSpy.mockImplementation(async (entry: LockfileAssistant) =>
     running.get(entry.assistantId)
       ? ({ version: "0.0.1", status: "healthy", authenticated: true } as never)
-      : ({ version: undefined, status: "unreachable", authenticated: true } as never),
+      : ({
+          version: undefined,
+          status: "unreachable",
+          authenticated: true,
+        } as never),
   );
 });
 afterAll(() => {
@@ -207,8 +211,9 @@ test("the same remote refuses before any host operation", async () => {
 });
 
 test("a multi-patch downgrade fails before shutdown", async () => {
-  healthSpy.mockImplementation(async () =>
-    ({ version: "1.2.3", status: "healthy", authenticated: true }) as never,
+  healthSpy.mockImplementation(
+    async () =>
+      ({ version: "1.2.3", status: "healthy", authenticated: true }) as never,
   );
   const result = await teleportAssistant({
     source,
@@ -241,13 +246,14 @@ test("a source backup failure wakes the source and moves nothing", async () => {
 });
 
 test("a failed graceful shutdown aborts with sleep's own error", async () => {
-  sleepLeg.mockImplementation(async () =>
-    ({
-      ok: false,
-      status: 500,
-      error: "the process tree refused to stop",
-      wasRunning: true,
-    }) as never,
+  sleepLeg.mockImplementation(
+    async () =>
+      ({
+        ok: false,
+        status: 500,
+        error: "the process tree refused to stop",
+        wasRunning: true,
+      }) as never,
   );
   const result = await teleportAssistant({
     source,
@@ -275,7 +281,12 @@ test("a failed source retirement wakes the source and moves nothing", async () =
   if (!result.ok) {
     expect(result.error).toContain("the instance dir held on");
   }
-  expect(order).toEqual(["sleep:source", "backup:source", "retire:source", "wake:source"]);
+  expect(order).toEqual([
+    "sleep:source",
+    "backup:source",
+    "retire:source",
+    "wake:source",
+  ]);
 });
 
 test("a failed init cleans the half-built target up and reports the archive", async () => {

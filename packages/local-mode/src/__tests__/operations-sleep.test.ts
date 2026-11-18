@@ -94,7 +94,16 @@ let sleepAssistant: typeof import("../operations/sleep").sleepAssistant;
 import type { LockfileAssistant } from "../lockfile-contract";
 import { readLockfile } from "../lockfile";
 import type { SleepResult } from "../operations/sleep";
-import { matchOperatorRequest } from "../operations/routes";
+import { forwardOperatorRequest } from "../operations/routes";
+
+/**
+ * Dispatches through the real dispatcher — the rows are its internals, so
+ * the tests speak the mount's API, not the match/run seam.
+ */
+const dispatch = (path: string, method = "GET"): Promise<Response | null> =>
+  forwardOperatorRequest(
+    new Request(`http://operator.test${path}`, { method }),
+  );
 
 let tmpDir: string;
 let lockfilePath: string;
@@ -440,29 +449,29 @@ describe("sleepAssistant — the dispatch", () => {
 });
 
 describe("the operator route table — the scoped surface's sleep arm", () => {
-  test("POST matches; foreign methods ride the proxy catch-all", () => {
-    expect(
-      matchOperatorRequest("/v1/assistants/a/sleep/", "POST"),
-    ).not.toBeNull();
-    expect(
-      matchOperatorRequest("/v1/assistants/a/sleep", "POST"),
-    ).not.toBeNull();
-    expect(
-      matchOperatorRequest("/v1/assistants/a/sleep/", "DELETE")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistants/a/retire/", "POST")?.route.method,
-    ).toBe("ALL");
-    expect(
-      matchOperatorRequest("/v1/assistants/a/conversations", "POST")?.route
-        .method,
-    ).toBe("ALL");
-  });
-
-  test("a malformed id decode passes", () => {
-    expect(
-      matchOperatorRequest("/v1/assistants/%zz/sleep/", "POST"),
-    ).toBeNull();
+  test("foreign methods on the sleep path ride the proxy catch-all and never stop the entry", async () => {
+    seedEntry({ assistantId: "asst-docker", cloud: "docker", port: 7831 });
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async (input: unknown, init?: unknown) => new Response("gateway"),
+    ) as unknown as typeof fetch;
+    try {
+      // The sleep row is POST-only; other methods on its path — and other
+      // paths on any method, including the malformed decode and the bare
+      // unscoped form — ride the ALL proxy row to the gateway, never the leg.
+      for (const [path, method] of [
+        ["/v1/assistants/asst-docker/sleep/", "DELETE"],
+        ["/v1/assistants/asst-docker/retire/", "POST"],
+        ["/v1/assistants/asst-docker/conversations", "POST"],
+        ["/v1/assistants/%zz/sleep/", "POST"],
+        ["/v1/assistants/", "DELETE"],
+      ] as const) {
+        await dispatch(path, method);
+      }
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(sleepDockerMock).not.toHaveBeenCalled();
   });
 
   test("a host-executable entry is answered in process with a 204", async () => {
@@ -472,15 +481,10 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
       port: 7831,
     });
 
-    const match = matchOperatorRequest(
+    const response = await dispatch(
       "/v1/assistants/asst-docker/sleep/",
       "POST",
     );
-    expect(match).not.toBeNull();
-    const response = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-    });
     expect(response?.status).toBe(204);
     expect(sleepDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
@@ -491,15 +495,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
   test("a platform-hosted entry is refused with the operation's 400", async () => {
     seedEntry({ assistantId: "asst-cloud", cloud: "cloud" });
 
-    const match = matchOperatorRequest(
-      "/v1/assistants/asst-cloud/sleep/",
-      "POST",
-    );
-    expect(match).not.toBeNull();
-    const response = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-    });
+    const response = await dispatch("/v1/assistants/asst-cloud/sleep/", "POST");
     expect(response?.status).toBe(400);
     const body = (await response!.json()) as { detail: string };
     expect(body.detail).toBe(
@@ -509,16 +505,8 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
   });
 
   test("an unknown id passes through to the pre-existing chain", async () => {
-    const match = matchOperatorRequest(
-      "/v1/assistants/no-such-assistant/sleep/",
-      "POST",
-    );
-    expect(match).not.toBeNull();
     expect(
-      await match!.route.run({
-        assistantId: match!.assistantId,
-        headers: new Headers(),
-      }),
+      await dispatch("/v1/assistants/no-such-assistant/sleep/", "POST"),
     ).toBeNull();
     expect(sleepDockerMock).not.toHaveBeenCalled();
   });
@@ -534,14 +522,7 @@ describe("the operator route table — the scoped surface's sleep arm", () => {
     isProcessAliveMock.mockReturnValue({ alive: true, pid: 12345 });
     writeLeaseFile(instanceDir, ["call-active-1"]);
 
-    const match = matchOperatorRequest(
-      "/v1/assistants/asst-local/sleep/",
-      "POST",
-    );
-    const response = await match!.route.run({
-      headers: new Headers(),
-      assistantId: match!.assistantId,
-    });
+    const response = await dispatch("/v1/assistants/asst-local/sleep/", "POST");
     expect(response?.status).toBe(409);
     const body = (await response!.json()) as { detail: string };
     expect(body.detail).toContain("active phone calls");

@@ -6,7 +6,14 @@
  * the caller). Every injectable fetch stand-in and fetcher parameter takes
  * THIS type.
  */
-export type Fetch = (
-  input: string,
-  init?: RequestInit,
-) => Promise<Response>;
+export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
+
+/** The methods the operator surface speaks — route rows and requests both. */
+export type HTTPMethod =
+  | "GET"
+  | "POST"
+  | "PUT"
+  | "PATCH"
+  | "DELETE"
+  | "HEAD"
+  | "OPTIONS";

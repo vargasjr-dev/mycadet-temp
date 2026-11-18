@@ -114,7 +114,6 @@ const pairingCancelMock = mock((_handle?: unknown): boolean => true);
 import { readLockfile } from "../lockfile";
 import { forwardOperatorRequest } from "../operations/routes";
 import { stripSensitiveFields } from "../util";
-import { matchOperatorRequest } from "../operations/routes";
 import { MemoryCookieJar } from "./helpers/memory-cookie-jar";
 
 let tmpDir: string;
@@ -246,10 +245,6 @@ const dispatch = (
   body?: unknown,
   cookieJar?: MemoryCookieJar,
 ): Promise<Response | null> => {
-  const match = matchOperatorRequest(pathname, method);
-  if (!match) {
-    return Promise.reject(new Error(`no route for ${method} ${pathname}`));
-  }
   const request = new Request(`http://host.test${pathname}`, {
     method,
     headers:
@@ -566,13 +561,13 @@ describe("the pairing rows — POST /v1/remote-web/pairing-*", () => {
       "/v1/devices",
       "/v1/devices/revoke",
     ]) {
-      const match = matchOperatorRequest(pathname, "POST")!;
-      const request = new Request(`http://host.test${pathname}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: "{not json",
-      });
-      const response = await forwardOperatorRequest(request);
+      const response = await forwardOperatorRequest(
+        new Request(`http://host.test${pathname}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: "{not json",
+        }),
+      );
       expect(response?.status).toBe(400);
       expect(await response?.json()).toEqual({
         ok: false,
@@ -719,54 +714,58 @@ describe("the avatar row — GET /v1/assistants/{id}/avatar/get", () => {
 });
 
 describe("the route table's method scoping", () => {
-  test("a method-mismatched request to a known path matches no row", () => {
-    expect(matchOperatorRequest("/v1/devices", "GET")).toBeNull();
-    expect(
-      matchOperatorRequest("/v1/remote-web/pairing-start", "DELETE"),
-    ).toBeNull();
+  test("a method-mismatched request to a known path passes to the host chain", async () => {
+    expect(await dispatch("/v1/devices", "GET")).toBeNull();
+    expect(await dispatch("/v1/remote-web/pairing-start", "DELETE")).toBeNull();
   });
 
-  test("a GET on a path-shaped id rides the resolution row's pattern", () => {
+  test("a GET on a path-shaped id rides the resolution row's pattern", async () => {
     // `/v1/assistants/hatch` is a legal resolution probe for an id literally
-    // named "hatch" — the id-scoped pattern owns it, the entry lookup
-    // pass-through decides.
-    const match = matchOperatorRequest("/v1/assistants/hatch", "GET");
-    expect(match?.assistantId).toBe("hatch");
-  });
-
-  test("no-capture patterns resolve the empty id", () => {
-    // Every body-only route's pattern has no capture group; the rows that
-    // read an id never match on those patterns.
-    const match = matchOperatorRequest("/v1/devices", "POST");
-    expect(match?.assistantId).toBe("");
+    // named "hatch" — the id-scoped pattern owns it (the hatch row is
+    // POST-only), the entry lookup decides. The health read fails fast for
+    // an unbound port, so the row answers its not-ready verdict rather
+    // than passing.
+    seedEntry({ assistantId: "hatch", cloud: "local", port: 7830 });
+    const response = await dispatch("/v1/assistants/hatch", "GET");
+    expect(response).not.toBeNull();
   });
 });
 
 describe("the webhook row — /webhooks/* bridges to the fronted gateway", () => {
-  test("matches the subtree at the root in every method, unscoped to the active entry", () => {
+  test("bridges the subtree at the root in every method, unscoped to the active entry", async () => {
     const entry = seedEntry({
       assistantId: "assistant-1",
       name: "Homelab",
       cloud: "local",
       port: 7830,
     });
-    for (const path of [
-      "/webhooks",
-      "/webhooks/telegram",
-      "/webhooks/twilio/voice",
-      "/webhooks/oauth/callback",
-    ]) {
-      for (const method of ["GET", "POST", "DELETE"]) {
-        const match = matchOperatorRequest(path, method);
-        expect(match?.assistantId).toBe(entry.assistantId);
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = mock(
+      async (input: unknown, init?: unknown) => new Response("bridged"),
+    ) as unknown as typeof fetch;
+    try {
+      for (const path of [
+        "/webhooks",
+        "/webhooks/telegram",
+        "/webhooks/twilio/voice",
+        "/webhooks/oauth/callback",
+      ]) {
+        for (const method of ["GET", "POST", "DELETE"]) {
+          // The bridge forwards to the active entry's gateway — the dial
+          // rides the entry's port, the answer rides back verbatim.
+          const response = await dispatch(path, method);
+          expect(await response?.text()).toBe("bridged");
+        }
       }
+    } finally {
+      globalThis.fetch = realFetch;
     }
   });
 
-  test("near-miss roots match no row", () => {
+  test("near-miss roots match no row", async () => {
     seedEntry({ assistantId: "assistant-1", cloud: "local", port: 7830 });
-    expect(matchOperatorRequest("/webhooks/telegram", "POST")).not.toBeNull();
-    expect(matchOperatorRequest("/hooks/telegram", "POST")).toBeNull();
-    expect(matchOperatorRequest("/webhookss/telegram", "POST")).toBeNull();
+    expect(await dispatch("/webhooks/telegram", "POST")).not.toBeNull();
+    expect(await dispatch("/hooks/telegram", "POST")).toBeNull();
+    expect(await dispatch("/webhookss/telegram", "POST")).toBeNull();
   });
 });

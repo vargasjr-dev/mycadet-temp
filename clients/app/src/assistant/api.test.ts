@@ -271,7 +271,7 @@ test("browser creation uses create semantics, CSRF, and the validated organizati
   );
 });
 
-test("native creation sends renderer origin and current session token without browser CSRF", async () => {
+test("native creation sends the current session token without browser CSRF", async () => {
   Object.defineProperty(window, "cadet", {
     configurable: true,
     value: {
@@ -288,9 +288,10 @@ test("native creation sends renderer origin and current session token without br
   expect(init?.body).toBe("{}");
   const headers = new Headers(init?.headers);
   expect(headers.get("X-Session-Token")).toBe("native-session-token");
-  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBe(
-    `${window.location.protocol}//${window.location.host}`,
-  );
+  // The renderer-origin marker is gone: its only reader (the arm's trust
+  // gate) trusted the unforgeable Sec-Fetch-Site instead, and a forgeable
+  // header was a liability, not a signal.
+  expect(headers.get("X-Cadet-Electron-Renderer-Origin")).toBeNull();
   expect(headers.get("X-CSRFToken")).toBeNull();
 });
 

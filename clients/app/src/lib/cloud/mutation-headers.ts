@@ -3,12 +3,7 @@ import { getElectronBridge } from "@app/runtime/electron-bridge";
 
 export async function addCloudMutationHeaders(headers: Headers): Promise<void> {
   headers.set("Content-Type", "application/json");
-  if (getElectronBridge()) {
-    headers.set(
-      "X-Cadet-Electron-Renderer-Origin",
-      `${window.location.protocol}//${window.location.host}`,
-    );
-  } else {
+  if (!getElectronBridge()) {
     await ensureCsrfCookie();
     const csrf = getCsrfToken();
     if (csrf) {
