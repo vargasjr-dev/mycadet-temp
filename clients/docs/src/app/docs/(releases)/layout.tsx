@@ -73,10 +73,10 @@ export default async function ReleasesLayout({
             </div>
           </div>
         </header>
-        <div className="docs-layout mx-auto flex max-w-[1280px] min-h-[calc(100vh-57px)] md:min-h-[calc(100vh-57px)]">
+        <div className="docs-layout mx-auto flex max-w-[1280px] min-h-[calc(100vh-57px)]">
           <ReleasesNav releases={releases} />
           <div className="docs-content-area min-w-0 flex-1">
-            <div className="flex items-start gap-6 px-4 py-6 md:px-10 md:py-10">
+            <div className="flex items-start gap-6 px-4 py-6 md:px-10 md:pb-10 md:pt-5">
               {children}
             </div>
           </div>

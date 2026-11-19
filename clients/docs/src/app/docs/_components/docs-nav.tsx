@@ -124,9 +124,6 @@ const GoogleCloudHex = ({ size = ICON_SIZE }: { size?: number }): ReactNode => (
 );
 
 const NAV_ITEMS: DocsNavItem[] = [
-  { label: "Constitution", href: "/docs/constitution", icon: icon(Scroll) },
-  { label: "Glossary", href: "/docs/glossary", icon: icon(Book) },
-  { label: "Community", href: "/community", icon: icon(Users) },
   {
     label: "Getting Started",
     href: "/docs/getting-started",
@@ -151,6 +148,21 @@ const NAV_ITEMS: DocsNavItem[] = [
         label: "Quick Start",
         href: "/docs/getting-started/quick-start",
         icon: icon(Rocket),
+      },
+      {
+        label: "Constitution",
+        href: "/docs/constitution",
+        icon: icon(Scroll),
+      },
+      {
+        label: "Glossary",
+        href: "/docs/glossary",
+        icon: icon(Book),
+      },
+      {
+        label: "Community",
+        href: "/community",
+        icon: icon(Users),
       },
       {
         label: "Self-improving Skills",
