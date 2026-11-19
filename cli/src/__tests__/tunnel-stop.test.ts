@@ -93,7 +93,7 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-test("stop terminates the owned agent and clears the record, retaining nginx and domain; repeated stop is harmless", async () => {
+test("stop terminates the owned agent and clears the record, retaining the app server and domain; repeated stop is harmless", async () => {
   await tunnel();
   expect(stop).toHaveBeenCalledWith(424242, "tunnel");
   expect(readRootProcesses().tunnel).toBeUndefined();

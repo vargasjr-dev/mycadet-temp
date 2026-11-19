@@ -320,7 +320,7 @@ describe("app server targeting", () => {
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
-    expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
+    expect(logs).toContain(`Started the app server on 127.0.0.1:${EDGE_PORT}`);
   });
 
   test("the tunnel level notifies every local gateway of the public URL", async () => {
@@ -397,7 +397,7 @@ describe("app server targeting", () => {
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
-    expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
+    expect(logs).toContain(`Started the app server on 127.0.0.1:${EDGE_PORT}`);
   });
 
   test("a stray positional errors pointing at the subcommands", async () => {
@@ -469,7 +469,7 @@ describe("app server targeting", () => {
     const logs = await runTunnelCapturingLogs();
 
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({});
-    expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
+    expect(logs).toContain(`Reusing the app server on 127.0.0.1:${EDGE_PORT}`);
   });
 
   test("a bare invocation tunnels the default provider", async () => {

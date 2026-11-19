@@ -64,10 +64,7 @@ function parseArgs(): TunnelArgs {
       console.log("below.");
       console.log("");
       console.log(
-        "The tunnel always fronts the local nginx edge, which is started automatically.",
-      );
-      console.log(
-        "nginx must be installed; if it is missing, cadet offers to install it.",
+        "The tunnel always fronts the local app server, which is started automatically.",
       );
       console.log("");
       console.log("Options:");
@@ -210,13 +207,13 @@ function parseArgs(): TunnelArgs {
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
-/** The `cadet tunnel restart` flow: bounce the tunnel, keep nginx. */
+/** The `cadet tunnel restart` flow: bounce the tunnel, keep the app server. */
 async function restartTunnelFlow(): Promise<void> {
   const restarted = await restartTunnel();
   console.log(`Tunnel restarted: ${restarted.publicUrl}`);
 }
 
-/** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
+/** The `cadet tunnel stop` flow: stop the recorded tunnel, keep the app server. */
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
   if (!record) {
@@ -228,7 +225,7 @@ async function stopTunnelFlow(): Promise<void> {
   const stopped = await stopTunnelProcess();
   console.log(
     stopped
-      ? "Tunnel stopped. nginx and the saved domain are unchanged."
+      ? "Tunnel stopped. The app server and the saved domain are unchanged."
       : "No running tunnel found; cleared stale tunnel state.",
   );
 }
@@ -241,7 +238,7 @@ export const tunnel = Object.assign(
       if (args.includes("--help") || args.includes("-h")) {
         console.log(`Usage: ${cliCommand()} tunnel stop`);
         console.log(
-          "Stop the recorded Cadet-managed tunnel, keeping nginx and the saved domain.",
+          "Stop the recorded Cadet-managed tunnel, keeping the app server and the saved domain.",
         );
         return;
       }
@@ -306,7 +303,7 @@ export const tunnel = Object.assign(
     }
 
     console.log(
-      `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port}.`,
+      `${edge.started ? "Started" : "Reusing"} the app server on 127.0.0.1:${edge.port}.`,
     );
 
     await runProviderTunnel(provider, { ...(domain ? { domain } : {}) });
