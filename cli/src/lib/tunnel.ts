@@ -73,11 +73,15 @@ export function providerSupportsReservedDomain(provider: string): boolean {
 
 /** Options every provider tunnel accepts; `runProviderTunnel` maps them. */
 export interface ProviderTunnelOptions {
-  port: number;
   /** Reserved domain to bind (providers that support one only). */
   domain?: string;
   /** Tailnet-only runs keep the webhook callback base as it is. */
   preserveIngressUrl?: boolean;
+}
+
+/** A provider run's full input: caller options plus the resolved edge port. */
+export interface ProviderTunnelRunOptions extends ProviderTunnelOptions {
+  port: number;
 }
 
 /**
@@ -96,7 +100,7 @@ export interface ProviderStopOptions {
 }
 
 export interface TunnelProvider {
-  run(opts: ProviderTunnelOptions): Promise<ProviderTunnelResult>;
+  run(opts: ProviderTunnelRunOptions): Promise<ProviderTunnelResult>;
   stop(opts: ProviderStopOptions): Promise<boolean>;
 }
 
@@ -169,7 +173,7 @@ export async function runProviderTunnel(
 /** Map the provider name onto its run — no gateway notification here. */
 function runProvider(
   provider: TunnelProviderName,
-  opts: ProviderTunnelOptions,
+  opts: ProviderTunnelRunOptions,
 ): Promise<ProviderTunnelResult> {
   return providers[provider].run(opts);
 }

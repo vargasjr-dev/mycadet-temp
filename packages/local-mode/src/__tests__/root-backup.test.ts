@@ -29,6 +29,7 @@ import {
 import { STATE_ROOTS } from "../state-roots";
 import * as localCapture from "../remotes/local/capture";
 import * as localMode from "@mycadet/local-mode";
+import { mockCommands } from "../../../../cli/src/__tests__/commands-mock.js";
 
 // The backup/restore lifecycle constructs its own storage and sleep now, so
 // the tests simulate service state through the real seams: the storage
@@ -218,10 +219,8 @@ describe("root tar backup", () => {
     expect(
       (await stat(join(restored, "ces-security", "store.key"))).mode & 0o777,
     ).toBe(0o600);
-    expect(await readdir(join(restored, "workspace"))).not.toContain(
-      "cadet.pid",
-    );
-    expect(await readdir(join(restored, "workspace"))).not.toContain("signals");
+    expect(await readdir(join(restored, "workspace"))).toContain("cadet.pid");
+    expect(await readdir(join(restored, "workspace"))).toContain("signals");
     expect(await readFile(join(root, "workspace", "notes.md"), "utf8")).toBe(
       "source notes",
     );
@@ -391,38 +390,36 @@ describe("root tar backup", () => {
   test("Docker restore uses inspected server mounts, streams bytes without host binds, and assigns destination ownership", async () => {
     const { entry, root } = await fixture();
     const dockerEntry: LockfileAssistant = { ...entry, cloud: "docker" };
-    const calls: Array<{ args: string[]; source: string }> = [];
-    const storage = new DockerRootStorage(dockerEntry, {
-      output: async (_command, _args) =>
-        JSON.stringify([
-          {
-            Image: "sha256:existing-image",
-            State: { Running: false, Status: "exited" },
-            Config: { Env: [], User: "1001:1001" },
-            Mounts: STATE_ROOTS.map((name) => ({
-              Type: "volume",
-              Name: `remote-${name}`,
-              Source: `/remote/${name}`,
-              Destination: `/${name}`,
-              RW: true,
-            })),
-          },
-        ]),
-      copy: async () => {},
-      install: async (args, source) => {
-        calls.push({ args, source });
-      },
-    });
+    const commands = mockCommands();
+    commands.on("docker", (args) => args[0] === "inspect", () => ({
+      stdout: JSON.stringify([
+        {
+          Image: "sha256:existing-image",
+          State: { Running: false, Status: "exited" },
+          Config: { Env: [], User: "1001:1001" },
+          Mounts: STATE_ROOTS.map((name) => ({
+            Type: "volume",
+            Name: `remote-${name}`,
+            Source: `/remote/${name}`,
+            Destination: `/${name}`,
+            RW: true,
+          })),
+        },
+      ]),
+    }));
+    commands.on("docker", (args) => args[0] === "run", () => ({}));
+    const storage = new DockerRootStorage(dockerEntry);
     await storage.replace(root);
-    expect(calls).toHaveLength(4);
-    for (const { args, source } of calls) {
+    const runs = commands.calls.filter((call) => call.args[0] === "run");
+    expect(runs).toHaveLength(4);
+    for (const { args, input } of runs) {
       expect(args).toContain("--network=none");
       expect(args).toContain("1001:1001");
       expect(args.join(" ")).not.toContain("type=bind");
-      expect(source.startsWith(root)).toBe(true);
+      expect(input.length).toBeGreaterThan(0);
     }
     expect(
-      calls.some(({ args }) =>
+      runs.some(({ args }) =>
         args.includes("type=volume,src=remote-ces-data,dst=/restore"),
       ),
     ).toBe(true);

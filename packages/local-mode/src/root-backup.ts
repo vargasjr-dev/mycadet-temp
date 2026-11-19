@@ -29,7 +29,7 @@ import { DOCKER_STATEFUL_SET_SPEC } from "./remotes/docker/statefulset";
 import { getLocalInstanceDir } from "./remotes/local/instance";
 import { sleepAssistant } from "./operations/sleep";
 import { captureRoot } from "./operations/capture";
-import { dockerOps, type DockerBackupOps } from "./remotes/docker/capture";
+
 import { consoleLifecycleReporter, type LifecycleReporter } from "./lifecycle-reporter";
 import { wakeAssistant } from "./operations/wake";
 import type { DockerAssistant, LocalAssistant } from "./lockfile-contract";
@@ -330,10 +330,7 @@ type ContainerInspection = z.infer<typeof ContainerInspectionSchema>;
 
 export class DockerRootStorage implements RootStorage {
   readonly containers: Record<StateRoot, string>;
-  constructor(
-    readonly entry: LockfileAssistant,
-    readonly ops: DockerBackupOps = dockerOps,
-  ) {
+  constructor(readonly entry: LockfileAssistant) {
     const names = dockerResourceNames(entry.assistantId);
     this.containers = {
       workspace: names.assistantContainer,
@@ -350,7 +347,7 @@ export class DockerRootStorage implements RootStorage {
       .array(ContainerInspectionSchema)
       .length(1)
       .safeParse(
-        JSON.parse(await this.ops.output("docker", ["inspect", container])),
+        JSON.parse(await execOutput("docker", ["inspect", container])),
       );
     if (!result.success) {
       throw new Error(`Invalid container inspection: ${container}`);
@@ -462,7 +459,7 @@ export class DockerRootStorage implements RootStorage {
     for (const { root, image, mount, owner } of await this.resolveMounts(
       source,
     )) {
-      await this.ops.install(
+      await dockerInstall(
         [
           "run",
           "--rm",
@@ -481,6 +478,40 @@ export class DockerRootStorage implements RootStorage {
         join(source, root),
       );
     }
+  }
+}
+
+/**
+ * Stream one root's archive into a docker run's stdin so the container-side
+ * restore (rm + untar + chown) happens without ever touching the host path
+ * inside the volume.
+ */
+async function dockerInstall(args: string[], source: string): Promise<void> {
+  const child = spawn("docker", args, {
+    stdio: ["pipe", "ignore", "pipe"],
+    windowsHide: true,
+  });
+  let stderr = "";
+  child.stderr.on("data", (chunk: Buffer) => {
+    stderr += chunk.toString();
+  });
+  const exited = new Promise<void>((done, fail) => {
+    child.once("error", fail);
+    child.once("close", (code) =>
+      code === 0
+        ? done()
+        : fail(new Error(`Docker restore failed (${code}): ${stderr}`)),
+    );
+  });
+  const input = tar.c({ cwd: source, portable: true }, ["."]);
+  const transfer = pipeline(input, child.stdin).catch((error) => {
+    child.kill("SIGTERM");
+    throw error;
+  });
+  // Do not begin recovery while an earlier writer still owns the volume.
+  const results = await Promise.allSettled([transfer, exited]);
+  for (const result of results) {
+    if (result.status === "rejected") throw result.reason;
   }
 }
 
