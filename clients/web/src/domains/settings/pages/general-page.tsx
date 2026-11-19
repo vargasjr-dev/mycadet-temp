@@ -110,7 +110,6 @@ export function GeneralPage() {
         accessory={
           <Button
             variant="outlined"
-            disabled={!assistantId}
             onClick={() => hardNavigate(routes.account.assistantDetail(assistantId))}
           >
             {t("generalPage.accountManage")}

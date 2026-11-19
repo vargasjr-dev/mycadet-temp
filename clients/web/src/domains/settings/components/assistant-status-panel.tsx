@@ -66,7 +66,7 @@ export function resizePollInterval(
 }
 
 export interface AssistantWithHealthz {
-  assistantId: string | null;
+  assistantId: string;
   healthz: HealthzGetResponse | null;
   healthzLoading: boolean;
   /** True while a request is in flight, including a refresh over existing values. */
@@ -94,7 +94,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
      id the hook already holds, so waiting for it would buy nothing and cost a
      round trip on a tunnel. */
   const healthzQueryOptions = useMemo(
-    () => healthzGetOptions({ path: { assistant_id: assistantId ?? "" } }),
+    () => healthzGetOptions({ path: { assistant_id: assistantId } }),
     [assistantId],
   );
   const [resizeWatch, setResizeWatch] = useState<ResizeWatch | null>(null);
