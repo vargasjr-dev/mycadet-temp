@@ -8,10 +8,9 @@ import {
   loadFreshGuardianToken,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { resolveTargetAssistant } from "../assistant-config.js";
+import { isCloudEntry } from "@mycadet/local-mode/contract";
 import {
   buildTunnelLiveVoiceUrl,
   mintTunnelWsToken,
@@ -53,13 +52,18 @@ export class LiveVoiceConnectionError extends Error {}
 export async function resolveLiveVoiceConnection(
   assistantIdArg?: string,
 ): Promise<LiveVoiceConnection> {
-  // An explicit target is looked up by id first and display name second, and
-  // an ambiguous display name is an error naming the candidates, per the
-  // package's assistant-targeting convention. With no target,
-  // `resolveTargetAssistant` applies the usual active/sole-entry fallback.
+  // An explicit target is looked up by assistant ID; with no target,
+  // findAssistant applies the usual active/sole-entry fallback.
   const entry = assistantIdArg
-    ? resolveNamedAssistant(assistantIdArg)
-    : resolveTargetAssistant();
+    ? findAssistant(assistantIdArg)
+    : findAssistant();
+  if (!entry) {
+    throw new LiveVoiceConnectionError(
+      assistantIdArg
+        ? `No assistant found with name or ID '${assistantIdArg}'.`
+        : "No assistant found. Run 'cadet hatch' first.",
+    );
+  }
 
   // Cloud assistants are reached the other way round. Their gateway
   // is behind tunnel, which authenticates nobody and forwards an attestation
@@ -153,14 +157,4 @@ async function resolveCloudConnection(
     assistantId: entry.assistantId,
     reference: getAssistantDisplayName(entry),
   };
-}
-
-function resolveNamedAssistant(identifier: string) {
-  const entry = findAssistant(identifier);
-  if (!entry) {
-    throw new LiveVoiceConnectionError(
-      `No assistant found with name or ID '${identifier}'.`,
-    );
-  }
-  return entry;
 }

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterAll, mock } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -20,11 +20,8 @@ mock.module("../../../packages/local-mode/src/port-probe", () => ({
   probePort: probePortMock,
 }));
 
-import {
-  resolveTargetAssistant,
-  setActiveAssistant,
-} from "../lib/assistant-config.js";
-import { allocateLocalPlacement } from "@mycadet/local-mode";
+import { setActiveAssistant } from "../lib/assistant-config.js";
+import { allocateLocalPlacement, findAssistant } from "@mycadet/local-mode";
 import {
   getActiveAssistant,
   removeLockfileAssistant,
@@ -38,13 +35,6 @@ afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
   delete process.env.XDG_CONFIG_HOME;
 });
-
-function writeLockfile(data: unknown): void {
-  writeFileSync(
-    join(testDir, "cadet", "lockfile.json"),
-    JSON.stringify(data, null, 2),
-  );
-}
 
 function readLockfileRaw(): Record<string, unknown> {
   return JSON.parse(
@@ -211,53 +201,6 @@ describe("multi-local", () => {
     });
   });
 
-  describe("resolveTargetAssistant() priority chain", () => {
-    test("explicit name returns that entry", () => {
-      makeEntry({ assistantId: "alpha" });
-      makeEntry({ assistantId: "beta" });
-      const result = resolveTargetAssistant("beta");
-      expect(result.assistantId).toBe("beta");
-    });
-
-    test("active assistant set returns the active entry", () => {
-      makeEntry({ assistantId: "alpha" });
-      makeEntry({ assistantId: "beta" });
-      setActiveAssistant("alpha");
-      const result = resolveTargetAssistant();
-      expect(result.assistantId).toBe("alpha");
-    });
-
-    test("sole local assistant returns it", () => {
-      makeEntry({ assistantId: "only-one" });
-      const result = resolveTargetAssistant();
-      expect(result.assistantId).toBe("only-one");
-    });
-
-    test("multiple local assistants and no active resolves the first entry", () => {
-      makeEntry({ assistantId: "x" });
-      makeEntry({ assistantId: "y" });
-      // findAssistant's served rule: no active selection → the sole
-      // first-seen entry is served before any chooser runs.
-      const result = resolveTargetAssistant();
-      expect(result.assistantId).toBe("x");
-    });
-
-    test("no local assistants throws", () => {
-      writeLockfile({ assistants: [] });
-      const mockExit = mock(() => {
-        throw new Error("process.exit called");
-      });
-      const origExit = process.exit;
-      process.exit = mockExit as unknown as typeof process.exit;
-      try {
-        expect(() => resolveTargetAssistant()).toThrow("process.exit called");
-        expect(mockExit).toHaveBeenCalledWith(1);
-      } finally {
-        process.exit = origExit;
-      }
-    });
-  });
-
   describe("setActiveAssistant() / getActiveAssistant() round-trip", () => {
     test("set active, read it back", () => {
       makeEntry({ assistantId: "my-assistant" });
@@ -292,7 +235,7 @@ describe("multi-local", () => {
   });
 
   describe("remote non-regression", () => {
-    test("resolveTargetAssistant works with remote entries", () => {
+    test("findAssistant serves the active remote entry", () => {
       makeEntry({
         assistantId: "my-remote",
         cloud: "custom",
@@ -300,9 +243,9 @@ describe("multi-local", () => {
         port: 7831,
       });
       setActiveAssistant("my-remote");
-      const result = resolveTargetAssistant();
-      expect(result.assistantId).toBe("my-remote");
-      expect(result.cloud).toBe("custom");
+      const result = findAssistant();
+      expect(result?.assistantId).toBe("my-remote");
+      expect(result?.cloud).toBe("custom");
     });
 
     test("remote entries don't get resources applied", () => {
@@ -315,9 +258,9 @@ describe("multi-local", () => {
       const remoteEntry = readEntry("cloud-box");
       // Save and reload to verify resources are not injected
       saveLockfileAssistant(remoteEntry!);
-      const result = resolveTargetAssistant("cloud-box");
+      const result = findAssistant("cloud-box");
       expect(
-        result.cloud === "local" ? result.instanceDir : undefined,
+        result && result.cloud === "local" ? result.instanceDir : undefined,
       ).toBeUndefined();
     });
   });

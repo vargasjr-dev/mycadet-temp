@@ -16,18 +16,14 @@ import { join } from "node:path";
 const testDir = mkdtempSync(join(tmpdir(), "cli-debug-test-"));
 process.env.XDG_CONFIG_HOME = testDir;
 
-import * as assistantConfig from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
 import { withPreconnect } from "./helpers/http.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
-const resolveTargetMock = spyOn(
-  assistantConfig,
-  "resolveTargetAssistant",
-).mockImplementation(() => {
-  throw new Error("process.exit:1");
-});
+const findAssistantMock = spyOn(localMode, "findAssistant").mockReturnValue(
+  null as never,
+);
 const readCloudTokenMock = spyOn(localMode, "readCloudToken").mockReturnValue(
   "test-cloud-token",
 );
@@ -94,8 +90,8 @@ beforeEach(() => {
       );
     },
   );
-  resolveTargetMock.mockReset();
-  resolveTargetMock.mockReturnValue(LOCAL_ENTRY);
+  findAssistantMock.mockReset();
+  findAssistantMock.mockReturnValue(LOCAL_ENTRY);
   leaseGuardianTokenSpy.mockClear();
   readCloudTokenMock.mockReset();
   readCloudTokenMock.mockReturnValue("test-cloud-token");
@@ -109,7 +105,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  resolveTargetMock.mockRestore();
+  findAssistantMock.mockRestore();
   leaseGuardianTokenSpy.mockRestore();
   readCloudTokenMock.mockRestore();
   loadGuardianTokenSpy.mockRestore();
@@ -135,10 +131,10 @@ describe("cadet debug", () => {
     expect(fetchCalls[2].init?.body).toBeInstanceOf(Blob);
   });
 
-  test("passes an unquoted multi-word display name through to the shared resolver", async () => {
+  test("passes an unquoted multi-word id through to findAssistant", async () => {
     process.argv = ["bun", "cadet", "debug", "Support", "Bot"];
     await debug();
-    expect(resolveTargetMock).toHaveBeenCalledWith("Support Bot");
+    expect(findAssistantMock).toHaveBeenCalledWith("Support Bot");
   });
 
   test("explains what to turn on when the cloud refuses", async () => {
@@ -156,10 +152,10 @@ describe("cadet debug", () => {
   });
 
   test("refuses a Cadet-hosted assistant, which needs no bundle", async () => {
-    resolveTargetMock.mockReturnValue({
+    findAssistantMock.mockReturnValue({
       ...LOCAL_ENTRY,
       cloud: "cloud",
-    });
+    } as never);
     const errorSpy = spyOn(console, "error").mockImplementation(() => {});
     try {
       await expect(debug()).rejects.toThrow("process.exit:1");
@@ -170,10 +166,10 @@ describe("cadet debug", () => {
   });
 
   test("asks for a login when the assistant is not registered", async () => {
-    resolveTargetMock.mockReturnValue({
+    findAssistantMock.mockReturnValue({
       ...LOCAL_ENTRY,
       cloudAssistantId: undefined,
-    });
+    } as never);
     const errors: string[] = [];
     const errorSpy = spyOn(console, "error").mockImplementation((msg) => {
       errors.push(String(msg));

@@ -97,7 +97,7 @@ export function readRootProcesses(): RootProcessRecords {
   return { tunnel: data.tunnel, app: data.app };
 }
 
-import { loadAllAssistants, findAssistant } from "@mycadet/local-mode";
+import { loadAllAssistants } from "@mycadet/local-mode";
 
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();
@@ -118,25 +118,6 @@ export function setActiveAssistant(assistantId: string): void {
     data.activeAssistant = assistantId;
     writeLockfileUnlocked(data);
   });
-}
-
-/**
- * Resolve which assistant to target for a command, exiting the process
- * with a user-facing error when nothing resolves: the explicit ID
- * argument, else findAssistant's served rule (active, or the sole entry
- * before a selection).
- */
-export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
-  const entry = findAssistant(nameArg);
-  if (!entry) {
-    console.error(
-      nameArg
-        ? `No assistant found with name or ID '${nameArg}'.`
-        : `No assistant found. Run 'cadet hatch' first.`,
-    );
-    process.exit(1);
-  }
-  return entry;
 }
 
 /**

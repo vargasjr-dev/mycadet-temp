@@ -18,13 +18,12 @@ import {
   DeviceRecord,
   dockerResourceNames,
   getAssistantDisplayName,
+  findAssistant,
   loadGuardianToken,
   loopbackSafeFetch,
   execOutput,
 } from "@mycadet/local-mode";
-
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { resolveTargetAssistant } from "../lib/assistant-config";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import { computeDeviceId } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
@@ -359,14 +358,30 @@ export const devices = Object.assign(
         process.exit(1);
       }
       const nameArg = positionals.slice(1).join(" ") || undefined;
-      const entry = resolveTargetAssistant(nameArg);
+      const entry = findAssistant(nameArg);
+      if (!entry) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
       const base = resolveLoopbackBase(entry);
       await revokeDevice(entry, base, hashedDeviceId, yes, jsonOutput);
       return;
     }
 
     const nameArg = parseAssistantTargetArg(args, []);
-    const entry = resolveTargetAssistant(nameArg);
+    const entry = findAssistant(nameArg);
+    if (!entry) {
+      console.error(
+        nameArg
+          ? `No assistant found with name or ID '${nameArg}'.`
+          : "No assistant found. Run 'cadet hatch' first.",
+      );
+      process.exit(1);
+    }
     const base = resolveLoopbackBase(entry);
     await listDevices(entry, base, jsonOutput);
   },

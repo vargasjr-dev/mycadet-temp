@@ -975,21 +975,15 @@ export interface SelectionRequest {
 
 const SCROLL_STEP = 5;
 
-export function render(
-  runtimeUrl: string,
-  assistantId: string,
-  assistantName?: string,
-): number {
+export function render(runtimeUrl: string, assistantId: string): number {
   const terminalColumns = process.stdout.columns || DEFAULT_TERMINAL_COLUMNS;
   const isCompact = terminalColumns < COMPACT_THRESHOLD;
   const headerHeight = calculateHeaderHeight(terminalColumns);
 
-  const lookedUp = findAssistant(assistantId);
-  const entry: LockfileAssistant = lookedUp ?? {
-    assistantId,
-    cloud: "cloud",
-    name: assistantName,
-  };
+  const entry = findAssistant(assistantId);
+  if (!entry) {
+    throw new Error(`No assistant found with id '${assistantId}'.`);
+  }
   const { unmount } = inkRender(<DefaultMainScreen entry={entry} />, {
     exitOnCtrlC: false,
   });
@@ -2318,6 +2312,9 @@ function ChatApp({
   }, [selection]);
 
   const lookedUp = findAssistant(assistantId);
+  if (!lookedUp) {
+    throw new Error(`No assistant found with id '${assistantId}'.`);
+  }
   if (connectionState !== "connected") {
     return (
       <ConnectionScreen
@@ -2333,18 +2330,7 @@ function ChatApp({
 
   return (
     <Box flexDirection="column" height={terminalRows}>
-      <DefaultMainScreen
-        entry={
-          lookedUp
-            ? lookedUp
-            : {
-                assistantId,
-                cloud: "cloud",
-                name: liveAssistantName,
-              }
-        }
-        healthStatus={healthStatus}
-      />
+      <DefaultMainScreen entry={lookedUp} healthStatus={healthStatus} />
 
       <Box flexDirection="column" flexGrow={1} overflow="hidden">
         {visibleWindow.hiddenAbove > 0 ? (

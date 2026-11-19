@@ -1,12 +1,11 @@
 import {
   cliCommand,
+  findAssistant,
   machineGet,
   machineResetKey,
   machineSetKey,
   type MachineMutationResult,
 } from "@mycadet/local-mode";
-
-import { resolveTargetAssistant } from "../lib/assistant-config.js";
 
 /**
  * `cadet machine` — the policy surface for host-independent machine settings.
@@ -116,7 +115,15 @@ export const machine = Object.assign(
     }
 
     if (subcommand === "get") {
-      const entry = resolveTargetAssistant(nameArg);
+      const entry = findAssistant(nameArg);
+      if (!entry) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
       const result = machineGet(entry);
       if (!result.ok) {
         console.error(`Error: ${result.error}`);
@@ -143,7 +150,15 @@ export const machine = Object.assign(
           "'machine set' needs a path and a value, e.g. set memory.max 8GiB.",
         );
       }
-      const entry = resolveTargetAssistant(third);
+      const entry = findAssistant(third);
+      if (!entry) {
+        console.error(
+          third
+            ? `No assistant found with name or ID '${third}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
       const result = machineSetKey(entry, first, second);
       if (result.ok && result.value !== undefined) {
         console.log(
@@ -154,7 +169,15 @@ export const machine = Object.assign(
       return;
     }
 
-    const entry = resolveTargetAssistant(nameArg);
+    const entry = findAssistant(nameArg);
+    if (!entry) {
+      console.error(
+        nameArg
+          ? `No assistant found with name or ID '${nameArg}'.`
+          : "No assistant found. Run 'cadet hatch' first.",
+      );
+      process.exit(1);
+    }
     const result = machineResetKey(entry, path);
     if (result.ok) {
       console.log(

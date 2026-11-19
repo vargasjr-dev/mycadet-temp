@@ -2,12 +2,11 @@ import type { LifecycleReporter } from "@mycadet/local-mode";
 import {
   cliCommand,
   consoleLifecycleReporter,
+  findAssistant,
   loadAllAssistants,
   parseWaitDuration,
   sleepAssistant,
 } from "@mycadet/local-mode";
-
-import { resolveTargetAssistant } from "../lib/assistant-config.js";
 
 export const sleep = Object.assign(
   async function sleep(): Promise<void> {
@@ -122,7 +121,15 @@ export const sleep = Object.assign(
       return;
     }
 
-    const entry = resolveTargetAssistant(nameArg);
+    const entry = findAssistant(nameArg);
+    if (!entry) {
+      console.error(
+        nameArg
+          ? `No assistant found with name or ID '${nameArg}'.`
+          : "No assistant found. Run 'cadet hatch' first.",
+      );
+      process.exit(1);
+    }
     const result = await sleepAssistant(entry, options);
     if (!result.ok) {
       console.error(`Error: ${result.error}`);

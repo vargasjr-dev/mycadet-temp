@@ -12,28 +12,22 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import * as assistantConfig from "../lib/assistant-config.js";
 import * as localModeModule from "@mycadet/local-mode";
 import * as rootSigningKey from "../lib/root-signing-key.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 
-const realAssistantConfig = { ...assistantConfig };
 const realLocalMode = { ...localModeModule };
 const realRootSigningKey = { ...rootSigningKey };
 
-const resolveTargetAssistantMock =
-  mock<typeof assistantConfig.resolveTargetAssistant>();
+const findAssistantMock = mock<typeof localModeModule.findAssistant>(
+  () => null,
+);
 const loadAllAssistantsMock = mock<typeof localModeModule.loadAllAssistants>(
   () => [],
 );
 const saveLockfileAssistantMock = mock<
   typeof localModeModule.saveLockfileAssistant
 >(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
-
-mock.module("../lib/assistant-config.js", () => ({
-  ...realAssistantConfig,
-  resolveTargetAssistant: resolveTargetAssistantMock,
-}));
 
 // The command delegates to the package's wake operation — the arms (local
 // daemon, docker containers, recreate-on-first-wake, narration) live in the
@@ -46,13 +40,12 @@ const waitForDaemonReadyMock = mock<typeof localModeModule.waitForDaemonReady>(
 );
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
+  findAssistant: findAssistantMock,
   saveLockfileAssistant: saveLockfileAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
   wakeAssistant: wakeAssistantMock,
   waitForDaemonReady: waitForDaemonReadyMock,
 }));
-
-// Defaults to the real writer: repair tests assert the key file's contents.
 const persistRootSigningKeyMock = mock<
   typeof rootSigningKey.persistRootSigningKey
 >(realRootSigningKey.persistRootSigningKey);
@@ -90,8 +83,8 @@ beforeEach(() => {
   errorSpy = spyOn(console, "error").mockImplementation(() => {});
 
   localEntry = makeLocalEntry();
-  resolveTargetAssistantMock.mockReset();
-  resolveTargetAssistantMock.mockReturnValue(localEntry);
+  findAssistantMock.mockReset();
+  findAssistantMock.mockReturnValue(localEntry);
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([]);
   saveLockfileAssistantMock.mockReset();
@@ -120,7 +113,6 @@ afterEach(() => {
 
 afterAll(() => {
   mock.module("@mycadet/local-mode", () => realLocalMode);
-  mock.module("../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../lib/root-signing-key.js", () => realRootSigningKey);
 });
 

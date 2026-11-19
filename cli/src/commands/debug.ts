@@ -5,6 +5,7 @@ import {
   authHeadersForKnownOrganization,
   cliCommand,
   cloudAuthHeaders,
+  findAssistant,
   getAssistantDisplayName,
   loadGuardianToken,
   loopbackSafeFetch,
@@ -12,7 +13,6 @@ import {
 } from "@mycadet/local-mode";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
-import { resolveTargetAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { leaseGuardianToken } from "@mycadet/local-mode";
 
@@ -59,7 +59,16 @@ export const debug = Object.assign(
       return;
     }
 
-    const entry = resolveTargetAssistant(parseAssistantTargetArg(args));
+    const nameArg = parseAssistantTargetArg(args);
+    const entry = findAssistant(nameArg);
+    if (!entry) {
+      console.error(
+        nameArg
+          ? `No assistant found with name or ID '${nameArg}'.`
+          : "No assistant found. Run 'cadet hatch' first.",
+      );
+      process.exit(1);
+    }
     const reference = getAssistantDisplayName(entry);
     if (isCloudEntry(entry)) {
       console.error(

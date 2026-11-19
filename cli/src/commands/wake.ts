@@ -1,10 +1,9 @@
 import {
   cliCommand,
+  findAssistant,
   loadAllAssistants,
   wakeAssistant,
 } from "@mycadet/local-mode";
-
-import { resolveTargetAssistant } from "../lib/assistant-config.js";
 
 export const wake = Object.assign(
   async function wake(): Promise<void> {
@@ -43,7 +42,15 @@ export const wake = Object.assign(
       return;
     }
 
-    const entry = resolveTargetAssistant(nameArg);
+    const entry = findAssistant(nameArg);
+    if (!entry) {
+      console.error(
+        nameArg
+          ? `No assistant found with name or ID '${nameArg}'.`
+          : "No assistant found. Run 'cadet hatch' first.",
+      );
+      process.exit(1);
+    }
     const result = await wakeAssistant(entry, { watch });
     if (!result.ok) {
       console.error(`Error: ${result.error}`);

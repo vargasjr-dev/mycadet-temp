@@ -1,10 +1,10 @@
 import {
   cliCommand,
   consoleLifecycleReporter,
+  findAssistant,
   restartAssistant,
 } from "@mycadet/local-mode";
-
-import { resolveTargetAssistant } from "../lib/assistant-config.js";
+import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 
 export const restart = Object.assign(
   async function restart(): Promise<void> {
@@ -32,7 +32,19 @@ export const restart = Object.assign(
       process.exit(1);
     }
 
-    const entry = all ? undefined : resolveTargetAssistant(nameArg);
+    let entry: LockfileAssistant | undefined;
+    if (!all) {
+      const found = findAssistant(nameArg);
+      if (!found) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
+      entry = found;
+    }
     const { ok, reports } = await restartAssistant({
       entry,
       all,

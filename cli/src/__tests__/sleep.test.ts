@@ -53,7 +53,7 @@ afterAll(() => {
 
 import { sleep } from "../commands/sleep.js";
 
-// Write a lockfile entry so the real resolveTargetAssistant() finds our test
+// Write a lockfile entry so the real findAssistant() finds our test
 // assistant without needing to mock the entire assistant-config module.
 function writeLockfile(extraEntryFields: Record<string, unknown> = {}): void {
   mkdirSync(join(testDir, "cadet"), { recursive: true });

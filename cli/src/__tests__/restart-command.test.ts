@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import * as localMode from "@mycadet/local-mode";
+import { consoleLifecycleReporter } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { SleepResult } from "@mycadet/local-mode";
 import { restart } from "../commands/restart.js";
@@ -50,7 +51,7 @@ test("restart delegates one target to the single operation", async () => {
   expect(restartOp).toHaveBeenCalledWith({
     entry,
     all: false,
-    log: expect.any(Function),
+    reporter: consoleLifecycleReporter,
   });
 });
 
@@ -61,7 +62,7 @@ test("restart --all rides the same operation with all: true", async () => {
   expect(restartOp).toHaveBeenCalledWith({
     entry: undefined,
     all: true,
-    log: expect.any(Function),
+    reporter: consoleLifecycleReporter,
   });
 });
 
