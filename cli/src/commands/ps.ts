@@ -267,13 +267,21 @@ async function getAssistantProcessRows(
   // assistant's descendants plus the gateway and the credential executor.
   const gatewayUrl = getGatewayUrl(entry);
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
-  const tree = await fetchGatewayPs(gatewayUrl, token);
-  return tree && tree.length > 0
-    ? flattenProcessTree(tree)
+  const result = await fetchGatewayPs(gatewayUrl, token);
+  if (!result.ok) {
+    return [
+      {
+        name: "assistant",
+        info: `unreachable — ${result.reason}`,
+      },
+    ];
+  }
+  return result.ok && result.processes.length > 0
+    ? flattenProcessTree(result.processes)
     : [
         {
           name: "assistant",
-          info: "unreachable — could not reach the gateway's process tree; is the assistant running?",
+          info: "unreachable — the gateway reported an empty process tree; is the assistant running?",
         },
       ];
 }

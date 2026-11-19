@@ -318,16 +318,20 @@ export interface ManagedPsResponse {
 /**
  * Fetch the gateway's `/v1/ps` process tree — the daemon's real process
  * table (assistant + every child it owns) with the gateway's own entry
- * appended. Returns null when the gateway is unreachable or the route is
- * missing (older gateway versions), so callers can fall back to local
- * process detection.
+ * appended. The failure branch carries the reason, so `cadet ps` can say
+ * WHY the tree is missing (refused vs rejected vs legacy gateway) instead
+ * of a blanket "unreachable".
  */
+export type GatewayPsResult =
+  | { ok: true; processes: ManagedProcessEntry[] }
+  | { ok: false; reason: string };
+
 export async function fetchGatewayPs(
   gatewayUrl: string,
   bearerToken?: string,
-): Promise<ManagedProcessEntry[] | null> {
+): Promise<GatewayPsResult> {
+  const url = `${gatewayUrl.replace(/\/+$/, "")}/v1/ps`;
   try {
-    const url = `${gatewayUrl.replace(/\/+$/, "")}/v1/ps`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -345,12 +349,38 @@ export async function fetchGatewayPs(
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) return null;
+    if (response.status === 401) {
+      return {
+        ok: false,
+        reason: `HTTP 401 from ${url} — the guardian token was rejected; re-pair this entry`,
+      };
+    }
+    if (!response.ok) {
+      return { ok: false, reason: `HTTP ${response.status} from ${url}` };
+    }
 
     const data = (await response.json()) as ManagedPsResponse;
-    return Array.isArray(data.processes) ? data.processes : null;
-  } catch {
-    return null;
+    return Array.isArray(data.processes)
+      ? { ok: true, processes: data.processes }
+      : {
+          ok: false,
+          reason: `${url} returned a malformed process tree (older gateway version?)`,
+        };
+  } catch (err) {
+    const cause = (err as { cause?: { code?: string } })?.cause?.code;
+    if ((err as Error)?.name === "AbortError" || cause === "ABORT_ERR") {
+      return { ok: false, reason: `${url} timed out after 5s` };
+    }
+    if (cause === "ECONNREFUSED") {
+      return {
+        ok: false,
+        reason: `connection refused at ${url} — nothing is listening on the published gateway port`,
+      };
+    }
+    return {
+      ok: false,
+      reason: `request to ${url} failed: ${(err as Error)?.message ?? err}`,
+    };
   }
 }
 
