@@ -283,8 +283,8 @@ RUN printf '%s\n' \
     ' rootfs and will NOT survive a machine save or container restart.' \
     > "/usr/lib/python$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')/EXTERNALLY-MANAGED"
 
-# Ensure the CES bootstrap socket volume is writable by the non-root CES user.
-RUN mkdir -p /run/ces-bootstrap && chmod 777 /run/ces-bootstrap
+# Ensure the CES socket volume is writable by the non-root CES user.
+RUN mkdir -p /run/ces-ipc && chmod 777 /run/ces-ipc
 
 USER root
 
