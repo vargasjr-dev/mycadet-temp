@@ -152,7 +152,9 @@ export const GATEWAY_PORT = process.env.GATEWAY_PORT
 
 /**
  * The URL to dial an entry's gateway on, derived from the entry's canonical
- * fields — the one seam every consumer addresses a gateway through:
+ * fields — the one seam every consumer addresses a gateway through, and the
+ * one place a trailing slash is stripped: the returned URL is always
+ * slash-free, so callers join paths directly:
  *
  * - `custom` remotes: their recorded host and port.
  * - cloud-managed: the environment's base url (`getCloudBaseUrl()`).

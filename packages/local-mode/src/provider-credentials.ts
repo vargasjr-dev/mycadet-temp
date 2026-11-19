@@ -105,7 +105,8 @@ export function isSupportedLlmProvider(
 }
 
 function gatewayUrlWithPath(gatewayUrl: string, path: string): string {
-  return `${gatewayUrl.replace(/\/+$/, "")}${path}`;
+  // getGatewayUrl output is already slash-free — join directly.
+  return `${gatewayUrl}${path}`;
 }
 
 function secretHeaders(bearerToken?: string): Record<string, string> {

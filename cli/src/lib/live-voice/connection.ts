@@ -69,7 +69,7 @@ export async function resolveLiveVoiceConnection(
     return await resolveCloudConnection(entry);
   }
 
-  const baseUrl = getGatewayUrl(entry).replace(/\/+$/, "");
+  const baseUrl = getGatewayUrl(entry);
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);

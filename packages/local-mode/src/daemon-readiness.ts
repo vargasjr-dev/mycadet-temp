@@ -315,6 +315,19 @@ export interface ManagedPsResponse {
   processes: ManagedProcessEntry[];
 }
 
+const ManagedProcessEntrySchema: z.ZodType<ManagedProcessEntry> = z.lazy(() =>
+  z.object({
+    name: z.string(),
+    status: z.enum(["running", "not_running", "unreachable"]),
+    children: z.array(ManagedProcessEntrySchema).optional(),
+    info: z.string().optional(),
+  }),
+);
+
+const ManagedPsResponseSchema = z.object({
+  processes: z.array(ManagedProcessEntrySchema),
+});
+
 /**
  * Fetch the gateway's `/v1/ps` process tree — the daemon's real process
  * table (assistant + every child it owns) with the gateway's own entry
@@ -330,7 +343,7 @@ export async function fetchGatewayPs(
   gatewayUrl: string,
   bearerToken?: string,
 ): Promise<GatewayPsResult> {
-  const url = `${gatewayUrl.replace(/\/+$/, "")}/v1/ps`;
+  const url = `${gatewayUrl}/v1/ps`;
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -359,9 +372,9 @@ export async function fetchGatewayPs(
       return { ok: false, reason: `HTTP ${response.status} from ${url}` };
     }
 
-    const data = (await response.json()) as ManagedPsResponse;
-    return Array.isArray(data.processes)
-      ? { ok: true, processes: data.processes }
+    const parsed = ManagedPsResponseSchema.safeParse(await response.json());
+    return parsed.success
+      ? { ok: true, processes: parsed.data.processes }
       : {
           ok: false,
           reason: `${url} returned a malformed process tree (older gateway version?)`,
