@@ -16,6 +16,7 @@ export class OllamaProvider extends OpenAIChatCompletionsProvider {
       providerName: "ollama",
       providerLabel: "Ollama",
       streamTimeoutMs: options.streamTimeoutMs,
+      outputTokenLimitField: "max_tokens",
     });
   }
 }
