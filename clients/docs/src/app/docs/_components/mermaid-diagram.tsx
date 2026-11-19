@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import mermaid from "mermaid";
 
 let mermaidInitialized = false;
@@ -33,28 +33,38 @@ interface MermaidDiagramProps {
  * <pre> if rendering fails, so a bad diagram never blanks a docs page.
  */
 export function MermaidDiagram({ code }: MermaidDiagramProps) {
-  const [svg, setSvg] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const idRef = useRef<string>(
-    `mermaid-${Math.random().toString(36).slice(2, 10)}`,
+  // State records which `code` it belongs to, so a render for a new diagram
+  // resets by derivation — no synchronous setState inside the effect, which
+  // the react-compiler flags as a cascading-render hazard.
+  const [rendered, setRendered] = useState<{ code: string; svg: string } | null>(
+    null,
   );
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  // A pure per-instance id (useId) instead of Math.random at render time;
+  // mermaid rejects the colon-shaped default, so strip to [A-Za-z0-9-].
+  const id = useId().replace(/[^a-zA-Z0-9-]/g, "");
 
   useEffect(() => {
     let cancelled = false;
-    setSvg(null);
-    setFailed(false);
     getMermaid()
-      .then((m) => m.render(idRef.current, code))
-      .then(({ svg: rendered }) => {
-        if (!cancelled) setSvg(rendered);
+      .then((m) => m.render(id, code))
+      .then(({ svg: renderedSvg }) => {
+        if (!cancelled) {
+          setRendered({ code, svg: renderedSvg });
+        }
       })
       .catch(() => {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) {
+          setFailedFor(code);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [code]);
+  }, [code, id]);
+
+  const svg = rendered?.code === code ? rendered.svg : null;
+  const failed = failedFor === code;
 
   if (failed) {
     return (
