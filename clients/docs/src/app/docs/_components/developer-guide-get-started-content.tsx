@@ -136,7 +136,7 @@ export function DeveloperGuideGetStartedContent() {
           <p className="mb-0 text-zinc-600">
             See{" "}
             <Link
-              href="/docs/developer-guide/architecture"
+              href="/docs/architecture/today"
               className={linkClass}
             >
               Architecture
@@ -298,7 +298,7 @@ curl -X POST \\
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
               <Link
-                href="/docs/developer-guide/architecture"
+                href="/docs/architecture/today"
                 className={linkClass}
               >
                 Architecture

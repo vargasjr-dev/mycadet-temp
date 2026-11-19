@@ -385,6 +385,23 @@ const NAV_ITEMS: DocsNavItem[] = [
     ],
   },
   {
+    label: "Architecture",
+    href: "/docs/architecture/today",
+    icon: icon(Layers),
+    children: [
+      {
+        label: "Today",
+        href: "/docs/architecture/today",
+        icon: icon(Layers),
+      },
+      {
+        label: "North star",
+        href: "/docs/architecture/north-star",
+        icon: icon(Sparkles),
+      },
+    ],
+  },
+  {
     label: "Developer Guide",
     href: "/docs/developer-guide",
     icon: icon(Code),
@@ -393,11 +410,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         label: "Get Started",
         href: "/docs/developer-guide/get-started",
         icon: icon(Rocket),
-      },
-      {
-        label: "Architecture",
-        href: "/docs/developer-guide/architecture",
-        icon: icon(Layers),
       },
       {
         label: "Security & Permissions",

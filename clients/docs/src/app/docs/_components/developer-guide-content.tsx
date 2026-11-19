@@ -12,7 +12,7 @@ const GUIDES = [
       "Developer on-ramp: repo layout, local dev setup, CLI, HTTP API, and SSE event stream.",
   },
   {
-    href: "/docs/developer-guide/architecture",
+    href: "/docs/architecture/today",
     title: "Architecture",
     description:
       "Platform domains, repo structure, and how the runtime, clients, and gateway fit together.",

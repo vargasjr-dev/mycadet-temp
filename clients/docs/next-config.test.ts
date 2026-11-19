@@ -211,6 +211,11 @@ describe("next config redirects", () => {
         destination: "/docs/hosting-options",
         permanent: true,
       },
+      {
+        source: "/docs/developer-guide/architecture",
+        destination: "/docs/architecture/today",
+        permanent: true,
+      },
     ]);
   });
 });

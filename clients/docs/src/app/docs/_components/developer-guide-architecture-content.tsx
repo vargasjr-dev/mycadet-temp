@@ -18,7 +18,7 @@ export function DeveloperGuideArchitectureContent() {
     <>
       <DocsContent
         title="Architecture"
-        breadcrumb="Docs / Developer Guide / Architecture"
+        breadcrumb="Docs / Architecture / Today"
       >
         <p className="mb-8 text-zinc-600">
           Cadet Cloud has three main domains that work together: a
