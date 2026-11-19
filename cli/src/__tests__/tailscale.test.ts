@@ -14,7 +14,6 @@ import {
   type TailscaleDeps,
 } from "../lib/tunnels/tailscale.js";
 import { resolveLockfilePath } from "@mycadet/local-mode";
-import { readRootProcesses } from "../lib/assistant-config.js";
 import { snapshotEnv } from "./helpers/env.js";
 
 describe("Tailscale discovery", () => {
