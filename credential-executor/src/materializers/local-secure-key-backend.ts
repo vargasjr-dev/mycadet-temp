@@ -180,6 +180,9 @@ function getOrCreateStore(
     }
     return { store: existing, aesKey: storeKey };
   }
+  if (existsSync(storePath)) {
+    throw new Error("credential store exists but could not be read");
+  }
 
   // No store exists — create a new empty v2 store
   const aesKey = getOrReadStoreKey(securityDir);
