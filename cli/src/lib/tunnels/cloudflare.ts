@@ -182,10 +182,7 @@ export function waitForCloudflareTunnelUrl(
  *
  * No Cloudflare account is required — quick tunnels are free and ephemeral.
  */
-export interface RunCloudflareTunnelOptions {
-  /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
-  port?: number;
-}
+export interface RunCloudflareTunnelOptions {}
 
 export async function runCloudflareTunnel(
   opts: RunCloudflareTunnelOptions = {},
@@ -218,7 +215,9 @@ export async function runCloudflareTunnel(
 
   console.log(`Using ${version}`);
 
-  const port = opts.port ?? GATEWAY_PORT;
+  // The tunnel always fronts the app edge, whose port the lockfile's `app`
+  // entry stamps — never caller-controlled.
+  const port = readRootProcesses().app?.port ?? GATEWAY_PORT;
 
   // Idempotency: the recorded agent may still be alive (a CLI restart, or
   // the wake/upgrade restore re-running this in-process). Adopt it instead

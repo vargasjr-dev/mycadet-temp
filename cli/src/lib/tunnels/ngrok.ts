@@ -727,8 +727,6 @@ export async function waitForNgrokUrl(
 }
 
 export interface RunNgrokTunnelOptions {
-  /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
-  port?: number;
   /**
    * Reserved ngrok domain to bind. Persisted so wake restores reuse it.
    * When omitted, a previously saved domain is reused without being rewritten.
@@ -776,7 +774,9 @@ export async function runNgrokTunnel(
 
   console.log(`Using ${version}`);
 
-  const port = opts.port ?? GATEWAY_PORT;
+  // The tunnel always fronts the app edge, whose port the lockfile's `app`
+  // entry stamps — never caller-controlled.
+  const port = readRootProcesses().app?.port ?? GATEWAY_PORT;
 
   // The saved domain is standing intent: a run without --domain reuses it,
   // and only an explicit --domain rewrites it.

@@ -79,11 +79,6 @@ export interface ProviderTunnelOptions {
   preserveIngressUrl?: boolean;
 }
 
-/** A provider run's full input: caller options plus the resolved edge port. */
-export interface ProviderTunnelRunOptions extends ProviderTunnelOptions {
-  port: number;
-}
-
 /**
  * What every tunnel provider's run hands back: the public URL it established
  * or adopted. Conformance is the point — the tunnel level can notify the
@@ -100,7 +95,7 @@ export interface ProviderStopOptions {
 }
 
 export interface TunnelProvider {
-  run(opts: ProviderTunnelRunOptions): Promise<ProviderTunnelResult>;
+  run(opts: ProviderTunnelOptions): Promise<ProviderTunnelResult>;
   stop(opts: ProviderStopOptions): Promise<boolean>;
 }
 
@@ -158,14 +153,7 @@ export async function runProviderTunnel(
   provider: TunnelProviderName,
   opts: Omit<ProviderTunnelOptions, "port"> = {},
 ): Promise<{ publicUrl: string }> {
-  // The tunnel fronts the app edge, whose port the lockfile's `app` entry
-  // stamps (the app server records it as it starts).
-  const port = readRootProcesses().app?.port;
-  if (port === undefined)
-    throw new Error(
-      "No app server edge is recorded — run 'cadet app start' first.",
-    );
-  const result = await runProvider(provider, { ...opts, port });
+  const result = await runProvider(provider, opts);
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
   return { publicUrl: result.publicUrl };
 }
@@ -173,7 +161,7 @@ export async function runProviderTunnel(
 /** Map the provider name onto its run — no gateway notification here. */
 function runProvider(
   provider: TunnelProviderName,
-  opts: ProviderTunnelRunOptions,
+  opts: ProviderTunnelOptions,
 ): Promise<ProviderTunnelResult> {
   return providers[provider].run(opts);
 }

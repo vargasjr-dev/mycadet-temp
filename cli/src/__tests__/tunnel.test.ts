@@ -194,7 +194,6 @@ function writeLockfile(
       {
         activeAssistant: activeAssistant ?? entries[0].assistantId,
         assistants: entries,
-        app: { pid: 4242, startedAt: "2026-01-01T00:00:00Z", port: EDGE_PORT },
       },
       null,
       2,
@@ -312,14 +311,14 @@ describe("app server targeting", () => {
     mock.module("@mycadet/local-mode", () => localModeModule);
   });
 
-  test("targets the edge port returned by ensureAppServer for ngrok", async () => {
+  test("starts the ngrok tunnel against the edge it ensured", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
@@ -352,7 +351,7 @@ describe("app server targeting", () => {
     const logs = await runTunnelCapturingLogs();
     expect(logs).not.toContain("Tunneling the local assistant");
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("a docker assistant set active tunnels the edge port", async () => {
@@ -374,7 +373,7 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("an active docker assistant tunnels on a bare invocation", async () => {
@@ -385,7 +384,7 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("an active cloud assistant with no local entries still tunnels the edge", async () => {
@@ -397,7 +396,7 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
@@ -430,7 +429,7 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("targets the edge port for cloudflare", async () => {
@@ -447,7 +446,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(runCloudflareTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runCloudflareTunnelMock).toHaveBeenCalledWith({});
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
@@ -469,7 +468,7 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({});
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
@@ -481,7 +480,7 @@ describe("app server targeting", () => {
     const logs = await runTunnelCapturingLogs();
 
     expect(logs).toContain("Using the default provider: ngrok");
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
@@ -501,7 +500,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("ngrok fronts the edge with the lockfile's active assistant", async () => {
@@ -511,7 +510,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("missing nginx aborts before any provider spawn", async () => {
@@ -589,7 +588,6 @@ describe("app server targeting", () => {
     await runTunnelCapturingLogs();
 
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
       domain: "foo.ngrok.app",
     });
   });
@@ -638,7 +636,7 @@ describe("app server targeting", () => {
     // The saved domain lives in the XDG ngrok config, not the workspace config.
     expect(realNgrok.loadNgrokDomain()).toBeNull();
     // The run proceeds domainless: no `domain` key reaches runNgrokTunnel.
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({ port: EDGE_PORT });
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({});
   });
 
   test("rejects --clear-domain combined with --domain", async () => {
@@ -780,6 +778,20 @@ describe("ngrok --domain spawn args", () => {
       defaultNgrokConfigPath,
       "authtoken: test-token-for-layered-spawn\n",
     );
+    // The run resolves its port from the lockfile's app entry — stamp 7831
+    // so the agent-args assertions read it back.
+    mkdirSync(join(configHome, "cadet"), { recursive: true });
+    writeFileSync(
+      join(configHome, "cadet", "lockfile.json"),
+      JSON.stringify(
+        {
+          assistants: [],
+          app: { pid: 4242, startedAt: "2026-01-01T00:00:00Z", port: 7831 },
+        },
+        null,
+        2,
+      ),
+    );
     mockNgrokApiFetch([null]);
   });
 
@@ -894,7 +906,6 @@ describe("ngrok --domain spawn args", () => {
     ]);
 
     const run = realNgrok.runNgrokTunnel({
-      port: 7831,
       domain: "foo.ngrok.app",
     });
     // runNgrokTunnel blocks until the ngrok process exits; pump exit events
@@ -956,7 +967,6 @@ describe("ngrok --domain spawn args", () => {
     try {
       await expect(
         realNgrok.runNgrokTunnel({
-          port: 7831,
           domain: "foo.ngrok.app",
         }),
       ).rejects.toThrow("does not match the requested domain 'foo.ngrok.app'");
@@ -982,7 +992,6 @@ describe("ngrok --domain spawn args", () => {
     mockTunnelListFetch("https://foo.ngrok.app", "localhost:7831");
 
     const run = realNgrok.runNgrokTunnel({
-      port: 7831,
       domain: "foo.ngrok.app",
     });
     // The adopt path blocks until SIGINT/SIGTERM; pump SIGINT until the
@@ -1011,12 +1020,23 @@ describe("ngrok --domain spawn args", () => {
 
   test("runNgrokTunnel rejects a mismatched existing tunnel without adopting or spawning", async () => {
     makeWorkspace({});
+    // The lockfile's app edge sits on 7830 — the port the existing agent
+    // fronts, whose domain mismatches the saved one.
+    writeFileSync(
+      join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
+      JSON.stringify(
+        {
+          assistants: [],
+          app: { pid: 4242, startedAt: "2026-01-01T00:00:00Z", port: 7830 },
+        },
+        null,
+        2,
+      ),
+    );
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7830");
 
-    await expect(realNgrok.runNgrokTunnel({ port: 7830 })).rejects.toThrow(
-      "does not match",
-    );
+    await expect(realNgrok.runNgrokTunnel()).rejects.toThrow("does not match");
 
     expect(spawnMock).not.toHaveBeenCalled();
 
@@ -1030,11 +1050,7 @@ describe("ngrok --domain spawn args", () => {
     makeWorkspace({});
     mockTunnelListFetch("https://adopted.ngrok.app", "localhost:7830");
 
-    await withLockfileFor("adopt-assistant", () =>
-      realNgrok.runNgrokTunnel({
-        port: 7830,
-      }),
-    );
+    await withLockfileFor("adopt-assistant", () => realNgrok.runNgrokTunnel());
 
     expect(spawnMock).not.toHaveBeenCalled();
     expect(readTunnelRecord()).toMatchObject({
@@ -1058,9 +1074,7 @@ describe("ngrok --domain spawn args", () => {
     ]);
 
     const run = withLockfileFor("spawn-assistant", () =>
-      realNgrok.runNgrokTunnel({
-        port: 7830,
-      }),
+      realNgrok.runNgrokTunnel(),
     );
     const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
     try {
@@ -1077,6 +1091,19 @@ describe("ngrok --domain spawn args", () => {
 
   test("runNgrokTunnel starts a second agent when the first tunnels a different port", async () => {
     makeWorkspace({});
+    // The lockfile's app edge sits on 18080 — the port the second agent must
+    // front, different from the stale first agent's 7830.
+    writeFileSync(
+      join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
+      JSON.stringify(
+        {
+          assistants: [],
+          app: { pid: 4242, startedAt: "2026-01-01T00:00:00Z", port: 18080 },
+        },
+        null,
+        2,
+      ),
+    );
     // Discovery sees the stale agent; the poll of the second agent's own API
     // then reports the tunnel for the requested port.
     mockNgrokApiFetch([
@@ -1098,7 +1125,7 @@ describe("ngrok --domain spawn args", () => {
       },
     ]);
 
-    const run = realNgrok.runNgrokTunnel({ port: 18080 });
+    const run = realNgrok.runNgrokTunnel();
     // runNgrokTunnel blocks until the ngrok process exits; pump exit events
     // until its final exit listener is registered and the promise settles.
     const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
@@ -1140,7 +1167,7 @@ describe("ngrok --domain spawn args", () => {
       },
     ]);
 
-    const run = realNgrok.runNgrokTunnel({ port: 7831 });
+    const run = realNgrok.runNgrokTunnel();
     const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
     try {
       await run;

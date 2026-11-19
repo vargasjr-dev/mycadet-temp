@@ -1,4 +1,4 @@
-import { stampRootProcess } from "../assistant-config.js";
+import { readRootProcesses, stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "@mycadet/local-mode";
 import type {
   TunnelProvider,
@@ -225,10 +225,7 @@ function serveFailureMessage(result: TailscaleCommandResult): string {
 
 // ── Tailscale serve lifecycle ───────────────────────────────────────────────
 
-export interface RunTailscaleTunnelOptions {
-  /** Local edge port to serve. Defaults to the global GATEWAY_PORT. */
-  port?: number;
-}
+export interface RunTailscaleTunnelOptions {}
 
 export interface TailscaleServeInfo {
   publicUrl: string;
@@ -266,7 +263,9 @@ export async function startTailscaleServe(
   const hostname = resolveServeHostname(statusResult.stdout);
   const publicUrl = `https://${hostname}`;
 
-  const port = opts.port ?? GATEWAY_PORT;
+  // The tunnel always fronts the app edge, whose port the lockfile's `app`
+  // entry stamps — never caller-controlled.
+  const port = readRootProcesses().app?.port ?? GATEWAY_PORT;
 
   const serveResult = deps.run(binary, ["serve", "--bg", String(port)]);
   if (serveResult.status !== 0) {
