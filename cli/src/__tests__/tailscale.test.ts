@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -14,6 +14,7 @@ import {
   type TailscaleDeps,
 } from "../lib/tunnels/tailscale.js";
 import { resolveLockfilePath } from "@mycadet/local-mode";
+import { readRootProcesses } from "../lib/assistant-config.js";
 import { snapshotEnv } from "./helpers/env.js";
 
 describe("Tailscale discovery", () => {
@@ -141,10 +142,29 @@ describe("resolveServeHostname", () => {
 // ── startTailscaleServe ───────────────────────────────────────────────────────
 
 describe("startTailscaleServe", () => {
+  /** Stamp the lockfile's app edge record: the serve resolves its port there. */
+  function stampAppPort(port: number): void {
+    const configDir = resolveLockfilePath();
+    mkdirSync(configDir.slice(0, configDir.lastIndexOf("/")), {
+      recursive: true,
+    });
+    writeFileSync(
+      configDir,
+      JSON.stringify(
+        {
+          assistants: [],
+          app: { pid: 4242, startedAt: "2026-01-01T00:00:00Z", port },
+        },
+        null,
+        2,
+      ),
+    );
+  }
+
   test("throws install guidance when the binary is missing", async () => {
     const { deps, calls } = makeDeps({ binary: null });
     await expect(
-      (makeWorkspace(), startTailscaleServe({ port: 7840 }, deps)),
+      (makeWorkspace(), stampAppPort(7840), startTailscaleServe(deps)),
     ).rejects.toThrow("Tailscale is not installed");
     expect(calls).toHaveLength(0);
   });
@@ -158,7 +178,7 @@ describe("startTailscaleServe", () => {
       },
     });
     await expect(
-      (makeWorkspace(), startTailscaleServe({ port: 7840 }, deps)),
+      (makeWorkspace(), stampAppPort(7840), startTailscaleServe(deps)),
     ).rejects.toThrow("not logged in");
     expect(calls).not.toContainEqual(["serve", "--bg", "7840"]);
   });
@@ -174,7 +194,7 @@ describe("startTailscaleServe", () => {
       },
     });
     await expect(
-      (makeWorkspace(), startTailscaleServe({ port: 7840 }, deps)),
+      (makeWorkspace(), stampAppPort(7840), startTailscaleServe(deps)),
     ).rejects.toThrow("Could not query Tailscale");
   });
 
@@ -187,7 +207,9 @@ describe("startTailscaleServe", () => {
       },
     });
 
-    const info = await startTailscaleServe({ port: 7840 }, deps);
+    stampAppPort(7840);
+
+    const info = await startTailscaleServe(deps);
 
     expect(info.publicUrl).toBe("https://my-host.tail-scale.ts.net");
     expect(info.port).toBe(7840);
@@ -218,9 +240,8 @@ describe("startTailscaleServe", () => {
       },
     });
 
-    await expect(startTailscaleServe({ port: 7840 }, deps)).rejects.toThrow(
-      enableUrl,
-    );
+    stampAppPort(7840);
+    await expect(startTailscaleServe(deps)).rejects.toThrow(enableUrl);
 
     // A failed serve must not persist an ingress URL.
     expect(existsSync(join(workspaceDir, "config.json"))).toBe(false);

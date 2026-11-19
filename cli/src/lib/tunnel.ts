@@ -151,7 +151,7 @@ export async function notifyAllLocalGatewaysOfPublicUrl(
  */
 export async function runProviderTunnel(
   provider: TunnelProviderName,
-  opts: Omit<ProviderTunnelOptions, "port"> = {},
+  opts: ProviderTunnelOptions = {},
 ): Promise<{ publicUrl: string }> {
   const result = await runProvider(provider, opts);
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);

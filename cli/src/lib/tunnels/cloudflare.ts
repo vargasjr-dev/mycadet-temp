@@ -182,11 +182,7 @@ export function waitForCloudflareTunnelUrl(
  *
  * No Cloudflare account is required — quick tunnels are free and ephemeral.
  */
-export interface RunCloudflareTunnelOptions {}
-
-export async function runCloudflareTunnel(
-  opts: RunCloudflareTunnelOptions = {},
-): Promise<ProviderTunnelResult> {
+export async function runCloudflareTunnel(): Promise<ProviderTunnelResult> {
   const version = await ensureBinaryInstalled({
     binary: "cloudflared",
     purpose: "the cloudflare tunnel",

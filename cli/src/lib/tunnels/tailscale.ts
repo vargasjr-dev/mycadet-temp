@@ -225,8 +225,6 @@ function serveFailureMessage(result: TailscaleCommandResult): string {
 
 // ── Tailscale serve lifecycle ───────────────────────────────────────────────
 
-export interface RunTailscaleTunnelOptions {}
-
 export interface TailscaleServeInfo {
   publicUrl: string;
   port: number;
@@ -242,7 +240,6 @@ export interface TailscaleServeInfo {
  * (binary missing, logged out, serve not enabled) with actionable guidance.
  */
 export async function startTailscaleServe(
-  opts: RunTailscaleTunnelOptions = {},
   deps: TailscaleDeps = realTailscaleDeps(),
 ): Promise<TailscaleServeInfo> {
   const binary = await deps.findBinary();
@@ -310,13 +307,11 @@ export function stopTailscaleServe(
  * The tailnet URL carries a real LetsEncrypt certificate but is reachable only
  * from devices signed in to the same tailnet: no public exposure.
  */
-export async function runTailscaleTunnel(
-  opts: RunTailscaleTunnelOptions = {},
-): Promise<ProviderTunnelResult> {
+export async function runTailscaleTunnel(): Promise<ProviderTunnelResult> {
   const deps = realTailscaleDeps();
 
   console.log("Setting up tailscale serve...");
-  const { publicUrl, port } = await startTailscaleServe(opts, deps);
+  const { publicUrl, port } = await startTailscaleServe(deps);
 
   console.log("");
   console.log(`Tunnel established: ${publicUrl}`);
