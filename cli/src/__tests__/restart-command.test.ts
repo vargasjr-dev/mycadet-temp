@@ -1,11 +1,10 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import * as localMode from "@mycadet/local-mode";
-import * as assistantLookup from "../lib/assistant-lookup.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import type { SleepResult } from "@mycadet/local-mode";
 import { restart } from "../commands/restart.js";
 
-const lookup = spyOn(assistantLookup, "lookupAssistantByIdentifier");
+const lookup = spyOn(localMode, "findAssistant");
 const restartOp = spyOn(localMode, "restartAssistant");
 const exitSpy = spyOn(process, "exit").mockImplementation((() => {
   throw new Error("process.exit");
@@ -31,7 +30,7 @@ beforeEach(() => {
   exitSpy.mockImplementation((() => {
     throw new Error("process.exit");
   }) as never);
-  lookup.mockReturnValue({ status: "found", entry });
+  lookup.mockReturnValue(entry);
   restartOp.mockResolvedValue({
     ok: true,
     reports: [{ assistantId: "test", sleep: okSleep, wake: { ok: true } }],

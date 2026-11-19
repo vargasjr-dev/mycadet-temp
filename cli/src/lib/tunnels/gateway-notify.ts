@@ -6,8 +6,11 @@
  */
 
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import { loadGuardianToken, loopbackSafeFetch } from "@mycadet/local-mode";
-import { lookupAssistantByIdentifier } from "../assistant-lookup.js";
+import {
+  findAssistant,
+  loadGuardianToken,
+  loopbackSafeFetch,
+} from "@mycadet/local-mode";
 import { GATEWAY_PORT } from "../constants.js";
 
 /**
@@ -16,9 +19,9 @@ import { GATEWAY_PORT } from "../constants.js";
  */
 function gatewayUrlFor(assistantId: string | undefined): string {
   if (assistantId) {
-    const result = lookupAssistantByIdentifier(assistantId);
-    if (result.status === "found") {
-      return getGatewayUrl(result.entry);
+    const entry = findAssistant(assistantId);
+    if (entry) {
+      return getGatewayUrl(entry);
     }
   }
   return `http://127.0.0.1:${GATEWAY_PORT}`;

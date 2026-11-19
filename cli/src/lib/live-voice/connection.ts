@@ -3,14 +3,11 @@
  */
 
 import {
+  findAssistant,
   getAssistantDisplayName,
   loadFreshGuardianToken,
   readCloudToken,
 } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../assistant-lookup.js";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -159,11 +156,11 @@ async function resolveCloudConnection(
 }
 
 function resolveNamedAssistant(identifier: string) {
-  const result = lookupAssistantByIdentifier(identifier);
-  if (result.status !== "found") {
+  const entry = findAssistant(identifier);
+  if (!entry) {
     throw new LiveVoiceConnectionError(
-      formatAssistantLookupError(identifier, result),
+      `No assistant found with name or ID '${identifier}'.`,
     );
   }
-  return result.entry;
+  return entry;
 }

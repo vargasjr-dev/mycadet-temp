@@ -233,21 +233,13 @@ describe("multi-local", () => {
       expect(result.assistantId).toBe("only-one");
     });
 
-    test("multiple local assistants and no active throws with guidance", () => {
+    test("multiple local assistants and no active resolves the first entry", () => {
       makeEntry({ assistantId: "x" });
       makeEntry({ assistantId: "y" });
-      // resolveTargetAssistant calls process.exit(1) on ambiguity
-      const mockExit = mock(() => {
-        throw new Error("process.exit called");
-      });
-      const origExit = process.exit;
-      process.exit = mockExit as unknown as typeof process.exit;
-      try {
-        expect(() => resolveTargetAssistant()).toThrow("process.exit called");
-        expect(mockExit).toHaveBeenCalledWith(1);
-      } finally {
-        process.exit = origExit;
-      }
+      // findAssistant's served rule: no active selection → the sole
+      // first-seen entry is served before any chooser runs.
+      const result = resolveTargetAssistant();
+      expect(result.assistantId).toBe("x");
     });
 
     test("no local assistants throws", () => {

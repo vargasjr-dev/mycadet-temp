@@ -4,14 +4,11 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   cliCommand,
   dockerResourceNames,
+  findAssistant,
   getActiveAssistant,
   getAssistantDisplayName,
   retireAssistant,
 } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../lib/assistant-lookup.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   canPromptForConfirmation,
@@ -110,16 +107,14 @@ async function retireInner(): Promise<void> {
     process.exit(1);
   }
 
-  const lookup = lookupAssistantByIdentifier(name);
-  if (lookup.status !== "found") {
-    console.error(formatAssistantLookupError(name, lookup));
+  const entry = findAssistant(name);
+  if (!entry) {
+    console.error(`No assistant found with name or ID '${name}'.`);
     console.error(
       `Run '${cliCommand()} hatch' first, or check the instance name.`,
     );
     process.exit(1);
   }
-
-  const entry = lookup.entry;
 
   printRetireTarget(entry);
 

@@ -9,12 +9,15 @@ import {
 import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 import { z } from "zod";
 
-import { checkHealth, getAssistantDisplayName } from "@mycadet/local-mode";
+import {
+  checkHealth,
+  findAssistant,
+  getAssistantDisplayName,
+} from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { loadFreshGuardianToken } from "@mycadet/local-mode";
-import { lookupAssistantByIdentifier } from "../lib/assistant-lookup.js";
 import { appendHistory, loadHistory } from "../lib/input-history";
 import { tuiLog } from "../lib/tui-log";
 import {
@@ -981,11 +984,12 @@ export function render(
   const isCompact = terminalColumns < COMPACT_THRESHOLD;
   const headerHeight = calculateHeaderHeight(terminalColumns);
 
-  const lookup = lookupAssistantByIdentifier(assistantId);
-  const entry: LockfileAssistant =
-    lookup.status === "found"
-      ? lookup.entry
-      : { assistantId, cloud: "cloud", name: assistantName };
+  const lookedUp = findAssistant(assistantId);
+  const entry: LockfileAssistant = lookedUp ?? {
+    assistantId,
+    cloud: "cloud",
+    name: assistantName,
+  };
   const { unmount } = inkRender(<DefaultMainScreen entry={entry} />, {
     exitOnCtrlC: false,
   });
@@ -2313,7 +2317,7 @@ function ChatApp({
     }
   }, [selection]);
 
-  const lookup = lookupAssistantByIdentifier(assistantId);
+  const lookedUp = findAssistant(assistantId);
   if (connectionState !== "connected") {
     return (
       <ConnectionScreen
@@ -2331,8 +2335,8 @@ function ChatApp({
     <Box flexDirection="column" height={terminalRows}>
       <DefaultMainScreen
         entry={
-          lookup.status === "found"
-            ? lookup.entry
+          lookedUp
+            ? lookedUp
             : {
                 assistantId,
                 cloud: "cloud",

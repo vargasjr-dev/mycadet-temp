@@ -9,6 +9,7 @@ import {
   cliCommand,
   dockerResourceNames,
   fetchGatewayPs,
+  findAssistant,
   getActiveAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
@@ -19,10 +20,6 @@ import {
   type GatewayHealth,
   type ManagedProcessEntry,
 } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../lib/assistant-lookup.js";
 
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { readRootProcesses } from "../lib/assistant-config";
@@ -402,13 +399,13 @@ export async function printRootProcessDetail(
 async function assistantRowsWithRootProcesses(
   assistants: LockfileAssistant[],
   healths: GatewayHealth[],
-  activeAssistantId: string | null,
+  activeId: string | null,
 ): Promise<TableRow[]> {
   const rootRows = (await getRootManagedRows()).map((managed) => managed.row);
 
   const rows: TableRow[] = [];
   assistants.forEach((entry, i) => {
-    rows.push(formatAssistantListRow(entry, activeAssistantId, healths[i]!));
+    rows.push(formatAssistantListRow(entry, activeId, healths[i]!));
   });
   rows.push(...rootRows);
   return rows;
@@ -418,14 +415,14 @@ async function assistantRowsWithRootProcesses(
 
 function formatAssistantListRow(
   entry: LockfileAssistant,
-  activeAssistantId: string | null,
+  activeId: string | null,
   health: GatewayHealth,
 ): TableRow {
   const infoParts: string[] = [];
   infoParts.push(getGatewayUrl(entry));
   if (entry.cloud) infoParts.push(`remote: ${entry.cloud}`);
 
-  const prefix = entry.assistantId === activeAssistantId ? "* " : "  ";
+  const prefix = entry.assistantId === activeId ? "* " : "  ";
   return {
     name: prefix + getAssistantDisplayName(entry),
     type: ASSISTANT_TYPE,
@@ -460,7 +457,6 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 
   const assistants = loadAllAssistants();
   const activeId = getActiveAssistant();
-  const activeAssistantId = activeId;
 
   if (assistants.length === 0) {
     // No assistants, but the CLI may still manage root processes (the app
@@ -487,11 +483,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
   );
 
   printTable(
-    await assistantRowsWithRootProcesses(
-      assistants,
-      healths,
-      activeAssistantId,
-    ),
+    await assistantRowsWithRootProcesses(assistants, healths, activeId),
     { name: "NAME", type: "TYPE", status: "STATUS", info: "INFO" },
   );
   console.log("");
@@ -536,13 +528,15 @@ export const ps = Object.assign(
     // never collide with an assistant name worth shadowing.
     if (await printRootProcessDetail(assistantIdentifier)) return;
 
-    const result = lookupAssistantByIdentifier(assistantIdentifier);
-    if (result.status !== "found") {
-      console.error(formatAssistantLookupError(assistantIdentifier, result));
+    const entry = findAssistant(assistantIdentifier);
+    if (!entry) {
+      console.error(
+        `No assistant found with name or ID '${assistantIdentifier}'.`,
+      );
       process.exit(1);
     }
 
-    const rows = await getAssistantProcessRows(result.entry);
+    const rows = await getAssistantProcessRows(entry);
     printFocusedTable(rows);
   },
   { description: "List assistants" },

@@ -24,10 +24,7 @@ process.env.XDG_CONFIG_HOME = testDir;
 
 import { loadLatestAssistant } from "../lib/assistant-config.js";
 import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../lib/assistant-lookup.js";
-import {
+  findAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
   removeLockfileAssistant,
@@ -147,40 +144,13 @@ describe("assistant-config", () => {
     ).toBe("assistant-3");
   });
 
-  test("lookupAssistantByIdentifier resolves a unique display name", () => {
+  test("findAssistant resolves an exact assistant ID", () => {
     makeEntry({ assistantId: "assistant-1", name: "Alice" });
     makeEntry({ assistantId: "assistant-2", name: "Bob" });
 
-    const result = lookupAssistantByIdentifier("Alice");
-    expect(result.status).toBe("found");
-    expect(result.status === "found" ? result.entry.assistantId : null).toBe(
-      "assistant-1",
-    );
-  });
-
-  test("assistant ID lookup wins over a display name match", () => {
-    makeEntry({ assistantId: "Alice", name: "Primary" });
-    makeEntry({ assistantId: "assistant-2", name: "Alice" });
-
-    const result = lookupAssistantByIdentifier("Alice");
-    expect(result.status).toBe("found");
-    expect(result.status === "found" ? result.entry.assistantId : null).toBe(
-      "Alice",
-    );
-  });
-
-  test("ambiguous display name lookup is explicit", () => {
-    makeEntry({ assistantId: "assistant-1", name: "Alice" });
-    makeEntry({ assistantId: "assistant-2", name: "Alice" });
-
-    const result = lookupAssistantByIdentifier("Alice");
-    expect(result.status).toBe("ambiguous");
-    expect(formatAssistantLookupError("Alice", result)).toContain(
-      "assistant-1",
-    );
-    expect(formatAssistantLookupError("Alice", result)).toContain(
-      "assistant-2",
-    );
+    expect(findAssistant("assistant-1")?.assistantId).toBe("assistant-1");
+    // A display name is not an id: nothing resolves.
+    expect(findAssistant("Alice")).toBeNull();
   });
 
   test("removeLockfileAssistant removes matching entry", () => {

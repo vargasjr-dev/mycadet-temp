@@ -97,12 +97,7 @@ export function readRootProcesses(): RootProcessRecords {
   return { tunnel: data.tunnel, app: data.app };
 }
 
-import { loadAllAssistants } from "@mycadet/local-mode";
-import { getActiveAssistant } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "./assistant-lookup.js";
+import { loadAllAssistants, findAssistant } from "@mycadet/local-mode";
 
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();
@@ -127,42 +122,21 @@ export function setActiveAssistant(assistantId: string): void {
 
 /**
  * Resolve which assistant to target for a command, exiting the process
- * with a user-facing error when resolution fails.
- *
- * Priority:
- * 1. Explicit name argument
- * 2. Active assistant set via `cadet use`
- * 3. Sole lockfile entry (any cloud)
+ * with a user-facing error when nothing resolves: the explicit ID
+ * argument, else findAssistant's served rule (active, or the sole entry
+ * before a selection).
  */
 export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
-  if (nameArg) {
-    const result = lookupAssistantByIdentifier(nameArg);
-    if (result.status === "found") return result.entry;
-    console.error(formatAssistantLookupError(nameArg, result));
-  } else {
-    const active = getActiveAssistant();
-    if (active) {
-      const result = lookupAssistantByIdentifier(active);
-      if (result.status === "found") return result.entry;
-      if (result.status === "ambiguous") {
-        console.error(formatAssistantLookupError(active, result));
-        process.exit(1);
-      }
-      // Active assistant no longer exists in lockfile — fall through.
-    }
-
-    const all = loadAllAssistants();
-    if (all.length === 1) return all[0];
-
-    if (all.length === 0) {
-      console.error(`No assistant found. Run 'cadet hatch' first.`);
-    } else {
-      console.error(
-        `Multiple assistants found. Set an active assistant with 'cadet use <name>'.`,
-      );
-    }
+  const entry = findAssistant(nameArg);
+  if (!entry) {
+    console.error(
+      nameArg
+        ? `No assistant found with name or ID '${nameArg}'.`
+        : `No assistant found. Run 'cadet hatch' first.`,
+    );
+    process.exit(1);
   }
-  process.exit(1);
+  return entry;
 }
 
 /**

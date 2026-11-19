@@ -141,13 +141,13 @@ describe("cadet retire", () => {
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  test("--yes retires by unquoted display name and removes by assistant ID", async () => {
+  test("--yes retires by assistant ID", async () => {
     makeEntry({
       assistantId: "assistant-1",
       name: "Example Assistant",
     });
     const entry = readEntry("assistant-1");
-    process.argv = ["bun", "cadet", "retire", "Example", "Assistant", "--yes"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1", "--yes"];
 
     await retire();
 
@@ -185,7 +185,7 @@ describe("cadet retire", () => {
       name: "Example Assistant",
     });
     const before = readLockfile();
-    process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1"];
 
     await expect(retire()).rejects.toThrow("process.exit:1");
 
@@ -203,7 +203,7 @@ describe("cadet retire", () => {
     });
     const before = readLockfile();
     setInteractiveTerminal();
-    process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1"];
 
     const pending = retire();
     queueMicrotask(() => {
@@ -225,7 +225,7 @@ describe("cadet retire", () => {
     });
     const entry = readEntry("assistant-1");
     setInteractiveTerminal();
-    process.argv = ["bun", "cadet", "retire", "Example", "Assistant"];
+    process.argv = ["bun", "cadet", "retire", "assistant-1"];
 
     const pending = retire();
     queueMicrotask(() => {
@@ -236,7 +236,7 @@ describe("cadet retire", () => {
     expect(retireAssistantMock).toHaveBeenCalledWith(entry);
   });
 
-  test("ambiguous display names fail before deleting", async () => {
+  test("an unresolvable name fails before deleting", async () => {
     makeEntry({ assistantId: "assistant-1", name: "Example Assistant" });
     makeEntry({ assistantId: "assistant-2", name: "Example Assistant" });
     const before = readLockfile();
@@ -247,8 +247,8 @@ describe("cadet retire", () => {
     expect(retireAssistantMock).not.toHaveBeenCalled();
     expect(readLockfile()).toBe(before);
     const output = consoleErrorSpy.mock.calls.flat().join("\n");
-    expect(output).toContain("Multiple assistants match 'Example Assistant'");
-    expect(output).toContain("assistant-1");
-    expect(output).toContain("assistant-2");
+    expect(output).toContain(
+      "No assistant found with name or ID 'Example Assistant'",
+    );
   });
 });

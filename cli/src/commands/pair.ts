@@ -38,10 +38,6 @@ import {
   pairDocker,
   pairLocal,
 } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../lib/assistant-lookup.js";
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
@@ -309,19 +305,17 @@ export const pair = Object.assign(
       process.exit(1);
     }
 
-    // Resolve the target. An explicit argument is matched by display name OR id
-    // (with the standard ambiguity error); no argument falls back to the active
-    // assistant. Join positional tokens so multi-word display names work even
-    // unquoted (e.g. `cadet pair My Assistant`).
+    // Resolve the target: an explicit assistant ID argument, else the
+    // active assistant. Join positional tokens so multi-word ids still
+    // arrive whole (e.g. `cadet pair My Assistant`).
     const assistantName = parseAssistantTargetArg(args);
     let entry: LockfileAssistant | null;
     if (assistantName) {
-      const result = lookupAssistantByIdentifier(assistantName);
-      if (result.status !== "found") {
-        console.error(formatAssistantLookupError(assistantName, result));
+      entry = findAssistant(assistantName);
+      if (!entry) {
+        console.error(`No assistant found with name or ID '${assistantName}'.`);
         process.exit(1);
       }
-      entry = result.entry;
     } else {
       entry = findAssistant();
       if (!entry) {

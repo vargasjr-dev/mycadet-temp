@@ -33,7 +33,6 @@ import {
   subscribeTerminalEvents,
   type ResolvedManagedAssistant,
 } from "@mycadet/local-mode";
-import { resolveManagedAssistant } from "../lib/terminal-session.js";
 import type { ChildProcess } from "child_process";
 
 const SSH_OPTS = [
@@ -244,7 +243,27 @@ export const terminal = Object.assign(
 
     // tmux subcommands are managed-cloud features
     if (subcommand === "list") {
-      await listTmuxSessions(resolveManagedAssistant(assistantName));
+      const entry = findAssistant(assistantName);
+      if (!entry) {
+        console.error(
+          assistantName
+            ? `No assistant instance found with name '${assistantName}'.`
+            : "No assistant instance found. Run `cadet hatch` first.",
+        );
+        process.exit(1);
+      }
+      const token = readCloudToken();
+      if (!token) {
+        console.error(
+          "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
+        );
+        process.exit(1);
+      }
+      await listTmuxSessions({
+        assistantId: entry.assistantId,
+        token,
+        cloudUrl: getCloudBaseUrl(),
+      });
       return;
     }
 
@@ -256,10 +275,30 @@ export const terminal = Object.assign(
         );
         process.exit(1);
       }
+      const entry = findAssistant(assistantName);
+      if (!entry) {
+        console.error(
+          assistantName
+            ? `No assistant instance found with name '${assistantName}'.`
+            : "No assistant instance found. Run `cadet hatch` first.",
+        );
+        process.exit(1);
+      }
+      const token = readCloudToken();
+      if (!token) {
+        console.error(
+          "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
+        );
+        process.exit(1);
+      }
       // Shell-escape the session name to handle spaces/metacharacters
       const escaped = tmuxSessionName.replace(/'/g, "'\\''");
       await interactiveSession(
-        resolveManagedAssistant(assistantName),
+        {
+          assistantId: entry.assistantId,
+          token,
+          cloudUrl: getCloudBaseUrl(),
+        },
         `tmux attach -t '${escaped}'`,
       );
       return;

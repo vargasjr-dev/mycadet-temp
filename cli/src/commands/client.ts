@@ -1,8 +1,8 @@
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { resolveConversationKey } from "../lib/assistant-config";
-import { findAssistant } from "@mycadet/local-mode";
 import {
   fetchOrganizationId,
+  findAssistant,
   getActiveAssistant,
   getAssistantDisplayName,
   loadGuardianToken,
@@ -10,10 +10,6 @@ import {
   readCloudToken,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../lib/assistant-lookup.js";
 
 import { normalizeRuntimeUrl } from "../lib/runtime-url";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
@@ -64,19 +60,15 @@ export function parseArgs(): ParsedArgs {
 
   let entry: LockfileAssistant | null = null;
   if (positionalName) {
-    const result = lookupAssistantByIdentifier(positionalName);
-    if (result.status !== "found") {
-      console.error(formatAssistantLookupError(positionalName, result));
+    entry = findAssistant(positionalName);
+    if (!entry) {
+      console.error(`No assistant found with name or ID '${positionalName}'.`);
       process.exit(1);
     }
-    entry = result.entry;
   } else {
     const active = getActiveAssistant();
     if (active) {
-      const result = lookupAssistantByIdentifier(active);
-      if (result.status === "found") {
-        entry = result.entry;
-      }
+      entry = findAssistant(active);
       if (!entry) {
         console.error(
           `Active assistant '${active}' not found in lockfile. Set an active assistant with 'cadet use <name-or-id>'.`,
@@ -233,11 +225,10 @@ export const client = Object.assign(
     // The CLI addresses its chat conversation by a client-minted uuid key
     // (web's temp-client-id pattern) — resolve-or-mint once, persisted on the
     // entry, so every session shares one conversation.
-    const lookup = lookupAssistantByIdentifier(assistantId);
-    const conversationKey =
-      lookup.status === "found"
-        ? resolveConversationKey(lookup.entry.assistantId)
-        : undefined;
+    const target = findAssistant(assistantId);
+    const conversationKey = target
+      ? resolveConversationKey(target.assistantId)
+      : undefined;
 
     const { renderChatApp } = await import("../components/DefaultMainScreen");
 

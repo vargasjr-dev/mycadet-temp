@@ -70,6 +70,10 @@ const checkHealthMock = spyOn(localMode, "checkHealth").mockResolvedValue({
   status: "healthy",
   authenticated: true,
 });
+// The focused `ps <id>` arm resolves through findAssistant.
+const findAssistantMock = spyOn(localMode, "findAssistant").mockReturnValue(
+  null,
+);
 
 // ---------------------------------------------------------------------------
 // stdout / stderr capture
@@ -123,6 +127,7 @@ afterEach(() => {
     authenticated: true,
   });
   readRootProcessesMock.mockReturnValue({});
+  findAssistantMock.mockReturnValue(null);
 });
 
 afterAll(() => {
@@ -133,6 +138,7 @@ afterAll(() => {
   fetchCurrentUserMock.mockRestore();
   fetchCloudAssistantsMock.mockRestore();
   checkHealthMock.mockRestore();
+  findAssistantMock.mockRestore();
   rmSync(testDir, { recursive: true, force: true });
 });
 
@@ -387,6 +393,11 @@ describe("cadet ps <built-in process name> details", () => {
         cloud: "cloud",
       },
     ]);
+    findAssistantMock.mockReturnValue({
+      assistantId: "assistant-123",
+      name: "nginx",
+      cloud: "cloud",
+    });
     checkHealthMock.mockImplementation(async () => ({
       version: "1.0.0",
       status: "healthy",

@@ -1,12 +1,9 @@
 import {
   cliCommand,
+  findAssistant,
   getActiveAssistant,
   getAssistantDisplayName,
 } from "@mycadet/local-mode";
-import {
-  formatAssistantLookupError,
-  lookupAssistantByIdentifier,
-} from "../lib/assistant-lookup.js";
 import { setActiveAssistant } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 
@@ -35,30 +32,26 @@ export const use = Object.assign(
     if (!name) {
       const active = getActiveAssistant();
       if (active) {
-        const result = lookupAssistantByIdentifier(active);
-        if (result.status === "found") {
-          console.log(
-            `Active assistant: ${getAssistantDisplayName(result.entry)}`,
-          );
-        } else {
-          console.log(`Active assistant: ${active} — not found in lockfile`);
-        }
+        const entry = findAssistant(active);
+        console.log(
+          entry
+            ? `Active assistant: ${getAssistantDisplayName(entry)}`
+            : `Active assistant: ${active} — not found in lockfile`,
+        );
       } else {
         console.log("No active assistant set.");
       }
       return;
     }
 
-    const result = lookupAssistantByIdentifier(name);
-    if (result.status !== "found") {
-      console.error(formatAssistantLookupError(name, result));
+    const entry = findAssistant(name);
+    if (!entry) {
+      console.error(`No assistant found with name or ID '${name}'.`);
       process.exit(1);
     }
 
-    setActiveAssistant(result.entry.assistantId);
-    console.log(
-      `Active assistant set to ${getAssistantDisplayName(result.entry)}.`,
-    );
+    setActiveAssistant(entry.assistantId);
+    console.log(`Active assistant set to ${getAssistantDisplayName(entry)}.`);
   },
   { description: "Set the active assistant for commands" },
 );
