@@ -44,7 +44,6 @@
     "remark-stringify": "11.0.0",
     "tailwindcss": "4.1.8",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.58.1",
     "unified": "11.0.5"
   }
 }

@@ -21,7 +21,6 @@
     "eslint": "10.2.0",
     "tailwindcss": "4.2.4",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.58.1",
     "vite": "8.0.11"
   }
 }

@@ -90,8 +90,9 @@
     "./workos-pkce": "./src/workos-pkce.ts"
   },
   "scripts": {
-    "typecheck": "bunx tsc --noEmit",
-    "test": "bun scripts/run-tests.ts"
+    "lint": "eslint . --max-warnings 33",
+    "test": "bun scripts/run-tests.ts",
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@mycadet/electron-utils": "workspace:*",

@@ -11,8 +11,9 @@
     "./guardian-contract": "./src/guardian-contract.ts"
   },
   "scripts": {
-    "typecheck": "bunx tsc --noEmit",
-    "test": "bun scripts/run-tests.ts"
+    "lint": "eslint . --max-warnings 47",
+    "test": "bun scripts/run-tests.ts",
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@mycadet/avatar-manifest": "workspace:*",

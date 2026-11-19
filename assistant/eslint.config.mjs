@@ -5,7 +5,7 @@ import simpleImportSort from "eslint-plugin-simple-import-sort";
 import cliNoDaemonInternals from "./eslint-rules/cli-no-daemon-internals.js";
 
 const eslintConfig = defineConfig([
-  ...baseEslintConfig({ ignores: ["drizzle/**"] }),
+  ...baseEslintConfig(),
   {
     plugins: {
       "simple-import-sort": simpleImportSort,

@@ -53,10 +53,9 @@
     "@types/qrcode-terminal": "0.12.2",
     "@types/react": "19.2.14",
     "@typescript/native-preview": "7.0.0-dev.20260624.1",
-    "eslint": "10.1.0",
+    "eslint": "10.2.0",
     "knip": "5.88.1",
     "prettier": "3.8.1",
-    "typescript": "5.9.3",
-    "typescript-eslint": "8.58.0"
+    "typescript": "5.9.3"
   }
 }

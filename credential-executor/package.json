@@ -39,9 +39,8 @@
   "devDependencies": {
     "@mycadet/shared": "workspace:*",
     "@types/bun": "1.3.10",
-    "eslint": "10.1.0",
+    "eslint": "10.2.0",
     "knip": "5.88.1",
-    "typescript": "5.9.3",
-    "typescript-eslint": "8.58.0"
+    "typescript": "5.9.3"
   }
 }
