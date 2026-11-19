@@ -11,14 +11,26 @@ export const STATE_ROOTS = [
 ] as const;
 export type StateRoot = (typeof STATE_ROOTS)[number];
 
-const TRANSIENT_PATHS = new Set(["workspace/cadet.pid", "workspace/signals"]);
+/**
+ * Whether a workspace entry is a harness process artifact rather than
+ * persistent state. Matched structurally — pid files and the harness's
+ * live signal endpoint — so no harness file is pinned by name here.
+ */
+function isTransient(path: string): boolean {
+  const [root, name] = path.split("/");
+  return (
+    root === "workspace" &&
+    name !== undefined &&
+    (name.endsWith(".pid") || name === "signals")
+  );
+}
 
 export function persistent(
   path: string,
   stat: import("node:fs").Stats | tar.ReadEntry,
 ): boolean {
   return (
-    !TRANSIENT_PATHS.has(path) &&
+    !isTransient(path) &&
     ("isFile" in stat
       ? stat.isFile() || stat.isDirectory() || stat.isSymbolicLink()
       : ["File", "Directory", "SymbolicLink", "Link"].includes(stat.type))

@@ -194,6 +194,7 @@ function writeLockfile(
       {
         activeAssistant: activeAssistant ?? entries[0].assistantId,
         assistants: entries,
+        app: { pid: 4242, startedAt: "2026-01-01T00:00:00Z", port: EDGE_PORT },
       },
       null,
       2,

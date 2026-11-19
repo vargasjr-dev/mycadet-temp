@@ -210,18 +210,10 @@ function parseArgs(): TunnelArgs {
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
-/** The `cadet tunnel restart` flow: bounce the recorded tunnel, keep nginx. */
+/** The `cadet tunnel restart` flow: bounce the tunnel, keep nginx. */
 async function restartTunnelFlow(): Promise<void> {
-  const record = readRootProcesses().tunnel;
-  if (!record) {
-    console.log(
-      "No Cadet-managed tunnel is recorded. Start one with `cadet tunnel start`.",
-    );
-    return;
-  }
   const restarted = await restartTunnel();
-  if (restarted) console.log(`Tunnel restarted: ${restarted.publicUrl}`);
-  else console.log("No Cadet-managed tunnel is recorded.");
+  console.log(`Tunnel restarted: ${restarted.publicUrl}`);
 }
 
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
@@ -317,14 +309,7 @@ export const tunnel = Object.assign(
       `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port}.`,
     );
 
-    const baseTunnelOpts = {
-      port: edge.port,
-    };
-
-    await runProviderTunnel(provider, {
-      ...baseTunnelOpts,
-      ...(domain ? { domain } : {}),
-    });
+    await runProviderTunnel(provider, { ...(domain ? { domain } : {}) });
   },
   { description: "Start or stop a tunnel in front of the app server" },
 );

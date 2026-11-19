@@ -58,7 +58,6 @@ export const dockerOps: DockerBackupOps = {
 export async function captureDockerRoot(
   entry: LockfileAssistant,
   target: string,
-  ops: DockerBackupOps = dockerOps,
 ): Promise<void> {
   const names = dockerResourceNames(entry.assistantId);
   const containers: Record<StateRoot, string> = {
@@ -69,7 +68,7 @@ export async function captureDockerRoot(
   };
   for (const stateRoot of STATE_ROOTS) {
     await mkdir(join(target, stateRoot), { mode: 0o700 });
-    await ops.copy(
+    await dockerOps.copy(
       containers[stateRoot],
       `/${stateRoot}`,
       join(target, stateRoot),

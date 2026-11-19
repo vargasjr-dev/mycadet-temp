@@ -25,7 +25,7 @@ import {
   isAppServerRunning,
   restartAppServer,
 } from "../lib/servers/common.js";
-import { restartTunnel } from "../lib/tunnel.js";
+import { isTunnelRunning, restartTunnel } from "../lib/tunnel.js";
 
 interface UpgradeArgs {
   name: string | null;
@@ -223,9 +223,11 @@ async function restartAppServerAfterUpgrade(): Promise<void> {
  * Best-effort — a failed restart warns but never fails the upgrade.
  */
 async function restoreTunnelAfterUpgrade(): Promise<void> {
+  if (!isTunnelRunning()) return;
   try {
+    console.log("🔄 Restoring the tunnel...");
     const restored = await restartTunnel();
-    if (restored) console.log(`✅ Tunnel restored: ${restored.publicUrl}`);
+    console.log(`✅ Tunnel restored: ${restored.publicUrl}`);
   } catch (err) {
     console.warn(
       `⚠️  Tunnel restart failed — run '${cliCommand()} tunnel start' manually: ${

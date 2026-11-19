@@ -2,7 +2,6 @@ import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { loadAllAssistants } from "@mycadet/local-mode";
 import { clearRootProcess, readRootProcesses } from "./assistant-config.js";
-import { ensureAppServer } from "./servers/common.js";
 import { type TunnelProcessRecord } from "@mycadet/local-mode/contract";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
@@ -153,9 +152,16 @@ export async function notifyAllLocalGatewaysOfPublicUrl(
  */
 export async function runProviderTunnel(
   provider: TunnelProviderName,
-  opts: ProviderTunnelOptions,
+  opts: Omit<ProviderTunnelOptions, "port"> = {},
 ): Promise<{ publicUrl: string }> {
-  const result = await runProvider(provider, opts);
+  // The tunnel fronts the app edge, whose port the lockfile's `app` entry
+  // stamps (the app server records it as it starts).
+  const port = readRootProcesses().app?.port;
+  if (port === undefined)
+    throw new Error(
+      "No app server edge is recorded — run 'cadet app start' first.",
+    );
+  const result = await runProvider(provider, { ...opts, port });
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
   return { publicUrl: result.publicUrl };
 }
@@ -174,18 +180,24 @@ export function clearReservedDomain(): void {
 }
 
 /**
- * Restart the recorded Cadet-managed tunnel: stop its agent (a no-op when it
- * already died) and bring it back up fronting the app server's port, read
- * from the lockfile's `app` entry (the app edge stamps its port there). A
- * no-op when no tunnel is recorded — the saved domain is standing intent,
- * but there is nothing standing to restart.
+ * Whether a Cadet-managed tunnel is recorded in the lockfile — the standing
+ * intent a caller (the upgrade flow) checks before restarting.
  */
-export async function restartTunnel(): Promise<{ publicUrl: string } | null> {
-  const record = readRootProcesses().tunnel;
-  if (!record) return null;
+export function isTunnelRunning(): boolean {
+  return readRootProcesses().tunnel !== undefined;
+}
+
+/**
+ * Restart the Cadet-managed tunnel: stop its agent (a no-op when it already
+ * died) and bring it back up on the recorded provider — or the default when
+ * none is recorded — fronting the app edge's lockfile port. Idempotent:
+ * repeated runs converge on exactly one running tunnel on the saved domain.
+ */
+export async function restartTunnel(): Promise<{ publicUrl: string }> {
+  const provider =
+    readRootProcesses().tunnel?.provider ?? DEFAULT_TUNNEL_PROVIDER;
   await stopTunnelProcess();
-  const port = readRootProcesses().app?.port ?? (await ensureAppServer()).port;
-  return runProviderTunnel(record.provider, { port });
+  return runProviderTunnel(provider);
 }
 
 /**
