@@ -400,6 +400,15 @@ describe("app server targeting", () => {
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
+  test("--help succeeds without starting a tunnel", async () => {
+    process.argv = ["bun", "cadet", "tunnel", "--help"];
+
+    const { exited } = await runTunnelExpectingExit1();
+
+    expect(exited).toBe(false);
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
+  });
+
   test("a stray positional errors pointing at the subcommands", async () => {
     const local = makeLocalEntry();
     writeLockfile([makeCloudEntry(), local], local.assistantId);

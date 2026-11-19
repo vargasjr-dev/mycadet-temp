@@ -262,11 +262,8 @@ export const tunnel = Object.assign(
       return;
     }
     if (subcommand !== "start") {
-      if (
-        subcommand !== undefined &&
-        subcommand !== "--help" &&
-        subcommand !== "-h"
-      ) {
+      const isHelp = subcommand === "--help" || subcommand === "-h";
+      if (subcommand !== undefined && !isHelp) {
         console.error(`Error: Unknown argument '${subcommand}'.`);
       }
       console.error(
@@ -275,7 +272,7 @@ export const tunnel = Object.assign(
       console.error(`       ${cliCommand()} tunnel status`);
       console.error(`       ${cliCommand()} tunnel restart`);
       console.error(`       ${cliCommand()} tunnel stop`);
-      process.exit(1);
+      process.exit(isHelp ? 0 : 1);
     }
     const { provider, domain, clearDomain } = parseArgs();
 
