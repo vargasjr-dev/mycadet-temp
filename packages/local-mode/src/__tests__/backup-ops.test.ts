@@ -15,7 +15,8 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import * as localMode from "@mycadet/local-mode";
 import * as backups from "../backup-ops";
 import * as guardian from "../guardian-token";
-import { stageRootArchive, STATE_ROOTS } from "../root-backup";
+import { stageRootArchive } from "../root-backup";
+import { STATE_ROOTS } from "../state-roots";
 
 const directory = await mkdtemp(join(tmpdir(), "safety-root-backup-"));
 const root = join(directory, "instance");

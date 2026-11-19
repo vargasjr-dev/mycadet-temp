@@ -28,34 +28,20 @@ import { isDockerEntry } from "./lockfile-contract";
 import { DOCKER_STATEFUL_SET_SPEC } from "./remotes/docker/statefulset";
 import { getLocalInstanceDir } from "./remotes/local/instance";
 import { sleepAssistant } from "./operations/sleep";
+import { captureRoot } from "./operations/capture";
+import { dockerOps, type DockerBackupOps } from "./remotes/docker/capture";
 import { consoleLifecycleReporter, type LifecycleReporter } from "./lifecycle-reporter";
 import { wakeAssistant } from "./operations/wake";
 import type { DockerAssistant, LocalAssistant } from "./lockfile-contract";
 import type { LockfileAssistant } from "./lockfile-contract";
 import { getBackupsDir } from "./backup-ops";
+import {
+  pruneTransient,
+  persistent,
+  STATE_ROOTS,
+  type StateRoot,
+} from "./state-roots";
 import { execOutput } from "./exec";
-
-export const STATE_ROOTS = [
-  "workspace",
-  "gateway-security",
-  "ces-security",
-  "ces-data",
-] as const;
-type StateRoot = (typeof STATE_ROOTS)[number];
-const ROOT_SET = new Set<string>(STATE_ROOTS);
-const TRANSIENT_PATHS = new Set(["workspace/cadet.pid", "workspace/signals"]);
-
-function persistent(
-  path: string,
-  stat: import("node:fs").Stats | tar.ReadEntry,
-): boolean {
-  return (
-    !TRANSIENT_PATHS.has(path) &&
-    ("isFile" in stat
-      ? stat.isFile() || stat.isDirectory() || stat.isSymbolicLink()
-      : ["File", "Directory", "SymbolicLink", "Link"].includes(stat.type))
-  );
-}
 
 /** Plain tar root layout; no credential decoding or logical workspace transformation. */
 export async function packRoot(root: string, output: string): Promise<void> {
@@ -116,7 +102,7 @@ function archivePath(path: string): string {
     path.startsWith("/") ||
     /^[a-z]:/i.test(path) ||
     stripped.split("/").some((p) => p === ".." || p === "." || !p) ||
-    !ROOT_SET.has(stripped.split("/")[0]!)
+    !(STATE_ROOTS as readonly string[]).includes(stripped.split("/")[0]!)
   ) {
     throw new Error(`Invalid root archive path: ${path}`);
   }
@@ -274,9 +260,6 @@ export class LocalRootStorage implements RootStorage {
     }
   }
 
-  async capture(target: string): Promise<void> {
-    return captureLocalRoot(this.localEntry, target);
-  }
   async replace(source: string): Promise<void> {
     // All renames stay on the instance's filesystem. A failed install rolls back
     // every root, including the root whose incoming rename failed.
@@ -345,110 +328,6 @@ const ContainerInspectionSchema = z.object({
 });
 type ContainerInspection = z.infer<typeof ContainerInspectionSchema>;
 
-export interface DockerBackupOps {
-  output: typeof execOutput;
-  copy: (container: string, path: string, target: string) => Promise<void>;
-  install: (args: string[], source: string) => Promise<void>;
-}
-
-const dockerOps: DockerBackupOps = {
-  output: execOutput,
-  copy: async (container, path, target) => {
-    await execOutput("docker", ["cp", `${container}:${path}/.`, target]);
-  },
-  install: async (args, source) => {
-    const child = spawn("docker", args, {
-      stdio: ["pipe", "ignore", "pipe"],
-      windowsHide: true,
-    });
-    let stderr = "";
-    child.stderr.on("data", (chunk: Buffer) => {
-      stderr += chunk.toString();
-    });
-    const exited = new Promise<void>((done, fail) => {
-      child.once("error", fail);
-      child.once("close", (code) =>
-        code === 0
-          ? done()
-          : fail(new Error(`Docker restore failed (${code}): ${stderr}`)),
-      );
-    });
-    const input = tar.c({ cwd: source, portable: true }, ["."]);
-    const transfer = pipeline(input, child.stdin).catch((error) => {
-      child.kill("SIGTERM");
-      throw error;
-    });
-    // Do not begin recovery while an earlier writer still owns the volume.
-    const results = await Promise.allSettled([transfer, exited]);
-    for (const result of results) {
-      if (result.status === "rejected") throw result.reason;
-    }
-  },
-};
-
-/**
- * Per-remote capture — each topology owns how its persistent roots are
- * copied out (local: filesystem copies off the instance dir; docker:
- * `docker cp` out of the containers). The storage classes keep the
- * replace/restore sides; capture is the remote's own verb.
- */
-export async function captureLocalRoot(
-  entry: LocalAssistant,
-  target: string,
-): Promise<void> {
-  const root = resolve(getLocalInstanceDir(entry));
-  for (const stateRoot of STATE_ROOTS) {
-    const source = join(root, stateRoot);
-    const stat = await lstat(source).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== "ENOENT") throw error;
-      return undefined;
-    });
-    if (!stat) throw new Error(`Persistent state root is missing: ${stateRoot}`);
-    if (!stat.isDirectory())
-      throw new Error(`State root must be a directory: ${stateRoot}`);
-    await cp(source, join(target, stateRoot), {
-      recursive: true,
-      verbatimSymlinks: true,
-      filter: async (path) =>
-        persistent(
-          posix.join(
-            stateRoot,
-            path
-              .slice(source.length + 1)
-              .split("\\")
-              .join("/"),
-          ),
-          await lstat(path),
-        ),
-    });
-  }
-}
-
-/** The docker capture: `docker cp` each container's state root out. */
-export async function captureDockerRoot(
-  entry: LockfileAssistant,
-  target: string,
-  ops: DockerBackupOps = dockerOps,
-): Promise<void> {
-  const names = dockerResourceNames(entry.assistantId);
-  const containers: Record<StateRoot, string> = {
-    workspace: names.assistantContainer,
-    "gateway-security": names.gatewayContainer,
-    "ces-security": names.cesContainer,
-    "ces-data": names.cesContainer,
-  };
-  for (const stateRoot of STATE_ROOTS) {
-    await mkdir(join(target, stateRoot), { mode: 0o700 });
-    await ops.copy(
-      containers[stateRoot],
-      `/${stateRoot}`,
-      join(target, stateRoot),
-    );
-  }
-  // docker cp may retain sockets in its tar stream; remove only process artifacts.
-  await pruneTransient(target);
-}
-
 export class DockerRootStorage implements RootStorage {
   readonly containers: Record<StateRoot, string>;
   constructor(
@@ -477,9 +356,6 @@ export class DockerRootStorage implements RootStorage {
       throw new Error(`Invalid container inspection: ${container}`);
     }
     return result.data[0]!;
-  }
-  async capture(target: string): Promise<void> {
-    return captureDockerRoot(this.entry, target, this.ops);
   }
   private async restoreMounts(_source: string) {
     const inspections = new Map<string, ContainerInspection>();
@@ -608,16 +484,6 @@ export class DockerRootStorage implements RootStorage {
   }
 }
 
-async function pruneTransient(root: string, relative = ""): Promise<void> {
-  for (const name of await readdir(join(root, relative))) {
-    const path = posix.join(relative, name);
-    const stat = await lstat(join(root, path));
-    if (!persistent(path, stat))
-      await rm(join(root, path), { recursive: true, force: true });
-    else if (stat.isDirectory()) await pruneTransient(root, path);
-  }
-}
-
 function storageFor(entry: LockfileAssistant): RootStorage {
   return entry.cloud === "docker"
     ? new DockerRootStorage(entry)
@@ -715,9 +581,7 @@ async function captureBackup(
     running = slept.wasRunning;
     stopped = true;
     log("Archiving workspace and databases (this can take a while)...");
-    await (entry.cloud === "docker"
-      ? captureDockerRoot(entry, stage)
-      : captureLocalRoot(entry as LocalAssistant, stage));
+    await captureRoot(entry, stage);
     log(`Snapshot staged at ${stage}`);
     if (running) {
       log("Restarting services...");
@@ -793,9 +657,7 @@ async function restoreBackup(
     running = slept.wasRunning;
     stopped = true;
     await mkdir(snapshot, { mode: 0o700 });
-    await (entry.cloud === "docker"
-      ? captureDockerRoot(entry, snapshot)
-      : captureLocalRoot(entry as LocalAssistant, snapshot));
+    await captureRoot(entry, snapshot);
     recoveryPath =
       options.recoveryPath ??
       join(

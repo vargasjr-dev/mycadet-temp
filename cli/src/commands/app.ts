@@ -6,7 +6,7 @@ import {
   isAppServerRunning,
   killForeignAppServerProcess,
   readAppServerState,
-  restartAppServer as restartAppServerCore,
+  restartAppServer,
   stopAppServer,
   type AppServer,
 } from "../lib/servers/common.js";
@@ -93,18 +93,6 @@ async function stopAppServerCommand(): Promise<void> {
   }
 }
 
-/** `cadet app restart`: bounce the app server onto the current build. */
-async function restartAppServer(): Promise<void> {
-  let server: AppServer;
-  try {
-    server = await restartAppServerCore();
-  } catch (err) {
-    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  }
-  console.log(`App server restarted on 127.0.0.1:${server.port}.`);
-}
-
 export const app = Object.assign(
   async function app(): Promise<void> {
     const subcommand = process.argv[3];
@@ -118,7 +106,11 @@ export const app = Object.assign(
       await printRootProcessDetail("app");
       return;
     }
-    if (subcommand === "restart") return restartAppServer();
+    if (subcommand === "restart") {
+      const server = await restartAppServer();
+      console.log(`App server restarted on 127.0.0.1:${server.port}.`);
+      return;
+    }
     console.error(`Error: Unknown argument '${subcommand}'.`);
     printAppHelp();
   },

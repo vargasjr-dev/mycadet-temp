@@ -245,14 +245,6 @@ async function waitForPidExit(
 }
 
 /**
- * Stop the running app server via its pidfile and clear the recorded state.
- * Returns true if a process was stopped.
- *
- * Verifies the PID still belongs to this app server before killing to avoid
- * hitting an unrelated process if the OS has reused the PID. SIGTERM first;
- * escalate to SIGKILL if it doesn't exit within the timeout.
- */
-/**
  * Restart the machine-level app server: stop the running instance (a
  * no-op when down) and bring it back up on the current build. The shared
  * core of `cadet app restart` and the upgrade command's post-upgrade
@@ -263,6 +255,14 @@ export async function restartAppServer(): Promise<AppServer> {
   return ensureAppServer();
 }
 
+/**
+ * Stop the running app server via its pidfile and clear the recorded state.
+ * Returns true if a process was stopped.
+ *
+ * Verifies the PID still belongs to this app server before killing to avoid
+ * hitting an unrelated process if the OS has reused the PID. SIGTERM first;
+ * escalate to SIGKILL if it doesn't exit within the timeout.
+ */
 export async function stopAppServer(): Promise<boolean> {
   const paths = getAppServerPaths();
 

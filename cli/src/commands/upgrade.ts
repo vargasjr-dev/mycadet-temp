@@ -27,14 +27,10 @@ import {
 } from "../lib/cli-error.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
-  ensureAppServer,
   isAppServerRunning,
   restartAppServer,
-  type AppServer,
 } from "../lib/servers/common.js";
-import { staleTrackedNgrokAgent } from "../lib/tunnels/ngrok.js";
-import { readRootProcesses } from "../lib/assistant-config.js";
-import { runProviderTunnel } from "../lib/tunnel.js";
+import { restartTunnel } from "../lib/tunnel.js";
 
 interface UpgradeArgs {
   name: string | null;
@@ -246,52 +242,38 @@ function ignoreHangupSignals(): void {
 /**
  * Post-upgrade restart of the app server when one is running: an upgrade
  * swaps the served dists, and a running server keeps its old build until
- * restarted. Returns the restarted (or already-running) server so the
- * tunnel restore fronts the right port. Best-effort — a failed restart
- * warns but never fails the upgrade.
+ * restarted. Best-effort — a failed restart warns but never fails the
+ * upgrade.
  */
-async function restartAppServerAfterUpgrade(): Promise<AppServer | null> {
+async function restartAppServerAfterUpgrade(): Promise<void> {
   try {
-    if (!isAppServerRunning()) return null;
+    if (!isAppServerRunning()) return;
     console.log("🔄 Restarting the app server on the upgraded build...");
-    const server = await restartAppServer();
+    await restartAppServer();
     console.log("✅ App server restarted.");
-    return server;
   } catch (err) {
     console.warn(
       `⚠️  App server restart failed — run '${cliCommand()} app restart' manually: ${
         err instanceof Error ? err.message : String(err)
       }`,
     );
-    return null;
   }
 }
 
 /**
- * Post-upgrade restore of a Cadet-managed tunnel: the recorded tunnel agent
- * usually dies with the stopped edge mid-upgrade, so bring it back fronting
- * the restarted app server (the saved domain is standing intent and is
- * reused). A tunnel that survived the upgrade is left alone. Best-effort —
- * a failed restore warns but never fails the upgrade.
+ * Post-upgrade restart of the recorded Cadet-managed tunnel: the recorded
+ * agent usually dies with the stopped edge mid-upgrade, so bring it back
+ * (the saved domain is standing intent). A no-op when no tunnel is
+ * recorded; the tunnel layer owns the provider and port details.
+ * Best-effort — a failed restart warns but never fails the upgrade.
  */
-async function restoreTunnelAfterUpgrade(edge: AppServer | null): Promise<void> {
-  const record = readRootProcesses().tunnel;
-  if (!record) return;
-  if (staleTrackedNgrokAgent(record)) {
-    // The recorded ngrok agent is still alive — the tunnel never went
-    // down; spawning a second one would fight it for the domain.
-    return;
-  }
+async function restoreTunnelAfterUpgrade(): Promise<void> {
   try {
-    console.log("🔄 Restoring the tunnel...");
-    // The restart step left the app server up (or it was never running —
-    // bring it up only then).
-    const server = edge ?? (await ensureAppServer());
-    await runProviderTunnel(record.provider, { port: server.port });
-    console.log(`✅ Tunnel restored: ${record.publicUrl}`);
+    const restored = await restartTunnel();
+    if (restored) console.log(`✅ Tunnel restored: ${restored.publicUrl}`);
   } catch (err) {
     console.warn(
-      `⚠️  Tunnel restore failed — run '${cliCommand()} tunnel start' manually: ${
+      `⚠️  Tunnel restart failed — run '${cliCommand()} tunnel start' manually: ${
         err instanceof Error ? err.message : String(err)
       }`,
     );
@@ -433,8 +415,8 @@ export const upgrade = Object.assign(
       reporter: consoleLifecycleReporter,
     });
     if (result.ok) {
-      const edge = await restartAppServerAfterUpgrade();
-      await restoreTunnelAfterUpgrade(edge);
+      await restartAppServerAfterUpgrade();
+      await restoreTunnelAfterUpgrade();
       return;
     }
 

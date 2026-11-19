@@ -24,17 +24,26 @@ import {
   packRoot,
   restoreRootBackup,
   stageRootArchive,
-  STATE_ROOTS,
   validateRootArchive,
 } from "../root-backup";
+import { STATE_ROOTS } from "../state-roots";
+import * as localCapture from "../remotes/local/capture";
 import * as localMode from "@mycadet/local-mode";
 
 // The backup/restore lifecycle constructs its own storage and sleep now, so
 // the tests simulate service state through the real seams: the storage
-// prototype's methods and the local-mode package's assistant entrypoint.
-const realCapture = LocalRootStorage.prototype.capture;
+// prototype's methods, the capture module, and the local-mode package's
+// assistant entrypoint.
+const realCapture = localCapture.captureLocalRoot;
 const realReplace = LocalRootStorage.prototype.replace;
-const captureMock = spyOn(LocalRootStorage.prototype, "capture");
+const captureMock = mock(
+  async (entry: unknown, path: string): Promise<void> => {
+    return realCapture(entry as never, path);
+  },
+);
+mock.module("../remotes/local/capture", () => ({
+  captureLocalRoot: captureMock,
+}));
 const replaceMock = spyOn(LocalRootStorage.prototype, "replace");
 const sleepMock = spyOn(localMode, "sleepAssistant");
 // The flow's wake hook is the package's wake operation — module-mocked here
@@ -57,11 +66,11 @@ let onReplace: ((path: string) => void) | undefined;
 let onResume: (() => void) | undefined;
 let onSleep: (() => void) | undefined;
 captureMock.mockImplementation(async function (
-  this: LocalRootStorage,
+  entry: unknown,
   path: string,
 ) {
   onCapture?.(path);
-  return realCapture.call(this, path);
+  return realCapture(entry as never, path);
 });
 replaceMock.mockImplementation(async function (
   this: LocalRootStorage,

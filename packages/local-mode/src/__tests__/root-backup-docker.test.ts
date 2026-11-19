@@ -18,8 +18,9 @@ import {
   packRoot,
   restoreRootBackup,
   stageRootArchive,
-  STATE_ROOTS,
 } from "../root-backup";
+import { STATE_ROOTS } from "../state-roots";
+import { captureDockerRoot } from "../remotes/docker/capture";
 import { createContainers } from "../remotes/docker/wake";
 import { sleepDocker } from "../remotes/docker/sleep";
 import type { LockfileAssistant } from "../lockfile-contract";
@@ -185,7 +186,7 @@ async function archive() {
   await mkdir(capture);
   const storage = new DockerRootStorage(entry);
   await sleepDocker(entry, { timeoutMs: 100 });
-  await storage.capture(capture);
+  await captureDockerRoot(entry, capture);
   const file = join(directory, "backup.tar.gz");
   await packRoot(capture, file);
   return { storage, file };

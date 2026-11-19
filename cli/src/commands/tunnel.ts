@@ -12,6 +12,7 @@ import {
   clearReservedDomain,
   isTunnelProvider,
   providerSupportsReservedDomain,
+  restartTunnel,
   runProviderTunnel,
   stopTunnelProcess,
 } from "../lib/tunnel.js";
@@ -209,6 +210,20 @@ function parseArgs(): TunnelArgs {
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
+/** The `cadet tunnel restart` flow: bounce the recorded tunnel, keep nginx. */
+async function restartTunnelFlow(): Promise<void> {
+  const record = readRootProcesses().tunnel;
+  if (!record) {
+    console.log(
+      "No Cadet-managed tunnel is recorded. Start one with `cadet tunnel start`.",
+    );
+    return;
+  }
+  const restarted = await restartTunnel();
+  if (restarted) console.log(`Tunnel restarted: ${restarted.publicUrl}`);
+  else console.log("No Cadet-managed tunnel is recorded.");
+}
+
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
@@ -243,6 +258,13 @@ export const tunnel = Object.assign(
       await stopTunnelFlow();
       return;
     }
+    if (subcommand === "restart") {
+      const args = process.argv.slice(4);
+      if (args.length > 0)
+        throw new Error(`Usage: ${cliCommand()} tunnel restart`);
+      await restartTunnelFlow();
+      return;
+    }
     if (subcommand === "status") {
       await printRootProcessDetail("tunnel");
       return;
@@ -259,6 +281,7 @@ export const tunnel = Object.assign(
         `Usage: ${cliCommand()} tunnel start --provider <provider> [options]`,
       );
       console.error(`       ${cliCommand()} tunnel status`);
+      console.error(`       ${cliCommand()} tunnel restart`);
       console.error(`       ${cliCommand()} tunnel stop`);
       process.exit(1);
     }

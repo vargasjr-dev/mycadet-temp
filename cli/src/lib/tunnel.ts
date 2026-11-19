@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { loadAllAssistants } from "@mycadet/local-mode";
 import { clearRootProcess, readRootProcesses } from "./assistant-config.js";
+import { ensureAppServer } from "./servers/common.js";
 import { type TunnelProcessRecord } from "@mycadet/local-mode/contract";
 import { isLocalEntry } from "@mycadet/local-mode/contract";
 import {
@@ -170,6 +171,21 @@ function runProvider(
 /** Drop the saved reserved-domain record (providers that keep one). */
 export function clearReservedDomain(): void {
   saveNgrokDomain(null);
+}
+
+/**
+ * Restart the recorded Cadet-managed tunnel: stop its agent (a no-op when it
+ * already died) and bring it back up fronting the app server's port, read
+ * from the lockfile's `app` entry (the app edge stamps its port there). A
+ * no-op when no tunnel is recorded — the saved domain is standing intent,
+ * but there is nothing standing to restart.
+ */
+export async function restartTunnel(): Promise<{ publicUrl: string } | null> {
+  const record = readRootProcesses().tunnel;
+  if (!record) return null;
+  await stopTunnelProcess();
+  const port = readRootProcesses().app?.port ?? (await ensureAppServer()).port;
+  return runProviderTunnel(record.provider, { port });
 }
 
 /**
