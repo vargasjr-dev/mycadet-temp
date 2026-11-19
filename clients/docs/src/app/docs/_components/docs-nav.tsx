@@ -40,6 +40,7 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  Users,
   Wand2,
   Webhook,
   Wrench,
@@ -123,14 +124,19 @@ const GoogleCloudHex = ({ size = ICON_SIZE }: { size?: number }): ReactNode => (
 );
 
 const NAV_ITEMS: DocsNavItem[] = [
-  { label: "Homepage", href: "/docs", icon: icon(House) },
   { label: "Constitution", href: "/docs/constitution", icon: icon(Scroll) },
   { label: "Glossary", href: "/docs/glossary", icon: icon(Book) },
+  { label: "Community", href: "/community", icon: icon(Users) },
   {
     label: "Getting Started",
     href: "/docs/getting-started",
     icon: icon(Rocket),
     children: [
+      {
+        label: "Docs Home",
+        href: "/docs",
+        icon: icon(House),
+      },
       {
         label: "What is Cadet?",
         href: "/docs/getting-started/what-is-cadet",
@@ -192,38 +198,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         label: "Web Search",
         href: "/docs/key-concepts/web-search",
         icon: icon(Search),
-        children: [
-          {
-            label: "Tavily",
-            href: "/docs/key-concepts/web-search/tavily",
-            icon: icon(Search),
-          },
-          {
-            label: "Perplexity",
-            href: "/docs/key-concepts/web-search/perplexity",
-            icon: icon(Search),
-          },
-          {
-            label: "Brave Search",
-            href: "/docs/key-concepts/web-search/brave",
-            icon: icon(Search),
-          },
-          {
-            label: "Firecrawl",
-            href: "/docs/key-concepts/web-search/firecrawl",
-            icon: icon(Search),
-          },
-          {
-            label: "Exa",
-            href: "/docs/key-concepts/web-search/exa",
-            icon: icon(Search),
-          },
-          {
-            label: "Serply",
-            href: "/docs/key-concepts/web-search/serply",
-            icon: icon(Search),
-          },
-        ],
       },
       {
         label: "OAuth Integrations",
@@ -430,6 +404,11 @@ const NAV_ITEMS: DocsNavItem[] = [
         label: "Development Workflow",
         href: "/docs/developer-guide/development-workflow",
         icon: icon(GitBranch),
+      },
+      {
+        label: "Releases",
+        href: "/docs/releases",
+        icon: icon(Rocket),
       },
     ],
   },

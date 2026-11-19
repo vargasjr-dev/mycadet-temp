@@ -1,5 +1,37 @@
 Cadet has three main domains that work together: a runtime that manages conversations and tools, a native client for macOS, and a gateway that handles all external communication.
 
+## The shape of the system
+
+Everything external enters through the gateway; everything credential-bearing goes through CES. The runtime owns the loop, and schedules, wakes, and plugins all live inside it.
+
+```mermaid
+flowchart LR
+  You["You: CLI · Desktop · Web"]
+  Channels["Channels: Telegram · Slack · Discord"]
+  Gateway["Gateway — public ingress: webhooks · OAuth · voice"]
+  Loop["Assistant runtime — session loop · tools · skills"]
+  CES["Credential Execution Service — keys never leave"]
+  WS[("Workspace volume")]
+  Mem[("Memory Qdrant")]
+  Sched["Schedules + wakes, in-process"]
+  Plugins["Plugins, in-process"]
+
+  You --> Gateway
+  Channels --> Gateway
+  Gateway --> Loop
+  Loop --> CES
+  Loop --> WS
+  Loop --> Mem
+  Loop --- Sched
+  Loop --- Plugins
+
+  click Loop "/docs/developer-guide/internals/assistant-architecture" "Assistant architecture"
+  click Gateway "/docs/developer-guide/internals/gateway-architecture" "Gateway architecture"
+  click CES "/docs/developer-guide/internals/credential-execution-service" "Credential Execution Service"
+  click Mem "/docs/developer-guide/internals/memory" "Memory architecture"
+  click Sched "/docs/developer-guide/internals/scheduling" "Scheduling architecture"
+```
+
 ## Cloud Domains
 
 ### Assistant Runtime

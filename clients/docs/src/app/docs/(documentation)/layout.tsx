@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { type ReactNode } from "react";
 
 import { DocsNav } from "@/app/docs/_components/docs-nav";
@@ -37,7 +36,10 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                 {/* Mobile: hamburger menu button */}
                 <DocsMobileMenuButton />
                 {/* Desktop: logo */}
-                <a href="https://www.mycadet.ai" className="hidden md:flex items-center gap-2 no-underline">
+                <a
+                  href="https://www.mycadet.ai"
+                  className="hidden md:flex items-center gap-2 no-underline"
+                >
                   <Image
                     src="/docs/cadet-logo.svg"
                     alt="Cadet"
@@ -64,52 +66,8 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
               </div>
             </div>
           </div>
-          {/* Section nav band: border-t spans full viewport, content centered */}
-          <div className="docs-header-tabs hidden border-t md:block">
-            <div className="mx-auto max-w-[1280px]">
-              <div className="flex h-11 items-center">
-                <div className="md:w-64 md:shrink-0" />
-                <div className="flex h-full flex-1 items-center gap-6 px-4 md:pl-8 md:pr-4">
-                  <Link
-                    href="/docs"
-                    className="docs-header-link docs-header-link-active text-sm font-medium no-underline"
-                  >
-                    Docs
-                  </Link>
-                  <Link
-                    href={"/docs/releases"}
-                    className="docs-header-link text-sm font-medium no-underline"
-                  >
-                    Releases
-                  </Link>
-                  <a
-                    href="https://www.mycadet.ai/skills"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="docs-header-link text-sm font-medium no-underline"
-                  >
-                    Skills
-                  </a>
-                  <a
-                    href="https://www.mycadet.ai/plugins"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="docs-header-link text-sm font-medium no-underline"
-                  >
-                    Plugins
-                  </a>
-                  <a
-                    href="https://www.mycadet.ai/community"
-                    className="docs-header-link text-sm font-medium no-underline"
-                  >
-                    Community
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
         </header>
-        <div className="docs-layout mx-auto flex max-w-[1280px] min-h-[calc(100vh-57px)] md:min-h-[calc(100vh-101px)]">
+        <div className="docs-layout mx-auto flex max-w-[1280px] min-h-[calc(100vh-57px)] md:min-h-[calc(100vh-57px)]">
           <DocsNav />
           <div className="docs-content-area min-w-0 flex-1">
             <div className="flex items-start gap-6 px-4 py-6 md:px-10 md:py-10">

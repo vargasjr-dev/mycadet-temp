@@ -64,7 +64,7 @@ describe("discoverDocsRoutes", () => {
     expect(routes).toContain("/docs");
     expect(routes).toContain("/docs/releases");
     expect(routes).toContain("/docs/skills-reference/computer-use");
-    expect(routes).toContain("/docs/key-concepts/web-search/perplexity");
+    expect(routes).toContain("/docs/key-concepts/web-search");
   });
 
   test("strips route groups from URLs", () => {
@@ -143,7 +143,9 @@ describe("docs sitemap", () => {
   });
 
   test("excludes the key-concepts redirect stub", () => {
-    expect(discoverDocsRoutes()).toContain("/docs/getting-started/key-concepts");
+    expect(discoverDocsRoutes()).toContain(
+      "/docs/getting-started/key-concepts",
+    );
     expect(entries.map((entry) => entry.url)).not.toContain(
       "https://www.mycadet.ai/docs/getting-started/key-concepts",
     );

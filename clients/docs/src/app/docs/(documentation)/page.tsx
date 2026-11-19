@@ -1,4 +1,4 @@
-import { HomepageContent } from "@/app/docs/_components/homepage-content";
+import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
@@ -9,5 +9,11 @@ export const metadata = createMetadata({
 });
 
 export default function DocsPage() {
-  return <HomepageContent />;
+  return (
+    <MarkdownDoc
+      file="homepage"
+      title="Meet Cadet"
+      breadcrumb="Docs / Homepage"
+    />
+  );
 }
