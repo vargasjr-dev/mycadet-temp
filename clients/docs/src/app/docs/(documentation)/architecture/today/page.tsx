@@ -1,13 +1,18 @@
-import { DeveloperGuideArchitectureContent } from "@/app/docs/_components/developer-guide-architecture-content";
+import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "Today's Architecture - Cadet Docs",
-  description:
-    "Platform domains, repository structure, and how the runtime, clients, and gateway fit together.",
+  description: "How your Cadet and the broader ecosystem works today.",
   path: "/docs/architecture/today",
 });
 
 export default function ArchitectureTodayPage() {
-  return <DeveloperGuideArchitectureContent />;
+  return (
+    <MarkdownDoc
+      file="architecture/today"
+      title="Today's Architecture"
+      breadcrumb="Docs / Architecture / Today"
+    />
+  );
 }
