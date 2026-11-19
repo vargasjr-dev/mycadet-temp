@@ -1,4 +1,5 @@
 import type { LockfileAssistant } from "../lockfile-contract";
+import type { LifecycleReporter } from "../lifecycle-reporter";
 import { cliCommand } from "../environment";
 import { isAssistantHealthy } from "../daemon-readiness";
 import { sleepLocal, type SleepServiceStop } from "../remotes/local/sleep";
@@ -43,8 +44,8 @@ export interface SleepOptions {
   waitMs?: number | null;
   /** Aborts the drain — the CLI's Ctrl-C. */
   signal?: AbortSignal;
-  /** Progress narration for the long drain wait (headless hosts omit it). */
-  log?: (line: string) => void;
+  /** Narration for the long drain wait (headless hosts omit it). */
+  reporter?: LifecycleReporter;
 }
 
 /**
@@ -66,7 +67,7 @@ export async function sleepAssistant(
   const wasRunning = await isAssistantHealthy(entry);
   try {
     if (entry.cloud === "docker") {
-      await sleepDocker(entry, { log: options.log });
+      await sleepDocker(entry, { reporter: options.reporter });
       return { ok: true, kind: "containers", wasRunning };
     }
     if (entry.cloud === "local") {

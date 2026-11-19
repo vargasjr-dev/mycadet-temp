@@ -55,10 +55,13 @@ test("restart sleeps then wakes the same entry", async () => {
 
 test("narration reaches the sleep half", async () => {
   const lines: string[] = [];
-  await restartAssistant({ entry, log: (line) => lines.push(line) });
+  await restartAssistant({
+    entry,
+    reporter: { log: (line) => lines.push(line), warn: () => {}, error: () => {}, progress: () => {} },
+  });
 
   expect(sleepLeg).toHaveBeenCalledWith(entry, {
-    log: expect.any(Function),
+    reporter: expect.objectContaining({ log: expect.any(Function) }),
   });
 });
 

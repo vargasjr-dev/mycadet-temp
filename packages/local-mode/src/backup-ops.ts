@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { findAssistantByName } from "./operations/lookup";
 import { createRootBackup, restoreRootBackup } from "./root-backup.js";
+import type { LifecycleReporter } from "./lifecycle-reporter";
 import { resolveDataDir } from "./config";
 
 /** Default backup directory following XDG convention */
@@ -24,7 +25,7 @@ export async function createBackup(
     prefix?: string;
     description?: string;
     timeoutMs?: number;
-    log?: (line: string) => void;
+    reporter?: LifecycleReporter;
   },
 ): Promise<string | null> {
   try {
@@ -38,7 +39,7 @@ export async function createBackup(
       getBackupsDir(),
       `${prefix}-${new Date().toISOString().replace(/[:.]/g, "-")}.tar.gz`,
     );
-    await createRootBackup(entry, path, { log: options?.log });
+    await createRootBackup(entry, path, { reporter: options?.reporter });
     return path;
   } catch (error) {
     console.warn(

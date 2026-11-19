@@ -59,7 +59,7 @@ beforeEach(() => {
 
 test("the docker leg narrates the containers-stopped line itself", async () => {
   const lines: string[] = [];
-  await sleepDocker(entry, { log: (line) => lines.push(line) });
+  await sleepDocker(entry, { reporter: { log: (line) => lines.push(line), warn: () => {}, error: () => {}, progress: () => {} } });
 
   // Per-container progress (each `docker stop` can wait out a grace period)
   // followed by the group-down line the leg has always narrated.

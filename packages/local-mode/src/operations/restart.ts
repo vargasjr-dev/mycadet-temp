@@ -1,4 +1,5 @@
 import type { LockfileAssistant } from "../lockfile-contract";
+import type { LifecycleReporter } from "../lifecycle-reporter";
 import { loadAllAssistants } from "./lookup";
 import { sleepAssistant, type SleepResult } from "./sleep";
 import { wakeAssistant, type WakeResult } from "./wake";
@@ -33,8 +34,8 @@ export interface RestartAssistantOptions {
   entry?: LockfileAssistant;
   /** Restart every assistant in this environment's lockfile. */
   all?: boolean;
-  /** Progress narration for the long drain wait (headless hosts omit it). */
-  log?: (line: string) => void;
+  /** Narration for the long drain wait (headless hosts omit it). */
+  reporter?: LifecycleReporter;
 }
 
 export async function restartAssistant(
@@ -44,7 +45,7 @@ export async function restartAssistant(
   if (!opts.entry) {
     throw new TypeError("restartAssistant requires an entry or all: true");
   }
-  const report = await restartEntry(opts.entry, opts.log);
+  const report = await restartEntry(opts.entry, opts.reporter);
   return {
     ok: report.sleep.ok && !report.sleep.cancelled && !!report.wake?.ok,
     reports: [report],
@@ -54,9 +55,9 @@ export async function restartAssistant(
 /** Sleep then wake one entry — the report the command layer narrates. */
 async function restartEntry(
   entry: LockfileAssistant,
-  log?: (line: string) => void,
+  reporter?: LifecycleReporter,
 ): Promise<RestartReport> {
-  const sleep = await sleepAssistant(entry, { log });
+  const sleep = await sleepAssistant(entry, { reporter });
   if (!sleep.ok || sleep.cancelled) {
     return { assistantId: entry.assistantId, sleep };
   }
@@ -85,7 +86,7 @@ async function restartAll(
   // All down first — the env-wide stop — then all up.
   const sleepResults = new Map<string, SleepResult>();
   for (const entry of manageable) {
-    const sleep = await sleepAssistant(entry, { log: opts.log });
+    const sleep = await sleepAssistant(entry, { reporter: opts.reporter });
     sleepResults.set(entry.assistantId, sleep);
     if (!sleep.ok) ok = false;
   }

@@ -1,11 +1,13 @@
 import { exec, execOutput } from "../../exec";
 import type { LockfileAssistant } from "../../lockfile-contract";
+import type { LifecycleReporter } from "../../operations/types";
+import { consoleLifecycleReporter } from "../../lifecycle-reporter";
 import { dockerResourceNames } from "./common";
 
 export interface SleepDockerOptions {
   timeoutMs?: number;
   /** Progress narration (headless hosts omit it). */
-  log?: (line: string) => void;
+  reporter?: LifecycleReporter;
 }
 
 /**
@@ -19,6 +21,7 @@ export async function sleepDocker(
   entry: LockfileAssistant,
   options: SleepDockerOptions = {},
 ): Promise<void> {
+  const logger: LifecycleReporter = options.reporter ?? consoleLifecycleReporter;
   const res = dockerResourceNames(entry.assistantId);
   for (const container of [
     res.assistantContainer,
@@ -36,9 +39,9 @@ export async function sleepDocker(
       if (status !== "running")
         throw new Error(`${container} is ${status}; cannot stop gracefully.`);
 
-      options.log?.(`Stopping ${container}...`);
+      logger.log(`Stopping ${container}...`);
       await exec("docker", ["stop", container]);
-      options.log?.(`Stopped ${container}.`);
+      logger.log(`Stopped ${container}.`);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message.toLowerCase() : String(err);
@@ -49,5 +52,5 @@ export async function sleepDocker(
       throw err;
     }
   }
-  options.log?.("Docker containers stopped.");
+  logger.log("Docker containers stopped.");
 }

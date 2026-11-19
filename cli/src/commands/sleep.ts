@@ -1,5 +1,7 @@
+import type { LifecycleReporter } from "@mycadet/local-mode";
 import {
   cliCommand,
+  consoleLifecycleReporter,
   loadAllAssistants,
   parseWaitDuration,
   sleepAssistant,
@@ -112,7 +114,7 @@ export const sleep = Object.assign(
       wait,
       waitMs,
       signal: drainAbort.signal,
-      log: (line: string): void => console.log(line),
+      reporter: consoleLifecycleReporter,
     };
 
     if (all) {
@@ -137,7 +139,7 @@ type SleepOptions = {
   wait: boolean;
   waitMs: number | null;
   signal: AbortSignal;
-  log: (line: string) => void;
+  reporter: LifecycleReporter;
 };
 
 /**

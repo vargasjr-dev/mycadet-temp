@@ -1,4 +1,8 @@
-import { cliCommand, restartAssistant } from "@mycadet/local-mode";
+import {
+  cliCommand,
+  consoleLifecycleReporter,
+  restartAssistant,
+} from "@mycadet/local-mode";
 
 import { resolveTargetAssistant } from "../lib/assistant-config.js";
 
@@ -32,7 +36,7 @@ export const restart = Object.assign(
     const { ok, reports } = await restartAssistant({
       entry,
       all,
-      log: (line: string): void => console.log(line),
+      reporter: consoleLifecycleReporter,
     });
 
     let cancelled = false;

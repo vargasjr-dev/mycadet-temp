@@ -6,6 +6,7 @@ import {
   isAppServerRunning,
   killForeignAppServerProcess,
   readAppServerState,
+  restartAppServer as restartAppServerCore,
   stopAppServer,
   type AppServer,
 } from "../lib/servers/common.js";
@@ -92,10 +93,16 @@ async function stopAppServerCommand(): Promise<void> {
   }
 }
 
-/** `cadet app start`: bring the app server up for the active local assistant. */
+/** `cadet app restart`: bounce the app server onto the current build. */
 async function restartAppServer(): Promise<void> {
-  await stopAppServerCommand();
-  await startAppServer();
+  let server: AppServer;
+  try {
+    server = await restartAppServerCore();
+  } catch (err) {
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  }
+  console.log(`App server restarted on 127.0.0.1:${server.port}.`);
 }
 
 export const app = Object.assign(

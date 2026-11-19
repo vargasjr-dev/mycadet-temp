@@ -213,7 +213,10 @@ export {
   invalidateOrgIdCache,
   fetchOrganizationId,
 } from "./cloud-auth";
-export { consoleLifecycleReporter } from "./lifecycle-reporter";
+export {
+  consoleLifecycleReporter,
+  type LifecycleReporter,
+} from "./lifecycle-reporter";
 export { unpairAssistant } from "./unpair";
 export {
   checkPairedAssistantName,

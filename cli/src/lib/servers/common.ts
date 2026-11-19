@@ -252,6 +252,17 @@ async function waitForPidExit(
  * hitting an unrelated process if the OS has reused the PID. SIGTERM first;
  * escalate to SIGKILL if it doesn't exit within the timeout.
  */
+/**
+ * Restart the machine-level app server: stop the running instance (a
+ * no-op when down) and bring it back up on the current build. The shared
+ * core of `cadet app restart` and the upgrade command's post-upgrade
+ * restart.
+ */
+export async function restartAppServer(): Promise<AppServer> {
+  await stopAppServer();
+  return ensureAppServer();
+}
+
 export async function stopAppServer(): Promise<boolean> {
   const paths = getAppServerPaths();
 

@@ -229,17 +229,16 @@ describe("the wake operation — a remote -> method router", () => {
       { watch: true },
     );
 
-    // The leg may receive the narration sink, but never the caller's
-    // control surface: no AbortSignal rides into the docker leg.
+    // The docker leg gets the options bag as-is (it ignores `watch`); the
+    // caller's control surface — the AbortSignal — must never ride along.
     expect(wakeDockerMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-docker" }),
       expect.anything(),
     );
     const opts = (
-    wakeDockerMock.mock.calls as unknown as Array<[unknown, unknown]>
-  )[0][1] as Record<string, unknown>;
+      wakeDockerMock.mock.calls as unknown as Array<[unknown, unknown]>
+    )[0][1] as Record<string, unknown>;
     expect(opts?.signal).toBeUndefined();
-    expect(opts?.watch).toBeUndefined();
   });
 
   test("a failed local wake carries the structured failure through", async () => {

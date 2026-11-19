@@ -302,7 +302,7 @@ describe("sleepAssistant — the local stop core", () => {
     const lines: string[] = [];
 
     const result = await sleepAssistant(entry, {
-      log: (line) => lines.push(line),
+      reporter: { log: (line) => lines.push(line), warn: () => {}, error: () => {}, progress: () => {} },
     });
 
     expect(result.ok).toBe(true);
@@ -358,7 +358,7 @@ describe("sleepAssistant — the --wait drain phase", () => {
     drainAssistantMock.mockResolvedValue("cancelled");
     const lines: string[] = [];
 
-    await sleepAssistant(entry, { wait: true, log: (l) => lines.push(l) });
+    await sleepAssistant(entry, { wait: true, reporter: { log: (l) => lines.push(l), warn: () => {}, error: () => {}, progress: () => {} } });
 
     expect(lines).toEqual([
       "Waiting for the assistant to finish background work (Ctrl-C cancels)…",

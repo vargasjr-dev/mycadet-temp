@@ -225,7 +225,7 @@ export async function upgradeDocker(
   const backupPath = await createBackup(entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion ?? "unknown"} → ${versionTag}`,
-    log,
+    reporter,
   });
   if (backupPath) {
     log(`   Backup saved: ${backupPath}\n`);
@@ -259,7 +259,7 @@ export async function upgradeDocker(
     extraGatewayEnv,
     gatewayPort,
     waitUntilReady: true,
-    log: (msg) => log(msg),
+    reporter,
   });
   const ready = wake.ok;
   if (ready) {
@@ -349,7 +349,7 @@ export async function upgradeDocker(
           extraGatewayEnv,
           gatewayPort,
           waitUntilReady: true,
-          log: (msg) => log(msg),
+          reporter,
         });
         let rollbackReady = rollbackWake.ok;
         let restoredViaFailedState = false;

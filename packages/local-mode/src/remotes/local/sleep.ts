@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { cliCommand } from "../../environment";
 import { getGatewayUrl } from "../../lockfile-contract";
+import type { LifecycleReporter } from "../../operations/types";
 import {
   isProcessAlive,
   stopProcessByPidFile,
@@ -53,8 +54,8 @@ export interface SleepLocalOptions {
   waitMs?: number | null;
   /** Aborts the drain phase — the CLI's Ctrl-C. */
   signal?: AbortSignal;
-  /** Progress narration for the long drain wait (headless hosts omit it). */
-  log?: (line: string) => void;
+  /** Narration for the long drain wait (headless hosts omit it). */
+  reporter?: LifecycleReporter;
 }
 
 /**
@@ -129,11 +130,11 @@ export async function sleepLocal(
   if (wait) {
     const outcome = await runDrainPhase(entry, assistantPidFile, waitMs, {
       signal: options.signal,
-      log: options.log,
+      reporter: options.reporter,
       notes,
     });
     if (outcome === "cancelled") {
-      options.log?.("Sleep cancelled — the assistant is still running.");
+      options.reporter?.log("Sleep cancelled — the assistant is still running.");
       return { ok: true, cancelled: true };
     }
   }
@@ -175,9 +176,9 @@ export async function sleepLocal(
     : "not-running";
 
   // The leg narrates its own verdict — the command layer adds nothing.
-  const { log } = options;
-  for (const note of notes) log?.(note);
-  log?.(
+  const log = (line: string): void => options.reporter?.log(line);
+  for (const note of notes) log(note);
+  log(
     services.assistant === "stopped"
       ? "Assistant stopped."
       : "Assistant is not running.",
@@ -204,7 +205,7 @@ async function runDrainPhase(
   waitMs: number | null,
   io: {
     signal?: AbortSignal;
-    log?: (line: string) => void;
+    reporter?: LifecycleReporter;
     notes: string[];
   },
 ): Promise<DrainOutcome | "skipped"> {
@@ -230,7 +231,7 @@ async function runDrainPhase(
     return "skipped";
   }
 
-  io.log?.(
+  io.reporter?.log(
     waitMs == null
       ? "Waiting for the assistant to finish background work (Ctrl-C cancels)…"
       : `Waiting up to ${Math.round(waitMs / 1000)}s for the assistant to finish background work (Ctrl-C cancels)…`,
@@ -241,14 +242,14 @@ async function runDrainPhase(
     token: leased.accessToken,
     deadlineAt: waitMs == null ? null : Date.now() + waitMs,
     signal: io.signal,
-    log: io.log,
+    log: io.reporter?.log.bind(io.reporter),
   });
   switch (outcome) {
     case "drained":
-      io.log?.("Background work finished — stopping now.");
+      io.reporter?.log("Background work finished — stopping now.");
       break;
     case "timeout":
-      io.log?.(
+      io.reporter?.log(
         "Wait limit reached — stopping now. Interrupted background jobs resume after the next start.",
       );
       break;

@@ -1,6 +1,8 @@
 import { platform } from "node:os";
 
 import type { DockerAssistant } from "../../lockfile-contract";
+import type { LifecycleReporter, WakeAssistantOptions } from "../../operations/types";
+import { consoleLifecycleReporter } from "../../lifecycle-reporter";
 import { exec, execOutput } from "../../exec";
 import { saveLockfileAssistant } from "../../lockfile";
 import { getOrCreateHostDeviceId } from "../../device-id";
@@ -26,20 +28,20 @@ import type { WakeResult } from "../../operations/wake";
  * recorded images and the start retried once; every other failure is a 500
  * carrying the docker error.
  */
-export interface WakeDockerOptions {
+export interface WakeDockerOptions extends WakeAssistantOptions {
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort?: number;
   /** Wait for the gateway's `/readyz` after the containers come up. */
   waitUntilReady?: boolean;
-  log?: (msg: string) => void;
 }
 
 export async function wakeDocker(
   entry: DockerAssistant,
   options: WakeDockerOptions = {},
 ): Promise<WakeResult> {
-  const log = options.log ?? ((msg: string): void => console.log(msg));
+  const logger: LifecycleReporter = options.reporter ?? consoleLifecycleReporter;
+  const log = (msg: string): void => logger.log(msg);
   const startAll = async (): Promise<void> => {
     const res = dockerResourceNames(entry.assistantId);
     for (const container of [
@@ -195,7 +197,8 @@ async function recreateDockerContainers(
     "credential-executor": cesImage,
   };
   const res = dockerResourceNames(entry.assistantId);
-  const log = options.log ?? ((msg: string): void => console.log(msg));
+  const logger: LifecycleReporter = options.reporter ?? consoleLifecycleReporter;
+  const log = (msg: string): void => logger.log(msg);
 
   try {
     await exec("docker", ["network", "inspect", res.network]);

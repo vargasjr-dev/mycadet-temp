@@ -1,4 +1,6 @@
 import type { LockfileAssistant } from "../lockfile-contract";
+import type { LifecycleReporter } from "../lifecycle-reporter";
+export type { LifecycleReporter };
 
 export type HatchAssistantResult =
   | {
@@ -23,3 +25,10 @@ export type HatchAssistantResult =
       cookies: string[];
     }
   | { ok: false; status: number; error: string; assistantId?: string };
+
+/** The local daemon's launch modes; the docker containers run detached. */
+export interface WakeAssistantOptions {
+  watch?: boolean;
+  /** Narration for the long legs (docker pull/start streams). */
+  reporter?: LifecycleReporter;
+}
