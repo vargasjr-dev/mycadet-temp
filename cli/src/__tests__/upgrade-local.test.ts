@@ -1,10 +1,10 @@
 /**
- * `cadet upgrade`'s targeting wiring: the assistant-resolution ceremony at
- * the command edge (exact-ID wins, unique display-name resolves, ambiguous
- * names list the matches). The lookup rules themselves are pinned in
- * `assistant-config.test.ts`; these tests stub the shared helper's result
- * and assert the command acts on it. The leg's behavior contract lives in
- * the package's remotes-local-upgrade.test.
+ * `cadet upgrade`'s targeting wiring: the command hands its positional
+ * argument straight to findAssistant and acts on the resolved entry (or
+ * exits with the not-found error). The resolution rules themselves —
+ * active ?? first for the bare spelling, exact-ID match for a positional —
+ * are pinned in the lockfile layer's tests. The leg's behavior contract
+ * lives in the package's remotes-local-upgrade.test.
  */
 import {
   afterAll,
@@ -26,15 +26,14 @@ import * as localModeModule from "@mycadet/local-mode";
 
 const realLocalMode = { ...localModeModule };
 
-const lookupAssistantByIdentifierMock =
-  mock<typeof localModeModule.lookupAssistantByIdentifier>();
+const findAssistantMock = mock<typeof localModeModule.findAssistant>();
 const upgradeAssistantMock = mock<typeof localModeModule.upgradeAssistant>(
   async () => ({ ok: true }),
 );
 
 mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
-  lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
+  findAssistant: findAssistantMock,
   upgradeAssistant: upgradeAssistantMock,
 }));
 
@@ -106,81 +105,46 @@ function argvFor(...positional: string[]): string[] {
 }
 
 describe("cadet upgrade assistant targeting", () => {
-  test("resolves a unique display-name match to its assistant", async () => {
-    const quill = makeQuillEntry();
-    process.argv = argvFor("Quill");
-    lookupAssistantByIdentifierMock.mockReturnValue({
-      status: "found",
-      entry: quill,
-    });
-
-    await upgrade();
-
-    expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith("Quill");
-    expect(exitSpy).not.toHaveBeenCalled();
-    expect(upgradeAssistantMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entry: expect.objectContaining({ assistantId: "quill-uuid" }),
-      }),
-    );
-  });
-
-  test("resolves a multi-word display-name argument, unsplit by --version", async () => {
-    const multiWord = makeQuillEntry({ name: "My Assistant" });
-    process.argv = argvFor("My", "Assistant");
-    lookupAssistantByIdentifierMock.mockReturnValue({
-      status: "found",
-      entry: multiWord,
-    });
-
-    await upgrade();
-
-    expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith(
-      "My Assistant",
-    );
-    expect(exitSpy).not.toHaveBeenCalled();
-    expect(upgradeAssistantMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entry: expect.objectContaining({ assistantId: "quill-uuid" }),
-      }),
-    );
-  });
-
-  test("an exact assistant-ID argument resolves via the shared helper's found result", async () => {
-    // `lookupAssistantByIdentifier` owns ID-wins-over-name precedence
-    // (covered in assistant-config.test.ts); this only checks that
-    // `cadet upgrade` passes the raw argument through unmodified and acts
-    // on whatever entry the shared helper resolves.
+  test("an exact assistant-ID argument resolves via findAssistant", async () => {
     const target = makeQuillEntry({ assistantId: "quill-uuid" });
     process.argv = argvFor("quill-uuid");
-    lookupAssistantByIdentifierMock.mockReturnValue({
-      status: "found",
-      entry: target,
-    });
+    findAssistantMock.mockReturnValue(target);
 
     await upgrade();
 
-    expect(lookupAssistantByIdentifierMock).toHaveBeenCalledWith("quill-uuid");
+    expect(findAssistantMock).toHaveBeenCalledWith("quill-uuid");
     expect(exitSpy).not.toHaveBeenCalled();
-    expect(upgradeAssistantMock).toHaveBeenCalled();
+    expect(upgradeAssistantMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entry: expect.objectContaining({ assistantId: "quill-uuid" }),
+      }),
+    );
   });
 
-  test("an ambiguous display name fails and lists the matching IDs", async () => {
-    process.argv = argvFor("Quill");
-    lookupAssistantByIdentifierMock.mockReturnValue({
-      status: "ambiguous",
-      matches: [
-        makeQuillEntry({ assistantId: "quill-uuid-1" }),
-        makeQuillEntry({ assistantId: "quill-uuid-2" }),
-      ],
-    });
+  test("the bare spelling rides findAssistant's active-first resolution", async () => {
+    const active = makeQuillEntry();
+    process.argv = argvFor();
+    findAssistantMock.mockReturnValue(active);
+
+    await upgrade();
+
+    expect(findAssistantMock).toHaveBeenCalledWith(null);
+    expect(exitSpy).not.toHaveBeenCalled();
+    expect(upgradeAssistantMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entry: expect.objectContaining({ assistantId: "quill-uuid" }),
+      }),
+    );
+  });
+
+  test("an unresolved argument fails with the not-found error", async () => {
+    process.argv = argvFor("ghost");
+    findAssistantMock.mockReturnValue(null);
 
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
 
     expect(upgradeAssistantMock).not.toHaveBeenCalled();
     const errText = consoleErrorSpy.mock.calls.flat().join("\n");
-    expect(errText).toContain("Multiple assistants match 'Quill'");
-    expect(errText).toContain("quill-uuid-1");
-    expect(errText).toContain("quill-uuid-2");
+    expect(errText).toContain("No assistant found with name 'ghost'");
   });
 });

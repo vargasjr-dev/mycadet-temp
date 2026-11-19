@@ -4,12 +4,14 @@ import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import {
   cliCommand,
   dockerResourceNames,
-  formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
-  lookupAssistantByIdentifier,
   retireAssistant,
 } from "@mycadet/local-mode";
+import {
+  formatAssistantLookupError,
+  lookupAssistantByIdentifier,
+} from "../lib/assistant-lookup.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   canPromptForConfirmation,

@@ -11,11 +11,6 @@ import type { Lockfile, LockfileAssistant } from "../lockfile-contract";
  * loop. The CLI's module re-exports them for its remaining consumers.
  */
 
-export type AssistantLookupResult =
-  | { status: "found"; entry: LockfileAssistant }
-  | { status: "not_found" }
-  | { status: "ambiguous"; matches: LockfileAssistant[] };
-
 export function loadAllAssistants(): LockfileAssistant[] {
   return readLockfile().assistants;
 }
@@ -40,49 +35,6 @@ export function findAssistant(id?: string | null): LockfileAssistant | null {
 
 export function getAssistantDisplayName(entry: LockfileAssistant): string {
   return entry.name?.trim() || entry.assistantId;
-}
-
-function getAssistantDisplayNameCandidates(entry: LockfileAssistant): string[] {
-  const name = entry.name?.trim();
-  return name ? [name] : [];
-}
-
-export function lookupAssistantByIdentifier(
-  identifier: string,
-): AssistantLookupResult {
-  const entries = loadAllAssistants();
-  const exactId = entries.find((entry) => entry.assistantId === identifier);
-  if (exactId) {
-    return { status: "found", entry: exactId };
-  }
-
-  const displayMatches = entries.filter((entry) =>
-    getAssistantDisplayNameCandidates(entry).includes(identifier),
-  );
-  if (displayMatches.length === 1) {
-    return { status: "found", entry: displayMatches[0]! };
-  }
-  if (displayMatches.length > 1) {
-    return { status: "ambiguous", matches: displayMatches };
-  }
-
-  return { status: "not_found" };
-}
-
-export function formatAssistantLookupError(
-  identifier: string,
-  result: AssistantLookupResult = lookupAssistantByIdentifier(identifier),
-): string {
-  if (result.status === "ambiguous") {
-    const matches = result.matches
-      .map(
-        (entry) => `${getAssistantDisplayName(entry)} (${entry.assistantId})`,
-      )
-      .join(", ");
-    return `Multiple assistants match '${identifier}': ${matches}. Use the assistant ID to disambiguate.`;
-  }
-
-  return `No assistant found with name or ID '${identifier}'.`;
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {

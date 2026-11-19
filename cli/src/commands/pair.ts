@@ -32,14 +32,16 @@ import {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import {
-  formatAssistantLookupError,
   getAssistantDisplayName,
-  lookupAssistantByIdentifier,
   loopbackSafeFetch,
   pairCliStdoutToResult,
   pairDocker,
   pairLocal,
 } from "@mycadet/local-mode";
+import {
+  formatAssistantLookupError,
+  lookupAssistantByIdentifier,
+} from "../lib/assistant-lookup.js";
 import { extractFlag } from "../lib/arg-utils.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";

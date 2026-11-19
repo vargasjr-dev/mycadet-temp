@@ -1,5 +1,4 @@
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import * as assistants from "../lib/assistant-config.js";
 import * as localMode from "@mycadet/local-mode";
 import { parseArgs, teleport } from "../commands/teleport.js";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";

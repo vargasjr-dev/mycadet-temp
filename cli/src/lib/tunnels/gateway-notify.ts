@@ -6,11 +6,8 @@
  */
 
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import {
-  loadGuardianToken,
-  lookupAssistantByIdentifier,
-  loopbackSafeFetch,
-} from "@mycadet/local-mode";
+import { loadGuardianToken, loopbackSafeFetch } from "@mycadet/local-mode";
+import { lookupAssistantByIdentifier } from "../assistant-lookup.js";
 import { GATEWAY_PORT } from "../constants.js";
 
 /**

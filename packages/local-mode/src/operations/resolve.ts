@@ -1,6 +1,5 @@
 import { checkHealth } from "../daemon-readiness";
 import { runListRoute } from "./list";
-import { findAssistant } from "./lookup";
 import type { OperatorRequest } from "./routes";
 
 function resolutionResponse(body: unknown, status = 200): Response {
@@ -24,17 +23,12 @@ export async function runResolveRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
   const headers = request.headers;
-  if (!request.assistantId) {
-    // No id to name: the resolution's unscoped arm IS the list contract —
-    // nothing hatched is empty, anything else hands the choice rows to the
-    // account chooser.
-    return runListRoute();
-  }
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
-    // Not this host's to name: the dispatcher's chain answers (the cloud
-    // arm for the cloud's own paths, the host's chain otherwise).
-    return null;
+    // Nothing resolves: the resolution's unscoped arm IS the list
+    // contract — nothing hatched is empty, anything else hands the
+    // choice rows to the account chooser.
+    return runListRoute();
   }
   const health = await checkHealth(entry, { headers });
   if (!health.authenticated) {

@@ -2,7 +2,6 @@ import { spawnSync } from "child_process";
 
 import cliPkg from "../../package.json";
 
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { findAssistant } from "@mycadet/local-mode";
 import {
   broadcastUpgradeEvent,
@@ -10,12 +9,8 @@ import {
   cliCommand,
   compareVersions,
   consoleLifecycleReporter,
-  formatAssistantLookupError,
-  getActiveAssistant,
   getGatewayUrl,
   fetchLatestVersion,
-  loadAllAssistants,
-  lookupAssistantByIdentifier,
   resolveLatestStableTag,
   stripVersionPrefix,
   upgradeAssistant,
@@ -157,48 +152,8 @@ function parseArgs(): UpgradeArgs {
 }
 
 /**
- * Resolve which assistant to target for the upgrade command. Priority:
- * 1. Explicit name argument (exact assistant ID wins over a display-name
- *    match; a unique display-name match resolves; an ambiguous display
- *    name is an error listing the matching IDs)
- * 2. Active assistant set via `cadet use`
- * 3. Sole assistant (when exactly one exists)
+ * The command edge's error UX: print, map onto the CLI taxonomy, exit.
  */
-function resolveTargetAssistant(nameArg: string | null): LockfileAssistant {
-  if (nameArg) {
-    const result = lookupAssistantByIdentifier(nameArg);
-    if (result.status !== "found") {
-      const msg = formatAssistantLookupError(nameArg, result);
-      console.error(msg);
-      emitCliError("ASSISTANT_NOT_FOUND", msg);
-      process.exit(1);
-    }
-    return result.entry;
-  }
-
-  const active = getActiveAssistant();
-  if (active) {
-    const entry = findAssistant(active);
-    if (entry) return entry;
-  }
-
-  const all = loadAllAssistants();
-  if (all.length === 1) return all[0];
-
-  if (all.length === 0) {
-    const msg = "No assistants found. Run 'cadet hatch' first.";
-    console.error(msg);
-    emitCliError("ASSISTANT_NOT_FOUND", msg);
-  } else {
-    const msg =
-      "Multiple assistants found. Specify a name or set an active assistant with 'cadet use <name>'.";
-    console.error(msg);
-    emitCliError("ASSISTANT_NOT_FOUND", msg);
-  }
-  process.exit(1);
-}
-
-/** The command edge's error UX: print, map onto the CLI taxonomy, exit. */
 function reportUpgradeFailure(result: {
   ok: boolean;
   status?: number;
@@ -303,7 +258,15 @@ export const upgrade = Object.assign(
   async function upgrade(): Promise<void> {
     const { name, version, latest, prepare, finalize, noWait, force } =
       parseArgs();
-    const entry = resolveTargetAssistant(name);
+    const entry = findAssistant(name);
+    if (!entry) {
+      const msg = name
+        ? `No assistant found with name '${name}'.`
+        : "No assistants found. Run 'cadet hatch' first.";
+      console.error(msg);
+      emitCliError("ASSISTANT_NOT_FOUND", msg);
+      process.exit(1);
+    }
 
     if (prepare) {
       const result = await upgradeAssistant({

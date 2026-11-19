@@ -13,10 +13,8 @@ import { checkHealth, getAssistantDisplayName } from "@mycadet/local-mode";
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
-import {
-  loadFreshGuardianToken,
-  lookupAssistantByIdentifier,
-} from "@mycadet/local-mode";
+import { loadFreshGuardianToken } from "@mycadet/local-mode";
+import { lookupAssistantByIdentifier } from "../lib/assistant-lookup.js";
 import { appendHistory, loadHistory } from "../lib/input-history";
 import { tuiLog } from "../lib/tui-log";
 import {

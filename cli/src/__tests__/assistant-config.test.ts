@@ -25,9 +25,11 @@ process.env.XDG_CONFIG_HOME = testDir;
 import { loadLatestAssistant } from "../lib/assistant-config.js";
 import {
   formatAssistantLookupError,
+  lookupAssistantByIdentifier,
+} from "../lib/assistant-lookup.js";
+import {
   getAssistantDisplayName,
   loadAllAssistants,
-  lookupAssistantByIdentifier,
   removeLockfileAssistant,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";

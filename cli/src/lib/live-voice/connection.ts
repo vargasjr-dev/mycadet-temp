@@ -3,12 +3,14 @@
  */
 
 import {
-  formatAssistantLookupError,
   getAssistantDisplayName,
   loadFreshGuardianToken,
-  lookupAssistantByIdentifier,
   readCloudToken,
 } from "@mycadet/local-mode";
+import {
+  formatAssistantLookupError,
+  lookupAssistantByIdentifier,
+} from "../assistant-lookup.js";
 import { isCloudEntry } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { type LockfileAssistant } from "@mycadet/local-mode/contract";

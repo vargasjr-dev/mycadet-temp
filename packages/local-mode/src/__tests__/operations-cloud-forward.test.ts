@@ -37,7 +37,7 @@ const armRequest = (
   path: string,
   init: { method?: string; headers?: Record<string, string> } = {},
 ): OperatorRequest => ({
-  assistantId: "",
+  assistant: null,
   method: (init.method ?? "GET") as OperatorRequest["method"],
   path,
   headers: new Headers(init.headers),

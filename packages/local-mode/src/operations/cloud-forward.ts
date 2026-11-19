@@ -82,24 +82,8 @@ export function buildProxyNetworkErrorResponse(): Response {
 }
 
 /**
- * The cloud arm for one dispatcher pass: `null` when the path isn't the
- * cloud's (the host's own chain answers), the cloud's answer otherwise.
- * The dial rides the host's `fetch` when it brings one (the desktop's
- * `net.fetch`: the main process's network stack, system proxy and cert
- * store), the ambient one otherwise. Best-effort retries cover the
- * transient net errors; exhausted or non-transient failures collapse into
- * the structured 502 instead of rejecting. Only bodiless idempotent
- * requests retry — a body streams `request.body`, which is single-use,
- * and non-idempotent methods must not be silently replayed.
- */
-/**
- * The arm's run, reached only through the operator route table — the row's
- * pattern is the only path in, so there is nothing here to re-check: no
- * cloud-path test (the pattern already matched) and no caller CSRF gate
- * (the arm's auth rides the caller's own session headers, which a
- * cross-site page cannot forge, and the serving hosts' CORS wrappers gate
- * the browser). Forwards verbatim: the caller's headers, the caller's
- * body stream, the caller's abort signal.
+ * The cloud arm's run — the caller's request rides to the cloud verbatim
+ * (same-origin origin stamp, transient-retry, structured 502).
  */
 export async function forwardCloudRequest(
   request: OperatorRequest,

@@ -97,12 +97,12 @@ export function readRootProcesses(): RootProcessRecords {
   return { tunnel: data.tunnel, app: data.app };
 }
 
+import { loadAllAssistants } from "@mycadet/local-mode";
+import { getActiveAssistant } from "@mycadet/local-mode";
 import {
   formatAssistantLookupError,
-  getActiveAssistant,
-  loadAllAssistants,
   lookupAssistantByIdentifier,
-} from "@mycadet/local-mode";
+} from "./assistant-lookup.js";
 
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();

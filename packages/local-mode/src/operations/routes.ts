@@ -7,7 +7,7 @@ import { upgradeAssistant } from "./upgrade";
 import { consoleLifecycleReporter } from "../lifecycle-reporter";
 import { ownVersion } from "../environment";
 import { unpairAssistant } from "../unpair";
-import { servedConfigFromLockfile } from "../served-config";
+import { servedAssistantFromLockfile } from "../served-config";
 import { runListRoute } from "./list";
 import { findAssistant } from "./lookup";
 import { retireAssistant } from "./retire";
@@ -28,11 +28,7 @@ import { wakeAssistant } from "./wake";
 import { z } from "zod";
 import { getGatewayUrl, type LockfileAssistant } from "../lockfile-contract";
 import { cookieHeader, parseSetCookie, type CookieJar } from "./cookie-jar";
-import {
-  CLOUD_ARM_PATTERN,
-  forwardCloudRequest,
-  isCloudPath,
-} from "./cloud-forward";
+import { CLOUD_ARM_PATTERN, forwardCloudRequest } from "./cloud-forward";
 import type { HTTPMethod } from "@mycadet/shared/fetch";
 
 /**
@@ -55,8 +51,13 @@ import type { HTTPMethod } from "@mycadet/shared/fetch";
  * need, no injection surface.
  */
 export interface OperatorRequest {
-  /** The scoped rows' decoded target id; the unscoped rows resolve it. */
-  assistantId: string;
+  /**
+   * The assistant the request rides, resolved by the matcher: the scoped
+   * rows' decoded target entry, the unscoped rows' served one (active, or
+   * the sole entry before a selection), `null` when nothing resolves (the
+   * empty roster behind the bare spelling — the choice rows' case).
+   */
+  assistant: LockfileAssistant | null;
   /**
    * The caller's method, carried for the proxy row (the other rows ignore
    * it — their table entry already names the method). The dispatcher
@@ -104,11 +105,17 @@ export interface OperatorRoute {
   pattern: RegExp;
   /**
    * Answer the request. Returning null means PASS: the request is not this
-   * host's to answer (unknown id, or an entry the host cannot retire) and
-   * the dispatcher's chain answers instead — the cloud arm for the cloud's
-   * own paths, the serving host's chain (assets, static) otherwise.
+   * host's to answer (an entry the host cannot retire, the proxy's
+   * declined dial) and the dispatcher's chain answers instead — the
+   * serving host's chain (assets, static).
    */
   run: (request: OperatorRequest) => Promise<Response | null>;
+  /**
+   * Whether the row's requests resolve to an assistant of this host's —
+   * `false` only for the cloud arm, whose surfaces name no host entry and
+   * whose answers' cookies are the cloud's session, never a gateway pair.
+   */
+  resolvesAssistant?: boolean;
 }
 
 /**
@@ -123,7 +130,7 @@ export interface OperatorRoute {
 async function runRetireRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
@@ -156,7 +163,7 @@ async function runRetireRoute(
 async function runSleepRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
@@ -181,7 +188,7 @@ async function runSleepRoute(
 async function runWakeRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
@@ -345,11 +352,11 @@ function gatewayOriginFor(entry: LockfileAssistant | null): string | null {
 async function runUnpairRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
-  const result = unpairAssistant(request.assistantId);
+  const result = unpairAssistant(entry.assistantId);
   if (result.ok) {
     return json({ ok: true, lockfile: result.lockfile });
   }
@@ -500,27 +507,26 @@ const upgradingLocalAssistantIds = new Set<string>();
 async function runUpgradeRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const assistantId = request.assistantId;
-  const entry = findAssistant(assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
   const { version, force } = UpgradeBodySchema.parse(
     await readJsonBody(request.body),
   );
-  if (!isActiveAssistant(assistantId)) {
+  if (!isActiveAssistant(entry.assistantId)) {
     return json({
       ok: false,
       error: "Can only upgrade the active local assistant",
     });
   }
-  if (upgradingLocalAssistantIds.has(assistantId)) {
+  if (upgradingLocalAssistantIds.has(entry.assistantId)) {
     return json({
       ok: false,
       error: "An upgrade is already in progress for this assistant.",
     });
   }
-  upgradingLocalAssistantIds.add(assistantId);
+  upgradingLocalAssistantIds.add(entry.assistantId);
   try {
     const result = await upgradeAssistant({
       entry,
@@ -537,7 +543,7 @@ async function runUpgradeRoute(
       result.version ? { ok: true, version: result.version } : { ok: true },
     );
   } finally {
-    upgradingLocalAssistantIds.delete(assistantId);
+    upgradingLocalAssistantIds.delete(entry.assistantId);
   }
 }
 
@@ -549,11 +555,11 @@ async function runUpgradeRoute(
 async function runAvatarRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
-  return json(readLockfileAssistantAvatar(request.assistantId));
+  return json(readLockfileAssistantAvatar(entry.assistantId));
 }
 
 /**
@@ -617,7 +623,7 @@ function normalizeForwardHeaders(
 async function runProxyRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }
@@ -799,36 +805,43 @@ export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
   // OR-union of the cloud's own prefixes, the run the cloud forward
   // itself. Last in match order — everything the operator rows don't
   // claim rides here, and the dispatcher's null (a row's pass, or no
-  // match at all) hands the serving host's chain its turn.
+  // match at all) hands the serving host's chain its turn. Its surfaces
+  // name no assistant of this host's: no resolution, and its answers'
+  // cookies are the cloud's session, never a gateway pair.
   {
     method: "ALL",
     pattern: CLOUD_ARM_PATTERN,
     run: forwardCloudRequest,
+    resolvesAssistant: false,
   },
 ];
 
-/** A matched operator request: the route and its decoded target id. */
+/** A matched operator request: the route and the assistant it rides. */
 export interface OperatorMatch {
   route: OperatorRoute;
   /**
-   * The assistant the request names: an id-scoped URL names its own entry
-   * (a string); the bare spelling rides the operator backend's active
-   * assistant (`null` — `findAssistant` resolves the active ?? first, and
-   * a hatch's locked write has already switched active to the minted
-   * entry by the time anything resolves post-run).
+   * The assistant the request rides, resolved by the matcher: an
+   * id-scoped URL names its own entry; the bare spelling rides the
+   * operator backend's served assistant (active, or the sole entry
+   * before a selection — a hatch's locked write has already switched
+   * active to the minted entry by the time anything resolves post-run);
+   * the cloud arm names none. `null` when nothing resolves.
    */
-  assistantId: string | null;
+  assistant: LockfileAssistant | null;
+  /** Whether the URL scoped its own entry's id (the bare spelling: no). */
+  scoped: boolean;
 }
 
 /**
  * Match a request against the route table: the first row whose DERIVED
  * pattern and method agree — one exec per row, no prefix walk, no surface
- * bookkeeping. Matching stays pure in the URL — the hot path of every
- * non-operator request (static assets, gateway forwards, pairing) pays a
- * regex pass and no I/O; only the dispatcher reads the lockfile, after a
- * match. An OPTIONS agrees with any row whose pattern matches regardless
- * of the row's method — the dispatcher answers the preflight 204 without
- * running the row (a preflight must not dial a gateway).
+ * bookkeeping — and resolve the assistant the request rides, so neither
+ * the dispatcher nor the rows re-resolve it. Unmatched requests (the hot
+ * path of every non-operator request: static assets, gateway forwards,
+ * pairing) pay a regex pass and no I/O; a MATCHED request pays one
+ * lockfile read here. An OPTIONS agrees with any row whose pattern
+ * matches regardless of the row's method and answers 204 without
+ * resolving or running the row (a preflight must not dial a gateway).
  */
 function matchOperatorRequest(
   pathname: string,
@@ -846,12 +859,22 @@ function matchOperatorRequest(
     if (!match) {
       continue;
     }
+    // The cloud arm's surfaces name no assistant of this host's.
+    if (route.resolvesAssistant === false || method === "OPTIONS") {
+      return { route, assistant: null, scoped: false };
+    }
     const id = match.groups?.id;
     if (!id) {
-      return { route, assistantId: null };
+      // The bare spelling rides the operator backend's served assistant.
+      return {
+        route,
+        assistant: servedAssistantFromLockfile(readLockfile()) ?? null,
+        scoped: false,
+      };
     }
     try {
-      return { route, assistantId: decodeURIComponent(id) };
+      const assistantId = decodeURIComponent(id);
+      return { route, assistant: findAssistant(assistantId), scoped: true };
     } catch {
       // Malformed percent-encoding: not this host's request.
       return null;
@@ -894,37 +917,21 @@ export async function forwardOperatorRequest(
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204 });
   }
-  // The cloud's own surfaces are the arm's row: no entry resolves for
-  // them, no gateway cookies attach (the arm authenticates with the
-  // caller's own session headers, and the entry's pair must not leak to
-  // the cloud), and no jar mirror runs (an account answer sets no gateway
-  // cookies).
-  const cloudArm = isCloudPath(pathname);
-  // The entry the request rides: a URL that names an assistant must be an
-  // entry on this machine — an unknown id (or one whose gateway URL does
-  // not resolve) is a 404, not a fall-through into whatever the host chain
-  // answers for a path it has never heard of. The bare spelling resolves
-  // active ?? first and stays answerable with no entry: the empty roster,
-  // the first hatch.
-  const entry = cloudArm ? null : findAssistant(match.assistantId);
-  let jarOrigin: string | null = null;
-  if (match.assistantId !== null && !entry) {
-    return json(
-      { error: `no assistant "${match.assistantId}" on this host` },
-      404,
-    );
+  const { assistant, scoped } = match;
+  // A URL that names an assistant must name an entry on this machine —
+  // an unknown id is a 404, not a fall-through into whatever the host
+  // chain answers for a path it has never heard of. The bare spelling
+  // stays answerable with no entry: the empty roster, the first hatch.
+  if (scoped && !assistant) {
+    return json({ error: "no such assistant on this host" }, 404);
   }
-  if (entry) {
+  let jarOrigin: string | null = null;
+  if (assistant) {
     try {
-      jarOrigin = new URL(getGatewayUrl(entry)).origin;
+      jarOrigin = new URL(getGatewayUrl(assistant)).origin;
     } catch {
-      if (match.assistantId !== null) {
-        return json(
-          {
-            error: `assistant "${match.assistantId}" has no resolvable gateway`,
-          },
-          404,
-        );
+      if (scoped) {
+        return json({ error: "no resolvable gateway for this assistant" }, 404);
       }
       // The shorthand's unresolvable origin: the jar attach skips.
     }
@@ -941,17 +948,7 @@ export async function forwardOperatorRequest(
   }
   const url = new URL(request.url);
   const response = await match.route.run({
-    // The match's own id when the URL named an assistant; the bare
-    // spelling rides the operator backend's served assistant — the
-    // active one, its sole entry before a selection, empty when neither
-    // names anything (the empty roster, the choice rows for the account
-    // chooser). Rows re-resolve through `findAssistant`, the same
-    // active ?? first rule the dispatcher's jar work used.
-    assistantId:
-      match.assistantId ??
-      (cloudArm
-        ? ""
-        : (servedConfigFromLockfile(readLockfile()).assistantId ?? "")),
+    assistant,
     method: request.method as HTTPMethod,
     path: url.pathname + url.search,
     headers,
@@ -962,13 +959,21 @@ export async function forwardOperatorRequest(
     // The jar's writes are the dispatcher's, one route-agnostic layer
     // above the rows: an answer that mints or rotates carries Set-Cookie
     // headers, and the pair belongs to the assistant it was minted for —
-    // `findAssistant` with the match's id (null re-resolves the lockfile's
-    // active post-run, which a hatch has just switched to the entry it
-    // minted). Best-effort per the jar's contract: the headers still ride
-    // the answer for natively-jarring browser callers.
+    // the match's own resolution when the request rode one; otherwise the
+    // lockfile's fresh active pointer, which the first hatch's leg has
+    // just switched inside its locked write. Only rows whose requests
+    // resolve to an assistant of this host's pair cookies (the cloud
+    // arm's answers are the cloud's session). Best-effort per the jar's
+    // contract: the headers still ride the answer for natively-jarring
+    // browser callers.
     const setCookies = response.headers.getSetCookie();
-    if (options?.cookieJar && !cloudArm && setCookies.length > 0) {
-      const origin = gatewayOriginFor(findAssistant(match.assistantId));
+    if (
+      options?.cookieJar &&
+      setCookies.length > 0 &&
+      match.route.resolvesAssistant !== false
+    ) {
+      const paired = assistant ?? findAssistant(null);
+      const origin = paired ? gatewayOriginFor(paired) : null;
       if (origin) {
         for (const raw of setCookies) {
           const cookie = parseSetCookie(raw);

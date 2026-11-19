@@ -12,7 +12,6 @@
  */
 
 import { loopbackSafeFetch } from "../loopback-fetch";
-import { findAssistant } from "./lookup";
 import type { OperatorRequest } from "./routes";
 import {
   UPSTREAM_TIMEOUT_MS,
@@ -25,7 +24,7 @@ import {
 export async function runMigrationsSignedUrlRoute(
   request: OperatorRequest,
 ): Promise<Response | null> {
-  const entry = findAssistant(request.assistantId);
+  const entry = request.assistant;
   if (!entry) {
     return null;
   }

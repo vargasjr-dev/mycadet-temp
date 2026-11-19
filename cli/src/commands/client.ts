@@ -3,15 +3,17 @@ import { resolveConversationKey } from "../lib/assistant-config";
 import { findAssistant } from "@mycadet/local-mode";
 import {
   fetchOrganizationId,
-  formatAssistantLookupError,
   getActiveAssistant,
   getAssistantDisplayName,
   loadGuardianToken,
-  lookupAssistantByIdentifier,
   loadFreshGuardianToken,
   readCloudToken,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
+import {
+  formatAssistantLookupError,
+  lookupAssistantByIdentifier,
+} from "../lib/assistant-lookup.js";
 
 import { normalizeRuntimeUrl } from "../lib/runtime-url";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
