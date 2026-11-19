@@ -222,6 +222,16 @@ function fillContextDefaultsForMissingKeys(
 }
 
 /**
+ * Write config JSON via a temp file and rename, so a concurrent reader or a
+ * crash mid-write never sees a truncated config.json.
+ */
+function writeConfigFile(configPath: string, config: unknown): void {
+  const tmpPath = `${configPath}.tmp`;
+  writeFileSync(tmpPath, JSON.stringify(config, null, 2) + "\n");
+  renameSync(tmpPath, configPath);
+}
+
+/**
  * Build a filesystem-safe ISO-8601 timestamp for use in quarantine filenames.
  * Replaces `:` (invalid on Windows, confusing on macOS Finder) with `-` so the
  * resulting string is safe on every supported platform.
@@ -808,7 +818,7 @@ function warnAndStripDeprecatedFields(
         for (const dotPath of found) {
           deleteNestedKeyByDotPath(raw as Record<string, unknown>, dotPath);
         }
-        writeFileSync(configPath, JSON.stringify(raw, null, 2) + "\n");
+        writeConfigFile(configPath, raw);
       }
     }
   } catch {
@@ -1085,7 +1095,7 @@ export function getConfig(): AssistantConfig {
         }
         // Strip dataDir (runtime-derived) from the persisted config
         const { dataDir: _, ...persistable } = seed;
-        writeFileSync(configPath, JSON.stringify(persistable, null, 2) + "\n");
+        writeConfigFile(configPath, persistable);
         log.info("Wrote default config to %s", configPath);
       } catch (err) {
         log.warn({ err }, "Failed to write default config file");
@@ -1242,7 +1252,7 @@ export function saveRawConfig(config: Record<string, unknown>): void {
   // Strip legacy apiKeys — provider keys belong in secure storage, not plaintext config
   delete config.apiKeys;
 
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  writeConfigFile(configPath, config);
 
   cached = null; // invalidate cache
   cachedFileSignature = null;
