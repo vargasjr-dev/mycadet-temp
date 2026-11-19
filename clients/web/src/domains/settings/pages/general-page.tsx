@@ -111,14 +111,7 @@ export function GeneralPage() {
           <Button
             variant="outlined"
             disabled={!assistantId}
-            onClick={() => {
-              // Assistant management lives in the app bundle — outside this
-              // router's table, so a client-side navigate splats to NotFound.
-              // Full-page navigation hands the browser to the host that
-              // serves the app shell (same hand-off as the login button).
-              if (!assistantId) return;
-              hardNavigate(routes.account.assistantDetail(assistantId));
-            }}
+            onClick={() => hardNavigate(routes.account.assistantDetail(assistantId))}
           >
             {t("generalPage.accountManage")}
           </Button>
