@@ -26,3 +26,8 @@ export function getLocalInstanceDir(entry: LocalAssistant): string {
 export function getDaemonPidPath(entry: LocalAssistant): string {
   return join(getLocalInstanceDir(entry), "workspace", "cadet.pid");
 }
+
+/** Derive the gateway PID file path from an entry. */
+export function getGatewayPidPath(entry: LocalAssistant): string {
+  return join(getLocalInstanceDir(entry), "gateway.pid");
+}

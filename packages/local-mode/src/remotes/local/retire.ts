@@ -4,7 +4,11 @@ import { basename, dirname, join, win32 } from "node:path";
 
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
 import { stopProcessByPidFile } from "../../process";
-import { getDaemonPidPath, getLocalInstanceDir } from "./instance";
+import {
+  getDaemonPidPath,
+  getGatewayPidPath,
+  getLocalInstanceDir,
+} from "./instance";
 import { loadAllAssistants } from "../../operations/lookup";
 import { getArchivePath, getMetadataPath } from "./archive";
 import { isLocalEntry } from "../../lockfile-contract";
@@ -124,7 +128,7 @@ export async function retireLocal(
   // Stop gateway via PID file — use a longer timeout because the gateway has a
   // drain window (5s) before it exits.
   await stopProcessByPidFile(
-    join(cadetDir, "gateway.pid"),
+    getGatewayPidPath(entry),
     "gateway",
     undefined,
     7000,

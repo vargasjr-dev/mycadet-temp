@@ -10,7 +10,11 @@ import {
   stopProcessGracefully,
 } from "../../process";
 import { DAEMON_STOP_TIMEOUT_MS } from "../../lifecycle-budgets";
-import { getLocalInstanceDir, getDaemonPidPath } from "./instance";
+import {
+  getLocalInstanceDir,
+  getDaemonPidPath,
+  getGatewayPidPath,
+} from "./instance";
 import { drainAssistant, type DrainOutcome } from "./drain";
 import {
   loadGuardianToken,
@@ -95,7 +99,7 @@ export async function sleepLocal(
 
   const assistantPidFile = getDaemonPidPath(entry);
   const cadetDir = getLocalInstanceDir(entry);
-  const gatewayPidFile = join(cadetDir, "gateway.pid");
+  const gatewayPidFile = getGatewayPidPath(entry);
 
   if (!force) {
     const assistantAlive = isProcessAlive(assistantPidFile).alive;

@@ -12,6 +12,8 @@ import {
   findAssistant,
   getActiveAssistant,
   getAssistantDisplayName,
+  getGatewayPidPath,
+  isProcessAlive,
   loadAllAssistants,
   loadGuardianToken,
   readCloudToken,
@@ -439,6 +441,17 @@ function formatAssistantListRow(
   };
 }
 
+/** A local assistant whose gateway process is gone is asleep, not down. */
+function assistantListHealth(entry: LockfileAssistant): Promise<GatewayHealth> {
+  if (
+    entry.cloud === "local" &&
+    !isProcessAlive(getGatewayPidPath(entry)).alive
+  ) {
+    return Promise.resolve({ status: "sleeping", authenticated: true });
+  }
+  return checkHealth(entry);
+}
+
 export async function listAllAssistants(verbose: boolean): Promise<void> {
   const envName = resolveEnvironmentName();
   // Production is what everyone gets by default — saying so is noise. Only
@@ -485,10 +498,7 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
     return;
   }
 
-  // The arrow keeps map's index out of checkHealth's opts param.
-  const healths = await Promise.all(
-    assistants.map((entry) => checkHealth(entry)),
-  );
+  const healths = await Promise.all(assistants.map(assistantListHealth));
 
   printTable(
     await assistantRowsWithRootProcesses(assistants, healths, activeId),

@@ -302,6 +302,23 @@ describe("cadet ps — platform status line", () => {
     expect(output).not.toContain("* assistant-123");
   });
 
+  test("a local assistant with no gateway process lists as sleeping", async () => {
+    loadAllAssistantsMock.mockReturnValue([
+      {
+        assistantId: "assistant-123",
+        name: "Alice",
+        cloud: "local",
+        port: 7831,
+        instanceDir: join(testDir, "slept-instance"),
+      },
+    ]);
+
+    await listAllAssistants(false);
+
+    expect(stdout.join("\n")).toContain("sleeping");
+    expect(checkHealthMock).not.toHaveBeenCalled();
+  });
+
   test("assistant list renders one stable final row per assistant", async () => {
     loadAllAssistantsMock.mockReturnValue([
       {
