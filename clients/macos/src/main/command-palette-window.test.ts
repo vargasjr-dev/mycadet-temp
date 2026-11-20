@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
-import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
+import type { IpcHandle } from "@mycadet/electron-desktop";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
+import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -176,28 +177,30 @@ const makeMainWindow = ({
   isMinimized: () => minimized,
 });
 
-mock.module("electron", () => ({
-  app: appState,
-  BrowserWindow: StubBrowserWindow,
-  Menu: {
-    buildFromTemplate: mock((template: unknown) => template),
-    setApplicationMenu: mock((_menu: unknown) => undefined),
-  },
-  ipcMain: {
-    handle: mock(() => undefined),
-    on: mock(() => undefined),
-  },
-  screen: {
-    getCursorScreenPoint: () => ({ x: 0, y: 0 }),
-    getDisplayNearestPoint: () => ({ workArea: activeWorkArea }),
-    getDisplayMatching: mock((_bounds: Electron.Rectangle) => ({
-      workArea: activeWorkArea,
-    })),
-  },
-  shell: {
-    openExternal: mock(() => Promise.resolve()),
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: appState,
+    BrowserWindow: StubBrowserWindow,
+    Menu: {
+      buildFromTemplate: mock((template: unknown) => template),
+      setApplicationMenu: mock((_menu: unknown) => undefined),
+    },
+    ipcMain: {
+      handle: mock(() => undefined),
+      on: mock(() => undefined),
+    },
+    screen: {
+      getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+      getDisplayNearestPoint: () => ({ workArea: activeWorkArea }),
+      getDisplayMatching: mock((_bounds: Electron.Rectangle) => ({
+        workArea: activeWorkArea,
+      })),
+    },
+    shell: {
+      openExternal: mock(() => Promise.resolve()),
+    },
+  }),
+);
 
 const { BrowserWindow } = await import("electron");
 
@@ -237,6 +240,7 @@ mock.module("./main-window", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/settings", () => ({
+  createAppSettingsStore: () => undefined,
   readHotkeyOverride: () => null,
   readSetting: () => null,
   writeSetting: () => {},
@@ -244,6 +248,9 @@ mock.module("@mycadet/electron-desktop/settings", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/about", () => ({
+  configureAboutRuntime: () => undefined,
+  getVersionInfo: () => ({ version: "0.0.0" }),
+  installAbout: () => undefined,
   openAboutWindow: mock(() => undefined),
 }));
 
@@ -256,6 +263,19 @@ mock.module("./devtools", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  clearCompanionIntroSeen: () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  restoreBounds: () => undefined,
+  track: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
+  writeOnboardingActive: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
   readOnboardingActive: () => false,
   readCompanionHidden: () => false,
   onCompanionHiddenChange: () => () => {},

@@ -1,18 +1,30 @@
 import { beforeEach, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const appListeners = new Map<string, () => void>();
 const createFromBitmap = mock((bitmap: Buffer) => ({ bitmap }));
 const bundleIcon = { isEmpty: () => false };
-mock.module("electron", () => ({
-  app: {
-    on: (event: string, listener: () => void) =>
-      appListeners.set(event, listener),
-  },
-  nativeImage: { createFromBitmap, createFromPath: () => bundleIcon },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      on: (event: string, listener: () => void) =>
+        appListeners.set(event, listener),
+    },
+    nativeImage: { createFromBitmap, createFromPath: () => bundleIcon },
+  }),
+);
 
 let avatarListener: (() => void) | null = null;
 mock.module("@mycadet/electron-desktop/avatar", () => ({
+  setAvatar: () => undefined,
+  setCharacter: () => undefined,
+  __resetForTesting: () => undefined,
+  getAccentHex: () => "#000000",
+  getCharacter: () => undefined,
+  installAvatarIpc: () => undefined,
   getAvatarPng: () => null,
   onAvatarChange: (listener: () => void) => {
     avatarListener = listener;
@@ -35,6 +47,22 @@ let status = "idle";
 let statusListener: (() => void) | null = null;
 const unsubscribe = mock(() => undefined);
 mock.module("@mycadet/electron-desktop/status", () => ({
+  __resetForTesting: () => undefined,
+  installConnectivityIpc: () => undefined,
+  installStatusIpc: () => undefined,
+  setBackendReachable: () => undefined,
+  pulseOpacityFrames: [],
+  shouldPulse: () => undefined,
+  setStatus: () => undefined,
+  getConnectivity: () => undefined,
+  setConnectivity: () => undefined,
+  setDeviceOnline: () => undefined,
+  onConnectivityChange: () => () => undefined,
+  statusMenuTitle: () => "Status",
+  PULSE_FRAME_COUNT: 12,
+  PULSE_FRAME_INTERVAL_MS: 60,
+  PULSE_MIN_OPACITY: 0.4,
+  PULSE_MAX_OPACITY: 1,
   getStatus: () => status,
   onStatusChange: (listener: () => void) => {
     statusListener = listener;

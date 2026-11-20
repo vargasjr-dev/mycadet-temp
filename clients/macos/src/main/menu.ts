@@ -1,6 +1,6 @@
 import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
 
-import { companionVisibilityItem } from "@mycadet/electron-desktop/companion-menu";
+import { companionVisibilityItem } from "@mycadet/electron-desktop";
 import { onSettingChange } from "@mycadet/electron-desktop/settings";
 import {
   onCompanionHiddenChange,
@@ -31,10 +31,12 @@ import {
 } from "@mycadet/electron-desktop/command-palette-window";
 import { setCompanionSurfaceVisible } from "./companion-window";
 import {
-  conversationFileMenuItems,
-  editMenuItems,
-  viewMenuItems,
-} from "@mycadet/electron-desktop/menu";
+  editMenu,
+  fileMenu,
+  helpMenu,
+  viewMenu,
+  windowMenu,
+} from "@mycadet/electron-desktop";
 import { dispatchToMain } from "./main-window";
 
 interface MenuState {
@@ -185,30 +187,18 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         { role: "quit" },
       ],
     },
-    {
-      label: "File",
-      submenu: conversationFileMenuItems(fileItem),
-    },
-    {
-      label: "Edit",
-      submenu: editMenuItems(fileItem),
-    },
-    {
-      label: "View",
-      submenu: viewMenuItems(fileItem, {
-        fullscreenAccelerator: "Control+Command+F",
-      }),
-    },
-    {
-      label: "Window",
-      submenu: [
-        { role: "minimize" },
-        { role: "zoom" },
-        { type: "separator" },
-        fileItem("Pop Out Conversation", { kind: "popOut" }),
-        { type: "separator" },
-        // The show/hide checkbox the tray offers too, from the one builder both
-        // read: two doors onto a single switch, not two switches.
+    // File/Edit/View/Window/Help are the shared groups; the macOS deltas
+    // ride the factory (palette-aware dispatch), the fullscreen chord, the
+    // zoom role, and the companion/front rows.
+    fileMenu(fileItem),
+    editMenu(fileItem),
+    viewMenu(fileItem, { fullscreenAccelerator: "Control+Command+F" }),
+    windowMenu({
+      item: fileItem,
+      zoomRole: true,
+      tail: [
+        // The show/hide checkbox the tray offers too, from the one builder
+        // both read: two doors onto a single switch, not two switches.
         companionVisibilityItem(
           readCompanionHidden(),
           setCompanionSurfaceVisible,
@@ -216,23 +206,8 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         { type: "separator" },
         { role: "front" },
       ],
-    },
-    {
-      role: "help",
-      submenu: [
-        {
-          label: "Send Feedback\u2026",
-          click: () => dispatchMenuCommand({ kind: "shareFeedback" }),
-        },
-        { type: "separator" },
-        {
-          label: "Cadet Documentation",
-          click: () => {
-            void shell.openExternal("https://mycadet.ai/docs");
-          },
-        },
-      ],
-    },
+    }),
+    helpMenu(fileItem, { updatesRow: false }),
   ];
 };
 

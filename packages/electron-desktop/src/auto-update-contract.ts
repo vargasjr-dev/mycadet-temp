@@ -41,10 +41,11 @@ export interface AutoUpdateConfig {
   updater: DesktopAutoUpdater;
   ipc: { handle: IpcHandle };
   logger: UpdaterLogger;
-  /** Release channel, e.g. "production". Also selects the updater channel. */
-  environment: string;
   /** Channel- and architecture-specific generic feed URL. */
   feedUrl: string;
 }
 
-export type UpdateFeedPlatform = "mac-electron" | "win-electron" | "linux-electron";
+export type UpdateFeedPlatform =
+  | "mac-electron"
+  | "win-electron"
+  | "linux-electron";

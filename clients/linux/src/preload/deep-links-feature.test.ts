@@ -1,4 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type { CadetBridge } from "@mycadet/ipc-contract";
 
@@ -7,9 +8,11 @@ const on = mock(() => undefined);
 const off = mock(() => undefined);
 const send = mock(() => undefined);
 
-mock.module("electron", () => ({
-  ipcRenderer: { invoke, off, on, send },
-}));
+mock.module("electron", () =>
+  electronMock({
+    ipcRenderer: { invoke, off, on, send },
+  }),
+);
 
 const { BridgeCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");

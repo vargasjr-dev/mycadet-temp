@@ -7,6 +7,7 @@ import {
   mock,
   test,
 } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type { CreateWindowOptions } from "@mycadet/electron-desktop/windows";
 
@@ -77,49 +78,72 @@ const ensureVisible = mock(() => undefined);
 const dispatchToMain = mock(() => undefined);
 const logWarn = mock(() => undefined);
 
-mock.module("electron", () => ({
-  app: {
-    isPackaged: false,
-    on: (event: string, listener: Listener) =>
-      appListeners.set(event, listener),
-    off: (event: string) => appListeners.delete(event),
-  },
-  BrowserWindow: class {
-    static getAllWindows() {
-      return created
-        .map(({ window }) => window)
-        .filter((win) => !win.isDestroyed());
-    }
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      on: (event: string, listener: Listener) =>
+        appListeners.set(event, listener),
+      off: (event: string) => appListeners.delete(event),
+    },
+    BrowserWindow: class {
+      static getAllWindows() {
+        return created
+          .map(({ window }) => window)
+          .filter((win) => !win.isDestroyed());
+      }
 
-    static getFocusedWindow() {
-      return focusedWindow;
-    }
-  },
-  globalShortcut: {
-    register: (accelerator: string, listener: Listener) => {
-      shortcutListeners.set(accelerator, listener);
-      return true;
+      static getFocusedWindow() {
+        return focusedWindow;
+      }
     },
-    unregister: (accelerator: string) => shortcutListeners.delete(accelerator),
-  },
-  screen: {
-    getCursorScreenPoint: () => ({ x: workArea.x, y: workArea.y }),
-    getDisplayMatching: () => ({ workArea }),
-    getDisplayNearestPoint: () => ({ workArea }),
-    on: (event: string, listener: Listener) => {
-      screenListeners.set(event, listener);
+    globalShortcut: {
+      register: (accelerator: string, listener: Listener) => {
+        shortcutListeners.set(accelerator, listener);
+        return true;
+      },
+      unregister: (accelerator: string) =>
+        shortcutListeners.delete(accelerator),
     },
-  },
-}));
+    screen: {
+      getCursorScreenPoint: () => ({ x: workArea.x, y: workArea.y }),
+      getDisplayMatching: () => ({ workArea }),
+      getDisplayNearestPoint: () => ({ workArea }),
+      on: (event: string, listener: Listener) => {
+        screenListeners.set(event, listener);
+      },
+    },
+  }),
+);
 const restoreBounds = mock(
   (_key: string, defaults: { width: number; height: number }) => defaults,
 );
 const trackWindowState = mock((_key: string, _win: unknown) => undefined);
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  readOnboardingActive: () => false,
+  clearCompanionIntroSeen: () => undefined,
+  onCompanionHiddenChange: () => () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionHidden: () => false,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
+  writeOnboardingActive: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
   restoreBounds,
   track: trackWindowState,
 }));
-mock.module("./windows.client", () => ({ createWindow }));
+mock.module("@mycadet/electron-desktop/windows", () => ({
+  hardenedWebPreferences: () => ({}),
+  installWebContentsSecurity: () => undefined,
+  createWindow,
+}));
 mock.module("./ipc.client", () => ({
   handle: (channel: string, _schema: unknown, listener: Listener) => {
     handleListeners.set(channel, listener);
@@ -133,14 +157,14 @@ mock.module("./main-window", () => ({
   dispatchToMain,
   ensureVisible,
 }));
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => undefined, warn: logWarn },
 }));
 
 const { default: auxiliaryWindowsModule } =
   await import("./features/auxiliary-windows");
-const { toggleQuickInput } =
-  await import("@mycadet/electron-desktop/quick-input-window");
+const { toggleQuickInput } = await import("@mycadet/electron-desktop");
 beforeAll(() => {
   auxiliaryWindowsModule.install({} as never);
 });

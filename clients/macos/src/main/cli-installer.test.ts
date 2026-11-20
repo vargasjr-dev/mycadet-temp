@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import { FakeChild } from "./test-helpers";
 
@@ -23,18 +24,22 @@ Object.defineProperty(process, "resourcesPath", {
   writable: true,
 });
 
-mock.module("electron", () => ({
-  app: {
-    getPath: (name: string) => {
-      if (name === "userData") return userDataPath;
-      return "/tmp";
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getName: () => "Cadet",
+      getPath: (name: string) => {
+        if (name === "userData") return userDataPath;
+        return "/tmp";
+      },
+      getVersion: () => mockAppVersion,
+      isPackaged: true,
     },
-    getVersion: () => mockAppVersion,
-    isPackaged: true,
-  },
-}));
+  }),
+);
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => {}, warn: () => {}, error: () => {} },
 }));
 

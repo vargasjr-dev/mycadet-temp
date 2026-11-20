@@ -6,19 +6,19 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { installDiagnosticsIpc } from "@mycadet/electron-desktop/diagnostics";
 import {
+  installDiagnosticsIpc,
   configureFeedback,
   installFeedbackIpc,
   type FeedbackDependencies,
-} from "@mycadet/electron-desktop/feedback";
+} from "@mycadet/electron-desktop";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
 import { handle, on } from "../ipc.client";
-import { getLogFilePaths } from "../logger";
+import { getLogFilePaths } from "@mycadet/electron-desktop";
 
 declare const __CADET_BUILD_SHA__: string;
 const commitSha =

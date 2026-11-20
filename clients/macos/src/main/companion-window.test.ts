@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import { EventEmitter } from "node:events";
 
 import {
@@ -31,7 +32,7 @@ import {
   type CompanionSurfaceState,
   type CadetCommand,
 } from "@mycadet/ipc-contract";
-import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
+import { companionSizeSubmenus } from "@mycadet/electron-desktop";
 
 // The module under test reaches `main-window.ts` to hand Talk to the renderer
 // that owns the live-voice session, and that chain loads `electron-store`, a
@@ -264,46 +265,51 @@ const fireAppEvent = (event: string, ...args: unknown[]): void => {
   }
 };
 
-mock.module("electron", () => ({
-  BrowserWindow: { getAllWindows: () => [] },
-  systemPreferences: {
-    getAnimationSettings: () => ({ prefersReducedMotion: reducedMotion }),
-    getMediaAccessStatus: () => micStatus,
-  },
-  app: {
-    on: (event: string, listener: (...args: unknown[]) => void) => {
-      appListeners.push({ event, listener });
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: { getAllWindows: () => [] },
+    systemPreferences: {
+      getAnimationSettings: () => ({ prefersReducedMotion: reducedMotion }),
+      getMediaAccessStatus: () => micStatus,
     },
-  },
-  // Stubbed for the same reason as the rest of this mock: the module under
-  // test imports it, and an export missing from a whole-module mock fails the
-  // file at load rather than in the case that uses it.
-  Menu: { buildFromTemplate: () => ({ popup: () => undefined }) },
-  // The pasteboard the offer's Copy writes to. Recorded rather than counted,
-  // since what a case has to be able to say is which words were taken.
-  clipboard: {
-    writeText: (text: string) => {
-      copied.push(text);
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      on: (event: string, listener: (...args: unknown[]) => void) => {
+        appListeners.push({ event, listener });
+      },
     },
-  },
-  // The browser a popover's link opens in. Recorded, since what a case has
-  // to say is which links were let through.
-  shell: {
-    openExternal: (url: string) => {
-      opened.push(url);
-      return Promise.resolve();
+    // Stubbed for the same reason as the rest of this mock: the module under
+    // test imports it, and an export missing from a whole-module mock fails the
+    // file at load rather than in the case that uses it.
+    Menu: { buildFromTemplate: () => ({ popup: () => undefined }) },
+    // The pasteboard the offer's Copy writes to. Recorded rather than counted,
+    // since what a case has to be able to say is which words were taken.
+    clipboard: {
+      writeText: (text: string) => {
+        copied.push(text);
+      },
     },
-  },
-  screen: {
-    getCursorScreenPoint: () => ({ x: 0, y: 0 }),
-    getDisplayNearestPoint: () => nearestDisplay,
-    getAllDisplays: () => displays,
-    getPrimaryDisplay: () => displays[0],
-    on: (event: string, listener: () => void) => {
-      screenListeners.push({ event, listener });
+    // The browser a popover's link opens in. Recorded, since what a case has
+    // to say is which links were let through.
+    shell: {
+      openExternal: (url: string) => {
+        opened.push(url);
+        return Promise.resolve();
+      },
     },
-  },
-}));
+    screen: {
+      getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+      getDisplayNearestPoint: () => nearestDisplay,
+      getAllDisplays: () => displays,
+      getPrimaryDisplay: () => displays[0],
+      on: (event: string, listener: () => void) => {
+        screenListeners.push({ event, listener });
+      },
+    },
+  }),
+);
 
 /** Every text main has put on the pasteboard, most recent last. */
 const copied: string[] = [];
@@ -677,6 +683,10 @@ const zonesWindow = (): GlowWindow | null =>
   others.get("companion-dock-zones") ?? null;
 
 mock.module("@mycadet/electron-desktop/floating-window", () => ({
+  listFloatingWindows: () => undefined,
+  repositionFloatingWindow: () => undefined,
+  configureFloatingWindows: () => undefined,
+  createWindowRouteResolver: () => () => ({ pathname: "/" }),
   createFloatingWindow: (options: {
     kind: string;
     width: number;
@@ -700,6 +710,10 @@ mock.module("@mycadet/electron-desktop/floating-window", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/avatar", () => ({
+  setAvatar: () => undefined,
+  setCharacter: () => undefined,
+  __resetForTesting: () => undefined,
+  installAvatarIpc: () => undefined,
   getAvatarPng: () => null,
   getCharacter: () => null,
   getAccentHex: () => null,
@@ -718,6 +732,8 @@ const flags: Record<string, boolean> = { "companion-surface": true };
 const flagListeners: (() => void)[] = [];
 
 mock.module("@mycadet/electron-desktop/settings", () => ({
+  createAppSettingsStore: () => undefined,
+  writeSetting: () => undefined,
   readSetting: () => flags,
   onSettingChange: (_key: string, listener: () => void) => {
     flagListeners.push(listener);
@@ -752,6 +768,13 @@ let storedDock: CompanionDock = "bottom";
 let introSeen = Number.MAX_SAFE_INTEGER;
 
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  readOnboardingActive: () => false,
+  onCompanionHiddenChange: () => () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  restoreBounds: () => undefined,
+  track: () => undefined,
+  writeOnboardingActive: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
   readCompanionSize: (axis: CompanionSizeAxis) => sizes[axis],
   readCompanionHidden: () => companionHidden,
   writeCompanionSize: (axis: CompanionSizeAxis, size: CompanionSize) => {
@@ -4550,7 +4573,7 @@ describe("the watch flag when the app's window goes away", () => {
 
 // The identity main holds, which is what opens the surface after a sign-in.
 // Imported after the mocks for the same reason the module under test is.
-const { setName } = await import("@mycadet/electron-desktop/identity");
+const { setName } = await import("@mycadet/electron-desktop");
 
 describe("the surface while the app is in front", () => {
   test("steps off the screen when the app comes forward", () => {

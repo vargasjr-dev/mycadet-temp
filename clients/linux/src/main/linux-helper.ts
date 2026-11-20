@@ -1,6 +1,6 @@
 import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
-import log from "./logger";
+import { log } from "@mycadet/electron-desktop";
 
 /**
  * Placeholder sidecar client for Linux. There is no native helper binary yet,

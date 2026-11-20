@@ -11,10 +11,7 @@ import { z } from "zod";
 import { DOCK_SET_BADGE, type AssistantStatus } from "@mycadet/ipc-contract";
 import { onAvatarChange } from "@mycadet/electron-desktop/avatar";
 import { avatarBitmap } from "@mycadet/electron-desktop/avatar-image";
-import {
-  applyAlphaMask,
-  roundedRectCoverage,
-} from "@mycadet/electron-desktop/image-mask";
+import { applyAlphaMask, roundedRectCoverage } from "@mycadet/electron-desktop";
 import { getStatus, onStatusChange } from "@mycadet/electron-desktop/status";
 
 import { on } from "./ipc.client";

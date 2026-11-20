@@ -4,9 +4,9 @@
  * Windows and Linux ship byte-identical templates — `buildDesktopMenu` is
  * that template, and `installDesktopMenu` its installer (the frameless
  * windows pop native submenus through the renderer, so the install also
- * owns the popup IPC). macOS keeps its app menu, roles, and palette-aware
- * dispatcher local, but composes its File/Edit/View groups from the same
- * builders below: one owner per row, per platform deltas only.
+ * owns the popup IPC). macOS splices its app menu in front and passes its
+ * palette-aware item factory and role deltas to the same group builders:
+ * one owner per row, per platform deltas only.
  */
 import {
   BrowserWindow,
@@ -125,6 +125,116 @@ const installCliRow = (installCli: (() => void) | undefined) => ({
   click: installCli,
 });
 
+/**
+ * The menu groups both platform templates assemble. Windows/Linux glue
+ * them together in `buildDesktopMenu`; macOS splices in its app menu and
+ * passes its palette-aware item factory and role deltas.
+ */
+
+/** The File menu: the conversation rows plus the platform's session tail. */
+export const fileMenu = (
+  item: MenuCommandItem,
+  sessionTail: MenuItemConstructorOptions[] = [],
+): MenuItemConstructorOptions => ({
+  id: "file",
+  label: "File",
+  submenu: [...conversationFileMenuItems(item), ...sessionTail],
+});
+
+/** The Edit menu — shared whole. */
+export const editMenu = (
+  item: MenuCommandItem,
+): MenuItemConstructorOptions => ({
+  id: "edit",
+  label: "Edit",
+  submenu: editMenuItems(item),
+});
+
+/** The View menu — shared whole bar the fullscreen chord. */
+export const viewMenu = (
+  item: MenuCommandItem,
+  options: { fullscreenAccelerator?: string } = {},
+): MenuItemConstructorOptions => ({
+  id: "view",
+  label: "View",
+  submenu: viewMenuItems(item, options),
+});
+
+export interface WindowMenuOptions {
+  item: MenuCommandItem;
+  /** macOS zooms in place of the frameless close role. */
+  zoomRole?: boolean;
+  /** Rows appended after a separator (macOS: companion toggle, front). */
+  tail?: MenuItemConstructorOptions[];
+}
+
+export const windowMenu = ({
+  item,
+  zoomRole,
+  tail,
+}: WindowMenuOptions): MenuItemConstructorOptions => ({
+  id: "window",
+  label: "Window",
+  submenu: [
+    { role: "minimize" },
+    zoomRole ? { role: "zoom" } : { role: "close" },
+    separator(),
+    item("Pop Out Conversation", { kind: "popOut" }),
+    ...(tail?.length ? [separator(), ...tail] : []),
+  ],
+});
+
+export interface HelpMenuOptions {
+  openAbout?: () => void;
+  checkForUpdates?: () => void;
+  /** macOS checks for updates from its app menu instead. */
+  updatesRow?: boolean;
+}
+
+export const helpMenu = (
+  item: MenuCommandItem,
+  options: HelpMenuOptions = {},
+): MenuItemConstructorOptions => ({
+  id: "help",
+  label: "Help",
+  submenu: [
+    ...(app.isPackaged && options.updatesRow !== false
+      ? [
+          {
+            label: "Check for Updates...",
+            enabled: options.checkForUpdates !== undefined,
+            click: options.checkForUpdates,
+          },
+        ]
+      : []),
+    item("Send Feedback...", { kind: "shareFeedback" }),
+    {
+      label: "Cadet Documentation",
+      click: () => {
+        void shell.openExternal("https://mycadet.ai/docs");
+      },
+    },
+    ...(options.openAbout
+      ? [separator(), { label: `About ${app.name}`, click: options.openAbout }]
+      : []),
+  ],
+});
+
+/** The File menu's session tail: settings, the install row, login state, quit. */
+const sessionFileTail = (
+  item: MenuCommandItem,
+  installCli: (() => void) | undefined,
+): MenuItemConstructorOptions[] => [
+  item("Settings...", { kind: "openSettings" }, !readOnboardingActive()),
+  ...(app.isPackaged ? [installCliRow(installCli)] : []),
+  separator(),
+  hasCloudSession
+    ? item("Log Out", { kind: "logout" })
+    : item("Log In", { kind: "login" }),
+  separator(),
+  { role: "quit" },
+];
+
 export interface DesktopMenuDeps {
   handle: IpcHandle;
   openAbout: () => void;
@@ -167,69 +277,11 @@ export const buildDesktopMenu = ({
   });
 
   return [
-    {
-      id: "file",
-      label: "File",
-      submenu: [
-        ...conversationFileMenuItems(commandItem),
-        commandItem(
-          "Settings...",
-          { kind: "openSettings" },
-          !readOnboardingActive(),
-        ),
-        ...(app.isPackaged ? [installCliRow(installCli)] : []),
-        separator(),
-        hasCloudSession
-          ? commandItem("Log Out", { kind: "logout" })
-          : commandItem("Log In", { kind: "login" }),
-        separator(),
-        { role: "quit" },
-      ],
-    },
-    {
-      id: "edit",
-      label: "Edit",
-      submenu: editMenuItems(commandItem),
-    },
-    {
-      id: "view",
-      label: "View",
-      submenu: viewMenuItems(commandItem),
-    },
-    {
-      id: "window",
-      label: "Window",
-      submenu: [
-        { role: "minimize" },
-        { role: "close" },
-        separator(),
-        commandItem("Pop Out Conversation", { kind: "popOut" }),
-      ],
-    },
-    {
-      id: "help",
-      label: "Help",
-      submenu: [
-        ...(app.isPackaged
-          ? [
-              {
-                label: "Check for Updates...",
-                enabled: checkForUpdates !== undefined,
-                click: checkForUpdates,
-              },
-            ]
-          : []),
-        commandItem("Send Feedback...", { kind: "shareFeedback" }),
-        {
-          label: "Cadet Documentation",
-          click: () => {
-            void shell.openExternal("https://mycadet.ai/docs");
-          },
-        },
-        separator(),
-        { label: `About ${app.name}`, click: openAbout },
-      ],
-    },
+    fileMenu(commandItem, sessionFileTail(commandItem, installCli)),
+    editMenu(commandItem),
+    viewMenu(commandItem),
+    windowMenu({ item: commandItem }),
+    helpMenu(commandItem, { openAbout, checkForUpdates }),
   ];
 };
 

@@ -1,4 +1,4 @@
-import { configureDeepLinks } from "@mycadet/electron-desktop/deep-links";
+import { configureDeepLinks } from "@mycadet/electron-desktop";
 
 import { handle, on } from "./ipc";
 import { ensureVisible } from "./main-window";

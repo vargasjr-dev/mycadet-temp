@@ -1,20 +1,22 @@
 import { configureCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
-import { configureDictationOverlayWindow } from "@mycadet/electron-desktop/dictation-overlay-window";
+import { configureDictationOverlayWindow } from "@mycadet/electron-desktop";
 import {
   configureFloatingWindows,
   createWindowRouteResolver,
 } from "@mycadet/electron-desktop/floating-window";
-import { configurePopoutWindows } from "@mycadet/electron-desktop/popout-window";
-import { configureQuickInputWindow } from "@mycadet/electron-desktop/quick-input-window";
+import {
+  configurePopoutWindows,
+  configureQuickInputWindow,
+} from "@mycadet/electron-desktop";
 import {
   restoreBounds,
   track as trackWindowState,
 } from "@mycadet/electron-desktop/window-state";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
+import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 import { handle, on } from "./ipc";
 import { current, dispatchToMain, ensureVisible } from "./main-window";
-import { createWindow } from "@mycadet/electron-desktop/windows";
+import { createWindow } from "@mycadet/electron-desktop";
 
 const resolveRoute = createWindowRouteResolver(() => RENDERER_BASE_PROD);
 

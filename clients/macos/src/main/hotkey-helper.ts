@@ -27,7 +27,7 @@ import {
   DictationOwnerRouter,
   requestDictationTranscription,
   toAudioBuffer,
-} from "@mycadet/electron-desktop/dictation-routing";
+} from "@mycadet/electron-desktop";
 import type {
   ChordBinding,
   ChordRegistrationResult,

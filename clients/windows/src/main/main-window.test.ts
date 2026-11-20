@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import {
   IDENTITY_NAME,
   MAIN_WINDOW_ENSURE_VISIBLE,
@@ -131,8 +132,13 @@ const createWindowMock = mock(
   },
 );
 
-mock.module("./windows.client", () => ({ createWindow: createWindowMock }));
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/windows", () => ({
+  hardenedWebPreferences: () => ({}),
+  installWebContentsSecurity: () => undefined,
+  createWindow: createWindowMock,
+}));
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { error: () => undefined },
 }));
 /**
@@ -156,17 +162,21 @@ const nativeThemeStub: {
 /** The override in force, read through a call so cases assert unnarrowed. */
 const themeSource = (): string => nativeThemeStub.themeSource;
 
-mock.module("electron", () => ({
-  app: {
-    isPackaged: false,
-    once: (event: string, listener: () => void) => {
-      appListeners.set(event, listener);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      once: (event: string, listener: () => void) => {
+        appListeners.set(event, listener);
+      },
     },
-  },
-  BrowserWindow: class {},
-  nativeTheme: nativeThemeStub,
-  shell: { openExternal: () => Promise.resolve() },
-}));
+    BrowserWindow: class {},
+    nativeTheme: nativeThemeStub,
+    shell: { openExternal: () => Promise.resolve() },
+  }),
+);
 
 let restoredBounds: {
   x?: number;
@@ -184,6 +194,16 @@ const writeTitleBarOverlayThemeMock = mock(
 );
 
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  clearCompanionIntroSeen: () => undefined,
+  onCompanionHiddenChange: () => () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionHidden: () => false,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
   restoreBounds: () => restoredBounds,
   track: trackMock,
   readOnboardingActive: () => false,

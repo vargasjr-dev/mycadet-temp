@@ -1,6 +1,6 @@
-import { createDictationEscapeMonitor } from "@mycadet/electron-desktop/dictation-escape-monitor";
+import { createDictationEscapeMonitor } from "@mycadet/electron-desktop";
 
-import log from "./logger";
+import { log } from "@mycadet/electron-desktop";
 import { dispatchToMain } from "./main-window";
 
 const monitor = createDictationEscapeMonitor({

@@ -5,19 +5,17 @@ import {
   resolveUpdateFeedUrl,
 } from "@mycadet/electron-desktop/auto-update";
 
-import { resolveEnvironmentName } from "@mycadet/shared";
 import { handle } from "./ipc.client";
-import log from "./logger";
+import { log } from "@mycadet/electron-desktop";
 
 /** Channel-specific `linux-electron/{arch}/` feed for this build. */
-export const linuxUpdateFeedUrl = (arch: string = process.arch): string =>
-  resolveUpdateFeedUrl(resolveEnvironmentName(), "linux-electron", arch);
+const linuxUpdateFeedUrl = (): string =>
+  resolveUpdateFeedUrl("linux-electron", process.arch);
 
 configureAutoUpdate({
   updater: autoUpdater,
   ipc: { handle },
   logger: log,
-  environment: resolveEnvironmentName(),
   feedUrl: linuxUpdateFeedUrl(),
 });
 

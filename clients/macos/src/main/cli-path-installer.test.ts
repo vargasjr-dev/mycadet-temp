@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 // --- Mocks ---
 // Must be installed before the `await import` of the module under test so
@@ -15,17 +16,22 @@ Object.defineProperty(process, "resourcesPath", {
   writable: true,
 });
 
-mock.module("electron", () => ({
-  app: {
-    getPath: (name: string) => {
-      if (name === "userData") return userDataPath;
-      return "/tmp";
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      getPath: (name: string) => {
+        if (name === "userData") return userDataPath;
+        return "/tmp";
+      },
+      isPackaged: true,
     },
-    isPackaged: true,
-  },
-}));
+  }),
+);
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => {}, warn: () => {}, error: () => {} },
 }));
 

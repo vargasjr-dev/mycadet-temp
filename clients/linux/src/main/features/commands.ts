@@ -13,22 +13,25 @@ import {
   configureHotkeySettings,
   HOTKEY_SETTINGS,
 } from "@mycadet/electron-desktop/commands";
-import { installGlobalShortcuts } from "@mycadet/electron-desktop/global-shortcuts";
-import { installHotkeysIpc } from "@mycadet/electron-desktop/hotkeys";
-import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
-import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
-import { toggleQuickInput } from "@mycadet/electron-desktop/quick-input-window";
+import {
+  installGlobalShortcuts,
+  installHotkeysIpc,
+  getName,
+  onNameChange,
+  installImageContextMenu,
+  toggleQuickInput,
+} from "@mycadet/electron-desktop";
 import {
   getSessionToken,
   onSessionTokenChange,
 } from "@mycadet/electron-desktop/session-token-store";
-import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
+import { installTextContextMenu } from "@mycadet/electron-desktop";
 
-import { getRendererBase } from "@mycadet/electron-desktop/app-config";
+import { getRendererBase } from "@mycadet/electron-desktop";
 import { checkForUpdates } from "../auto-update";
 import { runInstallCliCommandFlow } from "../cli-path-flow";
 import { handle } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import {
   current,
   dispatchToMain,
@@ -38,7 +41,7 @@ import {
 import {
   installDesktopMenu,
   setDesktopHasCloudSession,
-} from "@mycadet/electron-desktop/menu";
+} from "@mycadet/electron-desktop";
 
 const commandsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "commands",

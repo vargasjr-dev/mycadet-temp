@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type { z } from "zod";
 
@@ -41,6 +42,13 @@ mock.module("./ipc", () => ({
   },
 }));
 mock.module("@mycadet/electron-desktop/avatar", () => ({
+  setAvatar: () => undefined,
+  setCharacter: () => undefined,
+  __resetForTesting: () => undefined,
+  getAccentHex: () => "#000000",
+  getAvatarPng: () => Buffer.alloc(0),
+  getCharacter: () => undefined,
+  installAvatarIpc: () => undefined,
   onAvatarChange: () => () => undefined,
 }));
 
@@ -50,6 +58,10 @@ mock.module("@mycadet/electron-desktop/avatar", () => ({
 let mockToken: string | null = null;
 const tokenChangeListeners = new Set<() => void>();
 mock.module("@mycadet/electron-desktop/session-token-store", () => ({
+  __resetForTesting: "__resetForTesting",
+  clearSessionToken: () => undefined,
+  saveSessionToken: () => undefined,
+  setSessionTokenLogger: () => undefined,
   getSessionToken: () => mockToken,
   onSessionTokenChange: (listener: () => void) => {
     tokenChangeListeners.add(listener);
@@ -97,23 +109,28 @@ const createEmptyMock = mock(() => ({ __kind: "empty", isEmpty: () => true }));
 // Stable reference for the resolved bundle icon so tests can assert identity.
 const bundleImage = { __kind: "bundle", isEmpty: () => false };
 const createFromPathMock = mock((_p: string) => bundleImage);
-mock.module("electron", () => ({
-  app: {
-    dock: {
-      setIcon: setIconMock,
-      setBadge: setBadgeMock,
-      show: dockShowMock,
-      hide: dockHideMock,
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      dock: {
+        setIcon: setIconMock,
+        setBadge: setBadgeMock,
+        show: dockShowMock,
+        hide: dockHideMock,
+      },
+      setActivationPolicy: setActivationPolicyMock,
+      on: appOnMock,
     },
-    setActivationPolicy: setActivationPolicyMock,
-    on: appOnMock,
-  },
-  nativeImage: {
-    createFromBitmap: createFromBitmapMock,
-    createEmpty: createEmptyMock,
-    createFromPath: createFromPathMock,
-  },
-}));
+    nativeImage: {
+      createFromBitmap: createFromBitmapMock,
+      createEmpty: createEmptyMock,
+      createFromPath: createFromPathMock,
+    },
+  }),
+);
 
 const {
   computePolicy,

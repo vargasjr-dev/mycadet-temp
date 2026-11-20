@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 type StubWebContents = {
   on: ReturnType<typeof mock>;
@@ -187,20 +188,24 @@ const announce = (
   for (const h of from.get(event) ?? []) h();
 };
 
-mock.module("electron", () => ({
-  app: {
-    isPackaged: false,
-    on: listenOn(appListeners),
-  },
-  autoUpdater: { on: listenOn(updaterListeners) },
-  BrowserWindow: class {
-    constructor(opts: Record<string, unknown>) {
-      Object.assign(this, makeWindow(opts));
-    }
-  },
-  ipcMain: { handle: ipcHandleMock },
-  shell: { openExternal: () => Promise.resolve() },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      on: listenOn(appListeners),
+    },
+    autoUpdater: { on: listenOn(updaterListeners) },
+    BrowserWindow: class {
+      constructor(opts: Record<string, unknown>) {
+        Object.assign(this, makeWindow(opts));
+      }
+    },
+    ipcMain: { handle: ipcHandleMock },
+    shell: { openExternal: () => Promise.resolve() },
+  }),
+);
 
 // What the mocked `restoreBounds()` returns. Defaults to a saved windowed
 // state; tests exercising the fresh-install maximized default or a saved
@@ -217,6 +222,18 @@ let restoredBounds: {
 };
 
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  clearCompanionIntroSeen: () => undefined,
+  onCompanionHiddenChange: () => () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionHidden: () => false,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
   restoreBounds: () => restoredBounds,
   track: () => undefined,
   readOnboardingActive: () => onboardingActive,

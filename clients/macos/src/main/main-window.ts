@@ -1,6 +1,6 @@
 import { BrowserWindow, app, autoUpdater, shell } from "electron";
 import { z } from "zod";
-import { createWindowReadiness } from "@mycadet/electron-desktop/window-readiness";
+import { createWindowReadiness } from "@mycadet/electron-desktop";
 import {
   readOnboardingActive,
   restoreBounds,
@@ -8,13 +8,13 @@ import {
   writeOnboardingActive,
 } from "@mycadet/electron-desktop/window-state";
 
-import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
+import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "./app-origin";
 import { decideNavigation } from "./auth-nav";
 import { type CadetCommand } from "@mycadet/electron-desktop/commands";
-import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
+import { getName, onNameChange } from "@mycadet/electron-desktop";
 import { handle } from "./ipc";
-import { createWindow } from "@mycadet/electron-desktop/windows";
+import { createWindow } from "@mycadet/electron-desktop";
 
 // Default state for the main window once onboarding is done: maximized — a
 // normal window filling the display's work area, deliberately NOT native

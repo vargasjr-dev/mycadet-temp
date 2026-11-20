@@ -29,7 +29,7 @@ import {
 } from "@mycadet/ipc-contract";
 
 import { handle } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { current } from "../main-window";
 import { getLinuxHelperClient } from "../linux-helper";
 

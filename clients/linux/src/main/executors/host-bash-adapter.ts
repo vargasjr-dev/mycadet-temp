@@ -3,11 +3,11 @@
  * bash via the shared host shell executor.
  */
 
-import type { HostProxyExecutor } from "@mycadet/electron-desktop/host-proxy/router";
+import type { HostProxyExecutor } from "@mycadet/electron-desktop";
 import {
   createHostShellExecutor,
   type HostShellSpec,
-} from "@mycadet/electron-desktop/host-proxy/executors/host-shell-executor";
+} from "@mycadet/electron-desktop";
 import { buildShellInvocation } from "@mycadet/environments/shell";
 
 const createBashSpec = (): HostShellSpec => ({

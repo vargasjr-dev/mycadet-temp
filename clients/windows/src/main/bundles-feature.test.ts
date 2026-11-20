@@ -1,10 +1,5 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const installBundleFlowMock = mock(() => undefined);
 const handleBundleFileMock = mock(async (_filePath: string) => undefined);
@@ -18,23 +13,36 @@ const getGuardianAccessTokenMock = mock(async () => ({
   accessToken: "guardian-token",
 }));
 
-mock.module("electron", () => ({
-  app: {
-    getPath: () => "C:\\Cadet",
-    isPackaged: true,
-    once: appOnceMock,
-  },
-  BrowserWindow: class {},
-  session: { defaultSession: {} },
-  shell: {},
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      getPath: () => "C:\\Cadet",
+      isPackaged: true,
+      once: appOnceMock,
+    },
+    BrowserWindow: class {},
+    session: { defaultSession: {} },
+    shell: {},
+  }),
+);
 
 mock.module("@mycadet/electron-desktop/bundle-flow", () => ({
+  resolveActiveGateway: () => undefined,
+  scanBundleViaGateway: () => undefined,
   installBundleFlow: installBundleFlowMock,
   handleBundleFile: handleBundleFileMock,
 }));
 
 mock.module("@mycadet/electron-desktop/file-open", () => ({
+  canonicalizeCadetFilePath: () => undefined,
+  extractCadetFilePathsFromArgv: () => undefined,
+  __resetForTesting: () => undefined,
+  configureFileOpen: () => undefined,
+  handleFileOpenArgv: () => undefined,
+  hasPendingFiles: () => false,
+  installFileOpen: () => undefined,
   onFileOpen: onFileOpenMock,
 }));
 
@@ -52,12 +60,10 @@ mock.module("./ipc.client", () => ({
   on: () => undefined,
 }));
 
-const { bundleFileHandlerToken, getBundlePlatform } = await import(
-  "@mycadet/electron-desktop/bundle-platform"
-);
-const { resetBundlePlatformForTest } = await import(
-  "@mycadet/electron-desktop/bundle-platform"
-);
+const { bundleFileHandlerToken, getBundlePlatform } =
+  await import("@mycadet/electron-desktop/bundle-platform");
+const { resetBundlePlatformForTest } =
+  await import("@mycadet/electron-desktop/bundle-platform");
 const { DesktopCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");
 const { default: bundles } = await import("./features/bundles");

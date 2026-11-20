@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 type ConflictType = "exists" | "existsAndRunning";
 type ConflictHandler = (conflictType: ConflictType) => boolean;
@@ -28,75 +29,79 @@ let revealedInFinder = 0;
 let settingsStore: Record<string, unknown> = {};
 
 mock.module("@mycadet/electron-desktop/settings", () => ({
+  createAppSettingsStore: () => undefined,
+  onSettingChange: () => () => undefined,
   readSetting: (key: string) => settingsStore[key] ?? null,
   writeSetting: (key: string, value: unknown) => {
     settingsStore[key] = value;
   },
 }));
 
-mock.module("electron", () => ({
-  app: {
-    // `./logger` pulls in electron-log, which probes these on import.
-    isReady: () => false,
-    whenReady: () => Promise.resolve(),
-    on: () => undefined,
-    off: () => undefined,
-    getPath: () => "/tmp",
-    getName: () => "Cadet",
-    getVersion: () => "0.0.0-test",
-    get isPackaged() {
-      return appState.isPackaged;
-    },
-    isInApplicationsFolder: () => appState.inApplicationsFolder,
-    moveToApplicationsFolder: (options: MoveOptions) => {
-      if (appState.conflict) {
-        const proceed = options.conflictHandler(appState.conflict);
-        if (!proceed) {
-          return false;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      // `./logger` pulls in electron-log, which probes these on import.
+      isReady: () => false,
+      whenReady: () => Promise.resolve(),
+      on: () => undefined,
+      off: () => undefined,
+      getPath: () => "/tmp",
+      getName: () => "Cadet",
+      getVersion: () => "0.0.0-test",
+      get isPackaged() {
+        return appState.isPackaged;
+      },
+      isInApplicationsFolder: () => appState.inApplicationsFolder,
+      moveToApplicationsFolder: (options: MoveOptions) => {
+        if (appState.conflict) {
+          const proceed = options.conflictHandler(appState.conflict);
+          if (!proceed) {
+            return false;
+          }
         }
-      }
-      if (appState.move === "throws") {
-        throw new Error("Could not create a temporary directory");
-      }
-      return appState.move === "succeeds";
+        if (appState.move === "throws") {
+          throw new Error("Could not create a temporary directory");
+        }
+        return appState.move === "succeeds";
+      },
     },
-  },
-  dialog: {
-    showMessageBox: (options: { message?: string }) => {
-      dialogCalls.push({
-        ...(options.message == null ? {} : { message: options.message }),
-      });
-      const next = dialogAnswers.shift() ?? { response: 1 };
-      return Promise.resolve({
-        response: next.response,
-        checkboxChecked: next.checkboxChecked ?? false,
-      });
+    dialog: {
+      showMessageBox: (options: { message?: string }) => {
+        dialogCalls.push({
+          ...(options.message == null ? {} : { message: options.message }),
+        });
+        const next = dialogAnswers.shift() ?? { response: 1 };
+        return Promise.resolve({
+          response: next.response,
+          checkboxChecked: next.checkboxChecked ?? false,
+        });
+      },
     },
-  },
-  shell: {
-    showItemInFolder: () => {
-      revealedInFinder += 1;
+    shell: {
+      showItemInFolder: () => {
+        revealedInFinder += 1;
+      },
     },
-  },
-  // The install splash resolves through `ready-to-show`; fire it synchronously
-  // so the 150ms paint delay is the only wait per case.
-  BrowserWindow: class {
-    once(event: string, handler: () => void) {
-      if (event === "ready-to-show") {
-        handler();
+    // The install splash resolves through `ready-to-show`; fire it synchronously
+    // so the 150ms paint delay is the only wait per case.
+    BrowserWindow: class {
+      once(event: string, handler: () => void) {
+        if (event === "ready-to-show") {
+          handler();
+        }
+        return this;
       }
-      return this;
-    }
-    show() {}
-    close() {}
-    isDestroyed() {
-      return false;
-    }
-    loadURL() {
-      return Promise.resolve();
-    }
-  },
-}));
+      show() {}
+      close() {}
+      isDestroyed() {
+        return false;
+      }
+      loadURL() {
+        return Promise.resolve();
+      }
+    },
+  }),
+);
 
 const { relocateToApplicationsFolder, promptToRelocateIfStranded } =
   await import("./move-to-applications");

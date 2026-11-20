@@ -1,18 +1,24 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 // The shared publisher reaches `electron`'s `BrowserWindow`, which does not
 // exist outside an Electron runtime; only the install seam is under test here.
 // Publishing behavior is covered in packages/electron-desktop.
 const quitListeners: Array<() => void> = [];
-mock.module("electron", () => ({
-  app: {
-    once: (event: string, listener: () => void) => {
-      if (event === "before-quit") {
-        quitListeners.push(listener);
-      }
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      once: (event: string, listener: () => void) => {
+        if (event === "before-quit") {
+          quitListeners.push(listener);
+        }
+      },
     },
-  },
-}));
+  }),
+);
 
 const installs = { count: 0 };
 const teardown = mock(() => undefined);

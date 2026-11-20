@@ -2,8 +2,10 @@ import { app, powerMonitor } from "electron";
 import fs from "node:fs/promises";
 import os from "node:os";
 
-import { installDiagnosticsIpc as installSharedDiagnosticsIpc } from "@mycadet/electron-desktop/diagnostics";
-import { configureFeedback } from "@mycadet/electron-desktop/feedback";
+import {
+  installDiagnosticsIpc as installSharedDiagnosticsIpc,
+  configureFeedback,
+} from "@mycadet/electron-desktop";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { handle, on } from "./ipc";

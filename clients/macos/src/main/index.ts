@@ -2,14 +2,16 @@ import "./env-seed";
 import { app, Notification, protocol, session, shell } from "electron";
 import path from "node:path";
 
-import { installCsp } from "@mycadet/electron-desktop/csp";
+import { installCsp } from "@mycadet/electron-desktop";
 import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
-import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
-import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
-import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
-import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
-import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
-import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
+import {
+  installDictationOverlay,
+  installPermissionHandler,
+  installGatewayRequestGuard,
+  installPopoutWindows,
+  installQuickInput,
+  registerAppProtocol,
+} from "@mycadet/electron-desktop";
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
 import { installAbout } from "./about.client";
 import { installAutoUpdate } from "@mycadet/electron-desktop/auto-update";
@@ -17,8 +19,11 @@ import {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
-import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
-import { APP_HOST, APP_PROTOCOL } from "@mycadet/electron-desktop/app-config";
+import {
+  registerCadetProtocol,
+  APP_HOST,
+  APP_PROTOCOL,
+} from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
@@ -30,11 +35,11 @@ import "./auto-update.client";
 import "./deep-links.client";
 import "./file-open.client";
 import "./native-auth.client";
-import { installNativeAuth } from "@mycadet/electron-desktop/native-auth";
 import {
+  installNativeAuth,
   hasPendingDeepLinks,
   installDeepLinks,
-} from "@mycadet/electron-desktop/deep-links";
+} from "@mycadet/electron-desktop";
 import { installMacBundleWorkflow } from "./bundles";
 import { handleBundleFile } from "@mycadet/electron-desktop/bundle-flow";
 import {
@@ -44,15 +49,19 @@ import {
   onFileOpen,
 } from "@mycadet/electron-desktop/file-open";
 import { installAvatarIpc } from "@mycadet/electron-desktop/avatar";
-import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
-import { installDownloads } from "@mycadet/electron-desktop/downloads";
-import { installIdentityIpc } from "@mycadet/electron-desktop/identity";
+import {
+  installConnectivityProbe,
+  installDownloads,
+  installIdentityIpc,
+} from "@mycadet/electron-desktop";
 import {
   configureNotifications,
   installNotifications,
 } from "@mycadet/electron-desktop/notifications";
-import { installPowerEvents } from "@mycadet/electron-desktop/power-events";
-import { configurePresenceRuntime } from "@mycadet/electron-desktop/presence-runtime";
+import {
+  installPowerEvents,
+  configurePresenceRuntime,
+} from "@mycadet/electron-desktop";
 import {
   installConnectivityIpc,
   installStatusIpc,
@@ -63,15 +72,16 @@ import { installShare } from "./share";
 import { installWindowAttentionFeature } from "./window-attention";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
 import { installDiagnosticsIpc } from "./desktop-diagnostics";
-import { installFeedbackIpc } from "@mycadet/electron-desktop/feedback";
+import { installFeedbackIpc } from "@mycadet/electron-desktop";
 import { installGlobalShortcuts } from "./global-shortcuts.client";
 import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
-import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
-import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
+import {
+  installImageContextMenu,
+  installTextContextMenu,
+} from "@mycadet/electron-desktop";
 import { installLoginItem } from "./login-item.client";
-import { installLoginItemIpc } from "@mycadet/electron-desktop/login-item";
-import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
+import { installLoginItemIpc, startApp } from "@mycadet/electron-desktop";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "@mycadet/electron-desktop/app-logger";
 
@@ -114,7 +124,7 @@ import {
 } from "./companion-window";
 import { installTextInsertionIpc } from "./textInsertion";
 import { installTray } from "./tray.client";
-import { installWebContentsSecurity } from "@mycadet/electron-desktop/windows";
+import { installWebContentsSecurity } from "@mycadet/electron-desktop";
 
 const isDev = !app.isPackaged;
 

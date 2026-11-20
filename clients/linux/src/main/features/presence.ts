@@ -5,17 +5,19 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
-import { installIdentityIpc } from "@mycadet/electron-desktop/identity";
-import { installPowerEvents } from "@mycadet/electron-desktop/power-events";
-import { configurePresenceRuntime } from "@mycadet/electron-desktop/presence-runtime";
+import {
+  installConnectivityProbe,
+  installIdentityIpc,
+  installPowerEvents,
+  configurePresenceRuntime,
+} from "@mycadet/electron-desktop";
 import {
   installConnectivityIpc,
   installStatusIpc,
 } from "@mycadet/electron-desktop/status";
 
 import { handle, on } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { installLinuxTray } from "../tray";
 
 const presence: CapabilityModule<DesktopCapabilityRegistry> = {

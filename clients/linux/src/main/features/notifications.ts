@@ -8,7 +8,7 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { buildHelperToastRequest } from "@mycadet/electron-desktop/helper-toast-request";
+import { buildHelperToastRequest } from "@mycadet/electron-desktop";
 import {
   configureNotifications,
   installNotifications,
@@ -18,7 +18,7 @@ import {
 import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
 import { handle } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { ensureVisible } from "../main-window";
 
 /**

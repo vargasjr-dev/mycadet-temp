@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -14,25 +15,30 @@ const saveDialogCalls: Array<{ options: { defaultPath?: string } }> = [];
 
 const quitListeners: Array<() => void> = [];
 let userDataDir = "/nonexistent-user-data";
-mock.module("electron", () => ({
-  app: {
-    getAppPath: () => "/nonexistent-app-path",
-    getPath: (name: string) =>
-      name === "userData" ? userDataDir : "/nonexistent-path",
-    once: (event: string, listener: () => void) => {
-      if (event === "before-quit") {
-        quitListeners.push(listener);
-      }
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getAppPath: () => "/nonexistent-app-path",
+      getPath: (name: string) =>
+        name === "userData" ? userDataDir : "/nonexistent-path",
+      once: (event: string, listener: () => void) => {
+        if (event === "before-quit") {
+          quitListeners.push(listener);
+        }
+      },
     },
-  },
-  dialog: {
-    showSaveDialog: (_window: unknown, options: { defaultPath?: string }) => {
-      saveDialogCalls.push({ options });
-      return Promise.resolve(saveDialogResult);
+    dialog: {
+      showSaveDialog: (_window: unknown, options: { defaultPath?: string }) => {
+        saveDialogCalls.push({ options });
+        return Promise.resolve(saveDialogResult);
+      },
     },
-  },
-  BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
-}));
+    BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
+  }),
+);
 
 type HandleRegistration = {
   channel: string;
@@ -49,7 +55,8 @@ mock.module("./ipc.client", () => ({
     handleRegistrations.push({ channel, schema, fn });
   },
 }));
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
 }));
 mock.module("./main-window", () => ({
@@ -58,6 +65,12 @@ mock.module("./main-window", () => ({
 // The shared module imports `electron.Notification`, which does not exist
 // outside an Electron runtime.
 mock.module("@mycadet/electron-desktop/notifications", () => ({
+  __resetForTesting: () => undefined,
+  __setDeliveryTimeoutForTesting: () => undefined,
+  CATEGORY_ACTIONS: {},
+  NOTIFICATION_CATEGORIES: [],
+  createElectronNotification: () => undefined,
+  isPreparedNotificationSenderCurrent: () => true,
   configureNotifications: () => undefined,
   installNotifications: () => undefined,
 }));

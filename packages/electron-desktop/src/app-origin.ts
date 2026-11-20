@@ -63,14 +63,6 @@ export const resolveAllowedOrigin = createAllowedOriginResolver({
 });
 
 /**
- * The Windows/Linux clients' resolver: the factory's options are the same
- * app-config constants on both, so the wiring lives here rather than being
- * duplicated per client. (macOS keeps a constant resolver — its dev mode
- * packs the renderer dists and rides this same `app://` protocol, so there
- * is no dev-server origin to honor.)
- */
-
-/**
  * Whether `origin` matches the build's renderer origin. Accepts either
  * a frame's `senderFrame.origin` string (the IPC sender guard) or an
  * already-parsed navigation target `URL` (the navigation guard). The

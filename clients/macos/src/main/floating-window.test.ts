@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
+import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 
 type Listener = () => void;
 
@@ -103,20 +104,22 @@ class StubBrowserWindow {
   }
 }
 
-mock.module("electron", () => ({
-  app: appState,
-  BrowserWindow: StubBrowserWindow,
-  ipcMain: {
-    handle: mock(() => undefined),
-    on: mock(() => undefined),
-  },
-  screen: {
-    getCursorScreenPoint: () => ({ x: 0, y: 0 }),
-    getDisplayNearestPoint: () => ({
-      workArea: { x: 0, y: 0, width: 1440, height: 900 },
-    }),
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: appState,
+    BrowserWindow: StubBrowserWindow,
+    ipcMain: {
+      handle: mock(() => undefined),
+      on: mock(() => undefined),
+    },
+    screen: {
+      getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+      getDisplayNearestPoint: () => ({
+        workArea: { x: 0, y: 0, width: 1440, height: 900 },
+      }),
+    },
+  }),
+);
 
 const { BrowserWindow } = await import("electron");
 const {

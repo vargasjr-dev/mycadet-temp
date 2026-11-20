@@ -1,4 +1,5 @@
 import { expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
@@ -17,17 +18,19 @@ const send = mock(() => undefined);
 const off = mock(() => undefined);
 const getPathForFile = mock(() => "C:\\Projects\\例.cadet");
 
-mock.module("electron", () => ({
-  ipcRenderer: {
-    invoke,
-    send,
-    on: (channel: string, listener: Listener) => {
-      listeners.set(channel, listener);
+mock.module("electron", () =>
+  electronMock({
+    ipcRenderer: {
+      invoke,
+      send,
+      on: (channel: string, listener: Listener) => {
+        listeners.set(channel, listener);
+      },
+      off,
     },
-    off,
-  },
-  webUtils: { getPathForFile },
-}));
+    webUtils: { getPathForFile },
+  }),
+);
 
 const { default: pathsModule } = await import("./features/paths");
 const registry = new BridgeCapabilityRegistry<CadetBridge>({});

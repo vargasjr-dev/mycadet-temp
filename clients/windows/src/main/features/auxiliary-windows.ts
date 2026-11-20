@@ -13,7 +13,7 @@ import {
   configureDictationOverlayWindow,
   installDictationOverlay,
   repositionDictationOverlayWindow,
-} from "@mycadet/electron-desktop/dictation-overlay-window";
+} from "@mycadet/electron-desktop";
 import {
   configureFloatingWindows,
   createWindowRouteResolver,
@@ -21,23 +21,21 @@ import {
 import {
   configurePopoutWindows,
   installPopoutWindows,
-} from "@mycadet/electron-desktop/popout-window";
-import {
   configureQuickInputWindow,
   installQuickInput,
   repositionQuickInputWindow,
-} from "@mycadet/electron-desktop/quick-input-window";
+} from "@mycadet/electron-desktop";
 import {
   restoreBounds,
   track as trackWindowState,
 } from "@mycadet/electron-desktop/window-state";
 
-import { getRendererBase } from "@mycadet/electron-desktop/app-config";
+import { getRendererBase } from "@mycadet/electron-desktop";
 import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";
 import { handle, on } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { current, dispatchToMain, ensureVisible } from "../main-window";
-import { createWindow } from "../windows.client";
+import { createWindow } from "@mycadet/electron-desktop";
 
 const resolveRoute = createWindowRouteResolver(() =>
   getRendererBase(app.isPackaged),

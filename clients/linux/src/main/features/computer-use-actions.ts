@@ -11,12 +11,14 @@ import {
   type CapabilityModule,
   type DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop/host-proxy/cu-executor";
-import type { CuHelperClient } from "@mycadet/electron-desktop/host-proxy/helper-proxy-executor";
-import type { HostProxyExecutor } from "@mycadet/electron-desktop/host-proxy/router";
+import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop";
+import type {
+  CuHelperClient,
+  HostProxyExecutor,
+} from "@mycadet/electron-desktop";
 
 import { getLinuxHelperClient } from "../linux-helper";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 
 export interface ComputerUseActionExecutors {
   host_cu: HostProxyExecutor;

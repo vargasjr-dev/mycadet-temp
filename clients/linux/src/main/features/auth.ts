@@ -4,11 +4,11 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { resolveAuthCallbackScheme } from "@mycadet/electron-desktop/deep-links";
 import {
+  resolveAuthCallbackScheme,
   configureNativeAuth,
   installNativeAuth,
-} from "@mycadet/electron-desktop/native-auth";
+} from "@mycadet/electron-desktop";
 import {
   clearSessionToken,
   getSessionToken,
@@ -22,7 +22,7 @@ import {
 
 import { startLinuxAuthCallback } from "../auth-callback";
 import { handle, handleSync } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { ensureVisible } from "../main-window";
 
 const subscribeToAuthCallback = (
@@ -49,9 +49,7 @@ const subscribeToAuthCallback = (
 const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "native-auth",
   install: () => {
-    const authScheme = resolveAuthCallbackScheme(
-      resolveEnvironmentName(),
-    );
+    const authScheme = resolveAuthCallbackScheme(resolveEnvironmentName());
     setSessionTokenLogger(log);
     configureNativeAuth({
       activateWindow: () => {

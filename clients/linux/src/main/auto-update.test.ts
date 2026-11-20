@@ -5,7 +5,6 @@ import {
   UPDATE_GET_STATE,
   UPDATE_INSTALL,
 } from "@mycadet/ipc-contract";
-import { resolveUpdateFeedUrl } from "@mycadet/electron-desktop/auto-update";
 
 const registeredChannels: string[] = [];
 const feedUrls: string[] = [];
@@ -26,7 +25,7 @@ mock.module("electron-updater", () => ({
   },
 }));
 
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: {
     info: () => undefined,
     warn: () => undefined,
@@ -43,34 +42,7 @@ mock.module("./ipc.client", () => ({
   on: () => undefined,
 }));
 
-const { installAutoUpdate, linuxUpdateFeedUrl } = await import("./auto-update");
-
-describe("linuxUpdateFeedUrl", () => {
-  test("targets the architecture-specific linux-electron feed", () => {
-    expect(linuxUpdateFeedUrl("x64")).toBe(
-      "https://storage.googleapis.com/mycadet-prod-releases/linux-electron/x64/",
-    );
-    expect(linuxUpdateFeedUrl("arm64")).toBe(
-      "https://storage.googleapis.com/mycadet-prod-releases/linux-electron/arm64/",
-    );
-  });
-});
-
-describe("resolveUpdateFeedUrl", () => {
-  test("keeps environments, architectures, and platforms isolated", () => {
-    const feeds = [
-      resolveUpdateFeedUrl("production", "linux-electron", "x64"),
-      resolveUpdateFeedUrl("production", "linux-electron", "arm64"),
-      resolveUpdateFeedUrl("staging", "linux-electron", "x64"),
-      resolveUpdateFeedUrl("dev", "linux-electron", "x64"),
-      resolveUpdateFeedUrl("production", "mac-electron", "x64"),
-    ];
-    expect(new Set(feeds).size).toBe(feeds.length);
-    expect(resolveUpdateFeedUrl("staging", "linux-electron", "arm64")).toBe(
-      "https://storage.googleapis.com/mycadet-staging-releases/linux-electron/arm64/",
-    );
-  });
-});
+const { installAutoUpdate } = await import("./auto-update");
 
 describe("installAutoUpdate", () => {
   test("registers update IPC but leaves the updater idle when unpackaged", () => {

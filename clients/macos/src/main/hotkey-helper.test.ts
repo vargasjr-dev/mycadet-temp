@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import { EventEmitter } from "node:events";
 import { writeFile } from "node:fs/promises";
 
@@ -56,31 +57,36 @@ const makeWebContents = (): FakeWebContents => {
 
 let defaultSender = makeWebContents();
 
-mock.module("electron", () => ({
-  app: {
-    get isPackaged() {
-      return appState.isPackaged;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      get isPackaged() {
+        return appState.isPackaged;
+      },
+      getAppPath: () => appState.appPath,
+      on: (event: string, listener: () => void) => {
+        appListeners.set(event, listener);
+      },
     },
-    getAppPath: () => appState.appPath,
-    on: (event: string, listener: () => void) => {
-      appListeners.set(event, listener);
+    BrowserWindow: {
+      fromWebContents: (webContents: FakeWebContents) =>
+        webContents.ownerWindow,
+      getAllWindows: () => [],
     },
-  },
-  BrowserWindow: {
-    fromWebContents: (webContents: FakeWebContents) => webContents.ownerWindow,
-    getAllWindows: () => [],
-  },
-  ipcMain: {
-    handle: (
-      channel: string,
-      handler: (event: unknown, ...args: unknown[]) => unknown,
-    ) => {
-      handlers[channel] = handler;
+    ipcMain: {
+      handle: (
+        channel: string,
+        handler: (event: unknown, ...args: unknown[]) => unknown,
+      ) => {
+        handlers[channel] = handler;
+      },
+      on: mock(() => undefined),
+      removeAllListeners: mock(() => undefined),
     },
-    on: mock(() => undefined),
-    removeAllListeners: mock(() => undefined),
-  },
-}));
+  }),
+);
 
 let exists = true;
 // getMacHelperPath reads CFBundleExecutable from the bundle's Info.plist to
@@ -118,6 +124,7 @@ mock.module("node:child_process", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: {
     info: mock(() => undefined),
     warn: mock(() => undefined),
@@ -125,6 +132,11 @@ mock.module("@mycadet/electron-desktop/app-logger", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/app-origin", () => ({
+  createAllowedOriginResolver: () => () => ({
+    protocol: "app:",
+    host: "mycadet.ai",
+  }),
+  getAppName: () => "Cadet",
   isAllowedOrigin: () => true,
   resolveAllowedOrigin: () => ({ protocol: "app:", host: "mycadet.ai" }),
 }));

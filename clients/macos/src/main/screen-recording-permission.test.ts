@@ -21,6 +21,7 @@ mock.module("./sidecar/shared-cu-helper", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
 }));
 

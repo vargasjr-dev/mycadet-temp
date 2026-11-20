@@ -7,6 +7,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
+import { electronMock } from "../../test-setup";
 import type {
   PermissionKind,
   PermissionStateItem,
@@ -108,34 +109,44 @@ mock.module(
 mock.module("node:fs/promises", () => ({
   stat: async () => ({ isDirectory: () => true }),
 }));
-mock.module("electron", () => ({
-  nativeImage: { createFromBuffer: () => avatarIcon },
-  app: {
-    getPath: () => "/Applications/Cadet.app/Contents/MacOS/Cadet",
-    getFileIcon: async (_file: string, options: { size: string }) => {
-      // Electron does not support the large icon size on macOS.
-      expect(["small", "normal"]).toContain(options.size);
-      await iconWait;
-      return icon;
+mock.module("electron", () =>
+  electronMock({
+    nativeImage: { createFromBuffer: () => avatarIcon },
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getPath: () => "/Applications/Cadet.app/Contents/MacOS/Cadet",
+      getFileIcon: async (_file: string, options: { size: string }) => {
+        // Electron does not support the large icon size on macOS.
+        expect(["small", "normal"]).toContain(options.size);
+        await iconWait;
+        return icon;
+      },
+      on: () => undefined,
     },
-    on: () => undefined,
-  },
-  BrowserWindow: {
-    getAllWindows: () => [...windows.values()],
-    fromWebContents: (sender: unknown) =>
-      [...windows.values()].find((win) => win.webContents === sender),
-  },
-  screen: {
-    getCursorScreenPoint: () => ({ x: 500, y: 400 }),
-    getDisplayNearestPoint: () => ({ workArea }),
-    getDisplayMatching: () => ({ workArea }),
-  },
-  shell: { showItemInFolder: mock(() => undefined) },
-  systemPreferences: {
-    getAnimationSettings: () => ({ prefersReducedMotion: true }),
-  },
-}));
+    BrowserWindow: {
+      getAllWindows: () => [...windows.values()],
+      fromWebContents: (sender: unknown) =>
+        [...windows.values()].find((win) => win.webContents === sender),
+    },
+    screen: {
+      getCursorScreenPoint: () => ({ x: 500, y: 400 }),
+      getDisplayNearestPoint: () => ({ workArea }),
+      getDisplayMatching: () => ({ workArea }),
+    },
+    shell: { showItemInFolder: mock(() => undefined) },
+    systemPreferences: {
+      getAnimationSettings: () => ({ prefersReducedMotion: true }),
+    },
+  }),
+);
 mock.module("@mycadet/electron-desktop/floating-window", () => ({
+  listFloatingWindows: () => undefined,
+  repositionFloatingWindow: () => undefined,
+  configureFloatingWindows: () => undefined,
+  createWindowRouteResolver: () => () => ({ pathname: "/" }),
+  getFloatingWindow: () => undefined,
   createFloatingWindow: ({ kind }: { kind: string }) => {
     const win = new FakeWindow();
     windows.set(kind, win);
@@ -176,6 +187,7 @@ mock.module("./permissions-service", () => ({
   },
 }));
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { warn: () => undefined },
 }));
 const { installCompanionPermissionGuide } =

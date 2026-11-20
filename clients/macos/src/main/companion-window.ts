@@ -74,7 +74,7 @@ import {
   type VoiceActivityState,
   type WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
-import { companionSizeSubmenus } from "@mycadet/electron-desktop/companion-menu";
+import { companionSizeSubmenus } from "@mycadet/electron-desktop";
 
 import {
   clearCompanionIntroSeen,
@@ -97,7 +97,7 @@ import {
 import {
   getName as getAssistantName,
   onNameChange,
-} from "@mycadet/electron-desktop/identity";
+} from "@mycadet/electron-desktop";
 import {
   createFloatingWindow,
   getFloatingWindow,

@@ -9,13 +9,11 @@ import {
   DEEP_LINK_PROTOCOL_REGISTRATION,
   installDeepLinks,
   resolveRegisteredSchemes,
-} from "@mycadet/electron-desktop/deep-links";
-import {
   configureLoginItem,
   installLoginItem,
   installLoginItemIpc,
   STARTUP_REGISTRATION,
-} from "@mycadet/electron-desktop/login-item";
+} from "@mycadet/electron-desktop";
 import {
   onSettingChange,
   readSetting,
@@ -29,9 +27,7 @@ import { ensureVisible } from "../main-window";
 const deepLinksFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "deep-links",
   install: (capabilities) => {
-    const schemes = resolveRegisteredSchemes(
-      resolveEnvironmentName(),
-    );
+    const schemes = resolveRegisteredSchemes(resolveEnvironmentName());
     capabilities.provide(DEEP_LINK_PROTOCOL_REGISTRATION, { schemes });
     capabilities.provide(STARTUP_REGISTRATION, {
       settingsPage: "startup-apps",

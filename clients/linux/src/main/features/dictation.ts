@@ -11,7 +11,7 @@ import {
   DictationOwnerRouter,
   requestDictationTranscription,
   toAudioBuffer,
-} from "@mycadet/electron-desktop/dictation-routing";
+} from "@mycadet/electron-desktop";
 import {
   HELPER_DICTATION_FINALIZED_EVENT,
   HELPER_DICTATION_PARTIAL_EVENT,
@@ -31,7 +31,7 @@ import {
 } from "@mycadet/native-sidecar/supervisor";
 
 import { handle, on } from "../ipc.client";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { getLinuxHelperClient } from "../linux-helper";
 
 /**

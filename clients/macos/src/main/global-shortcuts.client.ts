@@ -1,5 +1,7 @@
-import { installGlobalShortcuts as installSharedGlobalShortcuts } from "@mycadet/electron-desktop/global-shortcuts";
-import { toggleQuickInput } from "@mycadet/electron-desktop/quick-input-window";
+import {
+  installGlobalShortcuts as installSharedGlobalShortcuts,
+  toggleQuickInput,
+} from "@mycadet/electron-desktop";
 
 import "./commands.client";
 import log from "@mycadet/electron-desktop/app-logger";

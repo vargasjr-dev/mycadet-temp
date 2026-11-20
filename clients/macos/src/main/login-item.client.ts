@@ -3,7 +3,7 @@ import { app } from "electron";
 import {
   configureLoginItem,
   installLoginItem as installPackagedLoginItem,
-} from "@mycadet/electron-desktop/login-item";
+} from "@mycadet/electron-desktop";
 import {
   onSettingChange,
   readSetting,

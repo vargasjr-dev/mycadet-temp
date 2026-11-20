@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -58,10 +59,12 @@ class ShareMenuMock {
 }
 const fakeWindow = { id: "main-window" };
 const fromWebContentsMock = mock((_sender: unknown): unknown => fakeWindow);
-mock.module("electron", () => ({
-  ShareMenu: ShareMenuMock,
-  BrowserWindow: { fromWebContents: fromWebContentsMock },
-}));
+mock.module("electron", () =>
+  electronMock({
+    ShareMenu: ShareMenuMock,
+    BrowserWindow: { fromWebContents: fromWebContentsMock },
+  }),
+);
 
 // `ShareMenu` wraps `NSSharingServicePicker`, so the handler guards on
 // `process.platform`. Force darwin so the happy-path tests run on the Linux CI

@@ -68,8 +68,8 @@ import type {
 import {
   HostProxyPoster,
   type HostCuResultPayload,
-} from "@mycadet/electron-desktop/host-proxy/poster";
-import type { HostProxySseMessage } from "@mycadet/electron-desktop/host-proxy/sse";
+} from "@mycadet/electron-desktop";
+import type { HostProxySseMessage } from "@mycadet/electron-desktop";
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 

@@ -1,4 +1,5 @@
 import { expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import type { IpcRenderer } from "electron";
 import { readdirSync } from "node:fs";
 import path from "node:path";
@@ -18,15 +19,17 @@ const ipcRenderer = {
   send: mock(() => undefined),
   sendSync: mock(() => null),
 };
-mock.module("electron", () => ({
-  contextBridge: {
-    exposeInMainWorld: (key: string, value: unknown) => {
-      exposed.set(key, value);
+mock.module("electron", () =>
+  electronMock({
+    contextBridge: {
+      exposeInMainWorld: (key: string, value: unknown) => {
+        exposed.set(key, value);
+      },
     },
-  },
-  ipcRenderer,
-  webUtils: { getPathForFile: mock(() => "") },
-}));
+    ipcRenderer,
+    webUtils: { getPathForFile: mock(() => "") },
+  }),
+);
 
 const { createLinuxCoreBridge, LINUX_NOT_APPLICABLE_CAPABILITIES } =
   await import("./core-capabilities");

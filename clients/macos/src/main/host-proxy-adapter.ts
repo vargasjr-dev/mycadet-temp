@@ -2,14 +2,16 @@ import {
   createHostProxyClientHeaders,
   installHostProxyBridge as installSharedHostProxyBridge,
   type HostProxyRuntime,
-} from "@mycadet/electron-desktop/host-proxy/router";
+} from "@mycadet/electron-desktop";
 
-import { HostBrowserExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-browser-executor";
-import { hostFileExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-file-executor";
-import { hostTransferExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-transfer-executor";
-import { createHostUiSnapshotExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-ui-snapshot-executor";
+import {
+  HostBrowserExecutor,
+  hostFileExecutor,
+  hostTransferExecutor,
+  createHostUiSnapshotExecutor,
+} from "@mycadet/electron-desktop";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
+import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 import { showCompanionCoachmarks } from "./companion-window";
 import { hostBashExecutor } from "./executors/host-bash-adapter";
 import { createHostCuExecutor } from "./executors/host-cu-executor";

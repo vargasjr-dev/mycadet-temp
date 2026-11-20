@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import { z } from "zod";
 
 // Capture what `handle`/`on` register so the tests can invoke the
@@ -9,17 +10,21 @@ const handlers = new Map<string, RawHandler>();
 const listeners = new Map<string, RawHandler>();
 
 const appState = { isPackaged: false };
-mock.module("electron", () => ({
-  app: {
-    get isPackaged() {
-      return appState.isPackaged;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      get isPackaged() {
+        return appState.isPackaged;
+      },
     },
-  },
-  ipcMain: {
-    handle: (channel: string, h: RawHandler) => handlers.set(channel, h),
-    on: (channel: string, l: RawHandler) => listeners.set(channel, l),
-  },
-}));
+    ipcMain: {
+      handle: (channel: string, h: RawHandler) => handlers.set(channel, h),
+      on: (channel: string, l: RawHandler) => listeners.set(channel, l),
+    },
+  }),
+);
 
 const { handle, on } = await import("./ipc");
 const { resolveAllowedOrigin } = await import("./app-origin");

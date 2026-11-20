@@ -1,23 +1,28 @@
 import { beforeEach, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const appListeners = new Map<string, () => void>();
-mock.module("electron", () => ({
-  app: {
-    isPackaged: false,
-    getAppPath: () => "/repo/clients/windows",
-    on: (event: string, listener: () => void) =>
-      appListeners.set(event, listener),
-  },
-  BrowserWindow: { getAllWindows: () => [] },
-  ipcMain: {
-    on: (channel: string, listener: (...args: unknown[]) => void) => {
-      rawListeners[channel] = listener;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getAppPath: () => "/repo/clients/windows",
+      on: (event: string, listener: () => void) =>
+        appListeners.set(event, listener),
     },
-    removeAllListeners: (channel: string) => {
-      delete rawListeners[channel];
+    BrowserWindow: { getAllWindows: () => [] },
+    ipcMain: {
+      on: (channel: string, listener: (...args: unknown[]) => void) => {
+        rawListeners[channel] = listener;
+      },
+      removeAllListeners: (channel: string) => {
+        delete rawListeners[channel];
+      },
     },
-  },
-}));
+  }),
+);
 
 type Handler = (args: unknown[], event: { sender: FakeSender }) => unknown;
 const handlers: Record<string, Handler> = {};
@@ -30,7 +35,8 @@ mock.module("./ipc.client", () => ({
     handlers[channel] = fn;
   },
 }));
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
 }));
 
@@ -291,12 +297,9 @@ test("one-shot transcription settles replacements and drops stale completions", 
   const replaced = makeSender();
   const active = makeSender();
   expect(
-    await handlers["cadet:helper:dictation:transcribe"]!(
-      [new ArrayBuffer(0)],
-      {
-        sender: replaced,
-      },
-    ),
+    await handlers["cadet:helper:dictation:transcribe"]!([new ArrayBuffer(0)], {
+      sender: replaced,
+    }),
   ).toEqual({ ok: false, reason: "empty audio" });
 
   let rejectFirst!: (reason: Error) => void;

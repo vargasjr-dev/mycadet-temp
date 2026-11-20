@@ -1,4 +1,5 @@
 import { expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import path from "node:path";
 
 import { FILE_OPEN_DRAIN, FILE_OPEN_EVENT } from "@mycadet/ipc-contract";
@@ -11,30 +12,35 @@ const ipcListeners = new Map<string, Listener>();
 const sent = mock(() => undefined);
 const ensureVisible = mock(() => undefined);
 
-mock.module("electron", () => ({
-  app: {
-    isReady: () => true,
-    on: (event: string, listener: Listener) => {
-      appListeners.set(event, [...(appListeners.get(event) ?? []), listener]);
-    },
-  },
-  BrowserWindow: {
-    getAllWindows: () => [
-      {
-        isDestroyed: () => false,
-        webContents: { send: sent },
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      isReady: () => true,
+      on: (event: string, listener: Listener) => {
+        appListeners.set(event, [...(appListeners.get(event) ?? []), listener]);
       },
-    ],
-  },
-  ipcMain: {
-    handle: (channel: string, listener: Listener) => {
-      invokeListeners.set(channel, listener);
     },
-    on: (channel: string, listener: Listener) => {
-      ipcListeners.set(channel, listener);
+    BrowserWindow: {
+      getAllWindows: () => [
+        {
+          isDestroyed: () => false,
+          webContents: { send: sent },
+        },
+      ],
     },
-  },
-}));
+    ipcMain: {
+      handle: (channel: string, listener: Listener) => {
+        invokeListeners.set(channel, listener);
+      },
+      on: (channel: string, listener: Listener) => {
+        ipcListeners.set(channel, listener);
+      },
+    },
+  }),
+);
 mock.module("./main-window", () => ({ ensureVisible }));
 
 const { default: fileOpenModule } = await import("./features/file-open");

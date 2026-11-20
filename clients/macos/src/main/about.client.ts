@@ -2,9 +2,9 @@ import {
   configureAboutRuntime,
   installAbout as installSharedAbout,
 } from "@mycadet/electron-desktop/about";
-import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
+import { getName, onNameChange } from "@mycadet/electron-desktop";
 
-import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
+import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 import { handle } from "./ipc";
 
 configureAboutRuntime({

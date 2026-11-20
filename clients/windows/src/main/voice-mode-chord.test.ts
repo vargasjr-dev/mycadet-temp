@@ -1,13 +1,19 @@
 import { expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const appListeners = new Map<string, () => void>();
-mock.module("electron", () => ({
-  app: {
-    once: (event: string, listener: () => void) => {
-      appListeners.set(event, listener);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      once: (event: string, listener: () => void) => {
+        appListeners.set(event, listener);
+      },
     },
-  },
-}));
+  }),
+);
 
 type Sender = {
   isDestroyed: () => boolean;
@@ -36,7 +42,8 @@ mock.module("./ipc.client", () => ({
     handler = next;
   },
 }));
-mock.module("./logger", () => ({
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { warn: () => undefined },
 }));
 
@@ -72,15 +79,16 @@ feature.install({} as never);
 
 test("restores the main window binding after a helper restart", async () => {
   const activator = { kind: "modifierOnly", modifiers: ["control"] };
-  expect(
-    await handler!([activator], { sender: mainSender }),
-  ).toEqual({ ok: true, enabled: true });
+  expect(await handler!([activator], { sender: mainSender })).toEqual({
+    ok: true,
+    enabled: true,
+  });
 
   helper.notificationListener!({ state: "down" });
-  expect(mainSender.send).toHaveBeenCalledWith(
-    "cadet:helper:hotkey:event",
-    { kind: "voiceModeChord", state: "down" },
-  );
+  expect(mainSender.send).toHaveBeenCalledWith("cadet:helper:hotkey:event", {
+    kind: "voiceModeChord",
+    state: "down",
+  });
   helper.stateListener!({ status: "backing-off" });
   expect(mainSender.send).toHaveBeenLastCalledWith(
     "cadet:helper:hotkey:registration",

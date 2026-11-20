@@ -1,4 +1,4 @@
-import { createIpcRegistrar } from "@mycadet/electron-desktop/ipc";
+import { createIpcRegistrar } from "@mycadet/electron-desktop";
 
 import {
   isAllowedOrigin,

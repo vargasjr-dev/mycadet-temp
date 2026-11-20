@@ -1,4 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type {
   CaptureSourceDeps,
@@ -9,11 +10,19 @@ import type {
 // and `osascript` for Chrome, none of which run here. Every case hands in its
 // own answers through the deps, so these mocks only have to satisfy the
 // imports.
-mock.module("electron", () => ({
-  app: { getFileIcon: async () => ({ isEmpty: () => true }) },
-  screen: { getAllDisplays: () => [], getPrimaryDisplay: () => ({ id: 0 }) },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getFileIcon: async () => ({ isEmpty: () => true }),
+    },
+    screen: { getAllDisplays: () => [], getPrimaryDisplay: () => ({ id: 0 }) },
+  }),
+);
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },
 }));
 mock.module("./appleScriptExecutor", () => ({

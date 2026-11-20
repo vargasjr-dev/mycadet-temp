@@ -1,4 +1,5 @@
 import { expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const listeners = new Map<string, (...args: unknown[]) => void>();
 const send = mock((_channel: string, ..._args: unknown[]) => undefined);
@@ -7,16 +8,18 @@ const invoke = mock((channel: string) =>
 );
 const off = mock(() => undefined);
 
-mock.module("electron", () => ({
-  ipcRenderer: {
-    invoke,
-    off,
-    on: (channel: string, listener: (...args: unknown[]) => void) => {
-      listeners.set(channel, listener);
+mock.module("electron", () =>
+  electronMock({
+    ipcRenderer: {
+      invoke,
+      off,
+      on: (channel: string, listener: (...args: unknown[]) => void) => {
+        listeners.set(channel, listener);
+      },
+      send,
     },
-    send,
-  },
-}));
+  }),
+);
 
 const presence = (await import("./features/presence")).default;
 

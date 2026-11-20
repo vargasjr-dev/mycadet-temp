@@ -9,11 +9,13 @@
  * one path to this machine the path it already has.
  */
 
-import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop/host-proxy/cu-executor";
-import type { CuHelperClient } from "@mycadet/electron-desktop/host-proxy/helper-proxy-executor";
-import type { HostProxyPoster } from "@mycadet/electron-desktop/host-proxy/poster";
-import type { HostProxyExecutor } from "@mycadet/electron-desktop/host-proxy/router";
-import type { HostProxySseMessage } from "@mycadet/electron-desktop/host-proxy/sse";
+import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop";
+import type {
+  CuHelperClient,
+  HostProxyPoster,
+  HostProxyExecutor,
+  HostProxySseMessage,
+} from "@mycadet/electron-desktop";
 import {
   COMPANION_COACHMARK_CAPTION_MAX,
   COMPANION_COACHMARK_MAX,

@@ -9,11 +9,13 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
-import { installHostProxyBridge } from "@mycadet/electron-desktop/host-proxy/router";
-import { createHostProxyRuntime } from "@mycadet/electron-desktop/host-proxy/runtime";
+import {
+  installHostProxyBridge,
+  createHostProxyRuntime,
+} from "@mycadet/electron-desktop";
 
 import { hostBashExecutor } from "../executors/host-bash-adapter";
-import log from "../logger";
+import { log } from "@mycadet/electron-desktop";
 import { COMPUTER_USE_ACTION_EXECUTORS } from "./computer-use-actions";
 
 const hostProxy: CapabilityModule<DesktopCapabilityRegistry> = {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 // Captures every `new BrowserWindow(...)` so assertions can inspect the
 // sealed `webPreferences` the seam injects, and exposes the per-window
@@ -18,34 +19,38 @@ let constructed: CapturedWindow[] = [];
 const appState = { isPackaged: false };
 const DEBUG_DEVTOOLS_DEFINE = "__CADET_ENABLE_CHROME_DEVTOOLS__";
 
-mock.module("electron", () => ({
-  app: appState,
-  BrowserWindow: class {
-    constructor(options: Record<string, unknown>) {
-      const webPreferences: Record<string, unknown> = {};
-      Object.assign(webPreferences, options.webPreferences);
-      const captured: CapturedWindow = {
-        options,
-        webPreferences,
-        navigationListeners: [],
-        windowOpenHandler: null,
-      };
-      const webContents = {
-        on: (event: string, listener: (...args: unknown[]) => void) => {
-          if (event === "will-navigate") {
-            captured.navigationListeners.push(listener);
-          }
-          return webContents;
-        },
-        setWindowOpenHandler: (handler: () => { action: "deny" | "allow" }) => {
-          captured.windowOpenHandler = handler;
-        },
-      };
-      Object.assign(this, { webContents });
-      constructed.push(captured);
-    }
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: appState,
+    BrowserWindow: class {
+      constructor(options: Record<string, unknown>) {
+        const webPreferences: Record<string, unknown> = {};
+        Object.assign(webPreferences, options.webPreferences);
+        const captured: CapturedWindow = {
+          options,
+          webPreferences,
+          navigationListeners: [],
+          windowOpenHandler: null,
+        };
+        const webContents = {
+          on: (event: string, listener: (...args: unknown[]) => void) => {
+            if (event === "will-navigate") {
+              captured.navigationListeners.push(listener);
+            }
+            return webContents;
+          },
+          setWindowOpenHandler: (
+            handler: () => { action: "deny" | "allow" },
+          ) => {
+            captured.windowOpenHandler = handler;
+          },
+        };
+        Object.assign(this, { webContents });
+        constructed.push(captured);
+      }
+    },
+  }),
+);
 
 const { createWindow, hardenedWebPreferences } =
   await import("@mycadet/electron-desktop/windows");

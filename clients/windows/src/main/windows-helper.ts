@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
-import log from "./logger";
+import { log } from "@mycadet/electron-desktop";
 
 const HELPER_ARCH = process.arch === "arm64" ? "arm64" : "x64";
 

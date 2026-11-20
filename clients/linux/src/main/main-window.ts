@@ -18,17 +18,16 @@ import {
   writeOnboardingActive,
   writeTitleBarOverlayTheme,
 } from "@mycadet/electron-desktop/window-state";
-import { createWindowReadiness } from "@mycadet/electron-desktop/window-readiness";
+import { createWindowReadiness } from "@mycadet/electron-desktop";
 import { z } from "zod";
 
-import { getRendererRootUrl } from "@mycadet/electron-desktop/app-config";
+import { getRendererRootUrl } from "@mycadet/electron-desktop";
 import {
   isAllowedOrigin,
   resolveAllowedOrigin,
 } from "@mycadet/electron-desktop/app-origin";
 import { handle, on } from "./ipc.client";
-import log from "./logger";
-import { createWindow } from "./windows.client";
+import { log, createWindow } from "@mycadet/electron-desktop";
 
 const MAIN_DEFAULT_BOUNDS = { width: 1280, height: 800 } as const;
 const MAIN_MIN_SIZE = { width: 800, height: 600 } as const;

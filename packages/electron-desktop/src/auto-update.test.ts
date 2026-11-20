@@ -34,7 +34,8 @@ const fakeUpdater: DesktopAutoUpdater = {
   quitAndInstall: () => undefined,
 };
 
-const { checkForUpdates, configureAutoUpdate } = await import("./auto-update");
+const { checkForUpdates, configureAutoUpdate, resolveUpdateFeedUrl } =
+  await import("./auto-update");
 
 configureAutoUpdate({
   updater: fakeUpdater,
@@ -44,7 +45,6 @@ configureAutoUpdate({
     warn: () => undefined,
     error: () => undefined,
   },
-  environment: "test",
   feedUrl: "https://updates.example.com/win-electron/x64/",
 });
 
@@ -98,5 +98,40 @@ describe("checkForUpdates", () => {
     });
 
     expect(unhandled).toEqual([]);
+  });
+});
+
+describe("resolveUpdateFeedUrl", () => {
+  const withEnvironment = (environment: string, run: () => void): void => {
+    const previous = process.env.CADET_ENVIRONMENT;
+    process.env.CADET_ENVIRONMENT = environment;
+    try {
+      run();
+    } finally {
+      if (previous === undefined) {
+        delete process.env.CADET_ENVIRONMENT;
+      } else {
+        process.env.CADET_ENVIRONMENT = previous;
+      }
+    }
+  };
+
+  test("resolves the release channel itself and keeps platforms and architectures isolated", () => {
+    withEnvironment("production", () => {
+      expect(resolveUpdateFeedUrl("linux-electron", "x64")).toBe(
+        "https://storage.googleapis.com/mycadet-prod-releases/linux-electron/x64/",
+      );
+      expect(resolveUpdateFeedUrl("mac-electron", "arm64")).toBe(
+        "https://storage.googleapis.com/mycadet-prod-releases/mac-electron/arm64/",
+      );
+    });
+    withEnvironment("staging", () => {
+      expect(resolveUpdateFeedUrl("win-electron", "arm64")).toBe(
+        "https://storage.googleapis.com/mycadet-staging-releases/win-electron/arm64/",
+      );
+      expect(resolveUpdateFeedUrl("linux-electron", "x64")).toBe(
+        "https://storage.googleapis.com/mycadet-staging-releases/linux-electron/x64/",
+      );
+    });
   });
 });

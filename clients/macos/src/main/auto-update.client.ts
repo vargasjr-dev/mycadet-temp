@@ -8,17 +8,9 @@ import {
 import { handle } from "./ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 
-declare const __CADET_ENVIRONMENT__: string;
-
-const ENVIRONMENT: string =
-  typeof __CADET_ENVIRONMENT__ === "string"
-    ? __CADET_ENVIRONMENT__
-    : "production";
-
 configureAutoUpdate({
   updater: autoUpdater,
   ipc: { handle },
   logger: log,
-  environment: ENVIRONMENT,
-  feedUrl: resolveUpdateFeedUrl(ENVIRONMENT, "mac-electron", process.arch),
+  feedUrl: resolveUpdateFeedUrl("mac-electron", process.arch),
 });

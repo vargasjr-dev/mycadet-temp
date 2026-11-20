@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type { CliPathInstallState } from "./cli-path-installer";
 
@@ -32,31 +33,43 @@ const electronApp = {
   isPackaged: true,
 };
 
-mock.module("electron", () => ({
-  app: electronApp,
-  BrowserWindow: {
-    getFocusedWindow: () => null,
-  },
-  Menu: {
-    buildFromTemplate: buildFromTemplateMock,
-    setApplicationMenu: setApplicationMenuMock,
-  },
-  shell: {
-    openExternal: mock(() => Promise.resolve()),
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: electronApp,
+    BrowserWindow: {
+      getFocusedWindow: () => null,
+    },
+    Menu: {
+      buildFromTemplate: buildFromTemplateMock,
+      setApplicationMenu: setApplicationMenuMock,
+    },
+    shell: {
+      openExternal: mock(() => Promise.resolve()),
+    },
+  }),
+);
 
 mock.module("@mycadet/electron-desktop/about", () => ({
+  configureAboutRuntime: () => undefined,
+  getVersionInfo: () => ({ version: "0.0.0" }),
+  installAbout: () => undefined,
   openAboutWindow: () => undefined,
 }));
 
 mock.module("@mycadet/electron-desktop/auto-update", () => ({
+  installAutoUpdate: () => undefined,
   checkForUpdates: () => undefined,
   configureAutoUpdate: () => undefined,
   resolveUpdateFeedUrl: () => "",
 }));
 
 mock.module("@mycadet/electron-desktop/commands", () => ({
+  readHotkeyOverride: () => undefined,
+  readHotkeyOverrides: () => undefined,
+  writeHotkeyOverrides: () => undefined,
+  GLOBAL_SHORTCUT_DEFAULTS: () => undefined,
+  resolveAccelerator: () => undefined,
+  HOTKEY_SETTINGS: "hotkeys",
   acceleratorOption: () => ({}),
   dispatchToFocused: () => undefined,
   configureHotkeySettings: () => undefined,
@@ -64,6 +77,12 @@ mock.module("@mycadet/electron-desktop/commands", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/command-palette-window", () => ({
+  commandPaletteDispatchCommandSchema: "commandPaletteDispatchCommandSchema",
+  selectCommandPaletteCommand: () => undefined,
+  __resetForTesting: () => undefined,
+  configureCommandPaletteWindow: () => undefined,
+  installCommandPaletteWindow: () => undefined,
+  repositionCommandPaletteWindow: () => undefined,
   closeCommandPaletteWindow: () => undefined,
   isCommandPaletteWindowFocused: () => false,
   openCommandPaletteWindow: () => undefined,
@@ -84,6 +103,7 @@ mock.module("./main-window", () => ({
 // Full `./settings` surface so this mock — which leaks into co-run test files
 // via the global module registry — doesn't break sibling modules.
 mock.module("@mycadet/electron-desktop/settings", () => ({
+  createAppSettingsStore: () => undefined,
   readSetting: () => null,
   writeSetting: () => {},
   onSettingChange: () => () => {},
@@ -92,6 +112,19 @@ mock.module("@mycadet/electron-desktop/settings", () => ({
 let companionHidden = false;
 let companionHiddenListener: ((hidden: boolean) => void) | null = null;
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  clearCompanionIntroSeen: () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  restoreBounds: () => undefined,
+  track: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
+  writeOnboardingActive: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
   readOnboardingActive: () => false,
   readCompanionHidden: () => companionHidden,
   onCompanionHiddenChange: (callback: (hidden: boolean) => void) => {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 // The shared publisher reaches `electron`'s `BrowserWindow`, which does not
 // exist outside an Electron runtime; only the install seam is under test here.
@@ -13,16 +14,21 @@ const record = (
 ): void => {
   registry.set(event, [...(registry.get(event) ?? []), listener]);
 };
-mock.module("electron", () => ({
-  app: {
-    once: (event: string, listener: Listener) => {
-      record(onceListeners, event, listener);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      once: (event: string, listener: Listener) => {
+        record(onceListeners, event, listener);
+      },
+      on: (event: string, listener: Listener) => {
+        record(onListeners, event, listener);
+      },
     },
-    on: (event: string, listener: Listener) => {
-      record(onListeners, event, listener);
-    },
-  },
-}));
+  }),
+);
 
 const installs = { count: 0 };
 const teardown = mock(() => undefined);

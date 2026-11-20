@@ -1,15 +1,20 @@
 import { beforeEach, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const trayIcon = { isEmpty: () => false };
-mock.module("electron", () => ({
-  app: {
-    getAppPath: () => "/app",
-    isPackaged: false,
-    showAboutPanel: () => undefined,
-  },
-  nativeImage: { createFromPath: () => trayIcon },
-  shell: { openExternal: () => Promise.resolve() },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      getAppPath: () => "/app",
+      isPackaged: false,
+      showAboutPanel: () => undefined,
+    },
+    nativeImage: { createFromPath: () => trayIcon },
+    shell: { openExternal: () => Promise.resolve() },
+  }),
+);
 
 type TrayRuntime = {
   accelerator: (kind: string) => { accelerator?: string };
@@ -17,15 +22,48 @@ type TrayRuntime = {
 };
 let trayRuntime: TrayRuntime | null = null;
 mock.module("@mycadet/electron-desktop/status-icon", () => ({
+  statusColor: () => undefined,
+  compositeStatusDot: () => undefined,
+  buildStatusIcon: () => undefined,
+  statusFrames: () => undefined,
+  invalidateIconCache: () => undefined,
+  __resetForTesting: () => undefined,
   configureStatusIconFallback: () => undefined,
 }));
 mock.module("@mycadet/electron-desktop/window-state", () => ({
+  clearCompanionIntroSeen: () => undefined,
+  onCompanionHiddenChange: () => () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionHidden: () => false,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  restoreBounds: () => undefined,
+  track: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
+  writeOnboardingActive: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
   readOnboardingActive: () => false,
 }));
 mock.module("@mycadet/electron-desktop/about", () => ({
+  configureAboutRuntime: () => undefined,
+  getVersionInfo: () => ({ version: "0.0.0" }),
+  installAbout: () => undefined,
   openAboutWindow: () => undefined,
 }));
 mock.module("@mycadet/electron-desktop/commands", () => ({
+  readHotkeyOverride: () => undefined,
+  readHotkeyOverrides: () => undefined,
+  writeHotkeyOverrides: () => undefined,
+  GLOBAL_SHORTCUT_DEFAULTS: () => undefined,
+  resolveAccelerator: () => undefined,
+  HOTKEY_SETTINGS: "hotkeys",
+  configureHotkeySettings: () => undefined,
+  dispatchToFocused: () => undefined,
+  onHotkeyOverridesChange: () => () => undefined,
   acceleratorOption: (kind: string) =>
     kind === "newConversation" ? { accelerator: "CmdOrCtrl+N" } : {},
 }));
@@ -34,6 +72,7 @@ mock.module("./menu-icon", () => ({
   menuIcon: () => () => themedIcon,
 }));
 mock.module("@mycadet/electron-desktop/tray-model", () => ({
+  __resetForTesting: () => undefined,
   configureTrayModel: (runtime: TrayRuntime) => {
     trayRuntime = runtime;
   },

@@ -5,23 +5,29 @@
  * the subtitle, and the picture travels as a file path the helper reads.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
-mock.module("electron", () => ({
-  app: {
-    getAppPath: () => "/app",
-    getPath: () => "/userData",
-    once: () => undefined,
-  },
-  // The shared notifications module reaches these at import time; only the
-  // helper factory is under test here.
-  BrowserWindow: { getAllWindows: () => [] },
-  nativeImage: { createFromBuffer: () => ({}) },
-  Notification: class {
-    static isSupported = () => true;
-    on(): void {}
-    show(): void {}
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getAppPath: () => "/app",
+      getPath: () => "/userData",
+      once: () => undefined,
+    },
+    // The shared notifications module reaches these at import time; only the
+    // helper factory is under test here.
+    BrowserWindow: { getAllWindows: () => [] },
+    nativeImage: { createFromBuffer: () => ({}) },
+    Notification: class {
+      static isSupported = () => true;
+      on(): void {}
+      show(): void {}
+    },
+  }),
+);
 
 interface HelperCall {
   method: string;
@@ -53,7 +59,10 @@ mock.module("@mycadet/electron-desktop/notification-avatar-file", () => ({
 mock.module("./ipc.client", () => ({ handle: () => undefined }));
 mock.module("./main-window", () => ({ ensureVisible: () => undefined }));
 const warn = mock(() => undefined);
-mock.module("./logger", () => ({ default: { warn, info: () => undefined } }));
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
+  default: { warn, info: () => undefined },
+}));
 
 const { createHelperToastFactory } = await import("./features/notifications");
 

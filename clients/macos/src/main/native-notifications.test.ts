@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -35,17 +36,23 @@ class FakeElectronNotification {
   show(): void {}
 }
 
-mock.module("electron", () => ({
-  app: {
-    getPath: () => userDataDir,
-  },
-  BrowserWindow: { getAllWindows: () => [] },
-  Notification: FakeElectronNotification,
-  nativeImage: { createFromBuffer: (buffer: Buffer) => buffer },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getPath: () => userDataDir,
+    },
+    BrowserWindow: { getAllWindows: () => [] },
+    Notification: FakeElectronNotification,
+    nativeImage: { createFromBuffer: (buffer: Buffer) => buffer },
+  }),
+);
 
 const warnings: unknown[][] = [];
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: {
     info: () => undefined,
     warn: (...args: unknown[]) => warnings.push(args),

@@ -8,20 +8,22 @@ import {
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
-import { registerAppProtocol } from "@mycadet/electron-desktop/app-protocol-forward";
-import { installCsp } from "@mycadet/electron-desktop/csp";
-import { getDeviceId } from "@mycadet/electron-desktop/device-id";
-import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
-import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
-import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
-import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
+import {
+  registerAppProtocol,
+  installCsp,
+  getDeviceId,
+  installGatewayRequestGuard,
+  installPermissionHandler,
+  registerCadetProtocol,
+  startApp,
+} from "@mycadet/electron-desktop";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
 import {
   APP_HOST,
   APP_PROTOCOL,
   usesAppProtocolRenderer,
-} from "@mycadet/electron-desktop/app-config";
+} from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 import {
   provisionCliForCurrentUser,
@@ -29,9 +31,9 @@ import {
 } from "./cli-path-flow";
 import { installMainFeatures } from "./features";
 import { handleSync } from "./ipc.client";
-import log from "./logger";
+import { log } from "@mycadet/electron-desktop";
 import { ensureVisible } from "./main-window";
-import { installWebContentsSecurity } from "./windows.client";
+import { installWebContentsSecurity } from "@mycadet/electron-desktop";
 
 // Toasts and taskbar grouping key off the AppUserModelID, which must match
 // the installed shortcut's id — the builder config is the single source, so

@@ -147,6 +147,7 @@ export {
   createHostShellExecutor,
 } from "./host-proxy/executors/host-shell-executor";
 export type { HostShellSpec } from "./host-proxy/executors/host-shell-executor";
+export { __testing as routerTesting } from "./host-proxy/router";
 export { hostTransferExecutor } from "./host-proxy/executors/host-transfer-executor";
 export { createHostUiSnapshotExecutor } from "./host-proxy/executors/host-ui-snapshot-executor";
 export type { CuHelperClient } from "./host-proxy/helper-proxy-executor";
@@ -160,7 +161,7 @@ export type { HostProxyExecutor, HostProxyRuntime } from "./host-proxy/router";
 export { createHostProxyRuntime } from "./host-proxy/runtime";
 export type { HostProxySseMessage } from "./host-proxy/sse";
 export { installHotkeysIpc } from "./hotkeys";
-export { getName, installIdentityIpc, onNameChange } from "./identity";
+export { getName, installIdentityIpc, onNameChange, setName } from "./identity";
 export { installImageContextMenu } from "./image-context-menu";
 export {
   applyAlphaMask,
@@ -176,12 +177,18 @@ export {
   installLoginItemIpc,
 } from "./login-item";
 export {
+  buildDesktopMenu,
   conversationFileMenuItems,
+  editMenu,
   editMenuItems,
+  fileMenu,
+  helpMenu,
   historyNavigationMenuItems,
   installDesktopMenu,
   setDesktopHasCloudSession,
+  viewMenu,
   viewMenuItems,
+  windowMenu,
 } from "./menu";
 export { configureNativeAuth, installNativeAuth } from "./native-auth";
 export type { NativeAuthCallback } from "./native-auth";
@@ -258,5 +265,9 @@ export {
   writeOnboardingActive,
   writeTitleBarOverlayTheme,
 } from "./window-state";
-export { createWindow, installWebContentsSecurity } from "./windows";
+export {
+  createWindow,
+  hardenedWebPreferences,
+  installWebContentsSecurity,
+} from "./windows";
 export type { CreateWindowOptions } from "./windows";

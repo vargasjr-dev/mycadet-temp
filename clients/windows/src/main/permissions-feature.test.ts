@@ -1,4 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import {
   PERMISSIONS_GET_STATE,
@@ -39,27 +40,35 @@ const helperCall = mock(defaultHelperCall);
 
 let onFocus: (() => void) | null = null;
 
-mock.module("electron", () => ({
-  app: {
-    on: mock((event: string, listener: () => void) => {
-      if (event === "browser-window-focus") {
-        onFocus = listener;
-      }
-    }),
-    quit: mock(() => undefined),
-    relaunch: mock(() => undefined),
-  },
-  BrowserWindow: { getAllWindows: () => [], getFocusedWindow: () => null },
-  shell: { openExternal },
-  systemPreferences: { getMediaAccessStatus: mediaStatus },
-  Notification: FakeNotification,
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      on: mock((event: string, listener: () => void) => {
+        if (event === "browser-window-focus") {
+          onFocus = listener;
+        }
+      }),
+      quit: mock(() => undefined),
+      relaunch: mock(() => undefined),
+    },
+    BrowserWindow: { getAllWindows: () => [], getFocusedWindow: () => null },
+    shell: { openExternal },
+    systemPreferences: { getMediaAccessStatus: mediaStatus },
+    Notification: FakeNotification,
+  }),
+);
 mock.module("./ipc.client", () => ({
   handle: (channel: string, _schema: unknown, handler: Handler) => {
     handlers.set(channel, handler);
   },
 }));
-mock.module("./logger", () => ({ default: { warn: mock(() => undefined) } }));
+mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
+  default: { warn: mock(() => undefined) },
+}));
 mock.module("./main-window", () => ({ current: () => null }));
 mock.module("./windows-helper", () => ({
   getWindowsHelperClient: () => ({ call: helperCall }),

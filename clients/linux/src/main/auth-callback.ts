@@ -1,4 +1,4 @@
-import type { NativeAuthCallback } from "@mycadet/electron-desktop/native-auth";
+import type { NativeAuthCallback } from "@mycadet/electron-desktop";
 
 export interface LinuxAuthCallbackOptions {
   scheme: string;

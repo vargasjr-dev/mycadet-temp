@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type { z } from "zod";
 
@@ -50,32 +51,36 @@ const helperCalls: string[] = [];
 let helperScreenStatus = "denied";
 let helperInputMonitoringStatus = "denied";
 
-mock.module("electron", () => ({
-  app: {
-    isPackaged: false,
-    getPath: () => "/tmp/cadet-permissions-test",
-    relaunch: () => undefined,
-    quit: () => undefined,
-    on: () => undefined,
-  },
-  BrowserWindow: { getAllWindows: () => [] },
-  Notification: FakeElectronNotification,
-  shell: {
-    openExternal: async (url: string) => {
-      helperCalls.push(`open ${url}`);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getPath: () => "/tmp/cadet-permissions-test",
+      relaunch: () => undefined,
+      quit: () => undefined,
+      on: () => undefined,
     },
-  },
-  systemPreferences: {
-    isTrustedAccessibilityClient: () => true,
-    askForMediaAccess: async () => {
-      helperCalls.push("request microphone");
-      return true;
+    BrowserWindow: { getAllWindows: () => [] },
+    Notification: FakeElectronNotification,
+    shell: {
+      openExternal: async (url: string) => {
+        helperCalls.push(`open ${url}`);
+      },
     },
-    // The app's own grant, which says nothing about the helper's: granted
-    // here so a screen status that followed it would be caught.
-    getMediaAccessStatus: () => "granted",
-  },
-}));
+    systemPreferences: {
+      isTrustedAccessibilityClient: () => true,
+      askForMediaAccess: async () => {
+        helperCalls.push("request microphone");
+        return true;
+      },
+      // The app's own grant, which says nothing about the helper's: granted
+      // here so a screen status that followed it would be caught.
+      getMediaAccessStatus: () => "granted",
+    },
+  }),
+);
 
 interface HandleRegistration {
   channel: string;
@@ -95,6 +100,7 @@ mock.module("./ipc", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
+  getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
 }));
 
@@ -132,6 +138,13 @@ mock.module("@mycadet/electron-desktop/notification-avatar-path", () => ({
 }));
 
 mock.module("@mycadet/electron-desktop/notifications", () => ({
+  __resetForTesting: () => undefined,
+  __setDeliveryTimeoutForTesting: () => undefined,
+  CATEGORY_ACTIONS: {},
+  NOTIFICATION_CATEGORIES: [],
+  configureNotifications: () => undefined,
+  createElectronNotification: () => undefined,
+  installNotifications: () => undefined,
   isPreparedNotificationSenderCurrent: (identity: { scopeId: string }) =>
     preparedSenderCurrent && /^scope:v1:[a-f0-9]{64}$/.test(identity.scopeId),
 }));

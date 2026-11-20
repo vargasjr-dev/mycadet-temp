@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 import type { CliPathInstallState } from "./cli-path-installer";
 
@@ -19,13 +20,15 @@ const showMessageBoxMock = mock(
 const showErrorBoxMock = mock((_title: string, _content: string) => undefined);
 const writeTextMock = mock((_text: string) => undefined);
 
-mock.module("electron", () => ({
-  dialog: {
-    showMessageBox: showMessageBoxMock,
-    showErrorBox: showErrorBoxMock,
-  },
-  clipboard: { writeText: writeTextMock },
-}));
+mock.module("electron", () =>
+  electronMock({
+    dialog: {
+      showMessageBox: showMessageBoxMock,
+      showErrorBox: showErrorBoxMock,
+    },
+    clipboard: { writeText: writeTextMock },
+  }),
+);
 
 const ensureCliInstalledMock = mock(async (): Promise<void> => undefined);
 

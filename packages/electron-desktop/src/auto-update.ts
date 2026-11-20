@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import { z } from "zod";
 
+import { resolveEnvironmentName } from "@mycadet/shared";
 import type { UpdateState, UpdateStatus } from "@mycadet/ipc-contract";
 
 import type {
@@ -19,12 +20,16 @@ export type {
   UpdaterLogger,
 } from "./auto-update-contract";
 
-/** Environment-, platform-, and architecture-isolated generic feed URL. */
+/**
+ * Platform- and architecture-isolated generic feed URL for this build's
+ * release channel (`resolveEnvironmentName`, which every client seeds from
+ * the same baked define the packaged build ships with).
+ */
 export const resolveUpdateFeedUrl = (
-  environment: string,
   platform: UpdateFeedPlatform,
   arch: string,
 ): string => {
+  const environment = resolveEnvironmentName();
   const bucketEnv = environment === "production" ? "prod" : environment;
   return `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/${platform}/${arch}/`;
 };
@@ -32,17 +37,11 @@ export const resolveUpdateFeedUrl = (
 let autoUpdater: DesktopAutoUpdater;
 let handle: IpcHandle;
 let log: UpdaterLogger;
-let ENVIRONMENT: string;
 let feedUrl: string;
 
 /** Each desktop shell configures its updater, IPC, logger, and feed once. */
 export const configureAutoUpdate = (config: AutoUpdateConfig): void => {
-  ({
-    updater: autoUpdater,
-    logger: log,
-    environment: ENVIRONMENT,
-    feedUrl,
-  } = config);
+  ({ updater: autoUpdater, logger: log, feedUrl } = config);
   ({ handle } = config.ipc);
 };
 
@@ -84,7 +83,7 @@ export const installAutoUpdate = (): void => {
   autoUpdater.logger = log;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.channel = ENVIRONMENT;
+  autoUpdater.channel = resolveEnvironmentName();
   autoUpdater.allowDowngrade = false;
   autoUpdater.setFeedURL({
     provider: "generic",

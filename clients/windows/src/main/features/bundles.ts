@@ -1,7 +1,7 @@
 import { app } from "electron";
 import path from "node:path";
 
-import { createBundleHostProvider } from "@mycadet/electron-desktop/bundle-host";
+import { createBundleHostProvider } from "@mycadet/electron-desktop";
 import {
   handleBundleFile,
   installBundleFlow,
@@ -17,7 +17,7 @@ import {
 } from "@mycadet/electron-desktop/bundle-platform";
 import { onFileOpen } from "@mycadet/electron-desktop/file-open";
 
-import { getRendererBase } from "@mycadet/electron-desktop/app-config";
+import { getRendererBase } from "@mycadet/electron-desktop";
 import { handle, on } from "../ipc.client";
 
 const bundles: CapabilityModule<DesktopCapabilityRegistry> = {

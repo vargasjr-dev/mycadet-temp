@@ -1,6 +1,6 @@
 import { app, session, shell } from "electron";
 
-import { configureNativeAuth } from "@mycadet/electron-desktop/native-auth";
+import { configureNativeAuth } from "@mycadet/electron-desktop";
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import { handle, handleSync } from "./ipc";

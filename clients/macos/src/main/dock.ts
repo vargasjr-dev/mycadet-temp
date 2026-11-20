@@ -10,7 +10,7 @@ import {
   applyAlphaMask,
   compositeCentered,
   roundedRectCoverage,
-} from "@mycadet/electron-desktop/image-mask";
+} from "@mycadet/electron-desktop";
 import { on } from "./ipc";
 import {
   current as currentMainWindow,
