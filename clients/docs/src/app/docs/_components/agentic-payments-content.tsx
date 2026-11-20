@@ -387,13 +387,6 @@ export function AgenticPaymentsContent() {
               Link. Existing approvals are unaffected.
             </li>
           </ul>
-          <p className="mb-0 text-stone-600 dark:text-stone-400">
-            For more detailed troubleshooting steps, see the{" "}
-            <Link href="/docs/help/faq" className={LINK_CLASS}>
-              Common Issues
-            </Link>{" "}
-            page.
-          </p>
         </section>
       </DocsContent>
       <TableOfContents items={TOC_ITEMS} />

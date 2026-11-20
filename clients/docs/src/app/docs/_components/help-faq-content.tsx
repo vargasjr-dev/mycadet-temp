@@ -69,7 +69,8 @@ export function HelpFaqContent() {
             <strong>Pro</strong> packages add a larger machine, more storage,
             and included monthly credits. For this assistant&apos;s live plan
             and credit balance, ask it here rather than guessing from a docs
-            page.
+            page. See <a href="/docs/hosting-options">Hosting options</a> for
+            plans and what&apos;s included.
           </p>
 
           <SectionHeading
@@ -89,7 +90,11 @@ export function HelpFaqContent() {
             A lot of it is configurable too. You can ask your assistant to
             disable or reduce the frequency of &ldquo;heartbeats&rdquo; and
             &ldquo;memory compaction,&rdquo; or to use a less expensive model
-            for these background actions.
+            for these background actions. See{" "}
+            <a href="/docs/key-concepts/model-profiles">Model profiles</a> for
+            the background agents and{" "}
+            <a href="/docs/hosting-options">Hosting options</a> for plans and
+            credits.
           </p>
 
           <SectionHeading id="what-platforms-does-it-support" level={3}>
@@ -310,7 +315,9 @@ export function HelpFaqContent() {
             they could potentially see the API calls or web traffic from your
             assistant. If that&apos;s a concern, self-hosting on a personal
             device is the most private option. Use your judgment based on your
-            work environment.
+            work environment. The{" "}
+            <a href="/docs/hosting-options">hosting options</a> cover the full
+            self-hosting paths.
           </p>
 
           <SectionHeading id="what-happens-if-i-delete-the-app" level={3}>
@@ -391,7 +398,8 @@ export function HelpFaqContent() {
             your Gmail account, but sending always requires your explicit
             approval. It creates a draft first, and you approve before anything
             is sent. Your assistant can also use its own email address through
-            AgentMail for sending on its own behalf.
+            AgentMail for sending on its own behalf. See the{" "}
+            <a href="/docs/skills-reference/gmail">Gmail skill</a>.
           </p>
 
           <SectionHeading id="can-it-control-my-computer" level={3}>
@@ -418,7 +426,7 @@ export function HelpFaqContent() {
             automatically). You can edit its workspace files directly (SOUL.md
             for behavior, USER.md for facts about you). And you can build custom
             skills that teach it new workflows and capabilities. See{" "}
-            <a href="/docs/extensibility/skills">Tools &amp; Skills</a>.
+            <a href="/docs/extensibility/skills">Skills</a>.
           </p>
 
           <SectionHeading id="can-i-use-it-offline" level={3}>
@@ -428,7 +436,12 @@ export function HelpFaqContent() {
             No. Your workspace and tools are local, but your assistant needs an
             internet connection to think &mdash; it sends your messages to the
             AI model provider (Anthropic) to generate responses. Without
-            internet, it can&apos;t respond.
+            internet, it can&apos;t respond. How the thinking works is covered
+            in{" "}
+            <a href="/docs/getting-started#how-does-it-work-the-30-second-version">
+              How does it work?
+            </a>
+            .
           </p>
         </section>
 
@@ -444,7 +457,9 @@ export function HelpFaqContent() {
           </SectionHeading>
           <p className="mb-6 text-zinc-600">
             Yes. Say &ldquo;I want to rename you to [name]&rdquo; or edit
-            IDENTITY.md directly in <code>$CADET_WORKSPACE_DIR</code>.
+            IDENTITY.md directly in <code>$CADET_WORKSPACE_DIR</code>. The
+            workspace files are covered in{" "}
+            <a href="/docs/key-concepts/the-workspace">The Workspace</a>.
           </p>
 
           <SectionHeading id="can-i-change-its-personality" level={3}>
@@ -465,7 +480,9 @@ export function HelpFaqContent() {
             Yes. Your assistant has a customizable avatar. Say &ldquo;put on a
             wizard hat&rdquo; or &ldquo;change your color to emerald&rdquo; and
             it will update its appearance. Avatar customization is managed
-            through the assistant&apos;s identity and style settings.
+            through the assistant&apos;s identity and style settings, which live
+            in <code>IDENTITY.md</code>. See{" "}
+            <a href="/docs/key-concepts/the-workspace">The Workspace</a>.
           </p>
 
           <SectionHeading id="what-ai-model-does-it-use" level={3}>
@@ -473,7 +490,9 @@ export function HelpFaqContent() {
           </SectionHeading>
           <p className="mb-6 text-zinc-600">
             Anthropic&apos;s Claude by default. The model can be changed in{" "}
-            <code>config.json</code> in your workspace.
+            <code>config.json</code> in your workspace —{" "}
+            <a href="/docs/key-concepts/model-profiles">Model profiles</a> has
+            the details.
           </p>
 
           <SectionHeading id="does-it-have-feelings" level={3}>

@@ -6,8 +6,7 @@ const HELP_PAGES = [
   {
     title: "FAQ",
     href: "/docs/help/faq",
-    description:
-      "The questions everyone asks. Answered once, linked everywhere.",
+    description: "Common questions from the Cadet Community.",
   },
   {
     title: "Getting Help",

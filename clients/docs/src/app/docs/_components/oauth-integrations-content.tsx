@@ -420,16 +420,6 @@ export function OauthIntegrationsContent() {
               service directly.
             </li>
           </ul>
-          <p className="mb-0 text-stone-600 dark:text-stone-400">
-            For more detailed troubleshooting steps, see the{" "}
-            <Link
-              href="/docs/help/faq"
-              className="text-emerald-700 underline hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-            >
-              Common Issues
-            </Link>{" "}
-            page.
-          </p>
         </section>
       </DocsContent>
       <TableOfContents items={TOC_ITEMS} />
