@@ -54,13 +54,8 @@ export {
   BridgeCapabilityRegistry,
   DesktopCapabilityRegistry,
   capabilityToken,
-  installCapabilityModules,
 } from "./capability-registry";
-export type {
-  CapabilityModule,
-  CapabilityModuleExport,
-  MainWindowController,
-} from "./capability-registry";
+export type { MainWindowController } from "./capability-registry";
 export {
   closeCommandPaletteWindow,
   configureCommandPaletteWindow,

@@ -5,10 +5,7 @@ import {
   installAbout,
   openAboutWindow,
 } from "@mycadet/electron-desktop/about";
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
+import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   configureHotkeySettings,
   HOTKEY_SETTINGS,
@@ -32,7 +29,7 @@ import {
 import { getRendererBase } from "@mycadet/electron-desktop";
 import { checkForUpdates } from "@mycadet/electron-desktop/auto-update";
 import { runInstallCliCommandFlow } from "../cli-path-flow";
-import { handle } from "../ipc.client";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import {
   current,
@@ -45,70 +42,65 @@ import {
   setDesktopHasCloudSession,
 } from "@mycadet/electron-desktop";
 
-const commandsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "commands",
-  install: (capabilities) => {
-    const hotkeySettings = capabilities.get(HOTKEY_SETTINGS);
-    configureHotkeySettings(hotkeySettings);
-    if (hotkeySettings) {
-      installHotkeysIpc({ handle });
-    }
+export const install = (capabilities: DesktopCapabilityRegistry): void => {
+  const hotkeySettings = capabilities.get(HOTKEY_SETTINGS);
+  configureHotkeySettings(hotkeySettings);
+  if (hotkeySettings) {
+    installHotkeysIpc({ handle });
+  }
 
-    configureAboutRuntime({
-      rendererBase: () => getRendererBase(app.isPackaged),
-      getAssistantName: getName,
-      onAssistantNameChange: onNameChange,
-    });
-    installAbout({ handle });
+  configureAboutRuntime({
+    rendererBase: () => getRendererBase(app.isPackaged),
+    getAssistantName: getName,
+    onAssistantNameChange: onNameChange,
+  });
+  installAbout({ handle });
 
-    installGlobalShortcuts({
-      handlers: {
-        globalHotkey: () => {
-          void ensureVisible();
-        },
-        // Registered through installGlobalShortcuts so the Keyboard
-        // Shortcuts rebinding applies and the chord is bound exactly once.
-        quickInput: toggleQuickInput,
-        // Talk, from wherever the user is. `registerAll` skips a command with
-        // no handler, so without this the binding would be offered in both
-        // Keyboard Shortcuts and Voice settings, show as bound, and do
-        // nothing. Never raises the window: the point of a global binding is
-        // that the user is working somewhere else.
-        toggleVoice: () => {
-          if (current() !== null) {
-            dispatchToMain({ kind: "toggleVoice" });
-            return;
-          }
-          // No renderer to act in. Building one necessarily shows it, which
-          // is still better than a press that lands nowhere.
-          void ensureVisible().then(() => {
-            dispatchToMain({ kind: "toggleVoice" });
-          });
-        },
+  installGlobalShortcuts({
+    handlers: {
+      globalHotkey: () => {
+        void ensureVisible();
       },
-      logger: log,
-    });
-    installDesktopMenu({
-      handle,
-      openAbout: openAboutWindow,
-      checkForUpdates,
-      installCli: () => {
-        void runInstallCliCommandFlow();
+      // Registered through installGlobalShortcuts so the Keyboard
+      // Shortcuts rebinding applies and the chord is bound exactly once.
+      quickInput: toggleQuickInput,
+      // Talk, from wherever the user is. `registerAll` skips a command with
+      // no handler, so without this the binding would be offered in both
+      // Keyboard Shortcuts and Voice settings, show as bound, and do
+      // nothing. Never raises the window: the point of a global binding is
+      // that the user is working somewhere else.
+      toggleVoice: () => {
+        if (current() !== null) {
+          dispatchToMain({ kind: "toggleVoice" });
+          return;
+        }
+        // No renderer to act in. Building one necessarily shows it, which
+        // is still better than a press that lands nowhere.
+        void ensureVisible().then(() => {
+          dispatchToMain({ kind: "toggleVoice" });
+        });
       },
-      onOnboardingChange,
-    });
-    // The menu's Log In/Log Out toggle is main's fact: derived from the same
-    // token store the OAuth flow and sign-out write.
+    },
+    logger: log,
+  });
+  installDesktopMenu({
+    handle,
+    openAbout: openAboutWindow,
+    checkForUpdates,
+    installCli: () => {
+      void runInstallCliCommandFlow();
+    },
+    onOnboardingChange,
+  });
+  // The menu's Log In/Log Out toggle is main's fact: derived from the same
+  // token store the OAuth flow and sign-out write.
+  setDesktopHasCloudSession(!!getSessionToken());
+  onSessionTokenChange(() => {
     setDesktopHasCloudSession(!!getSessionToken());
-    onSessionTokenChange(() => {
-      setDesktopHasCloudSession(!!getSessionToken());
-    });
+  });
 
-    app.on("web-contents-created", (_event, contents) => {
-      installImageContextMenu(contents);
-      installTextContextMenu(contents);
-    });
-  },
+  app.on("web-contents-created", (_event, contents) => {
+    installImageContextMenu(contents);
+    installTextContextMenu(contents);
+  });
 };
-
-export default commandsFeature;

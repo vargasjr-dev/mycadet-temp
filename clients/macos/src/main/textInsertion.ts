@@ -10,7 +10,7 @@ import {
   readFrontAppFocus,
   type ShortcutOutcome,
 } from "./hotkey-helper";
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 
 const CLIPBOARD_RESTORE_DELAY_MS = 500;

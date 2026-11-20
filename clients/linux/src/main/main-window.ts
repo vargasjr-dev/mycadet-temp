@@ -26,7 +26,7 @@ import {
   isAllowedOrigin,
   resolveAllowedOrigin,
 } from "@mycadet/electron-desktop/app-origin";
-import { handle, on } from "./ipc.client";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { log, createWindow } from "@mycadet/electron-desktop";
 
 const MAIN_DEFAULT_BOUNDS = { width: 1280, height: 800 } as const;

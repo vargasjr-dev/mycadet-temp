@@ -14,7 +14,7 @@ import { avatarBitmap } from "@mycadet/electron-desktop/avatar-image";
 import { applyAlphaMask, roundedRectCoverage } from "@mycadet/electron-desktop";
 import { getStatus, onStatusChange } from "@mycadet/electron-desktop/status";
 
-import { on } from "./ipc.client";
+import { on } from "@mycadet/electron-desktop/ipc";
 
 export interface TaskbarOptions {
   getWindow: () => BrowserWindow | null;

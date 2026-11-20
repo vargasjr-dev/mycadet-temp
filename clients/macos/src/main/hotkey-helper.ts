@@ -52,7 +52,7 @@ import {
   isFrameScrollWatched,
   provideFrameScrollWatch,
 } from "./frame-scroll-watch";
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import {
   JsonRpcHelperError,

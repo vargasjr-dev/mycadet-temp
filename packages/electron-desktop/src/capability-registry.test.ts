@@ -4,7 +4,6 @@ import {
   BridgeCapabilityRegistry,
   DesktopCapabilityRegistry,
   capabilityToken,
-  installCapabilityModules,
 } from "./capability-registry";
 
 test("registry stores typed providers and rejects duplicates", () => {
@@ -23,31 +22,6 @@ test("registry keeps unavailable providers absent", () => {
 
   expect(registry.get(token)).toBeUndefined();
   expect(() => registry.require(token)).toThrow(/unavailable/);
-});
-
-test("modules install in stable path order", () => {
-  const installed: string[] = [];
-  installCapabilityModules(installed, {
-    "./features/z.ts": {
-      default: { id: "z", install: (target) => target.push("z") },
-    },
-    "./features/a.ts": {
-      default: { id: "a", install: (target) => target.push("a") },
-    },
-  });
-
-  expect(installed).toEqual(["a", "z"]);
-});
-
-test("module installation rejects duplicate IDs", () => {
-  const modules = {
-    "./a.ts": { default: { id: "same", install: () => undefined } },
-    "./b.ts": { default: { id: "same", install: () => undefined } },
-  };
-
-  expect(() => installCapabilityModules({}, modules)).toThrow(
-    /Duplicate capability module/,
-  );
 });
 
 test("bridge registry composes namespaces", () => {

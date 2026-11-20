@@ -25,12 +25,32 @@ import {
   usesAppProtocolRenderer,
 } from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
+import { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   provisionCliForCurrentUser,
   resolveCliPathFlowOptions,
 } from "./cli-path-flow";
-import { installMainFeatures } from "./features";
-import { handleSync } from "./ipc.client";
+import { install as installAppSettings } from "./features/app-settings";
+import { install as installAuth } from "./features/auth";
+import { install as installAutoUpdate } from "./features/auto-update";
+import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
+import { install as installBundles } from "./features/bundles";
+import { install as installCommands } from "./features/commands";
+import { install as installComputerUseActions } from "./features/computer-use-actions";
+import { install as installDeepLinks } from "./features/deep-links";
+import { install as installDiagnostics } from "./features/diagnostics";
+import { install as installDictation } from "./features/dictation";
+import { install as installDownloads } from "./features/downloads";
+import { install as installFileOpen } from "./features/file-open";
+import { install as installHostProxy } from "./features/host-proxy";
+import { install as installMainWindow } from "./features/main-window";
+import { install as installNotifications } from "./features/notifications";
+import { install as installPermissions } from "./features/permissions";
+import { install as installPresence } from "./features/presence";
+import { install as installShare } from "./features/share";
+import { install as installVoiceModeChord } from "./features/voice-mode-chord";
+import { install as installWindowAttention } from "./features/window-attention";
+import { handleSync } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "@mycadet/electron-desktop";
@@ -125,7 +145,29 @@ startApp(log, () => {
       log.error("[cli] Failed to provision the Windows CLI:", error);
     }
   }
-  installMainFeatures();
+  // Every main-process feature, installed explicitly in the glob's
+  // sorted order — the list the old auto-discovery hid.
+  const capabilities = new DesktopCapabilityRegistry();
+  installAppSettings(capabilities);
+  installAuth();
+  installAutoUpdate();
+  installAuxiliaryWindows();
+  installBundles(capabilities);
+  installCommands(capabilities);
+  installComputerUseActions(capabilities);
+  installDeepLinks(capabilities);
+  installDiagnostics();
+  installDictation();
+  installDownloads();
+  installFileOpen();
+  installHostProxy(capabilities);
+  installMainWindow(capabilities);
+  installNotifications();
+  installPermissions();
+  installPresence();
+  installShare();
+  installVoiceModeChord();
+  installWindowAttention();
 });
 
 app.on("second-instance", () => {

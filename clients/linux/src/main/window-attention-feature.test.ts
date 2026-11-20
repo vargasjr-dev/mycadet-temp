@@ -29,7 +29,7 @@ mock.module("@mycadet/electron-desktop/window-attention", () => ({
   },
 }));
 
-const { default: windowAttentionFeature } =
+const { install: windowAttentionInstall } =
   await import("./features/window-attention");
 const { DesktopCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");
@@ -45,7 +45,7 @@ describe("window attention feature", () => {
   // spends this signal on presence reporting, so disabling toasts must not
   // also tell the daemon that a minimized desktop is watching.
   test("installs the publisher and tears it down on quit", () => {
-    windowAttentionFeature.install(new DesktopCapabilityRegistry());
+    windowAttentionInstall();
 
     expect(installs.count).toBe(1);
     expect(teardown).not.toHaveBeenCalled();

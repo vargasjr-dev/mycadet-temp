@@ -81,10 +81,8 @@ const {
   GLOBAL_SHORTCUT_DEFAULTS,
   resolveAccelerator,
 } = await import("./commands");
-const {
-  configureCommandPaletteWindow,
-  __resetForTesting,
-} = await import("./command-palette-window");
+const { configureCommandPaletteWindow, __resetForTesting } =
+  await import("./command-palette-window");
 const { configureFloatingWindows } = await import("./floating-window");
 
 configureFloatingWindows({

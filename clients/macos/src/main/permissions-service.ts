@@ -27,7 +27,7 @@ import {
   requestMacHelperSpeechRecognitionPermission,
   type MacHelperPermissionKind,
 } from "./hotkey-helper";
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import {
   getNotifier,

@@ -32,9 +32,9 @@ mock.module("electron", () =>
   }),
 );
 
-const { default: pathsModule } = await import("./features/paths");
+const { install: pathsInstall } = await import(".//features/paths");
 const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-pathsModule.install(registry);
+pathsInstall(registry);
 const bridge = registry.build();
 
 test("resolves only native File paths and returns null when unavailable", () => {

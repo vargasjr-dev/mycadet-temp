@@ -8,7 +8,7 @@ import {
 } from "@mycadet/electron-desktop";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getVersionInfo } from "@mycadet/electron-desktop/about";
-import { handle, on } from "./ipc";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { getLogFilePaths } from "@mycadet/electron-desktop/app-logger";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 

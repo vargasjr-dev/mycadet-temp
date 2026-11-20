@@ -223,7 +223,7 @@ const invokeHandlers = new Map<
 >();
 const eventHandlers = new Map<string, (args: unknown[]) => void>();
 
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (
     channel: string,
     _schema: unknown,

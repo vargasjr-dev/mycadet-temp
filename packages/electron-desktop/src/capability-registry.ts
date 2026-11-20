@@ -57,33 +57,6 @@ export class DesktopCapabilityRegistry {
   }
 }
 
-export interface CapabilityModule<Context> {
-  id: string;
-  install: (context: Context) => void;
-}
-
-export type CapabilityModuleExport<Context> = {
-  default?: CapabilityModule<Context>;
-};
-
-export const installCapabilityModules = <Context>(
-  context: Context,
-  exportsByPath: Record<string, CapabilityModuleExport<Context>>,
-): void => {
-  const installedIds = new Set<string>();
-  for (const path of Object.keys(exportsByPath).sort()) {
-    const module = exportsByPath[path]?.default;
-    if (!module) {
-      continue;
-    }
-    if (installedIds.has(module.id)) {
-      throw new Error(`Duplicate capability module: ${module.id}`);
-    }
-    installedIds.add(module.id);
-    module.install(context);
-  }
-};
-
 export class BridgeCapabilityRegistry<Bridge extends object> {
   readonly #bridge: Partial<Bridge>;
 

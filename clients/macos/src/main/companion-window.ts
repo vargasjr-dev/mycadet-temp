@@ -127,7 +127,7 @@ import {
   type PopoverSide,
 } from "./companion-popover-window";
 import { unwatchFrameScroll, watchFrameScroll } from "./frame-scroll-watch";
-import { handle, on } from "./ipc";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
 import {

@@ -55,7 +55,7 @@ mock.module("@mycadet/local-mode", () => ({
   resolveLockfilePaths: () => ["C:\\Cadet\\lockfile.json"],
 }));
 
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: () => undefined,
   on: () => undefined,
 }));
@@ -66,7 +66,7 @@ const { resetBundlePlatformForTest } =
   await import("@mycadet/electron-desktop/bundle-platform");
 const { DesktopCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");
-const { default: bundles } = await import("./features/bundles");
+const { install: bundlesInstall } = await import(".//features/bundles");
 
 beforeEach(() => {
   resetBundlePlatformForTest();
@@ -81,7 +81,7 @@ beforeEach(() => {
 describe("Windows bundle workflow", () => {
   test("installs the bundle flow and file-open handler", () => {
     const registry = new DesktopCapabilityRegistry();
-    bundles.install(registry);
+    bundlesInstall(registry);
 
     expect(registry.get(bundleFileHandlerToken)).toBe(handleBundleFileMock);
     expect(installBundleFlowMock).toHaveBeenCalledTimes(1);
@@ -94,7 +94,7 @@ describe("Windows bundle workflow", () => {
 
   test("mints gateway tokens through the shared host provider", async () => {
     const registry = new DesktopCapabilityRegistry();
-    bundles.install(registry);
+    bundlesInstall(registry);
 
     // The lockfile-backed provider resolves the active gateway itself; the
     // token mint delegates to the shared package (mocked here).

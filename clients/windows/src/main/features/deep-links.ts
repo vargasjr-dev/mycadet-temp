@@ -1,9 +1,6 @@
 import { app } from "electron";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
+import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   configureDeepLinks,
   DEEP_LINK_PROTOCOL_REGISTRATION,
@@ -20,43 +17,38 @@ import {
   writeSetting,
 } from "@mycadet/electron-desktop/settings";
 
-import { handle, on } from "../ipc.client";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { ensureVisible } from "../main-window";
 
-const deepLinksFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "deep-links",
-  install: (capabilities) => {
-    const schemes = resolveRegisteredSchemes();
-    capabilities.provide(DEEP_LINK_PROTOCOL_REGISTRATION, { schemes });
-    capabilities.provide(STARTUP_REGISTRATION, {
-      settingsPage: "startup-apps",
-    });
+export const install = (capabilities: DesktopCapabilityRegistry): void => {
+  const schemes = resolveRegisteredSchemes();
+  capabilities.provide(DEEP_LINK_PROTOCOL_REGISTRATION, { schemes });
+  capabilities.provide(STARTUP_REGISTRATION, {
+    settingsPage: "startup-apps",
+  });
 
-    configureDeepLinks({
-      ensureVisible,
-      handle,
-      initialArgv: process.argv,
-      on,
-    });
-    installDeepLinks();
+  configureDeepLinks({
+    ensureVisible,
+    handle,
+    initialArgv: process.argv,
+    on,
+  });
+  installDeepLinks();
 
-    configureLoginItem({
-      handle,
-      identity:
-        !app.isPackaged && process.argv[1]
-          ? { path: process.execPath, args: [process.argv[1]] }
-          : undefined,
-      store: {
-        read: () => readSetting("launchAtLogin"),
-        subscribe: (listener) => onSettingChange("launchAtLogin", listener),
-        write: (enabled) => {
-          writeSetting("launchAtLogin", enabled);
-        },
+  configureLoginItem({
+    handle,
+    identity:
+      !app.isPackaged && process.argv[1]
+        ? { path: process.execPath, args: [process.argv[1]] }
+        : undefined,
+    store: {
+      read: () => readSetting("launchAtLogin"),
+      subscribe: (listener) => onSettingChange("launchAtLogin", listener),
+      write: (enabled) => {
+        writeSetting("launchAtLogin", enabled);
       },
-    });
-    installLoginItem();
-    installLoginItemIpc();
-  },
+    },
+  });
+  installLoginItem();
+  installLoginItemIpc();
 };
-
-export default deepLinksFeature;

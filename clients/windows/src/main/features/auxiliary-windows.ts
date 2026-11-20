@@ -5,10 +5,6 @@ import {
   installCommandPaletteWindow,
   repositionCommandPaletteWindow,
 } from "@mycadet/electron-desktop/command-palette-window";
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import {
   configureDictationOverlayWindow,
   installDictationOverlay,
@@ -32,7 +28,7 @@ import {
 
 import { getRendererBase } from "@mycadet/electron-desktop";
 import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";
-import { handle, on } from "../ipc.client";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { current, dispatchToMain, ensureVisible } from "../main-window";
 import { createWindow } from "@mycadet/electron-desktop";
@@ -41,61 +37,56 @@ const resolveRoute = createWindowRouteResolver(() =>
   getRendererBase(app.isPackaged),
 );
 
-const module: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "auxiliary-windows",
-  install: () => {
-    configureFloatingWindows({
-      createWindow,
-      platform: "win32",
-      resolveRoute,
-    });
-    configureCommandPaletteWindow({
-      currentMainWindow: current,
-      dispatchToMain,
-      ensureMainWindowVisible: ensureVisible,
-      handle,
-    });
-    configureQuickInputWindow({
-      createWindow,
-      dispatchToMain,
-      ensureMainWindowVisible: ensureVisible,
-      handle,
-      platform: "win32",
-      resolveRoute,
-    });
-    // Native mouse-move forwarding for the click-through overlay is broken
-    // on Windows (see `pollCursorForHover`); poll instead so the Stop button
-    // can be hovered and clicked.
-    configureDictationOverlayWindow({
-      closeOnHide: true,
-      pollCursorForHover: true,
-      log: (message) => log.info(message),
-      handle,
-      on,
-    });
-    configurePopoutWindows({
-      createWindow,
-      handle,
-      resolveRoute,
-      restoreBounds,
-      trackWindowState,
-    });
+export const install = (): void => {
+  configureFloatingWindows({
+    createWindow,
+    platform: "win32",
+    resolveRoute,
+  });
+  configureCommandPaletteWindow({
+    currentMainWindow: current,
+    dispatchToMain,
+    ensureMainWindowVisible: ensureVisible,
+    handle,
+  });
+  configureQuickInputWindow({
+    createWindow,
+    dispatchToMain,
+    ensureMainWindowVisible: ensureVisible,
+    handle,
+    platform: "win32",
+    resolveRoute,
+  });
+  // Native mouse-move forwarding for the click-through overlay is broken
+  // on Windows (see `pollCursorForHover`); poll instead so the Stop button
+  // can be hovered and clicked.
+  configureDictationOverlayWindow({
+    closeOnHide: true,
+    pollCursorForHover: true,
+    log: (message) => log.info(message),
+    handle,
+    on,
+  });
+  configurePopoutWindows({
+    createWindow,
+    handle,
+    resolveRoute,
+    restoreBounds,
+    trackWindowState,
+  });
 
-    installEscapeMonitor();
-    installCommandPaletteWindow();
-    installQuickInput();
-    installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
-    installPopoutWindows();
+  installEscapeMonitor();
+  installCommandPaletteWindow();
+  installQuickInput();
+  installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
+  installPopoutWindows();
 
-    const repositionTransientWindows = (): void => {
-      repositionCommandPaletteWindow();
-      repositionQuickInputWindow();
-      repositionDictationOverlayWindow();
-    };
-    screen.on("display-added", repositionTransientWindows);
-    screen.on("display-removed", repositionTransientWindows);
-    screen.on("display-metrics-changed", repositionTransientWindows);
-  },
+  const repositionTransientWindows = (): void => {
+    repositionCommandPaletteWindow();
+    repositionQuickInputWindow();
+    repositionDictationOverlayWindow();
+  };
+  screen.on("display-added", repositionTransientWindows);
+  screen.on("display-removed", repositionTransientWindows);
+  screen.on("display-metrics-changed", repositionTransientWindows);
 };
-
-export default module;

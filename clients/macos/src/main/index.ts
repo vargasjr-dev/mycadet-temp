@@ -24,10 +24,10 @@ import {
   APP_HOST,
   APP_PROTOCOL,
 } from "@mycadet/electron-desktop";
-import { resolveAllowedOrigin } from "./app-origin";
+import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
-import { handle, on } from "./ipc";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 // Composition roots: these modules configure the shared desktop packages
 // with this client's seams at import time. Their surfaces are imported
 // directly from the packages below.

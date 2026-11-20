@@ -43,7 +43,7 @@ mock.module("electron", () =>
 );
 mock.module("./main-window", () => ({ ensureVisible }));
 
-const { default: fileOpenModule } = await import("./features/file-open");
+const { install: fileOpenInstall } = await import(".//features/file-open");
 const { resolveAllowedOrigin } =
   await import("@mycadet/electron-desktop/app-origin");
 
@@ -70,7 +70,7 @@ test("delivers canonical first-instance and second-instance file paths once", ()
   const firstPath = "exports/例.cadet";
   process.argv = ["Cadet.exe", firstPath, firstPath, "notes.txt"];
   try {
-    fileOpenModule.install({} as never);
+    fileOpenInstall();
   } finally {
     process.argv = originalArgv;
   }

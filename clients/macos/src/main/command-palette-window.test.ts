@@ -229,7 +229,7 @@ mock.module("./windows", () => ({
   createWindow: createWindowMock,
 }));
 
-mock.module("./ipc", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: handleMock,
 }));
 
@@ -276,7 +276,6 @@ mock.module("@mycadet/electron-desktop/window-state", () => ({
   readCompanionHidden: () => false,
   onCompanionHiddenChange: () => () => {},
 }));
-
 
 // Full `./cli-path-installer` surface so this mock — which leaks into co-run
 // test files via the global module registry — doesn't break sibling modules.

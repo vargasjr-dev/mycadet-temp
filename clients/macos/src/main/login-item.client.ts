@@ -10,7 +10,7 @@ import {
   writeSetting,
 } from "@mycadet/electron-desktop/settings";
 
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 
 configureLoginItem({
   handle,

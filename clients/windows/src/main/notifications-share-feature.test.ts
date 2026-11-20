@@ -46,7 +46,7 @@ type HandleRegistration = {
   fn: (args: unknown[], event: unknown) => unknown;
 };
 const handleRegistrations: HandleRegistration[] = [];
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (
     channel: string,
     schema: z.ZodType<unknown[]>,
@@ -117,12 +117,10 @@ mock.module("@mycadet/native-sidecar/supervisor", () => ({
 }));
 
 const { createHelperToastFactory } = await import("./features/notifications");
-const { default: windowAttentionFeature } =
+const { install: windowAttentionInstall } =
   await import("./features/window-attention");
-const { default: shareFeature, sanitizeFilename } =
+const { install: shareInstall, sanitizeFilename } =
   await import("./features/share");
-const { DesktopCapabilityRegistry } =
-  await import("@mycadet/electron-desktop/capability-registry");
 
 beforeEach(() => {
   handleRegistrations.length = 0;
@@ -136,7 +134,7 @@ beforeEach(() => {
 
 describe("window attention feature", () => {
   test("installs the window-attention publisher and tears it down on quit", () => {
-    windowAttentionFeature.install(new DesktopCapabilityRegistry());
+    windowAttentionInstall();
 
     expect(windowAttentionInstalls.count).toBe(1);
     expect(teardownWindowAttention).not.toHaveBeenCalled();
@@ -296,7 +294,7 @@ describe("helper toast factory", () => {
 
 describe("share feature", () => {
   const installShare = (): HandleRegistration => {
-    shareFeature.install(new DesktopCapabilityRegistry());
+    shareInstall();
     const registration = handleRegistrations.find(
       (candidate) => candidate.channel === "cadet:share:file",
     );

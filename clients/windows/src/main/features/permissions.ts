@@ -7,10 +7,6 @@ import {
 } from "electron";
 import { z } from "zod";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import {
   PERMISSIONS_GET_STATE,
   PERMISSIONS_OPEN_SETTINGS,
@@ -28,7 +24,7 @@ import {
   type TextInsertionResult,
 } from "@mycadet/ipc-contract";
 
-import { handle } from "../ipc.client";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { current } from "../main-window";
 import { getWindowsHelperClient } from "../windows-helper";
@@ -294,35 +290,30 @@ const insertIntoFrontApp = async (
   return { status: "blocked" };
 };
 
-const permissionsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "permissions",
-  install: () => {
-    configureWindowsPermissionsNative(createNativeProvider());
-    const service = new WindowsPermissionsService();
+export const install = (): void => {
+  configureWindowsPermissionsNative(createNativeProvider());
+  const service = new WindowsPermissionsService();
 
-    handle(PERMISSIONS_GET_STATE, z.tuple([]), () => service.refresh());
-    handle(PERMISSIONS_REQUEST, z.tuple([kindSchema]), ([kind]) =>
-      service.request(kind),
-    );
-    handle(PERMISSIONS_OPEN_SETTINGS, z.tuple([kindSchema]), ([kind]) =>
-      service.openSettings(kind),
-    );
-    handle(PERMISSIONS_QUIT_AND_REOPEN, z.tuple([]), () => {
-      service.quitAndReopen();
-    });
+  handle(PERMISSIONS_GET_STATE, z.tuple([]), () => service.refresh());
+  handle(PERMISSIONS_REQUEST, z.tuple([kindSchema]), ([kind]) =>
+    service.request(kind),
+  );
+  handle(PERMISSIONS_OPEN_SETTINGS, z.tuple([kindSchema]), ([kind]) =>
+    service.openSettings(kind),
+  );
+  handle(PERMISSIONS_QUIT_AND_REOPEN, z.tuple([]), () => {
+    service.quitAndReopen();
+  });
 
-    handle(TEXT_INSERT, z.tuple([z.string()]), ([text]) =>
-      insertIntoFrontApp(text),
-    );
-    // Windows has no automation permission pane; land on the privacy hub.
-    handle(TEXT_OPEN_SETTINGS, z.tuple([]), () =>
-      shell.openExternal(PRIVACY_SETTINGS_URI),
-    );
+  handle(TEXT_INSERT, z.tuple([z.string()]), ([text]) =>
+    insertIntoFrontApp(text),
+  );
+  // Windows has no automation permission pane; land on the privacy hub.
+  handle(TEXT_OPEN_SETTINGS, z.tuple([]), () =>
+    shell.openExternal(PRIVACY_SETTINGS_URI),
+  );
 
-    app.on("browser-window-focus", () => {
-      void service.refreshOnFocus();
-    });
-  },
+  app.on("browser-window-focus", () => {
+    void service.refreshOnFocus();
+  });
 };
-
-export default permissionsFeature;

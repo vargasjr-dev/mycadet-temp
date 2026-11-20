@@ -89,7 +89,7 @@ interface HandleRegistration {
 }
 
 const handleRegistrations: HandleRegistration[] = [];
-mock.module("./ipc", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (
     channel: string,
     schema: z.ZodType<unknown[]>,

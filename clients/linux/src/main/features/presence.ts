@@ -1,10 +1,6 @@
 import { app } from "electron";
 
 import { installAvatarIpc } from "@mycadet/electron-desktop/avatar";
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import {
   installConnectivityProbe,
   installIdentityIpc,
@@ -16,22 +12,17 @@ import {
   installStatusIpc,
 } from "@mycadet/electron-desktop/status";
 
-import { handle, on } from "../ipc.client";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { installLinuxTray } from "../tray";
 
-const presence: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "presence",
-  install: () => {
-    configurePresenceRuntime({ ipc: { handle, on }, logger: log });
-    installAvatarIpc();
-    installIdentityIpc();
-    installPowerEvents();
-    installStatusIpc();
-    const retryProbe = installConnectivityProbe();
-    installConnectivityIpc(retryProbe);
-    installLinuxTray();
-  },
+export const install = (): void => {
+  configurePresenceRuntime({ ipc: { handle, on }, logger: log });
+  installAvatarIpc();
+  installIdentityIpc();
+  installPowerEvents();
+  installStatusIpc();
+  const retryProbe = installConnectivityProbe();
+  installConnectivityIpc(retryProbe);
+  installLinuxTray();
 };
-
-export default presence;

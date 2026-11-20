@@ -38,14 +38,12 @@ export type MenuCommandItem = (
 ) => MenuItemConstructorOptions;
 
 /** The one row builder every menu group shares. */
-const commandItem =
-  (): MenuCommandItem =>
-  (label, command, enabled) => ({
-    label,
-    ...acceleratorOption(command.kind),
-    ...(enabled === undefined ? {} : { enabled }),
-    click: () => dispatchToFocused(command),
-  });
+const commandItem = (): MenuCommandItem => (label, command, enabled) => ({
+  label,
+  ...acceleratorOption(command.kind),
+  ...(enabled === undefined ? {} : { enabled }),
+  click: () => dispatchToFocused(command),
+});
 
 /** Step the focused window's history; no-op when nothing is focused. */
 export const navigateFocused = (direction: "back" | "forward"): void => {
@@ -158,9 +156,7 @@ export const fileMenu = (
 };
 
 /** The Edit menu — shared whole. */
-export const editMenu = (
-  options: Record<string, never> = {},
-): MenuItemConstructorOptions => ({
+export const editMenu = (): MenuItemConstructorOptions => ({
   id: "edit",
   label: "Edit",
   submenu: editMenuItems(commandItem()),

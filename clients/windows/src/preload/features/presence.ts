@@ -17,54 +17,48 @@ import {
   POWER_EVENT,
   STATUS_CONNECTION,
 } from "@mycadet/ipc-contract";
-import type {
-  BridgeCapabilityRegistry,
-  CapabilityModule,
-} from "@mycadet/electron-desktop/capability-registry";
+import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 
-const presence: CapabilityModule<BridgeCapabilityRegistry<CadetBridge>> = {
-  id: "presence",
-  install: (bridge) => {
-    bridge.contribute("status", {
-      setConnection: (status) => ipcRenderer.send(STATUS_CONNECTION, status),
-    });
-    bridge.contribute("identity", {
-      setName: (name) => ipcRenderer.send(IDENTITY_NAME, name),
-    });
-    bridge.contribute("icon", {
-      setAvatar: (png) => ipcRenderer.send(ICON_SET_AVATAR, png),
-      setCharacter: (character) =>
-        ipcRenderer.send(ICON_SET_CHARACTER, character),
-    });
-    bridge.contribute("dock", {
-      setBadge: (count) => ipcRenderer.send(DOCK_SET_BADGE, count),
-    });
-    bridge.contribute("power", {
-      onEvent: (callback) => {
-        const handler = (_event: IpcRendererEvent, payload: PowerEvent) => {
-          callback(payload);
-        };
-        ipcRenderer.on(POWER_EVENT, handler);
-        return () => ipcRenderer.off(POWER_EVENT, handler);
-      },
-    });
-    bridge.contribute("connectivity", {
-      onState: (callback) => {
-        const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
-          callback(state);
-        ipcRenderer.on(CONNECTIVITY_STATE, handler);
-        void (
-          ipcRenderer.invoke(CONNECTIVITY_GET) as Promise<ConnectivityState>
-        ).then(callback);
-        return () => ipcRenderer.off(CONNECTIVITY_STATE, handler);
-      },
-      get: () =>
-        ipcRenderer.invoke(CONNECTIVITY_GET) as Promise<ConnectivityState>,
-      setDevice: (online) => ipcRenderer.send(CONNECTIVITY_SET_DEVICE, online),
-      retry: () =>
-        ipcRenderer.invoke(CONNECTIVITY_RETRY) as Promise<ConnectivityState>,
-    });
-  },
+export const install = (
+  bridge: BridgeCapabilityRegistry<CadetBridge>,
+): void => {
+  bridge.contribute("status", {
+    setConnection: (status) => ipcRenderer.send(STATUS_CONNECTION, status),
+  });
+  bridge.contribute("identity", {
+    setName: (name) => ipcRenderer.send(IDENTITY_NAME, name),
+  });
+  bridge.contribute("icon", {
+    setAvatar: (png) => ipcRenderer.send(ICON_SET_AVATAR, png),
+    setCharacter: (character) =>
+      ipcRenderer.send(ICON_SET_CHARACTER, character),
+  });
+  bridge.contribute("dock", {
+    setBadge: (count) => ipcRenderer.send(DOCK_SET_BADGE, count),
+  });
+  bridge.contribute("power", {
+    onEvent: (callback) => {
+      const handler = (_event: IpcRendererEvent, payload: PowerEvent) => {
+        callback(payload);
+      };
+      ipcRenderer.on(POWER_EVENT, handler);
+      return () => ipcRenderer.off(POWER_EVENT, handler);
+    },
+  });
+  bridge.contribute("connectivity", {
+    onState: (callback) => {
+      const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
+        callback(state);
+      ipcRenderer.on(CONNECTIVITY_STATE, handler);
+      void (
+        ipcRenderer.invoke(CONNECTIVITY_GET) as Promise<ConnectivityState>
+      ).then(callback);
+      return () => ipcRenderer.off(CONNECTIVITY_STATE, handler);
+    },
+    get: () =>
+      ipcRenderer.invoke(CONNECTIVITY_GET) as Promise<ConnectivityState>,
+    setDevice: (online) => ipcRenderer.send(CONNECTIVITY_SET_DEVICE, online),
+    retry: () =>
+      ipcRenderer.invoke(CONNECTIVITY_RETRY) as Promise<ConnectivityState>,
+  });
 };
-
-export default presence;

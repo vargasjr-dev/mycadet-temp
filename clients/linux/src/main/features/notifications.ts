@@ -4,10 +4,6 @@ import path from "node:path";
 import { app } from "electron";
 import { z } from "zod";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import { buildHelperToastRequest } from "@mycadet/electron-desktop";
 import {
   configureNotifications,
@@ -17,7 +13,7 @@ import {
 } from "@mycadet/electron-desktop/notifications";
 import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
-import { handle } from "../ipc.client";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { ensureVisible } from "../main-window";
 
@@ -153,18 +149,13 @@ export const createHelperToastFactory = (
   };
 };
 
-const notifications: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "notifications",
-  install: () => {
-    const helperPath = resolveHelperPath();
-    configureNotifications({
-      ipc: { handle },
-      ensureVisible,
-      logger: log,
-      ...(helperPath ? { create: createHelperToastFactory(helperPath) } : {}),
-    });
-    installNotifications();
-  },
+export const install = (): void => {
+  const helperPath = resolveHelperPath();
+  configureNotifications({
+    ipc: { handle },
+    ensureVisible,
+    logger: log,
+    ...(helperPath ? { create: createHelperToastFactory(helperPath) } : {}),
+  });
+  installNotifications();
 };
-
-export default notifications;

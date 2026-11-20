@@ -2,17 +2,15 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const trayIcon = { isEmpty: () => false };
+// Only the deltas: the shared mock already covers every default the tray
+// reads (`getVersion`, `getName`, `isPackaged`, `showAboutPanel`, and
+// `shell.openExternal` among them), so the registration carries the two
+// values this file actually seams — the app path the tray resolves CLI
+// paths against, and the icon source.
 mock.module("electron", () =>
   electronMock({
-    app: {
-      getVersion: () => "0.0.0",
-      getName: () => "Cadet",
-      getAppPath: () => "/app",
-      isPackaged: false,
-      showAboutPanel: () => undefined,
-    },
+    app: { getAppPath: () => "/app" },
     nativeImage: { createFromPath: () => trayIcon },
-    shell: { openExternal: () => Promise.resolve() },
   }),
 );
 

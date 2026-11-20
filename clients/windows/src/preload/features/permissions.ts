@@ -1,9 +1,6 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type {
-  BridgeCapabilityRegistry,
-  CapabilityModule,
-} from "@mycadet/electron-desktop/capability-registry";
+import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   PERMISSIONS_GET_STATE,
   PERMISSIONS_OPEN_SETTINGS,
@@ -25,36 +22,31 @@ const invokeItem = (
 ): Promise<SystemPermissionStateItem> =>
   ipcRenderer.invoke(channel, kind) as Promise<SystemPermissionStateItem>;
 
-const permissionsFeature: CapabilityModule<
-  BridgeCapabilityRegistry<CadetBridge>
-> = {
-  id: "permissions",
-  install: (bridge) => {
-    bridge.contribute("permissions", {
-      getState: () =>
-        ipcRenderer.invoke(
-          PERMISSIONS_GET_STATE,
-        ) as Promise<SystemPermissionsState>,
-      request: (kind) => invokeItem(PERMISSIONS_REQUEST, kind),
-      openSettings: (kind) => invokeItem(PERMISSIONS_OPEN_SETTINGS, kind),
-      quitAndReopen: () =>
-        ipcRenderer.invoke(PERMISSIONS_QUIT_AND_REOPEN) as Promise<void>,
-      onState: (callback) => {
-        const handler = (
-          _event: IpcRendererEvent,
-          state: SystemPermissionsState,
-        ) => callback(state);
-        ipcRenderer.on(PERMISSIONS_STATE_EVENT, handler);
-        return () => ipcRenderer.off(PERMISSIONS_STATE_EVENT, handler);
-      },
-    });
-    bridge.contribute("text", {
-      insertIntoFrontApp: (text) =>
-        ipcRenderer.invoke(TEXT_INSERT, text) as Promise<TextInsertionResult>,
-      openAutomationSettings: () =>
-        ipcRenderer.invoke(TEXT_OPEN_SETTINGS) as Promise<void>,
-    });
-  },
+export const install = (
+  bridge: BridgeCapabilityRegistry<CadetBridge>,
+): void => {
+  bridge.contribute("permissions", {
+    getState: () =>
+      ipcRenderer.invoke(
+        PERMISSIONS_GET_STATE,
+      ) as Promise<SystemPermissionsState>,
+    request: (kind) => invokeItem(PERMISSIONS_REQUEST, kind),
+    openSettings: (kind) => invokeItem(PERMISSIONS_OPEN_SETTINGS, kind),
+    quitAndReopen: () =>
+      ipcRenderer.invoke(PERMISSIONS_QUIT_AND_REOPEN) as Promise<void>,
+    onState: (callback) => {
+      const handler = (
+        _event: IpcRendererEvent,
+        state: SystemPermissionsState,
+      ) => callback(state);
+      ipcRenderer.on(PERMISSIONS_STATE_EVENT, handler);
+      return () => ipcRenderer.off(PERMISSIONS_STATE_EVENT, handler);
+    },
+  });
+  bridge.contribute("text", {
+    insertIntoFrontApp: (text) =>
+      ipcRenderer.invoke(TEXT_INSERT, text) as Promise<TextInsertionResult>,
+    openAutomationSettings: () =>
+      ipcRenderer.invoke(TEXT_OPEN_SETTINGS) as Promise<void>,
+  });
 };
-
-export default permissionsFeature;

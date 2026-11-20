@@ -27,7 +27,7 @@ mock.module("electron", () =>
 type Handler = (args: unknown[], event: { sender: FakeSender }) => unknown;
 const handlers: Record<string, Handler> = {};
 const rawListeners: Record<string, (...args: unknown[]) => void> = {};
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (channel: string, _schema: unknown, fn: Handler) => {
     handlers[channel] = fn;
   },

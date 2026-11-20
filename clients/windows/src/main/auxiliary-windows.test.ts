@@ -144,7 +144,7 @@ mock.module("@mycadet/electron-desktop/windows", () => ({
   installWebContentsSecurity: () => undefined,
   createWindow,
 }));
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (channel: string, _schema: unknown, listener: Listener) => {
     handleListeners.set(channel, listener);
   },
@@ -162,11 +162,11 @@ mock.module("@mycadet/electron-desktop/app-logger", () => ({
   default: { info: () => undefined, warn: logWarn },
 }));
 
-const { default: auxiliaryWindowsModule } =
+const { install: auxiliaryWindowsInstall } =
   await import("./features/auxiliary-windows");
 const { toggleQuickInput } = await import("@mycadet/electron-desktop");
 beforeAll(() => {
-  auxiliaryWindowsModule.install({} as never);
+  auxiliaryWindowsInstall();
 });
 beforeEach(() => {
   created.length = 0;

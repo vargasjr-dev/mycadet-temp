@@ -1,9 +1,5 @@
 import { app } from "electron";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import { installWindowAttention } from "@mycadet/electron-desktop/window-attention";
 
 /**
@@ -18,12 +14,7 @@ import { installWindowAttention } from "@mycadet/electron-desktop/window-attenti
  * daemon that a minimized desktop is watching. macOS installs it
  * independently for the same reason.
  */
-const windowAttention: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "window-attention",
-  install: () => {
-    const teardown = installWindowAttention();
-    app.once("before-quit", teardown);
-  },
+export const install = (): void => {
+  const teardown = installWindowAttention();
+  app.once("before-quit", teardown);
 };
-
-export default windowAttention;
