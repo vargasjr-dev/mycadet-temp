@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
 import { ShareFeedbackModalLazy } from "@/components/share-feedback-modal-lazy";
+import { AssistantWakingGate } from "@/components/assistant-waking-gate";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useDownloadFeedback } from "@/hooks/use-download-feedback";
 import { useEventBusInit } from "@/hooks/use-event-bus-init";
@@ -514,7 +515,9 @@ export function RootLayout() {
             below the safe-area inset and the status banner instead of under
             the notch. */}
         <RoutePendingIndicator />
-        <Outlet />
+        <AssistantWakingGate>
+          <Outlet />
+        </AssistantWakingGate>
       </div>
 
       {/* Portal target for mobile overlays that use `position: fixed`. */}
