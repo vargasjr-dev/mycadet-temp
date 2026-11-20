@@ -418,8 +418,7 @@ export function HelpFaqContent() {
             automatically). You can edit its workspace files directly (SOUL.md
             for behavior, USER.md for facts about you). And you can build custom
             skills that teach it new workflows and capabilities. See{" "}
-            <a href="/docs/key-concepts/skills-and-tools">Tools &amp; Skills</a>
-            .
+            <a href="/docs/extensibility/skills">Tools &amp; Skills</a>.
           </p>
 
           <SectionHeading id="can-i-use-it-offline" level={3}>

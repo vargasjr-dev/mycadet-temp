@@ -32,20 +32,22 @@ export function OauthIntegrationsContent() {
             Overview
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            Cadet connects to external services through OAuth2 integrations. Instead of
-            copying API keys into chat, you authorize your assistant once through a
-            standard browser-based OAuth flow. The resulting access token is stored
-            securely in your local credential vault, and your assistant can call the
-            service&apos;s APIs on your behalf whenever a task requires it.
+            Cadet connects to external services through OAuth2 integrations.
+            Instead of copying API keys into chat, you authorize your assistant
+            once through a standard browser-based OAuth flow. The resulting
+            access token is stored securely in your local credential vault, and
+            your assistant can call the service&apos;s APIs on your behalf
+            whenever a task requires it.
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            Each integration is exposed as a bundled skill with its own set of tools. For
-            example, connecting Gmail gives your assistant tools like{" "}
+            Each integration is exposed as a bundled skill with its own set of
+            tools. For example, connecting Gmail gives your assistant tools like{" "}
             <code className="text-sm">gmail_send</code>,{" "}
             <code className="text-sm">gmail_search</code>, and{" "}
-            <code className="text-sm">gmail_archive</code>. Connecting Google Calendar adds
-            event creation, listing, and update tools. You decide which
-            integrations to connect, and you can revoke access at any time.
+            <code className="text-sm">gmail_archive</code>. Connecting Google
+            Calendar adds event creation, listing, and update tools. You decide
+            which integrations to connect, and you can revoke access at any
+            time.
           </p>
         </section>
 
@@ -57,8 +59,8 @@ export function OauthIntegrationsContent() {
             Supported services
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            The following integrations ship with every Cadet workspace and connect via
-            OAuth2 unless noted otherwise.
+            The following integrations ship with every Cadet workspace and
+            connect via OAuth2 unless noted otherwise.
           </p>
           <div className="overflow-x-auto">
             <table className="mb-4 w-full text-sm text-stone-600 dark:text-stone-400">
@@ -79,133 +81,129 @@ export function OauthIntegrationsContent() {
                 </tr>
               </thead>
               <tbody className="[&>tr:nth-child(even)]:bg-zinc-50 dark:[&>tr:nth-child(even)]:bg-moss-900/30">
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Discord
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Send messages, read channels, manage servers
-                    </td>
-                    <td className="py-3">
-                      Server-level. The bot must be added to each server you want to access.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      GitHub
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Read repos, open issues, review PRs, manage labels, star repos
-                    </td>
-                    <td className="py-3">
-                      Requires the repo and read:user scopes. Private repos accessible if granted.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Google
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Gmail, Calendar, Drive, Docs, Sheets, Slides, and Contacts
-                    </td>
-                    <td className="py-3">
-                      Single OAuth connection covers all Google services. Can be revoked in Google Account settings.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      HubSpot
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      CRM contacts and deals
-                    </td>
-                    <td className="py-3">
-                      CRM-scoped. Access follows your HubSpot user permissions.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Linear
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Issues and projects
-                    </td>
-                    <td className="py-3">
-                      Organization-scoped. Access follows your Linear role permissions.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Twitter (X)
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Posts and direct messages
-                    </td>
-                    <td className="py-3">
-                      Paid. Per-call billing through Cadet credits at the cloud rate.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Asana
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Tasks and projects
-                    </td>
-                    <td className="py-3">
-                      Workspace-scoped. Access follows your Asana workspace permissions.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Notion
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Pages and databases
-                    </td>
-                    <td className="py-3">
-                      Integration must be added to specific Notion pages to access them.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Outlook / Microsoft
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Email and calendar
-                    </td>
-                    <td className="py-3">
-                      Microsoft 365 OAuth. Covers Outlook email and calendar events.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
-                      Todoist
-                    </td>
-                    <td className="py-3 pr-4">OAuth2</td>
-                    <td className="py-3 pr-4">
-                      Tasks and projects
-                    </td>
-                    <td className="py-3">
-                      Project-scoped. Access follows your Todoist project permissions.
-                    </td>
-                  </tr>
-                </tbody>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Discord
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">
+                    Send messages, read channels, manage servers
+                  </td>
+                  <td className="py-3">
+                    Server-level. The bot must be added to each server you want
+                    to access.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    GitHub
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">
+                    Read repos, open issues, review PRs, manage labels, star
+                    repos
+                  </td>
+                  <td className="py-3">
+                    Requires the repo and read:user scopes. Private repos
+                    accessible if granted.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Google
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">
+                    Gmail, Calendar, Drive, Docs, Sheets, Slides, and Contacts
+                  </td>
+                  <td className="py-3">
+                    Single OAuth connection covers all Google services. Can be
+                    revoked in Google Account settings.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    HubSpot
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">CRM contacts and deals</td>
+                  <td className="py-3">
+                    CRM-scoped. Access follows your HubSpot user permissions.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Linear
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">Issues and projects</td>
+                  <td className="py-3">
+                    Organization-scoped. Access follows your Linear role
+                    permissions.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Twitter (X)
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">Posts and direct messages</td>
+                  <td className="py-3">
+                    Paid. Per-call billing through Cadet credits at the cloud
+                    rate.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Asana
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">Tasks and projects</td>
+                  <td className="py-3">
+                    Workspace-scoped. Access follows your Asana workspace
+                    permissions.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Notion
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">Pages and databases</td>
+                  <td className="py-3">
+                    Integration must be added to specific Notion pages to access
+                    them.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Outlook / Microsoft
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">Email and calendar</td>
+                  <td className="py-3">
+                    Microsoft 365 OAuth. Covers Outlook email and calendar
+                    events.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100">
+                    Todoist
+                  </td>
+                  <td className="py-3 pr-4">OAuth2</td>
+                  <td className="py-3 pr-4">Tasks and projects</td>
+                  <td className="py-3">
+                    Project-scoped. Access follows your Todoist project
+                    permissions.
+                  </td>
+                </tr>
+              </tbody>
             </table>
           </div>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            New integrations are added regularly. If a service you need isn&apos;t listed,
-            you can often connect it via a custom skill using its API key, or request it
-            through the{" "}
+            New integrations are added regularly. If a service you need
+            isn&apos;t listed, you can often connect it via a custom skill using
+            its API key, or request it through the{" "}
             <Link
               href="https://www.mycadet.ai/roadmap"
               className="text-emerald-700 underline hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
@@ -224,7 +222,8 @@ export function OauthIntegrationsContent() {
             Connecting an integration
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            The fastest way to connect a service is to ask your assistant directly:
+            The fastest way to connect a service is to ask your assistant
+            directly:
           </p>
           <div className="mb-4 overflow-x-auto rounded-lg bg-stone-100 px-4 py-3 dark:bg-moss-900/50">
             <code className="text-sm text-stone-800 dark:text-stone-200">
@@ -239,22 +238,24 @@ export function OauthIntegrationsContent() {
               Open <strong>Settings</strong> in your Cadet app.
             </li>
             <li>
-              Navigate to the <strong>Integrations</strong> or <strong>Services</strong> tab.
+              Navigate to the <strong>Integrations</strong> or{" "}
+              <strong>Services</strong> tab.
             </li>
             <li>
-              Find the service you want to connect and click <strong>Connect</strong>.
+              Find the service you want to connect and click{" "}
+              <strong>Connect</strong>.
             </li>
+            <li>Complete the OAuth flow in the browser window that opens.</li>
             <li>
-              Complete the OAuth flow in the browser window that opens.
-            </li>
-            <li>
-              Return to Cadet. The integration status should show <strong>Connected</strong>.
+              Return to Cadet. The integration status should show{" "}
+              <strong>Connected</strong>.
             </li>
           </ol>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            You can disconnect an integration at any time through the same Settings panel,
-            or by asking your assistant to disconnect it for you. Disconnecting deletes the
-            stored token from your local vault immediately.
+            You can disconnect an integration at any time through the same
+            Settings panel, or by asking your assistant to disconnect it for
+            you. Disconnecting deletes the stored token from your local vault
+            immediately.
           </p>
         </section>
 
@@ -266,28 +267,30 @@ export function OauthIntegrationsContent() {
             Security model
           </SectionHeading>
           <p className="mb-4 text-stone-600 dark:text-stone-400">
-            OAuth tokens are handled with the same security model as API keys and passwords:
+            OAuth tokens are handled with the same security model as API keys
+            and passwords:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
-              <strong>Local vault:</strong> Tokens are stored in your workspace&apos;s local
-              credential vault, not on Cadet&apos;s servers. The cloud never sees them.
+              <strong>Local vault:</strong> Tokens are stored in your
+              workspace&apos;s local credential vault, not on Cadet&apos;s
+              servers. The cloud never sees them.
             </li>
             <li>
-              <strong>LLM isolation:</strong> The LLM never receives raw tokens. When a
-              skill needs to call an API, the daemon retrieves the token and injects it
-              into the HTTP request at the transport layer.
+              <strong>LLM isolation:</strong> The LLM never receives raw tokens.
+              When a skill needs to call an API, the daemon retrieves the token
+              and injects it into the HTTP request at the transport layer.
             </li>
             <li>
-              <strong>Scoped permissions:</strong> Cadet requests the minimum OAuth scopes
-              required for each service. You can review the exact scopes on the
-              integration&apos;s detail page before connecting.
+              <strong>Scoped permissions:</strong> Cadet requests the minimum
+              OAuth scopes required for each service. You can review the exact
+              scopes on the integration&apos;s detail page before connecting.
             </li>
             <li>
-              <strong>Revocation:</strong> Disconnecting an integration in Cadet deletes
-              the local token. You can also revoke access from the third-party service&apos;s
-              own settings page (e.g., Google Account permissions) for an additional layer
-              of control.
+              <strong>Revocation:</strong> Disconnecting an integration in Cadet
+              deletes the local token. You can also revoke access from the
+              third-party service&apos;s own settings page (e.g., Google Account
+              permissions) for an additional layer of control.
             </li>
           </ul>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
@@ -333,10 +336,13 @@ export function OauthIntegrationsContent() {
                     Cloud OAuth (free)
                   </td>
                   <td className="py-3 pr-4">
-                    Services where Cadet manages the OAuth app registration (Discord, GitHub, Google, HubSpot, Linear, Asana, Notion, Outlook, Todoist)
+                    Services where Cadet manages the OAuth app registration
+                    (Discord, GitHub, Google, HubSpot, Linear, Asana, Notion,
+                    Outlook, Todoist)
                   </td>
                   <td className="py-3">
-                    No additional cost. These integrations are bundled with your Cadet workspace.
+                    No additional cost. These integrations are bundled with your
+                    Cadet workspace.
                   </td>
                 </tr>
                 <tr>
@@ -344,10 +350,12 @@ export function OauthIntegrationsContent() {
                     Cloud OAuth (billed)
                   </td>
                   <td className="py-3 pr-4">
-                    Twitter (X) — Cadet manages the OAuth app, but the underlying API usage is billed per call.
+                    Twitter (X) — Cadet manages the OAuth app, but the
+                    underlying API usage is billed per call.
                   </td>
                   <td className="py-3">
-                    API calls are billed through Cadet credits at the cloud rate.
+                    API calls are billed through Cadet credits at the cloud
+                    rate.
                   </td>
                 </tr>
                 <tr>
@@ -355,20 +363,23 @@ export function OauthIntegrationsContent() {
                     BYOK OAuth
                   </td>
                   <td className="py-3 pr-4">
-                    Services where you register your own OAuth app (e.g., custom Twitter API tier, enterprise Google Workspace)
+                    Services where you register your own OAuth app (e.g., custom
+                    Twitter API tier, enterprise Google Workspace)
                   </td>
                   <td className="py-3">
-                    You pay the third-party service directly under your own account and quota.
+                    You pay the third-party service directly under your own
+                    account and quota.
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            Most integrations (GitHub, Notion, Linear, Google, Discord, Asana, Outlook,
-            Todoist, and HubSpot) are cloud OAuth with no additional cost. Only Twitter (X)
-            cloud OAuth incurs per-call billing through Cadet credits. BYOK is for
-            advanced cases where you bring your own API keys or enterprise OAuth apps.
+            Most integrations (GitHub, Notion, Linear, Google, Discord, Asana,
+            Outlook, Todoist, and HubSpot) are cloud OAuth with no additional
+            cost. Only Twitter (X) cloud OAuth incurs per-call billing through
+            Cadet credits. BYOK is for advanced cases where you bring your own
+            API keys or enterprise OAuth apps.
           </p>
         </section>
 
@@ -384,31 +395,35 @@ export function OauthIntegrationsContent() {
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-stone-600 dark:text-stone-400 marker:text-stone-400 dark:marker:text-stone-500">
             <li>
-              <strong>OAuth connection failed:</strong> If you are on a corporate network,
-              your IT team may block third-party OAuth. Ask them to whitelist the service&apos;s
-              OAuth domain, or connect from a personal network.
+              <strong>OAuth connection failed:</strong> If you are on a
+              corporate network, your IT team may block third-party OAuth. Ask
+              them to whitelist the service&apos;s OAuth domain, or connect from
+              a personal network.
             </li>
             <li>
-              <strong>Token expired:</strong> OAuth tokens expire. Tell your assistant to
-              reconnect the service (e.g., <em>&ldquo;Reconnect my Gmail&rdquo;</em>) and it
-              will walk you through the authorization flow again.
+              <strong>Token expired:</strong> OAuth tokens expire. Tell your
+              assistant to reconnect the service (e.g.,{" "}
+              <em>&ldquo;Reconnect my Gmail&rdquo;</em>) and it will walk you
+              through the authorization flow again.
             </li>
             <li>
-              <strong>Insufficient permissions:</strong> If a skill says it can&apos;t
-              perform an action (e.g., sending from a specific Gmail label), the OAuth scope
-              may not cover it. Disconnect and reconnect, ensuring you grant all requested
-              permissions during the flow.
+              <strong>Insufficient permissions:</strong> If a skill says it
+              can&apos;t perform an action (e.g., sending from a specific Gmail
+              label), the OAuth scope may not cover it. Disconnect and
+              reconnect, ensuring you grant all requested permissions during the
+              flow.
             </li>
             <li>
-              <strong>Rate limited:</strong> Some services enforce strict API rate limits
-              (notably Twitter/X). If you hit limits, the assistant will tell you. You may
-              need to upgrade your API tier with the service directly.
+              <strong>Rate limited:</strong> Some services enforce strict API
+              rate limits (notably Twitter/X). If you hit limits, the assistant
+              will tell you. You may need to upgrade your API tier with the
+              service directly.
             </li>
           </ul>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             For more detailed troubleshooting steps, see the{" "}
             <Link
-              href="/docs/help/common-issues"
+              href="/docs/help/faq"
               className="text-emerald-700 underline hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
             >
               Common Issues

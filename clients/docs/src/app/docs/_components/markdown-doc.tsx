@@ -11,6 +11,8 @@ interface MarkdownDocProps {
   file: string;
   title: string;
   breadcrumb: string;
+  /** Render the page's markdown jump list as `.docs-nav-cards`. */
+  navCards?: boolean;
 }
 
 /**
@@ -22,7 +24,12 @@ interface MarkdownDocProps {
  * own h2/h3 headings (anchored by rehype-slug in ReleaseMarkdown) and is
  * shown whenever the doc has two or more of them.
  */
-export function MarkdownDoc({ file, title, breadcrumb }: MarkdownDocProps) {
+export function MarkdownDoc({
+  file,
+  title,
+  breadcrumb,
+  navCards = false,
+}: MarkdownDocProps) {
   const md = fs.readFileSync(
     path.join(process.cwd(), "src", "content", `${file}.md`),
     "utf8",
@@ -31,7 +38,7 @@ export function MarkdownDoc({ file, title, breadcrumb }: MarkdownDocProps) {
   return (
     <>
       <DocsContent title={title} breadcrumb={breadcrumb}>
-        <ReleaseMarkdown content={md} />
+        <ReleaseMarkdown content={md} navCards={navCards} />
       </DocsContent>
       {toc.length >= 2 ? <TableOfContents items={toc} /> : null}
     </>

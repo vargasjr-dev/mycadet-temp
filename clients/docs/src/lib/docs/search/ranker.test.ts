@@ -20,9 +20,9 @@ const BASE_INDEX: DocsSearchIndexFile = {
       keywords: ["installation", "quickstart"],
     },
     {
-      id: "/docs/help/common-issues#oauth",
-      route: "/docs/help/common-issues",
-      url: "/docs/help/common-issues#oauth",
+      id: "/docs/help/faq#oauth",
+      route: "/docs/help/faq",
+      url: "/docs/help/faq#oauth",
       pageTitle: "Common Issues",
       breadcrumb: "Docs / Help / Common Issues",
       heading: "OAuth connection failed",
@@ -50,7 +50,7 @@ describe("searchDocsIndex", () => {
       limit: 5,
     });
 
-    expect(fuzzy[0]?.route).toBe("/docs/help/common-issues");
+    expect(fuzzy[0]?.route).toBe("/docs/help/faq");
   });
 
   test("builds fuzzy-match snippets from the matched term, not the raw query token", () => {

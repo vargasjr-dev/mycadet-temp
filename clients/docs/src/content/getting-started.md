@@ -1,168 +1,8 @@
 Cadet is a personal AI assistant that lives in the secure Cadet Cloud, available wherever you are. It can have its own identity, its own email, its own accounts, its own logins. It can read your files, manage your calendar, order you food, build you an app, control your computer, take calls on your behalf, and remember that you take your coffee black. It's not a chatbot. It's a separate entity that works for you, learns about you, and takes real actions in the real world.
 
-This page covers everything to get from zero to a working assistant: what Cadet is, how to install it, how to start using it, and how to teach it its first new skill.
-
-## What is Cadet?
-
-### The short version
-
-Cadet is a personal AI assistant that lives in the secure Cadet Cloud, available wherever you are. It can have its own identity, its own email, its own accounts, its own logins. It can read your files, manage your calendar, order you food, build you an app, control your computer, take calls on your behalf, and remember that you take your coffee black.
-
-It's not a chatbot. It's not an autocomplete engine. It's a separate entity that works for you, learns about you, and takes real actions in the real world.
-
-### How is this different from ChatGPT, Claude, OpenClaw, or Hermes?
-
-Those are conversation tools. You type, they respond, you copy-paste the answer somewhere useful. The conversation ends and everything resets.
-
-Cadet is different in a few important ways:
-
-**It has tools, not just words.** Your assistant can browse the web, read your files, run code, send emails, manage your calendar, and interact with dozens of services. It can also see your screen and control your Mac or Windows PC directly, clicking, typing, and navigating apps through the desktop app. Sensitive actions always require your approval first. It doesn't describe what you _could_ do. It does it.
-
-**It remembers you.** Not just within a single conversation. Across days, weeks, months. Your preferences, your projects, your quirks. It builds a picture of who you are and uses that to help you better over time.
-
-**It has its own identity.** Your assistant isn't borrowing yours. It can have its own email, its own GitHub account, its own Slack handle. When it sends an email on your behalf, the recipient knows they're talking to your assistant, not to you. Clear boundaries, no confusion.
-
-**Your data stays yours.** Your workspace, your memories, your configuration... all live in your private Cadet Cloud account, encrypted and isolated, or on your own machine if you self-host. No shared database, no opaque storage, no data you can't access. Plain-text, exportable, deletable, yours.
-
-**It's personal.** Not a team tool. Not a shared resource. Not a Slack bot everyone in your company uses. It's _your_ assistant, personalized to _you_, and nobody else can access it.
-
-Tools like OpenClaw and Hermes Agent take a more DIY approach. They run in your terminal, expect you to configure them yourself, and assume you're comfortable wiring up API keys, model providers, and tool integrations before you can get anything done.
-
-**It works out of the box.** No config files to write, no CLI to install, no model routing to set up. Sign up and your assistant is running, connected to cloud AI models, and ready to go. OpenClaw and Hermes expect you to bring your own keys, pick your own providers, and handle the plumbing yourself.
-
-**It has a real interface.** A polished web app and desktop apps for macOS and Windows. You can see your memories, browse your skills, manage integrations, and read conversation history in a UI designed for humans. OpenClaw and Hermes live in the terminal, which works if you're a developer who lives there too, but most people want a screen they can click.
-
-**It's built for security and reliability.** Credentials are encrypted at rest. Sensitive actions require explicit approval. Your workspace is isolated to your account with no shared state. Cadet Cloud runs on managed infrastructure with monitoring and uptime you don't have to maintain. Self-hosting is there if you want full control, but you don't have to trade reliability for ownership.
-
-OpenClaw and Hermes are powerful if you're technical and want to build everything yourself. Cadet is for people who want the power without the setup tax.
-
-### What can it do?
-
-A non-exhaustive list of things your assistant can handle, organized by category:
-
-#### 💬 Communication
-
-- **Gmail** — Manage your inbox, draft replies, archive, label, and unsubscribe
-- **Email (Agent Mail)** — Give your assistant its own email address to send and receive mail
-- **Messaging** — Read, search, and send messages across multiple platforms
-- **Phone Calls** — Make and receive phone calls via Twilio
-- **Slack** — Scan channels, summarize threads, send and manage messages
-- **Contacts** — Manage contacts, communication channels, and access control
-- **Notifications** — Send notifications through the unified notification router
-
-#### 📅 Productivity
-
-- **Google Calendar** — Check schedules, create events, and coordinate availability
-- **Tasks** — Reusable task templates and a prioritized work queue
-- **Schedule** — Recurring and one-shot scheduling with cron, RRULE, or single fire-at time
-- **Followups** — Track sent messages awaiting responses across channels
-- **Playbooks** — Trigger-action automation rules for handling incoming messages
-- **Document** — Write and edit long-form content like blog posts, articles, and reports
-- **Start the Day** — Get a personalized daily briefing with weather, calendar, news, and tasks
-
-#### 🖥️ Automation & Control
-
-- **Computer Use**: Control your Mac or Windows PC: click, type, and navigate supported apps
-- **Browser** — Navigate and interact with web pages using a headless browser
-- **Screen Watch** — Observe the screen at regular intervals with OCR
-- **Watcher** — Poll and monitor external sources for changes
-- **Subagent** — Spawn autonomous background agents for parallel work
-
-#### 🛠️ Development
-
-- **App Builder** — Build interactive apps, dashboards, tools, and data visualizations
-- **Frontend Design** — Create distinctive, production-grade frontend interfaces with high design quality
-- **ACP** — Delegate coding tasks to external coding agents via the Agent Client Protocol
-
-#### 🎨 Media
-
-- **Image Studio** — Generate and edit images using AI
-- **Media Processing** — Ingest and process video, audio, and image files
-- **Transcribe** — Turn audio and video into text with Whisper
-
-#### 🛍️ Services
-
-- **Amazon** — Shop on Amazon and Amazon Fresh
-- **DoorDash** — Order food, groceries, and convenience items
-- **Weather** — Get current conditions and forecasts for any location
-
-#### 🧠 Knowledge & Identity
-
-- **Memory** — Remembers your preferences, projects, and context across conversations
-- **SOUL.md / IDENTITY.md / USER.md** — Editable files that shape your assistant's personality and knowledge of you
-- **Skill Management** — Create and manage custom skills as your needs evolve
-
-#### 🔗 Integrations
-
-- **OAuth Integrations** — Connect to third-party services like GitHub, Notion, Linear, Airtable, Spotify, and more
-- **MCP Servers** — Add Model Context Protocol servers for extended tool access
-- **ChatGPT Import** — Import conversation history from ChatGPT
-- **Voice Input** — Hold Fn to talk to your assistant
-
-And if it can't do something? You can teach it. Skills are modular and extensible — see [Your first skill](#your-first-skill) below.
-
-### Where does it run?
-
-Your assistant lives in Cadet Cloud by default and is reachable from anywhere. You can also self-host it on your own Mac if you want full control of the runtime.
-
-**☁️ Cadet Cloud (default)**
-
-Sign up and your assistant is provisioned in seconds, hosted in Cadet's secure cloud, always on, always reachable. No install, no servers to manage. Your workspace is encrypted and isolated to your account.
-
-- Use it instantly in your browser at mycadet.ai
-- Always-on availability, even when your laptop is closed
-- Encrypted, isolated workspace tied to your account
-- One assistant, reachable across web, desktop, mobile, voice, and chat channels
-
-**🌐 Web app**
-
-Open your assistant in any modern browser. Same conversation, memories, and tools as the desktop app, no install required.
-
-- Works in Chrome, Safari, Firefox, Arc, and the rest
-- Same workspace and identity as your desktop and mobile sessions
-- Browser extension available for reading open tabs and acting on the page you're looking at
-
-**🖥️ Desktop apps for macOS and Windows**
-
-A menu bar app on macOS and a system tray app on Windows. Same assistant as the web app, plus computer control and voice input. See [Installation](#installation) for system requirements and setup.
-
-- macOS DMG or Windows EXE installer
-- Desktop automation through macOS accessibility APIs or Windows UI Automation
-- Voice input with platform-specific shortcuts
-- Connects to your Cadet Cloud assistant, or run a fully self-hosted local workspace
-
-**📱 iOS app**
-
-Install Cadet on your iPhone or iPad and sign in to the same assistant you use on the web and Mac. Your conversations, memories, tools, and workspace stay with you across devices.
-
-- Available from the App Store
-- Talk to your assistant from your iPhone or iPad
-- Review approval requests from mobile notifications
-
-**📡 Channels**
-
-Beyond the apps, you can reach your assistant through external channels, so it's available wherever you are.
-
-- **Telegram** — Chat with your assistant from any device via a Telegram bot
-- **Slack** — Message your assistant directly in Slack, useful for work contexts
-- **Phone** — Call your assistant or have it take calls on your behalf via Twilio
-
-### How does it work? (The 30-second version)
-
-1. **You talk to it.** In your browser, the desktop app, by voice, or through chat channels like Telegram, Slack, and phone.
-2. **It thinks.** Your message, along with relevant context (your preferences, memories, workspace files), is sent to a cloud AI model to generate a response.
-3. **It acts.** If the response involves doing something (reading a file, sending an email, building an app, or controlling your desktop), your assistant uses its tools to make it happen. For desktop actions, it sees your screen, plans the steps, and executes them automatically. But it won't go rogue — your assistant always asks for permission before taking sensitive actions like sending emails, making purchases, or accessing new services. You stay in control, and you can configure exactly what requires approval and what your assistant can handle on its own.
-4. **It learns.** Important facts, preferences, and context are saved to your workspace so it gets better over time.
-
-> **Transparency moment:** Whether your assistant lives in Cadet Cloud or on your own machine, it _thinks_ by talking to an AI model provider (like Anthropic). Your prompts and context are sent there to generate responses. This is the trade-off of a smart assistant. We'd rather tell you upfront than have you discover it in a footnote.
-
-### Is it safe?
-
-Cadet has a built-in trust system. Sensitive actions like sending emails, making purchases, or controlling your desktop require your explicit approval. You can configure trust rules per channel. Credentials are encrypted at rest in Cadet Cloud, or stored in the macOS Keychain when you self-host, never in plain text.
-
-Learn more in [Trust & Security](/docs/trust-security).
-
 ## Installation
+
+Every client, one page: **[Downloads](https://www.mycadet.ai/downloads)** has the desktop apps, browser extension, and mobile listings.
 
 ### What you need
 
@@ -297,7 +137,105 @@ Key terms and concepts used throughout the Cadet ecosystem.
 - **Guardian** — The user who is in charge of the assistant. The guardian oversees the assistant's behavior, manages its configuration, and ensures it operates within defined boundaries.
 - **Hatch** — The process of creating and initializing a new assistant. When you hatch an assistant, it is configured and made ready to receive messages.
 - **Retire** — The process of deactivating an assistant. Retiring an assistant stops it from receiving new messages and frees up associated resources.
-- **[Skill](/docs/key-concepts/skills-and-tools)** — An action or capability that the assistant can invoke during a conversation. Skills allow the assistant to interact with external systems, run code, search the web, and more.
+
+## What is Cadet?
+
+### The short version
+
+Cadet is a personal AI assistant that lives in the secure Cadet Cloud, available wherever you are. It can have its own identity, its own email, its own accounts, its own logins. It can read your files, manage your calendar, order you food, build you an app, control your computer, take calls on your behalf, and remember that you take your coffee black.
+
+It's not a chatbot. It's not an autocomplete engine. It's a separate entity that works for you, learns about you, and takes real actions in the real world.
+
+### How is this different from ChatGPT, Claude, OpenClaw, or Hermes?
+
+Those are conversation tools. You type, they respond, you copy-paste the answer somewhere useful. The conversation ends and everything resets.
+
+Cadet is different in a few important ways:
+
+**It has tools, not just words.** Your assistant can browse the web, read your files, run code, send emails, manage your calendar, and interact with dozens of services. It can also see your screen and control your Mac or Windows PC directly, clicking, typing, and navigating apps through the desktop app. Sensitive actions always require your approval first. It doesn't describe what you _could_ do. It does it.
+
+**It remembers you.** Not just within a single conversation. Across days, weeks, months. Your preferences, your projects, your quirks. It builds a picture of who you are and uses that to help you better over time.
+
+**It has its own identity.** Your assistant isn't borrowing yours. It can have its own email, its own GitHub account, its own Slack handle. When it sends an email on your behalf, the recipient knows they're talking to your assistant, not to you. Clear boundaries, no confusion.
+
+**Your data stays yours.** Your workspace, your memories, your configuration... all live in your private Cadet Cloud account, encrypted and isolated, or on your own machine if you self-host. No shared database, no opaque storage, no data you can't access. Plain-text, exportable, deletable, yours.
+
+**It's personal.** Not a team tool. Not a shared resource. Not a Slack bot everyone in your company uses. It's _your_ assistant, personalized to _you_, and nobody else can access it.
+
+Tools like OpenClaw and Hermes Agent take a more DIY approach. They run in your terminal, expect you to configure them yourself, and assume you're comfortable wiring up API keys, model providers, and tool integrations before you can get anything done.
+
+**It works out of the box.** No config files to write, no CLI to install, no model routing to set up. Sign up and your assistant is running, connected to cloud AI models, and ready to go. OpenClaw and Hermes expect you to bring your own keys, pick your own providers, and handle the plumbing yourself.
+
+**It has a real interface.** A polished web app and desktop apps for macOS and Windows. You can see your memories, browse your skills, manage integrations, and read conversation history in a UI designed for humans. OpenClaw and Hermes live in the terminal, which works if you're a developer who lives there too, but most people want a screen they can click.
+
+**It's built for security and reliability.** Credentials are encrypted at rest. Sensitive actions require explicit approval. Your workspace is isolated to your account with no shared state. Cadet Cloud runs on managed infrastructure with monitoring and uptime you don't have to maintain. Self-hosting is there if you want full control, but you don't have to trade reliability for ownership.
+
+OpenClaw and Hermes are powerful if you're technical and want to build everything yourself. Cadet is for people who want the power without the setup tax.
+
+### What can it do?
+
+Cadet ships with 40+ built-in skills — Gmail, Google Calendar, Slack, phone calls, computer use, app building, image generation, and more — plus a growing library of community skills on [skills.sh](https://skills.sh). The [Skills Reference](https://www.mycadet.ai/skills) outlines every one, and [Plugins](/docs/extensibility) covers how to extend your Cadet with new skills, integrations, and automations.
+
+### Where does it run?
+
+Your assistant lives in Cadet Cloud by default and is reachable from anywhere. You can also self-host it on your own Mac if you want full control of the runtime.
+
+**☁️ Cadet Cloud (default)**
+
+Sign up and your assistant is provisioned in seconds, hosted in Cadet's secure cloud, always on, always reachable. No install, no servers to manage. Your workspace is encrypted and isolated to your account.
+
+- Use it instantly in your browser at mycadet.ai
+- Always-on availability, even when your laptop is closed
+- Encrypted, isolated workspace tied to your account
+- One assistant, reachable across web, desktop, mobile, voice, and chat channels
+
+**🌐 Web app**
+
+Open your assistant in any modern browser. Same conversation, memories, and tools as the desktop app, no install required.
+
+- Works in Chrome, Safari, Firefox, Arc, and the rest
+- Same workspace and identity as your desktop and mobile sessions
+- Browser extension available for reading open tabs and acting on the page you're looking at
+
+**🖥️ Desktop apps for macOS and Windows**
+
+A menu bar app on macOS and a system tray app on Windows. Same assistant as the web app, plus computer control and voice input. See [Installation](#installation) for system requirements and setup.
+
+- macOS DMG or Windows EXE installer
+- Desktop automation through macOS accessibility APIs or Windows UI Automation
+- Voice input with platform-specific shortcuts
+- Connects to your Cadet Cloud assistant, or run a fully self-hosted local workspace
+
+**📱 iOS app**
+
+Install Cadet on your iPhone or iPad and sign in to the same assistant you use on the web and Mac. Your conversations, memories, tools, and workspace stay with you across devices.
+
+- Available from the App Store
+- Talk to your assistant from your iPhone or iPad
+- Review approval requests from mobile notifications
+
+**📡 Channels**
+
+Beyond the apps, you can reach your assistant through external channels, so it's available wherever you are.
+
+- **Telegram** — Chat with your assistant from any device via a Telegram bot
+- **Slack** — Message your assistant directly in Slack, useful for work contexts
+- **Phone** — Call your assistant or have it take calls on your behalf via Twilio
+
+### How does it work? (The 30-second version)
+
+1. **You talk to it.** In your browser, the desktop app, by voice, or through chat channels like Telegram, Slack, and phone.
+2. **It thinks.** Your message, along with relevant context (your preferences, memories, workspace files), is sent to a cloud AI model to generate a response.
+3. **It acts.** If the response involves doing something (reading a file, sending an email, building an app, or controlling your desktop), your assistant uses its tools to make it happen. For desktop actions, it sees your screen, plans the steps, and executes them automatically. But it won't go rogue — your assistant always asks for permission before taking sensitive actions like sending emails, making purchases, or accessing new services. You stay in control, and you can configure exactly what requires approval and what your assistant can handle on its own.
+4. **It learns.** Important facts, preferences, and context are saved to your workspace so it gets better over time.
+
+> **Transparency moment:** Whether your assistant lives in Cadet Cloud or on your own machine, it _thinks_ by talking to an AI model provider (like Anthropic). Your prompts and context are sent there to generate responses. This is the trade-off of a smart assistant. We'd rather tell you upfront than have you discover it in a footnote.
+
+### Is it safe?
+
+Cadet has a built-in trust system. Sensitive actions like sending emails, making purchases, or controlling your desktop require your explicit approval. You can configure trust rules per channel. Credentials are encrypted at rest in Cadet Cloud, or stored in the macOS Keychain when you self-host, never in plain text.
+
+Learn more in [Trust & Security](/docs/trust-security).
 
 ## Quick Start
 
@@ -373,92 +311,6 @@ Setup is a few minutes per channel and runs through a verification handshake so 
 ### Where to go next
 
 - [Key Concepts](/docs/key-concepts): the workspace, memory, channels, tools, scheduling. The mental model behind how your assistant works.
-- [Your first skill](#your-first-skill): how to add a new capability, like a new integration or a custom workflow.
+- [Plugins](/docs/extensibility): all the ways to extend your Cadet with new skills, integrations, and automations.
 - [Security best practices](/docs/trust-security/security-best-practices): the practical guide to staying safe while giving your assistant useful access.
 - [FAQ](/docs/help/faq): answers to the questions most people have in their first week.
-
-## Your first skill
-
-Skills are how your agent learns to do new things. Not prompts you type once and forget, but durable capabilities you teach your agent once, and it keeps doing them for you.
-
-The model matters, but it was never the thing holding you back. A raw agent does not know your work, your voice, your tools, or the way you like things done. Skills close that gap. Your agent comes with 40+ built-in skills, and you can teach it new ones just by talking to it.
-
-### Why skills matter
-
-Most people use AI as a chat. Ask something, get an answer, move on. The next day they ask the same thing and the agent starts from zero. That is not a problem with the model. It is a problem with the architecture.
-
-A skill is the opposite of a one-off chat. It is a workflow you teach your agent once, and it runs the same way every time, with your format, your voice, your tools, and your edge cases locked in.
-
-### What's a skill?
-
-A skill gives your agent a new ability. It is a folder with a recipe, reference files, and tool declarations that teach your agent how to do one specific job well.
-
-- The **Weather** skill checks forecasts for any location
-- The **Gmail** skill reads, writes, and manages your email
-- The **DoorDash** skill orders food, delivered to your door
-- The **Schedule** skill sets up recurring tasks and reminders
-
-You do not have to think about skills at all. Your agent picks the right one when you ask it to do something. But knowing they exist, and that you can build your own, changes what is possible.
-
-### Built-in skills
-
-Your agent ships with 40+ skills across communication, productivity, automation, development, and media. Most work instantly. A few, like Gmail, Slack, and Phone Calls, need a one-time setup, and your agent walks you through it on first use.
-
-For the full list, see the [Skills Reference](https://www.mycadet.ai/skills).
-
-### Installing community skills
-
-Want something that is not built in? There is a growing library of community skills at [skills.sh](https://skills.sh). Just ask:
-
-> "Search for a Notion skill."
-
-Your agent finds it, shows you what it does, and installs it with your permission. From there it works just like a built-in skill.
-
-### Building a custom skill
-
-This is where it gets powerful. You can create new skills by describing what you want in the chat. Do not treat it as a feature request. Treat it as teaching. You are writing a recipe your agent will follow every time.
-
-#### Step 1: Pick one task
-
-Pick something you do every week and find tedious. Specific, not generic. Not "write blog posts." Something like:
-
-> "Check our competitor pricing every Monday and give me a table with price, change, and verdict."
-
-> "Read our overnight support tickets, group them by category, and post a summary to Slack at 9 AM."
-
-The narrower the better. A skill that does one thing well beats a skill that tries to do everything.
-
-#### Step 2: Draft the recipe
-
-Your agent drafts the skill from what you described. It writes the instructions, bundles any reference notes and scripts the workflow needs, and sets the format. It does this with its built-in **Skill Management** skill, the skill that builds skills. You do not invoke it directly. Just describe what you want and your agent reaches for it automatically.
-
-A good skill has four ingredients:
-
-1. **Clear purpose.** One task, one output.
-2. **Workflow steps.** The exact sequence your agent follows every time.
-3. **Tool access.** What it needs to read, search, or call.
-4. **Output format.** What a perfect result looks like. Show an example.
-
-Your agent asks follow-up questions if it needs more detail. Be specific about format, voice, and edge cases. The recipe is only as good as the instructions.
-
-#### Step 3: Test and iterate
-
-Once the skill is saved, run it and look at the output. The first run is almost never perfect, and that is expected. Tell your agent what is off and have it fix it: a missing column, the wrong tone, a competitor you forgot to mention.
-
-This is the teaching loop. Run it, judge it, fix it. Three rounds usually gets you to reliable, and the refinement is where the skill becomes yours.
-
-#### Step 4: Refine until reliable
-
-Your skill is saved as plain text files in `$CADET_WORKSPACE_DIR/skills/`. You can:
-
-- Edit the files directly in any text editor
-- Ask your agent to tweak it ("Make the verdict column bold")
-- Add reference docs, like a brand voice guide or a glossary
-- Add a schedule so it runs automatically
-- Share it with other Cadet users
-
-A reliable skill is one you trust enough to run without checking the output first. That is the payoff: it stops being work you do and becomes work your agent does for you.
-
----
-
-For documentation on every built-in skill, see the [Skills Reference](https://www.mycadet.ai/skills). Or keep going to [Key Concepts](/docs/key-concepts) to understand how it all fits together.

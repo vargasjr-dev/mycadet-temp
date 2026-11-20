@@ -14,6 +14,7 @@ export default function DocsPage() {
       file="homepage"
       title="Meet Cadet"
       breadcrumb="Docs / Homepage"
+      navCards
     />
   );
 }

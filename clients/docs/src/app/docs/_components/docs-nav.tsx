@@ -162,11 +162,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         icon: icon(FolderOpen),
       },
       {
-        label: "Tools & Skills",
-        href: "/docs/key-concepts/skills-and-tools",
-        icon: icon(Wrench),
-      },
-      {
         label: "Memory & Context",
         href: "/docs/key-concepts/memory-and-context",
         icon: icon(Brain),
@@ -506,11 +501,6 @@ const NAV_ITEMS: DocsNavItem[] = [
     icon: icon(LifeBuoy),
     children: [
       { label: "FAQ", href: "/docs/help/faq", icon: icon(HelpCircle) },
-      {
-        label: "Common Issues",
-        href: "/docs/help/common-issues",
-        icon: icon(AlertCircle),
-      },
       {
         label: "Getting Help",
         href: "/docs/help/getting-help",

@@ -25,17 +25,6 @@ export function KeyConceptsContent() {
             →
           </span>
         </a>
-        <a href="/docs/key-concepts/skills-and-tools" className="docs-nav-card">
-          <div className="docs-nav-card-content">
-            <span className="docs-nav-card-title">Tools &amp; Skills</span>
-            <span className="docs-nav-card-desc">
-              What your assistant can do, and how it learns new tricks.
-            </span>
-          </div>
-          <span className="docs-nav-card-arrow" aria-hidden="true">
-            →
-          </span>
-        </a>
         <a
           href="/docs/key-concepts/memory-and-context"
           className="docs-nav-card"

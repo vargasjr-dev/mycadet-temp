@@ -164,11 +164,11 @@ export function AgenticPaymentsContent() {
             numbers.
           </p>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
-            The connection runs through Cadet&apos;s cloud OAuth, so it needs
-            an assistant that is connected to Cadet Cloud. If yours is not,
-            your assistant falls back to Link&apos;s own device login: it shows
-            you a link and a short phrase, and you approve the connection in the
-            Link app. Purchases work the same way either way.
+            The connection runs through Cadet&apos;s cloud OAuth, so it needs an
+            assistant that is connected to Cadet Cloud. If yours is not, your
+            assistant falls back to Link&apos;s own device login: it shows you a
+            link and a short phrase, and you approve the connection in the Link
+            app. Purchases work the same way either way.
           </p>
         </section>
 
@@ -389,7 +389,7 @@ export function AgenticPaymentsContent() {
           </ul>
           <p className="mb-0 text-stone-600 dark:text-stone-400">
             For more detailed troubleshooting steps, see the{" "}
-            <Link href="/docs/help/common-issues" className={LINK_CLASS}>
+            <Link href="/docs/help/faq" className={LINK_CLASS}>
               Common Issues
             </Link>{" "}
             page.

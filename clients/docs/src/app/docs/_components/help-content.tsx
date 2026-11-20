@@ -3,17 +3,25 @@
 import { DocsContent } from "@/app/docs/_components/docs-content";
 
 const HELP_PAGES = [
-  { title: "FAQ", href: "/docs/help/faq", description: "The questions everyone asks. Answered once, linked everywhere." },
-  { title: "Common Issues", href: "/docs/help/common-issues", description: "Things that go wrong and how to fix them." },
-  { title: "Getting Help", href: "/docs/help/getting-help", description: "Where to go when the docs aren't enough." },
+  {
+    title: "FAQ",
+    href: "/docs/help/faq",
+    description:
+      "The questions everyone asks. Answered once, linked everywhere.",
+  },
+  {
+    title: "Getting Help",
+    href: "/docs/help/getting-help",
+    description: "Where to go when the docs aren't enough.",
+  },
 ];
 
 export function HelpContent() {
   return (
     <DocsContent title="Help" breadcrumb="Docs / Help">
       <p className="mb-6 text-zinc-600">
-        Something&apos;s not working, something&apos;s confusing, or you just have a question.
-        We&apos;ve got you.
+        Something&apos;s not working, something&apos;s confusing, or you just
+        have a question. We&apos;ve got you.
       </p>
 
       <div className="docs-nav-cards">
@@ -23,7 +31,9 @@ export function HelpContent() {
               <span className="docs-nav-card-title">{page.title}</span>
               <span className="docs-nav-card-desc">{page.description}</span>
             </div>
-            <span className="docs-nav-card-arrow" aria-hidden="true">→</span>
+            <span className="docs-nav-card-arrow" aria-hidden="true">
+              →
+            </span>
           </a>
         ))}
       </div>
