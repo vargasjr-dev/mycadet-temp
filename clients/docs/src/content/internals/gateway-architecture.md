@@ -326,7 +326,7 @@ The HTTP bridge can carry normal JSON requests and health checks, so it is usefu
 
 Local platform smoke-test flow:
 
-1. In `mycadet-platform`, run `vel up tunnel`.
+1. Run the tunnel (`vel up tunnel`) from the platform environment.
 2. Ensure vembda passes the environment-appropriate `TUNNEL_BASE_URL` into assistant gateway containers.
 3. Start or complete Twilio setup in the workspace so the gateway is allowed to connect the tunnel.
 4. Re-hatch or restart the assistant so the gateway receives the new environment.

@@ -393,9 +393,94 @@ jobs:
           path: /tmp/digests/*
           retention-days: 1
 
+  # The same gate the production release runs: hatch the freshly pushed dev
+  # images and exercise them through cadet-test before the manifest jobs tag
+  # them. A container-start bug ships to dev users otherwise.
+  run-docker-integration-tests:
+    needs:
+      [
+        compute-version,
+        ci-cli,
+        push-assistant-image,
+        push-gateway-image,
+        push-credential-executor-image,
+      ]
+    if: ${{ !cancelled() && needs.compute-version.result == 'success' && needs.ci-cli.result == 'success' && needs.push-assistant-image.result == 'success' && needs.push-gateway-image.result == 'success' && needs.push-credential-executor-image.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - name: Setup Node (for the npm-installed cadet bin)
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+
+      # One digest artifact per image per platform, downloaded into its own
+      # directory — the files inside are named by digest hex, so merging
+      # them would lose which digest belongs to which image. The suite
+      # boots the amd64 digests (the platform this runner pulls for).
+      - name: Download assistant digest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: assistant-digests-dev-linux-amd64
+          path: /tmp/digests/assistant
+      - name: Download gateway digest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gateway-digests-dev-linux-amd64
+          path: /tmp/digests/gateway
+      - name: Download credential-executor digest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: credential-executor-digests-dev-linux-amd64
+          path: /tmp/digests/credential-executor
+
+      - name: Resolve image refs
+        run: |
+          digest_of() { ls "/tmp/digests/$1" | head -1; }
+          {
+            echo "CADET_ASSISTANT_IMAGE=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}@sha256:$(digest_of assistant)"
+            echo "CADET_GATEWAY_IMAGE=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}@sha256:$(digest_of gateway)"
+            echo "CADET_CREDENTIAL_EXECUTOR_IMAGE=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}@sha256:$(digest_of credential-executor)"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify image refs resolved
+        run: |
+          test -n "$CADET_ASSISTANT_IMAGE" || { echo "::error::CADET_ASSISTANT_IMAGE did not resolve"; exit 1; }
+          test -n "$CADET_GATEWAY_IMAGE" || { echo "::error::CADET_GATEWAY_IMAGE did not resolve"; exit 1; }
+          test -n "$CADET_CREDENTIAL_EXECUTOR_IMAGE" || { echo "::error::CADET_CREDENTIAL_EXECUTOR_IMAGE did not resolve"; exit 1; }
+          echo "assistant: $CADET_ASSISTANT_IMAGE"
+          echo "gateway: $CADET_GATEWAY_IMAGE"
+          echo "credential-executor: $CADET_CREDENTIAL_EXECUTOR_IMAGE"
+
+      # The suite drives the cli the dev channel actually ships: pack the
+      # same tarball publish-npm-cli-dev publishes and install it globally,
+      # so `cadet` is on PATH and cadet-test resolves the product binary —
+      # not the repo source.
+      - name: Install qa dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/qa --filter=./cli
+
+      - name: Pack and install the @mycadet/cli artifact
+        run: |
+          bun scripts/pack-npm-cli.ts --version "${{ needs.compute-version.outputs.version }}" --out /tmp/npm-dist
+          npm install -g /tmp/npm-dist/package.tgz
+          cadet --version
+
+      - name: Run the docker hatch integration suite
+        working-directory: qa
+        run: bun test docker-hatch.test.ts
+
   push-assistant-manifest:
-    needs: [compute-version, push-assistant-image]
-    if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' }}
+    needs: [compute-version, push-assistant-image, run-docker-integration-tests]
+    if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -532,8 +617,8 @@ jobs:
           retention-days: 1
 
   push-gateway-manifest:
-    needs: [compute-version, push-gateway-image]
-    if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' }}
+    needs: [compute-version, push-gateway-image, run-docker-integration-tests]
+    if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -669,8 +754,13 @@ jobs:
           retention-days: 1
 
   push-credential-executor-manifest:
-    needs: [compute-version, push-credential-executor-image]
-    if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' }}
+    needs:
+      [
+        compute-version,
+        push-credential-executor-image,
+        run-docker-integration-tests,
+      ]
+    if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest

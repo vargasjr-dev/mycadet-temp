@@ -39,7 +39,7 @@ if (missingImageEnv.length > 0) {
 }
 
 /** Spawn cadet-test with this suite's sandboxed state root. */
-function runCadetTest(args: string[]): {
+function runCadetCli(args: string[]): {
   status: number | null;
   stdout: string;
   stderr: string;
@@ -65,7 +65,7 @@ const instance = `qa-${randomUUID().slice(0, 8)}`;
 
 describe("docker hatch", () => {
   beforeAll(async () => {
-    const r = runCadetTest(["hatch", "--remote", "docker", "--name", instance]);
+    const r = runCadetCli(["hatch", "--remote", "docker", "--name", instance]);
     if (r.status !== 0) {
       throw new Error(
         `cadet-test hatch --remote docker failed\n${tail(r.stderr || r.stdout)}`,
@@ -75,13 +75,13 @@ describe("docker hatch", () => {
 
   afterAll(() => {
     if (stateRoot) {
-      runCadetTest(["retire", instance, "--yes"]);
+      runCadetCli(["retire", instance, "--yes"]);
       rmSync(stateRoot, { recursive: true, force: true });
     }
   }, 3 * 60_000);
 
   test("assistant credentials list serves over the CES socket", () => {
-    const r = runCadetTest([
+    const r = runCadetCli([
       "exec",
       instance,
       "--timeout",

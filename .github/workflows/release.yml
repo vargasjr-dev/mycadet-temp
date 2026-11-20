@@ -703,8 +703,14 @@ jobs:
     # have caught it). The manifest jobs below only tag images this job has
     # booted: a failing hatch blocks the release.
     needs:
-      [push-assistant-image, push-gateway-image, push-credential-executor-image]
-    if: ${{ !cancelled() && needs.push-assistant-image.result == 'success' && needs.push-gateway-image.result == 'success' && needs.push-credential-executor-image.result == 'success' }}
+      [
+        extract-version,
+        ci-cli,
+        push-assistant-image,
+        push-gateway-image,
+        push-credential-executor-image,
+      ]
+    if: ${{ !cancelled() && needs.extract-version.result == 'success' && needs.ci-cli.result == 'success' && needs.push-assistant-image.result == 'success' && needs.push-gateway-image.result == 'success' && needs.push-credential-executor-image.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -717,6 +723,10 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: "1.3.11"
+      - name: Setup Node (for the npm-installed cadet bin)
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
 
       # One digest artifact per image, downloaded into its own directory —
       # the files inside are named by digest hex, so merging them would lose
@@ -755,8 +765,18 @@ jobs:
           echo "gateway: $CADET_GATEWAY_IMAGE"
           echo "credential-executor: $CADET_CREDENTIAL_EXECUTOR_IMAGE"
 
+      # The suite drives the cli the release actually ships: pack the same
+      # tarball publish-npm-cli-prod publishes and install it globally, so
+      # `cadet` is on PATH and cadet-test resolves the product binary —
+      # not the repo source.
       - name: Install qa dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/qa --filter=@mycadet/cli
+        run: bun install --frozen-lockfile --filter=@mycadet/qa --filter=./cli
+
+      - name: Pack and install the @mycadet/cli artifact
+        run: |
+          bun scripts/pack-npm-cli.ts --deps-version "${{ needs.extract-version.outputs.version }}" --out /tmp/npm-dist
+          npm install -g /tmp/npm-dist/package.tgz
+          cadet --version
 
       - name: Run the docker hatch integration suite
         working-directory: qa

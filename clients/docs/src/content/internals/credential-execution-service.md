@@ -78,7 +78,7 @@ These alternatives were evaluated for the v1 key store and rejected. They are re
 
 ### 3. Platform OAuth materialization stays on the cloud
 
-OAuth tokens managed by the cloud (`mycadet-platform`) — including token refresh, revocation, and scope management — continue to be handled by the cloud's token management system. CES does not duplicate OAuth lifecycle management. When CES needs an OAuth token, it requests a materialized token from the cloud via the existing cloud proxy endpoint, using the same mechanism the assistant currently uses.
+OAuth tokens managed by the cloud — including token refresh, revocation, and scope management — continue to be handled by the cloud's token management system. CES does not duplicate OAuth lifecycle management. When CES needs an OAuth token, it requests a materialized token from the cloud via the existing cloud proxy endpoint, using the same mechanism the assistant currently uses.
 
 ### 4. Secure generic authenticated HTTP must not run through `run_authenticated_command`
 
@@ -315,4 +315,3 @@ The following capabilities are intentionally deferred beyond v1:
 
 - [Security architecture](architecture/security.md) — existing credential broker and permission model
 - [Tools AGENTS.md](../src/tools/AGENTS.md) — tooling direction and CES exception
-- [Network traffic matrix](../../../mycadet-platform/docs/network-traffic-matrix.md) — managed pod network policies
