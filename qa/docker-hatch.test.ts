@@ -84,16 +84,23 @@ describe.skipIf(!imageRefsSupplied)(
         );
       }
 
+      // The one-shot CLI logs its INFO lines to stdout around the JSON
+      // payload (CES discovery, handshake, teardown) — the payload is the
+      // last brace-opening line.
+      const jsonLine = r.stdout
+        .split("\n")
+        .filter((line) => line.startsWith("{"))
+        .pop();
       let parsed: { ok: boolean; credentials: unknown[] };
       try {
-        parsed = JSON.parse(r.stdout) as {
+        parsed = JSON.parse(jsonLine ?? "") as {
           ok: boolean;
           credentials: unknown[];
         };
       } catch {
         const out = r.stdout;
         throw new Error(
-          `assistant credentials list --json did not print valid JSON ` +
+          `assistant credentials list --json did not print a JSON line ` +
             `(stdout ${out.length} bytes, stderr ${r.stderr.length} bytes)\n` +
             `stdout head: ${JSON.stringify(out.slice(0, 500))}\n` +
             `stdout tail: ${JSON.stringify(out.slice(-500))}\n` +
