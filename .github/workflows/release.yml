@@ -756,7 +756,7 @@ jobs:
           echo "credential-executor: $CADET_CREDENTIAL_EXECUTOR_IMAGE"
 
       - name: Install qa dependencies
-        run: bun install --frozen-lockfile --filter=@mycadet/qa
+        run: bun install --frozen-lockfile --filter=@mycadet/qa --filter=@mycadet/cli
 
       - name: Run the docker hatch integration suite
         working-directory: qa

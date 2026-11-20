@@ -81,7 +81,7 @@ jobs:
 
       - name: Install dependencies
         if: ${{ steps.edited.outputs.count != '0' }}
-        run: bun install --frozen-lockfile --filter=@mycadet/qa
+        run: bun install --frozen-lockfile --filter=@mycadet/qa --filter=@mycadet/cli
 
       - name: Set up Docker Buildx
         if: ${{ steps.edited.outputs.count != '0' }}
