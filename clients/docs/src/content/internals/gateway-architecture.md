@@ -324,16 +324,6 @@ Public Tunnel HTTPS/WSS URL
 
 The HTTP bridge can carry normal JSON requests and health checks, so it is useful for local bridge smoke tests. Tunnel-managed `ingress.publicBaseUrl` changes are tagged with `publicBaseUrlManagedBy` so gateway side effects can skip unrelated webhook reconciliation while still refreshing Twilio phone-number webhooks. While `tunnel-webhooks` is on, the Telegram reconcile runs on that change too, because the published URL is then the address Telegram is meant to point at; email callback re-registration stays suppressed either way.
 
-Local platform smoke-test flow:
-
-1. Run the tunnel (`vel up tunnel`) from the platform environment.
-2. Ensure vembda passes the environment-appropriate `TUNNEL_BASE_URL` into assistant gateway containers.
-3. Start or complete Twilio setup in the workspace so the gateway is allowed to connect the tunnel.
-4. Re-hatch or restart the assistant so the gateway receives the new environment.
-5. Confirm gateway logs show `Tunnel connected` and `Tunnel registered`.
-6. Verify HTTP forwarding by requesting `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/healthz` and `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/schema`. For MCP OAuth testing, request `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/oauth/client-metadata.json` and confirm its `redirect_uris` entry points at the same public assistant URL. When validating a JSON webhook route under active development, POST a small JSON body through the same Tunnel public URL and confirm it reaches the loopback gateway.
-7. Verify Twilio WebSocket forwarding with a synthetic local WebSocket client against `${TUNNEL_PUBLIC_BASE_URL}/<assistant-id>/webhooks/twilio/media-stream/<callSessionId>/<token>`, then with a real Twilio call after the gateway has registered with Tunnel.
-
 ### Webhook Ingress Route Registry
 
 The whole `/webhooks/` namespace used to be reachable through the tunnel as one wildcard. The registry replaces that with a per-assistant allowlist: an assistant answers exactly the subpaths it has claimed, and nothing else. It is gated on the `tunnel-webhooks` feature flag; with the flag off every rule below is the pre-registry one.

@@ -313,5 +313,4 @@ The following capabilities are intentionally deferred beyond v1:
 
 ## See Also
 
-- [Security architecture](architecture/security.md) — existing credential broker and permission model
-- [Tools AGENTS.md](../src/tools/AGENTS.md) — tooling direction and CES exception
+- [Security architecture](/docs/developer-guide/internals/security) — existing credential broker and permission model

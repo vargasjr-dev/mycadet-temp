@@ -229,7 +229,7 @@ The production lockfile (`~/.cadet.lock.json`) tracks all instances:
 
 ## Docker Volume Architecture
 
-Docker instances use dedicated volumes with per-service access boundaries instead of a single shared data volume. This enforces least-privilege: each service only has filesystem access to the data it owns. The assistant container also owns a dedicated `dockerd-data` volume that backs the inner Docker engine used by the Meet subsystem — see [Meet Docker-in-Docker Model](#meet-docker-in-docker-model) below.
+Docker instances use dedicated volumes with per-service access boundaries instead of a single shared data volume. This enforces least-privilege: each service only has filesystem access to the data it owns.
 
 ### Volume Layout
 
@@ -240,7 +240,6 @@ Docker instances use dedicated volumes with per-service access boundaries instea
 <instance-name>-socket          →  /run/ces-ipc   (assistant + CES)
 <instance-name>-gateway-ipc     →  /run/gateway-ipc     (assistant + gateway)
 <instance-name>-assistant-ipc   →  /run/assistant-ipc   (assistant + gateway)
-<instance-name>-dockerd-data    →  /var/lib/docker      (assistant only — inner dockerd state)
 ```
 
 - **Workspace volume** (`/workspace`): Shared state — config, conversations, apps, skills, database, logs. Set via `CADET_WORKSPACE_DIR=/workspace`. The assistant and gateway have read-write access; the CES mounts it read-only (for config reading).
@@ -249,35 +248,6 @@ Docker instances use dedicated volumes with per-service access boundaries instea
 - **Socket volume** (`/run/ces-ipc`): CES bootstrap socket for initial service handshake between the assistant and CES containers.
 - **Gateway IPC volume** (`/run/gateway-ipc`): Contains `gateway.sock` — the Unix domain socket used for assistant→gateway IPC calls (feature flags, trust rules, credentials). Set via `GATEWAY_IPC_SOCKET_DIR=/run/gateway-ipc`.
 - **Assistant IPC volume** (`/run/assistant-ipc`): Contains `assistant.sock` — the Unix domain socket used for gateway→assistant reverse IPC calls. Set via `ASSISTANT_IPC_SOCKET_DIR=/run/assistant-ipc`.
-- **Inner dockerd data volume** (`/var/lib/docker`): Persistent storage for the `dockerd` that runs _inside_ the assistant container. Holds the pulled meet-bot image and any in-flight bot container state so image pulls don't repeat on every assistant restart. Only the assistant container mounts this volume.
-
-### Meet Docker-in-Docker Model
-
-In Docker mode, Meet bots are **nested** containers spawned by a `dockerd` running _inside_ the assistant container. The assistant container runs an init supervisor that starts both the daemon and a local `dockerd`; the Meet subsystem connects to that inner engine and spawns bot containers as children of the assistant container.
-
-```
-  host Docker Engine
-        |
-        +--- assistant ct. (privileged)
-        |       |
-        |       +--- (inner) dockerd
-        |       |        |
-        |       |        +--- meet-bot ct. (per meeting)
-        |       |        +--- meet-bot ct. (per meeting)
-        |       |
-        |       +--- /workspace (<name>-workspace)
-        |
-        +--- gateway ct.
-        +--- CES ct.
-```
-
-Each bot container receives a bind of `/workspace` sourced from the assistant's own `/workspace` mount, so the bot can drop transcripts, audio, and metadata into `/workspace/meets/<meetingId>/` where the assistant can read them back. Bots have no access to the gateway-security or CES-security volumes.
-
-**Bot lifecycle is coupled to the assistant container.** Because the inner `dockerd` process runs inside the assistant container, if that container dies the inner engine dies with it and every bot container is torn down automatically. There are no orphan bot containers on the host — `docker ps` on the host only ever lists the assistant/gateway/CES containers.
-
-**Bare-metal fallback.** When the assistant runs directly on the host (bare-metal / local-dev mode) there is no inner `dockerd`; the daemon connects to the host's Docker engine and spawns bot containers as _siblings_ of the assistant process. In that configuration host-level `docker ps` does see each bot, and an ungraceful assistant exit can leave orphan bot containers — the meet-bot image's built-in max-meeting-minutes timeout caps their lifetime.
-
-**Security boundary — single-user local only.** The Docker-in-Docker model requires the assistant container to run with `--privileged`, or at minimum `CAP_SYS_ADMIN` + `CAP_NET_ADMIN`, so the inner `dockerd` can set up cgroups, overlay mounts, and container networks. This is acceptable for single-user local deployments where the assistant already runs with the user's privileges. It is **not** acceptable as-is for managed/multi-tenant mode: Kubernetes deployments must configure Pod Security Admission to allow this privilege level on the assistant pod, or swap in a different bot-spawn model (e.g. a Kubernetes job runner or a dedicated bot-scheduler service) before Meet can ship to managed instances. Managed Meet support is explicitly out of scope for this Docker-in-Docker approach.
 
 ### Cross-Service Access Patterns
 
