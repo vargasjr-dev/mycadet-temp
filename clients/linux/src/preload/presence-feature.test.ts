@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const listeners = new Map<string, (...args: unknown[]) => void>();
 const send = mock((_channel: string, ..._args: unknown[]) => undefined);
@@ -19,7 +19,7 @@ mock.module("electron", () =>
       send,
     },
   }),
-);
+);;
 
 const presence = (await import("./features/presence")).default;
 

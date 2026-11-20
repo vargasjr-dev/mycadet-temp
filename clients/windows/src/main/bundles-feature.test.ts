@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const installBundleFlowMock = mock(() => undefined);
 const handleBundleFileMock = mock(async (_filePath: string) => undefined);
@@ -26,7 +26,7 @@ mock.module("electron", () =>
     session: { defaultSession: {} },
     shell: {},
   }),
-);
+);;
 
 mock.module("@mycadet/electron-desktop/bundle-flow", () => ({
   resolveActiveGateway: () => undefined,

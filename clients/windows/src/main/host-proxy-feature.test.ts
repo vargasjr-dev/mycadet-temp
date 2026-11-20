@@ -1,5 +1,5 @@
 import { afterEach, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const quitListeners: Array<() => void> = [];
 
@@ -29,7 +29,7 @@ mock.module("electron", () =>
       decryptString: (value: Buffer) => value.toString(),
     },
   }),
-);
+);;
 
 mock.module("electron-log/main", () => {
   const noop = () => {};

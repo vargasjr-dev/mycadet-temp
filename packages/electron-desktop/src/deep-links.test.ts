@@ -55,6 +55,21 @@ let windows: Array<{
   webContents: { send: ReturnType<typeof mock> };
 }> = [];
 
+/** Stamp the environment for a resolver call, restoring whatever preceded. */
+const withEnvironment = (environment: string, run: () => void): void => {
+  const previous = process.env.CADET_ENVIRONMENT;
+  process.env.CADET_ENVIRONMENT = environment;
+  try {
+    run();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.CADET_ENVIRONMENT;
+    } else {
+      process.env.CADET_ENVIRONMENT = previous;
+    }
+  }
+};
+
 let appIsReady = true;
 let appIsPackaged = false;
 mock.module("electron", () => ({
@@ -83,7 +98,6 @@ const {
   resolveAuthCallbackScheme,
   resolveRegisteredSchemes,
 } = await import("./deep-links");
-const { resolveEnvironmentName } = await import("@mycadet/local-mode");
 
 const allowedEvent = {};
 
@@ -436,9 +450,7 @@ describe("installDeepLinks", () => {
   test("registers unpackaged apps with absolute executable and entry paths", () => {
     const entryPoint = process.argv[1];
     const platform = process.platform;
-    const expected = resolveRegisteredSchemes(
-      resolveEnvironmentName(),
-    );
+    const expected = resolveRegisteredSchemes();
     process.argv[1] = ".";
     Object.defineProperty(process, "platform", { value: "win32" });
     try {
@@ -464,9 +476,7 @@ describe("installDeepLinks", () => {
   test("keeps unpackaged non-Windows protocol registration unchanged", () => {
     installDeepLinks();
 
-    const expected = resolveRegisteredSchemes(
-      resolveEnvironmentName(),
-    );
+    const expected = resolveRegisteredSchemes();
     expect(setAsDefaultProtocolClientMock.mock.calls).toEqual(
       expected.map((scheme) => [scheme]),
     );
@@ -740,62 +750,87 @@ describe("handleDeepLink — window activation", () => {
 });
 
 describe("resolveRegisteredSchemes", () => {
+
   test("production registers cadet", () => {
-    expect(resolveRegisteredSchemes("production")).toEqual(["cadet"]);
+    withEnvironment("production", () => {
+      expect(resolveRegisteredSchemes()).toEqual(["cadet"]);
+    });
   });
 
   test("dev registers only cadet-dev", () => {
-    expect(resolveRegisteredSchemes("dev")).toEqual(["cadet-dev"]);
+    withEnvironment("dev", () => {
+      expect(resolveRegisteredSchemes()).toEqual(["cadet-dev"]);
+    });
   });
 
   test("staging registers only cadet-staging", () => {
-    expect(resolveRegisteredSchemes("staging")).toEqual(["cadet-staging"]);
+    withEnvironment("staging", () => {
+      expect(resolveRegisteredSchemes()).toEqual(["cadet-staging"]);
+    });
   });
 
   test("local registers only cadet-local", () => {
-    expect(resolveRegisteredSchemes("local")).toEqual(["cadet-local"]);
+    withEnvironment("local", () => {
+      expect(resolveRegisteredSchemes()).toEqual(["cadet-local"]);
+    });
   });
 
   test("unknown env derives scheme from env name", () => {
-    expect(resolveRegisteredSchemes("test")).toEqual(["cadet-test"]);
+    withEnvironment("test", () => {
+      expect(resolveRegisteredSchemes()).toEqual(["cadet-test"]);
+    });
   });
 });
 
 describe("resolveAuthCallbackScheme", () => {
+
   test("uses the app-specific production scheme", () => {
-    expect(resolveAuthCallbackScheme("production")).toBe("cadet");
+    withEnvironment("production", () => {
+      expect(resolveAuthCallbackScheme()).toBe("cadet");
+    });
   });
 
   test("uses the environment-specific non-production scheme", () => {
-    expect(resolveAuthCallbackScheme("dev")).toBe("cadet-dev");
+    withEnvironment("dev", () => {
+      expect(resolveAuthCallbackScheme()).toBe("cadet-dev");
+    });
   });
 });
 
 describe("resolveAcceptedSchemes", () => {
+
   test("production accepts cadet:", () => {
-    const accepted = resolveAcceptedSchemes("production");
-    expect(accepted).toContain("cadet:");
-    expect(accepted).toHaveLength(1);
+    withEnvironment("production", () => {
+      const accepted = resolveAcceptedSchemes();
+      expect(accepted).toContain("cadet:");
+      expect(accepted).toHaveLength(1);
+    });
   });
 
   test("dev accepts cadet: and cadet-dev:", () => {
-    const accepted = resolveAcceptedSchemes("dev");
-    expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("cadet-dev:");
-    expect(accepted).toHaveLength(2);
+    withEnvironment("dev", () => {
+      const accepted = resolveAcceptedSchemes();
+      expect(accepted).toContain("cadet:");
+      expect(accepted).toContain("cadet-dev:");
+      expect(accepted).toHaveLength(2);
+    });
   });
 
   test("staging accepts cadet: and cadet-staging:", () => {
-    const accepted = resolveAcceptedSchemes("staging");
-    expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("cadet-staging:");
-    expect(accepted).toHaveLength(2);
+    withEnvironment("staging", () => {
+      const accepted = resolveAcceptedSchemes();
+      expect(accepted).toContain("cadet:");
+      expect(accepted).toContain("cadet-staging:");
+      expect(accepted).toHaveLength(2);
+    });
   });
 
   test("local accepts cadet: and cadet-local:", () => {
-    const accepted = resolveAcceptedSchemes("local");
-    expect(accepted).toContain("cadet:");
-    expect(accepted).toContain("cadet-local:");
-    expect(accepted).toHaveLength(2);
+    withEnvironment("local", () => {
+      const accepted = resolveAcceptedSchemes();
+      expect(accepted).toContain("cadet:");
+      expect(accepted).toContain("cadet-local:");
+      expect(accepted).toHaveLength(2);
+    });
   });
 });

@@ -7,7 +7,7 @@ import {
   mock,
   test,
 } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type { CreateWindowOptions } from "@mycadet/electron-desktop/windows";
 
@@ -116,7 +116,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);
+);;
 const restoreBounds = mock(
   (_key: string, defaults: { width: number; height: number }) => defaults,
 );

@@ -30,7 +30,7 @@ import {
 } from "@mycadet/electron-desktop";
 
 import { getRendererBase } from "@mycadet/electron-desktop";
-import { checkForUpdates } from "../auto-update";
+import { checkForUpdates } from "@mycadet/electron-desktop/auto-update";
 import { runInstallCliCommandFlow } from "../cli-path-flow";
 import { handle } from "../ipc.client";
 import { log } from "@mycadet/electron-desktop";

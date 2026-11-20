@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import {
   IDENTITY_NAME,
   MAIN_WINDOW_ENSURE_VISIBLE,
@@ -176,7 +176,7 @@ mock.module("electron", () =>
     nativeTheme: nativeThemeStub,
     shell: { openExternal: () => Promise.resolve() },
   }),
-);
+);;
 
 let restoredBounds: {
   x?: number;

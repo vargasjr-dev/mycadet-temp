@@ -2,13 +2,14 @@ import type {
   CapabilityModule,
   DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
+import { installAutoUpdate } from "@mycadet/electron-desktop/auto-update";
 
-import { installAutoUpdate } from "../auto-update";
+import { handle } from "../ipc.client";
 
 const autoUpdateFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "auto-update",
   install: () => {
-    installAutoUpdate();
+    installAutoUpdate({ ipc: { handle }, platform: "win-electron" });
   },
 };
 

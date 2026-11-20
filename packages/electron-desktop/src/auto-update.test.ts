@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { DesktopAutoUpdater } from "./auto-update-contract";
-
-mock.module("electron", () => ({
-  app: { isPackaged: false },
-  BrowserWindow: { getAllWindows: () => [] },
-}));
-
 /**
  * Regression cover for the auto-updater's leaked download promise.
  *
@@ -22,30 +15,39 @@ let downloadResult: { downloadPromise: Promise<unknown> | null } = {
   downloadPromise: null,
 };
 
-const fakeUpdater: DesktopAutoUpdater = {
-  checkForUpdates: () => Promise.resolve(downloadResult),
-  logger: null,
-  autoDownload: false,
-  autoInstallOnAppQuit: false,
-  channel: "",
-  allowDowngrade: false,
-  setFeedURL: () => undefined,
-  on: () => undefined,
-  quitAndInstall: () => undefined,
-};
+const setFeedURLCalls: { url: string }[] = [];
 
-const { checkForUpdates, configureAutoUpdate, resolveUpdateFeedUrl } =
-  await import("./auto-update");
-
-configureAutoUpdate({
-  updater: fakeUpdater,
-  ipc: { handle: () => undefined },
-  logger: {
-    info: () => undefined,
-    warn: () => undefined,
-    error: () => undefined,
+mock.module("electron-updater", () => ({
+  autoUpdater: {
+    checkForUpdates: () => Promise.resolve(downloadResult),
+    logger: null,
+    autoDownload: false,
+    autoInstallOnAppQuit: false,
+    channel: "",
+    allowDowngrade: false,
+    setFeedURL: (options: { url: string }) => {
+      setFeedURLCalls.push(options);
+    },
+    on: () => undefined,
+    quitAndInstall: () => undefined,
   },
-  feedUrl: "https://updates.example.com/win-electron/x64/",
+}));
+
+const registeredChannels: string[] = [];
+
+const {
+  checkForUpdates,
+  installAutoUpdate,
+  resolveUpdateFeedUrl,
+} = await import("./auto-update");
+
+installAutoUpdate({
+  ipc: {
+    handle: (channel: string) => {
+      registeredChannels.push(channel);
+    },
+  },
+  platform: "win-electron",
 });
 
 /** Collect unhandled rejections raised while `run` settles. */
@@ -67,6 +69,17 @@ const unhandledDuring = async (run: () => void): Promise<unknown[]> => {
   }
   return seen;
 };
+
+describe("installAutoUpdate", () => {
+  test("registers the update IPC channels and leaves the updater idle unpackaged", () => {
+    expect(registeredChannels).toEqual([
+      "cadet:update:getState",
+      "cadet:update:check",
+      "cadet:update:install",
+    ]);
+    expect(setFeedURLCalls).toEqual([]);
+  });
+});
 
 describe("checkForUpdates", () => {
   beforeEach(() => {

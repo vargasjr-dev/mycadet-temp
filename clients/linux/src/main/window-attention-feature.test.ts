@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 // The shared publisher reaches `electron`'s `BrowserWindow`, which does not
 // exist outside an Electron runtime; only the install seam is under test here.
@@ -18,7 +18,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);
+);;
 
 const installs = { count: 0 };
 const teardown = mock(() => undefined);

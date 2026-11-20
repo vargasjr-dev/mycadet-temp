@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import path from "node:path";
 
 import { FILE_OPEN_DRAIN, FILE_OPEN_EVENT } from "@mycadet/ipc-contract";
@@ -40,7 +40,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);
+);;
 mock.module("./main-window", () => ({ ensureVisible }));
 
 const { default: fileOpenModule } = await import("./features/file-open");

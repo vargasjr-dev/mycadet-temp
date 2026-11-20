@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import { FakeChild } from "./test-helpers";
 
@@ -36,7 +36,7 @@ mock.module("electron", () =>
       isPackaged: true,
     },
   }),
-);
+);;
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],

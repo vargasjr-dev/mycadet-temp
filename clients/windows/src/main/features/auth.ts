@@ -16,7 +16,6 @@ import {
   setSessionTokenLogger,
 } from "@mycadet/electron-desktop/session-token-store";
 import {
-  resolveEnvironmentName,
   resolveLocalConfigFromEnv,
 } from "@mycadet/local-mode";
 
@@ -49,7 +48,7 @@ const subscribeToAuthCallback = (
 const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "native-auth",
   install: () => {
-    const authScheme = resolveAuthCallbackScheme(resolveEnvironmentName());
+    const authScheme = resolveAuthCallbackScheme();
     setSessionTokenLogger(log);
     configureNativeAuth({
       activateWindow: () => {

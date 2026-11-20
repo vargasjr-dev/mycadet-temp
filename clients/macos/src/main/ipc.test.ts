@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import { z } from "zod";
 
 // Capture what `handle`/`on` register so the tests can invoke the
@@ -24,7 +24,7 @@ mock.module("electron", () =>
       on: (channel: string, l: RawHandler) => listeners.set(channel, l),
     },
   }),
-);
+);;
 
 const { handle, on } = await import("./ipc");
 const { resolveAllowedOrigin } = await import("./app-origin");

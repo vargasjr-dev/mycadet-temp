@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 // --- Mocks ---
 // Must be installed before the `await import` of the module under test so
@@ -28,7 +28,7 @@ mock.module("electron", () =>
       isPackaged: true,
     },
   }),
-);
+);;
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],

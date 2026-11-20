@@ -5,7 +5,7 @@
  * the subtitle, and the picture travels as a file path the helper reads.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 mock.module("electron", () =>
   electronMock({
@@ -27,7 +27,7 @@ mock.module("electron", () =>
       show(): void {}
     },
   }),
-);
+);;
 
 interface HelperCall {
   method: string;
@@ -45,23 +45,26 @@ mock.module("@mycadet/native-sidecar/supervisor", () => ({
   },
 }));
 
-let avatarFileError: Error | null = null;
-const ensureNotificationAvatarFile = mock(() => {
-  if (avatarFileError) {
-    throw avatarFileError;
+let avatarStagingFailed = false;
+const STAGED_AVATAR_PATH = "/userData/notification-avatars/abc.png";
+const resolveNotificationAvatarPath = mock(() => {
+  if (avatarStagingFailed) {
+    // The shared path resolver logs and reports "no avatar" when staging
+    // fails; that contract is the package suite's. Here the failure shape
+    // is what the helper toast must survive.
+    return null;
   }
-  return "/userData/notification-avatars/abc.png";
+  return STAGED_AVATAR_PATH;
 });
-mock.module("@mycadet/electron-desktop/notification-avatar-file", () => ({
-  ensureNotificationAvatarFile,
+mock.module("@mycadet/electron-desktop/notification-avatar-path", () => ({
+  resolveNotificationAvatarPath,
 }));
 
 mock.module("./ipc.client", () => ({ handle: () => undefined }));
 mock.module("./main-window", () => ({ ensureVisible: () => undefined }));
-const warn = mock(() => undefined);
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { warn, info: () => undefined },
+  default: { warn: () => undefined, info: () => undefined },
 }));
 
 const { createHelperToastFactory } = await import("./features/notifications");
@@ -96,19 +99,18 @@ const showToast = async (
 
 beforeEach(() => {
   calls.length = 0;
-  avatarFileError = null;
-  ensureNotificationAvatarFile.mockClear();
-  warn.mockClear();
+  avatarStagingFailed = false;
+  resolveNotificationAvatarPath.mockClear();
 });
 
 describe("Linux helper toast factory", () => {
   test("posts a sender's toast under the assistant's name with the avatar file", async () => {
     await showToast({ ...baseOptions, sender });
 
-    expect(ensureNotificationAvatarFile).toHaveBeenCalledWith(
+    expect(resolveNotificationAvatarPath).toHaveBeenCalledWith(
+      sender,
       "/userData",
-      AVATAR_PNG,
-      AVATAR_HASH,
+      expect.objectContaining({ warn: expect.any(Function) }),
     );
     expect(calls).toHaveLength(1);
     expect(calls[0]!.method).toBe("notifications/show");
@@ -116,7 +118,7 @@ describe("Linux helper toast factory", () => {
       title: "Aria",
       subtitle: "Weekly review",
       body: "Three items need you",
-      avatarPath: "/userData/notification-avatars/abc.png",
+      avatarPath: STAGED_AVATAR_PATH,
       actions: [{ text: "View" }],
     });
   });
@@ -124,7 +126,13 @@ describe("Linux helper toast factory", () => {
   test("keeps the conversation title and sends no avatar without a sender", async () => {
     await showToast(baseOptions);
 
-    expect(ensureNotificationAvatarFile).not.toHaveBeenCalled();
+    // The builder hands the sender decision to the shared path resolver;
+    // a senderless toast carries neither subtitle nor avatar path.
+    expect(resolveNotificationAvatarPath).toHaveBeenCalledWith(
+      undefined,
+      "/userData",
+      expect.objectContaining({ warn: expect.any(Function) }),
+    );
     expect(calls[0]!.params).toMatchObject({
       title: "Weekly review",
       body: "Three items need you",
@@ -133,12 +141,11 @@ describe("Linux helper toast factory", () => {
     expect(calls[0]!.params).not.toHaveProperty("avatarPath");
   });
 
-  test("falls back to the plain toast when the avatar file cannot be written", async () => {
-    avatarFileError = new Error("read-only volume");
+  test("falls back to the plain toast when the avatar cannot be staged", async () => {
+    avatarStagingFailed = true;
 
     await showToast({ ...baseOptions, sender });
 
-    expect(warn).toHaveBeenCalled();
     expect(calls[0]!.params).toMatchObject({ title: "Weekly review" });
     expect(calls[0]!.params).not.toHaveProperty("avatarPath");
   });

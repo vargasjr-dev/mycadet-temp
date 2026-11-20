@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const appListeners = new Map<string, () => void>();
 mock.module("electron", () =>
@@ -22,7 +22,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);
+);;
 
 type Handler = (args: unknown[], event: { sender: FakeSender }) => unknown;
 const handlers: Record<string, Handler> = {};

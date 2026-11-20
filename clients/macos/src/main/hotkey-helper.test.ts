@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import { EventEmitter } from "node:events";
 import { writeFile } from "node:fs/promises";
 
@@ -86,7 +86,7 @@ mock.module("electron", () =>
       removeAllListeners: mock(() => undefined),
     },
   }),
-);
+);;
 
 let exists = true;
 // getMacHelperPath reads CFBundleExecutable from the bundle's Info.plist to

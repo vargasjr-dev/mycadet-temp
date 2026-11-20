@@ -19,7 +19,6 @@ import {
   readSetting,
   writeSetting,
 } from "@mycadet/electron-desktop/settings";
-import { resolveEnvironmentName } from "@mycadet/local-mode";
 
 import { handle, on } from "../ipc.client";
 import { ensureVisible } from "../main-window";
@@ -27,7 +26,7 @@ import { ensureVisible } from "../main-window";
 const deepLinksFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "deep-links",
   install: (capabilities) => {
-    const schemes = resolveRegisteredSchemes(resolveEnvironmentName());
+    const schemes = resolveRegisteredSchemes();
     capabilities.provide(DEEP_LINK_PROTOCOL_REGISTRATION, { schemes });
     capabilities.provide(STARTUP_REGISTRATION, {
       settingsPage: "startup-apps",

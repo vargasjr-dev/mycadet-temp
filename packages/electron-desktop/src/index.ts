@@ -34,12 +34,6 @@ export {
 export type { AllowedOrigin } from "./app-origin";
 export { registerAppProtocol } from "./app-protocol-forward";
 export {
-  checkForUpdates,
-  configureAutoUpdate,
-  installAutoUpdate,
-  resolveUpdateFeedUrl,
-} from "./auto-update";
-export {
   getAccentHex,
   getAvatarPng,
   getCharacter,
