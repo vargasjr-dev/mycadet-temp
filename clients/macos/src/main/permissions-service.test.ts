@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type { z } from "zod";
 
@@ -80,7 +80,7 @@ mock.module("electron", () =>
       getMediaAccessStatus: () => "granted",
     },
   }),
-);
+);;
 
 interface HandleRegistration {
   channel: string;

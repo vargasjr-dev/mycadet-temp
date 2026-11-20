@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -38,7 +38,7 @@ mock.module("electron", () =>
     },
     BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
   }),
-);
+);;
 
 type HandleRegistration = {
   channel: string;

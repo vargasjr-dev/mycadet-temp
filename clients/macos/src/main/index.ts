@@ -31,7 +31,6 @@ import { handle, on } from "./ipc";
 // Composition roots: these modules configure the shared desktop packages
 // with this client's seams at import time. Their surfaces are imported
 // directly from the packages below.
-import "./auto-update.client";
 import "./deep-links.client";
 import "./file-open.client";
 import "./native-auth.client";
@@ -261,7 +260,7 @@ startApp(log, async () => {
   // the renderer publishes during bootstrap.
   installIdentityIpc();
   installAbout();
-  installAutoUpdate();
+  installAutoUpdate({ ipc: { handle }, platform: "mac-electron" });
   installFeedbackIpc();
   installTextInsertionIpc();
   installCommandPaletteWindow();

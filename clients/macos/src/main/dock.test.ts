@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type { z } from "zod";
 
@@ -130,7 +130,7 @@ mock.module("electron", () =>
       createFromPath: createFromPathMock,
     },
   }),
-);
+);;
 
 const {
   computePolicy,

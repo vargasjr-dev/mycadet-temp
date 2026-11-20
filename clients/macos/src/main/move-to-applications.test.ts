@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 type ConflictType = "exists" | "existsAndRunning";
 type ConflictHandler = (conflictType: ConflictType) => boolean;
@@ -101,7 +101,7 @@ mock.module("electron", () =>
       }
     },
   }),
-);
+);;
 
 const { relocateToApplicationsFolder, promptToRelocateIfStranded } =
   await import("./move-to-applications");

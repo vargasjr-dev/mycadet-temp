@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type {
   CaptureSourceDeps,
@@ -20,7 +20,7 @@ mock.module("electron", () =>
     },
     screen: { getAllDisplays: () => [], getPrimaryDisplay: () => ({ id: 0 }) },
   }),
-);
+);;
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],
   default: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },

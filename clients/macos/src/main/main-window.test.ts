@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 type StubWebContents = {
   on: ReturnType<typeof mock>;
@@ -205,7 +205,7 @@ mock.module("electron", () =>
     ipcMain: { handle: ipcHandleMock },
     shell: { openExternal: () => Promise.resolve() },
   }),
-);
+);;
 
 // What the mocked `restoreBounds()` returns. Defaults to a saved windowed
 // state; tests exercising the fresh-install maximized default or a saved

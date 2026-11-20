@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import {
   PERMISSIONS_GET_STATE,
@@ -59,7 +59,7 @@ mock.module("electron", () =>
     systemPreferences: { getMediaAccessStatus: mediaStatus },
     Notification: FakeNotification,
   }),
-);
+);;
 mock.module("./ipc.client", () => ({
   handle: (channel: string, _schema: unknown, handler: Handler) => {
     handlers.set(channel, handler);

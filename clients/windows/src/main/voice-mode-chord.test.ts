@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const appListeners = new Map<string, () => void>();
 mock.module("electron", () =>
@@ -13,7 +13,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);
+);;
 
 type Sender = {
   isDestroyed: () => boolean;

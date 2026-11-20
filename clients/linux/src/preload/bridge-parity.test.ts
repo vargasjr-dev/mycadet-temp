@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import type { IpcRenderer } from "electron";
 import { readdirSync } from "node:fs";
 import path from "node:path";
@@ -29,7 +29,7 @@ mock.module("electron", () =>
     ipcRenderer,
     webUtils: { getPathForFile: mock(() => "") },
   }),
-);
+);;
 
 const { createLinuxCoreBridge, LINUX_NOT_APPLICABLE_CAPABILITIES } =
   await import("./core-capabilities");

@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -48,7 +48,7 @@ mock.module("electron", () =>
     Notification: FakeElectronNotification,
     nativeImage: { createFromBuffer: (buffer: Buffer) => buffer },
   }),
-);
+);;
 
 const warnings: unknown[][] = [];
 mock.module("@mycadet/electron-desktop/app-logger", () => ({

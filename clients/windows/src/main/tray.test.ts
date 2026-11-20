@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const trayIcon = { isEmpty: () => false };
 mock.module("electron", () =>
@@ -14,7 +14,7 @@ mock.module("electron", () =>
     nativeImage: { createFromPath: () => trayIcon },
     shell: { openExternal: () => Promise.resolve() },
   }),
-);
+);;
 
 type TrayRuntime = {
   accelerator: (kind: string) => { accelerator?: string };

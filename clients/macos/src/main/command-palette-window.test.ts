@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type { IpcHandle } from "@mycadet/electron-desktop";
 
@@ -200,7 +200,7 @@ mock.module("electron", () =>
       openExternal: mock(() => Promise.resolve()),
     },
   }),
-);
+);;
 
 const { BrowserWindow } = await import("electron");
 
@@ -252,10 +252,6 @@ mock.module("@mycadet/electron-desktop/about", () => ({
   getVersionInfo: () => ({ version: "0.0.0" }),
   installAbout: () => undefined,
   openAboutWindow: mock(() => undefined),
-}));
-
-mock.module("./auto-update.client", () => ({
-  checkForUpdates: mock(() => undefined),
 }));
 
 mock.module("./devtools", () => ({

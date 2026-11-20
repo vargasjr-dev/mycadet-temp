@@ -129,15 +129,6 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
   const isDev = !app.isPackaged;
   const cliItems = cliPathItems();
 
-  const fileItem = (
-    label: string,
-    command: CadetCommand,
-  ): MenuItemConstructorOptions => ({
-    label,
-    ...acceleratorOption(command.kind),
-    click: () => dispatchMenuCommand(command),
-  });
-
   return [
     {
       label: app.name,
@@ -188,13 +179,16 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
       ],
     },
     // File/Edit/View/Window/Help are the shared groups; the macOS deltas
-    // ride the factory (palette-aware dispatch), the fullscreen chord, the
-    // zoom role, and the companion/front rows.
-    fileMenu(fileItem),
-    editMenu(fileItem),
-    viewMenu(fileItem, { fullscreenAccelerator: "Control+Command+F" }),
+    // ride the palette-aware dispatch, the fullscreen chord, the zoom role,
+    // and the companion/front rows.
+    fileMenu({ dispatch: dispatchMenuCommand }),
+    editMenu({ dispatch: dispatchMenuCommand }),
+    viewMenu({
+      dispatch: dispatchMenuCommand,
+      fullscreenAccelerator: "Control+Command+F",
+    }),
     windowMenu({
-      item: fileItem,
+      dispatch: dispatchMenuCommand,
       zoomRole: true,
       tail: [
         // The show/hide checkbox the tray offers too, from the one builder
@@ -207,7 +201,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         { role: "front" },
       ],
     }),
-    helpMenu(fileItem, { updatesRow: false }),
+    helpMenu({ dispatch: dispatchMenuCommand, updatesRow: false }),
   ];
 };
 

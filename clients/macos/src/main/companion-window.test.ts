@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import { EventEmitter } from "node:events";
 
 import {
@@ -309,7 +309,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);
+);;
 
 /** Every text main has put on the pasteboard, most recent last. */
 const copied: string[] = [];

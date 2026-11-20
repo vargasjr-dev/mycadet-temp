@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type { CliPathInstallState } from "./cli-path-installer";
 
@@ -47,7 +47,7 @@ mock.module("electron", () =>
       openExternal: mock(() => Promise.resolve()),
     },
   }),
-);
+);;
 
 mock.module("@mycadet/electron-desktop/about", () => ({
   configureAboutRuntime: () => undefined,
@@ -59,7 +59,6 @@ mock.module("@mycadet/electron-desktop/about", () => ({
 mock.module("@mycadet/electron-desktop/auto-update", () => ({
   installAutoUpdate: () => undefined,
   checkForUpdates: () => undefined,
-  configureAutoUpdate: () => undefined,
   resolveUpdateFeedUrl: () => "",
 }));
 
@@ -86,10 +85,6 @@ mock.module("@mycadet/electron-desktop/command-palette-window", () => ({
   closeCommandPaletteWindow: () => undefined,
   isCommandPaletteWindowFocused: () => false,
   openCommandPaletteWindow: () => undefined,
-}));
-
-mock.module("@mycadet/electron-desktop/devtools", () => ({
-  areChromeDevToolsEnabled: () => false,
 }));
 
 mock.module("./ipc", () => ({

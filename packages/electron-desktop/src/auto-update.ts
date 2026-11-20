@@ -1,24 +1,16 @@
 import { app, BrowserWindow } from "electron";
+import { autoUpdater } from "electron-updater";
 import { z } from "zod";
 
+import log from "./app-logger";
 import { resolveEnvironmentName } from "@mycadet/shared";
 import type { UpdateState, UpdateStatus } from "@mycadet/ipc-contract";
 
-import type {
-  AutoUpdateConfig,
-  DesktopAutoUpdater,
-  UpdateFeedPlatform,
-  UpdaterLogger,
-} from "./auto-update-contract";
+import type { UpdateFeedPlatform } from "./auto-update-contract";
 import type { IpcHandle } from "./ipc";
 
 export type { UpdateState, UpdateStatus };
-export type {
-  AutoUpdateConfig,
-  DesktopAutoUpdater,
-  UpdateFeedPlatform,
-  UpdaterLogger,
-} from "./auto-update-contract";
+export type { UpdateFeedPlatform } from "./auto-update-contract";
 
 /**
  * Platform- and architecture-isolated generic feed URL for this build's
@@ -34,16 +26,11 @@ export const resolveUpdateFeedUrl = (
   return `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/${platform}/${arch}/`;
 };
 
-let autoUpdater: DesktopAutoUpdater;
-let handle: IpcHandle;
-let log: UpdaterLogger;
-let feedUrl: string;
-
-/** Each desktop shell configures its updater, IPC, logger, and feed once. */
-export const configureAutoUpdate = (config: AutoUpdateConfig): void => {
-  ({ updater: autoUpdater, logger: log, feedUrl } = config);
-  ({ handle } = config.ipc);
-};
+export interface AutoUpdateOptions {
+  ipc: { handle: IpcHandle };
+  /** The updater feed's platform bucket, e.g. `linux-electron`. */
+  platform: UpdateFeedPlatform;
+}
 
 let currentState: UpdateState = { status: "idle" };
 
@@ -71,7 +58,9 @@ export const checkForUpdates = (): void => {
     });
 };
 
-export const installAutoUpdate = (): void => {
+/** Installs the updater, its IPC surface, and the periodic check. */
+export const installAutoUpdate = ({ ipc, platform }: AutoUpdateOptions): void => {
+  const { handle } = ipc;
   handle("cadet:update:getState", z.tuple([]), () => currentState);
   handle("cadet:update:check", z.tuple([]), () => checkForUpdates());
   handle("cadet:update:install", z.tuple([]), () =>
@@ -87,7 +76,7 @@ export const installAutoUpdate = (): void => {
   autoUpdater.allowDowngrade = false;
   autoUpdater.setFeedURL({
     provider: "generic",
-    url: feedUrl,
+    url: resolveUpdateFeedUrl(platform, process.arch),
   });
 
   autoUpdater.on("checking-for-update", () => {

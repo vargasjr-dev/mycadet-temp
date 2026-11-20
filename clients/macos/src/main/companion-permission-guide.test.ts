@@ -7,7 +7,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import type {
   PermissionKind,
   PermissionStateItem,
@@ -140,7 +140,7 @@ mock.module("electron", () =>
       getAnimationSettings: () => ({ prefersReducedMotion: true }),
     },
   }),
-);
+);;
 mock.module("@mycadet/electron-desktop/floating-window", () => ({
   listFloatingWindows: () => undefined,
   repositionFloatingWindow: () => undefined,

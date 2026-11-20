@@ -4,7 +4,7 @@ import { BrowserWindow, app, type WebContents } from "electron";
 import { z } from "zod";
 
 import type { DeepLink } from "@mycadet/ipc-contract";
-import { resolveEnvironmentName } from "@mycadet/local-mode";
+import { resolveEnvironmentName } from "@mycadet/shared";
 
 import { capabilityToken } from "./capability-registry";
 import type { IpcHandle, IpcOn } from "./ipc";
@@ -77,7 +77,8 @@ export const configureDeepLinks = (next: DeepLinkRuntime): void => {
 
 const PRODUCTION_SCHEME = "cadet";
 
-export function resolveAuthCallbackScheme(env: string): string {
+export function resolveAuthCallbackScheme(): string {
+  const env = resolveEnvironmentName();
   return env === "production"
     ? PRODUCTION_SCHEME
     : `${PRODUCTION_SCHEME}-${env}`;
@@ -86,17 +87,17 @@ export function resolveAuthCallbackScheme(env: string): string {
 // Schemes to REGISTER with the OS via `app.setAsDefaultProtocolClient`.
 // Production claims `cadet`; non-production claims only the env-specific
 // scheme to avoid hijacking production.
-export function resolveRegisteredSchemes(env: string): string[] {
-  return [resolveAuthCallbackScheme(env)];
+export function resolveRegisteredSchemes(): string[] {
+  return [resolveAuthCallbackScheme()];
 }
 
 // Schemes to ACCEPT when parsing inbound URLs. Superset of registered
 // schemes — always includes `cadet:` so URLs routed to this build
 // still parse correctly.
-export function resolveAcceptedSchemes(env: string): string[] {
+export function resolveAcceptedSchemes(): string[] {
   const accepted = new Set([`${PRODUCTION_SCHEME}:`]);
-  if (env !== "production") {
-    accepted.add(`${resolveAuthCallbackScheme(env)}:`);
+  if (resolveEnvironmentName() !== "production") {
+    accepted.add(`${resolveAuthCallbackScheme()}:`);
   }
   return [...accepted];
 }
@@ -108,9 +109,8 @@ export function resolveAcceptedSchemes(env: string): string[] {
 // gateway and would not survive being rebuilt into a pairing URL.
 const DEVICE_CODE_RE = /^[^\s\u0000-\u001f\u007f]{1,256}$/;
 
-const currentEnv = resolveEnvironmentName();
-const REGISTERED_SCHEMES = resolveRegisteredSchemes(currentEnv);
-const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
+const REGISTERED_SCHEMES = resolveRegisteredSchemes();
+const ACCEPTED_SCHEMES = resolveAcceptedSchemes();
 
 /**
  * Pure parser: URL string → typed `DeepLink`. Exported for unit tests.

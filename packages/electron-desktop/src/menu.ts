@@ -36,6 +36,20 @@ export type MenuCommandItem = (
   enabled?: boolean,
 ) => MenuItemConstructorOptions;
 
+/** Where a menu row's click hands the command. macOS's dispatch is
+ * palette-aware; the default steps the focused window. */
+export type MenuDispatch = (command: CadetCommand) => void;
+
+/** The one row builder every menu group shares. */
+const commandItem =
+  (dispatch: MenuDispatch): MenuCommandItem =>
+  (label, command, enabled) => ({
+    label,
+    ...acceleratorOption(command.kind),
+    ...(enabled === undefined ? {} : { enabled }),
+    click: () => dispatch(command),
+  });
+
 /** Step the focused window's history; no-op when nothing is focused. */
 export const navigateFocused = (direction: "back" | "forward"): void => {
   const history =
@@ -133,35 +147,40 @@ const installCliRow = (installCli: (() => void) | undefined) => ({
 
 /** The File menu: the conversation rows plus the platform's session tail. */
 export const fileMenu = (
-  item: MenuCommandItem,
-  sessionTail: MenuItemConstructorOptions[] = [],
-): MenuItemConstructorOptions => ({
-  id: "file",
-  label: "File",
-  submenu: [...conversationFileMenuItems(item), ...sessionTail],
-});
+  options: { dispatch?: MenuDispatch; sessionTail?: MenuItemConstructorOptions[] } = {},
+): MenuItemConstructorOptions => {
+  const item = commandItem(options.dispatch ?? dispatchToFocused);
+  return {
+    id: "file",
+    label: "File",
+    submenu: [...conversationFileMenuItems(item), ...(options.sessionTail ?? [])],
+  };
+};
 
 /** The Edit menu — shared whole. */
 export const editMenu = (
-  item: MenuCommandItem,
+  options: { dispatch?: MenuDispatch } = {},
 ): MenuItemConstructorOptions => ({
   id: "edit",
   label: "Edit",
-  submenu: editMenuItems(item),
+  submenu: editMenuItems(commandItem(options.dispatch ?? dispatchToFocused)),
 });
 
 /** The View menu — shared whole bar the fullscreen chord. */
 export const viewMenu = (
-  item: MenuCommandItem,
-  options: { fullscreenAccelerator?: string } = {},
+  options: { dispatch?: MenuDispatch; fullscreenAccelerator?: string } = {},
 ): MenuItemConstructorOptions => ({
   id: "view",
   label: "View",
-  submenu: viewMenuItems(item, options),
+  submenu: viewMenuItems(
+    commandItem(options.dispatch ?? dispatchToFocused),
+    { fullscreenAccelerator: options.fullscreenAccelerator },
+  ),
 });
 
 export interface WindowMenuOptions {
-  item: MenuCommandItem;
+  /** macOS dispatches palette-aware; the default steps the focused window. */
+  dispatch?: MenuDispatch;
   /** macOS zooms in place of the frameless close role. */
   zoomRole?: boolean;
   /** Rows appended after a separator (macOS: companion toggle, front). */
@@ -169,22 +188,26 @@ export interface WindowMenuOptions {
 }
 
 export const windowMenu = ({
-  item,
+  dispatch,
   zoomRole,
   tail,
-}: WindowMenuOptions): MenuItemConstructorOptions => ({
-  id: "window",
-  label: "Window",
-  submenu: [
-    { role: "minimize" },
-    zoomRole ? { role: "zoom" } : { role: "close" },
-    separator(),
-    item("Pop Out Conversation", { kind: "popOut" }),
-    ...(tail?.length ? [separator(), ...tail] : []),
-  ],
-});
+}: WindowMenuOptions = {}): MenuItemConstructorOptions => {
+  const item = commandItem(dispatch ?? dispatchToFocused);
+  return {
+    id: "window",
+    label: "Window",
+    submenu: [
+      { role: "minimize" },
+      zoomRole ? { role: "zoom" } : { role: "close" },
+      separator(),
+      item("Pop Out Conversation", { kind: "popOut" }),
+      ...(tail?.length ? [separator(), ...tail] : []),
+    ],
+  };
+};
 
 export interface HelpMenuOptions {
+  dispatch?: MenuDispatch;
   openAbout?: () => void;
   checkForUpdates?: () => void;
   /** macOS checks for updates from its app menu instead. */
@@ -192,33 +215,35 @@ export interface HelpMenuOptions {
 }
 
 export const helpMenu = (
-  item: MenuCommandItem,
   options: HelpMenuOptions = {},
-): MenuItemConstructorOptions => ({
-  id: "help",
-  label: "Help",
-  submenu: [
-    ...(app.isPackaged && options.updatesRow !== false
-      ? [
-          {
-            label: "Check for Updates...",
-            enabled: options.checkForUpdates !== undefined,
-            click: options.checkForUpdates,
-          },
-        ]
-      : []),
-    item("Send Feedback...", { kind: "shareFeedback" }),
-    {
-      label: "Cadet Documentation",
-      click: () => {
-        void shell.openExternal("https://mycadet.ai/docs");
+): MenuItemConstructorOptions => {
+  const item = commandItem(options.dispatch ?? dispatchToFocused);
+  return {
+    id: "help",
+    label: "Help",
+    submenu: [
+      ...(app.isPackaged && options.updatesRow !== false
+        ? [
+            {
+              label: "Check for Updates...",
+              enabled: options.checkForUpdates !== undefined,
+              click: options.checkForUpdates,
+            },
+          ]
+        : []),
+      item("Send Feedback...", { kind: "shareFeedback" }),
+      {
+        label: "Cadet Documentation",
+        click: () => {
+          void shell.openExternal("https://mycadet.ai/docs");
+        },
       },
-    },
-    ...(options.openAbout
-      ? [separator(), { label: `About ${app.name}`, click: options.openAbout }]
-      : []),
-  ],
-});
+      ...(options.openAbout
+        ? [separator(), { label: `About ${app.name}`, click: options.openAbout }]
+        : []),
+    ],
+  };
+};
 
 /** The File menu's session tail: settings, the install row, login state, quit. */
 const sessionFileTail = (
@@ -269,19 +294,14 @@ export const buildDesktopMenu = ({
   DesktopMenuDeps,
   "handle" | "onOnboardingChange"
 >): MenuItemConstructorOptions[] => {
-  const commandItem: MenuCommandItem = (label, command, enabled) => ({
-    label,
-    ...acceleratorOption(command.kind),
-    ...(enabled === undefined ? {} : { enabled }),
-    click: () => dispatchToFocused(command),
-  });
+  const item = commandItem(dispatchToFocused);
 
   return [
-    fileMenu(commandItem, sessionFileTail(commandItem, installCli)),
-    editMenu(commandItem),
-    viewMenu(commandItem),
-    windowMenu({ item: commandItem }),
-    helpMenu(commandItem, { openAbout, checkForUpdates }),
+    fileMenu({ sessionTail: sessionFileTail(item, installCli) }),
+    editMenu(),
+    viewMenu(),
+    windowMenu(),
+    helpMenu({ openAbout, checkForUpdates }),
   ];
 };
 

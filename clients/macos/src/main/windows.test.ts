@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 // Captures every `new BrowserWindow(...)` so assertions can inspect the
 // sealed `webPreferences` the seam injects, and exposes the per-window
@@ -50,7 +50,7 @@ mock.module("electron", () =>
       }
     },
   }),
-);
+);;
 
 const { createWindow, hardenedWebPreferences } =
   await import("@mycadet/electron-desktop/windows");

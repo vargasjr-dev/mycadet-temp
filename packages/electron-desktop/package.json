@@ -17,11 +17,9 @@
     "./capability-registry": "./src/capability-registry.ts",
     "./command-palette-window": "./src/command-palette-window.ts",
     "./commands": "./src/commands.ts",
-    "./devtools": "./src/devtools.ts",
     "./file-open": "./src/file-open.ts",
     "./file-open-preload": "./src/file-open-preload.ts",
     "./floating-window": "./src/floating-window.ts",
-    "./notification-avatar-file": "./src/notification-avatar-file.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
     "./notifications": "./src/notifications.ts",
     "./preload": "./src/preload.ts",
@@ -29,6 +27,7 @@
     "./settings": "./src/settings.ts",
     "./status": "./src/status.ts",
     "./status-icon": "./src/status-icon.ts",
+    "./test-setup": "./test-setup.ts",
     "./tray-model": "./src/tray-model.ts",
     "./window-attention": "./src/window-attention.ts",
     "./window-state": "./src/window-state.ts",
@@ -50,6 +49,7 @@
   "peerDependencies": {
     "electron-log": ">=5.4.4",
     "electron-store": ">=11.0.2",
+    "electron-updater": ">=6.8.9",
     "electron": ">=42.2.0",
     "zod": ">=4.0.0"
   },

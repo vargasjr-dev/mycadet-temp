@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 
@@ -119,7 +119,7 @@ mock.module("electron", () =>
       }),
     },
   }),
-);
+);;
 
 const { BrowserWindow } = await import("electron");
 const {

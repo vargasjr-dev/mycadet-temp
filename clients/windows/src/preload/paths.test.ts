@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
@@ -30,7 +30,7 @@ mock.module("electron", () =>
     },
     webUtils: { getPathForFile },
   }),
-);
+);;
 
 const { default: pathsModule } = await import("./features/paths");
 const registry = new BridgeCapabilityRegistry<CadetBridge>({});

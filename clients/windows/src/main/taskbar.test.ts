@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 const appListeners = new Map<string, () => void>();
 const createFromBitmap = mock((bitmap: Buffer) => ({ bitmap }));
@@ -15,7 +15,7 @@ mock.module("electron", () =>
     },
     nativeImage: { createFromBitmap, createFromPath: () => bundleIcon },
   }),
-);
+);;
 
 let avatarListener: (() => void) | null = null;
 mock.module("@mycadet/electron-desktop/avatar", () => ({
