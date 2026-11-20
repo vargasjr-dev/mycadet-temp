@@ -763,7 +763,8 @@ jobs:
         run: bun install --frozen-lockfile --filter=@mycadet/qa
 
       - name: Run the docker hatch integration suite
-        run: bun test qa/docker-hatch.test.ts
+        working-directory: qa
+        run: bun test docker-hatch.test.ts
 
   push-docs-image:
     needs: [extract-version]

@@ -74,7 +74,7 @@ jobs:
         id: edited
         run: |
           BASE_SHA=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
-          EDITED=$(git diff --name-only "$BASE_SHA" HEAD -- qa/ | grep -E '(^|/)[^/]*\.test\.ts$' || true)
+          EDITED=$(git diff --name-only "$BASE_SHA" HEAD -- qa/ | grep -E '(^|/)[^/]*\.test\.ts$' | sed 's|^qa/||' || true)
           COUNT=$(printf '%s\n' "$EDITED" | grep -c . || true)
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           {
@@ -135,6 +135,7 @@ jobs:
 
       - name: Run the edited qa tests
         if: ${{ steps.edited.outputs.count != '0' }}
+        working-directory: qa
         env:
           QA_ASSISTANT_IMAGE: qa-pr-assistant:pr
           QA_GATEWAY_IMAGE: qa-pr-gateway:pr
