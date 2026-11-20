@@ -1,4 +1,4 @@
-import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
+import { Menu, type MenuItemConstructorOptions, app } from "electron";
 
 import { companionVisibilityItem } from "@mycadet/electron-desktop";
 import { onSettingChange } from "@mycadet/electron-desktop/settings";
