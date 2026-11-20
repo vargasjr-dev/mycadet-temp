@@ -87,6 +87,12 @@ describe("pairLocal — running the gateway's own CLI is the local presence proo
     expect(result).toEqual({ ok: true, response: fakeToken("t") });
   });
 
+  test("runs the mint on the assistant's own gateway port", async () => {
+    await pairLocal({ ...entry, port: 7831 });
+    const [, , options] = execOutputMock.mock.calls[0]!;
+    expect(options?.env?.GATEWAY_PORT).toBe("7831");
+  });
+
   test("omits the name flag when the device reports none", async () => {
     execOutputMock.mockResolvedValue(JSON.stringify(fakeToken("t")));
     await pairLocal(entry, { platform: "cli", deviceId: "device-2" });

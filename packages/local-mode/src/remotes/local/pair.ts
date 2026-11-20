@@ -35,6 +35,7 @@ function gatewayPairInvocation(entry: LocalAssistant): {
       ...process.env,
       CADET_WORKSPACE_DIR: join(root, "workspace"),
       GATEWAY_SECURITY_DIR: gatewaySecurityDir,
+      GATEWAY_PORT: String(entry.port),
       // The shim lives in the instance's bin/ — put it first on PATH so
       // the bare `gateway` command resolves to THIS instance's build.
       PATH: `${join(root, "bin")}:${process.env.PATH ?? ""}`,
