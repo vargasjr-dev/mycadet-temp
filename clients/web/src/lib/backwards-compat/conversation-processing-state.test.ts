@@ -57,9 +57,7 @@ async function isProcessing(inputs: {
     ]),
   );
 
-  useResolvedAssistantStore
-    .getState()
-    .setAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistantId(ASSISTANT_ID);
   useConversationStore.getState().setActiveConversationId(CONVERSATION_ID);
   if (inputs.isMarkedProcessingLocally) {
     useConversationStore.getState().markConversationProcessing(CONVERSATION_ID);

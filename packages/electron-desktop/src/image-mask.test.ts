@@ -14,8 +14,12 @@ const opaqueBitmap = (sizePx: number): Buffer => {
   return buf;
 };
 
-const alphaAt = (bitmap: Buffer, sizePx: number, x: number, y: number): number =>
-  bitmap[(y * sizePx + x) * 4 + 3]!;
+const alphaAt = (
+  bitmap: Buffer,
+  sizePx: number,
+  x: number,
+  y: number,
+): number => bitmap[(y * sizePx + x) * 4 + 3]!;
 
 describe("circleCoverage", () => {
   const SIZE = 36;
@@ -76,7 +80,7 @@ describe("applyAlphaMask", () => {
     expect(alphaAt(bitmap, SIZE, 0, 0)).toBe(0);
 
     // Color channels (BGR) are untouched — only alpha is scaled.
-    const centerOffset = (SIZE / 2 * SIZE + SIZE / 2) * 4;
+    const centerOffset = ((SIZE / 2) * SIZE + SIZE / 2) * 4;
     expect(bitmap[centerOffset]).toBe(255);
     expect(bitmap[centerOffset + 1]).toBe(255);
     expect(bitmap[centerOffset + 2]).toBe(255);

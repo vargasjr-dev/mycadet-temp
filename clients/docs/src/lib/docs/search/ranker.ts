@@ -25,8 +25,14 @@ const SEARCH_BOOSTS = {
   body: 1,
 } as const;
 
-const miniSearchCache = new WeakMap<DocsSearchChunk[], MiniSearch<SearchableChunk>>();
-const chunkMapCache = new WeakMap<DocsSearchChunk[], Map<string, DocsSearchChunk>>();
+const miniSearchCache = new WeakMap<
+  DocsSearchChunk[],
+  MiniSearch<SearchableChunk>
+>();
+const chunkMapCache = new WeakMap<
+  DocsSearchChunk[],
+  Map<string, DocsSearchChunk>
+>();
 
 function toSearchableChunk(chunk: DocsSearchChunk): SearchableChunk {
   return {
@@ -82,7 +88,8 @@ function clampLimit(limit: number | undefined): number {
 }
 
 function toResult(query: string, candidate: RankedChunk): DocsSearchResult {
-  const snippetQuery = [...candidate.matchedTerms, query].join(" ").trim() || query;
+  const snippetQuery =
+    [...candidate.matchedTerms, query].join(" ").trim() || query;
 
   return {
     id: candidate.chunk.id,

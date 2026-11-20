@@ -29,7 +29,7 @@ mock.module("electron", () =>
       decryptString: (value: Buffer) => value.toString(),
     },
   }),
-);;
+);
 
 mock.module("electron-log/main", () => {
   const noop = () => {};

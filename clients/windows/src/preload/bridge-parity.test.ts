@@ -29,7 +29,7 @@ mock.module("electron", () =>
     ipcRenderer,
     webUtils: { getPathForFile: mock(() => "") },
   }),
-);;
+);
 
 const { createWindowsCoreBridge, WINDOWS_NOT_APPLICABLE_CAPABILITIES } =
   await import("./core-capabilities");

@@ -72,7 +72,9 @@ for (let i = 0; i < files.length; i += concurrency) {
   );
 }
 
-console.log(`\n${passed} passed, ${failed} failed (${files.length} test files)`);
+console.log(
+  `\n${passed} passed, ${failed} failed (${files.length} test files)`,
+);
 
 if (failures.length > 0) {
   console.log("\nFailed:");

@@ -1,11 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // `powerMonitor`'s subscriptions are captured by name so the test can
 // fire them at will. `BrowserWindow.getAllWindows` returns a controllable
@@ -31,9 +24,8 @@ mock.module("electron", () => ({
   app: { on: appOnMock },
 }));
 
-const { __resetForTesting, installPowerEvents } = await import(
-  "./power-events"
-);
+const { __resetForTesting, installPowerEvents } =
+  await import("./power-events");
 
 const makeWindow = (destroyed = false): StubWindow => ({
   isDestroyed: () => destroyed,

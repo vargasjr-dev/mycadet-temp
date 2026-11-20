@@ -12,7 +12,7 @@ mock.module("electron", () =>
   electronMock({
     ipcRenderer: { invoke, off, on, send },
   }),
-);;
+);
 
 const { BridgeCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");

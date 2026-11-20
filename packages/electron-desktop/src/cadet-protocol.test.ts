@@ -9,8 +9,7 @@ mock.module("electron", () => ({
   protocol: { handle: mock(() => undefined) },
 }));
 
-const { mimeTypeForPath, resolveBundlePath } =
-  await import("./cadet-protocol");
+const { mimeTypeForPath, resolveBundlePath } = await import("./cadet-protocol");
 
 const BUNDLES_ROOT = "/data/bundles";
 const VALID_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
@@ -29,10 +28,7 @@ describe("resolveBundlePath valid inputs", () => {
 
   test("resolves a nested asset path", () => {
     expect(
-      resolveBundlePath(
-        BUNDLES_ROOT,
-        `cadet://${VALID_UUID}/assets/style.css`,
-      ),
+      resolveBundlePath(BUNDLES_ROOT, `cadet://${VALID_UUID}/assets/style.css`),
     ).toEqual({
       kind: "ok",
       uuid: VALID_UUID,
@@ -41,9 +37,7 @@ describe("resolveBundlePath valid inputs", () => {
   });
 
   test("resolves the bare root to the bundle directory itself", () => {
-    expect(
-      resolveBundlePath(BUNDLES_ROOT, `cadet://${VALID_UUID}/`),
-    ).toEqual({
+    expect(resolveBundlePath(BUNDLES_ROOT, `cadet://${VALID_UUID}/`)).toEqual({
       kind: "ok",
       uuid: VALID_UUID,
       resolved: BUNDLE_ROOT,
@@ -59,10 +53,7 @@ describe("resolveBundlePath valid inputs", () => {
 describe("resolveBundlePath URL parser handling", () => {
   test("literal `..` resolves to a safe in-bundle path", () => {
     expect(
-      resolveBundlePath(
-        BUNDLES_ROOT,
-        `cadet://${VALID_UUID}/../etc/passwd`,
-      ),
+      resolveBundlePath(BUNDLES_ROOT, `cadet://${VALID_UUID}/../etc/passwd`),
     ).toEqual({
       kind: "ok",
       uuid: VALID_UUID,
@@ -128,10 +119,7 @@ describe("resolveBundlePath invalid UUID", () => {
 
   test("UUID with extra characters returns forbidden", () => {
     expect(
-      resolveBundlePath(
-        BUNDLES_ROOT,
-        `cadet://${VALID_UUID}extra/index.html`,
-      ),
+      resolveBundlePath(BUNDLES_ROOT, `cadet://${VALID_UUID}extra/index.html`),
     ).toEqual({ kind: "forbidden" });
   });
 

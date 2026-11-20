@@ -81,9 +81,7 @@ const { useResolvedAssistantStore } =
   await import("@/stores/resolved-assistant-store");
 
 function renderSelection() {
-  useResolvedAssistantStore
-    .getState()
-    .setAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistantId(ASSISTANT_ID);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

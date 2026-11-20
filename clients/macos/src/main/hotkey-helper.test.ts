@@ -86,7 +86,7 @@ mock.module("electron", () =>
       removeAllListeners: mock(() => undefined),
     },
   }),
-);;
+);
 
 let exists = true;
 // getMacHelperPath reads CFBundleExecutable from the bundle's Info.plist to

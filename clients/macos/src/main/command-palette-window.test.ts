@@ -200,7 +200,7 @@ mock.module("electron", () =>
       openExternal: mock(() => Promise.resolve()),
     },
   }),
-);;
+);
 
 const { BrowserWindow } = await import("electron");
 

@@ -25,9 +25,9 @@ test("untrusted redirects fall back and provider import signups preserve the clo
   });
 });
 test("first-time signup routes through consent", () => {
-  expect(
-    resolve("/assistant/identity", "signup").destination,
-  ).toBe(routes.onboarding.privacy);
+  expect(resolve("/assistant/identity", "signup").destination).toBe(
+    routes.onboarding.privacy,
+  );
 });
 test("returning users skip first-run pages but keep new-assistant work", () => {
   expect(resolve(routes.onboarding.privacy, "signup", true).destination).toBe(

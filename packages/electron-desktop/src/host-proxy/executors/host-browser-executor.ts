@@ -66,7 +66,9 @@ function transportError(
   message: string,
 ): { requestId: string; content: string; isError: true } {
   const payload = JSON.stringify({ code, message });
-  log.error(`[host-browser] transport error: ${code} — ${message}`, { requestId });
+  log.error(`[host-browser] transport error: ${code} — ${message}`, {
+    requestId,
+  });
   return { requestId, content: payload, isError: true };
 }
 
@@ -104,7 +106,10 @@ export class HostBrowserExecutor implements HostProxyExecutor {
     }
 
     void this.execute(message, poster).catch((err) => {
-      log.error("[host-browser] unexpected top-level error", { requestId, err });
+      log.error("[host-browser] unexpected top-level error", {
+        requestId,
+        err,
+      });
     });
   }
 
@@ -117,7 +122,11 @@ export class HostBrowserExecutor implements HostProxyExecutor {
     if (pending) {
       pending.abortController.abort();
       clearTimeout(pending.timeoutTimer);
-      if (pending.ws && (pending.ws.readyState === WebSocket.OPEN || pending.ws.readyState === WebSocket.CONNECTING)) {
+      if (
+        pending.ws &&
+        (pending.ws.readyState === WebSocket.OPEN ||
+          pending.ws.readyState === WebSocket.CONNECTING)
+      ) {
         pending.ws.close();
       }
       pending.settled = true;
@@ -154,9 +163,13 @@ export class HostBrowserExecutor implements HostProxyExecutor {
     const cdpMethod = (message.cdpMethod as string) ?? "";
     const cdpParams = message.cdpParams as Record<string, unknown> | undefined;
     const cdpSessionId = message.cdpSessionId as string | undefined;
-    const rawTimeout = (message.timeout_seconds as number) ?? DEFAULT_TIMEOUT_SECONDS;
+    const rawTimeout =
+      (message.timeout_seconds as number) ?? DEFAULT_TIMEOUT_SECONDS;
     const timeoutSeconds =
-      typeof rawTimeout === "number" && isFinite(rawTimeout) && rawTimeout >= 0 && rawTimeout <= 18_000_000_000
+      typeof rawTimeout === "number" &&
+      isFinite(rawTimeout) &&
+      rawTimeout >= 0 &&
+      rawTimeout <= 18_000_000_000
         ? rawTimeout
         : DEFAULT_TIMEOUT_SECONDS;
     const host = "localhost";
@@ -171,7 +184,11 @@ export class HostBrowserExecutor implements HostProxyExecutor {
         pending.settled = true;
         this.inFlight.delete(requestId);
         void poster.postBrowserResult(
-          transportError(requestId, "timeout", `CDP command '${cdpMethod}' timed out after ${timeoutSeconds}s`),
+          transportError(
+            requestId,
+            "timeout",
+            `CDP command '${cdpMethod}' timed out after ${timeoutSeconds}s`,
+          ),
         );
       }
     }, timeoutSeconds * 1000);
@@ -186,7 +203,12 @@ export class HostBrowserExecutor implements HostProxyExecutor {
 
     try {
       // Step 1: Target discovery
-      const targets = await this.fetchTargets(host, port, abortController.signal, timeoutSeconds);
+      const targets = await this.fetchTargets(
+        host,
+        port,
+        abortController.signal,
+        timeoutSeconds,
+      );
 
       // Step 2: Select a page target
       const pageTargets = targets.filter(
@@ -213,7 +235,10 @@ export class HostBrowserExecutor implements HostProxyExecutor {
         selectedTarget = pageTargets[0];
       }
 
-      if (!selectedTarget || typeof selectedTarget.webSocketDebuggerUrl !== "string") {
+      if (
+        !selectedTarget ||
+        typeof selectedTarget.webSocketDebuggerUrl !== "string"
+      ) {
         this.settle(requestId);
         void poster.postBrowserResult(
           transportError(
@@ -235,7 +260,11 @@ export class HostBrowserExecutor implements HostProxyExecutor {
       } catch {
         this.settle(requestId);
         void poster.postBrowserResult(
-          transportError(requestId, "transport_error", `Chrome returned an invalid WebSocket URL: ${wsUrl}`),
+          transportError(
+            requestId,
+            "transport_error",
+            `Chrome returned an invalid WebSocket URL: ${wsUrl}`,
+          ),
         );
         return;
       }
@@ -254,16 +283,28 @@ export class HostBrowserExecutor implements HostProxyExecutor {
 
       // Step 3: Send CDP command via WebSocket
       const targetId = selectedTarget.id as string;
-      const result = await this.sendCDPCommand(wsUrl, targetId, cdpMethod, cdpParams, flight);
+      const result = await this.sendCDPCommand(
+        wsUrl,
+        targetId,
+        cdpMethod,
+        cdpParams,
+        flight,
+      );
 
       if (this.consumeCancelled(requestId)) {
-        log.debug("[host-browser] result suppressed (cancelled)", { requestId });
+        log.debug("[host-browser] result suppressed (cancelled)", {
+          requestId,
+        });
         this.settle(requestId);
         return;
       }
 
       this.settle(requestId);
-      void poster.postBrowserResult({ requestId, content: result, isError: false });
+      void poster.postBrowserResult({
+        requestId,
+        content: result,
+        isError: false,
+      });
     } catch (err) {
       if (flight.settled) return;
       this.settle(requestId);
@@ -276,9 +317,15 @@ export class HostBrowserExecutor implements HostProxyExecutor {
       if (err instanceof CDPError) {
         if (err.code === "protocol_error") {
           // Protocol errors carry the CDP error code in the message as "code:message"
-          void poster.postBrowserResult({ requestId, content: err.message, isError: true });
+          void poster.postBrowserResult({
+            requestId,
+            content: err.message,
+            isError: true,
+          });
         } else {
-          void poster.postBrowserResult(transportError(requestId, err.code, err.message));
+          void poster.postBrowserResult(
+            transportError(requestId, err.code, err.message),
+          );
         }
       } else if (abortController.signal.aborted) {
         // Timeout or cancellation already handled
@@ -381,7 +428,9 @@ export class HostBrowserExecutor implements HostProxyExecutor {
 
       const onMessage = (event: MessageEvent) => {
         try {
-          const data = JSON.parse(typeof event.data === "string" ? event.data : String(event.data));
+          const data = JSON.parse(
+            typeof event.data === "string" ? event.data : String(event.data),
+          );
           if (data.id !== commandId) return; // Not our response, keep listening
 
           cleanup();
@@ -394,7 +443,8 @@ export class HostBrowserExecutor implements HostProxyExecutor {
             return;
           }
 
-          const result = data.result !== undefined ? JSON.stringify(data.result) : "{}";
+          const result =
+            data.result !== undefined ? JSON.stringify(data.result) : "{}";
           resolve(result);
         } catch {
           // Malformed JSON, keep listening
@@ -404,14 +454,24 @@ export class HostBrowserExecutor implements HostProxyExecutor {
       const onError = () => {
         cleanup();
         this.pool.delete(targetId);
-        reject(new CDPError("transport_error", "WebSocket connection to Chrome DevTools failed"));
+        reject(
+          new CDPError(
+            "transport_error",
+            "WebSocket connection to Chrome DevTools failed",
+          ),
+        );
       };
 
       const onClose = () => {
         cleanup();
         this.pool.delete(targetId);
         // Only reject if not already settled
-        reject(new CDPError("transport_error", "WebSocket closed before receiving response"));
+        reject(
+          new CDPError(
+            "transport_error",
+            "WebSocket closed before receiving response",
+          ),
+        );
       };
 
       const cleanup = () => {
@@ -430,7 +490,9 @@ export class HostBrowserExecutor implements HostProxyExecutor {
         }
       };
 
-      flight.abortController.signal.addEventListener("abort", onAbort, { once: true });
+      flight.abortController.signal.addEventListener("abort", onAbort, {
+        once: true,
+      });
       ws.addEventListener("message", onMessage);
       ws.addEventListener("error", onError);
       ws.addEventListener("close", onClose);
@@ -447,7 +509,12 @@ export class HostBrowserExecutor implements HostProxyExecutor {
       } else {
         cleanup();
         this.pool.delete(targetId);
-        reject(new CDPError("transport_error", "WebSocket is not in a connectable state"));
+        reject(
+          new CDPError(
+            "transport_error",
+            "WebSocket is not in a connectable state",
+          ),
+        );
       }
     });
   }

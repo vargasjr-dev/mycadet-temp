@@ -50,7 +50,7 @@ mock.module("electron", () =>
       }
     },
   }),
-);;
+);
 
 const { createWindow, hardenedWebPreferences } =
   await import("@mycadet/electron-desktop/windows");

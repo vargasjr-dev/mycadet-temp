@@ -22,7 +22,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);;
+);
 
 type Handler = (args: unknown[], event: { sender: FakeSender }) => unknown;
 const handlers: Record<string, Handler> = {};

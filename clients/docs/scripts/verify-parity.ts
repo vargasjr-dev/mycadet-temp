@@ -39,7 +39,10 @@ function fetchWithTimeout(
   url: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  return fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  return fetch(url, {
+    ...init,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 }
 
 const baseUrl = (process.argv[2] ?? "").replace(/\/+$/, "");
@@ -110,7 +113,9 @@ function verifyRouteTree(): void {
 }
 
 async function verifyHtml(route: string): Promise<void> {
-  const res = await fetchWithTimeout(`${baseUrl}${route}`, { redirect: "manual" });
+  const res = await fetchWithTimeout(`${baseUrl}${route}`, {
+    redirect: "manual",
+  });
 
   if (REDIRECT_STUB_ROUTES.has(route)) {
     check(
@@ -187,10 +192,7 @@ async function verifyLlmsTxt(): Promise<void> {
   const res = await fetchWithTimeout(`${baseUrl}/docs/llms.txt`);
   check(res.status === 200, `/docs/llms.txt: expected 200, got ${res.status}`);
   const body = await res.text();
-  check(
-    body.startsWith("# Cadet Docs"),
-    "/docs/llms.txt: unexpected content",
-  );
+  check(body.startsWith("# Cadet Docs"), "/docs/llms.txt: unexpected content");
   for (const route of REDIRECT_STUB_ROUTES) {
     check(
       !body.includes(`${route}.md`),

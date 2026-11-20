@@ -50,7 +50,8 @@ export interface FloatingWindowDependencies {
   resolveRoute: (route: string) => string;
 }
 
-export const createWindowRouteResolver = (getBase: () => string) =>
+export const createWindowRouteResolver =
+  (getBase: () => string) =>
   (route: string): string =>
     `${getBase()}${route.startsWith("/") ? route : `/${route}`}`;
 
@@ -116,10 +117,7 @@ export const repositionFloatingWindow = (
   }
 };
 
-const showFloatingWindow = (
-  win: BrowserWindow,
-  focusOnShow: boolean,
-): void => {
+const showFloatingWindow = (win: BrowserWindow, focusOnShow: boolean): void => {
   if (focusOnShow) {
     win.show();
     win.focus();

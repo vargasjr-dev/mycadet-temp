@@ -1,13 +1,22 @@
 import { describe, expect, test } from "bun:test";
 import { createCuHelperProxyExecutor, cuExecutorConfig } from "./cu-executor";
 
-const build = (supportsSequence: boolean | undefined, toolName = "computer_use_sequence") =>
+const build = (
+  supportsSequence: boolean | undefined,
+  toolName = "computer_use_sequence",
+) =>
   cuExecutorConfig({
     logger: { info() {}, warn() {}, error() {} },
-    resolveHelper: () => { throw new Error("not called"); },
+    resolveHelper: () => {
+      throw new Error("not called");
+    },
     supportsSequence,
   }).buildParams(
-    { type: "host_cu_request", toolName, input: { actions: [{ action: "key", key: "cmd+n" }], reasoning: "r" } },
+    {
+      type: "host_cu_request",
+      toolName,
+      input: { actions: [{ action: "key", key: "cmd+n" }], reasoning: "r" },
+    },
     "req",
   );
 
@@ -18,7 +27,10 @@ describe("batched actions", () => {
   });
   test("forwards the actions unchanged on supported clients", () => {
     expect(build(true)).toMatchObject({
-      params: { toolName: "computer_use_sequence", input: { actions: [{ action: "key", key: "cmd+n" }] } },
+      params: {
+        toolName: "computer_use_sequence",
+        input: { actions: [{ action: "key", key: "cmd+n" }] },
+      },
     });
   });
   test("leaves single actions alone on clients without support", () => {
@@ -39,9 +51,14 @@ describe("cancelling a request the helper is still running", () => {
       }),
       supportsSequence: true,
     });
-    executor.handleCancel({ type: "host_cu_cancel", requestId: "req-1" }, {} as never);
+    executor.handleCancel(
+      { type: "host_cu_cancel", requestId: "req-1" },
+      {} as never,
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(calls).toEqual([{ method: "cu.cancel", params: { requestId: "req-1" } }]);
+    expect(calls).toEqual([
+      { method: "cu.cancel", params: { requestId: "req-1" } },
+    ]);
   });
 
   test("an older helper without cu.cancel is tolerated", async () => {
@@ -54,7 +71,10 @@ describe("cancelling a request the helper is still running", () => {
         },
       }),
     });
-    executor.handleCancel({ type: "host_cu_cancel", requestId: "req-2" }, {} as never);
+    executor.handleCancel(
+      { type: "host_cu_cancel", requestId: "req-2" },
+      {} as never,
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(warnings.some((w) => w.includes("cu.cancel failed"))).toBe(true);
   });

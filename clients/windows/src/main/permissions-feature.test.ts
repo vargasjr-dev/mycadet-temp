@@ -59,7 +59,7 @@ mock.module("electron", () =>
     systemPreferences: { getMediaAccessStatus: mediaStatus },
     Notification: FakeNotification,
   }),
-);;
+);
 mock.module("./ipc.client", () => ({
   handle: (channel: string, _schema: unknown, handler: Handler) => {
     handlers.set(channel, handler);

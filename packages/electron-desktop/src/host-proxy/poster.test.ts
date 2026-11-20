@@ -249,7 +249,6 @@ describe("HostProxyPoster", () => {
     });
   });
 
-
   describe("postPresence", () => {
     test("sends correct URL, method, headers, and body", async () => {
       const { fetchFn, captured } = createMockFetch(200, { recorded: true });

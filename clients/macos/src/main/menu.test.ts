@@ -47,7 +47,7 @@ mock.module("electron", () =>
       openExternal: mock(() => Promise.resolve()),
     },
   }),
-);;
+);
 
 mock.module("@mycadet/electron-desktop/about", () => ({
   configureAboutRuntime: () => undefined,

@@ -12,7 +12,10 @@ const EMPTY_INDEX: DocsSearchIndexFile = {
 let cachedIndex: DocsSearchIndexFile | null = null;
 
 function getIndexPath(): string {
-  return process.env.DOCS_SEARCH_INDEX_PATH ?? join(process.cwd(), "public", "docs", "search-index.json");
+  return (
+    process.env.DOCS_SEARCH_INDEX_PATH ??
+    join(process.cwd(), "public", "docs", "search-index.json")
+  );
 }
 
 export async function loadDocsSearchIndex(): Promise<DocsSearchIndexFile> {

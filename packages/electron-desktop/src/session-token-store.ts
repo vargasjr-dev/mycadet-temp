@@ -29,7 +29,9 @@ const listeners = new Set<TokenChangeListener>();
  * function. Fires after every `saveSessionToken` or `clearSessionToken`
  * so subscribers can re-derive signed-in state.
  */
-export function onSessionTokenChange(listener: TokenChangeListener): () => void {
+export function onSessionTokenChange(
+  listener: TokenChangeListener,
+): () => void {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);

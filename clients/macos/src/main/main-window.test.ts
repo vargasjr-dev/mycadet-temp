@@ -205,7 +205,7 @@ mock.module("electron", () =>
     ipcMain: { handle: ipcHandleMock },
     shell: { openExternal: () => Promise.resolve() },
   }),
-);;
+);
 
 // What the mocked `restoreBounds()` returns. Defaults to a saved windowed
 // state; tests exercising the fresh-install maximized default or a saved

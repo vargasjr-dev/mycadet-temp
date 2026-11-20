@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 // Mock fetch at the global level
 // ---------------------------------------------------------------------------
 
-let mockFetchImpl: typeof globalThis.fetch = (async () => new Response("[]")) as unknown as typeof globalThis.fetch;
+let mockFetchImpl: typeof globalThis.fetch = (async () =>
+  new Response("[]")) as unknown as typeof globalThis.fetch;
 
 // We need to intercept fetch calls for target discovery
 globalThis.fetch = (async (...args: Parameters<typeof globalThis.fetch>) => {
@@ -37,7 +38,11 @@ class MockWebSocket {
     }, 5);
   }
 
-  addEventListener(event: string, listener: (...args: unknown[]) => void, opts?: { once?: boolean }) {
+  addEventListener(
+    event: string,
+    listener: (...args: unknown[]) => void,
+    opts?: { once?: boolean },
+  ) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
@@ -88,9 +93,8 @@ Object.assign(globalThis.WebSocket, {
   CLOSED: 3,
 });
 
-const { HostBrowserExecutor, __testing } = await import(
-  "./host-browser-executor"
-);
+const { HostBrowserExecutor, __testing } =
+  await import("./host-browser-executor");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -116,11 +120,19 @@ function pageTarget(
 
 /** Create a capturing poster that records all postBrowserResult calls. */
 function capturingPoster() {
-  const results: Array<{ requestId: string; content?: string; isError?: boolean }> = [];
+  const results: Array<{
+    requestId: string;
+    content?: string;
+    isError?: boolean;
+  }> = [];
   return {
     results,
     poster: {
-      postBrowserResult: async (payload: { requestId: string; content?: string; isError?: boolean }) => {
+      postBrowserResult: async (payload: {
+        requestId: string;
+        content?: string;
+        isError?: boolean;
+      }) => {
         results.push(payload);
         return true;
       },
@@ -130,23 +142,24 @@ function capturingPoster() {
 
 /** Set fetch to return the given target list for /json/list. */
 function setTargets(targets: Record<string, unknown>[]) {
-  mockFetchImpl = (async () => new Response(JSON.stringify(targets), { status: 200 })) as unknown as typeof globalThis.fetch;
+  mockFetchImpl = (async () =>
+    new Response(JSON.stringify(targets), {
+      status: 200,
+    })) as unknown as typeof globalThis.fetch;
 }
 
 /** Set fetch to fail. */
 function setFetchError(msg = "Connection refused") {
-  mockFetchImpl = (async () => { throw new Error(msg); }) as unknown as typeof globalThis.fetch;
+  mockFetchImpl = (async () => {
+    throw new Error(msg);
+  }) as unknown as typeof globalThis.fetch;
 }
 
 /**
  * After flush, find the most recently created mock WebSocket and simulate
  * a CDP response.
  */
-function replyToCDP(
-  ws: MockWebSocket,
-  commandId: number,
-  result: unknown,
-) {
+function replyToCDP(ws: MockWebSocket, commandId: number, result: unknown) {
   ws.emit("message", { data: JSON.stringify({ id: commandId, result }) });
 }
 
@@ -156,7 +169,9 @@ function replyWithCDPError(
   code: number,
   message: string,
 ) {
-  ws.emit("message", { data: JSON.stringify({ id: commandId, error: { code, message } }) });
+  ws.emit("message", {
+    data: JSON.stringify({ id: commandId, error: { code, message } }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +188,8 @@ describe("HostBrowserExecutor", () => {
 
   afterEach(() => {
     executor.destroy();
-    mockFetchImpl = (async () => new Response("[]")) as unknown as typeof globalThis.fetch;
+    mockFetchImpl = (async () =>
+      new Response("[]")) as unknown as typeof globalThis.fetch;
   });
 
   // -- Test seams -----------------------------------------------------------
@@ -193,7 +209,11 @@ describe("HostBrowserExecutor", () => {
     });
 
     test("transportError returns structured error payload", () => {
-      const err = __testing.transportError("req-1", "unreachable", "cannot connect");
+      const err = __testing.transportError(
+        "req-1",
+        "unreachable",
+        "cannot connect",
+      );
       expect(err.requestId).toBe("req-1");
       expect(err.isError).toBe(true);
       const parsed = JSON.parse(err.content);
@@ -216,7 +236,12 @@ describe("HostBrowserExecutor", () => {
 
       const { poster, results } = capturingPoster();
       executor.handleRequest(
-        { type: "host_browser_request", requestId: "r1", cdpMethod: "Runtime.evaluate", cdpParams: { expression: "1+1" } },
+        {
+          type: "host_browser_request",
+          requestId: "r1",
+          cdpMethod: "Runtime.evaluate",
+          cdpParams: { expression: "1+1" },
+        },
         poster,
       );
 
@@ -231,7 +256,11 @@ describe("HostBrowserExecutor", () => {
 
       const { poster, results } = capturingPoster();
       executor.handleRequest(
-        { type: "host_browser_request", requestId: "r1", cdpMethod: "Page.navigate" },
+        {
+          type: "host_browser_request",
+          requestId: "r1",
+          cdpMethod: "Page.navigate",
+        },
         poster,
       );
 
@@ -243,13 +272,15 @@ describe("HostBrowserExecutor", () => {
     });
 
     test("returns unreachable when no page targets exist", async () => {
-      setTargets([
-        { id: "sw-1", type: "service_worker", title: "SW" },
-      ]);
+      setTargets([{ id: "sw-1", type: "service_worker", title: "SW" }]);
 
       const { poster, results } = capturingPoster();
       executor.handleRequest(
-        { type: "host_browser_request", requestId: "r1", cdpMethod: "Page.navigate" },
+        {
+          type: "host_browser_request",
+          requestId: "r1",
+          cdpMethod: "Page.navigate",
+        },
         poster,
       );
 
@@ -314,7 +345,11 @@ describe("HostBrowserExecutor", () => {
 
       const { poster, results } = capturingPoster();
       executor.handleRequest(
-        { type: "host_browser_request", requestId: "r1", cdpMethod: "Page.navigate" },
+        {
+          type: "host_browser_request",
+          requestId: "r1",
+          cdpMethod: "Page.navigate",
+        },
         poster,
       );
 
@@ -349,12 +384,16 @@ describe("HostBrowserExecutor", () => {
       expect(ws.send).toHaveBeenCalled();
 
       // Parse the sent message to find command id
-      const sentData = JSON.parse((ws.send as ReturnType<typeof mock>).mock.calls[0][0] as string);
+      const sentData = JSON.parse(
+        (ws.send as ReturnType<typeof mock>).mock.calls[0][0] as string,
+      );
       expect(sentData.method).toBe("Runtime.evaluate");
       expect(sentData.params.expression).toBe("document.title");
 
       // Reply
-      replyToCDP(ws, sentData.id, { result: { type: "string", value: "Test Page" } });
+      replyToCDP(ws, sentData.id, {
+        result: { type: "string", value: "Test Page" },
+      });
       await flush(50);
 
       expect(results.length).toBe(1);
@@ -378,7 +417,9 @@ describe("HostBrowserExecutor", () => {
 
       await flush(50);
       const ws = createdWebSockets[0];
-      const sentData = JSON.parse((ws.send as ReturnType<typeof mock>).mock.calls[0][0] as string);
+      const sentData = JSON.parse(
+        (ws.send as ReturnType<typeof mock>).mock.calls[0][0] as string,
+      );
 
       replyWithCDPError(ws, sentData.id, -32000, "Cannot find context");
       await flush(50);
@@ -433,7 +474,11 @@ describe("HostBrowserExecutor", () => {
 
       const { poster, results } = capturingPoster();
       executor.handleRequest(
-        { type: "host_browser_request", requestId: "r1", cdpMethod: "Page.navigate" },
+        {
+          type: "host_browser_request",
+          requestId: "r1",
+          cdpMethod: "Page.navigate",
+        },
         poster,
       );
 
@@ -447,7 +492,11 @@ describe("HostBrowserExecutor", () => {
 
       const { poster, results } = capturingPoster();
       executor.handleRequest(
-        { type: "host_browser_request", requestId: "r1", cdpMethod: "Page.navigate" },
+        {
+          type: "host_browser_request",
+          requestId: "r1",
+          cdpMethod: "Page.navigate",
+        },
         poster,
       );
 
@@ -470,10 +519,7 @@ describe("HostBrowserExecutor", () => {
   describe("edge cases", () => {
     test("ignores messages without requestId", () => {
       const { poster, results } = capturingPoster();
-      executor.handleRequest(
-        { type: "host_browser_request" },
-        poster,
-      );
+      executor.handleRequest({ type: "host_browser_request" }, poster);
       expect(results.length).toBe(0);
     });
   });

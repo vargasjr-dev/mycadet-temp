@@ -142,7 +142,6 @@ describe("resolveModelFirstGroups", () => {
     );
   });
 
-
   test("keeps a section in its owner's catalog order", () => {
     expect(namesOf([], "anthropic").slice(0, 3)).toEqual([
       "Claude Fable 5.1",

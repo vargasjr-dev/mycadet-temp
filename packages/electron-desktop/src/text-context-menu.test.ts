@@ -1,6 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 
-let listener: ((event: unknown, params: Record<string, unknown>) => void) | null = null;
+let listener:
+  | ((event: unknown, params: Record<string, unknown>) => void)
+  | null = null;
 let template: Array<Record<string, unknown>> = [];
 const replaceMisspelling = mock((_word: string) => undefined);
 
@@ -25,18 +27,23 @@ const contents = {
 describe("installTextContextMenu", () => {
   test("offers spelling suggestions and editable text roles", () => {
     installTextContextMenu(contents as never);
-    listener?.({}, {
-      isEditable: true,
-      selectionText: "teh",
-      mediaType: "none",
-      misspelledWord: "teh",
-      dictionarySuggestions: ["the"],
-    });
+    listener?.(
+      {},
+      {
+        isEditable: true,
+        selectionText: "teh",
+        mediaType: "none",
+        misspelledWord: "teh",
+        dictionarySuggestions: ["the"],
+      },
+    );
 
     expect(template[0]?.label).toBe("the");
     (template[0]?.click as (() => void) | undefined)?.();
     expect(replaceMisspelling).toHaveBeenCalledWith("the");
-    expect(template.some((item) => item.role === "pasteAndMatchStyle")).toBe(true);
+    expect(template.some((item) => item.role === "pasteAndMatchStyle")).toBe(
+      true,
+    );
   });
 
   test("does not replace the image context menu", () => {

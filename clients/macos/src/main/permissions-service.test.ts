@@ -80,7 +80,7 @@ mock.module("electron", () =>
       getMediaAccessStatus: () => "granted",
     },
   }),
-);;
+);
 
 interface HandleRegistration {
   channel: string;

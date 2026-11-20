@@ -49,9 +49,7 @@ beforeEach(() => {
 describe("notification identities", () => {
   test("derives deterministic opaque SHA-256 scopes from the assistant and the origin", () => {
     const setActive = (assistantId: string) =>
-      useResolvedAssistantStore
-        .getState()
-        .setAssistantId(assistantId);
+      useResolvedAssistantStore.getState().setAssistantId(assistantId);
     setActive("asst-1");
     const scope = resolveNotificationIdentityScope();
     const same = resolveNotificationIdentityScope();
@@ -291,9 +289,7 @@ describe("notification identities", () => {
   });
 
   test("reconcile force-clears a snapshot-only scope exactly once", () => {
-    useResolvedAssistantStore
-      .getState()
-      .setAssistantId("snapshot-only");
+    useResolvedAssistantStore.getState().setAssistantId("snapshot-only");
     const scopeId = resolveNotificationIdentityScope()!;
     const snapshotOnly = identity("snapshot-only", scopeId);
     const resetIdentities = mock(() => {});
@@ -316,9 +312,7 @@ describe("notification identities", () => {
   });
 
   test("queues native publication behind eager publisher registration", async () => {
-    useResolvedAssistantStore
-      .getState()
-      .setAssistantId("registered");
+    useResolvedAssistantStore.getState().setAssistantId("registered");
     const scopeId = resolveNotificationIdentityScope()!;
     let finishRegistration: (registered: boolean) => void = () => undefined;
     const registration = new Promise<boolean>((resolve) => {

@@ -35,11 +35,8 @@ mock.module("electron-updater", () => ({
 
 const registeredChannels: string[] = [];
 
-const {
-  checkForUpdates,
-  installAutoUpdate,
-  resolveUpdateFeedUrl,
-} = await import("./auto-update");
+const { checkForUpdates, installAutoUpdate, resolveUpdateFeedUrl } =
+  await import("./auto-update");
 
 installAutoUpdate({
   ipc: {

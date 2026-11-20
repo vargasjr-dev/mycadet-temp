@@ -27,7 +27,7 @@ mock.module("electron", () =>
       show(): void {}
     },
   }),
-);;
+);
 
 interface HelperCall {
   method: string;

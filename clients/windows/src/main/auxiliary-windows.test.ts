@@ -116,7 +116,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);;
+);
 const restoreBounds = mock(
   (_key: string, defaults: { width: number; height: number }) => defaults,
 );

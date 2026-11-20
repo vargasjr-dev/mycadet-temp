@@ -7,7 +7,10 @@ import {
   REDIRECT_STUB_ROUTES,
 } from "../src/lib/discover-docs-routes";
 import { extractDocsPageFromHtml } from "../src/lib/docs/search/extract";
-import type { DocsSearchChunk, DocsSearchIndexFile } from "../src/lib/docs/search/types";
+import type {
+  DocsSearchChunk,
+  DocsSearchIndexFile,
+} from "../src/lib/docs/search/types";
 import { loadPageModule, renderPage } from "./lib/docs-pages";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -71,12 +74,13 @@ async function main() {
     console.log(`[docs-search] Skipped ${skipped}`);
   }
   console.log(
-    `[docs-search] Indexed ${pageCount} pages into ${index.chunks.length} chunks -> ${OUTPUT_PATH}`
+    `[docs-search] Indexed ${pageCount} pages into ${index.chunks.length} chunks -> ${OUTPUT_PATH}`,
   );
 }
 
 main().catch((error) => {
-  const message = error instanceof Error ? (error.stack ?? error.message) : "unknown error";
+  const message =
+    error instanceof Error ? (error.stack ?? error.message) : "unknown error";
   console.error(`[docs-search] Failed to generate docs index: ${message}`);
   process.exitCode = 1;
 });

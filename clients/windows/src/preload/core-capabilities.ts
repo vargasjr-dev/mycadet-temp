@@ -63,10 +63,7 @@ export const createWindowsCoreBridge = (
         active,
       ) as Promise<void>,
     navigateTo: (url: string): Promise<void> =>
-      ipcRenderer.invoke(
-        "cadet:mainWindow:navigateTo",
-        url,
-      ) as Promise<void>,
+      ipcRenderer.invoke("cadet:mainWindow:navigateTo", url) as Promise<void>,
     setTitleBarOverlay: (theme: TitleBarOverlayTheme): Promise<void> =>
       ipcRenderer.invoke(
         "cadet:mainWindow:setTitleBarOverlay",

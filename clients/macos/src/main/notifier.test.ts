@@ -25,9 +25,7 @@ const electronApp = {
   getAppPath: () => appPath,
 };
 
-mock.module("electron", () =>
-  electronMock({ app: electronApp }),
-);;
+mock.module("electron", () => electronMock({ app: electronApp }));
 
 const warnings: unknown[][] = [];
 const infos: unknown[][] = [];

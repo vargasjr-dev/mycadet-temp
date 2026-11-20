@@ -55,10 +55,7 @@ describe("installGlobalShortcuts", () => {
     });
     settingsListener?.();
 
-    expect(registered).toEqual([
-      "CmdOrCtrl+Shift+G",
-      "CmdOrCtrl+Shift+G",
-    ]);
+    expect(registered).toEqual(["CmdOrCtrl+Shift+G", "CmdOrCtrl+Shift+G"]);
     expect(unregistered).toEqual([]);
 
     quitListener?.();

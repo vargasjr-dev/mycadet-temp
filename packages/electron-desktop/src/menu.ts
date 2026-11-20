@@ -147,13 +147,19 @@ const installCliRow = (installCli: (() => void) | undefined) => ({
 
 /** The File menu: the conversation rows plus the platform's session tail. */
 export const fileMenu = (
-  options: { dispatch?: MenuDispatch; sessionTail?: MenuItemConstructorOptions[] } = {},
+  options: {
+    dispatch?: MenuDispatch;
+    sessionTail?: MenuItemConstructorOptions[];
+  } = {},
 ): MenuItemConstructorOptions => {
   const item = commandItem(options.dispatch ?? dispatchToFocused);
   return {
     id: "file",
     label: "File",
-    submenu: [...conversationFileMenuItems(item), ...(options.sessionTail ?? [])],
+    submenu: [
+      ...conversationFileMenuItems(item),
+      ...(options.sessionTail ?? []),
+    ],
   };
 };
 
@@ -172,10 +178,9 @@ export const viewMenu = (
 ): MenuItemConstructorOptions => ({
   id: "view",
   label: "View",
-  submenu: viewMenuItems(
-    commandItem(options.dispatch ?? dispatchToFocused),
-    { fullscreenAccelerator: options.fullscreenAccelerator },
-  ),
+  submenu: viewMenuItems(commandItem(options.dispatch ?? dispatchToFocused), {
+    fullscreenAccelerator: options.fullscreenAccelerator,
+  }),
 });
 
 export interface WindowMenuOptions {
@@ -239,7 +244,10 @@ export const helpMenu = (
         },
       },
       ...(options.openAbout
-        ? [separator(), { label: `About ${app.name}`, click: options.openAbout }]
+        ? [
+            separator(),
+            { label: `About ${app.name}`, click: options.openAbout },
+          ]
         : []),
     ],
   };

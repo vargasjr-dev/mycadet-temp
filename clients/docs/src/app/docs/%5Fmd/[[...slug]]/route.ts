@@ -39,7 +39,7 @@ function markdownResponse(markdown: string, canonicalUrl: string): Response {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ slug?: string[] }> }
+  { params }: { params: Promise<{ slug?: string[] }> },
 ): Promise<Response> {
   const { slug = [] } = await params;
 

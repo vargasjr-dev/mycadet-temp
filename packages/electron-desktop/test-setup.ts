@@ -275,7 +275,6 @@ export const electronModuleMock = (): unknown => electronMock();
 
 mock.module("electron", electronModuleMock);
 
-
 /**
  * Mock surface for `electron-log/main`. The package's app-logger calls
  * `log.initialize()` and configures a file transport at import time, and

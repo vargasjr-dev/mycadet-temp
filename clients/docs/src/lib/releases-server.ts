@@ -34,7 +34,9 @@ export function releaseAnchor(release: ApiRelease): string {
 // merely start with the same word ("Build performance improved", "Commit:
 // enforce signing everywhere") are kept.
 export function hasRealNotes(release: ApiRelease): boolean {
-  if (!release.description) {return false;}
+  if (!release.description) {
+    return false;
+  }
   const stripped = release.description
     .split("\n")
     .filter(

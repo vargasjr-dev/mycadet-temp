@@ -15,9 +15,7 @@ import {
   saveSessionToken,
   setSessionTokenLogger,
 } from "@mycadet/electron-desktop/session-token-store";
-import {
-  resolveLocalConfigFromEnv,
-} from "@mycadet/local-mode";
+import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import { startLinuxAuthCallback } from "../auth-callback";
 import { handle, handleSync } from "../ipc.client";

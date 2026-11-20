@@ -639,8 +639,8 @@ describe("interaction broadcast", () => {
     });
     constructed[0]!.emit("click");
 
-    const actions = sentMessages.filter((message) =>
-      message.channel === ACTION_CHANNEL,
+    const actions = sentMessages.filter(
+      (message) => message.channel === ACTION_CHANNEL,
     );
     expect(actions[0]!.payload).toMatchObject({ identity });
   });

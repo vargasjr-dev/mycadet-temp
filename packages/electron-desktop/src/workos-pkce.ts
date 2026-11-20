@@ -51,7 +51,8 @@ export function buildAuthorizeUrl(options: AuthorizeUrlOptions): string {
   // No `prompt`: lets the browser's existing IdP session be reused.
   url.searchParams.set("provider", "authkit");
   if (options.loginHint) url.searchParams.set("login_hint", options.loginHint);
-  if (options.intent === "signup") url.searchParams.set("screen_hint", "sign-up");
+  if (options.intent === "signup")
+    url.searchParams.set("screen_hint", "sign-up");
   return url.toString();
 }
 
@@ -118,16 +119,24 @@ export interface LoopbackListener {
 }
 
 /** Bind an ephemeral loopback listener and wait for the OAuth redirect. */
-export function startLoopbackListener(expectedState: string): Promise<LoopbackListener> {
+export function startLoopbackListener(
+  expectedState: string,
+): Promise<LoopbackListener> {
   return new Promise((resolveListener, rejectListener) => {
-    let settle: { resolve: (code: string) => void; reject: (err: Error) => void };
+    let settle: {
+      resolve: (code: string) => void;
+      reject: (err: Error) => void;
+    };
     const waitForCode = new Promise<string>((resolve, reject) => {
       settle = { resolve, reject };
     });
 
     const server = http.createServer((req, res) => {
       const url = new URL(req.url ?? "/", "http://127.0.0.1");
-      if (url.pathname !== CALLBACK_PATH || url.searchParams.get("state") !== expectedState) {
+      if (
+        url.pathname !== CALLBACK_PATH ||
+        url.searchParams.get("state") !== expectedState
+      ) {
         res.writeHead(404).end();
         return;
       }
@@ -136,7 +145,9 @@ export function startLoopbackListener(expectedState: string): Promise<LoopbackLi
       if (error || !code) {
         res.writeHead(200, { "Content-Type": "text/html" }).end(ERROR_HTML);
         settle.reject(
-          new Error(`Authentication failed: ${error ?? "no authorization code received"}`),
+          new Error(
+            `Authentication failed: ${error ?? "no authorization code received"}`,
+          ),
         );
         return;
       }
@@ -180,7 +191,9 @@ export async function exchangeCodeWithWorkos(options: {
   );
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`WorkOS code exchange failed (${response.status}): ${body}`);
+    throw new Error(
+      `WorkOS code exchange failed (${response.status}): ${body}`,
+    );
   }
   const data = (await response.json()) as { access_token?: string };
   if (!data.access_token) {

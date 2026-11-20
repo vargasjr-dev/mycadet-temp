@@ -24,4 +24,3 @@ export function tosChangeNotes(version: string): string[] {
 export function privacyChangeNotes(version: string): string[] {
   return PRIVACY_CHANGE_NOTES[version] ?? [];
 }
-

@@ -36,7 +36,7 @@ mock.module("electron", () =>
       isPackaged: true,
     },
   }),
-);;
+);
 
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],

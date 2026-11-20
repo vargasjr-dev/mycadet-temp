@@ -15,7 +15,7 @@ mock.module("electron", () =>
     },
     nativeImage: { createFromBitmap, createFromPath: () => bundleIcon },
   }),
-);;
+);
 
 let avatarListener: (() => void) | null = null;
 mock.module("@mycadet/electron-desktop/avatar", () => ({

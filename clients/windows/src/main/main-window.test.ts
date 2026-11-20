@@ -176,7 +176,7 @@ mock.module("electron", () =>
     nativeTheme: nativeThemeStub,
     shell: { openExternal: () => Promise.resolve() },
   }),
-);;
+);
 
 let restoredBounds: {
   x?: number;

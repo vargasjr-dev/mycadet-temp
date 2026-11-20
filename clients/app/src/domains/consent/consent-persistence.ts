@@ -318,10 +318,12 @@ export function readConsentCurrency(userId: string | null): ConsentCurrency {
   const hasConsentRecord =
     typeof window !== "undefined" &&
     userId != null &&
-    ([
-      ["tos", userId],
-      ["privacy_policy", userId],
-      ["ai_data_sharing", userId],
-    ] as const).some(([field, id]) => readAckVersion(field, id) !== "");
+    (
+      [
+        ["tos", userId],
+        ["privacy_policy", userId],
+        ["ai_data_sharing", userId],
+      ] as const
+    ).some(([field, id]) => readAckVersion(field, id) !== "");
   return { ...restored, hasConsentRecord };
 }

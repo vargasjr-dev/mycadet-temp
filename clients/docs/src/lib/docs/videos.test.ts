@@ -18,11 +18,14 @@ const PUBLIC_ROOT = join(ROOT, "public");
 const entries = Object.entries(DOCS_VIDEOS);
 
 describe("DOCS_VIDEOS", () => {
-  test.each(entries)("%s has a poster committed under public/docs", (_slug, video) => {
-    expect(video.poster).toStartWith("/docs/");
-    expect(video.poster).toEndWith(".webp");
-    expect(existsSync(join(PUBLIC_ROOT, video.poster))).toBe(true);
-  });
+  test.each(entries)(
+    "%s has a poster committed under public/docs",
+    (_slug, video) => {
+      expect(video.poster).toStartWith("/docs/");
+      expect(video.poster).toEndWith(".webp");
+      expect(existsSync(join(PUBLIC_ROOT, video.poster))).toBe(true);
+    },
+  );
 
   test.each(entries)("%s carries usable metadata", (_slug, video) => {
     expect(video.youtubeId).toMatch(/^[\w-]{11}$/);
@@ -46,7 +49,7 @@ describe("DOCS_VIDEOS", () => {
 describe("watchUrl", () => {
   test("builds the canonical watch URL", () => {
     expect(watchUrl(DOCS_VIDEOS["local-hosting-setup"])).toBe(
-      "https://www.youtube.com/watch?v=SJgflx6XDeQ"
+      "https://www.youtube.com/watch?v=SJgflx6XDeQ",
     );
   });
 });

@@ -1,4 +1,9 @@
-import { BrowserWindow, Menu, type MenuItemConstructorOptions, type WebContents } from "electron";
+import {
+  BrowserWindow,
+  Menu,
+  type MenuItemConstructorOptions,
+  type WebContents,
+} from "electron";
 
 export const installTextContextMenu = (contents: WebContents): void => {
   contents.on("context-menu", (_event, params) => {
@@ -13,7 +18,10 @@ export const installTextContextMenu = (contents: WebContents): void => {
     const template: MenuItemConstructorOptions[] = [];
 
     if (params.misspelledWord) {
-      if (params.dictionarySuggestions && params.dictionarySuggestions.length > 0) {
+      if (
+        params.dictionarySuggestions &&
+        params.dictionarySuggestions.length > 0
+      ) {
         for (const suggestion of params.dictionarySuggestions) {
           template.push({
             label: suggestion,
@@ -48,6 +56,8 @@ export const installTextContextMenu = (contents: WebContents): void => {
     template.push({ role: "selectAll" });
 
     const menu = Menu.buildFromTemplate(template);
-    menu.popup({ window: BrowserWindow.fromWebContents(contents) ?? undefined });
+    menu.popup({
+      window: BrowserWindow.fromWebContents(contents) ?? undefined,
+    });
   });
 };

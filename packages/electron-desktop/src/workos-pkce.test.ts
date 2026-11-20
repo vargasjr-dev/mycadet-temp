@@ -81,7 +81,9 @@ describe("buildAuthorizeUrl", () => {
   });
 
   test("login hint is forwarded", () => {
-    const url = new URL(buildAuthorizeUrl({ ...base, loginHint: "user@example.com" }));
+    const url = new URL(
+      buildAuthorizeUrl({ ...base, loginHint: "user@example.com" }),
+    );
     expect(url.searchParams.get("login_hint")).toBe("user@example.com");
   });
 });
@@ -94,7 +96,8 @@ describe("selectWorkosClientId", () => {
     name: "WorkOS OIDC",
     client_id: "client_connect",
     flows: ["provider_redirect", "provider_token"],
-    openid_configuration_url: "https://x.authkit.app/.well-known/openid-configuration",
+    openid_configuration_url:
+      "https://x.authkit.app/.well-known/openid-configuration",
   };
   const modern = {
     id: "workos-oidc",
@@ -123,7 +126,11 @@ describe("fetchWorkosClientId", () => {
           data: {
             socialaccount: {
               providers: [
-                { id: "workos-oidc", client_id: "client_um", flows: ["provider_token"] },
+                {
+                  id: "workos-oidc",
+                  client_id: "client_um",
+                  flows: ["provider_token"],
+                },
               ],
             },
           },
@@ -131,19 +138,26 @@ describe("fetchWorkosClientId", () => {
         { status: 200 },
       );
 
-    expect(await fetchWorkosClientId("https://platform.example")).toBe("client_um");
-    expect(fetchCalls[0]!.url).toBe("https://platform.example/_allauth/app/v1/config");
+    expect(await fetchWorkosClientId("https://platform.example")).toBe(
+      "client_um",
+    );
+    expect(fetchCalls[0]!.url).toBe(
+      "https://platform.example/_allauth/app/v1/config",
+    );
   });
 
   test("throws a clear error when no token-auth provider is advertised", async () => {
     fetchResponses["/_allauth/app/v1/config"] = () =>
-      new Response(JSON.stringify({ data: { socialaccount: { providers: [] } } }), {
-        status: 200,
-      });
+      new Response(
+        JSON.stringify({ data: { socialaccount: { providers: [] } } }),
+        {
+          status: 200,
+        },
+      );
 
-    await expect(fetchWorkosClientId("https://platform.example")).rejects.toThrow(
-      /does not advertise/,
-    );
+    await expect(
+      fetchWorkosClientId("https://platform.example"),
+    ).rejects.toThrow(/does not advertise/);
   });
 });
 
@@ -152,12 +166,18 @@ describe("startLoopbackListener", () => {
     const listener = await startLoopbackListener("expected-state");
     try {
       // Noise: wrong path, wrong state — must not settle the promise.
-      const noise1 = await fetch(listener.redirectUri.replace("/auth/callback", "/favicon.ico"));
+      const noise1 = await fetch(
+        listener.redirectUri.replace("/auth/callback", "/favicon.ico"),
+      );
       expect(noise1.status).toBe(404);
-      const noise2 = await fetch(`${listener.redirectUri}?code=evil&state=wrong`);
+      const noise2 = await fetch(
+        `${listener.redirectUri}?code=evil&state=wrong`,
+      );
       expect(noise2.status).toBe(404);
 
-      const ok = await fetch(`${listener.redirectUri}?code=good-code&state=expected-state`);
+      const ok = await fetch(
+        `${listener.redirectUri}?code=good-code&state=expected-state`,
+      );
       expect(ok.status).toBe(200);
       expect(await ok.text()).toContain("You're all set");
       expect(await listener.waitForCode).toBe("good-code");
@@ -175,7 +195,9 @@ describe("startLoopbackListener", () => {
         () => null,
         (err: Error) => err,
       );
-      const res = await fetch(`${listener.redirectUri}?error=access_denied&state=st`);
+      const res = await fetch(
+        `${listener.redirectUri}?error=access_denied&state=st`,
+      );
       expect(res.status).toBe(200);
       const err = await settled;
       expect(err?.message).toMatch(/access_denied/);
@@ -199,7 +221,9 @@ describe("startLoopbackListener", () => {
 describe("exchangeCodeWithWorkos", () => {
   test("posts a public-client PKCE exchange and returns the access token", async () => {
     fetchResponses["/user_management/authenticate"] = () =>
-      new Response(JSON.stringify({ access_token: "at_1", user: {} }), { status: 200 });
+      new Response(JSON.stringify({ access_token: "at_1", user: {} }), {
+        status: 200,
+      });
 
     const token = await exchangeCodeWithWorkos({
       clientId: "client_um",

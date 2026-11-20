@@ -11,10 +11,7 @@ import { hostTransferExecutor, __testing } from "./host-transfer-executor";
 // Helpers
 // ---------------------------------------------------------------------------
 
-const TEST_DIR = path.join(
-  os.tmpdir(),
-  `host-transfer-test-${process.pid}`,
-);
+const TEST_DIR = path.join(os.tmpdir(), `host-transfer-test-${process.pid}`);
 
 function sha256hex(data: Buffer): string {
   return createHash("sha256").update(data).digest("hex");
@@ -163,7 +160,8 @@ describe("host-transfer-executor", () => {
           direction: "to_host",
           transferId: "xfer-2",
           destPath,
-          sha256: "0000000000000000000000000000000000000000000000000000000000000000",
+          sha256:
+            "0000000000000000000000000000000000000000000000000000000000000000",
           overwrite: false,
         },
         cap.poster,
@@ -403,7 +401,10 @@ describe("host-transfer-executor", () => {
             pushResolve = resolve;
           });
         }
-        if (url.includes("/v1/host-transfer-result") && init?.method === "POST") {
+        if (
+          url.includes("/v1/host-transfer-result") &&
+          init?.method === "POST"
+        ) {
           transferResult = JSON.parse(init.body as string);
           return new Response("ok");
         }
@@ -460,7 +461,9 @@ describe("host-transfer-executor", () => {
       await flush();
 
       expect(cap.transferResult()!.isError).toBe(true);
-      expect(cap.transferResult()!.errorMessage).toContain("Unknown transfer direction");
+      expect(cap.transferResult()!.errorMessage).toContain(
+        "Unknown transfer direction",
+      );
     });
 
     test("missing requestId is a no-op", () => {

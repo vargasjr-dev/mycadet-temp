@@ -20,10 +20,7 @@ import {
   selectLatestHistorySession,
   serializeSessionToText,
 } from "./doctor-history";
-import type {
-  ChatEntry,
-  UserOutcomePromptChatEntry,
-} from "./doctor-history";
+import type { ChatEntry, UserOutcomePromptChatEntry } from "./doctor-history";
 
 function msg(
   overrides: Partial<DoctorMessage> & Pick<DoctorMessage, "kind">,

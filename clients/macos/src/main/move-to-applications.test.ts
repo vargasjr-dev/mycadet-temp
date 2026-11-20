@@ -101,7 +101,7 @@ mock.module("electron", () =>
       }
     },
   }),
-);;
+);
 
 const { relocateToApplicationsFolder, promptToRelocateIfStranded } =
   await import("./move-to-applications");

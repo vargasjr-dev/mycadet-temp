@@ -750,7 +750,6 @@ describe("handleDeepLink — window activation", () => {
 });
 
 describe("resolveRegisteredSchemes", () => {
-
   test("production registers cadet", () => {
     withEnvironment("production", () => {
       expect(resolveRegisteredSchemes()).toEqual(["cadet"]);
@@ -783,7 +782,6 @@ describe("resolveRegisteredSchemes", () => {
 });
 
 describe("resolveAuthCallbackScheme", () => {
-
   test("uses the app-specific production scheme", () => {
     withEnvironment("production", () => {
       expect(resolveAuthCallbackScheme()).toBe("cadet");
@@ -798,7 +796,6 @@ describe("resolveAuthCallbackScheme", () => {
 });
 
 describe("resolveAcceptedSchemes", () => {
-
   test("production accepts cadet:", () => {
     withEnvironment("production", () => {
       const accepted = resolveAcceptedSchemes();

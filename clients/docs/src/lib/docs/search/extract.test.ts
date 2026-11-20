@@ -75,7 +75,9 @@ describe("extractDocsPageFromHtml", () => {
     const chunks = extractDocsPageFromHtml("/docs/guides", html);
 
     const sectionChunk = chunks.find((chunk) => chunk.sectionId === "setup");
-    const standaloneChunk = chunks.find((chunk) => chunk.sectionId === "troubleshooting");
+    const standaloneChunk = chunks.find(
+      (chunk) => chunk.sectionId === "troubleshooting",
+    );
 
     expect(sectionChunk?.url).toBe("/docs/guides#setup");
     expect(standaloneChunk?.url).toBe("/docs/guides#troubleshooting");
@@ -102,7 +104,9 @@ describe("extractDocsPageFromHtml", () => {
     const chunks = extractDocsPageFromHtml("/docs/guides", html);
 
     const installChunk = chunks.find((chunk) => chunk.sectionId === "install");
-    const uninstallChunk = chunks.find((chunk) => chunk.sectionId === "uninstall");
+    const uninstallChunk = chunks.find(
+      (chunk) => chunk.sectionId === "uninstall",
+    );
 
     expect(installChunk?.body).toContain("installer bundle");
     expect(installChunk?.body).not.toContain("zamboni");

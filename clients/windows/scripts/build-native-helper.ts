@@ -69,7 +69,8 @@ const bundledDotnetPath = (): string | null => {
 
 const dotnetCandidates = (): string[] =>
   [Bun.which("dotnet"), bundledDotnetPath(), projectDotnetPath()].filter(
-    (candidate): candidate is string => candidate !== null && existsSync(candidate),
+    (candidate): candidate is string =>
+      candidate !== null && existsSync(candidate),
   );
 
 const hasPinnedDotnetSdk = async (dotnet: string): Promise<boolean> => {

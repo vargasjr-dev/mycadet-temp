@@ -1,9 +1,6 @@
 import { BrowserWindow } from "electron";
 
-import {
-  DEFAULT_ACCELERATORS,
-  type CadetCommand,
-} from "@mycadet/ipc-contract";
+import { DEFAULT_ACCELERATORS, type CadetCommand } from "@mycadet/ipc-contract";
 
 import { capabilityToken } from "./capability-registry";
 

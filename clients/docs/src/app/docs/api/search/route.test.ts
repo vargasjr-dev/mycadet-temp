@@ -67,7 +67,9 @@ describe("GET /docs/api/search", () => {
       })),
     });
 
-    const request = new NextRequest("http://localhost/docs/api/search?q=installation&limit=200");
+    const request = new NextRequest(
+      "http://localhost/docs/api/search?q=installation&limit=200",
+    );
     const response = await GET(request);
     const body = (await response.json()) as { results: unknown[] };
 
@@ -94,9 +96,13 @@ describe("GET /docs/api/search", () => {
       ],
     });
 
-    const request = new NextRequest("http://localhost/docs/api/search?q=installation");
+    const request = new NextRequest(
+      "http://localhost/docs/api/search?q=installation",
+    );
     const response = await GET(request);
-    const body = (await response.json()) as { results: Array<{ route: string }> };
+    const body = (await response.json()) as {
+      results: Array<{ route: string }>;
+    };
 
     expect(body.results[0]?.route).toBe("/docs/getting-started");
     expect(response.headers.get("cache-control")).toBe("private, max-age=30");

@@ -2,7 +2,10 @@ import { useMemo } from "react";
 
 import { useAuthStore } from "@app/stores/auth-store";
 
-import { readConsentCurrency, type ConsentCurrency } from "./consent-persistence";
+import {
+  readConsentCurrency,
+  type ConsentCurrency,
+} from "./consent-persistence";
 
 export interface ConsentGateState {
   /** False while the session or user identity is still resolving. */
@@ -27,12 +30,8 @@ export function useConsentGate(): ConsentGateState {
   );
 
   return useMemo(() => {
-    const [status, cloudSession] = sessionStatus.split(":") as [
-      string,
-      string,
-    ];
-    const settled =
-      status !== "initializing" && cloudSession !== "unknown";
+    const [status, cloudSession] = sessionStatus.split(":") as [string, string];
+    const settled = status !== "initializing" && cloudSession !== "unknown";
     const hasCloudSession = cloudSession === "present";
     const userId = user?.id ?? null;
     return {

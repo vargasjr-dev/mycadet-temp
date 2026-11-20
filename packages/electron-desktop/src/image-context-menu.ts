@@ -32,6 +32,8 @@ export const installImageContextMenu = (contents: WebContents): void => {
     // in an unfocused auxiliary window (popout, command palette) must pop its
     // menu there. `fromWebContents` is null for windowless contents; the
     // undefined fallback lets Electron use the focused window.
-    menu.popup({ window: BrowserWindow.fromWebContents(contents) ?? undefined });
+    menu.popup({
+      window: BrowserWindow.fromWebContents(contents) ?? undefined,
+    });
   });
 };

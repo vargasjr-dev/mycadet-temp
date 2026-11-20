@@ -28,7 +28,7 @@ mock.module("electron", () =>
     },
     clipboard: { writeText: writeTextMock },
   }),
-);;
+);
 
 const ensureCliInstalledMock = mock(async (): Promise<void> => undefined);
 

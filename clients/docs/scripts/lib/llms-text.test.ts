@@ -17,9 +17,7 @@ describe("buildLlmsText", () => {
       },
     ]);
 
-    const bullets = text
-      .split("\n")
-      .filter((line) => line.startsWith("- "));
+    const bullets = text.split("\n").filter((line) => line.startsWith("- "));
     expect(bullets).toEqual([
       "- [Getting Started](https://www.mycadet.ai/docs/getting-started.md): Install Cadet",
       "- [Releases](https://www.mycadet.ai/docs/releases.md): Cadet releases",
@@ -31,7 +29,9 @@ describe("buildLlmsText", () => {
       { route: "/docs", title: "Cadet Docs", description: "" },
     ]);
 
-    expect(text).toContain("- [Cadet Docs](https://www.mycadet.ai/docs/index.md)");
+    expect(text).toContain(
+      "- [Cadet Docs](https://www.mycadet.ai/docs/index.md)",
+    );
     expect(text).not.toContain("index.md):");
   });
 

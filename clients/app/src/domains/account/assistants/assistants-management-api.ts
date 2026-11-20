@@ -138,7 +138,9 @@ export async function createAssistantBackup(
     ok: true,
     status: result.status,
     data:
-      result.data && typeof result.data === "object" && !Array.isArray(result.data)
+      result.data &&
+      typeof result.data === "object" &&
+      !Array.isArray(result.data)
         ? (result.data as Record<string, unknown>)
         : {},
   };
@@ -166,7 +168,9 @@ export async function restoreAssistantBackup(
     ok: true,
     status: result.status,
     data:
-      result.data && typeof result.data === "object" && !Array.isArray(result.data)
+      result.data &&
+      typeof result.data === "object" &&
+      !Array.isArray(result.data)
         ? (result.data as Record<string, unknown>)
         : {},
   };
@@ -218,18 +222,15 @@ export async function requestSignedDownloadUrl(
   _runtimeVersion: string | undefined,
   downloadFilename?: string,
 ): Promise<string> {
-  const response = await fetch(
-    scoped(assistantId, "/migrations/signed-url/"),
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        operation: "download",
-        bundle_key: bundleKey,
-        download_filename: downloadFilename,
-      }),
-    },
-  );
+  const response = await fetch(scoped(assistantId, "/migrations/signed-url/"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      operation: "download",
+      bundle_key: bundleKey,
+      download_filename: downloadFilename,
+    }),
+  });
   if (!response.ok) {
     const detail = await response
       .json()

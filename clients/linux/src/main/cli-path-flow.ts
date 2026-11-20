@@ -100,7 +100,10 @@ export async function runInstallCliCommandFlow(): Promise<void> {
   }
   flowInFlight = true;
   try {
-    if (installWrapper({ overwriteForeign: false }) === "needs-overwrite-confirmation") {
+    if (
+      installWrapper({ overwriteForeign: false }) ===
+      "needs-overwrite-confirmation"
+    ) {
       if (!(await confirmReplaceForeignFile())) {
         return;
       }

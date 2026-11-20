@@ -130,7 +130,7 @@ mock.module("electron", () =>
       createFromPath: createFromPathMock,
     },
   }),
-);;
+);
 
 const {
   computePolicy,

@@ -8,7 +8,8 @@ let focusedWindow: object | null = null;
 
 mock.module("electron", () => ({
   app: {
-    on: (event: string, listener: Listener) => appListeners.set(event, listener),
+    on: (event: string, listener: Listener) =>
+      appListeners.set(event, listener),
     off: (event: string) => appListeners.delete(event),
   },
   BrowserWindow: class {

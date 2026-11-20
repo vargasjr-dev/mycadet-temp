@@ -79,7 +79,9 @@ async function dial(
 ): Promise<OperatorResult<unknown>> {
   const { response, data, detail, networkError } = await dialCore(path, init);
   if (networkError || !response) {
-    throw networkError ?? new Error("The doctor dial failed without a response.");
+    throw (
+      networkError ?? new Error("The doctor dial failed without a response.")
+    );
   }
   return {
     data: response.ok ? data : null,

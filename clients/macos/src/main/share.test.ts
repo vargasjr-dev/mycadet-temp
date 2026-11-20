@@ -64,7 +64,7 @@ mock.module("electron", () =>
     ShareMenu: ShareMenuMock,
     BrowserWindow: { fromWebContents: fromWebContentsMock },
   }),
-);;
+);
 
 // `ShareMenu` wraps `NSSharingServicePicker`, so the handler guards on
 // `process.platform`. Force darwin so the happy-path tests run on the Linux CI

@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { HostProxyPoster } from "../poster";
-import { createHostShellExecutor, __testing as executorTesting } from "./host-shell-executor";
+import {
+  createHostShellExecutor,
+  __testing as executorTesting,
+} from "./host-shell-executor";
 
 // Exercises the shared lifecycle through a Bash spec, mirroring the macOS
 // adapter's invocation.
@@ -22,7 +25,10 @@ interface CapturedPost {
   body: Record<string, unknown>;
 }
 
-function capturingPoster(): { poster: InstanceType<typeof HostProxyPoster>; posts: () => CapturedPost[] } {
+function capturingPoster(): {
+  poster: InstanceType<typeof HostProxyPoster>;
+  posts: () => CapturedPost[];
+} {
   const captured: CapturedPost[] = [];
   const fakeFetch = async (url: unknown, init?: RequestInit) => {
     captured.push({ url: String(url), body: JSON.parse(init?.body as string) });
@@ -44,7 +50,11 @@ describe("host-shell-executor", () => {
   afterEach(() => {
     // Clean up any lingering processes
     for (const [, entry] of executorTesting.runningProcesses) {
-      try { entry.child.kill("SIGKILL"); } catch { /* already exited */ }
+      try {
+        entry.child.kill("SIGKILL");
+      } catch {
+        /* already exited */
+      }
     }
     executorTesting.runningProcesses.clear();
   });

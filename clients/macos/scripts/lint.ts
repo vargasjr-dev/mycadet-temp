@@ -17,6 +17,10 @@ type Step = { name: string; command: string[] };
 
 const steps: Step[] = [
   {
+    name: "prettier",
+    command: ["bun", "run", "format:check"],
+  },
+  {
     name: "eslint",
     command: ["bunx", "eslint", ".", "--max-warnings", "0"],
   },

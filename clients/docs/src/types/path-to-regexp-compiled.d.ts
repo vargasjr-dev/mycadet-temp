@@ -7,12 +7,12 @@
 declare module "next/dist/compiled/path-to-regexp" {
   export function match(
     path: string,
-    options?: { delimiter?: string; sensitive?: boolean; strict?: boolean }
+    options?: { delimiter?: string; sensitive?: boolean; strict?: boolean },
   ): (
-    pathname: string
+    pathname: string,
   ) => false | { params: Record<string, string | string[]> };
   export function compile(
     path: string,
-    options?: { validate?: boolean }
+    options?: { validate?: boolean },
   ): (params: Record<string, string | string[]>) => string;
 }

@@ -308,9 +308,7 @@ describe("handleSubagentStatusChanged: unknown subagent id", () => {
 
 describe("unknown-id reconcile kick", () => {
   function activate() {
-    useResolvedAssistantStore
-      .getState()
-      .setAssistantId("asst-1");
+    useResolvedAssistantStore.getState().setAssistantId("asst-1");
     useConversationStore.getState().setActiveConversationId(PARENT);
   }
 

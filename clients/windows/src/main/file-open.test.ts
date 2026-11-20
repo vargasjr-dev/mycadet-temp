@@ -40,7 +40,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);;
+);
 mock.module("./main-window", () => ({ ensureVisible }));
 
 const { default: fileOpenModule } = await import("./features/file-open");

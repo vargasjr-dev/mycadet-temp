@@ -38,7 +38,7 @@ mock.module("electron", () =>
     },
     BrowserWindow: { fromWebContents: () => ({ id: 1 }) },
   }),
-);;
+);
 
 type HandleRegistration = {
   channel: string;

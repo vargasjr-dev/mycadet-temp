@@ -75,7 +75,8 @@ export class HostProxySseClient {
     this.fallbackClientHeaders = options.fallbackClientHeaders ?? null;
     this.fetchFn = options.fetch ?? globalThis.fetch;
     this.idleTimeoutMs = options.idleTimeoutMs ?? IDLE_TIMEOUT_MS;
-    this.idleCheckIntervalMs = options.idleCheckIntervalMs ?? IDLE_CHECK_INTERVAL_MS;
+    this.idleCheckIntervalMs =
+      options.idleCheckIntervalMs ?? IDLE_CHECK_INTERVAL_MS;
     this.onRefreshToken = options.onRefreshToken ?? null;
     this.onConnected = options.onConnected ?? null;
   }

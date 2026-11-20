@@ -19,7 +19,7 @@ mock.module("electron", () =>
       send,
     },
   }),
-);;
+);
 
 const presence = (await import("./features/presence")).default;
 

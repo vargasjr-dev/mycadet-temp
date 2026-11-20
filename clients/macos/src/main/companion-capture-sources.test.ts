@@ -20,7 +20,7 @@ mock.module("electron", () =>
     },
     screen: { getAllDisplays: () => [], getPrimaryDisplay: () => ({ id: 0 }) },
   }),
-);;
+);
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],
   default: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },

@@ -172,7 +172,10 @@ function inferUTMFromReferrer(
 
   // Don't infer for same-site navigation
   const currentHost =
-    request.headers.get("host")?.split(":")[0]?.replace(/^www\./, "") ?? "";
+    request.headers
+      .get("host")
+      ?.split(":")[0]
+      ?.replace(/^www\./, "") ?? "";
   const refHost = host.replace(/^www\./, "");
   if (refHost === currentHost) {
     return null;
@@ -212,7 +215,10 @@ function inferUTMFromReferrer(
   } else if (hostMatches(host, "ecosia.org")) {
     source = "ecosia";
     medium = "organic";
-  } else if (hostMatches(host, "yandex.ru") || hostMatches(host, "yandex.com")) {
+  } else if (
+    hostMatches(host, "yandex.ru") ||
+    hostMatches(host, "yandex.com")
+  ) {
     source = "yandex";
     medium = "organic";
   }

@@ -172,9 +172,9 @@ describe("installNativeAuth session-token wiring", () => {
     const names = cookieRemoveCalls.map((c) => c.name);
     expect(names).toContain("sessionid");
     expect(names).toContain("__Secure-sessionid");
-    expect(cookieRemoveCalls.every((c) => c.url === "https://platform.example")).toBe(
-      true,
-    );
+    expect(
+      cookieRemoveCalls.every((c) => c.url === "https://platform.example"),
+    ).toBe(true);
   });
 
   test("signOut clears the persisted token", async () => {

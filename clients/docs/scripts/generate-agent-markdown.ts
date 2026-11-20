@@ -66,7 +66,7 @@ interface ConvertedPage {
 
 async function convertHtml(
   html: string,
-  fallbackTitle: string
+  fallbackTitle: string,
 ): Promise<ConvertedPage> {
   const $ = load(html);
 
@@ -124,7 +124,7 @@ async function main() {
   // would point agents at a page that only says "moved". llms.txt and the
   // mirror tree list the redirect targets instead.
   const pages = discoverDocsPages(DOCS_PAGES_ROOT).filter(
-    ({ route }) => !REDIRECT_STUB_ROUTES.has(route)
+    ({ route }) => !REDIRECT_STUB_ROUTES.has(route),
   );
 
   await rm(OUTPUT_ROOT, { recursive: true, force: true });
@@ -157,7 +157,9 @@ async function main() {
           .join("\n\n"),
       };
     } else {
-      console.warn(`[agent-markdown] Skipping ${route}: no render, no metadata`);
+      console.warn(
+        `[agent-markdown] Skipping ${route}: no render, no metadata`,
+      );
       continue;
     }
 
@@ -172,14 +174,14 @@ async function main() {
   await writeFile(
     DOCS_INDEX_OUTPUT,
     `${JSON.stringify(indexedPages, null, 2)}\n`,
-    "utf8"
+    "utf8",
   );
 
   await mkdir(dirname(LLMS_OUTPUT), { recursive: true });
   await writeFile(LLMS_OUTPUT, buildLlmsText(indexedPages), "utf8");
 
   console.log(
-    `[agent-markdown] Wrote ${written} Markdown pages (${fallbacks} metadata-only stubs) -> ${OUTPUT_ROOT}`
+    `[agent-markdown] Wrote ${written} Markdown pages (${fallbacks} metadata-only stubs) -> ${OUTPUT_ROOT}`,
   );
 }
 
@@ -189,7 +191,7 @@ main()
   })
   .catch((error) => {
     const message =
-      error instanceof Error ? error.stack ?? error.message : "unknown error";
+      error instanceof Error ? (error.stack ?? error.message) : "unknown error";
     console.error(`[agent-markdown] Failed: ${message}`);
     process.exit(1);
   });

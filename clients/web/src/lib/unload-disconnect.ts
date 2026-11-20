@@ -24,7 +24,10 @@
  * One listener per page, armed at most once. Safe to call from any
  * attachment lifetime.
  */
-import { getClientId, getClientRegistrationHeaders } from "@/lib/client-identity";
+import {
+  getClientId,
+  getClientRegistrationHeaders,
+} from "@/lib/client-identity";
 
 const DISCONNECT_ENDPOINT = "/v1/clients/disconnect";
 

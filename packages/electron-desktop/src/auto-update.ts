@@ -59,7 +59,10 @@ export const checkForUpdates = (): void => {
 };
 
 /** Installs the updater, its IPC surface, and the periodic check. */
-export const installAutoUpdate = ({ ipc, platform }: AutoUpdateOptions): void => {
+export const installAutoUpdate = ({
+  ipc,
+  platform,
+}: AutoUpdateOptions): void => {
   const { handle } = ipc;
   handle("cadet:update:getState", z.tuple([]), () => currentState);
   handle("cadet:update:check", z.tuple([]), () => checkForUpdates());

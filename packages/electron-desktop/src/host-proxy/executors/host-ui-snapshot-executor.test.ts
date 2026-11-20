@@ -15,7 +15,9 @@ function makePoster() {
   };
 }
 
-function request(overrides: Partial<HostProxySseMessage> = {}): HostProxySseMessage {
+function request(
+  overrides: Partial<HostProxySseMessage> = {},
+): HostProxySseMessage {
   return {
     type: "host_ui_snapshot_request",
     requestId: "req-1",

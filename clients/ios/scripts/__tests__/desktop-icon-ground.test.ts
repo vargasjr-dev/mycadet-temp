@@ -134,7 +134,7 @@ function decodePng(png: Buffer): DecodedPng {
   let width = 0;
   let height = 0;
   const deflated: Buffer[] = [];
-  for (let cursor = 8; cursor < png.length;) {
+  for (let cursor = 8; cursor < png.length; ) {
     const length = png.readUInt32BE(cursor);
     const type = png.toString("ascii", cursor + 4, cursor + 8);
     const data = png.subarray(cursor + 8, cursor + 8 + length);

@@ -24,7 +24,7 @@ mock.module("electron", () =>
       on: (channel: string, l: RawHandler) => listeners.set(channel, l),
     },
   }),
-);;
+);
 
 const { handle, on } = await import("./ipc");
 const { resolveAllowedOrigin } = await import("./app-origin");

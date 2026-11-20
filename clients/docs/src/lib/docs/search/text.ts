@@ -37,7 +37,11 @@ export function uniqueTokens(values: string[]): string[] {
   return Array.from(new Set(values.flatMap(tokenize)));
 }
 
-export function extractSnippet(body: string, query: string, maxLen = 180): string {
+export function extractSnippet(
+  body: string,
+  query: string,
+  maxLen = 180,
+): string {
   const source = normalizeText(body);
   if (!source) {
     return "";
@@ -45,7 +49,9 @@ export function extractSnippet(body: string, query: string, maxLen = 180): strin
 
   const tokens = uniqueTokens([query]);
   if (tokens.length === 0) {
-    return source.length <= maxLen ? source : `${source.slice(0, maxLen - 1)}...`;
+    return source.length <= maxLen
+      ? source
+      : `${source.slice(0, maxLen - 1)}...`;
   }
 
   const lower = source.toLowerCase();
@@ -59,7 +65,9 @@ export function extractSnippet(body: string, query: string, maxLen = 180): strin
   }
 
   if (matchIndex === -1) {
-    return source.length <= maxLen ? source : `${source.slice(0, maxLen - 1)}...`;
+    return source.length <= maxLen
+      ? source
+      : `${source.slice(0, maxLen - 1)}...`;
   }
 
   const contextBefore = Math.floor(maxLen * 0.4);

@@ -24,7 +24,8 @@ const CANCEL_TTL_MS = 30_000;
 
 /** Result of building helper params: the params, or a reason to reject up front. */
 export type BuildParamsResult =
-  { params: Record<string, unknown> } | { error: string };
+  | { params: Record<string, unknown> }
+  | { error: string };
 
 export interface HostHelperProxyConfig<T> {
   /** Short label for logs, e.g. "host-cu". */

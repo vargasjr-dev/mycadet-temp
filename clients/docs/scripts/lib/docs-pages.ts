@@ -9,14 +9,21 @@ export interface RenderedPage {
   metadata: Metadata | undefined;
 }
 
-export async function loadPageModule(pageFile: string): Promise<Record<string, unknown>> {
-  return (await import(pathToFileURL(pageFile).href)) as Record<string, unknown>;
+export async function loadPageModule(
+  pageFile: string,
+): Promise<Record<string, unknown>> {
+  return (await import(pathToFileURL(pageFile).href)) as Record<
+    string,
+    unknown
+  >;
 }
 
 /** Import a page module and return its exported metadata without rendering.
  *  Used for pages that cannot be statically rendered (request-time pages) so
  *  generators can still emit metadata-only entries. */
-export async function loadPageMetadata(pageFile: string): Promise<Metadata | undefined> {
+export async function loadPageMetadata(
+  pageFile: string,
+): Promise<Metadata | undefined> {
   try {
     const pageModule = await loadPageModule(pageFile);
     return pageModule.metadata as Metadata | undefined;
@@ -43,7 +50,9 @@ function isSuspenseSignal(error: unknown): boolean {
   ) {
     return true;
   }
-  return error instanceof Error && error.message.includes("A component suspended");
+  return (
+    error instanceof Error && error.message.includes("A component suspended")
+  );
 }
 
 /** Import a page module and render its default export to static HTML.
@@ -51,7 +60,9 @@ function isSuspenseSignal(error: unknown): boolean {
  *  lack a default export; any other render failure propagates to the caller.
  *  Only the page component is rendered: layouts (nav, header, footer) are not
  *  included. */
-export async function renderPage(pageFile: string): Promise<RenderedPage | null> {
+export async function renderPage(
+  pageFile: string,
+): Promise<RenderedPage | null> {
   const pageModule = await loadPageModule(pageFile);
   const Page = pageModule.default as React.ComponentType | undefined;
 

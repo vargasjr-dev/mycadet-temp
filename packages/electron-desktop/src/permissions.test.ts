@@ -244,8 +244,6 @@ describe("denyAllPermissions", () => {
     });
     expect(granted).toBe(false);
 
-    expect(checkHandler!({}, "clipboard-read", "cadet://bundle")).toBe(
-      false,
-    );
+    expect(checkHandler!({}, "clipboard-read", "cadet://bundle")).toBe(false);
   });
 });

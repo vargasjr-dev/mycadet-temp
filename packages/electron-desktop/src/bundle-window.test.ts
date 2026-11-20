@@ -19,7 +19,8 @@ interface StubWebContents {
   ) => void;
   willNavigateListeners: WillNavigateListener[];
   windowOpenHandler:
-    ((details: { url: string }) => { action: "deny" | "allow" }) | null;
+    | ((details: { url: string }) => { action: "deny" | "allow" })
+    | null;
 }
 
 interface StubWindow {
@@ -217,9 +218,7 @@ describe("openBundleWindow", () => {
     const checkHandler = setPermissionCheckHandlerMock.mock.calls[0]![0] as (
       ...args: unknown[]
     ) => boolean;
-    expect(checkHandler({}, "clipboard-read", "cadet://example")).toBe(
-      false,
-    );
+    expect(checkHandler({}, "clipboard-read", "cadet://example")).toBe(false);
   });
 
   test("registers the cadet:// handler on the bundle session", () => {

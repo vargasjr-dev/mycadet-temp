@@ -309,7 +309,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);;
+);
 
 /** Every text main has put on the pasteboard, most recent last. */
 const copied: string[] = [];

@@ -29,13 +29,9 @@ describe("startLinuxAuthCallback", () => {
 
     expect(callback.redirectUri).toBe("cadet-dev://auth/callback");
 
-    harness.emit(
-      "cadet-dev://auth/callback?code=wrong&state=unexpected",
-    );
+    harness.emit("cadet-dev://auth/callback?code=wrong&state=unexpected");
     harness.emit("https://example.com/callback?code=wrong&state=expected");
-    harness.emit(
-      "cadet-dev://auth/callback?code=good&state=expected",
-    );
+    harness.emit("cadet-dev://auth/callback?code=good&state=expected");
 
     expect(await callback.waitForCode).toBe("good");
     expect(harness.unsubscribeCalls).toBe(1);

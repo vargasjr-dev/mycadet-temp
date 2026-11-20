@@ -64,21 +64,43 @@ export function cuExecutorConfig(
         return { error: "Missing toolName" };
       }
       if (toolName === "computer_use_sequence" && !deps.supportsSequence) {
-        return { error: "Batched actions are not supported by this desktop client. Nothing was run." };
+        return {
+          error:
+            "Batched actions are not supported by this desktop client. Nothing was run.",
+        };
       }
-      const input = { ...((message.input as Record<string, unknown> | undefined) ?? {}) };
+      const input = {
+        ...((message.input as Record<string, unknown> | undefined) ?? {}),
+      };
       if (input.capture_window_id !== undefined) {
         if (!deps.supportsWindowCapture) {
-          return { error: "Window-scoped observation is not supported by this desktop client." };
+          return {
+            error:
+              "Window-scoped observation is not supported by this desktop client.",
+          };
         }
         if (toolName !== "computer_use_observe") {
-          return { error: "capture_window_id is only supported for computer_use_observe." };
+          return {
+            error:
+              "capture_window_id is only supported for computer_use_observe.",
+          };
         }
         const windowId = input.capture_window_id;
-        if (typeof windowId !== "number" || !Number.isInteger(windowId) || windowId < 1 || windowId > 0xffffffff) {
-          return { error: "capture_window_id must be a positive 32-bit native window ID." };
+        if (
+          typeof windowId !== "number" ||
+          !Number.isInteger(windowId) ||
+          windowId < 1 ||
+          windowId > 0xffffffff
+        ) {
+          return {
+            error:
+              "capture_window_id must be a positive 32-bit native window ID.",
+          };
         }
-        if (input.captureWindowId !== undefined || input.captureDisplayId !== undefined) {
+        if (
+          input.captureWindowId !== undefined ||
+          input.captureDisplayId !== undefined
+        ) {
           return { error: "Specify only one capture target." };
         }
         input.captureWindowId = windowId;

@@ -24,9 +24,7 @@ const activate = (assistantId: string | null) => {
     useResolvedAssistantStore.getState().resetAssistant();
     return;
   }
-  useResolvedAssistantStore
-    .getState()
-    .setAssistantId(assistantId);
+  useResolvedAssistantStore.getState().setAssistantId(assistantId);
 };
 
 /** The runtime's announcement, in the shape the event stream carries it. */

@@ -18,7 +18,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);;
+);
 
 const installs = { count: 0 };
 const teardown = mock(() => undefined);

@@ -25,7 +25,8 @@ export const INTEGRATIONS: Integration[] = [
   {
     slug: "slack",
     name: "Slack",
-    blurb: "Scan channels, summarize threads, post, and react with privacy-aware context sharing.",
+    blurb:
+      "Scan channels, summarize threads, post, and react with privacy-aware context sharing.",
     group: "Communication",
   },
   {
@@ -37,13 +38,15 @@ export const INTEGRATIONS: Integration[] = [
   {
     slug: "discord",
     name: "Discord",
-    blurb: "Post to channels, summarize threads, react, and bridge community signal.",
+    blurb:
+      "Post to channels, summarize threads, react, and bridge community signal.",
     group: "Communication",
   },
   {
     slug: "telegram",
     name: "Telegram",
-    blurb: "Two-way chat with your assistant from anywhere, including wake-up alerts.",
+    blurb:
+      "Two-way chat with your assistant from anywhere, including wake-up alerts.",
     group: "Communication",
   },
   {
@@ -98,7 +101,10 @@ export function getIntegrationBySlug(slug: string): Integration | undefined {
   return INTEGRATIONS.find((integration) => integration.slug === slug);
 }
 
-export function groupIntegrations(): Array<{ group: IntegrationGroup; items: Integration[] }> {
+export function groupIntegrations(): Array<{
+  group: IntegrationGroup;
+  items: Integration[];
+}> {
   return INTEGRATION_GROUPS.map((group) => ({
     group,
     items: INTEGRATIONS.filter((integration) => integration.group === group),

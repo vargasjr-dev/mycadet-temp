@@ -14,7 +14,7 @@ mock.module("electron", () =>
     nativeImage: { createFromPath: () => trayIcon },
     shell: { openExternal: () => Promise.resolve() },
   }),
-);;
+);
 
 type TrayRuntime = {
   accelerator: (kind: string) => { accelerator?: string };

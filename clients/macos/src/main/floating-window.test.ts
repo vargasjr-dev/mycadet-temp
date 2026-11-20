@@ -119,7 +119,7 @@ mock.module("electron", () =>
       }),
     },
   }),
-);;
+);
 
 const { BrowserWindow } = await import("electron");
 const {

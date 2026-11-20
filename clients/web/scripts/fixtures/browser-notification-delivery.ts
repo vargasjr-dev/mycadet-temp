@@ -13,7 +13,8 @@ const fixture = {
     // Headless pages can all report focused; drive their DOM attention input.
     document.hasFocus = () => attended;
     Object.defineProperty(document, "visibilityState", {
-      configurable: true, get: () => attended ? "visible" : "hidden",
+      configurable: true,
+      get: () => (attended ? "visible" : "hidden"),
     });
     window.dispatchEvent(new Event(attended ? "focus" : "blur"));
     document.dispatchEvent(new Event("visibilitychange"));
@@ -21,20 +22,30 @@ const fixture = {
   watchConversation: (key: string | null) => {
     stopAttention?.();
     stopAttention = key
-      ? delivery.trackAttention(() => isClientAttended() ? key : null)
+      ? delivery.trackAttention(() => (isClientAttended() ? key : null))
       : undefined;
   },
   isAttended: (key: string) => delivery.isConversationAttended(key),
   claimSound: (key: string) => delivery.claimSound(key),
-  deliver: async (key: string, fail = false, currentSession = true, conversationKey: string | null = null) => {
+  deliver: async (
+    key: string,
+    fail = false,
+    currentSession = true,
+    conversationKey: string | null = null,
+  ) => {
     try {
-      return await delivery.post(key, () => {
-        if (fail) {
-          throw new Error("Notification refused");
-        }
-        // The OS surface is stubbed; coordination uses actual browser APIs.
-        posted.push(key);
-      }, () => currentSession, conversationKey);
+      return await delivery.post(
+        key,
+        () => {
+          if (fail) {
+            throw new Error("Notification refused");
+          }
+          // The OS surface is stubbed; coordination uses actual browser APIs.
+          posted.push(key);
+        },
+        () => currentSession,
+        conversationKey,
+      );
     } catch {
       return "failed";
     }

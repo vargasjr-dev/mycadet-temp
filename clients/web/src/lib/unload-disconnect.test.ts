@@ -17,9 +17,7 @@ type FetchCall = {
   init: RequestInit | undefined;
 };
 
-async function freshImport(): Promise<
-  typeof import("./unload-disconnect")
-> {
+async function freshImport(): Promise<typeof import("./unload-disconnect")> {
   return (await import(
     `${MODULE_PATH}?t=${Math.random()}`
   )) as typeof import("./unload-disconnect");
@@ -28,7 +26,9 @@ async function freshImport(): Promise<
 /** Install a fake `fetch` recording calls; returns the calls + restore. */
 function stubFetch(): {
   calls: FetchCall[];
-  respond: (impl: (url: string, init?: RequestInit) => Promise<unknown>) => void;
+  respond: (
+    impl: (url: string, init?: RequestInit) => Promise<unknown>,
+  ) => void;
   restore: () => void;
 } {
   const calls: FetchCall[] = [];
@@ -142,10 +142,11 @@ describe("armUnloadDisconnect", () => {
 
   test("a 404 from the daemon (subscriber already gone) is ignored", async () => {
     fetchStub = stubFetch();
-    fetchStub.respond(async () =>
-      new Response(JSON.stringify({ error: { code: "NOT_FOUND" } }), {
-        status: 404,
-      }),
+    fetchStub.respond(
+      async () =>
+        new Response(JSON.stringify({ error: { code: "NOT_FOUND" } }), {
+          status: 404,
+        }),
     );
     listeners = capturePagehideListeners();
     const { armUnloadDisconnect } = await freshImport();

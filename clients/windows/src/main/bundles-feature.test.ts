@@ -26,7 +26,7 @@ mock.module("electron", () =>
     session: { defaultSession: {} },
     shell: {},
   }),
-);;
+);
 
 mock.module("@mycadet/electron-desktop/bundle-flow", () => ({
   resolveActiveGateway: () => undefined,

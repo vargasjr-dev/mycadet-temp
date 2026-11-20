@@ -168,7 +168,8 @@ export async function getCliPathInstallState(): Promise<CliPathInstallState> {
   const [firstHit] = findExecutablesInPath("cadet", shellPath);
   const firstHitIsWrapper =
     firstHit !== undefined &&
-    (firstHit === wrapperPath || realpathOr(firstHit) === realpathOr(wrapperPath));
+    (firstHit === wrapperPath ||
+      realpathOr(firstHit) === realpathOr(wrapperPath));
 
   const inPath =
     firstHitIsWrapper || splitPathEntries(shellPath).includes(getWrapperDir());

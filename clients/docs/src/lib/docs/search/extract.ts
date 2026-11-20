@@ -36,7 +36,13 @@ function cleanSectionBody(sectionText: string, headingText: string): string {
   return normalizedSection;
 }
 
-function buildKeywords(route: string, breadcrumb: string, pageTitle: string, heading: string, sectionId: string | null): string[] {
+function buildKeywords(
+  route: string,
+  breadcrumb: string,
+  pageTitle: string,
+  heading: string,
+  sectionId: string | null,
+): string[] {
   const routeTokens = route
     .replace(/^\/docs\/?/, "")
     .split("/")
@@ -60,8 +66,12 @@ function makeChunk(params: {
   sectionId: string | null;
   body: string;
 }): DocsSearchChunk {
-  const url = params.sectionId ? `${params.route}#${params.sectionId}` : params.route;
-  const id = params.sectionId ? `${params.route}#${params.sectionId}` : `${params.route}#__page`;
+  const url = params.sectionId
+    ? `${params.route}#${params.sectionId}`
+    : params.route;
+  const id = params.sectionId
+    ? `${params.route}#${params.sectionId}`
+    : `${params.route}#__page`;
 
   return {
     id,
@@ -78,12 +88,15 @@ function makeChunk(params: {
       params.breadcrumb,
       params.pageTitle,
       params.heading,
-      params.sectionId
+      params.sectionId,
     ),
   };
 }
 
-export function extractDocsPageFromHtml(route: string, html: string): DocsSearchChunk[] {
+export function extractDocsPageFromHtml(
+  route: string,
+  html: string,
+): DocsSearchChunk[] {
   const $ = load(html);
   // Structured-data payloads would otherwise be indexed as section prose.
   $("script, iframe").remove();
@@ -91,7 +104,8 @@ export function extractDocsPageFromHtml(route: string, html: string): DocsSearch
   const main = $(".docs-main").first();
 
   const pageTitle = elementText($, main.find("h1").first()) || "Docs";
-  const breadcrumb = elementText($, main.find(".docs-breadcrumb").first()) || "Docs";
+  const breadcrumb =
+    elementText($, main.find(".docs-breadcrumb").first()) || "Docs";
 
   const proseRoot = main.find(".docs-prose").first();
   const chunks: DocsSearchChunk[] = [];
@@ -124,7 +138,7 @@ export function extractDocsPageFromHtml(route: string, html: string): DocsSearch
         headingLevel,
         sectionId,
         body,
-      })
+      }),
     );
 
     seenIds.add(sectionId);
@@ -138,12 +152,14 @@ export function extractDocsPageFromHtml(route: string, html: string): DocsSearch
     }
 
     const headingText = elementText($, heading) || sectionId;
-    const headingLevel: 1 | 2 | 3 = heading.get(0)?.tagName?.toLowerCase() === "h3" ? 3 : 2;
+    const headingLevel: 1 | 2 | 3 =
+      heading.get(0)?.tagName?.toLowerCase() === "h3" ? 3 : 2;
 
     const parentSection = heading.closest("section");
     // Stop only at same-or-higher-level headings so an h2 block keeps its
     // child h3 content instead of ending at the first subsection heading.
-    const stopSelector = headingLevel === 3 ? "h1, h2, h3, section" : "h1, h2, section";
+    const stopSelector =
+      headingLevel === 3 ? "h1, h2, h3, section" : "h1, h2, section";
     const block =
       parentSection.length > 0
         ? parentSection
@@ -163,7 +179,7 @@ export function extractDocsPageFromHtml(route: string, html: string): DocsSearch
         headingLevel,
         sectionId,
         body,
-      })
+      }),
     );
 
     seenIds.add(sectionId);
@@ -180,7 +196,7 @@ export function extractDocsPageFromHtml(route: string, html: string): DocsSearch
         headingLevel: 1,
         sectionId: null,
         body: pageBody,
-      })
+      }),
     );
   }
 

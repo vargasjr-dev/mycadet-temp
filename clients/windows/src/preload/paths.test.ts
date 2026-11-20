@@ -30,7 +30,7 @@ mock.module("electron", () =>
     },
     webUtils: { getPathForFile },
   }),
-);;
+);
 
 const { default: pathsModule } = await import("./features/paths");
 const registry = new BridgeCapabilityRegistry<CadetBridge>({});

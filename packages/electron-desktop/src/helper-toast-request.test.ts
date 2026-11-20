@@ -28,9 +28,7 @@ let warnings: unknown[][];
 
 const logger = { warn: (...args: unknown[]) => warnings.push(args) };
 
-const build = (
-  overrides: Partial<NotificationCreateOptions> = {},
-) =>
+const build = (overrides: Partial<NotificationCreateOptions> = {}) =>
   buildHelperToastRequest(
     { ...options, ...overrides },
     { token: "toast-1", userDataDir, logger },
@@ -78,11 +76,7 @@ describe("buildHelperToastRequest", () => {
       title: "Weekly review",
       body: "Three items need you",
       actions: [{ text: "View" }],
-      avatarPath: path.join(
-        userDataDir,
-        "notification-avatars",
-        `${HASH}.png`,
-      ),
+      avatarPath: path.join(userDataDir, "notification-avatars", `${HASH}.png`),
     });
   });
 

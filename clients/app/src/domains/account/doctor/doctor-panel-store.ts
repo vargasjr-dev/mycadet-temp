@@ -14,10 +14,7 @@
 
 import { create } from "zustand";
 
-import type {
-  ChatEntry,
-  NewChatEntry,
-} from "./doctor-history";
+import type { ChatEntry, NewChatEntry } from "./doctor-history";
 import { createSelectors } from "@app/utils/create-selectors";
 
 // ---------------------------------------------------------------------------

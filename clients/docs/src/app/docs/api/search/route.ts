@@ -18,7 +18,10 @@ function parseLimit(value: string | null): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function buildResponse(body: DocsSearchResponse, cacheControl: string): NextResponse<DocsSearchResponse> {
+function buildResponse(
+  body: DocsSearchResponse,
+  cacheControl: string,
+): NextResponse<DocsSearchResponse> {
   return NextResponse.json(body, {
     headers: {
       "Cache-Control": cacheControl,
@@ -31,7 +34,10 @@ export async function GET(request: NextRequest) {
 
   const ip = resolveClientIp(request.headers.get("x-forwarded-for"));
   if (isRateLimited(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
   }
 
   try {
@@ -45,7 +51,7 @@ export async function GET(request: NextRequest) {
           tookMs: Math.round(performance.now() - startedAt),
           results: [],
         },
-        "no-store"
+        "no-store",
       );
     }
 
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
         tookMs: Math.round(performance.now() - startedAt),
         results,
       },
-      "private, max-age=30"
+      "private, max-age=30",
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
@@ -75,7 +81,7 @@ export async function GET(request: NextRequest) {
         tookMs: Math.round(performance.now() - startedAt),
         results: [],
       },
-      "no-store"
+      "no-store",
     );
   }
 }

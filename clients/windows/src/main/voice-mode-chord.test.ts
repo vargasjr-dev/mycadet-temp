@@ -13,7 +13,7 @@ mock.module("electron", () =>
       },
     },
   }),
-);;
+);
 
 type Sender = {
   isDestroyed: () => boolean;

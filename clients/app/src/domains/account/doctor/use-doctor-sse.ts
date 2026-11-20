@@ -21,10 +21,7 @@ import {
   mapPersistedStatusToPanelStatus,
   replayableDoctorSourceEventIds,
 } from "./doctor-history";
-import {
-  type DoctorEvent,
-  parseDoctorEvent,
-} from "./doctor-event-schema";
+import { type DoctorEvent, parseDoctorEvent } from "./doctor-event-schema";
 import {
   handleApprovalRequired,
   handleBackupPrompt,
@@ -38,13 +35,8 @@ import {
   handleToolResult,
 } from "./doctor-event-handlers";
 import { shouldResetDoctorSseReconnectBudget } from "./doctor-sse-reconnect";
-import {
-  doctorHistoryRetrieve,
-} from "./doctor-api";
-import {
-  OperatorSseError,
-  streamOperatorSse,
-} from "./operator-sse";
+import { doctorHistoryRetrieve } from "./doctor-api";
+import { OperatorSseError, streamOperatorSse } from "./operator-sse";
 import { captureError } from "@design/utils/capture-error";
 import { createStreamWatchdog } from "@app/lib/streaming/stream-watchdog";
 import { toError } from "@app/utils/to-error";
@@ -329,7 +321,10 @@ export function useDoctorSSE() {
                 if (SESSION_EXPIRED_STATUSES.has(error.status)) {
                   sessionExpired = true;
                 }
-                if (error.status === 409 && error.code === DOCTOR_REPLAY_GAP_CODE) {
+                if (
+                  error.status === 409 &&
+                  error.code === DOCTOR_REPLAY_GAP_CODE
+                ) {
                   replayGap = true;
                 }
               }

@@ -48,7 +48,7 @@ mock.module("electron", () =>
     Notification: FakeElectronNotification,
     nativeImage: { createFromBuffer: (buffer: Buffer) => buffer },
   }),
-);;
+);
 
 const warnings: unknown[][] = [];
 mock.module("@mycadet/electron-desktop/app-logger", () => ({

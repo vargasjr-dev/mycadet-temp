@@ -46,6 +46,9 @@ jobs:
       - name: Type check
         run: bun run typecheck
 
+      - name: Format check
+        run: bun run format:check
+
   build:
     name: Build
     runs-on: ubuntu-latest
