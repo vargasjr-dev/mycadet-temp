@@ -27,14 +27,14 @@ export function RoadmapContent() {
         <p className="mb-8 text-stone-600 dark:text-stone-400">
           This roadmap is the bridge between{" "}
           <a
-            href="/docs/architecture/today"
+            href="/docs/architecture"
             className="text-stone-900 underline dark:text-stone-100"
           >
             today&apos;s architecture
           </a>{" "}
           and the{" "}
           <a
-            href="/docs/architecture/north-star"
+            href="/docs/vision"
             className="text-stone-900 underline dark:text-stone-100"
           >
             north star

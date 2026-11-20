@@ -11,7 +11,11 @@ const TOC_ITEMS = [
   { id: "the-two-paths", label: "The two paths", level: 2 },
   { id: "the-repos", label: "The repos", level: 2 },
   { id: "local-development-setup", label: "Local development setup", level: 2 },
-  { id: "talking-to-your-assistant", label: "Talking to your assistant programmatically", level: 2 },
+  {
+    id: "talking-to-your-assistant",
+    label: "Talking to your assistant programmatically",
+    level: 2,
+  },
   { id: "cli", label: "CLI", level: 3 },
   { id: "http-api", label: "HTTP API", level: 3 },
   { id: "sse-event-stream", label: "SSE event stream", level: 3 },
@@ -29,10 +33,9 @@ export function DeveloperGuideGetStartedContent() {
         breadcrumb="Docs / Developer Guide / Get Started"
       >
         <p className="mb-8 text-zinc-600">
-          A short on-ramp for developers and contributors. Covers the
-          repo layout, how to run the assistant locally for development,
-          and how to talk to it programmatically through the CLI and the
-          HTTP API.
+          A short on-ramp for developers and contributors. Covers the repo
+          layout, how to run the assistant locally for development, and how to
+          talk to it programmatically through the CLI and the HTTP API.
         </p>
 
         <section id="who-this-is-for">
@@ -40,23 +43,22 @@ export function DeveloperGuideGetStartedContent() {
             Who this is for
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            This page is for developers who want to go beyond the
-            shipping product:
+            This page is for developers who want to go beyond the shipping
+            product:
           </p>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <strong>Contributors</strong> working on the assistant
-              runtime, the macOS, Windows, or iOS clients, the gateway, the CLI,
-              or the cloud web app.
+              <strong>Contributors</strong> working on the assistant runtime,
+              the macOS, Windows, or iOS clients, the gateway, the CLI, or the
+              cloud web app.
             </li>
             <li>
-              <strong>Integrators</strong> building skills, automations,
-              or tools on top of an existing assistant.
+              <strong>Integrators</strong> building skills, automations, or
+              tools on top of an existing assistant.
             </li>
             <li>
-              <strong>Advanced users</strong> who want to script their
-              assistant or run it locally with full visibility into how
-              it works.
+              <strong>Advanced users</strong> who want to script their assistant
+              or run it locally with full visibility into how it works.
             </li>
           </ul>
         </section>
@@ -66,19 +68,18 @@ export function DeveloperGuideGetStartedContent() {
             The two paths
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Most developer work happens against a{" "}
-            <strong>local install</strong>. The assistant runtime, the
-            gateway, the credential service, and the workspace all run
-            on your Mac, so you can read state, attach a debugger, and
-            iterate without round-tripping through Cadet&apos;s
-            infrastructure. Everything below assumes a local install
-            unless noted.
+            Most developer work happens against a <strong>local install</strong>
+            . The assistant runtime, the gateway, the credential service, and
+            the workspace all run on your Mac, so you can read state, attach a
+            debugger, and iterate without round-tripping through Cadet&apos;s
+            infrastructure. Everything below assumes a local install unless
+            noted.
           </p>
           <p className="mb-0 text-zinc-600">
-            Cadet Cloud is the same software running on managed
-            infrastructure. The HTTP API is gated behind the cloud
-            gateway in cloud mode, not exposed directly, so for raw API
-            development you&apos;ll want a local install. See{" "}
+            Cadet Cloud is the same software running on managed infrastructure.
+            The HTTP API is gated behind the cloud gateway in cloud mode, not
+            exposed directly, so for raw API development you&apos;ll want a
+            local install. See{" "}
             <Link
               href="/docs/hosting-options/cloud-hosting"
               className={linkClass}
@@ -101,23 +102,21 @@ export function DeveloperGuideGetStartedContent() {
             The repos
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Most developer work happens in{" "}
-            <strong>mycadet</strong>, the open-source repo that
-            holds the assistant daemon and everything that ships with
-            it:
+            Most developer work happens in <strong>mycadet</strong>, the
+            open-source repo that holds the assistant daemon and everything that
+            ships with it:
           </p>
           <ul className="mb-4 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <code>assistant/</code>: the TypeScript runtime
-              (conversations, memory, tools, channels, schedules)
+              <code>assistant/</code>: the TypeScript runtime (conversations,
+              memory, tools, channels, schedules)
             </li>
             <li>
-              <code>gateway/</code>: the network guard rail that fronts
-              the runtime
+              <code>gateway/</code>: the network guard rail that fronts the
+              runtime
             </li>
             <li>
-              <code>cli/</code>: the <code>cadet</code> command line
-              interface
+              <code>cli/</code>: the <code>cadet</code> command line interface
             </li>
             <li>
               <code>credential-executor/</code>: the isolated Credential
@@ -135,10 +134,7 @@ export function DeveloperGuideGetStartedContent() {
           </ul>
           <p className="mb-0 text-zinc-600">
             See{" "}
-            <Link
-              href="/docs/architecture/today"
-              className={linkClass}
-            >
+            <Link href="/docs/architecture" className={linkClass}>
               Architecture
             </Link>{" "}
             for how the pieces fit together.
@@ -150,36 +146,37 @@ export function DeveloperGuideGetStartedContent() {
             Local development setup
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            The fastest way to get a working assistant on your Mac is
-            through the desktop app installer, which provisions the
-            local runtime, gateway, and credential service for you.
-            From there you can swap in your own builds.
+            The fastest way to get a working assistant on your Mac is through
+            the desktop app installer, which provisions the local runtime,
+            gateway, and credential service for you. From there you can swap in
+            your own builds.
           </p>
           <ol className="mb-4 list-decimal space-y-2 pl-6 text-zinc-600">
             <li>
               Install the{" "}
-              <Link href="https://www.mycadet.ai/downloads" className={linkClass}>
+              <Link
+                href="https://www.mycadet.ai/downloads"
+                className={linkClass}
+              >
                 desktop app
               </Link>{" "}
               and walk through onboarding. Your workspace will live at{" "}
               <code>~/.cadet/</code>.
             </li>
             <li>
-              Clone <code>mycadet</code> alongside it. Use the
-              repo&apos;s top-level setup scripts to install
-              dependencies and link your local build into the running
-              installation.
+              Clone <code>mycadet</code> alongside it. Use the repo&apos;s
+              top-level setup scripts to install dependencies and link your
+              local build into the running installation.
             </li>
             <li>
-              Verify with{" "}
-              <code>cadet ps</code>: you should see the{" "}
+              Verify with <code>cadet ps</code>: you should see the{" "}
               <code>assistant</code>, <code>gateway</code>, and{" "}
               <code>credential-executor</code> processes running.
             </li>
           </ol>
           <p className="mb-0 text-zinc-600">
-            For the full development loop, including parallel agents
-            and the review pipeline, see{" "}
+            For the full development loop, including parallel agents and the
+            review pipeline, see{" "}
             <Link
               href="/docs/developer-guide/development-workflow"
               className={linkClass}
@@ -203,9 +200,9 @@ export function DeveloperGuideGetStartedContent() {
               CLI
             </SectionHeading>
             <p className="mb-3 text-zinc-600">
-              The <code>cadet</code> CLI is the highest-level
-              interface. It reads your local credentials and routes
-              commands to the running daemon.
+              The <code>cadet</code> CLI is the highest-level interface. It
+              reads your local credentials and routes commands to the running
+              daemon.
             </p>
             <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
               <code>{`# send a message and stream the response
@@ -218,12 +215,11 @@ cadet events
 cadet ps`}</code>
             </pre>
             <p className="mb-0 text-zinc-600">
-              Useful subcommands include <code>login</code>,{" "}
-              <code>setup</code>, <code>hatch</code>,{" "}
-              <code>message</code>, <code>events</code>,{" "}
-              <code>logs</code>, <code>ps</code>, <code>terminal</code>,
-              and <code>retire</code>. Run{" "}
-              <code>cadet --help</code> to see the full list.
+              Useful subcommands include <code>login</code>, <code>setup</code>,{" "}
+              <code>hatch</code>, <code>message</code>, <code>events</code>,{" "}
+              <code>logs</code>, <code>ps</code>, <code>terminal</code>, and{" "}
+              <code>retire</code>. Run <code>cadet --help</code> to see the full
+              list.
             </p>
           </div>
 
@@ -232,10 +228,10 @@ cadet ps`}</code>
               HTTP API
             </SectionHeading>
             <p className="mb-3 text-zinc-600">
-              The runtime exposes a versioned REST API at{" "}
-              <code>/v1</code>. On a local install the daemon listens
-              on a loopback port; the CLI handles auth for you, but you
-              can also call the API directly with a JWT bearer token.
+              The runtime exposes a versioned REST API at <code>/v1</code>. On a
+              local install the daemon listens on a loopback port; the CLI
+              handles auth for you, but you can also call the API directly with
+              a JWT bearer token.
             </p>
             <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
               <code>{`# list conversations
@@ -251,12 +247,9 @@ curl -X POST \\
             </pre>
             <p className="mb-0 text-zinc-600">
               Auth is JWT-only: every request needs an{" "}
-              <code>Authorization: Bearer</code> header carrying a
-              token signed by the gateway. See{" "}
-              <Link
-                href="/docs/developer-guide/security"
-                className={linkClass}
-              >
+              <code>Authorization: Bearer</code> header carrying a token signed
+              by the gateway. See{" "}
+              <Link href="/docs/developer-guide/security" className={linkClass}>
                 Security &amp; Permissions
               </Link>{" "}
               for the full auth model.
@@ -268,9 +261,9 @@ curl -X POST \\
               SSE event stream
             </SectionHeading>
             <p className="mb-3 text-zinc-600">
-              Long-lived clients subscribe to a server-sent events
-              stream to receive streaming model output, tool calls,
-              approval prompts, and channel events as they happen.
+              Long-lived clients subscribe to a server-sent events stream to
+              receive streaming model output, tool calls, approval prompts, and
+              channel events as they happen.
             </p>
             <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
               <code>{`curl -N \\
@@ -279,14 +272,11 @@ curl -X POST \\
             </pre>
             <p className="mb-0 text-zinc-600">
               See{" "}
-              <Link
-                href="/docs/developer-guide/api"
-                className={linkClass}
-              >
+              <Link href="/docs/developer-guide/api" className={linkClass}>
                 API &amp; Communication
               </Link>{" "}
-              for the full event-type catalog, connection management,
-              and a JavaScript reference client.
+              for the full event-type catalog, connection management, and a
+              JavaScript reference client.
             </p>
           </div>
         </section>
@@ -297,40 +287,27 @@ curl -X POST \\
           </SectionHeading>
           <ul className="mb-0 list-disc space-y-2 pl-6 text-zinc-600">
             <li>
-              <Link
-                href="/docs/architecture/today"
-                className={linkClass}
-              >
+              <Link href="/docs/architecture" className={linkClass}>
                 Architecture
               </Link>
-              : platform domains, repo structure, and how the runtime,
-              clients, and gateway fit together.
+              : platform domains, repo structure, and how the runtime, clients,
+              and gateway fit together.
             </li>
             <li>
-              <Link
-                href="/docs/developer-guide/security"
-                className={linkClass}
-              >
+              <Link href="/docs/developer-guide/security" className={linkClass}>
                 Security &amp; Permissions
               </Link>
-              : sandbox model, credential storage, trust rules, and
-              JWT auth.
+              : sandbox model, credential storage, trust rules, and JWT auth.
             </li>
             <li>
-              <Link
-                href="/docs/developer-guide/features"
-                className={linkClass}
-              >
+              <Link href="/docs/developer-guide/features" className={linkClass}>
                 Features &amp; Capabilities
               </Link>
-              : integrations, dynamic skill authoring, browser
-              automation, attachments.
+              : integrations, dynamic skill authoring, browser automation,
+              attachments.
             </li>
             <li>
-              <Link
-                href="/docs/developer-guide/api"
-                className={linkClass}
-              >
+              <Link href="/docs/developer-guide/api" className={linkClass}>
                 API &amp; Communication
               </Link>
               : SSE event stream, payloads, connection management.
@@ -342,8 +319,8 @@ curl -X POST \\
               >
                 Development Workflow
               </Link>
-              : Claude Code commands, parallel PR execution, the
-              release pipeline.
+              : Claude Code commands, parallel PR execution, the release
+              pipeline.
             </li>
           </ul>
         </section>

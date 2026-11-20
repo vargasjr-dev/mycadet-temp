@@ -1,50 +1,53 @@
 /**
- * `/docs/getting-started/installation` lists the shipped clients. These
- * tests lock the public install matrix: iOS, Android, macOS, Windows, web,
- * and self-host, with no shipped Linux desktop client.
+ * `/docs/getting-started` is one combined document — what Cadet is,
+ * installation, quick start, and your first skill. These tests lock the
+ * public install matrix facts (iOS, Android, macOS, Windows, web, self-host,
+ * no shipped Linux desktop client) against the markdown source itself.
  */
 
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-import { GettingStartedContent } from "@/app/docs/_components/getting-started-content";
+import { extractMarkdownToc } from "@/lib/markdown-toc";
 
-const html = renderToStaticMarkup(<GettingStartedContent />);
+const md = readFileSync(
+  path.join(process.cwd(), "src", "content", "getting-started.md"),
+  "utf8",
+);
 
-function tocTargets(markup: string): string[] {
-  const listStart = markup.indexOf("On this page");
-  expect(listStart).toBeGreaterThan(-1);
-  const list = markup.slice(listStart, markup.indexOf("</ul>", listStart));
-  return [...list.matchAll(/href="#([^"]+)"/g)].map((match) => match[1]!);
-}
-
-describe("GettingStartedContent", () => {
+describe("getting-started.md", () => {
   test("names the shipped mobile clients and store listings", () => {
-    expect(html).toContain("Android app");
-    expect(html).toContain("Google Play");
-    expect(html).toContain("play.google.com/store/apps/details?id=ai.mycadet.android");
-    expect(html).toContain("App Store");
-    expect(html).toContain("apps.apple.com/us/app/mycadet/id6759934423");
+    expect(md).toContain("Android app");
+    expect(md).toContain("Google Play");
+    expect(md).toContain(
+      "play.google.com/store/apps/details?id=ai.mycadet.android",
+    );
+    expect(md).toContain("App Store");
+    expect(md).toContain("apps.apple.com/us/app/mycadet/id6759934423");
   });
 
   test("points desktop install at the public downloads page", () => {
-    expect(html).toContain("mycadet.ai/downloads");
-    expect(html).toContain("/downloads");
-    expect(html).toContain("Desktop app (macOS and Windows)");
+    expect(md).toContain("mycadet.ai/downloads");
+    expect(md).toContain("Desktop app (macOS and Windows)");
   });
 
   test("states there is no shipped Linux desktop client", () => {
-    expect(html).toContain("no shipped Linux desktop client");
-    expect(html).toContain("Self-host the assistant runtime");
-    expect(html).not.toContain("no shipped Windows");
+    expect(md).toContain("no shipped Linux desktop client");
+    expect(md).toContain("Self-host the assistant runtime");
+    expect(md).not.toContain("no shipped Windows");
   });
 
-  test("carries no contents entry for a section that is not on the page", () => {
-    const targets = tocTargets(html);
-    expect(targets).toContain("android-app");
-    expect(targets).toContain("linux");
-    for (const target of targets) {
-      expect(html).toContain(`id="${target}"`);
+  test("extracts a table of contents that matches its own headings", () => {
+    const toc = extractMarkdownToc(md);
+    expect(toc.length).toBeGreaterThanOrEqual(2);
+    const ids = toc.map((item) => item.id);
+    expect(ids).toContain("installation");
+    expect(ids).toContain("linux");
+    // Fence-aware: the ~/.cadet directory sample must not leak headings.
+    expect(ids).not.toContain("lockfilejson");
+    for (const item of toc) {
+      expect(item.label.length).toBeGreaterThan(0);
     }
   });
 });

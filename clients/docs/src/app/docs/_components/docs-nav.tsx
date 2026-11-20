@@ -135,21 +135,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         icon: icon(House),
       },
       {
-        label: "What is Cadet?",
-        href: "/docs/getting-started/what-is-cadet",
-        icon: icon(Sparkles),
-      },
-      {
-        label: "Installation",
-        href: "/docs/getting-started/installation",
-        icon: icon(Download),
-      },
-      {
-        label: "Quick Start",
-        href: "/docs/getting-started/quick-start",
-        icon: icon(Rocket),
-      },
-      {
         label: "Constitution",
         href: "/docs/constitution",
         icon: icon(Scroll),
@@ -163,11 +148,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         label: "Community",
         href: "/community",
         icon: icon(Users),
-      },
-      {
-        label: "Self-improving Skills",
-        href: "/docs/key-concepts/self-improving-skills",
-        icon: icon(Wand2),
       },
     ],
   },
@@ -220,6 +200,16 @@ const NAV_ITEMS: DocsNavItem[] = [
         label: "Agentic Payments",
         href: "/docs/key-concepts/agentic-payments",
         icon: icon(CreditCard),
+      },
+      {
+        label: "Architecture",
+        href: "/docs/architecture",
+        icon: icon(Layers),
+      },
+      {
+        label: "Vision",
+        href: "/docs/vision",
+        icon: icon(Sparkles),
       },
     ],
   },
@@ -368,23 +358,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         icon: icon(Hammer),
       },
       { label: "ACP", href: "/docs/skills-reference/acp", icon: icon(Hammer) },
-    ],
-  },
-  {
-    label: "Architecture",
-    href: "/docs/architecture/today",
-    icon: icon(Layers),
-    children: [
-      {
-        label: "Today",
-        href: "/docs/architecture/today",
-        icon: icon(Layers),
-      },
-      {
-        label: "North star",
-        href: "/docs/architecture/north-star",
-        icon: icon(Sparkles),
-      },
     ],
   },
   {

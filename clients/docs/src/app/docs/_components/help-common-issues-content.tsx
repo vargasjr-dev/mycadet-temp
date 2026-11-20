@@ -168,8 +168,8 @@ export function HelpCommonIssuesContent() {
               assistant daemon isn&apos;t running. Relaunch the app.
             </li>
             <li>
-              Open Console.app and filter on{" "}
-              <code>ai.mycadet.electron</code> for crash logs.
+              Open Console.app and filter on <code>ai.mycadet.electron</code>{" "}
+              for crash logs.
             </li>
             <li>As a last resort, delete the app and reinstall.</li>
           </ol>
@@ -480,7 +480,7 @@ export function HelpCommonIssuesContent() {
             loading?&rdquo; and it can read the file and tell you what&apos;s
             wrong. For more on building skills, see the{" "}
             <Link
-              href="/docs/getting-started/your-first-skill"
+              href="/docs/getting-started#your-first-skill"
               className={linkClass}
             >
               Your first skill

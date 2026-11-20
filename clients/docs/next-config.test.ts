@@ -54,7 +54,7 @@ function hasMarkdownAcceptCondition(rule: RewriteRule): boolean {
       (condition) =>
         condition.type === "header" &&
         condition.key.toLowerCase() === "accept" &&
-        condition.value?.includes("text/markdown")
+        condition.value?.includes("text/markdown"),
     ) ?? false
   );
 }
@@ -74,8 +74,7 @@ function docsPathForSource(source: string, pathname: string): string | null {
 
   const docsPath = pathname.slice(prefix.length);
   if (
-    source ===
-    "/docs/:path((?!llms\\.txt$)(?!api(?:\\/|$))(?!_md(?:\\/|$)).*)"
+    source === "/docs/:path((?!llms\\.txt$)(?!api(?:\\/|$))(?!_md(?:\\/|$)).*)"
   ) {
     if (
       docsPath === "llms.txt" ||
@@ -93,7 +92,7 @@ function docsPathForSource(source: string, pathname: string): string | null {
 }
 
 async function markdownRewriteDestinationsFor(
-  pathname: string
+  pathname: string,
 ): Promise<string[]> {
   const rewrites = await beforeFilesRewrites();
   return rewrites.filter(hasMarkdownAcceptCondition).flatMap((rule) => {
@@ -115,11 +114,11 @@ const PATH_TO_REGEXP_OPTIONS = {
 
 function acceptConditionSatisfied(
   rule: RewriteRule,
-  accept: string | null
+  accept: string | null,
 ): boolean {
   const acceptCondition = rule.has?.find(
     (condition) =>
-      condition.type === "header" && condition.key.toLowerCase() === "accept"
+      condition.type === "header" && condition.key.toLowerCase() === "accept",
   );
   if (!acceptCondition) {
     return true;
@@ -141,7 +140,7 @@ function acceptConditionSatisfied(
  */
 async function resolveBeforeFilesRewrite(
   pathname: string,
-  accept: string | null = null
+  accept: string | null = null,
 ): Promise<string | null> {
   const rules = await beforeFilesRewrites();
   for (const rule of rules) {
@@ -178,7 +177,7 @@ describe("next config rewrite sources", () => {
 
   test("docsPathForSource rejects unrecognized sources", () => {
     expect(() => docsPathForSource("/docs/:path*", "/docs/releases")).toThrow(
-      "Unsupported docs markdown rewrite source"
+      "Unsupported docs markdown rewrite source",
     );
   });
 });
@@ -213,7 +212,7 @@ describe("next config redirects", () => {
       },
       {
         source: "/docs/developer-guide/architecture",
-        destination: "/docs/architecture/today",
+        destination: "/docs/architecture",
         permanent: true,
       },
     ]);
@@ -228,7 +227,7 @@ describe("next config .md URL-suffix rewrites", () => {
     ["/docs/skills-reference/browser.md", "/docs/_md/skills-reference/browser"],
   ])("maps %s to %s", async (pathname, destination) => {
     await expect(resolveBeforeFilesRewrite(pathname)).resolves.toBe(
-      destination
+      destination,
     );
   });
 
@@ -237,10 +236,13 @@ describe("next config .md URL-suffix rewrites", () => {
     // the `.md` suffix and 404. The suffix rules are declared first so they
     // win.
     await expect(
-      resolveBeforeFilesRewrite("/docs/getting-started.md", "text/markdown, */*")
+      resolveBeforeFilesRewrite(
+        "/docs/getting-started.md",
+        "text/markdown, */*",
+      ),
     ).resolves.toBe("/docs/_md/getting-started");
     await expect(
-      resolveBeforeFilesRewrite("/docs/index.md", "text/markdown, */*")
+      resolveBeforeFilesRewrite("/docs/index.md", "text/markdown, */*"),
     ).resolves.toBe("/docs/_md");
   });
 
@@ -248,23 +250,23 @@ describe("next config .md URL-suffix rewrites", () => {
     "does not add a .md rewrite for %s",
     async (pathname) => {
       await expect(resolveBeforeFilesRewrite(pathname)).resolves.toBeNull();
-    }
+    },
   );
 });
 
 describe("next config docs Markdown content negotiation", () => {
   test("rewrites the docs index for markdown-preferring clients", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs", "text/markdown")
+      resolveBeforeFilesRewrite("/docs", "text/markdown"),
     ).resolves.toBe("/docs/_md");
   });
 
   test("rewrites docs pages for markdown-preferring clients", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/getting-started", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/getting-started", "text/markdown"),
     ).resolves.toBe("/docs/_md/getting-started");
     await expect(
-      markdownRewriteDestinationsFor("/docs/getting-started")
+      markdownRewriteDestinationsFor("/docs/getting-started"),
     ).resolves.toEqual(["/docs/_md/getting-started"]);
   });
 
@@ -272,75 +274,81 @@ describe("next config docs Markdown content negotiation", () => {
     await expect(
       resolveBeforeFilesRewrite(
         "/docs/releases",
-        "application/json;q=0.9, text/markdown;q=0.8"
-      )
+        "application/json;q=0.9, text/markdown;q=0.8",
+      ),
     ).resolves.toBe("/docs/_md/releases");
   });
 
   test("does not rewrite when markdown is explicitly unacceptable (q=0)", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/releases", "text/html, text/markdown;q=0")
+      resolveBeforeFilesRewrite(
+        "/docs/releases",
+        "text/html, text/markdown;q=0",
+      ),
     ).resolves.toBeNull();
     await expect(
-      resolveBeforeFilesRewrite("/docs/releases", "text/markdown;q=0.0")
+      resolveBeforeFilesRewrite("/docs/releases", "text/markdown;q=0.0"),
     ).resolves.toBeNull();
     await expect(
-      resolveBeforeFilesRewrite("/docs/releases", "text/markdown; q=0, */*")
+      resolveBeforeFilesRewrite("/docs/releases", "text/markdown; q=0, */*"),
     ).resolves.toBeNull();
     await expect(
       resolveBeforeFilesRewrite(
         "/docs/releases",
-        "text/markdown;charset=utf-8;q=0"
-      )
+        "text/markdown;charset=utf-8;q=0",
+      ),
     ).resolves.toBeNull();
     await expect(
-      resolveBeforeFilesRewrite("/docs/releases", "text/markdown;level=1;q=0")
+      resolveBeforeFilesRewrite("/docs/releases", "text/markdown;level=1;q=0"),
     ).resolves.toBeNull();
   });
 
   test("serves HTML (no rewrite) to browsers", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/releases", "text/html,application/xhtml+xml")
+      resolveBeforeFilesRewrite(
+        "/docs/releases",
+        "text/html,application/xhtml+xml",
+      ),
     ).resolves.toBeNull();
     await expect(resolveBeforeFilesRewrite("/docs")).resolves.toBeNull();
   });
 
   test("does not rewrite the docs llms.txt index", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/llms.txt", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/llms.txt", "text/markdown"),
     ).resolves.toBeNull();
-    await expect(markdownRewriteDestinationsFor("/docs/llms.txt")).resolves.toEqual(
-      []
-    );
+    await expect(
+      markdownRewriteDestinationsFor("/docs/llms.txt"),
+    ).resolves.toEqual([]);
   });
 
   test("does not rewrite the /docs/api subtree", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/api/health", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/api/health", "text/markdown"),
     ).resolves.toBeNull();
     await expect(
-      markdownRewriteDestinationsFor("/docs/api/health")
+      markdownRewriteDestinationsFor("/docs/api/health"),
     ).resolves.toEqual([]);
   });
 
   test("does not rewrite the bare /docs/api path", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/api", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/api", "text/markdown"),
     ).resolves.toBeNull();
     await expect(markdownRewriteDestinationsFor("/docs/api")).resolves.toEqual(
-      []
+      [],
     );
   });
 
   test("does not re-enter the mirror route itself", async () => {
     await expect(
-      resolveBeforeFilesRewrite("/docs/_md/releases", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/_md/releases", "text/markdown"),
     ).resolves.toBeNull();
     await expect(
-      markdownRewriteDestinationsFor("/docs/_md/releases")
+      markdownRewriteDestinationsFor("/docs/_md/releases"),
     ).resolves.toEqual([]);
     await expect(
-      resolveBeforeFilesRewrite("/docs/_md", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/_md", "text/markdown"),
     ).resolves.toBeNull();
   });
 
@@ -348,7 +356,7 @@ describe("next config docs Markdown content negotiation", () => {
     // Only /docs/_md and /docs/_md/... are excluded; an _md-prefixed sibling
     // path still negotiates.
     await expect(
-      resolveBeforeFilesRewrite("/docs/_mdsomething", "text/markdown")
+      resolveBeforeFilesRewrite("/docs/_mdsomething", "text/markdown"),
     ).resolves.toBe("/docs/_md/_mdsomething");
   });
 });

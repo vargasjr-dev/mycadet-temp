@@ -4,15 +4,15 @@ import { createMetadata } from "@/lib/metadata";
 export const metadata = createMetadata({
   title: "Today's Architecture - Cadet Docs",
   description: "How your Cadet and the broader ecosystem works today.",
-  path: "/docs/architecture/today",
+  path: "/docs/architecture",
 });
 
-export default function ArchitectureTodayPage() {
+export default function ArchitecturePage() {
   return (
     <MarkdownDoc
-      file="architecture/today"
+      file="architecture"
       title="Today's Architecture"
-      breadcrumb="Docs / Architecture / Today"
+      breadcrumb="Docs / Architecture"
     />
   );
 }

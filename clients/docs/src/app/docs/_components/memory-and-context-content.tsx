@@ -118,10 +118,10 @@ export function MemoryAndContextContent() {
             How memories are organized
           </SectionHeading>
           <p className="mb-4 text-zinc-600">
-            Memory groups related knowledge into concept articles. A person,
-            a project, a recurring process, or an important topic can have its
-            own article. Each article has a short overview and focused sections
-            that can be searched independently.
+            Memory groups related knowledge into concept articles. A person, a
+            project, a recurring process, or an important topic can have its own
+            article. Each article has a short overview and focused sections that
+            can be searched independently.
           </p>
           <p className="mb-4 text-zinc-600">
             Concepts link to one another, forming a wiki rather than a pile of
@@ -179,9 +179,9 @@ export function MemoryAndContextContent() {
             />
           </div>
           <p className="mb-4 text-zinc-600">
-            If memory says your assistant uses an older memory engine, follow the
-            guided upgrade from that page. Your assistant will inspect the current
-            memory corpus and explain the change before reorganizing it.
+            If memory says your assistant uses an older memory engine, follow
+            the guided upgrade from that page. Your assistant will inspect the
+            current memory corpus and explain the change before reorganizing it.
           </p>
           <p className="mb-4 text-zinc-600">
             From a concept, choose <strong>Ask about this</strong> to start a
@@ -207,8 +207,8 @@ export function MemoryAndContextContent() {
             together.
           </p>
           <p className="mb-0 text-zinc-600">
-            Refining a concept updates the assistant’s current understanding while
-            preserving the surrounding relationships that still matter.
+            Refining a concept updates the assistant’s current understanding
+            while preserving the surrounding relationships that still matter.
           </p>
         </section>
 
@@ -240,7 +240,7 @@ export function MemoryAndContextContent() {
           <p className="mb-0 text-zinc-600">
             Learn how that works in{" "}
             <Link
-              href="/docs/key-concepts/self-improving-skills"
+              href="/docs/extensibility/skills"
               className="text-mint-600 hover:underline"
             >
               Self-improving Skills
@@ -260,10 +260,10 @@ export function MemoryAndContextContent() {
             used in future conversations.
           </p>
           <p className="mb-4 text-zinc-600">
-            You can inspect what your assistant knows from the memory map, refine
-            inaccurate concepts, or turn memory off. When memory is off, the
-            assistant stops keeping information from conversations for future
-            recall.
+            You can inspect what your assistant knows from the memory map,
+            refine inaccurate concepts, or turn memory off. When memory is off,
+            the assistant stops keeping information from conversations for
+            future recall.
           </p>
           <p className="mb-0 text-zinc-600">
             Self-hosted assistants keep their workspace and memory on

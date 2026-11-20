@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/docs/developer-guide/architecture",
-        destination: "/docs/architecture/today",
+        destination: "/docs/architecture",
         permanent: true,
       },
     ];
@@ -108,7 +108,8 @@ const nextConfig: NextConfig = {
           // The lookaheads anchor on a following slash or end-of-path so the
           // bare /docs/api and /docs/_md paths are excluded while sibling
           // prefixes (e.g. a hypothetical /docs/api-guide) still negotiate.
-          source: "/docs/:path((?!llms\\.txt$)(?!api(?:\\/|$))(?!_md(?:\\/|$)).*)",
+          source:
+            "/docs/:path((?!llms\\.txt$)(?!api(?:\\/|$))(?!_md(?:\\/|$)).*)",
           destination: "/docs/_md/:path",
           has: [MARKDOWN_ACCEPT_HEADER],
         },

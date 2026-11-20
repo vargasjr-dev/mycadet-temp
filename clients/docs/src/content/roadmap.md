@@ -7,8 +7,7 @@ files — runs in a disposable workbench that holds nothing precious.
 
 This page is the plan, one step at a time. Each step ships on its own and
 makes the next one easier. Every entry here starts as today's architecture
-(see [Today](/docs/architecture/today)) and lands at the [north
-star](/docs/architecture/north-star).
+(see [Architecture](/docs/architecture)) and lands at the [Vision](/docs/vision).
 
 ## Schedules move out of the sandbox
 

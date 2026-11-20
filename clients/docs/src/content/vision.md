@@ -34,7 +34,7 @@ flowchart LR
 
 ```
 
-Follow the story: [Cadet today](/docs/architecture/today), the [roadmap](/docs/roadmap), and the [Credential Execution Service](/docs/developer-guide/internals/credential-execution-service).
+Follow the story: [Cadet today](/docs/architecture), the [roadmap](/docs/roadmap), and the [Credential Execution Service](/docs/developer-guide/internals/credential-execution-service).
 
 ## The harness
 
