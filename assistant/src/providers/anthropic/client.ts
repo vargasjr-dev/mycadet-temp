@@ -1068,6 +1068,18 @@ export class AnthropicProvider implements Provider {
           : {}),
       };
 
+      // A thinking block's signature binds the whole conversation prefix, so
+      // any history rewrite (compaction, truncation, block merges) invalidates
+      // the resent blocks and the API 400s the call. Opt into dropping stale
+      // blocks instead of failing the request. Haiku skips the beta endpoint,
+      // so it must not carry the field.
+      if (!isHaiku && params.thinking && typeof params.thinking === "object") {
+        params.thinking = {
+          ...(params.thinking as unknown as Record<string, unknown>),
+          block_binding: { prefix_mismatch_behavior: "drop_block" },
+        } as unknown as typeof params.thinking;
+      }
+
       if (systemPrompt) {
         // The system prompt may carry a cache boundary (placed by the
         // section pipeline — see `prompts/sections.ts`) splitting it into
@@ -1321,7 +1333,12 @@ export class AnthropicProvider implements Provider {
       // Collect request betas that are still explicit transport features.
       // Current long-context Anthropic models expose their larger windows by
       // model capability in the catalog/resolver, not by this generic header.
-      const betas: string[] = isHaiku ? [] : ["extended-cache-ttl-2025-04-11"];
+      const betas: string[] = isHaiku
+        ? []
+        : [
+            "extended-cache-ttl-2025-04-11",
+            "thinking-binding-controls-2026-08-01",
+          ];
       if (useFastMode) {
         betas.push("fast-mode-2026-02-01");
       }
