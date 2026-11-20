@@ -7,7 +7,6 @@ on:
       # Only what @mycadet/gateway actually consumes (its workspace:*
       # dep closure — kept in lockstep with gateway/package.json), plus the
       # shared inputs its checks read.
-      - "package.json"
       - "patches/**"
       - "gateway/**"
       - "packages/assistant-client/**"

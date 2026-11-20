@@ -16,17 +16,17 @@
     "gateway": "./src/cli/index.ts"
   },
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
-    "schema": "bun run src/cli/schema.ts",
-    "generate:openapi": "bun run scripts/generate-openapi.ts",
     "db:generate": "drizzle-kit generate --dialect sqlite --schema src/db/schema.ts --out src/db/migrations",
-    "start": "bun run src/index.ts",
-    "test": "bun run scripts/run-tests.ts",
+    "dev": "bun run --watch src/index.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint --max-warnings 0",
+    "generate:openapi": "bun run scripts/generate-openapi.ts",
+    "lint": "eslint . --max-warnings 1514",
     "lint:unused": "knip --include files,dependencies,unlisted",
+    "schema": "bun run src/cli/schema.ts",
+    "start": "bun run src/index.ts",
+    "test": "bun run scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {

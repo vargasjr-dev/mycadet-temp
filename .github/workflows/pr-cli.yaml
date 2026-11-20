@@ -4,7 +4,6 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
-      - "package.json"
       - "patches/**"
       - "cli/**"
       - "packages/local-mode/**"

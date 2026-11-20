@@ -5,17 +5,6 @@ import { baseEslintConfig } from "@mycadet/shared/eslint/base";
 const eslintConfig = defineConfig([
   ...baseEslintConfig(),
   {
-    rules: {
-      // Ban `as` casts outright (the cloud repo's rule) — prefer zod
-      // schemas or `in`-narrowing. The client's cast debt was cleared, so
-      // the lint script gates warnings at zero again.
-      "@typescript-eslint/consistent-type-assertions": [
-        "warn",
-        { assertionStyle: "never" },
-      ],
-    },
-  },
-  {
     // The plugin registers in the shared floor; this only opts macos into
     // the no-empty-imports rule.
     rules: { "@mycadet/no-empty-imports": "error" },

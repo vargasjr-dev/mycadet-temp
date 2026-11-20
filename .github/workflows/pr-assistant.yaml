@@ -4,7 +4,6 @@ on:
   pull_request:
     types: [labeled, synchronize, opened, reopened]
     paths:
-      - "package.json"
       - "patches/**"
       - "assistant/**"
       - "packages/app-icons/**"

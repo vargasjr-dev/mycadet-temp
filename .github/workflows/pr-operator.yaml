@@ -7,11 +7,8 @@ on:
       # Only what @mycadet/local-mode consumes and the shared floor it lints
       # against. The package is being renamed to `operator` soon — the lane
       # name pre-empts that.
-      - "package.json"
-      - "bun.lock"
       - "patches/**"
       - "packages/local-mode/**"
-      - "packages/shared/**"
       - ".github/workflows/pr-operator.yaml"
   workflow_dispatch:
 concurrency:

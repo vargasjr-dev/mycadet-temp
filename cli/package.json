@@ -15,11 +15,11 @@
     "cadet": "./src/index.ts"
   },
   "scripts": {
+    "compile:check": "bun build --compile src/index.ts --outfile /dev/null",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint --max-warnings 109",
+    "lint": "eslint . --max-warnings 112",
     "lint:unused": "knip --include files,dependencies,unlisted",
-    "compile:check": "bun build --compile src/index.ts --outfile /dev/null",
     "test": "bun run scripts/run-tests.ts",
     "typecheck": "bunx tsgo --noEmit"
   },

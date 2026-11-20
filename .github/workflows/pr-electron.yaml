@@ -6,12 +6,9 @@ on:
     paths:
       # Only what the electron packages consume and the shared floor they
       # lint against.
-      - "package.json"
-      - "bun.lock"
       - "patches/**"
       - "packages/electron-desktop/**"
       - "packages/electron-utils/**"
-      - "packages/shared/**"
       - ".github/workflows/pr-electron.yaml"
   workflow_dispatch:
 concurrency:

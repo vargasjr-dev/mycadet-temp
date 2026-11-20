@@ -43,6 +43,11 @@ export function AssistantDesktopPreview() {
   }, []);
 
   useEffect(() => {
+    // Reads `assistantId` so the dep is load-bearing: switching assistants
+    // (or losing one) closes the stale preview session.
+    if (assistantId === null) {
+      return;
+    }
     return () => useDesktopPreviewStore.getState().close();
   }, [assistantId]);
 

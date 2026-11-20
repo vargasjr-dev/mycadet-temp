@@ -3,16 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "bun run docs:search:index && bun run generate:agent-markdown",
-    "dev": "next dev --port 3005",
-    "prebuild": "bun run docs:search:index && bun run generate:agent-markdown",
     "build": "next build",
+    "dev": "next dev --port 3005",
     "docs:search:index": "bun scripts/generate-docs-search-index.ts",
-    "start": "next start",
     "generate:agent-markdown": "bun scripts/generate-agent-markdown.ts",
-    "lint": "eslint",
-    "typecheck": "bunx tsc --noEmit",
-    "test": "bun test src scripts next-config.test.ts --pass-with-no-tests"
+    "lint": "eslint . --max-warnings 29",
+    "prebuild": "bun run docs:search:index && bun run generate:agent-markdown",
+    "predev": "bun run docs:search:index && bun run generate:agent-markdown",
+    "start": "next start",
+    "test": "bun test src scripts next-config.test.ts --pass-with-no-tests",
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "@mycadet/design-library": "workspace:*",

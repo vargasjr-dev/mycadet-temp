@@ -58,6 +58,19 @@ export function baseEslintConfig() {
           "error",
           { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
         ],
+        // Ban `as` casts at warning level: the cloud repo's rule. A cast
+        // tells the checker to shut up; prefer zod schemas or
+        // `in`-narrowing. The lint script pins --max-warnings to the
+        // current count and each PR chips away at the remainder — PR 5
+        // burns it to zero and flips this to error.
+        "@typescript-eslint/consistent-type-assertions": [
+          "warn",
+          { assertionStyle: "never" },
+        ],
+        // A `let` assigned a value it can never read again is a dead
+        // write — either the assignment is stale or the earlier value
+        // was.
+        "no-useless-assignment": "warn",
         "@mycadet/no-re-exports": "error",
       },
     },

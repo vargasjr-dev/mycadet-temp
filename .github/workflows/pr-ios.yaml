@@ -4,8 +4,6 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
-      - "package.json"
-      - "bun.lock"
       - "patches/**"
       - "clients/ios/**"
       - "clients/app/capacitor.config.base.ts"

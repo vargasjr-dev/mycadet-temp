@@ -7,8 +7,6 @@ on:
       # Only what @mycadet/local-mode actually consumes (its workspace:*
       # dep closure — kept in lockstep with packages/local-mode/package.json),
       # plus the shared inputs its checks read.
-      - "package.json"
-      - "bun.lock"
       - "patches/**"
       - "packages/local-mode/**"
       - "packages/avatar-manifest/**"

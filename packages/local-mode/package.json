@@ -11,7 +11,7 @@
     "./guardian-contract": "./src/guardian-contract.ts"
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 61",
+    "lint": "eslint . --max-warnings 388",
     "test": "bun scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"
   },

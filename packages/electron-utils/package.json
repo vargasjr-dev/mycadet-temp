@@ -9,7 +9,7 @@
     "./auth-popup-session": "./src/auth-popup-session.ts"
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 1",
     "test": "bun test src",
     "typecheck": "bunx tsc --noEmit"
   },

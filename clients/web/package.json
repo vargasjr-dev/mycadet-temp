@@ -13,21 +13,21 @@
     "scripts/postinstall.sh"
   ],
   "scripts": {
-    "dev": "echo 'clients/web has no vite dev server. The cadet app server is how app/web assets load by running `cadet-local app start`.' && exit 1",
-    "build": "bun scripts/build.ts",
-    "lint": "eslint --max-warnings 13",
-    "knip": "knip",
     "audit:cross-domain": "node scripts/audit-cross-domain-imports.mjs",
     "audit:cross-domain:check": "node scripts/audit-cross-domain-imports.mjs --check",
-    "pretypecheck": "bun run openapi-ts",
-    "typecheck": "bunx tsgo --noEmit",
-    "postinstall": "bash scripts/postinstall.sh",
-    "openapi-ts": "bun run scripts/generate-clients.ts",
-    "storybook": "storybook dev -p 6007",
+    "build": "bun scripts/build.ts",
     "build-storybook": "storybook build",
+    "dev": "echo 'clients/web has no vite dev server. The cadet app server is how app/web assets load by running `cadet-local app start`.' && exit 1",
+    "knip": "knip",
+    "lint": "eslint . --max-warnings 2717",
+    "openapi-ts": "bun run scripts/generate-clients.ts",
+    "postinstall": "bash scripts/postinstall.sh",
+    "pretypecheck": "bun run openapi-ts",
+    "storybook": "storybook dev -p 6007",
     "test": "bun test",
+    "test:ci": "bun scripts/run-tests.ts",
     "test:edge-swipe:browser": "bun scripts/test-edge-swipe-browser.ts",
-    "test:ci": "bun scripts/run-tests.ts"
+    "typecheck": "bunx tsgo --noEmit"
   },
   "dependencies": {
     "@capacitor-community/camera-preview": "8.0.1",
