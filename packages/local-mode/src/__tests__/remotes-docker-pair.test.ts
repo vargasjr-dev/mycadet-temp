@@ -56,6 +56,8 @@ describe("pairDocker — the in-container gateway CLI is the docker presence pro
     // (node_modules/.bin) from the container's WORKDIR.
     expect(args).toEqual([
       "exec",
+      "-e",
+      "GATEWAY_PORT=7831",
       "assistant-123-gateway",
       "bun",
       "run",
@@ -71,6 +73,17 @@ describe("pairDocker — the in-container gateway CLI is the docker presence pro
     ]);
     expect(options?.timeoutMs).toBe(30_000);
     expect(result).toEqual({ ok: true, response: fakeToken("t") });
+  });
+
+  test("runs the mint on the assistant's host gateway port", async () => {
+    await pairDocker(entry);
+    const [, args] = execOutputMock.mock.calls.at(-1)!;
+    expect(args.slice(0, 4)).toEqual([
+      "exec",
+      "-e",
+      "GATEWAY_PORT=7831",
+      "assistant-123-gateway",
+    ]);
   });
 
   test("parses the LAST stdout line of the mint", async () => {

@@ -4,7 +4,7 @@ import {
   type PairDeviceIdentity,
   type PairOperationResult,
 } from "../../operations/pair";
-import type { LockfileAssistant } from "../../lockfile-contract";
+import type { DockerAssistant } from "../../lockfile-contract";
 import type { GuardianTokenData } from "../../guardian-token";
 import { GuardianTokenFileSchema } from "../../guardian-token";
 import { dockerResourceNames } from "./common";
@@ -21,17 +21,27 @@ import { dockerResourceNames } from "./common";
  * `cadet pair` command wraps — the command's raw stdout, whose last line
  * is the challenge JSON.
  */
-export function pairDocker(entry: LockfileAssistant): Promise<string>;
+export function pairDocker(entry: DockerAssistant): Promise<string>;
 export function pairDocker(
-  entry: LockfileAssistant,
+  entry: DockerAssistant,
   device: PairDeviceIdentity,
 ): Promise<PairOperationResult<GuardianTokenData>>;
 export async function pairDocker(
-  entry: LockfileAssistant,
+  entry: DockerAssistant,
   device?: PairDeviceIdentity,
 ): Promise<string | PairOperationResult<GuardianTokenData>> {
   const container = dockerResourceNames(entry.assistantId).gatewayContainer;
-  const args = ["exec", container, "bun", "run", "gateway", "pairing", "mint"];
+  const args = [
+    "exec",
+    "-e",
+    `GATEWAY_PORT=${entry.port}`,
+    container,
+    "bun",
+    "run",
+    "gateway",
+    "pairing",
+    "mint",
+  ];
   if (device) {
     args.push(
       "--platform",
