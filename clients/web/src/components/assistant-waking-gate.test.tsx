@@ -33,9 +33,13 @@ mock.module("@mycadet/design-library", () => ({
   }) => <span>{children}</span>,
 }));
 
-const { AssistantWakingGate, WAKING_GATE_TITLE } = await import(
+const { AssistantWakingGate } = await import(
   "@/components/assistant-waking-gate"
 );
+
+// The English catalog's copy — the gate reads it through the real i18n
+// module (English ships static), so the assertion is the rendered truth.
+const WAKING_TITLE = "Assistant is waking";
 
 function renderGate() {
   const client = new QueryClient({
@@ -60,7 +64,7 @@ describe("AssistantWakingGate", () => {
     renderGate();
     expect(screen.queryByText("the app")).toBeNull();
     await waitFor(() =>
-      expect(screen.queryByText(WAKING_GATE_TITLE)).not.toBeNull(),
+      expect(screen.queryByText(WAKING_TITLE)).not.toBeNull(),
     );
     expect(screen.queryByText("the app")).toBeNull();
   });
@@ -69,6 +73,6 @@ describe("AssistantWakingGate", () => {
     healthzError = null;
     renderGate();
     await waitFor(() => expect(screen.getByText("the app")).toBeDefined());
-    expect(screen.queryByText(WAKING_GATE_TITLE)).toBeNull();
+    expect(screen.queryByText(WAKING_TITLE)).toBeNull();
   });
 });

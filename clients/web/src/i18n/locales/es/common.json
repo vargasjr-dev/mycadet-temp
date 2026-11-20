@@ -874,5 +874,8 @@
     "dragError": "No se puede arrastrar. Inténtalo desde Finder.",
     "showInFinder": "Mostrar en Finder",
     "inputLabel": "Monitorización de entrada"
+  },
+  "assistantWakingGate": {
+    "title": "El asistente se está despertando"
   }
 }

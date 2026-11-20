@@ -912,5 +912,8 @@
     "dragError": "無法拖移。請嘗試從 Finder 中拖移。",
     "showInFinder": "在 Finder 中顯示",
     "inputLabel": "輸入監控"
+  },
+  "assistantWakingGate": {
+    "title": "助理正在喚醒中"
   }
 }

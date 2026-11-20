@@ -912,5 +912,8 @@
     "dragError": "Drag unavailable. Try dragging from Finder.",
     "showInFinder": "Show in Finder",
     "inputLabel": "Input Monitoring"
+  },
+  "assistantWakingGate": {
+    "title": "Assistant is waking"
   }
 }

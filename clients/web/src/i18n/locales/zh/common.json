@@ -912,5 +912,8 @@
     "dragError": "无法拖动。请尝试从访达中拖动。",
     "showInFinder": "在访达中显示",
     "inputLabel": "输入监控"
+  },
+  "assistantWakingGate": {
+    "title": "助手正在唤醒"
   }
 }

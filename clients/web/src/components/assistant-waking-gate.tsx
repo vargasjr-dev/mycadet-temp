@@ -5,13 +5,10 @@ import { CloudOff } from "lucide-react";
 
 import { Typography } from "@mycadet/design-library";
 
+import { useTranslation } from "@/i18n";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { markNativeLaunchScreenReady } from "@/runtime/native-launch-screen";
-
-export const WAKING_GATE_TITLE = "Assistant is waking";
-export const WAKING_GATE_MESSAGE =
-  "The assistant's vm isn't answering yet — this screen leaves on its own once the services come up.";
 
 // The waking cadence: the vm usually answers within about a minute of a
 // wake, and each miss re-arms the query, so no manual refresh is needed.
@@ -49,10 +46,12 @@ export function AssistantWakingGate({ children }: { children: ReactNode }) {
 
 /**
  * The waking screen itself — the same visual language as the boot floor
- * (`StartupFailure`): icon, honest copy, no dead ends. The query above
+ * (`StartupFailure`): icon, honest copy, no dead end. The query above
  * owns the retry, so the screen is static by design.
  */
 function AssistantWaking() {
+  const { t } = useTranslation();
+
   useEffect(() => {
     void markNativeLaunchScreenReady("system");
   }, []);
@@ -65,11 +64,8 @@ function AssistantWaking() {
       >
         <CloudOff className="size-6" aria-hidden="true" />
         <Typography variant="body-medium-default">
-          {WAKING_GATE_TITLE}
+          {t("assistantWakingGate.title")}
         </Typography>
-        <p className="text-body-medium-lighter text-[var(--content-secondary)]">
-          {WAKING_GATE_MESSAGE}
-        </p>
       </div>
     </main>
   );
