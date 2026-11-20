@@ -340,8 +340,10 @@ jobs:
     # The image job MUST be a direct need: needs.<job>.result only resolves
     # for jobs in this list, and the if below reads it. #143's port dropped
     # it, so every manifest silently skipped and nothing downstream ran.
-    needs: [extract-version, push-assistant-image]
-    if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' }}
+    # run-docker-integration-tests is the second gate: never tag an image
+    # that hasn't booted as a hatch (see that job).
+    needs: [extract-version, push-assistant-image, run-docker-integration-tests]
+    if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -478,8 +480,8 @@ jobs:
 
   push-gateway-manifest:
     # Direct need on the image job — see push-assistant-manifest above.
-    needs: [extract-version, push-gateway-image]
-    if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' }}
+    needs: [extract-version, push-gateway-image, run-docker-integration-tests]
+    if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -616,8 +618,13 @@ jobs:
 
   push-credential-executor-manifest:
     # Direct need on the image job — see push-assistant-manifest above.
-    needs: [extract-version, push-credential-executor-image]
-    if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' }}
+    needs:
+      [
+        extract-version,
+        push-credential-executor-image,
+        run-docker-integration-tests,
+      ]
+    if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -686,6 +693,77 @@ jobs:
           name: credential-executor-manifest-digest-dev
           path: /tmp/manifest-digest/*
           retention-days: 1
+
+  run-docker-integration-tests:
+    # Boots the three images that were just pushed as a real docker hatch
+    # (fresh network, fresh volumes, real container start) and runs the qa
+    # integration suite against them. Container-start bugs — volume modes,
+    # non-root users, socket creation — have no unit detector; this job is
+    # theirs (the CES socket dir fix shipped without any CI check that could
+    # have caught it). The manifest jobs below only tag images this job has
+    # booted: a failing hatch blocks the release.
+    needs:
+      [push-assistant-image, push-gateway-image, push-credential-executor-image]
+    if: ${{ !cancelled() && needs.push-assistant-image.result == 'success' && needs.push-gateway-image.result == 'success' && needs.push-credential-executor-image.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
+
+      # One digest artifact per image, downloaded into its own directory —
+      # the files inside are named by digest hex, so merging them would lose
+      # which digest belongs to which image.
+      - name: Download assistant digest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: assistant-digests-release-linux-amd64
+          path: /tmp/digests/assistant
+      - name: Download gateway digest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gateway-digests-release-linux-amd64
+          path: /tmp/digests/gateway
+      - name: Download credential-executor digest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: credential-executor-digests-release-linux-amd64
+          path: /tmp/digests/credential-executor
+
+      - name: Resolve image refs
+        run: |
+          digest_of() { ls "/tmp/digests/$1" | head -1; }
+          {
+            echo "QA_ASSISTANT_IMAGE=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}@sha256:$(digest_of assistant)"
+            echo "QA_GATEWAY_IMAGE=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}@sha256:$(digest_of gateway)"
+            echo "QA_CES_IMAGE=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}@sha256:$(digest_of credential-executor)"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify image refs resolved
+        run: |
+          test -n "$QA_ASSISTANT_IMAGE" || { echo "::error::QA_ASSISTANT_IMAGE did not resolve"; exit 1; }
+          test -n "$QA_GATEWAY_IMAGE" || { echo "::error::QA_GATEWAY_IMAGE did not resolve"; exit 1; }
+          test -n "$QA_CES_IMAGE" || { echo "::error::QA_CES_IMAGE did not resolve"; exit 1; }
+          echo "assistant: $QA_ASSISTANT_IMAGE"
+          echo "gateway: $QA_GATEWAY_IMAGE"
+          echo "credential-executor: $QA_CES_IMAGE"
+
+      - name: Install qa dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/qa
+
+      - name: Run the docker hatch integration suite
+        run: bun test qa/docker-hatch.test.ts
 
   push-docs-image:
     needs: [extract-version]

@@ -9,6 +9,7 @@ Bun + TypeScript monorepo with multiple packages:
 - `cli/` — Multi-assistant management CLI (Bun + TypeScript).
 - `gateway/` — Channel ingress gateway (Bun + TypeScript)
 - `packages/` — Shared internal packages (e.g. `service-contracts` for CES wire-protocol schemas)
+- `qa/` — The QA package: the Baseten client-QA sandbox image and the docker hatch integration suite. Integration tests live ONLY here, and only for logic unit tests cannot protect (see `qa/README.md`); the release pipeline's `run-docker-integration-tests` job boots the freshly pushed service images through it, and `pr-qa.yaml` runs just the tests a PR edited.
 - `scripts/` — Utility scripts
 - `skills/` — First-party skill catalog (portable skill packages).
 - Evals have moved to a dedicated repo: [vargasjr-dev/evals](https://github.com/vargasjr-dev/evals).

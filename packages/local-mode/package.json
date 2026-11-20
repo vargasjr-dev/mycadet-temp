@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./contract": "./src/lockfile-contract.ts",
     "./teleport-backup-policy": "./src/teleport-backup-policy.ts",
-    "./guardian-contract": "./src/guardian-contract.ts"
+    "./guardian-contract": "./src/guardian-contract.ts",
+    "./docker-hatch-spec": "./src/remotes/docker/statefulset.ts",
+    "./docker-resource-names": "./src/remotes/docker/common.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 61",
