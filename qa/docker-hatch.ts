@@ -202,15 +202,15 @@ export async function startQaHatch(
 
   // The assistant owns the instance's network namespace, so it starts first
   // — the same ordering startAssistantThenSidecars enforces in production.
+  // buildServiceRunArgs already opens each service's args with `run`.
   log(`starting ${containers.assistant}`);
-  dockerOrThrow(["run", ...runArgs.assistant()], "start assistant container");
+  dockerOrThrow(runArgs.assistant(), "start assistant container");
   log(`starting ${containers.gateway}, ${containers["credential-executor"]}`);
   await Promise.all([
-    (async () =>
-      dockerOrThrow(["run", ...runArgs.gateway()], "start gateway sidecar"))(),
+    (async () => dockerOrThrow(runArgs.gateway(), "start gateway sidecar"))(),
     (async () =>
       dockerOrThrow(
-        ["run", ...runArgs["credential-executor"]()],
+        runArgs["credential-executor"](),
         "start credential-executor sidecar",
       ))(),
   ]);
