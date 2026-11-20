@@ -76,15 +76,9 @@
   },
   "researchOnboardingScreen": {
     "title": "我們從您開始。",
-    "body": "一些細節，以便我更好地了解您。",
     "firstNameLabel": "我該怎麼稱呼您？",
     "firstNamePlaceholder": "您的名字",
-    "lastNameLabel": "您的姓氏是？",
-    "lastNamePlaceholder": "您的姓氏（選填）",
-    "roleLabel": "您的角色",
-    "rolePlaceholder": "您的職業是什麼？",
-    "hobbiesLabel": "有什麼嗜好嗎？",
-    "hobbiesPlaceholder": "汽車、書籍、種植番茄？"
+    "skip": "跳過初始設定"
   },
   "existingAssistantStep": {
     "titleNamed": "{name} 已啟動並正在執行",

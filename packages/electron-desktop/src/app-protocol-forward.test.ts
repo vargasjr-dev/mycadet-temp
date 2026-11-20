@@ -186,7 +186,6 @@ describe("registerAppProtocol", () => {
     expect(JSON.parse(body)).toEqual({
       baseUrl: "app://mycadet.ai",
       deviceId: "device-7",
-      version: "9.9.9",
       assistantName: "A<ria",
     });
     expect(body).toContain("\\u003c");
@@ -210,26 +209,46 @@ describe("registerAppProtocol", () => {
     await setupDev();
     await register();
     const response = await handler!(
-      new Request("app://mycadet.ai/assistant/index.html"),
+      new Request("app://mycadet.ai/web/assistant/index.html"),
     );
     const body = await response.text();
     expect(body).toContain("<body>web</body>");
   });
 
+  test("the app shell owns /assistant documents — onboarding refreshes stay app-side", async () => {
+    await setupDev();
+    await register();
+    const shell = await handler!(
+      new Request(
+        "app://mycadet.ai/assistant/onboarding/research?hosting=local",
+      ),
+    );
+    expect(await shell.text()).toContain("<body>shell</body>");
+    const root = await handler!(new Request("app://mycadet.ai/assistant"));
+    expect(await root.text()).toContain("<body>shell</body>");
+  });
+
   test("web-mount assets ride the web root verbatim", async () => {
     await setupDev();
     await register();
-    const response = await handler!(
+    // The iframe's asset URLs: the `/web` mount for frame-relative
+    // requests and the vite `base` prefix (`/assistant/assets/*`) for the
+    // hashed assets the document references.
+    const viaBase = await handler!(
       new Request("app://mycadet.ai/assistant/assets/index.js"),
     );
-    expect(await response.text()).toBe("console.log(1)");
+    expect(await viaBase.text()).toBe("console.log(1)");
+    const viaFrame = await handler!(
+      new Request("app://mycadet.ai/web/assistant/assets/index.js"),
+    );
+    expect(await viaFrame.text()).toBe("console.log(1)");
   });
 
   test("packaged windows reads the web bundle inside the cli runtime", async () => {
     await setupPackaged();
     await register();
     const web = await handler!(
-      new Request("app://mycadet.ai/assistant/index.html"),
+      new Request("app://mycadet.ai/web/assistant/index.html"),
     );
     expect(await web.text()).toContain("<body>web</body>");
     const shell = await handler!(new Request("app://mycadet.ai/some/route"));

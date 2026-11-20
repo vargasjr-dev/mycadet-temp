@@ -76,15 +76,9 @@
   },
   "researchOnboardingScreen": {
     "title": "Начало.",
-    "body": "Пара деталей, чтобы узнать собеседника.",
     "firstNameLabel": "Имя",
     "firstNamePlaceholder": "Имя",
-    "lastNameLabel": "А фамилия?",
-    "lastNamePlaceholder": "Фамилия (необязательно)",
-    "roleLabel": "Род занятий",
-    "rolePlaceholder": "Должность",
-    "hobbiesLabel": "Есть хобби?",
-    "hobbiesPlaceholder": "Машины, книги, помидоры на подоконнике?"
+    "skip": "Пропустить настройку"
   },
   "existingAssistantStep": {
     "titleNamed": "{name} уже запущен и работает",

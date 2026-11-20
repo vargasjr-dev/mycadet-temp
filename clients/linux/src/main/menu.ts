@@ -16,10 +16,7 @@ import {
 import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
 import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
 import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
-import {
-  MENU_POPUP,
-  MENU_TITLES,
-} from "@mycadet/ipc-contract";
+import { MENU_POPUP, MENU_TITLES } from "@mycadet/ipc-contract";
 
 import { onOnboardingChange } from "./main-window";
 
@@ -32,6 +29,25 @@ interface LinuxMenuOptions {
 
 let hasCloudSession = false;
 let applyFn: () => void = () => {};
+
+/**
+ * The focused window's history navigation. The menu owns back/forward (no
+ * webContents roles exist for them): the shell is a SPA, whose pushState
+ * entries ride `navigationHistory` like any load, so a step back or forward
+ * lands on the previous in-app surface. No-op when nothing is focused.
+ */
+const navigateFocused = (direction: "back" | "forward"): void => {
+  const history =
+    BrowserWindow.getFocusedWindow()?.webContents.navigationHistory;
+  if (!history) {
+    return;
+  }
+  if (direction === "back") {
+    history.goBack();
+  } else {
+    history.goForward();
+  }
+};
 
 /**
  * The Log In/Log Out toggle is this process's fact: the wiring derives it
@@ -116,6 +132,17 @@ export const buildLinuxMenu = ({
     submenu: [
       commandItem("Toggle Sidebar", { kind: "sidebarToggle" }),
       commandItem("Command Palette...", { kind: "commandPalette" }),
+      { type: "separator" },
+      {
+        label: "Back",
+        accelerator: "CmdOrCtrl+[",
+        click: () => navigateFocused("back"),
+      },
+      {
+        label: "Forward",
+        accelerator: "CmdOrCtrl+]",
+        click: () => navigateFocused("forward"),
+      },
       { type: "separator" },
       { role: "reload" },
       { role: "forceReload" },

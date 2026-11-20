@@ -34,6 +34,9 @@ const electronApp = {
 
 mock.module("electron", () => ({
   app: electronApp,
+  BrowserWindow: {
+    getFocusedWindow: () => null,
+  },
   Menu: {
     buildFromTemplate: buildFromTemplateMock,
     setApplicationMenu: setApplicationMenuMock,

@@ -25,12 +25,12 @@ export const LINUX_RELEASE_INFO = {
 
 const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
 
-export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/assistant`;
+export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/web/assistant`;
 
 /**
  * App-shell base URL for the main window, which renders the app shell
  * (root-based `@mycadet/app` standalone build — no mount suffix; the
- * shell iframes the web bundle on the `/assistant` mount). Auxiliary
+ * shell iframes the web bundle on the `/web/assistant` mount). Auxiliary
  * windows keep `RENDERER_BASE_PROD`, the web routes' base.
  */
 export const APP_RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}`;

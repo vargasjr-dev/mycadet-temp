@@ -20,8 +20,8 @@
  *   build, root-based): `APP_RENDERER_BASE_PROD` is the root the `app://`
  *   protocol handler resolves to.
  * - Auxiliary windows (about, command palette, companion, popouts, …) still
- *   render web routes. They keep the `/assistant` base the web bundle's
- *   `base` setting requires: `RENDERER_BASE_PROD`.
+ *   render web routes. They ride the `/web/assistant` mount the app shell
+ *   iframes the web bundle through: `RENDERER_BASE_PROD`.
  */
 
 export const APP_PROTOCOL = "app";
@@ -32,7 +32,7 @@ export const APP_HOST = "mycadet.ai";
  * They append their own subpath (`/about`, future `/conversations/<id>`,
  * etc.) onto the `/assistant` mount the web bundle's `base` requires.
  */
-export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/assistant`;
+export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/web/assistant`;
 
 /**
  * Renderer-base URL for the MAIN window, which renders the app shell

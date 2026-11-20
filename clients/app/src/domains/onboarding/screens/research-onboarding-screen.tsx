@@ -25,14 +25,13 @@ import { useTranslation } from "@app/i18n";
 
 export interface ResearchOnboardingValues {
   firstName: string;
-  lastName: string;
-  role: string;
 }
 
 interface ResearchOnboardingScreenProps {
   initialFirstName?: string;
-  initialLastName?: string;
   onSubmit: (values: ResearchOnboardingValues) => void;
+  /** The faint off-ramp: abandoning the funnel for the assistant as-is. */
+  onSkip: () => void;
 }
 
 /**
@@ -52,26 +51,22 @@ function riseIn(delaySeconds: number, zIndex?: number): React.CSSProperties {
 
 export function ResearchOnboardingScreen({
   initialFirstName = "",
-  initialLastName = "",
   onSubmit,
+  onSkip,
 }: ResearchOnboardingScreenProps) {
   const { t } = useTranslation("onboarding");
   // The screen owns the whole viewport, so the shell paints its safe-area
   // strips to match. See `page-surface-store`.
   usePublishPageSurface(ONBOARDING_DARK_SURFACE);
   const [firstName, setFirstName] = useState(initialFirstName);
-  const [lastName, setLastName] = useState(initialLastName);
-  const [role, setRole] = useState("");
 
-  // First name is the only required field; role just sharpens the
-  // research when present.
   const canSubmit = firstName.trim().length > 0;
 
   function handleSubmit() {
     if (!canSubmit) {
       return;
     }
-    onSubmit({ firstName, lastName, role });
+    onSubmit({ firstName });
   }
 
   return (
@@ -95,27 +90,10 @@ export function ResearchOnboardingScreen({
             {t("researchOnboardingScreen.title")}
           </h1>
 
-          <p
-            className="mt-3 text-center text-body-medium-lighter text-[var(--content-secondary)]"
-            style={riseIn(0.12)}
-          >
-            {t("researchOnboardingScreen.body")}
-          </p>
-
           <div className="mt-10 flex w-full flex-col gap-5">
-            <div style={riseIn(0.2, 40)}>
+            <div style={riseIn(0.12, 40)}>
               <Input
-                label={
-                  <>
-                    {t("researchOnboardingScreen.firstNameLabel")}
-                    <span
-                      aria-hidden
-                      className="text-[var(--system-negative-strong)]"
-                    >
-                      {" *"}
-                    </span>
-                  </>
-                }
+                label={t("researchOnboardingScreen.firstNameLabel")}
                 placeholder={t("researchOnboardingScreen.firstNamePlaceholder")}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -125,29 +103,6 @@ export function ResearchOnboardingScreen({
                 fullWidth
               />
             </div>
-
-            <div style={riseIn(0.27, 30)}>
-              <Input
-                label={t("researchOnboardingScreen.lastNameLabel")}
-                placeholder={t("researchOnboardingScreen.lastNamePlaceholder")}
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className={MOBILE_INPUT_NO_ZOOM}
-                fullWidth
-              />
-            </div>
-
-            <div style={riseIn(0.34, 20)}>
-              <Input
-                label={t("researchOnboardingScreen.roleLabel")}
-                placeholder={t("researchOnboardingScreen.rolePlaceholder")}
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className={MOBILE_INPUT_NO_ZOOM}
-                fullWidth
-              />
-            </div>
-
           </div>
 
           <div className="mt-10 w-full" style={riseIn(0.5)}>
@@ -163,6 +118,18 @@ export function ResearchOnboardingScreen({
             </Button>
           </div>
         </form>
+
+        {/* The off-ramp: faint on purpose — findable, never competing with
+            the funnel. Fixed to the viewport corner so it holds its ground
+            no matter how the centered column reflows. */}
+        <button
+          type="button"
+          onClick={onSkip}
+          className="fixed right-6 bottom-6 text-body-small text-[var(--content-tertiary)] transition-colors hover:text-[var(--content-secondary)]"
+          style={riseIn(0.6)}
+        >
+          {t("researchOnboardingScreen.skip")}
+        </button>
       </OnboardingLayout>
     </div>
   );

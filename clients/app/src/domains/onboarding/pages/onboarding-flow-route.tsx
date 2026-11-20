@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { z } from "zod";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { patchCloud } from "@app/lib/cloud/request";
 import { saveCharacterTraits } from "@app/assistant/avatar-traits";
 import { resolveOrganization } from "@app/lib/cloud/organization";
@@ -11,6 +11,7 @@ import {
   type PreChatOnboardingContext,
 } from "@app/domains/onboarding/prechat";
 import { markAssistantOnboarded } from "@app/domains/onboarding/onboarded-assistant-record";
+import { selectedAssistantState } from "@app/assistant/assistant-selection";
 import { OnboardingLayout } from "@app/components/onboarding-layout";
 import { routes } from "@app/utils/routes";
 import { ResearchOnboardingScreen } from "../screens/research-onboarding-screen";
@@ -65,10 +66,13 @@ async function saveAvatarVoice(
 
 export function OnboardingFlowRoute() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  // The hatching screen hands off only once provisioning is ready, so the id
-  // is already live here — no hatch-wait, no error overlay, no retry arm.
-  const assistantId = searchParams.get("assistant");
+  const location = useLocation();
+  // The hatching screen hands off only once provisioning is ready, so the
+  // id is already live here — no hatch-wait, no error overlay, no retry
+  // arm. The selection rides history state (the chooser's convention), so
+  // the route itself stays bare — no query params to keep alive across a
+  // refresh.
+  const assistantId = selectedAssistantState(location.state)?.id;
 
   const [step, setStep] = useState<FlowStep>("form");
   const [formValues, setFormValues] = useState<ResearchOnboardingValues | null>(
@@ -93,9 +97,7 @@ export function OnboardingFlowRoute() {
     if (!formValues) {
       return;
     }
-    const fullName = [formValues.firstName.trim(), formValues.lastName.trim()]
-      .filter(Boolean)
-      .join(" ");
+    const userName = formValues.firstName.trim();
     const assistantName = faceValues?.name.trim() || undefined;
 
     const context: PreChatOnboardingContext = {
@@ -103,8 +105,7 @@ export function OnboardingFlowRoute() {
       tools: [],
       tasks: [],
       tone: "grounded",
-      ...(fullName ? { userName: fullName } : {}),
-      ...(formValues.role.trim() ? { occupation: formValues.role.trim() } : {}),
+      ...(userName ? { userName } : {}),
       // Hidden kickoff: the chat opens on the assistant's proactive greeting.
       initialMessage: buildLetsChatKickoffMessage(assistantName),
       initialMessageHidden: true,
@@ -137,6 +138,16 @@ export function OnboardingFlowRoute() {
           onSubmit={(values) => {
             setFormValues(values);
             setStep("intro");
+          }}
+          onSkip={() => {
+            // The off-ramp lands on the assistant as-is. A known assistant
+            // is marked onboarded so the funnel doesn't re-run for it; a
+            // walk that hasn't provisioned one yet has nothing to mark —
+            // the chooser takes it from here.
+            if (assistantId) {
+              markAssistantOnboarded(assistantId);
+            }
+            void navigate(routes.assistant, { replace: true });
           }}
         />
       </OnboardingLayout>

@@ -76,15 +76,9 @@
   },
   "researchOnboardingScreen": {
     "title": "Let's start with you.",
-    "body": "A few details so I can get to know you.",
     "firstNameLabel": "What should I call you?",
     "firstNamePlaceholder": "Your name",
-    "lastNameLabel": "And your last name?",
-    "lastNamePlaceholder": "Your last name (optional)",
-    "roleLabel": "Your role",
-    "rolePlaceholder": "What do you do for work?",
-    "hobbiesLabel": "Any hobbies?",
-    "hobbiesPlaceholder": "Cars, books, growing tomatoes?"
+    "skip": "Skip onboarding"
   },
   "existingAssistantStep": {
     "titleNamed": "{name} is already up and running",

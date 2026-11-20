@@ -76,15 +76,9 @@
   },
   "researchOnboardingScreen": {
     "title": "Empecemos por ti.",
-    "body": "Unos detalles para que pueda conocerte.",
     "firstNameLabel": "¿Cómo debería llamarte?",
     "firstNamePlaceholder": "Tu nombre",
-    "lastNameLabel": "¿Y tu apellido?",
-    "lastNamePlaceholder": "Tu apellido (opcional)",
-    "roleLabel": "Tu rol",
-    "rolePlaceholder": "¿A qué te dedicas?",
-    "hobbiesLabel": "¿Algún hobby?",
-    "hobbiesPlaceholder": "Coches, libros, cultivar tomates?"
+    "skip": "Omitir la configuración"
   },
   "existingAssistantStep": {
     "titleNamed": "{name} ya está en marcha",

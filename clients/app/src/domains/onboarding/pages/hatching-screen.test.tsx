@@ -118,7 +118,7 @@ describe("hatching screen", () => {
     expect(hatchAssistantMock).not.toHaveBeenCalled();
   });
 
-  test("the local hatch polls the resolution endpoint then hands off to research with the hosting + assistant", async () => {
+  test("the local hatch polls the resolution endpoint then hands off to research with the hatched assistant in state", async () => {
     searchParams = new URLSearchParams("hosting=local");
     resolutionReadyFromCall = 2;
     render(<HatchingScreen />);
@@ -130,10 +130,10 @@ describe("hatching screen", () => {
     expect(writeSelectionMock).toHaveBeenCalledWith("local-1");
     // The resolution answered notReady once, so the wait loop polled again.
     expect(resolutionCallCount).toBe(2);
-    expect(navigateMock).toHaveBeenCalledWith(
-      `${routes.onboarding.research}?hosting=local&assistant=local-1`,
-      { replace: true },
-    );
+    expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
+      replace: true,
+      state: { assistantSelection: { id: "local-1" } },
+    });
   });
 
   test("a resolution that says unauthenticated renders the error screen and stops asking", async () => {
@@ -151,7 +151,7 @@ describe("hatching screen", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  test("the docker hatch passes the docker remote and carries the hosting choice to research", async () => {
+  test("the docker hatch passes the docker remote and carries the hatched assistant to research", async () => {
     searchParams = new URLSearchParams("hosting=docker");
     render(<HatchingScreen />);
 
@@ -159,10 +159,10 @@ describe("hatching screen", () => {
       timeout: 5000,
     });
     expect(hatchAssistantMock).toHaveBeenCalledWith("docker");
-    expect(navigateMock).toHaveBeenCalledWith(
-      `${routes.onboarding.research}?hosting=docker&assistant=local-1`,
-      { replace: true },
-    );
+    expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
+      replace: true,
+      state: { assistantSelection: { id: "local-1" } },
+    });
   });
 
   test("the cloud hatch passes the cloud remote and hands off bare to research", async () => {

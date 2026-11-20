@@ -5,6 +5,7 @@ import { seedHatchAvatar } from "@app/assistant/avatar-traits";
 import { hatchAssistant, releaseHatchGuard } from "@app/assistant/operations";
 import { resolveAssistant } from "@app/assistant/resolve-assistant";
 import { writeSelectedAssistantId } from "@app/assistant/selected-assistant-storage";
+import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { AccountShell } from "@app/components/account/account-shell";
 import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
@@ -170,20 +171,18 @@ export function HatchingScreen() {
         // brand-new one instead of reusing this resolved promise and avatar.
         releaseHatchGuard();
         releaseHatchTraits();
-        // A local walk carries the hosting choice + the hatched assistant so
+        // A local walk carries the hatched assistant in history state so
         // research adopts exactly this assistant, not whatever a stale
         // selection resolves to (its background hatch resolves the existing
         // local assistant instead of provisioning a cloud one). A cloud walk
         // hands off bare — research owns the managed background hatch.
-        if (hosting && hosting !== "cloud") {
-          const researchParams = new URLSearchParams({ hosting });
-          if (readyAssistantId) {
-            researchParams.set("assistant", readyAssistantId);
-          }
-          void navigate(
-            `${routes.onboarding.research}?${researchParams.toString()}`,
-            SETUP_NAVIGATE,
-          );
+        // Either way the route itself stays bare: the state survives a
+        // refresh (same history entry) without query params to keep alive.
+        if (hosting && hosting !== "cloud" && readyAssistantId) {
+          void navigate(routes.onboarding.research, {
+            ...SETUP_NAVIGATE,
+            state: assistantSelectionState(readyAssistantId),
+          });
           return;
         }
         void navigate(routes.onboarding.research, SETUP_NAVIGATE);

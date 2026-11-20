@@ -54,9 +54,7 @@ export async function resolveLiveVoiceConnection(
 ): Promise<LiveVoiceConnection> {
   // An explicit target is looked up by assistant ID; with no target,
   // findAssistant applies the usual active/sole-entry fallback.
-  const entry = assistantIdArg
-    ? findAssistant(assistantIdArg)
-    : findAssistant();
+  const entry = findAssistant(assistantIdArg);
   if (!entry) {
     throw new LiveVoiceConnectionError(
       assistantIdArg

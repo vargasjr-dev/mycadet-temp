@@ -17,13 +17,23 @@ import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protoco
  * The `app://` protocol handler all three desktop clients share: one
  * ordered pass — host check, `/__config`, operator routes (whose
  * fallthrough arm forwards the cloud's own account paths — `/_allauth`
- * and `/accounts`), then renderer assets (web
- * bundle on `/assistant`, app shell everywhere else) with an index.html
+ * and `/accounts`), then renderer assets (the app shell everywhere,
+ * the web bundle on the `/web` mount plus the `/assistant/assets`
+ * prefix its vite base requires) with an index.html
  * fallback that carries the injected config.
  */
 const APP_PROTOCOL = "app";
 const APP_HOST = "mycadet.ai";
-const RENDERER_MOUNT = "/assistant";
+/**
+ * The web bundle's document mount: the app shell iframes it here
+ * (`/web/assistant/*`), the same shape the gateway's app server and the
+ * cloud's mirror serve. The web build's vite `base` stays `/assistant/`,
+ * so its hashed assets are requested at `/assistant/assets/*` regardless
+ * of the mount that served the document — that prefix is the web asset
+ * arm below.
+ */
+const WEB_MOUNT = "/web";
+const WEB_ASSET_PREFIX = "/assistant/assets/";
 
 /**
  * The session jar, as the `CookieJar` the operator route table speaks.
@@ -123,14 +133,24 @@ export function registerAppProtocol(): void {
       return operated;
     }
 
-    // The `/assistant` mount serves the web bundle; every other path
-    // is the app shell.
-    const isWebMount = pathname.startsWith(RENDERER_MOUNT);
+    // The app shell owns every document route — `/assistant/*` included:
+    // the shell frames the web bundle at `/web/assistant/*` instead of
+    // being served BY it. The web bundle rides the `/web` mount (the
+    // frame strips one and two segments deep, matching the gateway's
+    // app server), plus the `/assistant/assets` prefix its vite `base`
+    // bakes into the document's asset URLs.
+    const webPrefix = pathname.startsWith("/web/assistant")
+      ? "/web/assistant"
+      : pathname.startsWith(WEB_MOUNT)
+        ? WEB_MOUNT
+        : pathname.startsWith(WEB_ASSET_PREFIX)
+          ? "/assistant"
+          : undefined;
     const asset = await planAppProtocolAssetRequest({
-      rendererRoot: isWebMount ? webDistRoot : appDistRoot,
-      indexHtml: isWebMount ? webIndexHtml : appIndexHtml,
+      rendererRoot: webPrefix ? webDistRoot : appDistRoot,
+      indexHtml: webPrefix ? webIndexHtml : appIndexHtml,
       requestUrl: request.url,
-      mountPrefix: isWebMount ? RENDERER_MOUNT : undefined,
+      mountPrefix: webPrefix,
       allowedOrigin: appOrigin(),
     });
     if (asset.kind === "forbidden") {
