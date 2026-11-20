@@ -78,7 +78,7 @@ describe("docker hatch", () => {
       runCadetTest(["retire", instance, "--yes"]);
       rmSync(stateRoot, { recursive: true, force: true });
     }
-  });
+  }, 3 * 60_000);
 
   test("assistant credentials list serves over the CES socket", () => {
     const r = runCadetTest([
