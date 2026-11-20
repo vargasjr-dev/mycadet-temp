@@ -76,7 +76,7 @@ describe.skipIf(!imageRefsSupplied)(
           "list",
           "--json",
         ],
-        { encoding: "utf8" },
+        { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
       );
       if (r.status !== 0) {
         throw new Error(
@@ -84,10 +84,22 @@ describe.skipIf(!imageRefsSupplied)(
         );
       }
 
-      const parsed = JSON.parse(r.stdout) as {
-        ok: boolean;
-        credentials: unknown[];
-      };
+      let parsed: { ok: boolean; credentials: unknown[] };
+      try {
+        parsed = JSON.parse(r.stdout) as {
+          ok: boolean;
+          credentials: unknown[];
+        };
+      } catch {
+        const out = r.stdout;
+        throw new Error(
+          `assistant credentials list --json did not print valid JSON ` +
+            `(stdout ${out.length} bytes, stderr ${r.stderr.length} bytes)\n` +
+            `stdout head: ${JSON.stringify(out.slice(0, 500))}\n` +
+            `stdout tail: ${JSON.stringify(out.slice(-500))}\n` +
+            `stderr tail: ${JSON.stringify(r.stderr.slice(-500))}`,
+        );
+      }
       expect(parsed.ok).toBe(true);
       expect(Array.isArray(parsed.credentials)).toBe(true);
     }, 120_000);
