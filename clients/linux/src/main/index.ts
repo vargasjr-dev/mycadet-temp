@@ -17,9 +17,9 @@ import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import {
   APP_HOST,
   APP_PROTOCOL,
-  LINUX_RELEASE_INFO,
   usesAppProtocolRenderer,
-} from "./app-config";
+} from "@mycadet/electron-desktop/app-config";
+import { LINUX_RELEASE_INFO } from "./release-info";
 import { resolveAllowedOrigin } from "./app-origin.client";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";

@@ -18,7 +18,7 @@ import {
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
-import { APP_HOST, APP_PROTOCOL } from "./app-config";
+import { APP_HOST, APP_PROTOCOL } from "@mycadet/electron-desktop/app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";

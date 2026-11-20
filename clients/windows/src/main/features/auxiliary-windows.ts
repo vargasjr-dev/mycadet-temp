@@ -32,7 +32,7 @@ import {
   track as trackWindowState,
 } from "@mycadet/electron-desktop/window-state";
 
-import { getRendererBase } from "../app-config";
+import { getRendererBase } from "@mycadet/electron-desktop/app-config";
 import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";
 import { handle, on } from "../ipc.client";
 import log from "../logger";

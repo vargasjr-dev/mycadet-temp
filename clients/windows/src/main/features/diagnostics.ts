@@ -15,7 +15,7 @@ import {
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 
-import { WINDOWS_RELEASE_INFO } from "../app-config";
+import { WINDOWS_RELEASE_INFO } from "../release-info";
 import { handle, on } from "../ipc.client";
 import { getLogFilePaths } from "../logger";
 

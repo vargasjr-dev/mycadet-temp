@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { app, dialog } from "electron";
 
-import { WINDOWS_RELEASE_INFO } from "./app-config";
+import { WINDOWS_RELEASE_INFO } from "./release-info";
 import { provisionCliRuntime, resolveCliRuntimePaths } from "./cli-installer";
 import {
   installCliLauncher,

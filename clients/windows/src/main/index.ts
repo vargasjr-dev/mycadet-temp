@@ -19,9 +19,9 @@ import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
 import {
   APP_HOST,
   APP_PROTOCOL,
-  WINDOWS_RELEASE_INFO,
   usesAppProtocolRenderer,
-} from "./app-config";
+} from "@mycadet/electron-desktop/app-config";
+import { WINDOWS_RELEASE_INFO } from "./release-info";
 import { resolveAllowedOrigin } from "./app-origin.client";
 import {
   provisionCliForCurrentUser,

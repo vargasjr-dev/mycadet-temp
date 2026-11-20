@@ -17,7 +17,7 @@ import {
 } from "@mycadet/electron-desktop/bundle-platform";
 import { onFileOpen } from "@mycadet/electron-desktop/file-open";
 
-import { getRendererBase } from "../app-config";
+import { getRendererBase } from "@mycadet/electron-desktop/app-config";
 import { handle, on } from "../ipc.client";
 
 const bundles: CapabilityModule<DesktopCapabilityRegistry> = {

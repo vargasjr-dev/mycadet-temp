@@ -16,7 +16,7 @@ import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/se
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
-import { LINUX_RELEASE_INFO } from "../app-config";
+import { LINUX_RELEASE_INFO } from "../release-info";
 import { handle, on } from "../ipc.client";
 import { getLogFilePaths } from "../logger";
 

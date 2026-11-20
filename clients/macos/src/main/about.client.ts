@@ -4,7 +4,7 @@ import {
 } from "@mycadet/electron-desktop/about";
 import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 
-import { APP_RENDERER_BASE_PROD } from "./app-config";
+import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
 import { handle } from "./ipc";
 
 configureAboutRuntime({

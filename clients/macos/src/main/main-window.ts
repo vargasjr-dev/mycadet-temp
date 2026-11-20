@@ -8,7 +8,7 @@ import {
   writeOnboardingActive,
 } from "@mycadet/electron-desktop/window-state";
 
-import { APP_RENDERER_BASE_PROD } from "./app-config";
+import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { decideNavigation } from "./auth-nav";
 import { type CadetCommand } from "@mycadet/electron-desktop/commands";

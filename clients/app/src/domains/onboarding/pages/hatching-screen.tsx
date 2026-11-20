@@ -171,14 +171,15 @@ export function HatchingScreen() {
         // brand-new one instead of reusing this resolved promise and avatar.
         releaseHatchGuard();
         releaseHatchTraits();
-        // A local walk carries the hatched assistant in history state so
+        // The handoff carries the hatched assistant in history state so
         // research adopts exactly this assistant, not whatever a stale
-        // selection resolves to (its background hatch resolves the existing
-        // local assistant instead of provisioning a cloud one). A cloud walk
-        // hands off bare — research owns the managed background hatch.
-        // Either way the route itself stays bare: the state survives a
-        // refresh (same history entry) without query params to keep alive.
-        if (hosting && hosting !== "cloud" && readyAssistantId) {
+        // selection resolves to — whatever the hosting, the hatch that
+        // resolved an id is the one research adopts. A walk whose hatch
+        // never resolved an id hands off bare (research owns the managed
+        // background hatch). Either way the route itself stays bare: the
+        // state survives a refresh (same history entry) without query
+        // params to keep alive.
+        if (readyAssistantId) {
           void navigate(routes.onboarding.research, {
             ...SETUP_NAVIGATE,
             state: assistantSelectionState(readyAssistantId),

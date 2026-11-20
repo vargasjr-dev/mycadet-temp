@@ -165,7 +165,7 @@ describe("hatching screen", () => {
     });
   });
 
-  test("the cloud hatch passes the cloud remote and hands off bare to research", async () => {
+  test("the cloud hatch passes the cloud remote and carries the hatched assistant to research", async () => {
     searchParams = new URLSearchParams("hosting=cloud");
     render(<HatchingScreen />);
 
@@ -180,8 +180,11 @@ describe("hatching screen", () => {
       "local-1",
       expect.objectContaining({ bodyShape: expect.any(String) }),
     );
+    // Hosting-agnostic handoff: the id the hatch resolved rides the state,
+    // the route stays bare.
     expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
       replace: true,
+      state: { assistantSelection: { id: "local-1" } },
     });
   });
 
@@ -203,6 +206,7 @@ describe("hatching screen", () => {
     expect(hatchAssistantMock).toHaveBeenCalledTimes(2);
     expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
       replace: true,
+      state: { assistantSelection: { id: "local-1" } },
     });
   });
 

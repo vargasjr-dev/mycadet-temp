@@ -1,10 +1,5 @@
-import {
-  Menu,
-  BrowserWindow,
-  type MenuItemConstructorOptions,
-  app,
-  shell,
-} from "electron";
+import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
+
 import { companionVisibilityItem } from "@mycadet/electron-desktop/companion-menu";
 import { onSettingChange } from "@mycadet/electron-desktop/settings";
 import {
@@ -34,28 +29,10 @@ import {
   isCommandPaletteWindowFocused,
   openCommandPaletteWindow,
 } from "@mycadet/electron-desktop/command-palette-window";
+import { historyNavigationMenuItems } from "@mycadet/electron-desktop/menu-navigation";
 import { setCompanionSurfaceVisible } from "./companion-window";
 import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
 import { dispatchToMain } from "./main-window";
-
-/**
- * The focused window's history navigation. The menu owns back/forward (no
- * webContents roles exist for them): the shell is a SPA, whose pushState
- * entries ride `navigationHistory` like any load, so a step back or forward
- * lands on the previous in-app surface. No-op when nothing is focused.
- */
-const navigateFocused = (direction: "back" | "forward"): void => {
-  const history =
-    BrowserWindow.getFocusedWindow()?.webContents.navigationHistory;
-  if (!history) {
-    return;
-  }
-  if (direction === "back") {
-    history.goBack();
-  } else {
-    history.goForward();
-  }
-};
 
 interface MenuState {
   hasCloudSession: boolean;
@@ -243,16 +220,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         fileItem("Toggle Sidebar", { kind: "sidebarToggle" }),
         fileItem("Command Palette\u2026", { kind: "commandPalette" }),
         { type: "separator" },
-        {
-          label: "Back",
-          accelerator: "CmdOrCtrl+[",
-          click: () => navigateFocused("back"),
-        },
-        {
-          label: "Forward",
-          accelerator: "CmdOrCtrl+]",
-          click: () => navigateFocused("forward"),
-        },
+        ...historyNavigationMenuItems(),
         { type: "separator" },
         { role: "reload" },
         { role: "forceReload" },

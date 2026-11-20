@@ -11,7 +11,7 @@ import {
   APP_PROTOCOL,
   getDevRendererBase,
   usesAppProtocolRenderer,
-} from "./app-config";
+} from "@mycadet/electron-desktop/app-config";
 
 export type { AllowedOrigin };
 export { isAllowedOrigin };

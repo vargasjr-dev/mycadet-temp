@@ -9,7 +9,7 @@ import { hostFileExecutor } from "@mycadet/electron-desktop/host-proxy/executors
 import { hostTransferExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-transfer-executor";
 import { createHostUiSnapshotExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-ui-snapshot-executor";
 
-import { RENDERER_BASE_PROD } from "./app-config";
+import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
 import { showCompanionCoachmarks } from "./companion-window";
 import { hostBashExecutor } from "./executors/host-bash-adapter";
 import { createHostCuExecutor } from "./executors/host-cu-executor";

@@ -11,7 +11,7 @@ import {
   track as trackWindowState,
 } from "@mycadet/electron-desktop/window-state";
 
-import { RENDERER_BASE_PROD } from "./app-config";
+import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop/app-config";
 import { handle, on } from "./ipc";
 import { current, dispatchToMain, ensureVisible } from "./main-window";
 import { createWindow } from "@mycadet/electron-desktop/windows";

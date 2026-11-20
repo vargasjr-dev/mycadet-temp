@@ -1,6 +1,6 @@
 import type { AllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 
-import { APP_HOST, APP_PROTOCOL } from "./app-config";
+import { APP_HOST, APP_PROTOCOL } from "@mycadet/electron-desktop/app-config";
 
 /**
  * Dev packs the renderer dists (`bun run dev`) and serves them through

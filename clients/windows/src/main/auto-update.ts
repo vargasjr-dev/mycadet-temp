@@ -5,7 +5,7 @@ import {
   resolveUpdateFeedUrl,
 } from "@mycadet/electron-desktop/auto-update";
 
-import { WINDOWS_RELEASE_INFO } from "./app-config";
+import { WINDOWS_RELEASE_INFO } from "./release-info";
 import { handle } from "./ipc.client";
 import log from "./logger";
 

@@ -24,7 +24,7 @@ import {
 } from "@mycadet/electron-desktop/session-token-store";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 
-import { getRendererBase } from "../app-config";
+import { getRendererBase } from "@mycadet/electron-desktop/app-config";
 import { checkForUpdates } from "../auto-update";
 import { runInstallCliCommandFlow } from "../cli-path-flow";
 import { handle } from "../ipc.client";

@@ -7,7 +7,7 @@ describe("renderer bases — the same app:// origins in dev and packaged builds"
     expect(APP_RENDERER_BASE_PROD).toBe("app://mycadet.ai");
   });
 
-  test("auxiliary windows keep the /assistant web mount on the same origin", () => {
-    expect(RENDERER_BASE_PROD).toBe("app://mycadet.ai/assistant");
+  test("auxiliary windows ride the /web/assistant iframe mount on the same origin", () => {
+    expect(RENDERER_BASE_PROD).toBe("app://mycadet.ai/web/assistant");
   });
 });
