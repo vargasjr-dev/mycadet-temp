@@ -27,10 +27,10 @@ export { startApp } from "./app-lifecycle";
 export { default as log, getLogFilePaths } from "./app-logger";
 export {
   createAllowedOriginResolver,
-  getAppName,
   isAllowedOrigin,
   resolveAllowedOrigin,
 } from "./app-origin";
+export { getAppName } from "./app-name";
 export type { AllowedOrigin } from "./app-origin";
 export { registerAppProtocol } from "./app-protocol-forward";
 export {

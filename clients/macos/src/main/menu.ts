@@ -24,11 +24,6 @@ import {
   dispatchToFocused,
   type CadetCommand,
 } from "@mycadet/electron-desktop/commands";
-import {
-  closeCommandPaletteWindow,
-  isCommandPaletteWindowFocused,
-  openCommandPaletteWindow,
-} from "@mycadet/electron-desktop/command-palette-window";
 import { setCompanionSurfaceVisible } from "./companion-window";
 import {
   editMenu,
@@ -37,7 +32,6 @@ import {
   viewMenu,
   windowMenu,
 } from "@mycadet/electron-desktop";
-import { dispatchToMain } from "./main-window";
 
 interface MenuState {
   hasCloudSession: boolean;
@@ -109,22 +103,6 @@ const cliPathItems = (): MenuItemConstructorOptions[] => {
   ];
 };
 
-export const dispatchMenuCommand = (command: CadetCommand): void => {
-  if (command.kind === "commandPalette") {
-    if (isCommandPaletteWindowFocused()) {
-      closeCommandPaletteWindow();
-      return;
-    }
-    openCommandPaletteWindow();
-    return;
-  }
-  if (isCommandPaletteWindowFocused()) {
-    dispatchToMain(command);
-    return;
-  }
-  dispatchToFocused(command);
-};
-
 const buildTemplate = (): MenuItemConstructorOptions[] => {
   const isDev = !app.isPackaged;
   const cliItems = cliPathItems();
@@ -154,7 +132,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
           label: "Settings\u2026",
           ...acceleratorOption("openSettings"),
           enabled: !readOnboardingActive(),
-          click: () => dispatchMenuCommand({ kind: "openSettings" }),
+          click: () => dispatchToFocused({ kind: "openSettings" }),
         },
         { type: "separator" },
         ...cliItems,
@@ -164,11 +142,11 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         state.hasCloudSession
           ? {
               label: "Log Out",
-              click: () => dispatchMenuCommand({ kind: "logout" }),
+              click: () => dispatchToFocused({ kind: "logout" }),
             }
           : {
               label: "Log In",
-              click: () => dispatchMenuCommand({ kind: "login" }),
+              click: () => dispatchToFocused({ kind: "login" }),
             },
         { type: "separator" },
         { role: "hide" },
@@ -179,16 +157,12 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
       ],
     },
     // File/Edit/View/Window/Help are the shared groups; the macOS deltas
-    // ride the palette-aware dispatch, the fullscreen chord, the zoom role,
-    // and the companion/front rows.
-    fileMenu({ dispatch: dispatchMenuCommand }),
-    editMenu({ dispatch: dispatchMenuCommand }),
-    viewMenu({
-      dispatch: dispatchMenuCommand,
-      fullscreenAccelerator: "Control+Command+F",
-    }),
+    // ride the fullscreen chord, the zoom role, and the companion/front
+    // rows.
+    fileMenu(),
+    editMenu(),
+    viewMenu({ fullscreenAccelerator: "Control+Command+F" }),
     windowMenu({
-      dispatch: dispatchMenuCommand,
       zoomRole: true,
       tail: [
         // The show/hide checkbox the tray offers too, from the one builder
@@ -201,7 +175,7 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         { role: "front" },
       ],
     }),
-    helpMenu({ dispatch: dispatchMenuCommand, updatesRow: false }),
+    helpMenu({ updatesRow: false }),
   ];
 };
 

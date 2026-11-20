@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./about": "./src/about.ts",
     "./app-logger": "./src/app-logger.ts",
+    "./app-name": "./src/app-name.ts",
     "./app-origin": "./src/app-origin.ts",
     "./auto-update": "./src/auto-update.ts",
     "./avatar": "./src/avatar.ts",

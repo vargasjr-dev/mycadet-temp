@@ -168,6 +168,15 @@ export const isCommandPaletteWindowFocused = (): boolean => {
   return Boolean(focused && palette && focused === palette);
 };
 
+/**
+ * The configured main-window dispatcher, for the shared command dispatch: a
+ * command aimed at "the focused window" must never target this palette
+ * window — its renderer only speaks the palette protocol — so while the
+ * palette holds focus, the command routes to the app's main window.
+ */
+export const dispatchToMainWindow = (command: CadetCommand): void =>
+  configuration.get().dispatchToMain(command);
+
 export const selectCommandPaletteCommand = async (
   command: CommandPaletteDispatchCommand,
 ): Promise<void> => {

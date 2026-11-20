@@ -277,12 +277,6 @@ mock.module("@mycadet/electron-desktop/window-state", () => ({
   onCompanionHiddenChange: () => () => {},
 }));
 
-// Stubbed so `./menu`, imported below for `dispatchMenuCommand`, doesn't drag
-// the real companion surface into this file's module graph, along with the
-// rest of `window-state` that the mock above deliberately doesn't cover.
-mock.module("./companion-window", () => ({
-  setCompanionSurfaceVisible: () => undefined,
-}));
 
 // Full `./cli-path-installer` surface so this mock — which leaks into co-run
 // test files via the global module registry — doesn't break sibling modules.
@@ -325,7 +319,6 @@ configureCommandPaletteWindow({
   ensureMainWindowVisible: ensureVisibleMock,
   handle: handleMock,
 });
-const { dispatchMenuCommand } = await import("./menu");
 
 beforeEach(() => {
   for (const { win } of created) {
@@ -500,51 +493,5 @@ describe("commandPaletteDispatchCommandSchema", () => {
         assistantId: "paired-1",
       }).success,
     ).toBe(false);
-  });
-});
-
-describe("dispatchMenuCommand", () => {
-  test("routes the Command Palette menu command to the floating window", () => {
-    const source = makeFocusedSource();
-    focusedWindow = source;
-
-    dispatchMenuCommand({ kind: "commandPalette" });
-
-    expect(created).toHaveLength(1);
-    expect(source.webContents.send).not.toHaveBeenCalled();
-  });
-
-  test("closes the focused palette when the Command Palette accelerator is pressed again", () => {
-    openCommandPaletteWindow();
-    const palette = created[0]!.win;
-
-    dispatchMenuCommand({ kind: "commandPalette" });
-
-    expect(palette.close).toHaveBeenCalledTimes(1);
-    expect(palette.isDestroyed()).toBe(true);
-  });
-
-  test("keeps other menu commands on the focused renderer command stream", () => {
-    const source = makeFocusedSource();
-    focusedWindow = source;
-
-    dispatchMenuCommand({ kind: "newConversation" });
-
-    expect(created).toHaveLength(0);
-    expect(source.webContents.send).toHaveBeenCalledWith("cadet:command", {
-      kind: "newConversation",
-    });
-  });
-
-  test("routes non-palette menu commands to the main window while the palette is focused", () => {
-    openCommandPaletteWindow();
-    const palette = created[0]!.win;
-
-    dispatchMenuCommand({ kind: "openSettings" });
-
-    expect(palette.webContents.send).not.toHaveBeenCalledWith("cadet:command", {
-      kind: "openSettings",
-    });
-    expect(dispatchToMainMock).toHaveBeenCalledWith({ kind: "openSettings" });
   });
 });

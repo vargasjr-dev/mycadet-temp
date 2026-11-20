@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { getAppName } from "@mycadet/electron-desktop/app-origin";
+import { getAppName } from "@mycadet/electron-desktop/app-name";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
