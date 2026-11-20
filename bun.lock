@@ -855,9 +855,10 @@
     "qa": {
       "name": "@mycadet/qa",
       "version": "0.13.0",
+      "bin": {
+        "cadet-test": "./cadet-test.ts",
+      },
       "devDependencies": {
-        "@mycadet/ces-client": "workspace:*",
-        "@mycadet/local-mode": "workspace:*",
         "@mycadet/shared": "workspace:*",
         "@types/bun": "1.3.14",
         "typescript": "5.9.3",

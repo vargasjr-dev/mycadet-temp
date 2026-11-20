@@ -4,22 +4,9 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
-      # The qa suite itself, plus everything its checks read: the workspace
-      # inputs (lockfile, patches) and the local-mode / ces-client closure
-      # the docker hatch harness imports. The three service Dockerfiles are
-      # included because the integration suite boots them — a Dockerfile
-      # change re-runs the suite that guards it.
+      # Only qa changes — this workflow exists to protect releases, not to
+      # gate source code (the source packages' own PR workflows do that).
       - "qa/**"
-      - "package.json"
-      - "bun.lock"
-      - "patches/**"
-      - "packages/local-mode/**"
-      - "packages/ces-client/**"
-      - "packages/ipc-server-utils/**"
-      - "packages/shared/**"
-      - "assistant/Dockerfile"
-      - "gateway/Dockerfile"
-      - "credential-executor/Dockerfile"
       - ".github/workflows/pr-qa.yaml"
   workflow_dispatch:
 
@@ -48,12 +35,15 @@ jobs:
         working-directory: qa
         run: bun run typecheck
 
-      - name: Unit tests (integration tests skip without image env)
+      - name: Unit tests
         working-directory: qa
-        run: bun run test
+        # The unit tests only — docker-hatch.test.ts fails without image
+        # refs by design (a release must never pass because its detector
+        # was unconfigured); it runs in the integration job.
+        run: bun test index.test.ts
 
   integration:
-    name: Edited Integration Tests (docker hatch)
+    name: Edited Integration Tests
     needs: [checks]
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -137,7 +127,7 @@ jobs:
         if: ${{ steps.edited.outputs.count != '0' }}
         working-directory: qa
         env:
-          QA_ASSISTANT_IMAGE: qa-pr-assistant:pr
-          QA_GATEWAY_IMAGE: qa-pr-gateway:pr
-          QA_CES_IMAGE: qa-pr-credential-executor:pr
+          CADET_ASSISTANT_IMAGE: qa-pr-assistant:pr
+          CADET_GATEWAY_IMAGE: qa-pr-gateway:pr
+          CADET_CREDENTIAL_EXECUTOR_IMAGE: qa-pr-credential-executor:pr
         run: bun test ${{ steps.edited.outputs.files }}

@@ -7,9 +7,9 @@ import { restart } from "../commands/restart.js";
 
 const lookup = spyOn(localMode, "findAssistant");
 const restartOp = spyOn(localMode, "restartAssistant");
-const exitSpy = spyOn(process, "exit").mockImplementation((() => {
+const exitSpy = spyOn(process, "exit").mockImplementation((): never => {
   throw new Error("process.exit");
-}) as never);
+});
 
 const entry: LockfileAssistant = {
   assistantId: "test",
@@ -28,9 +28,9 @@ const okSleep: SleepResult = {
 beforeEach(() => {
   for (const spy of [lookup, restartOp]) spy.mockReset();
   // mockReset restores the spy's original — re-arm the throwing exit.
-  exitSpy.mockImplementation((() => {
+  exitSpy.mockImplementation((): never => {
     throw new Error("process.exit");
-  }) as never);
+  });
   lookup.mockReturnValue(entry);
   restartOp.mockResolvedValue({
     ok: true,

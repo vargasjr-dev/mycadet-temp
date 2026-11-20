@@ -314,6 +314,5 @@ The following capabilities are intentionally deferred beyond v1:
 ## See Also
 
 - [Security architecture](architecture/security.md) — existing credential broker and permission model
-- [AGENTS.md](../../AGENTS.md) — tooling direction and CES exception
 - [Tools AGENTS.md](../src/tools/AGENTS.md) — tooling direction and CES exception
 - [Network traffic matrix](../../../mycadet-platform/docs/network-traffic-matrix.md) — managed pod network policies

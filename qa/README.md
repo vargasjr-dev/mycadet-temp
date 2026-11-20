@@ -8,24 +8,24 @@ the session, not a flag on the manager.
 
 ## The docker hatch integration suite
 
-`docker-hatch.test.ts` boots the three service images (assistant, gateway,
-credential-executor) as a real docker hatch — fresh network, fresh volumes,
-the production statefulset spec — and exercises the container start path.
-The release pipeline's `run-docker-integration-tests` job feeds it the
-digests it just pushed before any manifest may tag them; `pr-qa.yaml` builds
-the images from the PR and runs only the tests that PR edited.
+`docker-hatch.test.ts` hatches a real instance from the three service images
+(assistant, gateway, credential-executor) — fresh network, fresh volumes —
+and exercises it solely through `cadet-test` cli commands: the same public
+surface a user drives, never docker or implementation details. The release
+pipeline's `run-docker-integration-tests` job feeds it the digests it just
+pushed before any manifest may tag them; `pr-qa.yaml` builds the images from
+the PR and runs only the tests that PR edited.
 
 **Only integration tests for logic that cannot be protected by unit tests
-belong in this suite.** The bar is the CES socket dir bug: the image's
-`chmod` targeted the old socket path while the volume mounted the new one,
-so every fresh hatch got a root-owned socket volume and the CES sidecar
-could not create its socket. No unit test can ever catch that class — the
-chmod succeeds at build time, and the bug only exists when a fresh volume
-meets a non-root process at container start. Static file-content assertions
-(grepping a Dockerfile for the right path) are code analysis, not tests, and
-do not belong here either. If a unit test could protect the logic, put it
-next to the code it protects; bring it here only when a booted container is
-the only witness.
+belong in this suite.** The bar is a bug that lives in the gap between build
+time and run time: an instruction that succeeds while the image builds, but
+is contradicted the moment a fresh container starts against fresh volumes.
+No unit test can ever catch that class — everything the unit test can see
+(build-time state, static file contents) is still consistent. Static
+file-content assertions (grepping a Dockerfile for the right value) are code
+analysis, not tests, and do not belong here either. If a unit test could
+protect the logic, put it next to the code it protects; bring it here only
+when a booted container is the only witness.
 
 ## What the image carries
 
