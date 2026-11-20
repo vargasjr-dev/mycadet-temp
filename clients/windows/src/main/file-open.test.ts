@@ -38,7 +38,8 @@ mock.module("electron", () => ({
 mock.module("./main-window", () => ({ ensureVisible }));
 
 const { default: fileOpenModule } = await import("./features/file-open");
-const { resolveAllowedOrigin } = await import("./app-origin.client");
+const { resolveAllowedOrigin } =
+  await import("@mycadet/electron-desktop/app-origin");
 
 const makeEvent = () => {
   let destroyed: (() => void) | undefined;

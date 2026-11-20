@@ -22,7 +22,10 @@ import { createWindowReadiness } from "@mycadet/electron-desktop/window-readines
 import { z } from "zod";
 
 import { getRendererRootUrl } from "@mycadet/electron-desktop/app-config";
-import { isAllowedOrigin, resolveAllowedOrigin } from "./app-origin.client";
+import {
+  isAllowedOrigin,
+  resolveAllowedOrigin,
+} from "@mycadet/electron-desktop/app-origin";
 import { handle, on } from "./ipc.client";
 import log from "./logger";
 import { createWindow } from "./windows.client";

@@ -35,20 +35,18 @@ mock.module("electron", () => ({
 
 let onboardingActive = false;
 let chromeDevTools = false;
-mock.module("@mycadet/electron-desktop/settings", () => ({
+mock.module("./settings", () => ({
+  readSetting: () => ({}),
   onSettingChange: () => () => undefined,
 }));
-mock.module("@mycadet/electron-desktop/window-state", () => ({
+mock.module("./window-state", () => ({
   readOnboardingActive: () => onboardingActive,
 }));
-mock.module("@mycadet/electron-desktop/devtools", () => ({
+mock.module("./devtools", () => ({
   areChromeDevToolsEnabled: () => chromeDevTools,
 }));
-mock.module("./main-window", () => ({
-  onOnboardingChange: () => () => undefined,
-}));
 
-const { buildWindowsMenu, installWindowsMenu, setWindowsHasCloudSession } =
+const { buildDesktopMenu, installDesktopMenu, setDesktopHasCloudSession } =
   await import("./menu");
 
 test("the Log In/Log Out toggle follows the published session fact", () => {
@@ -57,35 +55,34 @@ test("the Log In/Log Out toggle follows the published session fact", () => {
       ["Log In", "Log Out"].includes(String(item.label)),
     )?.label ?? "") as string;
 
-  setWindowsHasCloudSession(true);
+  setDesktopHasCloudSession(true);
   expect(label()).toBe("Log Out");
-  setWindowsHasCloudSession(false);
+  setDesktopHasCloudSession(false);
   expect(label()).toBe("Log In");
 });
 
-type MenuOptions = Parameters<typeof buildWindowsMenu>[0];
+type MenuOptions = Parameters<typeof buildDesktopMenu>[0];
 
 const submenu = (
   label: string,
   options: MenuOptions = { openAbout: () => undefined },
 ): Array<Record<string, unknown>> => {
-  const item = buildWindowsMenu(options).find((entry) => entry.label === label);
+  const item = buildDesktopMenu(options).find((entry) => entry.label === label);
   return item?.submenu as Array<Record<string, unknown>>;
 };
 
 const enabled = (menu: string, label: string, options?: MenuOptions): unknown =>
   submenu(menu, options).find((item) => item.label === label)?.enabled;
 
-
-describe("buildWindowsMenu", () => {
-  test("uses Windows roles and disables unavailable providers", () => {
+describe("buildDesktopMenu", () => {
+  test("uses Window roles and disables unavailable providers", () => {
     expect(submenu("Window").some((item) => item.role === "close")).toBe(true);
     expect(enabled("Help", "Check for Updates...")).toBe(false);
     expect(enabled("File", "Install cadet Command...")).toBe(false);
     expect(enabled("Window", "Pop Out Conversation")).toBeUndefined();
   });
 
-  test("gates Settings on onboarding", () => {
+  test("gates Settings on onboarding and devtools on the flag", () => {
     expect(enabled("File", "Settings...")).toBe(true);
     expect(submenu("View").some((item) => item.role === "toggleDevTools")).toBe(
       false,
@@ -121,12 +118,18 @@ describe("buildWindowsMenu", () => {
     (item?.click as (() => void) | undefined)?.();
     expect(sent).toEqual([["cadet:command", { kind: "newConversation" }]]);
   });
+
+  test("the View menu carries the shared history rows", () => {
+    const labels = submenu("View").map((item) => String(item.label));
+    expect(labels).toContain("Back");
+    expect(labels).toContain("Forward");
+  });
 });
 
-describe("installWindowsMenu", () => {
+describe("installDesktopMenu", () => {
   type Handler = (args: unknown[], event: unknown) => unknown;
   const handlers = new Map<string, Handler>();
-  installWindowsMenu({
+  installDesktopMenu({
     handle: ((channel: string, _schema: unknown, fn: Handler) => {
       handlers.set(channel, fn);
     }) as never,

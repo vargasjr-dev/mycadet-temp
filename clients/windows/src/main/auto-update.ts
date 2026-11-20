@@ -5,23 +5,19 @@ import {
   resolveUpdateFeedUrl,
 } from "@mycadet/electron-desktop/auto-update";
 
-import { WINDOWS_RELEASE_INFO } from "./release-info";
+import { resolveEnvironmentName } from "@mycadet/shared";
 import { handle } from "./ipc.client";
 import log from "./logger";
 
 /** Channel-specific `win-electron/{arch}/` feed for this build. */
 export const windowsUpdateFeedUrl = (arch: string = process.arch): string =>
-  resolveUpdateFeedUrl(
-    WINDOWS_RELEASE_INFO.releaseChannel,
-    "win-electron",
-    arch,
-  );
+  resolveUpdateFeedUrl(resolveEnvironmentName(), "win-electron", arch);
 
 configureAutoUpdate({
   updater: autoUpdater,
   ipc: { handle },
   logger: log,
-  environment: WINDOWS_RELEASE_INFO.releaseChannel,
+  environment: resolveEnvironmentName(),
   feedUrl: windowsUpdateFeedUrl(),
 });
 

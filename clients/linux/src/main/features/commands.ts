@@ -29,8 +29,16 @@ import { checkForUpdates } from "../auto-update";
 import { runInstallCliCommandFlow } from "../cli-path-flow";
 import { handle } from "../ipc.client";
 import log from "../logger";
-import { current, dispatchToMain, ensureVisible } from "../main-window";
-import { installLinuxMenu, setLinuxHasCloudSession } from "../menu";
+import {
+  current,
+  dispatchToMain,
+  ensureVisible,
+  onOnboardingChange,
+} from "../main-window";
+import {
+  installDesktopMenu,
+  setDesktopHasCloudSession,
+} from "@mycadet/electron-desktop/menu";
 
 const commandsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "commands",
@@ -75,19 +83,20 @@ const commandsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
       },
       logger: log,
     });
-    installLinuxMenu({
+    installDesktopMenu({
       handle,
       openAbout: openAboutWindow,
       checkForUpdates,
       installCli: () => {
         void runInstallCliCommandFlow();
       },
+      onOnboardingChange,
     });
     // The menu's Log In/Log Out toggle is main's fact: derived from the same
     // token store the OAuth flow and sign-out write.
-    setLinuxHasCloudSession(!!getSessionToken());
+    setDesktopHasCloudSession(!!getSessionToken());
     onSessionTokenChange(() => {
-      setLinuxHasCloudSession(!!getSessionToken());
+      setDesktopHasCloudSession(!!getSessionToken());
     });
 
     app.on("web-contents-created", (_event, contents) => {

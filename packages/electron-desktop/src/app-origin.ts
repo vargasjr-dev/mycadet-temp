@@ -1,4 +1,13 @@
+import { app } from "electron";
+
 import { resolveEnvironmentName } from "@mycadet/shared";
+
+import {
+  APP_HOST,
+  APP_PROTOCOL,
+  getDevRendererBase,
+  usesAppProtocolRenderer,
+} from "./app-config";
 
 /**
  * The single origin the renderer legitimately runs at, expressed as a
@@ -38,6 +47,28 @@ export const createAllowedOriginResolver =
     const devUrl = new URL(options.getDevRendererBase());
     return { protocol: devUrl.protocol, host: devUrl.host };
   };
+
+/**
+ * The Windows/Linux clients' resolver: the factory's options are the same
+ * app-config constants on both, so the wiring lives here rather than being
+ * duplicated per client. (macOS keeps a constant resolver — its dev mode
+ * packs the renderer dists and rides this same `app://` protocol, so there
+ * is no dev-server origin to honor.)
+ */
+export const resolveAllowedOrigin = createAllowedOriginResolver({
+  appHost: APP_HOST,
+  appProtocol: APP_PROTOCOL,
+  getDevRendererBase,
+  isPackaged: () => usesAppProtocolRenderer(app.isPackaged),
+});
+
+/**
+ * The Windows/Linux clients' resolver: the factory's options are the same
+ * app-config constants on both, so the wiring lives here rather than being
+ * duplicated per client. (macOS keeps a constant resolver — its dev mode
+ * packs the renderer dists and rides this same `app://` protocol, so there
+ * is no dev-server origin to honor.)
+ */
 
 /**
  * Whether `origin` matches the build's renderer origin. Accepts either

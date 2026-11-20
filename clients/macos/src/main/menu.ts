@@ -29,9 +29,12 @@ import {
   isCommandPaletteWindowFocused,
   openCommandPaletteWindow,
 } from "@mycadet/electron-desktop/command-palette-window";
-import { historyNavigationMenuItems } from "@mycadet/electron-desktop/menu-navigation";
 import { setCompanionSurfaceVisible } from "./companion-window";
-import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
+import {
+  conversationFileMenuItems,
+  editMenuItems,
+  viewMenuItems,
+} from "@mycadet/electron-desktop/menu";
 import { dispatchToMain } from "./main-window";
 
 interface MenuState {
@@ -122,7 +125,6 @@ export const dispatchMenuCommand = (command: CadetCommand): void => {
 
 const buildTemplate = (): MenuItemConstructorOptions[] => {
   const isDev = !app.isPackaged;
-  const chromeDevToolsEnabled = areChromeDevToolsEnabled();
   const cliItems = cliPathItems();
 
   const fileItem = (
@@ -185,56 +187,17 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
     },
     {
       label: "File",
-      submenu: [
-        fileItem("New Conversation", { kind: "newConversation" }),
-        fileItem("Current Conversation", { kind: "currentConversation" }),
-        { type: "separator" },
-        fileItem("Pin Current Conversation", { kind: "togglePinConversation" }),
-        fileItem("Mark Current as Unread", { kind: "markCurrentUnread" }),
-        { type: "separator" },
-        fileItem("Previous Conversation", { kind: "previousConversation" }),
-        fileItem("Next Conversation", { kind: "nextConversation" }),
-      ],
+      submenu: conversationFileMenuItems(fileItem),
     },
     {
       label: "Edit",
-      submenu: [
-        { role: "undo" },
-        { role: "redo" },
-        { type: "separator" },
-        { role: "cut" },
-        { role: "copy" },
-        { role: "paste" },
-        { role: "selectAll" },
-        { type: "separator" },
-        {
-          label: "Find\u2026",
-          ...acceleratorOption("find"),
-          click: () => dispatchMenuCommand({ kind: "find" }),
-        },
-      ],
+      submenu: editMenuItems(fileItem),
     },
     {
       label: "View",
-      submenu: [
-        fileItem("Toggle Sidebar", { kind: "sidebarToggle" }),
-        fileItem("Command Palette\u2026", { kind: "commandPalette" }),
-        { type: "separator" },
-        ...historyNavigationMenuItems(),
-        { type: "separator" },
-        { role: "reload" },
-        { role: "forceReload" },
-        ...(chromeDevToolsEnabled ? [{ role: "toggleDevTools" as const }] : []),
-        { type: "separator" },
-        { role: "resetZoom" },
-        { role: "zoomIn" },
-        { role: "zoomOut" },
-        { type: "separator" },
-        {
-          role: "togglefullscreen",
-          accelerator: "Control+Command+F",
-        },
-      ],
+      submenu: viewMenuItems(fileItem, {
+        fullscreenAccelerator: "Control+Command+F",
+      }),
     },
     {
       label: "Window",

@@ -2,7 +2,8 @@ import path from "node:path";
 
 import { app, dialog } from "electron";
 
-import { WINDOWS_RELEASE_INFO } from "./release-info";
+import { resolveEnvironmentName } from "@mycadet/shared";
+
 import { provisionCliRuntime, resolveCliRuntimePaths } from "./cli-installer";
 import {
   installCliLauncher,
@@ -28,7 +29,7 @@ export function resolveCliPathFlowOptions(): CliPathFlowOptions {
     localAppData:
       process.env.LOCALAPPDATA ??
       path.join(app.getPath("home"), "AppData", "Local"),
-    releaseChannel: WINDOWS_RELEASE_INFO.releaseChannel,
+    releaseChannel: resolveEnvironmentName(),
     version: app.getVersion(),
   };
 }

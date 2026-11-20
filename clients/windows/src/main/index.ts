@@ -15,14 +15,14 @@ import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-re
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
+import { resolveEnvironmentName } from "@mycadet/shared";
 
 import {
   APP_HOST,
   APP_PROTOCOL,
   usesAppProtocolRenderer,
 } from "@mycadet/electron-desktop/app-config";
-import { WINDOWS_RELEASE_INFO } from "./release-info";
-import { resolveAllowedOrigin } from "./app-origin.client";
+import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 import {
   provisionCliForCurrentUser,
   resolveCliPathFlowOptions,
@@ -33,16 +33,24 @@ import log from "./logger";
 import { ensureVisible } from "./main-window";
 import { installWebContentsSecurity } from "./windows.client";
 
-// Toasts and taskbar grouping key off the AppUserModelID. Packaged builds
-// get it from the installer shortcut; dev would otherwise show "electron.app".
-app.setAppUserModelId(WINDOWS_RELEASE_INFO.appUserModelId);
+// Toasts and taskbar grouping key off the AppUserModelID, which must match
+// the installed shortcut's id — the builder config is the single source, so
+// the build define is read here rather than round-tripped through a
+// release-info module. macOS/Linux need no such call: their identity rides
+// the OS bundle metadata (Info.plist / the .desktop file).
+declare const __CADET_APP_USER_MODEL_ID__: string;
+app.setAppUserModelId(
+  typeof __CADET_APP_USER_MODEL_ID__ === "string"
+    ? __CADET_APP_USER_MODEL_ID__
+    : "ai.mycadet.electron",
+);
 
 // Packaged builds all share the same package.json `name`, so Electron
 // resolves `app.getPath("userData")` to the same directory for every
 // environment. Append an environment suffix for non-production builds so
 // dev/staging/production installs can run side-by-side; production keeps the
 // original path for backwards compatibility.
-const releaseChannel = WINDOWS_RELEASE_INFO.releaseChannel;
+const releaseChannel = resolveEnvironmentName();
 if (app.isPackaged) {
   if (releaseChannel !== "production") {
     const base = app.getPath("userData");

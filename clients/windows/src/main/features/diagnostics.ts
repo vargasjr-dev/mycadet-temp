@@ -14,12 +14,15 @@ import {
 } from "@mycadet/electron-desktop/feedback";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
+import { resolveEnvironmentName } from "@mycadet/shared";
 
-import { WINDOWS_RELEASE_INFO } from "../release-info";
 import { handle, on } from "../ipc.client";
 import { getLogFilePaths } from "../logger";
 
-const { commitSha, releaseChannel } = WINDOWS_RELEASE_INFO;
+declare const __CADET_BUILD_SHA__: string;
+const commitSha =
+  typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown";
+const releaseChannel = resolveEnvironmentName();
 
 const feedback: FeedbackDependencies = {
   ipc: { handle },

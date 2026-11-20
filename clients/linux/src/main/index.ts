@@ -13,14 +13,14 @@ import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-re
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { startApp } from "@mycadet/electron-desktop/app-lifecycle";
+import { resolveEnvironmentName } from "@mycadet/shared";
 
 import {
   APP_HOST,
   APP_PROTOCOL,
   usesAppProtocolRenderer,
 } from "@mycadet/electron-desktop/app-config";
-import { LINUX_RELEASE_INFO } from "./release-info";
-import { resolveAllowedOrigin } from "./app-origin.client";
+import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { installMainFeatures } from "./features";
@@ -33,7 +33,7 @@ import { installWebContentsSecurity } from "./windows.client";
 // environment. Append an environment suffix for non-production builds so
 // dev/staging/production installs can run side-by-side; production keeps the
 // original path for backwards compatibility.
-const releaseChannel = LINUX_RELEASE_INFO.releaseChannel;
+const releaseChannel = resolveEnvironmentName();
 if (app.isPackaged) {
   if (releaseChannel !== "production") {
     const base = app.getPath("userData");

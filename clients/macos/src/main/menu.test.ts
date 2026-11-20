@@ -60,6 +60,7 @@ mock.module("@mycadet/electron-desktop/commands", () => ({
   acceleratorOption: () => ({}),
   dispatchToFocused: () => undefined,
   configureHotkeySettings: () => undefined,
+  onHotkeyOverridesChange: () => () => undefined,
 }));
 
 mock.module("@mycadet/electron-desktop/command-palette-window", () => ({
