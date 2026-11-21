@@ -178,7 +178,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
-      hostProxy: { interfaceId: "test" },
+      interfaceId: "test",
       setup: () => {
         ran = true;
       },
@@ -205,7 +205,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
-      hostProxy: { interfaceId: "test" },
+      interfaceId: "test",
       setup: () => {
         ran = true;
       },
@@ -225,7 +225,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
-      hostProxy: { interfaceId: "test" },
+      interfaceId: "test",
     });
 
     const secondInstance = appListeners.get("second-instance") ?? [];
@@ -239,7 +239,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
-      hostProxy: { interfaceId: "test" },
+      interfaceId: "test",
       setup: () => {
         ran = true;
       },
@@ -262,7 +262,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
-      hostProxy: { interfaceId: "test" },
+      interfaceId: "test",
       setup: () => {
         throw boom;
       },

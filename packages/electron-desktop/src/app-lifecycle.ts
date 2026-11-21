@@ -59,10 +59,9 @@ import {
 } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
 import { install as installPermissions } from "./features/permissions";
-import { install as installTray } from "./features/tray";
+import { install as installTray, type ShellTrayInputs } from "./features/tray";
 import { install as installShare, type SharePresenter } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
-import type { TrayModelRuntime } from "./tray-model";
 import {
   createHelperToastFactory,
   resolveHelperToastBinaryPath,
@@ -123,19 +122,23 @@ export interface DesktopAppInputs {
    */
   platform: string;
   /**
-   * The shell's host-proxy identity and executors. Every shell has an
-   * interface id; the rest is the shell's own wiring — absent fields fall
-   * back to the shared composition's defaults.
+   * The shell's name for itself — the one identity every desktop carries
+   * into the daemon's headers (the host proxy today, more as the surface
+   * grows). The package never derives it.
    */
-  hostProxy: ShellHostProxyInputs;
+  interfaceId: string;
   /**
-   * The shell's tray model values — the surfaces only it has (its icons,
-   * its companion callbacks). Absent, the classic notification-area
+   * The shell's host-proxy contributions — the capability flags and the
+   * computer-use executor only its build ships. Absent, the shared
+   * composition answers with the shared defaults.
+   */
+  hostProxy?: ShellHostProxyInputs;
+  /**
+   * The shell's tray surfaces — its own icon renderer, its companion
+   * wiring, its removal-row copy. Absent, the classic notification-area
    * runtime answers.
    */
-  tray?: { runtime: TrayModelRuntime };
-  /** The shell opting into the taskbar-button surface. */
-  taskbar?: boolean;
+  tray?: ShellTrayInputs;
   /**
    * The shell's native share surface. Absent, sharing presents with the
    * Save-As dialog fallback.
@@ -434,8 +437,8 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installAuxiliaryWindows();
       installLoginItem();
       installMainWindow();
-      installHostProxy(inputs.hostProxy);
-      installTray(inputs.tray, inputs.taskbar);
+      installHostProxy(inputs.interfaceId, inputs.hostProxy);
+      installTray(inputs.tray);
       installShare(inputs.share);
       // Still the classic shells' own compositions until their rounds
       // land: the permissions contract (R10), the helper dictation bridge

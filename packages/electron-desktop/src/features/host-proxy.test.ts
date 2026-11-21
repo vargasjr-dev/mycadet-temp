@@ -61,7 +61,7 @@ afterEach(() => {
 });
 
 test("installs the bridge with the portable executors and tears down on quit", async () => {
-  hostProxyInstall({ interfaceId: "test" });
+  hostProxyInstall("test");
 
   // The bridge install is deferred a microtask so the lockfile watcher's
   // initial read (a later-sorted feature) lands first.
@@ -83,12 +83,9 @@ test("installs the bridge with the portable executors and tears down on quit", a
 });
 
 test("the shell's own values ride the runtime", async () => {
-  const bashExecutor = { handleRequest() {}, handleCancel() {} };
   const hostCuExecutor = { handleRequest() {}, handleCancel() {} };
   let toreDown = 0;
-  hostProxyInstall({
-    interfaceId: "test-shell",
-    bashExecutor,
+  hostProxyInstall("test-shell", {
     hostCu: {
       executor: hostCuExecutor,
       teardown: () => {
@@ -101,7 +98,6 @@ test("the shell's own values ride the runtime", async () => {
   });
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  expect(routerTesting.executors.get("host_bash")).toBe(bashExecutor);
   expect(routerTesting.executors.get("host_cu")).toBe(hostCuExecutor);
 
   // The shell's teardown rides the bridge's quit teardown, after the

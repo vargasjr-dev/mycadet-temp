@@ -1,6 +1,6 @@
 import { mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
+import { tmpdir } from "node:os";
 
 import { BrowserWindow, dialog, type WebContents } from "electron";
 import { z } from "zod";
@@ -9,25 +9,16 @@ import { handle } from "../ipc";
 
 /**
  * `share.shareFile(bytes, filename)` for every desktop shell. The shell
- * decides what presenting a shared file means:
+ * decides what presenting a shared file means: the classic shells present
+ * the documented export fallback (a Save-As dialog writing the bytes
+ * directly); a shell with a native share surface passes a `present`
+ * callback and receives a staged temp file instead.
  *
- * - The classic shells have no app-invokable share surface, so the
- *   committed contract is served by the documented export fallback: a
- *   native Save As dialog anchored to the sender's window, writing the
- *   bytes directly to the picked destination (no staged temp files).
- *   Cancelling resolves without writing.
- *
- * - A shell with a native share surface passes a `present` callback and
- *   receives a staged temp file instead. The staging exists because that
- *   kind of picker shares files by path. Cleanup is deliberately NOT tied
- *   to the picker closing: a picker's close callback fires the moment a
- *   service is *selected*, not when the selected service has finished with
- *   the file — an in-flight transfer can still read it after the menu
- *   closes, so deleting there could pull it out from under the share.
- *   Instead the sweep reclaims only *stale* staged dirs, ones old enough
- *   that no transfer could still be using them, at startup and before each
- *   new share. Bounding to stale dirs also keeps the sweep safe when a
- *   second build of the app is sharing concurrently.
+ * Staged files are cleaned by reclaiming only STALE staged dirs — ones old
+ * enough that no in-flight transfer could still be reading them — because
+ * a picker's close callback fires when a service is selected, not when it
+ * has finished with the file. The staleness bound also keeps the sweep
+ * safe when a second build of the app is sharing concurrently.
  */
 
 const SHARE_TMP_PREFIX = "cadet-share-";
@@ -46,6 +37,24 @@ export type SharePresenter = (file: {
   filePath: string;
   sender: WebContents;
 }) => Promise<void> | void;
+
+/**
+ * The native share-sheet presenter for shells whose OS provides one. The
+ * menu is built lazily — a shell that never wires `present` never
+ * constructs it. The popup's anchor option is `window` (the documented
+ * `browserWindow` name is ignored at runtime).
+ */
+export const shareMenuPresenter = (): SharePresenter => {
+  return async ({ filePath, sender }) => {
+    // ShareMenu exists only in builds whose OS ships one, so it resolves
+    // at present time instead of module load.
+    const { ShareMenu } = await import("electron");
+    const shareMenu = new ShareMenu({ filePaths: [filePath] });
+    shareMenu.popup({
+      window: BrowserWindow.fromWebContents(sender) ?? undefined,
+    });
+  };
+};
 
 /**
  * Reclaim *stale* staged share dirs — those older than `SHARE_TMP_STALE_MS`.
@@ -90,12 +99,9 @@ export const sanitizeFilename = (filename: string): string => {
   return base.length > 0 ? base : "download";
 };
 
+// Reclaim stale staged files an earlier run left behind.
 export const install = (share?: { present: SharePresenter }): void => {
   if (share) {
-    // Reclaim stale staged files an earlier run left behind (crash /
-    // force-quit). A shell without staging never creates them, so the
-    // sweep is a cheap no-op there — but it stays on for symmetry of the
-    // one install path.
     void sweepStaleShareDirs();
   }
 
@@ -104,15 +110,10 @@ export const install = (share?: { present: SharePresenter }): void => {
     ShareFileArgs,
     async ([bytes, filename], event): Promise<void> => {
       if (share) {
-        // Opportunistically reclaim old shares so temp usage stays bounded
-        // without an unsafe close-time delete. Fire-and-forget — it never
-        // blocks the share, and the staleness filter keeps it off the file
-        // we're about to write (and off any concurrent share).
         void sweepStaleShareDirs();
 
         const dir = await mkdtemp(path.join(tmpdir(), SHARE_TMP_PREFIX));
-        // `basename` strips any path components the renderer's filename may
-        // carry, keeping the write inside the temp dir.
+        // Keep the write inside the temp dir.
         const filePath = path.join(dir, path.basename(filename));
         await writeFile(filePath, bytes);
         await share.present({ filePath, sender: event.sender });

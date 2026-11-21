@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Notification, ShareMenu } from "electron";
+import { app, Notification } from "electron";
 
 import {
   hasPendingDeepLinks,
@@ -6,18 +6,23 @@ import {
   installDictationOverlay,
   ensureMainWindowVisible,
   registerCompanionSurfaceSync,
+  shareMenuPresenter,
   startApp,
 } from "@mycadet/electron-desktop";
 import log from "@mycadet/electron-desktop/app-logger";
 
 import { installDock } from "./dock";
-import { hostBashExecutor } from "./executors/host-bash-adapter";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
-import { trayRuntime } from "./tray.client";
+import { trayIcon } from "./tray-icon";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
 import { installHotkeyHelper } from "./hotkey-helper";
 import { showCompanionCoachmarks } from "./companion-window";
+import {
+  replayCompanionIntro,
+  setCompanionSurfaceSize,
+  setCompanionSurfaceVisible,
+} from "./companion-window";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -35,10 +40,13 @@ import {
 import { installCompanionPermissionGuide } from "./companion-permission-guide";
 import {
   installCompanionWindow,
-  setCompanionSurfaceVisible,
   syncCompanionSurface,
 } from "./companion-window";
 import { installTextInsertionIpc } from "./textInsertion";
+import {
+  readCompanionHidden,
+  readCompanionSize,
+} from "@mycadet/electron-desktop/window-state";
 
 const isDev = !app.isPackaged;
 
@@ -63,11 +71,10 @@ const nativeNotifications = isNotifierSupported()
 
 startApp({
   platform: "mac-electron",
+  interfaceId: "macos",
   titleBarMode: "hidden",
   hostProxy: {
-    interfaceId: "macos",
     supports: { windowCapture: true, sequence: true, coachmarks: true },
-    bashExecutor: hostBashExecutor,
     hostCu: {
       executor: createHostCuExecutor({
         showCoachmarks: showCompanionCoachmarks,
@@ -75,17 +82,21 @@ startApp({
       teardown: shutdownSharedCuHelper,
     },
   },
-  tray: { runtime: trayRuntime },
-  share: {
-    present: ({ filePath, sender }) => {
-      // ShareMenu wraps the native share sheet; popup's anchor option is
-      // `window` (the documented `browserWindow` name is ignored at runtime).
-      const shareMenu = new ShareMenu({ filePaths: [filePath] });
-      shareMenu.popup({
-        window: BrowserWindow.fromWebContents(sender) ?? undefined,
-      });
+  tray: {
+    icon: trayIcon,
+    companion: {
+      // Every build of this shell has the companion surface; the tray
+      // preference is the only thing that turns it off.
+      supported: () => true,
+      hidden: readCompanionHidden,
+      size: readCompanionSize,
+      setVisible: setCompanionSurfaceVisible,
+      setSize: setCompanionSurfaceSize,
+      replayIntro: replayCompanionIntro,
     },
+    removePairedLabel: "Remove from this Mac\u2026",
   },
+  share: { present: shareMenuPresenter() },
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();
