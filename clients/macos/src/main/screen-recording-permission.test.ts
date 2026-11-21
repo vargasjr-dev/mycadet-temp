@@ -6,7 +6,7 @@ let helperStatus = "denied";
 let helperReads = 0;
 let helperShutdowns = 0;
 
-mock.module("./hotkey-helper", () => ({
+mock.module("./mac-helper-permissions", () => ({
   queryFreshMacHelperPermission: async (kind: string) => {
     expect(kind).toBe("screen");
     helperReads += 1;

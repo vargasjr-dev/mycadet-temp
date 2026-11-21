@@ -108,6 +108,10 @@ mock.module("./features/auxiliary-windows", () => ({
 }));
 mock.module("./features/dictation", () => ({
   install: recorder("dictation"),
+  // The helper-hotkeys feature shares the bridge's client accessor.
+  helperClient: () => {
+    throw new Error("no helper client in this suite");
+  },
 }));
 mock.module("./features/host-proxy", () => ({
   install: recorder("host-proxy"),
@@ -121,6 +125,9 @@ mock.module("./features/permissions", () => ({
 }));
 mock.module("./features/tray", () => ({ install: recorder("tray") }));
 mock.module("./features/share", () => ({ install: recorder("share") }));
+mock.module("./features/helper-hotkeys", () => ({
+  install: recorder("helper-hotkeys"),
+}));
 mock.module("./features/voice-mode-chord", () => ({
   install: recorder("voice-mode-chord"),
 }));
@@ -172,7 +179,7 @@ const universalSurface = [
 ];
 
 /** The classic-only composition, appended on the classic platforms. */
-const classicSurface = ["dictation", "voice-mode-chord"];
+const classicSurface = ["dictation", "helper-hotkeys", "voice-mode-chord"];
 
 describe("startApp", () => {
   test("logs ready, assembles the universal surface in order, and runs setup once Electron is ready", async () => {

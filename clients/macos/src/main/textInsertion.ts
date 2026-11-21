@@ -1,5 +1,4 @@
 import { BrowserWindow, clipboard, type Data } from "electron";
-import { z } from "zod";
 
 import type { TextInsertionResult } from "@mycadet/ipc-contract";
 
@@ -9,8 +8,7 @@ import {
   postFrontAppShortcut,
   readFrontAppFocus,
   type ShortcutOutcome,
-} from "./hotkey-helper";
-import { handle } from "@mycadet/electron-desktop/ipc";
+} from "@mycadet/electron-desktop/helper-hotkeys";
 import log from "@mycadet/electron-desktop/app-logger";
 
 const CLIPBOARD_RESTORE_DELAY_MS = 500;
@@ -301,11 +299,5 @@ export const undoInFrontAppWithDeps = async (
   return sendShortcut(deps, "z", UNDO_SHORTCUT_SCRIPT, "undo");
 };
 
-const undoInFrontApp = (): Promise<TextInsertionResult> =>
+export const undoInFrontApp = (): Promise<TextInsertionResult> =>
   undoInFrontAppWithDeps(defaultDeps);
-
-// The insertion and automation-settings channels ride the shared
-// permissions install; only the undo flow stays this shell's own.
-export const installTextInsertionIpc = (): void => {
-  handle("cadet:text:undoInFrontApp", z.tuple([]), () => undoInFrontApp());
-};

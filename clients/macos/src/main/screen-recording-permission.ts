@@ -12,7 +12,7 @@
 import {
   queryFreshMacHelperPermission,
   type MacHelperPermissionStatus,
-} from "./hotkey-helper";
+} from "./mac-helper-permissions";
 import log from "@mycadet/electron-desktop/app-logger";
 import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";

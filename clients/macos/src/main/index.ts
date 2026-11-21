@@ -10,16 +10,24 @@ import {
   startApp,
 } from "@mycadet/electron-desktop";
 import log from "@mycadet/electron-desktop/app-logger";
+import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
 import { installDock } from "./dock";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
+import { getMacHelperPath } from "./sidecar/mac-helper-path";
 import {
-  handleHotkeyHelperState,
-  installHotkeyHelper,
-  makeClient,
-} from "./hotkey-helper";
+  coachmarkPressed,
+  provideCoachmarkPressWatch,
+  watchedCoachmarkPress,
+} from "./coachmark-press-watch";
+import { isPointerOnCompanion } from "./companion-pointer";
+import {
+  frameScrollEnded,
+  isFrameScrollWatched,
+  provideFrameScrollWatch,
+} from "./frame-scroll-watch";
 import { showCompanionCoachmarks } from "./companion-window";
 import {
   replayCompanionIntro,
@@ -46,7 +54,6 @@ import {
   installCompanionWindow,
   syncCompanionSurface,
 } from "./companion-window";
-import { installTextInsertionIpc } from "./textInsertion";
 import {
   readCompanionHidden,
   readCompanionSize,
@@ -102,14 +109,32 @@ startApp({
   permissions: permissionsShell,
   permissionGuide,
   dictation: {
-    client: makeClient,
-    onState: handleHotkeyHelperState,
+    client: () =>
+      new NativeSidecarClient({
+        name: "mac helper",
+        resolveExecutablePath: getMacHelperPath,
+        logger: log,
+        platform: process.platform,
+      }),
     // The hold outlives the process boundary only if the helper is told —
     // the key must not survive a quit still believing it is armed.
     shutdownRequest: {
       method: "hotkey.modifierHold",
       params: { enable: false },
     },
+  },
+  hotkeys: {
+    // The watch state lives where the frames and marks put it; the hotkey
+    // feature carries the sends over the shared helper client.
+    watches: {
+      provideFrameScrollWatch,
+      frameScrollEnded,
+      isFrameScrollWatched,
+      provideCoachmarkPressWatch,
+      coachmarkPressed,
+      watchedCoachmarkPress,
+    },
+    isPointerOnCompanion,
   },
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
@@ -122,8 +147,6 @@ startApp({
   async setup() {
     installDock();
 
-    installHotkeyHelper();
-    installTextInsertionIpc();
     registerCompanionSurfaceSync(setCompanionSurfaceVisible);
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
     installCompanionWindow();

@@ -47,11 +47,6 @@ export interface DictationShellInputs {
   /** The shell's sidecar client factory — its helper binary and options. */
   client?: () => NativeSidecarClient;
   /**
-   * The shell's own reaction to helper state changes, beside the shared
-   * broadcast and dictation-owner clears (restored bindings, watches).
-   */
-  onState?: (state: NativeSidecarState) => void;
-  /**
    * The graceful request sent to the helper on app quit, instead of the
    * dictation disable.
    */
@@ -78,7 +73,6 @@ const getClient = (): NativeSidecarClient => (client ??= clientFactory());
  */
 export const helperClient = getClient;
 
-let shellOnState: ((state: NativeSidecarState) => void) | null = null;
 let quitRequest: { method: string; params?: unknown } = {
   method: "dictation.setPartials",
   params: { enable: false },
@@ -164,7 +158,6 @@ const handleHelperState = (state: NativeSidecarState): void => {
       ?.send(HELPER_DICTATION_TRANSCRIBED_EVENT, { text: "" });
     dictationOwners.clear();
   }
-  shellOnState?.(state);
 };
 
 export const install = (inputs?: DictationShellInputs): void => {
@@ -175,7 +168,6 @@ export const install = (inputs?: DictationShellInputs): void => {
   if (inputs?.client) {
     clientFactory = inputs.client;
   }
-  shellOnState = inputs?.onState ?? null;
   quitRequest = inputs?.shutdownRequest ?? quitRequest;
   const helper = getClient();
 
@@ -302,7 +294,6 @@ export const __resetForTesting = (
   dictationPartialsQueue = Promise.resolve();
   transcriptionRequestSequence = 0;
   audioChunkCount = 0;
-  shellOnState = null;
   quitRequest = { method: "dictation.setPartials", params: { enable: false } };
   clientFactory = factory ?? getSharedHelperClient;
   try {

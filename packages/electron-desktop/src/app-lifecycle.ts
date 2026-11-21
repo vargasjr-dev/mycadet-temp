@@ -66,6 +66,10 @@ import {
   type DictationShellInputs,
 } from "./features/dictation";
 import {
+  install as installHelperHotkeys,
+  type HelperHotkeysShellInputs,
+} from "./features/helper-hotkeys";
+import {
   installPermissionGuide,
   type PermissionGuideInputs,
 } from "./features/permission-guide";
@@ -171,6 +175,11 @@ export interface DesktopAppInputs {
    * the shared helper client answers.
    */
   dictation?: DictationShellInputs;
+  /**
+   * The shell's watch state and companion check. Absent, the hotkey family
+   * installs with nothing to provide or restore.
+   */
+  hotkeys?: HelperHotkeysShellInputs;
   /**
    * How the main window's chrome draws — the macOS traffic lights over a
    * hidden title bar, the Windows caption overlay, or the plain system
@@ -472,6 +481,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
       installDictation(inputs.dictation);
+      installHelperHotkeys(inputs.hotkeys);
       if (process.platform !== "darwin") {
         installVoiceModeChord();
       }

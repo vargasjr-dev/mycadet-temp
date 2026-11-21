@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
 import { EventEmitter } from "node:events";
-import { writeFile } from "node:fs/promises";
 
-import { FakeChild } from "./test-helpers";
+import { electronMock } from "../../test-setup";
+import { FakeChild } from "../test-helpers";
+import type {
+  HelperHotkeyPressRect,
+  HelperHotkeysShellInputs,
+} from "./helper-hotkeys";
 
 class FakeHotkeyChild extends FakeChild {
   stdin = {
@@ -21,24 +24,83 @@ class FakeHotkeyChild extends FakeChild {
   kill = mock(() => true);
 }
 
-const appState = { isPackaged: false, appPath: "/repo/clients/macos" };
-const handlers: Record<
-  string,
-  (event: unknown, ...args: unknown[]) => unknown
-> = {};
+/** Where the test client's helper executable pretends to live. The real
+ * shells resolve their own paths; the feature under test never sees one. */
+const HELPER_PATH = "/fake/helpers/cadet-helper";
 
-/** The recorded handle callback for `channel`, fired against the fake event.
- * Zero-payload channels are fired bare — an explicit `undefined` would fail
- * the tuple schema that guards the channel's arity. */
-const invoke = (
-  channel: string,
-  args?: unknown,
-  sender: FakeWebContents = defaultSender,
-): unknown =>
-  args === undefined
-    ? handlers[channel]({ sender })
-    : handlers[channel]({ sender }, args);
 const appListeners = new Map<string, () => void>();
+const handlers: Record<string, (args: unknown[], event: unknown) => unknown> =
+  {};
+
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: () => "0.0.0",
+      getName: () => "Cadet",
+      isPackaged: false,
+      getAppPath: () => "/repo/clients/macos",
+      on: (event: string, listener: () => void) => {
+        appListeners.set(event, listener);
+      },
+    },
+    BrowserWindow: {
+      fromWebContents: (webContents: FakeWebContents) =>
+        webContents.ownerWindow,
+      getAllWindows: () => [],
+    },
+    ipcMain: {
+      handle: mock(() => undefined),
+      on: mock(() => undefined),
+      removeAllListeners: mock(() => undefined),
+    },
+  }),
+);
+
+let exists = true;
+let lastChild: FakeHotkeyChild | null = null;
+const spawnCalls: Array<[string, string[], object]> = [];
+mock.module("node:child_process", () => ({
+  spawn: (cmd: string, args: string[], opts: object) => {
+    spawnCalls.push([cmd, args, opts]);
+    lastChild = new FakeHotkeyChild();
+    return lastChild;
+  },
+}));
+
+mock.module("node:fs", () => ({
+  existsSync: () => exists,
+  readdirSync: () => {
+    throw new Error("directory walks are not exercised here");
+  },
+  readFileSync: () => {
+    throw new Error("plist reads are not exercised here");
+  },
+}));
+
+mock.module("../app-logger", () => ({
+  getLogFilePaths: () => [],
+  default: {
+    info: mock(() => undefined),
+    warn: mock(() => undefined),
+  },
+}));
+
+mock.module("../ipc", () => ({
+  handle: (
+    channel: string,
+    _schema: unknown,
+    fn: (args: unknown[], event: unknown) => unknown,
+  ) => {
+    handlers[channel] = fn;
+  },
+  on: (
+    channel: string,
+    _schema: unknown,
+    fn: (args: unknown[], event: unknown) => unknown,
+  ) => {
+    handlers[channel] = fn;
+  },
+}));
 
 class FakeWebContents extends EventEmitter {
   id = 0;
@@ -57,148 +119,140 @@ const makeWebContents = (): FakeWebContents => {
 
 let defaultSender = makeWebContents();
 
-mock.module("electron", () =>
-  electronMock({
-    app: {
-      getVersion: () => "0.0.0",
-      getName: () => "Cadet",
-      get isPackaged() {
-        return appState.isPackaged;
-      },
-      getAppPath: () => appState.appPath,
-      on: (event: string, listener: () => void) => {
-        appListeners.set(event, listener);
-      },
-    },
-    BrowserWindow: {
-      fromWebContents: (webContents: FakeWebContents) =>
-        webContents.ownerWindow,
-      getAllWindows: () => [],
-    },
-    ipcMain: {
-      handle: (
-        channel: string,
-        handler: (event: unknown, ...args: unknown[]) => unknown,
-      ) => {
-        handlers[channel] = handler;
-      },
-      on: mock(() => undefined),
-      removeAllListeners: mock(() => undefined),
-    },
-  }),
-);
-
-let exists = true;
-// getMacHelperPath reads CFBundleExecutable from the bundle's Info.plist to
-// resolve the (per-environment) executable filename. getMacHelperAppPath
-// reads a sidecar (.cadet-mac-helper.bundle-name) to discover the .app
-// folder name — the same pattern, lifted one level. The default bundle name
-// is `cadet-mac-helper`, so tests that don't override it resolve the
-// `cadet-mac-helper.app` path.
-let helperExecutableName = "cadet-mac-helper";
-let helperBundleName = "cadet-mac-helper";
-mock.module("node:fs", () => ({
-  existsSync: () => exists,
-  // The bundle-name sidecar above answers first, so the discovery walk is
-  // never reached in these tests; keep it inert rather than reading real dirs.
-  readdirSync: () => {
-    throw new Error("directory walks are not exercised here");
-  },
-  readFileSync: (target: unknown) => {
-    const targetPath = String(target);
-    if (targetPath.endsWith(".cadet-mac-helper.bundle-name")) {
-      return helperBundleName;
-    }
-    return `<plist><dict><key>CFBundleExecutable</key><string>${helperExecutableName}</string></dict></plist>`;
-  },
-}));
-
-let lastChild: FakeHotkeyChild | null = null;
-const spawnCalls: Array<[string, string[], object]> = [];
-mock.module("node:child_process", () => ({
-  spawn: (cmd: string, args: string[], opts: object) => {
-    spawnCalls.push([cmd, args, opts]);
-    lastChild = new FakeHotkeyChild();
-    return lastChild;
-  },
-}));
-
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
-  getLogFilePaths: () => [],
-  default: {
-    info: mock(() => undefined),
-    warn: mock(() => undefined),
-  },
-}));
-
-mock.module("@mycadet/electron-desktop/app-origin", () => ({
-  createAllowedOriginResolver: () => () => ({
-    protocol: "app:",
-    host: "mycadet.ai",
-  }),
-  getAppName: () => "Cadet",
-  isAllowedOrigin: () => true,
-  resolveAllowedOrigin: () => ({ protocol: "app:", host: "mycadet.ai" }),
-}));
-
-Object.defineProperty(process, "resourcesPath", {
-  value: "/mock/resources",
-  writable: true,
-});
-
-const { setPointerOnCompanion } = await import("./companion-pointer");
 const {
-  __resetFrameScrollWatchForTesting,
-  unwatchFrameScroll,
-  watchFrameScroll,
-} = await import("./frame-scroll-watch");
-
-const {
-  __resetCoachmarkPressWatchForTesting,
-  unwatchCoachmarkPress,
-  watchCoachmarkPress,
-} = await import("./coachmark-press-watch");
-
-const {
+  install: installHelperHotkeys,
   __resetForTesting,
-  __setPlatformForTesting,
-  __setSupervisorOptionsForTesting,
-  handleHotkeyHelperState,
-  installHotkeyHelper,
-  makeClient,
   postFrontAppShortcut,
-  queryFreshMacHelperPermission,
-  requestMacHelperInputMonitoringPermission,
-  requestMacHelperSpeechRecognitionPermission,
-} = await import("./hotkey-helper");
+} = await import("./helper-hotkeys");
 
-const { install: installDictationHelper } =
-  await import("@mycadet/electron-desktop/dictation");
+const { install: installDictationHelper, __resetForTesting: resetDictation } =
+  await import("./dictation");
+
+const { default: log } = await import("../app-logger");
+const { NativeSidecarClient } =
+  await import("@mycadet/native-sidecar/supervisor");
+
+let supervisorOptions: Record<string, unknown> = {};
+
+const makeTestClient = () =>
+  new NativeSidecarClient({
+    name: "mac helper",
+    resolveExecutablePath: () => HELPER_PATH,
+    logger: log,
+    platform: "darwin",
+    ...supervisorOptions,
+  });
+
+/**
+ * The shell's watch state, in fixture form: the state the real watch modules
+ * keep (wanted-or-not, the rectangles) with the sends they are handed at
+ * install.
+ */
+const makeScrollWatch = () => {
+  let send: ((enable: boolean) => void) | null = null;
+  let onEnded: (() => void) | null = null;
+  let watched = false;
+  return {
+    provide: (s: (enable: boolean) => void) => {
+      send = s;
+    },
+    watch: (cb: () => void) => {
+      onEnded = cb;
+      watched = true;
+      send?.(true);
+    },
+    ended: () => onEnded?.(),
+    unwatch: () => {
+      watched = false;
+      send?.(false);
+    },
+    isWatched: () => watched,
+    reset: () => {
+      send = null;
+      onEnded = null;
+      watched = false;
+    },
+  };
+};
+
+const makePressWatch = () => {
+  let send: ((rects: readonly HelperHotkeyPressRect[]) => void) | null = null;
+  let onPressed: ((index: number) => void) | null = null;
+  let rects: readonly HelperHotkeyPressRect[] | null = null;
+  return {
+    provide: (s: (rects: readonly HelperHotkeyPressRect[]) => void) => {
+      send = s;
+    },
+    watch: (
+      next: readonly HelperHotkeyPressRect[],
+      cb: (index: number) => void,
+    ) => {
+      rects = next;
+      onPressed = cb;
+      send?.(next);
+    },
+    pressed: (index: number) => {
+      // One-shot on the shell's side too: the first report consumes it.
+      const cb = onPressed;
+      onPressed = null;
+      cb?.(index);
+    },
+    unwatch: () => {
+      rects = null;
+      send?.([]);
+    },
+    watchedRects: () => rects,
+    reset: () => {
+      send = null;
+      onPressed = null;
+      rects = null;
+    },
+  };
+};
+
+let scrollWatch = makeScrollWatch();
+let pressWatch = makePressWatch();
+let pointerOnCompanion = false;
 
 /**
  * The composition the mac shell runs: the shared dictation bridge supervises
  * the sidecar client (with this shell's arm), and the hotkey half installs
- * beside it. The state hook and quit request ride the arm.
+ * beside it, taking the shell's watch state and companion check.
  */
 const installHelperBridge = (): void => {
   installDictationHelper({
-    client: makeClient,
-    onState: handleHotkeyHelperState,
+    client: () => makeTestClient(),
     shutdownRequest: {
       method: "hotkey.modifierHold",
       params: { enable: false },
     },
   });
-  installHotkeyHelper();
+  const inputs: HelperHotkeysShellInputs = {
+    watches: {
+      provideFrameScrollWatch: scrollWatch.provide,
+      frameScrollEnded: () => scrollWatch.ended(),
+      isFrameScrollWatched: () => scrollWatch.isWatched(),
+      provideCoachmarkPressWatch: pressWatch.provide,
+      coachmarkPressed: (index: number) => pressWatch.pressed(index),
+      watchedCoachmarkPress: () => pressWatch.watchedRects(),
+    },
+    isPointerOnCompanion: () => pointerOnCompanion,
+  };
+  installHelperHotkeys(inputs);
 };
-
-const { getMacHelperAppPath, getMacHelperPath } =
-  await import("./sidecar/mac-helper-path");
 
 const CTRL_OPTION = { kind: "modifierOnly", modifiers: ["control", "option"] };
 
+/** The recorded handle callback for `channel`, fired the way the shared ipc
+ * registrar delivers: the parsed argument tuple, then the event. */
+const invoke = (
+  channel: string,
+  args: unknown[] = [],
+  sender: FakeWebContents = defaultSender,
+): unknown => handlers[channel]!(args, { sender });
+
 const invokeSetModifierHoldFrom = (hold: unknown, sender: FakeWebContents) =>
-  invoke("cadet:helper:hotkey:setModifierHold", hold, sender);
+  invoke("cadet:helper:hotkey:setModifierHold", [hold], sender);
 
 const invokeSetModifierHold = (hold: unknown = CTRL_OPTION) =>
   invokeSetModifierHoldFrom(hold, defaultSender);
@@ -232,7 +286,7 @@ const OPTION_CHORDS = {
 };
 
 const invokeSetChords = (binding: unknown, sender: FakeWebContents) =>
-  invoke("cadet:helper:hotkey:setChords", binding, sender);
+  invoke("cadet:helper:hotkey:setChords", [binding], sender);
 
 /**
  * Arm the chords from `sender` and answer the helper's reply.
@@ -276,131 +330,22 @@ const wait = (ms: number) =>
 
 beforeEach(() => {
   __resetForTesting();
-  __setPlatformForTesting("darwin");
   for (const key of Object.keys(handlers)) delete handlers[key];
   appListeners.clear();
   spawnCalls.length = 0;
   lastChild = null;
   exists = true;
-  helperExecutableName = "cadet-mac-helper";
-  helperBundleName = "cadet-mac-helper";
-  appState.isPackaged = false;
-  appState.appPath = "/repo/clients/macos";
+  supervisorOptions = {};
   nextWebContentsId = 1;
   defaultSender = makeWebContents();
-  setPointerOnCompanion(false);
+  pointerOnCompanion = false;
 });
 
 afterEach(() => {
   __resetForTesting();
-  __resetFrameScrollWatchForTesting();
-  __resetCoachmarkPressWatchForTesting();
-});
-
-describe("getMacHelperPath", () => {
-  test("resolves dev helper app from app path resources", () => {
-    expect(getMacHelperAppPath()).toBe(
-      "/repo/clients/macos/resources/cadet-mac-helper.app",
-    );
-  });
-
-  test("resolves dev helper from app path resources", () => {
-    expect(getMacHelperPath()).toBe(
-      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
-    );
-  });
-
-  test("resolves packaged helper app from process.resourcesPath", () => {
-    appState.isPackaged = true;
-    expect(getMacHelperAppPath()).toBe(
-      "/mock/resources/bin/cadet-mac-helper.app",
-    );
-  });
-
-  test("resolves packaged helper from process.resourcesPath", () => {
-    appState.isPackaged = true;
-    expect(getMacHelperPath()).toBe(
-      "/mock/resources/bin/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
-    );
-  });
-
-  test("resolves the per-environment executable name from CFBundleExecutable", () => {
-    helperExecutableName = "Cadet Helper Dev";
-    expect(getMacHelperPath()).toBe(
-      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/Cadet Helper Dev",
-    );
-  });
-
-  test("resolves the per-environment bundle folder name from the sidecar", () => {
-    helperBundleName = "Cadet Helper Dev";
-    expect(getMacHelperAppPath()).toBe(
-      "/repo/clients/macos/resources/Cadet Helper Dev.app",
-    );
-    expect(getMacHelperPath()).toBe(
-      "/repo/clients/macos/resources/Cadet Helper Dev.app/Contents/MacOS/cadet-mac-helper",
-    );
-  });
-
-  test("resolves the packaged bundle folder name from the sidecar", () => {
-    appState.isPackaged = true;
-    helperBundleName = "Cadet Helper Staging";
-    expect(getMacHelperAppPath()).toBe(
-      "/mock/resources/bin/Cadet Helper Staging.app",
-    );
-  });
-});
-
-describe("permission request launchers", () => {
-  test("reads a permission status from a fresh helper process", async () => {
-    const pending = queryFreshMacHelperPermission("speechRecognition");
-    await wait(10);
-
-    expect(spawnCalls[0]?.[0]).toBe("open");
-    const args = spawnCalls[0]?.[1] ?? [];
-    expect(args.slice(0, 4)).toEqual([
-      "-n",
-      "/repo/clients/macos/resources/cadet-mac-helper.app",
-      "--args",
-      "--permission-status",
-    ]);
-    expect(args[4]).toBe("speechRecognition");
-    expect(args[5]).toBe("--status-output");
-    expect(args[6]).toBeString();
-
-    await writeFile(args[6]!, '{"status":"granted"}');
-    lastChild?.emit("exit", 0);
-    expect(await pending).toBe("granted");
-  });
-
-  test("launches the helper app for Speech Recognition prompts", async () => {
-    const pending = requestMacHelperSpeechRecognitionPermission();
-
-    expect(spawnCalls[0]?.[0]).toBe("open");
-    expect(spawnCalls[0]?.[1]).toEqual([
-      "-n",
-      "/repo/clients/macos/resources/cadet-mac-helper.app",
-      "--args",
-      "--request-speech-recognition",
-    ]);
-
-    lastChild?.emit("exit", 0);
-    await expect(pending).resolves.toBeUndefined();
-  });
-
-  test("launches the helper app for Input Monitoring prompts", async () => {
-    const pending = requestMacHelperInputMonitoringPermission();
-
-    expect(spawnCalls[0]?.[0]).toBe("open");
-    expect(spawnCalls[0]?.[1]).toEqual([
-      "-n",
-      "/repo/clients/macos/resources/cadet-mac-helper.app",
-      "--args",
-      "--request-input-monitoring",
-    ]);
-
-    lastChild?.emit("exit", 0);
-    await expect(pending).resolves.toBeUndefined();
-  });
+  resetDictation();
+  scrollWatch = makeScrollWatch();
+  pressWatch = makePressWatch();
 });
 
 describe("installHotkeyHelper", () => {
@@ -437,9 +382,7 @@ describe("installHotkeyHelper", () => {
       ok: true,
       state: { status: "running" },
     });
-    expect(spawnCalls[0]?.[0]).toBe(
-      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
-    );
+    expect(spawnCalls[0]?.[0]).toBe(HELPER_PATH);
   });
 
   test("user-initiated restart replaces an already-running helper", async () => {
@@ -464,12 +407,12 @@ describe("installHotkeyHelper", () => {
   });
 
   test("user-initiated restart reopens a circuit-open helper", async () => {
-    __setSupervisorOptionsForTesting({
+    supervisorOptions = {
       initialBackoffMs: 1,
       maxBackoffMs: 1,
       circuitCrashCount: 2,
       circuitWindowMs: 1_000,
-    });
+    };
     installHelperBridge();
 
     expect(invokeRestart()).toEqual({
@@ -501,9 +444,7 @@ describe("installHotkeyHelper", () => {
     const pending = invokeSetModifierHold();
     await wait(5);
 
-    expect(spawnCalls[0]?.[0]).toBe(
-      "/repo/clients/macos/resources/cadet-mac-helper.app/Contents/MacOS/cadet-mac-helper",
-    );
+    expect(spawnCalls[0]?.[0]).toBe(HELPER_PATH);
     expect(lastChild?.stdin.writes[0]).toContain('"jsonrpc":"2.0"');
     expect(lastChild?.stdin.writes[0]).toContain(
       '"method":"hotkey.modifierHold"',
@@ -522,10 +463,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("restarts the helper after a crash", async () => {
-    __setSupervisorOptionsForTesting({
-      initialBackoffMs: 1,
-      maxBackoffMs: 1,
-    });
+    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
     installHelperBridge();
 
     const pending = invokePing();
@@ -549,10 +487,7 @@ describe("installHotkeyHelper", () => {
    * helper the binding.
    */
   test("restores the hold after a helper crash", async () => {
-    __setSupervisorOptionsForTesting({
-      initialBackoffMs: 1,
-      maxBackoffMs: 1,
-    });
+    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
@@ -916,8 +851,7 @@ describe("installHotkeyHelper", () => {
     installHelperBridge();
 
     const pending = invoke("cadet:helper:apps:running", [
-      "com.electron.wispr-flow",
-      "com.example.other",
+      ["com.electron.wispr-flow", "com.example.other"],
     ]);
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.running"');
     expect(lastChild?.stdin.writes[0]).toContain('"com.electron.wispr-flow"');
@@ -938,7 +872,7 @@ describe("installHotkeyHelper", () => {
     installHelperBridge();
 
     const pending = invoke("cadet:helper:apps:running", [
-      "com.electron.wispr-flow",
+      ["com.electron.wispr-flow"],
     ]);
     lastChild?.stdout.emit(
       "data",
@@ -953,12 +887,12 @@ describe("installHotkeyHelper", () => {
   test("asks nothing of the helper for an app outside the voice key's claimants", async () => {
     installHelperBridge();
 
-    expect(await invoke("cadet:helper:apps:quit", "com.example.editor")).toBe(
+    expect(await invoke("cadet:helper:apps:quit", ["com.example.editor"])).toBe(
       false,
     );
     expect(lastChild).toBeNull();
     expect(
-      await invoke("cadet:helper:apps:running", ["com.example.editor"]),
+      await invoke("cadet:helper:apps:running", [["com.example.editor"]]),
     ).toEqual([]);
     expect(lastChild).toBeNull();
   });
@@ -985,7 +919,7 @@ describe("installHotkeyHelper", () => {
   test("keeps a press on the companion out of the input activity it forwards", async () => {
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
-    setPointerOnCompanion(true);
+    pointerOnCompanion = true;
 
     lastChild?.stdout.emit(
       "data",
@@ -995,7 +929,7 @@ describe("installHotkeyHelper", () => {
       "cadet:helper:input:activity",
     );
 
-    setPointerOnCompanion(false);
+    pointerOnCompanion = false;
     lastChild?.stdout.emit(
       "data",
       Buffer.from('{"jsonrpc":"2.0","method":"input.activity"}\n'),
@@ -1010,11 +944,11 @@ describe("installHotkeyHelper", () => {
    * asks for neither again.
    */
   test("restores the input watch after a helper crash", async () => {
-    __setSupervisorOptionsForTesting({ initialBackoffMs: 1, maxBackoffMs: 1 });
+    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
-    const watch = invoke("cadet:helper:input:setActivityWatch", true);
+    const watch = invoke("cadet:helper:input:setActivityWatch", [true]);
     lastChild?.stdout.emit(
       "data",
       Buffer.from('{"jsonrpc":"2.0","id":2,"result":{"enabled":true}}\n'),
@@ -1030,17 +964,17 @@ describe("installHotkeyHelper", () => {
   });
 
   /**
-   * The watch frame asks for the scroll watch through `frame-scroll-watch.ts`
-   * rather than through the renderer: it is main's own window, and the end
-   * of the scroll is main's to act on.
+   * The watch frame asks for the scroll watch through its own state, rather
+   * than through the renderer: it is main's own window, and the end of the
+   * scroll is main's to act on.
    */
   test("asks the helper to watch for the scroll ending and reports it", async () => {
-    __setSupervisorOptionsForTesting({ initialBackoffMs: 1, maxBackoffMs: 1 });
+    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     let ended = 0;
-    watchFrameScroll(() => {
+    scrollWatch.watch(() => {
       ended += 1;
     });
     await wait(0);
@@ -1060,25 +994,25 @@ describe("installHotkeyHelper", () => {
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setScrollWatch"');
 
-    unwatchFrameScroll();
+    scrollWatch.unwatch();
     await wait(0);
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"enable":false');
   });
 
   /**
-   * The marks ask for the press watch through `coachmark-press-watch.ts`, the
-   * way the frame asks for the scroll watch: they are main's, and the press
-   * is main's to act on.
+   * The marks ask for the press watch through their own state, the way the
+   * frame asks for the scroll watch: they are main's, and the press is
+   * main's to act on.
    */
   test("asks the helper to watch for a press on a pointed-at control and reports it", async () => {
-    __setSupervisorOptionsForTesting({ initialBackoffMs: 1, maxBackoffMs: 1 });
+    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     const pressed: number[] = [];
     const rect = { x: 120, y: 80, width: 60, height: 20 };
-    watchCoachmarkPress([rect], (index) => {
+    pressWatch.watch([rect], (index) => {
       pressed.push(index);
     });
     await wait(0);
@@ -1110,8 +1044,8 @@ describe("installHotkeyHelper", () => {
     );
     expect(pressed).toEqual([0]);
 
-    watchCoachmarkPress([rect], () => {});
-    unwatchCoachmarkPress();
+    pressWatch.watch([rect], () => {});
+    pressWatch.unwatch();
     await wait(0);
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"rects":[]');
@@ -1121,7 +1055,7 @@ describe("installHotkeyHelper", () => {
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
-    const pending = invoke("cadet:helper:input:setActivityWatch", true);
+    const pending = invoke("cadet:helper:input:setActivityWatch", [true]);
     lastChild?.stdout.emit(
       "data",
       Buffer.from('{"jsonrpc":"2.0","id":2,"result":{"enabled":true}}\n'),
@@ -1140,7 +1074,9 @@ describe("installHotkeyHelper", () => {
   test("asks the helper to quit an app and reports whether it was asked", async () => {
     installHelperBridge();
 
-    const pending = invoke("cadet:helper:apps:quit", "com.electron.wispr-flow");
+    const pending = invoke("cadet:helper:apps:quit", [
+      "com.electron.wispr-flow",
+    ]);
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.quit"');
     lastChild?.stdout.emit(
       "data",
@@ -1156,10 +1092,7 @@ describe("installHotkeyHelper", () => {
    * and has to say the user did not let go.
    */
   test("closes a hold the helper died holding with a cancelled edge", async () => {
-    __setSupervisorOptionsForTesting({
-      initialBackoffMs: 1,
-      maxBackoffMs: 1,
-    });
+    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 

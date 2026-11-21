@@ -18,6 +18,7 @@ import {
   SYSTEM_PERMISSION_STATUSES,
   TEXT_INSERT,
   TEXT_OPEN_SETTINGS,
+  TEXT_UNDO,
   permissionNotificationPresentationSchema,
   type PermissionNotificationPresentation,
   type SystemPermissionKind,
@@ -144,6 +145,8 @@ export interface PermissionsShellInputs {
   ) => boolean;
   /** The shell's own front-app insertion machinery. */
   insertText?: (text: string) => Promise<TextInsertionResult>;
+  /** The shell's own front-app undo machinery, answering the undo channel. */
+  undoText?: () => Promise<TextInsertionResult>;
 }
 
 const NOT_APPLICABLE_KINDS = new Set<SystemPermissionKind>([
@@ -443,6 +446,9 @@ export const install = (inputs: PermissionsShellInputs = {}): void => {
   handle(TEXT_INSERT, z.tuple([z.string()]), ([text]) =>
     insertIntoFrontApp(inputs, text),
   );
+  if (inputs.undoText) {
+    handle(TEXT_UNDO, z.tuple([]), () => inputs.undoText?.());
+  }
   handle(TEXT_OPEN_SETTINGS, z.tuple([]), () => {
     const uri = inputs.settingsUris?.automation;
     if (uri) {

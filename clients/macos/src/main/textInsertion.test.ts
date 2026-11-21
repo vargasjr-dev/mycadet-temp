@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import type { ShortcutOutcome } from "./hotkey-helper";
+import type { ShortcutOutcome } from "@mycadet/electron-desktop/helper-hotkeys";
 import {
   type ClipboardSnapshot,
   type TextInsertionDeps,

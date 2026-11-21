@@ -18,6 +18,7 @@
     "./dictation": "./src/features/dictation.ts",
     "./file-open-preload": "./src/file-open-preload.ts",
     "./floating-window": "./src/floating-window.ts",
+    "./helper-hotkeys": "./src/features/helper-hotkeys.ts",
     "./ipc": "./src/ipc.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
     "./notifications": "./src/notifications.ts",

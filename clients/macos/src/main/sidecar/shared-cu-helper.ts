@@ -3,7 +3,7 @@
  * and app-control executors.
  *
  * This is a separate `MacHelperClient` from the hotkey/dictation client in
- * `hotkey-helper.ts`: the two drive disjoint JSON-RPC surfaces, and keeping
+ * `mac-helper-permissions.ts`: the two drive disjoint JSON-RPC surfaces, and keeping
  * them apart means a crash in one supervisor circuit never tears down the
  * other. The underlying process is the same signed binary, so the two share
  * the helper's Accessibility and Screen Recording grants. Those are the

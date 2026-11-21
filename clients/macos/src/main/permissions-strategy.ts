@@ -23,7 +23,7 @@ import {
   requestMacHelperScreenRecordingPermission,
   requestMacHelperSpeechRecognitionPermission,
   type MacHelperPermissionKind,
-} from "./hotkey-helper";
+} from "./mac-helper-permissions";
 import log from "@mycadet/electron-desktop/app-logger";
 import {
   getNotifier,
@@ -32,7 +32,7 @@ import {
   type NotifierAuthorizationResult,
 } from "./notifier";
 import { readScreenRecordingPermission } from "./screen-recording-permission";
-import { typeIntoFrontApp } from "./textInsertion";
+import { typeIntoFrontApp, undoInFrontApp } from "./textInsertion";
 
 const SECURITY_PANE_URL =
   "x-apple.systempreferences:com.apple.preference.security";
@@ -394,4 +394,5 @@ export const permissionsShell: PermissionsShellInputs = {
     startPolling(kind, refresh);
   },
   insertText: typeIntoFrontApp,
+  undoText: undoInFrontApp,
 };

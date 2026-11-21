@@ -96,7 +96,7 @@ mock.module("./appleScriptExecutor", () => ({
   runAppleScript: async () => "",
 }));
 
-mock.module("./hotkey-helper", () => ({
+mock.module("./mac-helper-permissions", () => ({
   queryFreshMacHelperPermission: async () => "granted",
   queryMacHelperPermission: async () => helperInputMonitoringStatus,
   requestMacHelperInputMonitoringPermission: async () => {
@@ -106,8 +106,11 @@ mock.module("./hotkey-helper", () => ({
     helperCalls.push("request screen");
   },
   requestMacHelperSpeechRecognitionPermission: async () => undefined,
-  // The text-insertion flow's helper seams; the strategy's insertText never
-  // runs in this suite.
+}));
+
+// The text-insertion flow's helper seams; the strategy's insertText never
+// runs in this suite.
+mock.module("@mycadet/electron-desktop/helper-hotkeys", () => ({
   readFrontAppFocus: async () => ({
     takesText: true,
     helperAnswered: true,
