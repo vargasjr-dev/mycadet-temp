@@ -36,6 +36,19 @@ describe("getting-started.md", () => {
     expect(md).not.toContain("<!--");
   });
 
+  test("bare markdown h2s are styled by the theme, not reset by preflight", () => {
+    const css = readFileSync(
+      path.join(process.cwd(), "src", "app", "docs", "docs-theme.css"),
+      "utf8",
+    );
+    // The rule must exist inside @layer base...
+    expect(css).toContain(".docs-shell .docs-prose h2 {");
+    // ...without a zero-specificity wrapper, which loses to Tailwind v4's
+    // preflight (h2 { font-size: inherit }) in the same layer and renders
+    // markdown headings as normal text.
+    expect(css).not.toContain(":where(.docs-shell .docs-prose h2)");
+  });
+
   test("Where to go next uses the nav-cards list shape", () => {
     expect(md).toContain(
       "- [Key Concepts](/docs/key-concepts/the-workspace) —",

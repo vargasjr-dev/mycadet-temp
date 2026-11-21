@@ -1,4 +1,4 @@
-import { GlossaryContent } from "@/app/docs/_components/glossary-content";
+import GlossaryMarkdown from "@/app/docs/_components/glossary-markdown";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
@@ -9,5 +9,5 @@ export const metadata = createMetadata({
 });
 
 export default function GlossaryPage() {
-  return <GlossaryContent />;
+  return <GlossaryMarkdown />;
 }

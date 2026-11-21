@@ -90,3 +90,7 @@ function walk(dir: string, basePath: string): DiscoveredDocsPage[] {
 export function fetchConstitutionContent(): string {
   return fs.readFileSync("../../CONSTITUTION.md").toString();
 }
+
+export function fetchGlossaryContent(): string {
+  return fs.readFileSync("../../GLOSSARY.md").toString();
+}

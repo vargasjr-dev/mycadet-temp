@@ -1,5 +1,3 @@
-<!-- TODO: These h2's are still rendering like normal text -->
-
 ## Setup
 
 [Sign up](https://www.mycadet.ai/account/signup) for **Cadet Cloud** and we can hatch and start managing your assistant for you in seconds.

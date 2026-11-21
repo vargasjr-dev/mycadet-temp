@@ -132,18 +132,19 @@ html:has(.docs-shell) {
   line-height: 1.85;
 }
 
-/* Default typography for bare h2/h3/ul/ol/li/p inside docs-prose.
-   Wrapped in :where() AND nested in @layer base so per-element Tailwind
-   utilities (e.g. SectionHeading's mb-4 mt-0 text-3xl, or a page's
-   own text-base) reliably win. Without the layer wrap, these rules
-   were unlayered and Tailwind utilities (which live in @layer utilities)
-   could not override them regardless of :where() specificity. */
+/* Default typography for bare h2/h3/ul/ol/li/p inside docs-prose (raw
+   markdown docs). Nested in @layer base so per-element Tailwind utilities
+   (e.g. SectionHeading's mb-4 mt-0 text-3xl) reliably win — utilities
+   out-rank the base layer regardless of specificity. Deliberately NOT
+   zeroed out to zero specificity: that loses to Tailwind v4's preflight
+   (h2 { font-size: inherit } lives in the same base layer), which is how
+   bare markdown headings ended up rendering like plain text. */
 @layer base {
-  :where(.docs-shell .docs-prose p) {
+  .docs-shell .docs-prose p {
     margin-bottom: 1rem;
   }
 
-  :where(.docs-shell .docs-prose h2) {
+  .docs-shell .docs-prose h2 {
     margin-top: 2.75rem;
     margin-bottom: 1rem;
     font-family: "DM Sans", sans-serif;
@@ -154,7 +155,7 @@ html:has(.docs-shell) {
     color: var(--docs-text);
   }
 
-  :where(.docs-shell .docs-prose h3) {
+  .docs-shell .docs-prose h3 {
     margin-top: 2rem;
     margin-bottom: 0.75rem;
     font-family: "DM Sans", sans-serif;
@@ -164,36 +165,36 @@ html:has(.docs-shell) {
     color: var(--docs-text);
   }
 
-  :where(.docs-shell .docs-prose h2:first-child),
-  :where(.docs-shell .docs-prose h3:first-child) {
+  .docs-shell .docs-prose h2:first-child,
+  .docs-shell .docs-prose h3:first-child {
     margin-top: 0;
   }
 
-  :where(.docs-shell .docs-prose ul) {
+  .docs-shell .docs-prose ul {
     list-style-type: disc;
     padding-left: 1.5rem;
     margin-top: 0.5rem;
     margin-bottom: 1.25rem;
   }
 
-  :where(.docs-shell .docs-prose ol) {
+  .docs-shell .docs-prose ol {
     list-style-type: decimal;
     padding-left: 1.5rem;
     margin-top: 0.5rem;
     margin-bottom: 1.25rem;
   }
 
-  :where(.docs-shell .docs-prose li) {
+  .docs-shell .docs-prose li {
     font-size: 1.06rem;
     line-height: 1.7;
     margin-bottom: 0.4rem;
   }
 
-  :where(.docs-shell .docs-prose li > p) {
+  .docs-shell .docs-prose li > p {
     margin-bottom: 0.4rem;
   }
 
-  :where(.docs-shell .docs-prose li::marker) {
+  .docs-shell .docs-prose li::marker {
     color: var(--docs-text-muted);
   }
 }
@@ -390,7 +391,7 @@ html:has(.docs-shell) {
 }
 
 /* The CollapsibleSection's h3 sits inside a flex button row with a chevron.
-   The :where(.docs-prose h3) defaults below would otherwise add 2rem of
+   The base-layer .docs-prose h3 defaults above would otherwise add 2rem of
    margin-top, breaking the centered chevron+title alignment. Override with
    real specificity so the row stays compact and centered. */
 .docs-shell .docs-home-principle h3 {
