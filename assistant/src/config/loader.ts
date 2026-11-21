@@ -114,9 +114,7 @@ function getCachedConfigIfFresh(): AssistantConfig | null {
  * single parse is sufficient to cascade defaults through every nesting level.
  */
 export function applyNestedDefaults(config: unknown): AssistantConfig {
-  return structuredClone(
-    AssistantConfigSchema.parse(config),
-  ) as AssistantConfig;
+  return structuredClone(AssistantConfigSchema.parse(config));
 }
 
 function cloneDefaultConfig(): AssistantConfig {
@@ -206,12 +204,9 @@ function fillContextDefaultsForMissingKeys(
     if (value !== null && typeof value === "object" && !Array.isArray(value)) {
       const targetChild = readPlainObject(target[key]);
       const fileChild = readPlainObject(fileVal);
-      if (targetChild) {
-        fillContextDefaultsForMissingKeys(
-          targetChild,
-          fileChild ?? {},
-          value as Record<string, unknown>,
-        );
+      const valueObj = readPlainObject(value);
+      if (targetChild && valueObj) {
+        fillContextDefaultsForMissingKeys(targetChild, fileChild ?? {}, valueObj);
       } else {
         target[key] = structuredClone(value);
       }
@@ -513,7 +508,7 @@ function validateWithSchema(raw: Record<string, unknown>): AssistantConfig {
         issuePaths(result.error.issues),
       );
     }
-    deleteNestedKey(cleaned, issue.path as (string | number)[], true);
+    deleteNestedKey(cleaned, issue.path, true);
   }
 
   // Deleting an invalid array element via `deleteNestedKey` uses `delete
@@ -698,7 +693,7 @@ function compactSparseArrays(value: unknown): { removeFromParent: boolean } {
  */
 function deleteNestedKey(
   obj: Record<string, unknown>,
-  path: (string | number)[],
+  path: PropertyKey[],
   pruneEmptyAncestors = false,
 ): void {
   // Record each (container, key) hop on the way down so we can prune upward
@@ -706,17 +701,19 @@ function deleteNestedKey(
   const chain: Array<{ container: Record<string, unknown>; key: string }> = [];
   let current: unknown = obj;
   for (let i = 0; i < path.length - 1; i++) {
-    if (current == null || typeof current !== "object") {
+    const container = readPlainObject(current);
+    if (!container) {
       return;
     }
     const key = String(path[i]);
-    chain.push({ container: current as Record<string, unknown>, key });
-    current = (current as Record<string, unknown>)[key];
+    chain.push({ container, key });
+    current = container[key];
   }
-  if (current == null || typeof current !== "object") {
+  const leaf = readPlainObject(current);
+  if (!leaf) {
     return;
   }
-  delete (current as Record<string, unknown>)[String(path[path.length - 1])];
+  delete leaf[String(path[path.length - 1])];
 
   if (!pruneEmptyAncestors) {
     return;
@@ -803,10 +800,10 @@ function warnAndStripDeprecatedFields(
   // Persist the cleaned config to disk so the warning doesn't repeat
   try {
     if (existsSync(configPath)) {
-      const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (raw != null && typeof raw === "object" && !Array.isArray(raw)) {
+      const raw = readPlainObject(JSON.parse(readFileSync(configPath, "utf-8")));
+      if (raw) {
         for (const dotPath of found) {
-          deleteNestedKeyByDotPath(raw as Record<string, unknown>, dotPath);
+          deleteNestedKeyByDotPath(raw, dotPath);
         }
         writeFileSync(configPath, JSON.stringify(raw, null, 2) + "\n");
       }
@@ -839,7 +836,11 @@ function stripNullLeaves(value: unknown): unknown {
     return value;
   }
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+  const entries = readPlainObject(value);
+  if (!entries) {
+    return out;
+  }
+  for (const [k, v] of Object.entries(entries)) {
     if (v === null) {
       continue;
     }
@@ -910,10 +911,13 @@ export function deepMergeOverwrite(
       typeof target[key] === "object" &&
       !Array.isArray(target[key])
     ) {
-      deepMergeOverwrite(
-        target[key] as Record<string, unknown>,
-        ov as Record<string, unknown>,
-      );
+      const targetChild = readPlainObject(target[key]);
+      const ovChild = readPlainObject(ov);
+      if (targetChild && ovChild) {
+        deepMergeOverwrite(targetChild, ovChild);
+      } else {
+        target[key] = stripNullLeaves(ov);
+      }
     } else {
       target[key] = stripNullLeaves(ov);
     }
@@ -1002,6 +1006,9 @@ export function getConfig(): AssistantConfig {
     // because the helper only fills missing keys.
     const contextDefaults = getDeploymentContextDefaults();
     if (Object.keys(contextDefaults).length > 0) {
+      // Mutator seam: the defaults fill mutates the LIVE typed config in
+      // place (the batch lesson — zod views copy, mutators keep one
+      // documented aliasing cast).
       fillContextDefaultsForMissingKeys(
         config as unknown as Record<string, unknown>,
         fileConfig,
@@ -1252,10 +1259,11 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    if (current == null || typeof current !== "object") {
+    const container = readPlainObject(current);
+    if (!container) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[key];
+    current = container[key];
   }
   return current;
 }
@@ -1269,6 +1277,9 @@ export function setNestedValue(
   let current = obj;
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
+    // Mutator seam: the walk assigns containers in place; arrays are kept
+    // (numeric path segments index them), so the container view is the one
+    // documented aliasing cast.
     if (current[key] == null || typeof current[key] !== "object") {
       current[key] = {};
     }

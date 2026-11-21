@@ -1,4 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
+
+/**
+ * The honest or-union a unified stream's final message can be: the standard
+ * endpoint's Message, or the beta endpoint's ParsedBetaMessage (a BetaMessage
+ * superset carrying beta-only block kinds like compaction).
+ */
+type FinalMessage = Anthropic.Message | ParsedBetaMessage<null>;
+type FinalContentBlock = FinalMessage["content"][number];
+import type { ParsedBetaMessage } from "@anthropic-ai/sdk/lib/beta-parser.js";
 import { z } from "zod";
 
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "../../prompts/cache-boundary.js";
@@ -1378,7 +1387,12 @@ export class AnthropicProvider implements Provider {
         createStreamTimeout(this.streamTimeoutMs, signal);
       innerTimeoutSignal = timeoutSignal;
 
-      /** Minimal stream interface shared by MessageStream and BetaMessageStream. */
+      /**
+       * Minimal stream interface shared by MessageStream and BetaMessageStream.
+       * finalMessage is the honest or-union: the beta stream's final message is
+       * a ParsedBetaMessage (a BetaMessage superset), and both flow through the
+       * same downstream consumers, so the union IS the type — no bridge cast.
+       */
       interface UnifiedStream {
         on(event: "text", listener: (text: string) => void): this;
         on(event: "thinking", listener: (thinking: string) => void): this;
@@ -1387,9 +1401,15 @@ export class AnthropicProvider implements Provider {
           listener: (event: Anthropic.MessageStreamEvent) => void,
         ): this;
         on(event: "inputJson", listener: (partialJson: string) => void): this;
-        finalMessage(): Promise<Anthropic.Message>;
+        finalMessage(): Promise<FinalMessage>;
       }
 
+      /**
+       * The pause_turn resume re-sends the paused assistant content as
+       * message params. Every response block kind has a structurally identical
+       * param twin except the beta stream's compaction marker — a server-owned
+       * context annotation with no param twin, which is never re-sent.
+       */
       // Fast mode: use the beta endpoint with speed: "fast" for the Opus
       // models that support it (5.5, 5, 4.8 — 4.7 lost support in July 2026).
       const useFastMode = speed === "fast" && effectiveModel.includes("opus");
@@ -1407,11 +1427,11 @@ export class AnthropicProvider implements Provider {
         betas.push("fast-mode-2026-02-01");
       }
 
-      let response: Anthropic.Message;
+      let response: FinalMessage;
       // Paused segments accumulated by the `pause_turn` continuation loop,
       // in stream order, excluding the final response. Empty for the normal
       // single-request case.
-      const pausedSegments: Anthropic.Message[] = [];
+      const pausedSegments: FinalMessage[] = [];
       try {
         recordProviderRequestDiagnostics({ model_id: params.model });
         const requestHeaders = {
@@ -1430,7 +1450,7 @@ export class AnthropicProvider implements Provider {
         // accumulators) instead of inheriting a prior segment's buffers.
         const streamOnce = async (
           streamParams: Anthropic.MessageStreamParams,
-        ): Promise<Anthropic.Message> => {
+        ): Promise<FinalMessage> => {
           inspectableRequest = streamParams;
           let stream: UnifiedStream;
           if (useFastMode || betas.length > 0) {
@@ -1445,13 +1465,10 @@ export class AnthropicProvider implements Provider {
               ...(useFastMode ? { speed: "fast" as const } : {}),
               ...(betas.length > 0 ? { betas } : {}),
             } as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming;
-            // The beta stream's finalMessage carries beta-only content blocks
-            // (compaction) so the classes don't unify at the type level; the
-            // listeners used here are identical.
             stream = this.client.beta.messages.stream(
               betaParams,
               requestOptions,
-            ) as unknown as UnifiedStream;
+            );
           } else {
             stream = this.client.messages.stream(streamParams, requestOptions);
           }
@@ -1719,7 +1736,16 @@ export class AnthropicProvider implements Provider {
             ...params,
             messages: [
               ...params.messages,
-              { role: "assistant" as const, content: response.content },
+              // The paused content re-sends VERBATIM on whichever endpoint
+              // produced it — the continuation pins as-is resend, so the
+              // array passes through by reference. The beta block union is
+              // wire-valid there even though the shared params type models
+              // only the standard endpoint (the beta bridge already narrows
+              // params at its own boundary below).
+              {
+                role: "assistant" as const,
+                content: response.content as Anthropic.MessageParam["content"],
+              },
             ],
           };
           // Keep the 400-diagnostics dump in the catch block accurate for
@@ -1750,7 +1776,7 @@ export class AnthropicProvider implements Provider {
           : undefined;
       return {
         content: segments
-          .flatMap((segment) => segment.content)
+          .flatMap((segment): FinalContentBlock[] => [...segment.content])
           .map((block) => this.fromAnthropicBlock(block)),
         model: response.model,
         resolvedEndpoint: this.client.baseURL,
@@ -2345,7 +2371,7 @@ export class AnthropicProvider implements Provider {
     }
   }
 
-  private fromAnthropicBlock(block: Anthropic.ContentBlock): ContentBlock {
+  private fromAnthropicBlock(block: FinalContentBlock): ContentBlock {
     switch (block.type) {
       case "text":
         return { type: "text", text: block.text };

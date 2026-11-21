@@ -238,6 +238,16 @@ interface ExecError extends Error {
   code?: string | number;
 }
 
+/**
+ * ExecError's extra members are all optional (as are the exec layer's
+ * stdout/stderr attachments), so every Error thrown by the exec layer
+ * satisfies the shape — the guard is the honest narrow.
+ */
+const isExecError = (
+  err: unknown,
+): err is ExecError & { stdout?: string; stderr?: string } =>
+  err instanceof Error;
+
 interface GitCommitMetadata {
   /** Optional metadata to include in the commit message or as git notes */
   [key: string]: unknown;
@@ -472,18 +482,18 @@ export class WorkspaceGitService {
               // should NOT destroy .git — they will resolve on retry via
               // the guard clearing logic.
               const errMsg = err instanceof Error ? err.message : String(err);
-              const execErr = err as ExecError;
+              const execErr = isExecError(err) ? err : undefined;
               const isTimeout =
-                execErr.killed === true ||
-                execErr.signal === "SIGTERM" ||
+                execErr?.killed === true ||
+                execErr?.signal === "SIGTERM" ||
                 errMsg.includes("SIGTERM") ||
                 errMsg.includes("timed out");
               const isPermission =
-                execErr.code === "EACCES" ||
+                execErr?.code === "EACCES" ||
                 errMsg.includes("EACCES") ||
                 errMsg.toLowerCase().includes("permission denied");
               const isMissingBinary =
-                execErr.code === "ENOENT" || errMsg.includes("ENOENT");
+                execErr?.code === "ENOENT" || errMsg.includes("ENOENT");
 
               if (isTimeout || isPermission || isMissingBinary) {
                 // Re-throw so initialization fails gracefully without
@@ -517,18 +527,18 @@ export class WorkspaceGitService {
                 // should NOT fall through to re-initialization — they will
                 // resolve on retry via the guard clearing logic.
                 const errMsg = err instanceof Error ? err.message : String(err);
-                const execErr = err as ExecError;
+                const execErr = isExecError(err) ? err : undefined;
                 const isTimeout =
-                  execErr.killed === true ||
-                  execErr.signal === "SIGTERM" ||
+                  execErr?.killed === true ||
+                  execErr?.signal === "SIGTERM" ||
                   errMsg.includes("SIGTERM") ||
                   errMsg.includes("timed out");
                 const isPermission =
-                  execErr.code === "EACCES" ||
+                  execErr?.code === "EACCES" ||
                   errMsg.includes("EACCES") ||
                   errMsg.toLowerCase().includes("permission denied");
                 const isMissingBinary =
-                  execErr.code === "ENOENT" || errMsg.includes("ENOENT");
+                  execErr?.code === "ENOENT" || errMsg.includes("ENOENT");
 
                 if (isTimeout || isPermission || isMissingBinary) {
                   throw err;
@@ -894,7 +904,7 @@ export class WorkspaceGitService {
       await this.execGit(["rev-parse", "--quiet", "--verify", "HEAD"]);
       return "HEAD";
     } catch (err) {
-      if ((err as ExecError).code === 1) {
+      if (isExecError(err) && err.code === 1) {
         return EMPTY_TREE_OID;
       }
       throw err;
@@ -1619,8 +1629,7 @@ export class WorkspaceGitService {
       await this.execGit(["diff", "--cached", "--quiet"]);
       return false;
     } catch (err) {
-      const execErr = err as ExecError;
-      if (execErr.code !== 1) {
+      if (!isExecError(err) || err.code !== 1) {
         throw err;
       }
       return true;
@@ -1924,13 +1933,15 @@ export class WorkspaceGitService {
       });
       return { stdout, stderr };
     } catch (err) {
-      const gitErr = err as ExecError & { stdout?: string; stderr?: string };
+      if (!isExecError(err)) {
+        throw err;
+      }
       throw this.enhanceGitError(args, {
-        message: gitErr.message,
-        stderr: gitErr.stderr,
-        code: gitErr.code,
-        killed: gitErr.killed,
-        signal: gitErr.signal,
+        message: err.message,
+        stderr: err.stderr,
+        code: err.code,
+        killed: err.killed,
+        signal: err.signal,
       });
     }
   }
@@ -2056,14 +2067,18 @@ export class WorkspaceGitService {
     const prefix = isPermissionError
       ? "Git permission error"
       : "Git command failed";
-    const enhanced = new Error(
-      `${prefix}: git ${args.join(" ")}\n` +
-        `Error: ${raw.message}\n` +
-        `Stderr: ${raw.stderr || ""}`,
-    ) as ExecError;
-    enhanced.killed = raw.killed;
-    enhanced.signal = raw.signal;
-    enhanced.code = raw.code;
+    const enhanced = Object.assign(
+      new Error(
+        `${prefix}: git ${args.join(" ")}\n` +
+          `Error: ${raw.message}\n` +
+          `Stderr: ${raw.stderr || ""}`,
+      ),
+      {
+        killed: raw.killed,
+        signal: raw.signal,
+        code: raw.code,
+      },
+    );
     return enhanced;
   }
 
@@ -2171,7 +2186,7 @@ export class WorkspaceGitService {
       try {
         await this.execGit(args, { signal });
       } catch (err) {
-        const msg = (err as Error).message ?? "";
+        const msg = err instanceof Error ? err.message : "";
         if (!msg.includes("index.lock") && !msg.includes("Unable to create")) {
           throw err;
         }
@@ -2247,43 +2262,44 @@ export function _resetGitServiceRegistry(): void {
 }
 
 /**
+ * @internal Test-only view of the circuit-breaker and compaction-timer
+ * fields the class keeps private. One aliasing seam for all the test-only
+ * helpers below — the class owns the fields, this names them.
+ */
+interface GitServiceInternals {
+  consecutiveFailures: number;
+  nextAllowedAttemptMs: number;
+  initConsecutiveFailures: number;
+  initNextAllowedAttemptMs: number;
+  historyCompactionTimer: unknown;
+}
+
+const internals = (service: WorkspaceGitService): GitServiceInternals =>
+  service as unknown as GitServiceInternals;
+
+/**
  * @internal Test-only: reset circuit breaker state for a service instance
  */
 export function _resetBreaker(service: WorkspaceGitService): void {
-  (
-    service as unknown as {
-      consecutiveFailures: number;
-    }
-  ).consecutiveFailures = 0;
-  (
-    service as unknown as {
-      nextAllowedAttemptMs: number;
-    }
-  ).nextAllowedAttemptMs = 0;
+  const state = internals(service);
+  state.consecutiveFailures = 0;
+  state.nextAllowedAttemptMs = 0;
 }
 
 /**
  * @internal Test-only: get consecutive failure count
  */
 export function _getConsecutiveFailures(service: WorkspaceGitService): number {
-  return (service as unknown as { consecutiveFailures: number })
-    .consecutiveFailures;
+  return internals(service).consecutiveFailures;
 }
 
 /**
  * @internal Test-only: reset init circuit breaker state for a service instance
  */
 export function _resetInitBreaker(service: WorkspaceGitService): void {
-  (
-    service as unknown as {
-      initConsecutiveFailures: number;
-    }
-  ).initConsecutiveFailures = 0;
-  (
-    service as unknown as {
-      initNextAllowedAttemptMs: number;
-    }
-  ).initNextAllowedAttemptMs = 0;
+  const state = internals(service);
+  state.initConsecutiveFailures = 0;
+  state.initNextAllowedAttemptMs = 0;
 }
 
 /**
@@ -2292,8 +2308,7 @@ export function _resetInitBreaker(service: WorkspaceGitService): void {
 export function _getInitConsecutiveFailures(
   service: WorkspaceGitService,
 ): number {
-  return (service as unknown as { initConsecutiveFailures: number })
-    .initConsecutiveFailures;
+  return internals(service).initConsecutiveFailures;
 }
 
 /**
@@ -2302,8 +2317,5 @@ export function _getInitConsecutiveFailures(
 export function _hasPendingHistoryCompaction(
   service: WorkspaceGitService,
 ): boolean {
-  return (
-    (service as unknown as { historyCompactionTimer: unknown })
-      .historyCompactionTimer !== null
-  );
+  return internals(service).historyCompactionTimer !== null;
 }

@@ -20,6 +20,11 @@ import {
   SurfaceTypeSchema,
 } from "../api/surfaces.js";
 import { AnySurfaceData } from "../api/surfaces.js";
+import {
+  booleanParam,
+  recordParam,
+  stringParam,
+} from "../util/wire-params.js";
 import { CardSurfaceData } from "../api/surfaces.js";
 import { ChoiceSurfaceData } from "../api/surfaces.js";
 import { ConfirmationSurfaceData } from "../api/surfaces.js";
@@ -1318,15 +1323,10 @@ function buildStandaloneSurfaceData(
   // of top-level `fields` may omit the latter entirely.
   const raw = request.data;
   const hasFields = Array.isArray(raw.fields) && raw.fields.length > 0;
-  // The fields passthrough is deliberate: FormSurfaceDataSchema's own parse
-  // applies the same recordArray(FormFieldSchema) normalization, and this
-  // pipeline's contract is that FUTURE additive keys (on the form and its
-  // fields) survive untouched — a zod parse here would strip them.
-  const fields: FormSurfaceData["fields"] = hasFields
-    ? (raw.fields as FormSurfaceData["fields"])
-    : [];
-
-  const form = FormSurfaceDataSchema.parse({ ...raw, fields });
+  const form = FormSurfaceDataSchema.parse({
+    ...raw,
+    fields: hasFields ? raw.fields : [],
+  });
   return { surfaceType: "form", data: form };
 }
 
@@ -2459,7 +2459,15 @@ export async function handleSurfaceAction(
     fallbackContent += `\n\nAction data: ${JSON.stringify(mergedDataForText)}`;
   }
   // Append deselection context for table/list surfaces so the LLM knows what the user chose to keep.
-  const selectedIds = mergedData?.selectedIds as string[] | undefined;
+  const selectedIds =
+    mergedData &&
+    typeof mergedData === "object" &&
+    "selectedIds" in mergedData &&
+    Array.isArray(mergedData.selectedIds)
+      ? mergedData.selectedIds.filter(
+          (id): id is string => typeof id === "string",
+        )
+      : undefined;
   if (
     selectedIds &&
     (pending.surfaceType === "table" || pending.surfaceType === "list")
@@ -2754,7 +2762,10 @@ export function buildCompletionSummary(
     return `User chose: ${actionId}`;
   }
   if (surfaceType === "list" && data) {
-    const selectedIds = data.selectedIds as string[] | undefined;
+    const selectedIds =
+      "selectedIds" in data && Array.isArray(data.selectedIds)
+        ? data.selectedIds.filter((id): id is string => typeof id === "string")
+        : undefined;
     const actionSuffix = actionId ? ` (action: ${actionId})` : "";
     if (selectedIds?.length === 1) {
       return `Selected: ${selectedIds[0]}${actionSuffix}`;
@@ -2764,7 +2775,10 @@ export function buildCompletionSummary(
     }
   }
   if (surfaceType === "table" && data) {
-    const selectedIds = data.selectedIds as string[] | undefined;
+    const selectedIds =
+      "selectedIds" in data && Array.isArray(data.selectedIds)
+        ? data.selectedIds.filter((id): id is string => typeof id === "string")
+        : undefined;
     const actionSuffix = actionId ? ` (action: ${actionId})` : "";
     if (selectedIds?.length === 1) {
       return `Selected 1 row${actionSuffix}`;
@@ -2787,7 +2801,10 @@ function buildUserFacingLabel(
   data?: Record<string, unknown>,
   surfaceData?: Record<string, unknown>,
 ): string {
-  const count = (data?.selectedIds as string[] | undefined)?.length;
+  const count = Array.isArray(data?.selectedIds)
+    ? data.selectedIds.filter((id): id is string => typeof id === "string")
+        .length
+    : undefined;
   const selectedTitles = Array.isArray(data?.selectedTitles)
     ? data.selectedTitles.filter(
         (title): title is string => typeof title === "string",
@@ -3066,11 +3083,13 @@ export function settleRunningTaskProgressSurfaces(
     if (entry.surfaceType !== "card" || !taskProgressStillRunning(entry.data)) {
       continue;
     }
-    const templateData = entry.data.templateData as Record<string, unknown>;
-    const steps = Array.isArray(templateData.steps) ? templateData.steps : [];
+    const templateData = entry.data.templateData;
+    const steps = Array.isArray(templateData?.steps) ? templateData.steps : [];
     const patch = {
       templateData: {
-        ...(templateData.status === "in_progress" ? { status: "pending" } : {}),
+        ...(templateData?.status === "in_progress"
+          ? { status: "pending" }
+          : {}),
         steps: steps.map((step) =>
           isPlainObject(step) && step.status === "in_progress"
             ? { ...step, status: "pending" }
@@ -3282,7 +3301,7 @@ export async function surfaceProxyResolver(
       const ack = await openChannelSetupPanel(
         ctx,
         surfaceId,
-        rawData as Record<string, unknown>,
+        recordParam(rawData) ?? {},
         { signal },
       );
 
@@ -3431,7 +3450,7 @@ export async function surfaceProxyResolver(
     const awaitAction =
       !ctx.hasNoClient &&
       !isActionless &&
-      ((input.await_action as boolean) ?? isInteractive);
+      (booleanParam(input.await_action) ?? isInteractive);
 
     // Only one non-persistent interactive surface at a time. If another
     // surface is already awaiting user input, reject this one so the LLM
@@ -3448,7 +3467,7 @@ export async function surfaceProxyResolver(
       }
     }
 
-    const display = (input.display as string) === "panel" ? "panel" : "inline";
+    const display = stringParam(input.display) === "panel" ? "panel" : "inline";
     // `persistent: true` keeps the card visible through action clicks (only
     // marks the clicked action as spent). Forward the flag so
     // `SurfaceManager.showSurface` on the client sees it — without this the
@@ -3676,7 +3695,7 @@ export async function surfaceProxyResolver(
       // Inline-only preview card emitted during app_create — do not open a
       // workspace panel and do not register surface state. The client renders
       // this as a tappable inline card that opens the app on demand.
-      ctx.emit({
+      const previewShow: UiSurfaceShow = {
         type: "ui_surface_show",
         conversationId: ctx.conversationId,
         surfaceId,
@@ -3685,7 +3704,8 @@ export async function surfaceProxyResolver(
         data: surfaceData,
         display: "inline",
         ...(toolUseId ? { toolCallId: toolUseId } : {}),
-      } as UiSurfaceShow);
+      };
+      ctx.emit(previewShow);
 
       // Track for message persistence so the inline card survives history reload.
       ctx.currentTurnSurfaces.push({

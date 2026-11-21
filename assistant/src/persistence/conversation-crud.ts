@@ -156,6 +156,10 @@ import {
   toolInvocations,
 } from "./schema/index.js";
 import { timeSyncSection } from "./slow-sync-log.js";
+import {
+  numberParam,
+  recordParam,
+} from "../util/wire-params.js";
 import { deleteSubagentRecordsByParent } from "./subagent-store.js";
 
 const log = getLogger("conversation-store");
@@ -593,7 +597,10 @@ export function isStandaloneAssistantMessage(
     return false;
   }
   try {
-    const parsed = JSON.parse(metadata) as Record<string, unknown>;
+    const parsed = recordParam(JSON.parse(metadata));
+    if (!parsed) {
+      return false;
+    }
     return (
       isSystemCardMetadata(parsed) ||
       isProviderErrorMetadata(parsed) ||
@@ -672,7 +679,10 @@ function cloneForkMessageMetadata(
   try {
     const parsed = JSON.parse(metadata);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      const sourceRecord = parsed as Record<string, unknown>;
+      const sourceRecord = recordParam(parsed);
+      if (!sourceRecord) {
+        return "";
+      }
       const forkSourceMessageId =
         typeof sourceRecord.forkSourceMessageId === "string"
           ? sourceRecord.forkSourceMessageId
@@ -790,7 +800,7 @@ export const parseConversation = createRowMapper<
   updatedAt: "updatedAt",
   totalInputTokens: {
     from: "totalInputTokens",
-    transform: (v) => (v as number | null) ?? 0,
+    transform: (v) => numberParam(v) ?? 0,
   },
   totalOutputTokens: "totalOutputTokens",
   totalEstimatedCost: "totalEstimatedCost",
@@ -984,13 +994,18 @@ function warnOnModelInvisibleContent(
     (block) =>
       typeof block === "object" &&
       block !== null &&
-      (block as { type?: unknown }).type === "ui_surface",
+      "type" in block &&
+      block.type === "ui_surface",
   );
   if (!allCards) {
     return;
   }
   const surfaceTypes = parsed
-    .map((block) => (block as { surfaceType?: unknown }).surfaceType)
+    .map((block) =>
+      typeof block === "object" && block !== null && "surfaceType" in block
+        ? block.surfaceType
+        : undefined,
+    )
     .filter((t): t is string => typeof t === "string");
   const message =
     "Persisting a message whose only content is ui_surface blocks — the model cannot see it. " +
@@ -1090,7 +1105,12 @@ async function insertMessageCore(
             } catch (insertErr) {
               raw.exec("ROLLBACK TO insert_msg");
               raw.exec("RELEASE insert_msg");
-              const code = (insertErr as { code?: string }).code ?? "";
+              const code =
+                typeof insertErr === "object" &&
+                insertErr !== null &&
+                "code" in insertErr
+                  ? insertErr.code
+                  : "";
               if (code === "SQLITE_CONSTRAINT_UNIQUE") {
                 // Duplicate clientMessageId — return the existing row.
                 const existing = db
@@ -1107,7 +1127,9 @@ async function insertMessageCore(
                   return {
                     id: existing.id,
                     conversationId: existing.conversationId,
-                    role: existing.role as MessageRole,
+                    role: z
+                      .enum(["user", "assistant", "system"])
+                      .parse(existing.role),
                     content: existing.content,
                     createdAt: existing.createdAt,
                     ...(existing.metadata
@@ -1283,11 +1305,11 @@ export function createConversation(
     totalInputTokens: 0,
     totalOutputTokens: 0,
     totalEstimatedCost: 0,
-    contextSummary: null as string | null,
+    contextSummary: null,
     contextCompactedMessageCount: 0,
-    contextCompactedAt: null as number | null,
-    slackContextCompactionWatermarkTs: null as string | null,
-    slackContextCompactionWatermarkAt: null as number | null,
+    contextCompactedAt: null,
+    slackContextCompactionWatermarkTs: null,
+    slackContextCompactionWatermarkAt: null,
     conversationType,
     source,
     originChannel,
@@ -1576,7 +1598,7 @@ export function forkConversation(params: {
   const messagesToCopy =
     copyBoundaryIndex >= 0
       ? dropUnfinalizedRows(sourceMessages.slice(0, copyBoundaryIndex + 1))
-      : ([] as MessageRow[]);
+      : [];
 
   // Inherit the history-strip marker only when the fork boundary is at-or-
   // after the strip event. Pre-strip forks branch from history that pre-
@@ -1986,10 +2008,10 @@ function remapWorkspaceAttachmentRefs(
     return value;
   }
 
-  const record = value as Record<string, unknown>;
   let changed = false;
   const remapped: Record<string, unknown> = {};
-  for (const [key, entry] of Object.entries(record)) {
+  const record = recordParam(value) ?? {};
+  for (const [key, entry] of Object.entries(value)) {
     let next = remapWorkspaceAttachmentRefs(entry, attachmentIdMap);
     if (
       key === "attachmentId" &&
@@ -2181,7 +2203,7 @@ export async function forkConversationForRetrospective(params: {
   const messagesToCopy =
     copyBoundaryIndex >= 0
       ? dropUnfinalizedRows(sourceMessages.slice(0, copyBoundaryIndex + 1))
-      : ([] as MessageRow[]);
+      : [];
 
   const sourceHistoryStrippedAt = sourceConversation.historyStrippedAt ?? null;
   const boundaryMessageCreatedAt = messagesToCopy.at(-1)?.createdAt ?? null;
@@ -2371,10 +2393,10 @@ export function isReferentialHistoryOrphaned(row: {
   forkParentConversationId: string | null;
   forkParentMessageId: string | null;
 }): boolean {
-  if (!isReferentialFork(row)) {
+  if (!isReferentialFork(row) || !row.forkParentConversationId) {
     return false;
   }
-  return getConversation(row.forkParentConversationId as string) === null;
+  return getConversation(row.forkParentConversationId) === null;
 }
 
 export function deleteConversation(id: string): DeletedMemoryIds {
@@ -3889,7 +3911,7 @@ export function clearExpiredInferenceProfiles(
   // Two-step approach: SELECT to get pre-clear sessionIds, then UPDATE.
   // The UPDATE re-applies the WHERE condition for CAS safety.
   // RETURNING the id lets us know which rows were actually cleared.
-  const expired = raw
+  const expiredRaw = raw
     .prepare(
       `
     SELECT id AS conversationId, inference_profile_session_id AS sessionId
@@ -3897,16 +3919,24 @@ export function clearExpiredInferenceProfiles(
     WHERE inference_profile_expires_at IS NOT NULL AND inference_profile_expires_at <= ?
   `,
     )
-    .all(now) as Array<{ conversationId: string; sessionId: string | null }>;
+    .all(now);
+  const expiredRows = z
+    .array(
+      z.object({
+        conversationId: z.string(),
+        sessionId: z.string().nullable(),
+      }),
+    )
+    .parse(expiredRaw);
 
-  if (expired.length === 0) {
+  if (expiredRows.length === 0) {
     return [];
   }
 
-  const ids = expired.map((r) => r.conversationId);
+  const ids = expiredRows.map((r) => r.conversationId);
   const placeholders = ids.map(() => "?").join(", ");
 
-  const actuallyCleared = raw
+  const actuallyClearedRaw = raw
     .prepare(
       `
     UPDATE conversations
@@ -3915,10 +3945,13 @@ export function clearExpiredInferenceProfiles(
     RETURNING id AS conversationId
   `,
     )
-    .all(...ids, now) as Array<{ conversationId: string }>;
+    .all(...ids, now);
+  const clearedRows = z
+    .array(z.object({ conversationId: z.string() }))
+    .parse(actuallyClearedRaw);
 
-  const clearedSet = new Set(actuallyCleared.map((r) => r.conversationId));
-  return expired.filter((r) => clearedSet.has(r.conversationId));
+  const clearedSet = new Set(clearedRows.map((r) => r.conversationId));
+  return expiredRows.filter((r) => clearedSet.has(r.conversationId));
 }
 
 /**
@@ -3945,7 +3978,7 @@ export function listActiveInferenceProfileSessions(
   if (conversationId) {
     baseConditions.push(eq(conversations.id, conversationId));
   }
-  return db
+  const rows = db
     .select({
       conversationId: conversations.id,
       conversationTitle: conversations.title,
@@ -3955,13 +3988,18 @@ export function listActiveInferenceProfileSessions(
     })
     .from(conversations)
     .where(and(...baseConditions))
-    .all() as Array<{
-    conversationId: string;
-    conversationTitle: string | null;
-    profile: string;
-    sessionId: string;
-    expiresAt: number;
-  }>;
+    .all();
+  return z
+    .array(
+      z.object({
+        conversationId: z.string(),
+        conversationTitle: z.string().nullable(),
+        profile: z.string(),
+        sessionId: z.string(),
+        expiresAt: z.number(),
+      }),
+    )
+    .parse(rows);
 }
 
 /**
@@ -4557,9 +4595,7 @@ export function finalizeMessageContent(
       .from(messages)
       .where(eq(messages.id, messageId))
       .get();
-    const existing = row?.metadata
-      ? (JSON.parse(row.metadata) as Record<string, unknown>)
-      : {};
+    const existing = (row?.metadata ? recordParam(JSON.parse(row.metadata)) : undefined) ?? {};
     tx.update(messages)
       .set({
         content: contentJson,
@@ -5029,7 +5065,8 @@ function isToolResultMessage(role: string, content: string): boolean {
       (block: unknown) =>
         block != null &&
         typeof block === "object" &&
-        (block as Record<string, unknown>).type === "tool_result",
+        "type" in block &&
+        block.type === "tool_result",
     );
   } catch {
     return false;

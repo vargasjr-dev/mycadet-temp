@@ -3,6 +3,7 @@ import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
+import { z } from "zod";
 import { v4 as uuid } from "uuid";
 
 import { getQdrantHttpPortEnv, getQdrantUrlEnv } from "../../config/env.js";
@@ -52,6 +53,22 @@ export interface QdrantClientConfig {
   quantization: "scalar" | "none";
   embeddingModel?: string;
 }
+
+/**
+ * Point payloads are written by this module's upserts and read back through
+ * the Qdrant client, which types them as a bare record. The round trip is
+ * the trust boundary — one documented seam instead of a cast at every read.
+ */
+const asPayload = (payload: unknown): QdrantPointPayload =>
+  payload as QdrantPointPayload;
+
+/**
+ * Filters are built as plain records by this module's callers and handed to
+ * the Qdrant client, whose Filter type models the same wire shape — the
+ * constructor seam is the documented bridge.
+ */
+const asFilter = (filter: Record<string, unknown> | undefined) =>
+  filter as Parameters<QdrantRestClient["search"]>[1]["filter"];
 
 export interface QdrantPointPayload {
   target_type:
@@ -160,7 +177,14 @@ export async function clearRebuildSentinel(): Promise<void> {
   try {
     await unlink(rebuildSentinelPath());
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (
+      !(
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === "ENOENT"
+      )
+    ) {
       throw err;
     }
   }
@@ -225,16 +249,22 @@ export class CadetQdrantClient {
           const info = await this.client.getCollection(this.collection);
           const vectorsConfig = info.config?.params?.vectors;
 
-          // Detect whether the collection uses unnamed vectors (legacy) vs named vectors
-          const isUnnamedVectors =
-            vectorsConfig != null &&
-            typeof vectorsConfig === "object" &&
-            "size" in vectorsConfig;
-
+          // Detect whether the collection uses unnamed vectors (legacy) vs
+          // named vectors: the SDK types config as the unnamed VectorParams
+          // or the named map, and only a real {size: number} shape answers.
+          const vectorParamsProbe = z
+            .object({ size: z.number() })
+            .nullable()
+            .catch(null);
+          const namedVectorsProbe = z
+            .object({ dense: vectorParamsProbe.optional() })
+            .nullable()
+            .catch(null);
+          const unnamedParse = vectorParamsProbe.safeParse(vectorsConfig);
+          const isUnnamedVectors = unnamedParse.success;
           const currentSize = isUnnamedVectors
-            ? (vectorsConfig as { size?: number })?.size
-            : (vectorsConfig as Record<string, { size?: number }> | undefined)
-                ?.dense?.size;
+            ? unnamedParse.data?.size
+            : namedVectorsProbe.parse(vectorsConfig)?.dense?.size;
 
           const dimMismatch =
             currentSize != null && currentSize !== this.vectorSize;
@@ -371,7 +401,7 @@ export class CadetQdrantClient {
       if (
         err instanceof Error &&
         "status" in err &&
-        (err as { status: number }).status === 409
+        err.status === 409
       ) {
         if (await this.ensurePayloadIndexesSafe()) {
           this.collectionReady = true;
@@ -423,16 +453,18 @@ export class CadetQdrantClient {
   private async reconcileSparseIndexOnDisk(
     info: Awaited<ReturnType<QdrantRestClient["getCollection"]>>,
   ): Promise<void> {
-    const sparseParams = (
-      info.config?.params as
-        | {
-            sparse_vectors?: Record<
-              string,
-              { index?: { on_disk?: boolean | null } | null } | undefined
-            >;
-          }
-        | undefined
-    )?.sparse_vectors;
+    const sparseParams = z
+      .object({
+        sparse_vectors: z
+          .record(
+            z.string(),
+            z.object({ index: z.object({ on_disk: z.boolean().nullable().optional() }).optional() }).optional(),
+          )
+          .optional(),
+      })
+      .nullable()
+      .catch(null)
+      .parse(info.config?.params)?.sparse_vectors;
     // No sparse config in the probe — nothing to move. (A collection without
     // the `sparse` named vector cannot accept an index update for it.)
     if (!sparseParams || !("sparse" in sparseParams)) {
@@ -529,7 +561,7 @@ export class CadetQdrantClient {
       limit,
       with_payload: true,
       score_threshold: 0.0,
-      filter: filter as Parameters<QdrantRestClient["search"]>[1]["filter"],
+      filter: asFilter(filter),
     };
 
     let results;
@@ -548,7 +580,7 @@ export class CadetQdrantClient {
     return results.map((result) => ({
       id: typeof result.id === "string" ? result.id : String(result.id),
       score: result.score,
-      payload: result.payload as unknown as QdrantPointPayload,
+      payload: asPayload(result.payload),
     }));
   }
 
@@ -609,7 +641,7 @@ export class CadetQdrantClient {
   async hybridSearch(params: {
     denseVector: number[];
     sparseVector: QdrantSparseVector;
-    filter?: object;
+    filter?: Record<string, unknown>;
     limit: number;
     prefetchLimit?: number;
   }): Promise<QdrantSearchResult[]> {
@@ -621,7 +653,7 @@ export class CadetQdrantClient {
     const queryParams = {
       prefetch: [
         {
-          query: denseVector as unknown as number[],
+          query: denseVector,
           using: "dense",
           limit: effectivePrefetchLimit,
         },
@@ -636,7 +668,7 @@ export class CadetQdrantClient {
       ],
       query: { fusion: "rrf" as const },
       limit,
-      filter: filter as Record<string, unknown> | undefined,
+      filter,
       with_payload: true,
     };
 
@@ -656,7 +688,7 @@ export class CadetQdrantClient {
     return (results.points ?? []).map((point) => ({
       id: typeof point.id === "string" ? point.id : String(point.id),
       score: point.score ?? 0,
-      payload: point.payload as unknown as QdrantPointPayload,
+      payload: asPayload(point.payload),
     }));
   }
 
@@ -800,7 +832,7 @@ export class CadetQdrantClient {
     }
     return {
       id: typeof point.id === "string" ? point.id : String(point.id),
-      payload: point.payload as unknown as QdrantPointPayload,
+      payload: asPayload(point.payload),
     };
   }
 
@@ -913,12 +945,7 @@ export class CadetQdrantClient {
    * (e.g. `assistant sessions clear`).
    */
   private isCollectionMissing(err: unknown): boolean {
-    if (
-      err &&
-      typeof err === "object" &&
-      "status" in err &&
-      (err as { status: number }).status === 404
-    ) {
+    if (err && typeof err === "object" && "status" in err && err.status === 404) {
       return true;
     }
     const msg = err instanceof Error ? err.message : String(err);
@@ -998,10 +1025,7 @@ export class CadetQdrantClient {
       if (points.length === 0) {
         return null;
       }
-      return (
-        ((points[0].payload as Record<string, unknown>)
-          ?.embedding_model as string) ?? null
-      );
+      return z.string().nullish().catch(null).parse(points[0].payload?.embedding_model) ?? null;
     } catch {
       return null;
     }
@@ -1065,14 +1089,14 @@ export class CadetQdrantClient {
         });
         for (const point of result.points) {
           const id = typeof point.id === "string" ? point.id : String(point.id);
-          const payload = (point.payload ?? {}) as Record<string, unknown>;
+          const payload = point.payload ?? {};
           out.push({ id, payload });
         }
         const next = result.next_page_offset;
         if (next == null) {
           break;
         }
-        offset = typeof next === "string" ? next : (next as number);
+        offset = typeof next === "string" ? next : Number(next);
       }
       return out;
     };

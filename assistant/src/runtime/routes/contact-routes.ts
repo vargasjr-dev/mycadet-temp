@@ -25,6 +25,12 @@ import {
 import { z } from "zod";
 
 import {
+  nullableStringParam,
+  numberParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
+import {
   createInvite,
   listInvites,
   redeemInviteByToken,
@@ -55,7 +61,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 const log = getLogger("contact-routes");
 
 function withGuardianNameOverride<
-  T extends { role: string; displayName: string },
+  T extends { role?: string | undefined; displayName: string },
 >(contact: T): T {
   if (contact.role === "guardian") {
     return {
@@ -106,6 +112,20 @@ interface PreparableContact {
   channels: { address: string }[];
 }
 
+/** The merge relay's contact: the gateway owns the full shape; this probe
+ * pins the fields the response preparation reads and passes the rest
+ * through, so a malformed relay fails loudly instead of casting. */
+const mergedContactProbe = z
+  .object({
+    id: z.string(),
+    displayName: z.string(),
+    role: z.string(),
+    contactType: z.string().nullable().optional(),
+    channels: z
+      .array(z.object({ address: z.string() }).passthrough()),
+  })
+  .passthrough();
+
 /** Compose the response transforms, then apply the guardian display-name
  * override (keyed off the role that's correct for this path) and the channel
  * compat field. Also coerces nullable gateway-sourced fields to their DB
@@ -134,16 +154,22 @@ function prepareContactResponse(
     contact.contactType == null
       ? { ...contact, contactType: "human" }
       : contact;
-  const withRole = guardianIds
-    ? withGatewayRole(coerced, guardianIds)
-    : (coerced as PreparableContact & { role: string });
-  return withChannelCompat(withGuardianNameOverride(withRole));
+  if (guardianIds) {
+    return withChannelCompat(
+      withGuardianNameOverride(withGatewayRole(coerced, guardianIds)),
+    );
+  }
+  return withChannelCompat(withGuardianNameOverride(coerced));
 }
 
 const VALID_CONTACT_TYPES: readonly ContactType[] = ["human", "assistant"];
 
 function isContactType(value: string): value is ContactType {
-  return (VALID_CONTACT_TYPES as readonly string[]).includes(value);
+  return VALID_CONTACT_TYPES.some((t) => t === value);
+}
+
+function isContactRole(value: string): value is ContactRole {
+  return value === "guardian" || value === "contact";
 }
 
 // ---------------------------------------------------------------------------
@@ -326,7 +352,7 @@ async function hydrateTelemetryFromGateway(
 
 export async function handleListContacts(queryParams: Record<string, string>) {
   const limit = Number(queryParams.limit ?? 50);
-  const role = (queryParams.role as ContactRole) || undefined;
+  const role = isContactRole(queryParams.role) ? queryParams.role : undefined;
   const contactTypeParam = queryParams.contactType;
   const query = queryParams.query || undefined;
   const channelAddress = queryParams.channelAddress || undefined;
@@ -338,8 +364,8 @@ export async function handleListContacts(queryParams: Record<string, string>) {
     );
   }
 
-  const contactType = contactTypeParam
-    ? (contactTypeParam as ContactType)
+  const contactType = isContactType(contactTypeParam)
+    ? contactTypeParam
     : undefined;
 
   // True search stays daemon-native: gateway-native search is design-blocked.
@@ -440,8 +466,8 @@ export async function handleListInvites({
 }
 
 export async function handleCreateInvite({ body = {} }: RouteHandlerArgs) {
-  const contactId = body.contactId as string;
-  const sourceChannel = body.sourceChannel as string | undefined;
+  const contactId = stringParam(body.contactId) ?? "";
+  const sourceChannel = stringParam(body.sourceChannel);
   // The guardian display label on voice invites is daemon-resolved and passed
   // through to the gateway, which stores it and never interprets it.
   const guardianName =
@@ -451,10 +477,10 @@ export async function handleCreateInvite({ body = {} }: RouteHandlerArgs) {
     result = await createInvite({
       contactId,
       sourceChannel,
-      note: body.note as string | undefined,
-      maxUses: body.maxUses as number | undefined,
-      expiresInMs: body.expiresInMs as number | undefined,
-      expectedExternalUserId: body.expectedExternalUserId as string | undefined,
+      note: stringParam(body.note),
+      maxUses: numberParam(body.maxUses),
+      expiresInMs: numberParam(body.expiresInMs),
+      expectedExternalUserId: stringParam(body.expectedExternalUserId),
       ...(guardianName ? { guardianName } : {}),
       ...(typeof body.sourceConversationId === "string"
         ? { sourceConversationId: body.sourceConversationId }
@@ -565,9 +591,9 @@ export async function handleRedeemInvite(args: RouteHandlerArgs) {
 // The provider call is a daemon capability.
 export async function handleTriggerInviteCall({ body = {} }: RouteHandlerArgs) {
   const result = await triggerInviteCall({
-    phoneNumber: body.phoneNumber as string | undefined,
-    friendName: body.friendName as string | null | undefined,
-    guardianName: body.guardianName as string | null | undefined,
+    phoneNumber: stringParam(body.phoneNumber),
+    friendName: nullableStringParam(body.friendName),
+    guardianName: nullableStringParam(body.guardianName),
   });
   if (!result.ok) {
     throw new BadRequestError(result.error);
@@ -988,8 +1014,8 @@ export const ROUTES: RouteDefinition[] = [
  * second write).
  */
 export async function handleMergeContactsRoute(args: RouteHandlerArgs) {
-  const keepId = args.body?.keepId as string | undefined;
-  const mergeId = args.body?.mergeId as string | undefined;
+  const keepId = stringParam(args.body?.keepId);
+  const mergeId = stringParam(args.body?.mergeId);
 
   if (!keepId || !mergeId) {
     throw new BadRequestError("keepId and mergeId are required");
@@ -1007,9 +1033,7 @@ export async function handleMergeContactsRoute(args: RouteHandlerArgs) {
     return {
       ok: parsed.ok,
       contact: parsed.contact
-        ? prepareContactResponse(
-            parsed.contact as unknown as PreparableContact & { role: string },
-          )
+        ? prepareContactResponse(mergedContactProbe.parse(parsed.contact))
         : undefined,
     };
   } catch (err) {
