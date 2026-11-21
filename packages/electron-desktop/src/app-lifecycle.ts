@@ -62,6 +62,10 @@ import {
   install as installPermissions,
   type PermissionsShellInputs,
 } from "./features/permissions";
+import {
+  installPermissionGuide,
+  type PermissionGuideInputs,
+} from "./features/permission-guide";
 import { install as installTray, type ShellTrayInputs } from "./features/tray";
 import { install as installShare, type SharePresenter } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
@@ -153,6 +157,12 @@ export interface DesktopAppInputs {
    * answer (the helper sidecar and the notification probe).
    */
   permissions?: PermissionsShellInputs;
+  /**
+   * The shell's permission-guide surfaces — its drag target, its settings
+   * pane opener, its settings-window list. Absent, the guide doesn't
+   * install.
+   */
+  permissionGuide?: PermissionGuideInputs;
   /**
    * How the main window's chrome draws — the macOS traffic lights over a
    * hidden title bar, the Windows caption overlay, or the plain system
@@ -450,6 +460,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installTray(inputs.tray);
       installShare(inputs.share);
       installPermissions(inputs.permissions);
+      installPermissionGuide(inputs.permissionGuide);
       // Still the classic shells' own composition until its round lands:
       // the helper dictation bridge and the voice-mode chord (R11).
       if (process.platform !== "darwin") {

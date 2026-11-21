@@ -1,4 +1,3 @@
-import { stat } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -28,37 +27,64 @@ import {
   type PermissionGuideState,
   type PermissionSourceRect,
 } from "@mycadet/ipc-contract";
-import { createFloatingWindow } from "@mycadet/electron-desktop/floating-window";
-import {
-  getAccentHex,
-  getAvatarPng,
-  onAvatarChange,
-} from "@mycadet/electron-desktop/avatar";
+import { createFloatingWindow } from "../floating-window";
+import { getAccentHex, getAvatarPng, onAvatarChange } from "../avatar";
+import { handle, on } from "../ipc";
+import log from "../app-logger";
+import { getPermissionsService } from "./permissions";
 
-import { defaultCaptureSourceDeps } from "./companion-capture-sources";
-import { handle, on } from "@mycadet/electron-desktop/ipc";
-import log from "@mycadet/electron-desktop/app-logger";
-import {
-  GUIDE_HEIGHT,
-  GUIDE_WIDTH,
-  permissionGuideBounds,
-} from "./permission-drag-target";
-import {
-  openPermissionSettingsPane,
-  preparePermissionPresentation,
-} from "./permissions-strategy";
-import type {
-  SystemPermissionKind,
-  SystemPermissionsState,
-} from "@mycadet/ipc-contract";
-import { getPermissionsService } from "@mycadet/electron-desktop";
-import { getMacHelperAppPath } from "./sidecar/mac-helper-path";
+import { PERMISSION_GUIDE_MIN_HEIGHT } from "@mycadet/ipc-contract";
 
-/** The slice of the shared permissions service the guide drives. */
-type PermissionsService = {
-  state(): Promise<SystemPermissionsState>;
-  refresh(): Promise<SystemPermissionsState>;
-};
+export const GUIDE_WIDTH = 560;
+export const GUIDE_HEIGHT = PERMISSION_GUIDE_MIN_HEIGHT;
+
+/** Keep the app list exposed, with the guide tucked against its lower edge. */
+export function permissionGuideBounds(
+  workArea: Rectangle,
+  settings?: Rectangle,
+  contentHeight = GUIDE_HEIGHT,
+): Rectangle {
+  const width = Math.min(GUIDE_WIDTH, workArea.width - 24);
+  const height = Math.min(contentHeight, workArea.height - 24);
+  const right = settings
+    ? settings.x + settings.width - 16
+    : workArea.x + (workArea.width + width) / 2;
+  const bottom = settings
+    ? settings.y + settings.height - 16
+    : workArea.y + workArea.height - 24;
+  return {
+    x: Math.round(
+      Math.max(
+        workArea.x + 12,
+        Math.min(right - width, workArea.x + workArea.width - width - 12),
+      ),
+    ),
+    y: Math.round(
+      Math.max(
+        workArea.y + 12,
+        Math.min(bottom - height, workArea.y + workArea.height - height - 12),
+      ),
+    ),
+    width,
+    height,
+  };
+}
+
+/**
+ * The surfaces only the shell's OS has: the app the user drags into the OS
+ * settings list, and — where the OS even lets a window be found — the
+ * settings windows the guide follows.
+ */
+export interface PermissionGuideInputs {
+  /** The helper app to drag into the list, with its icon. */
+  dragTarget(): Promise<{ file: string; icon: NativeImage }>;
+  /** Open the kind's settings pane — the guide opens it beside itself. */
+  openSettingsPane(kind: DraggablePermissionKind): Promise<void>;
+  /** The OS settings windows, when the OS can name them. */
+  listSettingsWindows?(): Promise<Array<{ id?: number; bounds: Rectangle }>>;
+  /** Runs when the guide yields focus to the OS settings surface. */
+  onYieldToSettings?: () => void;
+}
 
 const GUIDE = "permission-guide";
 const kindSchema = z.enum(DRAGGABLE_PERMISSION_KINDS);
@@ -88,6 +114,7 @@ interface GuideSession {
 let guide: GuideSession | null = null;
 let generation = 0;
 let guideOwner: WebContents | undefined;
+let guideInputs: PermissionGuideInputs | undefined;
 
 function refreshGuideAppearance(session: GuideSession): void {
   const png = getAvatarPng();
@@ -139,27 +166,22 @@ function guideSender(id: number, sender: WebContents): GuideSession | null {
 }
 
 async function followSettings(session: GuideSession): Promise<void> {
-  const windows = await defaultCaptureSourceDeps.listWindows();
+  const windows = (await guideInputs?.listSettingsWindows?.()) ?? [];
   if (guide !== session || !session.ready || session.yieldedToSettings) {
     return;
   }
-  const settingsWindows = windows.filter(
-    (win) => win.bundleId === "com.apple.systempreferences",
-  );
   // Authentication dialogs can precede the main window in the window list.
   const settings =
     session.settingsWindowId === undefined
-      ? settingsWindows.sort(
+      ? windows.sort(
           (a, b) =>
             b.bounds.width * b.bounds.height - a.bounds.width * a.bounds.height,
         )[0]
-      : settingsWindows.find(
-          (win) => win.windowId === session.settingsWindowId,
-        );
+      : windows.find((win) => win.id === session.settingsWindowId);
   if (!settings) {
     return;
   }
-  session.settingsWindowId = settings.windowId;
+  session.settingsWindowId = settings.id;
   session.workArea = screen.getDisplayMatching(settings.bounds).workArea;
   const next = permissionGuideBounds(
     session.workArea,
@@ -176,22 +198,28 @@ async function followSettings(session: GuideSession): Promise<void> {
 }
 
 function yieldToSettings(session: GuideSession): void {
-  preparePermissionPresentation();
+  guideInputs?.onYieldToSettings?.();
   session.yieldedToSettings = true;
   session.window.setAlwaysOnTop(false);
 }
 
 /**
- * Open the kind's Settings pane with the floating guide beside it, the guide
- * holding the helper app to drag into the list. Settles once the guide is up;
- * the guide closes itself when the grant lands.
+ * Open the kind's Settings pane with the floating guide beside it, the
+ * guide holding the shell's drag target. Settles once the guide is up; the
+ * guide closes itself when the grant lands.
  */
 export async function beginPermissionGuide(
-  service: Pick<PermissionsService, "state" | "refresh">,
+  service: {
+    state(): Promise<Record<string, { status: string }>>;
+    refresh(): Promise<Record<string, { status: string }>>;
+  },
   kind: DraggablePermissionKind,
   sender?: WebContents,
   source?: PermissionSourceRect,
 ): Promise<void> {
+  if (!guideInputs) {
+    return;
+  }
   dismissGuide();
   const id = generation;
   guideOwner = sender;
@@ -203,13 +231,8 @@ export async function beginPermissionGuide(
     guideOwner = undefined;
     return;
   }
-  const file = getMacHelperAppPath();
-  // Resolve only app-owned paths in main; a renderer cannot choose a drag payload.
-  const [fileStat, icon] = await Promise.all([
-    stat(file),
-    app.getFileIcon(file, { size: "normal" }),
-  ]);
-  if (!fileStat.isDirectory() || !file.endsWith(".app") || icon.isEmpty()) {
+  const { file, icon } = await guideInputs.dragTarget();
+  if (icon.isEmpty()) {
     throw new Error(
       "The permission app is unavailable. Reinstall Cadet and try again.",
     );
@@ -250,7 +273,7 @@ export async function beginPermissionGuide(
     state: {
       id,
       kind,
-      appName: path.basename(file, ".app"),
+      appName: path.basename(file, path.extname(file)),
       appIcon: icon.toDataURL(),
       error: false,
     },
@@ -274,7 +297,7 @@ export async function beginPermissionGuide(
   });
   publishGuide();
   try {
-    await openPermissionSettingsPane(kind);
+    await guideInputs.openSettingsPane(kind);
   } catch (error) {
     if (guide === session) {
       dismissGuide();
@@ -295,8 +318,8 @@ export async function beginPermissionGuide(
         return;
       }
       checking = true;
-      void service
-        .refresh()
+      void getPermissionsService()
+        ?.refresh()
         .then((next) => {
           if (guide === session && next[kind].status === "granted") {
             dismissGuide();
@@ -326,8 +349,13 @@ export async function beginPermissionGuide(
   );
 }
 
-export function installCompanionPermissionGuide(): void {
-  // The shared permissions install runs before the client's setup.
+export const installPermissionGuide = (
+  inputs?: PermissionGuideInputs,
+): void => {
+  if (!inputs) {
+    return;
+  }
+  guideInputs = inputs;
   const service = getPermissionsService();
   if (!service) {
     return;
@@ -413,4 +441,4 @@ export function installCompanionPermissionGuide(): void {
     }
   });
   app.on("before-quit", () => dismissGuide());
-}
+};

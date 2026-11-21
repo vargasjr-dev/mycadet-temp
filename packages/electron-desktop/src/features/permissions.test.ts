@@ -204,9 +204,9 @@ test("a malformed presentation degrades to a plain request", async () => {
 test("the shell's own reads, requests, and insertion win over the defaults", async () => {
   handlers.clear();
   const reads: SystemPermissionKind[] = [];
-  let requested: SystemPermissionKind | null = null;
-  let inserted: string | null = null;
-  let askedFor: SystemPermissionKind | null = null;
+  const requested: SystemPermissionKind[] = [];
+  const inserted: string[] = [];
+  const askedFor: SystemPermissionKind[] = [];
   permissionsInstall({
     settingsUris: { microphone: "shell://mic-pane" },
     readStatus: async (kind) => {
@@ -214,14 +214,14 @@ test("the shell's own reads, requests, and insertion win over the defaults", asy
       return kind === "microphone" ? "denied" : undefined;
     },
     request: async (kind, { refresh }) => {
-      requested = kind;
+      requested.push(kind);
       await refresh();
     },
     openSettings: async (kind) => {
-      askedFor = kind;
+      askedFor.push(kind);
     },
     insertText: async (text) => {
-      inserted = text;
+      inserted.push(text);
       return { status: "inserted" };
     },
   });
@@ -237,15 +237,15 @@ test("the shell's own reads, requests, and insertion win over the defaults", asy
   expect(reads.length).toBe(SYSTEM_PERMISSION_KINDS.length);
 
   await handlers.get(PERMISSIONS_REQUEST)!(["microphone"]);
-  expect(requested).toBe("microphone");
+  expect(requested).toEqual(["microphone"]);
 
   await handlers.get(PERMISSIONS_OPEN_SETTINGS)!(["screen"]);
-  expect(askedFor).toBe("screen");
+  expect(askedFor).toEqual(["screen"]);
 
   await expect(handlers.get(TEXT_INSERT)!(["hello"])).resolves.toEqual({
     status: "inserted",
   });
-  expect(inserted).toBe("hello");
+  expect(inserted).toEqual(["hello"]);
 });
 
 test("a throwing shell read surfaces in the item's error field", async () => {

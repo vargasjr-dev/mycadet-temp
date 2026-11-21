@@ -116,7 +116,7 @@ import {
   watchCoachmarkPress,
   type CoachmarkPressRect,
 } from "./coachmark-press-watch";
-import { beginPermissionGuide } from "./companion-permission-guide";
+import { beginPermissionGuide } from "@mycadet/electron-desktop";
 import { setPointerOnCompanion } from "./companion-pointer";
 import {
   closeCompanionPopover,

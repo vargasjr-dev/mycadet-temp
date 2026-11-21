@@ -117,6 +117,7 @@ mock.module("./features/login-item", () => ({
 }));
 mock.module("./features/permissions", () => ({
   install: recorder("permissions"),
+  getPermissionsService: () => null,
 }));
 mock.module("./features/tray", () => ({ install: recorder("tray") }));
 mock.module("./features/share", () => ({ install: recorder("share") }));

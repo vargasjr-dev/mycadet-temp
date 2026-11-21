@@ -57,6 +57,8 @@ export { getDeviceId } from "./device-id";
 export { areChromeDevToolsEnabled } from "./devtools";
 export { shareMenuPresenter } from "./features/share";
 export { getPermissionsService } from "./features/permissions";
+export { beginPermissionGuide } from "./features/permission-guide";
+export type { PermissionGuideInputs } from "./features/permission-guide";
 export type {
   PermissionsRequestContext,
   PermissionsShellInputs,

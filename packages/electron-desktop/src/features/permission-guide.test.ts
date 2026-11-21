@@ -7,7 +7,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../test-setup";
 import type { PermissionGuideState } from "@mycadet/ipc-contract";
 import type {
   SystemPermissionKind as PermissionKind,
@@ -16,8 +16,14 @@ import type {
   SystemPermissionStatus as PermissionStatus,
 } from "@mycadet/ipc-contract";
 
-const handles = new Map<string, (...args: any[]) => any>();
-const listeners = new Map<string, (...args: any[]) => any>();
+const handles = new Map<
+  string,
+  (args: unknown[], event?: unknown) => unknown
+>();
+const listeners = new Map<
+  string,
+  (args: unknown[], event?: unknown) => unknown
+>();
 const intervals: (() => void)[] = [];
 const intervalSpy = spyOn(globalThis, "setInterval").mockImplementation(
   Object.assign((callback: () => void) => {
@@ -37,6 +43,8 @@ let accentHex: string | null = null;
 let avatarEmpty = false;
 let avatarChanged = () => {};
 const settingsBounds = { x: 100, y: 50, width: 700, height: 700 };
+const HELPER_APP =
+  "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app";
 const mainSettings = {
   windowId: 1,
   bundleId: "com.apple.systempreferences",
@@ -96,8 +104,8 @@ const avatarIcon = {
   resize: () => avatarIcon,
 };
 mock.module(
-  "@mycadet/electron-desktop/avatar",
-  (): Partial<typeof import("@mycadet/electron-desktop/avatar")> => ({
+  "../avatar",
+  (): Partial<typeof import("../avatar")> => ({
     getAvatarPng: () => avatarPng,
     getAccentHex: () => accentHex,
     onAvatarChange: (callback: () => void) => {
@@ -106,9 +114,6 @@ mock.module(
     },
   }),
 );
-mock.module("node:fs/promises", () => ({
-  stat: async () => ({ isDirectory: () => true }),
-}));
 mock.module("electron", () =>
   electronMock({
     nativeImage: { createFromBuffer: () => avatarIcon },
@@ -117,12 +122,6 @@ mock.module("electron", () =>
       getName: () => "Cadet",
       isPackaged: false,
       getPath: () => "/Applications/Cadet.app/Contents/MacOS/Cadet",
-      getFileIcon: async (_file: string, options: { size: string }) => {
-        // Electron does not support the large icon size on macOS.
-        expect(["small", "normal"]).toContain(options.size);
-        await iconWait;
-        return icon;
-      },
       on: () => undefined,
     },
     BrowserWindow: {
@@ -141,7 +140,7 @@ mock.module("electron", () =>
     },
   }),
 );
-mock.module("@mycadet/electron-desktop/floating-window", () => ({
+mock.module("../floating-window", () => ({
   listFloatingWindows: () => undefined,
   repositionFloatingWindow: () => undefined,
   configureFloatingWindows: () => undefined,
@@ -153,51 +152,33 @@ mock.module("@mycadet/electron-desktop/floating-window", () => ({
     return win;
   },
 }));
-mock.module("@mycadet/electron-desktop/ipc", () => ({
+mock.module("../ipc", () => ({
   handle: (
     channel: string,
-    schema: { parse: (...args: any[]) => any },
-    fn: (...args: any[]) => any,
+    schema: { parse: (args: unknown[]) => unknown },
+    fn: (args: unknown, event: unknown) => unknown,
   ) =>
-    handles.set(channel, (args: unknown[], event: unknown) =>
+    handles.set(channel, (args: unknown[], event?: unknown) =>
       fn(schema.parse(args), event),
     ),
-  on: (channel: string, _schema: unknown, fn: (...args: any[]) => any) =>
-    listeners.set(channel, fn),
-}));
-mock.module("./companion-capture-sources", () => ({
-  defaultCaptureSourceDeps: {
-    listWindows: async () => {
-      await windowsWait;
-      return settingsWindows;
-    },
-  },
-}));
-mock.module("./sidecar/mac-helper-path", () => ({
-  getMacHelperAppPath: () =>
-    "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
+  on: (
+    channel: string,
+    _schema: unknown,
+    fn: (args: unknown, event: unknown) => unknown,
+  ) => listeners.set(channel, fn),
 }));
 const preparePresentation = mock(() => undefined);
-mock.module("./permissions-strategy", () => ({
-  preparePermissionPresentation: preparePresentation,
-  openPermissionSettingsPane: async () => {
-    if (settingsOpenFails) {
-      throw new Error("Settings failed");
-    }
-  },
-}));
-mock.module("@mycadet/electron-desktop", () => ({
+mock.module("./permissions", () => ({
   getPermissionsService: () => ({
     state: async () => state(),
     refresh: async () => state(),
   }),
 }));
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
+mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
   default: { warn: () => undefined },
 }));
-const { installCompanionPermissionGuide } =
-  await import("./companion-permission-guide");
+const { installPermissionGuide } = await import("./permission-guide");
 // The full state surface, with the kinds under test riding the toggle.
 const state = (): PermissionsState => {
   const status = (): PermissionStatus =>
@@ -219,7 +200,31 @@ const state = (): PermissionsState => {
     notifications: item("notifications"),
   };
 };
-installCompanionPermissionGuide();
+// The shell's own guide surfaces, as fixtures.
+installPermissionGuide({
+  dragTarget: async () => {
+    await iconWait;
+    if (iconEmpty) {
+      throw new Error(
+        "The permission app is unavailable. Reinstall Cadet and try again.",
+      );
+    }
+    return { file: HELPER_APP, icon: icon as never };
+  },
+  openSettingsPane: async () => {
+    if (settingsOpenFails) {
+      throw new Error("Settings failed");
+    }
+  },
+  listSettingsWindows: async () => {
+    await windowsWait;
+    return settingsWindows.map((win) => ({
+      id: win.windowId,
+      bounds: win.bounds,
+    }));
+  },
+  onYieldToSettings: preparePresentation,
+});
 const get = (): PermissionGuideState | null =>
   handles.get("cadet:permissions:guide:get")!([]);
 const begin = (
@@ -268,7 +273,7 @@ describe("native permission guide", () => {
       sender: win.webContents,
     });
     expect(win.webContents.startDrag).toHaveBeenCalledWith({
-      file: "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
+      file: HELPER_APP,
       icon: avatarIcon,
     });
   });
@@ -333,7 +338,7 @@ describe("native permission guide", () => {
     expect(win.webContents.startDrag).not.toHaveBeenCalled();
     drag([session.id], { sender: win.webContents });
     expect(win.webContents.startDrag).toHaveBeenCalledWith({
-      file: "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
+      file: HELPER_APP,
       icon,
     });
   });

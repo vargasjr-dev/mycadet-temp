@@ -37,7 +37,7 @@ import {
   isNotifierSupported,
   restoreNotifierDelegate,
 } from "./notifier";
-import { installCompanionPermissionGuide } from "./companion-permission-guide";
+import { permissionGuide } from "./permission-guide-values";
 import { permissionsShell } from "./permissions-strategy";
 import {
   installCompanionWindow,
@@ -99,6 +99,7 @@ startApp({
   },
   share: { present: shareMenuPresenter() },
   permissions: permissionsShell,
+  permissionGuide,
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();
@@ -111,7 +112,6 @@ startApp({
     installDock();
 
     installHotkeyHelper();
-    installCompanionPermissionGuide();
     installTextInsertionIpc();
     registerCompanionSurfaceSync(setCompanionSurfaceVisible);
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
