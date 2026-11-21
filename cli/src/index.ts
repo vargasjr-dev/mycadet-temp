@@ -9,105 +9,16 @@ import {
   setLocalSourceRoot,
 } from "@mycadet/local-mode";
 
-import { stampedVersion } from "@mycadet/shared/version";
-
 import cliPkg from "../package.json";
-import { backup } from "./commands/backup";
-import { app } from "./commands/app";
+import { buildCadetProgram } from "./program";
 import { client } from "./commands/client";
-import { completeCadet, completions } from "./commands/completions";
-import { confirm } from "./commands/confirm";
-import { connect } from "./commands/connect";
-import { devices } from "./commands/devices";
-import { events } from "./commands/events";
-import { exec } from "./commands/exec";
-import { hatch } from "./commands/hatch";
-import { login, logout, whoami } from "./commands/login";
-import { logs } from "./commands/logs";
-import { message } from "./commands/message";
-import { pair } from "./commands/pair";
-import { ps } from "./commands/ps";
-import { restore } from "./commands/restore";
-import { retire } from "./commands/retire";
-import { restart } from "./commands/restart";
-import { setup } from "./commands/setup";
-import { sleep } from "./commands/sleep";
-import { machine } from "./commands/machine";
-import { debug } from "./commands/debug";
-import { teleport } from "./commands/teleport";
-import { terminal } from "./commands/terminal";
-import { tunnel } from "./commands/tunnel";
-import { uninstall } from "./commands/uninstall";
-import { upgrade } from "./commands/upgrade";
-import { use } from "./commands/use";
-import { voice } from "./commands/voice";
-import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { setActiveAssistant } from "./lib/assistant-config";
 import { findAssistant } from "@mycadet/local-mode";
+
 // Report where the source tree lives for local file resolution
 if (typeof import.meta.dir === "string") {
   setLocalSourceRoot(join(import.meta.dir, "..", ".."));
-}
-
-const commands = {
-  backup,
-  app,
-  client,
-  completions,
-  confirm,
-  connect,
-  debug,
-  devices,
-  events,
-  exec,
-  hatch,
-  login,
-  logs,
-  logout,
-  machine,
-  message,
-  pair,
-  ps,
-  restore,
-  retire,
-  restart,
-  setup,
-  sleep,
-  teleport,
-  terminal,
-  tunnel,
-  uninstall,
-  upgrade,
-  use,
-  voice,
-  wake,
-  whoami,
-};
-
-type CommandName = keyof typeof commands;
-
-function isCommandName(name: string): name is CommandName {
-  return name in commands;
-}
-
-function printHelp(): void {
-  console.log("Usage: cadet <command> [options]");
-  console.log("");
-  console.log("Commands:");
-  const nameWidth = Math.max(
-    ...Object.keys(commands).map((name) => name.length),
-  );
-  for (const [name, command] of Object.entries(commands)) {
-    console.log(`  ${name.padEnd(nameWidth)}  ${command.description}`);
-  }
-  console.log("");
-  console.log("Options:");
-  console.log(
-    "  --no-color, --plain   Disable colored output (honors NO_COLOR env)",
-  );
-  console.log("  --version, -v         Show version");
-  console.log("  --help, -h            Show this help");
 }
 
 /**
@@ -198,62 +109,33 @@ async function main() {
   // provider API keys and other config are available to hatch, exec, etc.
   loadConfigDotenv();
 
-  const args = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
 
   // Must run before any command or terminal-capabilities usage
-  applyNoColorFlags(args);
+  applyNoColorFlags(rawArgs);
 
-  // Global flags that are not command names
+  // The pass-through modules parse their own argv (process.argv.slice(3)),
+  // so strip the global flags from process.argv the way the pre-commander
+  // entry did — commander never sees them, and neither do the modules.
   const GLOBAL_FLAGS = new Set(["--no-color", "--plain"]);
-  const commandName = args.find((a) => !GLOBAL_FLAGS.has(a));
+  const filteredArgs = rawArgs.filter((a) => !GLOBAL_FLAGS.has(a));
+  process.argv = [process.argv[0], process.argv[1], ...filteredArgs];
 
-  // Strip global flags from process.argv so subcommands that parse
-  // process.argv.slice(3) don't see them as positional arguments.
-  const filteredArgs = args.filter((a) => !GLOBAL_FLAGS.has(a));
-  process.argv = [...process.argv.slice(0, 2), ...filteredArgs];
+  const program = buildCadetProgram();
 
-  if (commandName === "--version" || commandName === "-v") {
-    console.log(`@mycadet/cli v${stampedVersion(cliPkg.version)}`);
-    process.exit(0);
-  }
-
-  if (commandName === "--help" || commandName === "-h") {
-    printHelp();
-    process.exit(0);
-  }
-
-  if (!commandName) {
+  // A bare `cadet` launches the TUI client when a healthy assistant is
+  // running — help is the fallback, not the primary. Commander's own
+  // bare-program behavior (help + exit 1) would skip both.
+  if (filteredArgs.length === 0) {
     const launched = await tryLaunchClient();
     if (!launched) {
-      printHelp();
+      program.outputHelp();
     }
     process.exit(0);
   }
 
-  // Hidden completion hook: the bash completion script calls
-  // `cadet __complete <words-up-to-cursor>` and filters the printed
-  // candidates against the word under the cursor. Deliberately unlisted in
-  // the command map so it never shows up in help.
-  if (commandName === "__complete") {
-    const candidates = completeCadet(
-      process.argv.slice(3),
-      Object.keys(commands),
-    );
-    console.log(candidates.join("\n"));
-    process.exit(0);
-  }
-
-  const command = isCommandName(commandName)
-    ? commands[commandName]
-    : undefined;
-
-  if (!command) {
-    console.error(red(`Unknown command: ${commandName}`));
-    process.exit(1);
-  }
-
   try {
-    await command();
+    await program.parseAsync(filteredArgs, { from: "user" });
   } catch (error) {
     console.error(
       red(`Error: ${error instanceof Error ? error.message : error}`),

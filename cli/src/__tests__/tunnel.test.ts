@@ -208,6 +208,14 @@ async function runTunnelExpectingExit1(): Promise<{
       errors.push(a.join(" "));
     },
   );
+  // Commander writes its parse errors (unknown options, invalid values)
+  // straight to the stderr stream — capture those too.
+  const errStreamSpy = spyOn(process.stderr, "write").mockImplementation(
+    (chunk) => {
+      errors.push(String(chunk));
+      return true;
+    },
+  );
   const exitSpy = spyOn(process, "exit").mockImplementation(
     (code?: number | string | undefined): never => {
       throw new Error(`exit:${code}`);
@@ -221,6 +229,7 @@ async function runTunnelExpectingExit1(): Promise<{
     exited = e instanceof Error && e.message === "exit:1";
   } finally {
     errSpy.mockRestore();
+    errStreamSpy.mockRestore();
     exitSpy.mockRestore();
   }
   return { exited, errors: errors.join("\n") };
@@ -699,7 +708,7 @@ describe("app server targeting", () => {
     const { exited, errors } = await runTunnelExpectingExit1();
 
     expect(exited).toBe(true);
-    expect(errors).toContain("--domain requires a value");
+    expect(errors).toContain("argument missing");
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 

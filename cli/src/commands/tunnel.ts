@@ -1,3 +1,5 @@
+import { Command, InvalidArgumentError } from "commander";
+
 import {
   TUNNEL_PROVIDERS,
   type TunnelProviderName,
@@ -23,151 +25,32 @@ import { printRootProcessDetail } from "./ps.js";
 // The accepted `--provider` values ARE the shared registry, so validation
 // here cannot drift from what the workspace config accepts.
 
-interface TunnelArgs {
-  provider: TunnelProviderName;
-  domain: string | null;
-  clearDomain: boolean;
+function parseProvider(value: string): TunnelProviderName {
+  if (!isTunnelProvider(value)) {
+    throw new InvalidArgumentError(
+      `unknown tunnel provider '${value}'. Valid providers: ${TUNNEL_PROVIDERS.join(", ")}. If this provider is documented, ${STALE_CLI_UPDATE_HINT}`,
+    );
+  }
+  return value;
 }
 
-function parseArgs(): TunnelArgs {
-  // argv[3] is the `start` subcommand — the entrypoint dispatches on it.
-  const args = process.argv.slice(4);
-  let provider: TunnelProviderName | null = null;
-  let domain: string | null = null;
-  let clearDomain = false;
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === "--help" || arg === "-h") {
-      console.log(
-        `Usage: ${cliCommand()} tunnel start --provider <provider> [options]\n       ${cliCommand()} tunnel stop`,
-      );
-      console.log("");
-      console.log("Front a locally running assistant with an HTTPS tunnel.");
-      console.log(
-        "The tunnel URL is saved to the workspace config as the ingress base URL,",
-      );
-      console.log(
-        "and shared with every locally reachable assistant's gateway when the",
-      );
-      console.log("tunnel establishes.");
-      console.log("");
-      console.log(
-        "How far that URL reaches depends on the provider; omit --provider for",
-      );
-      console.log(
-        "the default. A tailscale tunnel is reachable only from your",
-      );
-      console.log(
-        "own tailnet; webhook integrations need a public tunnel. See Providers",
-      );
-      console.log("below.");
-      console.log("");
-      console.log(
-        "The tunnel always fronts the local app server, which is started automatically.",
-      );
-      console.log("");
-      console.log("Options:");
-      console.log(
-        `  --provider <provider>         Tunnel provider: ${TUNNEL_PROVIDERS.join(", ")} — default ${DEFAULT_TUNNEL_PROVIDER}`,
-      );
-      console.log(
-        "  --domain <domain>             Reserved domain to bind, for providers that support",
-      );
-      console.log(
-        "                                one. Saved to the workspace config so `${cliCommand()} wake` restores",
-      );
-      console.log("                                reuse it.");
-      console.log(
-        "  --clear-domain                Clear the saved reserved domain (same providers) and",
-      );
-      console.log(
-        "                                tunnel without one. Cannot be combined with --domain.",
-      );
-      console.log(
-        "The tunnel runs in the background: the command returns after printing",
-      );
-      console.log(
-        "the public URL, and logs stream to tunnel.log in the CLI log directory.",
-      );
-      console.log(
-        `Stop the tunnel with \`${cliCommand()} tunnel stop\`, except when it`,
-      );
-      console.log(
-        "adopted an already-running tunnel (started outside this command):",
-      );
-      console.log("killing the supervisor then leaves that tunnel running.");
-      console.log("");
-      console.log("Providers:");
-      for (const name of TUNNEL_PROVIDERS) {
-        const meta = PROVIDER_META[name];
-        console.log(`  ${name.padEnd(12)}${meta.reach}`);
-        console.log(`  ${" ".repeat(12)}${meta.install}`);
-        for (const note of meta.notes ?? []) {
-          console.log(`  ${" ".repeat(12)}${note}`);
-        }
-      }
-      console.log("");
-      console.log("Examples:");
-      console.log(
-        `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER}`,
-      );
-      const domainExample =
-        PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
-      if (domainExample) {
-        console.log(
-          `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --domain ${domainExample}`,
-        );
-        console.log(
-          `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --clear-domain`,
-        );
-      }
-      console.log(`  $ ${cliCommand()} tunnel start --provider cloudflare`);
-      console.log(`  $ ${cliCommand()} tunnel stop`);
-      process.exit(0);
-    } else if (arg === "--provider") {
-      const next = args[i + 1];
-      if (!next || next.startsWith("-")) {
-        console.error(
-          `Error: --provider requires one of: ${TUNNEL_PROVIDERS.join(", ")}`,
-        );
-        process.exit(1);
-      }
-      if (!isTunnelProvider(next)) {
-        console.error(
-          `Error: unknown tunnel provider '${next}'. Valid providers: ${TUNNEL_PROVIDERS.join(", ")}.`,
-        );
-        console.error(
-          `If this provider is documented, ${STALE_CLI_UPDATE_HINT}`,
-        );
-        process.exit(1);
-      }
-      provider = next;
-      i++;
-    } else if (arg === "--domain") {
-      const next = args[i + 1];
-      if (!next || next.startsWith("-")) {
-        const domainExample =
-          PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
-        console.error(
-          `Error: --domain requires a value${domainExample ? `, e.g. --domain ${domainExample}` : ""}`,
-        );
-        process.exit(1);
-      }
-      domain = next;
-      i++;
-    } else if (arg === "--clear-domain") {
-      clearDomain = true;
-    } else if (arg.startsWith("-")) {
-      console.error(`Error: Unknown option '${arg}'.`);
-      process.exit(1);
-    }
-  }
-
-  if (provider === null) {
+/** The `cadet tunnel start` flow: ensure the edge, run the provider tunnel. */
+async function startTunnelFlow(
+  opts: {
+    provider?: TunnelProviderName;
+    domain?: string;
+    clearDomain?: boolean;
+  },
+  command: Command,
+): Promise<void> {
+  let provider = opts.provider;
+  if (provider === undefined) {
     provider = DEFAULT_TUNNEL_PROVIDER;
     console.log(`Using the default provider: ${provider}.`);
   }
+
+  const domain = opts.domain ?? null;
+  const clearDomain = opts.clearDomain ?? false;
 
   if (domain && !providerSupportsReservedDomain(provider)) {
     console.error(
@@ -190,12 +73,9 @@ function parseArgs(): TunnelArgs {
     process.exit(1);
   }
 
-  // No positionals exist anymore — but the scan must skip the values of the
-  // two value-taking flags, or those values read as stray positionals.
-  const valueFlags = new Set(["--provider", "--domain"]);
-  const positional = args.find(
-    (arg, i) => !arg.startsWith("-") && !valueFlags.has(args[i - 1] ?? ""),
-  );
+  // No positionals exist anymore — the scan catches the leftover habit of
+  // naming an assistant here.
+  const positional = command.args[0];
   if (positional !== undefined) {
     console.error(
       `Error: Unknown argument '${positional}'. ${cliCommand()} tunnel takes no assistant name — it fronts the active assistant; use \`${cliCommand()} tunnel start\` or \`${cliCommand()} tunnel stop\`.`,
@@ -203,10 +83,39 @@ function parseArgs(): TunnelArgs {
     process.exit(1);
   }
 
-  return { provider, domain, clearDomain };
+  if (PROVIDER_META[provider].comingSoon) {
+    throw cadetTunnelComingSoonError(provider);
+  }
+
+  // The tunnel is assistant-agnostic: its only concern is the app server —
+  // a machine-level server that resolves whatever it fronts from the
+  // lockfile itself. ensureAppServer starts it when it is down and reuses
+  // it when up; the tunnel fronts the port it reports.
+
+  if (clearDomain) {
+    clearReservedDomain();
+    console.log("Cleared the saved reserved domain.");
+  }
+
+  let edge: AppServer;
+  try {
+    // The app server resolves the assistant it fronts (and the gateway to
+    // proxy) from the lockfile itself — no per-assistant threading here.
+    edge = await ensureAppServer();
+  } catch (err) {
+    console.error(
+      `Error: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    process.exit(1);
+  }
+
+  console.log(
+    `${edge.started ? "Started" : "Reusing"} the app server on 127.0.0.1:${edge.port}.`,
+  );
+
+  await runProviderTunnel(provider, { ...(domain ? { domain } : {}) });
 }
 
-/** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
 /** The `cadet tunnel restart` flow: bounce the tunnel, keep the app server. */
 async function restartTunnelFlow(): Promise<void> {
   const restarted = await restartTunnel();
@@ -230,80 +139,108 @@ async function stopTunnelFlow(): Promise<void> {
   );
 }
 
+/** The provider reach/install notes the bespoke help used to carry. */
+function providersSection(): string {
+  const lines: string[] = ["Providers:"];
+  for (const name of TUNNEL_PROVIDERS) {
+    const meta = PROVIDER_META[name];
+    lines.push(`  ${name.padEnd(12)}${meta.reach}`);
+    lines.push(`  ${" ".repeat(12)}${meta.install}`);
+    for (const note of meta.notes ?? []) {
+      lines.push(`  ${" ".repeat(12)}${note}`);
+    }
+  }
+  lines.push("");
+  lines.push("Examples:");
+  lines.push(`  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER}`);
+  const domainExample = PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
+  if (domainExample) {
+    lines.push(
+      `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --domain ${domainExample}`,
+    );
+    lines.push(
+      `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER} --clear-domain`,
+    );
+  }
+  lines.push(`  $ ${cliCommand()} tunnel start --provider cloudflare`);
+  lines.push(`  $ ${cliCommand()} tunnel stop`);
+  return lines.join("\n");
+}
+
+/**
+ * The `cadet tunnel` command tree — commander owns the subcommand dispatch
+ * and flag parsing (the hand-rolled argv[3] switch was the #881 bug class:
+ * `tunnel start --help` could not show the other subcommands); this module
+ * keeps the execute layer.
+ */
+export function registerTunnelCommand(program: Command): void {
+  const tunnel = program
+    .command("tunnel")
+    .description("Start or stop a tunnel in front of the app server");
+
+  tunnel
+    .command("start")
+    .description("Front the locally running assistant with an HTTPS tunnel")
+    .option(
+      "--provider <provider>",
+      `Tunnel provider: ${TUNNEL_PROVIDERS.join(", ")} — default ${DEFAULT_TUNNEL_PROVIDER}`,
+      parseProvider,
+    )
+    .option(
+      "--domain <domain>",
+      "Reserved domain to bind, for providers that support one. Saved to the workspace config so restarts reuse it.",
+    )
+    .option(
+      "--clear-domain",
+      "Clear the saved reserved domain (same providers) and tunnel without one. Cannot be combined with --domain.",
+    )
+    .allowExcessArguments(true)
+    .addHelpText(
+      "after",
+      `
+The tunnel URL is saved to the workspace config as the ingress base URL, and shared with every locally reachable assistant's gateway when the tunnel establishes.
+
+How far that URL reaches depends on the provider; omit --provider for the default. A tailscale tunnel is reachable only from your own tailnet; webhook integrations need a public tunnel.
+
+The tunnel always fronts the local app server, which is started automatically. The tunnel runs in the background: the command returns after printing the public URL, and logs stream to tunnel.log in the CLI log directory. Stop the tunnel with \`${cliCommand()} tunnel stop\`, except when it adopted an already-running tunnel (started outside this command): killing the supervisor then leaves that tunnel running.
+
+${providersSection()}`,
+    )
+    .action(startTunnelFlow);
+
+  tunnel
+    .command("stop")
+    .description(
+      "Stop the recorded Cadet-managed tunnel, keeping the app server and the saved domain",
+    )
+    .action(stopTunnelFlow);
+
+  tunnel
+    .command("restart")
+    .description("Bounce the tunnel, keeping the app server")
+    .action(restartTunnelFlow);
+
+  tunnel
+    .command("status")
+    .description("Show the recorded tunnel process")
+    .action(async () => {
+      await printRootProcessDetail("tunnel");
+    });
+}
+
+/**
+ * Compat runner for the tunnel suite: the tests set process.argv and call
+ * `tunnel()` the way the pre-commander entry did. Builds the tunnel subtree
+ * standalone and parses the argv after the command word.
+ */
 export const tunnel = Object.assign(
   async function tunnel(): Promise<void> {
-    const subcommand = process.argv[3];
-    if (subcommand === "stop") {
-      const args = process.argv.slice(4);
-      if (args.includes("--help") || args.includes("-h")) {
-        console.log(`Usage: ${cliCommand()} tunnel stop`);
-        console.log(
-          "Stop the recorded Cadet-managed tunnel, keeping the app server and the saved domain.",
-        );
-        return;
-      }
-      if (args.length > 0)
-        throw new Error(`Usage: ${cliCommand()} tunnel stop`);
-      await stopTunnelFlow();
-      return;
-    }
-    if (subcommand === "restart") {
-      const args = process.argv.slice(4);
-      if (args.length > 0)
-        throw new Error(`Usage: ${cliCommand()} tunnel restart`);
-      await restartTunnelFlow();
-      return;
-    }
-    if (subcommand === "status") {
-      await printRootProcessDetail("tunnel");
-      return;
-    }
-    if (subcommand !== "start") {
-      const isHelp = subcommand === "--help" || subcommand === "-h";
-      if (subcommand !== undefined && !isHelp) {
-        console.error(`Error: Unknown argument '${subcommand}'.`);
-      }
-      console.error(
-        `Usage: ${cliCommand()} tunnel start --provider <provider> [options]`,
-      );
-      console.error(`       ${cliCommand()} tunnel status`);
-      console.error(`       ${cliCommand()} tunnel restart`);
-      console.error(`       ${cliCommand()} tunnel stop`);
-      process.exit(isHelp ? 0 : 1);
-    }
-    const { provider, domain, clearDomain } = parseArgs();
-
-    if (PROVIDER_META[provider].comingSoon) {
-      throw cadetTunnelComingSoonError(provider);
-    }
-
-    // The tunnel is assistant-agnostic: its only concern is the app server —
-    // a machine-level server that resolves whatever it fronts from the
-    // lockfile itself. ensureAppServer starts it when it is down and reuses
-    // it when up; the tunnel fronts the port it reports.
-
-    if (clearDomain) {
-      clearReservedDomain();
-      console.log("Cleared the saved reserved domain.");
-    }
-
-    let edge: AppServer;
-    try {
-      // The app server resolves the assistant it fronts (and the gateway to
-      // proxy) from the lockfile itself — no per-assistant threading here.
-      edge = await ensureAppServer();
-    } catch (err) {
-      console.error(
-        `Error: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      process.exit(1);
-    }
-
-    console.log(
-      `${edge.started ? "Started" : "Reusing"} the app server on 127.0.0.1:${edge.port}.`,
-    );
-
-    await runProviderTunnel(provider, { ...(domain ? { domain } : {}) });
+    const program = new Command();
+    program.name(cliCommand());
+    registerTunnelCommand(program);
+    await program.parseAsync(["tunnel", ...process.argv.slice(3)], {
+      from: "user",
+    });
   },
   { description: "Start or stop a tunnel in front of the app server" },
 );
