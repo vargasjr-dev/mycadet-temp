@@ -21,17 +21,6 @@ const DesktopPreviewContent = lazy(() =>
 
 export function AssistantDesktopPreview() {
   const assistantId = useActiveAssistantId();
-
-  if (assistantId === null) {
-    return null;
-  }
-
-  // Preview receives a non-null assistantId, so its close-on-switch effect
-  // works on a guaranteed-truthy id.
-  return <Preview assistantId={assistantId} />;
-}
-
-function Preview({ assistantId }: { assistantId: string }) {
   const session = useDesktopPreviewStore.use.session();
   const inlinePreview = useDesktopPreviewStore.use.inlinePreview();
   const fullscreenOnly = usePointerCoarse();

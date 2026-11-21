@@ -465,6 +465,34 @@ export interface SendMessageConfig {
    * wins. Default false — existing behavior.
    */
   disableCache?: boolean;
+  /**
+   * TTL for the Anthropic prompt-cache breakpoints this client places.
+   * `"5m"` unless the caller opts into the long form; anything else falls
+   * back to `"5m"`.
+   */
+  cacheTtl?: "5m" | "1h";
+  /**
+   * Opt-out for callers that send a single user message per call with
+   * content that changes every time: the turn-start cache breakpoint is
+   * only useful when the same prefix is re-sent on a subsequent call.
+   * Consumed by the Anthropic client only.
+   */
+  disableTurnStartCache?: boolean;
+  /**
+   * Sampling params forwarded to models that still accept them (newer
+   * models 400 on any of these, so the Anthropic client gates on the
+   * model before sending).
+   */
+  temperature?: number;
+  top_p?: number;
+  top_k?: number;
+  /** Per-call output-token cap override (wire `max_tokens`). */
+  max_tokens?: number;
+  /**
+   * Provider-shaped output configuration blob forwarded as-is (Anthropic
+   * `output_config`; the effort tier lives in {@link SendMessageConfig.effort}).
+   */
+  output_config?: Record<string, unknown>;
   [key: string]: unknown;
 }
 

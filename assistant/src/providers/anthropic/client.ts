@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
 
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "../../prompts/cache-boundary.js";
 import { ToolDefinition } from "../../tools/tool-types.js";
@@ -77,6 +78,29 @@ export const MAX_PAUSE_TURN_CONTINUATIONS = 6;
  * `.message` key exists — so we probe both the nested body and the
  * formatted string.
  */
+/**
+ * The SDK types `APIError.error` as an unknown body; every reader here only
+ * needs the documented error-envelope fields, so one schema is the single
+ * honest boundary between the wire and this file.
+ */
+const apiErrorBodySchema = z
+  .object({
+    type: z.string().optional(),
+    message: z.string().optional(),
+    error: z
+      .object({
+        type: z.string().optional(),
+        message: z.string().optional(),
+        code: z.string().optional(),
+      })
+      .optional(),
+  })
+  .optional();
+
+function apiErrorBody(error: InstanceType<typeof Anthropic.APIError>) {
+  return apiErrorBodySchema.safeParse(error.error).data;
+}
+
 export function detectAnthropicContextOverflow(
   error: InstanceType<typeof Anthropic.APIError>,
 ): { actualTokens?: number; maxTokens?: number } | null {
@@ -84,17 +108,8 @@ export function detectAnthropicContextOverflow(
   if (error.status !== 400) {
     return null;
   }
-  const body = error.error as
-    | {
-        type?: string;
-        message?: string;
-        error?: { type?: string; message?: string };
-      }
-    | undefined;
-  const innerMessage =
-    (typeof body === "object" && body != null
-      ? (body.error?.message ?? body.message)
-      : undefined) ?? "";
+  const body = apiErrorBody(error);
+  const innerMessage = (body?.error?.message ?? body?.message) ?? "";
   const topLevelMessage = error.message ?? "";
   const combined = `${innerMessage} ${topLevelMessage}`;
   if (!/prompt.?is.?too.?long|prompt_too_long/i.test(combined)) {
@@ -112,17 +127,14 @@ export function detectAnthropicContextOverflow(
 function readAnthropicErrorType(
   error: InstanceType<typeof Anthropic.APIError>,
 ): string | undefined {
-  const body = error.error as
-    | { type?: string; error?: { type?: string; code?: string } }
-    | undefined;
+  const body = apiErrorBody(error);
   return body?.error?.type ?? body?.type;
 }
 
 function readAnthropicErrorCode(
   error: InstanceType<typeof Anthropic.APIError>,
 ): string | undefined {
-  const body = error.error as { error?: { code?: string } } | undefined;
-  const code = body?.error?.code;
+  const code = apiErrorBody(error)?.error?.code;
   return typeof code === "string" && code.length > 0 ? code : undefined;
 }
 
@@ -133,9 +145,7 @@ function readAnthropicErrorCode(
 function readAnthropicMessage(
   error: InstanceType<typeof Anthropic.APIError>,
 ): string | undefined {
-  const body = error.error as
-    | { message?: string; error?: { message?: string } }
-    | undefined;
+  const body = apiErrorBody(error);
   const inner = body?.error?.message ?? body?.message;
   return typeof inner === "string" && inner.length > 0 ? inner : undefined;
 }
@@ -285,7 +295,8 @@ function isToolUseBlock(block: unknown): block is Anthropic.ToolUseBlockParam {
   return (
     typeof block === "object" &&
     block != null &&
-    (block as { type: string }).type === "tool_use"
+    "type" in block &&
+    block.type === "tool_use"
   );
 }
 
@@ -296,7 +307,8 @@ function isToolResultBlock(
   return (
     typeof block === "object" &&
     block != null &&
-    (block as { type: string }).type === "tool_result"
+    "type" in block &&
+    block.type === "tool_result"
   );
 }
 
@@ -308,20 +320,28 @@ function summarizeMessages(messages: Anthropic.MessageParam[]): string[] {
   return messages.map((m, idx) => {
     const content = Array.isArray(m.content) ? m.content : [{ type: "text" }];
     const blockDescs = content.map((b) => {
-      const bt = (b as { type: string }).type;
-      if (bt === "tool_use") {
-        return `tool_use(${(b as { id: string }).id})`;
+      if (typeof b !== "object" || b == null) {
+        return "(non-object block)";
       }
-      if (bt === "server_tool_use") {
-        return `server_tool_use(${(b as { id: string }).id})`;
+      if ("type" in b && b.type === "tool_use" && "id" in b) {
+        return `tool_use(${String(b.id)})`;
       }
-      if (bt === "tool_result") {
-        return `tool_result(${(b as { tool_use_id: string }).tool_use_id})`;
+      if ("type" in b && b.type === "server_tool_use" && "id" in b) {
+        return `server_tool_use(${String(b.id)})`;
       }
-      if (bt === "web_search_tool_result") {
-        return `web_search_tool_result(${(b as { tool_use_id: string }).tool_use_id})`;
+      if ("type" in b && b.type === "tool_result" && "tool_use_id" in b) {
+        return `tool_result(${String(b.tool_use_id)})`;
       }
-      return bt;
+      if (
+        "type" in b &&
+        b.type === "web_search_tool_result" &&
+        "tool_use_id" in b
+      ) {
+        return `web_search_tool_result(${String(b.tool_use_id)})`;
+      }
+      return "type" in b && typeof b.type === "string"
+        ? b.type
+        : "(untyped block)";
     });
     return `[${idx}] ${m.role}: ${blockDescs.join(", ") || "(empty)"}`;
   });
@@ -562,14 +582,15 @@ function repairOrphanedServerToolBlocks(
       }
       repairedContent.push(block);
       if (isServerToolUseBlock(block) && orphanServerToolUseIds.has(block.id)) {
-        repairedContent.push({
+        const orphanErrorBlock: Anthropic.WebSearchToolResultBlockParam = {
           type: "web_search_tool_result",
           tool_use_id: block.id,
           content: {
             type: "web_search_tool_result_error",
             error_code: "unavailable",
           },
-        } as unknown as Anthropic.ContentBlockParam);
+        };
+        repairedContent.push(orphanErrorBlock);
       }
     }
 
@@ -587,21 +608,15 @@ function formatOrphanedWebSearchResultAsText(block: {
   }
   const entries: string[] = [];
   for (const r of block.content) {
-    if (
-      typeof r !== "object" ||
-      r == null ||
-      (r as { type?: string }).type !== "web_search_result"
-    ) {
+    if (typeof r !== "object" || r == null) {
+      continue;
+    }
+    if (!("type" in r) || r.type !== "web_search_result") {
       continue;
     }
     const title =
-      typeof (r as { title?: unknown }).title === "string"
-        ? (r as { title: string }).title
-        : "(untitled)";
-    const url =
-      typeof (r as { url?: unknown }).url === "string"
-        ? (r as { url: string }).url
-        : "";
+      "title" in r && typeof r.title === "string" ? r.title : "(untitled)";
+    const url = "url" in r && typeof r.url === "string" ? r.url : "";
     const idx = entries.length + 1;
     entries.push(url ? `${idx}. ${title}\n   ${url}` : `${idx}. ${title}`);
   }
@@ -705,11 +720,12 @@ function ensureToolPairing(
             verbatimIds.has(block.tool_use_id)),
       );
 
+    const noCarryover: Anthropic.ContentBlockParam[] = [];
     const { pairedContent, carryoverContent, toolUseIds } =
       hasVerbatimServerBlock
         ? {
             pairedContent: content,
-            carryoverContent: [] as Anthropic.ContentBlockParam[],
+            carryoverContent: noCarryover,
             toolUseIds: getOrderedToolUseIds(content),
           }
         : splitAssistantForToolPairing(content);
@@ -930,32 +946,24 @@ export class AnthropicProvider implements Provider {
     options?: SendMessageOptions,
   ): Promise<ProviderResponse> {
     const { tools, systemPrompt, config, onEvent, signal } = options ?? {};
-    const cacheTtl: "5m" | "1h" =
-      ((config as Record<string, unknown> | undefined)?.cacheTtl as
-        | "5m"
-        | "1h") ?? "1h";
+    const cacheTtl: "5m" | "1h" = config?.cacheTtl ?? "1h";
     // Opt-out for callers (e.g. the memory router) that send a single
     // user message per call with content that changes every time. The
     // turn-start cache breakpoint below is only useful when the same
     // prefix is re-sent on a subsequent call (typical for the main agent
     // loop's tool-use iterations); one-shot callers pay cache_creation
     // cost without a future hit.
-    const disableTurnStartCache =
-      (config as Record<string, unknown> | undefined)?.disableTurnStartCache ===
-      true;
+    const disableTurnStartCache = config?.disableTurnStartCache === true;
     // When true, the latest user message carries per-turn-volatile content
     // (e.g. an injected memory block), so the long-TTL anchor must skip it and
     // land on the most recent stable user message instead. See the breakpoint
     // block below.
-    const mutableLatestUserMessage =
-      (config as Record<string, unknown> | undefined)
-        ?.mutableLatestUserMessage === true;
+    const mutableLatestUserMessage = config?.mutableLatestUserMessage === true;
     // Full prompt-caching opt-out: send no cache breakpoints at all and strip
     // caller-stamped block-level markers. Resolved per call site (see
     // `disableCache` in the LLM config schema) for one-shot prompts where
     // every breakpoint is a paid cache write with no future read.
-    const disableCache =
-      (config as Record<string, unknown> | undefined)?.disableCache === true;
+    const disableCache = config?.disableCache === true;
     let sentMessages: Anthropic.MessageParam[] | undefined;
     const startedAt = Date.now();
     // Hoisted so the catch block can distinguish our inner stream timeout
@@ -984,27 +992,12 @@ export class AnthropicProvider implements Provider {
         top_p: callerTopP,
         top_k: callerTopK,
         ...restConfig
-      } = (config ?? {}) as Record<string, unknown> & {
-        // "xhigh" is an intermediate tier between "high" and "max" supported
-        // by newer Anthropic models (e.g. Opus 4.7). The SDK's OutputConfig
-        // type doesn't yet include it, so we widen to the internal effort
-        // union and cast when building mergedOutputConfig. "none" is a
-        // Cadet-wide value meaning "omit the effort param entirely" — we
-        // skip the output_config.effort field in that case.
-        effort?: "none" | "low" | "medium" | "high" | "xhigh" | "max";
-        speed?: "standard" | "fast";
-        output_config?: Record<string, unknown>;
-        usageAttributionHeaders?: Record<string, string>;
-        temperature?: number;
-        top_p?: number;
-        top_k?: number;
-      };
+      } = config ?? {};
       // Haiku does not support the effort / output_config parameter or
       // extended cache TTL betas.
       // Determine the effective model (per-call override or provider default)
       // and gate features accordingly.
-      const effectiveModel =
-        (restConfig as Record<string, unknown>).model?.toString() ?? this.model;
+      const effectiveModel = config?.model ?? this.model;
       const isHaiku = effectiveModel.includes("haiku");
       // Effort support is per-model: Haiku and Sonnet 4.5 reject the param (see isEffortSupported).
       const supportsEffort = isEffortSupported(effectiveModel);
@@ -1074,10 +1067,14 @@ export class AnthropicProvider implements Provider {
       // blocks instead of failing the request. Haiku skips the beta endpoint,
       // so it must not carry the field.
       if (!isHaiku && params.thinking && typeof params.thinking === "object") {
-        params.thinking = {
-          ...(params.thinking as unknown as Record<string, unknown>),
+        // The SDK's ThinkingConfig type doesn't carry the block-binding beta
+        // field yet; the wire accepts it, so the extra key rides in one
+        // boundary cast. Delete this when the SDK picks the field up.
+        const withBinding = {
+          ...params.thinking,
           block_binding: { prefix_mismatch_behavior: "drop_block" },
-        } as unknown as typeof params.thinking;
+        };
+        params.thinking = withBinding as Anthropic.ThinkingConfigParam;
       }
 
       if (systemPrompt) {
@@ -1179,9 +1176,12 @@ export class AnthropicProvider implements Provider {
           return;
         }
         const lastBlock = content[content.length - 1];
-        if (typeof lastBlock !== "string") {
-          (lastBlock as unknown as Record<string, unknown>).cache_control =
-            control;
+        if (
+          typeof lastBlock !== "string" &&
+          lastBlock.type !== "thinking" &&
+          lastBlock.type !== "redacted_thinking"
+        ) {
+          lastBlock.cache_control = control;
         }
       };
       const turnStartIdx = findUserTextMsgIdx(msgs.length - 1);
@@ -1255,15 +1255,19 @@ export class AnthropicProvider implements Provider {
             const block = lastMsg.content[j];
             if (
               typeof block !== "string" &&
-              !NON_CACHEABLE_TYPES.has((block as { type: string }).type)
+              !("type" in block && NON_CACHEABLE_TYPES.has(block.type))
             ) {
               tailBlock = block;
               break;
             }
           }
-          if (tailBlock && typeof tailBlock !== "string") {
-            (tailBlock as unknown as Record<string, unknown>).cache_control =
-              tailCacheControl;
+          if (
+            tailBlock &&
+            typeof tailBlock !== "string" &&
+            tailBlock.type !== "thinking" &&
+            tailBlock.type !== "redacted_thinking"
+          ) {
+            tailBlock.cache_control = tailCacheControl;
           }
         }
       }
