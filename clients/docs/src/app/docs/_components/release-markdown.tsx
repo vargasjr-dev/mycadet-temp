@@ -65,7 +65,7 @@ export function ReleaseMarkdown({
             }
             if (/language-docs-video\b/.test(className ?? "")) {
               const slug = String(children).trim() as DocsVideoSlug;
-              if (slug in DOCS_VIDEOS) return <DocsVideo video={slug} />;
+              if (slug in DOCS_VIDEOS) {return <DocsVideo video={slug} />;}
             }
             return (
               <code className={className} {...props}>

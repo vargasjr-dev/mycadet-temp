@@ -4,9 +4,6 @@
  *
  * Steps run in order and the first failure stops the pass, so a red run's
  * output starts at the step that failed. Each step streams its own output.
- *
- * eslint pins `--max-warnings 2`: the floor's cast ban found two stragglers in main's fresh code,
- * and a warning is a gate again rather than a countdown to hold.
  */
 
 import { resolve } from "node:path";

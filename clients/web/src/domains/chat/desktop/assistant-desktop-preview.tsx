@@ -21,6 +21,17 @@ const DesktopPreviewContent = lazy(() =>
 
 export function AssistantDesktopPreview() {
   const assistantId = useActiveAssistantId();
+
+  if (assistantId === null) {
+    return null;
+  }
+
+  // Preview receives a non-null assistantId, so its close-on-switch effect
+  // works on a guaranteed-truthy id.
+  return <Preview assistantId={assistantId} />;
+}
+
+function Preview({ assistantId }: { assistantId: string }) {
   const session = useDesktopPreviewStore.use.session();
   const inlinePreview = useDesktopPreviewStore.use.inlinePreview();
   const fullscreenOnly = usePointerCoarse();
@@ -28,6 +39,11 @@ export function AssistantDesktopPreview() {
     supportsWindowAttention() ? isWindowAttended() : document.hasFocus(),
   );
   useBusSubscription("app.attention", ({ attended }) => setAttended(attended));
+
+  useEffect(() => {
+    return () => useDesktopPreviewStore.getState().close();
+  }, [assistantId]);
+
   useEffect(() => {
     if (supportsWindowAttention()) {
       return;
@@ -42,16 +58,7 @@ export function AssistantDesktopPreview() {
     };
   }, []);
 
-  useEffect(() => {
-    // Reads `assistantId` so the dep is load-bearing: switching assistants
-    // (or losing one) closes the stale preview session.
-    if (assistantId === null) {
-      return;
-    }
-    return () => useDesktopPreviewStore.getState().close();
-  }, [assistantId]);
-
-  if (assistantId === null || !attended) {
+  if (!attended) {
     return null;
   }
 

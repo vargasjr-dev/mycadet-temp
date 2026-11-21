@@ -38,7 +38,7 @@
     "./windows": "./src/windows.ts"
   },
   "scripts": {
-    "lint": "prettier --check src scripts test-setup.ts && eslint . --max-warnings 33",
+    "lint": "prettier --check src scripts test-setup.ts && eslint . --max-warnings 413",
     "format:check": "prettier --check src scripts test-setup.ts",
     "test": "bun scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"

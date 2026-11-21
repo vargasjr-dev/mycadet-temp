@@ -4,7 +4,6 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  AlertCircle,
   AlertOctagon,
   AppWindow,
   Book,
@@ -14,7 +13,6 @@ import {
   Cloud,
   Code,
   CreditCard,
-  Download,
   FolderOpen,
   GitBranch,
   Globe,
@@ -41,7 +39,6 @@ import {
   Sparkles,
   Store,
   Users,
-  Wand2,
   Webhook,
   Wrench,
 } from "lucide-react";

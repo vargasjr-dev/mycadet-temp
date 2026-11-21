@@ -4,9 +4,6 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
     paths:
-      # Only what @mycadet/local-mode consumes and the shared floor it lints
-      # against. The package is being renamed to `operator` soon — the lane
-      # name pre-empts that.
       - "patches/**"
       - "packages/local-mode/**"
       - ".github/workflows/pr-operator.yaml"

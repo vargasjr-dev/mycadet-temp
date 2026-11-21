@@ -20,10 +20,10 @@ export function extractMarkdownToc(md: string): TocItem[] {
       inFence = !inFence;
       continue;
     }
-    if (inFence) continue;
+    if (inFence) {continue;}
 
     const match = /^(#{2,3})\s+(.+?)\s*#*\s*$/.exec(line);
-    if (!match) continue;
+    if (!match) {continue;}
 
     const label = match[2]
       .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")

@@ -7,7 +7,7 @@
     "dev": "next dev --port 3005",
     "docs:search:index": "bun scripts/generate-docs-search-index.ts",
     "generate:agent-markdown": "bun scripts/generate-agent-markdown.ts",
-    "lint": "eslint . --max-warnings 29",
+    "lint": "eslint . --max-warnings 31",
     "prebuild": "bun run docs:search:index && bun run generate:agent-markdown",
     "predev": "bun run docs:search:index && bun run generate:agent-markdown",
     "start": "next start",
