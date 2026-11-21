@@ -19,13 +19,6 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-/** Route params and body fields arrive untyped off the wire; read them through zod. */
-const stringParam = (v: unknown): string | undefined =>
-  z.string().optional().catch(undefined).parse(v);
-
-const recordParam = (v: unknown): Record<string, unknown> | undefined =>
-  z.record(z.string(), z.unknown()).optional().catch(undefined).parse(v);
-
 import {
   type AppPin,
   listAppPins,
@@ -63,6 +56,7 @@ import { compareSemver } from "../../daemon/handlers/shared.js";
 import { computeContentId } from "../../util/content-id.js";
 import { getLogger } from "../../util/logger.js";
 import { getUserAppDataDir } from "../../util/os.js";
+import { recordParam, stringParam } from "../../util/wire-params.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   getOriginClientId,

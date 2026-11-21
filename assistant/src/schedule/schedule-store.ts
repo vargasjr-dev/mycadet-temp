@@ -12,6 +12,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import { getConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
@@ -24,6 +25,7 @@ import { UserError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
 import { safeStringSlice } from "../util/unicode.js";
+import { recordParam } from "../util/wire-params.js";
 import {
   hasOwnerDeferProvenance,
   isDeferSchedule,
@@ -59,6 +61,22 @@ export type ScheduleMode =
   | "workflow";
 export type RoutingIntent = "single_channel" | "multi_channel" | "all_channels";
 export type ScheduleStatus = "active" | "firing" | "fired" | "cancelled";
+
+/**
+ * The persisted schedule columns read back through their domain enums with
+ * the same fail-soft defaults the readers always applied — a corrupt row
+ * degrades instead of casting an unverified string into the union.
+ */
+const scheduleSyntaxSchema = z.enum(["cron", "rrule"]).catch("cron");
+const scheduleModeSchema = z
+  .enum(["notify", "execute", "script", "wake", "workflow"] as const)
+  .catch("execute");
+const routingIntentSchema = z
+  .enum(["single_channel", "multi_channel", "all_channels"] as const)
+  .catch("all_channels");
+const scheduleStatusSchema = z
+  .enum(["active", "firing", "fired", "cancelled"] as const)
+  .catch("active");
 
 export interface ScheduleJob {
   id: string;
@@ -343,8 +361,8 @@ async function insertSchedule(
     capabilitiesJson:
       params.capabilities != null ? JSON.stringify(params.capabilities) : null,
     nextRunAt,
-    lastRunAt: null as number | null,
-    lastStatus: null as string | null,
+    lastRunAt: null,
+    lastStatus: null,
     retryCount: 0,
     maxRetries,
     retryBackoffMs,
@@ -355,13 +373,13 @@ async function insertSchedule(
     createdBy: params.createdBy ?? "agent",
     sourceKey: params.sourceKey ?? null,
     definitionHash: params.definitionHash ?? null,
-    userEnabled: null as boolean | null,
+    userEnabled: null,
     mode,
     routingIntent,
     routingHintsJson: JSON.stringify(routingHints),
     quiet,
     reuseConversation,
-    status: "active" as ScheduleStatus,
+    status: "active",
     createdAt: now,
     updatedAt: now,
   };
@@ -607,7 +625,7 @@ export async function updateSchedule(
 
   // Resolve the effective syntax and expression after this update
   const newSyntax =
-    updates.syntax ?? (existing.scheduleSyntax as ScheduleSyntax);
+    updates.syntax ?? scheduleSyntaxSchema.parse(existing.scheduleSyntax);
   const newExpr =
     updates.expression ?? updates.cronExpression ?? existing.cronExpression;
   const newTimezone =
@@ -1063,7 +1081,7 @@ export async function setUserEnabled(
       // note.
       if (value && existing.cronExpression != null) {
         set.nextRunAt = computeNextRunAtEngine({
-          syntax: existing.scheduleSyntax as ScheduleSyntax,
+          syntax: scheduleSyntaxSchema.parse(existing.scheduleSyntax),
           expression: existing.cronExpression,
           timezone: existing.timezone,
         });
@@ -1124,7 +1142,7 @@ export async function claimDueSchedules(now: number): Promise<ScheduleJob[]> {
     let newNextRunAt: number | null;
     let exhausted = false;
     try {
-      const syntax = row.scheduleSyntax as ScheduleSyntax;
+      const syntax = scheduleSyntaxSchema.parse(row.scheduleSyntax);
       newNextRunAt = computeNextRunAtEngine({
         syntax,
         expression: row.cronExpression!,
@@ -1674,25 +1692,31 @@ export function describeCronExpression(expr: string | null): string {
   try {
     const cron = new Cron(expr, { maxRuns: 0 });
     // Access Croner internal state to extract the parsed cron pattern.
-    // This is fragile but necessary — Croner doesn't expose a public API for this.
-    const cronInternal = cron as unknown as Record<string, unknown>;
-    const states = cronInternal._states;
-    if (!states || typeof states !== "object") {
+    // This is fragile but necessary — Croner doesn't expose a public API for
+    // this; the probe degrades to the raw expression if the internals move.
+    const cronPatternProbe = z
+      .object({
+        _states: z
+          .object({
+            pattern: z.object({
+              minute: z.array(z.boolean()),
+              hour: z.array(z.boolean()),
+              day: z.array(z.boolean()),
+              month: z.array(z.boolean()),
+              dayOfWeek: z.array(z.boolean()),
+              starDOM: z.boolean(),
+              starDOW: z.boolean(),
+            }),
+          })
+          .optional(),
+      })
+      .loose()
+      .nullable()
+      .catch(null);
+    const pattern = cronPatternProbe.parse(cron)?._states?.pattern;
+    if (!pattern) {
       return expr;
     }
-    const p = (states as Record<string, unknown>).pattern;
-    if (!p || typeof p !== "object") {
-      return expr;
-    }
-    const pattern = p as {
-      minute: number[];
-      hour: number[];
-      day: number[];
-      month: number[];
-      dayOfWeek: number[];
-      starDOM: boolean;
-      starDOW: boolean;
-    };
 
     const activeMinutes = pattern.minute.reduce<number[]>((acc, v, i) => {
       if (v) {
@@ -2014,7 +2038,7 @@ function parseJobRow(row: typeof cronJobs.$inferSelect): ScheduleJob {
     name: row.name,
     description: row.description ?? "",
     enabled: row.enabled,
-    syntax: row.scheduleSyntax as ScheduleSyntax,
+    syntax: scheduleSyntaxSchema.parse(row.scheduleSyntax),
     expression: row.cronExpression,
     cronExpression: row.cronExpression,
     timezone: row.timezone,
@@ -2038,12 +2062,12 @@ function parseJobRow(row: typeof cronJobs.$inferSelect): ScheduleJob {
     sourceKey: row.sourceKey ?? null,
     definitionHash: row.definitionHash ?? null,
     userEnabled: row.userEnabled ?? null,
-    mode: (row.mode ?? "execute") as ScheduleMode,
-    routingIntent: (row.routingIntent ?? "all_channels") as RoutingIntent,
+    mode: scheduleModeSchema.parse(row.mode),
+    routingIntent: routingIntentSchema.parse(row.routingIntent),
     routingHints: safeParseJson(row.routingHintsJson),
     quiet: row.quiet ?? false,
     reuseConversation: row.reuseConversation ?? false,
-    status: (row.status ?? "active") as ScheduleStatus,
+    status: scheduleStatusSchema.parse(row.status),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -2064,7 +2088,7 @@ function safeParseJson(
     return {};
   }
   try {
-    return JSON.parse(json) as Record<string, unknown>;
+    return recordParam(JSON.parse(json)) ?? {};
   } catch {
     return {};
   }

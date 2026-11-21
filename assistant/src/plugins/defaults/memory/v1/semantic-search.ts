@@ -1,3 +1,4 @@
+import type { Schemas } from "@qdrant/js-client-rest";
 import { inArray } from "drizzle-orm";
 
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
@@ -231,17 +232,15 @@ export async function semanticSearch(
  * Build a Qdrant filter for hybrid search. Mirrors the logic in
  * `searchWithFilter` but as a standalone object for the query API.
  */
-function buildHybridFilter(
-  excludeMessageIds: string[],
-): Record<string, unknown> {
-  const mustConditions: Array<Record<string, unknown>> = [
+function buildHybridFilter(excludeMessageIds: string[]): Schemas["Filter"] {
+  const mustConditions: Schemas["Condition"][] = [
     {
       key: "target_type",
       match: { any: ["summary", "segment", "media"] },
     },
   ];
 
-  const mustNotConditions: Array<Record<string, unknown>> = [
+  const mustNotConditions: Schemas["Condition"][] = [
     { key: "_meta", match: { value: true } },
   ];
   if (excludeMessageIds.length > 0) {

@@ -105,7 +105,7 @@ const toolUseContentSchema = z
   })
   .passthrough();
 
-const toolResultContentSchema = z
+export const toolResultContentSchema = z
   .object({
     type: z.literal("tool_result"),
     tool_use_id: z.string(),

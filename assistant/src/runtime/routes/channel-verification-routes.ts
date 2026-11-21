@@ -20,10 +20,10 @@
  *   `ipcCallPersistent("mark_channel_revoked", …)` to `ContactStore.markChannelRevoked`.
  */
 
-import { ChannelId } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { revokePendingSessions } from "../../channels/gateway-verification-sessions.js";
+import { parseChannelId } from "../../channels/types.js";
 import {
   createInboundChallenge,
   getVerificationStatus,
@@ -33,6 +33,11 @@ import {
   verifyTrustedContact,
 } from "../../daemon/handlers/config-channels.js";
 import { normalizePhoneNumber } from "../../util/phone.js";
+import {
+  booleanParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../assistant-scope.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
@@ -68,52 +73,36 @@ export async function handleCreateVerificationSession({
     throw new BadRequestError("Request body is required");
   }
 
-  const {
-    channel,
-    destination,
-    rebind,
-    conversationId,
-    originConversationId,
-    purpose: rawPurpose,
-    contactChannelId,
-  } = body as {
-    channel?: ChannelId;
-    destination?: string;
-    rebind?: boolean;
-    conversationId?: string;
-    originConversationId?: string;
-    purpose?: string;
-    contactChannelId?: string;
-  };
+  const channel = parseChannelId(body.channel) ?? undefined;
+  const destination = stringParam(body.destination);
+  const rebind = booleanParam(body.rebind);
+  const conversationId = stringParam(body.conversationId);
+  const originConversationId = stringParam(body.originConversationId);
+  const rawPurpose = stringParam(body.purpose);
+  const contactChannelId = stringParam(body.contactChannelId);
 
   const purpose = rawPurpose ?? "guardian";
 
-  if (purpose === "trusted_contact" && !contactChannelId) {
-    throw new BadRequestError(
-      "contactChannelId is required for trusted_contact purpose",
-    );
-  }
-
   // Trusted contact verification path
   if (purpose === "trusted_contact") {
+    if (!contactChannelId) {
+      throw new BadRequestError(
+        "contactChannelId is required for trusted_contact purpose",
+      );
+    }
     const result = await verifyTrustedContact(
-      contactChannelId!,
+      contactChannelId,
       DAEMON_INTERNAL_ASSISTANT_ID,
     );
     if (!result.success) {
       if (result.error === "rate_limited") {
-        throw new TooManyRequestsError(
-          (result as { message?: string }).message ?? "Rate limited",
-        );
+        throw new TooManyRequestsError(result.message ?? "Rate limited");
       }
       if (result.error === "already_verified") {
-        throw new ConflictError(
-          (result as { message?: string }).message ?? "Already verified",
-        );
+        throw new ConflictError(result.message ?? "Already verified");
       }
       throw new BadRequestError(
-        (result as { message?: string }).message ??
-          "Trusted contact verification failed",
+        result.message ?? "Trusted contact verification failed",
       );
     }
     return result;
@@ -154,13 +143,10 @@ export async function handleCreateVerificationSession({
 
     if (!result.success) {
       if (result.error === "rate_limited") {
-        throw new TooManyRequestsError(
-          (result as { message?: string }).message ?? "Rate limited",
-        );
+        throw new TooManyRequestsError(result.message ?? "Rate limited");
       }
       throw new BadRequestError(
-        (result as { message?: string }).message ??
-          "Outbound verification failed",
+        result.message ?? "Outbound verification failed",
       );
     }
 
@@ -171,8 +157,7 @@ export async function handleCreateVerificationSession({
   const result = await createInboundChallenge(channel, rebind, conversationId);
   if (!result.success) {
     throw new BadRequestError(
-      (result as { message?: string }).message ??
-        "Inbound challenge creation failed",
+      result.message ?? "Inbound challenge creation failed",
     );
   }
   return result;
@@ -185,8 +170,9 @@ async function handleGetVerificationStatus({
   queryParams = {},
   body = {},
 }: RouteHandlerArgs): Promise<VerificationStatusResponse> {
-  const channel = (queryParams.channel ??
-    (body as Record<string, unknown>).channel) as ChannelId | undefined;
+  const channel =
+    parseChannelId(queryParams.channel ?? recordParam(body)?.channel) ??
+    undefined;
   return await getVerificationStatus(channel);
 }
 
@@ -200,10 +186,8 @@ export async function handleResendVerificationSession({
     throw new BadRequestError("Request body is required");
   }
 
-  const { channel, originConversationId } = body as {
-    channel?: ChannelId;
-    originConversationId?: string;
-  };
+  const channel = parseChannelId(body.channel) ?? undefined;
+  const originConversationId = stringParam(body.originConversationId);
   if (!channel) {
     throw new BadRequestError('The "channel" field is required.');
   }
@@ -212,13 +196,9 @@ export async function handleResendVerificationSession({
 
   if (!result.success) {
     if (result.error === "rate_limited") {
-      throw new TooManyRequestsError(
-        (result as { message?: string }).message ?? "Rate limited",
-      );
+      throw new TooManyRequestsError(result.message ?? "Rate limited");
     }
-    throw new BadRequestError(
-      (result as { message?: string }).message ?? "Resend failed",
-    );
+    throw new BadRequestError(result.message ?? "Resend failed");
   }
 
   return result;
@@ -234,7 +214,7 @@ export async function handleCancelVerificationSession({
     throw new BadRequestError("Request body is required");
   }
 
-  const { channel } = body as { channel?: ChannelId };
+  const channel = parseChannelId(body.channel);
   if (!channel) {
     throw new BadRequestError('The "channel" field is required.');
   }
@@ -251,13 +231,11 @@ export async function handleCancelVerificationSession({
 async function handleRevokeVerificationBinding({
   body = {},
 }: RouteHandlerArgs) {
-  const { channel } = body as { channel?: ChannelId };
+  const channel = parseChannelId(body.channel) ?? undefined;
 
   const result = await revokeVerificationForChannel(channel);
   if (!result.success) {
-    throw new BadRequestError(
-      (result as { message?: string }).message ?? "Revocation failed",
-    );
+    throw new BadRequestError(result.message ?? "Revocation failed");
   }
   return result;
 }

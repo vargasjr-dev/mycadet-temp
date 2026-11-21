@@ -74,6 +74,11 @@ import { ToolDefinition } from "../../tools/tool-types.js";
 import { pathExists } from "../../util/fs.js";
 import { getWorkspaceDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
+import {
+  booleanParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import { broadcastMessage } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, InternalError, NotFoundError } from "./errors.js";
@@ -87,7 +92,7 @@ const log = getLogger("settings-routes");
 // ---------------------------------------------------------------------------
 
 function handleVoiceConfigUpdate({ body = {} }: RouteHandlerArgs) {
-  const { activationKey } = body as { activationKey?: string };
+  const activationKey = stringParam(body.activationKey);
   if (!activationKey) {
     throw new BadRequestError("activationKey is required");
   }
@@ -105,7 +110,8 @@ function handleVoiceConfigUpdate({ body = {} }: RouteHandlerArgs) {
 const SUPPORTED_CLIENT_SETTINGS_KEYS = new Set(["activationKey"]);
 
 function handleClientSettingsUpdate({ body = {} }: RouteHandlerArgs) {
-  const { key, value } = body as { key?: string; value?: string };
+  const key = stringParam(body.key);
+  const value = stringParam(body.value);
   if (!key || value === undefined) {
     throw new BadRequestError("key and value are required");
   }
@@ -141,10 +147,12 @@ function sanitizeOAuthError(message: string): string {
 }
 
 async function handleOAuthConnectStart({ body = {} }: RouteHandlerArgs) {
-  const { service, requestedScopes } = body as {
-    service?: string;
-    requestedScopes?: string[];
-  };
+  const service = stringParam(body.service);
+  const requestedScopes = z
+    .array(z.string())
+    .optional()
+    .catch(undefined)
+    .parse(body.requestedScopes);
 
   if (!service) {
     throw new BadRequestError("Missing required field: service");
@@ -373,6 +381,16 @@ type SchemaShape = {
   required?: string[];
 };
 
+/** Tool defs' input_schema is generated from zod upstream; this probe pins
+ * the advertised shape at the route boundary instead of asserting it. */
+const schemaShapeProbe = z.object({
+  type: z.string(),
+  properties: z.record(z.string(), z.unknown()).optional(),
+  required: z.array(z.string()).optional(),
+});
+const asSchemaShape = (schema: object): SchemaShape =>
+  schemaShapeProbe.parse(schema);
+
 /** How an `agent` query param was read, when one was given by role. */
 interface ResolvedAgentInfo {
   /** The `agent` value as asked for. */
@@ -421,7 +439,7 @@ function handleToolNamesList(
 
   const transformedDefs = injectActivityField(rawDefs, ACTIVITY_SKIP_SET);
   for (const def of transformedDefs) {
-    schemas[def.name] = def.input_schema as SchemaShape;
+    schemas[def.name] = asSchemaShape(def.input_schema);
   }
 
   try {
@@ -439,7 +457,7 @@ function handleToolNamesList(
             continue;
           }
           nameSet.add(entry.name);
-          schemas[entry.name] = entry.input_schema as unknown as SchemaShape;
+          schemas[entry.name] = asSchemaShape(entry.input_schema);
         }
       } catch {
         // Skip skills whose manifests can't be parsed
@@ -517,6 +535,10 @@ function handleAgentToolList(agent: string): ToolNamesListResponse {
     skillProjectionCache: {},
     hasNoClient: true,
     preactivatedSkillIds: mergedSkillIds,
+    // Fixture seam: the resolver walks deep Conversation internals (trust,
+    // abort, approval bookkeeping) the preview never reaches; the fake rides
+    // the type rather than the preview dragging the whole type into a
+    // preview-scoped interface.
   } as unknown as Conversation;
 
   const agentInfo: ResolvedAgentInfo = {
@@ -541,7 +563,7 @@ function handleAgentToolList(agent: string): ToolNamesListResponse {
   const schemaByName = new Map<string, SchemaShape>(
     injectActivityField(getAllTools(), ACTIVITY_SKIP_SET).map((d) => [
       d.name,
-      d.input_schema as SchemaShape,
+      asSchemaShape(d.input_schema),
     ]),
   );
 
@@ -589,7 +611,7 @@ function handleConversationToolList(
   const tools: ToolListEntry[] = [];
   for (const def of defs) {
     names.push(def.name);
-    schemas[def.name] = def.input_schema as SchemaShape;
+    schemas[def.name] = asSchemaShape(def.input_schema);
     tools.push(toolEntryForName(def.name));
   }
 
@@ -642,17 +664,10 @@ function buildRegisteredToolEntries(): ToolListEntry[] {
 }
 
 async function handleToolPermissionSimulate({ body = {} }: RouteHandlerArgs) {
-  const {
-    toolName,
-    input,
-    workingDir: rawWorkingDir,
-    isInteractive,
-  } = body as {
-    toolName?: string;
-    input?: Record<string, unknown>;
-    workingDir?: string;
-    isInteractive?: boolean;
-  };
+  const toolName = stringParam(body.toolName);
+  const input = recordParam(body.input);
+  const rawWorkingDir = stringParam(body.workingDir);
+  const isInteractive = booleanParam(body.isInteractive);
 
   if (!toolName || typeof toolName !== "string") {
     throw new BadRequestError("toolName is required");
@@ -805,7 +820,7 @@ function handleGetCloudConfig() {
 
 function handleUpdateCloudConfig({ body = {} }: RouteHandlerArgs) {
   try {
-    const { baseUrl: rawBaseUrl } = body as { baseUrl?: string };
+    const rawBaseUrl = stringParam(body.baseUrl);
     const value = normalizePublicBaseUrl(rawBaseUrl);
     setConfigSection("cloud", { ...getConfig().cloud, baseUrl: value ?? "" });
     return { baseUrl: value ?? "", success: true };
@@ -822,13 +837,11 @@ function handleUpdateCloudConfig({ body = {} }: RouteHandlerArgs) {
 
 function handleUpdateIngressConfig({ body = {} }: RouteHandlerArgs) {
   try {
-    const { publicBaseUrl: rawUrl, enabled } = body as {
-      publicBaseUrl?: string;
-      enabled?: boolean;
-    };
+    const rawUrl = stringParam(body.publicBaseUrl);
+    const enabled = booleanParam(body.enabled);
     const value = normalizePublicBaseUrl(rawUrl);
     const raw = loadRawConfig();
-    const ingress = (raw?.ingress ?? {}) as Record<string, unknown>;
+    const ingress = recordParam(raw?.ingress) ?? {};
     dropTunnelRecordsForNewUrl(ingress, value);
     ingress.publicBaseUrl = value;
     if (enabled !== undefined) {
@@ -836,7 +849,7 @@ function handleUpdateIngressConfig({ body = {} }: RouteHandlerArgs) {
     }
     saveRawConfig({ ...raw, ingress });
 
-    const isEnabled = (ingress.enabled as boolean | undefined) ?? false;
+    const isEnabled = booleanParam(ingress.enabled) ?? false;
     if (value && isEnabled) {
       setIngressPublicBaseUrl(value);
     } else {

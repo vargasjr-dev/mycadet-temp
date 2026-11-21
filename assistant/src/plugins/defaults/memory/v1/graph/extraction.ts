@@ -9,13 +9,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { ContentBlock, ImageContent, Message } from "@mycadet/plugin-api";
+import type { ContentBlock, Message } from "@mycadet/plugin-api";
 import {
   getConfiguredProvider,
   getConversationDirPath,
   safeStringSlice,
 } from "@mycadet/plugin-api";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
+import { z } from "zod";
 
 import { AssistantConfig } from "../../../../../config/schema.js";
 import { getDb } from "../../../../../persistence/db-connection.js";
@@ -23,7 +24,9 @@ import {
   conversations,
   messages,
 } from "../../../../../persistence/schema/index.js";
+import { contentBlockArraySchema } from "../../../../../providers/content-block-schema.js";
 import { BackendUnavailableError } from "../../../../../util/errors.js";
+import { recordParam } from "../../../../../util/wire-params.js";
 import {
   enqueueGraphNodeEmbed,
   enqueueGraphTriggerEmbed,
@@ -37,7 +40,6 @@ import {
 import type {
   DecayCurve,
   EmotionalCharge,
-  Fidelity,
   ImageRef,
   MemoryDiff,
   MemoryNode,
@@ -476,56 +478,88 @@ const EXTRACT_TOOL_SCHEMA = {
 // Response parsing
 // ---------------------------------------------------------------------------
 
-interface RawCreateNode {
-  temp_id?: string;
-  content?: string;
-  type?: string;
-  emotional_charge?: {
-    valence?: number;
-    intensity?: number;
-    decay_curve?: string;
-    decay_rate?: number;
-  };
-  significance?: number;
-  confidence?: number;
-  source_type?: string;
-  event_date?: number;
-  triggers?: Array<{
-    type?: string;
-    schedule?: string;
-    condition?: string;
-    event_date?: number;
-    ramp_days?: number;
-    follow_up_days?: number;
-    recurring?: boolean;
-  }>;
-  edges_to_existing?: Array<{
-    target_node_id?: string;
-    relationship?: string;
-    weight?: number;
-  }>;
-  image_refs?: Array<{
-    message_id?: string;
-    block_index?: number;
-    description?: string;
-  }>;
-}
+/**
+ * The Raw* shapes describe the LLM's tool-call arguments: every field
+ * optional, every field lenient (a wrong-typed value degrades to undefined
+ * rather than flowing through a blind cast). The zod schemas are the types —
+ * the interfaces below ride z.infer.
+ */
+const optStr = z.string().optional().catch(undefined);
+const optNum = z.number().optional().catch(undefined);
 
-interface RawUpdateNode {
-  id?: string;
-  content?: string;
-  significance?: number;
-  confidence?: number;
-  fidelity?: string;
-  event_date?: number | null;
-}
+const rawCreateNodeSchema = z.object({
+  temp_id: optStr,
+  content: optStr,
+  type: optStr,
+  emotional_charge: z
+    .object({
+      valence: optNum,
+      intensity: optNum,
+      decay_curve: optStr,
+      decay_rate: optNum,
+    })
+    .optional()
+    .catch(undefined),
+  significance: optNum,
+  confidence: optNum,
+  source_type: optStr,
+  event_date: optNum,
+  triggers: z
+    .array(
+      z.object({
+        type: optStr,
+        schedule: optStr,
+        condition: optStr,
+        event_date: optNum,
+        ramp_days: optNum,
+        follow_up_days: optNum,
+        recurring: z.boolean().optional().catch(undefined),
+      }),
+    )
+    .optional()
+    .catch(undefined),
+  edges_to_existing: z
+    .array(
+      z.object({
+        target_node_id: optStr,
+        relationship: optStr,
+        weight: optNum,
+      }),
+    )
+    .optional()
+    .catch(undefined),
+  image_refs: z
+    .array(
+      z.object({
+        message_id: optStr,
+        block_index: optNum,
+        description: optStr,
+      }),
+    )
+    .optional()
+    .catch(undefined),
+});
 
-interface RawNewEdge {
-  source_node_id?: string;
-  target_node_id?: string;
-  relationship?: string;
-  weight?: number;
-}
+const rawUpdateNodeSchema = z.object({
+  id: optStr,
+  content: optStr,
+  significance: optNum,
+  confidence: optNum,
+  fidelity: optStr,
+  event_date: z.number().nullable().optional().catch(undefined),
+});
+
+const rawNewEdgeSchema = z.object({
+  source_node_id: optStr,
+  target_node_id: optStr,
+  relationship: optStr,
+  weight: optNum,
+});
+
+const rawCreateNodeArraySchema = z.array(rawCreateNodeSchema).catch([]);
+const rawUpdateNodeArraySchema = z.array(rawUpdateNodeSchema).catch([]);
+const rawNewEdgeArraySchema = z.array(rawNewEdgeSchema).catch([]);
+const reinforceNodeIdsSchema = z.array(z.string()).catch([]);
 
 const VALID_TYPES = new Set<string>([
   "episodic",
@@ -560,6 +594,21 @@ const VALID_RELATIONSHIPS = new Set<string>([
 ]);
 const VALID_TRIGGER_TYPES = new Set<string>(["temporal", "semantic", "event"]);
 
+/**
+ * Membership guards over the VALID_* sets: the sets carry the raw LLM
+ * strings, the guards are the verified narrow to the domain unions.
+ */
+const isMemoryType = (v: string | undefined): v is MemoryType =>
+  v !== undefined && VALID_TYPES.has(v);
+const isDecayCurve = (v: string | undefined): v is DecayCurve =>
+  v !== undefined && VALID_DECAY_CURVES.has(v);
+const isSourceType = (v: string | undefined): v is SourceType =>
+  v !== undefined && VALID_SOURCE_TYPES.has(v);
+const isTriggerType = (v: string | undefined): v is TriggerType =>
+  v !== undefined && VALID_TRIGGER_TYPES.has(v);
+const isRelationship = (v: string | undefined): v is NewEdge["relationship"] =>
+  v !== undefined && VALID_RELATIONSHIPS.has(v);
+
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
@@ -585,7 +634,8 @@ export type DeferredEdgeEndpoint =
 export interface DeferredEdge {
   source: DeferredEdgeEndpoint;
   target: DeferredEdgeEndpoint;
-  relationship: string;
+  /** Narrowed at creation — only VALID_RELATIONSHIPS members reach here. */
+  relationship: NewEdge["relationship"];
   weight: number;
 }
 
@@ -638,21 +688,15 @@ export function applySupersessionDurability(
     const existing = diff.updateNodes.find((u) => u.id === edge.sourceNodeId);
     if (existing) {
       existing.changes.stability = Math.max(
-        (existing.changes.stability as number | undefined) ??
-          source?.stability ??
-          14,
+        existing.changes.stability ?? source?.stability ?? 14,
         inheritedStability,
       );
       existing.changes.reinforcementCount = Math.max(
-        (existing.changes.reinforcementCount as number | undefined) ??
-          source?.reinforcementCount ??
-          0,
+        existing.changes.reinforcementCount ?? source?.reinforcementCount ?? 0,
         inheritedCount,
       );
       existing.changes.significance = Math.max(
-        (existing.changes.significance as number | undefined) ??
-          source?.significance ??
-          0,
+        existing.changes.significance ?? source?.significance ?? 0,
         inheritedSignificance,
       );
     } else {
@@ -693,7 +737,7 @@ export function applySupersessionDurability(
 }
 
 export function parseExtractionResponse(
-  input: Record<string, unknown>,
+  rawInput: unknown,
   conversationId: string,
   candidateNodeIds: Set<string>,
   /** Epoch ms — when the conversation happened (not extraction time). */
@@ -712,11 +756,14 @@ export function parseExtractionResponse(
     trigger: Omit<NewTrigger, "nodeId">;
   }>;
 } {
+  const input = recordParam(rawInput) ?? {};
   const now = conversationTimestamp;
-  const createNodes = (input.create_nodes ?? []) as RawCreateNode[];
-  const updateNodes = (input.update_nodes ?? []) as RawUpdateNode[];
-  const reinforceNodeIds = (input.reinforce_node_ids ?? []) as string[];
-  const newEdges = (input.new_edges ?? []) as RawNewEdge[];
+  const createNodes = rawCreateNodeArraySchema.parse(input.create_nodes);
+  const updateNodes = rawUpdateNodeArraySchema.parse(input.update_nodes);
+  const reinforceNodeIds = reinforceNodeIdsSchema.parse(
+    input.reinforce_node_ids,
+  );
+  const newEdges = rawNewEdgeArraySchema.parse(input.new_edges);
 
   const diff: MemoryDiff = {
     createNodes: [],
@@ -747,7 +794,7 @@ export function parseExtractionResponse(
     if (!raw.content || typeof raw.content !== "string") {
       continue;
     }
-    if (!raw.type || !VALID_TYPES.has(raw.type)) {
+    if (!isMemoryType(raw.type)) {
       continue;
     }
 
@@ -755,31 +802,29 @@ export function parseExtractionResponse(
     const emotionalCharge: EmotionalCharge = {
       valence: clamp(Number(charge.valence) || 0, -1, 1),
       intensity: clamp(Number(charge.intensity) || 0, 0, 1),
-      decayCurve: (VALID_DECAY_CURVES.has(charge.decay_curve ?? "")
+      decayCurve: isDecayCurve(charge.decay_curve)
         ? charge.decay_curve
-        : "linear") as DecayCurve,
+        : "linear",
       decayRate: clamp(Number(charge.decay_rate) || 0.05, 0.001, 1),
       originalIntensity: clamp(Number(charge.intensity) || 0, 0, 1),
     };
 
     const node: NewNode = {
       content: raw.content,
-      type: raw.type as MemoryType,
+      type: raw.type,
       created: now,
       lastAccessed: now,
       lastConsolidated: now,
       eventDate: parseEpochMs(raw.event_date),
       emotionalCharge,
-      fidelity: "vivid" as Fidelity,
+      fidelity: "vivid",
       confidence: clamp(Number(raw.confidence) || 0.5, 0, 1),
       significance: clamp(Number(raw.significance) || 0.5, 0, 1),
       stability: 14,
       reinforcementCount: 0,
       lastReinforced: now,
       sourceConversations: [conversationId],
-      sourceType: (VALID_SOURCE_TYPES.has(raw.source_type ?? "")
-        ? raw.source_type
-        : "inferred") as SourceType,
+      sourceType: isSourceType(raw.source_type) ? raw.source_type : "inferred",
       narrativeRole: null,
       partOfStory: null,
       imageRefs: null,
@@ -811,13 +856,13 @@ export function parseExtractionResponse(
     // Collect triggers
     if (Array.isArray(raw.triggers)) {
       for (const t of raw.triggers) {
-        if (!t.type || !VALID_TRIGGER_TYPES.has(t.type)) {
+        if (!isTriggerType(t.type)) {
           continue;
         }
         deferredTriggers.push({
           newNodeIndex: nodeIndex,
           trigger: {
-            type: t.type as TriggerType,
+            type: t.type,
             schedule: t.schedule ?? null,
             condition: t.condition ?? null,
             conditionEmbedding: null, // Embedded async via job
@@ -860,7 +905,7 @@ export function parseExtractionResponse(
       deferredTriggers.push({
         newNodeIndex: nodeIndex,
         trigger: {
-          type: "event" as TriggerType,
+          type: "event",
           schedule: null,
           condition: null,
           conditionEmbedding: null,
@@ -946,7 +991,7 @@ export function parseExtractionResponse(
   const pushResolvedEdge = (
     source: DeferredEdgeEndpoint,
     target: DeferredEdgeEndpoint,
-    relationship: string,
+    relationship: NewEdge["relationship"],
     weight: number,
   ) => {
     // Both endpoints existing → apply directly via diff.createEdges.
@@ -955,7 +1000,7 @@ export function parseExtractionResponse(
       diff.createEdges.push({
         sourceNodeId: source.nodeId,
         targetNodeId: target.nodeId,
-        relationship: relationship as NewEdge["relationship"],
+        relationship,
         weight,
         created: now,
       });
@@ -981,7 +1026,7 @@ export function parseExtractionResponse(
       if (!edge.target_node_id) {
         continue;
       }
-      if (!edge.relationship || !VALID_RELATIONSHIPS.has(edge.relationship)) {
+      if (!isRelationship(edge.relationship)) {
         continue;
       }
       const target = resolveEndpoint(edge.target_node_id);
@@ -1010,7 +1055,15 @@ export function parseExtractionResponse(
     if (!raw.id || !candidateNodeIds.has(raw.id)) {
       continue;
     }
-    const changes: Record<string, unknown> = {};
+    const changes: Partial<{
+      content: string;
+      significance: number;
+      confidence: number;
+      fidelity: "vivid" | "clear" | "faded" | "gist";
+      eventDate: number | null;
+      stability: number;
+      reinforcementCount: number;
+    }> = {};
     if (raw.content) {
       changes.content = raw.content;
     }
@@ -1021,8 +1074,10 @@ export function parseExtractionResponse(
       changes.confidence = clamp(raw.confidence, 0, 1);
     }
     if (
-      raw.fidelity &&
-      ["vivid", "clear", "faded", "gist"].includes(raw.fidelity)
+      raw.fidelity === "vivid" ||
+      raw.fidelity === "clear" ||
+      raw.fidelity === "faded" ||
+      raw.fidelity === "gist"
     ) {
       changes.fidelity = raw.fidelity;
     }
@@ -1040,7 +1095,7 @@ export function parseExtractionResponse(
     if (!raw.source_node_id || !raw.target_node_id) {
       continue;
     }
-    if (!raw.relationship || !VALID_RELATIONSHIPS.has(raw.relationship)) {
+    if (!isRelationship(raw.relationship)) {
       continue;
     }
     const source = resolveEndpoint(raw.source_node_id);
@@ -1252,7 +1307,7 @@ export async function runGraphExtraction(
   }
 
   const { diff, deferredEdges, deferredTriggers } = parseExtractionResponse(
-    toolBlock.input as Record<string, unknown>,
+    toolBlock.input,
     conversationId,
     candidateNodeIds,
     conversationTimestamp,
@@ -1287,7 +1342,7 @@ export async function runGraphExtraction(
     createEdge({
       sourceNodeId,
       targetNodeId,
-      relationship: de.relationship as NewEdge["relationship"],
+      relationship: de.relationship,
       weight: de.weight,
       created: conversationTimestamp,
     });
@@ -1411,10 +1466,15 @@ function resolveImageRefMimeType(
   }
 
   try {
-    const blocks = JSON.parse(msg.content) as Array<{
-      type?: string;
-      source?: { media_type?: string };
-    }>;
+    const imageRefProbe = z
+      .array(
+        z.object({
+          type: optStr,
+          source: z.object({ media_type: optStr }).optional().catch(undefined),
+        }),
+      )
+      .catch([]);
+    const blocks = imageRefProbe.parse(JSON.parse(msg.content));
     const block = blocks[blockIndex];
     if (!block || block.type !== "image") {
       return null;
@@ -1454,14 +1514,14 @@ async function loadTranscriptFromDisk(
       .filter((line) => line.length > 0);
 
     const parts: string[] = [];
+    const lineProbe = z
+      .object({ role: optStr, content: optStr, ts: optStr })
+      .nullable()
+      .catch(null);
     for (const line of lines) {
       try {
-        const msg = JSON.parse(line) as {
-          role?: string;
-          content?: string;
-          ts?: string;
-        };
-        if (!msg.role || !msg.content) {
+        const msg = lineProbe.parse(JSON.parse(line));
+        if (!msg?.role || !msg.content) {
           continue;
         }
 
@@ -1545,7 +1605,9 @@ function loadTranscriptWithImages(
       if (typeof raw === "string") {
         parsed = [{ type: "text", text: raw }];
       } else if (Array.isArray(raw)) {
-        parsed = raw as ContentBlock[];
+        // Persisted content — the canonical schema is the honest validator,
+        // and blocks that fail it have no business reaching the prompt.
+        parsed = contentBlockArraySchema.parse(raw);
       } else {
         continue;
       }
@@ -1566,13 +1628,12 @@ function loadTranscriptWithImages(
         contentBlocks.push({ type: "text", text });
       } else if (block?.type === "image") {
         if (imageCount < MAX_IMAGES) {
-          const imgBlock = block as ImageContent;
           // Add annotation so the extraction LLM knows the image's reference coordinates
           contentBlocks.push({
             type: "text",
-            text: `<image message_id="${row.id}" block_index="${i}" type="${imgBlock.source.media_type}" />`,
+            text: `<image message_id="${row.id}" block_index="${i}" type="${block.source.media_type}" />`,
           });
-          contentBlocks.push(imgBlock);
+          contentBlocks.push(block);
           imageCount++;
           hasImagesFlag = true;
         }

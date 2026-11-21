@@ -18,6 +18,7 @@
  * POST   /v1/memory-nodes/update — replace content on the single node matching content
  */
 
+import type { Schemas } from "@qdrant/js-client-rest";
 import {
   and,
   asc,
@@ -231,7 +232,7 @@ async function searchNodesSemantic(
     const sparseVector = { indices: sparse.indices, values: sparse.values };
 
     // Filter to graph_node target_type, exclude gone nodes
-    const mustConditions: Array<Record<string, unknown>> = [
+    const mustConditions: Schemas["Condition"][] = [
       { key: "target_type", match: { value: "graph_node" } },
     ];
     if (kindFilter) {

@@ -1,4 +1,5 @@
 import { type Command } from "commander";
+import { z } from "zod";
 
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
 import { getCliLogger } from "../../../util/logger.js";
@@ -49,15 +50,33 @@ interface SerializedProvider {
   identityOkField?: string | null;
   responseOkField?: string | null;
   availableScopes?: unknown;
-  setupNotes?: string[] | unknown;
+  setupNotes?: string[];
   logoUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
 
+/** The gateway relay's provider row: snake_case off the wire, probed at the
+ * boundary and mapped to the CLI's camelCase contract. */
+const providerRowProbe = z.object({
+  provider_key: z.string(),
+  display_name: z.string().nullable(),
+  description: z.string().nullable(),
+  requires_client_secret: z.boolean(),
+  logo_url: z.string().nullable(),
+  dashboard_url: z.string().nullable(),
+  client_id_placeholder: z.string().nullable(),
+  acts_as: z.enum(["user", "assistant"]).optional(),
+});
+
 // ---------------------------------------------------------------------------
 // Text formatting helpers (non-JSON output)
 // ---------------------------------------------------------------------------
+
+const scopeEntrySchema = z.object({
+  scope: z.string(),
+  description: z.string().optional(),
+});
 
 function formatAvailableScopes(
   availableScopes: unknown,
@@ -72,11 +91,15 @@ function formatAvailableScopes(
   if (Array.isArray(availableScopes)) {
     return (
       "\n" +
-      (availableScopes as Array<{ scope: string; description?: string }>)
-        .map(
-          (s) =>
-            `${indent}- ${s.scope}${s.description ? ` — ${s.description}` : ""}`,
-        )
+      availableScopes
+        .flatMap((s) => {
+          const entry = scopeEntrySchema.safeParse(s);
+          return entry.success
+            ? [
+                `${indent}- ${entry.data.scope}${entry.data.description ? ` — ${entry.data.description}` : ""}`,
+              ]
+            : [];
+        })
         .join("\n")
     );
   }
@@ -86,10 +109,9 @@ function formatAvailableScopes(
 function formatProviderSummary(p: SerializedProvider): string {
   const name = p.displayName ?? p.providerKey;
   const desc = p.description ? ` — ${p.description}` : "";
-  const scopes =
-    (p.defaultScopes as string[])?.length > 0
-      ? `  Scopes: ${(p.defaultScopes as string[]).join(", ")}`
-      : "";
+  const scopes = p.defaultScopes?.length
+    ? `  Scopes: ${p.defaultScopes.join(", ")}`
+    : "";
   return (
     `${p.providerKey} (${name})${desc}` +
     `${scopes ? "\n" + scopes : ""}` +
@@ -135,8 +157,8 @@ function formatProviderDetail(p: SerializedProvider): string {
   if (p.tokenExchangeBodyFormat && p.tokenExchangeBodyFormat !== "form") {
     lines.push(`  Token exchange body format: ${p.tokenExchangeBodyFormat}`);
   }
-  if ((p.defaultScopes as string[])?.length > 0) {
-    lines.push(`  Default scopes: ${(p.defaultScopes as string[]).join(", ")}`);
+  if (p.defaultScopes?.length) {
+    lines.push(`  Default scopes: ${p.defaultScopes.join(", ")}`);
   }
   const avail = formatAvailableScopes(p.availableScopes);
   if (avail) {
@@ -199,7 +221,7 @@ function formatProviderDetail(p: SerializedProvider): string {
   }
   if (p.identityResponsePaths) {
     lines.push(
-      `  Identity response paths: ${(p.identityResponsePaths as string[]).join(", ")}`,
+      `  Identity response paths: ${p.identityResponsePaths.join(", ")}`,
     );
   }
   if (p.identityFormat) {
@@ -214,7 +236,7 @@ function formatProviderDetail(p: SerializedProvider): string {
   if (p.setupNotes) {
     if (Array.isArray(p.setupNotes)) {
       lines.push(
-        `  Setup notes:\n${(p.setupNotes as string[]).map((n) => `    - ${n}`).join("\n")}`,
+        `  Setup notes:\n${p.setupNotes.map((n) => `    - ${n}`).join("\n")}`,
       );
     } else {
       lines.push(`  Setup notes: ${formatJsonValue(p.setupNotes)}`);
@@ -277,16 +299,21 @@ export function registerProviderCommands(oauth: Command): void {
 
       // The route returns snake_case summaries; map to camelCase for
       // display consistency with the existing CLI contract.
-      let rows: SerializedProvider[] = (r.result?.providers ?? []).map((p) => ({
-        providerKey: p.provider_key as string,
-        displayName: p.display_name as string | null,
-        description: p.description as string | null,
-        requiresClientSecret: p.requires_client_secret as boolean,
-        logoUrl: p.logo_url as string | null,
-        dashboardUrl: p.dashboard_url as string | null,
-        clientIdPlaceholder: p.client_id_placeholder as string | null,
-        actsAs: p.acts_as as "user" | "assistant" | undefined,
-      }));
+      let rows: SerializedProvider[] = (r.result?.providers ?? []).map(
+        (row): SerializedProvider => {
+          const p = providerRowProbe.parse(row);
+          return {
+            providerKey: p.provider_key,
+            displayName: p.display_name,
+            description: p.description,
+            requiresClientSecret: p.requires_client_secret,
+            logoUrl: p.logo_url,
+            dashboardUrl: p.dashboard_url,
+            clientIdPlaceholder: p.client_id_placeholder,
+            actsAs: p.acts_as,
+          };
+        },
+      );
 
       if (opts.providerKey) {
         const needles = opts.providerKey

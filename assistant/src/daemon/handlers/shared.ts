@@ -282,6 +282,56 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value != null;
 }
 
+/** The client's answer to a standalone secret_request, parsed at the RPC
+ * boundary so a malformed response fails loudly instead of resolving the
+ * awaiting route with garbage. */
+const secretRpcResultProbe = z.object({
+  value: z.string().nullable(),
+  delivery: z.enum(["store", "transient_send"]),
+  reason: z.enum(["cancelled", "superseded", "timed_out"]).optional(),
+  error: z.literal("unsupported_channel").optional(),
+});
+
+/** The credential-collection link mint's gateway response. */
+const collectionLinkResponseProbe = z.union([
+  z.object({ ok: z.literal(true), url: z.string(), expiresAt: z.number() }),
+  z.object({ ok: z.literal(false), error: z.string() }),
+  z.undefined(),
+]);
+
+/** The image block's source: validated into the real MediaSource union
+ * instead of asserting the record's shape. */
+const mediaSourceProbe: z.ZodType<MediaSource> = z.union([
+  z.object({
+    type: z.literal("base64"),
+    media_type: z.string(),
+    data: z.string(),
+  }),
+  z.object({
+    type: z.literal("workspace_ref"),
+    media_type: z.string(),
+    attachmentId: z.string(),
+    sizeBytes: z.number(),
+  }),
+]);
+
+const webSearchErrorProbe = z.object({
+  type: z.literal("web_search_tool_result_error"),
+});
+
+const webSearchResultProbe = z.object({
+  type: z.literal("web_search_result"),
+  title: z.string(),
+  url: z.string(),
+});
+
+// The persisted workspace_ref arm of MediaSource as stored on content blocks —
+// looser than mediaSourceProbe (legacy rows may predate sizeBytes).
+const workspaceRefProbe = z.object({
+  type: z.literal("workspace_ref"),
+  attachmentId: z.string(),
+});
+
 function formatBytes(sizeBytes: number): string {
   if (sizeBytes < 1024) {
     return `${sizeBytes} B`;
@@ -508,9 +558,7 @@ export function renderHistoryContent(
         surfaceType:
           typeof block.surfaceType === "string" ? block.surfaceType : "",
         title: typeof block.title === "string" ? block.title : undefined,
-        data: isRecord(block.data)
-          ? (block.data as Record<string, unknown>)
-          : {},
+        data: isRecord(block.data) ? block.data : {},
         actions: Array.isArray(block.actions) ? block.actions : undefined,
         display: typeof block.display === "string" ? block.display : undefined,
         persistent: block.persistent === true ? true : undefined,
@@ -621,9 +669,7 @@ export function renderHistoryContent(
     if (block.type === "tool_use") {
       finalizeSegment();
       const name = typeof block.name === "string" ? block.name : "unknown";
-      const input = isRecord(block.input)
-        ? (block.input as Record<string, unknown>)
-        : {};
+      const input = isRecord(block.input) ? block.input : {};
       const id = typeof block.id === "string" ? block.id : "";
       const entry: HistoryToolCall = { name, input };
       if (id) {
@@ -673,16 +719,13 @@ export function renderHistoryContent(
       // `annotatePersistedAssistantMessage`. Validate the array shape only
       // — element shapes are best-effort (we trust our own writer).
       if (Array.isArray(block._riskScopeOptions)) {
-        entry.riskScopeOptions =
-          block._riskScopeOptions as HistoryToolCall["riskScopeOptions"];
+        entry.riskScopeOptions = block._riskScopeOptions;
       }
       if (Array.isArray(block._riskAllowlistOptions)) {
-        entry.riskAllowlistOptions =
-          block._riskAllowlistOptions as HistoryToolCall["riskAllowlistOptions"];
+        entry.riskAllowlistOptions = block._riskAllowlistOptions;
       }
       if (Array.isArray(block._riskDirectoryScopeOptions)) {
-        entry.riskDirectoryScopeOptions =
-          block._riskDirectoryScopeOptions as HistoryToolCall["riskDirectoryScopeOptions"];
+        entry.riskDirectoryScopeOptions = block._riskDirectoryScopeOptions;
       }
       // Read back tool activity persisted by `annotatePersistedAssistantMessage`
       // so the activity card survives a history reopen instead of degrading to
@@ -721,9 +764,7 @@ export function renderHistoryContent(
     if (block.type === "server_tool_use") {
       finalizeSegment();
       const name = typeof block.name === "string" ? block.name : "unknown";
-      const input = isRecord(block.input)
-        ? (block.input as Record<string, unknown>)
-        : {};
+      const input = isRecord(block.input) ? block.input : {};
       const id = typeof block.id === "string" ? block.id : "";
       const entry: HistoryToolCall = { name, input };
       if (id) {
@@ -752,22 +793,18 @@ export function renderHistoryContent(
     if (block.type === "web_search_tool_result") {
       const toolUseId =
         typeof block.tool_use_id === "string" ? block.tool_use_id : "";
-      const isError =
-        isRecord(block.content) &&
-        (block.content as { type?: string }).type ===
-          "web_search_tool_result_error";
+      const isError = webSearchErrorProbe.safeParse(block.content).success;
 
       // Format search results into readable text.
       let resultContent = "";
       if (Array.isArray(block.content)) {
-        resultContent = (block.content as unknown[])
-          .filter(
-            (r): r is { type: string; title: string; url: string } =>
-              typeof r === "object" &&
-              r != null &&
-              (r as { type?: string }).type === "web_search_result",
-          )
-          .map((r) => `${r.title}\n${r.url}`)
+        resultContent = block.content
+          .flatMap((r) => {
+            const parsed = webSearchResultProbe.safeParse(r);
+            return parsed.success
+              ? [`${parsed.data.title}\n${parsed.data.url}`]
+              : [];
+          })
           .join("\n\n");
       }
 
@@ -801,14 +838,18 @@ export function renderHistoryContent(
       if (Array.isArray(block.contentBlocks)) {
         for (const cb of block.contentBlocks) {
           if (isRecord(cb) && cb.type === "image" && isRecord(cb.source)) {
-            const source = cb.source as unknown as MediaSource;
-            if (source.type === "workspace_ref" && source.attachmentId) {
-              imageAttachmentIds.push(source.attachmentId);
+            const source = cb.source;
+            const workspaceRef = workspaceRefProbe.safeParse(source);
+            if (workspaceRef.success) {
+              imageAttachmentIds.push(workspaceRef.data.attachmentId);
               continue;
             }
-            const resolved = resolveMediaSourceData(source);
-            if (resolved) {
-              imageDataList.push(resolved.data);
+            const validated = mediaSourceProbe.safeParse(source);
+            if (validated.success) {
+              const resolved = resolveMediaSourceData(validated.data);
+              if (resolved) {
+                imageDataList.push(resolved.data);
+              }
             }
           }
         }
@@ -927,15 +968,14 @@ async function mintCollectionLinkFallback(
   };
   const hasPolicy = Object.values(policy).some((v) => v !== undefined);
 
-  const result = (await gatewayIpcCall("create_credential_request", {
-    service: params.service,
-    field: params.field,
-    label: params.label,
-    ...(hasPolicy ? { policyJson: JSON.stringify(policy) } : {}),
-  })) as
-    | { ok: true; url: string; expiresAt: number }
-    | { ok: false; error: string }
-    | undefined;
+  const result = collectionLinkResponseProbe.parse(
+    await gatewayIpcCall("create_credential_request", {
+      service: params.service,
+      field: params.field,
+      label: params.label,
+      ...(hasPolicy ? { policyJson: JSON.stringify(policy) } : {}),
+    }),
+  );
 
   if (result?.ok) {
     log.info(
@@ -991,7 +1031,8 @@ export function requestSecretStandalone(
     pendingInteractions.register(requestId, {
       conversationId: params.conversationId,
       kind: "secret",
-      rpcResolve: resolve as (value: unknown) => void,
+      rpcResolve: (value: unknown) =>
+        resolve(secretRpcResultProbe.parse(value)),
       timer,
     });
     broadcastMessage({
@@ -1018,18 +1059,21 @@ export function ensureSkillEntry(
   raw: Record<string, unknown>,
   name: string,
 ): Record<string, unknown> {
-  if (!isRecord(raw.skills) || Array.isArray(raw.skills)) {
-    raw.skills = {};
-  }
-  const skills = raw.skills as Record<string, unknown>;
-  if (!isRecord(skills.entries) || Array.isArray(skills.entries)) {
-    skills.entries = {};
-  }
-  const entries = skills.entries as Record<string, unknown>;
-  if (!isRecord(entries[name]) || Array.isArray(entries[name])) {
-    entries[name] = {};
-  }
-  return entries[name] as Record<string, unknown>;
+  const skills = Array.isArray(raw.skills)
+    ? (raw.skills = {})
+    : isRecord(raw.skills)
+      ? raw.skills
+      : (raw.skills = {});
+  const entries = Array.isArray(skills.entries)
+    ? (skills.entries = {})
+    : isRecord(skills.entries)
+      ? skills.entries
+      : (skills.entries = {});
+  return Array.isArray(entries[name])
+    ? (entries[name] = {})
+    : isRecord(entries[name])
+      ? entries[name]
+      : (entries[name] = {});
 }
 
 /**

@@ -2,8 +2,10 @@ import { existsSync } from "node:fs";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import type { Schemas } from "@qdrant/js-client-rest";
 import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import { getQdrantHttpPortEnv, getQdrantUrlEnv } from "../../config/env.js";
 import { AssistantConfig } from "../../config/schema.js";
@@ -11,6 +13,10 @@ import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 
 const log = getLogger("qdrant-client");
+
+/** The Qdrant client signals HTTP failures on an attached `status` field. */
+const qdrantErrorWithStatus = (status: number) =>
+  z.object({ status: z.literal(status) });
 
 /**
  * Resolve the Qdrant base URL for this process.
@@ -52,6 +58,44 @@ export interface QdrantClientConfig {
   quantization: "scalar" | "none";
   embeddingModel?: string;
 }
+
+/**
+ * Point payloads are written by this module's upserts and read back through
+ * the Qdrant client, which types them as a bare record — the round trip is the
+ * trust boundary, so reads validate through the schema instead of trusting it.
+ */
+const pointPayloadSchema: z.ZodType<QdrantPointPayload> = z.looseObject({
+  target_type: z.enum([
+    "segment",
+    "item",
+    "summary",
+    "media",
+    "graph_node",
+    "pkb_file",
+    "plugin_index",
+  ]),
+  target_id: z.string(),
+  text: z.string(),
+  kind: z.string().optional(),
+  subject: z.string().optional(),
+  status: z.string().optional(),
+  importance: z.number().optional(),
+  confidence: z.number().optional(),
+  created_at: z.number(),
+  last_seen_at: z.number().optional(),
+  conversation_id: z.string().optional(),
+  message_id: z.string().optional(),
+  modality: z.enum(["text", "image", "audio", "video"]).optional(),
+  plugin: z.string().optional(),
+  document_id: z.string().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+});
+
+/** Validate a point payload read back from Qdrant; null when malformed. */
+const readPayload = (payload: unknown): QdrantPointPayload | null => {
+  const parsed = pointPayloadSchema.safeParse(payload);
+  return parsed.success ? parsed.data : null;
+};
 
 export interface QdrantPointPayload {
   target_type:
@@ -160,7 +204,7 @@ export async function clearRebuildSentinel(): Promise<void> {
   try {
     await unlink(rebuildSentinelPath());
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (!z.object({ code: z.literal("ENOENT") }).safeParse(err).success) {
       throw err;
     }
   }
@@ -225,16 +269,22 @@ export class CadetQdrantClient {
           const info = await this.client.getCollection(this.collection);
           const vectorsConfig = info.config?.params?.vectors;
 
-          // Detect whether the collection uses unnamed vectors (legacy) vs named vectors
-          const isUnnamedVectors =
-            vectorsConfig != null &&
-            typeof vectorsConfig === "object" &&
-            "size" in vectorsConfig;
-
+          // Detect whether the collection uses unnamed vectors (legacy) vs
+          // named vectors: the SDK types config as the unnamed VectorParams
+          // or the named map, and only a real {size: number} shape answers.
+          const vectorParamsProbe = z
+            .object({ size: z.number() })
+            .nullable()
+            .catch(null);
+          const namedVectorsProbe = z
+            .object({ dense: vectorParamsProbe.optional() })
+            .nullable()
+            .catch(null);
+          const unnamedParse = vectorParamsProbe.safeParse(vectorsConfig);
+          const isUnnamedVectors = unnamedParse.success;
           const currentSize = isUnnamedVectors
-            ? (vectorsConfig as { size?: number })?.size
-            : (vectorsConfig as Record<string, { size?: number }> | undefined)
-                ?.dense?.size;
+            ? unnamedParse.data?.size
+            : namedVectorsProbe.parse(vectorsConfig)?.dense?.size;
 
           const dimMismatch =
             currentSize != null && currentSize !== this.vectorSize;
@@ -368,11 +418,7 @@ export class CadetQdrantClient {
       });
     } catch (err) {
       // 409 = collection was created by a concurrent caller — that's fine
-      if (
-        err instanceof Error &&
-        "status" in err &&
-        (err as { status: number }).status === 409
-      ) {
+      if (qdrantErrorWithStatus(409).safeParse(err).success) {
         if (await this.ensurePayloadIndexesSafe()) {
           this.collectionReady = true;
         }
@@ -423,16 +469,24 @@ export class CadetQdrantClient {
   private async reconcileSparseIndexOnDisk(
     info: Awaited<ReturnType<QdrantRestClient["getCollection"]>>,
   ): Promise<void> {
-    const sparseParams = (
-      info.config?.params as
-        | {
-            sparse_vectors?: Record<
-              string,
-              { index?: { on_disk?: boolean | null } | null } | undefined
-            >;
-          }
-        | undefined
-    )?.sparse_vectors;
+    const sparseParams = z
+      .object({
+        sparse_vectors: z
+          .record(
+            z.string(),
+            z
+              .object({
+                index: z
+                  .object({ on_disk: z.boolean().nullable().optional() })
+                  .optional(),
+              })
+              .optional(),
+          )
+          .optional(),
+      })
+      .nullable()
+      .catch(null)
+      .parse(info.config?.params)?.sparse_vectors;
     // No sparse config in the probe — nothing to move. (A collection without
     // the `sparse` named vector cannot accept an index update for it.)
     if (!sparseParams || !("sparse" in sparseParams)) {
@@ -520,7 +574,7 @@ export class CadetQdrantClient {
   async search(
     vector: number[],
     limit: number,
-    filter?: Record<string, unknown>,
+    filter?: Schemas["Filter"],
   ): Promise<QdrantSearchResult[]> {
     await this.ensureCollection();
 
@@ -529,7 +583,7 @@ export class CadetQdrantClient {
       limit,
       with_payload: true,
       score_threshold: 0.0,
-      filter: filter as Parameters<QdrantRestClient["search"]>[1]["filter"],
+      filter,
     };
 
     let results;
@@ -545,11 +599,18 @@ export class CadetQdrantClient {
       }
     }
 
-    return results.map((result) => ({
-      id: typeof result.id === "string" ? result.id : String(result.id),
-      score: result.score,
-      payload: result.payload as unknown as QdrantPointPayload,
-    }));
+    return results.flatMap((result) => {
+      const payload = readPayload(result.payload);
+      return payload
+        ? [
+            {
+              id: typeof result.id === "string" ? result.id : String(result.id),
+              score: result.score,
+              payload,
+            },
+          ]
+        : [];
+    });
   }
 
   async searchWithFilter(
@@ -558,7 +619,7 @@ export class CadetQdrantClient {
     targetTypes: Array<"segment" | "item" | "summary" | "media">,
     excludeMessageIds?: string[],
   ): Promise<QdrantSearchResult[]> {
-    const mustConditions: Array<Record<string, unknown>> = [
+    const mustConditions: Schemas["Condition"][] = [
       {
         key: "target_type",
         match: { any: targetTypes },
@@ -583,7 +644,7 @@ export class CadetQdrantClient {
       });
     }
 
-    const mustNotConditions: Array<Record<string, unknown>> = [
+    const mustNotConditions: Schemas["Condition"][] = [
       { key: "_meta", match: { value: true } },
     ];
     if (excludeMessageIds && excludeMessageIds.length > 0) {
@@ -593,7 +654,7 @@ export class CadetQdrantClient {
       });
     }
 
-    const filter: Record<string, unknown> = {
+    const filter: Schemas["Filter"] = {
       must: mustConditions,
       must_not: mustNotConditions,
     };
@@ -609,7 +670,7 @@ export class CadetQdrantClient {
   async hybridSearch(params: {
     denseVector: number[];
     sparseVector: QdrantSparseVector;
-    filter?: object;
+    filter?: Schemas["Filter"];
     limit: number;
     prefetchLimit?: number;
   }): Promise<QdrantSearchResult[]> {
@@ -621,7 +682,7 @@ export class CadetQdrantClient {
     const queryParams = {
       prefetch: [
         {
-          query: denseVector as unknown as number[],
+          query: denseVector,
           using: "dense",
           limit: effectivePrefetchLimit,
         },
@@ -636,7 +697,7 @@ export class CadetQdrantClient {
       ],
       query: { fusion: "rrf" as const },
       limit,
-      filter: filter as Record<string, unknown> | undefined,
+      filter,
       with_payload: true,
     };
 
@@ -653,11 +714,18 @@ export class CadetQdrantClient {
       }
     }
 
-    return (results.points ?? []).map((point) => ({
-      id: typeof point.id === "string" ? point.id : String(point.id),
-      score: point.score ?? 0,
-      payload: point.payload as unknown as QdrantPointPayload,
-    }));
+    return (results.points ?? []).flatMap((point) => {
+      const payload = readPayload(point.payload);
+      return payload
+        ? [
+            {
+              id: typeof point.id === "string" ? point.id : String(point.id),
+              score: point.score ?? 0,
+              payload,
+            },
+          ]
+        : [];
+    });
   }
 
   async deleteByTarget(targetType: string, targetId: string): Promise<void> {
@@ -761,14 +829,14 @@ export class CadetQdrantClient {
   ): Promise<{ id: string; payload: QdrantPointPayload } | null> {
     await this.ensureCollection();
 
-    const must: Array<Record<string, unknown>> = [
+    const must: Schemas["Condition"][] = [
       { key: "target_type", match: { value: targetType } },
       { key: "target_id", match: { value: targetId } },
     ];
     if (opts?.plugin !== undefined) {
       must.push({ key: "plugin", match: { value: opts.plugin } });
     }
-    const filter = {
+    const filter: Schemas["Filter"] = {
       must,
       must_not: [{ key: "_meta", match: { value: true } }],
     };
@@ -798,9 +866,13 @@ export class CadetQdrantClient {
     if (!point) {
       return null;
     }
+    const payload = readPayload(point.payload);
+    if (!payload) {
+      return null;
+    }
     return {
       id: typeof point.id === "string" ? point.id : String(point.id),
-      payload: point.payload as unknown as QdrantPointPayload,
+      payload,
     };
   }
 
@@ -913,12 +985,7 @@ export class CadetQdrantClient {
    * (e.g. `assistant sessions clear`).
    */
   private isCollectionMissing(err: unknown): boolean {
-    if (
-      err &&
-      typeof err === "object" &&
-      "status" in err &&
-      (err as { status: number }).status === 404
-    ) {
+    if (qdrantErrorWithStatus(404).safeParse(err).success) {
       return true;
     }
     const msg = err instanceof Error ? err.message : String(err);
@@ -999,8 +1066,11 @@ export class CadetQdrantClient {
         return null;
       }
       return (
-        ((points[0].payload as Record<string, unknown>)
-          ?.embedding_model as string) ?? null
+        z
+          .string()
+          .nullish()
+          .catch(null)
+          .parse(points[0].payload?.embedding_model) ?? null
       );
     } catch {
       return null;
@@ -1039,13 +1109,13 @@ export class CadetQdrantClient {
     await this.ensureCollection();
 
     const batchSize = options?.batchSize ?? 256;
-    const must: Array<Record<string, unknown>> = [
+    const must: Schemas["Condition"][] = [
       { key: "target_type", match: { value: targetType } },
     ];
     if (options?.path) {
       must.push({ key: "path", match: { value: options.path } });
     }
-    const filter = {
+    const filter: Schemas["Filter"] = {
       must,
       must_not: [{ key: "_meta", match: { value: true } }],
     };
@@ -1065,14 +1135,14 @@ export class CadetQdrantClient {
         });
         for (const point of result.points) {
           const id = typeof point.id === "string" ? point.id : String(point.id);
-          const payload = (point.payload ?? {}) as Record<string, unknown>;
+          const payload = point.payload ?? {};
           out.push({ id, payload });
         }
         const next = result.next_page_offset;
         if (next == null) {
           break;
         }
-        offset = typeof next === "string" ? next : (next as number);
+        offset = typeof next === "string" ? next : Number(next);
       }
       return out;
     };

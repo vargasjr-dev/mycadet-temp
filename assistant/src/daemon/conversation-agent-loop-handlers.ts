@@ -69,6 +69,10 @@ import { indexMessageNow } from "../plugins/defaults/memory/indexer.js";
 import { backfillMemoryRecallLogMessageId } from "../plugins/defaults/memory/memory-recall-log-store.js";
 import { backfillMemoryV2ActivationMessageId } from "../plugins/defaults/memory/v2/activation-log-store.js";
 import { backfillMemoryV3SelectionMessageId } from "../plugins/defaults/memory/v3/shadow-plugin.js";
+import {
+  contentBlockSchema,
+  toolResultContentSchema,
+} from "../providers/content-block-schema.js";
 import { resolveMediaSourceData } from "../providers/media-resolve.js";
 import type {
   ContentBlock,
@@ -766,10 +770,7 @@ export function buildPersistedAssistantContent(
 ): ContentBlock[] {
   const { cleanedContent } = cleanAssistantContent(rawBlocks);
   const cleaned = cleanedContent.filter(
-    (b): b is ContentBlock =>
-      typeof b === "object" &&
-      b != null &&
-      z.object({ type: z.string() }).loose().safeParse(b).success,
+    (b): b is ContentBlock => contentBlockSchema.safeParse(b).success,
   );
   const withSurfaces: ContentBlock[] = [...cleaned];
   for (const surface of surfaces) {
@@ -1853,7 +1854,7 @@ export function handleInputJsonDelta(
 function buildToolResultBlocks(
   pending: ReadonlyMap<string, PendingToolResult>,
   revealCandidates: readonly ResolvedRevealCandidate[] = [],
-): ContentBlock[] {
+) {
   // Tool results keep the legacy `<redacted type/>` marker (NOT sentinels):
   // history maps tool_result content to `toolCall.result`, which the tool
   // detail panel renders via CodeBlock — a path with no markdown/chip
@@ -1866,24 +1867,26 @@ function buildToolResultBlocks(
   // panel and history must not retain a value every other surface redacts.
   const redact = (text: string): string =>
     redactCandidateValuesLegacy(text, revealCandidates);
-  return Array.from(pending.entries()).map(([toolUseId, result]) => ({
-    type: "tool_result",
-    tool_use_id: toolUseId,
-    content: redact(result.content),
-    is_error: result.isError,
-    // Persist the error classification so reopened history can re-derive
-    // surfaces keyed on it (e.g. the inline "Connect Claude Code" card).
-    ...(result.errorCode ? { errorCode: result.errorCode } : {}),
-    ...(result.contentBlocks
-      ? {
-          contentBlocks: result.contentBlocks.map((block) =>
-            block.type === "text"
-              ? { ...block, text: redact(block.text) }
-              : block,
-          ),
-        }
-      : {}),
-  }));
+  return Array.from(pending.entries()).map(([toolUseId, result]) =>
+    toolResultContentSchema.parse({
+      type: "tool_result",
+      tool_use_id: toolUseId,
+      content: redact(result.content),
+      is_error: result.isError,
+      // Persist the error classification so reopened history can re-derive
+      // surfaces keyed on it (e.g. the inline "Connect Claude Code" card).
+      ...(result.errorCode ? { errorCode: result.errorCode } : {}),
+      ...(result.contentBlocks
+        ? {
+            contentBlocks: result.contentBlocks.map((block) =>
+              block.type === "text"
+                ? { ...block, text: redact(block.text) }
+                : block,
+            ),
+          }
+        : {}),
+    }),
+  );
 }
 
 /**

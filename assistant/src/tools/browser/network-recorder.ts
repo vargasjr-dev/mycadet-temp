@@ -5,14 +5,62 @@
  * Network.* events across all tabs the user browses.
  */
 
+import { z } from "zod";
+
 import { getLogger } from "../../util/logger.js";
 import { truncate } from "../../util/truncate.js";
 import { safeStringSlice } from "../../util/unicode.js";
+import {
+  numberParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import type {
   ExtractedCredential,
   NetworkRecordedEntry,
   NetworkRecordedRequest,
 } from "./network-recording-types.js";
+
+/**
+ * CDP wire probes: the DevTools HTTP endpoints and the Network-domain event
+ * params arrive as untyped JSON. Every field degrades to a sane default
+ * rather than flowing through a blind cast, and a malformed event drops out
+ * instead of poisoning the recording.
+ */
+const cdpVersionProbe = z
+  .object({ webSocketDebuggerUrl: z.string() })
+  .catch({ webSocketDebuggerUrl: "" });
+
+const cdpTargetListProbe = z
+  .array(
+    z.object({
+      id: z.string(),
+      type: z.string(),
+      webSocketDebuggerUrl: z.string(),
+    }),
+  )
+  .catch([]);
+
+const cdpCookieProbe = z.object({
+  name: z.string().catch(""),
+  value: z.string().catch(""),
+  domain: z.string().catch(""),
+  path: z.string().catch(""),
+  httpOnly: z.boolean().catch(false),
+  secure: z.boolean().catch(false),
+  expires: z.number().catch(0),
+});
+const cookiesProbe = z.object({ cookies: z.array(cdpCookieProbe).catch([]) });
+
+const responseBodyProbe = z.object({
+  body: z.string().catch(""),
+  base64Encoded: z.boolean().catch(false),
+});
+
+const headerProbe = z
+  .record(z.string(), z.string())
+  .optional()
+  .catch(undefined);
 
 const log = getLogger("network-recorder");
 
@@ -156,9 +204,7 @@ export class NetworkRecorder {
 
     // Discover the browser's WebSocket debugger URL
     const versionRes = await fetch(`${this.cdpBaseUrl}/json/version`);
-    const version = (await versionRes.json()) as {
-      webSocketDebuggerUrl: string;
-    };
+    const version = cdpVersionProbe.parse(await versionRes.json());
     const wsUrl = version.webSocketDebuggerUrl;
 
     if (!wsUrl) {
@@ -195,11 +241,7 @@ export class NetworkRecorder {
     }
     try {
       const res = await fetch(`${this.cdpBaseUrl}/json`);
-      const pages = (await res.json()) as Array<{
-        id: string;
-        type: string;
-        webSocketDebuggerUrl: string;
-      }>;
+      const pages = cdpTargetListProbe.parse(await res.json());
 
       for (const page of pages) {
         if (
@@ -291,18 +333,10 @@ export class NetworkRecorder {
       return [];
     }
     try {
-      const result = (await client.send("Network.getAllCookies")) as {
-        cookies: Array<{
-          name: string;
-          value: string;
-          domain: string;
-          path: string;
-          httpOnly: boolean;
-          secure: boolean;
-          expires: number;
-        }>;
-      };
-      let cookies = result.cookies ?? [];
+      const result = cookiesProbe.parse(
+        await client.send("Network.getAllCookies"),
+      );
+      let cookies = result.cookies;
       if (domain) {
         cookies = cookies.filter(
           (c) =>
@@ -348,21 +382,21 @@ export class NetworkRecorder {
   private loginDetectedFired = false;
 
   private handleRequestWillBeSent(params: Record<string, unknown>): void {
-    const resourceType = params.type as string;
+    const resourceType = stringParam(params.type) ?? "";
     if (resourceType !== "XHR" && resourceType !== "Fetch") {
       return;
     }
 
-    const request = params.request as Record<string, unknown>;
-    const url = request.url as string;
+    const request = recordParam(params.request) ?? {};
+    const url = stringParam(request.url) ?? "";
     if (!this.matchesDomain(url)) {
       return;
     }
 
-    const requestId = params.requestId as string;
-    const headers = (request.headers as Record<string, string>) ?? {};
-    const method = (request.method as string) ?? "GET";
-    const postData = request.postData as string | undefined;
+    const requestId = stringParam(params.requestId) ?? "";
+    const headers = headerProbe.parse(request.headers) ?? {};
+    const method = stringParam(request.method) ?? "GET";
+    const postData = stringParam(request.postData);
 
     log.debug(
       { url: truncate(url, 120, ""), method, requestId },
@@ -378,25 +412,25 @@ export class NetworkRecorder {
     const entry: NetworkRecordedEntry = {
       requestId,
       resourceType,
-      timestamp: (params.timestamp as number) ?? Date.now() / 1000,
+      timestamp: numberParam(params.timestamp) ?? Date.now() / 1000,
       request: recordedRequest,
     };
     this.entries.set(requestId, entry);
   }
 
   private handleResponseReceived(params: Record<string, unknown>): void {
-    const requestId = params.requestId as string;
+    const requestId = stringParam(params.requestId) ?? "";
     const entry = this.entries.get(requestId);
     if (!entry) {
       return;
     }
 
-    const response = params.response as Record<string, unknown>;
-    const status = (response.status as number) ?? 0;
+    const response = recordParam(params.response) ?? {};
+    const status = numberParam(response.status) ?? 0;
     entry.response = {
       status,
-      headers: (response.headers as Record<string, string>) ?? {},
-      mimeType: (response.mimeType as string) ?? "",
+      headers: headerProbe.parse(response.headers) ?? {},
+      mimeType: stringParam(response.mimeType) ?? "",
     };
 
     // Auto-detect login: check for any of the login signal URLs
@@ -421,7 +455,7 @@ export class NetworkRecorder {
     params: Record<string, unknown>,
     client: DirectCDPClient,
   ): void {
-    const requestId = params.requestId as string;
+    const requestId = stringParam(params.requestId) ?? "";
     const entry = this.entries.get(requestId);
     if (!entry || !entry.response) {
       return;
@@ -444,12 +478,9 @@ export class NetworkRecorder {
       return;
     }
     try {
-      const result = (await client.send("Network.getResponseBody", {
-        requestId,
-      })) as {
-        body: string;
-        base64Encoded: boolean;
-      };
+      const result = responseBodyProbe.parse(
+        await client.send("Network.getResponseBody", { requestId }),
+      );
 
       if (result.body && entry.response) {
         const body = result.base64Encoded

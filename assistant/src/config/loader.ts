@@ -10,6 +10,7 @@ import {
 import { basename, dirname, join } from "node:path";
 
 import { writeFileAtomic } from "@mycadet/shared";
+import { z } from "zod";
 
 import { safeStatSync } from "../util/fs.js";
 import {
@@ -116,9 +117,7 @@ function getCachedConfigIfFresh(): AssistantConfig | null {
  * single parse is sufficient to cascade defaults through every nesting level.
  */
 export function applyNestedDefaults(config: unknown): AssistantConfig {
-  return structuredClone(
-    AssistantConfigSchema.parse(config),
-  ) as AssistantConfig;
+  return structuredClone(AssistantConfigSchema.parse(config));
 }
 
 function cloneDefaultConfig(): AssistantConfig {
@@ -208,11 +207,12 @@ function fillContextDefaultsForMissingKeys(
     if (value !== null && typeof value === "object" && !Array.isArray(value)) {
       const targetChild = readPlainObject(target[key]);
       const fileChild = readPlainObject(fileVal);
-      if (targetChild) {
+      const valueObj = readPlainObject(value);
+      if (targetChild && valueObj) {
         fillContextDefaultsForMissingKeys(
           targetChild,
           fileChild ?? {},
-          value as Record<string, unknown>,
+          valueObj,
         );
       } else {
         target[key] = structuredClone(value);
@@ -515,7 +515,7 @@ function validateWithSchema(raw: Record<string, unknown>): AssistantConfig {
         issuePaths(result.error.issues),
       );
     }
-    deleteNestedKey(cleaned, issue.path as (string | number)[], true);
+    deleteNestedKey(cleaned, issue.path, true);
   }
 
   // Deleting an invalid array element via `deleteNestedKey` uses `delete
@@ -698,27 +698,70 @@ function compactSparseArrays(value: unknown): { removeFromParent: boolean } {
  * pruned (arrays are left alone), and a still-populated ancestor stops the walk
  * so a container holding other config is never removed.
  */
+/** A JSON container: `z.record` rejects arrays, but issue paths index them. */
+const configContainer = z.union([
+  z.record(z.string(), z.unknown()),
+  z.array(z.unknown()),
+]);
+
+/** Validates without copying — mutation needs the live reference, and a zod
+ * parse result is a detached view of it. */
+const isJsonContainer = (
+  v: unknown,
+): v is Record<string, unknown> | unknown[] =>
+  configContainer.safeParse(v).success;
+
+const readChild = (
+  container: Record<string, unknown> | unknown[],
+  key: string,
+): unknown =>
+  Array.isArray(container) ? container[Number(key)] : container[key];
+
+const deleteChild = (
+  container: Record<string, unknown> | unknown[],
+  key: string,
+): void => {
+  if (Array.isArray(container)) {
+    delete container[Number(key)];
+  } else {
+    delete container[key];
+  }
+};
+
+const writeChild = (
+  container: Record<string, unknown> | unknown[],
+  key: string,
+  value: unknown,
+): void => {
+  if (Array.isArray(container)) {
+    container[Number(key)] = value;
+  } else {
+    container[key] = value;
+  }
+};
+
 function deleteNestedKey(
   obj: Record<string, unknown>,
-  path: (string | number)[],
+  path: PropertyKey[],
   pruneEmptyAncestors = false,
 ): void {
-  // Record each (container, key) hop on the way down so we can prune upward
-  // after deleting the leaf.
-  const chain: Array<{ container: Record<string, unknown>; key: string }> = [];
+  const chain: Array<{
+    container: Record<string, unknown> | unknown[];
+    key: string;
+  }> = [];
   let current: unknown = obj;
   for (let i = 0; i < path.length - 1; i++) {
-    if (current == null || typeof current !== "object") {
+    if (!isJsonContainer(current)) {
       return;
     }
     const key = String(path[i]);
-    chain.push({ container: current as Record<string, unknown>, key });
-    current = (current as Record<string, unknown>)[key];
+    chain.push({ container: current, key });
+    current = readChild(current, key);
   }
-  if (current == null || typeof current !== "object") {
+  if (!isJsonContainer(current)) {
     return;
   }
-  delete (current as Record<string, unknown>)[String(path[path.length - 1])];
+  deleteChild(current, String(path[path.length - 1]));
 
   if (!pruneEmptyAncestors) {
     return;
@@ -727,9 +770,9 @@ function deleteNestedKey(
   // that still has keys.
   for (let i = chain.length - 1; i >= 0; i--) {
     const { container, key } = chain[i];
-    const child = container[key];
+    const child = readChild(container, key);
     if (isPlainObject(child) && Object.keys(child).length === 0) {
-      delete container[key];
+      deleteChild(container, key);
     } else {
       break;
     }
@@ -805,10 +848,12 @@ function warnAndStripDeprecatedFields(
   // Persist the cleaned config to disk so the warning doesn't repeat
   try {
     if (existsSync(configPath)) {
-      const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (raw != null && typeof raw === "object" && !Array.isArray(raw)) {
+      const raw = readPlainObject(
+        JSON.parse(readFileSync(configPath, "utf-8")),
+      );
+      if (raw) {
         for (const dotPath of found) {
-          deleteNestedKeyByDotPath(raw as Record<string, unknown>, dotPath);
+          deleteNestedKeyByDotPath(raw, dotPath);
         }
         writeFileAtomic(configPath, JSON.stringify(raw, null, 2) + "\n");
       }
@@ -841,7 +886,11 @@ function stripNullLeaves(value: unknown): unknown {
     return value;
   }
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+  const entries = readPlainObject(value);
+  if (!entries) {
+    return out;
+  }
+  for (const [k, v] of Object.entries(entries)) {
     if (v === null) {
       continue;
     }
@@ -912,10 +961,13 @@ export function deepMergeOverwrite(
       typeof target[key] === "object" &&
       !Array.isArray(target[key])
     ) {
-      deepMergeOverwrite(
-        target[key] as Record<string, unknown>,
-        ov as Record<string, unknown>,
-      );
+      const targetChild = readPlainObject(target[key]);
+      const ovChild = readPlainObject(ov);
+      if (targetChild && ovChild) {
+        deepMergeOverwrite(targetChild, ovChild);
+      } else {
+        target[key] = stripNullLeaves(ov);
+      }
     } else {
       target[key] = stripNullLeaves(ov);
     }
@@ -992,16 +1044,6 @@ export function getConfig(): AssistantConfig {
     // this run's effective values.
     const willSeed = !configFileExisted && suppressConfigDiskWritesDepth === 0;
 
-    // Layer deployment-context defaults (e.g. IS_CLOUD=true → all service
-    // modes = "managed") onto the in-memory config for any leaves that aren't
-    // explicitly set in `fileConfig`. This runs on every load — not just the
-    // first — because the workspace config file is written by upstream
-    // lifecycle steps (`seedInferenceProfiles`, the config-write routes)
-    // after `getConfig()` is first reached. Gating on `!configFileExisted`
-    // would make the context defaults dead code on cloud-managed daemons
-    // whose config.json was created by those earlier steps without
-    // service-mode entries. Explicit user choices on disk are preserved
-    // because the helper only fills missing keys.
     const contextDefaults = getDeploymentContextDefaults();
     if (Object.keys(contextDefaults).length > 0) {
       fillContextDefaultsForMissingKeys(
@@ -1257,10 +1299,10 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    if (current == null || typeof current !== "object") {
+    if (!isJsonContainer(current)) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[key];
+    current = readChild(current, key);
   }
   return current;
 }
@@ -1271,15 +1313,20 @@ export function setNestedValue(
   value: unknown,
 ): void {
   const keys = path.split(".");
-  let current = obj;
+  let current: Record<string, unknown> | unknown[] = obj;
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    if (current[key] == null || typeof current[key] !== "object") {
-      current[key] = {};
+    const child = readChild(current, key);
+    if (child == null || typeof child !== "object") {
+      writeChild(current, key, {});
     }
-    current = current[key] as Record<string, unknown>;
+    const next = readChild(current, key);
+    if (!isJsonContainer(next)) {
+      return;
+    }
+    current = next;
   }
-  current[keys[keys.length - 1]] = value;
+  writeChild(current, keys[keys.length - 1], value);
 }
 
 /**

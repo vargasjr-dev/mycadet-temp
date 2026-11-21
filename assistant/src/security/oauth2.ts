@@ -24,19 +24,10 @@ import { z } from "zod";
 import { getIsCloud } from "../config/env-registry.js";
 import { parseScopeList } from "../oauth/scope-utils.js";
 import { getLogger } from "../util/logger.js";
+import { numberParam, recordParam, stringParam } from "../util/wire-params.js";
 import { renderOAuthCompletionPage as renderLoopbackPage } from "./oauth-completion-page.js";
 
 const log = getLogger("oauth2");
-
-/** Wire-shaped unknowns read through zod, with lenient fallbacks. */
-const stringParam = (v: unknown): string | undefined =>
-  z.string().optional().catch(undefined).parse(v);
-
-const numberParam = (v: unknown): number | undefined =>
-  z.number().optional().catch(undefined).parse(v);
-
-const recordParam = (v: unknown): Record<string, unknown> | undefined =>
-  z.record(z.string(), z.unknown()).optional().catch(undefined).parse(v);
 
 // ---------------------------------------------------------------------------
 // Types

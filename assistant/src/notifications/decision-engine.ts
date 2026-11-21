@@ -27,6 +27,7 @@ import {
 import type { Provider } from "../providers/types.js";
 import { getLogger } from "../util/logger.js";
 import { truncate } from "../util/truncate.js";
+import { recordParam } from "../util/wire-params.js";
 import {
   ensureAccessRequestInviteDirectiveInCopy,
   stripAccessRequestReplyMechanicsFromCopy,
@@ -417,12 +418,16 @@ function buildFallbackDecision(
 
 const VALID_CHANNELS = new Set<string>(getDeliverableChannels());
 
+const isNotificationChannel = (v: string): v is NotificationChannel =>
+  VALID_CHANNELS.has(v);
+
 function validateDecisionOutput(
-  input: Record<string, unknown>,
+  raw: unknown,
   availableChannels: NotificationChannel[],
   candidateSet?: ConversationCandidateSet,
 ): NotificationDecision | null {
-  if (typeof input.shouldNotify !== "boolean") {
+  const input = recordParam(raw);
+  if (!input || typeof input.shouldNotify !== "boolean") {
     return null;
   }
   if (typeof input.reasoningSummary !== "string") {
@@ -432,14 +437,15 @@ function validateDecisionOutput(
     return null;
   }
 
-  if (!Array.isArray(input.selectedChannels)) {
+  const selectedChannels = input.selectedChannels;
+  if (!Array.isArray(selectedChannels)) {
     return null;
   }
-  const validatedChannels = (input.selectedChannels as unknown[]).filter(
+  const validatedChannels = selectedChannels.filter(
     (ch): ch is NotificationChannel =>
       typeof ch === "string" &&
-      VALID_CHANNELS.has(ch) &&
-      availableChannels.includes(ch as NotificationChannel),
+      isNotificationChannel(ch) &&
+      availableChannels.includes(ch),
   );
   const validChannels = [...new Set(validatedChannels)];
 
@@ -452,12 +458,12 @@ function validateDecisionOutput(
   const renderedCopy: Partial<
     Record<NotificationChannel, RenderedChannelCopy>
   > = {};
-  if (input.renderedCopy && typeof input.renderedCopy === "object") {
-    const copyObj = input.renderedCopy as Record<string, unknown>;
+  const copyObj = recordParam(input.renderedCopy);
+  if (copyObj) {
     for (const ch of validChannels) {
       const chCopy = copyObj[ch];
-      if (chCopy && typeof chCopy === "object") {
-        const c = chCopy as Record<string, unknown>;
+      const c = recordParam(chCopy);
+      if (c) {
         if (typeof c.title === "string" && typeof c.body === "string") {
           if (!c.title.trim() && !c.body.trim()) {
             log.warn(
@@ -491,10 +497,7 @@ function validateDecisionOutput(
     candidateSet,
   );
 
-  const deepLinkTarget =
-    input.deepLinkTarget && typeof input.deepLinkTarget === "object"
-      ? (input.deepLinkTarget as Record<string, unknown>)
-      : undefined;
+  const deepLinkTarget = recordParam(input.deepLinkTarget);
 
   return {
     shouldNotify: input.shouldNotify,
@@ -530,20 +533,20 @@ export function validateConversationActions(
 ): Partial<Record<NotificationChannel, ConversationAction>> {
   const result: Partial<Record<NotificationChannel, ConversationAction>> = {};
 
-  if (!raw || typeof raw !== "object") {
+  const actionsObj = recordParam(raw);
+  if (!actionsObj) {
     return result;
   }
 
-  const actionsObj = raw as Record<string, unknown>;
-  const channelSet = new Set(validChannels);
+  const channelSet = new Set<string>(validChannels);
 
   // Build a lookup of valid candidate conversationIds per channel
   const validCandidateIds = new Map<NotificationChannel, Set<string>>();
   if (candidateSet) {
-    for (const [ch, candidates] of Object.entries(candidateSet) as [
-      NotificationChannel,
-      { conversationId: string }[],
-    ][]) {
+    for (const [ch, candidates] of Object.entries(candidateSet)) {
+      if (!isNotificationChannel(ch)) {
+        continue;
+      }
       validCandidateIds.set(
         ch,
         new Set(candidates.map((c) => c.conversationId)),
@@ -552,15 +555,15 @@ export function validateConversationActions(
   }
 
   for (const [ch, actionRaw] of Object.entries(actionsObj)) {
-    if (!channelSet.has(ch as NotificationChannel)) {
+    if (!isNotificationChannel(ch) || !channelSet.has(ch)) {
       continue;
     }
-    if (!actionRaw || typeof actionRaw !== "object") {
+    const action = recordParam(actionRaw);
+    if (!action) {
       continue;
     }
 
-    const channel = ch as NotificationChannel;
-    const action = actionRaw as Record<string, unknown>;
+    const channel = ch;
 
     if (action.action === "start_new") {
       result[channel] = { action: "start_new" };
@@ -627,11 +630,11 @@ function stripReplyMechanics(
   const nextCopy: Partial<Record<NotificationChannel, RenderedChannelCopy>> = {
     ...decision.renderedCopy,
   };
-  for (const channel of Object.keys(nextCopy) as NotificationChannel[]) {
-    const copy = nextCopy[channel];
-    if (!copy) {
+  for (const [channelStr, copy] of Object.entries(nextCopy)) {
+    if (!copy || !isNotificationChannel(channelStr)) {
       continue;
     }
+    const channel = channelStr;
     nextCopy[channel] =
       isQuestion && requestCode
         ? stripGuardianReplyMechanicsFromCopy(copy, requestCode, questionText)
@@ -665,13 +668,12 @@ function ensureSeedContentBlocks(
   const nextCopy: Partial<Record<NotificationChannel, RenderedChannelCopy>> = {
     ...decision.renderedCopy,
   };
-  for (const channel of Object.keys(nextCopy) as NotificationChannel[]) {
-    const copy = nextCopy[channel];
-    if (!copy) {
+  for (const [channelStr, copy] of Object.entries(nextCopy)) {
+    if (!copy || !isNotificationChannel(channelStr)) {
       continue;
     }
     if (!copy.seedContentBlocks) {
-      nextCopy[channel] = { ...copy, seedContentBlocks: blocks };
+      nextCopy[channelStr] = { ...copy, seedContentBlocks: blocks };
     }
   }
 
@@ -714,12 +716,11 @@ function pinQuestionDeliveryCopy(
   const nextCopy: Partial<Record<NotificationChannel, RenderedChannelCopy>> = {
     ...decision.renderedCopy,
   };
-  for (const channel of Object.keys(nextCopy) as NotificationChannel[]) {
-    const copy = nextCopy[channel];
-    if (!copy) {
+  for (const [channelStr, copy] of Object.entries(nextCopy)) {
+    if (!copy || !isNotificationChannel(channelStr)) {
       continue;
     }
-    nextCopy[channel] = {
+    nextCopy[channelStr] = {
       ...copy,
       body: text,
       deliveryText: text,
@@ -804,10 +805,10 @@ function buildPassThroughDecision(params: {
         ch,
         { title, body, conversationSeedMessage: body },
       ]),
-    ) as NotificationDecision["renderedCopy"],
+    ),
     conversationActions: Object.fromEntries(
       availableChannels.map((ch) => [ch, { action: "start_new" as const }]),
-    ) as NotificationDecision["conversationActions"],
+    ),
     // A producer-supplied key names what it wants collapsed; the signal id is
     // a per-emit fallback that collapses nothing.
     dedupeKey: signal.dedupeKey ?? signal.signalId,
@@ -829,9 +830,7 @@ function selectDefaultChannelsByUrgency(
   if (isUrgent) {
     return [...availableChannels];
   }
-  return availableChannels.includes("cadet")
-    ? ["cadet" as NotificationChannel]
-    : [];
+  return availableChannels.includes("cadet") ? ["cadet"] : [];
 }
 
 /**
@@ -881,7 +880,7 @@ export async function evaluateSignal(
     });
   }
   if (signal.sourceChannel === "assistant_tool" && requestedBody) {
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = recordParam(signal.contextPayload) ?? {};
     const defaultChannels = selectDefaultChannelsByUrgency(
       signal.attentionHints.urgency,
       availableChannels,
@@ -904,9 +903,9 @@ export async function evaluateSignal(
       );
     } else if (preferredChannelsRaw && preferredChannelsRaw.length > 0) {
       const availableSet = new Set<string>(availableChannels);
-      const preferredAvailable = preferredChannelsRaw.filter((c) => {
-        return availableSet.has(c);
-      }) as NotificationChannel[];
+      const preferredAvailable = preferredChannelsRaw.filter(
+        (c): c is NotificationChannel => availableSet.has(c),
+      );
       if (preferredAvailable.length > 0) {
         selectedChannels = Array.from(
           new Set<NotificationChannel>([
@@ -1129,7 +1128,7 @@ async function classifyWithLLM(
     }
 
     const validated = validateDecisionOutput(
-      toolBlock.input as Record<string, unknown>,
+      toolBlock.input,
       availableChannels,
       candidateSet,
     );
@@ -1175,12 +1174,13 @@ export function enforceRoutingIntent(
     // is among the connected channels, use it regardless of what the LLM
     // picked (even if the LLM picked exactly one wrong channel).
     // Otherwise fall back to capping at the first selected channel.
-    const sourceIsConnected =
+    const connectedSource =
       sourceChannel &&
-      connectedChannels.includes(sourceChannel as NotificationChannel);
-    const preferred = sourceIsConnected
-      ? (sourceChannel as NotificationChannel)
-      : decision.selectedChannels[0];
+      isNotificationChannel(sourceChannel) &&
+      connectedChannels.includes(sourceChannel)
+        ? sourceChannel
+        : undefined;
+    const preferred = connectedSource ?? decision.selectedChannels[0];
 
     // No change needed if the decision already matches.
     if (
@@ -1357,8 +1357,11 @@ function enforceConversationAffinity(
     ...(decision.conversationActions ?? {}),
   };
 
-  for (const [channel, conversationId] of entries) {
-    conversationActions[channel as NotificationChannel] = {
+  for (const [channelStr, conversationId] of entries) {
+    if (!isNotificationChannel(channelStr)) {
+      continue;
+    }
+    conversationActions[channelStr] = {
       action: "reuse_existing",
       conversationId: conversationId!,
     };

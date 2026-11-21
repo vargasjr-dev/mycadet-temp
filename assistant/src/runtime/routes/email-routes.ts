@@ -7,6 +7,72 @@
 
 import { z } from "zod";
 
+import { stringParam } from "../../util/wire-params.js";
+
+/**
+ * The cloud email API's wire shapes: responses parse at the boundary (a
+ * malformed payload fails the route loudly) and the error body is a
+ * fail-soft probe since only `detail` is read.
+ */
+const errorBodyProbe = z
+  .object({ detail: z.unknown().optional() })
+  .loose()
+  .catch({ detail: undefined });
+const registerResponseProbe = z.object({
+  id: z.string(),
+  address: z.string(),
+  created_at: z.string(),
+});
+const statusResponseProbe = z.object({
+  address: z.string(),
+  status: z.string(),
+  created_at: z.string(),
+  usage: z.object({
+    sent_today: z.number(),
+    daily_limit: z.number(),
+    received_today: z.number(),
+    sent_this_month: z.number(),
+    received_this_month: z.number(),
+  }),
+});
+const listResponseProbe = z.object({
+  results: z.array(z.unknown()),
+  count: z.number(),
+});
+const attachmentMetaSchema = z.object({
+  message_id: z.string(),
+  filename: z.string(),
+  content_type: z.string(),
+  size: z.number().optional(),
+});
+const attachmentListProbe = z
+  .object({ results: z.array(attachmentMetaSchema).optional().catch([]) })
+  .transform((d) => ({ results: d.results ?? [] }));
+
+const sendResponseProbe = z.object({
+  delivery_id: z.string(),
+  status: z.string(),
+});
+const sendBodyProbe = z.object({
+  to: z.array(z.string()).catch([]),
+  text: z.string().catch(""),
+  subject: z.string().optional().catch(undefined),
+  html: z.string().optional().catch(undefined),
+  cc: z.array(z.string()).optional().catch(undefined),
+  bcc: z.array(z.string()).optional().catch(undefined),
+  attachments: z
+    .array(
+      z.object({
+        filename: z.string(),
+        content_type: z.string(),
+        content: z.string(),
+      }),
+    )
+    .optional()
+    .catch(undefined),
+  reply_to: z.string().optional().catch(undefined),
+});
+
 import { CadetCloudClient } from "../../cloud/client.js";
 import { getReadinessService } from "../../daemon/handlers/config-channels.js";
 import { markdownToEmailHtml } from "../../email/html-renderer.js";
@@ -44,7 +110,7 @@ async function requireClient(): Promise<CadetCloudClient> {
 // ── Handlers ──────────────────────────────────────────────────────────
 
 async function handleEmailRegister({ body = {} }: RouteHandlerArgs) {
-  const { username } = body as { username: string };
+  const username = stringParam(body.username) ?? "";
   const client = await requireClient();
 
   const response = await client.fetch(
@@ -57,10 +123,9 @@ async function handleEmailRegister({ body = {} }: RouteHandlerArgs) {
   );
 
   if (!response.ok) {
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail =
       respBody.detail ??
       (Array.isArray(respBody.username) ? respBody.username[0] : undefined) ??
@@ -71,11 +136,7 @@ async function handleEmailRegister({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError(String(detail));
   }
 
-  const data = (await response.json()) as {
-    id: string;
-    address: string;
-    created_at: string;
-  };
+  const data = registerResponseProbe.parse(await response.json());
   invalidateEmailReadinessState();
   return data;
 }
@@ -124,10 +185,9 @@ async function handleEmailUnregister(_args: RouteHandlerArgs) {
   );
 
   if (!deleteResponse.ok) {
-    const respBody = (await deleteResponse.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await deleteResponse.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${deleteResponse.status}`;
     throw new RouteError(
       String(detail),
@@ -157,10 +217,9 @@ async function handleEmailStatus(_args: RouteHandlerArgs) {
   );
 
   if (!statusResponse.ok) {
-    const respBody = (await statusResponse.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await statusResponse.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${statusResponse.status}`;
     throw new RouteError(
       String(detail),
@@ -169,18 +228,7 @@ async function handleEmailStatus(_args: RouteHandlerArgs) {
     );
   }
 
-  return (await statusResponse.json()) as {
-    address: string;
-    status: string;
-    created_at: string;
-    usage: {
-      sent_today: number;
-      daily_limit: number;
-      received_today: number;
-      sent_this_month: number;
-      received_this_month: number;
-    };
-  };
+  return statusResponseProbe.parse(await statusResponse.json());
 }
 
 async function handleEmailList({ queryParams = {} }: RouteHandlerArgs) {
@@ -202,18 +250,14 @@ async function handleEmailList({ queryParams = {} }: RouteHandlerArgs) {
   const response = await client.fetch(path);
 
   if (!response.ok) {
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "LIST_FAILED", response.status);
   }
 
-  const data = (await response.json()) as {
-    results: unknown[];
-    count: number;
-  };
+  const data = listResponseProbe.parse(await response.json());
   return { results: data.results, count: data.count };
 }
 
@@ -229,10 +273,9 @@ async function handleEmailDownload({ queryParams = {} }: RouteHandlerArgs) {
     if (response.status === 404) {
       throw new NotFoundError(`Email message not found: ${messageId}`);
     }
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "DOWNLOAD_FAILED", response.status);
   }
@@ -241,20 +284,14 @@ async function handleEmailDownload({ queryParams = {} }: RouteHandlerArgs) {
 }
 
 async function handleEmailSend({ body = {} }: RouteHandlerArgs) {
-  const { to, text, subject, html, cc, bcc, attachments, reply_to } = body as {
-    to: string[];
-    text: string;
-    subject?: string;
-    html?: string;
-    cc?: string[];
-    bcc?: string[];
-    attachments?: {
-      filename: string;
-      content_type: string;
-      content: string;
-    }[];
-    reply_to?: string;
-  };
+  const send = sendBodyProbe.parse(body);
+  const { to, text } = send;
+  const subject = send.subject;
+  const html = send.html;
+  const cc = send.cc;
+  const bcc = send.bcc;
+  const attachments = send.attachments;
+  const reply_to = send.reply_to;
 
   const client = await requireClient();
 
@@ -312,30 +349,17 @@ async function handleEmailSend({ body = {} }: RouteHandlerArgs) {
         402,
       );
     }
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new BadRequestError(String(detail));
   }
 
-  return (await response.json()) as {
-    delivery_id: string;
-    status: string;
-  };
+  return sendResponseProbe.parse(await response.json());
 }
 
 // ── Attachment handlers ───────────────────────────────────────────────
-
-interface AttachmentMeta {
-  id: string;
-  filename: string;
-  content_type: string;
-  size_bytes: number;
-  content_id: string;
-  created_at: string;
-}
 
 async function handleEmailAttachmentList({
   queryParams = {},
@@ -351,16 +375,15 @@ async function handleEmailAttachmentList({
     if (response.status === 404) {
       throw new NotFoundError(`Email message not found: ${messageId}`);
     }
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "LIST_FAILED", response.status);
   }
 
-  const data = (await response.json()) as { results: AttachmentMeta[] };
-  return { results: data.results ?? [] };
+  const data = attachmentListProbe.parse(await response.json());
+  return data;
 }
 
 async function handleEmailAttachmentGet({
@@ -377,10 +400,9 @@ async function handleEmailAttachmentGet({
     if (response.status === 404) {
       throw new NotFoundError(`Attachment not found: ${attachmentId}`);
     }
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "DOWNLOAD_FAILED", response.status);
   }
@@ -406,7 +428,7 @@ async function handleEmailAttachmentGet({
   // Return a streaming response — the IPC server pipes the ReadableStream as
   // chunked binary frames to the client
   return {
-    stream: response.body as ReadableStream<Uint8Array>,
+    stream: response.body,
     headers: {
       "content-type": contentType,
       "transfer-encoding": "chunked",
