@@ -36,6 +36,7 @@ handleSync("cadet:config:get", () => ({
 // (the launcher flow on this platform), the second-instance focus — is
 // startApp's.
 startApp({
+  CmdOrCtrl: "Control",
   helperToastExecutable: "Cadet.WindowsHelper.exe",
   helperToastOverrideEnvVar: "CADET_WINDOWS_HELPER_PATH",
   helperToastName: "windows-helper",

@@ -132,6 +132,16 @@ export interface DesktopAppInputs {
   helperToastExecutable?: string;
   helperToastOverrideEnvVar?: string;
   helperToastName?: string;
+
+  /**
+   * Message to VargasJR:
+   *
+   * This is psuedocode. If Electron automatically handles `CmdOrCtrl` (they might)
+   * then we don't need this. If they don't, then we simplify let each shim pass this
+   * through
+   *
+   */
+  CmdOrCtrl: "Command" | "Control";
 }
 
 // In prod, register `app://` and `cadet://` as "standard" + "secure" schemes
@@ -231,9 +241,7 @@ const provisionPackagedCli = (): void => {
  *   and the floating windows), the classic-desktop composition (Windows,
  *   Linux), the packaged CLI provisioning, and the client's own setup.
  */
-export const startApp = async (
-  inputs: DesktopAppInputs = {},
-): Promise<void> => {
+export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
   // Single-instance lock: relaunches focus the existing window instead of
   // spawning a parallel main process. The second-instance handler fires on
   // the instance that holds the lock (the primary).
@@ -390,7 +398,7 @@ export const startApp = async (
         onAssistantNameChange: onNameChange,
       });
       installAbout();
-      installDesktopMenu();
+      installDesktopMenu({ CmdOrCtrl: inputs.CmdOrCtrl });
       installGlobalShortcuts({
         handlers: {
           globalHotkey: () => {

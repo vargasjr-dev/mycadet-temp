@@ -72,6 +72,7 @@ const nativeNotifications = isNotifierSupported()
 // ---------------------------------------------------------------------------
 
 startApp({
+  CmdOrCtrl: "Command",
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();

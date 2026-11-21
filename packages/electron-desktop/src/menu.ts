@@ -126,7 +126,6 @@ export const editMenuItems = (
 /** The View menu — identical on every platform bar the fullscreen chord. */
 export const viewMenuItems = (
   item: MenuCommandItem,
-  options: { fullscreenAccelerator?: string } = {},
 ): MenuItemConstructorOptions[] => [
   item("Toggle Sidebar", { kind: "sidebarToggle" }),
   item("Command Palette...", { kind: "commandPalette" }),
@@ -141,9 +140,7 @@ export const viewMenuItems = (
   { role: "zoomIn" },
   { role: "zoomOut" },
   separator(),
-  options.fullscreenAccelerator
-    ? { role: "togglefullscreen", accelerator: options.fullscreenAccelerator }
-    : { role: "togglefullscreen" },
+  { role: "togglefullscreen", accelerator: "CmdOrCtrl+F" },
 ];
 
 /** The Windows/Linux install row: a direct click, not a command dispatch. */
@@ -176,84 +173,65 @@ export type CliPathMenuState =
  */
 
 /** The File menu: the conversation rows plus the platform's session tail. */
-export const fileMenu = (
-  options: { sessionTail?: MenuItemConstructorOptions[] } = {},
-): MenuItemConstructorOptions => {
+const fileMenu = (): MenuItemConstructorOptions => {
   const item = commandItem();
   return {
     id: "file",
     label: "File",
     submenu: [
       ...conversationFileMenuItems(item),
-      ...(options.sessionTail ?? []),
+      ...sessionFileTail(item, installCliAction()),
     ],
   };
 };
 
 /** The Edit menu — shared whole. */
-export const editMenu = (): MenuItemConstructorOptions => ({
+const editMenu = (): MenuItemConstructorOptions => ({
   id: "edit",
   label: "Edit",
   submenu: editMenuItems(commandItem()),
 });
 
 /** The View menu — shared whole bar the fullscreen chord. */
-export const viewMenu = (
-  options: { fullscreenAccelerator?: string } = {},
-): MenuItemConstructorOptions => ({
+const viewMenu = (): MenuItemConstructorOptions => ({
   id: "view",
   label: "View",
-  submenu: viewMenuItems(commandItem(), {
-    fullscreenAccelerator: options.fullscreenAccelerator,
-  }),
+  submenu: viewMenuItems(commandItem()),
 });
 
-export interface WindowMenuOptions {
-  /** macOS zooms in place of the frameless close role. */
-  zoomRole?: boolean;
-  /** Rows appended after a separator (macOS: companion toggle, front). */
-  tail?: MenuItemConstructorOptions[];
-}
-
-export const windowMenu = ({
-  zoomRole,
-  tail,
-}: WindowMenuOptions = {}): MenuItemConstructorOptions => {
+export const windowMenu = (): MenuItemConstructorOptions => {
   const item = commandItem();
   return {
     id: "window",
     label: "Window",
     submenu: [
       { role: "minimize" },
-      zoomRole ? { role: "zoom" } : { role: "close" },
+      { role: "zoom" },
+      { role: "close" },
       separator(),
       item("Pop Out Conversation", { kind: "popOut" }),
-      ...(tail?.length ? [separator(), ...tail] : []),
+      separator(),
+      companionVisibilityItem(
+        readCompanionHidden(),
+        setCompanionSurfaceVisible,
+      ),
+      separator(),
+      { role: "front" },
     ],
   };
 };
 
-export interface HelpMenuOptions {
-  openAbout?: () => void;
-  checkForUpdates?: () => void;
-  /** macOS checks for updates from its app menu instead. */
-  updatesRow?: boolean;
-}
-
-export const helpMenu = (
-  options: HelpMenuOptions = {},
-): MenuItemConstructorOptions => {
+export const helpMenu = (): MenuItemConstructorOptions => {
   const item = commandItem();
   return {
     id: "help",
     label: "Help",
     submenu: [
-      ...(app.isPackaged && options.updatesRow !== false
+      ...(app.isPackaged
         ? [
             {
               label: "Check for Updates...",
-              enabled: options.checkForUpdates !== undefined,
-              click: options.checkForUpdates,
+              click: checkForUpdates,
             },
           ]
         : []),
@@ -264,12 +242,8 @@ export const helpMenu = (
           void shell.openExternal("https://mycadet.ai/docs");
         },
       },
-      ...(options.openAbout
-        ? [
-            separator(),
-            { label: `About ${app.name}`, click: options.openAbout },
-          ]
-        : []),
+      separator(),
+      { label: `About ${app.name}`, click: openAboutWindow },
     ],
   };
 };
@@ -303,8 +277,6 @@ export function setDesktopHasCloudSession(): void {
   hasCloudSession = has;
   applyFn();
 }
-
-const MAC_FULLSCREEN_ACCELERATOR = "Control+Command+F";
 
 /** Read per call so tests can stamp the platform. */
 const isDarwin = (): boolean => process.platform === "darwin";
@@ -434,18 +406,6 @@ const appMenu = (): MenuItemConstructorOptions => {
   };
 };
 
-/** The desktop menu template — the darwin app menu prepended on macOS. */
-/**
- * The Window menu's tail on macOS: the companion show/hide checkbox — the
- * one switch the tray offers too — and the front role. Built here, from
- * the same companion state the tray reads, so the shells carry no rows.
- */
-const darwinWindowMenuTail = (): MenuItemConstructorOptions[] => [
-  companionVisibilityItem(readCompanionHidden(), setCompanionSurfaceVisible),
-  separator(),
-  { role: "front" },
-];
-
 /** The File tail's install row: this process's CLI family's flow. */
 const installCliAction = (): (() => void) | undefined => {
   if (!app.isPackaged || isDarwin()) {
@@ -464,33 +424,26 @@ const installCliAction = (): (() => void) | undefined => {
  * The desktop menu template — the darwin app menu prepended on macOS.
  */
 export const buildDesktopMenu = (): MenuItemConstructorOptions[] => {
-  const item = commandItem();
-
-  if (isDarwin()) {
-    // File/Edit/View/Window/Help are the shared groups; the macOS deltas
-    // ride the app menu, the fullscreen chord, the zoom role, and the
-    // companion/front rows built from the shared companion state.
-    return [
-      appMenu(),
-      fileMenu(),
-      editMenu(),
-      viewMenu({ fullscreenAccelerator: MAC_FULLSCREEN_ACCELERATOR }),
-      windowMenu({ zoomRole: true, tail: darwinWindowMenuTail() }),
-      helpMenu({ updatesRow: false }),
-    ];
-  }
-
   return [
-    fileMenu({ sessionTail: sessionFileTail(item, installCliAction()) }),
+    appMenu(),
+    fileMenu(),
     editMenu(),
     viewMenu(),
     windowMenu(),
-    helpMenu({ openAbout: openAboutWindow, checkForUpdates }),
+    helpMenu(),
   ];
 };
 
+export type CmdOrCtrlEnum = "Command" | "Control";
+
+interface InstallDesktopMenuOptions {
+  CmdOrCtrl: CmdOrCtrlEnum;
+}
+
 /** Installs the desktop menu, popup IPC included. */
-export const installDesktopMenu = (): void => {
+export const installDesktopMenu = (
+  options: InstallDesktopMenuOptions,
+): void => {
   const apply = (): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(buildDesktopMenu()));
   };
@@ -504,6 +457,7 @@ export const installDesktopMenu = (): void => {
     buildDesktopMenu().map((item) => ({
       id: String(item.id),
       label: String(item.label),
+      // TODO: post process accelerators using `options.CmdOrCtrl`
     })),
   );
   handle(
