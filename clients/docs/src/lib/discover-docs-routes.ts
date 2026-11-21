@@ -94,3 +94,21 @@ export function fetchConstitutionContent(): string {
 export function fetchGlossaryContent(): string {
   return fs.readFileSync("../../GLOSSARY.md").toString();
 }
+
+// The legal pages render from markdown under src/content/legal — the
+// hand-maintained JSX bodies became prose files so the copy is editable
+// without touching a component. The allowlist keeps a stray path segment
+// from turning into a file read.
+const LEGAL_PAGES: ReadonlySet<string> = new Set([
+  "privacy-policy",
+  "terms-of-use",
+]);
+
+export function fetchLegalPageContent(name: string): string {
+  if (!LEGAL_PAGES.has(name)) {
+    throw new Error(`Unknown legal page: ${name}`);
+  }
+  return fs
+    .readFileSync(path.join(process.cwd(), "src", "content", "legal", `${name}.md`))
+    .toString();
+}

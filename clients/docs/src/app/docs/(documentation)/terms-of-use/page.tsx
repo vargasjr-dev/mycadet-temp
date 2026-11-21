@@ -1,4 +1,4 @@
-import { TermsOfUseBody } from "@/app/docs/(documentation)/terms-of-use/_components/terms-of-use-body";
+import LegalMarkdown from "@/app/docs/_components/legal-markdown";
 import { createMetadata } from "@/lib/metadata";
 import { routes } from "@/lib/routes";
 
@@ -10,5 +10,11 @@ export const metadata = createMetadata({
 });
 
 export default function TermsOfUsePage() {
-  return <TermsOfUseBody />;
+  return (
+    <LegalMarkdown
+      file="terms-of-use"
+      title="Cadet Terms of Service"
+      breadcrumb="Docs / Legal / Terms"
+    />
+  );
 }
