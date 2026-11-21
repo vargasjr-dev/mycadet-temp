@@ -119,7 +119,7 @@ const mergedContactProbe = z
   .object({
     id: z.string(),
     displayName: z.string(),
-    role: z.string(),
+    role: z.string().optional(),
     contactType: z.string().nullable().optional(),
     channels: z
       .array(z.object({ address: z.string() }).passthrough()),
@@ -139,9 +139,9 @@ const mergedContactProbe = z
  *   - provided (daemon-native reads): the local contact shape carries no role,
  *     so derive it from the gateway guardian id set.
  */
-function prepareContactResponse<T extends PreparableContact & { role: string }>(
-  contact: T,
-): T;
+function prepareContactResponse<
+  T extends PreparableContact & { role?: string },
+>(contact: T): T;
 function prepareContactResponse<T extends PreparableContact>(
   contact: T,
   guardianIds: ReadonlySet<string>,
