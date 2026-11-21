@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { electronMock, recordedIpcHandlers } from "../test-setup";
+import { recordedIpcHandlers } from "../test-setup";
 
 /**
  * Regression cover for the auto-updater's leaked download promise.

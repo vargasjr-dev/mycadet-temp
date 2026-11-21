@@ -1,1 +1,1 @@
-import { setup } from "@mycadet/electron-desktop/test-setup";
+import "@mycadet/electron-desktop/test-setup";

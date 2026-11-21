@@ -70,7 +70,6 @@ export const preparePermissionPresentation = (): void => {
   }
 };
 
-
 export const configurePermissionsNative = (
   provider: PermissionsNativeProvider | null,
 ): void => {

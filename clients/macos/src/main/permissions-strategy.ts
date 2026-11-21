@@ -11,7 +11,6 @@ import { isPreparedNotificationSenderCurrent } from "@mycadet/electron-desktop/n
 import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
 import {
   describeError,
-  onPermissionPresentation,
   preparePermissionPresentation,
 } from "@mycadet/electron-desktop/permissions";
 import { resolveEnvironmentName } from "@mycadet/shared";

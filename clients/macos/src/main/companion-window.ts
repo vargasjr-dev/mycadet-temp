@@ -131,9 +131,7 @@ import { handle, on } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
 import { getPermissionsService } from "@mycadet/electron-desktop";
-import {
-  onPermissionPresentation,
-} from "@mycadet/electron-desktop/permissions";
+import { onPermissionPresentation } from "@mycadet/electron-desktop/permissions";
 import { openPermissionSettingsPane } from "./permissions-strategy";
 import {
   answerScreenRecordingRefusal,

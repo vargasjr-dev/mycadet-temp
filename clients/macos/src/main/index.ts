@@ -15,7 +15,11 @@ import { installDock } from "./dock";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
-import { installHotkeyHelper } from "./hotkey-helper";
+import {
+  handleHotkeyHelperState,
+  installHotkeyHelper,
+  makeClient,
+} from "./hotkey-helper";
 import { showCompanionCoachmarks } from "./companion-window";
 import {
   replayCompanionIntro,
@@ -97,6 +101,16 @@ startApp({
   share: { present: shareMenuPresenter() },
   permissions: permissionsShell,
   permissionGuide,
+  dictation: {
+    client: makeClient,
+    onState: handleHotkeyHelperState,
+    // The hold outlives the process boundary only if the helper is told —
+    // the key must not survive a quit still believing it is armed.
+    shutdownRequest: {
+      method: "hotkey.modifierHold",
+      params: { enable: false },
+    },
+  },
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();

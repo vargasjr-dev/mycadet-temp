@@ -52,7 +52,6 @@ import { install as installBundles } from "./features/bundles";
 import { install as installDiagnostics } from "./features/diagnostics";
 import { install as installAuth } from "./features/auth";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
-import { install as installDictation } from "./features/dictation";
 import {
   install as installHostProxy,
   type ShellHostProxyInputs,
@@ -62,6 +61,10 @@ import {
   install as installPermissions,
   type PermissionsShellInputs,
 } from "./features/permissions";
+import {
+  install as installDictation,
+  type DictationShellInputs,
+} from "./features/dictation";
 import {
   installPermissionGuide,
   type PermissionGuideInputs,
@@ -141,9 +144,8 @@ export interface DesktopAppInputs {
    */
   hostProxy?: ShellHostProxyInputs;
   /**
-   * The shell's tray surfaces — its own icon renderer, its companion
-   * wiring, its removal-row copy. Absent, the classic notification-area
-   * runtime answers.
+   * The shell's tray surfaces — its companion wiring. Absent, the classic
+   * notification-area runtime answers.
    */
   tray?: ShellTrayInputs;
   /**
@@ -163,6 +165,12 @@ export interface DesktopAppInputs {
    * install.
    */
   permissionGuide?: PermissionGuideInputs;
+  /**
+   * The shell's helper surfaces for the dictation bridge — its sidecar
+   * client factory, its extra state handling, its quit request. Absent,
+   * the shared helper client answers.
+   */
+  dictation?: DictationShellInputs;
   /**
    * How the main window's chrome draws — the macOS traffic lights over a
    * hidden title bar, the Windows caption overlay, or the plain system
@@ -462,9 +470,9 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installPermissions(inputs.permissions);
       installPermissionGuide(inputs.permissionGuide);
       // Still the classic shells' own composition until its round lands:
-      // the helper dictation bridge and the voice-mode chord (R11).
+      // the voice-mode chord (R12).
+      installDictation(inputs.dictation);
       if (process.platform !== "darwin") {
-        installDictation();
         installVoiceModeChord();
       }
 

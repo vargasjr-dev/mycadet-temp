@@ -1,4 +1,4 @@
-import { BrowserWindow, app, ipcMain, type WebContents } from "electron";
+import { BrowserWindow, type WebContents } from "electron";
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -12,28 +12,17 @@ import {
   HELPER_APPS_RUNNING,
   HELPER_INPUT_ACTIVITY_EVENT,
   HELPER_INPUT_SET_ACTIVITY_WATCH,
-  HELPER_DICTATION_FINALIZED_EVENT,
-  HELPER_DICTATION_PARTIAL_EVENT,
-  HELPER_DICTATION_SET_PARTIALS,
-  HELPER_DICTATION_TRANSCRIBE,
-  HELPER_DICTATION_TRANSCRIBED_EVENT,
   HELPER_HOTKEY_READ_FRONT_SELECTION,
   HELPER_HOTKEY_SET_CHORDS,
   HELPER_HOTKEY_SET_MODIFIER_HOLD,
 } from "@mycadet/ipc-contract";
 import {
-  DICTATION_PUSH_SAMPLE_RATE,
-  dictationPartialsHelperResultSchema,
-  DictationOwnerRouter,
-  requestDictationTranscription,
-  toAudioBuffer,
-} from "@mycadet/electron-desktop";
+  helperClient,
+  __resetForTesting as resetDictationHelper,
+} from "@mycadet/electron-desktop/dictation";
 import type {
   ChordBinding,
   ChordRegistrationResult,
-  DictationPartialEvent,
-  DictationPartialsResult,
-  HelperRestartResult,
   HotkeyEvent,
   HotkeySelectionResult,
   ModifierHold,
@@ -138,16 +127,6 @@ const HELPER_PERMISSION_STATUS_SCHEMA = z.object({
   ]),
 });
 
-const DICTATION_PARTIAL_SCHEMA = z.object({
-  text: z.string(),
-});
-
-const DICTATION_ERROR_SCHEMA = z.object({
-  message: z.string(),
-  onDevice: z.boolean(),
-  willRetryServer: z.boolean(),
-});
-
 let platformForTesting: NodeJS.Platform | null = null;
 let supervisorOptionsForTesting: Partial<
   Pick<
@@ -163,7 +142,7 @@ let supervisorOptionsForTesting: Partial<
 const getPlatform = (): NodeJS.Platform =>
   platformForTesting ?? process.platform;
 
-const makeClient = (): MacHelperClient =>
+export const makeClient = (): MacHelperClient =>
   new MacHelperClient({
     name: "mac helper",
     resolveExecutablePath: getMacHelperPath,
@@ -171,8 +150,6 @@ const makeClient = (): MacHelperClient =>
     platform: getPlatform(),
     ...supervisorOptionsForTesting,
   });
-
-let client = makeClient();
 
 /**
  * The binding the helper is currently holding, so a clear that has nothing to
@@ -243,7 +220,7 @@ const sendChords = async (
   binding: ChordBinding,
 ): Promise<ChordRegistrationResult> => {
   try {
-    const result = await client.call(
+    const result = await helperClient().call(
       "hotkey.chords",
       binding.kind === "off"
         ? { enable: false }
@@ -307,7 +284,7 @@ const sendModifierHold = async (
   hold: ModifierHold,
 ): Promise<ModifierHoldRegistrationResult> => {
   try {
-    const result = await client.call(
+    const result = await helperClient().call(
       "hotkey.modifierHold",
       hold.kind === "off"
         ? { enable: false }
@@ -337,7 +314,7 @@ const readFrontSelection = async (): Promise<HotkeySelectionResult> => {
     let holdId: number | undefined;
     // Chromium debounces activation for two seconds, so allow tree build time too.
     for (let attempt = 0; attempt <= FRONT_SELECTION_MAX_RETRIES; attempt++) {
-      const result = await client.call(
+      const result = await helperClient().call(
         "selection.read",
         holdId === undefined ? undefined : { holdId },
       );
@@ -381,7 +358,9 @@ const runningApps = async (bundleIds: string[]): Promise<string[]> => {
     return [];
   }
   try {
-    const result = await client.call("apps.running", { bundleIds: wanted });
+    const result = await helperClient().call("apps.running", {
+      bundleIds: wanted,
+    });
     const parsed = RUNNING_APPS_SCHEMA.safeParse(result);
     return parsed.success ? parsed.data.running : [];
   } catch (err) {
@@ -406,7 +385,7 @@ const quitApp = async (bundleId: string): Promise<boolean> => {
     return false;
   }
   try {
-    const result = await client.call("apps.quit", { bundleId });
+    const result = await helperClient().call("apps.quit", { bundleId });
     const parsed = QUIT_APP_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.asked;
   } catch (err) {
@@ -420,7 +399,7 @@ const quitApp = async (bundleId: string): Promise<boolean> => {
 /** The bundle identifier of the application in front, or `null` when the helper cannot say. */
 const frontmostApp = async (): Promise<string | null> => {
   try {
-    const result = await client.call("apps.frontmost");
+    const result = await helperClient().call("apps.frontmost");
     const parsed = FRONTMOST_APP_SCHEMA.safeParse(result);
     return parsed.success ? parsed.data.bundleId : null;
   } catch (err) {
@@ -446,7 +425,9 @@ const setInputActivityWatch = async (enable: boolean): Promise<boolean> => {
 
 const sendInputActivityWatch = async (enable: boolean): Promise<boolean> => {
   try {
-    const result = await client.call("input.setActivityWatch", { enable });
+    const result = await helperClient().call("input.setActivityWatch", {
+      enable,
+    });
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.enabled === enable;
   } catch (err) {
@@ -465,7 +446,9 @@ const sendInputActivityWatch = async (enable: boolean): Promise<boolean> => {
  */
 const sendScrollWatch = async (enable: boolean): Promise<boolean> => {
   try {
-    const result = await client.call("input.setScrollWatch", { enable });
+    const result = await helperClient().call("input.setScrollWatch", {
+      enable,
+    });
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.enabled === enable;
   } catch (err) {
@@ -486,7 +469,7 @@ const sendPressWatch = async (
   rects: readonly CoachmarkPressRect[],
 ): Promise<boolean> => {
   try {
-    const result = await client.call("input.setPressWatch", { rects });
+    const result = await helperClient().call("input.setPressWatch", { rects });
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.enabled === rects.length > 0;
   } catch (err) {
@@ -519,7 +502,7 @@ export type FrontAppFocus = { takesText: boolean; helperAnswered: boolean };
 
 export const readFrontAppFocus = async (): Promise<FrontAppFocus> => {
   try {
-    const result = await client.call("focus.read");
+    const result = await helperClient().call("focus.read");
     const parsed = FRONT_FOCUS_SCHEMA.safeParse(result);
     if (!parsed.success) {
       log.warn("[mac-helper] focus read returned an invalid result");
@@ -552,7 +535,7 @@ export const postFrontAppShortcut = async (
 ): Promise<ShortcutOutcome> => {
   let pending: Promise<unknown>;
   try {
-    pending = client.call("keys.shortcut", { key });
+    pending = helperClient().call("keys.shortcut", { key });
   } catch (err) {
     log.warn(
       `[mac-helper] shortcut not sent: ${err instanceof Error ? err.message : String(err)}`,
@@ -582,18 +565,10 @@ export const postFrontAppShortcut = async (
   }
 };
 
-const ping = async (): Promise<"pong"> => {
-  const result = await client.call("ping");
-  if (result !== "pong") {
-    throw new Error("mac helper returned invalid ping result");
-  }
-  return "pong";
-};
-
 export const queryMacHelperPermission = async (
   kind: MacHelperPermissionKind,
 ): Promise<MacHelperPermissionStatus> => {
-  const result = await client.call("permission.status", { kind });
+  const result = await helperClient().call("permission.status", { kind });
   return HELPER_PERMISSION_STATUS_SCHEMA.parse(result).status;
 };
 
@@ -721,102 +696,6 @@ const CHORD_BINDING_SCHEMA = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const dictationOwners = new DictationOwnerRouter();
-
-// The renderer's push pipeline downsamples to 16 kHz mono Int16 (the
-// pcm-downsample worklet contract).
-const setDictationPartials = async (
-  webContents: WebContents,
-  enable: boolean,
-  deviceName?: string,
-  pushAudio?: boolean,
-): Promise<DictationPartialsResult> => {
-  try {
-    const result = await client.call("dictation.setPartials", {
-      enable,
-      ...(deviceName ? { deviceName } : {}),
-      ...(pushAudio
-        ? { pushAudio: true, sampleRate: DICTATION_PUSH_SAMPLE_RATE }
-        : {}),
-    });
-    const parsed = dictationPartialsHelperResultSchema.safeParse(result);
-    if (!parsed.success) {
-      return {
-        ok: false,
-        reason: "mac helper returned invalid dictation result",
-      };
-    }
-    if (enable && !parsed.data.enabled) {
-      log.warn(
-        `[mac-helper] dictation partials enable refused (wc=${webContents.id}): ${parsed.data.reason ?? "unavailable"}`,
-      );
-      return { ok: false, reason: parsed.data.reason ?? "unavailable" };
-    }
-    const previousOwner = dictationOwners.setOwner(webContents, enable);
-    if (enable) {
-      forwardedPartialCount = 0;
-      audioChunkCount = 0;
-    }
-    const replaced =
-      previousOwner &&
-      previousOwner !== webContents &&
-      !previousOwner.isDestroyed()
-        ? ` (replaced wc=${previousOwner.id})`
-        : "";
-    const tap = enable && parsed.data.tap ? ` tap=${parsed.data.tap}` : "";
-    log.info(
-      `[mac-helper] dictation partials ${enable ? "enabled" : "disabled"} by wc=${webContents.id}${replaced}${tap}`,
-    );
-    return { ok: true, enabled: parsed.data.enabled };
-  } catch (err) {
-    return {
-      ok: false,
-      reason: err instanceof Error ? err.message : String(err),
-    };
-  }
-};
-
-let forwardedPartialCount = 0;
-let audioChunkCount = 0;
-
-const sendDictationPartialToOwner = (event: DictationPartialEvent): void => {
-  forwardedPartialCount += 1;
-  const owner = dictationOwners.target();
-  if (forwardedPartialCount === 1 || forwardedPartialCount % 25 === 0) {
-    // Count/length only — transcript content must never be logged.
-    log.info(
-      `[mac-helper] dictation partial #${forwardedPartialCount} chars=${event.text.length} → ${owner ? `wc=${owner.id}` : "DROPPED (no owner)"}`,
-    );
-  }
-  if (!owner) {
-    return;
-  }
-  owner.send(HELPER_DICTATION_PARTIAL_EVENT, event);
-};
-
-const sendDictationTextEventToOwner = (
-  kind: "finalized" | "transcribed",
-  event: DictationPartialEvent,
-): void => {
-  const owner =
-    kind === "transcribed"
-      ? dictationOwners.takeTranscriptionTarget()
-      : dictationOwners.target();
-  // Length only; transcript content must never be logged.
-  log.info(
-    `[mac-helper] dictation ${kind} chars=${event.text.length} -> ${owner ? `wc=${owner.id}` : "DROPPED (no owner)"}`,
-  );
-  if (!owner) {
-    return;
-  }
-  owner.send(
-    kind === "finalized"
-      ? HELPER_DICTATION_FINALIZED_EVENT
-      : HELPER_DICTATION_TRANSCRIBED_EVENT,
-    event,
-  );
-};
-
 const hotkeyOwners = new Map<number, HotkeyOwner>();
 let activeHotkeyOwnerId: number | null = null;
 /** Whether the running helper has taken the binding, as far as main knows. */
@@ -934,13 +813,6 @@ const sendSyntheticHotkeyUpIfNeeded = (): void => {
   });
 };
 
-const sendHelperStateToRenderers = (state: MacHelperState): void => {
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (win.webContents.isDestroyed()) continue;
-    win.webContents.send("cadet:helper:state", state);
-  }
-};
-
 /**
  * Hand a helper that has just come back the binding the app believes it holds.
  * The renderer registered once and is not told about the restart, so without
@@ -985,8 +857,7 @@ const restoreChordsIfNeeded = async (): Promise<void> => {
   }
 };
 
-const handleHelperState = (state: MacHelperState): void => {
-  sendHelperStateToRenderers(state);
+export const handleHotkeyHelperState = (state: MacHelperState): void => {
   if (state.status === "running") {
     void restoreModifierHoldIfNeeded();
     void restoreChordsIfNeeded();
@@ -1014,23 +885,7 @@ const handleHelperState = (state: MacHelperState): void => {
   if (chordBinding.kind !== "off") {
     restoreChordsAfterRestart = true;
   }
-  // The partials session lived in the dead helper process; the renderer's
-  // session simply continues without live text.
-  dictationOwners.clear();
   sendSyntheticHotkeyUpIfNeeded();
-};
-
-const restartHelper = (): HelperRestartResult => {
-  try {
-    const state = client.retry();
-    return { ok: true, state };
-  } catch (err) {
-    return {
-      ok: false,
-      reason: err instanceof Error ? err.message : String(err),
-      state: client.getState(),
-    };
-  }
 };
 
 let installed = false;
@@ -1038,31 +893,26 @@ let unsubscribeHotkeyEvents: (() => void) | null = null;
 let unsubscribeInputActivity: (() => void) | null = null;
 let unsubscribeScrollEnded: (() => void) | null = null;
 let unsubscribePressed: (() => void) | null = null;
-let unsubscribeHelperState: (() => void) | null = null;
-let unsubscribeDictationPartials: (() => void) | null = null;
-let unsubscribeDictationFinalized: (() => void) | null = null;
-let unsubscribeDictationTranscribed: (() => void) | null = null;
-let unsubscribeDictationError: (() => void) | null = null;
 
 export const installHotkeyHelper = (): void => {
   if (installed) return;
   installed = true;
 
-  unsubscribeHotkeyEvents = client.onNotification(
+  unsubscribeHotkeyEvents = helperClient().onNotification(
     "hotkey.event",
     HOTKEY_EVENT_SCHEMA,
     (event) => {
       sendHotkeyEventToOwner(event);
     },
   );
-  unsubscribeInputActivity = client.onNotification(
+  unsubscribeInputActivity = helperClient().onNotification(
     "input.activity",
     z.unknown(),
     () => {
       sendInputActivityToOwner();
     },
   );
-  unsubscribeScrollEnded = client.onNotification(
+  unsubscribeScrollEnded = helperClient().onNotification(
     "input.scrollEnded",
     z.unknown(),
     () => {
@@ -1072,7 +922,7 @@ export const installHotkeyHelper = (): void => {
   provideFrameScrollWatch((enable) => {
     void sendScrollWatch(enable);
   });
-  unsubscribePressed = client.onNotification(
+  unsubscribePressed = helperClient().onNotification(
     "input.pressed",
     INPUT_PRESSED_SCHEMA,
     (event) => {
@@ -1082,44 +932,6 @@ export const installHotkeyHelper = (): void => {
   provideCoachmarkPressWatch((rects) => {
     void sendPressWatch(rects);
   });
-  unsubscribeDictationPartials = client.onNotification(
-    "dictation.partial",
-    DICTATION_PARTIAL_SCHEMA,
-    (event) => {
-      sendDictationPartialToOwner(event);
-    },
-  );
-  unsubscribeDictationFinalized = client.onNotification(
-    "dictation.finalized",
-    DICTATION_PARTIAL_SCHEMA,
-    (event) => {
-      sendDictationTextEventToOwner("finalized", event);
-    },
-  );
-  unsubscribeDictationTranscribed = client.onNotification(
-    "dictation.transcribed",
-    DICTATION_PARTIAL_SCHEMA,
-    (event) => {
-      sendDictationTextEventToOwner("transcribed", event);
-    },
-  );
-  unsubscribeDictationError = client.onNotification(
-    "dictation.error",
-    DICTATION_ERROR_SCHEMA,
-    (event) => {
-      // Field-debuggable trace for recognition dying mid-session (the
-      // helper retries on the server path when the on-device pin fails).
-      log.warn(
-        `[mac-helper] dictation recognition error (onDevice=${event.onDevice}, retryServer=${event.willRetryServer}): ${event.message}`,
-      );
-    },
-  );
-  unsubscribeHelperState = client.onState(handleHelperState);
-
-  handle("cadet:helper:ping", z.tuple([]), () => ping());
-  handle("cadet:helper:state:get", z.tuple([]), () => client.getState());
-  handle("cadet:helper:restart", z.tuple([]), () => restartHelper());
-
   handle(
     HELPER_HOTKEY_SET_MODIFIER_HOLD,
     z.tuple([MODIFIER_HOLD_SCHEMA]),
@@ -1163,65 +975,10 @@ export const installHotkeyHelper = (): void => {
   handle(HELPER_INPUT_SET_ACTIVITY_WATCH, z.tuple([z.boolean()]), ([enable]) =>
     setInputActivityWatch(enable),
   );
-
-  handle(
-    HELPER_DICTATION_SET_PARTIALS,
-    z.tuple([z.boolean(), z.string().optional(), z.boolean().optional()]),
-    ([enable, deviceName, pushAudio], event) =>
-      setDictationPartials(event.sender, enable, deviceName, pushAudio),
-  );
-
-  // High-frequency fire-and-forget PCM from the partials owner — plain
-  // `on`, not `handle`: a round-trip per ~100ms chunk buys nothing.
-  ipcMain.on("cadet:helper:dictation:audio", (event, chunk: unknown) => {
-    if (!dictationOwners.ownsPartials(event.sender)) {
-      audioChunkCount += 1;
-      if (audioChunkCount === 1 || audioChunkCount % 50 === 0) {
-        log.warn(
-          `[mac-helper] dictation audio chunk #${audioChunkCount} DROPPED (sender wc=${event.sender.id} is not the partials owner)`,
-        );
-      }
-      return;
-    }
-    const buf = toAudioBuffer(chunk);
-    if (!buf || buf.length === 0) return;
-    audioChunkCount += 1;
-    if (audioChunkCount === 1 || audioChunkCount % 50 === 0) {
-      // Byte counts only — never audio content.
-      log.info(
-        `[mac-helper] dictation audio chunk #${audioChunkCount} → helper (${buf.length} bytes)`,
-      );
-    }
-    void client
-      .call("dictation.appendAudio", { audio: buf.toString("base64") })
-      .catch(() => {
-        // Helper restarting mid-session — chunks are best-effort.
-      });
-  });
-
-  handle(
-    HELPER_DICTATION_TRANSCRIBE,
-    z.tuple([z.unknown()]),
-    ([audio], event) =>
-      requestDictationTranscription({
-        audio,
-        sender: event.sender,
-        owners: dictationOwners,
-        client,
-      }),
-  );
-
-  app.on("before-quit", () => {
-    client.shutdown({
-      method: "hotkey.modifierHold",
-      params: { enable: false },
-    });
-  });
 };
 
 export const __resetForTesting = (): void => {
   installed = false;
-  ipcMain.removeAllListeners("cadet:helper:dictation:audio");
   platformForTesting = null;
   supervisorOptionsForTesting = {};
   modifierHoldBinding = { kind: "off" };
@@ -1245,30 +1002,17 @@ export const __resetForTesting = (): void => {
   unsubscribeScrollEnded = null;
   unsubscribePressed?.();
   unsubscribePressed = null;
-  unsubscribeHelperState?.();
-  unsubscribeHelperState = null;
-  unsubscribeDictationPartials?.();
-  unsubscribeDictationPartials = null;
-  unsubscribeDictationError?.();
-  unsubscribeDictationError = null;
-  unsubscribeDictationFinalized?.();
-  unsubscribeDictationFinalized = null;
-  unsubscribeDictationTranscribed?.();
-  unsubscribeDictationTranscribed = null;
-  dictationOwners.clear();
   for (const owner of hotkeyOwners.values()) owner.cleanup();
   hotkeyOwners.clear();
   activeHotkeyOwnerId = null;
-  client.resetForTesting();
-  client = makeClient();
+  resetDictationHelper(makeClient);
 };
 
 export const __setPlatformForTesting = (
   platform: NodeJS.Platform | null,
 ): void => {
   platformForTesting = platform;
-  client.resetForTesting();
-  client = makeClient();
+  resetDictationHelper(makeClient);
 };
 
 export const __setSupervisorOptionsForTesting = (
@@ -1284,6 +1028,5 @@ export const __setSupervisorOptionsForTesting = (
   >,
 ): void => {
   supervisorOptionsForTesting = options;
-  client.resetForTesting();
-  client = makeClient();
+  resetDictationHelper(makeClient);
 };

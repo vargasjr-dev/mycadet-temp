@@ -15,6 +15,7 @@
     "./capability-registry": "./src/capability-registry.ts",
     "./command-palette-window": "./src/command-palette-window.ts",
     "./commands": "./src/commands.ts",
+    "./dictation": "./src/features/dictation.ts",
     "./file-open-preload": "./src/file-open-preload.ts",
     "./floating-window": "./src/floating-window.ts",
     "./ipc": "./src/ipc.ts",
@@ -31,7 +32,7 @@
     "./windows": "./src/windows.ts"
   },
   "scripts": {
-    "lint": "prettier --check src scripts test-setup.ts && eslint . --max-warnings 410",
+    "lint": "prettier --check src scripts test-setup.ts && eslint . --max-warnings 404",
     "format:check": "prettier --check src scripts test-setup.ts",
     "test": "bun scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"

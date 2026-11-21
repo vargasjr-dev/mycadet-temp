@@ -555,8 +555,8 @@ export async function resolveCapturePick(
     await bringForward(pick.windowId, deps);
     return { kind: "window", windowId: pick.windowId };
   }
-  let title = "";
-  let placement: ChromeWindowPlacement | null = null;
+  let title: string;
+  let placement: ChromeWindowPlacement | null;
   try {
     const tab = (await deps.listChromeTabs()).find(
       (t) =>

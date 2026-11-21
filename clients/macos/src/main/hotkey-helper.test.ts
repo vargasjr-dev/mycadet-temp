@@ -163,12 +163,34 @@ const {
   __resetForTesting,
   __setPlatformForTesting,
   __setSupervisorOptionsForTesting,
+  handleHotkeyHelperState,
   installHotkeyHelper,
+  makeClient,
   postFrontAppShortcut,
   queryFreshMacHelperPermission,
   requestMacHelperInputMonitoringPermission,
   requestMacHelperSpeechRecognitionPermission,
 } = await import("./hotkey-helper");
+
+const { install: installDictationHelper } =
+  await import("@mycadet/electron-desktop/dictation");
+
+/**
+ * The composition the mac shell runs: the shared dictation bridge supervises
+ * the sidecar client (with this shell's arm), and the hotkey half installs
+ * beside it. The state hook and quit request ride the arm.
+ */
+const installHelperBridge = (): void => {
+  installDictationHelper({
+    client: makeClient,
+    onState: handleHotkeyHelperState,
+    shutdownRequest: {
+      method: "hotkey.modifierHold",
+      params: { enable: false },
+    },
+  });
+  installHotkeyHelper();
+};
 
 const { getMacHelperAppPath, getMacHelperPath } =
   await import("./sidecar/mac-helper-path");
@@ -383,7 +405,7 @@ describe("permission request launchers", () => {
 
 describe("installHotkeyHelper", () => {
   test("registers the helper IPC handlers", () => {
-    installHotkeyHelper();
+    installHelperBridge();
     expect(handlers["cadet:helper:ping"]).toBeDefined();
     expect(handlers["cadet:helper:state:get"]).toBeDefined();
     expect(handlers["cadet:helper:restart"]).toBeDefined();
@@ -392,7 +414,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("pings the helper process", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokePing();
 
     expect(lastChild?.stdin.writes[0]).toContain('"jsonrpc":"2.0"');
@@ -407,7 +429,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("exposes helper state and user-initiated restart", () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     expect(invokeGetState()).toEqual({ status: "idle" });
 
@@ -421,7 +443,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("user-initiated restart replaces an already-running helper", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invokePing();
     lastChild?.stdout.emit(
@@ -448,7 +470,7 @@ describe("installHotkeyHelper", () => {
       circuitCrashCount: 2,
       circuitWindowMs: 1_000,
     });
-    installHotkeyHelper();
+    installHelperBridge();
 
     expect(invokeRestart()).toEqual({
       ok: true,
@@ -475,7 +497,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("sends hotkey.modifierHold to the helper process", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeSetModifierHold();
     await wait(5);
 
@@ -504,7 +526,7 @@ describe("installHotkeyHelper", () => {
       initialBackoffMs: 1,
       maxBackoffMs: 1,
     });
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invokePing();
     lastChild?.stdout.emit(
@@ -531,7 +553,7 @@ describe("installHotkeyHelper", () => {
       initialBackoffMs: 1,
       maxBackoffMs: 1,
     });
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     const crashed = lastChild;
@@ -550,7 +572,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("maps JSON-RPC helper errors to hotkey results", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeSetModifierHold();
     await wait(5);
 
@@ -566,7 +588,7 @@ describe("installHotkeyHelper", () => {
 
   test("returns unavailable when the helper executable is missing", async () => {
     exists = false;
-    installHotkeyHelper();
+    installHelperBridge();
 
     expect(await invokeSetModifierHold()).toEqual({
       ok: false,
@@ -575,7 +597,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("routes hotkey-event envelopes to the registered owner", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     lastChild?.stdout.emit(
@@ -597,7 +619,7 @@ describe("installHotkeyHelper", () => {
    * mean something under them.
    */
   test("sends hotkey.chords to the helper process", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerChords(makeWebContents())).toEqual({
       ok: true,
       enabled: true,
@@ -617,7 +639,7 @@ describe("installHotkeyHelper", () => {
    * front must not take a press meant for the call.
    */
   test("a chord goes to the window that armed it, not the focused one", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const owner = makeWebContents();
     const focused = makeWebContents();
     expect(await registerChords(owner)).toEqual({ ok: true, enabled: true });
@@ -639,7 +661,7 @@ describe("installHotkeyHelper", () => {
    * taking presses that are the user's own again.
    */
   test("clears the chords when the window that armed them goes", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const owner = makeWebContents();
     expect(await registerChords(owner)).toEqual({ ok: true, enabled: true });
     const before = lastChild?.stdin.writes.length ?? 0;
@@ -657,7 +679,7 @@ describe("installHotkeyHelper", () => {
    * is focused: the press asked something of a session that has gone.
    */
   test("drops a chord once the window that armed it has gone", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const owner = makeWebContents();
     const other = makeWebContents();
     expect(await registerChords(owner)).toEqual({ ok: true, enabled: true });
@@ -672,7 +694,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("carries the reason a hold closed through to the owner", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     lastChild?.stdout.emit(
@@ -699,7 +721,7 @@ describe("installHotkeyHelper", () => {
     };
 
     test("reports a posted shortcut", async () => {
-      installHotkeyHelper();
+      installHelperBridge();
       const pending = postFrontAppShortcut("v");
       reply('{"jsonrpc":"2.0","id":1,"result":{"outcome":"posted"}}');
 
@@ -709,7 +731,7 @@ describe("installHotkeyHelper", () => {
     });
 
     test("reads a helper without Accessibility as declined", async () => {
-      installHotkeyHelper();
+      installHelperBridge();
       const pending = postFrontAppShortcut("v");
       reply('{"jsonrpc":"2.0","id":1,"result":{"outcome":"untrusted"}}');
 
@@ -717,7 +739,7 @@ describe("installHotkeyHelper", () => {
     });
 
     test("reads a helper that does not know the method as declined", async () => {
-      installHotkeyHelper();
+      installHelperBridge();
       const pending = postFrontAppShortcut("v");
       reply(
         '{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"Method not found"}}',
@@ -727,7 +749,7 @@ describe("installHotkeyHelper", () => {
     });
 
     test("reads a helper that exits before replying as unknown", async () => {
-      installHotkeyHelper();
+      installHelperBridge();
       const pending = postFrontAppShortcut("v");
       lastChild?.emit("close", 1, null);
 
@@ -736,7 +758,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("reads what is highlighted in the application in front", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
@@ -755,7 +777,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("reads a selection that says nothing about editability as read-only", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
@@ -773,7 +795,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("reads nothing highlighted as no selection", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
@@ -785,7 +807,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("keeps a refused selection distinct from no selection", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
@@ -799,7 +821,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("retries accessibility warmup with the original hold id", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
       "data",
@@ -826,7 +848,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("stops retrying when the hold or foreground app changes", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
       "data",
@@ -844,7 +866,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("does not retry a non-retryable capture failure", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
       "data",
@@ -855,7 +877,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("bounds warmup retries beyond Chromium's two-second debounce", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeReadFrontSelection();
     for (let id = 1; id <= 31; id++) {
       while ((lastChild?.stdin.writes.length ?? 0) < id) {
@@ -879,7 +901,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("does not treat malformed selection data as no selection", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokeReadFrontSelection();
     lastChild?.stdout.emit(
       "data",
@@ -891,7 +913,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("asks the helper which of the named apps are running", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invoke("cadet:helper:apps:running", [
       "com.electron.wispr-flow",
@@ -913,7 +935,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("reads a helper that cannot say as no apps running", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invoke("cadet:helper:apps:running", [
       "com.electron.wispr-flow",
@@ -929,7 +951,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("asks nothing of the helper for an app outside the voice key's claimants", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     expect(await invoke("cadet:helper:apps:quit", "com.example.editor")).toBe(
       false,
@@ -942,7 +964,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("reads the application in front from the helper", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invoke("cadet:helper:apps:frontmost");
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.frontmost"');
@@ -961,7 +983,7 @@ describe("installHotkeyHelper", () => {
    * document, and the offer those controls answer must survive being pressed.
    */
   test("keeps a press on the companion out of the input activity it forwards", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
     setPointerOnCompanion(true);
 
@@ -989,7 +1011,7 @@ describe("installHotkeyHelper", () => {
    */
   test("restores the input watch after a helper crash", async () => {
     __setSupervisorOptionsForTesting({ initialBackoffMs: 1, maxBackoffMs: 1 });
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     const watch = invoke("cadet:helper:input:setActivityWatch", true);
@@ -1014,7 +1036,7 @@ describe("installHotkeyHelper", () => {
    */
   test("asks the helper to watch for the scroll ending and reports it", async () => {
     __setSupervisorOptionsForTesting({ initialBackoffMs: 1, maxBackoffMs: 1 });
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     let ended = 0;
@@ -1051,7 +1073,7 @@ describe("installHotkeyHelper", () => {
    */
   test("asks the helper to watch for a press on a pointed-at control and reports it", async () => {
     __setSupervisorOptionsForTesting({ initialBackoffMs: 1, maxBackoffMs: 1 });
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     const pressed: number[] = [];
@@ -1096,7 +1118,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("forwards input activity to the window that holds the key", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     const pending = invoke("cadet:helper:input:setActivityWatch", true);
@@ -1116,7 +1138,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("asks the helper to quit an app and reports whether it was asked", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
 
     const pending = invoke("cadet:helper:apps:quit", "com.electron.wispr-flow");
     expect(lastChild?.stdin.writes[0]).toContain('"method":"apps.quit"');
@@ -1138,7 +1160,7 @@ describe("installHotkeyHelper", () => {
       initialBackoffMs: 1,
       maxBackoffMs: 1,
     });
-    installHotkeyHelper();
+    installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     lastChild?.stdout.emit(
@@ -1157,7 +1179,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("the edges reach the window that registered last, and never a stranger", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const first = makeWebContents();
     const second = makeWebContents();
 
@@ -1184,7 +1206,7 @@ describe("installHotkeyHelper", () => {
    * window left would open a microphone into nothing.
    */
   test("clears the hold when the last owner goes away, not before", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const first = makeWebContents();
     const second = makeWebContents();
 
@@ -1205,7 +1227,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("closes helper stdin on app quit so native registrations are cleaned up", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     await registerHold();
 
     appListeners.get("before-quit")?.();
@@ -1218,7 +1240,7 @@ describe("installHotkeyHelper", () => {
   });
 
   test("does not respawn the helper after deliberate shutdown", async () => {
-    installHotkeyHelper();
+    installHelperBridge();
     const pending = invokePing();
     lastChild?.stdout.emit(
       "data",

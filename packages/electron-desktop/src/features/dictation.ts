@@ -38,6 +38,26 @@ import { getSharedHelperClient } from "../native-helper-client";
  * helper binary exists (Linux today), helper RPCs fail closed.
  */
 
+/**
+ * The shell's helper surfaces for the dictation bridge. Absent fields take
+ * the shared answers: the classic helper client, no extra state handling,
+ * and a dictation-only graceful shutdown.
+ */
+export interface DictationShellInputs {
+  /** The shell's sidecar client factory — its helper binary and options. */
+  client?: () => NativeSidecarClient;
+  /**
+   * The shell's own reaction to helper state changes, beside the shared
+   * broadcast and dictation-owner clears (restored bindings, watches).
+   */
+  onState?: (state: NativeSidecarState) => void;
+  /**
+   * The graceful request sent to the helper on app quit, instead of the
+   * dictation disable.
+   */
+  shutdownRequest?: { method: string; params?: unknown };
+}
+
 const DICTATION_TEXT_SCHEMA = z.object({ text: z.string() });
 const DICTATION_TRANSCRIBED_SCHEMA = DICTATION_TEXT_SCHEMA.extend({
   requestId: z.string(),
@@ -51,10 +71,24 @@ let clientFactory = (): NativeSidecarClient => getSharedHelperClient();
 let client: NativeSidecarClient | null = null;
 const getClient = (): NativeSidecarClient => (client ??= clientFactory());
 
+/**
+ * The helper client the dictation bridge supervises. A shell's other helper
+ * halves (its hotkey bindings, its permission requests) share this one
+ * client rather than supervising a second helper process.
+ */
+export const helperClient = getClient;
+
+let shellOnState: ((state: NativeSidecarState) => void) | null = null;
+let quitRequest: { method: string; params?: unknown } = {
+  method: "dictation.setPartials",
+  params: { enable: false },
+};
+
 let installed = false;
 const dictationOwners = new DictationOwnerRouter();
 let dictationPartialsQueue: Promise<void> = Promise.resolve();
 let transcriptionRequestSequence = 0;
+let audioChunkCount = 0;
 
 const applyDictationPartials = async (
   sender: WebContents,
@@ -130,13 +164,19 @@ const handleHelperState = (state: NativeSidecarState): void => {
       ?.send(HELPER_DICTATION_TRANSCRIBED_EVENT, { text: "" });
     dictationOwners.clear();
   }
+  shellOnState?.(state);
 };
 
-export const install = (): void => {
+export const install = (inputs?: DictationShellInputs): void => {
   if (installed) {
     return;
   }
   installed = true;
+  if (inputs?.client) {
+    clientFactory = inputs.client;
+  }
+  shellOnState = inputs?.onState ?? null;
+  quitRequest = inputs?.shutdownRequest ?? quitRequest;
   const helper = getClient();
 
   helper.onNotification("dictation.partial", DICTATION_TEXT_SCHEMA, (event) => {
@@ -147,7 +187,7 @@ export const install = (): void => {
     DICTATION_TEXT_SCHEMA,
     (event) => {
       // Length only; transcript content must never be logged.
-      log.info(`[win-helper] dictation finalized chars=${event.text.length}`);
+      log.info(`[helper] dictation finalized chars=${event.text.length}`);
       dictationOwners.target()?.send(HELPER_DICTATION_FINALIZED_EVENT, event);
     },
   );
@@ -161,7 +201,7 @@ export const install = (): void => {
   );
   helper.onNotification("dictation.error", DICTATION_ERROR_SCHEMA, (event) => {
     log.warn(
-      `[win-helper] dictation error (onDevice=${event.onDevice ?? true}, retryServer=${event.willRetryServer ?? false}): ${event.message}`,
+      `[helper] dictation error (onDevice=${event.onDevice ?? true}, retryServer=${event.willRetryServer ?? false}): ${event.message}`,
     );
     // The helper is restarting the session on the server path; the
     // owner keeps streaming.
@@ -175,11 +215,13 @@ export const install = (): void => {
   });
   helper.onState(handleHelperState);
 
-  handle(
-    HELPER_PING,
-    z.tuple([]),
-    () => getClient().call("ping") as Promise<"pong">,
-  );
+  handle(HELPER_PING, z.tuple([]), async (): Promise<"pong"> => {
+    const result = await getClient().call("ping");
+    if (result !== "pong") {
+      throw new Error("helper returned invalid ping result");
+    }
+    return result;
+  });
   handle(HELPER_GET_STATE, z.tuple([]), () => getClient().getState());
   handle(HELPER_RESTART, z.tuple([]), (): HelperRestartResult => {
     try {
@@ -215,31 +257,40 @@ export const install = (): void => {
       });
     },
   );
-  // Fire-and-forget PCM from the partials owner (no per-chunk round-trip).
+  // High-frequency fire-and-forget PCM from the partials owner — plain
+  // `on`, not `handle`: a round-trip per ~100ms chunk buys nothing.
   on(
     "cadet:helper:dictation:audio",
     z.tuple([z.unknown()]),
     ([chunk], event) => {
       if (!dictationOwners.ownsPartials(event.sender)) {
+        audioChunkCount += 1;
+        if (audioChunkCount === 1 || audioChunkCount % 50 === 0) {
+          log.warn(
+            `[helper] dictation audio chunk #${audioChunkCount} DROPPED (sender wc=${event.sender.id} is not the partials owner)`,
+          );
+        }
         return;
       }
       const buf = toAudioBuffer(chunk);
-      if (!buf || buf.length === 0) {
-        return;
+      if (!buf || buf.length === 0) return;
+      audioChunkCount += 1;
+      if (audioChunkCount === 1 || audioChunkCount % 50 === 0) {
+        // Byte counts only — never audio content.
+        log.info(
+          `[helper] dictation audio chunk #${audioChunkCount} → helper (${buf.length} bytes)`,
+        );
       }
       void getClient()
         .call("dictation.appendAudio", { audio: buf.toString("base64") })
         .catch(() => {
-          // Helper restarting mid-session; chunks are best-effort.
+          // Helper restarting mid-session — chunks are best-effort.
         });
     },
   );
 
   app.on("before-quit", () => {
-    getClient().shutdown({
-      method: "dictation.setPartials",
-      params: { enable: false },
-    });
+    getClient().shutdown(quitRequest);
   });
 };
 
@@ -250,6 +301,16 @@ export const __resetForTesting = (
   dictationOwners.clear();
   dictationPartialsQueue = Promise.resolve();
   transcriptionRequestSequence = 0;
-  client = null;
+  audioChunkCount = 0;
+  shellOnState = null;
+  quitRequest = { method: "dictation.setPartials", params: { enable: false } };
   clientFactory = factory ?? getSharedHelperClient;
+  try {
+    // A supervised helper left running keeps its respawn timers — a later
+    // test's writes land on the wrong child. Settle it before dropping it.
+    client?.shutdown();
+  } catch {
+    // The client was already gone.
+  }
+  client = null;
 };

@@ -234,7 +234,7 @@ describe("HostBrowserExecutor", () => {
       ];
       setTargets(targets);
 
-      const { poster, results } = capturingPoster();
+      const { poster } = capturingPoster();
       executor.handleRequest(
         {
           type: "host_browser_request",
@@ -297,7 +297,7 @@ describe("HostBrowserExecutor", () => {
     test("matches target by cdpSessionId", async () => {
       setTargets([pageTarget("target-A"), pageTarget("target-B")]);
 
-      const { poster, results } = capturingPoster();
+      const { poster } = capturingPoster();
       executor.handleRequest(
         {
           type: "host_browser_request",
