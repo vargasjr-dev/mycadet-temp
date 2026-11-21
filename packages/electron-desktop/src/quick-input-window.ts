@@ -12,20 +12,7 @@ import { createModuleConfiguration } from "./module-configuration";
 import type { CreateWindowOptions } from "./windows";
 
 /**
- * System-wide quick input window — a Spotlight-style floating panel the user
- * invokes via Cmd+Shift+/ to send a message without switching to the main
- * window. Matches the native Swift client's `QuickInputWindow` behavior:
- * frameless, always-on-top, auto-dismisses on blur, centered on the active
- * display slightly above center.
- *
- * `type: "panel"` maps to `NSWindowStyleMaskNonactivatingPanel` on macOS,
- * which receives keyboard input without stealing focus from the frontmost
- * app — the same underlying mechanism the Swift app's `NSPanel` uses.
- * Available since Electron 22; we require 42+.
- *
- * The UI is a React route in `clients/web/` — `/assistant/quick-input` —
- * following the same pattern as the About window. The route is standalone
- * (no auth middleware, no RootLayout) so it loads fast.
+ * System-wide quick input window
  */
 
 const QUICK_INPUT_PATH = "/quick-input";
@@ -72,14 +59,13 @@ const openQuickInput = (): void => {
     return;
   }
 
-  const { createWindow, platform, resolveRoute } = configuration.get();
+  const { createWindow, resolveRoute } = configuration.get();
   const { x, y } = quickInputPosition();
 
   quickInputWindow = createWindow({
     browserWindow: {
-      ...(platform === "darwin"
-        ? { type: "panel" as const, vibrancy: "popover" as const }
-        : {}),
+      type: "panel",
+      vibrancy: "popover",
       width: PANEL_WIDTH,
       height: PANEL_HEIGHT,
       x,
