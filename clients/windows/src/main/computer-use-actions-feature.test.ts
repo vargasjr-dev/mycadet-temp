@@ -13,21 +13,16 @@ mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],
 }));
 
-const { DesktopCapabilityRegistry } =
-  await import("@mycadet/electron-desktop/capability-registry");
 const {
-  COMPUTER_USE_ACTION_EXECUTORS,
+  computerUseExecutors,
   createWindowsHostCuExecutor,
-  install: computerUseActionsInstall,
   protectComputerUseCapture,
 } = await import("./features/computer-use-actions");
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-test("provides the host_cu executor through the capability registry", () => {
-  const registry = new DesktopCapabilityRegistry();
-  computerUseActionsInstall(registry);
-  const provided = registry.require(COMPUTER_USE_ACTION_EXECUTORS);
+test("composes the host_cu executor set for the host-proxy bridge", () => {
+  const provided = computerUseExecutors();
   expect(typeof provided.host_cu.handleRequest).toBe("function");
   expect(typeof provided.teardown).toBe("function");
 });

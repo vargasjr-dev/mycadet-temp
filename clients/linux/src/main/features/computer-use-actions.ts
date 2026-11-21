@@ -6,10 +6,6 @@
 
 import { BrowserWindow } from "electron";
 
-import {
-  capabilityToken,
-  type DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop";
 import type {
   CuHelperClient,
@@ -23,11 +19,6 @@ export interface ComputerUseActionExecutors {
   host_cu: HostProxyExecutor;
   teardown: () => void;
 }
-
-export const COMPUTER_USE_ACTION_EXECUTORS =
-  capabilityToken<ComputerUseActionExecutors>(
-    "desktop.computer-use-action-executors",
-  );
 
 export const getSharedCuHelper = () => getLinuxHelperClient();
 
@@ -105,9 +96,11 @@ export const createLinuxHostCuExecutor = (
   });
 };
 
-export const install = (capabilities: DesktopCapabilityRegistry): void => {
-  capabilities.provide(COMPUTER_USE_ACTION_EXECUTORS, {
-    host_cu: createLinuxHostCuExecutor(),
-    teardown: shutdownSharedCuHelper,
-  });
-};
+/**
+ * The executor set the host-proxy bridge composes — the registry-free
+ * successor of the old capability provide, wired by direct import.
+ */
+export const computerUseExecutors = (): ComputerUseActionExecutors => ({
+  host_cu: createLinuxHostCuExecutor(),
+  teardown: shutdownSharedCuHelper,
+});

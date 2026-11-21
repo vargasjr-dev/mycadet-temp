@@ -3,7 +3,6 @@ import path from "node:path";
 
 import {
   BUNDLES_DIR_NAME,
-  bundleFileHandlerToken,
   configureBundlePlatform,
 } from "@mycadet/electron-desktop/bundle-platform";
 import {
@@ -11,13 +10,12 @@ import {
   installBundleFlow,
 } from "@mycadet/electron-desktop/bundle-flow";
 import { createBundleHostProvider } from "@mycadet/electron-desktop";
-import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import { onFileOpen } from "@mycadet/electron-desktop/file-open";
 
 import { getRendererBase } from "@mycadet/electron-desktop";
 import { handle, on } from "@mycadet/electron-desktop/ipc";
 
-export const install = (registry: DesktopCapabilityRegistry): void => {
+export const install = (): void => {
   configureBundlePlatform({
     ...createBundleHostProvider(),
     bundlesRoot: () => path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
@@ -25,7 +23,6 @@ export const install = (registry: DesktopCapabilityRegistry): void => {
     ipc: { handle, on },
   });
   installBundleFlow();
-  registry.provide(bundleFileHandlerToken, handleBundleFile);
   const stopFileOpen = onFileOpen((filePath) => {
     void handleBundleFile(filePath);
   });

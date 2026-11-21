@@ -25,18 +25,14 @@ import {
   usesAppProtocolRenderer,
 } from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
-import { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   provisionCliForCurrentUser,
   resolveCliPathFlowOptions,
 } from "./cli-path-flow";
-import { install as installAppSettings } from "./features/app-settings";
 import { install as installAuth } from "./features/auth";
-import { install as installAutoUpdate } from "./features/auto-update";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
 import { install as installBundles } from "./features/bundles";
 import { install as installCommands } from "./features/commands";
-import { install as installComputerUseActions } from "./features/computer-use-actions";
 import { install as installDeepLinks } from "./features/deep-links";
 import { install as installDiagnostics } from "./features/diagnostics";
 import { install as installDictation } from "./features/dictation";
@@ -146,22 +142,20 @@ startApp(log, () => {
     }
   }
   // Every main-process feature, installed explicitly in the glob's
-  // sorted order — the list the old auto-discovery hid.
-  const capabilities = new DesktopCapabilityRegistry();
-  installAppSettings(capabilities);
+  // sorted order — the list the old auto-discovery hid. The hotkey
+  // settings and auto-update installs the features used to carry live in
+  // startApp now (the three shells wired them identically).
   installAuth();
-  installAutoUpdate();
   installAuxiliaryWindows();
-  installBundles(capabilities);
-  installCommands(capabilities);
-  installComputerUseActions(capabilities);
-  installDeepLinks(capabilities);
+  installBundles();
+  installCommands();
+  installDeepLinks();
   installDiagnostics();
   installDictation();
   installDownloads();
   installFileOpen();
-  installHostProxy(capabilities);
-  installMainWindow(capabilities);
+  installHostProxy();
+  installMainWindow();
   installNotifications();
   installPermissions();
   installPresence();

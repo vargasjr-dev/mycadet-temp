@@ -60,7 +60,9 @@ mock.module("@mycadet/electron-desktop/notification-avatar-path", () => ({
   resolveNotificationAvatarPath,
 }));
 
-mock.module("@mycadet/electron-desktop/ipc", () => ({ handle: () => undefined }));
+mock.module("@mycadet/electron-desktop/ipc", () => ({
+  handle: () => undefined,
+}));
 mock.module("./main-window", () => ({ ensureVisible: () => undefined }));
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],

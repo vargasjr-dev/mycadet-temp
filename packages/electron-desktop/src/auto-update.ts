@@ -7,7 +7,7 @@ import { resolveEnvironmentName } from "@mycadet/shared";
 import type { UpdateState, UpdateStatus } from "@mycadet/ipc-contract";
 
 import type { UpdateFeedPlatform } from "./auto-update-contract";
-import type { IpcHandle } from "./ipc";
+import { handle as sharedIpcHandle, type IpcHandle } from "./ipc";
 
 export type { UpdateState, UpdateStatus };
 export type { UpdateFeedPlatform } from "./auto-update-contract";
@@ -27,10 +27,22 @@ export const resolveUpdateFeedUrl = (
 };
 
 export interface AutoUpdateOptions {
-  ipc: { handle: IpcHandle };
-  /** The updater feed's platform bucket, e.g. `linux-electron`. */
-  platform: UpdateFeedPlatform;
+  /** Defaults to the desktop package's shared IPC registrar. */
+  ipc?: { handle: IpcHandle };
+  /**
+   * The updater feed's platform bucket, e.g. `linux-electron`. Defaults to
+   * this process's platform, which is all the three shells ever passed.
+   */
+  platform?: UpdateFeedPlatform;
 }
+
+/** The feed bucket for this process's platform. */
+export const resolveUpdateFeedPlatform = (): UpdateFeedPlatform =>
+  process.platform === "darwin"
+    ? "mac-electron"
+    : process.platform === "win32"
+      ? "win-electron"
+      : "linux-electron";
 
 let currentState: UpdateState = { status: "idle" };
 
@@ -59,11 +71,9 @@ export const checkForUpdates = (): void => {
 };
 
 /** Installs the updater, its IPC surface, and the periodic check. */
-export const installAutoUpdate = ({
-  ipc,
-  platform,
-}: AutoUpdateOptions): void => {
-  const { handle } = ipc;
+export const installAutoUpdate = (options: AutoUpdateOptions = {}): void => {
+  const handle = options.ipc?.handle ?? sharedIpcHandle;
+  const platform = options.platform ?? resolveUpdateFeedPlatform();
   handle("cadet:update:getState", z.tuple([]), () => currentState);
   handle("cadet:update:check", z.tuple([]), () => checkForUpdates());
   handle("cadet:update:install", z.tuple([]), () =>

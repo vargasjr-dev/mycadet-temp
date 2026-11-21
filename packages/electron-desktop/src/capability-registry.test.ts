@@ -1,28 +1,6 @@
 import { expect, test } from "bun:test";
 
-import {
-  BridgeCapabilityRegistry,
-  DesktopCapabilityRegistry,
-  capabilityToken,
-} from "./capability-registry";
-
-test("registry stores typed providers and rejects duplicates", () => {
-  const registry = new DesktopCapabilityRegistry();
-  const token = capabilityToken<{ run: () => string }>("commands");
-  const provider = { run: () => "done" };
-
-  registry.provide(token, provider);
-  expect(registry.require(token).run()).toBe("done");
-  expect(() => registry.provide(token, provider)).toThrow(/already registered/);
-});
-
-test("registry keeps unavailable providers absent", () => {
-  const registry = new DesktopCapabilityRegistry();
-  const token = capabilityToken<string>("missing");
-
-  expect(registry.get(token)).toBeUndefined();
-  expect(() => registry.require(token)).toThrow(/unavailable/);
-});
+import { BridgeCapabilityRegistry } from "./capability-registry";
 
 test("bridge registry composes namespaces", () => {
   interface Bridge {

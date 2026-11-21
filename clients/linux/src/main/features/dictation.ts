@@ -132,7 +132,7 @@ const handleHelperState = (state: NativeSidecarState): void => {
   }
 };
 
-export const installDictation = (): void => {
+export const install = (): void => {
   if (installed) {
     return;
   }
@@ -242,8 +242,6 @@ export const installDictation = (): void => {
     });
   });
 };
-
-export const install = (): void => installDictation();
 
 export const __resetForTesting = (
   factory?: () => NativeSidecarClient,

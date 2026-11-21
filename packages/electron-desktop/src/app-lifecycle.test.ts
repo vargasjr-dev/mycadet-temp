@@ -15,6 +15,15 @@ mock.module("electron", () => ({
   },
 }));
 
+// startApp owns the universal wiring now; the single-purpose module it
+// calls is mocked here (nothing else imports it, so no co-run pollution).
+const calls: string[] = [];
+mock.module("./universal-wiring", () => ({
+  installUniversalFeatures: () => {
+    calls.push("universal-wiring");
+  },
+}));
+
 const { startApp } = await import("./app-lifecycle");
 
 // The seam's contract is the full electron-log MainLogger; the test drives
@@ -25,7 +34,7 @@ const log = {
 } as unknown as Parameters<typeof startApp>[0];
 
 describe("startApp", () => {
-  test("logs ready and runs setup once Electron is ready", async () => {
+  test("logs ready, wires the universal installs, and runs setup once Electron is ready", async () => {
     let ran = false;
     startApp(log, () => {
       ran = true;
@@ -36,6 +45,7 @@ describe("startApp", () => {
     await Promise.resolve();
 
     expect(ran).toBe(true);
+    expect(calls).toEqual(["universal-wiring"]);
     expect(
       logCalls.some(
         ([level, message]) => level === "info" && message === "[app] ready",

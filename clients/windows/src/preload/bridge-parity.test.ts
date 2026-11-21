@@ -23,7 +23,8 @@ mock.module("electron", () =>
   }),
 );
 
-const { WINDOWS_NOT_APPLICABLE_CAPABILITIES } = await import("./core-capabilities");
+const { WINDOWS_NOT_APPLICABLE_CAPABILITIES } =
+  await import("./core-capabilities");
 
 // Every real feature module, loaded from disk the way the production glob
 // does, so cross-module bridge-key collisions (which kill the whole

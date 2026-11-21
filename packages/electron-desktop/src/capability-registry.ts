@@ -1,62 +1,10 @@
-export type CapabilityToken<Value> = {
-  readonly id: string;
-  readonly __value?: Value;
-};
-
-export const capabilityToken = <V>(id: string): CapabilityToken<V> => ({ id });
-
-export interface MainWindowController<Window = unknown> {
-  current: () => Window | null;
-  ensureVisible: () => void | Promise<void>;
-}
-
-export type CommandDispatcher<Command> = {
-  dispatch: (command: Command) => void;
-};
-
-export interface StatusSource<Status> {
-  current: () => Status;
-  subscribe: (listener: (status: Status) => void) => () => void;
-}
-
-export interface SessionProvider<Session> {
-  current: () => Session | null;
-  subscribe: (listener: (session: Session | null) => void) => () => void;
-}
-
-export interface LocalRuntimeAdapter<Command, Status> {
-  execute: (command: Command) => Promise<void>;
-  status: () => Promise<Status>;
-}
-
-export interface LaunchIngressRegistry<Event> {
-  dispatch: (event: Event) => void;
-  register: (listener: (event: Event) => void) => () => void;
-}
-
-export class DesktopCapabilityRegistry {
-  readonly #providers = new Map<string, unknown>();
-
-  provide<Value>(token: CapabilityToken<Value>, value: Value): void {
-    if (this.#providers.has(token.id)) {
-      throw new Error(`Capability already registered: ${token.id}`);
-    }
-    this.#providers.set(token.id, value);
-  }
-
-  get<Value>(token: CapabilityToken<Value>): Value | undefined {
-    return this.#providers.get(token.id) as Value | undefined;
-  }
-
-  require<Value>(token: CapabilityToken<Value>): Value {
-    const value = this.get(token);
-    if (value === undefined) {
-      throw new Error(`Capability is unavailable: ${token.id}`);
-    }
-    return value;
-  }
-}
-
+/**
+ * The preload bridge's contributor registry: preload features contribute
+ * named bridges into the `CadetBridge` object the renderer consumes. Unlike
+ * the main process — where features import each other directly — the
+ * preload's contributors are assembled before any consumer exists, so the
+ * two-phase contribute/build registry is the honest shape there.
+ */
 export class BridgeCapabilityRegistry<Bridge extends object> {
   readonly #bridge: Partial<Bridge>;
 

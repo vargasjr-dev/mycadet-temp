@@ -146,7 +146,13 @@ const pristineElectronSurface: Record<string, unknown> = {
       toBitmap: () => Buffer.alloc(0),
     }),
     createFromBitmap: () => ({ setTemplateImage: () => undefined }),
-    createFromPath: () => ({ setTemplateImage: () => undefined }),
+    // Real createFromPath never returns null and the tray reads isEmpty()
+    // off the result, so the default image answers it (empty) alongside the
+    // template flag — the tray tests need no per-file delta for it.
+    createFromPath: () => ({
+      isEmpty: () => true,
+      setTemplateImage: () => undefined,
+    }),
     createFromBuffer: () => ({ setTemplateImage: () => undefined }),
   },
   protocol: {

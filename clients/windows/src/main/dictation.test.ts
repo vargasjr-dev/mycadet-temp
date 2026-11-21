@@ -96,8 +96,7 @@ const makeSender = (): FakeSender => ({
   send: mock(() => undefined),
 });
 
-const { __resetForTesting, installDictation } =
-  await import("./features/dictation");
+const { __resetForTesting, install } = await import("./features/dictation");
 
 beforeEach(() => {
   fakeClient = new FakeClient();
@@ -106,7 +105,7 @@ beforeEach(() => {
     delete handlers[key];
   }
   appListeners.clear();
-  installDictation();
+  install();
 });
 
 test("dictation partials route to the owner and gate pushed audio", async () => {

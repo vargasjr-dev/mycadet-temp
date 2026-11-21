@@ -1,7 +1,6 @@
 import { app } from "electron";
 import { z } from "zod";
 
-import { capabilityToken } from "./capability-registry";
 import type { IpcHandle } from "./ipc";
 
 export interface LaunchAtLoginStore {
@@ -15,14 +14,6 @@ export interface LoginItemRuntime {
   identity?: { path: string; args: string[] };
   store?: LaunchAtLoginStore;
 }
-
-export interface StartupRegistration {
-  settingsPage: "startup-apps";
-}
-
-export const STARTUP_REGISTRATION = capabilityToken<StartupRegistration>(
-  "desktop.startup-registration",
-);
 
 let runtime: LoginItemRuntime | null = null;
 let teardown: (() => void) | null = null;

@@ -46,16 +46,10 @@ export { createBundleHostProvider } from "./bundle-host";
 export {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
-  bundleFileHandlerToken,
   configureBundlePlatform,
 } from "./bundle-platform";
 export { registerCadetProtocol } from "./cadet-protocol";
-export {
-  BridgeCapabilityRegistry,
-  DesktopCapabilityRegistry,
-  capabilityToken,
-} from "./capability-registry";
-export type { MainWindowController } from "./capability-registry";
+export { BridgeCapabilityRegistry } from "./capability-registry";
 export {
   closeCommandPaletteWindow,
   configureCommandPaletteWindow,
@@ -65,11 +59,11 @@ export {
   repositionCommandPaletteWindow,
 } from "./command-palette-window";
 export {
-  HOTKEY_SETTINGS,
   acceleratorOption,
   configureHotkeySettings,
   dispatchToFocused,
   onHotkeyOverridesChange,
+  settingsHotkeySettings,
 } from "./commands";
 export type { CadetCommand, HotkeySettingsProvider } from "./commands";
 export {
@@ -79,7 +73,6 @@ export {
 export { installConnectivityProbe } from "./connectivity-probe";
 export { installCsp } from "./csp";
 export {
-  DEEP_LINK_PROTOCOL_REGISTRATION,
   configureDeepLinks,
   hasPendingDeepLinks,
   installDeepLinks,
@@ -160,7 +153,6 @@ export {
 export { createIpcRegistrar } from "./ipc";
 export type { IpcHandle } from "./ipc";
 export {
-  STARTUP_REGISTRATION,
   configureLoginItem,
   installLoginItem,
   installLoginItemIpc,
@@ -174,11 +166,13 @@ export {
   helpMenu,
   historyNavigationMenuItems,
   installDesktopMenu,
+  refreshDesktopMenuCliPath,
   setDesktopHasCloudSession,
   viewMenu,
   viewMenuItems,
   windowMenu,
 } from "./menu";
+export type { CliPathMenuState, DesktopCliPathMenuDeps } from "./menu";
 export { configureNativeAuth, installNativeAuth } from "./native-auth";
 export type { NativeAuthCallback } from "./native-auth";
 export { resolveNotificationAvatarPath } from "./notification-avatar-path";

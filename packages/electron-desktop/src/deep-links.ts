@@ -6,7 +6,6 @@ import { z } from "zod";
 import type { DeepLink } from "@mycadet/ipc-contract";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
-import { capabilityToken } from "./capability-registry";
 import type { IpcHandle, IpcOn } from "./ipc";
 
 /**
@@ -59,15 +58,6 @@ export interface DeepLinkRuntime {
   initialArgv: readonly string[];
   on: IpcOn;
 }
-
-export interface DeepLinkProtocolRegistration {
-  schemes: readonly string[];
-}
-
-export const DEEP_LINK_PROTOCOL_REGISTRATION =
-  capabilityToken<DeepLinkProtocolRegistration>(
-    "desktop.deep-link-protocol-registration",
-  );
 
 let runtime: DeepLinkRuntime | null = null;
 

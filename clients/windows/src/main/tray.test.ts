@@ -1,20 +1,4 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
-
-const trayIcon = { isEmpty: () => false };
-mock.module("electron", () =>
-  electronMock({
-    app: {
-      getVersion: () => "0.0.0",
-      getName: () => "Cadet",
-      getAppPath: () => "/app",
-      isPackaged: false,
-      showAboutPanel: () => undefined,
-    },
-    nativeImage: { createFromPath: () => trayIcon },
-    shell: { openExternal: () => Promise.resolve() },
-  }),
-);
 
 type TrayRuntime = {
   accelerator: (kind: string) => { accelerator?: string };

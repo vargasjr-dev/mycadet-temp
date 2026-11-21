@@ -23,8 +23,8 @@ mock.module("electron", () =>
   }),
 );
 
-const { LINUX_NOT_APPLICABLE_CAPABILITIES } = await import("./core-capabilities");
-
+const { LINUX_NOT_APPLICABLE_CAPABILITIES } =
+  await import("./core-capabilities");
 
 // The composition under test is the shell's own preload index — the
 // same module the packaged preload runs — not a test-side rebuild.

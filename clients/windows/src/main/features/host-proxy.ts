@@ -5,7 +5,6 @@
 
 import { app } from "electron";
 
-import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   installHostProxyBridge,
   createHostProxyRuntime,
@@ -13,26 +12,26 @@ import {
 
 import { hostBashExecutor } from "../executors/host-bash-adapter";
 import { log } from "@mycadet/electron-desktop";
-import { COMPUTER_USE_ACTION_EXECUTORS } from "./computer-use-actions";
+import { computerUseExecutors } from "./computer-use-actions";
 
-export const install = (capabilities: DesktopCapabilityRegistry): void => {
+export const install = (): void => {
   // Deferred one microtask: capability modules install synchronously in
   // path order, and the bridge seeds its connections from the lockfile,
   // which the presence module (sorted later) fills with its initial
   // synchronous read. Deferring lets the bridge observe assistants already
   // present at startup.
   queueMicrotask(() => {
-    installBridge(capabilities);
+    installBridge();
   });
 };
 
-const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
+const installBridge = (): void => {
   const teardown = installHostProxyBridge(
     createHostProxyRuntime({
       interfaceId: "windows",
       bashExecutor: hostBashExecutor,
       logger: log,
-      computerUseExecutors: capabilities.get(COMPUTER_USE_ACTION_EXECUTORS),
+      computerUseExecutors: computerUseExecutors(),
     }),
   );
   app.once("before-quit", teardown);

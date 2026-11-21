@@ -1,15 +1,11 @@
 import { app } from "electron";
 
-import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   configureDeepLinks,
-  DEEP_LINK_PROTOCOL_REGISTRATION,
   installDeepLinks,
-  resolveRegisteredSchemes,
   configureLoginItem,
   installLoginItem,
   installLoginItemIpc,
-  STARTUP_REGISTRATION,
 } from "@mycadet/electron-desktop";
 import {
   onSettingChange,
@@ -20,13 +16,7 @@ import {
 import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { ensureVisible } from "../main-window";
 
-export const install = (capabilities: DesktopCapabilityRegistry): void => {
-  const schemes = resolveRegisteredSchemes();
-  capabilities.provide(DEEP_LINK_PROTOCOL_REGISTRATION, { schemes });
-  capabilities.provide(STARTUP_REGISTRATION, {
-    settingsPage: "startup-apps",
-  });
-
+export const install = (): void => {
   configureDeepLinks({
     ensureVisible,
     handle,

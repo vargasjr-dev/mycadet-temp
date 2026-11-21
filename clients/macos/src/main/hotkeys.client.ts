@@ -1,6 +1,5 @@
 import { installHotkeysIpc as installSharedHotkeysIpc } from "@mycadet/electron-desktop";
 
-import "./commands.client";
 import { handle } from "@mycadet/electron-desktop/ipc";
 
 export const installHotkeysIpc = (): void => {

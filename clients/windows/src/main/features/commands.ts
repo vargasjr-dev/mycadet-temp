@@ -5,11 +5,6 @@ import {
   installAbout,
   openAboutWindow,
 } from "@mycadet/electron-desktop/about";
-import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
-import {
-  configureHotkeySettings,
-  HOTKEY_SETTINGS,
-} from "@mycadet/electron-desktop/commands";
 import {
   installGlobalShortcuts,
   installHotkeysIpc,
@@ -42,12 +37,10 @@ import {
   setDesktopHasCloudSession,
 } from "@mycadet/electron-desktop";
 
-export const install = (capabilities: DesktopCapabilityRegistry): void => {
-  const hotkeySettings = capabilities.get(HOTKEY_SETTINGS);
-  configureHotkeySettings(hotkeySettings);
-  if (hotkeySettings) {
-    installHotkeysIpc({ handle });
-  }
+export const install = (): void => {
+  // Hotkey settings ride the shared settings-store provider startApp
+  // configures; the IPC surface is unconditional for the same reason.
+  installHotkeysIpc({ handle });
 
   configureAboutRuntime({
     rendererBase: () => getRendererBase(app.isPackaged),

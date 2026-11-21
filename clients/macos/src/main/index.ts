@@ -13,8 +13,8 @@ import {
   registerAppProtocol,
 } from "@mycadet/electron-desktop";
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
+import { checkForUpdates } from "@mycadet/electron-desktop/auto-update";
 import { installAbout } from "./about.client";
-import { installAutoUpdate } from "@mycadet/electron-desktop/auto-update";
 import {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
@@ -26,6 +26,12 @@ import {
 } from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 import { writeCliLocator } from "./cli-installer";
+import { getCliPathInstallState } from "./cli-path-installer";
+import {
+  isCliPathFlowInFlight,
+  runInstallCliCommandFlow,
+  runUninstallCliCommandFlow,
+} from "./cli-path-flow";
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { handle, on } from "@mycadet/electron-desktop/ipc";
 // Composition roots: these modules configure the shared desktop packages
@@ -92,10 +98,13 @@ import {
   toggleVisibility as toggleMainWindowVisibility,
 } from "./main-window";
 import {
-  installApplicationMenu,
-  refreshCliPathMenuState,
-  setHasCloudSession,
-} from "./menu";
+  companionVisibilityItem,
+  installDesktopMenu,
+  readCompanionHidden,
+  onCompanionHiddenChange,
+  refreshDesktopMenuCliPath,
+  setDesktopHasCloudSession,
+} from "@mycadet/electron-desktop";
 import {
   getSessionToken,
   onSessionTokenChange,
@@ -119,6 +128,7 @@ import { installPermissionsService } from "./permissions-service";
 import { installCompanionPermissionGuide } from "./companion-permission-guide";
 import {
   installCompanionWindow,
+  setCompanionSurfaceVisible,
   syncCompanionSurface,
 } from "./companion-window";
 import { installTextInsertionIpc } from "./textInsertion";
@@ -245,7 +255,7 @@ startApp(log, async () => {
     // rather than after the next in-app CLI action.
     void provisionCliForWrapper()
       .then((provisioned) =>
-        provisioned ? refreshCliPathMenuState() : undefined,
+        provisioned ? refreshDesktopMenuCliPath() : undefined,
       )
       .catch((err: unknown) => {
         log.error("[app] startup CLI provisioning failed:", err);
@@ -260,16 +270,38 @@ startApp(log, async () => {
   // the renderer publishes during bootstrap.
   installIdentityIpc();
   installAbout();
-  installAutoUpdate({ ipc: { handle }, platform: "mac-electron" });
   installFeedbackIpc();
   installTextInsertionIpc();
   installCommandPaletteWindow();
-  installApplicationMenu();
+  // The shared desktop menu — the same installer linux/windows ride, with
+  // this shell's app-menu rows passed as deps rather than owned here.
+  installDesktopMenu({
+    handle,
+    openAbout: openAboutWindow,
+    checkForUpdates,
+    cliPath: {
+      state: getCliPathInstallState,
+      inFlight: isCliPathFlowInFlight,
+      install: runInstallCliCommandFlow,
+      uninstall: runUninstallCliCommandFlow,
+    },
+    windowMenuTail: [
+      // The show/hide checkbox the tray offers too, from the one builder
+      // both read: two doors onto a single switch, not two switches.
+      companionVisibilityItem(
+        readCompanionHidden(),
+        setCompanionSurfaceVisible,
+      ),
+      { type: "separator" },
+      { role: "front" },
+    ],
+    onCompanionHiddenChange,
+  });
   // The menu's Log In/Log Out toggle is main's fact: derived from the same
   // token store the OAuth flow and sign-out write.
-  setHasCloudSession(!!getSessionToken());
+  setDesktopHasCloudSession(!!getSessionToken());
   onSessionTokenChange(() => {
-    setHasCloudSession(!!getSessionToken());
+    setDesktopHasCloudSession(!!getSessionToken());
   });
   installQuickInput();
   installDictationOverlay({ onRecordingLifecycle: setDictationRecording });

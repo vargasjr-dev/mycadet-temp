@@ -31,8 +31,6 @@ mock.module("@mycadet/electron-desktop/window-attention", () => ({
 
 const { install: windowAttentionInstall } =
   await import("./features/window-attention");
-const { DesktopCapabilityRegistry } =
-  await import("@mycadet/electron-desktop/capability-registry");
 
 beforeEach(() => {
   quitListeners.length = 0;

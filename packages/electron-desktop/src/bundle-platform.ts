@@ -1,6 +1,5 @@
 import type { Session } from "electron";
 
-import { capabilityToken } from "./capability-registry";
 import type { IpcRegistrar } from "./ipc";
 
 export const BUNDLES_DIR_NAME = "bundles";
@@ -16,10 +15,6 @@ export interface BundleHostProvider {
   acquireGatewayToken: (assistantId: string) => Promise<string | null>;
   denyAllPermissions: (targetSession: Session) => void;
 }
-
-export const bundleFileHandlerToken = capabilityToken<
-  (filePath: string) => Promise<void>
->("desktop.bundle-file-handler");
 
 export interface BundlePlatform extends BundleHostProvider {
   bundlesRoot: () => string;

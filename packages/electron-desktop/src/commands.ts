@@ -2,13 +2,13 @@ import { BrowserWindow } from "electron";
 
 import { DEFAULT_ACCELERATORS, type CadetCommand } from "@mycadet/ipc-contract";
 
-import { capabilityToken } from "./capability-registry";
 import {
   closeCommandPaletteWindow,
   dispatchToMainWindow,
   isCommandPaletteWindowFocused,
   openCommandPaletteWindow,
 } from "./command-palette-window";
+import { onSettingChange, readSetting, writeSetting } from "./settings";
 
 export type { CadetCommand };
 
@@ -22,9 +22,18 @@ export interface HotkeySettingsProvider {
   subscribe: (listener: () => void) => () => void;
 }
 
-export const HOTKEY_SETTINGS = capabilityToken<HotkeySettingsProvider>(
-  "desktop.hotkey-settings",
-);
+/**
+ * The settings-store-backed hotkey settings — the one provider shape all
+ * three desktop shells shipped identically, so it lives here next to the
+ * store instead of once per client.
+ */
+export const settingsHotkeySettings: HotkeySettingsProvider = {
+  read: () => ({ ...(readSetting("hotkeys") ?? {}) }),
+  write: (hotkeys) => {
+    writeSetting("hotkeys", hotkeys);
+  },
+  subscribe: (listener) => onSettingChange("hotkeys", listener),
+};
 
 const unavailableHotkeySettings: HotkeySettingsProvider = {
   read: () => ({}),

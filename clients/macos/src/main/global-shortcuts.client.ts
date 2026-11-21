@@ -3,7 +3,6 @@ import {
   toggleQuickInput,
 } from "@mycadet/electron-desktop";
 
-import "./commands.client";
 import log from "@mycadet/electron-desktop/app-logger";
 import { ensureVisible } from "./main-window";
 
