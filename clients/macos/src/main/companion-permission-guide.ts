@@ -44,6 +44,7 @@ import {
   permissionGuideBounds,
 } from "./permission-drag-target";
 import {
+  installPermissionsService,
   openPermissionSettingsPane,
   preparePermissionPresentation,
   type PermissionsService,
@@ -316,9 +317,8 @@ export async function beginPermissionGuide(
   );
 }
 
-export function installCompanionPermissionGuide(
-  service: Pick<PermissionsService, "state" | "refresh">,
-): void {
+export function installCompanionPermissionGuide(): void {
+  const service = installPermissionsService();
   onAvatarChange(() => {
     if (guide) {
       refreshGuideAppearance(guide);

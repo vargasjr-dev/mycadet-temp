@@ -138,7 +138,6 @@ export {
   getSessionToken,
   onSessionTokenChange,
   saveSessionToken,
-  setSessionTokenLogger,
 } from "./session-token-store";
 export { onSettingChange, readSetting, writeSetting } from "./settings";
 export { getStatus } from "./status";

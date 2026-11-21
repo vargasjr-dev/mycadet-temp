@@ -2,6 +2,7 @@ import { app } from "electron";
 import { z } from "zod";
 
 import { handle } from "./ipc";
+import { onSettingChange, readSetting, writeSetting } from "./settings";
 
 export interface LaunchAtLoginStore {
   read: () => boolean | null;
@@ -14,18 +15,22 @@ export interface LoginItemRuntime {
   store?: LaunchAtLoginStore;
 }
 
-let runtime: LoginItemRuntime | null = null;
+// The settings-backed store every shell ships: the launch-at-login toggle
+// persists through the shared settings module unless a caller configures
+// something else.
+const settingsStore: LaunchAtLoginStore = {
+  read: () => readSetting("launchAtLogin"),
+  subscribe: (listener) => onSettingChange("launchAtLogin", listener),
+  write: (enabled) => {
+    writeSetting("launchAtLogin", enabled);
+  },
+};
+
+let runtime: LoginItemRuntime = { store: settingsStore };
 let teardown: (() => void) | null = null;
 
 export const configureLoginItem = (next: LoginItemRuntime): void => {
-  runtime = next;
-};
-
-const requireRuntime = (): LoginItemRuntime => {
-  if (!runtime) {
-    throw new Error("Login-item runtime is unavailable");
-  }
-  return runtime;
+  runtime = { store: settingsStore, ...next };
 };
 
 const readLaunchAtLogin = (): boolean => {
@@ -57,13 +62,19 @@ export const installLoginItemIpc = (): void => {
 };
 
 export const installLoginItem = (): void => {
-  const configured = requireRuntime();
-  const { store } = configured;
+  // `setLoginItemSettings` fails in dev on macOS ("Operation not permitted"
+  // — the unpacked binary can't register as a login item); only packaged
+  // darwin builds register at boot. Linux and Windows register their
+  // unpacked dev identity (the composition's configure) fine.
+  if (process.platform === "darwin" && !app.isPackaged) {
+    return;
+  }
+  const { store } = runtime;
   if (!store || teardown) {
     return;
   }
   if (store.read() === null) {
-    store.write(app.getLoginItemSettings(configured.identity).openAtLogin);
+    store.write(app.getLoginItemSettings(runtime.identity).openAtLogin);
   }
   syncLoginItem();
   teardown = store.subscribe(syncLoginItem);
@@ -72,5 +83,5 @@ export const installLoginItem = (): void => {
 export const __resetLoginItemForTesting = (): void => {
   teardown?.();
   teardown = null;
-  runtime = null;
+  runtime = { store: settingsStore };
 };

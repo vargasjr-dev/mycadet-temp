@@ -185,6 +185,10 @@ mock.module("./permissions-service", () => ({
       throw new Error("Settings failed");
     }
   },
+  installPermissionsService: () => ({
+    state: async () => state(),
+    refresh: async () => state(),
+  }),
 }));
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],
@@ -213,10 +217,7 @@ const state = (): PermissionsState => {
     notifications: item("notifications"),
   };
 };
-installCompanionPermissionGuide({
-  state: async () => state(),
-  refresh: async () => state(),
-});
+installCompanionPermissionGuide();
 const get = (): PermissionGuideState | null =>
   handles.get("cadet:permissions:guide:get")!([]);
 const begin = (

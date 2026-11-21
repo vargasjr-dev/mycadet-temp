@@ -117,17 +117,21 @@ export interface DesktopAppInputs {
     isSupported?: () => boolean;
   };
   /**
-   * The classic shells' toast-helper identity: the supervised sidecar's
-   * executable name, its dev-override env var, and the sidecar client name
-   * it registers under. The package resolves the binary and builds the
-   * factory; absent a helper binary, notifications fall back to the shared
-   * default.
+   * Runs once at the head of the lifecycle — after this launch's files and
+   * deep links are captured, before anything is wired. Returning true stops
+   * the startup: the precheck has quit this process itself (the macOS
+   * move-to-Applications relaunch).
    */
-  helperToast?: {
-    executable: string;
-    overrideEnvVar: string;
-    name: string;
-  };
+  precheck?: () => boolean | Promise<boolean>;
+  /**
+   * The shell's toast-helper identity: the supervised sidecar's executable
+   * name, its dev-override env var, and the sidecar client name it registers
+   * under. The package resolves the binary and builds the factory; absent a
+   * helper binary, notifications fall back to the shared default.
+   */
+  helperToastExecutable?: string;
+  helperToastOverrideEnvVar?: string;
+  helperToastName?: string;
 }
 
 // In prod, register `app://` and `cadet://` as "standard" + "secure" schemes
@@ -227,7 +231,9 @@ const provisionPackagedCli = (): void => {
  *   and the floating windows), the classic-desktop composition (Windows,
  *   Linux), the packaged CLI provisioning, and the client's own setup.
  */
-export const startApp = (inputs: DesktopAppInputs = {}): void => {
+export const startApp = async (
+  inputs: DesktopAppInputs = {},
+): Promise<void> => {
   // Single-instance lock: relaunches focus the existing window instead of
   // spawning a parallel main process. The second-instance handler fires on
   // the instance that holds the lock (the primary).
@@ -267,6 +273,14 @@ export const startApp = (inputs: DesktopAppInputs = {}): void => {
   // handlers existed. macOS reads `open-file` events instead, so its input
   // is empty and this is a no-op.
   handleFileOpenArgv(inputs.initialArgv ?? process.argv);
+
+  // The client's precheck — the macOS move-to-Applications relaunch — runs
+  // before anything is wired: it may quit this process, and a relaunch that
+  // lands after windows and menus exist would tear them down mid-flight.
+  if (hasInstanceLock && inputs.precheck && (await inputs.precheck())) {
+    app.quit();
+    return;
+  }
 
   // Feature modules each attach cleanup listeners; lift the default cap of
   // 10 so they don't trip MaxListenersExceededWarning. The security wiring
@@ -325,18 +339,21 @@ export const startApp = (inputs: DesktopAppInputs = {}): void => {
       // The toast factory: the classic shells' helper identity resolves to
       // a supervised sidecar client where the binary ships; macOS passes
       // its own native factory. An explicit `notifications.create` wins.
-      const helperToast = inputs.helperToast;
-      const helperPath = helperToast
-        ? resolveHelperToastBinaryPath(helperToast)
+      const helperPath = inputs.helperToastExecutable
+        ? resolveHelperToastBinaryPath({
+            executable: inputs.helperToastExecutable,
+            overrideEnvVar:
+              inputs.helperToastOverrideEnvVar ?? "CADET_HELPER_TOAST_PATH",
+          })
         : null;
       configureNotifications({
         ensureVisible: ensureMainWindow,
         logger: log,
-        ...(helperPath && helperToast
+        ...(helperPath
           ? {
               create: createHelperToastFactory({
                 helperPath,
-                name: helperToast.name,
+                name: inputs.helperToastName ?? "cadet-helper",
               }),
             }
           : {}),

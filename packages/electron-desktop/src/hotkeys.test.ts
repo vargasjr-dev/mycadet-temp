@@ -57,10 +57,11 @@ beforeEach(() => {
   __resetForTesting();
 });
 
-describe("installHotkeysIpc with the macOS exclusion", () => {
-  test("a shell that excludes a command offers no row and takes no override", () => {
-    // The exclusion is the platform's own (macOS's Talk chord rides the
-    // voice key's double tap); stamp darwin and reinstall to exercise it.
+describe("installHotkeysIpc with no platform exclusions", () => {
+  test("darwin offers every command — no shell excludes any", () => {
+    // There are no exclusions, platform-internal or caller-passed: every
+    // shell offers the full catalog. Stamp darwin and reinstall to pin the
+    // rule where the old macOS Talk exclusion used to bite.
     const original = process.platform;
     Object.defineProperty(process, "platform", { value: "darwin" });
     try {
@@ -68,11 +69,10 @@ describe("installHotkeysIpc with the macOS exclusion", () => {
       installHotkeysIpc();
 
       const catalog = invoke("cadet:hotkeys:get", []) as Array<{ key: string }>;
-      expect(catalog.map((c) => c.key)).not.toContain("toggleVoice");
+      expect(catalog.map((c) => c.key)).toContain("toggleVoice");
       expect(() =>
         invoke("cadet:hotkeys:set", ["toggleVoice", "CmdOrCtrl+Shift+T"]),
-      ).toThrow("Unknown hotkey command: toggleVoice");
-      expect(hotkeys).toEqual({});
+      ).not.toThrow();
     } finally {
       Object.defineProperty(process, "platform", { value: original });
       __resetForTesting();

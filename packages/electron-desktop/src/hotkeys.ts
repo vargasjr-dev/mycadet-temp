@@ -18,12 +18,8 @@ import { handle } from "./ipc";
 /**
  * Catalog commands this shell does not offer. They render no row and take
  * no override, and their global shortcut is never registered because the
- * shell passes no handler for them. macOS excludes Talk: its voice key (a
- * double tap of Fn) is the keyboard way into a call there, so the exclusion
- * is the platform's own, not a caller option.
+ * shell passes no handler for them.
  */
-const macOSExclusions = (): readonly string[] =>
-  process.platform === "darwin" ? ["toggleVoice"] : [];
 
 export type { HotkeyScope, ResolvedHotkey };
 
@@ -64,11 +60,6 @@ const HOTKEY_CATALOG: readonly HotkeyCommand[] = [
   },
   { key: "nextConversation", label: "Next conversation", scope: "menu" },
 ];
-
-let excludedKeys: ReadonlySet<string> = new Set();
-
-const offeredCatalog = (): HotkeyCommand[] =>
-  HOTKEY_CATALOG.filter((command) => !excludedKeys.has(command.key));
 
 /**
  * Commands the app binds but does not expose for rebinding. Their accelerators
@@ -116,7 +107,7 @@ const resolveCommand = (
  * conflict, so carrying it would only add noise.
  */
 export const resolveHotkeyCatalog = (): ResolvedHotkey[] => [
-  ...offeredCatalog().map((command) => resolveCommand(command, true)),
+  ...HOTKEY_CATALOG.map((command) => resolveCommand(command, true)),
   ...RESERVED_COMMANDS.map((command) => resolveCommand(command, false)).filter(
     (entry) => entry.accelerator !== "",
   ),
@@ -131,7 +122,7 @@ export const resolveHotkeyCatalog = (): ResolvedHotkey[] => [
  * and rebuild the menu.
  */
 const writeHotkey = (key: string, accelerator: string | null): void => {
-  if (!offeredCatalog().some((command) => command.key === key)) {
+  if (!HOTKEY_CATALOG.some((command) => command.key === key)) {
     throw new Error(`Unknown hotkey command: ${key}`);
   }
   if (
@@ -170,7 +161,6 @@ export const installHotkeysIpc = (): void => {
   if (teardown) {
     return;
   }
-  excludedKeys = new Set(macOSExclusions());
 
   handle("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
   handle(
@@ -194,5 +184,4 @@ export const installHotkeysIpc = (): void => {
 export const __resetForTesting = (): void => {
   teardown?.();
   teardown = null;
-  excludedKeys = new Set();
 };

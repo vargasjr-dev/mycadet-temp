@@ -100,7 +100,6 @@ mock.module("./session-token-store", () => ({
     store.saved.push(token);
   },
   onSessionTokenChange: () => () => undefined,
-  setSessionTokenLogger: () => undefined,
 }));
 mock.module("@mycadet/local-mode", () => ({
   resolveLocalConfigFromEnv: () => ({ cloudUrl: "https://platform.example" }),

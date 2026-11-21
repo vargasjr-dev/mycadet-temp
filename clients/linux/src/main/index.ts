@@ -8,9 +8,7 @@ import { startApp } from "@mycadet/electron-desktop";
 // schemes, the launch capture, the universal surface, the CLI provisioning,
 // the second-instance focus — is startApp's.
 startApp({
-  helperToast: {
-    executable: "cadet-linux-helper",
-    overrideEnvVar: "CADET_LINUX_HELPER_PATH",
-    name: "linux-helper",
-  },
+  helperToastExecutable: "cadet-linux-helper",
+  helperToastOverrideEnvVar: "CADET_LINUX_HELPER_PATH",
+  helperToastName: "linux-helper",
 });

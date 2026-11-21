@@ -2,10 +2,8 @@ import { app, type Event } from "electron";
 
 import { configureNativeAuth, installNativeAuth } from "../native-auth";
 import { resolveAuthCallbackScheme } from "../deep-links";
-import { setSessionTokenLogger } from "../session-token-store";
 
 import { startAuthCallback } from "../auth-callback";
-import log from "../app-logger";
 import { ensureVisible } from "../main-window";
 
 const subscribeToAuthCallback = (
@@ -31,7 +29,6 @@ const subscribeToAuthCallback = (
 
 export const install = (): void => {
   const authScheme = resolveAuthCallbackScheme();
-  setSessionTokenLogger(log);
   configureNativeAuth({
     activateWindow: () => {
       app.focus({ steal: true });

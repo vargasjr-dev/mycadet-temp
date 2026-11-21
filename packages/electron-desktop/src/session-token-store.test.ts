@@ -41,7 +41,6 @@ const {
   saveSessionToken,
   clearSessionToken,
   onSessionTokenChange,
-  setSessionTokenLogger,
   __resetForTesting,
 } = await import("./session-token-store");
 
@@ -51,7 +50,6 @@ beforeEach(() => {
   userDataDir = mkdtempSync(path.join(os.tmpdir(), "cadet-session-token-"));
   encryptionAvailable = true;
   __resetForTesting();
-  setSessionTokenLogger({ warn: () => undefined });
 });
 
 afterEach(() => {

@@ -9,8 +9,8 @@ import { mock } from "bun:test";
 
 import {
   electronLogModuleMock,
-  electronModuleMock,
+  electronMock,
 } from "@mycadet/electron-desktop/test-setup";
 
-mock.module("electron", electronModuleMock);
+mock.module("electron", electronMock);
 mock.module("electron-log/main", electronLogModuleMock);

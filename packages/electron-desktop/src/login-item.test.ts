@@ -3,10 +3,16 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { electronMock, recordedIpcHandlers } from "../test-setup";
 
 let openAtLogin = false;
-const getLoginItemSettings = mock(() => ({ openAtLogin }));
-const setLoginItemSettings = mock((settings: { openAtLogin: boolean }) => {
+let getLoginItemSettingsCalls: unknown[] = [];
+let setLoginItemSettingsCalls: unknown[] = [];
+const getLoginItemSettings = (...args: unknown[]): { openAtLogin: boolean } => {
+  getLoginItemSettingsCalls.push(args);
+  return { openAtLogin };
+};
+const setLoginItemSettings = (settings: { openAtLogin: boolean }): void => {
+  setLoginItemSettingsCalls.push(settings);
   openAtLogin = settings.openAtLogin;
-});
+};
 
 mock.module("electron", () =>
   electronMock({
@@ -16,6 +22,26 @@ mock.module("electron", () =>
     },
   }),
 );
+
+// The module defaults to the settings-backed store; these tests stand up
+// their own stores or drive the OS fallback directly, so the settings
+// module here is a working stand-in: writes persist in `setting` and fire
+// the change listeners, exactly the chain the real module runs.
+let setting: boolean | null = null;
+let notify: () => void = () => undefined;
+mock.module("./settings", () => ({
+  readSetting: () => setting,
+  writeSetting: (_key: string, enabled: boolean) => {
+    setting = enabled;
+    notify();
+  },
+  onSettingChange: (_key: string, listener: () => void) => {
+    notify = listener;
+    return () => {
+      notify = () => undefined;
+    };
+  },
+}));
 
 const {
   __resetLoginItemForTesting,
@@ -38,13 +64,16 @@ beforeEach(() => {
   __resetLoginItemForTesting();
   recordedIpcHandlers.clear();
   openAtLogin = false;
-  setLoginItemSettings.mockClear();
-  getLoginItemSettings.mockClear();
+  setting = null;
+  notify = () => undefined;
+  getLoginItemSettingsCalls = [];
+  setLoginItemSettingsCalls = [];
 });
 
 test("identifies the app entry for an unpackaged login item", () => {
   const identity = { path: "/path/to/electron", args: ["/path/to/app"] };
   configureLoginItem({ identity });
+  installLoginItem();
   installLoginItemIpc();
 
   expect(
@@ -52,8 +81,8 @@ test("identifies the app entry for an unpackaged login item", () => {
   ).toBe(false);
   recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
 
-  expect(getLoginItemSettings).toHaveBeenCalledWith(identity);
-  expect(setLoginItemSettings).toHaveBeenCalledWith({
+  expect(getLoginItemSettingsCalls).toEqual([[identity]]);
+  expect(setLoginItemSettingsCalls).toContainEqual({
     openAtLogin: true,
     ...identity,
   });
@@ -61,6 +90,7 @@ test("identifies the app entry for an unpackaged login item", () => {
 
 test("reads and changes the operating-system login item", () => {
   configureLoginItem({});
+  installLoginItem();
   installLoginItemIpc();
 
   const get = recordedIpcHandlers.get("cadet:launchAtLogin:get");
@@ -68,7 +98,7 @@ test("reads and changes the operating-system login item", () => {
   expect(get?.(allowedEvent)).toBe(false);
   set?.(allowedEvent, true);
 
-  expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true });
+  expect(setLoginItemSettingsCalls).toContainEqual({ openAtLogin: true });
   expect(get?.(allowedEvent)).toBe(true);
 });
 
@@ -96,11 +126,11 @@ test("keeps a persisted setting synchronized with the login item", () => {
   installLoginItemIpc();
 
   expect(write).toHaveBeenCalledWith(false);
-  expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false });
+  expect(setLoginItemSettingsCalls).toContainEqual({ openAtLogin: false });
 
   recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
   notify();
 
   expect(write).toHaveBeenLastCalledWith(true);
-  expect(setLoginItemSettings).toHaveBeenLastCalledWith({ openAtLogin: true });
+  expect(setLoginItemSettingsCalls.at(-1)).toEqual({ openAtLogin: true });
 });
