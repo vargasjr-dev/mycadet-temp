@@ -73,6 +73,7 @@ const nativeNotifications = isNotifierSupported()
 
 startApp({
   CmdOrCtrl: "Command",
+  platform: "mac-electron",
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();

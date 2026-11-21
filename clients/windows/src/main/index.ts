@@ -37,6 +37,7 @@ handleSync("cadet:config:get", () => ({
 // startApp's.
 startApp({
   CmdOrCtrl: "Control",
+  platform: "win-electron",
   helperToastExecutable: "Cadet.WindowsHelper.exe",
   helperToastOverrideEnvVar: "CADET_WINDOWS_HELPER_PATH",
   helperToastName: "windows-helper",

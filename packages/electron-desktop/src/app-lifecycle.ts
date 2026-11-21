@@ -37,7 +37,6 @@ import {
   type NotificationCreateOptions,
   type NotificationLike,
 } from "./notifications";
-import { installUniversalFeatures } from "./universal-wiring";
 import { installImageContextMenu } from "./image-context-menu";
 import { installTextContextMenu } from "./text-context-menu";
 import { installHotkeysIpc } from "./hotkeys";
@@ -77,6 +76,8 @@ import {
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { writeCliLocator } from "./cli-installer";
 import log from "./app-logger";
+import { configureHotkeySettings, settingsHotkeySettings } from "./commands";
+import { installAutoUpdate, UpdateFeedPlatform } from "./auto-update";
 
 /**
  * The client's own pieces of the lifecycle — the seams that genuinely
@@ -142,6 +143,20 @@ export interface DesktopAppInputs {
    *
    */
   CmdOrCtrl: "Command" | "Control";
+  /**
+   * Message to VargasJR:
+   *
+   * We delete UpdateFeedPlatform and reduce to string bc ideally,
+   * we don't even mention the words linux, windows (OS), or macos
+   * anywhere in this package. I can conceive of a future where there
+   * are a ton more desktop and OS providers (Omarchy is getting alot of attention),
+   * and don't want to lock ourselves in to the big 3.
+   * 
+   * We might ourselves produce a desktop operating system specific to just 
+   * running this app. 
+   *
+   */
+  platform: string;
 }
 
 // In prod, register `app://` and `cadet://` as "standard" + "secure" schemes
@@ -311,7 +326,9 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
     .whenReady()
     .then(async () => {
       log.info("[app] ready");
-      installUniversalFeatures();
+
+      configureHotkeySettings(settingsHotkeySettings);
+      installAutoUpdate({ platform: inputs.platform });
 
       // Dev on the classic shells serves the renderer from the dev server,
       // so only packaged builds ride the `app://` origin there; macOS packs
@@ -407,25 +424,18 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
           // Registered through installGlobalShortcuts so the Keyboard
           // Shortcuts rebinding applies and the chord is bound exactly once.
           quickInput: toggleQuickInput,
-          // Talk, from wherever the user is. `registerAll` skips a command
-          // with no handler — and macOS registers none: the voice key's
-          // double tap is the keyboard way into a call there.
-          ...(process.platform === "darwin"
-            ? {}
-            : {
-                toggleVoice: () => {
-                  if (current() !== null) {
-                    dispatchToMain({ kind: "toggleVoice" });
-                    return;
-                  }
-                  // No renderer to act in. Building one necessarily shows
-                  // it, which is still better than a press that lands
-                  // nowhere.
-                  void ensureMainWindow().then(() => {
-                    dispatchToMain({ kind: "toggleVoice" });
-                  });
-                },
-              }),
+          toggleVoice: () => {
+            if (current() !== null) {
+              dispatchToMain({ kind: "toggleVoice" });
+              return;
+            }
+            // No renderer to act in. Building one necessarily shows
+            // it, which is still better than a press that lands
+            // nowhere.
+            void ensureMainWindow().then(() => {
+              dispatchToMain({ kind: "toggleVoice" });
+            });
+          },
         },
         logger: log,
       });

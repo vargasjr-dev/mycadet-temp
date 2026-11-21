@@ -12,4 +12,5 @@ startApp({
   helperToastOverrideEnvVar: "CADET_LINUX_HELPER_PATH",
   helperToastName: "linux-helper",
   CmdOrCtrl: "Control",
+  platform: "linux-electron",
 });
