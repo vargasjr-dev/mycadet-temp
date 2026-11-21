@@ -139,7 +139,12 @@ export async function notifyAllLocalGatewaysOfPublicUrl(
   await Promise.all(
     loadAllAssistants()
       .filter(isLocalEntry)
-      .map((entry) => notifyGatewayOfPublicUrl(publicUrl, entry.assistantId)),
+      .map((entry) =>
+        notifyGatewayOfPublicUrl({
+          publicUrl,
+          assistantId: entry.assistantId,
+        }),
+      ),
   );
 }
 

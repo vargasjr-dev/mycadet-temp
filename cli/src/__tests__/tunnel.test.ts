@@ -329,14 +329,14 @@ describe("app server targeting", () => {
     // The provider hands its URL back; the notification is the tunnel
     // level's job, and the domain is app-global info — every locally
     // reachable assistant's gateway hears it, not just the edge's front.
-    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
-      "https://test.example.ngrok.dev",
-      "assistant-1",
-    );
-    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
-      "https://test.example.ngrok.dev",
-      "assistant-2",
-    );
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith({
+      publicUrl: "https://test.example.ngrok.dev",
+      assistantId: "assistant-1",
+    });
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith({
+      publicUrl: "https://test.example.ngrok.dev",
+      assistantId: "assistant-2",
+    });
   });
 
   test("an active cloud assistant still tunnels the edge", async () => {

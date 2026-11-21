@@ -68,11 +68,11 @@ export async function hatchAssistant(
   // of falling back to the internal bind port. Best-effort; the tunnel's
   // later publication supersedes it (its tag owns the reconcile).
   if (result.ok && result.ready && result.assistant) {
-    await notifyGatewayOfPublicUrl(
-      getGatewayUrl(result.assistant),
-      result.assistant.assistantId,
-      { managedBy: "hatch" },
-    );
+    await notifyGatewayOfPublicUrl({
+      publicUrl: getGatewayUrl(result.assistant),
+      assistantId: result.assistant.assistantId,
+      managedBy: "hatch",
+    });
   }
   return result;
 }
