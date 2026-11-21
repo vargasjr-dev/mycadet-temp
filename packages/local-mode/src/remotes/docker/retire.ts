@@ -3,6 +3,7 @@ import { stopProcess, isCadetProcess } from "../../process";
 import { DockerAssistant, isDockerEntry } from "../../lockfile-contract";
 import { dockerResourceNames } from "./common";
 import { sleepDocker } from "./sleep";
+import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset";
 
 /** Silently attempt to stop and remove a Docker container. */
 export async function removeContainer(containerName: string): Promise<void> {
@@ -47,14 +48,8 @@ export async function retireDocker(entry: DockerAssistant): Promise<void> {
   } catch {
     // network may not exist
   }
-  for (const vol of [
-    res.socketVolume,
-    res.assistantIpcVolume,
-    res.gatewayIpcVolume,
-    res.workspaceVolume,
-    res.cesSecurityVolume,
-    res.gatewaySecurityVolume,
-  ]) {
+  for (const claim of DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates) {
+    const vol = claim.dockerVolume(entry.assistantId);
     try {
       await exec("docker", ["volume", "rm", vol]);
     } catch {
