@@ -65,7 +65,7 @@ describe("cadet app status", () => {
     process.argv = ["bun", "cadet", "app", "status"];
     await app();
 
-    expect(logs.join("\n")).toContain("not running");
+    expect(logs.join("\n")).toContain("not recorded");
   });
 });
 
@@ -94,6 +94,6 @@ describe("cadet tunnel status", () => {
     process.argv = ["bun", "cadet", "tunnel", "status"];
     await tunnel();
 
-    expect(logs.join("\n")).toContain("not running");
+    expect(logs.join("\n")).toContain("not recorded");
   });
 });
