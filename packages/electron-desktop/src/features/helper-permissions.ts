@@ -7,14 +7,14 @@ import { z } from "zod";
 import {
   getMacHelperAppPath,
   getSharedHelperClient,
-} from "@mycadet/electron-desktop/native-helper-client";
+} from "../native-helper-client";
 
-export type MacHelperPermissionKind =
+export type HelperPermissionKind =
   | "speechRecognition"
   | "inputMonitoring"
   | "screen";
 
-export type MacHelperPermissionStatus =
+export type HelperPermissionStatus =
   | "unknown"
   | "restricted"
   | "denied"
@@ -31,39 +31,42 @@ const HELPER_PERMISSION_STATUS_SCHEMA = z.object({
   ]),
 });
 
-export const queryMacHelperPermission = async (
-  kind: MacHelperPermissionKind,
-): Promise<MacHelperPermissionStatus> => {
+const REQUEST_FLAGS: Record<HelperPermissionKind, string> = {
+  speechRecognition: "--request-speech-recognition",
+  inputMonitoring: "--request-input-monitoring",
+  screen: "--request-screen-recording",
+};
+
+/** The helper's own status over the shared client. */
+export const queryHelperPermission = async (
+  kind: HelperPermissionKind,
+): Promise<HelperPermissionStatus> => {
   const result = await getSharedHelperClient().call("permission.status", {
     kind,
   });
   return HELPER_PERMISSION_STATUS_SCHEMA.parse(result).status;
 };
 
-export const queryFreshMacHelperPermission = async (
-  kind: MacHelperPermissionKind,
-): Promise<MacHelperPermissionStatus> => {
-  const result = await queryBundledMacHelperPermission(kind);
+/**
+ * A freshly spawned helper instance re-reads its own TCC status — the answer
+ * to give right after the user flips a toggle in System Settings.
+ */
+export const queryFreshHelperPermission = async (
+  kind: HelperPermissionKind,
+): Promise<HelperPermissionStatus> => {
+  const result = await queryBundledHelperPermission(kind);
   return HELPER_PERMISSION_STATUS_SCHEMA.parse(result).status;
 };
 
-export const requestMacHelperSpeechRecognitionPermission =
-  async (): Promise<void> => {
-    await openMacHelperApp(["--request-speech-recognition"]);
-  };
+/** Launches the helper app so its prompt (or its grant) takes. */
+export const requestHelperPermission = async (
+  kind: HelperPermissionKind,
+): Promise<void> => {
+  await openHelperApp([REQUEST_FLAGS[kind]]);
+};
 
-export const requestMacHelperInputMonitoringPermission =
-  async (): Promise<void> => {
-    await openMacHelperApp(["--request-input-monitoring"]);
-  };
-
-export const requestMacHelperScreenRecordingPermission =
-  async (): Promise<void> => {
-    await openMacHelperApp(["--request-screen-recording"]);
-  };
-
-const queryBundledMacHelperPermission = async (
-  kind: MacHelperPermissionKind,
+const queryBundledHelperPermission = async (
+  kind: HelperPermissionKind,
 ): Promise<unknown> => {
   const tempDir = await mkdtemp(
     path.join(tmpdir(), "cadet-mac-helper-permission-"),
@@ -71,7 +74,7 @@ const queryBundledMacHelperPermission = async (
   const outputPath = path.join(tempDir, "status.json");
 
   try {
-    await openMacHelperApp([
+    await openHelperApp([
       "--permission-status",
       kind,
       "--status-output",
@@ -83,7 +86,7 @@ const queryBundledMacHelperPermission = async (
   }
 };
 
-const openMacHelperApp = async (helperArgs: string[]): Promise<void> => {
+const openHelperApp = async (helperArgs: string[]): Promise<void> => {
   await new Promise<void>((resolve, reject) => {
     const args = ["-n", getMacHelperAppPath(), "--args", ...helperArgs];
     const child = spawn("open", args, { stdio: "ignore" });

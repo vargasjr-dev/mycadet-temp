@@ -10,9 +10,9 @@
  */
 
 import {
-  queryFreshMacHelperPermission,
-  type MacHelperPermissionStatus,
-} from "./mac-helper-permissions";
+  queryFreshHelperPermission,
+  type HelperPermissionStatus,
+} from "@mycadet/electron-desktop/helper-permissions";
 import log from "@mycadet/electron-desktop/app-logger";
 import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
@@ -30,7 +30,7 @@ export const JSON_RPC_PERMISSION_DENIED = -32001;
  */
 const ASK_COOLDOWN_MS = 30_000;
 
-let lastStatus: MacHelperPermissionStatus | null = null;
+let lastStatus: HelperPermissionStatus | null = null;
 let answering = false;
 let lastAskedAtMs = Number.NEGATIVE_INFINITY;
 
@@ -46,8 +46,8 @@ export const isScreenRecordingRefusal = (err: unknown): boolean =>
  * computer-use helper, which takes every frame, is let go when a read finds
  * the grant newly given, so the next capture starts one that can see it.
  */
-export async function readScreenRecordingPermission(): Promise<MacHelperPermissionStatus> {
-  const status = await queryFreshMacHelperPermission("screen");
+export async function readScreenRecordingPermission(): Promise<HelperPermissionStatus> {
+  const status = await queryFreshHelperPermission("screen");
   if (status === "granted" && lastStatus !== null && lastStatus !== "granted") {
     shutdownSharedCuHelper();
   }

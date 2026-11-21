@@ -6,8 +6,8 @@ let helperStatus = "denied";
 let helperReads = 0;
 let helperShutdowns = 0;
 
-mock.module("./mac-helper-permissions", () => ({
-  queryFreshMacHelperPermission: async (kind: string) => {
+mock.module("@mycadet/electron-desktop/helper-permissions", () => ({
+  queryFreshHelperPermission: async (kind: string) => {
     expect(kind).toBe("screen");
     helperReads += 1;
     return helperStatus;

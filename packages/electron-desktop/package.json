@@ -19,6 +19,7 @@
     "./file-open-preload": "./src/file-open-preload.ts",
     "./floating-window": "./src/floating-window.ts",
     "./helper-hotkeys": "./src/features/helper-hotkeys.ts",
+    "./helper-permissions": "./src/features/helper-permissions.ts",
     "./ipc": "./src/ipc.ts",
     "./native-helper-client": "./src/native-helper-client.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",

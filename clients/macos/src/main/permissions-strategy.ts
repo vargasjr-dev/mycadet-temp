@@ -17,13 +17,11 @@ import { resolveEnvironmentName } from "@mycadet/shared";
 
 import { runAppleScript } from "./appleScriptExecutor";
 import {
-  queryFreshMacHelperPermission,
-  queryMacHelperPermission,
-  requestMacHelperInputMonitoringPermission,
-  requestMacHelperScreenRecordingPermission,
-  requestMacHelperSpeechRecognitionPermission,
-  type MacHelperPermissionKind,
-} from "./mac-helper-permissions";
+  queryFreshHelperPermission,
+  queryHelperPermission,
+  requestHelperPermission,
+  type HelperPermissionKind,
+} from "@mycadet/electron-desktop/helper-permissions";
 import log from "@mycadet/electron-desktop/app-logger";
 import {
   getNotifier,
@@ -55,9 +53,9 @@ const HELPER_PERMISSION_KINDS = new Set<SystemPermissionKind>([
   "inputMonitoring",
 ]);
 
-const isMacHelperPermissionKind = (
+const isHelperPermissionKind = (
   kind: SystemPermissionKind,
-): kind is MacHelperPermissionKind => HELPER_PERMISSION_KINDS.has(kind);
+): kind is HelperPermissionKind => HELPER_PERMISSION_KINDS.has(kind);
 
 const isAutomationDeniedError = (err: unknown): boolean => {
   const message = describeError(err).toLowerCase();
@@ -216,10 +214,10 @@ const readStatus = async (
     case "microphone":
       return systemPreferences.getMediaAccessStatus("microphone");
     case "speechRecognition":
-      return await queryFreshMacHelperPermission(kind);
+      return await queryFreshHelperPermission(kind);
     case "inputMonitoring":
-      return isMacHelperPermissionKind(kind)
-        ? await queryMacHelperPermission(kind)
+      return isHelperPermissionKind(kind)
+        ? await queryHelperPermission(kind)
         : "unknown";
     case "automation":
       return automationStatus.current;
@@ -347,14 +345,14 @@ export const permissionsShell: PermissionsShellInputs = {
           await systemPreferences.askForMediaAccess("microphone");
           break;
         case "screen":
-          await requestMacHelperScreenRecordingPermission();
+          await requestHelperPermission("screen");
           helperRequests.add(kind);
           break;
         case "speechRecognition":
-          await requestMacHelperSpeechRecognitionPermission();
+          await requestHelperPermission("speechRecognition");
           break;
         case "inputMonitoring":
-          await requestMacHelperInputMonitoringPermission();
+          await requestHelperPermission("inputMonitoring");
           helperRequests.add(kind);
           break;
         case "automation":

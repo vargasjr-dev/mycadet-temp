@@ -96,16 +96,12 @@ mock.module("./appleScriptExecutor", () => ({
   runAppleScript: async () => "",
 }));
 
-mock.module("./mac-helper-permissions", () => ({
-  queryFreshMacHelperPermission: async () => "granted",
-  queryMacHelperPermission: async () => helperInputMonitoringStatus,
-  requestMacHelperInputMonitoringPermission: async () => {
-    helperCalls.push("request inputMonitoring");
+mock.module("@mycadet/electron-desktop/helper-permissions", () => ({
+  queryFreshHelperPermission: async () => "granted",
+  queryHelperPermission: async () => helperInputMonitoringStatus,
+  requestHelperPermission: async (kind: string) => {
+    helperCalls.push(`request ${kind}`);
   },
-  requestMacHelperScreenRecordingPermission: async () => {
-    helperCalls.push("request screen");
-  },
-  requestMacHelperSpeechRecognitionPermission: async () => undefined,
 }));
 
 // The text-insertion flow's helper seams; the strategy's insertText never
