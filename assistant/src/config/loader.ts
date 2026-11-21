@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { writeFileAtomic } from "@mycadet/shared";
 import { z } from "zod";
 
 import { safeStatSync } from "../util/fs.js";
@@ -220,16 +221,6 @@ function fillContextDefaultsForMissingKeys(
       target[key] = value;
     }
   }
-}
-
-/**
- * Write config JSON via a temp file and rename, so a concurrent reader or a
- * crash mid-write never sees a truncated config.json.
- */
-function writeConfigFile(configPath: string, config: unknown): void {
-  const tmpPath = `${configPath}.tmp`;
-  writeFileSync(tmpPath, JSON.stringify(config, null, 2) + "\n");
-  renameSync(tmpPath, configPath);
 }
 
 /**
@@ -859,7 +850,7 @@ function warnAndStripDeprecatedFields(
         for (const dotPath of found) {
           deleteNestedKeyByDotPath(raw, dotPath);
         }
-        writeConfigFile(configPath, raw);
+        writeFileAtomic(configPath, JSON.stringify(raw, null, 2) + "\n");
       }
     }
   } catch {
@@ -1133,7 +1124,10 @@ export function getConfig(): AssistantConfig {
         }
         // Strip dataDir (runtime-derived) from the persisted config
         const { dataDir: _, ...persistable } = seed;
-        writeConfigFile(configPath, persistable);
+        writeFileAtomic(
+          configPath,
+          JSON.stringify(persistable, null, 2) + "\n",
+        );
         log.info("Wrote default config to %s", configPath);
       } catch (err) {
         log.warn({ err }, "Failed to write default config file");
@@ -1290,7 +1284,7 @@ export function saveRawConfig(config: Record<string, unknown>): void {
   // Strip legacy apiKeys — provider keys belong in secure storage, not plaintext config
   delete config.apiKeys;
 
-  writeConfigFile(configPath, config);
+  writeFileAtomic(configPath, JSON.stringify(config, null, 2) + "\n");
 
   cached = null; // invalidate cache
   cachedFileSignature = null;

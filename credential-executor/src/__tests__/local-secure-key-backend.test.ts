@@ -228,6 +228,15 @@ describe("createLocalSecureKeyBackend — filesystem", () => {
     await expect(backend.list()).rejects.toThrow(StoreUnavailableError);
   });
 
+  test("set() fails and leaves the file untouched when the store file exists but is unreadable", async () => {
+    const { securityDir, cadetRoot } = setup();
+    const storePath = join(securityDir, "keys.enc");
+    writeFileSync(storePath, "{ corrupt", { mode: 0o600 });
+    const backend = createLocalSecureKeyBackend(cadetRoot);
+    expect(await backend.set("k", "v")).toBe(false);
+    expect(readFileSync(storePath, "utf-8")).toBe("{ corrupt");
+  });
+
   // -------------------------------------------------------------------------
   // Store-write durability: the store is written to a temp file with
   // `flush: true` so the ack the assistant receives follows an fsync.
