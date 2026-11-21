@@ -7,14 +7,14 @@
 
 import { z } from "zod";
 
+import { getLogger } from "../../util/logger.js";
+import { truncate } from "../../util/truncate.js";
+import { safeStringSlice } from "../../util/unicode.js";
 import {
   numberParam,
   recordParam,
   stringParam,
 } from "../../util/wire-params.js";
-import { getLogger } from "../../util/logger.js";
-import { truncate } from "../../util/truncate.js";
-import { safeStringSlice } from "../../util/unicode.js";
 import type {
   ExtractedCredential,
   NetworkRecordedEntry,

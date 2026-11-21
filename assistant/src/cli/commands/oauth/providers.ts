@@ -1,5 +1,4 @@
 import { type Command } from "commander";
-
 import { z } from "zod";
 
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
@@ -87,13 +86,14 @@ function formatAvailableScopes(
   if (Array.isArray(availableScopes)) {
     return (
       "\n" +
-      availableScopes.filter(
-        (s): s is { scope: string; description?: string } =>
-          typeof s === "object" &&
-          s != null &&
-          "scope" in s &&
-          typeof s.scope === "string",
-      )
+      availableScopes
+        .filter(
+          (s): s is { scope: string; description?: string } =>
+            typeof s === "object" &&
+            s != null &&
+            "scope" in s &&
+            typeof s.scope === "string",
+        )
         .map(
           (s) =>
             `${indent}- ${s.scope}${s.description ? ` — ${s.description}` : ""}`,

@@ -16,11 +16,9 @@ import { z } from "zod";
 import { localeFromAcceptLanguage } from "../../i18n/index.js";
 import { channelBindingSchema } from "../../messaging/channel-binding-schema.js";
 import {
-  type Confidence,
   getAttentionStateByConversationIds,
   markConversationUnread,
   recordConversationSeenSignal,
-  type SignalType,
 } from "../../persistence/conversation-attention-store.js";
 import { isConversationProcessing } from "../../persistence/conversation-crud.js";
 import {
@@ -41,6 +39,11 @@ import { getBindingsForConversations } from "../../persistence/external-conversa
 import { listGroups } from "../../persistence/group-crud.js";
 import { UserError } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
+import {
+  numberParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   buildConversationDetailResponse,
@@ -225,6 +228,22 @@ function resolveOrThrow(rawId: string): string {
  * filter" would hand back the full list where a subset was asked for, and
  * that skew is invisible to the client (it masks version skew too).
  */
+const signalTypeSchema = z
+  .enum([
+    "macos_notification_view",
+    "macos_conversation_opened",
+    "ios_conversation_opened",
+    "web_bulk_mark_read",
+    "telegram_inbound_message",
+    "telegram_callback",
+    "slack_inbound_message",
+    "slack_callback",
+  ] as const)
+  .catch("macos_conversation_opened");
+const confidenceSchema = z
+  .enum(["explicit", "inferred"] as const)
+  .catch("explicit");
+
 function parseEnumQueryParam<const T extends readonly string[]>(
   queryParams: Record<string, string | undefined>,
   name: string,
@@ -234,8 +253,8 @@ function parseEnumQueryParam<const T extends readonly string[]>(
   if (raw === undefined || raw === "") {
     return undefined;
   }
-  if ((accepted as readonly string[]).includes(raw)) {
-    return raw as T[number];
+  if (accepted.includes(raw)) {
+    return raw;
   }
   throw new BadRequestError(
     `Unknown ${name} "${raw}"; expected ${accepted.map((v) => `"${v}"`).join(" or ")}.`,
@@ -435,7 +454,7 @@ function handleGetConversationSections() {
 }
 
 function handleRecordSeen({ body = {}, headers }: RouteHandlerArgs) {
-  const rawConversationId = body.conversationId as string | undefined;
+  const rawConversationId = stringParam(body.conversationId);
   if (!rawConversationId) {
     throw new BadRequestError("Missing conversationId");
   }
@@ -454,14 +473,17 @@ function handleRecordSeen({ body = {}, headers }: RouteHandlerArgs) {
 
     recordConversationSeenSignal({
       conversationId,
-      sourceChannel: (body.sourceChannel as string) ?? "cadet",
-      signalType: ((body.signalType as string) ??
-        "macos_conversation_opened") as SignalType,
-      confidence: ((body.confidence as string) ?? "explicit") as Confidence,
-      source: (body.source as string) ?? "http-api",
-      evidenceText: body.evidenceText as string | undefined,
-      metadata: body.metadata as Record<string, unknown> | undefined,
-      observedAt: body.observedAt as number | undefined,
+      sourceChannel: stringParam(body.sourceChannel) ?? "cadet",
+      signalType: signalTypeSchema.parse(
+        stringParam(body.signalType) ?? "macos_conversation_opened",
+      ),
+      confidence: confidenceSchema.parse(
+        stringParam(body.confidence) ?? "explicit",
+      ),
+      source: stringParam(body.source) ?? "http-api",
+      evidenceText: stringParam(body.evidenceText),
+      metadata: recordParam(body.metadata),
+      observedAt: numberParam(body.observedAt),
     });
 
     if (wasUnseen) {
@@ -480,7 +502,11 @@ function handleRecordSeen({ body = {}, headers }: RouteHandlerArgs) {
 }
 
 function handleRecordSeenBulk({ body = {}, headers }: RouteHandlerArgs) {
-  const rawIds = body.conversationIds as string[] | undefined;
+  const rawIds = z
+    .array(z.string())
+    .optional()
+    .catch(undefined)
+    .parse(body.conversationIds);
   if (!Array.isArray(rawIds) || rawIds.length === 0) {
     throw new BadRequestError("conversationIds must be a non-empty array");
   }
@@ -529,7 +555,7 @@ function handleRecordSeenBulk({ body = {}, headers }: RouteHandlerArgs) {
 }
 
 function handleMarkUnread({ body = {}, headers }: RouteHandlerArgs) {
-  const rawConversationId = body.conversationId as string | undefined;
+  const rawConversationId = stringParam(body.conversationId);
   if (!rawConversationId) {
     throw new BadRequestError("Missing conversationId");
   }

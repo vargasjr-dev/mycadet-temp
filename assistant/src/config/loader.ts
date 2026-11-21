@@ -206,7 +206,11 @@ function fillContextDefaultsForMissingKeys(
       const fileChild = readPlainObject(fileVal);
       const valueObj = readPlainObject(value);
       if (targetChild && valueObj) {
-        fillContextDefaultsForMissingKeys(targetChild, fileChild ?? {}, valueObj);
+        fillContextDefaultsForMissingKeys(
+          targetChild,
+          fileChild ?? {},
+          valueObj,
+        );
       } else {
         target[key] = structuredClone(value);
       }
@@ -701,19 +705,22 @@ function deleteNestedKey(
   const chain: Array<{ container: Record<string, unknown>; key: string }> = [];
   let current: unknown = obj;
   for (let i = 0; i < path.length - 1; i++) {
-    const container = readPlainObject(current);
-    if (!container) {
+    // Mutator seam: issue paths traverse arrays too (numeric segments index
+    // them), so the container view is the one documented aliasing cast.
+    if (current == null || typeof current !== "object") {
       return;
     }
     const key = String(path[i]);
-    chain.push({ container, key });
-    current = container[key];
+    chain.push({
+      container: current as Record<string, unknown>,
+      key,
+    });
+    current = (current as Record<string, unknown>)[key];
   }
-  const leaf = readPlainObject(current);
-  if (!leaf) {
+  if (current == null || typeof current !== "object") {
     return;
   }
-  delete leaf[String(path[path.length - 1])];
+  delete (current as Record<string, unknown>)[String(path[path.length - 1])];
 
   if (!pruneEmptyAncestors) {
     return;
@@ -800,7 +807,9 @@ function warnAndStripDeprecatedFields(
   // Persist the cleaned config to disk so the warning doesn't repeat
   try {
     if (existsSync(configPath)) {
-      const raw = readPlainObject(JSON.parse(readFileSync(configPath, "utf-8")));
+      const raw = readPlainObject(
+        JSON.parse(readFileSync(configPath, "utf-8")),
+      );
       if (raw) {
         for (const dotPath of found) {
           deleteNestedKeyByDotPath(raw, dotPath);
@@ -1259,11 +1268,13 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    const container = readPlainObject(current);
-    if (!container) {
+    // Read seam: dot paths may index arrays (numeric segments), so the
+    // container view is the documented aliasing cast, not a plain-object
+    // probe.
+    if (current == null || typeof current !== "object") {
       return undefined;
     }
-    current = container[key];
+    current = (current as Record<string, unknown>)[key];
   }
   return current;
 }

@@ -1,7 +1,4 @@
 import { Cron } from "croner";
-
-import { z } from "zod";
-import { recordParam } from "../util/wire-params.js";
 import {
   and,
   asc,
@@ -15,6 +12,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import { getConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
@@ -27,6 +25,7 @@ import { UserError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
 import { safeStringSlice } from "../util/unicode.js";
+import { recordParam } from "../util/wire-params.js";
 import {
   hasOwnerDeferProvenance,
   isDeferSchedule,
@@ -68,9 +67,7 @@ export type ScheduleStatus = "active" | "firing" | "fired" | "cancelled";
  * the same fail-soft defaults the readers always applied — a corrupt row
  * degrades instead of casting an unverified string into the union.
  */
-const scheduleSyntaxSchema = z
-  .enum(["cron", "rrule"])
-  .catch("cron");
+const scheduleSyntaxSchema = z.enum(["cron", "rrule"]).catch("cron");
 const scheduleModeSchema = z
   .enum(["notify", "execute", "script", "wake", "workflow"] as const)
   .catch("execute");
@@ -627,7 +624,8 @@ export async function updateSchedule(
   }
 
   // Resolve the effective syntax and expression after this update
-  const newSyntax = updates.syntax ?? scheduleSyntaxSchema.parse(existing.scheduleSyntax);
+  const newSyntax =
+    updates.syntax ?? scheduleSyntaxSchema.parse(existing.scheduleSyntax);
   const newExpr =
     updates.expression ?? updates.cronExpression ?? existing.cronExpression;
   const newTimezone =

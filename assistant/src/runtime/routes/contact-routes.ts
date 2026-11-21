@@ -25,12 +25,6 @@ import {
 import { z } from "zod";
 
 import {
-  nullableStringParam,
-  numberParam,
-  recordParam,
-  stringParam,
-} from "../../util/wire-params.js";
-import {
   createInvite,
   listInvites,
   redeemInviteByToken,
@@ -49,6 +43,11 @@ import { ipcCallPersistent } from "../../ipc/gateway-client.js";
 import { rethrowGatewayIpcFailure } from "../../ipc/gateway-ipc-errors.js";
 import { resolveGuardianName } from "../../prompts/user-reference.js";
 import { getLogger } from "../../util/logger.js";
+import {
+  nullableStringParam,
+  numberParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import { ACTOR_PRINCIPALS, GATEWAY_PRINCIPALS } from "../auth/route-policy.js";
 import {
   composeInvitePresentation,
@@ -121,8 +120,7 @@ const mergedContactProbe = z
     displayName: z.string(),
     role: z.string().optional(),
     contactType: z.string().nullable().optional(),
-    channels: z
-      .array(z.object({ address: z.string() }).passthrough()),
+    channels: z.array(z.object({ address: z.string() }).passthrough()),
   })
   .passthrough();
 

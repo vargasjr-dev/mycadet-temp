@@ -4,12 +4,6 @@
  */
 
 import { readFileSync } from "node:fs";
-
-import {
-  booleanParam,
-  recordParam,
-  stringParam,
-} from "../../util/wire-params.js";
 import { basename, join } from "node:path";
 
 import { normalizePublicBaseUrl } from "@mycadet/service-contracts/ingress";
@@ -80,6 +74,11 @@ import { ToolDefinition } from "../../tools/tool-types.js";
 import { pathExists } from "../../util/fs.js";
 import { getWorkspaceDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
+import {
+  booleanParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import { broadcastMessage } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, InternalError, NotFoundError } from "./errors.js";

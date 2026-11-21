@@ -1051,7 +1051,11 @@ export function ensureSkillEntry(
   raw: Record<string, unknown>,
   name: string,
 ): Record<string, unknown> {
-  const skills = Array.isArray(raw.skills) ? (raw.skills = {}) : isRecord(raw.skills) ? raw.skills : (raw.skills = {});
+  const skills = Array.isArray(raw.skills)
+    ? (raw.skills = {})
+    : isRecord(raw.skills)
+      ? raw.skills
+      : (raw.skills = {});
   const entries = Array.isArray(skills.entries)
     ? (skills.entries = {})
     : isRecord(skills.entries)

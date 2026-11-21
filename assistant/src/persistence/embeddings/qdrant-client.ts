@@ -3,8 +3,8 @@ import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
-import { z } from "zod";
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import { getQdrantHttpPortEnv, getQdrantUrlEnv } from "../../config/env.js";
 import { AssistantConfig } from "../../config/schema.js";
@@ -398,11 +398,7 @@ export class CadetQdrantClient {
       });
     } catch (err) {
       // 409 = collection was created by a concurrent caller — that's fine
-      if (
-        err instanceof Error &&
-        "status" in err &&
-        err.status === 409
-      ) {
+      if (err instanceof Error && "status" in err && err.status === 409) {
         if (await this.ensurePayloadIndexesSafe()) {
           this.collectionReady = true;
         }
@@ -458,7 +454,13 @@ export class CadetQdrantClient {
         sparse_vectors: z
           .record(
             z.string(),
-            z.object({ index: z.object({ on_disk: z.boolean().nullable().optional() }).optional() }).optional(),
+            z
+              .object({
+                index: z
+                  .object({ on_disk: z.boolean().nullable().optional() })
+                  .optional(),
+              })
+              .optional(),
           )
           .optional(),
       })
@@ -945,7 +947,12 @@ export class CadetQdrantClient {
    * (e.g. `assistant sessions clear`).
    */
   private isCollectionMissing(err: unknown): boolean {
-    if (err && typeof err === "object" && "status" in err && err.status === 404) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "status" in err &&
+      err.status === 404
+    ) {
       return true;
     }
     const msg = err instanceof Error ? err.message : String(err);
@@ -1025,7 +1032,13 @@ export class CadetQdrantClient {
       if (points.length === 0) {
         return null;
       }
-      return z.string().nullish().catch(null).parse(points[0].payload?.embedding_model) ?? null;
+      return (
+        z
+          .string()
+          .nullish()
+          .catch(null)
+          .parse(points[0].payload?.embedding_model) ?? null
+      );
     } catch {
       return null;
     }

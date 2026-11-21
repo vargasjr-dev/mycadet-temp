@@ -15,14 +15,9 @@ import {
 } from "node:fs";
 import { stat, unlink } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { z } from "zod";
-
 import { join } from "node:path";
-import {
-  recordParam,
-  stringParam,
-} from "../../util/wire-params.js";
 
+import { z } from "zod";
 
 import {
   type AppPin,
@@ -61,6 +56,7 @@ import { compareSemver } from "../../daemon/handlers/shared.js";
 import { computeContentId } from "../../util/content-id.js";
 import { getLogger } from "../../util/logger.js";
 import { getUserAppDataDir } from "../../util/os.js";
+import { recordParam, stringParam } from "../../util/wire-params.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   getOriginClientId,

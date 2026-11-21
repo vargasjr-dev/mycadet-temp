@@ -60,6 +60,7 @@ import {
   isRetryableSqliteError,
   withSqliteRetry,
 } from "../util/sqlite-retry.js";
+import { numberParam, recordParam } from "../util/wire-params.js";
 import {
   purgeAllWatchTimelines,
   purgeWatchTimelineForConversation,
@@ -156,10 +157,6 @@ import {
   toolInvocations,
 } from "./schema/index.js";
 import { timeSyncSection } from "./slow-sync-log.js";
-import {
-  numberParam,
-  recordParam,
-} from "../util/wire-params.js";
 import { deleteSubagentRecordsByParent } from "./subagent-store.js";
 
 const log = getLogger("conversation-store");
@@ -4595,7 +4592,8 @@ export function finalizeMessageContent(
       .from(messages)
       .where(eq(messages.id, messageId))
       .get();
-    const existing = (row?.metadata ? recordParam(JSON.parse(row.metadata)) : undefined) ?? {};
+    const existing =
+      (row?.metadata ? recordParam(JSON.parse(row.metadata)) : undefined) ?? {};
     tx.update(messages)
       .set({
         content: contentJson,

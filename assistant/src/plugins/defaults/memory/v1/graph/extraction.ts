@@ -9,16 +9,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { ContentBlock, ImageContent, Message } from "@mycadet/plugin-api";
+import type { ContentBlock, Message } from "@mycadet/plugin-api";
 import {
   getConfiguredProvider,
   getConversationDirPath,
   safeStringSlice,
 } from "@mycadet/plugin-api";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
-import { contentBlockArraySchema } from "../../../../../providers/content-block-schema.js";
 import { z } from "zod";
-import { recordParam } from "../../../../../util/wire-params.js";
 
 import { AssistantConfig } from "../../../../../config/schema.js";
 import { getDb } from "../../../../../persistence/db-connection.js";
@@ -26,7 +24,9 @@ import {
   conversations,
   messages,
 } from "../../../../../persistence/schema/index.js";
+import { contentBlockArraySchema } from "../../../../../providers/content-block-schema.js";
 import { BackendUnavailableError } from "../../../../../util/errors.js";
+import { recordParam } from "../../../../../util/wire-params.js";
 import {
   enqueueGraphNodeEmbed,
   enqueueGraphTriggerEmbed,
@@ -40,7 +40,6 @@ import {
 import type {
   DecayCurve,
   EmotionalCharge,
-  Fidelity,
   ImageRef,
   MemoryDiff,
   MemoryNode,
@@ -562,10 +561,6 @@ const rawUpdateNodeArraySchema = z.array(rawUpdateNodeSchema).catch([]);
 const rawNewEdgeArraySchema = z.array(rawNewEdgeSchema).catch([]);
 const reinforceNodeIdsSchema = z.array(z.string()).catch([]);
 
-type RawCreateNode = z.infer<typeof rawCreateNodeSchema>;
-type RawUpdateNode = z.infer<typeof rawUpdateNodeSchema>;
-type RawNewEdge = z.infer<typeof rawNewEdgeSchema>;
-
 const VALID_TYPES = new Set<string>([
   "episodic",
   "semantic",
@@ -742,7 +737,7 @@ export function applySupersessionDurability(
 }
 
 export function parseExtractionResponse(
-  input: Record<string, unknown>,
+  rawInput: unknown,
   conversationId: string,
   candidateNodeIds: Set<string>,
   /** Epoch ms — when the conversation happened (not extraction time). */
@@ -761,6 +756,7 @@ export function parseExtractionResponse(
     trigger: Omit<NewTrigger, "nodeId">;
   }>;
 } {
+  const input = recordParam(rawInput) ?? {};
   const now = conversationTimestamp;
   const createNodes = rawCreateNodeArraySchema.parse(input.create_nodes);
   const updateNodes = rawUpdateNodeArraySchema.parse(input.update_nodes);
@@ -828,9 +824,7 @@ export function parseExtractionResponse(
       reinforcementCount: 0,
       lastReinforced: now,
       sourceConversations: [conversationId],
-      sourceType: isSourceType(raw.source_type)
-        ? raw.source_type
-        : "inferred",
+      sourceType: isSourceType(raw.source_type) ? raw.source_type : "inferred",
       narrativeRole: null,
       partOfStory: null,
       imageRefs: null,
@@ -1476,10 +1470,7 @@ function resolveImageRefMimeType(
       .array(
         z.object({
           type: optStr,
-          source: z
-            .object({ media_type: optStr })
-            .optional()
-            .catch(undefined),
+          source: z.object({ media_type: optStr }).optional().catch(undefined),
         }),
       )
       .catch([]);

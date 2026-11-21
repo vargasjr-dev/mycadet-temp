@@ -24,11 +24,7 @@ import { z } from "zod";
 import { getIsCloud } from "../config/env-registry.js";
 import { parseScopeList } from "../oauth/scope-utils.js";
 import { getLogger } from "../util/logger.js";
-import {
-  numberParam,
-  recordParam,
-  stringParam,
-} from "../util/wire-params.js";
+import { numberParam, recordParam, stringParam } from "../util/wire-params.js";
 import { renderOAuthCompletionPage as renderLoopbackPage } from "./oauth-completion-page.js";
 
 const log = getLogger("oauth2");

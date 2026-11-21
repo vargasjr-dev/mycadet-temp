@@ -16,10 +16,6 @@ import { z } from "zod";
 
 import { onActivationToolCall } from "../activation/turn-hooks.js";
 import type { AgentEvent } from "../agent/loop.js";
-import {
-  contentBlockSchema,
-  toolResultContentSchema,
-} from "../providers/content-block-schema.js";
 import { resolveComputerUseToolName } from "../api/computer-use-tool.js";
 import type { AnsweredQuestion } from "../api/events/question-answered.js";
 import type {
@@ -73,6 +69,10 @@ import { indexMessageNow } from "../plugins/defaults/memory/indexer.js";
 import { backfillMemoryRecallLogMessageId } from "../plugins/defaults/memory/memory-recall-log-store.js";
 import { backfillMemoryV2ActivationMessageId } from "../plugins/defaults/memory/v2/activation-log-store.js";
 import { backfillMemoryV3SelectionMessageId } from "../plugins/defaults/memory/v3/shadow-plugin.js";
+import {
+  contentBlockSchema,
+  toolResultContentSchema,
+} from "../providers/content-block-schema.js";
 import { resolveMediaSourceData } from "../providers/media-resolve.js";
 import type {
   ContentBlock,

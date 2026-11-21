@@ -123,7 +123,9 @@ async function handleEmailRegister({ body = {} }: RouteHandlerArgs) {
   );
 
   if (!response.ok) {
-    const respBody = errorBodyProbe.parse(await response.json().catch(() => ({})));
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail =
       respBody.detail ??
       (Array.isArray(respBody.username) ? respBody.username[0] : undefined) ??
@@ -248,7 +250,9 @@ async function handleEmailList({ queryParams = {} }: RouteHandlerArgs) {
   const response = await client.fetch(path);
 
   if (!response.ok) {
-    const respBody = errorBodyProbe.parse(await response.json().catch(() => ({})));
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "LIST_FAILED", response.status);
   }
@@ -269,7 +273,9 @@ async function handleEmailDownload({ queryParams = {} }: RouteHandlerArgs) {
     if (response.status === 404) {
       throw new NotFoundError(`Email message not found: ${messageId}`);
     }
-    const respBody = errorBodyProbe.parse(await response.json().catch(() => ({})));
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "DOWNLOAD_FAILED", response.status);
   }
@@ -343,7 +349,9 @@ async function handleEmailSend({ body = {} }: RouteHandlerArgs) {
         402,
       );
     }
-    const respBody = errorBodyProbe.parse(await response.json().catch(() => ({})));
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new BadRequestError(String(detail));
   }
@@ -352,15 +360,6 @@ async function handleEmailSend({ body = {} }: RouteHandlerArgs) {
 }
 
 // ── Attachment handlers ───────────────────────────────────────────────
-
-interface AttachmentMeta {
-  id: string;
-  filename: string;
-  content_type: string;
-  size_bytes: number;
-  content_id: string;
-  created_at: string;
-}
 
 async function handleEmailAttachmentList({
   queryParams = {},
@@ -376,7 +375,9 @@ async function handleEmailAttachmentList({
     if (response.status === 404) {
       throw new NotFoundError(`Email message not found: ${messageId}`);
     }
-    const respBody = errorBodyProbe.parse(await response.json().catch(() => ({})));
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "LIST_FAILED", response.status);
   }
@@ -399,7 +400,9 @@ async function handleEmailAttachmentGet({
     if (response.status === 404) {
       throw new NotFoundError(`Attachment not found: ${attachmentId}`);
     }
-    const respBody = errorBodyProbe.parse(await response.json().catch(() => ({})));
+    const respBody = errorBodyProbe.parse(
+      await response.json().catch(() => ({})),
+    );
     const detail = respBody.detail ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "DOWNLOAD_FAILED", response.status);
   }

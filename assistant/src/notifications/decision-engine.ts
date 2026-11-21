@@ -11,8 +11,6 @@
 
 import { v4 as uuid } from "uuid";
 
-import { recordParam } from "../util/wire-params.js";
-
 import { getDeliverableChannels } from "../channels/config.js";
 import { findContactInfoById } from "../contacts/contact-store.js";
 import {
@@ -29,6 +27,7 @@ import {
 import type { Provider } from "../providers/types.js";
 import { getLogger } from "../util/logger.js";
 import { truncate } from "../util/truncate.js";
+import { recordParam } from "../util/wire-params.js";
 import {
   ensureAccessRequestInviteDirectiveInCopy,
   stripAccessRequestReplyMechanicsFromCopy,

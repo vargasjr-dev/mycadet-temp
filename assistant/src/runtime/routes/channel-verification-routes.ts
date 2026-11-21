@@ -20,10 +20,10 @@
  *   `ipcCallPersistent("mark_channel_revoked", …)` to `ContactStore.markChannelRevoked`.
  */
 
-import { ChannelId } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
 import { revokePendingSessions } from "../../channels/gateway-verification-sessions.js";
+import { parseChannelId } from "../../channels/types.js";
 import {
   createInboundChallenge,
   getVerificationStatus,
@@ -33,6 +33,11 @@ import {
   verifyTrustedContact,
 } from "../../daemon/handlers/config-channels.js";
 import { normalizePhoneNumber } from "../../util/phone.js";
+import {
+  booleanParam,
+  recordParam,
+  stringParam,
+} from "../../util/wire-params.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../assistant-scope.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
@@ -47,12 +52,6 @@ import {
   ConflictError,
   TooManyRequestsError,
 } from "./errors.js";
-import {
-  booleanParam,
-  recordParam,
-  stringParam,
-} from "../../util/wire-params.js";
-import { parseChannelId } from "../../channels/types.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -97,18 +96,13 @@ export async function handleCreateVerificationSession({
     );
     if (!result.success) {
       if (result.error === "rate_limited") {
-        throw new TooManyRequestsError(
-          result.message ?? "Rate limited",
-        );
+        throw new TooManyRequestsError(result.message ?? "Rate limited");
       }
       if (result.error === "already_verified") {
-        throw new ConflictError(
-          result.message ?? "Already verified",
-        );
+        throw new ConflictError(result.message ?? "Already verified");
       }
       throw new BadRequestError(
-        result.message ??
-          "Trusted contact verification failed",
+        result.message ?? "Trusted contact verification failed",
       );
     }
     return result;
@@ -149,13 +143,10 @@ export async function handleCreateVerificationSession({
 
     if (!result.success) {
       if (result.error === "rate_limited") {
-        throw new TooManyRequestsError(
-          result.message ?? "Rate limited",
-        );
+        throw new TooManyRequestsError(result.message ?? "Rate limited");
       }
       throw new BadRequestError(
-        result.message ??
-          "Outbound verification failed",
+        result.message ?? "Outbound verification failed",
       );
     }
 
@@ -166,8 +157,7 @@ export async function handleCreateVerificationSession({
   const result = await createInboundChallenge(channel, rebind, conversationId);
   if (!result.success) {
     throw new BadRequestError(
-      result.message ??
-        "Inbound challenge creation failed",
+      result.message ?? "Inbound challenge creation failed",
     );
   }
   return result;
@@ -180,9 +170,9 @@ async function handleGetVerificationStatus({
   queryParams = {},
   body = {},
 }: RouteHandlerArgs): Promise<VerificationStatusResponse> {
-  const channel = parseChannelId(
-    queryParams.channel ?? recordParam(body)?.channel,
-  ) ?? undefined;
+  const channel =
+    parseChannelId(queryParams.channel ?? recordParam(body)?.channel) ??
+    undefined;
   return await getVerificationStatus(channel);
 }
 
@@ -206,13 +196,9 @@ export async function handleResendVerificationSession({
 
   if (!result.success) {
     if (result.error === "rate_limited") {
-      throw new TooManyRequestsError(
-        result.message ?? "Rate limited",
-      );
+      throw new TooManyRequestsError(result.message ?? "Rate limited");
     }
-    throw new BadRequestError(
-      result.message ?? "Resend failed",
-    );
+    throw new BadRequestError(result.message ?? "Resend failed");
   }
 
   return result;
@@ -249,9 +235,7 @@ async function handleRevokeVerificationBinding({
 
   const result = await revokeVerificationForChannel(channel);
   if (!result.success) {
-    throw new BadRequestError(
-      result.message ?? "Revocation failed",
-    );
+    throw new BadRequestError(result.message ?? "Revocation failed");
   }
   return result;
 }
