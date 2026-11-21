@@ -25,20 +25,13 @@ import {
 
 import { resolveDataDir, resolveLogDir } from "../../config";
 import { GATEWAY_PORT, type LocalAssistant } from "../../lockfile-contract";
-import {
-  httpHealthCheck,
-  waitForDaemonMigrationsReady,
-  waitForDaemonReady,
-  type DaemonReadiness,
-} from "../../daemon-readiness";
+import { waitForDaemonReady } from "../../daemon-readiness";
 import { getDefaultPorts, findAvailablePort } from "../../ports";
 import {
   executableName,
   isProcessAlive,
   pathListDelimiter,
-  resolveProcessState,
   stopProcessByPidFile,
-  type ProcessState,
 } from "../../process";
 import { isValidReleaseVersion } from "../../upgrade";
 import { stripVersionPrefix } from "../../version";
@@ -635,36 +628,6 @@ function startupLog(message = ""): void {
   if (startupLogging) console.log(message);
 }
 
-function logDaemonReadiness(
-  readiness: DaemonReadiness,
-  requireReady = false,
-): void {
-  switch (readiness) {
-    case "ready":
-      startupLog("   Assistant ready\n");
-      break;
-    case "migrating":
-      console.log(
-        "   Assistant is up. Database migrations still running; DB-backed commands return 503 until they finish\n",
-      );
-      break;
-    case "failed":
-      console.log(
-        "   ⚠️  Assistant database migrations FAILED. DB-backed commands return 503 until the assistant is restarted\n",
-      );
-      break;
-    default:
-      if (requireReady) {
-        throw new Error(
-          "Assistant did not bind its local port within 60 seconds.",
-        );
-      }
-      console.log(
-        "   ⚠️  Assistant did not report ready yet — continuing anyway (wake asks again at the gateway level)\n",
-      );
-  }
-}
-
 /**
  * Handle to a daemon this process spawned, reporting whether that child has
  * since exited. Attach paths have no handle, since the daemon they found is
@@ -680,94 +643,16 @@ function trackDaemonSpawn(child: ChildProcess): DaemonSpawn {
   return { hasExited: () => exited };
 }
 
-/** How long a fresh spawn gets to abort before its readiness is trusted. */
-const FRESH_SPAWN_SETTLE_MS = 2000;
-const FRESH_SPAWN_POLL_MS = 100;
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * True when a freshly spawned daemon is the process serving its runtime HTTP
- * port.
- *
- * A readiness answer proves only that something listens on the port: a foreign
- * listener holding it answers in the daemon's place, so a daemon aborting over
- * the collision still reads as "up" or "migrating". Ownership is confirmed
- * from the listening PID where the cloud can report it. Otherwise the spawn
- * gets a short settle window, which is long enough because transports bind
- * before migrations run, so an address collision aborts the daemon early.
- */
-async function freshSpawnServesRuntimePort(
-  spawn: DaemonSpawn,
-  pidFile: string,
-  daemonPort: number,
-): Promise<boolean> {
-  const spawnPid = (): number | null => {
-    if (spawn.hasExited()) {
-      return null;
-    }
-    return isProcessAlive(pidFile).pid;
-  };
-
-  const pid = spawnPid();
-  if (pid === null) {
-    return false;
-  }
-  if (findPidListeningOnPort(daemonPort) === pid) {
-    return true;
-  }
-
-  const deadline = Date.now() + FRESH_SPAWN_SETTLE_MS;
-  while (Date.now() < deadline) {
-    await sleep(FRESH_SPAWN_POLL_MS);
-    if (spawnPid() === null) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
- * Report a freshly spawned daemon's readiness, gated on that daemon serving
- * the runtime HTTP port the readiness was probed on.
- *
- * A daemon that aborts during startup (an occupied runtime HTTP port, a fatal
- * subsystem failure) is reported as the startup failure it is instead of an
- * optimistic line about an assistant that is not running.
- */
-export async function reportFreshSpawnReadiness(
-  spawn: DaemonSpawn,
-  pidFile: string,
-  daemonPort: number,
-  readiness: DaemonReadiness,
-  requireReady = false,
-): Promise<void> {
-  if (!(await freshSpawnServesRuntimePort(spawn, pidFile, daemonPort))) {
-    if (requireReady) {
-      throw new Error("Assistant exited during startup and is not running.");
-    }
-    console.log("   ⚠️  Assistant exited during startup and is not running\n");
-    return;
-  }
-  logDaemonReadiness(readiness, requireReady);
-}
-
-function logAssistantAlreadyRunning(
-  pid: number,
-  status: ProcessState["status"],
-): void {
-  const suffix =
-    status === "migration_failed"
-      ? " but its database migrations failed — restart to recover"
-      : status === "unready"
-        ? " — database migrations still running"
-        : status === "stuck"
-          ? " but is not responding and could not be stopped"
-          : "";
-  console.log(`   Assistant already running (pid ${pid})${suffix}\n`);
-}
+/** How long a "starting" sentinel gets to resolve into a real PID before the
+ * spawner that wrote it is judged dead and this caller takes over the start.
+ * spawn() returns in milliseconds, so this is pure grace; the daemon's
+ * migrations are the gateway's readiness wait, never this layer's. */
+const STARTING_SENTINEL_SETTLE_MS = 15_000;
+const STARTING_SENTINEL_POLL_MS = 250;
 
 async function startDaemonFromSource(
   assistantIndex: string,
@@ -783,25 +668,22 @@ async function startDaemonFromSource(
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
-  if (await awaitStartingSentinel(pidFile, daemonPort)) {
+  // The operator layer never health-checks the daemon's HTTP port: the port
+  // is the daemon's own bind address (on its way to IPC-only), and the
+  // cadet's health is the gateway's to answer. Liveness here is the PID file.
+  if (await awaitStartingSentinel(pidFile)) {
     return null;
   }
 
-  const daemonState = await resolveProcessState(
-    pidFile,
-    daemonPort,
-    "Assistant",
-    60_000,
-    "readyz",
-  );
-  if (daemonState.status !== "needs_start") {
-    logAssistantAlreadyRunning(daemonState.pid, daemonState.status);
+  const existing = isProcessAlive(pidFile);
+  if (existing.alive && existing.pid !== null) {
+    console.log(`   Assistant already running (pid ${existing.pid})\n`);
     return null;
   }
-
-  if (await checkOrphanedDaemon(pidFile, daemonPort)) {
-    return null;
-  }
+  // Dead or stale PID — clean up so the fresh spawn owns the file.
+  try {
+    unlinkSync(pidFile);
+  } catch {}
 
   const env = applyAssistantEnvironment(entry);
 
@@ -854,25 +736,22 @@ async function startDaemonWatchFromSource(
   mkdirSync(dirname(pidFile), { recursive: true });
 
   // --- Lifecycle guard: prevent split-brain daemon state ---
-  if (await awaitStartingSentinel(pidFile, daemonPort)) {
+  // The operator layer never health-checks the daemon's HTTP port: the port
+  // is the daemon's own bind address (on its way to IPC-only), and the
+  // cadet's health is the gateway's to answer. Liveness here is the PID file.
+  if (await awaitStartingSentinel(pidFile)) {
     return null;
   }
 
-  const daemonState = await resolveProcessState(
-    pidFile,
-    daemonPort,
-    "Assistant",
-    60_000,
-    "readyz",
-  );
-  if (daemonState.status !== "needs_start") {
-    logAssistantAlreadyRunning(daemonState.pid, daemonState.status);
+  const existing = isProcessAlive(pidFile);
+  if (existing.alive && existing.pid !== null) {
+    console.log(`   Assistant already running (pid ${existing.pid})\n`);
     return null;
   }
-
-  if (await checkOrphanedDaemon(pidFile, daemonPort)) {
-    return null;
-  }
+  // Dead or stale PID — clean up so the fresh spawn owns the file.
+  try {
+    unlinkSync(pidFile);
+  } catch {}
 
   const env = applyAssistantEnvironment(entry);
 
@@ -1147,38 +1026,18 @@ export function findPidListeningOnPort(port: number): number | undefined {
 }
 
 /**
- * Recover PID tracking for a daemon that is already responsive on its HTTP
- * port but whose PID file is stale or missing. Looks up the listener PID
- * via `lsof` and writes it to `pidFile` so lifecycle commands (sleep, retire,
- * wake) can target the running process.
- *
- * Returns the recovered PID, or undefined if recovery failed.
- */
-function recoverPidFile(
-  pidFile: string,
-  daemonPort: number,
-): number | undefined {
-  const pid = findPidListeningOnPort(daemonPort);
-  if (pid) {
-    mkdirSync(dirname(pidFile), { recursive: true });
-    writeFileSync(pidFile, String(pid), "utf-8");
-  }
-  return pid;
-}
-
-/**
  * Handle the "starting" sentinel in a PID file. When another caller is
- * already spawning the daemon, wait for it to become ready instead of
- * racing to spawn a duplicate.
+ * already spawning the daemon, wait for its spawn to settle instead of
+ * racing to a duplicate. The CLI never probes the daemon's HTTP port, so
+ * there is no readiness to wait out here — only the handoff: the sentinel
+ * resolving into a real PID means the concurrent spawner won; a sentinel
+ * that never resolves was written by a dead spawner, and this caller
+ * cleans it up and proceeds.
  *
- * Returns `true` if the daemon became ready (caller should return early),
- * `false` if the spawn failed or the sentinel wasn't present (caller
- * should proceed). Cleans up the PID file on failure.
+ * Returns `true` if a concurrent spawner owns the start (caller should
+ * return early), `false` if this caller should proceed.
  */
-async function awaitStartingSentinel(
-  pidFile: string,
-  daemonPort: number,
-): Promise<boolean> {
+export async function awaitStartingSentinel(pidFile: string): Promise<boolean> {
   if (!existsSync(pidFile)) return false;
   try {
     const content = readFileSync(pidFile, "utf-8").trim();
@@ -1187,46 +1046,21 @@ async function awaitStartingSentinel(
     return false;
   }
 
-  console.log("   Assistant is starting — waiting for it to become ready...");
-  const readiness = await waitForDaemonMigrationsReady(
-    daemonPort,
-    Date.now() + 60000,
-  );
-  if (readiness !== "unreachable") {
-    // The daemon exists and is answering — migrating and failed states must
-    // NOT fall through to a second spawn (split-brain). Report honestly.
-    logDaemonReadiness(readiness);
-    return true;
+  console.log("   Assistant is starting — waiting for the spawn to settle...");
+  const deadline = Date.now() + STARTING_SENTINEL_SETTLE_MS;
+  while (Date.now() < deadline) {
+    await sleep(STARTING_SENTINEL_POLL_MS);
+    if (!existsSync(pidFile)) return false;
+    try {
+      if (readFileSync(pidFile, "utf-8").trim() !== "starting") return true;
+    } catch {
+      return false;
+    }
   }
   try {
     unlinkSync(pidFile);
   } catch {}
   return false;
-}
-
-/**
- * Check if a daemon without a valid PID file is still reachable on its
- * HTTP port (orphaned process). If so, recover its PID file so lifecycle
- * commands can manage it.
- *
- * Returns `true` if an orphaned daemon was found (caller should skip
- * starting a new one), `false` otherwise.
- */
-async function checkOrphanedDaemon(
-  pidFile: string,
-  daemonPort: number,
-): Promise<boolean> {
-  if (!(await httpHealthCheck(daemonPort))) return false;
-
-  const recoveredPid = recoverPidFile(pidFile, daemonPort);
-  if (recoveredPid) {
-    console.log(
-      `   Assistant is responsive (pid ${recoveredPid}) — skipping restart\n`,
-    );
-  } else {
-    console.log("   Assistant is responsive — skipping restart\n");
-  }
-  return true;
 }
 
 export async function discoverPublicUrl(

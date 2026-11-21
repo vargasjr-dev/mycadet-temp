@@ -4,11 +4,10 @@ import type {
   LocalAssistant,
   LockfileAssistant,
 } from "../../lockfile-contract";
-import { isLocalEntry } from "../../lockfile-contract";
-import { isProcessAlive } from "../../process";
+import { isLocalEntry, GATEWAY_PORT } from "../../lockfile-contract";
+import { checkHealth } from "../../daemon-readiness";
 import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
-import { getDaemonPidPath } from "./instance";
 import { startCes, startGateway, startLocalDaemon } from "./common";
 
 import type { WakeResult } from "../../operations/wake";
@@ -74,21 +73,24 @@ async function wakeLocalSteps(
     }
   }
 
-  const pidFile = getDaemonPidPath(entry);
-
   await Promise.all([
     startCes(watch, entry),
     startLocalDaemon(watch, entry),
     startGateway(watch, entry),
   ]);
 
-  // A daemon that aborts during startup (an occupied runtime HTTP port, a
-  // fatal subsystem failure) leaves no process behind: whatever foreign
-  // listener holds the port answers the gateway's probes in its place.
-  // Liveness is the one thing wake itself must answer for.
-  if (!isProcessAlive(pidFile).alive) {
+  // Liveness is the one thing wake itself must answer for, and the only
+  // health check the operator layer owns is the cadet's own: through its
+  // gateway, which gates its traffic on the daemon's migrations. The daemon's
+  // HTTP port is its bind address, never a probe target.
+  const gatewayHealth = await checkHealth(entry);
+  if (
+    gatewayHealth.status === "unreachable" ||
+    gatewayHealth.status === "timeout"
+  ) {
+    const gatewayPort = entry.port ?? GATEWAY_PORT;
     throw new WakeRefused(
-      `the assistant exited during startup and is not running. Its runtime HTTP port ${daemonPort} may be held by another process (check \`lsof -i :${daemonPort}\`); the daemon log records the startup error it reported.`,
+      `the assistant's gateway did not come up. A healthy gateway is how the cadet answers — check \`lsof -i :${gatewayPort}\` and the daemon/gateway logs for the startup error they reported.`,
     );
   }
 

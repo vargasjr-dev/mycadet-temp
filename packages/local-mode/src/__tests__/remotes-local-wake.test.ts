@@ -29,6 +29,22 @@ mock.module("../process", () => ({
   isProcessAlive: isProcessAliveMock,
 }));
 
+// The wake's one health check is the cadet's own, through its gateway. The
+// result is a mutable let so tests flip what the gateway answers.
+let gatewayHealth: { status: string } = { status: "ok" };
+const realDaemonReadiness = { ...(await import("../daemon-readiness")) };
+const checkHealthMock = mock<typeof realDaemonReadiness.checkHealth>(
+  async () =>
+    gatewayHealth as unknown as Awaited<
+      ReturnType<typeof realDaemonReadiness.checkHealth>
+    >,
+);
+
+mock.module("../daemon-readiness", () => ({
+  ...realDaemonReadiness,
+  checkHealth: checkHealthMock,
+}));
+
 const findAvailablePortMock = mock<typeof realPorts.findAvailablePort>(
   async (port) => port,
 );
@@ -57,6 +73,7 @@ afterAll(() => {
   mock.module("../process", () => realProcess);
   mock.module("../ports", () => realPorts);
   mock.module("../remotes/local/common", () => realCommon);
+  mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
 import type { LocalAssistant } from "../lockfile-contract";
@@ -101,6 +118,7 @@ beforeEach(() => {
   startCesMock.mockResolvedValue(undefined);
   isProcessAliveMock.mockReset();
   isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
+  gatewayHealth = { status: "ok" };
 });
 
 afterEach(() => {
@@ -111,12 +129,14 @@ afterEach(() => {
 describe("wakeLocal — the in-process local wake leg", () => {
   test("starts CES, the daemon, and the gateway — every wake, in parallel", async () => {
     /**
-     * The wake asks no readiness questions and classifies no processes:
-     * the start helpers own their own stale-process cleanup, and the
-     * gateway owns readiness. Bring-up is one parallel step.
+     * The wake asks one health question — the cadet's own, through its
+     * gateway — and classifies no daemon processes: the start helpers own
+     * their own stale-process cleanup, and the gateway owns readiness.
+     * Bring-up is one parallel step.
      */
 
-    // GIVEN a previous wake already left everything running
+    // GIVEN a previous wake already left everything running, and the
+    // gateway answers
     // WHEN the leg runs
     const result = await wakeLocal(localEntry);
 
@@ -124,40 +144,45 @@ describe("wakeLocal — the in-process local wake leg", () => {
     expect(startCesMock).toHaveBeenCalledTimes(1);
     expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
     expect(startGatewayMock).toHaveBeenCalledTimes(1);
+    expect(checkHealthMock).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ ok: true });
   });
 
-  test("fails structured when the freshly spawned daemon is not running", async () => {
+  test("fails structured when the cadet never answers through its gateway", async () => {
     /**
-     * Tests that a daemon which aborts during startup (an occupied runtime
-     * HTTP port) fails the wake instead of reporting a successful one.
+     * Tests that a wake whose gateway never comes up fails the wake — the
+     * daemon's own port is never probed, so a dead daemon behind a healthy
+     * gateway is not this leg's verdict to make.
      */
 
-    // GIVEN the spawned daemon left no live process behind — whatever
-    // foreign listener holds the port would answer the gateway's probes
-    // in the dead daemon's place, so liveness is the signal
+    // GIVEN the spawned daemon left no live process behind and the gateway
+    // reports the cadet unreachable
     isProcessAliveMock.mockReturnValue({ alive: false, pid: null });
+    gatewayHealth = { status: "unreachable" };
 
     // WHEN the leg runs
     const result = await wakeLocal(localEntry);
 
-    // THEN the failure is structured, names the port, and never claims the
-    // wake completed
+    // THEN the failure is structured, points at the gateway (the heal may
+    // have moved the recorded port — the sandbox itself holds the defaults),
+    // and never claims the wake completed
     expect(result.ok).toBe(false);
     expect((result as { error: string }).error).toContain(
-      "exited during startup",
+      "gateway did not come up",
     );
-    expect((result as { error: string }).error).toContain("7821");
+    expect((result as { error: string }).error).toContain(
+      String(localEntry.port),
+    );
   });
 
   test("completes when the freshly spawned daemon is running", async () => {
     /**
      * Tests that a live fresh spawn reports a completed wake without the
      * wake itself tracking migrations — the gateway gates its own traffic
-     * on the daemon's readiness.
+     * on the daemon's readiness, and its answer is the only one wake needs.
      */
 
-    // GIVEN the spawned daemon is alive
+    // GIVEN the spawned daemon is alive and the gateway answers
     // WHEN the leg runs
     const result = await wakeLocal(localEntry);
 
