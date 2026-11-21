@@ -40,7 +40,6 @@ import { fixBackfillGoogleGmailSettingsScopeMigration } from "./042-fix-backfill
 import { releaseNotesLatexRenderingMigration } from "./043-release-notes-latex-rendering.js";
 import { bumpStaleProviderStreamTimeoutMigration } from "./044-bump-stale-provider-stream-timeout.js";
 import { releaseNotesMeetAvatarMigration } from "./045-release-notes-meet-avatar.js";
-import { seedConversationStartersCallsiteMigration } from "./046-seed-conversation-starters-callsite.js";
 import { removeWatchCallsitesMigration } from "./047-remove-watch-callsites.js";
 import { removeWorkspaceHooksMigration } from "./048-remove-workspace-hooks.js";
 import { releaseNotesDefaultSonnetMigration } from "./049-release-notes-default-sonnet.js";
@@ -204,7 +203,6 @@ export const WORKSPACE_MIGRATIONS: WorkspaceMigration[] = [
   releaseNotesLatexRenderingMigration,
   bumpStaleProviderStreamTimeoutMigration,
   releaseNotesMeetAvatarMigration,
-  seedConversationStartersCallsiteMigration,
   removeWatchCallsitesMigration,
   removeWorkspaceHooksMigration,
   releaseNotesDefaultSonnetMigration,
