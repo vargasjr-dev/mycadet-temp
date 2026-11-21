@@ -3,7 +3,7 @@ import { PricingCards } from "@/components/pricing-cards";
 import { loadPlansCatalog } from "@/lib/plans-catalog";
 
 export const metadata: Metadata = {
-  title: "Pricing — Cadet",
+  title: "Pricing | Cadet",
   description: "Plans for hosting your personal Cadet.",
 };
 

@@ -3,7 +3,7 @@ import { PluginsExplorer } from "@/components/plugins-explorer";
 import { loadCatalog } from "@/lib/plugins-catalog";
 
 export const metadata: Metadata = {
-  title: "Plugins — Cadet",
+  title: "Plugins | Cadet",
   description: "Give your Cadet superpowers — browse the plugin marketplace.",
 };
 
