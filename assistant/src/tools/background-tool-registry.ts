@@ -11,6 +11,9 @@
  * the future.
  */
 
+/** Conversation stop must not let cancelled tools wake the agent again. */
+export const CONVERSATION_ABORT_REASON = "conversation_user_abort";
+
 export interface BackgroundTool {
   id: string;
   /** Tool type identifier (e.g. "bash", "host_bash"). */

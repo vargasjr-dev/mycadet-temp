@@ -11,7 +11,10 @@ mock.module("../runtime/agent-wake.js", () => ({
   wakeAgentForOpportunity: mockWakeAgentForOpportunity,
 }));
 
-const mockRegisterBackgroundTool = mock(() => {});
+const registrations: BackgroundTool[] = [];
+const mockRegisterBackgroundTool = mock((tool: BackgroundTool) => {
+  registrations.push(tool);
+});
 const mockRemoveBackgroundTool = mock(() => {});
 let bgIdCounter = 0;
 const mockGenerateBackgroundToolId = mock(
@@ -27,6 +30,7 @@ mock.module("../tools/background-tool-registry.js", () => ({
   generateBackgroundToolId: mockGenerateBackgroundToolId,
   isBackgroundToolLimitReached: mockIsBackgroundToolLimitReached,
   MAX_BACKGROUND_TOOLS: 20,
+  CONVERSATION_ABORT_REASON: "conversation_user_abort",
 }));
 
 // Stub child_process.spawn so we don't actually run commands. The test
@@ -138,6 +142,7 @@ beforeEach(() => {
   mockIsBackgroundToolLimitReached.mockClear();
   mockIsBackgroundToolLimitReached.mockReturnValue(false);
   latestChild = undefined;
+  registrations.length = 0;
   mockProxyAvailable = false;
   mockProxyRequestImpl = () => Promise.resolve({ content: "", isError: false });
 });
@@ -152,6 +157,20 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("host_bash background mode — proxy path", () => {
+  test("conversation abort suppresses the proxy completion wake", async () => {
+    mockProxyAvailable = true;
+    const pending = Promise.withResolvers<ToolExecutionResult>();
+    mockProxyRequestImpl = () => pending.promise;
+    await hostShellTool.execute(
+      { command: "sleep 30", background: true },
+      makeContext(),
+    );
+    registrations[0]!.cancel("conversation_user_abort");
+    pending.resolve({ content: "Aborted", isError: true });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(mockWakeAgentForOpportunity).not.toHaveBeenCalled();
+  });
+
   for (const cronRunId of [undefined, null, "cron-run-123"]) {
     for (const outcome of [
       "completed",
@@ -365,6 +384,17 @@ describe("host_bash background mode — proxy path", () => {
 // ---------------------------------------------------------------------------
 
 describe("host_bash background mode — direct execution path", () => {
+  test("conversation abort suppresses the local completion wake", async () => {
+    await hostShellTool.execute(
+      { command: "sleep 30", background: true },
+      makeContext(),
+    );
+    registrations[0]!.cancel("conversation_user_abort");
+    latestChild!.emit("close", null, "SIGKILL");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(mockWakeAgentForOpportunity).not.toHaveBeenCalled();
+  });
+
   for (const cronRunId of [undefined, null, "cron-run-123"]) {
     for (const outcome of [
       "completed",

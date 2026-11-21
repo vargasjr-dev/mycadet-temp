@@ -29,15 +29,22 @@ setBroadcastOverrideForTesting((msg: unknown) => {
 });
 
 // Background completion wakes the agent; that side-effect is out of scope here.
+const wakes: unknown[] = [];
 const realWake = await import("../../runtime/agent-wake.js");
 mock.module("../../runtime/agent-wake.js", () => ({
   ...realWake,
-  wakeAgentForOpportunity: async () => ({}),
+  wakeAgentForOpportunity: async (options: unknown) => {
+    wakes.push(options);
+    return {};
+  },
 }));
 
 const { shellTool } = await import("./shell.js");
-const { cancelBackgroundTool, _clearRegistryForTesting } =
-  await import("../background-tool-registry.js");
+const {
+  cancelBackgroundTool,
+  _clearRegistryForTesting,
+  CONVERSATION_ABORT_REASON,
+} = await import("../background-tool-registry.js");
 
 function makeContext(): ToolContext {
   return {
@@ -76,6 +83,7 @@ function completedEvents(): CapturedEvent[] {
 describe("background bash lifecycle events", () => {
   beforeEach(() => {
     events.length = 0;
+    wakes.length = 0;
     _clearRegistryForTesting();
   });
 
@@ -142,6 +150,14 @@ describe("background bash lifecycle events", () => {
     expect(completed[0]?.exitCode).toBeNull();
     // A timeout is not a cancel: it must not carry the cancellation message.
     expect(completed[0]?.output).not.toContain("cancelled");
+  });
+
+  test("conversation abort records cancellation without waking the conversation", async () => {
+    const id = await startBackground("sleep 30");
+    cancelBackgroundTool(id, CONVERSATION_ABORT_REASON);
+    await waitFor(() => completedEvents().length > 0);
+    expect(completedEvents()[0]).toMatchObject({ id, status: "cancelled" });
+    expect(wakes).toEqual([]);
   });
 
   test("cancelled background command broadcasts completed with status cancelled", async () => {

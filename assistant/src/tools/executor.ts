@@ -24,6 +24,7 @@ import { TokenExpiredError } from "../security/token-manager.js";
 import { PermissionDeniedError, ToolError } from "../util/errors.js";
 import { pathExists, safeStatSync } from "../util/fs.js";
 import { truncateForLog } from "../util/logger.js";
+import { runInToolProcessContext } from "../util/tool-process-context.js";
 import {
   callerOwnsWorkflowRun,
   manifestGrantsSideEffects,
@@ -273,10 +274,15 @@ export class ToolExecutor {
       // plugin (a route handler calling `runConversationTurn`), and this tool
       // is host code that must not inherit that plugin's identity.
       const owner = getToolOwner(name);
-      const execPromise =
-        owner?.kind === "plugin"
-          ? runInPluginContext(owner.id, () => tool.execute(input, execContext))
-          : runOutsidePluginContext(() => tool.execute(input, execContext));
+      const execPromise = runInToolProcessContext(
+        { toolName: name, conversationId: context.conversationId },
+        () =>
+          owner?.kind === "plugin"
+            ? runInPluginContext(owner.id, () =>
+                tool.execute(input, execContext),
+              )
+            : runOutsidePluginContext(() => tool.execute(input, execContext)),
+      );
 
       let execResult: ToolExecutionResult = await executeWithTimeout(
         execPromise,

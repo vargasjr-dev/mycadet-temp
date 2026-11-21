@@ -6,9 +6,11 @@
  * mapping (native ProcTreeNode -> ProcessEntry) rather than the real table.
  */
 
+import { ChildProcess } from "node:child_process";
 import { describe, expect, mock, test } from "bun:test";
 
 import type { ProcInfo, ProcTreeNode } from "../../../util/process-tree.js";
+import { trackToolProcess } from "../../../util/tool-process-context.js";
 
 let procsToReturn: ProcInfo[] = [];
 let listShouldThrow = false;
@@ -65,6 +67,7 @@ function getHandler() {
       status: string;
       origin: string;
       info?: string;
+      pid?: number;
       children?: unknown[];
     }>;
   }>;
@@ -77,10 +80,18 @@ describe("ps route handler", () => {
     ];
     listShouldThrow = false;
 
-    const { processes } = await getHandler()();
+    const child = new ChildProcess();
+    Object.defineProperty(child, "pid", { value: 300 });
+    trackToolProcess(child, { toolName: "bash", conversationId: "conv-123" });
+    let processes;
+    try {
+      ({ processes } = await getHandler()());
+    } finally {
+      child.emit("close");
+    }
 
-    // The assistant's tree plus the always-reported credential executor.
-    expect(processes).toHaveLength(2);
+    // Only real OS processes appear.
+    expect(processes).toHaveLength(1);
     const root = processes[0];
     // The route must surface the daemon's node as "assistant", not the
     // entry-script name the tree builder derives ("daemon-main").
@@ -88,6 +99,12 @@ describe("ps route handler", () => {
     expect(root.status).toBe("running");
     expect(root.info).toBe(`pid ${process.pid}`);
     expect(root.children).toHaveLength(2);
+    expect(root.children?.[0]).toMatchObject({ pid: 200 });
+    expect(root.children?.[1]).toMatchObject({
+      tool: { toolName: "bash", conversationId: "conv-123" },
+      children: [{ tool: { toolName: "bash", conversationId: "conv-123" } }],
+    });
+    expect(JSON.stringify(processes)).not.toContain("credential-executor");
   });
 
   test("includes the memory worker as a descendant with its own children", async () => {
@@ -135,6 +152,7 @@ describe("ps route handler", () => {
     const walk = (n: {
       status: string;
       info?: string;
+      pid?: number;
       children?: unknown[];
     }): void => {
       expect(n.status).toBe("running");
@@ -146,20 +164,19 @@ describe("ps route handler", () => {
     walk(processes[0]);
   });
 
-  test("falls back to a lone assistant node plus the credential executor when enumeration fails", async () => {
+  test("falls back to a lone assistant node when enumeration fails", async () => {
     listShouldThrow = true;
 
     const { processes } = await getHandler()();
 
-    expect(processes).toHaveLength(2);
+    expect(processes).toHaveLength(1);
     expect(processes[0]).toEqual({
       name: "assistant",
       status: "running",
       origin: "workspace",
       info: `pid ${process.pid}`,
+      pid: process.pid,
     });
-    // The credential executor reports live RPC state, not tree membership.
-    expect(processes[1]!.name).toBe("credential-executor");
-    expect(processes[1]!.status).toBe("not_running");
+    expect(JSON.stringify(processes)).not.toContain("rpc session");
   });
 });

@@ -17,8 +17,10 @@ import {
 } from "../../util/host-process.js";
 import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
+import { trackToolProcess } from "../../util/tool-process-context.js";
 import type { CompletedBackgroundTool } from "../background-tool-registry.js";
 import {
+  CONVERSATION_ABORT_REASON,
   generateBackgroundToolId,
   isBackgroundToolLimitReached,
   MAX_BACKGROUND_TOOLS,
@@ -139,6 +141,7 @@ export const shellTool = {
     }
 
     const background = parsed.data.background === true;
+    let suppressBackgroundWake = false;
     if (background && context.diskPressureCleanupModeActive === true) {
       return {
         content:
@@ -331,6 +334,10 @@ export const shellTool = {
         stdio: ["ignore", "pipe", "pipe"],
         ...buildShellSpawnFlags(),
       });
+      trackToolProcess(child, {
+        toolName: "bash",
+        conversationId: context.conversationId,
+      });
       const launch = watchShellProcessStart(child);
       const collector = attachBoundedStdio(child);
 
@@ -410,21 +417,23 @@ export const shellTool = {
           status === "cancelled"
             ? `Background command cancelled (id=${bgId}):`
             : `Background command completed (id=${bgId}, exit=${code ?? "unknown"}):`;
-        void wakeAgentForOpportunity({
-          conversationId: context.conversationId,
-          cronRunId,
-          hint: framing,
-          source: "background-tool",
-          persistTriggerAsEvent: true,
-          backgroundToolCompletion: completion,
-          untrustedOutput: {
-            content: output,
-            source: "tool_result",
-            // Bounded output plus the truncation marker; a larger budget
-            // keeps wrapUntrustedContent from slicing the marker off.
-            maxChars: MAX_OUTPUT_LENGTH * 2,
-          },
-        });
+        if (!suppressBackgroundWake) {
+          void wakeAgentForOpportunity({
+            conversationId: context.conversationId,
+            cronRunId,
+            hint: framing,
+            source: "background-tool",
+            persistTriggerAsEvent: true,
+            backgroundToolCompletion: completion,
+            untrustedOutput: {
+              content: output,
+              source: "tool_result",
+              // Bounded output plus the truncation marker; a larger budget
+              // keeps wrapUntrustedContent from slicing the marker off.
+              maxChars: MAX_OUTPUT_LENGTH * 2,
+            },
+          });
+        }
         recordCompletedBackgroundTool(completion);
         broadcastMessage(
           {
@@ -474,14 +483,16 @@ export const shellTool = {
           output: framing,
           completedAt,
         };
-        void wakeAgentForOpportunity({
-          conversationId: context.conversationId,
-          cronRunId,
-          hint: framing,
-          source: "background-tool",
-          persistTriggerAsEvent: true,
-          backgroundToolCompletion: completion,
-        });
+        if (!suppressBackgroundWake) {
+          void wakeAgentForOpportunity({
+            conversationId: context.conversationId,
+            cronRunId,
+            hint: framing,
+            source: "background-tool",
+            persistTriggerAsEvent: true,
+            backgroundToolCompletion: completion,
+          });
+        }
 
         recordCompletedBackgroundTool(completion);
         broadcastMessage(
@@ -505,7 +516,8 @@ export const shellTool = {
         conversationId: context.conversationId,
         command,
         startedAt,
-        cancel: () => {
+        cancel: (reason) => {
+          suppressBackgroundWake = reason === CONVERSATION_ABORT_REASON;
           aborted = true;
           killTree("abort");
         },
@@ -541,6 +553,10 @@ export const shellTool = {
         env,
         stdio: ["ignore", "pipe", "pipe"],
         ...buildShellSpawnFlags(),
+      });
+      trackToolProcess(child, {
+        toolName: "bash",
+        conversationId: context.conversationId,
       });
       const launch = watchShellProcessStart(child);
       const collector = attachBoundedStdio(child, {

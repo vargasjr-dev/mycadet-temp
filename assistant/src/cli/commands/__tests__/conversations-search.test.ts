@@ -270,3 +270,52 @@ describe("conversations search", () => {
     expect(stdout).toContain("--json");
   });
 });
+
+describe("conversations abort", () => {
+  beforeEach(() => {
+    mockIpcResult = {
+      ok: true,
+      result: { ok: true, cancelled: true, conversationId: "conv-123" },
+    };
+  });
+  test("targets the existing cancellation route using a conversation ID", async () => {
+    const result = await runSearch(["abort", "conv-123", "--json"]);
+    expect(result.code).toBe(0);
+    expect(lastIpcCall).toEqual({
+      method: "cancelConversationGeneration",
+      params: { pathParams: { id: "conv-123" } },
+    });
+    expect(JSON.parse(result.stdout)).toEqual({
+      ok: true,
+      cancelled: true,
+      conversationId: "conv-123",
+    });
+  });
+  test("unknown conversations and transport errors exit nonzero in JSON mode", async () => {
+    mockIpcResult = {
+      ok: false,
+      error: "Conversation not found",
+      statusCode: 404,
+    };
+    const result = await runSearch(["abort", "missing", "--json"]);
+    expect(result.code).toBe(2);
+    expect(JSON.parse(result.stdout)).toEqual({
+      ok: false,
+      error: "Conversation not found",
+    });
+  });
+  test("requires a nonempty explicit ID before IPC", async () => {
+    expect((await runSearch(["abort", "  ", "--json"])).code).toBe(1);
+    expect(lastIpcCall).toBeNull();
+    expect((await runSearch(["abort"])).code).toBe(1);
+  });
+  test("idle conversations report a successful no-op", async () => {
+    mockIpcResult = {
+      ok: true,
+      result: { ok: true, cancelled: false, conversationId: "conv-123" },
+    };
+    const result = await runSearch(["abort", "conv-123", "--json"]);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout).cancelled).toBe(false);
+  });
+});

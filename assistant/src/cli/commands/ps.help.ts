@@ -18,10 +18,12 @@ worker (when the daemon owns it), MCP servers, and any other live children.
 The tree is built from the native process table (/proc on Linux, ps on
 macOS), so it reflects what is actually running, not a fixed subsystem list.
 
-Each node shows its origin — 'workspace' for the daemon and its subsystems,
-or 'plugin:<name>' for a process spawned from a plugin (e.g.
-'plugin:default-memory', 'plugin:cognee') — plus its PID. Every listed
-process is live by definition.
+Each row shows a process name (up to 30 characters), PID, tool or plugin
+source, originating conversation ID, CPU, and resident RAM in MiB.
+Tool descendants inherit their nearest tracked tool's attribution.
+CPU is sampled over roughly 200 ms as a percentage of one core (so a
+multithreaded process can exceed 100%). Unavailable metrics show as '—'.
+RPC connections to sibling services are not OS processes and are omitted.
 
 Examples:
   $ assistant ps

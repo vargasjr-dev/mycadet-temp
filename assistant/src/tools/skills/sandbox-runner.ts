@@ -13,6 +13,7 @@ import {
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";
+import { trackToolProcess } from "../../util/tool-process-context.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";
 import { buildSanitizedEnv } from "../terminal/safe-env.js";
@@ -174,6 +175,10 @@ function spawnRunner(
       env,
       stdio: ["ignore", "pipe", "pipe"],
       ...buildShellSpawnFlags(),
+    });
+    trackToolProcess(child, {
+      toolName: executorPath,
+      conversationId: context.conversationId,
     });
     const launch = watchShellProcessStart(child);
 

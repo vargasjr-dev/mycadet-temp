@@ -12,8 +12,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
-import { MAX_COMMAND_LABEL_LENGTH } from "../../../util/process-tree.js";
-
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
@@ -127,15 +125,8 @@ beforeEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("ps command — IPC wiring", () => {
-  test("calls the `ps` IPC method exactly once", async () => {
-    await runPsCommand();
-    expect(ipcCalls).toEqual([{ method: "ps" }]);
-  });
-});
-
-describe("ps command — tree rendering", () => {
-  test("renders parent, indented children, and plugin/workspace origin", async () => {
+describe("ps table", () => {
+  test("shows headers, rules, tool attribution and right-aligned resource columns", async () => {
     mockResponse = {
       ok: true,
       result: {
@@ -144,58 +135,25 @@ describe("ps command — tree rendering", () => {
             name: "assistant",
             status: "running",
             origin: "workspace",
-            children: [
-              { name: "qdrant", status: "running", origin: "workspace" },
-              {
-                name: "memory-worker",
-                status: "running",
-                origin: "plugin:default-memory",
-              },
-            ],
-          },
-        ],
-      },
-    };
-
-    await runPsCommand();
-    const lines = logLines.filter((l) => l.trim().length > 0);
-
-    // Column 1 keeps the hierarchy indentation; the origin column follows.
-    const root = lines.find((l) => l.startsWith("assistant"))!;
-    const qdrant = lines.find((l) => l.trimStart().startsWith("qdrant"))!;
-    const worker = lines.find((l) =>
-      l.trimStart().startsWith("memory-worker"),
-    )!;
-
-    expect(qdrant).toMatch(/^ {2}qdrant/);
-    expect(root).toContain("workspace");
-    expect(qdrant).toContain("workspace");
-    // The plugin's name is shown alongside the plugin tag.
-    expect(worker).toContain("plugin:default-memory");
-
-    // The status label is gone — no [running] anywhere.
-    expect(logLines.join("\n")).not.toContain("[running]");
-  });
-
-  test("aligns column 2 to the same start index across all rows", async () => {
-    mockResponse = {
-      ok: true,
-      result: {
-        processes: [
-          {
-            name: "assistant",
-            status: "running",
-            origin: "workspace",
+            pid: 7,
+            cpuPct: 224.3,
+            rssBytes: 3 * 1024 ** 3,
             children: [
               {
-                name: "qdrant",
+                name: "bash " + "x".repeat(100),
                 status: "running",
                 origin: "workspace",
+                pid: 42,
+                tool: { toolName: "bash", conversationId: "conv-123" },
+                cpuPct: 0,
+                rssBytes: 1024 ** 2,
                 children: [
                   {
-                    name: "deeply-nested-child",
+                    name: "bun test",
                     status: "running",
-                    origin: "plugin:cognee",
+                    origin: "workspace",
+                    pid: 43,
+                    tool: { toolName: "bash", conversationId: "conv-123" },
                   },
                 ],
               },
@@ -204,130 +162,71 @@ describe("ps command — tree rendering", () => {
         ],
       },
     };
-
     await runPsCommand();
-    const lines = logLines.filter((l) => l.trim().length > 0);
-
-    // The origin word starts at the same column on every row regardless of
-    // the depth-driven indentation in column 1.
-    const originStarts = lines.map((l) =>
-      l.indexOf("workspace") === -1
-        ? l.indexOf("plugin")
-        : l.indexOf("workspace"),
-    );
-    expect(new Set(originStarts).size).toBe(1);
+    expect(ipcCalls).toEqual([{ method: "ps" }]);
+    const text = logLines.join("\n");
+    for (const header of [
+      "PROCESS",
+      "PID",
+      "SOURCE",
+      "CONVERSATION",
+      "CPU",
+      "RAM",
+    ]) {
+      expect(text).toContain(header);
+    }
+    expect(text).not.toContain("workspace");
+    expect(text).toContain("tool:bash");
+    expect(text).toContain("conv-123");
+    expect(text).toContain("224.3%");
+    expect(text).toContain("3072.0 MiB");
+    expect(text).toContain("0.0%");
+    expect(logLines.filter((line) => line.startsWith("─"))).toHaveLength(2);
+    const child = logLines.find((line) => line.startsWith("  bash"))!;
+    expect(child.indexOf("…")).toBe(29);
+    expect(
+      logLines.find((line) => line.startsWith("    bun test")),
+    ).toBeDefined();
+    const root = logLines.find((line) => line.startsWith("assistant"))!;
+    expect(root.indexOf("tool:bash")).toBe(-1);
+    expect(root.indexOf("%")).toBe(child.indexOf("%"));
   });
 
-  test("shows the pid info column", async () => {
+  test("preserves plugin identity without a workspace column", async () => {
     mockResponse = {
       ok: true,
       result: {
         processes: [
           {
-            name: "qdrant",
+            name: "memory-worker",
+            origin: "plugin:default-memory",
             status: "running",
-            origin: "workspace",
-            info: "pid 4242",
           },
         ],
       },
     };
-
     await runPsCommand();
-    expect(logLines.join("\n")).toContain("pid 4242");
+    expect(logLines.join("\n")).toContain("plugin:default-memory");
+    expect(logLines.join("\n")).toContain("—");
   });
 
-  test("prints a placeholder when no processes are reported", async () => {
-    mockResponse = { ok: true, result: { processes: [] } };
+  test("prints a placeholder for an empty tree", async () => {
     await runPsCommand();
     expect(logLines.join("\n")).toContain("No processes reported.");
   });
-});
 
-describe("ps command — JSON output", () => {
-  test("--json emits the raw route payload, not the tree", async () => {
+  test("JSON preserves the complete route payload", async () => {
     const result = {
-      processes: [{ name: "assistant", status: "running" }],
+      processes: [{ name: "assistant", pid: 7, cpuPct: 12, rssBytes: 1024 }],
     };
     mockResponse = { ok: true, result };
-
     const { stdout } = await runPsCommand(["--json"]);
-
     expect(JSON.parse(stdout)).toEqual(result);
-    // Tree renderer should not have run.
-    expect(logLines.join("\n")).not.toContain("[running]");
+    expect(logLines).toEqual([]);
   });
-});
 
-describe("ps command — failures", () => {
-  test("exits non-zero when the IPC call fails", async () => {
+  test("IPC failure exits nonzero", async () => {
     mockResponse = { ok: false, error: "boom", statusCode: 500 };
-    const { exitCode } = await runPsCommand();
-    expect(exitCode).toBe(1);
-  });
-});
-
-describe("ps command — long labels stay bounded", () => {
-  const longName =
-    "bun x -y @some/org/deeply-nested-mcp-server --stdio --port 8080 --verbose";
-
-  test("caps a command-derived name that runs long, keeping head and tail", async () => {
-    mockResponse = {
-      ok: true,
-      result: {
-        processes: [{ name: longName, status: "running", origin: "workspace" }],
-      },
-    };
-
-    await runPsCommand();
-    const line = logLines.find((l) => l.trimStart().startsWith("bun x"))!;
-
-    // The interpreter survives at the head, the args' tail stays intact ahead
-    // of the origin column, and the middle collapses to one ellipsis so no
-    // column runs unbounded.
-    expect(line).toBeDefined();
-    expect(line.trimStart().startsWith(longName.slice(0, 16))).toBe(true);
-    expect(line).toContain("--stdio --port 8080 --verbose");
-    expect(line).toContain("…");
-    // Bounded end to end: capped label + two-space gutter + origin column.
-    expect(line.trimStart().length).toBeLessThanOrEqual(
-      MAX_COMMAND_LABEL_LENGTH + 2 + "workspace".length,
-    );
-  });
-
-  test("keeps the hierarchy indentation on a capped child label", async () => {
-    mockResponse = {
-      ok: true,
-      result: {
-        processes: [
-          {
-            name: "assistant",
-            status: "running",
-            origin: "workspace",
-            children: [
-              { name: longName, status: "running", origin: "workspace" },
-            ],
-          },
-        ],
-      },
-    };
-
-    await runPsCommand();
-    const line = logLines.find((l) => l.trimStart().startsWith("bun x"))!;
-    expect(line).toMatch(/^ {2}bun x/);
-  });
-
-  test("leaves short labels untouched", async () => {
-    mockResponse = {
-      ok: true,
-      result: {
-        processes: [{ name: "qdrant", status: "running", origin: "workspace" }],
-      },
-    };
-
-    await runPsCommand();
-    const line = logLines.find((l) => l.trimStart().startsWith("qdrant"))!;
-    expect(line).not.toContain("…");
-    expect(line.trimStart().startsWith("qdrant")).toBe(true);
+    expect((await runPsCommand()).exitCode).toBe(1);
   });
 });

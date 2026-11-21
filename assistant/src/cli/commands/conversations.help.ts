@@ -18,6 +18,20 @@ Examples:
   $ assistant conversations clear`,
   subcommands: [
     {
+      name: "abort",
+      args: "<conversationId>",
+      description: "Stop a conversation's current generation and tools",
+      options: [{ flags: "--json", description: "Output result as JSON" }],
+      helpText: `
+Stops the current response, foreground and background tools, and child agents.
+Preserves the conversation and its messages. Future messages can start a new turn.
+Pass a conversation ID or unique prefix from 'assistant conversations list'.
+
+Examples:
+  $ assistant conversations abort abc123
+  $ assistant conversations abort abc123 --json`,
+    },
+    {
       name: "import",
       description: "Import conversations from a standard JSON format",
       options: [

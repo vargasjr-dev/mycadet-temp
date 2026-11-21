@@ -262,6 +262,39 @@ export function registerConversationsCommand(program: Command): void {
         },
       );
 
+      subcommand(conversations, "abort").action(
+        async (conversationId: string, _opts: unknown, cmd: Command) => {
+          const id = conversationId.trim();
+          if (!id) {
+            writeError(cmd, "Conversation ID must be non-empty.");
+            process.exitCode = 1;
+            return;
+          }
+          const result = await cliIpcCall<{
+            ok: boolean;
+            cancelled: boolean;
+            conversationId: string;
+          }>("cancelConversationGeneration", { pathParams: { id } });
+          if (!result.ok) {
+            if (shouldOutputJson(cmd)) {
+              writeOutput(cmd, { ok: false, error: result.error });
+              process.exitCode = exitCodeFromIpcResult(result);
+              return;
+            }
+            return exitFromIpcResult(result);
+          }
+          if (shouldOutputJson(cmd)) {
+            writeOutput(cmd, result.result);
+            return;
+          }
+          log.info(
+            result.result!.cancelled
+              ? `Abort requested for conversation ${result.result!.conversationId}.`
+              : `Conversation ${result.result!.conversationId} has no active generation.`,
+          );
+        },
+      );
+
       // -------------------------------------------------------------------
       // search
       // -------------------------------------------------------------------

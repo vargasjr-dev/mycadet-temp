@@ -18,6 +18,11 @@ import {
   setConversation,
 } from "../daemon/conversation-registry.js";
 import { cancelGeneration } from "../daemon/handlers/conversations.js";
+import {
+  CONVERSATION_ABORT_REASON,
+  registerBackgroundTool,
+  removeBackgroundTool,
+} from "../tools/background-tool-registry.js";
 
 interface CancelledConversation {
   isProcessing: () => boolean;
@@ -75,6 +80,31 @@ describe("cancelGeneration", () => {
     // turn's `finally` owns that teardown once abort drives it there.
     expect(fake.setProcessingCalls()).not.toContain(false);
     expect(fake.isProcessing()).toBe(true);
+  });
+
+  test("cancels only the target conversation's background tools, including evicted conversations", () => {
+    const cancelled: string[] = [];
+    for (const id of [conversationId, "other-conversation"]) {
+      registerBackgroundTool({
+        id,
+        toolName: "bash",
+        conversationId: id,
+        command: "sleep 30",
+        startedAt: Date.now(),
+        cancel: (reason) => {
+          cancelled.push(`${id}:${reason}`);
+        },
+      });
+    }
+    try {
+      expect(cancelGeneration(conversationId)).toBe(true);
+      expect(cancelled).toEqual([
+        `${conversationId}:${CONVERSATION_ABORT_REASON}`,
+      ]);
+    } finally {
+      removeBackgroundTool(conversationId);
+      removeBackgroundTool("other-conversation");
+    }
   });
 
   test("returns false for a conversation that is not registered", () => {

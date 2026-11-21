@@ -508,7 +508,7 @@ function handleSurfaceConversation({
 }
 
 function handleCancelGeneration({ pathParams = {} }: RouteHandlerArgs) {
-  const resolvedId = resolveConversationId(pathParams.id!) ?? pathParams.id!;
+  const resolvedId = resolveOrThrow(pathParams.id!);
   const cancelled = cancelGeneration(resolvedId);
   return { ok: true, cancelled, conversationId: resolvedId };
 }

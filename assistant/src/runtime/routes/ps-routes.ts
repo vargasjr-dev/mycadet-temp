@@ -11,13 +11,20 @@
 
 import { z } from "zod";
 
-import { getCesClient } from "../../credential-execution/ces-runtime.js";
 import { getLogger } from "../../util/logger.js";
+import {
+  type ProcessResources,
+  sampleProcessResources,
+} from "../../util/process-resources.js";
 import {
   buildProcessTree,
   listProcesses,
   type ProcTreeNode,
 } from "../../util/process-tree.js";
+import {
+  getToolProcessOwner,
+  type ToolProcessOwner,
+} from "../../util/tool-process-context.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import type { RouteDefinition } from "./types.js";
 
@@ -38,6 +45,10 @@ interface ProcessEntry {
   origin: ProcessOrigin;
   children?: ProcessEntry[];
   info?: string;
+  pid?: number;
+  tool?: ToolProcessOwner;
+  cpuPct?: number;
+  rssBytes?: number;
 }
 
 const processOriginSchema = z
@@ -55,6 +66,12 @@ const processEntrySchema: z.ZodType<ProcessEntry> = z
       origin: processOriginSchema,
       children: z.array(processEntrySchema).optional(),
       info: z.string().optional(),
+      pid: z.number().int().positive().optional(),
+      tool: z
+        .object({ toolName: z.string(), conversationId: z.string() })
+        .optional(),
+      cpuPct: z.number().nonnegative().optional(),
+      rssBytes: z.number().nonnegative().optional(),
     }),
   )
   .meta({ id: "ProcessEntry" });
@@ -64,16 +81,26 @@ const psResponseSchema = z.object({
 });
 
 /** Map a native process-tree node onto the wire `ProcessEntry` shape. */
-function toEntry(node: ProcTreeNode): ProcessEntry {
+function toEntry(
+  node: ProcTreeNode,
+  resources: Map<number, ProcessResources>,
+  inheritedTool?: ToolProcessOwner,
+): ProcessEntry {
+  const tool = getToolProcessOwner(node.pid) ?? inheritedTool;
   const entry: ProcessEntry = {
     name: node.name,
+    pid: node.pid,
+    tool,
+    ...resources.get(node.pid),
     // Every node in the walk is a live process by definition.
     status: "running",
     origin: node.origin,
     info: `pid ${node.pid}`,
   };
   if (node.children.length > 0) {
-    entry.children = node.children.map(toEntry);
+    entry.children = node.children.map((child) =>
+      toEntry(child, resources, tool),
+    );
   }
   return entry;
 }
@@ -82,7 +109,15 @@ async function getProcessStatus() {
   const processes: ProcessEntry[] = [];
   try {
     const procs = await listProcesses();
-    const entry = toEntry(buildProcessTree(procs, process.pid));
+    const tree = buildProcessTree(procs, process.pid);
+    const pids: number[] = [];
+    const visit = (node: ProcTreeNode) => {
+      pids.push(node.pid);
+      node.children.forEach(visit);
+    };
+    visit(tree);
+    const resources = await sampleProcessResources(pids);
+    const entry = toEntry(tree, resources);
     // The daemon's own node derives its name from the entry script
     // (`daemon-main`); callers know this process as the assistant itself —
     // the fallback branch below already reports that name.
@@ -97,20 +132,9 @@ async function getProcessStatus() {
       status: "running",
       origin: "workspace",
       info: `pid ${process.pid}`,
+      pid: process.pid,
     });
   }
-
-  // The credential executor is a sibling process (CLI-launched) or sidecar
-  // container, not a child of the daemon — the process tree above can never
-  // contain it. Report it live from the assistant's own RPC connection,
-  // mirroring readyz: connected+handshaked is running, anything else is not.
-  const cesConnected = getCesClient()?.isReady() ?? false;
-  processes.push({
-    name: "credential-executor",
-    status: cesConnected ? "running" : "not_running",
-    origin: "workspace",
-    info: cesConnected ? "rpc session established" : "no rpc session",
-  });
 
   return { processes };
 }

@@ -12,6 +12,10 @@ import { resolveCapabilities } from "../../runtime/capabilities.js";
 import * as pendingInteractions from "../../runtime/pending-interactions.js";
 import { resolvePendingQuestion } from "../../runtime/question-resolution.js";
 import { getSubagentManager } from "../../subagent/index.js";
+import {
+  cancelBackgroundTools,
+  CONVERSATION_ABORT_REASON,
+} from "../../tools/background-tool-registry.js";
 import { createAbortReason } from "../../util/abort-reasons.js";
 import { UserError } from "../../util/errors.js";
 import type { Conversation } from "../conversation.js";
@@ -99,9 +103,13 @@ export async function switchConversation(conversationId: string): Promise<{
  * Cancel generation for a conversation. Returns true if a conversation was found and cancelled.
  */
 export function cancelGeneration(conversationId: string): boolean {
+  const background = cancelBackgroundTools(
+    (tool) => tool.conversationId === conversationId,
+    CONVERSATION_ABORT_REASON,
+  );
   const conversation = findConversation(conversationId);
   if (!conversation) {
-    return false;
+    return background.length > 0;
   }
   touchConversation(conversationId);
   conversation.abort(

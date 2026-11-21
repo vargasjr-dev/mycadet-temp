@@ -29,8 +29,10 @@ import {
   watchShellProcessStart,
 } from "../../util/host-process.js";
 import { getLogger } from "../../util/logger.js";
+import { trackToolProcess } from "../../util/tool-process-context.js";
 import type { CompletedBackgroundTool } from "../background-tool-registry.js";
 import {
+  CONVERSATION_ABORT_REASON,
   generateBackgroundToolId,
   isBackgroundToolLimitReached,
   MAX_BACKGROUND_TOOLS,
@@ -189,6 +191,7 @@ export const hostShellTool = {
       };
     }
     const background = parsed.data.background === true;
+    let suppressBackgroundWake = false;
     if (background && context.diskPressureCleanupModeActive === true) {
       return {
         content:
@@ -316,20 +319,22 @@ export const hostShellTool = {
                 : result.isError
                   ? `Background host command failed (id=${bgId}):`
                   : `Background host command completed (id=${bgId}):`;
-            void wakeAgentForOpportunity({
-              conversationId: context.conversationId,
-              cronRunId,
-              hint: framing,
-              source: "background-tool",
-              persistTriggerAsEvent: true,
-              backgroundToolCompletion: completion,
-              untrustedOutput: {
-                content: output || "(no output)",
-                source: "tool_result",
-                // Bounded output plus the truncation marker (see shell.ts).
-                maxChars: MAX_OUTPUT_LENGTH * 2,
-              },
-            });
+            if (!suppressBackgroundWake) {
+              void wakeAgentForOpportunity({
+                conversationId: context.conversationId,
+                cronRunId,
+                hint: framing,
+                source: "background-tool",
+                persistTriggerAsEvent: true,
+                backgroundToolCompletion: completion,
+                untrustedOutput: {
+                  content: output || "(no output)",
+                  source: "tool_result",
+                  // Bounded output plus the truncation marker (see shell.ts).
+                  maxChars: MAX_OUTPUT_LENGTH * 2,
+                },
+              });
+            }
           })
           .catch((err) => {
             const status = abortController.signal.aborted
@@ -365,17 +370,19 @@ export const hostShellTool = {
               },
               context.conversationId,
             );
-            void wakeAgentForOpportunity({
-              conversationId: context.conversationId,
-              cronRunId,
-              hint:
-                status === "cancelled"
-                  ? `Background host command cancelled (id=${bgId}):`
-                  : `Background host command failed (id=${bgId}): ${err instanceof Error ? err.message : String(err)}`,
-              source: "background-tool",
-              persistTriggerAsEvent: true,
-              backgroundToolCompletion: completion,
-            });
+            if (!suppressBackgroundWake) {
+              void wakeAgentForOpportunity({
+                conversationId: context.conversationId,
+                cronRunId,
+                hint:
+                  status === "cancelled"
+                    ? `Background host command cancelled (id=${bgId}):`
+                    : `Background host command failed (id=${bgId}): ${err instanceof Error ? err.message : String(err)}`,
+                source: "background-tool",
+                persistTriggerAsEvent: true,
+                backgroundToolCompletion: completion,
+              });
+            }
           })
           .finally(() => removeBackgroundTool(bgId));
 
@@ -386,7 +393,10 @@ export const hostShellTool = {
           conversationId: context.conversationId,
           command,
           startedAt,
-          cancel: (reason?: string) => abortController.abort(reason),
+          cancel: (reason?: string) => {
+            suppressBackgroundWake = reason === CONVERSATION_ABORT_REASON;
+            abortController.abort(reason);
+          },
         });
 
         broadcastMessage(
@@ -466,6 +476,10 @@ export const hostShellTool = {
         stdio: ["ignore", "pipe", "pipe"],
         ...buildShellSpawnFlags(),
       });
+      trackToolProcess(child, {
+        toolName: "host_bash",
+        conversationId: context.conversationId,
+      });
       const launch = watchShellProcessStart(child);
 
       const collector = attachBoundedStdio(child);
@@ -539,20 +553,22 @@ export const hostShellTool = {
             : result.isError
               ? `Background host command failed (id=${bgId}):`
               : `Background host command completed (id=${bgId}):`;
-        void wakeAgentForOpportunity({
-          conversationId: context.conversationId,
-          cronRunId,
-          hint: framing,
-          source: "background-tool",
-          persistTriggerAsEvent: true,
-          backgroundToolCompletion: completion,
-          untrustedOutput: {
-            content: output || "(no output)",
-            source: "tool_result",
-            // Bounded output plus the truncation marker (see shell.ts).
-            maxChars: MAX_OUTPUT_LENGTH * 2,
-          },
-        });
+        if (!suppressBackgroundWake) {
+          void wakeAgentForOpportunity({
+            conversationId: context.conversationId,
+            cronRunId,
+            hint: framing,
+            source: "background-tool",
+            persistTriggerAsEvent: true,
+            backgroundToolCompletion: completion,
+            untrustedOutput: {
+              content: output || "(no output)",
+              source: "tool_result",
+              // Bounded output plus the truncation marker (see shell.ts).
+              maxChars: MAX_OUTPUT_LENGTH * 2,
+            },
+          });
+        }
         removeBackgroundTool(bgId);
       });
 
@@ -591,17 +607,19 @@ export const hostShellTool = {
           },
           context.conversationId,
         );
-        void wakeAgentForOpportunity({
-          conversationId: context.conversationId,
-          cronRunId,
-          hint:
-            status === "cancelled"
-              ? `Background host command cancelled (id=${bgId}):`
-              : `Background host command failed (id=${bgId}): ${err.message}`,
-          source: "background-tool",
-          persistTriggerAsEvent: true,
-          backgroundToolCompletion: completion,
-        });
+        if (!suppressBackgroundWake) {
+          void wakeAgentForOpportunity({
+            conversationId: context.conversationId,
+            cronRunId,
+            hint:
+              status === "cancelled"
+                ? `Background host command cancelled (id=${bgId}):`
+                : `Background host command failed (id=${bgId}): ${err.message}`,
+            source: "background-tool",
+            persistTriggerAsEvent: true,
+            backgroundToolCompletion: completion,
+          });
+        }
         removeBackgroundTool(bgId);
       });
 
@@ -612,7 +630,8 @@ export const hostShellTool = {
         conversationId: context.conversationId,
         command,
         startedAt,
-        cancel: () => {
+        cancel: (reason) => {
+          suppressBackgroundWake = reason === CONVERSATION_ABORT_REASON;
           aborted = true;
           killTree();
         },
@@ -645,6 +664,10 @@ export const hostShellTool = {
         env: hostEnv,
         stdio: ["ignore", "pipe", "pipe"],
         ...buildShellSpawnFlags(),
+      });
+      trackToolProcess(child, {
+        toolName: "host_bash",
+        conversationId: context.conversationId,
       });
       const launch = watchShellProcessStart(child);
       const collector = attachBoundedStdio(child, {
