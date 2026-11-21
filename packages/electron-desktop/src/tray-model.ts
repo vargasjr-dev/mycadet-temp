@@ -353,9 +353,7 @@ export const installTray = (handlers: TrayHandlers): void => {
 
   const initialStatus = getStatus();
   trayInstance = new Tray(statusFrames(initialStatus)[0]!);
-  if (process.platform === "darwin") {
-    trayInstance.setIgnoreDoubleClickEvents(true);
-  }
+  trayInstance.setIgnoreDoubleClickEvents(true);
 
   trayInstance.on("click", () => {
     handlers.toggleMainWindow();

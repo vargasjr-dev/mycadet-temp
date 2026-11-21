@@ -62,13 +62,6 @@ export const installLoginItemIpc = (): void => {
 };
 
 export const installLoginItem = (): void => {
-  // `setLoginItemSettings` fails in dev on macOS ("Operation not permitted"
-  // — the unpacked binary can't register as a login item); only packaged
-  // darwin builds register at boot. Linux and Windows register their
-  // unpacked dev identity (the composition's configure) fine.
-  if (process.platform === "darwin" && !app.isPackaged) {
-    return;
-  }
   const { store } = runtime;
   if (!store || teardown) {
     return;

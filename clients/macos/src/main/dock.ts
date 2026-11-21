@@ -22,46 +22,7 @@ import {
 } from "@mycadet/electron-desktop/session-token-store";
 
 /**
- * Dock integration: avatar icon + unread-count badge + visibility state
- * machine.
- *
- * The Dock icon is the assistant avatar clipped to a rounded square
- * ("squircle"), inset with ~10% padding inside a 512px canvas to match the
- * macOS icon grid. The renderer publishes the avatar over
- * `cadet:icon:setAvatar`; this module masks and applies it via
- * `app.dock.setIcon`. With no avatar the bundled app icon shows through
- * naturally.
- *
- * The Dock tile is the only icon surface Electron exposes directly;
- * LaunchServices-resolved surfaces (Finder, the notification daemon) read
- * the on-disk bundle icon, which would need a native `NSWorkspace.setIcon`
- * bridge to mirror — out of scope here and tracked separately.
- *
- * The state machine has two inputs:
- *
- *   1. **Main-window visibility**, subscribed via
- *      `onMainWindowVisibilityChange` on `./main-window`. Auxiliary
- *      windows (About, future thread pop-outs) deliberately do NOT
- *      drive dock policy — opening About while signed out would
- *      otherwise flicker the dock icon to `regular` and back.
- *   2. **Signed-in flag**, derived from two main-process signals:
- *      a session token (`getSessionToken() !== null`), which covers
- *      platform auth, and active local assistants in the lockfile,
- *      which covers local-mode auth (gateway-only, no platform
- *      token). The dock subscribes to `onSessionTokenChange` and
- *      re-derives on every save/clear; local-assistant presence is
- *      re-checked at the same time.
- *
- * Policy:
- *
- *   - Main visible OR signed in → `regular` (Dock icon visible).
- *     We keep the icon visible while signed in so the user can re-open
- *     the window from the Dock after closing the last one.
- *   - Main hidden AND signed out → `accessory` (Dock icon hidden,
- *     menu-bar-only).
- *
- * Transitions are debounced ~100ms so a fast close-then-open (e.g.
- * keyboard shortcut chord) doesn't visibly flash the Dock icon.
+ * Dock integration: avatar icon + unread-count badge + visibility.
  */
 
 // Format the badge string per macOS Dock conventions: "" clears,

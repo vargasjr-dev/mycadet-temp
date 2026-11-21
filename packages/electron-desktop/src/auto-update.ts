@@ -26,21 +26,13 @@ export const resolveUpdateFeedUrl = (
   return `https://storage.googleapis.com/mycadet-${bucketEnv}-releases/${platform}/${arch}/`;
 };
 
-export interface AutoUpdateOptions {
+interface AutoUpdateOptions {
   /**
    * The updater feed's platform bucket, e.g. `linux-electron`. Defaults to
    * this process's platform, which is all the three shells ever passed.
    */
-  platform?: UpdateFeedPlatform;
+  platform: UpdateFeedPlatform;
 }
-
-/** The feed bucket for this process's platform. */
-export const resolveUpdateFeedPlatform = (): UpdateFeedPlatform =>
-  process.platform === "darwin"
-    ? "mac-electron"
-    : process.platform === "win32"
-      ? "win-electron"
-      : "linux-electron";
 
 let currentState: UpdateState = { status: "idle" };
 
@@ -69,8 +61,8 @@ export const checkForUpdates = (): void => {
 };
 
 /** Installs the updater, its IPC surface, and the periodic check. */
-export const installAutoUpdate = (options: AutoUpdateOptions = {}): void => {
-  const platform = options.platform ?? resolveUpdateFeedPlatform();
+export const installAutoUpdate = (options: AutoUpdateOptions): void => {
+  const platform = options.platform;
   handle("cadet:update:getState", z.tuple([]), () => currentState);
   handle("cadet:update:check", z.tuple([]), () => checkForUpdates());
   handle("cadet:update:install", z.tuple([]), () =>

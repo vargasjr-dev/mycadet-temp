@@ -50,6 +50,11 @@ export function baseEslintConfig() {
     ]),
     {
       plugins: { "@mycadet": mycadetPlugin },
+      languageOptions: {
+        parserOptions: {
+          tsconfigRootDir: process.cwd(),
+        },
+      },
       rules: {
         // Unused symbols are noise the compiler can't see (params kept
         // for signature shape, type-only imports); an underscore-prefixed

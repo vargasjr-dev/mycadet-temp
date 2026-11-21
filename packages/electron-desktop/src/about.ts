@@ -120,9 +120,7 @@ export const openAboutWindow = (): void => {
       minimizable: false,
       maximizable: false,
       fullscreenable: false,
-      ...(process.platform === "darwin"
-        ? { titleBarStyle: "hiddenInset" as const }
-        : {}),
+      titleBarStyle: "hiddenInset",
       title: `About ${APP_NAME}`,
       show: false,
     },

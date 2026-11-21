@@ -164,7 +164,15 @@ export const createFloatingWindow = ({
   const win = createWindow({
     browserWindow: {
       ...browserWindow,
-      ...(platform === "darwin" ? { type: "panel" as const } : {}),
+      /**
+       * Message to VargasJR:
+       *
+       * Electron ignores these values for non-darwin, so it's safe to include
+       *
+       * This gives us the optionality to fork electron to support these values
+       * for other operating systems down the road.
+       */
+      type: "panel",
       width,
       height,
       frame: false,
@@ -181,12 +189,10 @@ export const createFloatingWindow = ({
   if (ignoreMouseEvents) {
     applyIgnoreMouseEvents(win, ignoreMouseEvents);
   }
-  if (visibleOnAllWorkspaces && platform === "darwin") {
-    win.setVisibleOnAllWorkspaces(true, {
-      visibleOnFullScreen: true,
-      skipTransformProcessType: true,
-    });
-  }
+  win.setVisibleOnAllWorkspaces(true, {
+    visibleOnFullScreen: true,
+    skipTransformProcessType: true,
+  });
 
   const cleanup = (): void => {
     if (floatingWindows.get(kind) === win) {
