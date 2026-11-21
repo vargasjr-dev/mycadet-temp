@@ -1,6 +1,7 @@
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { routes } from "@/lib/routes";
 
+// TODO: convert this page to md
 export function TermsOfUseBody() {
   return (
     <DocsContent title="Cadet Terms of Service" breadcrumb="Docs / Legal / Terms">
@@ -80,6 +81,12 @@ export function TermsOfUseBody() {
 
                   <h2>6. Payment</h2>
                   <p>
+                    {/**
+                     * TODO  Let's bring the `/pricing` and `/plugins` pages into the oss repo next
+                     * For `/pricing`, we shouldn't show the actual price values and product metadata
+                     * here. We want that data fully controlled on the cloud side, so this should
+                     * invoke a public cloud api to fetch that metadata before rendering
+                     * */}
                     <strong>6.1 Transactions.</strong> We may make available the ability to purchase certain products or functionalities through the Services (a &quot;Transaction&quot;) as further described <a href="/pricing">here</a>. The purchase and use of Cadet Credits is a Transaction and is additionally governed by Section 6.2 of these Terms. If you wish to make a Transaction, you may be asked to supply certain relevant information, such as your credit card number and its expiration date, and your billing address, or connect to a digital wallet. YOU REPRESENT AND WARRANT THAT YOU HAVE THE RIGHT TO USE ANY CREDIT CARD THAT YOU SUBMIT IN CONNECTION WITH A TRANSACTION. By submitting such information, you grant us the right to provide such information to third parties for purposes of facilitating Transactions. Verification of information may be required prior to the acknowledgment or completion of any Transaction. By making a Transaction, you represent that the applicable purchases will be used only in a lawful manner. All Transactions are exclusive of applicable taxes. You are responsible for paying all taxes, duties, and other governmental assessments associated with your Transactions.
                   </p>
 

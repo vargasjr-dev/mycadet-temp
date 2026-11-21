@@ -3,20 +3,22 @@ import { createMetadata } from "@/lib/metadata";
 import { routes } from "@/lib/routes";
 
 export const metadata = createMetadata({
-  title: "Privacy Notice | Cadet",
+  title: "Privacy Policy | Cadet",
   description:
     "Cadet's privacy notice explaining how we collect, use, disclose and otherwise process your information.",
   path: routes.docs.legal.privacyPolicy,
 });
 
+// TODO: Convert this page into markdown
+
 export default function PrivacyPolicyPage() {
   return (
-    <DocsContent title="Privacy Notice" breadcrumb="Docs / Legal / Privacy">
+    <DocsContent title="Privacy Policy" breadcrumb="Docs / Legal / Privacy">
       <p>
         <em>Last Updated: June 22, 2026</em>
       </p>
       <p>
-        This Privacy Notice describes how Cadet, Inc., the provider of Cadet
+        This Privacy Policy describes how Cadet, Inc., the provider of Cadet
         (collectively, &quot;
         <strong>
           <em>Cadet</em>
