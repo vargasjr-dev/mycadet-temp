@@ -985,6 +985,19 @@ describe("OpenAIProvider", () => {
     expect(lastCreateParams).not.toHaveProperty("max_tokens");
   });
 
+  test("ollama sends the output limit as max_tokens", async () => {
+    fakeChunks = [textChunk("OK"), usageChunk(10, 2)];
+    const ollama = new OllamaProvider("llama3.2");
+
+    await ollama.sendMessage(
+      [{ role: "user", content: [{ type: "text", text: "Hi" }] }],
+      { config: { max_tokens: 64000 } },
+    );
+
+    expect(lastCreateParams!.max_tokens).toBe(64000);
+    expect(lastCreateParams).not.toHaveProperty("max_completion_tokens");
+  });
+
   // -----------------------------------------------------------------------
   // Thinking blocks are skipped
   // -----------------------------------------------------------------------

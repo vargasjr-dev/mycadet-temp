@@ -20,7 +20,6 @@
 import {
   type Dispatch,
   type MutableRefObject,
-  type ReactNode,
   type RefObject,
   type SetStateAction,
   useCallback,
@@ -81,7 +80,6 @@ import { SUBAGENT_DESCRIPTOR } from "@/domains/chat/process-registry/descriptors
 import { ACP_RUN_DESCRIPTOR } from "@/domains/chat/process-registry/descriptors/acp-run";
 import { WORKFLOW_DESCRIPTOR } from "@/domains/chat/process-registry/descriptors/workflow";
 import { BACKGROUND_TASK_DESCRIPTOR } from "@/domains/chat/process-registry/descriptors/background-task";
-import { AnimatedRightDrawer } from "@/domains/chat/components/animated-right-drawer";
 import { ChatBody } from "@/domains/chat/components/chat-body";
 import { ProgressStack } from "@/domains/chat/components/progress-stack";
 import { ChatComposer } from "@/domains/chat/components/chat-composer/chat-composer";
@@ -95,12 +93,10 @@ import { MicPermissionPrimer } from "@/domains/chat/components/mic-permission-pr
 import { OnboardingChoiceCard } from "@/domains/chat/components/onboarding-choice-card";
 import { SendErrorModal } from "@/domains/chat/components/send-error-modal";
 import { StoreCredentialDialog } from "@/domains/chat/components/store-credential-dialog";
-import { SuggestionDetailPanel } from "@/domains/chat/components/suggestion-detail-panel";
 import type { DetectedSecret } from "@mycadet/service-contracts/secret-detection";
-import type { ThreadSuggestion } from "@/domains/chat/suggestions/types";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
-import { BottomSheet, Notice } from "@mycadet/design-library";
+import { Notice } from "@mycadet/design-library";
 import { useEditMessage } from "@/domains/chat/hooks/use-edit-message";
 import { useOnboardingChoice } from "@/domains/chat/hooks/use-onboarding-choice";
 import { usePullRefresh } from "@/domains/chat/hooks/use-pull-refresh";
@@ -1009,43 +1005,6 @@ export function ChatMainPanel({
   );
 
   // -------------------------------------------------------------------------
-  // New-thread suggestion drawer (empty-state only)
-  // -------------------------------------------------------------------------
-  // Called unconditionally — the desktop drawer vs mobile sheet choice below
-  // branches on this, but the hook must run on every render.
-  const [selectedSuggestion, setSelectedSuggestion] =
-    useState<ThreadSuggestion | null>(null);
-
-  // Clear any open suggestion detail when the active conversation changes or the
-  // thread leaves the empty state. Keying on `activeConversationId` covers the
-  // empty→empty switch (id changes while `isEmptyConversation` stays true), which
-  // the non-empty transition alone would miss — otherwise the stale drawer/sheet
-  // could submit the previous selection into the newly active thread, since
-  // ChatMainPanel is not keyed by conversation. Setting null on a fresh empty
-  // conversation is harmless because no card is selected yet.
-  useEffect(() => {
-    setSelectedSuggestion(null);
-  }, [activeConversationId, isEmptyConversation]);
-
-  // Close, and Save-for-later, both just dismiss the drawer: persisting saved
-  // suggestions is not implemented yet.
-  const handleCloseSuggestion = useCallback(
-    () => setSelectedSuggestion(null),
-    [],
-  );
-
-  const handleConfirmSuggestion = useCallback(
-    (s: ThreadSuggestion) => {
-      // Seed the composer before submitting (mirrors handleSelectStarter) so a
-      // blocked send leaves the prompt in the composer to retry, rather than
-      // silently dropping it when the drawer closes.
-      handleSelectStarter({ prompt: s.prompt });
-      setSelectedSuggestion(null);
-    },
-    [handleSelectStarter],
-  );
-
-  // -------------------------------------------------------------------------
   // Rule editor bridge (viewer-store seq → rule editor open)
   // -------------------------------------------------------------------------
   useRuleEditorBridge(messages, handleOpenRuleEditorForToolCall);
@@ -1090,9 +1049,6 @@ export function ChatMainPanel({
   const {
     emptyStateProps: chatEmptyStateProps,
     startersSlot,
-    belowFoldSlot,
-    dockStartersToBottom,
-    startersDockCollapsed,
     renderAvatar,
     emptyStatePlaceholder,
     composerPeekSlot,
@@ -1105,7 +1061,6 @@ export function ChatMainPanel({
     openedAppState,
     isAssistantBusy,
     onSelectStarter: handleSelectStarter,
-    onSelectSuggestion: setSelectedSuggestion,
   });
 
   // -------------------------------------------------------------------------
@@ -1406,85 +1361,15 @@ export function ChatMainPanel({
       bannerSlot={isSidePanel ? undefined : mainBannerWithNotices}
       queuedDrawerSlot={isSidePanel ? undefined : mainQueuedDrawerSlot}
       startersSlot={startersSlot}
-      belowFoldSlot={belowFoldSlot}
-      dockStartersToBottom={dockStartersToBottom}
-      startersDockCollapsed={startersDockCollapsed}
       activeProcessOverlaysSlot={
         hasActiveProcess ? activeProcessOverlays : undefined
       }
     />
   );
 
-  const suggestionDetailPanel = selectedSuggestion ? (
-    <SuggestionDetailPanel
-      suggestion={selectedSuggestion}
-      onClose={handleCloseSuggestion}
-      onConfirm={handleConfirmSuggestion}
-    />
-  ) : null;
-
-  // Behind the flag the picked suggestion's detail rides alongside the chat.
-  //
-  // Desktop: an animated right-hand drawer. The wrapper is gated on the flag
-  // (and desktop), NOT on `isEmptyConversation`, so the `chatBody` subtree keeps
-  // the same tree position across the empty→active transition and never
-  // remounts — preserving composer focus/textarea state through the first send.
-  // Suggestion cards only render in the empty state, so `selectedSuggestion` is
-  // null in active conversations and the drawer simply sits closed there.
-  //
-  // Mobile: `AnimatedRightDrawer` is a desktop split that overflows narrow
-  // viewports, so the chat renders normally and the detail floats above it in a
-  // `BottomSheet` instead.
-  //
-  let mainContent: ReactNode;
-  if (!isMobile) {
-    mainContent = (
-      <AnimatedRightDrawer
-        open={Boolean(selectedSuggestion)}
-        storageKey="cadet:suggestion-drawer-width"
-        left={chatBody}
-        right={suggestionDetailPanel}
-      />
-    );
-  } else {
-    mainContent = (
-      <>
-        {chatBody}
-        <BottomSheet.Root
-          open={Boolean(selectedSuggestion)}
-          onOpenChange={(next) => {
-            if (!next) {
-              handleCloseSuggestion();
-            }
-          }}
-        >
-          {/* `SuggestionDetailPanel` brings its own visible heading + scroll-
-              body + footer, so it sits directly inside `Content` (no
-              BottomSheet.Body). The taller cap plus the panel's `h-full` give it
-              a bounded height inside the sheet's flex column so its body scrolls.
-              Radix Dialog still needs a Title for screen readers; the panel's
-              heading isn't a Dialog.Title, so a visually-hidden one mirrors it
-              (matches composer-settings-menu's pattern). */}
-          <BottomSheet.Content
-            aria-describedby={undefined}
-            className="h-[80dvh] max-h-[80dvh]"
-          >
-            <BottomSheet.Header className="sr-only">
-              <BottomSheet.Title>
-                {selectedSuggestion?.detail.heading ??
-                  t("chatRouteContent.suggestionFallback")}
-              </BottomSheet.Title>
-            </BottomSheet.Header>
-            {suggestionDetailPanel}
-          </BottomSheet.Content>
-        </BottomSheet.Root>
-      </>
-    );
-  }
-
   return (
     <>
-      {mainContent}
+      {chatBody}
       {composerPeekSlot}
       <MicPermissionPrimer
         open={showPrimer}

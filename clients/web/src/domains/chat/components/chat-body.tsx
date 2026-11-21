@@ -151,13 +151,11 @@ export interface ChatBodyProps {
   channelFooterSlot?: ReactNode;
 
   /**
-   * Optional conversation-starter content for the empty state: the bottom
-   * dock when {@link dockStartersToBottom} is set, otherwise a chip grid
+   * Optional contextual chips for the app-editing side panel, rendered
    * inside the max-width wrapper directly below the composer. The parent
-   * passes `undefined` once messages arrive. Rendered as a slot (like
-   * {@link bannerSlot}) so `ChatBody` stays agnostic of the starter data
-   * model, including whether the node it hands over is holding space for
-   * chips that have not loaded.
+   * passes `undefined` everywhere else. Rendered as a slot (like
+   * {@link bannerSlot}) so `ChatBody` stays agnostic of the chip data
+   * model.
    */
   startersSlot?: ReactNode;
 
@@ -171,35 +169,6 @@ export interface ChatBodyProps {
    * (kept mounted) so the composer, not the plugin row, docks to the
    * keyboard edge.
    */
-
-  /**
-   * Below-the-fold content rendered after the first viewport on the empty
-   * state. Only used when {@link dockStartersToBottom} is true (the
-   * suggestions-library layout); holds the categorized suggestion groups.
-   */
-  belowFoldSlot?: ReactNode;
-
-  /**
-   * When true (and on the empty state), the greeting + composer are centered
-   * in the first viewport, {@link startersSlot} is docked to the bottom of
-   * that viewport, and {@link belowFoldSlot} is placed below the fold. Used by
-   * the whole plain empty state (starter chips and the new-thread suggestions
-   * library alike). When false, the empty state uses the layout where the
-   * starters sit directly below the composer.
-   * While the soft keyboard is open the greeting + composer anchor to the
-   * bottom edge and the dock fades out and collapses its reserved height
-   * (kept mounted so dismissing the keyboard restores it without a remount).
-   */
-  dockStartersToBottom?: boolean;
-
-  /**
-   * When true, the docked {@link startersSlot} keeps its place in the tree but
-   * collapses to nothing, through the same transition an open soft keyboard
-   * uses. The empty state sets it once its starter query has settled with no
-   * chips to show. The collapse wraps the whole docked column, padding
-   * included, so an empty dock gives back every pixel it was holding.
-   */
-  startersDockCollapsed?: boolean;
 
   /**
    * Top-center floating row of active background-process overlays (subagents,
@@ -235,9 +204,6 @@ export function ChatBody({
   queuedDrawerSlot,
   channelFooterSlot,
   startersSlot,
-  belowFoldSlot,
-  dockStartersToBottom = false,
-  startersDockCollapsed = false,
   activeProcessOverlaysSlot,
 }: ChatBodyProps) {
   const { t } = useTranslation("chat");
@@ -281,26 +247,17 @@ export function ChatBody({
   // keyboard is open.
   const outerClass = isEmptyState ? `${baseClass} overflow-y-auto` : baseClass;
 
-  const isDockedEmpty = isEmptyState && dockStartersToBottom;
-
   // The composer lives at outer > inner > group > stack in every branch, so
-  // flipping docked/undocked (starters arriving) or empty/active does not
-  // remount it and drop textarea focus. Empty + docked: inner is a
-  // min-h-full column and the group flexes + centers (or bottom-anchors
-  // while the keyboard is open). Empty + undocked: inner is the centered
-  // column and the group shrink-wraps. Active: both are flex-1 min-h-0 so
-  // the transcript still fills.
+  // flipping empty/active does not remount it and drop textarea focus.
+  // Empty: inner is the centered column and the group shrink-wraps.
+  // Active: both are flex-1 min-h-0 so the transcript still fills.
   const innerClass = isEmptyState
-    ? isDockedEmpty
-      ? "flex min-h-full flex-col"
-      : `flex min-h-full flex-col ${nonDockedAlignmentClass}`
+    ? `flex min-h-full flex-col ${nonDockedAlignmentClass}`
     : "flex min-h-0 flex-1 flex-col";
 
-  const groupClass = isDockedEmpty
-    ? `flex flex-1 flex-col ${keyboardOpen ? "justify-end" : "[justify-content:safe_center]"}`
-    : isEmptyState
-      ? "flex flex-col"
-      : "flex min-h-0 flex-1 flex-col";
+  const groupClass = isEmptyState
+    ? "flex flex-col"
+    : "flex min-h-0 flex-1 flex-col";
 
   // Mirror the mounted banner — not the candidate slot — into the shared
   // store so activation surfaces stay mutually exclusive with nudge banners.
@@ -319,38 +276,11 @@ export function ChatBody({
     return unregisterVisibleBanner;
   }, [bannerRendered, registerVisibleBanner, unregisterVisibleBanner]);
 
-  // Shared treatment for the below-composer extras (the starters dock and
-  // the plugin pills) when something should stand down: fade out and collapse
-  // the reserved height so the bottom-anchored composer reaches the keyboard
-  // edge, or so an empty dock gives its space back. Each stays mounted so the
-  // reason going away restores it without a remount, and `inert` removes it
-  // from the tab order and the accessibility tree. The inner div clips only
-  // while collapsed: the collapse needs the clip, but at rest it would shave
-  // the keyboard-focus rings that paint outside the cards and buttons inside
-  // the slot. Reduced motion gets the same end states without the tween.
-  const renderCollapse = (
-    dataSlot: string,
-    collapsed: boolean,
-    children: ReactNode,
-  ) => (
-    <div
-      data-slot={dataSlot}
-      inert={collapsed || undefined}
-      className={`grid transition-[grid-template-rows,opacity] duration-150 motion-reduce:transition-none${collapsed ? " pointer-events-none opacity-0" : ""}`}
-      style={{ gridTemplateRows: collapsed ? "0fr" : "1fr" }}
-    >
-      <div className={`min-h-0${collapsed ? " overflow-hidden" : ""}`}>
-        {children}
-      </div>
-    </div>
-  );
-
-  // Composer stack stays at the same tree position across empty→active
-  // and undocked→docked so React preserves its state (focus, draft text,
-  // attachments) and iOS Safari does not blur the input on first send
-  // (LUM-1506 / LUM-1516). `trailingStarters` lets the docked layout
-  // render the starters elsewhere (its own bottom dock) instead of
-  // directly below the composer.
+  // Composer stack stays at the same tree position across empty→active so
+  // React preserves its state (focus, draft text, attachments) and iOS
+  // Safari does not blur the input on first send (LUM-1506 / LUM-1516).
+  // `trailingStarters` is the app-editing side panel's contextual chips,
+  // rendered directly below the composer.
   const renderComposerStack = (trailingStarters: ReactNode) => (
     // The banner is a flow child here because it is an opaque full-width
     // card that always occupies its own height: the `flex-1` scroll area
@@ -474,21 +404,9 @@ export function ChatBody({
             </div>
           )}
 
-          {renderComposerStack(
-            showingDocument || isDockedEmpty ? null : startersSlot,
-          )}
+          {renderComposerStack(showingDocument ? null : startersSlot)}
         </div>
-        {isDockedEmpty &&
-          startersSlot &&
-          renderCollapse(
-            "docked-starters",
-            keyboardOpen || startersDockCollapsed,
-            <ChatColumn className="pb-3">{startersSlot}</ChatColumn>,
-          )}
       </div>
-      {isDockedEmpty && belowFoldSlot ? (
-        <ChatColumn className="pt-2 pb-8">{belowFoldSlot}</ChatColumn>
-      ) : null}
       {dragOverlay}
     </div>
   );

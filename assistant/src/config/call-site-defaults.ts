@@ -66,12 +66,6 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     temperature: 0,
     disableCache: true,
   },
-  conversationStarters: {
-    profile: "balanced",
-    effort: "low",
-    thinking: { enabled: false },
-  },
-
   filingAgent: { profile: "cost-optimized" },
   memoryExtraction: { profile: "cost-optimized" },
   memoryRetrieval: { profile: "cost-optimized" },

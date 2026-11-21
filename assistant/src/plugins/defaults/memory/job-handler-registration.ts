@@ -22,7 +22,6 @@
 
 import { usesConceptPageMemory } from "../../../config/memory-v3-gate.js";
 import { buildConversationSummaryJob } from "../../../conversations/job-handlers/summarization.js";
-import { generateConversationStartersJob } from "../../../home/job-handlers/conversation-starters.js";
 import { mediaProcessingJob } from "../../../media/job-handlers/media-processing.js";
 import {
   pruneOldConversationsJob,
@@ -82,7 +81,4 @@ export function registerMemoryPluginJobHandlers(): void {
     await buildConversationSummaryJob(job, config);
   });
   registerJobHandler("media_processing", (job) => mediaProcessingJob(job));
-  registerJobHandler("generate_conversation_starters", (job) =>
-    generateConversationStartersJob(job),
-  );
 }

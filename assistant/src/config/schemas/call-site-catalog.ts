@@ -172,13 +172,6 @@ const CATALOG_RECORD: CatalogRecord = {
   },
 
   // ui
-  conversationStarters: {
-    id: "conversationStarters",
-    displayName: "Conversation Starters",
-    description:
-      "Generates the personalized starter chips on the empty conversation page.",
-    domain: "ui",
-  },
   replySuggestion: {
     id: "replySuggestion",
     displayName: "Reply Suggestion",

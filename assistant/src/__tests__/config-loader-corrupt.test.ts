@@ -7,6 +7,7 @@
  * that the corrupt file is preserved for debugging.
  */
 
+import * as fs from "node:fs";
 import {
   existsSync,
   mkdirSync,
@@ -16,12 +17,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import {
   getConfig,
   invalidateConfigCache,
   loadRawConfig,
+  saveRawConfig,
 } from "../config/loader.js";
 
 // ---------------------------------------------------------------------------
@@ -201,6 +203,28 @@ describe("loadRawConfig corrupt-file recovery", () => {
 
     expect(raw).toEqual({});
     expect(listQuarantinedFiles()).toHaveLength(1);
+  });
+
+  test("a save that crashes mid-write leaves the previous config intact", () => {
+    const previous = JSON.stringify({ foo: "bar" });
+    writeFileSync(CONFIG_PATH, previous);
+
+    // Simulate a crash partway through the write: half the bytes land, then
+    // the process dies.
+    const realWrite = fs.writeFileSync;
+    const spy = spyOn(fs, "writeFileSync").mockImplementation(
+      (path, data) => {
+        realWrite(path, String(data).slice(0, 5));
+        throw new Error("crash");
+      },
+    );
+    try {
+      expect(() => saveRawConfig({ foo: "baz" })).toThrow("crash");
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(readFileSync(CONFIG_PATH, "utf-8")).toBe(previous);
   });
 
   test("returns parsed object when config is valid", () => {

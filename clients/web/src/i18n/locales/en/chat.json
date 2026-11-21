@@ -407,8 +407,7 @@
   "chatRouteContent": {
     "askTheDoctor": "Ask the Doctor",
     "goToDoctor": "Go to Doctor",
-    "openPage": "Open page",
-    "suggestionFallback": "Suggestion"
+    "openPage": "Open page"
   },
   "chatRuleEditorModal": {
     "applyTo": "Apply to",
@@ -578,9 +577,6 @@
     "labelLoaded": "{count, plural, one {# loaded asset} other {# loaded assets}}",
     "ariaLabelLoaded": "Conversation assets, {count, plural, one {# loaded item} other {# loaded items}}",
     "ariaLabelLoadedUnseen": "Conversation assets, {count, plural, one {# loaded item} other {# loaded items}} (unseen changes)"
-  },
-  "conversationStarterDock": {
-    "caption": "Try some suggestions:"
   },
   "conversationStarterGrid": {
     "sendAria": "Send: {label}"
@@ -1104,9 +1100,6 @@
     "letsDoIt": "Let's do it!",
     "thingsWeCanDo": "Things we can do:",
     "whatWellNeed": "Here's what we'll need:"
-  },
-  "suggestionLibrary": {
-    "scrollForMore": "Scroll down to see more"
   },
   "surfaceActions": {
     "submitFailed": "Failed to submit. Please try again."

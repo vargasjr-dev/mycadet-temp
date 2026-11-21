@@ -20,7 +20,7 @@ import type { WorkspaceMigration } from "./types.js";
  * tuned the combined call site keep their override. Only fall back to the
  * fixed Haiku defaults when no `conversationStarters` override exists.
  *
- * Mirrors `046-seed-conversation-starters-callsite`:
+ * Mirrors the seeding pattern of the sibling callsite migrations:
  *   - In the fallback default path, skip when the resolved provider is not
  *     Anthropic or OpenRouter (the seeded model IDs are Anthropic-shaped, so
  *     mixing with another provider would guarantee invalid-model errors).

@@ -532,8 +532,8 @@ export function readPromptFile(path: string): string | null {
  * and concatenates whichever exist, plus the guardian's user persona when
  * one is resolvable. Returns null if none are present.
  *
- * Used by subsystems (memory extraction, conversation starters,
- * notification decisions) that run outside the per-turn pipeline and want
+ * Used by subsystems (memory extraction, notification decisions) that run
+ * outside the per-turn pipeline and want
  * the assistant's "view of themselves and their guardian" without a trust
  * context. The guardian persona fold is what callers used to do manually
  * by passing `userPersona: resolveGuardianPersona()` — folding it in here

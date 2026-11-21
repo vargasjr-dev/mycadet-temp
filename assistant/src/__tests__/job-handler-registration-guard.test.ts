@@ -56,7 +56,6 @@ const NON_PLUGIN_JOB_TYPES = [
   "backfill_lexical_index",
   "build_conversation_summary",
   "media_processing",
-  "generate_conversation_starters",
 ].sort();
 
 function captureRegisteredTypes(register: () => void): string[] {
