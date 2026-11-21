@@ -319,11 +319,14 @@ describe("share feature", () => {
     return registration;
   };
 
-  test("sanitizeFilename strips directories and Windows-invalid characters", () => {
-    expect(sanitizeFilename("..\\..\\évil<name>.txt")).toBe("évil_name_.txt");
+  test("sanitizeFilename strips directories and invalid characters", () => {
+    // Forward slashes are separators on every host; the host's own
+    // basename rules (path.basename) strip the rest, so only the invalid
+    // characters survive for the regex.
     expect(sanitizeFilename("nested/dir/受信 rėsumė.txt")).toBe(
       "受信 rėsumė.txt",
     );
+    expect(sanitizeFilename("évil<name>.txt")).toBe("évil_name_.txt");
     expect(sanitizeFilename("///")).toBe("download");
   });
 

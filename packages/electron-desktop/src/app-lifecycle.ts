@@ -53,12 +53,16 @@ import { install as installDiagnostics } from "./features/diagnostics";
 import { install as installAuth } from "./features/auth";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
 import { install as installDictation } from "./features/dictation";
-import { install as installHostProxy } from "./features/host-proxy";
+import {
+  install as installHostProxy,
+  type ShellHostProxyInputs,
+} from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
 import { install as installPermissions } from "./features/permissions";
 import { install as installTray } from "./features/tray";
-import { install as installShare } from "./features/share";
+import { install as installShare, type SharePresenter } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
+import type { TrayModelRuntime } from "./tray-model";
 import {
   createHelperToastFactory,
   resolveHelperToastBinaryPath,
@@ -118,6 +122,25 @@ export interface DesktopAppInputs {
    * one.
    */
   platform: string;
+  /**
+   * The shell's host-proxy identity and executors. Every shell has an
+   * interface id; the rest is the shell's own wiring — absent fields fall
+   * back to the shared composition's defaults.
+   */
+  hostProxy: ShellHostProxyInputs;
+  /**
+   * The shell's tray model values — the surfaces only it has (its icons,
+   * its companion callbacks). Absent, the classic notification-area
+   * runtime answers.
+   */
+  tray?: { runtime: TrayModelRuntime };
+  /** The shell opting into the taskbar-button surface. */
+  taskbar?: boolean;
+  /**
+   * The shell's native share surface. Absent, sharing presents with the
+   * Save-As dialog fallback.
+   */
+  share?: { present: SharePresenter };
   /**
    * How the main window's chrome draws — the macOS traffic lights over a
    * hidden title bar, the Windows caption overlay, or the plain system
@@ -411,12 +434,15 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installAuxiliaryWindows();
       installLoginItem();
       installMainWindow();
+      installHostProxy(inputs.hostProxy);
+      installTray(inputs.tray, inputs.taskbar);
+      installShare(inputs.share);
+      // Still the classic shells' own compositions until their rounds
+      // land: the permissions contract (R10), the helper dictation bridge
+      // and the voice-mode chord (R11).
       if (process.platform !== "darwin") {
         installDictation();
-        installHostProxy();
         installPermissions();
-        installTray();
-        installShare();
         installVoiceModeChord();
       }
 

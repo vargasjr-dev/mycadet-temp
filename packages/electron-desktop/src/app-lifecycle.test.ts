@@ -144,7 +144,8 @@ beforeEach(() => {
 
 /** The universal surface, in the order startApp assembles it. The
  * auth/auxiliary-windows/login-item/main-window composition is shared by
- * every shell since the main-window fold. */
+ * every shell since the main-window fold; the tray, share, and host-proxy
+ * installs joined it in R9 — every shell rides them, values shell-passed. */
 const universalSurface = [
   "hotkey-settings",
   "auto-update",
@@ -163,17 +164,13 @@ const universalSurface = [
   "auxiliary-windows",
   "login-item",
   "main-window",
+  "host-proxy",
+  "tray",
+  "share",
 ];
 
 /** The classic-only composition, appended on the classic platforms. */
-const classicSurface = [
-  "dictation",
-  "host-proxy",
-  "permissions",
-  "tray",
-  "share",
-  "voice-mode-chord",
-];
+const classicSurface = ["dictation", "permissions", "voice-mode-chord"];
 
 describe("startApp", () => {
   test("logs ready, assembles the universal surface in order, and runs setup once Electron is ready", async () => {
@@ -181,6 +178,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
+      hostProxy: { interfaceId: "test" },
       setup: () => {
         ran = true;
       },
@@ -207,6 +205,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
+      hostProxy: { interfaceId: "test" },
       setup: () => {
         ran = true;
       },
@@ -223,7 +222,11 @@ describe("startApp", () => {
   });
 
   test("a second-instance launch focuses the client's main window", async () => {
-    startApp({ platform: "test-electron", titleBarMode: "hidden" });
+    startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
+      hostProxy: { interfaceId: "test" },
+    });
 
     const secondInstance = appListeners.get("second-instance") ?? [];
     expect(secondInstance).toHaveLength(1);
@@ -236,6 +239,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
+      hostProxy: { interfaceId: "test" },
       setup: () => {
         ran = true;
       },
@@ -258,6 +262,7 @@ describe("startApp", () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
+      hostProxy: { interfaceId: "test" },
       setup: () => {
         throw boom;
       },

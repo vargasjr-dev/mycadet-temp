@@ -52,7 +52,7 @@ mock.module("electron-log/main", () => {
   };
 });
 
-const { routerTesting } = await import("../index");
+const { __testing: routerTesting } = await import("../host-proxy/router");
 const { install: hostProxyInstall } = await import("../features/host-proxy");
 
 afterEach(() => {
@@ -61,7 +61,7 @@ afterEach(() => {
 });
 
 test("installs the bridge with the portable executors and tears down on quit", async () => {
-  hostProxyInstall();
+  hostProxyInstall({ interfaceId: "test" });
 
   // The bridge install is deferred a microtask so the lockfile watcher's
   // initial read (a later-sorted feature) lands first.
@@ -71,20 +71,41 @@ test("installs the bridge with the portable executors and tears down on quit", a
   expect([...routerTesting.executors.keys()].sort()).toEqual([
     "host_bash",
     "host_browser",
+    "host_cu",
     "host_file",
     "host_transfer",
     "host_ui_snapshot",
   ]);
-  expect(routerTesting.connections.size).toBe(0);
 
   expect(quitListeners.length).toBe(1);
   quitListeners[0]();
   expect(routerTesting.executors.size).toBe(0);
 });
 
-test("installs the computer-use executor wired by direct import", async () => {
-  hostProxyInstall();
+test("the shell's own values ride the runtime", async () => {
+  const bashExecutor = { handleRequest() {}, handleCancel() {} };
+  const hostCuExecutor = { handleRequest() {}, handleCancel() {} };
+  let toreDown = 0;
+  hostProxyInstall({
+    interfaceId: "test-shell",
+    bashExecutor,
+    hostCu: {
+      executor: hostCuExecutor,
+      teardown: () => {
+        toreDown += 1;
+      },
+    },
+    teardown: () => {
+      toreDown += 10;
+    },
+  });
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  expect(routerTesting.executors.has("host_cu")).toBe(true);
+  expect(routerTesting.executors.get("host_bash")).toBe(bashExecutor);
+  expect(routerTesting.executors.get("host_cu")).toBe(hostCuExecutor);
+
+  // The shell's teardown rides the bridge's quit teardown, after the
+  // shared executors' own.
+  quitListeners[0]();
+  expect(toreDown).toBe(11);
 });

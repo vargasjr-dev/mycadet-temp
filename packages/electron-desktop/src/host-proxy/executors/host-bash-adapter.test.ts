@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import os from "node:os";
 
 import { HostProxyPoster } from "@mycadet/electron-desktop";
-import { __testing as executorTesting } from "@mycadet/electron-desktop";
+import { __testing as executorTesting } from "./host-shell-executor";
 
 import { createHostBashExecutor } from "./host-bash-adapter";
 

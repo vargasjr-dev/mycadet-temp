@@ -1,10 +1,8 @@
 import { shell, type NativeImage } from "electron";
 
-import {
-  configureTrayModel,
-  installTray as installSharedTray,
-  type TrayHandlers,
-  type TrayMenuIcon,
+import type {
+  TrayMenuIcon,
+  TrayModelRuntime,
 } from "@mycadet/electron-desktop/tray-model";
 import {
   readCompanionHidden,
@@ -40,25 +38,21 @@ const ICONS: Record<TrayMenuIcon, NativeImage> = {
   settings: menuIcon(MENU_ICON_SETTINGS),
 };
 
-export const installTray = (handlers: TrayHandlers): void => {
-  configureTrayModel({
-    accelerator: acceleratorOption,
-    // macOS is the cloud that has the surface. Flat `true` rather than a
-    // read of anything: every macOS build has one, and the tray preference
-    // below is the only thing that turns it off.
-    companionSupported: () => true,
-    companionHidden: readCompanionHidden,
-    companionSize: readCompanionSize,
-    dispatch: dispatchToMain,
-    icon: (icon) => ICONS[icon],
-    onboardingActive: readOnboardingActive,
-    openComponentGallery: () => {
-      void shell.openExternal("http://localhost:6007");
-    },
-    removePairedLabel: "Remove from this Mac…",
-    replayCompanionIntro,
-    setCompanionSize: setCompanionSurfaceSize,
-    setCompanionVisible: setCompanionSurfaceVisible,
-  });
-  installSharedTray(handlers);
+export const trayRuntime: TrayModelRuntime = {
+  accelerator: acceleratorOption,
+  // Every build of this shell has the companion surface; the tray
+  // preference is the only thing that turns it off.
+  companionSupported: () => true,
+  companionHidden: readCompanionHidden,
+  companionSize: readCompanionSize,
+  dispatch: dispatchToMain,
+  icon: (icon) => ICONS[icon],
+  onboardingActive: readOnboardingActive,
+  openComponentGallery: () => {
+    void shell.openExternal("http://localhost:6007");
+  },
+  removePairedLabel: "Remove from this Mac\u2026",
+  replayCompanionIntro,
+  setCompanionSize: setCompanionSurfaceSize,
+  setCompanionVisible: setCompanionSurfaceVisible,
 };

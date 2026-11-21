@@ -50,21 +50,37 @@ test("creates a runtime with only the committed portable executors", () => {
   expect(() => runtime.teardownExecutors?.()).not.toThrow();
 });
 
-test("adds host_cu when the computer-use capability is installed", () => {
+test("adds host_cu when the shell contributes one, and tears it down", () => {
   let didTeardown = false;
   const runtime = createHostProxyRuntime({
     interfaceId: "windows",
     bashExecutor: unavailableExecutor,
-    logger: console,
-    computerUseExecutors: {
-      host_cu: unavailableExecutor,
+    hostCu: {
+      executor: unavailableExecutor,
       teardown: () => {
         didTeardown = true;
       },
     },
+    logger: console,
   });
 
   expect(runtime.executors.host_cu).toBe(unavailableExecutor);
   runtime.teardownExecutors?.();
   expect(didTeardown).toBe(true);
+});
+
+test("the shell's capability flags ride the SSE headers", () => {
+  const runtime = createHostProxyRuntime({
+    interfaceId: "test-shell",
+    supports: { windowCapture: true, sequence: true, coachmarks: true },
+    bashExecutor: unavailableExecutor,
+    logger: console,
+  });
+
+  expect(runtime.sseClientHeaders()).toMatchObject({
+    "X-Cadet-Interface-Id": "test-shell",
+    "X-Cadet-Cu-Window-Capture": "1",
+    "X-Cadet-Cu-Sequence": "1",
+    "X-Cadet-Cu-Annotate": "1",
+  });
 });

@@ -183,8 +183,8 @@ const REFUSALS: Record<CoachmarkRefusal, string> = {
  * The surface lives in the window layer and this is the host proxy: an
  * executor that imported its way into the windows would be the transport
  * depending on the thing being transported to. The app wires the two
- * together (`host-proxy-adapter.ts`), which is also what lets these paths be
- * exercised without a window server.
+ * together (the `hostCu` input on `startApp`), which is also what lets these
+ * paths be exercised without a window server.
  *
  * The conversation goes with the marks because a mark carries no identity of
  * its own, and the surface it would land on belongs to whichever call is

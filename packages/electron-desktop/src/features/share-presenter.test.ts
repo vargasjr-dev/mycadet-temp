@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../test-setup";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { z } from "zod";
 
-// Capture the invocable IPC registration `installShare` makes so the tests can
+// Capture the invocable IPC registration `install` makes so the tests can
 // drive the handler directly without a real `ipcMain`. The sender-origin guard
-// inside the real `handle` is covered by `ipc.test.ts`, so it's intentionally
-// absent here (mirrors `dock.test.ts`).
+// inside the real `handle` is covered by the ipc suite, so it's intentionally
+// absent here.
 type Handler = (args: unknown[], event: unknown) => unknown;
 type Registration = {
   channel: string;
@@ -16,7 +16,7 @@ type Registration = {
   fn: Handler;
 };
 const handleRegistrations: Registration[] = [];
-mock.module("@mycadet/electron-desktop/ipc", () => ({
+mock.module("../ipc", () => ({
   handle: (channel: string, schema: z.ZodType<unknown[]>, fn: Handler) => {
     handleRegistrations.push({ channel, schema, fn });
   },
@@ -42,47 +42,21 @@ mock.module("node:fs/promises", () => ({
   stat: statMock,
 }));
 
-// Mock the electron seams `share.ts` touches: the `ShareMenu` picker and
-// `BrowserWindow` (used to anchor the sheet to the calling window). `ShareMenu`
-// records its constructor arg + `popup` options so the tests can assert the
-// file path and that no teardown callback is wired to menu close.
-type PopupOpts = { window?: unknown; callback?: () => void };
-const shareMenuArgs: Array<{ filePaths: string[] }> = [];
-const popupCalls: PopupOpts[] = [];
-class ShareMenuMock {
-  constructor(arg: { filePaths: string[] }) {
-    shareMenuArgs.push(arg);
-  }
-  popup(opts: PopupOpts): void {
-    popupCalls.push(opts);
-  }
-}
-const fakeWindow = { id: "main-window" };
-const fromWebContentsMock = mock((_sender: unknown): unknown => fakeWindow);
-mock.module("electron", () =>
-  electronMock({
-    ShareMenu: ShareMenuMock,
-    BrowserWindow: { fromWebContents: fromWebContentsMock },
-  }),
-);
+mock.module("electron", () => electronMock({}));
 
-// `ShareMenu` wraps `NSSharingServicePicker`, so the handler guards on
-// `process.platform`. Force darwin so the happy-path tests run on the Linux CI
-// host — matching how `dock.test.ts` defines `process.resourcesPath`.
-// `configurable` lets the guard test flip it and restore.
-const setPlatform = (value: NodeJS.Platform): void => {
-  Object.defineProperty(process, "platform", { value, configurable: true });
+const { install, sweepStaleShareDirs } = await import("./share");
+
+// The test's stand-in for a shell's native share surface: it records what
+// the staged share handed it.
+const presented: Array<{ filePath: string; sender: unknown }> = [];
+const present = (file: { filePath: string; sender: unknown }): void => {
+  presented.push(file);
 };
-setPlatform("darwin");
 
-const { installShare, sweepStaleShareDirs } = await import("./share");
+install({ present });
 
-// Idempotent — a second call must not double-register (module-level flag).
-installShare();
-installShare();
-
-// installShare kicks off a startup sweep (a `readdir`) synchronously; snapshot
-// the call count before `beforeEach` clears the mocks.
+// install kicks off a startup sweep (a `readdir`) synchronously; snapshot the
+// call count before `beforeEach` clears the mocks.
 const readdirCallsAtInstall = readdirMock.mock.calls.length;
 
 const shareReg = (): Registration =>
@@ -97,8 +71,7 @@ const expectedDir = `${path.join(tmpdir(), "cadet-share-")}abc123`;
 const STALE_MS = 60 * 60 * 1000;
 
 beforeEach(() => {
-  shareMenuArgs.length = 0;
-  popupCalls.length = 0;
+  presented.length = 0;
   mkdtempMock.mockClear();
   writeFileMock.mockClear();
   rmMock.mockClear();
@@ -108,12 +81,9 @@ beforeEach(() => {
   statMock.mockImplementation((_path: string) =>
     Promise.resolve({ mtimeMs: Date.now() }),
   );
-  fromWebContentsMock.mockReset();
-  fromWebContentsMock.mockReturnValue(fakeWindow);
-  setPlatform("darwin");
 });
 
-describe("installShare wiring", () => {
+describe("install wiring", () => {
   test("registers cadet:share:file exactly once over the invocable `handle` path", () => {
     const matches = handleRegistrations.filter(
       (r) => r.channel === "cadet:share:file",
@@ -121,7 +91,7 @@ describe("installShare wiring", () => {
     expect(matches).toHaveLength(1);
   });
 
-  test("kicks off a single startup sweep (idempotent across repeat installs)", () => {
+  test("kicks off a single startup sweep for a shell with a presenter", () => {
     expect(readdirCallsAtInstall).toBe(1);
   });
 });
@@ -149,8 +119,8 @@ describe("ShareFileArgs schema", () => {
   });
 });
 
-describe("share handler", () => {
-  test("writes the bytes to a fresh temp file and presents that path", async () => {
+describe("staged share handler", () => {
+  test("writes the bytes to a fresh temp file and hands the presenter that path", async () => {
     // WHEN the renderer shares a file
     await shareReg().fn([bytes, "report.pdf"], fakeEvent);
 
@@ -161,9 +131,8 @@ describe("share handler", () => {
     const expectedPath = path.join(expectedDir, "report.pdf");
     expect(writeFileMock).toHaveBeenCalledWith(expectedPath, bytes);
 
-    // …and the sheet is opened for exactly that path.
-    expect(shareMenuArgs).toEqual([{ filePaths: [expectedPath] }]);
-    expect(popupCalls).toHaveLength(1);
+    // …and the presenter is handed exactly that path, with the sender.
+    expect(presented).toEqual([{ filePath: expectedPath, sender: fakeSender }]);
   });
 
   test("strips path components from the renderer filename, keeping the write inside the temp dir", async () => {
@@ -173,56 +142,24 @@ describe("share handler", () => {
     // THEN only the basename is used, so the write stays in the temp dir
     const expectedPath = path.join(expectedDir, "passwd");
     expect(writeFileMock).toHaveBeenCalledWith(expectedPath, bytes);
-    expect(shareMenuArgs).toEqual([{ filePaths: [expectedPath] }]);
+    expect(presented[0]!.filePath).toBe(expectedPath);
   });
 
-  test("anchors the sheet to the sender's BrowserWindow", async () => {
+  test("never deletes the fresh temp dir — only stale dirs are swept", async () => {
     await shareReg().fn([bytes, "report.pdf"], fakeEvent);
 
-    expect(fromWebContentsMock).toHaveBeenCalledWith(fakeSender);
-    expect(popupCalls[0]!.window).toBe(fakeWindow);
-  });
-
-  test("presents an unanchored sheet when the sender has no window", async () => {
-    // GIVEN the sender's WebContents has no owning BrowserWindow
-    fromWebContentsMock.mockReturnValue(null);
-
-    // WHEN the file is shared
-    await shareReg().fn([bytes, "report.pdf"], fakeEvent);
-
-    // THEN the sheet still opens, just unanchored (undefined, not null)
-    expect(popupCalls[0]!.window).toBeUndefined();
-  });
-
-  test("wires no teardown callback and does not delete the fresh temp dir", async () => {
-    await shareReg().fn([bytes, "report.pdf"], fakeEvent);
-
-    // Cleanup is intentionally NOT wired to the picker closing: Electron's
-    // popup callback fires on menu close (service selected), not when the
-    // service is done reading the file. No teardown callback is passed, and the
-    // just-written (fresh) dir is never swept — only stale dirs are.
-    expect(popupCalls[0]!.callback).toBeUndefined();
+    // Cleanup is intentionally NOT tied to the picker closing: a picker's
+    // close callback fires the moment a service is selected, not when the
+    // service is done reading the file. The just-written (fresh) dir is
+    // never swept — only stale dirs are.
     expect(rmMock).not.toHaveBeenCalled();
-  });
-
-  test("rejects on a non-darwin host without touching the filesystem", async () => {
-    // GIVEN a non-macOS shell (the picker wraps NSSharingServicePicker)
-    setPlatform("linux");
-
-    // WHEN a share is attempted THEN it fails loudly and writes nothing
-    await expect(
-      shareReg().fn([bytes, "report.pdf"], fakeEvent),
-    ).rejects.toThrow(/only available on macOS/);
-    expect(mkdtempMock).not.toHaveBeenCalled();
-    expect(writeFileMock).not.toHaveBeenCalled();
-    expect(shareMenuArgs).toHaveLength(0);
   });
 });
 
 describe("sweepStaleShareDirs", () => {
   const dirPath = (name: string): string => path.join(tmpdir(), name);
 
-  test("removes only stale cadet-share-* dirs, sparing fresh ones and unrelated entries", async () => {
+  test("removes only stale staged dirs, sparing fresh ones and unrelated entries", async () => {
     const now = Date.now();
     const mtimes: Record<string, number> = {
       "cadet-share-old": now - 2 * STALE_MS, // stale → removed
@@ -233,7 +170,7 @@ describe("sweepStaleShareDirs", () => {
       Promise.resolve([
         "cadet-share-old",
         "cadet-share-fresh",
-        "cadet-mac-helper-permission-x",
+        "cadet-unrelated-entry",
         "cadet-share-old2",
       ]),
     );
@@ -252,16 +189,14 @@ describe("sweepStaleShareDirs", () => {
       recursive: true,
       force: true,
     });
-    // A fresh share dir might still be open by the selected service — never
-    // deleted, even though it matches the prefix.
+    // A fresh staged dir might still be open by the selected service —
+    // never deleted, even though it matches the prefix.
     expect(rmMock).not.toHaveBeenCalledWith(
       dirPath("cadet-share-fresh"),
       expect.anything(),
     );
     // Unrelated temp dirs aren't even stat'd.
-    expect(statMock).not.toHaveBeenCalledWith(
-      dirPath("cadet-mac-helper-permission-x"),
-    );
+    expect(statMock).not.toHaveBeenCalledWith(dirPath("cadet-unrelated-entry"));
   });
 
   test("leaves everything in place when no share dir is stale", async () => {

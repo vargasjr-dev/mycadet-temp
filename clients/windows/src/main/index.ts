@@ -30,6 +30,8 @@ handleSync("cadet:config:get", () => ({
 startApp({
   platform: "win-electron",
   titleBarMode: "hiddenOverlay",
+  hostProxy: { interfaceId: "windows" },
+  taskbar: true,
   helperToastExecutable: "Cadet.WindowsHelper.exe",
   helperToastOverrideEnvVar: "CADET_WINDOWS_HELPER_PATH",
   helperToastName: "windows-helper",

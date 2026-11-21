@@ -1,24 +1,23 @@
-import { app, Notification } from "electron";
+import { app, BrowserWindow, Notification, ShareMenu } from "electron";
 
 import {
   hasPendingDeepLinks,
   hasPendingFiles,
   installDictationOverlay,
-  openAboutWindow,
+  ensureMainWindowVisible,
   registerCompanionSurfaceSync,
   startApp,
 } from "@mycadet/electron-desktop";
 import log from "@mycadet/electron-desktop/app-logger";
 
 import { installDock } from "./dock";
-import { installShare } from "./share";
-import { installHostProxyBridge } from "./host-proxy-adapter";
+import { hostBashExecutor } from "./executors/host-bash-adapter";
+import { createHostCuExecutor } from "./executors/host-cu-executor";
+import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
+import { trayRuntime } from "./tray.client";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
 import { installHotkeyHelper } from "./hotkey-helper";
-import {
-  ensureMainWindowVisible,
-  toggleMainWindowVisibility,
-} from "@mycadet/electron-desktop";
+import { showCompanionCoachmarks } from "./companion-window";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -40,7 +39,6 @@ import {
   syncCompanionSurface,
 } from "./companion-window";
 import { installTextInsertionIpc } from "./textInsertion";
-import { installTray } from "./tray.client";
 
 const isDev = !app.isPackaged;
 
@@ -66,6 +64,28 @@ const nativeNotifications = isNotifierSupported()
 startApp({
   platform: "mac-electron",
   titleBarMode: "hidden",
+  hostProxy: {
+    interfaceId: "macos",
+    supports: { windowCapture: true, sequence: true, coachmarks: true },
+    bashExecutor: hostBashExecutor,
+    hostCu: {
+      executor: createHostCuExecutor({
+        showCoachmarks: showCompanionCoachmarks,
+      }),
+      teardown: shutdownSharedCuHelper,
+    },
+  },
+  tray: { runtime: trayRuntime },
+  share: {
+    present: ({ filePath, sender }) => {
+      // ShareMenu wraps the native share sheet; popup's anchor option is
+      // `window` (the documented `browserWindow` name is ignored at runtime).
+      const shareMenu = new ShareMenu({ filePaths: [filePath] });
+      shareMenu.popup({
+        window: BrowserWindow.fromWebContents(sender) ?? undefined,
+      });
+    },
+  },
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();
@@ -83,7 +103,6 @@ startApp({
     registerCompanionSurfaceSync(setCompanionSurfaceVisible);
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
     installCompanionWindow();
-    installShare();
     if (nativeNotifications) {
       Notification.isSupported();
       ensureNotifierDelegate();
@@ -91,13 +110,6 @@ startApp({
       app.on("before-quit", restoreNotifierDelegate);
     }
     installEscapeMonitor();
-    const teardownHostProxy = installHostProxyBridge();
-    app.on("before-quit", teardownHostProxy);
-    installTray({
-      toggleMainWindow: toggleMainWindowVisibility,
-      ensureMainWindow: ensureMainWindowVisible,
-      openAbout: openAboutWindow,
-    });
     syncCompanionSurface();
     void promptToRelocateIfStranded().catch((err: unknown) => {
       log.error("[app] relocation prompt failed:", err);

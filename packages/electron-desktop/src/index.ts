@@ -149,7 +149,11 @@ export {
 export { onSettingChange, readSetting, writeSetting } from "./settings";
 export { getStatus } from "./status";
 export { configureTrayModel, installTray } from "./tray-model";
-export type { TrayHandlers, TrayMenuIcon } from "./tray-model";
+export type {
+  TrayHandlers,
+  TrayMenuIcon,
+  TrayModelRuntime,
+} from "./tray-model";
 export { createWindowReadiness } from "./window-readiness";
 export {
   clearCompanionIntroSeen,
