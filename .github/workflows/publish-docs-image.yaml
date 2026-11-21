@@ -9,6 +9,17 @@ name: Publish Docs Image
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    # The image bakes the docs app + the design library + the patches the
+    # install applies — exactly what docs-release.yaml builds alongside,
+    # so the service and the marketing snapshot land in lockstep (the
+    # snapshot's HTML references this build's chunk hashes).
+    paths:
+      - "clients/docs/**"
+      - "packages/design-library/**"
+      - "patches/**"
+      - ".github/workflows/publish-docs-image.yaml"
 
 # Cancel superseded publishes: concurrency groups run in arbitrary order,
 # so cancelling older runs is what guarantees the newest commit's build is

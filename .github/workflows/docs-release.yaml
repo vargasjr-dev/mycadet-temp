@@ -1,0 +1,83 @@
+# The docs frontend's standalone release: every merge to main that touches
+# the docs app builds it and publishes the MARKETING SNAPSHOT as workflow
+# artifacts — no npm publish, no GCP knowledge (the cloud side's
+# github-handler watches for this workflow's webhook and pushes the bundle
+# into the channel's GCS bucket, the same split as the electron feed).
+#
+# The bundle is the servable static part of the standalone build: the
+# marketing routes' prerendered HTML (/, /community, /downloads) plus the
+# content-hashed client chunks under _next/. The /docs/* page routes stay
+# served by the docs-site Cloud Run service (publish-docs-image), whose
+# build ships the same commit's chunks — the bucket accumulates every
+# build's chunks append-only, so both consumers resolve their references.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "clients/docs/**"
+      - "packages/design-library/**"
+      - "patches/**"
+      - ".github/workflows/docs-release.yaml"
+  workflow_dispatch:
+
+# Cancel superseded publishes: the channel's latest/ alias must always
+# resolve to the newest commit's snapshot.
+concurrency:
+  group: docs-release
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      # Node runs the build itself (`bun run build` shells out to Node the
+      # same way the docs-site image does) — Next's server chunks don't
+      # survive a Bun runtime.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.22.2"
+
+      - name: Install dependencies
+        run: |
+          if ! bun install --frozen-lockfile --filter=@mycadet/docs; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/docs
+          fi
+
+      - name: Build the docs app
+        working-directory: clients/docs
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: bun run build
+
+      - name: Assemble the marketing snapshot
+        run: |
+          SITE=docs-frontend-site
+          mkdir -p "$SITE/_next"
+          # The marketing routes' prerendered HTML — the pages the cloud
+          # web twin serves from the bucket. The /docs/* page routes are
+          # NOT here; the docs-site service owns those.
+          cp clients/docs/.next/server/app/index.html "$SITE/"
+          cp clients/docs/.next/server/app/community.html "$SITE/"
+          cp clients/docs/.next/server/app/downloads.html "$SITE/"
+          # Content-hashed client chunks, referenced as /docs/_next/* (the
+          # app's assetPrefix). Uploaded append-only bucket-side so older
+          # builds' references keep resolving.
+          cp -R clients/docs/.next/static "$SITE/_next/"
+          echo "$GITHUB_SHA" > "$SITE/VERSION"
+
+      - name: Upload the snapshot artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: docs-frontend
+          path: docs-frontend-site
+          if-no-files-found: error
