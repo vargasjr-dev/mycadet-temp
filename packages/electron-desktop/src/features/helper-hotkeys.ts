@@ -23,7 +23,7 @@ import type {
 
 import { handle } from "../ipc";
 import log from "../app-logger";
-import { helperClient } from "./dictation";
+import { getSharedHelperClient } from "../native-helper-client";
 import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
 
 /**
@@ -193,7 +193,7 @@ const sendChords = async (
   binding: ChordBinding,
 ): Promise<ChordRegistrationResult> => {
   try {
-    const result = await helperClient().call(
+    const result = await getSharedHelperClient().call(
       "hotkey.chords",
       binding.kind === "off"
         ? { enable: false }
@@ -257,7 +257,7 @@ const sendModifierHold = async (
   hold: ModifierHold,
 ): Promise<ModifierHoldRegistrationResult> => {
   try {
-    const result = await helperClient().call(
+    const result = await getSharedHelperClient().call(
       "hotkey.modifierHold",
       hold.kind === "off"
         ? { enable: false }
@@ -287,7 +287,7 @@ const readFrontSelection = async (): Promise<HotkeySelectionResult> => {
     let holdId: number | undefined;
     // Chromium debounces activation for two seconds, so allow tree build time too.
     for (let attempt = 0; attempt <= FRONT_SELECTION_MAX_RETRIES; attempt++) {
-      const result = await helperClient().call(
+      const result = await getSharedHelperClient().call(
         "selection.read",
         holdId === undefined ? undefined : { holdId },
       );
@@ -331,7 +331,7 @@ const runningApps = async (bundleIds: string[]): Promise<string[]> => {
     return [];
   }
   try {
-    const result = await helperClient().call("apps.running", {
+    const result = await getSharedHelperClient().call("apps.running", {
       bundleIds: wanted,
     });
     const parsed = RUNNING_APPS_SCHEMA.safeParse(result);
@@ -356,7 +356,9 @@ const quitApp = async (bundleId: string): Promise<boolean> => {
     return false;
   }
   try {
-    const result = await helperClient().call("apps.quit", { bundleId });
+    const result = await getSharedHelperClient().call("apps.quit", {
+      bundleId,
+    });
     const parsed = QUIT_APP_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.asked;
   } catch (err) {
@@ -370,7 +372,7 @@ const quitApp = async (bundleId: string): Promise<boolean> => {
 /** The bundle identifier of the application in front, or `null` when the helper cannot say. */
 const frontmostApp = async (): Promise<string | null> => {
   try {
-    const result = await helperClient().call("apps.frontmost");
+    const result = await getSharedHelperClient().call("apps.frontmost");
     const parsed = FRONTMOST_APP_SCHEMA.safeParse(result);
     return parsed.success ? parsed.data.bundleId : null;
   } catch (err) {
@@ -396,9 +398,12 @@ const setInputActivityWatch = async (enable: boolean): Promise<boolean> => {
 
 const sendInputActivityWatch = async (enable: boolean): Promise<boolean> => {
   try {
-    const result = await helperClient().call("input.setActivityWatch", {
-      enable,
-    });
+    const result = await getSharedHelperClient().call(
+      "input.setActivityWatch",
+      {
+        enable,
+      },
+    );
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.enabled === enable;
   } catch (err) {
@@ -417,7 +422,7 @@ const sendInputActivityWatch = async (enable: boolean): Promise<boolean> => {
  */
 const sendScrollWatch = async (enable: boolean): Promise<boolean> => {
   try {
-    const result = await helperClient().call("input.setScrollWatch", {
+    const result = await getSharedHelperClient().call("input.setScrollWatch", {
       enable,
     });
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
@@ -440,7 +445,9 @@ const sendPressWatch = async (
   rects: readonly HelperHotkeyPressRect[],
 ): Promise<boolean> => {
   try {
-    const result = await helperClient().call("input.setPressWatch", { rects });
+    const result = await getSharedHelperClient().call("input.setPressWatch", {
+      rects,
+    });
     const parsed = HOTKEY_RESULT_SCHEMA.safeParse(result);
     return parsed.success && parsed.data.enabled === rects.length > 0;
   } catch (err) {
@@ -473,7 +480,7 @@ export type FrontAppFocus = { takesText: boolean; helperAnswered: boolean };
 
 export const readFrontAppFocus = async (): Promise<FrontAppFocus> => {
   try {
-    const result = await helperClient().call("focus.read");
+    const result = await getSharedHelperClient().call("focus.read");
     const parsed = FRONT_FOCUS_SCHEMA.safeParse(result);
     if (!parsed.success) {
       log.warn("[helper] focus read returned an invalid result");
@@ -506,7 +513,7 @@ export const postFrontAppShortcut = async (
 ): Promise<ShortcutOutcome> => {
   let pending: Promise<unknown>;
   try {
-    pending = helperClient().call("keys.shortcut", { key });
+    pending = getSharedHelperClient().call("keys.shortcut", { key });
   } catch (err) {
     log.warn(
       `[helper] shortcut not sent: ${err instanceof Error ? err.message : String(err)}`,
@@ -784,22 +791,22 @@ export const install = (inputs?: HelperHotkeysShellInputs): void => {
   shellWatches = inputs?.watches ?? null;
   shellPointerCheck = inputs?.isPointerOnCompanion ?? null;
 
-  unsubscribeState = helperClient().onState(handleHelperState);
-  unsubscribeHotkeyEvents = helperClient().onNotification(
+  unsubscribeState = getSharedHelperClient().onState(handleHelperState);
+  unsubscribeHotkeyEvents = getSharedHelperClient().onNotification(
     "hotkey.event",
     HOTKEY_EVENT_SCHEMA,
     (event) => {
       sendHotkeyEventToOwner(event);
     },
   );
-  unsubscribeInputActivity = helperClient().onNotification(
+  unsubscribeInputActivity = getSharedHelperClient().onNotification(
     "input.activity",
     z.unknown(),
     () => {
       sendInputActivityToOwner();
     },
   );
-  unsubscribeScrollEnded = helperClient().onNotification(
+  unsubscribeScrollEnded = getSharedHelperClient().onNotification(
     "input.scrollEnded",
     z.unknown(),
     () => {
@@ -809,7 +816,7 @@ export const install = (inputs?: HelperHotkeysShellInputs): void => {
   shellWatches?.provideFrameScrollWatch((enable) => {
     void sendScrollWatch(enable);
   });
-  unsubscribePressed = helperClient().onNotification(
+  unsubscribePressed = getSharedHelperClient().onNotification(
     "input.pressed",
     INPUT_PRESSED_SCHEMA,
     (event) => {

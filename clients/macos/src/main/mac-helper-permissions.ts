@@ -4,9 +4,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { z } from "zod";
 
-import { helperClient } from "@mycadet/electron-desktop/dictation";
-
-import { getMacHelperAppPath } from "./sidecar/mac-helper-path";
+import {
+  getMacHelperAppPath,
+  getSharedHelperClient,
+} from "@mycadet/electron-desktop/native-helper-client";
 
 export type MacHelperPermissionKind =
   | "speechRecognition"
@@ -33,7 +34,9 @@ const HELPER_PERMISSION_STATUS_SCHEMA = z.object({
 export const queryMacHelperPermission = async (
   kind: MacHelperPermissionKind,
 ): Promise<MacHelperPermissionStatus> => {
-  const result = await helperClient().call("permission.status", { kind });
+  const result = await getSharedHelperClient().call("permission.status", {
+    kind,
+  });
   return HELPER_PERMISSION_STATUS_SCHEMA.parse(result).status;
 };
 

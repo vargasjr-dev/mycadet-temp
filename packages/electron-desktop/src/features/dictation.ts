@@ -21,10 +21,7 @@ import {
   type DictationPartialsResult,
   type HelperRestartResult,
 } from "@mycadet/ipc-contract";
-import {
-  NativeSidecarClient,
-  type NativeSidecarState,
-} from "@mycadet/native-sidecar/supervisor";
+import { type NativeSidecarState } from "@mycadet/native-sidecar/supervisor";
 
 import { handle, on } from "../ipc";
 import log from "../app-logger";
@@ -43,16 +40,6 @@ import { getSharedHelperClient } from "../native-helper-client";
  * the shared answers: the classic helper client, no extra state handling,
  * and a dictation-only graceful shutdown.
  */
-export interface DictationShellInputs {
-  /** The shell's sidecar client factory — its helper binary and options. */
-  client?: () => NativeSidecarClient;
-  /**
-   * The graceful request sent to the helper on app quit, instead of the
-   * dictation disable.
-   */
-  shutdownRequest?: { method: string; params?: unknown };
-}
-
 const DICTATION_TEXT_SCHEMA = z.object({ text: z.string() });
 const DICTATION_TRANSCRIBED_SCHEMA = DICTATION_TEXT_SCHEMA.extend({
   requestId: z.string(),
@@ -63,11 +50,7 @@ const DICTATION_ERROR_SCHEMA = z.object({
   willRetryServer: z.boolean().optional(),
 });
 
-const getClient = () => {
-  return new NativeSidecarClient({
-    logger: log,
-  });
-};
+const getClient = getSharedHelperClient;
 
 const quitRequest: { method: string; params?: unknown } = {
   method: "dictation.setPartials",

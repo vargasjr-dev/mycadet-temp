@@ -38,7 +38,6 @@ export const getSharedCuHelper = (): CuHelperClient => {
     return getSharedHelperClient();
   }
   sharedHelper ??= new NativeSidecarClient({
-    name: "windows helper (computer use)",
     resolveExecutablePath: getWindowsHelperPath,
     logger: log,
     responseTimeoutMs: CU_HELPER_TIMEOUT_MS,

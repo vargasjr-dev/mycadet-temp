@@ -73,7 +73,10 @@ class FakeClient {
   retry(): unknown {
     return { status: "running" };
   }
-  shutdown(): void {}
+  shutdowns: Array<{ method: string; params?: unknown } | undefined> = [];
+  shutdown(request?: { method: string; params?: unknown }): void {
+    this.shutdowns.push(request);
+  }
 }
 let fakeClient = new FakeClient();
 mock.module("@mycadet/native-sidecar/supervisor", () => ({
@@ -97,15 +100,25 @@ const makeSender = (): FakeSender => ({
 });
 
 const { __resetForTesting, install } = await import("../features/dictation");
+const { resetSharedHelperClient } = await import("../native-helper-client");
 
 beforeEach(() => {
   fakeClient = new FakeClient();
-  __resetForTesting(() => fakeClient as never);
+  fakeClient.shutdowns = [];
+  resetSharedHelperClient();
+  __resetForTesting();
   for (const key of Object.keys(handlers)) {
     delete handlers[key];
   }
   appListeners.clear();
   install();
+});
+
+test("app quit sends the dictation disable and shuts the helper down", () => {
+  appListeners.get("before-quit")?.();
+  expect(fakeClient.shutdowns).toEqual([
+    { method: "dictation.setPartials", params: { enable: false } },
+  ]);
 });
 
 test("dictation partials route to the owner and gate pushed audio", async () => {

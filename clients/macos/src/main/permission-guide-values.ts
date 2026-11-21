@@ -6,7 +6,7 @@ import type { PermissionGuideInputs } from "@mycadet/electron-desktop";
 import type { DraggablePermissionKind } from "@mycadet/ipc-contract";
 
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
-import { getMacHelperAppPath } from "./sidecar/mac-helper-path";
+import { getMacHelperAppPath } from "@mycadet/electron-desktop/native-helper-client";
 import { openPermissionSettingsPane } from "./permissions-strategy";
 import { preparePermissionPresentation } from "@mycadet/electron-desktop/permissions";
 

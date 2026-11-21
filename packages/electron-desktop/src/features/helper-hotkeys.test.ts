@@ -59,11 +59,37 @@ mock.module("electron", () =>
 let exists = true;
 let lastChild: FakeHotkeyChild | null = null;
 const spawnCalls: Array<[string, string[], object]> = [];
+/** When on, every selection.read frame answers itself on the same child (see
+ * the warmup-retry bound test). */
+let autoAnswerSelectionRead = false;
+let seenRequests: unknown[] = [];
 mock.module("node:child_process", () => ({
   spawn: (cmd: string, args: string[], opts: object) => {
     spawnCalls.push([cmd, args, opts]);
-    lastChild = new FakeHotkeyChild();
-    return lastChild;
+    const child = new FakeHotkeyChild();
+    const { write } = child.stdin;
+    child.stdin.write = mock((data: string, callback?: () => void) => {
+      const result = write(data, callback);
+      if (autoAnswerSelectionRead) {
+        const request = JSON.parse(String(data));
+        if (request.method === "selection.read") {
+          seenRequests.push(request.params);
+          child.stdout.emit(
+            "data",
+            Buffer.from(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                id: request.id,
+                result: { unavailable: true, holdId: 7 },
+              }) + "\n",
+            ),
+          );
+        }
+      }
+      return result;
+    });
+    lastChild = child;
+    return child;
   },
 }));
 
@@ -119,29 +145,34 @@ const makeWebContents = (): FakeWebContents => {
 
 let defaultSender = makeWebContents();
 
+const { default: log } = await import("../app-logger");
+const { NativeSidecarClient } =
+  await import("@mycadet/native-sidecar/supervisor");
+
+let sharedClient: InstanceType<typeof NativeSidecarClient> | null = null;
+let supervisorOptions: Record<string, unknown> = {};
+mock.module("../native-helper-client", () => ({
+  getSharedHelperClient: () =>
+    (sharedClient ??= new NativeSidecarClient({
+      resolveExecutablePath: () => HELPER_PATH,
+      logger: log,
+      ...supervisorOptions,
+    })),
+  resetSharedHelperClient: () => {
+    sharedClient = null;
+  },
+}));
+
+const { resetSharedHelperClient } = await import("../native-helper-client");
+
+const { install: installDictationHelper, __resetForTesting: resetDictation } =
+  await import("./dictation");
+
 const {
   install: installHelperHotkeys,
   __resetForTesting,
   postFrontAppShortcut,
 } = await import("./helper-hotkeys");
-
-const { install: installDictationHelper, __resetForTesting: resetDictation } =
-  await import("./dictation");
-
-const { default: log } = await import("../app-logger");
-const { NativeSidecarClient } =
-  await import("@mycadet/native-sidecar/supervisor");
-
-let supervisorOptions: Record<string, unknown> = {};
-
-const makeTestClient = () =>
-  new NativeSidecarClient({
-    name: "mac helper",
-    resolveExecutablePath: () => HELPER_PATH,
-    logger: log,
-    platform: "darwin",
-    ...supervisorOptions,
-  });
 
 /**
  * The shell's watch state, in fixture form: the state the real watch modules
@@ -215,18 +246,12 @@ let pressWatch = makePressWatch();
 let pointerOnCompanion = false;
 
 /**
- * The composition the mac shell runs: the shared dictation bridge supervises
- * the sidecar client (with this shell's arm), and the hotkey half installs
- * beside it, taking the shell's watch state and companion check.
+ * The composition the mac shell runs: the shared helper client supervises
+ * the sidecar, and the hotkey half installs beside dictation, taking the
+ * shell's watch state and companion check.
  */
 const installHelperBridge = (): void => {
-  installDictationHelper({
-    client: () => makeTestClient(),
-    shutdownRequest: {
-      method: "hotkey.modifierHold",
-      params: { enable: false },
-    },
-  });
+  installDictationHelper();
   const inputs: HelperHotkeysShellInputs = {
     watches: {
       provideFrameScrollWatch: scrollWatch.provide,
@@ -265,8 +290,9 @@ const registerHold = async (
   sender: FakeWebContents = defaultSender,
   id?: number,
 ): Promise<unknown> => {
+  const before = writesSeen();
   const pending = invokeSetModifierHoldFrom(CTRL_OPTION, sender);
-  await wait(5);
+  await until(() => writesSeen() > before, "the hold request to be written");
   const request = lastChild?.stdin.writes.at(-1) ?? "";
   const parsed: { id?: number } = JSON.parse(request);
   const answered = id ?? parsed.id;
@@ -295,8 +321,9 @@ const invokeSetChords = (binding: unknown, sender: FakeWebContents) =>
  * outlives a test, so which id a call gets depends on what ran before it.
  */
 const registerChords = async (sender: FakeWebContents): Promise<unknown> => {
+  const before = writesSeen();
   const pending = invokeSetChords(OPTION_CHORDS, sender);
-  await wait(5);
+  await until(() => writesSeen() > before, "the chords request to be written");
   const request = lastChild?.stdin.writes.at(-1) ?? "";
   const parsed: { id?: number } = JSON.parse(request);
   const id = parsed.id;
@@ -328,8 +355,32 @@ const invokeRestart = () => invoke("cadet:helper:restart");
 const wait = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** Several loop turns: the fixed sleeps here are settle windows, and a
+ * single 5ms hop loses to the client's lazy spawn once cores saturate. */
+const settle = async (): Promise<void> => {
+  for (let i = 0; i < 12; i++) await new Promise((r) => setTimeout(r, 5));
+};
+
+/** Waits for a condition with a deadline — fixed sleeps race the client's
+ * lazy spawn once the cores are saturated. */
+const until = async (
+  predicate: () => boolean,
+  label: string,
+): Promise<void> => {
+  const deadline = Date.now() + 5_000;
+  while (!predicate()) {
+    if (Date.now() > deadline) {
+      throw new Error(`timed out waiting for ${label}`);
+    }
+    await settle();
+  }
+};
+
+const writesSeen = (): number => lastChild?.stdin.writes.length ?? 0;
+
 beforeEach(() => {
   __resetForTesting();
+  resetDictation();
   for (const key of Object.keys(handlers)) delete handlers[key];
   appListeners.clear();
   spawnCalls.length = 0;
@@ -344,6 +395,7 @@ beforeEach(() => {
 afterEach(() => {
   __resetForTesting();
   resetDictation();
+  resetSharedHelperClient();
   scrollWatch = makeScrollWatch();
   pressWatch = makePressWatch();
 });
@@ -422,12 +474,12 @@ describe("installHotkeyHelper", () => {
 
     const first = lastChild;
     first?.emit("close", 1, null);
-    await wait(5);
+    await settle();
     expect(spawnCalls).toHaveLength(2);
 
     const second = lastChild;
     second?.emit("close", 1, null);
-    await wait(0);
+    await settle();
     expect(invokeGetState()).toEqual(
       expect.objectContaining({ status: "circuit-open" }),
     );
@@ -442,7 +494,7 @@ describe("installHotkeyHelper", () => {
   test("sends hotkey.modifierHold to the helper process", async () => {
     installHelperBridge();
     const pending = invokeSetModifierHold();
-    await wait(5);
+    await settle();
 
     expect(spawnCalls[0]?.[0]).toBe(HELPER_PATH);
     expect(lastChild?.stdin.writes[0]).toContain('"jsonrpc":"2.0"');
@@ -475,7 +527,7 @@ describe("installHotkeyHelper", () => {
 
     const crashed = lastChild;
     crashed?.emit("close", 1, null);
-    await wait(5);
+    await settle();
 
     expect(spawnCalls).toHaveLength(2);
     expect(lastChild).not.toBe(crashed);
@@ -493,7 +545,7 @@ describe("installHotkeyHelper", () => {
 
     const crashed = lastChild;
     crashed?.emit("close", 1, null);
-    await wait(5);
+    await settle();
 
     expect(spawnCalls).toHaveLength(2);
     expect(lastChild).not.toBe(crashed);
@@ -509,7 +561,7 @@ describe("installHotkeyHelper", () => {
   test("maps JSON-RPC helper errors to hotkey results", async () => {
     installHelperBridge();
     const pending = invokeSetModifierHold();
-    await wait(5);
+    await settle();
 
     lastChild?.stdout.emit(
       "data",
@@ -527,7 +579,7 @@ describe("installHotkeyHelper", () => {
 
     expect(await invokeSetModifierHold()).toEqual({
       ok: false,
-      reason: "mac helper is not available",
+      reason: "native-sidecar-client is not available",
     });
   });
 
@@ -602,7 +654,7 @@ describe("installHotkeyHelper", () => {
     const before = lastChild?.stdin.writes.length ?? 0;
 
     owner.emit("destroyed");
-    await wait(5);
+    await settle();
 
     const sent = lastChild?.stdin.writes.slice(before).join("") ?? "";
     expect(sent).toContain('"method":"hotkey.chords"');
@@ -620,7 +672,7 @@ describe("installHotkeyHelper", () => {
     expect(await registerChords(owner)).toEqual({ ok: true, enabled: true });
     expect(await registerHold(other)).toEqual({ ok: true, enabled: true });
     owner.emit("destroyed");
-    await wait(5);
+    await settle();
     other.send.mockClear();
 
     emitChord("s");
@@ -813,26 +865,17 @@ describe("installHotkeyHelper", () => {
 
   test("bounds warmup retries beyond Chromium's two-second debounce", async () => {
     installHelperBridge();
-    const pending = invokeReadFrontSelection();
-    for (let id = 1; id <= 31; id++) {
-      while ((lastChild?.stdin.writes.length ?? 0) < id) {
-        await new Promise((resolve) => setTimeout(resolve, 5));
-      }
-      const request = JSON.parse(lastChild!.stdin.writes[id - 1]!);
-      expect(request.params).toEqual(id === 1 ? undefined : { holdId: 7 });
-      lastChild?.stdout.emit(
-        "data",
-        Buffer.from(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            id,
-            result: { unavailable: true, holdId: 7 },
-          }) + "\n",
-        ),
-      );
+    seenRequests = [];
+    autoAnswerSelectionRead = true;
+    try {
+      expect(await invokeReadFrontSelection()).toEqual({ unavailable: true });
+    } finally {
+      autoAnswerSelectionRead = false;
     }
-    expect(await pending).toEqual({ unavailable: true });
-    expect(lastChild?.stdin.writes).toHaveLength(31);
+    expect(seenRequests).toHaveLength(31);
+    expect(seenRequests[0]).toBeUndefined();
+    expect(seenRequests.at(1)).toEqual({ holdId: 7 });
+    expect(seenRequests.at(30)).toEqual({ holdId: 7 });
   });
 
   test("does not treat malformed selection data as no selection", async () => {
@@ -956,7 +999,7 @@ describe("installHotkeyHelper", () => {
     expect(await watch).toBe(true);
 
     lastChild?.emit("close", 1, null);
-    await wait(10);
+    await settle();
 
     const writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setActivityWatch"');
@@ -977,7 +1020,7 @@ describe("installHotkeyHelper", () => {
     scrollWatch.watch(() => {
       ended += 1;
     });
-    await wait(0);
+    await settle();
     let writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setScrollWatch"');
     expect(writes).toContain('"enable":true');
@@ -990,12 +1033,12 @@ describe("installHotkeyHelper", () => {
 
     // The watch goes down with the helper and comes back with it.
     lastChild?.emit("close", 1, null);
-    await wait(10);
+    await settle();
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setScrollWatch"');
 
     scrollWatch.unwatch();
-    await wait(0);
+    await settle();
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"enable":false');
   });
@@ -1015,7 +1058,7 @@ describe("installHotkeyHelper", () => {
     pressWatch.watch([rect], (index) => {
       pressed.push(index);
     });
-    await wait(0);
+    await settle();
     let writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setPressWatch"');
     expect(writes).toContain(JSON.stringify({ rects: [rect] }));
@@ -1023,7 +1066,7 @@ describe("installHotkeyHelper", () => {
     // The watch goes down with the helper and comes back with it, still on
     // the same rectangles.
     lastChild?.emit("close", 1, null);
-    await wait(10);
+    await settle();
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setPressWatch"');
 
@@ -1046,7 +1089,7 @@ describe("installHotkeyHelper", () => {
 
     pressWatch.watch([rect], () => {});
     pressWatch.unwatch();
-    await wait(0);
+    await settle();
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"rects":[]');
   });
@@ -1103,7 +1146,7 @@ describe("installHotkeyHelper", () => {
       ),
     );
     lastChild?.emit("close", 1, null);
-    await wait(5);
+    await settle();
 
     expect(defaultSender.send).toHaveBeenLastCalledWith(
       "cadet:helper:hotkey:event",
@@ -1148,28 +1191,15 @@ describe("installHotkeyHelper", () => {
     const writesBefore = lastChild?.stdin.writes.length;
 
     first.emit("destroyed");
-    await wait(5);
+    await settle();
     expect(lastChild?.stdin.writes.length).toBe(writesBefore);
 
     second.emit("destroyed");
-    await wait(5);
+    await settle();
     expect(lastChild?.stdin.writes.at(-1)).toContain(
       '"method":"hotkey.modifierHold"',
     );
     expect(lastChild?.stdin.writes.at(-1)).toContain('"enable":false');
-  });
-
-  test("closes helper stdin on app quit so native registrations are cleaned up", async () => {
-    installHelperBridge();
-    await registerHold();
-
-    appListeners.get("before-quit")?.();
-
-    expect(lastChild?.stdin.writes.at(-1)).toContain(
-      '"method":"hotkey.modifierHold"',
-    );
-    expect(lastChild?.stdin.writes.at(-1)).toContain('"enable":false');
-    expect(lastChild?.stdin.ended).toBe(true);
   });
 
   test("does not respawn the helper after deliberate shutdown", async () => {
@@ -1185,7 +1215,9 @@ describe("installHotkeyHelper", () => {
     appListeners.get("before-quit")?.();
     shuttingDown?.emit("close", 0, null);
 
-    await expect(invokePing()).rejects.toThrow("mac helper is not available");
+    await expect(invokePing()).rejects.toThrow(
+      "native-sidecar-client is not available",
+    );
     expect(spawnCalls).toHaveLength(1);
   });
 });

@@ -20,6 +20,7 @@
     "./floating-window": "./src/floating-window.ts",
     "./helper-hotkeys": "./src/features/helper-hotkeys.ts",
     "./ipc": "./src/ipc.ts",
+    "./native-helper-client": "./src/native-helper-client.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
     "./notifications": "./src/notifications.ts",
     "./permissions": "./src/features/permissions.ts",

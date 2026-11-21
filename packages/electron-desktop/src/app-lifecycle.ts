@@ -61,10 +61,7 @@ import {
   install as installPermissions,
   type PermissionsShellInputs,
 } from "./features/permissions";
-import {
-  install as installDictation,
-  type DictationShellInputs,
-} from "./features/dictation";
+import { install as installDictation } from "./features/dictation";
 import {
   install as installHelperHotkeys,
   type HelperHotkeysShellInputs,

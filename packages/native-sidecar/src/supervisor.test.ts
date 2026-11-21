@@ -32,10 +32,8 @@ describe("NativeSidecarClient", () => {
     const child = new FakeChild();
     const logs = logger();
     const client = new NativeSidecarClient({
-      name: "test helper",
       resolveExecutablePath: () => "unused",
       logger: logs,
-      platform: "win32",
       spawn: () => asChild(child),
       maxFrameBytes: 256,
     });
@@ -72,10 +70,8 @@ describe("NativeSidecarClient", () => {
   test("rejects pending calls when the helper exits", async () => {
     const child = new FakeChild();
     const client = new NativeSidecarClient({
-      name: "test helper",
       resolveExecutablePath: () => "unused",
       logger: logger(),
-      platform: "darwin",
       spawn: () => asChild(child),
       initialBackoffMs: 50,
     });
@@ -90,7 +86,6 @@ describe("NativeSidecarClient", () => {
 test("SidecarSupervisor bounds crash loops with a circuit breaker", async () => {
   const children: FakeChild[] = [];
   const supervisor = new SidecarSupervisor({
-    name: "test helper",
     logger: logger(),
     spawn: () => {
       const child = new FakeChild();

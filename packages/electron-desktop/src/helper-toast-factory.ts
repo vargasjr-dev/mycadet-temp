@@ -87,7 +87,6 @@ export const createHelperToastFactory = (client: {
       return sidecar;
     }
     sidecar = new NativeSidecarClient({
-      name: client.name,
       resolveExecutablePath: () => client.helperPath,
       logger: log,
       // Generous: the first toast may wait on toast-identity registration.
