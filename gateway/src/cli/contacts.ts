@@ -12,12 +12,7 @@ import { getLogger } from "../logger.js";
 
 const log = getLogger("gateway-cli");
 
-const THRESHOLDS = ["none", "low", "medium", "high", "inherit"] as const;
-type ThresholdFlag = (typeof THRESHOLDS)[number];
-
 export type ParsedContactsCommand =
-  | { kind: "help" }
-  | { kind: "error"; message: string }
   | { kind: "list"; json: boolean; role?: string }
   | { kind: "get"; contactId: string; json: boolean }
   | {
@@ -42,116 +37,6 @@ interface ContactRecord {
   channels?: ContactChannel[];
 }
 
-function isThresholdFlag(value: string): value is ThresholdFlag {
-  return (THRESHOLDS as readonly string[]).includes(value);
-}
-
-export function parseContactsArgs(args: string[]): ParsedContactsCommand {
-  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
-    return { kind: "help" };
-  }
-
-  const json = args.includes("--json");
-  const positional = args.filter((arg) => arg !== "--json");
-  const subcommand = positional[0];
-
-  if (subcommand === "list") {
-    const role = readFlag(positional.slice(1), "--role");
-    if (role === "") {
-      return { kind: "error", message: "--role requires a value" };
-    }
-    return { kind: "list", json, ...(role ? { role } : {}) };
-  }
-
-  if (subcommand === "get") {
-    const contactId = positional[1];
-    if (!contactId || contactId.startsWith("-")) {
-      return {
-        kind: "error",
-        message:
-          "Missing required argument: <contactId>. Run 'gateway contacts list' to find IDs.",
-      };
-    }
-    return { kind: "get", contactId, json };
-  }
-
-  if (subcommand === "set-risk-threshold") {
-    const contactId = positional[1];
-    if (!contactId || contactId.startsWith("-")) {
-      return {
-        kind: "error",
-        message:
-          "Missing required argument: <contactId>. Run 'gateway contacts list' to find IDs.",
-      };
-    }
-    const threshold = readFlag(positional.slice(2), "--threshold");
-    if (threshold === undefined) {
-      return {
-        kind: "error",
-        message:
-          "Missing required flag: --threshold none|low|medium|high|inherit",
-      };
-    }
-    if (threshold === "" || !isThresholdFlag(threshold)) {
-      return {
-        kind: "error",
-        message: `Invalid --threshold "${threshold}". Must be one of: none, low, medium, high, inherit.`,
-      };
-    }
-    return {
-      kind: "set-risk-threshold",
-      contactId,
-      threshold: threshold === "inherit" ? null : threshold,
-      json,
-    };
-  }
-
-  return {
-    kind: "error",
-    message: `Unknown contacts subcommand: ${subcommand}`,
-  };
-}
-
-function readFlag(args: string[], flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  if (index === -1) {
-    return undefined;
-  }
-  const value = args[index + 1];
-  if (value === undefined || value.startsWith("-")) {
-    return "";
-  }
-  return value;
-}
-
-export function contactsUsage(): string {
-  return [
-    "Usage: gateway contacts <subcommand>",
-    "",
-    "Operator commands for gateway-owned contact ACL.",
-    "The contact risk ceiling is stored as none, low, medium, or high.",
-    "inherit clears it so the contact follows room and trust-class settings.",
-    "",
-    "Subcommands:",
-    "  list                              List contacts",
-    "  get <contactId>                   Get one contact",
-    "  set-risk-threshold <contactId>    Set the contact risk ceiling",
-    "",
-    "Options:",
-    "  --role <role>                     Filter list by contact or guardian",
-    "  --threshold <value>               none, low, medium, high, or inherit",
-    "  --json                            Machine-readable JSON",
-    "",
-    "Examples:",
-    "  $ gateway contacts list",
-    "  $ gateway contacts get abc-123",
-    "  $ gateway contacts set-risk-threshold abc-123 --threshold high",
-    "  $ gateway contacts set-risk-threshold abc-123 --threshold inherit",
-    "",
-    "From the host: cadet exec --service gateway -- gateway contacts list",
-  ].join("\n");
-}
-
 export type GatewayIpcCall = (
   method: string,
   params?: Record<string, unknown>,
@@ -169,17 +54,6 @@ export async function executeContactsCommand(
   parsed: ParsedContactsCommand,
   ipc: GatewayIpcCall = defaultGatewayIpcCall,
 ): Promise<number> {
-  if (parsed.kind === "help") {
-    console.log(contactsUsage());
-    return 0;
-  }
-  if (parsed.kind === "error") {
-    console.error(parsed.message);
-    console.error("");
-    console.error(contactsUsage());
-    return 1;
-  }
-
   if (parsed.kind === "list") {
     const result = await ipc("contacts_list_rich", {
       ...(parsed.role ? { role: parsed.role } : {}),
@@ -254,10 +128,6 @@ export async function executeContactsCommand(
   const ceiling = result.threshold ?? "inherit";
   console.log(`Set assistant access for ${result.contactId} to ${ceiling}`);
   return 0;
-}
-
-export async function runContactsCommand(args: string[]): Promise<number> {
-  return executeContactsCommand(parseContactsArgs(args));
 }
 
 function failUnreachable(): number {

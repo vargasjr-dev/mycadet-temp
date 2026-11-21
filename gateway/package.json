@@ -38,6 +38,7 @@
     "@mycadet/service-contracts": "workspace:*",
     "@mycadet/slack-text": "workspace:*",
     "@mycadet/twilio-client": "workspace:*",
+    "commander": "13.1.0",
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
     "file-type": "21.3.0",

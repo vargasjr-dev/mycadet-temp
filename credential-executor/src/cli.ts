@@ -18,6 +18,8 @@
  *                             (falls back to `./ces-security`)
  */
 
+import { Command } from "commander";
+
 import { createLocalSecureKeyBackend } from "./materializers/local-secure-key-backend.js";
 import { getSecurityDir } from "./paths.js";
 
@@ -25,104 +27,86 @@ import { getSecurityDir } from "./paths.js";
 // CLI
 // ---------------------------------------------------------------------------
 
-async function main(): Promise<void> {
-  const [command, ...args] = process.argv.slice(2);
+let backend: Awaited<ReturnType<typeof createLocalSecureKeyBackend>> | null =
+  null;
 
-  if (!command || command === "--help" || command === "-h") {
-    printUsage();
-    process.exit(0);
-  }
-
-  const backend = createLocalSecureKeyBackend(getSecurityDir());
-
-  switch (command) {
-    case "list": {
-      const accounts = await backend.list();
-      if (accounts.length === 0) {
-        console.log("(no credentials stored)");
-      } else {
-        for (const account of accounts.sort()) {
-          console.log(account);
-        }
-      }
-      break;
-    }
-
-    case "get": {
-      const account = args[0];
-      if (!account) {
-        console.error("Usage: ces get <account>");
-        process.exit(1);
-      }
-      const value = await backend.get(account);
-      if (value === undefined) {
-        console.error(`Not found: ${account}`);
-        process.exit(1);
-      }
-      // Write raw value to stdout (no trailing newline for piping)
-      process.stdout.write(value);
-      break;
-    }
-
-    case "set": {
-      const account = args[0];
-      const value = args[1];
-      if (!account || value === undefined) {
-        console.error("Usage: ces set <account> <value>");
-        process.exit(1);
-      }
-      const ok = await backend.set(account, value);
-      if (ok) {
-        console.log(`Set: ${account}`);
-      } else {
-        console.error(`Failed to set: ${account}`);
-        process.exit(1);
-      }
-      break;
-    }
-
-    case "delete": {
-      const account = args[0];
-      if (!account) {
-        console.error("Usage: ces delete <account>");
-        process.exit(1);
-      }
-      const result = await backend.delete(account);
-      if (result === "deleted") {
-        console.log(`Deleted: ${account}`);
-      } else {
-        console.error(`Not found: ${account}`);
-        process.exit(1);
-      }
-      break;
-    }
-
-    default:
-      console.error(`Unknown command: ${command}`);
-      printUsage();
-      process.exit(1);
-  }
+/** One backend per process, built lazily so help never touches the store. */
+function keyBackend() {
+  backend ??= createLocalSecureKeyBackend(getSecurityDir());
+  return backend;
 }
 
-function printUsage(): void {
-  console.log(`CES CLI — credential CRUD for the encrypted key store
+const program = new Command();
+program
+  .name("ces")
+  .description("CES CLI — credential CRUD for the encrypted key store");
 
-Usage:
-  ces list                     List all credential accounts
-  ces get <account>            Get a credential value
-  ces set <account> <value>    Set a credential value
-  ces delete <account>         Delete a credential
+program
+  .command("list")
+  .description("List all credential accounts")
+  .action(async () => {
+    const accounts = await keyBackend().list();
+    if (accounts.length === 0) {
+      console.log("(no credentials stored)");
+    } else {
+      for (const account of accounts.sort()) {
+        console.log(account);
+      }
+    }
+  });
 
+program
+  .command("get <account>")
+  .description("Get a credential value")
+  .action(async (account: string) => {
+    const value = await keyBackend().get(account);
+    if (value === undefined) {
+      console.error(`Not found: ${account}`);
+      process.exit(1);
+    }
+    // Write raw value to stdout (no trailing newline for piping)
+    process.stdout.write(value);
+  });
+
+program
+  .command("set <account> <value>")
+  .description("Set a credential value")
+  .action(async (account: string, value: string) => {
+    const ok = await keyBackend().set(account, value);
+    if (ok) {
+      console.log(`Set: ${account}`);
+    } else {
+      console.error(`Failed to set: ${account}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("delete <account>")
+  .description("Delete a credential")
+  .action(async (account: string) => {
+    const result = await keyBackend().delete(account);
+    if (result === "deleted") {
+      console.log(`Deleted: ${account}`);
+    } else {
+      console.error(`Not found: ${account}`);
+      process.exit(1);
+    }
+  });
+
+program.addHelpText(
+  "after",
+  `
 Account format:
   credential/<service>/<field>
   Example: credential/cadet/platform_organization_id
 
 Environment:
   CREDENTIAL_SECURITY_DIR    Directory containing keys.enc + store.key
-                             (falls back to ./ces-security)`);
-}
+                             (falls back to ./ces-security)`,
+);
 
-main().catch((err) => {
+program.parseAsync(process.argv).catch((err: unknown) => {
   console.error(`Fatal: ${err instanceof Error ? err.message : err}`);
   process.exit(1);
 });

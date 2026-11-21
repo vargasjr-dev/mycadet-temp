@@ -1,11 +1,12 @@
 {
-  "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
+  "entry": ["src/cli.ts", "src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
   "project": ["src/**/*.ts"],
   "ignoreDependencies": [
-    "@mycadet/shared",
-    "@mycadet/service-contracts",
+    "@mycadet/ces-client",
     "@mycadet/credential-storage",
     "@mycadet/egress-proxy",
-    "@mycadet/ipc-server-utils"
+    "@mycadet/ipc-server-utils",
+    "@mycadet/service-contracts",
+    "@mycadet/shared"
   ]
 }

@@ -79,7 +79,10 @@ describe("ces", () => {
   });
 
   test("get on missing key exits 1", () => {
-    const { exitCode, stderr } = runCli(["get", "credential/nonexistent/key"], env);
+    const { exitCode, stderr } = runCli(
+      ["get", "credential/nonexistent/key"],
+      env,
+    );
     expect(exitCode).toBe(1);
     expect(stderr).toContain("Not found");
   });
@@ -98,16 +101,19 @@ describe("ces", () => {
   });
 
   test("delete on missing key exits 1", () => {
-    const { exitCode, stderr } = runCli(["delete", "credential/nonexistent/key"], env);
+    const { exitCode, stderr } = runCli(
+      ["delete", "credential/nonexistent/key"],
+      env,
+    );
     expect(exitCode).toBe(1);
     expect(stderr).toContain("Not found");
   });
 
-  test("no args prints usage", () => {
-    const { exitCode, stdout } = runCli([], env);
-    expect(exitCode).toBe(0);
-    expect(stdout).toContain("CES CLI");
-    expect(stdout).toContain("ces list");
+  test("no args prints usage and exits 1 — a subcommand is required", () => {
+    const { exitCode, stderr } = runCli([], env);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("CES CLI");
+    expect(stderr).toContain("delete <account>");
   });
 
   test("--help prints usage", () => {
@@ -119,13 +125,13 @@ describe("ces", () => {
   test("unknown command exits 1", () => {
     const { exitCode, stderr } = runCli(["frobnicate"], env);
     expect(exitCode).toBe(1);
-    expect(stderr).toContain("Unknown command");
+    expect(stderr).toContain("unknown command");
   });
 
   test("set without value exits 1", () => {
     const { exitCode, stderr } = runCli(["set", "credential/test/key"], env);
     expect(exitCode).toBe(1);
-    expect(stderr).toContain("Usage");
+    expect(stderr).toContain("missing required argument");
   });
 
   test("overwrite existing credential", () => {

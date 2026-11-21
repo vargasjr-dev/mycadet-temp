@@ -64,8 +64,7 @@ mock.module("../../db/assistant-db-proxy.js", () => ({
 setTestSigningKey();
 initSigningKey();
 
-const { parsePairingArgs, parsePairingMintArgs, runPairingCommand } =
-  await import("../pairing.js");
+const { buildGatewayCliProgram } = await import("../program.js");
 const { initGatewayDb, getGatewayDb, resetGatewayDb } =
   await import("../../db/connection.js");
 const {
@@ -102,6 +101,8 @@ let logs: string[];
 let errors: string[];
 let logSpy: ReturnType<typeof spyOn>;
 let errorSpy: ReturnType<typeof spyOn>;
+let outSpy: ReturnType<typeof spyOn>;
+let errSpy: ReturnType<typeof spyOn>;
 
 beforeEach(() => {
   resetRemoteWebPairingChallengesForTests();
@@ -117,13 +118,49 @@ beforeEach(() => {
       errors.push(args.map(String).join(" "));
     },
   );
+  // Commander writes help and parse-error text straight to the streams —
+  // capture those too, or help/error assertions read empty.
+  outSpy = spyOn(process.stdout, "write").mockImplementation((chunk) => {
+    logs.push(String(chunk));
+    return true;
+  });
+  errSpy = spyOn(process.stderr, "write").mockImplementation((chunk) => {
+    errors.push(String(chunk));
+    return true;
+  });
 });
 
 afterEach(() => {
   writeIngressPublicBaseUrl(null);
   logSpy.mockRestore();
   errorSpy.mockRestore();
+  outSpy.mockRestore();
+  errSpy.mockRestore();
 });
+
+/**
+ * Run `gateway pairing <args>` through the commander program, pinning the
+ * exit code the way the CLI exits: the action's process.exit.
+ */
+async function runPairing(args: string[]): Promise<number> {
+  const exitSpy = spyOn(process, "exit").mockImplementation(
+    (code?: number): never => {
+      throw new Error(`exit:${code}`);
+    },
+  );
+  try {
+    await buildGatewayCliProgram().parseAsync(["pairing", ...args], {
+      from: "user",
+    });
+    return 0;
+  } catch (e) {
+    const match = /^exit:(-?\d+)$/.exec(e instanceof Error ? e.message : "");
+    if (match) return Number(match[1]);
+    throw e;
+  } finally {
+    exitSpy.mockRestore();
+  }
+}
 
 function writeIngressPublicBaseUrl(url: string | null): void {
   const configPath = join(testWorkspaceDir, "config.json");
@@ -147,7 +184,7 @@ function lastLoggedPayload(): Record<string, unknown> {
 describe("gateway pairing mint", () => {
   test("mints an approved challenge directly against the file-backed store", async () => {
     writeIngressPublicBaseUrl("https://my-assistant.ts.net");
-    const code = await runPairingCommand(["mint"]);
+    const code = await runPairing(["mint"]);
 
     expect(code).toBe(0);
     const challenge = PrintedChallengeSchema.parse(lastLoggedPayload());
@@ -163,7 +200,7 @@ describe("gateway pairing mint", () => {
 
   test("persists the challenge to the store the running gateway reads", async () => {
     writeIngressPublicBaseUrl("https://my-assistant.ts.net");
-    const code = await runPairingCommand(["mint"]);
+    const code = await runPairing(["mint"]);
     expect(code).toBe(0);
 
     const storePath = join(
@@ -178,7 +215,7 @@ describe("gateway pairing mint", () => {
 
   test("rejects an unparseable saved public base URL", async () => {
     writeIngressPublicBaseUrl("not-a-url");
-    const code = await runPairingCommand(["mint"]);
+    const code = await runPairing(["mint"]);
 
     expect(code).toBe(1);
     expect(errors.join("\n")).toContain("publicBaseUrl is required");
@@ -186,52 +223,10 @@ describe("gateway pairing mint", () => {
 
   test("defaults the mint to the local host when no ingress url is saved", async () => {
     writeIngressPublicBaseUrl(null);
-    const code = await runPairingCommand(["mint"]);
+    const code = await runPairing(["mint"]);
 
     // The default base is the gateway's own local host — the mint succeeds.
     expect(code).toBe(0);
-  });
-});
-
-describe("parsePairingArgs", () => {
-  test("splits the subcommand and positional", () => {
-    expect(parsePairingArgs(["mint", "https://x.example"])).toEqual({
-      subcommand: "mint",
-      positional: "https://x.example",
-    });
-    expect(parsePairingArgs([])).toEqual({
-      subcommand: null,
-      positional: null,
-    });
-  });
-});
-
-describe("parsePairingMintArgs", () => {
-  test("parses the device identity flags", () => {
-    expect(
-      parsePairingMintArgs([
-        "--platform",
-        "cli",
-        "--device-id",
-        "device-1",
-        "--client-reported-name",
-        "box",
-      ]),
-    ).toEqual({
-      deviceId: "device-1",
-      platform: "cli",
-      clientReportedName: "box",
-    });
-  });
-
-  test("defaults the platform to cli", () => {
-    expect(parsePairingMintArgs(["--device-id", "device-2"]).platform).toBe(
-      "cli",
-    );
-  });
-
-  test("a missing device id is not a parse failure — the mint stays a challenge", () => {
-    expect(parsePairingMintArgs(["--platform", "cli"]).deviceId).toBeNull();
   });
 });
 
@@ -258,7 +253,7 @@ describe("gateway pairing mint --device-id", () => {
   });
 
   test("mints the device-bound credential in-process and prints it as JSON", async () => {
-    const code = await runPairingCommand([
+    const code = await runPairing([
       "mint",
       "--platform",
       "cli",
@@ -300,7 +295,7 @@ describe("gateway pairing mint --device-id", () => {
     // The fresh-install case: the lease pairs before any tunnel exists,
     // which the challenge arm refuses. The device-bound arm must not.
     writeIngressPublicBaseUrl(null);
-    const code = await runPairingCommand(["mint", "--device-id", "device-2"]);
+    const code = await runPairing(["mint", "--device-id", "device-2"]);
 
     expect(code).toBe(0);
     expect(lastLoggedPayload().accessToken).toBeTruthy();
@@ -309,7 +304,7 @@ describe("gateway pairing mint --device-id", () => {
   });
 
   test("prints usage on --help", async () => {
-    const code = await runPairingCommand(["mint", "--help"]);
+    const code = await runPairing(["mint", "--help"]);
     expect(code).toBe(0);
     expect(logs.join("\n")).toContain("Usage: gateway pairing");
   });
@@ -343,7 +338,7 @@ function lastLoggedChallenges() {
 
 describe("gateway pairing list", () => {
   test("empty store prints a no-results line and exits 0", async () => {
-    const code = await runPairingCommand(["list"]);
+    const code = await runPairing(["list"]);
 
     expect(code).toBe(0);
     expect(logs.join("\n")).toContain("No pairing challenges found.");
@@ -357,13 +352,13 @@ describe("gateway pairing list", () => {
     const newer = Date.now() - 30_000;
     setRemoteWebPairingChallengeNowForTests(() => older);
     writeIngressPublicBaseUrl("https://older.example.com");
-    await runPairingCommand(["mint"]);
+    await runPairing(["mint"]);
     setRemoteWebPairingChallengeNowForTests(() => newer);
     writeIngressPublicBaseUrl("https://newer.example.com");
-    await runPairingCommand(["mint"]);
+    await runPairing(["mint"]);
     setRemoteWebPairingChallengeNowForTests(() => Date.now());
 
-    const code = await runPairingCommand(["list", "--json"]);
+    const code = await runPairing(["list", "--json"]);
     expect(code).toBe(0);
 
     const challenges = lastLoggedChallenges();
@@ -383,10 +378,10 @@ describe("gateway pairing list", () => {
     // CLI checks against, without the store's own expiry paths deleting it.
     setRemoteWebPairingChallengeNowForTests(() => Date.now() - 3_600_000);
     writeIngressPublicBaseUrl("https://stale.example.com");
-    await runPairingCommand(["mint"]);
+    await runPairing(["mint"]);
     setRemoteWebPairingChallengeNowForTests(() => Date.now());
 
-    const code = await runPairingCommand(["list", "--json"]);
+    const code = await runPairing(["list", "--json"]);
     expect(code).toBe(0);
 
     const challenges = lastLoggedChallenges();
@@ -398,9 +393,9 @@ describe("gateway pairing list", () => {
 
   test("human output shows user code, status, liveness, and timestamps", async () => {
     writeIngressPublicBaseUrl("https://shown.example.com");
-    await runPairingCommand(["mint"]);
+    await runPairing(["mint"]);
 
-    const code = await runPairingCommand(["list"]);
+    const code = await runPairing(["list"]);
     expect(code).toBe(0);
 
     const output = logs.join("\n");

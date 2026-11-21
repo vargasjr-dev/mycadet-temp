@@ -1,15 +1,14 @@
 /**
- * Tests for `gateway contacts`. Parse and execute against a stub IPC
- * caller so the suite does not need a live gateway socket.
+ * Tests for `gateway contacts`. Run through the commander program with a
+ * stub IPC caller injected, so the suite covers the flag-to-command
+ * adaptation and the execute layer without a live gateway socket.
  */
 
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import {
-  executeContactsCommand,
-  parseContactsArgs,
-  type GatewayIpcCall,
-} from "../contacts.js";
+import { buildGatewayCliProgram } from "../program.js";
+
+import type { GatewayIpcCall } from "../contacts.js";
 
 let lastIpc: { method: string; params?: Record<string, unknown> } | null = null;
 let ipcResult: unknown = { ok: true, contacts: [] };
@@ -19,26 +18,58 @@ const ipc: GatewayIpcCall = async (method, params) => {
   return ipcResult;
 };
 
+let stdout: string[];
+let stderr: string[];
+
 async function run(
   args: string[],
 ): Promise<{ code: number; stdout: string; stderr: string }> {
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-  const log = console.log;
-  const error = console.error;
-  console.log = (...parts: unknown[]) => {
-    stdout.push(parts.map(String).join(" "));
-  };
-  console.error = (...parts: unknown[]) => {
-    stderr.push(parts.map(String).join(" "));
-  };
+  stdout = [];
+  stderr = [];
+  const logSpy = spyOn(console, "log").mockImplementation(
+    (...parts: unknown[]) => {
+      stdout.push(parts.map(String).join(" "));
+    },
+  );
+  const errorSpy = spyOn(console, "error").mockImplementation(
+    (...parts: unknown[]) => {
+      stderr.push(parts.map(String).join(" "));
+    },
+  );
+  // Commander writes help and parse-error text straight to the streams —
+  // capture those too, or help/error assertions read empty.
+  const outSpy = spyOn(process.stdout, "write").mockImplementation((chunk) => {
+    stdout.push(String(chunk));
+    return true;
+  });
+  const errSpy = spyOn(process.stderr, "write").mockImplementation((chunk) => {
+    stderr.push(String(chunk));
+    return true;
+  });
+  const exitSpy = spyOn(process, "exit").mockImplementation(
+    (code?: number): never => {
+      throw new Error(`exit:${code}`);
+    },
+  );
   try {
-    const parsed = parseContactsArgs(args);
-    const code = await executeContactsCommand(parsed, ipc);
-    return { code, stdout: stdout.join("\n"), stderr: stderr.join("\n") };
+    await buildGatewayCliProgram(ipc).parseAsync(args, { from: "user" });
+    return { code: 0, stdout: stdout.join("\n"), stderr: stderr.join("\n") };
+  } catch (e) {
+    const match = /^exit:(-?\d+)$/.exec(e instanceof Error ? e.message : "");
+    if (match) {
+      return {
+        code: Number(match[1]),
+        stdout: stdout.join("\n"),
+        stderr: stderr.join("\n"),
+      };
+    }
+    throw e;
   } finally {
-    console.log = log;
-    console.error = error;
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    outSpy.mockRestore();
+    errSpy.mockRestore();
+    exitSpy.mockRestore();
   }
 }
 
@@ -47,43 +78,11 @@ beforeEach(() => {
   ipcResult = { ok: true, contacts: [] };
 });
 
-describe("parseContactsArgs", () => {
-  test("maps inherit to a null ceiling", () => {
-    expect(
-      parseContactsArgs([
-        "set-risk-threshold",
-        "contact-1",
-        "--threshold",
-        "inherit",
-      ]),
-    ).toEqual({
-      kind: "set-risk-threshold",
-      contactId: "contact-1",
-      threshold: null,
-      json: false,
-    });
-  });
-
-  test("rejects an unknown threshold without calling IPC", () => {
-    expect(
-      parseContactsArgs([
-        "set-risk-threshold",
-        "contact-1",
-        "--threshold",
-        "full",
-      ]),
-    ).toEqual({
-      kind: "error",
-      message:
-        'Invalid --threshold "full". Must be one of: none, low, medium, high, inherit.',
-    });
-  });
-});
-
 describe("gateway contacts set-risk-threshold", () => {
   test("writes a ceiling over IPC", async () => {
     ipcResult = { ok: true, contactId: "contact-1", threshold: "high" };
     const { code, stdout } = await run([
+      "contacts",
       "set-risk-threshold",
       "contact-1",
       "--threshold",
@@ -100,6 +99,7 @@ describe("gateway contacts set-risk-threshold", () => {
   test("maps inherit to a null ceiling", async () => {
     ipcResult = { ok: true, contactId: "contact-1", threshold: null };
     const { code, stdout } = await run([
+      "contacts",
       "set-risk-threshold",
       "contact-1",
       "--threshold",
@@ -113,9 +113,23 @@ describe("gateway contacts set-risk-threshold", () => {
     expect(stdout).toContain("Set assistant access for contact-1 to inherit");
   });
 
+  test("rejects an unknown threshold without calling IPC", async () => {
+    const { code, stderr } = await run([
+      "contacts",
+      "set-risk-threshold",
+      "contact-1",
+      "--threshold",
+      "full",
+    ]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("full");
+    expect(lastIpc).toBeNull();
+  });
+
   test("maps a missing contact to exit 1", async () => {
     ipcResult = { ok: false, error: "not_found" };
     const { code, stderr } = await run([
+      "contacts",
       "set-risk-threshold",
       "contact-missing",
       "--threshold",
@@ -128,6 +142,7 @@ describe("gateway contacts set-risk-threshold", () => {
   test("exits 1 when the gateway is unreachable", async () => {
     ipcResult = undefined;
     const { code, stderr } = await run([
+      "contacts",
       "set-risk-threshold",
       "contact-1",
       "--threshold",
@@ -151,7 +166,7 @@ describe("gateway contacts list and get", () => {
         },
       ],
     };
-    const { code, stdout } = await run(["list"]);
+    const { code, stdout } = await run(["contacts", "list"]);
     expect(code).toBe(0);
     expect(lastIpc).toEqual({
       method: "contacts_list_rich",
@@ -160,6 +175,15 @@ describe("gateway contacts list and get", () => {
     expect(stdout).toContain("contact-1");
     expect(stdout).toContain("Alice");
     expect(stdout).toContain("access:high");
+  });
+
+  test("filters the list by role", async () => {
+    const { code } = await run(["contacts", "list", "--role", "guardian"]);
+    expect(code).toBe(0);
+    expect(lastIpc).toEqual({
+      method: "contacts_list_rich",
+      params: { role: "guardian" },
+    });
   });
 
   test("gets one contact over IPC", async () => {
@@ -172,7 +196,7 @@ describe("gateway contacts list and get", () => {
         autoApproveThreshold: null,
       },
     };
-    const { code, stdout } = await run(["get", "contact-1"]);
+    const { code, stdout } = await run(["contacts", "get", "contact-1"]);
     expect(code).toBe(0);
     expect(lastIpc).toEqual({
       method: "contacts_get_rich",
