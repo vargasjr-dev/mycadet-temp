@@ -34,11 +34,22 @@ mock.module("@app/utils/use-bundled-avatar-components", () => ({
   useBundledAvatarComponents: () => bundledArt,
 }));
 
+/** Whether the entrance failsafe has fired; flipped by the deadline test. */
+let entranceExpired = false;
+
+mock.module("@app/domains/onboarding/hooks/use-entrance-failsafe", () => ({
+  useEntranceFailsafe: () => entranceExpired,
+  ENTRANCE_DEADLINE_MS: 3000,
+}));
+
 // Decorative, and it measures itself; the surface handover is what is under
 // test here.
-mock.module("@app/domains/onboarding/components/onboarding-peeking-eyes", () => ({
-  OnboardingPeekingEyes: () => null,
-}));
+mock.module(
+  "@app/domains/onboarding/components/onboarding-peeking-eyes",
+  () => ({
+    OnboardingPeekingEyes: () => null,
+  }),
+);
 
 const { IntroductionScreen } =
   await import("@app/domains/onboarding/screens/introduction-screen");
@@ -90,6 +101,7 @@ beforeEach(() => {
       },
     ],
   };
+  entranceExpired = false;
   frames = [];
   globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) =>
     frames.push(callback)) as typeof globalThis.requestAnimationFrame;
@@ -167,6 +179,47 @@ describe("IntroductionScreen surface handover", () => {
       ONBOARDING_DARK_SURFACE,
     );
     unmount();
+  });
+
+  test("a missing art never strands the funnel — greeting and Continue render", () => {
+    // The old failure: a null art returned a bare stage and the user sat on
+    // it for good, the screen's own comment admitting the sit. The art is
+    // decoration; the greeting and Continue are the funnel.
+    bundledArt = null;
+
+    const screen = renderScreen();
+
+    expect(screen.getByText("Hey, Ada!")).toBeTruthy();
+    expect(screen.getByText("Continue")).toBeTruthy();
+    screen.unmount();
+  });
+
+  test("a missing art renders no entrance delay — the greeting is visible at once", () => {
+    bundledArt = null;
+
+    const screen = renderScreen();
+
+    const heading = screen.getByText("Hey, Ada!").closest("h1");
+    expect(heading).toBeTruthy();
+    expect((heading as HTMLElement).style.opacity).toBe("1");
+    screen.unmount();
+  });
+
+  test("an armed entrance holds the greeting invisible; the failsafe releases it", () => {
+    // The reported bug class: the entrance animation arms opacity 0 and a
+    // stalled driver never releases it — visible to the accessibility tree,
+    // invisible to the eye. The failsafe deadline drops the entrance and
+    // renders the final state.
+    const armed = renderScreen();
+    const armedHeading = armed.getByText("Hey, Ada!").closest("h1");
+    expect((armedHeading as HTMLElement).style.opacity).toBe("0");
+    armed.unmount();
+
+    entranceExpired = true;
+    const released = renderScreen();
+    const releasedHeading = released.getByText("Hey, Ada!").closest("h1");
+    expect((releasedHeading as HTMLElement).style.opacity).toBe("1");
+    released.unmount();
   });
 
   test("releases the surface on unmount", () => {

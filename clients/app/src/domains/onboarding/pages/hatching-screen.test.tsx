@@ -90,6 +90,23 @@ mock.module("@app/assistant/avatar-traits", () => ({
   seedHatchAvatar: seedHatchAvatarMock,
 }));
 
+// The avatar svg compose is real by default; a test can force the null path
+// to pin the broken-image guard. The original function is captured before the
+// patch — the module's own binding is the mock once patched, so re-entering
+// through it would recurse to death.
+const compositorActual = await import("@app/utils/avatar-svg-compositor");
+const realComposeSvg = compositorActual.composeSvg;
+const realComposeSvgFromDefinitions =
+  compositorActual.composeSvgFromDefinitions;
+let composeSvgOverride: typeof compositorActual.composeSvg | null = null;
+mock.module("@app/utils/avatar-svg-compositor", () => ({
+  composeSvg: (
+    ...args: Parameters<typeof compositorActual.composeSvg>
+  ): string | null =>
+    composeSvgOverride ? composeSvgOverride(...args) : realComposeSvg(...args),
+  composeSvgFromDefinitions: realComposeSvgFromDefinitions,
+}));
+
 const { HatchingScreen } =
   await import("@app/domains/onboarding/pages/hatching-screen");
 
@@ -116,6 +133,33 @@ describe("hatching screen", () => {
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());
     expect(hatchAssistantMock).not.toHaveBeenCalled();
+  });
+
+  test("a composed avatar renders as a data-url image", () => {
+    // The happy path pins the shape the broken-image guard protects: a real
+    // src, never an empty one.
+    searchParams = new URLSearchParams("fail=1");
+    const view = render(<HatchingScreen />);
+
+    const img = view.container.querySelector("img");
+    expect(img).toBeDefined();
+    expect(
+      (img as HTMLImageElement)
+        .getAttribute("src")
+        ?.startsWith("data:image/svg+xml"),
+    ).toBe(true);
+  });
+
+  test("a failed compose renders a placeholder, never an empty-src image", () => {
+    // Chromium paints a broken-image icon for `src=""` — the icon Bartolo
+    // reported near the bottom of a white screen. A compose that cannot
+    // resolve renders a placeholder instead.
+    searchParams = new URLSearchParams("fail=1");
+    composeSvgOverride = () => null;
+    const view = render(<HatchingScreen />);
+
+    expect(view.container.querySelector("img")).toBeNull();
+    composeSvgOverride = null;
   });
 
   test("the local hatch polls the resolution endpoint then hands off to research with the hatched assistant in state", async () => {

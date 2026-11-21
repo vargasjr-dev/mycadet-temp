@@ -318,13 +318,20 @@ export function HatchingScreen() {
           <p className="mt-3 text-body-medium-lighter text-[var(--content-tertiary)]">
             {error}
           </p>
-          <img
-            src={avatarSvgDataUrl}
-            alt=""
-            width={160}
-            height={160}
-            className="my-10"
-          />
+          {avatarSvgDataUrl ? (
+            <img
+              src={avatarSvgDataUrl}
+              alt=""
+              width={160}
+              height={160}
+              className="my-10"
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              className="my-10 h-[160px] w-[160px] rounded-full bg-[var(--surface-raised)]"
+            />
+          )}
           <div className="flex w-full flex-col gap-2">
             <Button
               variant="primary"
@@ -380,13 +387,20 @@ export function HatchingScreen() {
             {t("hatchingScreen.wakingBody")}
           </p>
         )}
-        <img
-          src={avatarSvgDataUrl}
-          alt=""
-          width={160}
-          height={160}
-          className={`my-10 ${phase === "ready" ? "" : "animate-pulse"}`}
-        />
+        {avatarSvgDataUrl ? (
+          <img
+            src={avatarSvgDataUrl}
+            alt=""
+            width={160}
+            height={160}
+            className={`my-10 ${phase === "ready" ? "" : "animate-pulse"}`}
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className={`my-10 h-[160px] w-[160px] rounded-full bg-[var(--surface-raised)] ${phase === "ready" ? "" : "animate-pulse"}`}
+          />
+        )}
         <ProgressBar
           value={displayProgress}
           height={6}

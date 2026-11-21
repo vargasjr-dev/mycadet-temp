@@ -25,6 +25,7 @@ import { OnboardingPeekingEyes } from "@app/domains/onboarding/components/onboar
 import { OnboardingStage } from "@app/domains/onboarding/components/onboarding-stage";
 import { OnboardingTopBar } from "@app/domains/onboarding/components/onboarding-top-bar";
 import { useOnboardingStageSize } from "@app/domains/onboarding/hooks/use-onboarding-stage-size";
+import { useEntranceFailsafe } from "@app/domains/onboarding/hooks/use-entrance-failsafe";
 import { useOnboardingTone } from "@app/domains/onboarding/onboarding-tone";
 import { useOnboardingAvatarPoolStore } from "@app/domains/onboarding/onboarding-avatar-pool-store";
 import { cssTransitionFor } from "@app/stores/page-surface-store";
@@ -113,6 +114,7 @@ export function IntroductionScreen({
   const selectedIndex = useOnboardingAvatarPoolStore.use.selectedIndex();
   const reduce = useReducedMotion();
   const tone = useOnboardingTone();
+  const entranceExpired = useEntranceFailsafe();
 
   const chosen = characters.length > 0 ? characters[selectedIndex] : undefined;
 
@@ -172,20 +174,24 @@ export function IntroductionScreen({
     ? t("introductionScreen.introNamed", { name: trimmedAssistantName })
     : t("introductionScreen.intro");
 
-  if (!art) {
-    // The bundled avatar art is a dynamic import that can be slow on a restored
-    // journey and can fail outright, in which case this is what the user sits
-    // on. It goes through the stage rather than a bare div so the strips get
-    // the dark surface too: the stage is what publishes it, and the same stage
-    // instance carries on into the tinted render below once the art lands.
-    return <OnboardingStage className="bg-[var(--surface-base)]" />;
-  }
+  // The art is decoration; the funnel is function. The bundled-art import can
+  // be slow on a restored journey and can fail outright, and a failed chunk
+  // must never strand the customer on a bare stage — so a missing art renders
+  // the same screen without the body and eyes, greeting and Continue visible
+  // at once, and the art layers join when (and if) the import lands.
+  //
+  // The same fold covers a stalled animation driver: `entranceArmed` gates
+  // every `initial` state, and once the failsafe deadline passes (or motion
+  // is reduced, or the art is missing) the entrance drops and everything
+  // renders at its final values. Greeting and Continue the accessibility tree
+  // can see but the eye cannot is the exact bug class this fails.
+  const entranceArmed = !reduce && !entranceExpired && art != null;
 
   return (
     // Starts on the picker's dark surface; the color layer below fades in.
     <OnboardingStage
       className="bg-[var(--surface-base)]"
-      surface={stripTinted ? art.color : ONBOARDING_DARK_SURFACE}
+      surface={stripTinted ? art?.color : ONBOARDING_DARK_SURFACE}
       // The strips fade on the color layer's own timing rather than jumping to
       // the tint while the stage is still dark.
       surfaceTransition={tintPublished ? TINT_FADE_CSS : undefined}
@@ -193,25 +199,29 @@ export function IntroductionScreen({
       {/* The avatar color fills in so coverage is end-to-end even where the
           body shape has gaps/spikes. Held at zero until the strips have their
           dark starting color on screen, so the two fades share a start. */}
-      <motion.div
-        className="absolute inset-0 z-0"
-        style={{ backgroundColor: art.color }}
-        initial={reduce ? false : { opacity: 0 }}
-        animate={{ opacity: stripTinted ? 1 : 0 }}
-        transition={reduce ? { duration: 0 } : TINT_FADE}
-      />
+      {art && (
+        <motion.div
+          className="absolute inset-0 z-0"
+          style={{ backgroundColor: art.color }}
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: stripTinted ? 1 : 0 }}
+          transition={reduce ? { duration: 0 } : TINT_FADE}
+        />
+      )}
 
       {/* Body: grows from the picker size to cover the screen. */}
-      <IntroductionBodyGrow art={art} reduce={reduce === true} />
+      {art && <IntroductionBodyGrow art={art} reduce={reduce === true} />}
 
       {/* Eyes peek up from the bottom, growing in alongside the body. */}
-      <OnboardingPeekingEyes entrance />
+      {art && <OnboardingPeekingEyes entrance />}
 
       {/* Progress + back, fading in after the grow. */}
       <motion.div
-        initial={reduce ? false : { opacity: 0 }}
+        initial={entranceArmed ? { opacity: 0 } : false}
         animate={{ opacity: 1 }}
-        transition={reduce ? { duration: 0 } : { duration: 0.4, delay: 1 }}
+        transition={
+          entranceArmed ? { duration: 0.4, delay: 1 } : { duration: 0 }
+        }
       >
         <OnboardingTopBar onBack={onBack} onNext={onForward} />
       </motion.div>
@@ -221,12 +231,12 @@ export function IntroductionScreen({
         <motion.h1
           className="text-center leading-[1.15] max-md:leading-[1.25]"
           style={{ fontFamily: "var(--font-serif)" }}
-          initial={reduce ? false : { scale: 0.9, opacity: 0 }}
+          initial={entranceArmed ? { scale: 0.9, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={
-            reduce
-              ? { duration: 0 }
-              : { type: "spring", stiffness: 260, damping: 11, delay: 1 }
+            entranceArmed
+              ? { type: "spring", stiffness: 260, damping: 11, delay: 1 }
+              : { duration: 0 }
           }
         >
           <span
@@ -244,9 +254,11 @@ export function IntroductionScreen({
         </motion.h1>
 
         <motion.div
-          initial={reduce ? false : { opacity: 0, y: 8 }}
+          initial={entranceArmed ? { opacity: 0, y: 8 } : false}
           animate={{ opacity: 1, y: 0 }}
-          transition={reduce ? { duration: 0 } : { duration: 0.4, delay: 1.15 }}
+          transition={
+            entranceArmed ? { duration: 0.4, delay: 1.15 } : { duration: 0 }
+          }
         >
           <Button
             type="button"
