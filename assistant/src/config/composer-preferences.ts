@@ -1,13 +1,8 @@
-import { createHash, randomUUID } from "node:crypto";
-import {
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { writeFileAtomic } from "@mycadet/shared/atomic-write";
 import { z } from "zod";
 
 import { getDataDir } from "../util/layout.js";
@@ -81,15 +76,6 @@ export function updateComposerPreferences(
   const directory = join(dataDir, "composer-preferences");
   mkdirSync(directory, { recursive: true });
   const path = preferencesPath(principalId, dataDir);
-  const temporaryPath = `${path}.${randomUUID()}.tmp`;
-  try {
-    writeFileSync(temporaryPath, JSON.stringify(preferences), {
-      mode: 0o600,
-      flag: "wx",
-    });
-    renameSync(temporaryPath, path);
-  } finally {
-    rmSync(temporaryPath, { force: true });
-  }
+  writeFileAtomic(path, JSON.stringify(preferences), { mode: 0o600 });
   return preferences;
 }

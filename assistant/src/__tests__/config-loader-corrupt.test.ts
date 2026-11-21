@@ -7,7 +7,6 @@
  * that the corrupt file is preserved for debugging.
  */
 
-import * as fs from "node:fs";
 import {
   existsSync,
   mkdirSync,
@@ -17,7 +16,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
   getConfig,
@@ -209,22 +208,17 @@ describe("loadRawConfig corrupt-file recovery", () => {
     const previous = JSON.stringify({ foo: "bar" });
     writeFileSync(CONFIG_PATH, previous);
 
-    // Simulate a crash partway through the write: half the bytes land, then
-    // the process dies.
-    const realWrite = fs.writeFileSync;
-    const spy = spyOn(fs, "writeFileSync").mockImplementation(
-      (path, data) => {
-        realWrite(path, String(data).slice(0, 5));
-        throw new Error("crash");
-      },
-    );
+    // A directory parked at the atomic write's temp path makes the write
+    // fail deterministically — the real filesystem, no mocks.
+    const tempPath = `${CONFIG_PATH}.tmp.${process.pid}`;
+    mkdirSync(tempPath);
     try {
-      expect(() => saveRawConfig({ foo: "baz" })).toThrow("crash");
+      expect(() => saveRawConfig({ foo: "baz" })).toThrow();
+      expect(readFileSync(CONFIG_PATH, "utf-8")).toBe(previous);
     } finally {
-      spy.mockRestore();
+      rmSync(tempPath, { recursive: true, force: true });
     }
-
-    expect(readFileSync(CONFIG_PATH, "utf-8")).toBe(previous);
+    expect(existsSync(tempPath)).toBe(false);
   });
 
   test("returns parsed object when config is valid", () => {

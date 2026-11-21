@@ -13,7 +13,8 @@
     "./providers/baseten": "./providers/baseten.ts",
     "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts",
     "./seeds": "./seeds.ts",
-    "./version": "./version.ts"
+    "./version": "./version.ts",
+    "./atomic-write": "./atomic-write.ts"
   },
   "devDependencies": {
     "eslint": "10.2.0",

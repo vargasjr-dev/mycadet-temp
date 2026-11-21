@@ -9,6 +9,8 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { writeFileAtomic } from "@mycadet/shared/atomic-write";
+
 import { safeStatSync } from "../util/fs.js";
 import {
   ensureDataDir,
@@ -222,13 +224,12 @@ function fillContextDefaultsForMissingKeys(
 }
 
 /**
- * Write config JSON via a temp file and rename, so a concurrent reader or a
- * crash mid-write never sees a truncated config.json.
+ * Write config JSON via the house atomic write — the temp-and-rename lives
+ * in @mycadet/shared so every config-shaped file shares one contract; this
+ * layer only shapes the JSON.
  */
 function writeConfigFile(configPath: string, config: unknown): void {
-  const tmpPath = `${configPath}.tmp`;
-  writeFileSync(tmpPath, JSON.stringify(config, null, 2) + "\n");
-  renameSync(tmpPath, configPath);
+  writeFileAtomic(configPath, JSON.stringify(config, null, 2) + "\n");
 }
 
 /**
