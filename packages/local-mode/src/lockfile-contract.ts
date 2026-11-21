@@ -262,9 +262,10 @@ export function machinePolicyPaths(): {
   };
   const walk = (node: z.ZodType, path: string | undefined): void => {
     const inner = node as ZodNode;
-    const shape = typeof inner.unwrap === "function"
-      ? (inner.unwrap() as ZodNode).shape
-      : inner.shape;
+    const shape =
+      typeof inner.unwrap === "function"
+        ? (inner.unwrap() as ZodNode).shape
+        : inner.shape;
     if (shape) {
       if (path !== undefined) sections.push(path);
       for (const [key, child] of Object.entries(shape)) {

@@ -52,6 +52,16 @@ function usageError(message: string): never {
   process.exit(1);
 }
 
+/** One stored policy leaf: the paths are the schema's own, so the read is typed. */
+function storedLeaf(
+  memory: { max?: number; high?: number } | undefined,
+  path: string,
+): number | undefined {
+  if (path === "memory.max") return memory?.max;
+  if (path === "memory.high") return memory?.high;
+  return undefined;
+}
+
 /** Exact-fit unit labels for byte sizes; falls through to raw bytes. */
 function formatMachineBytes(bytes: number): string {
   for (const [suffix, unit] of [
@@ -179,18 +189,7 @@ export const machine = Object.assign(
         `Machine policy for '${entry.assistantId}' (${entry.cloud} assistant):`,
       );
       for (const p of paths) {
-        const stored = p
-          .split(".")
-          .reduce<unknown>(
-            (node, key) =>
-              node !== undefined && typeof node === "object"
-                ? (node as Record<string, unknown>)[key]
-                : undefined,
-            result.machine,
-          );
-        console.log(
-          storedLine(p, typeof stored === "number" ? stored : undefined),
-        );
+        console.log(storedLine(p, storedLeaf(result.machine?.memory, p)));
       }
       return;
     }
@@ -216,19 +215,9 @@ export const machine = Object.assign(
       const stored = result.stored;
       const storedSummary = stored
         ? LEAF_PATHS.map((leaf) => {
-            const value = leaf
-              .split(".")
-              .reduce<unknown>(
-                (node, key) =>
-                  node !== undefined && typeof node === "object"
-                    ? (node as Record<string, unknown>)[key]
-                    : undefined,
-                stored,
-              );
+            const value = storedLeaf(stored, leaf);
             return `${leaf} ${
-              typeof value === "number"
-                ? formatMachineBytes(value)
-                : "(default)"
+              value !== undefined ? formatMachineBytes(value) : "(default)"
             }`;
           }).join(", ")
         : "none";
