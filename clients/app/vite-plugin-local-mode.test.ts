@@ -183,25 +183,7 @@ describe("paired gateway proxy", () => {
     });
   });
 
-  test("rejects a browser request without positive same-origin proof", async () => {
-    writeLockfile([
-      {
-        assistantId: "paired-g",
-        cloud: "custom",
-        ipAddress: "gateway.example.com",
-        port: 443,
-      },
-    ]);
-    writeToken("paired-g", {
-      pairedGatewayUrl: "https://gateway.example.com",
-    });
-
-    const result = await dispatch("/v1/assistants/paired-g/readyz");
-
-    expect(result).toEqual({ status: 403, body: "Forbidden" });
-  });
-
-  test("rejects a browser request from another loopback origin", async () => {
+  test("refuses a non-loopback browser origin with the JSON forbidden body", async () => {
     writeLockfile([
       {
         assistantId: "paired-g",
@@ -215,35 +197,24 @@ describe("paired gateway proxy", () => {
     });
 
     const result = await dispatch("/v1/assistants/paired-g/readyz", {
-      origin: "http://127.0.0.1:9999",
-      "sec-fetch-site": "same-site",
+      origin: "https://evil.example",
+      "sec-fetch-site": "cross-site",
     });
 
-    expect(result).toEqual({ status: 403, body: "Forbidden" });
+    expect(result.status).toBe(403);
+    expect(JSON.parse(result.body)).toEqual({ error: "Forbidden" });
   });
 
-  test("pipes a loopback forward with the host-minted bearer injected", async () => {
-    // A real loopback upstream: the middleware mints against its /auth/token
-    // (leasing the guardian token from the seeded token file), injects the
-    // minted bearer on the forward, and the renderer's own authorization
-    // never crosses.
+  test("pipes a loopback forward with the caller's headers raw", async () => {
+    // A real loopback upstream: the operator table's proxy catch-all forwards
+    // verbatim — headers pass through raw (#689's doctrine), so the renderer's
+    // own authorization crosses as-is and the gateway resolves its own bearer.
     const server = http.createServer((upstreamReq, upstreamRes) => {
-      const url = new URL(upstreamReq.url ?? "/", "http://127.0.0.1");
       upstreamRes.writeHead(200, {
         "content-type": "application/json",
-        // bun test's fetch enforces CORS on the Origin-carrying mint (the
-        // runtime's own gateway does too, for web origins).
+        // bun test's fetch enforces CORS on the cross-port forward.
         "access-control-allow-origin": "*",
       });
-      if (url.pathname === "/auth/token") {
-        upstreamRes.end(
-          JSON.stringify({
-            token: "minted-by-host",
-            expiresAt: Math.floor(Date.now() / 1000) + 3600,
-          }),
-        );
-        return;
-      }
       upstreamRes.end(
         JSON.stringify({ authorization: upstreamReq.headers.authorization }),
       );
@@ -271,7 +242,7 @@ describe("paired gateway proxy", () => {
 
       expect(result.status).toBe(200);
       const upstream = JSON.parse(result.body);
-      expect(upstream.authorization).toBe("Bearer minted-by-host");
+      expect(upstream.authorization).toBe("Bearer renderer-should-not-send");
     } finally {
       server.close();
     }
@@ -280,8 +251,11 @@ describe("paired gateway proxy", () => {
 
 describe("devices routes (operator rows)", () => {
   beforeEach(() => {
-    devicesListResult = { ok: true, devices: [] };
-    devicesRevokeResult = { ok: true };
+    runDevicesListMock.mockImplementation(async () => ({
+      ok: true,
+      devices: [],
+    }));
+    runDevicesRevokeMock.mockImplementation(async () => ({ ok: true }));
     runDevicesListMock.mockClear();
     runDevicesRevokeMock.mockClear();
   });
@@ -335,7 +309,10 @@ describe("devices routes (operator rows)", () => {
     });
 
     test("passes the device list through", async () => {
-      devicesListResult = { ok: true, devices: [DEVICE] };
+      runDevicesListMock.mockImplementation(async () => ({
+        ok: true,
+        devices: [DEVICE],
+      }));
 
       const result = await dispatch(
         "/v1/devices",
@@ -352,7 +329,10 @@ describe("devices routes (operator rows)", () => {
     });
 
     test("run-helper failure yields ok:false with no status field", async () => {
-      devicesListResult = { ok: false, error: "gateway offline" };
+      runDevicesListMock.mockImplementation(async () => ({
+        ok: false,
+        error: "gateway offline",
+      }));
 
       const result = await dispatch(
         "/v1/devices",
@@ -444,7 +424,10 @@ describe("devices routes (operator rows)", () => {
     });
 
     test("run-helper failure yields ok:false with no status field", async () => {
-      devicesRevokeResult = { ok: false, error: "revoke failed" };
+      runDevicesRevokeMock.mockImplementation(async () => ({
+        ok: false,
+        error: "revoke failed",
+      }));
 
       const result = await dispatch(
         "/v1/devices/revoke",

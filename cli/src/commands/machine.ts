@@ -2,23 +2,33 @@ import {
   cliCommand,
   findAssistant,
   machineGet,
+  machinePolicyPaths,
   machineResetKey,
   machineSetKey,
+  planMachine,
+  sleepAssistant,
+  wakeAssistant,
   type MachineMutationResult,
+  type MachinePlanChange,
 } from "@mycadet/local-mode";
 
 /**
  * `cadet machine` — the policy surface for host-independent machine settings.
- * The verbs are honest about what they can and cannot do YET: `set`/`reset`
- * only write the store and say when the policy takes effect; the
- * stored-vs-applied comparison and `apply` (sleep → recreate → wake) land
- * with `machine plan` in tranche 3. The command owns UX (arg parsing,
- * narration, exit codes) and delegates everything else to the operations.
+ * `set`/`reset` write the store and say when the policy takes effect;
+ * `plan` is the read-only stored-vs-applied diff (the terraform inspect
+ * half, powered by the operation that owns the applied-state reader);
+ * `apply` is the sleep → wake restart — every remote answers through its
+ * own sleep/wake legs, so apply works everywhere they do. The paths come
+ * from walking the policy schema, so knobs join the surface as the schema
+ * grows. The command owns UX (arg parsing, narration, exit codes) and
+ * delegates everything else to the operations.
  */
 
 const HELP = (cmd: string) =>
   `
 Usage: ${cmd} machine get [<path>] [<name>]
+       ${cmd} machine plan [<name>]
+       ${cmd} machine apply [<name>]
        ${cmd} machine set <path> <value> [<name>]
        ${cmd} machine reset [<path>] [<name>]
 
@@ -27,6 +37,8 @@ host-independent settings stored on the assistant's lockfile entry.
 
 Subcommands:
   get <key>            Show stored policy vs what is applied, with drift markers
+  plan                 Read-only diff of stored policy vs what is applied
+  apply                Recreate the containers so the stored policy takes effect
   set <path> <value>   Store one policy value
   reset [<path>]       Clear back to defaults (no path clears everything)
 
@@ -38,6 +50,16 @@ function usageError(message: string): never {
   console.error(`Error: ${message}`);
   console.error(`Run '${cliCommand()} machine --help' for usage.`);
   process.exit(1);
+}
+
+/** One stored policy leaf: the paths are the schema's own, so the read is typed. */
+function storedLeaf(
+  memory: { max?: number; high?: number } | undefined,
+  path: string,
+): number | undefined {
+  if (path === "memory.max") return memory?.max;
+  if (path === "memory.high") return memory?.high;
+  return undefined;
 }
 
 /** Exact-fit unit labels for byte sizes; falls through to raw bytes. */
@@ -71,8 +93,36 @@ function storedLine(path: string, value: number | undefined): string {
   return `  ${path.padEnd(14)}${label}`;
 }
 
-/** The dotted paths `get`/`reset` accept; `set` needs a leaf. */
-const SECTION_PATHS = ["memory", "memory.max", "memory.high"];
+/** Render one plan change with the same byte formatting `get` uses. */
+function changeLine(change: MachinePlanChange): string {
+  const side = (bytes: number | undefined) =>
+    bytes === undefined ? "unlimited" : formatMachineBytes(bytes);
+  return `  ⚠ ${change.field}: ${side(change.from)} → ${side(change.to)}`;
+}
+
+/** The applied half of a docker plan, in the flags plan compares against. */
+function appliedLine(applied: {
+  maxBytes?: number;
+  highBytes?: number;
+  swapBytes?: number;
+}): string {
+  if (applied.maxBytes === undefined && applied.highBytes === undefined) {
+    return "unlimited (no memory flags on the container)";
+  }
+  const parts: string[] = [];
+  if (applied.maxBytes !== undefined)
+    parts.push(`--memory ${formatMachineBytes(applied.maxBytes)}`);
+  if (applied.highBytes !== undefined)
+    parts.push(`--memory-reservation ${formatMachineBytes(applied.highBytes)}`);
+  if (applied.swapBytes !== undefined)
+    parts.push(`--memory-swap ${formatMachineBytes(applied.swapBytes)}`);
+  return parts.join(", ");
+}
+
+/** The dotted paths the schema walks to, derived dynamically: `get`/`reset`
+ * accept sections and leaves, `set` needs a leaf. */
+const { sections: SECTION_PATHS, leaves: LEAF_PATHS } = machinePolicyPaths();
+const ALL_PATHS = [...SECTION_PATHS, ...LEAF_PATHS];
 
 export const machine = Object.assign(
   async function machine(): Promise<void> {
@@ -84,6 +134,8 @@ export const machine = Object.assign(
     }
     if (
       subcommand !== "get" &&
+      subcommand !== "plan" &&
+      subcommand !== "apply" &&
       subcommand !== "set" &&
       subcommand !== "reset"
     ) {
@@ -94,20 +146,23 @@ export const machine = Object.assign(
 
     // get/reset: an optional dotted path, then an optional assistant. A
     // dotted first operand is the path; anything else is an identifier.
+    // plan/apply take an assistant name only.
     let path: string | undefined;
     let nameArg: string | undefined;
-    if (subcommand !== "set") {
+    if (subcommand === "plan" || subcommand === "apply") {
+      nameArg = first;
+    } else if (subcommand !== "set") {
       if (first !== undefined && first.includes(".")) {
-        if (!SECTION_PATHS.includes(first)) {
+        if (!ALL_PATHS.includes(first)) {
           usageError(
-            `Unknown machine path '${first}'. Valid paths: ${SECTION_PATHS.join(", ")}.`,
+            `Unknown machine path '${first}'. Valid paths: ${ALL_PATHS.join(", ")}.`,
           );
         }
         path = first;
         nameArg = second;
       } else if (second !== undefined) {
         usageError(
-          `'${first}' is not a machine path. Valid paths: ${SECTION_PATHS.join(", ")}.`,
+          `'${first}' is not a machine path. Valid paths: ${ALL_PATHS.join(", ")}.`,
         );
       } else {
         nameArg = first;
@@ -129,17 +184,79 @@ export const machine = Object.assign(
         console.error(`Error: ${result.error}`);
         process.exit(1);
       }
-      const paths =
-        path !== undefined
-          ? [path]
-          : SECTION_PATHS.filter((p) => p !== "memory");
+      const paths = path !== undefined ? [path] : LEAF_PATHS;
       console.log(
         `Machine policy for '${entry.assistantId}' (${entry.cloud} assistant):`,
       );
       for (const p of paths) {
-        const leaf = p.split(".")[1];
-        if (leaf !== "max" && leaf !== "high") continue;
-        console.log(storedLine(p, result.machine?.memory?.[leaf]));
+        console.log(storedLine(p, storedLeaf(result.machine?.memory, p)));
+      }
+      return;
+    }
+
+    if (subcommand === "plan") {
+      const entry = findAssistant(nameArg);
+      if (!entry) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
+      const result = await planMachine(entry);
+      if (!result.ok) {
+        console.error(`Error: ${result.error}`);
+        process.exit(1);
+      }
+      console.log(
+        `Machine plan for '${entry.assistantId}' (${result.cloud} assistant):`,
+      );
+      const stored = result.stored;
+      const storedSummary = stored
+        ? LEAF_PATHS.map((leaf) => {
+            const value = storedLeaf(stored, leaf);
+            return `${leaf} ${
+              value !== undefined ? formatMachineBytes(value) : "(default)"
+            }`;
+          }).join(", ")
+        : "none";
+      console.log(`  stored:        ${storedSummary}`);
+      console.log(
+        `  applied:       ${result.applied ? appliedLine(result.applied) : "nothing live to compare"}`,
+      );
+      for (const change of result.changes) {
+        console.log(changeLine(change));
+      }
+      if (result.requiresRecreate) {
+        console.log(
+          `  Recreate required — run \`${cliCommand()} machine apply\`.`,
+        );
+      }
+      if (result.note) console.log(`  ${result.note}`);
+      return;
+    }
+
+    if (subcommand === "apply") {
+      const entry = findAssistant(nameArg);
+      if (!entry) {
+        console.error(
+          nameArg
+            ? `No assistant found with name or ID '${nameArg}'.`
+            : "No assistant found. Run 'cadet hatch' first.",
+        );
+        process.exit(1);
+      }
+      const stopped = await sleepAssistant(entry);
+      if (!stopped.ok) {
+        console.error(`Error: ${stopped.error}`);
+        process.exit(1);
+      }
+      console.log("Assistant slept — restarting with the stored policy...");
+      const woken = await wakeAssistant(entry);
+      if (!woken.ok) {
+        console.error(`Error: ${woken.error}`);
+        process.exit(1);
       }
       return;
     }

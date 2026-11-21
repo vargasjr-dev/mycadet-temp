@@ -1,3 +1,4 @@
+import { readLockfile } from "../lockfile";
 import {
   afterAll,
   afterEach,
@@ -42,13 +43,20 @@ async function writeEntry(entry: Record<string, unknown>): Promise<void> {
   if (!result.ok) throw new Error(result.error);
 }
 
+/**
+ * The saved-back entry, read as the write pinned it — the lockfile parse is
+ * the boundary under test, so the test reads the raw shape once, here.
+ */
+function freshEntry(): LockfileAssistant {
+  return readLockfile().assistants[0] as LockfileAssistant;
+}
+
 async function readStored(
   assistantId: string,
 ): Promise<Record<string, unknown> | undefined> {
-  const { readLockfile } = await import("../lockfile");
-  return readLockfile().assistants.find(
-    (a) => a.assistantId === assistantId,
-  ) as unknown as Record<string, unknown> | undefined;
+  return readLockfile().assistants
+    .filter((a) => a.assistantId === assistantId)
+    .map((a) => a as unknown as Record<string, unknown>)[0];
 }
 
 import {
@@ -88,8 +96,7 @@ describe("parseMachineBytes", () => {
 describe("machineSetKey", () => {
   test("stores the merged section, the parsed value, and the pending note", async () => {
     await writeEntry(dockerEntry);
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     const result = machineSetKey(entry, "memory.max", "8GiB");
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -112,8 +119,7 @@ describe("machineSetKey", () => {
       cloud: "local",
       port: 7830,
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     const result = machineSetKey(entry, "memory.high", "4GiB");
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.note).toContain("worker spawn");
@@ -124,8 +130,7 @@ describe("machineSetKey", () => {
       ...dockerEntry,
       machine: { memory: { high: 4 * 1024 ** 3 } },
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     const result = machineSetKey(entry, "memory.max", "8GiB");
     expect(result.ok).toBe(true);
     const stored = (await readStored(dockerEntry.assistantId))?.machine as {
@@ -139,8 +144,7 @@ describe("machineSetKey", () => {
 
   test("rejects unknown keys and unparsable values", async () => {
     await writeEntry(dockerEntry);
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     for (const [key, value] of [
       ["memory.limit", "8GiB"],
       ["port", "7830"],
@@ -160,8 +164,7 @@ describe("machineSetKey", () => {
       ...dockerEntry,
       machine: { memory: { max: 8 * 1024 ** 3 } },
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     const result = machineSetKey(entry, "memory.high", "10GiB");
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -175,6 +178,34 @@ describe("machineSetKey", () => {
     expect(stored.memory.max).toBe(8 * 1024 ** 3);
     expect((stored.memory as Record<string, unknown>).high).toBeUndefined();
   });
+
+  test("re-stating a stored value is a no-op — no lock write", async () => {
+    await writeEntry({
+      ...dockerEntry,
+      machine: { memory: { max: 8 * 1024 ** 3 } },
+    });
+    const entry = freshEntry();
+    const result = machineSetKey(entry, "memory.max", "8GiB");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.note).toBe("Already stored — no change.");
+      expect(result.value).toBe(8 * 1024 ** 3);
+      expect(result.machine).toEqual({
+        memory: { max: 8 * 1024 ** 3 },
+      });
+    }
+    // The lock was never touched: a different sibling value written AFTER
+    // the no-op proves the file still parsed from the original write.
+    const followup = machineSetKey(entry, "memory.high", "4GiB");
+    expect(followup.ok).toBe(true);
+    const stored = (await readStored(dockerEntry.assistantId))?.machine as {
+      memory: { max: number; high: number };
+    };
+    expect(stored.memory).toEqual({
+      max: 8 * 1024 ** 3,
+      high: 4 * 1024 ** 3,
+    });
+  });
 });
 
 describe("machineResetKey", () => {
@@ -185,8 +216,7 @@ describe("machineResetKey", () => {
         memory: { high: 4 * 1024 ** 3, max: 8 * 1024 ** 3 },
       },
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     const result = machineResetKey(entry, "memory.max");
     expect(result.ok).toBe(true);
     const stored = (await readStored(dockerEntry.assistantId))?.machine as {
@@ -200,8 +230,7 @@ describe("machineResetKey", () => {
       ...dockerEntry,
       machine: { memory: { max: 8 * 1024 ** 3 } },
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     expect(machineResetKey(entry, "memory.max").ok).toBe(true);
     const stored = await readStored(dockerEntry.assistantId);
     expect(stored?.machine).toBeUndefined();
@@ -212,8 +241,7 @@ describe("machineResetKey", () => {
       ...dockerEntry,
       machine: { memory: { max: 8 * 1024 ** 3 } },
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     expect(machineResetKey(entry, "port").ok).toBe(false);
     expect(machineResetKey(entry, "memory").ok).toBe(true);
     const stored = await readStored(dockerEntry.assistantId);
@@ -227,8 +255,7 @@ describe("machineGet", () => {
       ...dockerEntry,
       machine: { memory: { high: 4 * 1024 ** 3 } },
     });
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     const result = machineGet(entry);
     expect(result).toEqual({
       ok: true,
@@ -238,8 +265,7 @@ describe("machineGet", () => {
 
   test("an unset section reads as undefined (spec defaults)", async () => {
     await writeEntry(dockerEntry);
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     expect(machineGet(entry)).toEqual({ ok: true, machine: undefined });
   });
 });
@@ -247,16 +273,14 @@ describe("machineGet", () => {
 describe("the written lockfile survives the schema round-trip", () => {
   test("a machine policy written by set reads back byte-identical", async () => {
     await writeEntry(dockerEntry);
-    const { readLockfile: freshRead } = await import("../lockfile");
-    const entry = freshRead().assistants[0] as LockfileAssistant;
+    const entry = freshEntry();
     machineSetKey(entry, "memory.high", "6GiB");
     expect(
       (readStored(dockerEntry.assistantId) as Promise<
         Record<string, unknown>
       >) ?? null,
     ).toBeDefined();
-    const { readLockfile: reread } = await import("../lockfile");
-    expect((reread().assistants[0] as LockfileAssistant).machine).toEqual({
+    expect(freshEntry().machine).toEqual({
       memory: { high: 6 * 1024 ** 3 },
     });
   });

@@ -1,6 +1,9 @@
 import { platform } from "node:os";
 
-import type { DockerAssistant } from "../../lockfile-contract";
+import type {
+  DockerAssistant,
+  MachineMemoryPolicy,
+} from "../../lockfile-contract";
 import type { LifecycleReporter, WakeAssistantOptions } from "../../operations/types";
 import { consoleLifecycleReporter } from "../../lifecycle-reporter";
 import { exec, execOutput } from "../../exec";
@@ -15,6 +18,7 @@ import {
   type ServiceName,
 } from "./statefulset";
 import { waitForReady } from "../../daemon-readiness";
+import { inspectAppliedMemory } from "./plan";
 import type { WakeResult } from "../../operations/wake";
 
 /**
@@ -150,6 +154,15 @@ async function containersDriftFromLockfile(
       return false;
     }
   }
+  // The machine memory policy is recreate-only state too: `docker start`
+  // replays the container's creation args, so a stored policy that differs
+  // from the assistant container's live limits drifts exactly like an image
+  // mismatch — the wake recreates instead of restarting stale limits.
+  const applied = await inspectAppliedMemory(res.assistantContainer);
+  if (applied) {
+    if (applied.maxBytes !== entry.machine?.memory?.max) return true;
+    if (applied.highBytes !== entry.machine?.memory?.high) return true;
+  }
   return false;
 }
 
@@ -244,6 +257,7 @@ async function recreateDockerContainers(
     imageTags: images,
     instanceName: entry.assistantId,
     res,
+    assistantMemory: entry.machine?.memory ?? null,
     avatarDevicePath: resolveAvatarDevicePath(),
   });
 
@@ -280,6 +294,7 @@ async function startAssistantThenSidecars(
 
 /** The container bring-up options shared by start and create. */
 type ServiceContainersOpts = {
+  assistantMemory?: MachineMemoryPolicy | null;
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort: number;

@@ -114,7 +114,7 @@ export async function retireLocal(
   }
 
   if (!isLocalEntry(entry)) {
-    throw new Error(`'${name}' is not a local assistant.`);
+    throw new Error(`'${entry.assistantId}' is not a local assistant.`);
   }
   const cadetDir = getLocalInstanceDir(entry);
 
