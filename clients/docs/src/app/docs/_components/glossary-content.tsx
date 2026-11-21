@@ -103,9 +103,9 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
           The exception is the cloud &ndash; the multi-tenant infrastructure
           that hosts assistants for guardians who don&apos;t want to run their
           own. Billing, tenancy isolation, secrets management, support tooling,
-          the operational surface around cloud hosting: this is the
-          convenience layer Cadet builds and operates as a business. You rent
-          the cloud. You own the assistant.
+          the operational surface around cloud hosting: this is the convenience
+          layer Cadet builds and operates as a business. You rent the cloud. You
+          own the assistant.
         </span>
       </>
     ),
@@ -194,6 +194,8 @@ const GLOSSARY_ENTRIES: GlossaryEntry[] = [
 ];
 
 export function GlossaryContent() {
+  // TODO: Just like constitution, we should render the GLOSSARY.md file instead of repeat the content here
+  // We should maintain the table format & css, I quite liked it
   return (
     <>
       <DocsContent title="Glossary" breadcrumb="Docs / Key Concepts / Glossary">

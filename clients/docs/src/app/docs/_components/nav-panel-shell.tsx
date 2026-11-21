@@ -65,7 +65,7 @@ export function NavPanelShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Desktop sidebar */}
-      <nav className="docs-nav-panel hidden border-r md:sticky md:top-[101px] md:block md:h-[calc(100vh-101px)] md:w-64 md:shrink-0 md:self-start md:overflow-y-auto md:pb-8">
+      <nav className="docs-nav-panel hidden border-r md:sticky md:top-[56px] md:block md:h-[calc(100vh-56px)] md:w-64 md:shrink-0 md:self-start md:overflow-y-auto md:pb-8">
         {navContent}
       </nav>
     </>

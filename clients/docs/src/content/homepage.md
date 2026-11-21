@@ -11,5 +11,3 @@ Cadet is the personal assistant that lives wherever you need them. They have the
 - [Developer Guide](/docs/developer-guide) — Architecture, security model, and how to build on top of Cadet.
 - [Community](/community) — Meet the people raising their assistants.
 - [Roadmap](/docs/roadmap) — What's shipping soon, and what we're exploring in the open.
-
-Reading as a machine? [`/docs/llms.txt`](/docs/llms.txt) indexes every page in plain Markdown.

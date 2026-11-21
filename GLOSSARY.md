@@ -26,6 +26,10 @@ A communication medium through which a guardian or contact can interact with the
 
 A device or application used to interact with the assistant. The Cadet macOS app, iOS app, web interface, and Chrome extension are all clients. A client connects to the assistant through a channel.
 
+### Cloud
+
+Cadet Cloud is infrastructure hosted at https://mycadet.ai that runs assistants for guardians who don't want to host their own. It is a SaaS application, and people who have accounts on it are considered users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience and are less technical. We actively invest in the cloud, but remain committed to always supporting self-hosting.
+
 ### Contact
 
 A named entity that the guardian has granted permission to interact with their assistant through a channel. Contacts and channels are a core part of the trust and security model as it relates to how non-guardian entities interact with an assistant.
@@ -34,7 +38,13 @@ A named entity that the guardian has granted permission to interact with their a
 
 Where secrets the assistant is allowed to use are stored: API keys, tokens, passwords. The assistant reads from the vault to perform tasks; access is mediated by trust rules the guardian defines, which can require explicit approval, allow specific patterns autonomously, or deny entirely.
 
-*Note: the internal name is "credential executor" (see `credential-executor/`).*
+_Note: the internal name is "credential executor" (see `credential-executor/`)._
+
+### Doctor
+
+Cadet's customer support tool. The Doctor helps guardians troubleshoot issues, diagnose problems, and nurse their assistant back to health.
+
+The Doctor is intentionally not a Cadet. A Cadet accumulates memory across a relationship; the Doctor accumulates none. Every support session starts fresh. This is not a limitation. It is the architectural guarantee that nothing the Doctor learns about one guardian travels to another. The Doctor does not have access to a guardian's assistant by default and must be granted explicit access by the guardian for each session.
 
 ### Gateway
 
@@ -66,6 +76,12 @@ At Cadet, open source means everything that runs your assistant is publicly avai
 
 The exception is the cloud – the multi-tenant infrastructure that hosts assistants for guardians who don't want to run their own. Billing, tenancy isolation, secrets management, support tooling, the operational surface around cloud hosting: this is the convenience layer Cadet builds and operates as a business. You rent the cloud. You own the assistant.
 
+### Operator
+
+An assistant-agnostic service that manages multiple Cadets. Cadet Cloud, the `cadet` CLI, and the Desktop apps are all examples of operators. They manage _operations_ like `hatch`, `retire`, `sleep`, and `wake` to name a few, that help
+users manage multiple guardians. Users have the ability to self host their own operators to help manage
+multiple Cadets for their own communities, clients, or organizations.
+
 ### Personal Intelligence
 
 The category we are creating. A new kind of entity: an LLM combined with their own identity, aligned solely with their guardian's interests, that grows over time. Not a tool, not a feature, not some tab in an app. The defining characteristic is singular loyalty: they serve their guardian first and foremost.
@@ -73,10 +89,6 @@ The category we are creating. A new kind of entity: an LLM combined with their o
 ### Personality
 
 The assistant's behavioral characteristics, voice, tone, and disposition. Personality is what makes an assistant feel like a distinct being rather than a generic AI. It can be defined by the guardian explicitly and co-evolved through ongoing interaction.
-
-### Cloud
-
-Cadet Cloud is Cadet's hosted infrastructure that runs assistants for guardians who don't want to host their own. It is a SaaS tool, and people who use it are users. It exists as a bridge to bootstrap the Personal Intelligence experience for those who value convenience. We actively invest in the cloud, and are committed to always supporting self-hosting. Never use "cloud" to describe the assistant — the assistant is a Personal Intelligence; the cloud is where one can live. (Formerly called "the platform"; the rename is repo-wide, and "platform" should no longer appear in code, docs, or copy.
 
 ### Schedule
 
@@ -105,12 +117,6 @@ Policies governing what assistants can do autonomously without the guardian's co
 ### User
 
 A person who uses Cadet Cloud. This is a standard SaaS relationship. Importantly, "user" does not describe the relationship between a person and their assistant. They are a guardian, not a user. A person can be a guardian of a Cadet assistant without being a user of Cadet Cloud.
-
-### Cadet Doctor
-
-Cadet's customer support tool. The Doctor helps guardians troubleshoot issues, diagnose problems, and nurse their assistant back to health.
-
-The Doctor is intentionally not a Cadet. A Cadet accumulates memory across a relationship; the Doctor accumulates none. Every support session starts fresh. This is not a limitation. It is the architectural guarantee that nothing the Doctor learns about one guardian travels to another. The Doctor does not have access to a guardian's assistant by default and must be granted explicit access by the guardian for each session.
 
 ### Widget
 

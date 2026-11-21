@@ -15,8 +15,7 @@ import { CodeBlockCopy } from "@/app/docs/_components/code-block-copy";
 import "@/app/docs/docs-theme.css";
 
 export const metadata: Metadata = {
-  description:
-    "Documentation for Cadet: learn how to build, configure, and deploy AI assistants with skills, channels, and more.",
+  description: "Cadet: Your personal digital assistant",
 };
 
 interface DocsLayoutProps {

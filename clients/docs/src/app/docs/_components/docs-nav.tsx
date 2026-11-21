@@ -563,7 +563,7 @@ function NavSection({
 }) {
   return (
     <li className="docs-nav-section m-0 p-0">
-      <span className="docs-nav-section-label block px-3 pb-2 pt-3 text-[13px] font-bold tracking-normal normal-case">
+      <span className="docs-nav-section-label block px-3 pb-2 pt-2 text-[13px] font-bold tracking-normal normal-case">
         {item.label}
       </span>
       <ul className="list-none p-0 m-0">
@@ -650,7 +650,7 @@ export function DocsNav() {
 
   return (
     <NavPanelShell>
-      <ul className="docs-nav-list list-none px-4 pb-4 pt-4 md:pt-8 m-0 flex-1 overflow-y-auto">
+      <ul className="docs-nav-list list-none px-4 pb-4 pt-4 m-0 flex-1 overflow-y-auto">
         {navItems}
       </ul>
     </NavPanelShell>

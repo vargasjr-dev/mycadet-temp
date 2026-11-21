@@ -1,3 +1,5 @@
+<!-- TODO: These h2's are still rendering like normal text -->
+
 ## Setup
 
 [Sign up](https://www.mycadet.ai/account/signup) for **Cadet Cloud** and we can hatch and start managing your assistant for you in seconds.
@@ -8,6 +10,7 @@ For those looking to self host their own Cadet, install the CLI in your terminal
 
 ```bash
 npm install -g @mycadet/cli
+cadet hatch
 ```
 
 ## Updates
