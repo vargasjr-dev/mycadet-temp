@@ -987,23 +987,21 @@ function warnOnModelInvisibleContent(
   if (!Array.isArray(parsed) || parsed.length === 0) {
     return;
   }
-  const allCards = parsed.every(
-    (block) =>
-      typeof block === "object" &&
-      block !== null &&
-      "type" in block &&
-      block.type === "ui_surface",
+  const uiSurfaceProbe = z.object({ type: z.literal("ui_surface") });
+  const allCards = parsed.every((block) =>
+    uiSurfaceProbe.safeParse(block).success,
   );
   if (!allCards) {
     return;
   }
-  const surfaceTypes = parsed
-    .map((block) =>
-      typeof block === "object" && block !== null && "surfaceType" in block
-        ? block.surfaceType
-        : undefined,
-    )
-    .filter((t): t is string => typeof t === "string");
+  const surfaceTypeProbe = z.object({
+    type: z.literal("ui_surface"),
+    surfaceType: z.string(),
+  });
+  const surfaceTypes = parsed.flatMap((block) => {
+    const surfaceBlock = surfaceTypeProbe.safeParse(block);
+    return surfaceBlock.success ? [surfaceBlock.data.surfaceType] : [];
+  });
   const message =
     "Persisting a message whose only content is ui_surface blocks — the model cannot see it. " +
     "Pair the card with a model-readable sibling (e.g. a _surfaceFallback text block).";
@@ -1102,12 +1100,10 @@ async function insertMessageCore(
             } catch (insertErr) {
               raw.exec("ROLLBACK TO insert_msg");
               raw.exec("RELEASE insert_msg");
-              const code =
-                typeof insertErr === "object" &&
-                insertErr !== null &&
-                "code" in insertErr
-                  ? insertErr.code
-                  : "";
+              const sqliteCode = z
+                .object({ code: z.string() })
+                .safeParse(insertErr);
+              const code = sqliteCode.success ? sqliteCode.data.code : "";
               if (code === "SQLITE_CONSTRAINT_UNIQUE") {
                 // Duplicate clientMessageId — return the existing row.
                 const existing = db
@@ -5059,12 +5055,9 @@ function isToolResultMessage(role: string, content: string): boolean {
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return false;
     }
-    return parsed.every(
-      (block: unknown) =>
-        block != null &&
-        typeof block === "object" &&
-        "type" in block &&
-        block.type === "tool_result",
+    const toolResultProbe = z.object({ type: z.literal("tool_result") });
+    return parsed.every((block: unknown) =>
+      toolResultProbe.safeParse(block).success,
     );
   } catch {
     return false;

@@ -9,6 +9,8 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { z } from "zod";
+
 import { safeStatSync } from "../util/fs.js";
 import {
   ensureDataDir,
@@ -695,32 +697,65 @@ function compactSparseArrays(value: unknown): { removeFromParent: boolean } {
  * pruned (arrays are left alone), and a still-populated ancestor stops the walk
  * so a container holding other config is never removed.
  */
+/** A JSON container: `z.record` rejects arrays, but issue paths index them. */
+const configContainer = z.union([
+  z.record(z.string(), z.unknown()),
+  z.array(z.unknown()),
+]);
+
+const readChild = (
+  container: Record<string, unknown> | unknown[],
+  key: string,
+): unknown =>
+  Array.isArray(container) ? container[Number(key)] : container[key];
+
+const deleteChild = (
+  container: Record<string, unknown> | unknown[],
+  key: string,
+): void => {
+  if (Array.isArray(container)) {
+    delete container[Number(key)];
+  } else {
+    delete container[key];
+  }
+};
+
+const writeChild = (
+  container: Record<string, unknown> | unknown[],
+  key: string,
+  value: unknown,
+): void => {
+  if (Array.isArray(container)) {
+    container[Number(key)] = value;
+  } else {
+    container[key] = value;
+  }
+};
+
 function deleteNestedKey(
   obj: Record<string, unknown>,
   path: PropertyKey[],
   pruneEmptyAncestors = false,
 ): void {
-  // Record each (container, key) hop on the way down so we can prune upward
-  // after deleting the leaf.
-  const chain: Array<{ container: Record<string, unknown>; key: string }> = [];
+  const chain: Array<{
+    container: Record<string, unknown> | unknown[];
+    key: string;
+  }> = [];
   let current: unknown = obj;
   for (let i = 0; i < path.length - 1; i++) {
-    // Mutator seam: issue paths traverse arrays too (numeric segments index
-    // them), so the container view is the one documented aliasing cast.
-    if (current == null || typeof current !== "object") {
+    const container = configContainer.safeParse(current);
+    if (!container.success) {
       return;
     }
     const key = String(path[i]);
-    chain.push({
-      container: current as Record<string, unknown>,
-      key,
-    });
-    current = (current as Record<string, unknown>)[key];
+    chain.push({ container: container.data, key });
+    current = readChild(container.data, key);
   }
-  if (current == null || typeof current !== "object") {
+  const leafContainer = configContainer.safeParse(current);
+  if (!leafContainer.success) {
     return;
   }
-  delete (current as Record<string, unknown>)[String(path[path.length - 1])];
+  deleteChild(leafContainer.data, String(path[path.length - 1]));
 
   if (!pruneEmptyAncestors) {
     return;
@@ -729,9 +764,9 @@ function deleteNestedKey(
   // that still has keys.
   for (let i = chain.length - 1; i >= 0; i--) {
     const { container, key } = chain[i];
-    const child = container[key];
+    const child = readChild(container, key);
     if (isPlainObject(child) && Object.keys(child).length === 0) {
-      delete container[key];
+      deleteChild(container, key);
     } else {
       break;
     }
@@ -1003,21 +1038,8 @@ export function getConfig(): AssistantConfig {
     // this run's effective values.
     const willSeed = !configFileExisted && suppressConfigDiskWritesDepth === 0;
 
-    // Layer deployment-context defaults (e.g. IS_CLOUD=true → all service
-    // modes = "managed") onto the in-memory config for any leaves that aren't
-    // explicitly set in `fileConfig`. This runs on every load — not just the
-    // first — because the workspace config file is written by upstream
-    // lifecycle steps (`seedInferenceProfiles`, the config-write routes)
-    // after `getConfig()` is first reached. Gating on `!configFileExisted`
-    // would make the context defaults dead code on cloud-managed daemons
-    // whose config.json was created by those earlier steps without
-    // service-mode entries. Explicit user choices on disk are preserved
-    // because the helper only fills missing keys.
     const contextDefaults = getDeploymentContextDefaults();
     if (Object.keys(contextDefaults).length > 0) {
-      // Mutator seam: the defaults fill mutates the LIVE typed config in
-      // place (the batch lesson — zod views copy, mutators keep one
-      // documented aliasing cast).
       fillContextDefaultsForMissingKeys(
         config as unknown as Record<string, unknown>,
         fileConfig,
@@ -1268,13 +1290,11 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    // Read seam: dot paths may index arrays (numeric segments), so the
-    // container view is the documented aliasing cast, not a plain-object
-    // probe.
-    if (current == null || typeof current !== "object") {
+    const container = configContainer.safeParse(current);
+    if (!container.success) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[key];
+    current = readChild(container.data, key);
   }
   return current;
 }
@@ -1285,18 +1305,16 @@ export function setNestedValue(
   value: unknown,
 ): void {
   const keys = path.split(".");
-  let current = obj;
+  let current: Record<string, unknown> | unknown[] = obj;
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    // Mutator seam: the walk assigns containers in place; arrays are kept
-    // (numeric path segments index them), so the container view is the one
-    // documented aliasing cast.
-    if (current[key] == null || typeof current[key] !== "object") {
-      current[key] = {};
+    const child = readChild(current, key);
+    if (child == null || typeof child !== "object") {
+      writeChild(current, key, {});
     }
-    current = current[key] as Record<string, unknown>;
+    current = configContainer.parse(readChild(current, key));
   }
-  current[keys[keys.length - 1]] = value;
+  writeChild(current, keys[keys.length - 1], value);
 }
 
 /**

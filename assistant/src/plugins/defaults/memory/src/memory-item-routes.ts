@@ -29,6 +29,7 @@ import {
   ne,
   notInArray,
 } from "drizzle-orm";
+import type { Schemas } from "@qdrant/js-client-rest";
 import { z } from "zod";
 
 import { getConfig } from "../../../../config/loader.js";
@@ -231,7 +232,7 @@ async function searchNodesSemantic(
     const sparseVector = { indices: sparse.indices, values: sparse.values };
 
     // Filter to graph_node target_type, exclude gone nodes
-    const mustConditions: Array<Record<string, unknown>> = [
+    const mustConditions: Schemas["Condition"][] = [
       { key: "target_type", match: { value: "graph_node" } },
     ];
     if (kindFilter) {

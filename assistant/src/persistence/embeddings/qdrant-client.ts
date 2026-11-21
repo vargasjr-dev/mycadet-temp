@@ -3,6 +3,7 @@ import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
+import type { Schemas } from "@qdrant/js-client-rest";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 
@@ -12,6 +13,10 @@ import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 
 const log = getLogger("qdrant-client");
+
+/** The Qdrant client signals HTTP failures on an attached `status` field. */
+const qdrantErrorWithStatus = (status: number) =>
+  z.object({ status: z.literal(status) });
 
 /**
  * Resolve the Qdrant base URL for this process.
@@ -56,19 +61,41 @@ export interface QdrantClientConfig {
 
 /**
  * Point payloads are written by this module's upserts and read back through
- * the Qdrant client, which types them as a bare record. The round trip is
- * the trust boundary — one documented seam instead of a cast at every read.
+ * the Qdrant client, which types them as a bare record — the round trip is the
+ * trust boundary, so reads validate through the schema instead of trusting it.
  */
-const asPayload = (payload: unknown): QdrantPointPayload =>
-  payload as QdrantPointPayload;
+const pointPayloadSchema: z.ZodType<QdrantPointPayload> = z.looseObject({
+  target_type: z.enum([
+    "segment",
+    "item",
+    "summary",
+    "media",
+    "graph_node",
+    "pkb_file",
+    "plugin_index",
+  ]),
+  target_id: z.string(),
+  text: z.string(),
+  kind: z.string().optional(),
+  subject: z.string().optional(),
+  status: z.string().optional(),
+  importance: z.number().optional(),
+  confidence: z.number().optional(),
+  created_at: z.number(),
+  last_seen_at: z.number().optional(),
+  conversation_id: z.string().optional(),
+  message_id: z.string().optional(),
+  modality: z.enum(["text", "image", "audio", "video"]).optional(),
+  plugin: z.string().optional(),
+  document_id: z.string().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+});
 
-/**
- * Filters are built as plain records by this module's callers and handed to
- * the Qdrant client, whose Filter type models the same wire shape — the
- * constructor seam is the documented bridge.
- */
-const asFilter = (filter: Record<string, unknown> | undefined) =>
-  filter as Parameters<QdrantRestClient["search"]>[1]["filter"];
+/** Validate a point payload read back from Qdrant; null when malformed. */
+const readPayload = (payload: unknown): QdrantPointPayload | null => {
+  const parsed = pointPayloadSchema.safeParse(payload);
+  return parsed.success ? parsed.data : null;
+};
 
 export interface QdrantPointPayload {
   target_type:
@@ -177,14 +204,7 @@ export async function clearRebuildSentinel(): Promise<void> {
   try {
     await unlink(rebuildSentinelPath());
   } catch (err) {
-    if (
-      !(
-        typeof err === "object" &&
-        err !== null &&
-        "code" in err &&
-        err.code === "ENOENT"
-      )
-    ) {
+    if (!z.object({ code: z.literal("ENOENT") }).safeParse(err).success) {
       throw err;
     }
   }
@@ -398,7 +418,7 @@ export class CadetQdrantClient {
       });
     } catch (err) {
       // 409 = collection was created by a concurrent caller — that's fine
-      if (err instanceof Error && "status" in err && err.status === 409) {
+      if (qdrantErrorWithStatus(409).safeParse(err).success) {
         if (await this.ensurePayloadIndexesSafe()) {
           this.collectionReady = true;
         }
@@ -554,7 +574,7 @@ export class CadetQdrantClient {
   async search(
     vector: number[],
     limit: number,
-    filter?: Record<string, unknown>,
+    filter?: Schemas["Filter"],
   ): Promise<QdrantSearchResult[]> {
     await this.ensureCollection();
 
@@ -563,7 +583,7 @@ export class CadetQdrantClient {
       limit,
       with_payload: true,
       score_threshold: 0.0,
-      filter: asFilter(filter),
+      filter,
     };
 
     let results;
@@ -579,11 +599,18 @@ export class CadetQdrantClient {
       }
     }
 
-    return results.map((result) => ({
-      id: typeof result.id === "string" ? result.id : String(result.id),
-      score: result.score,
-      payload: asPayload(result.payload),
-    }));
+    return results.flatMap((result) => {
+      const payload = readPayload(result.payload);
+      return payload
+        ? [
+            {
+              id: typeof result.id === "string" ? result.id : String(result.id),
+              score: result.score,
+              payload,
+            },
+          ]
+        : [];
+    });
   }
 
   async searchWithFilter(
@@ -592,7 +619,7 @@ export class CadetQdrantClient {
     targetTypes: Array<"segment" | "item" | "summary" | "media">,
     excludeMessageIds?: string[],
   ): Promise<QdrantSearchResult[]> {
-    const mustConditions: Array<Record<string, unknown>> = [
+    const mustConditions: Schemas["Condition"][] = [
       {
         key: "target_type",
         match: { any: targetTypes },
@@ -617,7 +644,7 @@ export class CadetQdrantClient {
       });
     }
 
-    const mustNotConditions: Array<Record<string, unknown>> = [
+    const mustNotConditions: Schemas["Condition"][] = [
       { key: "_meta", match: { value: true } },
     ];
     if (excludeMessageIds && excludeMessageIds.length > 0) {
@@ -627,7 +654,7 @@ export class CadetQdrantClient {
       });
     }
 
-    const filter: Record<string, unknown> = {
+    const filter: Schemas["Filter"] = {
       must: mustConditions,
       must_not: mustNotConditions,
     };
@@ -643,7 +670,7 @@ export class CadetQdrantClient {
   async hybridSearch(params: {
     denseVector: number[];
     sparseVector: QdrantSparseVector;
-    filter?: Record<string, unknown>;
+    filter?: Schemas["Filter"];
     limit: number;
     prefetchLimit?: number;
   }): Promise<QdrantSearchResult[]> {
@@ -687,11 +714,18 @@ export class CadetQdrantClient {
       }
     }
 
-    return (results.points ?? []).map((point) => ({
-      id: typeof point.id === "string" ? point.id : String(point.id),
-      score: point.score ?? 0,
-      payload: asPayload(point.payload),
-    }));
+    return (results.points ?? []).flatMap((point) => {
+      const payload = readPayload(point.payload);
+      return payload
+        ? [
+            {
+              id: typeof point.id === "string" ? point.id : String(point.id),
+              score: point.score ?? 0,
+              payload,
+            },
+          ]
+        : [];
+    });
   }
 
   async deleteByTarget(targetType: string, targetId: string): Promise<void> {
@@ -795,14 +829,14 @@ export class CadetQdrantClient {
   ): Promise<{ id: string; payload: QdrantPointPayload } | null> {
     await this.ensureCollection();
 
-    const must: Array<Record<string, unknown>> = [
+    const must: Schemas["Condition"][] = [
       { key: "target_type", match: { value: targetType } },
       { key: "target_id", match: { value: targetId } },
     ];
     if (opts?.plugin !== undefined) {
       must.push({ key: "plugin", match: { value: opts.plugin } });
     }
-    const filter = {
+    const filter: Schemas["Filter"] = {
       must,
       must_not: [{ key: "_meta", match: { value: true } }],
     };
@@ -832,9 +866,13 @@ export class CadetQdrantClient {
     if (!point) {
       return null;
     }
+    const payload = readPayload(point.payload);
+    if (!payload) {
+      return null;
+    }
     return {
       id: typeof point.id === "string" ? point.id : String(point.id),
-      payload: asPayload(point.payload),
+      payload,
     };
   }
 
@@ -947,12 +985,7 @@ export class CadetQdrantClient {
    * (e.g. `assistant sessions clear`).
    */
   private isCollectionMissing(err: unknown): boolean {
-    if (
-      err &&
-      typeof err === "object" &&
-      "status" in err &&
-      err.status === 404
-    ) {
+    if (qdrantErrorWithStatus(404).safeParse(err).success) {
       return true;
     }
     const msg = err instanceof Error ? err.message : String(err);
@@ -1076,13 +1109,13 @@ export class CadetQdrantClient {
     await this.ensureCollection();
 
     const batchSize = options?.batchSize ?? 256;
-    const must: Array<Record<string, unknown>> = [
+    const must: Schemas["Condition"][] = [
       { key: "target_type", match: { value: targetType } },
     ];
     if (options?.path) {
       must.push({ key: "path", match: { value: options.path } });
     }
-    const filter = {
+    const filter: Schemas["Filter"] = {
       must,
       must_not: [{ key: "_meta", match: { value: true } }],
     };

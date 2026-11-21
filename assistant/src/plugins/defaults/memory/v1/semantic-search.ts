@@ -1,4 +1,6 @@
 import { inArray } from "drizzle-orm";
+import type { Schemas } from "@qdrant/js-client-rest";
+
 
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
 import { withQdrantBreaker } from "../../../../persistence/embeddings/qdrant-circuit-breaker.js";
@@ -233,15 +235,15 @@ export async function semanticSearch(
  */
 function buildHybridFilter(
   excludeMessageIds: string[],
-): Record<string, unknown> {
-  const mustConditions: Array<Record<string, unknown>> = [
+): Schemas["Filter"] {
+  const mustConditions: Schemas["Condition"][] = [
     {
       key: "target_type",
       match: { any: ["summary", "segment", "media"] },
     },
   ];
 
-  const mustNotConditions: Array<Record<string, unknown>> = [
+  const mustNotConditions: Schemas["Condition"][] = [
     { key: "_meta", match: { value: true } },
   ];
   if (excludeMessageIds.length > 0) {

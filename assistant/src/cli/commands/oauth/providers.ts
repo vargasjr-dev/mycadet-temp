@@ -73,6 +73,11 @@ const providerRowProbe = z.object({
 // Text formatting helpers (non-JSON output)
 // ---------------------------------------------------------------------------
 
+const scopeEntrySchema = z.object({
+  scope: z.string(),
+  description: z.string().optional(),
+});
+
 function formatAvailableScopes(
   availableScopes: unknown,
   indent: string = "    ",
@@ -87,17 +92,14 @@ function formatAvailableScopes(
     return (
       "\n" +
       availableScopes
-        .filter(
-          (s): s is { scope: string; description?: string } =>
-            typeof s === "object" &&
-            s != null &&
-            "scope" in s &&
-            typeof s.scope === "string",
-        )
-        .map(
-          (s) =>
-            `${indent}- ${s.scope}${s.description ? ` — ${s.description}` : ""}`,
-        )
+        .flatMap((s) => {
+          const entry = scopeEntrySchema.safeParse(s);
+          return entry.success
+            ? [
+                `${indent}- ${entry.data.scope}${entry.data.description ? ` — ${entry.data.description}` : ""}`,
+              ]
+            : [];
+        })
         .join("\n")
     );
   }

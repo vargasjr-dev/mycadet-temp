@@ -37,6 +37,20 @@ const uiSurfaceBlockSchema = z
     surfaceId: z.string(),
   })
   .loose();
+
+/** Surface action data carrying the ids the user kept (list/table selects). */
+const surfaceSelectionSchema = z.object({
+  selectedIds: z
+    .array(z.unknown())
+    .transform((ids) =>
+      ids.filter((id): id is string => typeof id === "string"),
+    ),
+});
+
+const readSelectedIds = (data: unknown): string[] | undefined => {
+  const parsed = surfaceSelectionSchema.safeParse(data);
+  return parsed.success ? parsed.data.selectedIds : undefined;
+};
 import { TableColumn } from "../api/surfaces.js";
 import { TableRow } from "../api/surfaces.js";
 import {
@@ -2454,15 +2468,7 @@ export async function handleSurfaceAction(
     fallbackContent += `\n\nAction data: ${JSON.stringify(mergedDataForText)}`;
   }
   // Append deselection context for table/list surfaces so the LLM knows what the user chose to keep.
-  const selectedIds =
-    mergedData &&
-    typeof mergedData === "object" &&
-    "selectedIds" in mergedData &&
-    Array.isArray(mergedData.selectedIds)
-      ? mergedData.selectedIds.filter(
-          (id): id is string => typeof id === "string",
-        )
-      : undefined;
+  const selectedIds = readSelectedIds(mergedData);
   if (
     selectedIds &&
     (pending.surfaceType === "table" || pending.surfaceType === "list")
@@ -2757,10 +2763,7 @@ export function buildCompletionSummary(
     return `User chose: ${actionId}`;
   }
   if (surfaceType === "list" && data) {
-    const selectedIds =
-      "selectedIds" in data && Array.isArray(data.selectedIds)
-        ? data.selectedIds.filter((id): id is string => typeof id === "string")
-        : undefined;
+    const selectedIds = readSelectedIds(data);
     const actionSuffix = actionId ? ` (action: ${actionId})` : "";
     if (selectedIds?.length === 1) {
       return `Selected: ${selectedIds[0]}${actionSuffix}`;
@@ -2770,10 +2773,7 @@ export function buildCompletionSummary(
     }
   }
   if (surfaceType === "table" && data) {
-    const selectedIds =
-      "selectedIds" in data && Array.isArray(data.selectedIds)
-        ? data.selectedIds.filter((id): id is string => typeof id === "string")
-        : undefined;
+    const selectedIds = readSelectedIds(data);
     const actionSuffix = actionId ? ` (action: ${actionId})` : "";
     if (selectedIds?.length === 1) {
       return `Selected 1 row${actionSuffix}`;

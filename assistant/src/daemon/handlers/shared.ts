@@ -315,6 +315,23 @@ const mediaSourceProbe: z.ZodType<MediaSource> = z.union([
   }),
 ]);
 
+const webSearchErrorProbe = z.object({
+  type: z.literal("web_search_tool_result_error"),
+});
+
+const webSearchResultProbe = z.object({
+  type: z.literal("web_search_result"),
+  title: z.string(),
+  url: z.string(),
+});
+
+// The persisted workspace_ref arm of MediaSource as stored on content blocks —
+// looser than mediaSourceProbe (legacy rows may predate sizeBytes).
+const workspaceRefProbe = z.object({
+  type: z.literal("workspace_ref"),
+  attachmentId: z.string(),
+});
+
 function formatBytes(sizeBytes: number): string {
   if (sizeBytes < 1024) {
     return `${sizeBytes} B`;
@@ -777,22 +794,18 @@ export function renderHistoryContent(
       const toolUseId =
         typeof block.tool_use_id === "string" ? block.tool_use_id : "";
       const isError =
-        isRecord(block.content) &&
-        "type" in block.content &&
-        block.content.type === "web_search_tool_result_error";
+        webSearchErrorProbe.safeParse(block.content).success;
 
       // Format search results into readable text.
       let resultContent = "";
       if (Array.isArray(block.content)) {
         resultContent = block.content
-          .filter(
-            (r): r is { type: string; title: string; url: string } =>
-              typeof r === "object" &&
-              r != null &&
-              "type" in r &&
-              r.type === "web_search_result",
-          )
-          .map((r) => `${r.title}\n${r.url}`)
+          .flatMap((r) => {
+            const parsed = webSearchResultProbe.safeParse(r);
+            return parsed.success
+              ? [`${parsed.data.title}\n${parsed.data.url}`]
+              : [];
+          })
           .join("\n\n");
       }
 
@@ -827,13 +840,9 @@ export function renderHistoryContent(
         for (const cb of block.contentBlocks) {
           if (isRecord(cb) && cb.type === "image" && isRecord(cb.source)) {
             const source = cb.source;
-            if (
-              "type" in source &&
-              source.type === "workspace_ref" &&
-              "attachmentId" in source &&
-              typeof source.attachmentId === "string"
-            ) {
-              imageAttachmentIds.push(source.attachmentId);
+            const workspaceRef = workspaceRefProbe.safeParse(source);
+            if (workspaceRef.success) {
+              imageAttachmentIds.push(workspaceRef.data.attachmentId);
               continue;
             }
             const validated = mediaSourceProbe.safeParse(source);
