@@ -19,6 +19,7 @@ COPY credential-executor/package.json ./credential-executor/
 COPY assistant/package.json ./assistant/
 COPY assistant/src/api/package.json ./assistant/src/api/
 COPY --parents packages/*/package.json ./
+COPY qa/package.json ./qa/
 
 RUN bun install --frozen-lockfile --ignore-scripts --filter=@mycadet/docs
 
