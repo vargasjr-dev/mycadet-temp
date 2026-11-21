@@ -38,6 +38,7 @@ import {
   restoreNotifierDelegate,
 } from "./notifier";
 import { installCompanionPermissionGuide } from "./companion-permission-guide";
+import { permissionsShell } from "./permissions-strategy";
 import {
   installCompanionWindow,
   syncCompanionSurface,
@@ -97,6 +98,7 @@ startApp({
     removePairedLabel: "Remove from this Mac\u2026",
   },
   share: { present: shareMenuPresenter() },
+  permissions: permissionsShell,
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();

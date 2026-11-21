@@ -4,6 +4,7 @@ import {
   app,
   shell,
   systemPreferences,
+  type WebContents,
 } from "electron";
 import { z } from "zod";
 
@@ -17,6 +18,8 @@ import {
   SYSTEM_PERMISSION_STATUSES,
   TEXT_INSERT,
   TEXT_OPEN_SETTINGS,
+  permissionNotificationPresentationSchema,
+  type PermissionNotificationPresentation,
   type SystemPermissionKind,
   type SystemPermissionStateItem,
   type SystemPermissionStatus,
@@ -80,22 +83,45 @@ const createNativeProvider = (): PermissionsNativeProvider => ({
 
 const kindSchema = z.enum(SYSTEM_PERMISSION_KINDS);
 
-// Where the OS settings surface lives. Windows deep-links each kind to its
-// privacy pane; Linux desktop environments share no settings URI scheme, so
-// until a helper can open the right pane, kinds have no remediation surface.
-const SETTINGS_URIS: Partial<Record<SystemPermissionKind, string>> =
-  process.platform === "win32"
-    ? {
-        screen: "ms-settings:privacy-graphicscaptureprogrammatic",
-        microphone: "ms-settings:privacy-microphone",
-        speechRecognition: "ms-settings:privacy-speech",
-        notifications: "ms-settings:notifications",
-      }
-    : {};
+/** What a request needs to act: the sender, the presentation, a refresh. */
+export interface PermissionsRequestContext {
+  sender?: WebContents;
+  presentation?: PermissionNotificationPresentation;
+  refresh(): Promise<SystemPermissionsState>;
+}
 
-// Windows lands unmatched requests on the privacy hub.
-const PRIVACY_SETTINGS_URI =
-  process.platform === "win32" ? "ms-settings:privacy" : undefined;
+/**
+ * The surfaces only the shell's OS has: its own permission reads and
+ * request actions, where its settings panes live, and its front-app
+ * insertion machinery. Every hook is optional — the shared defaults
+ * (the helper sidecar's answers, the notification probe, the deep links)
+ * answer wherever the shell stays silent.
+ */
+export interface PermissionsShellInputs {
+  /** The kind's settings deep-link; kinds without one have no remediation row. */
+  settingsUris?: Partial<Record<SystemPermissionKind, string>>;
+  /** The shell's own OS read; an undefined answer falls through to the shared defaults. */
+  readStatus?: (
+    kind: SystemPermissionKind,
+  ) => Promise<SystemPermissionStatus | undefined>;
+  /** The shell's own request action. */
+  request?: (
+    kind: SystemPermissionKind,
+    context: PermissionsRequestContext,
+  ) => Promise<void>;
+  /** The shell's own settings flow, when the OS needs more than a deep link. */
+  openSettings?: (
+    kind: SystemPermissionKind,
+    context: PermissionsRequestContext,
+  ) => Promise<void>;
+  /** The shell's own requestability rule; the default offers notifications only. */
+  canRequest?: (
+    kind: SystemPermissionKind,
+    status: SystemPermissionStatus,
+  ) => boolean;
+  /** The shell's own front-app insertion machinery. */
+  insertText?: (text: string) => Promise<TextInsertionResult>;
+}
 
 const NOT_APPLICABLE_KINDS = new Set<SystemPermissionKind>([
   "accessibility",
@@ -107,6 +133,9 @@ const mapMediaStatus = (status: string): SystemPermissionStatus =>
   SYSTEM_PERMISSION_STATUSES.includes(status as SystemPermissionStatus)
     ? (status as SystemPermissionStatus)
     : "unknown";
+
+const describeError = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err);
 
 const allWindowsWebContents = () =>
   BrowserWindow.getAllWindows()
@@ -123,10 +152,22 @@ class PermissionsService {
     nativeStatus: SystemPermissionStatus | undefined;
   } | null = null;
 
+  constructor(private readonly shell: PermissionsShellInputs = {}) {}
+
   async state(): Promise<SystemPermissionsState> {
     const native = await this.readNativeStatuses();
+    if (!this.shell.readStatus) {
+      return Object.fromEntries(
+        SYSTEM_PERMISSION_KINDS.map((kind) => [kind, this.item(kind, native)]),
+      ) as SystemPermissionsState;
+    }
     return Object.fromEntries(
-      SYSTEM_PERMISSION_KINDS.map((kind) => [kind, this.item(kind, native)]),
+      await Promise.all(
+        SYSTEM_PERMISSION_KINDS.map(async (kind) => {
+          const item = await this.readItem(kind, native);
+          return [kind, item] as const;
+        }),
+      ),
     ) as SystemPermissionsState;
   }
 
@@ -136,22 +177,26 @@ class PermissionsService {
     return state;
   }
 
-  // No platform here has a programmatic permission prompt for desktop apps
-  // except notifications, which are probed by showing one. Everything else
-  // stays unknown until a helper can report status (Linux) or can only be
-  // changed from the matching Settings page (Windows).
   async request(
     kind: SystemPermissionKind,
+    presentation?: PermissionNotificationPresentation,
   ): Promise<SystemPermissionStateItem> {
-    if (kind === "notifications") {
+    const context: PermissionsRequestContext = {
+      presentation,
+      refresh: () => this.refresh(),
+    };
+    if (this.shell.request) {
+      await this.shell.request(kind, context);
+    } else if (kind === "notifications") {
       const native = await this.readNativeStatuses();
       this.notificationProbe = {
         status: await this.probeNotifications(),
         nativeStatus: native.notifications,
       };
-      return (await this.refresh())[kind];
+    } else {
+      await this.openSettings(kind);
     }
-    return this.openSettings(kind);
+    return (await this.refresh())[kind];
   }
 
   // A change made outside the app is picked up by the refresh that runs
@@ -159,9 +204,13 @@ class PermissionsService {
   async openSettings(
     kind: SystemPermissionKind,
   ): Promise<SystemPermissionStateItem> {
-    const uri = SETTINGS_URIS[kind];
-    if (uri) {
-      await shell.openExternal(uri);
+    if (this.shell.openSettings) {
+      await this.shell.openSettings(kind, { refresh: () => this.refresh() });
+    } else {
+      const uri = this.settingsUri(kind);
+      if (uri) {
+        await shell.openExternal(uri);
+      }
     }
     return (await this.refresh())[kind];
   }
@@ -174,6 +223,10 @@ class PermissionsService {
   quitAndReopen(): void {
     app.relaunch();
     app.quit();
+  }
+
+  private settingsUri(kind: SystemPermissionKind): string | undefined {
+    return this.shell.settingsUris?.[kind];
   }
 
   private async readNativeStatuses(): Promise<
@@ -194,18 +247,49 @@ class PermissionsService {
     kind: SystemPermissionKind,
     native: Partial<Record<SystemPermissionKind, SystemPermissionStatus>>,
   ): SystemPermissionStateItem {
-    const status = this.readStatus(kind, native);
+    const status = this.defaultStatus(kind, native);
+    return this.assemble(kind, status);
+  }
+
+  // The shell reads its own OS; a failed or undefined answer falls back to
+  // the shared chain.
+  private async readItem(
+    kind: SystemPermissionKind,
+    native: Partial<Record<SystemPermissionKind, SystemPermissionStatus>>,
+  ): Promise<SystemPermissionStateItem> {
+    let status: SystemPermissionStatus;
+    let error: string | undefined;
+    try {
+      const answer = await this.shell.readStatus?.(kind);
+      status = answer ?? this.defaultStatus(kind, native);
+    } catch (err) {
+      status = "unknown";
+      error = describeError(err);
+      log.warn(`[permissions] read ${kind} failed:`, err);
+    }
+    const item = this.assemble(kind, status);
+    return error ? { ...item, error } : item;
+  }
+
+  private assemble(
+    kind: SystemPermissionKind,
+    status: SystemPermissionStatus,
+  ): SystemPermissionStateItem {
     const settled = status === "granted" || status === "restricted";
+    const canRequest = this.shell.canRequest
+      ? this.shell.canRequest(kind, status)
+      : kind === "notifications" && !settled;
     return {
       kind,
       status,
-      canRequest: kind === "notifications" && !settled,
-      canOpenSettings: kind in SETTINGS_URIS && status !== "granted",
+      canRequest,
+      canOpenSettings:
+        this.settingsUri(kind) !== undefined && status !== "granted",
       requiresRestart: false,
     };
   }
 
-  private readStatus(
+  private defaultStatus(
     kind: SystemPermissionKind,
     native: Partial<Record<SystemPermissionKind, SystemPermissionStatus>>,
   ): SystemPermissionStatus {
@@ -276,10 +360,14 @@ class PermissionsService {
 }
 
 const insertIntoFrontApp = async (
+  inputs: PermissionsShellInputs,
   text: string,
 ): Promise<TextInsertionResult> => {
   if (BrowserWindow.getFocusedWindow() !== null) {
     return { status: "cadet-focused" };
+  }
+  if (inputs.insertText) {
+    return inputs.insertText(text);
   }
   if (!nativeProvider) {
     log.warn("[text-insertion] no native insertion provider registered");
@@ -299,13 +387,28 @@ const insertIntoFrontApp = async (
   return { status: "blocked" };
 };
 
-export const install = (): void => {
+let installedService: PermissionsService | null = null;
+
+/**
+ * The service the IPC handlers answer from, for a main-process caller that
+ * needs to read or refresh a permission. Null before install.
+ */
+export const getPermissionsService = (): PermissionsService | null =>
+  installedService;
+
+export const install = (inputs: PermissionsShellInputs = {}): void => {
   configurePermissionsNative(createNativeProvider());
-  const service = new PermissionsService();
+  const service = new PermissionsService(inputs);
+  installedService = service;
 
   handle(PERMISSIONS_GET_STATE, z.tuple([]), () => service.refresh());
-  handle(PERMISSIONS_REQUEST, z.tuple([kindSchema]), ([kind]) =>
-    service.request(kind),
+  handle(
+    PERMISSIONS_REQUEST,
+    z.tuple([
+      kindSchema,
+      permissionNotificationPresentationSchema.optional().catch(undefined),
+    ]),
+    ([kind, presentation]) => service.request(kind, presentation),
   );
   handle(PERMISSIONS_OPEN_SETTINGS, z.tuple([kindSchema]), ([kind]) =>
     service.openSettings(kind),
@@ -315,13 +418,12 @@ export const install = (): void => {
   });
 
   handle(TEXT_INSERT, z.tuple([z.string()]), ([text]) =>
-    insertIntoFrontApp(text),
+    insertIntoFrontApp(inputs, text),
   );
   handle(TEXT_OPEN_SETTINGS, z.tuple([]), () => {
-    // No automation permission pane on either platform; Windows lands on
-    // the privacy hub.
-    if (PRIVACY_SETTINGS_URI) {
-      void shell.openExternal(PRIVACY_SETTINGS_URI);
+    const uri = inputs.settingsUris?.automation;
+    if (uri) {
+      void shell.openExternal(uri);
     }
     return Promise.resolve();
   });

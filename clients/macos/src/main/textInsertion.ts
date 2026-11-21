@@ -1,4 +1,4 @@
-import { BrowserWindow, clipboard, shell, type Data } from "electron";
+import { BrowserWindow, clipboard, type Data } from "electron";
 import { z } from "zod";
 
 import type { TextInsertionResult } from "@mycadet/ipc-contract";
@@ -18,9 +18,6 @@ const PASTE_SHORTCUT_SCRIPT =
   'tell application "System Events" to keystroke "v" using command down';
 const UNDO_SHORTCUT_SCRIPT =
   'tell application "System Events" to keystroke "z" using command down';
-
-const AUTOMATION_SETTINGS_URL =
-  "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
 
 const FILE_CLIPBOARD_FORMATS = [
   "NSFilenamesPboardType",
@@ -283,6 +280,8 @@ export const typeIntoFrontAppWithDeps = async (
 const typeIntoFrontApp = (text: string): Promise<TextInsertionResult> =>
   typeIntoFrontAppWithDeps(text, defaultDeps);
 
+export { typeIntoFrontApp };
+
 /**
  * Undo the last edit in the application in front, the way its Edit menu
  * would. The same keystroke path a paste takes, and the same guard: a Cadet
@@ -307,15 +306,8 @@ export const undoInFrontAppWithDeps = async (
 const undoInFrontApp = (): Promise<TextInsertionResult> =>
   undoInFrontAppWithDeps(defaultDeps);
 
-const openAutomationSettings = (): Promise<void> =>
-  shell.openExternal(AUTOMATION_SETTINGS_URL);
-
+// The insertion and automation-settings channels ride the shared
+// permissions install; only the undo flow stays this shell's own.
 export const installTextInsertionIpc = (): void => {
-  handle("cadet:text:insertIntoFrontApp", z.tuple([z.string()]), ([text]) =>
-    typeIntoFrontApp(text),
-  );
-  handle("cadet:text:openAutomationSettings", z.tuple([]), () =>
-    openAutomationSettings(),
-  );
   handle("cadet:text:undoInFrontApp", z.tuple([]), () => undoInFrontApp());
 };

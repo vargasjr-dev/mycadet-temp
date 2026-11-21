@@ -1,16 +1,15 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { electronMock } from "../../test-setup";
 
-// The suite asserts the Windows settings deep links, which the feature
-// branches on per call. The isolated runner gives each file its own
-// process, so the stamp is safe to hold for the whole file.
-Object.defineProperty(process, "platform", { value: "win32" });
-
 import {
   PERMISSIONS_GET_STATE,
   PERMISSIONS_OPEN_SETTINGS,
   PERMISSIONS_REQUEST,
+  SYSTEM_PERMISSION_KINDS,
   TEXT_INSERT,
+  TEXT_OPEN_SETTINGS,
+  type SystemPermissionKind,
+  type SystemPermissionStatus,
 } from "@mycadet/ipc-contract";
 
 type Handler = (args: unknown[]) => unknown;
@@ -81,6 +80,16 @@ mock.module("../native-helper-client", () => ({
 
 const { install: permissionsInstall } = await import("../features/permissions");
 
+// The Windows shell's own deep links, passed as values — the feature never
+// derives an OS.
+const WINDOWS_SETTINGS_URIS: Partial<Record<SystemPermissionKind, string>> = {
+  screen: "ms-settings:privacy-graphicscaptureprogrammatic",
+  microphone: "ms-settings:privacy-microphone",
+  speechRecognition: "ms-settings:privacy-speech",
+  notifications: "ms-settings:notifications",
+  automation: "ms-settings:privacy",
+};
+
 beforeEach(() => {
   handlers.clear();
   helperCall.mockReset();
@@ -89,10 +98,10 @@ beforeEach(() => {
   mediaStatus.mockReset();
   mediaStatus.mockImplementation(() => "granted");
   notificationOutcome = "show";
-  permissionsInstall();
+  permissionsInstall({ settingsUris: WINDOWS_SETTINGS_URIS });
 });
 
-test("uses the Windows helper for permission states and text insertion", async () => {
+test("uses the helper sidecar for permission states and text insertion", async () => {
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
     {
       microphone: { status: "granted" },
@@ -108,7 +117,7 @@ test("uses the Windows helper for permission states and text insertion", async (
   expect(helperCall).toHaveBeenCalledWith("text.insert", { text: "hello" });
 });
 
-test("reports Windows-only applicability and opens screen capture settings", async () => {
+test("reports kinds without an OS answer as not-applicable and opens screen capture settings", async () => {
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
     {
       accessibility: { status: "not-applicable" },
@@ -117,7 +126,7 @@ test("reports Windows-only applicability and opens screen capture settings", asy
         canOpenSettings: true,
       },
       inputMonitoring: { status: "not-applicable" },
-      automation: { status: "not-applicable" },
+      automation: { status: "not-applicable", canOpenSettings: true },
     },
   );
 
@@ -171,4 +180,88 @@ test("regaining focus drops the notification probe result", async () => {
 test("requesting a settings-only kind opens its settings page", async () => {
   await handlers.get(PERMISSIONS_REQUEST)!(["microphone"]);
   expect(openExternal).toHaveBeenCalledWith("ms-settings:privacy-microphone");
+});
+
+test("the automation settings request opens the shell's privacy pane", async () => {
+  await handlers.get(TEXT_OPEN_SETTINGS)!([]);
+  expect(openExternal).toHaveBeenCalledWith("ms-settings:privacy");
+});
+
+// The presentation argument degrades rather than rejects: a renderer that
+// mangles it still gets its permission request through.
+test("a malformed presentation degrades to a plain request", async () => {
+  helperCall.mockImplementation(async () => ({ notifications: "unknown" }));
+  const malformed = {
+    presentation: "assistant",
+    identity: { scopeId: "scope" },
+    sender: { id: "native-a", name: "Alice" },
+  };
+  await expect(
+    handlers.get(PERMISSIONS_REQUEST)!(["notifications", malformed]),
+  ).resolves.toMatchObject({ status: "granted" });
+});
+
+test("the shell's own reads, requests, and insertion win over the defaults", async () => {
+  handlers.clear();
+  const reads: SystemPermissionKind[] = [];
+  let requested: SystemPermissionKind | null = null;
+  let inserted: string | null = null;
+  let askedFor: SystemPermissionKind | null = null;
+  permissionsInstall({
+    settingsUris: { microphone: "shell://mic-pane" },
+    readStatus: async (kind) => {
+      reads.push(kind);
+      return kind === "microphone" ? "denied" : undefined;
+    },
+    request: async (kind, { refresh }) => {
+      requested = kind;
+      await refresh();
+    },
+    openSettings: async (kind) => {
+      askedFor = kind;
+    },
+    insertText: async (text) => {
+      inserted = text;
+      return { status: "inserted" };
+    },
+  });
+
+  const state = (await handlers.get(PERMISSIONS_GET_STATE)!([])) as Record<
+    string,
+    { status: SystemPermissionStatus; canRequest: boolean }
+  >;
+  // The shell's answer wins where it gives one; the shared defaults answer
+  // where it stays silent.
+  expect(state.microphone.status).toBe("denied");
+  expect(state.screen.status).toBe("unknown");
+  expect(reads.length).toBe(SYSTEM_PERMISSION_KINDS.length);
+
+  await handlers.get(PERMISSIONS_REQUEST)!(["microphone"]);
+  expect(requested).toBe("microphone");
+
+  await handlers.get(PERMISSIONS_OPEN_SETTINGS)!(["screen"]);
+  expect(askedFor).toBe("screen");
+
+  await expect(handlers.get(TEXT_INSERT)!(["hello"])).resolves.toEqual({
+    status: "inserted",
+  });
+  expect(inserted).toBe("hello");
+});
+
+test("a throwing shell read surfaces in the item's error field", async () => {
+  handlers.clear();
+  permissionsInstall({
+    readStatus: async (kind) => {
+      if (kind === "screen") {
+        throw new Error("consent store unreachable");
+      }
+      return undefined;
+    },
+  });
+  const state = (await handlers.get(PERMISSIONS_GET_STATE)!([])) as Record<
+    string,
+    { status: SystemPermissionStatus; error?: string }
+  >;
+  expect(state.screen.status).toBe("unknown");
+  expect(state.screen.error).toBe("consent store unreachable");
 });

@@ -44,12 +44,21 @@ import {
   permissionGuideBounds,
 } from "./permission-drag-target";
 import {
-  installPermissionsService,
   openPermissionSettingsPane,
   preparePermissionPresentation,
-  type PermissionsService,
-} from "./permissions-service";
+} from "./permissions-strategy";
+import type {
+  SystemPermissionKind,
+  SystemPermissionsState,
+} from "@mycadet/ipc-contract";
+import { getPermissionsService } from "@mycadet/electron-desktop";
 import { getMacHelperAppPath } from "./sidecar/mac-helper-path";
+
+/** The slice of the shared permissions service the guide drives. */
+type PermissionsService = {
+  state(): Promise<SystemPermissionsState>;
+  refresh(): Promise<SystemPermissionsState>;
+};
 
 const GUIDE = "permission-guide";
 const kindSchema = z.enum(DRAGGABLE_PERMISSION_KINDS);
@@ -186,7 +195,7 @@ export async function beginPermissionGuide(
   dismissGuide();
   const id = generation;
   guideOwner = sender;
-  const state = await service.state(sender);
+  const state = await service.state();
   if (id !== generation) {
     return;
   }
@@ -318,7 +327,11 @@ export async function beginPermissionGuide(
 }
 
 export function installCompanionPermissionGuide(): void {
-  const service = installPermissionsService();
+  // The shared permissions install runs before the client's setup.
+  const service = getPermissionsService();
+  if (!service) {
+    return;
+  }
   onAvatarChange(() => {
     if (guide) {
       refreshGuideAppearance(guide);
@@ -335,7 +348,7 @@ export function installCompanionPermissionGuide(): void {
     z.tuple([kindSchema, sourceSchema.optional()]),
     async ([kind, source], event) => {
       await beginPermissionGuide(service, kind, event.sender, source);
-      return (await service.refresh(event.sender))[kind];
+      return (await service.refresh())[kind];
     },
   );
   handle(PERMISSION_GUIDE_GET, z.tuple([]), () => guide?.state ?? null);

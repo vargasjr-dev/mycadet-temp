@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
-import type { z } from "zod";
-
 import type {
   Notifier,
   NotifierAuthorizationResult,
   NotifierRequest,
 } from "./notifier";
+import {
+  SYSTEM_PERMISSION_KINDS,
+  type PermissionNotificationPresentation,
+  type SystemPermissionKind,
+  type SystemPermissionsState,
+  type SystemPermissionStatus,
+} from "@mycadet/ipc-contract";
 
 // Counted rather than asserted on construction: the whole point of the native
 // path is that Electron's presenter is never built, and building it is what
@@ -82,23 +87,6 @@ mock.module("electron", () =>
   }),
 );
 
-interface HandleRegistration {
-  channel: string;
-  schema: z.ZodType<unknown[]>;
-  fn: (args: unknown[], event: { sender: unknown }) => unknown;
-}
-
-const handleRegistrations: HandleRegistration[] = [];
-mock.module("@mycadet/electron-desktop/ipc", () => ({
-  handle: (
-    channel: string,
-    schema: z.ZodType<unknown[]>,
-    fn: (args: unknown[], event: { sender: unknown }) => unknown,
-  ) => {
-    handleRegistrations.push({ channel, schema, fn });
-  },
-}));
-
 mock.module("@mycadet/electron-desktop/app-logger", () => ({
   getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
@@ -118,6 +106,13 @@ mock.module("./hotkey-helper", () => ({
     helperCalls.push("request screen");
   },
   requestMacHelperSpeechRecognitionPermission: async () => undefined,
+  // The text-insertion flow's helper seams; the strategy's insertText never
+  // runs in this suite.
+  readFrontAppFocus: async () => ({
+    takesText: true,
+    helperAnswered: true,
+  }),
+  postFrontAppShortcut: async () => "sent",
 }));
 
 mock.module("./screen-recording-permission", () => ({
@@ -155,11 +150,8 @@ mock.module("./notifier", () => ({
   requestNotifierAuthorization: () => authorizationRequest(),
 }));
 
-const {
-  PermissionsService,
-  installPermissionsService,
-  onPermissionPresentation,
-} = await import("./permissions-service");
+const { permissionsShell, onPermissionPresentation } =
+  await import("./permissions-strategy");
 
 const nativeNotifier = (isSupported = true): Notifier => ({
   isSupported: () => isSupported,
@@ -174,6 +166,40 @@ const nativeNotifier = (isSupported = true): Notifier => ({
   },
 });
 
+// The strategy runs inside the shared service, whose refresh feeds the
+// item assembly; the fixture mirrors what the real service would read —
+// the helper-backed kinds from the same fakes the probes read.
+const refresh = async (): Promise<SystemPermissionsState> =>
+  Object.fromEntries(
+    SYSTEM_PERMISSION_KINDS.map((kind) => [
+      kind,
+      {
+        kind,
+        status:
+          kind === "screen"
+            ? helperScreenStatus
+            : kind === "inputMonitoring"
+              ? helperInputMonitoringStatus
+              : "granted",
+        canRequest: false,
+        canOpenSettings: false,
+        requiresRestart: false,
+      },
+    ]),
+  ) as SystemPermissionsState;
+
+const request = async (
+  kind: SystemPermissionKind,
+  presentation?: PermissionNotificationPresentation,
+): Promise<SystemPermissionStatus> => {
+  await permissionsShell.request!(kind, { presentation, refresh });
+  return (await permissionsShell.readStatus!(kind))!;
+};
+
+const openSettings = async (kind: SystemPermissionKind): Promise<void> => {
+  await permissionsShell.openSettings!(kind, { refresh });
+};
+
 describe("notification permission requests", () => {
   beforeEach(() => {
     electronNotificationsConstructed = 0;
@@ -186,14 +212,13 @@ describe("notification permission requests", () => {
     authorizationRequest = async () => authorizationResult;
     preparedSenderCurrent = true;
     nativeShowError = null;
-    handleRegistrations.length = 0;
     resolveNotificationAvatarPath.mockClear();
   });
 
   test("prompts through the addon and leaves electron.Notification alone", async () => {
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
     expect(electronNotificationsConstructed).toBe(0);
     expect(electronIsSupportedCalls).toBe(0);
   });
@@ -201,7 +226,7 @@ describe("notification permission requests", () => {
   // The Electron probe posts a notification to learn its answer, so a granted
   // permission always ends in a banner; the addon answers without posting one.
   test("posts the same confirmation banner the Electron probe leaves behind", async () => {
-    await new PermissionsService().request("notifications");
+    await request("notifications");
 
     expect(nativePosts.length).toBe(1);
     expect(nativePosts[0]!.body).toBe("Notifications are enabled.");
@@ -212,9 +237,9 @@ describe("notification permission requests", () => {
   test("records a refused prompt as denied", async () => {
     authorizationResult = { granted: false, error: "not authorized" };
 
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("denied");
+    expect(status).toBe("denied");
     expect(electronNotificationsConstructed).toBe(0);
     expect(nativePosts.length).toBe(0);
   });
@@ -222,18 +247,18 @@ describe("notification permission requests", () => {
   test("does not confirm an unknown native authorization outcome", async () => {
     authorizationResult = null;
 
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("unknown");
+    expect(status).toBe("unknown");
     expect(nativePosts).toHaveLength(0);
   });
 
   test("falls back to the Electron probe when the addon cannot notify", async () => {
     notifier = nativeNotifier(false);
 
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
     expect(electronNotificationsConstructed).toBe(1);
     expect(nativePosts.length).toBe(0);
   });
@@ -257,13 +282,9 @@ describe("notification permission requests", () => {
       },
     };
 
-    const item = await new PermissionsService().request(
-      "notifications",
-      undefined,
-      presentation,
-    );
+    const status = await request("notifications", presentation);
 
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
     expect(nativePosts).toHaveLength(1);
     expect(nativePosts[0]).toMatchObject({
       title: "Alice",
@@ -303,17 +324,15 @@ describe("notification permission requests", () => {
       },
     };
 
-    const request = new PermissionsService().request(
-      "notifications",
-      undefined,
+    const pending = permissionsShell.request!("notifications", {
       presentation,
-    );
+      refresh,
+    });
     await Promise.resolve();
     preparedSenderCurrent = false;
     settleAuthorization?.({ granted: true });
-    const item = await request;
+    await pending;
 
-    expect(item.status).toBe("granted");
     expect(nativePosts).toHaveLength(1);
     expect(nativePosts[0]).toMatchObject({
       title: "Cadet",
@@ -326,71 +345,32 @@ describe("notification permission requests", () => {
   test("keeps a granted result when the confirmation fails", async () => {
     nativeShowError = new Error("notification failed");
 
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
     expect(nativePosts).toHaveLength(0);
   });
 
-  test("accepts old request calls and drops malformed presentation", async () => {
-    installPermissionsService();
-    const registration = handleRegistrations.find(
-      ({ channel }) => channel === "cadet:permissions:request",
-    );
-    expect(registration).toBeDefined();
-
-    const oldArgs = registration!.schema.parse(["notifications"]);
-    expect(oldArgs).toEqual(["notifications"]);
-
-    const malformedArgs = registration!.schema.parse([
-      "notifications",
-      {
-        presentation: "assistant",
-        identity: {
-          scopeId: `scope:v1:${"a".repeat(64)}`,
-          assistantId: "assistant-a",
-          nativeSenderId: "native-a",
-        },
-        sender: { id: "native-a", name: "Alice" },
-      },
-    ]);
-    await registration!.fn(malformedArgs, { sender: {} });
-
-    expect(nativePosts).toHaveLength(1);
-    expect(nativePosts[0]).toMatchObject({
-      title: "Cadet",
-      body: "Notifications are enabled.",
-    });
-    expect(nativePosts[0]!.sender).toBeUndefined();
-  });
-
   test("degrades a raw-scope sender to a plain confirmation", async () => {
-    installPermissionsService();
-    const registration = handleRegistrations.find(
-      ({ channel }) => channel === "cadet:permissions:request",
-    );
     const avatarPng = Buffer.from("avatar-bytes");
-    const args = registration!.schema.parse([
-      "notifications",
-      {
-        presentation: "assistant",
-        identity: {
-          scopeId: "raw-scope",
-          assistantId: "assistant-a",
-          nativeSenderId: "native-a",
-        },
-        sender: {
-          id: "native-a",
-          name: "Alice",
-          avatarBase64: avatarPng.toString("base64"),
-          avatarHash: new Bun.CryptoHasher("sha256")
-            .update(avatarPng)
-            .digest("hex"),
-        },
+    const presentation = {
+      presentation: "assistant" as const,
+      identity: {
+        scopeId: "raw-scope",
+        assistantId: "assistant-a",
+        nativeSenderId: "native-a",
       },
-    ]);
+      sender: {
+        id: "native-a",
+        name: "Alice",
+        avatarBase64: avatarPng.toString("base64"),
+        avatarHash: new Bun.CryptoHasher("sha256")
+          .update(avatarPng)
+          .digest("hex"),
+      },
+    };
 
-    await registration!.fn(args, { sender: {} });
+    await request("notifications", presentation);
 
     expect(nativePosts).toHaveLength(1);
     expect(nativePosts[0]).toMatchObject({
@@ -405,28 +385,24 @@ describe("notification permission requests", () => {
     notifier = nativeNotifier(false);
     const avatarPng = Buffer.from("avatar-bytes");
 
-    const item = await new PermissionsService().request(
-      "notifications",
-      undefined,
-      {
-        presentation: "assistant",
-        identity: {
-          scopeId: `scope:v1:${"a".repeat(64)}`,
-          assistantId: "assistant-a",
-          nativeSenderId: "native-a",
-        },
-        sender: {
-          id: "native-a",
-          name: "Alice",
-          avatarBase64: avatarPng.toString("base64"),
-          avatarHash: new Bun.CryptoHasher("sha256")
-            .update(avatarPng)
-            .digest("hex"),
-        },
+    const status = await request("notifications", {
+      presentation: "assistant",
+      identity: {
+        scopeId: `scope:v1:${"a".repeat(64)}`,
+        assistantId: "assistant-a",
+        nativeSenderId: "native-a",
       },
-    );
+      sender: {
+        id: "native-a",
+        name: "Alice",
+        avatarBase64: avatarPng.toString("base64"),
+        avatarHash: new Bun.CryptoHasher("sha256")
+          .update(avatarPng)
+          .digest("hex"),
+      },
+    });
 
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
     expect(electronNotificationsConstructed).toBe(1);
     expect(electronNotificationOptions).toEqual({
       title: "Cadet",
@@ -439,9 +415,9 @@ describe("notification permission requests", () => {
   test("falls back to the Electron probe when the addon is unavailable", async () => {
     notifier = null;
 
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
     expect(electronNotificationsConstructed).toBe(1);
   });
 
@@ -449,9 +425,9 @@ describe("notification permission requests", () => {
     notifier = nativeNotifier(false);
     electronSupported = false;
 
-    const item = await new PermissionsService().request("notifications");
+    const status = await request("notifications");
 
-    expect(item.status).toBe("restricted");
+    expect(status).toBe("restricted");
     expect(electronNotificationsConstructed).toBe(0);
   });
 });
@@ -464,10 +440,9 @@ describe("permission setup", () => {
   });
 
   test("reports the helper's grant, not the app's", async () => {
-    const state = await new PermissionsService().state();
+    const status = await permissionsShell.readStatus!("screen");
 
-    expect(state.screen.status).toBe("denied");
-    expect(state.screen.requiresRestart).toBe(false);
+    expect(status).toBe("denied");
   });
 
   test("opens Screen Recording Settings without the native alert", async () => {
@@ -475,7 +450,7 @@ describe("permission setup", () => {
       helperCalls.push("yield tour");
     });
     try {
-      await new PermissionsService().openSettings("screen");
+      await openSettings("screen");
       expect(helperCalls).toEqual([
         "yield tour",
         "open x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
@@ -486,7 +461,7 @@ describe("permission setup", () => {
   });
 
   test("opens Input Monitoring Settings immediately after a denial", async () => {
-    await new PermissionsService().openSettings("inputMonitoring");
+    await openSettings("inputMonitoring");
 
     expect(helperCalls).toEqual([
       "open x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
@@ -495,13 +470,12 @@ describe("permission setup", () => {
 
   test("requests Input Monitoring before opening Settings when it is not determined", async () => {
     helperInputMonitoringStatus = "not-determined";
-    const service = new PermissionsService();
 
-    await service.openSettings("inputMonitoring");
+    await openSettings("inputMonitoring");
     expect(helperCalls).toEqual(["request inputMonitoring"]);
 
     helperInputMonitoringStatus = "denied";
-    await service.openSettings("inputMonitoring");
+    await openSettings("inputMonitoring");
     expect(helperCalls).toEqual([
       "request inputMonitoring",
       "open x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
@@ -510,30 +484,31 @@ describe("permission setup", () => {
 
   test("does not open Settings for a helper grant that already arrived", async () => {
     helperScreenStatus = "granted";
-    await new PermissionsService().openSettings("screen");
+    await openSettings("screen");
     expect(helperCalls).toEqual([]);
   });
 
   test("a request asks the helper", async () => {
     helperScreenStatus = "granted";
 
-    const item = await new PermissionsService().request("screen");
+    const status = await request("screen");
 
     expect(helperCalls).toEqual(["request screen"]);
-    expect(item.status).toBe("granted");
+    expect(status).toBe("granted");
   });
+
   test("yields before a native microphone prompt and unsubscribes", async () => {
     const stop = onPermissionPresentation(() => {
       helperCalls.push("yield tour");
     });
     try {
-      await new PermissionsService().request("microphone");
+      await request("microphone");
       expect(helperCalls).toEqual(["yield tour", "request microphone"]);
     } finally {
       stop();
     }
     helperCalls.length = 0;
-    await new PermissionsService().request("microphone");
+    await request("microphone");
     expect(helperCalls).toEqual(["request microphone"]);
   });
 });

@@ -56,6 +56,11 @@ export { hasPendingDeepLinks } from "./deep-links";
 export { getDeviceId } from "./device-id";
 export { areChromeDevToolsEnabled } from "./devtools";
 export { shareMenuPresenter } from "./features/share";
+export { getPermissionsService } from "./features/permissions";
+export type {
+  PermissionsRequestContext,
+  PermissionsShellInputs,
+} from "./features/permissions";
 export { createDictationEscapeMonitor } from "./dictation-escape-monitor";
 export {
   DICTATION_OVERLAY_ALWAYS_ON_TOP_LEVEL,

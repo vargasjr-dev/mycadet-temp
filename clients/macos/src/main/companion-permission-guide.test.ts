@@ -8,13 +8,13 @@ import {
   test,
 } from "bun:test";
 import { electronMock } from "@mycadet/electron-desktop/test-setup";
-import type {
-  PermissionKind,
-  PermissionStateItem,
-  PermissionsState,
-  PermissionStatus,
-} from "./permissions-service";
 import type { PermissionGuideState } from "@mycadet/ipc-contract";
+import type {
+  SystemPermissionKind as PermissionKind,
+  SystemPermissionStateItem as PermissionStateItem,
+  SystemPermissionsState as PermissionsState,
+  SystemPermissionStatus as PermissionStatus,
+} from "@mycadet/ipc-contract";
 
 const handles = new Map<string, (...args: any[]) => any>();
 const listeners = new Map<string, (...args: any[]) => any>();
@@ -178,14 +178,16 @@ mock.module("./sidecar/mac-helper-path", () => ({
     "/Applications/Cadet.app/Contents/Resources/bin/Cadet Helper.app",
 }));
 const preparePresentation = mock(() => undefined);
-mock.module("./permissions-service", () => ({
+mock.module("./permissions-strategy", () => ({
   preparePermissionPresentation: preparePresentation,
   openPermissionSettingsPane: async () => {
     if (settingsOpenFails) {
       throw new Error("Settings failed");
     }
   },
-  installPermissionsService: () => ({
+}));
+mock.module("@mycadet/electron-desktop", () => ({
+  getPermissionsService: () => ({
     state: async () => state(),
     refresh: async () => state(),
   }),

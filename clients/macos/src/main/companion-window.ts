@@ -130,11 +130,11 @@ import { unwatchFrameScroll, watchFrameScroll } from "./frame-scroll-watch";
 import { handle, on } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
+import { getPermissionsService } from "@mycadet/electron-desktop";
 import {
-  getPermissionsService,
   onPermissionPresentation,
   openPermissionSettingsPane,
-} from "./permissions-service";
+} from "./permissions-strategy";
 import {
   answerScreenRecordingRefusal,
   isScreenRecordingRefusal,

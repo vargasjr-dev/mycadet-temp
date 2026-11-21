@@ -58,7 +58,10 @@ import {
   type ShellHostProxyInputs,
 } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
-import { install as installPermissions } from "./features/permissions";
+import {
+  install as installPermissions,
+  type PermissionsShellInputs,
+} from "./features/permissions";
 import { install as installTray, type ShellTrayInputs } from "./features/tray";
 import { install as installShare, type SharePresenter } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
@@ -144,6 +147,12 @@ export interface DesktopAppInputs {
    * Save-As dialog fallback.
    */
   share?: { present: SharePresenter };
+  /**
+   * The shell's own permission surfaces — its OS reads, request actions,
+   * settings panes, and insertion machinery. Absent, the shared defaults
+   * answer (the helper sidecar and the notification probe).
+   */
+  permissions?: PermissionsShellInputs;
   /**
    * How the main window's chrome draws — the macOS traffic lights over a
    * hidden title bar, the Windows caption overlay, or the plain system
@@ -440,12 +449,11 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installHostProxy(inputs.interfaceId, inputs.hostProxy);
       installTray(inputs.tray);
       installShare(inputs.share);
-      // Still the classic shells' own compositions until their rounds
-      // land: the permissions contract (R10), the helper dictation bridge
-      // and the voice-mode chord (R11).
+      installPermissions(inputs.permissions);
+      // Still the classic shells' own composition until its round lands:
+      // the helper dictation bridge and the voice-mode chord (R11).
       if (process.platform !== "darwin") {
         installDictation();
-        installPermissions();
         installVoiceModeChord();
       }
 

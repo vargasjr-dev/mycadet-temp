@@ -97,6 +97,22 @@ const notificationSenderSchema = z.object({
   avatarHash: z.string().regex(NOTIFICATION_AVATAR_HASH_PATTERN),
 });
 
+/**
+ * The optional second argument of the permissions request: who the
+ * notification-permission confirmation banner should present as. Only a
+ * shell whose build delivers assistant-presentation notifications sends
+ * one; the shared default renders its confirmation plainly.
+ */
+export const permissionNotificationPresentationSchema = z.object({
+  presentation: z.literal("assistant"),
+  identity: notificationIdentitySchema,
+  sender: notificationSenderSchema,
+});
+
+export type PermissionNotificationPresentation = z.output<
+  typeof permissionNotificationPresentationSchema
+>;
+
 export const prepareNotificationIdentityPayloadSchema = z
   .object({
     identity: notificationIdentitySchema,

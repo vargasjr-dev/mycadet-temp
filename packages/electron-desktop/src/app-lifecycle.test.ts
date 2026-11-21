@@ -167,10 +167,11 @@ const universalSurface = [
   "host-proxy",
   "tray",
   "share",
+  "permissions",
 ];
 
 /** The classic-only composition, appended on the classic platforms. */
-const classicSurface = ["dictation", "permissions", "voice-mode-chord"];
+const classicSurface = ["dictation", "voice-mode-chord"];
 
 describe("startApp", () => {
   test("logs ready, assembles the universal surface in order, and runs setup once Electron is ready", async () => {
