@@ -232,9 +232,7 @@ export async function semanticSearch(
  * Build a Qdrant filter for hybrid search. Mirrors the logic in
  * `searchWithFilter` but as a standalone object for the query API.
  */
-function buildHybridFilter(
-  excludeMessageIds: string[],
-): Schemas["Filter"] {
+function buildHybridFilter(excludeMessageIds: string[]): Schemas["Filter"] {
   const mustConditions: Schemas["Condition"][] = [
     {
       key: "target_type",

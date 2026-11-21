@@ -212,12 +212,10 @@ describe("loadRawConfig corrupt-file recovery", () => {
     // Simulate a crash partway through the write: half the bytes land, then
     // the process dies.
     const realWrite = fs.writeFileSync;
-    const spy = spyOn(fs, "writeFileSync").mockImplementation(
-      (path, data) => {
-        realWrite(path, String(data).slice(0, 5));
-        throw new Error("crash");
-      },
-    );
+    const spy = spyOn(fs, "writeFileSync").mockImplementation((path, data) => {
+      realWrite(path, String(data).slice(0, 5));
+      throw new Error("crash");
+    });
     try {
       expect(() => saveRawConfig({ foo: "baz" })).toThrow("crash");
     } finally {

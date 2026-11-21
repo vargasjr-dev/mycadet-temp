@@ -988,8 +988,8 @@ function warnOnModelInvisibleContent(
     return;
   }
   const uiSurfaceProbe = z.object({ type: z.literal("ui_surface") });
-  const allCards = parsed.every((block) =>
-    uiSurfaceProbe.safeParse(block).success,
+  const allCards = parsed.every(
+    (block) => uiSurfaceProbe.safeParse(block).success,
   );
   if (!allCards) {
     return;
@@ -5056,8 +5056,8 @@ function isToolResultMessage(role: string, content: string): boolean {
       return false;
     }
     const toolResultProbe = z.object({ type: z.literal("tool_result") });
-    return parsed.every((block: unknown) =>
-      toolResultProbe.safeParse(block).success,
+    return parsed.every(
+      (block: unknown) => toolResultProbe.safeParse(block).success,
     );
   } catch {
     return false;

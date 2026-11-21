@@ -793,8 +793,7 @@ export function renderHistoryContent(
     if (block.type === "web_search_tool_result") {
       const toolUseId =
         typeof block.tool_use_id === "string" ? block.tool_use_id : "";
-      const isError =
-        webSearchErrorProbe.safeParse(block.content).success;
+      const isError = webSearchErrorProbe.safeParse(block.content).success;
 
       // Format search results into readable text.
       let resultContent = "";
