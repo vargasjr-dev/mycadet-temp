@@ -704,6 +704,13 @@ const configContainer = z.union([
   z.array(z.unknown()),
 ]);
 
+/** Validates without copying — mutation needs the live reference, and a zod
+ * parse result is a detached view of it. */
+const isJsonContainer = (
+  v: unknown,
+): v is Record<string, unknown> | unknown[] =>
+  configContainer.safeParse(v).success;
+
 const readChild = (
   container: Record<string, unknown> | unknown[],
   key: string,
@@ -744,19 +751,17 @@ function deleteNestedKey(
   }> = [];
   let current: unknown = obj;
   for (let i = 0; i < path.length - 1; i++) {
-    const container = configContainer.safeParse(current);
-    if (!container.success) {
+    if (!isJsonContainer(current)) {
       return;
     }
     const key = String(path[i]);
-    chain.push({ container: container.data, key });
-    current = readChild(container.data, key);
+    chain.push({ container: current, key });
+    current = readChild(current, key);
   }
-  const leafContainer = configContainer.safeParse(current);
-  if (!leafContainer.success) {
+  if (!isJsonContainer(current)) {
     return;
   }
-  deleteChild(leafContainer.data, String(path[path.length - 1]));
+  deleteChild(current, String(path[path.length - 1]));
 
   if (!pruneEmptyAncestors) {
     return;
@@ -1294,11 +1299,10 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    const container = configContainer.safeParse(current);
-    if (!container.success) {
+    if (!isJsonContainer(current)) {
       return undefined;
     }
-    current = readChild(container.data, key);
+    current = readChild(current, key);
   }
   return current;
 }
@@ -1316,7 +1320,11 @@ export function setNestedValue(
     if (child == null || typeof child !== "object") {
       writeChild(current, key, {});
     }
-    current = configContainer.parse(readChild(current, key));
+    const next = readChild(current, key);
+    if (!isJsonContainer(next)) {
+      return;
+    }
+    current = next;
   }
   writeChild(current, keys[keys.length - 1], value);
 }
