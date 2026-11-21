@@ -90,6 +90,26 @@ export const companionSizeSubmenus = (
  * Electron flips `checked` before `click` runs, so the item hands on the state
  * being asked for rather than the one it was drawn in.
  */
+
+/**
+ * The surface sync the clouds with a companion register at startup: the
+ * one action that shows or hides the floating surface through its own
+ * decision path. The menu (and anything else that reaches for it) calls
+ * {@link setCompanionSurfaceVisible}; where no surface exists it is a
+ * no-op, matching the tray's inert fields.
+ */
+let registeredSurfaceSync: ((visible: boolean) => void) | null = null;
+
+export const registerCompanionSurfaceSync = (
+  sync: (visible: boolean) => void,
+): void => {
+  registeredSurfaceSync = sync;
+};
+
+export const setCompanionSurfaceVisible = (visible: boolean): void => {
+  registeredSurfaceSync?.(visible);
+};
+
 export const companionVisibilityItem = (
   hidden: boolean,
   setVisible: (visible: boolean) => void,

@@ -1,0 +1,129 @@
+import path from "node:path";
+
+import { app, dialog } from "electron";
+
+import { resolveEnvironmentName } from "@mycadet/shared";
+
+import { provisionCliRuntime, resolveCliRuntimePaths } from "./cli-installer";
+import {
+  installCliLauncher,
+  resolveCliLauncherPaths,
+  type CliLauncherState,
+  type RegistryRunner,
+} from "./cli-launcher";
+
+export interface CliPathFlowOptions {
+  userDataDir: string;
+  resourcesDir: string;
+  localAppData: string;
+  releaseChannel: string;
+  version: string;
+  registryRunner?: RegistryRunner;
+}
+
+/** Provisioning inputs for the running packaged app. */
+export function resolveCliPathFlowOptions(): CliPathFlowOptions {
+  return {
+    userDataDir: app.getPath("userData"),
+    resourcesDir: process.resourcesPath,
+    localAppData:
+      process.env.LOCALAPPDATA ??
+      path.join(app.getPath("home"), "AppData", "Local"),
+    releaseChannel: resolveEnvironmentName(),
+    version: app.getVersion(),
+  };
+}
+
+export function provisionCliForCurrentUser(options: CliPathFlowOptions) {
+  const {
+    userDataDir,
+    resourcesDir,
+    localAppData,
+    releaseChannel,
+    version,
+    registryRunner,
+  } = options;
+  const runtime = provisionCliRuntime(
+    resolveCliRuntimePaths(userDataDir, resourcesDir, version),
+  );
+  const sourcePath = path.join(runtime.installDir, "cadet.cmd");
+  const paths = resolveCliLauncherPaths(localAppData, releaseChannel);
+  const launcherState = installCliLauncher(
+    sourcePath,
+    version,
+    paths,
+    registryRunner,
+    { ownerId: resourcesDir },
+  );
+  return {
+    installDir: runtime.installDir,
+    launcherPath: paths.executable,
+    launcherState,
+    reusedRuntime: runtime.reused,
+  };
+}
+
+// Menu-triggered re-runs stack dialogs, so only one flow runs at a time.
+let flowInFlight = false;
+
+const errorMessage = (err: unknown): string =>
+  err instanceof Error ? err.message : "Unknown error";
+
+const installResultDialog = (
+  state: CliLauncherState,
+  launcherPath: string,
+): Electron.MessageBoxOptions => {
+  switch (state) {
+    case "installed":
+      return {
+        type: "info",
+        message: "Cadet CLI installed",
+        detail:
+          `The cadet command is installed at ${launcherPath}. ` +
+          'Open a new terminal and run "cadet".',
+      };
+    case "shadowed":
+      return {
+        type: "warning",
+        message: "Cadet CLI installed",
+        detail:
+          `The cadet command is installed at ${launcherPath}, but another ` +
+          '"cadet" earlier in your PATH will take precedence in your terminal.',
+      };
+    case "foreign":
+      return {
+        type: "warning",
+        message: "Cadet CLI not installed",
+        detail:
+          `A "cadet" file already exists at ${launcherPath} but wasn't ` +
+          "installed by Cadet, so it was left in place.",
+      };
+    default:
+      return {
+        type: "warning",
+        message: "Cadet CLI not installed",
+        detail: `The cadet command at ${launcherPath} could not be set up (${state}). Try again.`,
+      };
+  }
+};
+
+/**
+ * "Install cadet Command..." from the menu. Provisioning is idempotent, so
+ * this doubles as repair. Never throws; failures surface via showErrorBox.
+ */
+export async function runInstallCliCommandFlow(): Promise<void> {
+  if (flowInFlight) return;
+  flowInFlight = true;
+  try {
+    const { launcherState, launcherPath } = provisionCliForCurrentUser(
+      resolveCliPathFlowOptions(),
+    );
+    await dialog.showMessageBox(
+      installResultDialog(launcherState, launcherPath),
+    );
+  } catch (err) {
+    dialog.showErrorBox("Failed to install cadet command", errorMessage(err));
+  } finally {
+    flowInFlight = false;
+  }
+}

@@ -13,10 +13,14 @@ import {
   type CadetCommandKind,
   writeHotkeyOverrides,
 } from "./commands";
-import type { IpcHandle } from "./ipc";
+import { handle as sharedHandle, type IpcHandle } from "./ipc";
 
 export interface HotkeysIpc {
-  handle: IpcHandle;
+  /**
+   * The registrar the channels ride. Defaults to the shared origin-checking
+   * registrar; tests inject a capturing one.
+   */
+  handle?: IpcHandle;
   /**
    * Catalog commands this shell does not offer. They render no row and take
    * no override, and their global shortcut is never registered because the
@@ -168,16 +172,16 @@ let teardown: (() => void) | null = null;
  * changes a different window initiated) so open settings views stay in sync.
  */
 export const installHotkeysIpc = ({
-  handle,
+  handle: registrar = sharedHandle,
   exclude = [],
-}: HotkeysIpc): void => {
+}: HotkeysIpc = {}): void => {
   if (teardown) {
     return;
   }
   excludedKeys = new Set(exclude);
 
-  handle("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
-  handle(
+  registrar("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
+  registrar(
     "cadet:hotkeys:set",
     z.tuple([z.string(), z.union([z.string(), z.null()])]),
     ([key, accelerator]) => {

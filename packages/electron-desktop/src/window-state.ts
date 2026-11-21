@@ -118,6 +118,37 @@ export const writeOnboardingActive = (active: boolean): void => {
   store().set("onboardingActive", active);
 };
 
+const onboardingListeners = new Set<(active: boolean) => void>();
+
+/**
+ * Subscribe to onboarding-mode transitions. Fires only on a real
+ * transition (see `setOnboarding`); the renderer re-asserts the mode on
+ * every navigation. The menu's Settings row and the window that changes
+ * size both ride this instead of polling.
+ */
+export const onOnboardingChange = (
+  listener: (active: boolean) => void,
+): (() => void) => {
+  onboardingListeners.add(listener);
+  return () => onboardingListeners.delete(listener);
+};
+
+/**
+ * Record the onboarding mode and notify subscribers. The no-op case is
+ * the same guard `writeOnboardingActive` applies — a renderer that
+ * re-asserts the mode on every navigation must not churn the store or
+ * refire the listeners.
+ */
+export const setOnboarding = (active: boolean): void => {
+  if (readOnboardingActive() === active) {
+    return;
+  }
+  writeOnboardingActive(active);
+  for (const listener of onboardingListeners) {
+    listener(active);
+  }
+};
+
 /**
  * Whether the user has hidden the companion surface from the tray's
  * "Show Companion" item. Absent defaults to `false`: the surface

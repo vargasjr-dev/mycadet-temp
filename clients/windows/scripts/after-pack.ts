@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 
-import { CLI_RUNTIME_ENTRIES } from "../src/main/cli-installer";
+import { CLI_RUNTIME_ENTRIES } from "@mycadet/electron-desktop/classic-shell";
 import { argValue } from "./cli-args";
 
 /**

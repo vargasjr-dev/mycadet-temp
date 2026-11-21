@@ -5,7 +5,11 @@ import type { CliPathMenuState } from "./menu";
 const sent: unknown[] = [];
 const builtTemplates: unknown[][] = [];
 
-const electronApp = { isPackaged: true, name: "Cadet" };
+const electronApp = {
+  isPackaged: true,
+  name: "Cadet",
+  getVersion: () => "0.0.0",
+};
 const popups: Array<{
   template: unknown;
   options: { x: number; y: number; window: unknown };
@@ -38,6 +42,13 @@ mock.module("electron", () => ({
     },
     setApplicationMenu: () => undefined,
   },
+  // The shared ipc registrar needs the main-process surface at import time.
+  ipcMain: {
+    handle: () => undefined,
+    handleOnce: () => undefined,
+    on: () => undefined,
+    removeHandler: () => undefined,
+  },
   shell: { openExternal: () => Promise.resolve() },
   // The command graph's palette module links `screen` for its positioning;
   // no test here drives a palette window, so the bindings need only exist.
@@ -52,19 +63,92 @@ mock.module("electron", () => ({
   },
 }));
 
+// The menu reads every one of these states itself now: the session token,
+// the onboarding flag, the companion hidden flag, and the CLI wrapper's
+// install state. Tests flip the mocks, never the menu.
+let sessionToken: string | null = null;
 let onboardingActive = false;
 let chromeDevTools = false;
+let companionHidden = false;
+let cliPathState: CliPathMenuState = { kind: "not-installed" };
+
+const sessionTokenListeners: Array<() => void> = [];
+const onboardingListeners: Array<(active: boolean) => void> = [];
+const companionHiddenListeners: Array<() => void> = [];
+
 mock.module("./settings", () => ({
   createAppSettingsStore: () => undefined,
   readSetting: () => ({}),
   writeSetting: () => undefined,
   onSettingChange: () => () => undefined,
 }));
+mock.module("./session-token-store", () => ({
+  getSessionToken: () => sessionToken,
+  onSessionTokenChange: (listener: () => void) => {
+    sessionTokenListeners.push(listener);
+    return () => undefined;
+  },
+}));
 mock.module("./window-state", () => ({
   readOnboardingActive: () => onboardingActive,
+  onOnboardingChange: (listener: (active: boolean) => void) => {
+    onboardingListeners.push(listener);
+    return () => undefined;
+  },
+  readCompanionHidden: () => companionHidden,
+  onCompanionHiddenChange: (listener: () => void) => {
+    companionHiddenListeners.push(listener);
+    return () => undefined;
+  },
 }));
 mock.module("./devtools", () => ({
   areChromeDevToolsEnabled: () => chromeDevTools,
+}));
+// The updates rows hold the real module's checkForUpdates; the updater's
+// own surface is stubbed because nothing here drives a check.
+mock.module("electron-updater", () => ({
+  autoUpdater: {
+    checkForUpdates: () => Promise.resolve({ downloadPromise: null }),
+    logger: null,
+    autoDownload: false,
+    autoInstallOnAppQuit: false,
+    channel: "",
+    allowDowngrade: false,
+    setFeedURL: () => undefined,
+    on: () => undefined,
+    quitAndInstall: () => undefined,
+  },
+}));
+// The CLI family, per platform, exactly as the shells' modules answer.
+const cliFlowCalls: string[] = [];
+mock.module("./cli-path-installer", () => ({
+  getCliPathInstallState: async () => cliPathState,
+}));
+mock.module("./cli-path-flow", () => ({
+  isCliPathFlowInFlight: () => false,
+  runInstallCliCommandFlow: async () => {
+    cliFlowCalls.push("install");
+  },
+  runUninstallCliCommandFlow: async () => {
+    cliFlowCalls.push("uninstall");
+  },
+}));
+mock.module("./win32-cli/cli-path-flow", () => ({
+  runInstallCliCommandFlow: async () => {
+    cliFlowCalls.push("launcher-install");
+  },
+}));
+
+// The shared ipc registrar is captured so tests invoke the menu's channels
+// the way a validated IPC message would.
+type Handler = (args: unknown[], event: unknown) => unknown;
+const handlers = new Map<string, Handler>();
+mock.module("./ipc", () => ({
+  handle: (channel: string, _schema: unknown, fn: Handler) => {
+    handlers.set(channel, fn);
+  },
+  handleSync: () => undefined,
+  on: () => undefined,
 }));
 
 const {
@@ -74,36 +158,41 @@ const {
   setDesktopHasCloudSession,
 } = await import("./menu");
 
-test("the Log In/Log Out toggle follows the published session fact", () => {
-  const label = (): string =>
-    (submenu("File").find((item) =>
-      ["Log In", "Log Out"].includes(String(item.label)),
-    )?.label ?? "") as string;
+type MenuItem = Record<string, unknown>;
 
-  setDesktopHasCloudSession(true);
-  expect(label()).toBe("Log Out");
-  setDesktopHasCloudSession(false);
-  expect(label()).toBe("Log In");
-});
+const submenu = (label: string): Array<Record<string, unknown>> =>
+  (buildDesktopMenu().find((entry) => entry.label === label)?.submenu ??
+    []) as Array<Record<string, unknown>>;
 
-type MenuOptions = Parameters<typeof buildDesktopMenu>[0];
+const enabled = (menu: string, label: string): unknown =>
+  submenu(menu).find((item) => item.label === label)?.enabled;
 
-const submenu = (
-  label: string,
-  options: MenuOptions = { openAbout: () => undefined },
-): Array<Record<string, unknown>> => {
-  const item = buildDesktopMenu(options).find((entry) => entry.label === label);
-  return item?.submenu as Array<Record<string, unknown>>;
-};
+const labels = (items: MenuItem[]): string[] =>
+  items
+    .map((item) => item.label ?? item.role)
+    .filter((l): l is string => typeof l === "string");
 
-const enabled = (menu: string, label: string, options?: MenuOptions): unknown =>
-  submenu(menu, options).find((item) => item.label === label)?.enabled;
+const submenuOf = (template: MenuItem[], label: string): MenuItem[] =>
+  (template.find((i) => i.label === label)?.submenu ?? []) as MenuItem[];
 
 describe("buildDesktopMenu", () => {
-  test("uses Window roles and disables unavailable providers", () => {
-    expect(submenu("Window").some((item) => item.role === "close")).toBe(true);
-    expect(enabled("Help", "Check for Updates...")).toBe(false);
-    expect(enabled("File", "Install cadet Command...")).toBe(false);
+  test("uses Window roles; the session token drives the Log In/Log Out toggle", () => {
+    const label = (): string =>
+      (submenu("File").find((item) =>
+        ["Log In", "Log Out"].includes(String(item.label)),
+      )?.label ?? "") as string;
+
+    sessionToken = "token";
+    setDesktopHasCloudSession();
+    expect(label()).toBe("Log Out");
+    sessionToken = null;
+    setDesktopHasCloudSession();
+    expect(label()).toBe("Log In");
+  });
+
+  test("wires every provider it offers: updates, install row, commands", () => {
+    expect(enabled("Help", "Check for Updates...")).toBe(true);
+    expect(enabled("File", "Install cadet Command...")).toBe(true);
     expect(enabled("Window", "Pop Out Conversation")).toBeUndefined();
   });
 
@@ -126,16 +215,6 @@ describe("buildDesktopMenu", () => {
     }
   });
 
-  test("enables update and CLI items when handlers are provided", () => {
-    const options = {
-      openAbout: () => undefined,
-      checkForUpdates: () => undefined,
-      installCli: () => undefined,
-    };
-    expect(enabled("Help", "Check for Updates...", options)).toBe(true);
-    expect(enabled("File", "Install cadet Command...", options)).toBe(true);
-  });
-
   test("dispatches committed commands to the focused window", () => {
     const item = submenu("File").find(
       (entry) => entry.label === "New Conversation",
@@ -145,21 +224,14 @@ describe("buildDesktopMenu", () => {
   });
 
   test("the View menu carries the shared history rows", () => {
-    const labels = submenu("View").map((item) => String(item.label));
-    expect(labels).toContain("Back");
-    expect(labels).toContain("Forward");
+    const rows = submenu("View").map((item) => String(item.label));
+    expect(rows).toContain("Back");
+    expect(rows).toContain("Forward");
   });
 });
 
 describe("installDesktopMenu", () => {
-  type Handler = (args: unknown[], event: unknown) => unknown;
-  const handlers = new Map<string, Handler>();
-  installDesktopMenu({
-    handle: ((channel: string, _schema: unknown, fn: Handler) => {
-      handlers.set(channel, fn);
-    }) as never,
-    openAbout: () => undefined,
-  });
+  installDesktopMenu();
 
   test("reports the top-level menu ids and labels", () => {
     const titles = handlers.get("cadet:menu:titles")?.([], {});
@@ -190,45 +262,40 @@ describe("installDesktopMenu", () => {
     });
     expect(popups).toHaveLength(1);
   });
+
+  test("re-applies when the session token store announces a change", () => {
+    // The subscription is the menu's own wiring: the shells never carry it.
+    sessionToken = "token";
+    for (const listener of sessionTokenListeners) listener();
+    expect(submenu("File").some((item) => item.label === "Log Out")).toBe(true);
+    sessionToken = null;
+    setDesktopHasCloudSession();
+  });
+
+  test("re-applies when onboarding flips", () => {
+    onboardingActive = true;
+    for (const listener of onboardingListeners) listener(true);
+    expect(enabled("File", "Settings...")).toBe(false);
+    onboardingActive = false;
+  });
 });
 
 // ---------------------------------------------------------------------------
 // macOS: the app menu rides the same template. The module reads the platform
-// per call, so tests stamp it; the CLI rows are driven through the `cliPath`
-// dep exactly as the client passes its installer's state.
+// per call, so tests stamp it; the CLI rows are driven through the wrapper
+// family's state the menu wires itself.
 // ---------------------------------------------------------------------------
 describe("buildDesktopMenu (macOS)", () => {
   const setPlatform = (value: string) =>
     Object.defineProperty(process, "platform", { value });
 
-  type MenuItem = Record<string, unknown>;
-  const macOptions = () => ({
-    openAbout: () => undefined,
-    checkForUpdates: () => undefined,
-  });
-
-  const cliPath = () => ({
-    state: async () => ({ kind: "not-installed" }) as CliPathMenuState,
-    inFlight: () => false,
-    install: () => Promise.resolve(),
-    uninstall: () => Promise.resolve(),
-  });
-
   const appSubmenuShadowed = (): MenuItem | undefined => {
-    const submenu = ((builtTemplates.at(-1) as MenuItem[])?.[0]?.submenu ??
+    const rows = ((builtTemplates.at(-1) as MenuItem[])?.[0]?.submenu ??
       []) as MenuItem[];
-    return submenu.find(
+    return rows.find(
       (i) => i.label === "⚠ cadet is shadowed by another install",
     );
   };
-
-  const labels = (items: MenuItem[]): string[] =>
-    items
-      .map((item) => item.label ?? item.role)
-      .filter((l): l is string => typeof l === "string");
-
-  const submenuOf = (template: MenuItem[], label: string): MenuItem[] =>
-    (template.find((i) => i.label === label)?.submenu ?? []) as MenuItem[];
 
   const withPlatform = (
     platform: string,
@@ -246,9 +313,7 @@ describe("buildDesktopMenu (macOS)", () => {
 
   test("prepends the app menu with About, updates, Settings, and roles", () =>
     withPlatform("darwin", () => {
-      const rows = labels(
-        (buildDesktopMenu(macOptions())[0]?.submenu ?? []) as MenuItem[],
-      );
+      const rows = labels((buildDesktopMenu()[0]?.submenu ?? []) as MenuItem[]);
       expect(rows[0]).toBe("About Cadet");
       expect(rows).toContain("Check for Updates…");
       expect(rows).toContain("Settings…");
@@ -261,7 +326,7 @@ describe("buildDesktopMenu (macOS)", () => {
   test("keeps the File menu free of the session tail on macOS", () =>
     withPlatform("darwin", () => {
       const fileRows = labels(
-        submenuOf(buildDesktopMenu(macOptions()) as MenuItem[], "File"),
+        submenuOf(buildDesktopMenu() as MenuItem[], "File"),
       );
       expect(fileRows).not.toContain("Settings…");
       expect(fileRows).not.toContain("Log In");
@@ -269,12 +334,9 @@ describe("buildDesktopMenu (macOS)", () => {
       expect(fileRows).toContain("New Conversation");
     }));
 
-  test("applies the mac fullscreen chord, zoom role, and Window tail", () =>
+  test("applies the mac fullscreen chord, zoom role, and the companion tail", () =>
     withPlatform("darwin", () => {
-      const template = buildDesktopMenu({
-        ...macOptions(),
-        windowMenuTail: [{ label: "Front Row", role: "front" }],
-      }) as MenuItem[];
+      const template = buildDesktopMenu() as MenuItem[];
       const viewSubmenu = submenuOf(template, "View");
       expect(viewSubmenu.find((i) => i.role === "togglefullscreen")).toEqual({
         role: "togglefullscreen",
@@ -282,30 +344,25 @@ describe("buildDesktopMenu (macOS)", () => {
       });
       const windowSubmenu = submenuOf(template, "Window");
       expect(windowSubmenu.some((i) => i.role === "zoom")).toBe(true);
-      expect(windowSubmenu.some((i) => i.label === "Front Row")).toBe(true);
+      // The tail is the menu's own rows now: the companion checkbox built
+      // from the shared state, then the front role.
+      expect(windowSubmenu.some((i) => i.label === "Show Companion")).toBe(
+        true,
+      );
+      expect(windowSubmenu.some((i) => i.role === "front")).toBe(true);
     }));
 
   test("drops the update rows from Help on macOS (the app menu owns them)", () =>
     withPlatform("darwin", () => {
       const helpRows = labels(
-        submenuOf(buildDesktopMenu(macOptions()) as MenuItem[], "Help"),
+        submenuOf(buildDesktopMenu() as MenuItem[], "Help"),
       );
       expect(helpRows).not.toContain("Check for Updates...");
     }));
 
-  test("renders the CLI rows from the cliPath dep's state", async () => {
+  test("renders the CLI rows from the wrapper family's state", async () => {
     await withPlatform("darwin", async () => {
-      let state: CliPathMenuState = { kind: "not-installed" };
-      installDesktopMenu({
-        handle: (() => undefined) as never,
-        openAbout: () => undefined,
-        cliPath: {
-          state: async () => state,
-          inFlight: () => false,
-          install: () => Promise.resolve(),
-          uninstall: () => Promise.resolve(),
-        },
-      });
+      installDesktopMenu();
       const appRows = (): string[] =>
         labels(
           ((builtTemplates.at(-1) as MenuItem[])?.[0]?.submenu ??
@@ -313,14 +370,14 @@ describe("buildDesktopMenu (macOS)", () => {
         );
 
       // Unknown/not-installed/foreign → the Install row.
-      state = { kind: "not-installed" };
+      cliPathState = { kind: "not-installed" };
       await refreshDesktopMenuCliPath();
       let rows = appRows();
       expect(rows).toContain("Install cadet Command…");
       expect(rows).not.toContain("Uninstall cadet Command");
 
       // Installed with a ready runtime → Uninstall only.
-      state = { kind: "installed", inPath: true, runtimeReady: true };
+      cliPathState = { kind: "installed", inPath: true, runtimeReady: true };
       await refreshDesktopMenuCliPath();
       rows = appRows();
       expect(rows).toContain("Uninstall cadet Command");
@@ -328,14 +385,14 @@ describe("buildDesktopMenu (macOS)", () => {
       expect(rows).not.toContain("Repair cadet Command…");
 
       // A missing runtime offers Repair alongside Uninstall.
-      state = { kind: "installed", inPath: true, runtimeReady: false };
+      cliPathState = { kind: "installed", inPath: true, runtimeReady: false };
       await refreshDesktopMenuCliPath();
       rows = appRows();
       expect(rows).toContain("Repair cadet Command…");
       expect(rows).toContain("Uninstall cadet Command");
 
       // Shadowed installs say so, disabled.
-      state = {
+      cliPathState = {
         kind: "shadowed",
         shadowedBy: "/usr/local/bin/cadet",
         inPath: true,
@@ -351,25 +408,29 @@ describe("buildDesktopMenu (macOS)", () => {
     withPlatform("darwin", () => {
       electronApp.isPackaged = false;
       try {
-        let detections = 0;
-        const options = {
-          ...macOptions(),
-          cliPath: {
-            ...cliPath(),
-            state: async () => {
-              detections += 1;
-              return { kind: "not-installed" } as CliPathMenuState;
-            },
-          },
-        } as Parameters<typeof buildDesktopMenu>[0];
         const rows = labels(
-          (buildDesktopMenu(options)[0]?.submenu ?? []) as MenuItem[],
+          (buildDesktopMenu()[0]?.submenu ?? []) as MenuItem[],
         );
         expect(rows).not.toContain("Install cadet Command…");
         expect(rows).not.toContain("Uninstall cadet Command");
-        expect(detections).toBe(0);
       } finally {
         electronApp.isPackaged = true;
       }
+    }));
+
+  test("re-applies when the companion surface's hidden flag moves", () =>
+    withPlatform("darwin", () => {
+      installDesktopMenu();
+      companionHidden = true;
+      for (const listener of companionHiddenListeners) listener();
+      const windowSubmenu = submenu("Window");
+      expect(
+        windowSubmenu.some((item) => item.label === "Show Companion"),
+      ).toBe(true);
+      const checkbox = windowSubmenu.find(
+        (item) => item.label === "Show Companion",
+      );
+      expect(checkbox?.checked).toBe(false);
+      companionHidden = false;
     }));
 });

@@ -25,30 +25,14 @@ import {
   usesAppProtocolRenderer,
 } from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
+import { log } from "@mycadet/electron-desktop";
+import { handleSync } from "@mycadet/electron-desktop/ipc";
 import {
+  ensureVisible,
+  installClassicShellFeatures,
   provisionCliForCurrentUser,
   resolveCliPathFlowOptions,
-} from "./cli-path-flow";
-import { install as installAuth } from "./features/auth";
-import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
-import { install as installBundles } from "./features/bundles";
-import { install as installCommands } from "./features/commands";
-import { install as installDeepLinks } from "./features/deep-links";
-import { install as installDiagnostics } from "./features/diagnostics";
-import { install as installDictation } from "./features/dictation";
-import { install as installDownloads } from "./features/downloads";
-import { install as installFileOpen } from "./features/file-open";
-import { install as installHostProxy } from "./features/host-proxy";
-import { install as installMainWindow } from "./features/main-window";
-import { install as installNotifications } from "./features/notifications";
-import { install as installPermissions } from "./features/permissions";
-import { install as installPresence } from "./features/presence";
-import { install as installShare } from "./features/share";
-import { install as installVoiceModeChord } from "./features/voice-mode-chord";
-import { install as installWindowAttention } from "./features/window-attention";
-import { handleSync } from "@mycadet/electron-desktop/ipc";
-import { log } from "@mycadet/electron-desktop";
-import { ensureVisible } from "./main-window";
+} from "@mycadet/electron-desktop/classic-shell";
 import { installWebContentsSecurity } from "@mycadet/electron-desktop";
 
 // Toasts and taskbar grouping key off the AppUserModelID, which must match
@@ -141,27 +125,11 @@ startApp(log, () => {
       log.error("[cli] Failed to provision the Windows CLI:", error);
     }
   }
-  // Every main-process feature, installed explicitly in the glob's
-  // sorted order — the list the old auto-discovery hid. The hotkey
-  // settings and auto-update installs the features used to carry live in
-  // startApp now (the three shells wired them identically).
-  installAuth();
-  installAuxiliaryWindows();
-  installBundles();
-  installCommands();
-  installDeepLinks();
-  installDiagnostics();
-  installDictation();
-  installDownloads();
-  installFileOpen();
-  installHostProxy();
-  installMainWindow();
-  installNotifications();
-  installPermissions();
-  installPresence();
-  installShare();
-  installVoiceModeChord();
-  installWindowAttention();
+  // Every main-process feature, in the glob-sorted order the old
+  // auto-discovery hid — one ordered list in the package now, since both
+  // classic-desktop shells ran it identically. The universal installs
+  // (hotkey settings, auto-update) ran earlier, in startApp.
+  installClassicShellFeatures();
 });
 
 app.on("second-instance", () => {

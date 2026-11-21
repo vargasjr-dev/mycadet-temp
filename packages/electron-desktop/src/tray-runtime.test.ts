@@ -1,0 +1,84 @@
+import { beforeEach, expect, mock, test } from "bun:test";
+
+type TrayRuntime = {
+  accelerator: (kind: string) => { accelerator?: string };
+  icon: (icon: string) => unknown;
+};
+let trayRuntime: TrayRuntime | null = null;
+mock.module("./status-icon", () => ({
+  statusColor: () => undefined,
+  compositeStatusDot: () => undefined,
+  buildStatusIcon: () => undefined,
+  statusFrames: () => undefined,
+  invalidateIconCache: () => undefined,
+  __resetForTesting: () => undefined,
+  configureStatusIconFallback: () => undefined,
+}));
+mock.module("./window-state", () => ({
+  clearCompanionIntroSeen: () => undefined,
+  onCompanionHiddenChange: () => () => undefined,
+  readCompanionCallDock: () => undefined,
+  readCompanionHidden: () => false,
+  readCompanionIntroSeenVersion: () => undefined,
+  readCompanionSize: () => undefined,
+  readTitleBarOverlayTheme: () => undefined,
+  restoreBounds: () => undefined,
+  track: () => undefined,
+  writeCompanionCallDock: () => undefined,
+  writeCompanionHidden: () => undefined,
+  writeCompanionIntroSeen: () => undefined,
+  writeCompanionSize: () => undefined,
+  writeOnboardingActive: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
+  readOnboardingActive: () => false,
+}));
+mock.module("./about", () => ({
+  configureAboutRuntime: () => undefined,
+  getVersionInfo: () => ({ version: "0.0.0" }),
+  installAbout: () => undefined,
+  openAboutWindow: () => undefined,
+}));
+mock.module("./commands", () => ({
+  readHotkeyOverride: () => undefined,
+  readHotkeyOverrides: () => undefined,
+  writeHotkeyOverrides: () => undefined,
+  GLOBAL_SHORTCUT_DEFAULTS: () => undefined,
+  resolveAccelerator: () => undefined,
+  HOTKEY_SETTINGS: "hotkeys",
+  configureHotkeySettings: () => undefined,
+  dispatchToFocused: () => undefined,
+  onHotkeyOverridesChange: () => () => undefined,
+  acceleratorOption: (kind: string) =>
+    kind === "newConversation" ? { accelerator: "CmdOrCtrl+N" } : {},
+}));
+const themedIcon = { dark: false };
+mock.module("./menu-icon", () => ({
+  menuIcon: () => () => themedIcon,
+}));
+mock.module("./tray-model", () => ({
+  __resetForTesting: () => undefined,
+  configureTrayModel: (runtime: TrayRuntime) => {
+    trayRuntime = runtime;
+  },
+  installTray: () => undefined,
+}));
+mock.module("./main-window", () => ({
+  current: () => null,
+  ensureVisible: () => undefined,
+  toggleVisibility: () => undefined,
+}));
+
+const { installTrayRuntime } = await import("./tray-runtime");
+
+beforeEach(() => {
+  trayRuntime = null;
+});
+
+test("exposes menu accelerators and themed icons", () => {
+  installTrayRuntime();
+
+  expect(trayRuntime?.accelerator("newConversation")).toEqual({
+    accelerator: "CmdOrCtrl+N",
+  });
+  expect(trayRuntime?.icon("settings")).toBe(themedIcon);
+});

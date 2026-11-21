@@ -238,6 +238,10 @@ mock.module("@mycadet/electron-desktop/window-state", () => ({
   track: () => undefined,
   readOnboardingActive: () => onboardingActive,
   writeOnboardingActive: writeOnboardingActiveMock,
+  // The shared menu's wiring subscribes to both registries through the
+  // root graph this test's imports pull.
+  onOnboardingChange: () => () => undefined,
+  setOnboarding: () => undefined,
 }));
 
 const {

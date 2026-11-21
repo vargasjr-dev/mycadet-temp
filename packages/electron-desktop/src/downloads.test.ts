@@ -44,6 +44,13 @@ mock.module("electron", () => ({
       },
     },
   },
+  // The module registers its reveal handler through the shared ipc
+  // registrar; the test injects a capturing registrar, so the electron
+  // side only needs the import to resolve.
+  ipcMain: {
+    handle: () => undefined,
+    on: () => undefined,
+  },
   shell: { showItemInFolder: showItemInFolderMock },
 }));
 

@@ -23,8 +23,30 @@ import {
   type CadetCommand,
 } from "./commands";
 import { areChromeDevToolsEnabled } from "./devtools";
-import type { IpcHandle } from "./ipc";
-import { readOnboardingActive } from "./window-state";
+import { openAboutWindow } from "./about";
+import { checkForUpdates } from "./auto-update";
+import { handle } from "./ipc";
+import { getSessionToken, onSessionTokenChange } from "./session-token-store";
+import {
+  onCompanionHiddenChange,
+  onOnboardingChange,
+  readCompanionHidden,
+  readOnboardingActive,
+} from "./window-state";
+import {
+  companionVisibilityItem,
+  setCompanionSurfaceVisible,
+} from "./companion-menu";
+// The CLI rows ride this process's own platform family: the wrapper
+// (macOS + Linux, a symlink in the user's bin dir) or the Windows launcher
+// (a PATH entry written for the current user).
+import {
+  isCliPathFlowInFlight,
+  runInstallCliCommandFlow as runWrapperCliInstallFlow,
+  runUninstallCliCommandFlow,
+} from "./cli-path-flow";
+import { getCliPathInstallState } from "./cli-path-installer";
+import { runInstallCliCommandFlow as runLauncherCliInstallFlow } from "./win32-cli/cli-path-flow";
 
 /** Builds one command row: the accelerator flavor + the focused-window
  * dispatch (which owns the palette-aware routing). */
@@ -147,15 +169,6 @@ export type CliPathMenuState =
       runtimeReady: boolean;
     };
 
-export interface DesktopCliPathMenuDeps {
-  /** Kicks a fresh detection; the menu renders Install until it resolves. */
-  state: () => Promise<CliPathMenuState>;
-  /** True while an install/repair/uninstall flow runs (rows go inert). */
-  inFlight: () => boolean;
-  install: () => Promise<void>;
-  uninstall: () => Promise<void>;
-}
-
 /**
  * The menu groups both platform templates assemble. Windows/Linux glue
  * them together in `buildDesktopMenu`; macOS splices in its app menu and
@@ -276,42 +289,16 @@ const sessionFileTail = (
   { role: "quit" },
 ];
 
-export interface DesktopMenuDeps {
-  handle: IpcHandle;
-  openAbout: () => void;
-  checkForUpdates?: () => void;
-  installCli?: () => void;
-  /**
-   * macOS only: the CLI wrapper's install state drives the app menu's
-   * Install/Repair/Uninstall rows. Windows/Linux render the single
-   * `installCli` row instead.
-   */
-  cliPath?: DesktopCliPathMenuDeps;
-  /**
-   * macOS only: rows appended to the Window menu after a separator (the
-   * companion toggle and the front role ride here from the client).
-   */
-  windowMenuTail?: MenuItemConstructorOptions[];
-  /**
-   * macOS only: re-apply when the companion surface's hidden flag moves
-   * from somewhere else (tray, its own right-click).
-   */
-  onCompanionHiddenChange?: (apply: () => void) => () => void;
-  /**
-   * Re-apply when onboarding flips (the Settings row's enabled state);
-   * each client owns its window-side wiring.
-   */
-  onOnboardingChange?: (apply: () => void) => void;
-}
-
 let hasCloudSession = false;
 let applyFn: () => void = () => {};
 
 /**
- * The menu's Log In/Log Out toggle is this process's fact: the wiring
- * derives it from the session-token store and publishes here.
+ * The menu's Log In/Log Out toggle is this process's fact: it reads the
+ * session-token store directly — the same store the OAuth flow and
+ * sign-out write — and re-applies. The shells never carry it.
  */
-export function setDesktopHasCloudSession(has: boolean): void {
+export function setDesktopHasCloudSession(): void {
+  const has = getSessionToken() !== null;
   if (hasCloudSession === has) return;
   hasCloudSession = has;
   applyFn();
@@ -324,7 +311,6 @@ const isDarwin = (): boolean => process.platform === "darwin";
 
 // Null until the first detection completes; the menu shows the Install item
 // in the meantime (the install flow is safe to run from any state).
-let cliPathDeps: DesktopCliPathMenuDeps | null = null;
 let cliPathState: CliPathMenuState | null = null;
 
 /**
@@ -333,10 +319,12 @@ let cliPathState: CliPathMenuState | null = null;
  * for the next menu-triggering event.
  */
 export const refreshDesktopMenuCliPath = async (): Promise<void> => {
-  if (!cliPathDeps) return;
+  // Only the wrapper family (macOS + Linux) drives the menu rows from a
+  // detected state, and only packaged builds manage the shared wrapper.
+  if (!isDarwin() && process.platform !== "linux") return;
   if (app.isPackaged) {
     try {
-      cliPathState = await cliPathDeps.state();
+      cliPathState = await getCliPathInstallState();
     } catch {
       cliPathState = null;
     }
@@ -349,7 +337,7 @@ const cliPathFlowItem = (
   flow: () => Promise<void>,
 ): MenuItemConstructorOptions => ({
   label,
-  enabled: !cliPathDeps?.inFlight(),
+  enabled: !isCliPathFlowInFlight(),
   click: async () => {
     const flowDone = flow();
     // Re-render immediately so the item is disabled while the flow runs.
@@ -361,7 +349,7 @@ const cliPathFlowItem = (
 
 const cliPathItems = (): MenuItemConstructorOptions[] => {
   // Only packaged builds manage the shared ~/.local/bin/cadet wrapper.
-  if (!app.isPackaged || !cliPathDeps) return [];
+  if (!app.isPackaged) return [];
   const cliState = cliPathState;
   if (cliState?.kind === "installed" || cliState?.kind === "shadowed") {
     return [
@@ -376,22 +364,23 @@ const cliPathItems = (): MenuItemConstructorOptions[] => {
       // Wrapper exists but the CLI runtime never provisioned; the install
       // flow is idempotent, so re-running it doubles as repair.
       ...(!cliState.runtimeReady
-        ? [cliPathFlowItem("Repair cadet Command\u2026", cliPathDeps.install)]
+        ? [
+            cliPathFlowItem(
+              "Repair cadet Command\u2026",
+              runWrapperCliInstallFlow,
+            ),
+          ]
         : []),
-      cliPathFlowItem("Uninstall cadet Command", cliPathDeps.uninstall),
+      cliPathFlowItem("Uninstall cadet Command", runUninstallCliCommandFlow),
     ];
   }
-  return [cliPathFlowItem("Install cadet Command\u2026", cliPathDeps.install)];
+  return [
+    cliPathFlowItem("Install cadet Command\u2026", runWrapperCliInstallFlow),
+  ];
 };
 
 /** The macOS app menu — About, updates, Settings, CLI rows, session, roles. */
-const macAppMenu = ({
-  openAbout,
-  checkForUpdates,
-}: Pick<
-  DesktopMenuDeps,
-  "openAbout" | "checkForUpdates"
->): MenuItemConstructorOptions => {
+const macAppMenu = (): MenuItemConstructorOptions => {
   const isDev = !app.isPackaged;
   const cliItems = cliPathItems();
 
@@ -401,7 +390,7 @@ const macAppMenu = ({
       {
         label: `About ${app.name}`,
         click: () => {
-          openAbout();
+          openAboutWindow();
         },
       },
       ...(!isDev
@@ -409,7 +398,7 @@ const macAppMenu = ({
             {
               label: "Check for Updates\u2026",
               click: () => {
-                checkForUpdates?.();
+                checkForUpdates();
               },
             },
           ]
@@ -446,72 +435,87 @@ const macAppMenu = ({
 };
 
 /** The desktop menu template — the darwin app menu prepended on macOS. */
-export const buildDesktopMenu = ({
-  openAbout,
-  checkForUpdates,
-  installCli,
-  windowMenuTail,
-}: Omit<
-  DesktopMenuDeps,
-  "handle" | "onOnboardingChange" | "cliPath"
->): MenuItemConstructorOptions[] => {
+/**
+ * The Window menu's tail on macOS: the companion show/hide checkbox — the
+ * one switch the tray offers too — and the front role. Built here, from
+ * the same companion state the tray reads, so the shells carry no rows.
+ */
+const darwinWindowMenuTail = (): MenuItemConstructorOptions[] => [
+  companionVisibilityItem(readCompanionHidden(), setCompanionSurfaceVisible),
+  separator(),
+  { role: "front" },
+];
+
+/** The File tail's install row: this process's CLI family's flow. */
+const installCliAction = (): (() => void) | undefined => {
+  if (!app.isPackaged || isDarwin()) {
+    return undefined;
+  }
+  return process.platform === "win32"
+    ? () => {
+        void runLauncherCliInstallFlow();
+      }
+    : () => {
+        void runWrapperCliInstallFlow();
+      };
+};
+
+/** The About action, the same window the shells' install opened. */
+const openAboutAction = (): void => {
+  openAboutWindow();
+};
+
+/**
+ * The desktop menu template — the darwin app menu prepended on macOS.
+ */
+export const buildDesktopMenu = (): MenuItemConstructorOptions[] => {
   const item = commandItem();
 
   if (isDarwin()) {
     // File/Edit/View/Window/Help are the shared groups; the macOS deltas
     // ride the app menu, the fullscreen chord, the zoom role, and the
-    // companion/front rows the client passes in.
+    // companion/front rows built from the shared companion state.
     return [
-      macAppMenu({ openAbout, checkForUpdates }),
+      macAppMenu(),
       fileMenu(),
       editMenu(),
       viewMenu({ fullscreenAccelerator: MAC_FULLSCREEN_ACCELERATOR }),
-      windowMenu({ zoomRole: true, tail: windowMenuTail }),
+      windowMenu({ zoomRole: true, tail: darwinWindowMenuTail() }),
       helpMenu({ updatesRow: false }),
     ];
   }
 
   return [
-    fileMenu({ sessionTail: sessionFileTail(item, installCli) }),
+    fileMenu({ sessionTail: sessionFileTail(item, installCliAction()) }),
     editMenu(),
     viewMenu(),
     windowMenu(),
-    helpMenu({ openAbout, checkForUpdates }),
+    helpMenu({ openAbout: openAboutAction, checkForUpdates }),
   ];
 };
 
 /** Installs the desktop menu, popup IPC included. */
-export const installDesktopMenu = (options: DesktopMenuDeps): void => {
+export const installDesktopMenu = (): void => {
   const apply = (): void => {
-    Menu.setApplicationMenu(
-      Menu.buildFromTemplate(
-        buildDesktopMenu({
-          openAbout: options.openAbout,
-          checkForUpdates: options.checkForUpdates,
-          installCli: options.installCli,
-          windowMenuTail: options.windowMenuTail,
-        }),
-      ),
-    );
+    Menu.setApplicationMenu(Menu.buildFromTemplate(buildDesktopMenu()));
   };
   applyFn = apply;
-  cliPathDeps = options.cliPath ?? null;
   // The main window hides the native frame (`titleBarStyle: "hidden"`), which
   // hides the OS menu bar with it. The renderer draws the top-level titles in
   // its title bar (localizing them by id) and pops the real native submenus
   // here, so items, accelerators, and enabled states keep the one template
   // above as owner.
-  options.handle(MENU_TITLES, z.tuple([]), () =>
-    buildDesktopMenu(options).map((item) => ({
+  handle(MENU_TITLES, z.tuple([]), () =>
+    buildDesktopMenu().map((item) => ({
       id: String(item.id),
       label: String(item.label),
     })),
   );
-  options.handle(
+  handle(
     MENU_POPUP,
     z.tuple([z.string(), z.number(), z.number()]),
     ([id, x, y], event) => {
-      const submenu = buildDesktopMenu(options).find(
+      const submenu = buildDesktopMenu().find(
         (item) => item.id === id,
       )?.submenu;
       const win = BrowserWindow.fromWebContents(event.sender);
@@ -532,8 +536,14 @@ export const installDesktopMenu = (options: DesktopMenuDeps): void => {
     },
   );
   onHotkeyOverridesChange(apply);
-  options.onOnboardingChange?.(apply);
-  options.onCompanionHiddenChange?.(apply);
-  if (options.cliPath) void refreshDesktopMenuCliPath();
+  onOnboardingChange(apply);
+  onCompanionHiddenChange(apply);
+  // The session toggle is the menu's own fact: read once now, then re-read
+  // on every token change the store announces.
+  setDesktopHasCloudSession();
+  onSessionTokenChange(() => {
+    setDesktopHasCloudSession();
+  });
+  void refreshDesktopMenuCliPath();
   apply();
 };

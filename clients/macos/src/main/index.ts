@@ -13,7 +13,6 @@ import {
   registerAppProtocol,
 } from "@mycadet/electron-desktop";
 import { openAboutWindow } from "@mycadet/electron-desktop/about";
-import { checkForUpdates } from "@mycadet/electron-desktop/auto-update";
 import { installAbout } from "./about.client";
 import {
   BUNDLES_DIR_NAME,
@@ -25,14 +24,14 @@ import {
   APP_PROTOCOL,
 } from "@mycadet/electron-desktop";
 import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
-import { writeCliLocator } from "./cli-installer";
-import { getCliPathInstallState } from "./cli-path-installer";
 import {
-  isCliPathFlowInFlight,
-  runInstallCliCommandFlow,
-  runUninstallCliCommandFlow,
-} from "./cli-path-flow";
-import { provisionCliForWrapper } from "./cli-path-installer";
+  provisionCliForWrapper,
+  writeCliLocator,
+} from "@mycadet/electron-desktop/cli-wrapper";
+import {
+  refreshDesktopMenuCliPath,
+  registerCompanionSurfaceSync,
+} from "@mycadet/electron-desktop";
 import { handle, on } from "@mycadet/electron-desktop/ipc";
 // Composition roots: these modules configure the shared desktop packages
 // with this client's seams at import time. Their surfaces are imported
@@ -97,19 +96,8 @@ import {
   installMainWindow,
   toggleVisibility as toggleMainWindowVisibility,
 } from "./main-window";
-import {
-  companionVisibilityItem,
-  installDesktopMenu,
-  readCompanionHidden,
-  onCompanionHiddenChange,
-  refreshDesktopMenuCliPath,
-  setDesktopHasCloudSession,
-} from "@mycadet/electron-desktop";
-import {
-  getSessionToken,
-  onSessionTokenChange,
-  setSessionTokenLogger,
-} from "@mycadet/electron-desktop/session-token-store";
+import { installDesktopMenu } from "@mycadet/electron-desktop";
+import { setSessionTokenLogger } from "@mycadet/electron-desktop/session-token-store";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -273,36 +261,13 @@ startApp(log, async () => {
   installFeedbackIpc();
   installTextInsertionIpc();
   installCommandPaletteWindow();
-  // The shared desktop menu — the same installer linux/windows ride, with
-  // this shell's app-menu rows passed as deps rather than owned here.
-  installDesktopMenu({
-    handle,
-    openAbout: openAboutWindow,
-    checkForUpdates,
-    cliPath: {
-      state: getCliPathInstallState,
-      inFlight: isCliPathFlowInFlight,
-      install: runInstallCliCommandFlow,
-      uninstall: runUninstallCliCommandFlow,
-    },
-    windowMenuTail: [
-      // The show/hide checkbox the tray offers too, from the one builder
-      // both read: two doors onto a single switch, not two switches.
-      companionVisibilityItem(
-        readCompanionHidden(),
-        setCompanionSurfaceVisible,
-      ),
-      { type: "separator" },
-      { role: "front" },
-    ],
-    onCompanionHiddenChange,
-  });
-  // The menu's Log In/Log Out toggle is main's fact: derived from the same
-  // token store the OAuth flow and sign-out write.
-  setDesktopHasCloudSession(!!getSessionToken());
-  onSessionTokenChange(() => {
-    setDesktopHasCloudSession(!!getSessionToken());
-  });
+  // The shared desktop menu — the same installer the classic-desktop
+  // shells ride, with every row wired inside the package (About, updates,
+  // the CLI wrapper rows, the session toggle, onboarding, the companion
+  // tail). This side registers the one action only it owns: the surface
+  // sync the menu's Show Companion row and the tray both go through.
+  registerCompanionSurfaceSync(setCompanionSurfaceVisible);
+  installDesktopMenu();
   installQuickInput();
   installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
   installCompanionWindow();
@@ -316,7 +281,7 @@ startApp(log, async () => {
   installShare();
   // Files renderer downloads into ~/Downloads instead of prompting a Save
   // panel. Distinct from `installShare`, which is the "send elsewhere" intent.
-  installDownloads({ handle });
+  installDownloads();
   installPowerEvents();
   // The addon takes the notifications the assistant avatar can ride on only
   // when it says it can have them: an unbundled run loads it fine and then

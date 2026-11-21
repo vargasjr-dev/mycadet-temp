@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import type { AppVersionInfo } from "@mycadet/ipc-contract";
 
-import type { IpcHandle } from "./ipc";
+import { handle as sharedHandle, type IpcHandle } from "./ipc";
 import { createWindow } from "./windows";
 
 export interface AboutRuntime {
@@ -13,7 +13,8 @@ export interface AboutRuntime {
 }
 
 export interface AboutIpc {
-  handle: IpcHandle;
+  /** The registrar the channels ride; defaults to the shared one. */
+  handle?: IpcHandle;
 }
 
 let runtime: AboutRuntime = {
@@ -161,7 +162,9 @@ const applyAboutPanelOptions = (): void => {
 };
 
 let installed = false;
-export const installAbout = ({ handle }: AboutIpc): void => {
+export const installAbout = ({
+  handle: registrar = sharedHandle,
+}: AboutIpc = {}): void => {
   if (installed) {
     return;
   }
@@ -172,7 +175,7 @@ export const installAbout = ({ handle }: AboutIpc): void => {
   // live identity.
   runtime.onAssistantNameChange?.(applyAboutPanelOptions);
 
-  handle("cadet:app:versionInfo", z.tuple([]), () => getVersionInfo());
+  registrar("cadet:app:versionInfo", z.tuple([]), () => getVersionInfo());
 
   // The renderer is sandboxed — `shell.openExternal` only works from
   // main. The About page's website-link click handler routes through
@@ -180,7 +183,7 @@ export const installAbout = ({ handle }: AboutIpc): void => {
   // of navigating the About window away from its route. The target is
   // a fixed constant, never a renderer-supplied URL, so there's no
   // open-redirect surface here.
-  handle("cadet:app:openWebsite", z.tuple([]), () =>
+  registrar("cadet:app:openWebsite", z.tuple([]), () =>
     shell.openExternal(WEBSITE),
   );
 };

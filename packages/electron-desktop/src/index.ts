@@ -24,6 +24,7 @@ export {
   usesAppProtocolRenderer,
 } from "./app-config";
 export { startApp } from "./app-lifecycle";
+export { registerCompanionSurfaceSync } from "./companion-menu";
 export { default as log, getLogFilePaths } from "./app-logger";
 export {
   createAllowedOriginResolver,
@@ -172,7 +173,7 @@ export {
   viewMenuItems,
   windowMenu,
 } from "./menu";
-export type { CliPathMenuState, DesktopCliPathMenuDeps } from "./menu";
+export type { CliPathMenuState } from "./menu";
 export { configureNativeAuth, installNativeAuth } from "./native-auth";
 export type { NativeAuthCallback } from "./native-auth";
 export { resolveNotificationAvatarPath } from "./notification-avatar-path";
