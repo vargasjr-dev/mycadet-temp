@@ -58,7 +58,7 @@ interface DocsNavChild {
 
 interface DocsNavSection {
   label: string;
-  href: Route | string;
+  href?: Route | string;
   icon: ReactNode;
   collapsedByDefault?: boolean;
   hidden?: boolean;
@@ -122,14 +122,18 @@ const GoogleCloudHex = ({ size = ICON_SIZE }: { size?: number }): ReactNode => (
 
 const NAV_ITEMS: DocsNavItem[] = [
   {
-    label: "Getting Started",
-    href: "/docs/getting-started",
+    label: "Overview",
     icon: icon(Rocket),
     children: [
       {
         label: "Docs Home",
         href: "/docs",
         icon: icon(House),
+      },
+      {
+        label: "Getting Started",
+        href: "/docs/getting-started",
+        icon: icon(Rocket),
       },
       {
         label: "Constitution",
@@ -150,7 +154,6 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Key Concepts",
-    href: "/docs/key-concepts",
     icon: icon(Boxes),
     children: [
       {
@@ -207,9 +210,13 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Trust & Security",
-    href: "/docs/trust-security",
     icon: icon(Shield),
     children: [
+      {
+        label: "Overview",
+        href: "/docs/trust-security",
+        icon: icon(Shield),
+      },
       {
         label: "Privacy & Data",
         href: routes.docs.legal.privacyAndData,
@@ -229,7 +236,6 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Skills Reference",
-    href: "/docs/skills-reference",
     icon: icon(Hammer),
     collapsedByDefault: true,
     hidden: true,
@@ -354,9 +360,13 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Developer Guide",
-    href: "/docs/developer-guide",
     icon: icon(Code),
     children: [
+      {
+        label: "Overview",
+        href: "/docs/developer-guide",
+        icon: icon(Code),
+      },
       {
         label: "Get Started",
         href: "/docs/developer-guide/get-started",
@@ -391,7 +401,6 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Extensibility",
-    href: "/docs/extensibility",
     icon: icon(Puzzle),
     children: [
       { label: "Overview", href: "/docs/extensibility", icon: icon(Book) },
@@ -444,7 +453,6 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Hosting options",
-    href: "/docs/hosting-options",
     icon: icon(Globe),
     children: [
       { label: "Overview", href: "/docs/hosting-options", icon: icon(Book) },
@@ -472,7 +480,6 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Legal",
-    href: routes.docs.legal.privacyPolicy,
     icon: icon(Scale),
     children: [
       {
@@ -494,9 +501,13 @@ const NAV_ITEMS: DocsNavItem[] = [
   },
   {
     label: "Help",
-    href: "/docs/help",
     icon: icon(LifeBuoy),
     children: [
+      {
+        label: "Overview",
+        href: "/docs/help",
+        icon: icon(LifeBuoy),
+      },
       { label: "FAQ", href: "/docs/help/faq", icon: icon(HelpCircle) },
       {
         label: "Getting Help",
@@ -550,19 +561,11 @@ function NavSection({
   pathname: string;
   onLinkClick: () => void;
 }) {
-  const isSectionActive = pathname === item.href;
-
   return (
     <li className="docs-nav-section m-0 p-0">
-      <Link
-        href={item.href as never}
-        onClick={onLinkClick}
-        className={`docs-nav-section-label block px-3 pb-2 pt-3 text-[13px] font-bold tracking-normal normal-case no-underline transition-colors ${
-          isSectionActive ? "docs-nav-section-label-active" : ""
-        }`}
-      >
+      <span className="docs-nav-section-label block px-3 pb-2 pt-3 text-[13px] font-bold tracking-normal normal-case">
         {item.label}
-      </Link>
+      </span>
       <ul className="list-none p-0 m-0">
         {item.children?.map((child) => {
           const hasGrandchildren = child.children && child.children.length > 0;
@@ -614,7 +617,7 @@ export function DocsNav() {
           if (hasChildren(item)) {
             return (
               <NavSection
-                key={item.href}
+                key={item.label}
                 item={item}
                 pathname={pathname}
                 onLinkClick={close}

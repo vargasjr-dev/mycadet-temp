@@ -119,17 +119,6 @@ html:has(.docs-shell) {
   font-family: "DM Sans", sans-serif;
 }
 
-/* H2/H3 inside docs match H1: DM Sans + bold + tight tracking.
-   Defined outside @layer to beat .marketing-root h2/h3 in marketing.css
-   which sets font-weight 600. Specificity (0,2,1) beats (0,1,1) so this
-   wins without !important. */
-.docs-shell .docs-prose h2,
-.docs-shell .docs-prose h3 {
-  font-family: "DM Sans", sans-serif;
-  font-weight: 400;
-  letter-spacing: -0.025em;
-}
-
 .docs-shell .docs-subtitle {
   color: var(--docs-text-muted);
 }

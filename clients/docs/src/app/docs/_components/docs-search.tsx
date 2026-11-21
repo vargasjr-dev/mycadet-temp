@@ -13,9 +13,15 @@ import {
   useState,
 } from "react";
 
-import type { DocsSearchResponse, DocsSearchResult } from "@/lib/docs/search/types";
+import type {
+  DocsSearchResponse,
+  DocsSearchResult,
+} from "@/lib/docs/search/types";
 import { tokenize } from "@/lib/docs/search/text";
-import { lockBodyScroll, unlockBodyScroll } from "@/app/docs/_components/body-scroll-lock";
+import {
+  lockBodyScroll,
+  unlockBodyScroll,
+} from "@/app/docs/_components/body-scroll-lock";
 
 const MIN_QUERY_LENGTH = 2;
 const SPOTLIGHT_TRANSITION_MS = 220;
@@ -30,7 +36,7 @@ const SUGGESTED_SECTIONS = [
   {
     label: "Key Concepts",
     description: "Understand workspaces, memory, channels, and more",
-    url: "/docs/key-concepts",
+    url: "/docs/key-concepts/the-workspace",
     icon: BookOpen,
   },
   {
@@ -48,12 +54,16 @@ const SUGGESTED_SECTIONS = [
 ] as const;
 
 function renderHighlightedText(text: string, query: string): ReactNode {
-  const tokens = Array.from(new Set(tokenize(query))).sort((a, b) => b.length - a.length);
+  const tokens = Array.from(new Set(tokenize(query))).sort(
+    (a, b) => b.length - a.length,
+  );
   if (tokens.length === 0) {
     return text;
   }
 
-  const escapedTokens = tokens.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const escapedTokens = tokens.map((token) =>
+    token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  );
   const regex = new RegExp(`(${escapedTokens.join("|")})`, "ig");
   const parts = text.split(regex);
 
@@ -152,7 +162,8 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
     }
 
     const handleShortcut = (event: globalThis.KeyboardEvent) => {
-      const isShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
+      const isShortcut =
+        (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
       if (!isShortcut) {
         if (event.key === "Escape" && spotlightOpen) {
           closeSpotlight();
@@ -201,7 +212,10 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
     // The portal target only exists in the browser DOM, so it is resolved
     // after mount rather than during render.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPortalRoot((document.querySelector(".docs-shell") as HTMLElement | null) ?? document.body);
+    setPortalRoot(
+      (document.querySelector(".docs-shell") as HTMLElement | null) ??
+        document.body,
+    );
   }, []);
 
   useEffect(() => {
@@ -258,7 +272,9 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
       return null;
     }
 
-    return results[Math.min(Math.max(activeIndex, 0), results.length - 1)] ?? null;
+    return (
+      results[Math.min(Math.max(activeIndex, 0), results.length - 1)] ?? null
+    );
   }, [activeIndex, results]);
 
   const openResult = (result: DocsSearchResult) => {
@@ -270,7 +286,9 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((current) => (results.length === 0 ? 0 : (current + 1) % results.length));
+      setActiveIndex((current) =>
+        results.length === 0 ? 0 : (current + 1) % results.length,
+      );
       return;
     }
 
@@ -362,22 +380,35 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
                   </button>
                 </div>
 
-                <div id="docs-search-results" className="docs-search-spotlight-results" role="listbox">
-                  {loading && <div className="docs-search-status">Searching...</div>}
+                <div
+                  id="docs-search-results"
+                  className="docs-search-spotlight-results"
+                  role="listbox"
+                >
+                  {loading && (
+                    <div className="docs-search-status">Searching...</div>
+                  )}
 
                   {!loading && !canSearch && (
                     <div className="docs-search-suggestions">
-                      <div className="docs-search-suggestions-label">Suggested</div>
+                      <div className="docs-search-suggestions-label">
+                        Suggested
+                      </div>
                       <ul className="docs-search-list">
                         {SUGGESTED_SECTIONS.map((section) => {
                           const Icon = section.icon;
                           return (
-                            <li key={section.url} className="docs-search-item-wrapper">
+                            <li
+                              key={section.url}
+                              className="docs-search-item-wrapper"
+                            >
                               <button
                                 type="button"
                                 className="docs-search-item docs-search-suggestion-item"
                                 onClick={() => {
-                                  (router.push as (url: string) => void)(section.url);
+                                  (router.push as (url: string) => void)(
+                                    section.url,
+                                  );
                                   closeSpotlight(true);
                                 }}
                               >
@@ -385,8 +416,12 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
                                   <Icon size={16} />
                                 </div>
                                 <div>
-                                  <div className="docs-search-title">{section.label}</div>
-                                  <div className="docs-search-snippet">{section.description}</div>
+                                  <div className="docs-search-title">
+                                    {section.label}
+                                  </div>
+                                  <div className="docs-search-snippet">
+                                    {section.description}
+                                  </div>
                                 </div>
                               </button>
                             </li>
@@ -397,7 +432,9 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
                   )}
 
                   {!loading && canSearch && results.length === 0 && (
-                    <div className="docs-search-status">No matching docs yet.</div>
+                    <div className="docs-search-status">
+                      No matching docs yet.
+                    </div>
                   )}
 
                   {!loading && results.length > 0 && (
@@ -405,7 +442,10 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
                       {results.map((result, index) => {
                         const selected = index === activeIndex;
                         return (
-                          <li key={result.id} className="docs-search-item-wrapper">
+                          <li
+                            key={result.id}
+                            className="docs-search-item-wrapper"
+                          >
                             <button
                               type="button"
                               className={`docs-search-item ${selected ? "is-active" : ""}`}
@@ -415,11 +455,17 @@ export function DocsSearch({ registerShortcut = true }: DocsSearchProps) {
                               aria-selected={selected}
                             >
                               <div className="docs-search-title-row">
-                                <span className="docs-search-title">{renderHighlightedText(result.heading, query)}</span>
-                                <span className="docs-search-page">{result.pageTitle}</span>
+                                <span className="docs-search-title">
+                                  {renderHighlightedText(result.heading, query)}
+                                </span>
+                                <span className="docs-search-page">
+                                  {result.pageTitle}
+                                </span>
                               </div>
                               {result.snippet && (
-                                <div className="docs-search-snippet">{renderHighlightedText(result.snippet, query)}</div>
+                                <div className="docs-search-snippet">
+                                  {renderHighlightedText(result.snippet, query)}
+                                </div>
                               )}
                             </button>
                           </li>

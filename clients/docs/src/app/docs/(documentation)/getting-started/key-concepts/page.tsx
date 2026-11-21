@@ -10,5 +10,5 @@ export const metadata = createMetadata({
 });
 
 export default function KeyConceptsPage() {
-  permanentRedirect("/docs/key-concepts");
+  permanentRedirect("/docs/key-concepts/the-workspace");
 }

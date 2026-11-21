@@ -14,6 +14,7 @@ export default function GettingStartedPage() {
       file="getting-started"
       title="Getting Started"
       breadcrumb="Docs / Getting Started"
+      navCards
     />
   );
 }

@@ -1,8 +1,9 @@
 /**
- * `/docs/getting-started` is one combined document — what Cadet is,
- * installation, quick start, and your first skill. These tests lock the
- * public install matrix facts (iOS, Android, macOS, Windows, web, self-host,
- * no shipped Linux desktop client) against the markdown source itself.
+ * `/docs/getting-started` is Vargas's revised short page: Setup (cloud sign
+ * up, downloads, self-host CLI install), Updates, and a Where-to-go-next
+ * jump list that renders as docs nav cards. These tests pin that shape
+ * against the markdown source itself, and guard against the TODO comments
+ * he left during the revision creeping back in.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -17,37 +18,38 @@ const md = readFileSync(
 );
 
 describe("getting-started.md", () => {
-  test("names the shipped mobile clients and store listings", () => {
-    expect(md).toContain("Android app");
-    expect(md).toContain("Google Play");
+  test("keeps Vargas's revision: Setup, Updates, Where to go next", () => {
+    expect(md).toContain("## Setup");
+    expect(md).toContain("## Updates");
+    expect(md).toContain("## Where to go next");
+    expect(md).not.toContain("## Installation");
+  });
+
+  test("covers cloud sign up, downloads, and the self-host CLI install", () => {
+    expect(md).toContain("https://www.mycadet.ai/account/signup");
+    expect(md).toContain("https://www.mycadet.ai/downloads");
+    expect(md).toContain("npm install -g @mycadet/cli");
+  });
+
+  test("carries no unresolved revision TODOs", () => {
+    expect(md).not.toContain("TODO:");
+    expect(md).not.toContain("<!--");
+  });
+
+  test("Where to go next uses the nav-cards list shape", () => {
     expect(md).toContain(
-      "play.google.com/store/apps/details?id=ai.mycadet.android",
+      "- [Key Concepts](/docs/key-concepts/the-workspace) —",
     );
-    expect(md).toContain("App Store");
-    expect(md).toContain("apps.apple.com/us/app/mycadet/id6759934423");
-  });
-
-  test("points desktop install at the public downloads page", () => {
-    expect(md).toContain("mycadet.ai/downloads");
-    expect(md).toContain("Desktop app (macOS and Windows)");
-  });
-
-  test("states there is no shipped Linux desktop client", () => {
-    expect(md).toContain("no shipped Linux desktop client");
-    expect(md).toContain("Self-host the assistant runtime");
-    expect(md).not.toContain("no shipped Windows");
+    expect(md).toContain("- [Plugins](/docs/extensibility) —");
+    expect(md).not.toContain("/docs/key-concepts)");
   });
 
   test("extracts a table of contents that matches its own headings", () => {
     const toc = extractMarkdownToc(md);
-    expect(toc.length).toBeGreaterThanOrEqual(2);
-    const ids = toc.map((item) => item.id);
-    expect(ids).toContain("installation");
-    expect(ids).toContain("linux");
-    // Fence-aware: the ~/.cadet directory sample must not leak headings.
-    expect(ids).not.toContain("lockfilejson");
-    for (const item of toc) {
-      expect(item.label.length).toBeGreaterThan(0);
-    }
+    expect(toc.map((item) => item.label)).toEqual([
+      "Setup",
+      "Updates",
+      "Where to go next",
+    ]);
   });
 });
