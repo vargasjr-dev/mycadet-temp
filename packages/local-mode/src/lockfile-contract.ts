@@ -255,15 +255,16 @@ export function machinePolicyPaths(): {
 } {
   const sections: string[] = [];
   const leaves: string[] = [];
+  /** A zod wrapper node, narrowed to the two reflective members the walk needs. */
+  type ZodNode = z.ZodType & {
+    unwrap?: () => z.ZodType;
+    shape?: Record<string, z.ZodType>;
+  };
   const walk = (node: z.ZodType, path: string | undefined): void => {
-    const wrapper = node as unknown as { unwrap?: () => z.ZodType };
-    const inner =
-      typeof wrapper.unwrap === "function" ? wrapper.unwrap() : node;
-    const shape = (
-      inner as unknown as {
-        shape?: Record<string, z.ZodType>;
-      }
-    ).shape;
+    const inner = node as ZodNode;
+    const shape = typeof inner.unwrap === "function"
+      ? (inner.unwrap() as ZodNode).shape
+      : inner.shape;
     if (shape) {
       if (path !== undefined) sections.push(path);
       for (const [key, child] of Object.entries(shape)) {

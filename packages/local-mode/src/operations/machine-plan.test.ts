@@ -3,14 +3,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import * as realExec from "../exec";
+
 // The plan operation's only host seam is the docker inspect — mocked at the
 // package-internal exec module; everything else is a pure function of the
 // entry + the inspect answer.
 const execOutputMock = mock(async () => "");
 
 mock.module("../exec", () => {
-  const real = require("../exec");
-  return { ...real, execOutput: execOutputMock };
+  return { ...realExec, execOutput: execOutputMock };
 });
 
 import { planMachine } from "./machine-plan";
@@ -29,15 +30,13 @@ afterEach(() => {
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-function dockerEntry(machine?: {
-  memory: { max?: number; high?: number };
+function planEntry(partial: {
+  assistantId: string;
+  cloud: LockfileAssistant["cloud"];
+  port?: number;
+  machine?: { memory: { max?: number; high?: number } };
 }): LockfileAssistant {
-  return {
-    assistantId: "asst_plan_docker",
-    cloud: "docker",
-    port: 7830,
-    machine,
-  } as unknown as LockfileAssistant;
+  return partial as LockfileAssistant;
 }
 
 function inspectAnswer(limits: {
@@ -51,7 +50,7 @@ function inspectAnswer(limits: {
 describe("planMachine — docker", () => {
   test("no policy and an unlimited container = no diff", async () => {
     execOutputMock.mockImplementation(async () => inspectAnswer({}));
-    const result = await planMachine(dockerEntry());
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830 }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.stored).toBeUndefined();
@@ -72,7 +71,7 @@ describe("planMachine — docker", () => {
     execOutputMock.mockImplementation(async () =>
       inspectAnswer({ memory: max, reservation: high, swap: max }),
     );
-    const result = await planMachine(dockerEntry({ memory: { max, high } }));
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830, machine: { memory: { max, high } } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.changes).toEqual([]);
@@ -84,7 +83,7 @@ describe("planMachine — docker", () => {
   test("a stored policy on an unlimited container wants a recreate", async () => {
     const max = 8 * 1024 ** 3;
     execOutputMock.mockImplementation(async () => inspectAnswer({}));
-    const result = await planMachine(dockerEntry({ memory: { max } }));
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830, machine: { memory: { max } } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.changes).toEqual([
@@ -101,7 +100,7 @@ describe("planMachine — docker", () => {
     execOutputMock.mockImplementation(async () =>
       inspectAnswer({ memory: max, swap: 0 }),
     );
-    const result = await planMachine(dockerEntry({ memory: { max } }));
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830, machine: { memory: { max } } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.changes).toEqual([
@@ -114,7 +113,7 @@ describe("planMachine — docker", () => {
   test("a stored soft limit alone diffs against the live reservation", async () => {
     const high = 4 * 1024 ** 3;
     execOutputMock.mockImplementation(async () => inspectAnswer({}));
-    const result = await planMachine(dockerEntry({ memory: { high } }));
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830, machine: { memory: { high } } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.changes).toEqual([
@@ -129,7 +128,7 @@ describe("planMachine — docker", () => {
     execOutputMock.mockImplementation(async () =>
       inspectAnswer({ memory: applied, reservation: applied, swap: applied }),
     );
-    const result = await planMachine(dockerEntry());
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830 }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.changes).toEqual([
@@ -145,7 +144,7 @@ describe("planMachine — docker", () => {
       throw new Error("No such object: asst_plan_docker-assistant");
     });
     const max = 8 * 1024 ** 3;
-    const result = await planMachine(dockerEntry({ memory: { max } }));
+    const result = await planMachine(planEntry({ assistantId: "asst_plan_docker", cloud: "docker", port: 7830, machine: { memory: { max } } }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.applied).toBeUndefined();
@@ -159,12 +158,12 @@ describe("planMachine — docker", () => {
 
 describe("planMachine — remotes without a docker diff", () => {
   test("local: the policy is a hint — never a recreate", async () => {
-    const result = await planMachine({
+    const result = await planMachine(planEntry({
       assistantId: "asst_plan_local",
       cloud: "local",
       port: 7830,
       machine: { memory: { high: 4 * 1024 ** 3 } },
-    } as unknown as LockfileAssistant);
+    }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.applied).toBeUndefined();
@@ -175,11 +174,11 @@ describe("planMachine — remotes without a docker diff", () => {
   });
 
   test("local with no policy says what unset means", async () => {
-    const result = await planMachine({
+    const result = await planMachine(planEntry({
       assistantId: "asst_plan_local",
       cloud: "local",
       port: 7830,
-    } as unknown as LockfileAssistant);
+    }));
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.note).toContain("derived from the machine's total");
@@ -187,10 +186,10 @@ describe("planMachine — remotes without a docker diff", () => {
   });
 
   test("unsupported remotes refuse the plan like their sleep and wake do", async () => {
-    const result = await planMachine({
+    const result = await planMachine(planEntry({
       assistantId: "asst_plan_cloud",
       cloud: "cloud",
-    } as unknown as LockfileAssistant);
+    }));
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(400);
