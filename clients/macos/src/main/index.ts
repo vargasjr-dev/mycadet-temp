@@ -85,6 +85,11 @@ startApp({
   rendererUsesAppProtocol: () => true,
   ...(nativeNotifications ? { notifications: nativeNotifications } : {}),
   async setup() {
+    // This one can stay in clients/macos, makes sense
+    installDock();
+
+    // Everything below here I'm more skeptical
+
     installLoginItem();
     installLoginItemIpc();
     installHotkeyHelper();
@@ -93,7 +98,6 @@ startApp({
     registerCompanionSurfaceSync(setCompanionSurfaceVisible);
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
     installCompanionWindow();
-    installDock();
     installShare();
     if (nativeNotifications) {
       Notification.isSupported();
