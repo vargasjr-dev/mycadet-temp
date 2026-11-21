@@ -72,7 +72,7 @@ describe("notifyGatewayOfPublicUrl", () => {
     const call = loopbackSafeFetchMock.mock.calls[0]!;
     expect(String(call[0])).toBe("http://127.0.0.1:7832/v1/ingress/domains");
     expect(call[1]!.method).toBe("POST");
-    expect((call[1]!.headers as Record<string, string>).Authorization).toBe(
+    expect(new Headers(call[1]!.headers).get("Authorization")).toBe(
       "Bearer tok_file_abc",
     );
     expect(JSON.parse(String(call[1]!.body))).toEqual({
@@ -103,9 +103,7 @@ describe("notifyGatewayOfPublicUrl", () => {
 
     const call = loopbackSafeFetchMock.mock.calls[0]!;
     expect(String(call[0])).toBe("http://127.0.0.1:7830/v1/ingress/domains");
-    expect(call[1]!.headers as Record<string, string>).not.toHaveProperty(
-      "Authorization",
-    );
+    expect(new Headers(call[1]!.headers).get("Authorization")).toBeNull();
   });
 
   test("is best-effort — a failed save logs and resolves, never throws", async () => {
