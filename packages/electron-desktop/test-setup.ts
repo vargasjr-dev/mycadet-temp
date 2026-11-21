@@ -14,6 +14,41 @@ import { mock } from "bun:test";
  * at first import, so a re-registration (not an in-place patch) is what a
  * later import sees.
  */
+/**
+ * Every `ipcMain.handle` registration the package's modules make against the
+ * shared surface, keyed by channel. Tests that removed the handle-injection
+ * seams (the registrar is always the shared one) capture handlers here
+ * instead: `recordedIpcHandlers.get(channel)` returns the origin-validating
+ * wrapper — invoke it with `{ senderFrame: { origin } }` built from
+ * `resolveAllowedOrigin()`.
+ */
+export const recordedIpcHandlers = new Map<
+  string,
+  (...args: unknown[]) => unknown
+>();
+const handleRecord = (
+  channel: string,
+  handler: (...args: unknown[]) => unknown,
+): void => {
+  recordedIpcHandlers.set(channel, handler);
+};
+
+/** Every `ipcMain.on` listener, per channel — the sync channels and the
+ * fire-and-forget ones. Invoke a listener with a stub event that carries
+ * `senderFrame`/`sender` (and reads back `event.returnValue` for sync). */
+export const recordedIpcOnListeners = new Map<
+  string,
+  Array<(...args: unknown[]) => unknown>
+>();
+const onRecord = (
+  channel: string,
+  listener: (...args: unknown[]) => unknown,
+): void => {
+  const list = recordedIpcOnListeners.get(channel) ?? [];
+  list.push(listener);
+  recordedIpcOnListeners.set(channel, list);
+};
+
 const pristineElectronSurface: Record<string, unknown> = {
   app: {
     isPackaged: false,
@@ -135,10 +170,12 @@ const pristineElectronSurface: Record<string, unknown> = {
     show() {}
   },
   ipcMain: {
-    handle: () => undefined,
+    handle: handleRecord,
     handleOnce: () => undefined,
-    on: () => undefined,
-    removeHandler: () => undefined,
+    on: onRecord,
+    removeHandler: (channel: string) => {
+      recordedIpcHandlers.delete(channel);
+    },
   },
   nativeImage: {
     createEmpty: () => ({
@@ -169,6 +206,7 @@ const pristineElectronSurface: Record<string, unknown> = {
         onBeforeSendHeaders: () => undefined,
       },
       setPermissionRequestHandler: () => undefined,
+      setPermissionCheckHandler: () => undefined,
       setWindowOpenHandler: () => undefined,
       getPreloads: () => [],
       setPreloads: () => undefined,
@@ -255,6 +293,19 @@ const electronSurface: Record<string, unknown> = { ...pristineElectronSurface };
 const electronDefaultSurface: Record<string, unknown> = {
   ...pristineElectronSurface,
 };
+
+/**
+ * The mock's `app` member merged over the base surface — a test's
+ * `electronMock({ app: { ... } })` replaces the whole `app` object (the
+ * top-level rule), so tests that need most of the base app plus a tweak
+ * build the override with this.
+ */
+export const electronAppOverride = (
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> => ({
+  ...(pristineElectronSurface.app as Record<string, unknown>),
+  ...overrides,
+});
 
 /**
  * The setup's electron surface with a test's overrides merged in (two

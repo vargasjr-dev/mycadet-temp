@@ -1,4 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 type Listener = () => void;
 
@@ -6,25 +7,28 @@ const appListeners = new Map<string, Listener>();
 const shortcutListeners = new Map<string, Listener>();
 let focusedWindow: object | null = null;
 
-mock.module("electron", () => ({
-  app: {
-    on: (event: string, listener: Listener) =>
-      appListeners.set(event, listener),
-    off: (event: string) => appListeners.delete(event),
-  },
-  BrowserWindow: class {
-    static getFocusedWindow() {
-      return focusedWindow;
-    }
-  },
-  globalShortcut: {
-    register: (accelerator: string, listener: Listener) => {
-      shortcutListeners.set(accelerator, listener);
-      return true;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      on: (event: string, listener: Listener) =>
+        appListeners.set(event, listener),
+      off: (event: string) => appListeners.delete(event),
     },
-    unregister: (accelerator: string) => shortcutListeners.delete(accelerator),
-  },
-}));
+    BrowserWindow: class {
+      static getFocusedWindow() {
+        return focusedWindow;
+      }
+    },
+    globalShortcut: {
+      register: (accelerator: string, listener: Listener) => {
+        shortcutListeners.set(accelerator, listener);
+        return true;
+      },
+      unregister: (accelerator: string) =>
+        shortcutListeners.delete(accelerator),
+    },
+  }),
+);
 
 const { createDictationEscapeMonitor } =
   await import("./dictation-escape-monitor");

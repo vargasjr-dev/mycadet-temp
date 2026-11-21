@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { CompanionSize, CompanionSizeAxis } from "@mycadet/ipc-contract";
+import { electronMock } from "../test-setup";
 
 // Tray stub: records constructions, event listeners, and image swaps.
 type TrayCall = { event: string; handler: (...args: unknown[]) => void };
@@ -47,45 +48,47 @@ const themeListeners = new Map<string, () => void>();
 const appRelaunchMock = mock(() => undefined);
 const appQuitMock = mock(() => undefined);
 
-mock.module("electron", () => ({
-  app: {
-    name: "Cadet Test",
-    on: (event: string, handler: () => void) => {
-      appListeners.set(event, handler);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      name: "Cadet Test",
+      on: (event: string, handler: () => void) => {
+        appListeners.set(event, handler);
+      },
+      relaunch: appRelaunchMock,
+      quit: appQuitMock,
     },
-    relaunch: appRelaunchMock,
-    quit: appQuitMock,
-  },
-  BrowserWindow: class {
-    static getFocusedWindow() {
-      return null;
-    }
-    static getAllWindows() {
-      return [];
-    }
-  },
-  Menu: {
-    buildFromTemplate: buildFromTemplateMock,
-  },
-  Tray: class {
-    constructor(_icon: unknown) {
-      const stub = makeTray();
-      trays.push(stub);
-      Object.assign(this, stub);
-    }
-  },
-  nativeTheme: {
-    on: (event: string, handler: () => void) => {
-      themeListeners.set(event, handler);
+    BrowserWindow: class {
+      static getFocusedWindow() {
+        return null;
+      }
+      static getAllWindows() {
+        return [];
+      }
     },
-    removeListener: (event: string) => {
-      themeListeners.delete(event);
+    Menu: {
+      buildFromTemplate: buildFromTemplateMock,
     },
-  },
-  shell: {
-    openExternal: mock(() => Promise.resolve()),
-  },
-}));
+    Tray: class {
+      constructor(_icon: unknown) {
+        const stub = makeTray();
+        trays.push(stub);
+        Object.assign(this, stub);
+      }
+    },
+    nativeTheme: {
+      on: (event: string, handler: () => void) => {
+        themeListeners.set(event, handler);
+      },
+      removeListener: (event: string) => {
+        themeListeners.delete(event);
+      },
+    },
+    shell: {
+      openExternal: mock(() => Promise.resolve()),
+    },
+  }),
+);
 
 /** Defaults to a macOS-shaped build, which is the one that has the surface. */
 let companionSupported = true;

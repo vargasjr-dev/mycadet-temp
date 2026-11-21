@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { WINDOW_ATTENTION } from "@mycadet/ipc-contract";
+import { electronMock } from "../test-setup";
 
 // `app.on` subscriptions are captured by event name so the test can fire
 // them at will, and `BrowserWindow.getAllWindows` returns a controllable
@@ -82,10 +83,12 @@ interface StubWindow extends StubEmitter, WindowState {
 
 let windows: StubWindow[] = [];
 
-mock.module("electron", () => ({
-  app: { on: appOnMock, off: appOffMock },
-  BrowserWindow: { getAllWindows: () => windows },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: { on: appOnMock, off: appOffMock },
+    BrowserWindow: { getAllWindows: () => windows },
+  }),
+);
 
 const { installWindowAttention } = await import("./window-attention");
 

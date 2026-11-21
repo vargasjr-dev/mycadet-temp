@@ -379,8 +379,8 @@ const cliPathItems = (): MenuItemConstructorOptions[] => {
   ];
 };
 
-/** The macOS app menu — About, updates, Settings, CLI rows, session, roles. */
-const macAppMenu = (): MenuItemConstructorOptions => {
+/** The app menu — About, updates, Settings, CLI rows, session, roles. */
+const appMenu = (): MenuItemConstructorOptions => {
   const isDev = !app.isPackaged;
   const cliItems = cliPathItems();
 
@@ -460,11 +460,6 @@ const installCliAction = (): (() => void) | undefined => {
       };
 };
 
-/** The About action, the same window the shells' install opened. */
-const openAboutAction = (): void => {
-  openAboutWindow();
-};
-
 /**
  * The desktop menu template — the darwin app menu prepended on macOS.
  */
@@ -476,7 +471,7 @@ export const buildDesktopMenu = (): MenuItemConstructorOptions[] => {
     // ride the app menu, the fullscreen chord, the zoom role, and the
     // companion/front rows built from the shared companion state.
     return [
-      macAppMenu(),
+      appMenu(),
       fileMenu(),
       editMenu(),
       viewMenu({ fullscreenAccelerator: MAC_FULLSCREEN_ACCELERATOR }),
@@ -490,7 +485,7 @@ export const buildDesktopMenu = (): MenuItemConstructorOptions[] => {
     editMenu(),
     viewMenu(),
     windowMenu(),
-    helpMenu({ openAbout: openAboutAction, checkForUpdates }),
+    helpMenu({ openAbout: openAboutWindow, checkForUpdates }),
   ];
 };
 

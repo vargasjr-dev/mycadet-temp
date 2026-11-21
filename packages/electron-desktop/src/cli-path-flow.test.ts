@@ -208,7 +208,7 @@ describe("runInstallCliCommandFlow", () => {
     expect(lastDialog()?.detail).not.toContain("shell profile");
   });
 
-  test("shadowed + inPath names the winning binary and the npm uninstall fix", async () => {
+  test("shadowed + inPath names the winning binary and tells the user the npm install is fine to keep", async () => {
     setState({
       kind: "shadowed",
       shadowedBy: "/opt/homebrew/bin/cadet",
@@ -220,11 +220,15 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(writeTextMock).not.toHaveBeenCalled();
     expect(lastDialog()?.detail).toContain("/opt/homebrew/bin/cadet");
-    expect(lastDialog()?.detail).toContain("npm uninstall -g @mycadet/cli");
+    // The npm-global install is how local hatches happen, so the copy never
+    // advises uninstalling it — it explains the precedence and stops.
+    expect(lastDialog()?.detail).toContain("will take precedence");
+    expect(lastDialog()?.detail).toContain("fine to keep");
+    expect(lastDialog()?.detail).not.toContain("npm uninstall");
     expect(lastDialog()?.detail).not.toContain("clipboard");
   });
 
-  test("shadowed without PATH adds the export-line help alongside the npm advice", async () => {
+  test("shadowed without PATH adds the export-line help alongside the precedence note", async () => {
     setState({
       kind: "shadowed",
       shadowedBy: "/opt/homebrew/bin/cadet",
@@ -236,7 +240,8 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
     expect(writeTextMock).toHaveBeenCalledWith(PATH_EXPORT_LINE);
-    expect(lastDialog()?.detail).toContain("npm uninstall -g @mycadet/cli");
+    expect(lastDialog()?.detail).toContain("will take precedence");
+    expect(lastDialog()?.detail).not.toContain("npm uninstall");
     expect(lastDialog()?.detail).toContain("copied to your clipboard");
   });
 
@@ -253,7 +258,8 @@ describe("runInstallCliCommandFlow", () => {
 
     expect(writeTextMock).toHaveBeenCalledTimes(1);
     expect(writeTextMock).toHaveBeenCalledWith(FISH_ADD_PATH_LINE);
-    expect(lastDialog()?.detail).toContain("npm uninstall -g @mycadet/cli");
+    expect(lastDialog()?.detail).toContain("will take precedence");
+    expect(lastDialog()?.detail).not.toContain("npm uninstall");
     expect(lastDialog()?.detail).toContain("fish command");
   });
 

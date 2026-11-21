@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 type StubWebContents = {
   on: (
@@ -75,37 +76,33 @@ const setAboutPanelOptionsMock = mock((_opts: unknown) => undefined);
 const ipcHandleMock = mock((_channel: string, _handler: unknown) => undefined);
 const openExternalMock = mock(() => Promise.resolve());
 
-mock.module("electron", () => ({
-  app: {
-    getVersion: getVersionMock,
-    setAboutPanelOptions: setAboutPanelOptionsMock,
-  },
-  BrowserWindow: class {
-    constructor() {
-      const win = makeWindow();
-      constructed.push(win);
-      // Mutate `this` so the production code's per-instance method
-      // bindings (`aboutWindow.show()`, etc.) reach the stub. Caller
-      // never holds the prototype instance directly.
-      Object.assign(this, win);
-    }
-  },
-  ipcMain: {
-    handle: ipcHandleMock,
-  },
-  shell: {
-    openExternal: openExternalMock,
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getVersion: getVersionMock,
+      setAboutPanelOptions: setAboutPanelOptionsMock,
+    },
+    BrowserWindow: class {
+      constructor() {
+        const win = makeWindow();
+        constructed.push(win);
+        // Mutate `this` so the production code's per-instance method
+        // bindings (`aboutWindow.show()`, etc.) reach the stub. Caller
+        // never holds the prototype instance directly.
+        Object.assign(this, win);
+      }
+    },
+    ipcMain: {
+      handle: ipcHandleMock,
+    },
+    shell: {
+      openExternal: openExternalMock,
+    },
+  }),
+);
 
 const { getVersionInfo, installAbout, openAboutWindow } =
   await import("./about");
-
-const aboutIpc = {
-  handle: (channel: string, _schema: unknown, handler: unknown): void => {
-    ipcHandleMock(channel, handler);
-  },
-};
 
 beforeEach(() => {
   constructed = [];
@@ -144,9 +141,9 @@ describe("getVersionInfo", () => {
 // across multiple `test()` blocks. One call, multiple assertions.
 describe("installAbout", () => {
   test("registers IPC handlers, populates the About panel, and is idempotent on repeated calls", () => {
-    installAbout(aboutIpc);
-    installAbout(aboutIpc);
-    installAbout(aboutIpc);
+    installAbout();
+    installAbout();
+    installAbout();
 
     const channels = ipcHandleMock.mock.calls.map((c) => c[0]);
     expect(channels).toContain("cadet:app:versionInfo");

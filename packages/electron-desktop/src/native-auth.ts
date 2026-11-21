@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { z } from "zod";
 
-import type { createIpcRegistrar } from "./ipc";
+import { handle, handleSync } from "./ipc";
 import { clearNotificationIdentityMemory } from "./notification-identity-memory";
 import type {
   clearSessionToken,
@@ -23,11 +23,6 @@ export function generateState(): string {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-type IpcRegistrar = Pick<
-  ReturnType<typeof createIpcRegistrar>,
-  "handle" | "handleSync"
->;
-
 export interface NativeAuthCallback {
   redirectUri: string;
   waitForCode: Promise<string>;
@@ -37,7 +32,6 @@ export interface NativeAuthCallback {
 export interface NativeAuthOptions {
   activateWindow: () => void | Promise<void>;
   getCloudUrl: () => string;
-  ipc: IpcRegistrar;
   openExternal: (url: string) => void | Promise<void>;
   removeCookie: (url: string, name: string) => Promise<void>;
   startCallback?: (expectedState: string) => Promise<NativeAuthCallback>;
@@ -154,25 +148,23 @@ export const installNativeAuth = (): void => {
   const options = getRuntime();
   void clearLegacySessionCookies();
 
-  options.ipc.handle(
+  handle(
     "cadet:auth:startOAuth",
     startOAuthSchema,
     async ([authOptions]): Promise<{ sessionToken: string }> =>
       startOAuth(authOptions),
   );
 
-  options.ipc.handle("cadet:auth:cancelOAuth", z.tuple([]), () => {
+  handle("cadet:auth:cancelOAuth", z.tuple([]), () => {
     activePkceCancel?.();
   });
 
-  options.ipc.handle("cadet:auth:signOut", z.tuple([]), () => {
+  handle("cadet:auth:signOut", z.tuple([]), () => {
     clearNotificationIdentityMemory();
     options.sessionStore.clear();
   });
 
-  options.ipc.handleSync("cadet:auth:getSessionToken", () =>
-    options.sessionStore.get(),
-  );
+  handleSync("cadet:auth:getSessionToken", () => options.sessionStore.get());
 };
 
 export const __resetForTesting = (): void => {

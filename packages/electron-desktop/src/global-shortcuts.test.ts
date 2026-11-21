@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 let quitListener: (() => void) | null = null;
 let settingsListener: (() => void) | null = null;
@@ -6,24 +7,26 @@ let registrationResults: boolean[] = [];
 const registered: string[] = [];
 const unregistered: string[] = [];
 
-mock.module("electron", () => ({
-  app: {
-    on: (_event: string, listener: () => void) => {
-      quitListener = listener;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      on: (_event: string, listener: () => void) => {
+        quitListener = listener;
+      },
+      off: () => undefined,
     },
-    off: () => undefined,
-  },
-  BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
-  globalShortcut: {
-    register: (accelerator: string) => {
-      registered.push(accelerator);
-      return registrationResults.shift() ?? true;
+    BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
+    globalShortcut: {
+      register: (accelerator: string) => {
+        registered.push(accelerator);
+        return registrationResults.shift() ?? true;
+      },
+      unregister: (accelerator: string) => {
+        unregistered.push(accelerator);
+      },
     },
-    unregister: (accelerator: string) => {
-      unregistered.push(accelerator);
-    },
-  },
-}));
+  }),
+);
 
 const { configureHotkeySettings } = await import("./commands");
 const { installGlobalShortcuts, __resetGlobalShortcutsForTesting } =

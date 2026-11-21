@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 // `powerMonitor`'s subscriptions are captured by name so the test can
 // fire them at will. `BrowserWindow.getAllWindows` returns a controllable
@@ -18,11 +19,13 @@ let windows: StubWindow[] = [];
 
 const appOnMock = mock((_event: string, _handler: () => void) => undefined);
 
-mock.module("electron", () => ({
-  powerMonitor: { on: powerOnMock },
-  BrowserWindow: { getAllWindows: () => windows },
-  app: { on: appOnMock },
-}));
+mock.module("electron", () =>
+  electronMock({
+    powerMonitor: { on: powerOnMock },
+    BrowserWindow: { getAllWindows: () => windows },
+    app: { on: appOnMock },
+  }),
+);
 
 const { __resetForTesting, installPowerEvents } =
   await import("./power-events");

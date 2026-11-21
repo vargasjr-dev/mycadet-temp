@@ -9,14 +9,12 @@ import { installBundleFlow } from "@mycadet/electron-desktop/bundle-flow";
 import { createBundleHostProvider } from "@mycadet/electron-desktop";
 
 import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
-import { handle, on } from "@mycadet/electron-desktop/ipc";
 
 export const installMacBundleWorkflow = (): void => {
   configureBundlePlatform({
     ...createBundleHostProvider(),
     bundlesRoot: () => path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     rendererBase: () => RENDERER_BASE_PROD,
-    ipc: { handle, on },
   });
   installBundleFlow();
 };

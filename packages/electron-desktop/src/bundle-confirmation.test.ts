@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { BundleScanData } from "./bundle-manager";
+import {
+  electronMock,
+  recordedIpcHandlers,
+  recordedIpcOnListeners,
+} from "../test-setup";
 
 type StubWebContents = {
   on: (
@@ -80,41 +85,27 @@ const makeWindow = (): StubWindow => {
   return win;
 };
 
-const registerGetDataMock = mock((_handler: () => unknown) => undefined);
-const registerResponseMock = mock(
-  (_handler: (accepted: boolean) => void) => undefined,
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      isPackaged: false,
+    },
+    BrowserWindow: class {
+      constructor() {
+        const win = makeWindow();
+        constructed.push(win);
+        Object.assign(this, win);
+      }
+    },
+  }),
 );
 
-mock.module("electron", () => ({
-  app: {
-    isPackaged: false,
-  },
-  BrowserWindow: class {
-    constructor() {
-      const win = makeWindow();
-      constructed.push(win);
-      Object.assign(this, win);
-    }
-  },
-}));
-
+// The confirmation channels ride the shared registrar, whose ipcMain
+// registrations the shared surface records; the fake events derive their
+// origin from the guard's own resolver.
 mock.module("./bundle-platform", () => ({
   getBundlePlatform: () => ({
     rendererBase: () => "http://localhost:5173/assistant",
-    ipc: {
-      handle: (_channel: string, _schema: unknown, handler: () => unknown) => {
-        registerGetDataMock(handler);
-      },
-      on: (
-        _channel: string,
-        _schema: unknown,
-        handler: (args: [boolean]) => void,
-      ) => {
-        registerResponseMock((accepted) => {
-          handler([accepted]);
-        });
-      },
-    },
   }),
 }));
 
@@ -149,8 +140,6 @@ beforeEach(() => {
   showMock.mockClear();
   focusMock.mockClear();
   loadURLMock.mockClear();
-  registerGetDataMock.mockClear();
-  registerResponseMock.mockClear();
 });
 
 afterEach(() => {
@@ -211,7 +200,9 @@ describe("openBundleConfirmation", () => {
 describe("installBundleConfirmation", () => {
   test("registers getData (handle) and respond (on) IPC channels", () => {
     installBundleConfirmation();
-    expect(registerGetDataMock).toHaveBeenCalledTimes(1);
-    expect(registerResponseMock).toHaveBeenCalledTimes(1);
+    expect(recordedIpcHandlers.has("cadet:bundleConfirm:getData")).toBe(true);
+    expect(recordedIpcOnListeners.has("cadet:bundleConfirm:respond")).toBe(
+      true,
+    );
   });
 });

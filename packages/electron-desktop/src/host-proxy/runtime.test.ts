@@ -1,16 +1,19 @@
 import { expect, mock, test } from "bun:test";
+import { electronMock } from "../../test-setup";
 
 const MOCK_DEVICE_ID = "test-device-00000000-0000-0000-0000-000000000000";
 
-mock.module("electron", () => ({
-  app: { isPackaged: false, once: () => undefined },
-  safeStorage: { isEncryptionAvailable: () => false },
-  powerMonitor: {
-    getSystemIdleState: () => "active",
-    addListener: () => undefined,
-    removeListener: () => undefined,
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: { isPackaged: false, once: () => undefined },
+    safeStorage: { isEncryptionAvailable: () => false },
+    powerMonitor: {
+      getSystemIdleState: () => "active",
+      addListener: () => undefined,
+      removeListener: () => undefined,
+    },
+  }),
+);
 
 mock.module("../device-id", () => ({
   getDeviceId: () => MOCK_DEVICE_ID,

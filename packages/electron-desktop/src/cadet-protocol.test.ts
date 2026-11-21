@@ -3,11 +3,14 @@ import path from "node:path";
 import { describe, expect, mock, test } from "bun:test";
 
 import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
+import { electronMock } from "../test-setup";
 
-mock.module("electron", () => ({
-  net: { fetch: mock(async () => new Response()) },
-  protocol: { handle: mock(() => undefined) },
-}));
+mock.module("electron", () =>
+  electronMock({
+    net: { fetch: mock(async () => new Response()) },
+    protocol: { handle: mock(() => undefined) },
+  }),
+);
 
 const { mimeTypeForPath, resolveBundlePath } = await import("./cadet-protocol");
 

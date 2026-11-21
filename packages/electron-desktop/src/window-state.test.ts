@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 type SavedState = {
   x: number;
@@ -61,13 +62,15 @@ mock.module("electron-store", () => ({
 
 // Override the `screen` surface from `test-setup.ts` so each test can
 // shape the work-area to its scenario.
-mock.module("electron", () => ({
-  BrowserWindow: class {},
-  screen: {
-    getDisplayMatching: () => ({ workArea }),
-    getPrimaryDisplay: () => ({ workArea }),
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: class {},
+    screen: {
+      getDisplayMatching: () => ({ workArea }),
+      getPrimaryDisplay: () => ({ workArea }),
+    },
+  }),
+);
 
 const {
   restoreBounds,

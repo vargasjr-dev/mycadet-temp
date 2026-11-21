@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 type PermissionCheckHandler = NonNullable<
   Parameters<Electron.Session["setPermissionCheckHandler"]>[0]
@@ -21,15 +22,17 @@ const setPermissionRequestHandlerMock = mock(
   },
 );
 
-mock.module("electron", () => ({
-  app: { isPackaged: true },
-  session: {
-    defaultSession: {
-      setPermissionCheckHandler: setPermissionCheckHandlerMock,
-      setPermissionRequestHandler: setPermissionRequestHandlerMock,
+mock.module("electron", () =>
+  electronMock({
+    app: { isPackaged: true },
+    session: {
+      defaultSession: {
+        setPermissionCheckHandler: setPermissionCheckHandlerMock,
+        setPermissionRequestHandler: setPermissionRequestHandlerMock,
+      },
     },
-  },
-}));
+  }),
+);
 
 const permissionPolicy = await import("./permissions");
 const { denyAllPermissions, installPermissionHandler } = permissionPolicy;

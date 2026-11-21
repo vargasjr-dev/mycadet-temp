@@ -2,11 +2,11 @@ import path from "node:path";
 
 import { appendFileSync } from "node:fs";
 
-import { readRuntimeManifest } from "@mycadet/electron-desktop/classic-shell";
+import { readRuntimeManifest } from "@mycadet/electron-desktop";
 import {
   resolveCliLauncherPaths,
   uninstallCliLauncher,
-} from "@mycadet/electron-desktop/classic-shell";
+} from "@mycadet/electron-desktop";
 
 export function uninstallPackagedCli(
   execPath: string,

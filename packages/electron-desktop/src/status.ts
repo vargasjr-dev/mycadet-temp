@@ -9,7 +9,8 @@ import {
   assistantStatusSchema,
 } from "@mycadet/ipc-contract";
 
-import { handle, log, on } from "./presence-runtime";
+import { handle, on } from "./ipc";
+import log from "./app-logger";
 
 /**
  * Assistant connection status driving the menu-bar (Tray) indicator.
@@ -132,6 +133,12 @@ export const setStatus = (status: AssistantStatus): void => {
 };
 
 const connectionPayloadSchema = z.tuple([assistantStatusSchema]);
+
+// Test seam: the channel boundary schemas, for tests asserting the parse.
+export const __statusSchemasForTesting = {
+  connection: connectionPayloadSchema,
+  device: z.tuple([z.boolean()]),
+};
 
 /**
  * Register the `cadet:status:connection` renderer→main channel. Fire-and-

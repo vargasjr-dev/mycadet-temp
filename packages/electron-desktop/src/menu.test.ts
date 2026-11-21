@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
 import type { CliPathMenuState } from "./menu";
+import { electronMock } from "../test-setup";
 
 const sent: unknown[] = [];
 const builtTemplates: unknown[][] = [];
@@ -15,53 +16,55 @@ const popups: Array<{
   options: { x: number; y: number; window: unknown };
 }> = [];
 
-mock.module("electron", () => ({
-  app: electronApp,
-  BrowserWindow: {
-    getFocusedWindow: () => ({
-      webContents: { send: (...args: unknown[]) => sent.push(args) },
-    }),
-    getAllWindows: () => [],
-    fromWebContents: () => ({ isDestroyed: () => false }),
-  },
-  Menu: {
-    buildFromTemplate: (template: unknown) => {
-      builtTemplates.push(template as never);
-      return {
-        template,
-        popup: (options: {
-          x: number;
-          y: number;
-          window: unknown;
-          callback: () => void;
-        }) => {
-          popups.push({ template, options });
-          options.callback();
-        },
-      };
+mock.module("electron", () =>
+  electronMock({
+    app: electronApp,
+    BrowserWindow: {
+      getFocusedWindow: () => ({
+        webContents: { send: (...args: unknown[]) => sent.push(args) },
+      }),
+      getAllWindows: () => [],
+      fromWebContents: () => ({ isDestroyed: () => false }),
     },
-    setApplicationMenu: () => undefined,
-  },
-  // The shared ipc registrar needs the main-process surface at import time.
-  ipcMain: {
-    handle: () => undefined,
-    handleOnce: () => undefined,
-    on: () => undefined,
-    removeHandler: () => undefined,
-  },
-  shell: { openExternal: () => Promise.resolve() },
-  // The command graph's palette module links `screen` for its positioning;
-  // no test here drives a palette window, so the bindings need only exist.
-  screen: {
-    getDisplayMatching: () => ({
-      workArea: { x: 0, y: 0, width: 1920, height: 1080 },
-    }),
-    getDisplayNearestPoint: () => ({
-      workArea: { x: 0, y: 0, width: 1920, height: 1080 },
-    }),
-    getCursorScreenPoint: () => ({ x: 0, y: 0 }),
-  },
-}));
+    Menu: {
+      buildFromTemplate: (template: unknown) => {
+        builtTemplates.push(template as never);
+        return {
+          template,
+          popup: (options: {
+            x: number;
+            y: number;
+            window: unknown;
+            callback: () => void;
+          }) => {
+            popups.push({ template, options });
+            options.callback();
+          },
+        };
+      },
+      setApplicationMenu: () => undefined,
+    },
+    // The shared ipc registrar needs the main-process surface at import time.
+    ipcMain: {
+      handle: () => undefined,
+      handleOnce: () => undefined,
+      on: () => undefined,
+      removeHandler: () => undefined,
+    },
+    shell: { openExternal: () => Promise.resolve() },
+    // The command graph's palette module links `screen` for its positioning;
+    // no test here drives a palette window, so the bindings need only exist.
+    screen: {
+      getDisplayMatching: () => ({
+        workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+      }),
+      getDisplayNearestPoint: () => ({
+        workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+      }),
+      getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+    },
+  }),
+);
 
 // The menu reads every one of these states itself now: the session token,
 // the onboarding flag, the companion hidden flag, and the CLI wrapper's

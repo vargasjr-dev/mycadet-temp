@@ -316,7 +316,6 @@ configureCommandPaletteWindow({
   currentMainWindow: () => currentMainWindow,
   dispatchToMain: dispatchToMainMock,
   ensureMainWindowVisible: ensureVisibleMock,
-  handle: handleMock,
 });
 
 beforeEach(() => {

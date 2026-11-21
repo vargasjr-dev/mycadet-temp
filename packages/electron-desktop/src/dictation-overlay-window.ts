@@ -19,7 +19,7 @@ import {
   getFloatingWindow,
   repositionFloatingWindow,
 } from "./floating-window";
-import type { IpcHandle, IpcOn } from "./ipc";
+import { handle, on } from "./ipc";
 import { createModuleConfiguration } from "./module-configuration";
 
 /**
@@ -93,8 +93,6 @@ export interface DictationOverlayWindowDependencies {
   pollCursorForHover?: boolean;
   /** Diagnostic sink for overlay lifecycle and hit-test decisions. */
   log?: (message: string) => void;
-  handle: IpcHandle;
-  on: IpcOn;
 }
 
 const configuration =
@@ -430,7 +428,6 @@ export const installDictationOverlay = (
     return;
   }
   installed = true;
-  const { handle, on } = configuration.get();
 
   const controller = createDictationOverlayController({
     showOverlay,

@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { electronMock } from "../test-setup";
 
 // Only `electron` is stubbed (no Electron runtime / keychain in tests). The
 // store's fs calls run against a real per-test temp dir, so the file, its mode,
@@ -17,21 +18,23 @@ import path from "node:path";
 let userDataDir = "";
 let encryptionAvailable = true;
 
-mock.module("electron", () => ({
-  app: {
-    getPath: (name: string) => (name === "userData" ? userDataDir : "/tmp"),
-  },
-  safeStorage: {
-    isEncryptionAvailable: () => encryptionAvailable,
-    // Reversible tag so round-trips and bad blobs are checkable.
-    encryptString: (value: string) => Buffer.from(`enc:${value}`),
-    decryptString: (blob: Buffer) => {
-      const text = blob.toString();
-      if (!text.startsWith("enc:")) throw new Error("undecryptable blob");
-      return text.slice("enc:".length);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getPath: (name: string) => (name === "userData" ? userDataDir : "/tmp"),
     },
-  },
-}));
+    safeStorage: {
+      isEncryptionAvailable: () => encryptionAvailable,
+      // Reversible tag so round-trips and bad blobs are checkable.
+      encryptString: (value: string) => Buffer.from(`enc:${value}`),
+      decryptString: (blob: Buffer) => {
+        const text = blob.toString();
+        if (!text.startsWith("enc:")) throw new Error("undecryptable blob");
+        return text.slice("enc:".length);
+      },
+    },
+  }),
+);
 
 const {
   getSessionToken,

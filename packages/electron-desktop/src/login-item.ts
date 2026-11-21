@@ -1,7 +1,7 @@
 import { app } from "electron";
 import { z } from "zod";
 
-import type { IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 
 export interface LaunchAtLoginStore {
   read: () => boolean | null;
@@ -10,7 +10,6 @@ export interface LaunchAtLoginStore {
 }
 
 export interface LoginItemRuntime {
-  handle: IpcHandle;
   identity?: { path: string; args: string[] };
   store?: LaunchAtLoginStore;
 }
@@ -51,7 +50,6 @@ const syncLoginItem = (): void => {
 };
 
 export const installLoginItemIpc = (): void => {
-  const { handle } = requireRuntime();
   handle("cadet:launchAtLogin:get", z.tuple([]), readLaunchAtLogin);
   handle("cadet:launchAtLogin:set", z.tuple([z.boolean()]), ([enabled]) => {
     writeLaunchAtLogin(enabled);

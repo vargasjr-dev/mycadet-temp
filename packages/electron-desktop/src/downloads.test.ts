@@ -6,8 +6,7 @@ import {
   DOWNLOADS_REVEAL,
   type DownloadDoneEvent,
 } from "@mycadet/ipc-contract";
-
-import type { IpcHandle } from "./ipc";
+import { electronMock, recordedIpcHandlers } from "../test-setup";
 
 // `node:fs` is mocked so the save-path resolution is asserted structurally,
 // with no real disk access. `node:path` stays real (pure helper), so the
@@ -30,29 +29,26 @@ const willDownloadListeners: DownloadListener[] = [];
 const downloadFinishedMock = mock((_p: string) => undefined);
 const showItemInFolderMock = mock((_p: string) => undefined);
 const getPathMock = mock((_name: string) => "/Users/tester/Downloads");
-mock.module("electron", () => ({
-  app: {
-    getPath: getPathMock,
-    dock: { downloadFinished: downloadFinishedMock },
-  },
-  session: {
-    defaultSession: {
-      on: (channel: string, listener: DownloadListener) => {
-        if (channel === "will-download") {
-          willDownloadListeners.push(listener);
-        }
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getPath: getPathMock,
+      dock: { downloadFinished: downloadFinishedMock },
+    },
+    session: {
+      defaultSession: {
+        on: (channel: string, listener: DownloadListener) => {
+          if (channel === "will-download") {
+            willDownloadListeners.push(listener);
+          }
+        },
       },
     },
-  },
-  // The module registers its reveal handler through the shared ipc
-  // registrar; the test injects a capturing registrar, so the electron
-  // side only needs the import to resolve.
-  ipcMain: {
-    handle: () => undefined,
-    on: () => undefined,
-  },
-  shell: { showItemInFolder: showItemInFolderMock },
-}));
+    // The module registers its reveal handler through the shared ipc
+    // registrar, whose ipcMain.handle the shared surface records.
+    shell: { showItemInFolder: showItemInFolderMock },
+  }),
+);
 
 // Stand-in for Electron's `DownloadItem`: records the save path and replays
 // the `done` event on demand. `panelPath` simulates the destination the user
@@ -104,28 +100,29 @@ class FakeWebContents {
   }
 }
 
-// Capture the shell registrar's channel registrations so tests can invoke the
-// reveal handler the way a validated IPC message would.
-type RegisteredHandler = (args: unknown[]) => unknown;
-const ipcHandlers = new Map<string, RegisteredHandler>();
-const handle: IpcHandle = (channel, _schema, fn) => {
-  ipcHandlers.set(channel, fn as RegisteredHandler);
-};
-
 const { installDownloads, uniqueDownloadPath, __resetForTesting } =
   await import("./downloads");
 
 // Idempotent: a second call must not double-register (module-level flag).
-installDownloads({ handle });
-installDownloads({ handle });
+installDownloads();
+installDownloads();
 
 const DOWNLOADS = "/Users/tester/Downloads";
 const inDownloads = (name: string): string => path.join(DOWNLOADS, name);
 const fire = (item: FakeItem, webContents = new FakeWebContents()): void => {
   willDownloadListeners[0]!({}, item, webContents);
 };
+// The wrapper validates the sender's frame origin against the guard's own
+// resolver; the fake event derives it.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
+};
 const reveal = (id: string): void => {
-  ipcHandlers.get(DOWNLOADS_REVEAL)!([id]);
+  recordedIpcHandlers.get(DOWNLOADS_REVEAL)!(allowedEvent, id);
 };
 const free = (): boolean => false;
 

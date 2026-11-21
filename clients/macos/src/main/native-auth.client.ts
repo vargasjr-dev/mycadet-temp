@@ -3,7 +3,6 @@ import { app, session, shell } from "electron";
 import { configureNativeAuth } from "@mycadet/electron-desktop";
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
-import { handle, handleSync } from "@mycadet/electron-desktop/ipc";
 import { ensureVisible } from "./main-window";
 import {
   clearSessionToken,
@@ -17,7 +16,6 @@ configureNativeAuth({
     ensureVisible();
   },
   getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
-  ipc: { handle, handleSync },
   openExternal: (url) => shell.openExternal(url),
   removeCookie: (url, name) => session.defaultSession.cookies.remove(url, name),
   sessionStore: {

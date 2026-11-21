@@ -2,6 +2,7 @@ import { BrowserWindow } from "electron";
 import { z } from "zod";
 
 import { getBundlePlatform } from "./bundle-platform";
+import { handle, on } from "./ipc";
 import type { BundleScanData } from "./bundle-manager";
 import { createWindow } from "./windows";
 
@@ -59,23 +60,14 @@ export const openBundleConfirmation = (
 };
 
 export const installBundleConfirmation = (): void => {
-  const bundlePlatform = getBundlePlatform();
-  bundlePlatform.ipc.handle(
-    "cadet:bundleConfirm:getData",
-    z.tuple([]),
-    () => pendingData,
-  );
-  bundlePlatform.ipc.on(
-    "cadet:bundleConfirm:respond",
-    z.tuple([z.boolean()]),
-    ([accepted]) => {
-      if (pendingResolve) {
-        pendingResolve(accepted);
-        pendingResolve = null;
-      }
-      if (confirmationWindow) {
-        confirmationWindow.close();
-      }
-    },
-  );
+  handle("cadet:bundleConfirm:getData", z.tuple([]), () => pendingData);
+  on("cadet:bundleConfirm:respond", z.tuple([z.boolean()]), ([accepted]) => {
+    if (pendingResolve) {
+      pendingResolve(accepted);
+      pendingResolve = null;
+    }
+    if (confirmationWindow) {
+      confirmationWindow.close();
+    }
+  });
 };

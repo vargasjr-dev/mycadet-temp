@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+import { handle } from "./ipc";
+
 import { FEEDBACK_DIAGNOSTICS, FEEDBACK_LOGS } from "@mycadet/ipc-contract";
 
-import type { FeedbackDependencies, FeedbackIpc } from "./diagnostics-contract";
+import type { FeedbackDependencies } from "./diagnostics-contract";
 import { redactText, REDACTION_VERSION } from "./redact";
 
 export type { FeedbackDependencies } from "./diagnostics-contract";
@@ -14,13 +16,11 @@ let fs: { readFile: FeedbackDependencies["readFile"] };
 let getVersionInfo: FeedbackDependencies["getVersionInfo"];
 let getLogFilePaths: FeedbackDependencies["getLogFilePaths"];
 let hasSession: FeedbackDependencies["hasSession"];
-let handle: FeedbackIpc["handle"];
 
 export const configureFeedback = (dependencies: FeedbackDependencies): void => {
   ({ app, powerMonitor, os, getVersionInfo, getLogFilePaths, hasSession } =
     dependencies);
   fs = { readFile: dependencies.readFile };
-  handle = dependencies.ipc.handle;
 };
 
 export interface ElectronDiagnostics {

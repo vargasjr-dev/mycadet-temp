@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import path from "node:path";
+import { electronMock } from "../test-setup";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -48,19 +49,19 @@ let windows: Array<{
 }> = [];
 
 let appIsReady = true;
-mock.module("electron", () => ({
-  app: {
-    on: appOnMock,
-    isReady: () => appIsReady,
-  },
-  ipcMain: { handle: ipcHandleMock, on: ipcOnMock },
-  BrowserWindow: { getAllWindows: () => windows },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      on: appOnMock,
+      isReady: () => appIsReady,
+    },
+    ipcMain: { handle: ipcHandleMock, on: ipcOnMock },
+    BrowserWindow: { getAllWindows: () => windows },
+  }),
+);
 
 const ensureMainWindowVisibleMock = mock(async () => undefined);
 
-const { createIpcRegistrar } = await import("./ipc");
-const { isAllowedOrigin } = await import("./app-origin");
 const {
   __resetForTesting,
   configureFileOpen,
@@ -70,18 +71,16 @@ const {
   onFileOpen,
 } = await import("./file-open");
 
-const resolveAllowedOrigin = () => ({ protocol: "app:", host: "mycadet.ai" });
-const { handle, on } = createIpcRegistrar(
-  resolveAllowedOrigin,
-  isAllowedOrigin,
-);
 configureFileOpen({
   ensureMainWindowVisible: ensureMainWindowVisibleMock,
-  handle,
-  on,
 });
 
-const { protocol: allowedProtocol, host: allowedHost } = resolveAllowedOrigin();
+// The IPC wrapper rejects any sender whose frame origin isn't the app
+// renderer's; the fake sender derives from the guard's own resolver.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
 const allowedSenderFrame = { origin: `${allowedProtocol}//${allowedHost}` };
 const makeAllowedEvent = () => {
   const { sender, fireDestroyed } = makeSender();

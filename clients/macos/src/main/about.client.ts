@@ -5,7 +5,6 @@ import {
 import { getName, onNameChange } from "@mycadet/electron-desktop";
 
 import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
-import { handle } from "@mycadet/electron-desktop/ipc";
 
 configureAboutRuntime({
   // The About window renders the app bundle's root-based /about route,
@@ -16,5 +15,5 @@ configureAboutRuntime({
 });
 
 export const installAbout = (): void => {
-  installSharedAbout({ handle });
+  installSharedAbout();
 };

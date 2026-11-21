@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { BundleScanData, BundleMetadata } from "./bundle-manager";
+import { electronMock } from "../test-setup";
 
 // ---------------------------------------------------------------------------
 // Stubs and mocks
@@ -12,10 +13,12 @@ const netFetchMock = mock(
     new Response(null, { status: 500 }),
 );
 
-mock.module("electron", () => ({
-  dialog: { showErrorBox: showErrorBoxMock },
-  net: { fetch: netFetchMock },
-}));
+mock.module("electron", () =>
+  electronMock({
+    dialog: { showErrorBox: showErrorBoxMock },
+    net: { fetch: netFetchMock },
+  }),
+);
 
 const resolveActiveGatewayMock = mock(
   (): { assistantId: string; baseUrl: string } | null => null,

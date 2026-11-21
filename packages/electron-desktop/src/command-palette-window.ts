@@ -13,7 +13,7 @@ import {
   getFloatingWindow,
   repositionFloatingWindow,
 } from "./floating-window";
-import type { IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 import { createModuleConfiguration } from "./module-configuration";
 
 const COMMAND_PALETTE_KIND = "commandPalette";
@@ -31,7 +31,6 @@ export interface CommandPaletteWindowDependencies {
   > | null;
   dispatchToMain: (command: CadetCommand) => void;
   ensureMainWindowVisible: () => void | Promise<void>;
-  handle: IpcHandle;
 }
 
 const configuration =
@@ -199,7 +198,6 @@ export const installCommandPaletteWindow = (): void => {
     return;
   }
   installed = true;
-  const { handle } = configuration.get();
 
   handle(COMMAND_PALETTE_OPEN, z.tuple([]), () => {
     openCommandPaletteWindow();

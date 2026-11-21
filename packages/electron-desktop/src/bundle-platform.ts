@@ -1,7 +1,5 @@
 import type { Session } from "electron";
 
-import type { IpcRegistrar } from "./ipc";
-
 export const BUNDLES_DIR_NAME = "bundles";
 export const CADET_PROTOCOL = "cadet";
 
@@ -18,7 +16,6 @@ export interface BundleHostProvider {
 
 export interface BundlePlatform extends BundleHostProvider {
   bundlesRoot: () => string;
-  ipc: Pick<IpcRegistrar, "handle" | "on">;
   rendererBase: () => string;
 }
 

@@ -4,41 +4,31 @@ import path from "node:path";
 import { app } from "electron";
 import { z } from "zod";
 
-import { buildHelperToastRequest } from "../helper-toast-request";
-import {
-  configureNotifications,
-  installNotifications,
-  type NotificationCreateOptions,
-  type NotificationLike,
-} from "../notifications";
+import { buildHelperToastRequest } from "./helper-toast-request";
+import type {
+  NotificationCreateOptions,
+  NotificationLike,
+} from "./notifications";
 import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
 
-import { handle } from "../ipc";
-import log from "../app-logger";
-import { ensureVisible } from "../main-window";
+import log from "./app-logger";
 
 /**
- * Notifications feature for the classic-desktop shells. Delivery prefers the
- * native helper's `notifications/show` toast module where a helper binary
- * ships (Windows toasts are the only path with per-category action buttons,
- * and the helper reports activation back over JSON-RPC so clicks and buttons
- * route the same category metadata as macOS). Without the helper binary (dev
- * runs before `build:native-helper`, and every Linux install until a sidecar
- * ships), the shared module's default `electron.Notification` path delivers
- * click-only toasts.
+ * The helper toast mechanism: delivery through the native helper's
+ * `notifications/show` toast module where a helper binary ships (Windows
+ * toasts are the only path with per-category action buttons, and the helper
+ * reports activation back over JSON-RPC so clicks and buttons route the
+ * same category metadata as macOS). The helper's identity — its executable
+ * name, its dev-override env var, the sidecar client name — is the client's
+ * own; this module only resolves, supervises, and routes.
  *
  * A toast from a sender puts the assistant's avatar in the toast's image
  * slot, which the helper reads from a file, so the assistant's name is the
- * title and the conversation title becomes the subtitle. The default path
- * draws the same avatar through `electron.Notification`'s `icon`.
+ * title and the conversation title becomes the subtitle. Without a helper
+ * binary (dev runs before `build:native-helper`, and every Linux install
+ * until a sidecar ships) the shared module's default `electron.Notification`
+ * path delivers click-only toasts.
  */
-
-// The helper binary name and its dev-override env are per-platform names of
-// the same seam: one supervised sidecar the toasts ride.
-const HELPER_EXECUTABLE =
-  process.platform === "win32"
-    ? "Cadet.WindowsHelper.exe"
-    : "cadet-linux-helper";
 
 // Bound on toasts a user could still interact with.
 const MAX_TRACKED_TOASTS = 200;
@@ -54,17 +44,20 @@ const SHOW_RESULT_SCHEMA = z.object({
   errorMessage: z.string().optional(),
 });
 
-export const resolveHelperPath = (): string | null => {
-  const override =
-    process.env[
-      process.platform === "win32"
-        ? "CADET_WINDOWS_HELPER_PATH"
-        : "CADET_LINUX_HELPER_PATH"
-    ];
+/**
+ * Where this client's helper binary lives: the dev override first, then the
+ * packaged resources dir, then the dev publish dir. The executable name and
+ * override env var are the client's own.
+ */
+export const resolveHelperToastBinaryPath = (client: {
+  executable: string;
+  overrideEnvVar: string;
+}): string | null => {
+  const override = process.env[client.overrideEnvVar];
   // `resourcesPath` (the packaged install's resources dir) is only set under
   // an Electron runtime; the app-path candidate is the dev publish dir.
   const resourcesPath: string | undefined = process.resourcesPath;
-  const tail = ["native-helper", process.arch, HELPER_EXECUTABLE];
+  const tail = ["native-helper", process.arch, client.executable];
   const candidates = [
     ...(override ? [override] : []),
     ...(resourcesPath ? [path.join(resourcesPath, ...tail)] : []),
@@ -80,25 +73,27 @@ type ToastListener = (...args: unknown[]) => void;
  * client is created lazily on the first toast; activation events route back
  * to the matching toast's listeners by token.
  */
-export const createHelperToastFactory = (
-  helperPath: string,
-): ((options: NotificationCreateOptions) => NotificationLike) => {
-  let client: NativeSidecarClient | null = null;
+export const createHelperToastFactory = (client: {
+  helperPath: string;
+  /** The sidecar client name this shell's helper registers under. */
+  name: string;
+}): ((options: NotificationCreateOptions) => NotificationLike) => {
+  let sidecar: NativeSidecarClient | null = null;
   const listenersByToken = new Map<string, Record<string, ToastListener>>();
   let nextToken = 1;
 
   const ensureClient = (): NativeSidecarClient => {
-    if (client) {
-      return client;
+    if (sidecar) {
+      return sidecar;
     }
-    client = new NativeSidecarClient({
-      name: process.platform === "win32" ? "windows-helper" : "linux-helper",
-      resolveExecutablePath: () => helperPath,
+    sidecar = new NativeSidecarClient({
+      name: client.name,
+      resolveExecutablePath: () => client.helperPath,
       logger: log,
       // Generous: the first toast may wait on toast-identity registration.
       responseTimeoutMs: 10_000,
     });
-    client.onNotification(
+    sidecar.onNotification(
       "notifications/event",
       TOAST_EVENT_SCHEMA,
       (event) => {
@@ -112,8 +107,8 @@ export const createHelperToastFactory = (
         }
       },
     );
-    app.once("before-quit", () => client?.shutdown());
-    return client;
+    app.once("before-quit", () => sidecar?.shutdown());
+    return sidecar;
   };
 
   return (options) => {
@@ -162,15 +157,4 @@ export const createHelperToastFactory = (
     };
     return { on, show };
   };
-};
-
-export const install = (): void => {
-  const helperPath = resolveHelperPath();
-  configureNotifications({
-    ipc: { handle },
-    ensureVisible,
-    logger: log,
-    ...(helperPath ? { create: createHelperToastFactory(helperPath) } : {}),
-  });
-  installNotifications();
 };

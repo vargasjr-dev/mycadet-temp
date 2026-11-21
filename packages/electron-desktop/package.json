@@ -16,8 +16,7 @@
     "./bundle-flow": "./src/bundle-flow.ts",
     "./bundle-platform": "./src/bundle-platform.ts",
     "./capability-registry": "./src/capability-registry.ts",
-    "./classic-shell": "./src/classic-shell/index.ts",
-    "./cli-wrapper": "./src/cli-wrapper/index.ts",
+    "./classic-shell": "./src/classic-shell.ts",
     "./command-palette-window": "./src/command-palette-window.ts",
     "./commands": "./src/commands.ts",
     "./file-open": "./src/file-open.ts",
@@ -45,8 +44,10 @@
   },
   "dependencies": {
     "@mycadet/electron-utils": "workspace:*",
+    "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-contract": "workspace:*",
     "@mycadet/local-mode": "workspace:*",
+    "@mycadet/native-sidecar": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
     "electron-store": "11.0.2",
     "jszip": "3.10.1"

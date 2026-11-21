@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { electronMock } from "../test-setup";
 
 let isPackaged = false;
 let appPath = process.cwd();
@@ -17,19 +18,21 @@ const netFetch = mock(async (url: string) => {
   });
 });
 
-mock.module("electron", () => ({
-  app: {
-    get isPackaged() {
-      return isPackaged;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      get isPackaged() {
+        return isPackaged;
+      },
+      getAppPath: () => appPath,
     },
-    getAppPath: () => appPath,
-  },
-  net: { fetch: netFetch },
-  protocol: { handle: protocolHandle },
-  session: {
-    defaultSession: { cookies: { set: cookieSet, get: cookieGet } },
-  },
-}));
+    net: { fetch: netFetch },
+    protocol: { handle: protocolHandle },
+    session: {
+      defaultSession: { cookies: { set: cookieSet, get: cookieGet } },
+    },
+  }),
+);
 
 import * as realLocalMode from "@mycadet/local-mode";
 

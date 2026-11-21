@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { WebContents } from "electron";
+import { electronMock } from "../test-setup";
 
 // Capture the template each Menu.buildFromTemplate call receives and the
 // popup options, so tests can assert the menu shape and anchoring without a
@@ -17,10 +18,12 @@ const buildFromTemplateMock = mock((_template: TemplateItem[]) => ({
   popup: popupMock,
 }));
 const fromWebContentsMock = mock((_contents: unknown): unknown => fakeWindow);
-mock.module("electron", () => ({
-  Menu: { buildFromTemplate: buildFromTemplateMock },
-  BrowserWindow: { fromWebContents: fromWebContentsMock },
-}));
+mock.module("electron", () =>
+  electronMock({
+    Menu: { buildFromTemplate: buildFromTemplateMock },
+    BrowserWindow: { fromWebContents: fromWebContentsMock },
+  }),
+);
 
 const { installImageContextMenu } = await import("./image-context-menu");
 

@@ -74,9 +74,12 @@ async function showInstallSuccessDialog(): Promise<void> {
   } else if (state.kind === "shadowed") {
     detail =
       `The cadet command is installed at ${wrapperPath}, but another ` +
-      `"cadet" was found at ${state.shadowedBy} (likely installed via ` +
-      "npm) and will take precedence in your terminal. Run " +
-      '"npm uninstall -g @mycadet/cli" to use the app-managed version.';
+      `"cadet" was found at ${state.shadowedBy} (installed via npm) and ` +
+      `will take precedence in your terminal. That install is fine to ` +
+      "keep — hatching local assistants runs through it — and the " +
+      "app-managed version stays at " +
+      wrapperPath +
+      ".";
     if (!state.inPath) {
       detail += ` Also, ${copyPathExportHelp()}`;
     }

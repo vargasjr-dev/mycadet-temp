@@ -13,20 +13,15 @@ import {
   type CadetCommandKind,
   writeHotkeyOverrides,
 } from "./commands";
-import { handle as sharedHandle, type IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 
+/**
+ * Catalog commands this shell does not offer. They render no row and take
+ * no override, and their global shortcut is never registered because the
+ * shell passes no handler for them. The macOS shell excludes Talk: its
+ * voice key (a double tap of Fn) is the keyboard way into a call there.
+ */
 export interface HotkeysIpc {
-  /**
-   * The registrar the channels ride. Defaults to the shared origin-checking
-   * registrar; tests inject a capturing one.
-   */
-  handle?: IpcHandle;
-  /**
-   * Catalog commands this shell does not offer. They render no row and take
-   * no override, and their global shortcut is never registered because the
-   * shell passes no handler for them. The macOS shell excludes Talk: its
-   * voice key (a double tap of Fn) is the keyboard way into a call there.
-   */
   exclude?: readonly string[];
 }
 
@@ -171,17 +166,14 @@ let teardown: (() => void) | null = null;
  * broadcast to every window whenever the hotkeys setting changes (including
  * changes a different window initiated) so open settings views stay in sync.
  */
-export const installHotkeysIpc = ({
-  handle: registrar = sharedHandle,
-  exclude = [],
-}: HotkeysIpc = {}): void => {
+export const installHotkeysIpc = ({ exclude = [] }: HotkeysIpc = {}): void => {
   if (teardown) {
     return;
   }
   excludedKeys = new Set(exclude);
 
-  registrar("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
-  registrar(
+  handle("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
+  handle(
     "cadet:hotkeys:set",
     z.tuple([z.string(), z.union([z.string(), z.null()])]),
     ([key, accelerator]) => {

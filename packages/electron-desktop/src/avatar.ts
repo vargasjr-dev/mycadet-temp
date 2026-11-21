@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { CompanionCharacter } from "@mycadet/ipc-contract";
 
-import { on } from "./presence-runtime";
+import { on } from "./ipc";
 
 /**
  * Avatar source of truth for the macOS icon surfaces.
@@ -130,6 +130,13 @@ const characterPayloadSchema = z.tuple([
  * renderer publishes during bootstrap.
  */
 let installed = false;
+/** The icon channels' boundary schemas, for tests asserting the payload
+ * contract the renderer must satisfy. */
+export const __avatarSchemasForTesting = {
+  setAvatar: avatarPayloadSchema,
+  setCharacter: characterPayloadSchema,
+};
+
 export const installAvatarIpc = (): void => {
   if (installed) {
     return;

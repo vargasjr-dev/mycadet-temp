@@ -10,10 +10,7 @@ import {
   writeSetting,
 } from "@mycadet/electron-desktop/settings";
 
-import { handle } from "@mycadet/electron-desktop/ipc";
-
 configureLoginItem({
-  handle,
   store: {
     read: () => readSetting("launchAtLogin"),
     subscribe: (listener) => onSettingChange("launchAtLogin", listener),

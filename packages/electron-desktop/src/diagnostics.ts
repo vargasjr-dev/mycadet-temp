@@ -2,13 +2,12 @@ import { z } from "zod";
 
 import { DIAGNOSTICS_SET_SHARE } from "@mycadet/ipc-contract";
 
-import type { DiagnosticsIpc } from "./diagnostics-contract";
+import { on } from "./ipc";
 
 export const installDiagnosticsIpc = (
-  ipc: DiagnosticsIpc,
   setShareDiagnostics: (enabled: boolean) => void,
 ): void => {
-  ipc.on(DIAGNOSTICS_SET_SHARE, z.tuple([z.boolean()]), ([enabled]) => {
+  on(DIAGNOSTICS_SET_SHARE, z.tuple([z.boolean()]), ([enabled]) => {
     setShareDiagnostics(enabled);
   });
 };

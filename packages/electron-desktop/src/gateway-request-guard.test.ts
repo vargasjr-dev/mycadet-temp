@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 type BeforeRequestListener = (
   details: { frame?: { origin: string } | null },
@@ -14,9 +15,11 @@ const onBeforeRequest = mock(
   },
 );
 
-mock.module("electron", () => ({
-  session: { defaultSession: { webRequest: { onBeforeRequest } } },
-}));
+mock.module("electron", () =>
+  electronMock({
+    session: { defaultSession: { webRequest: { onBeforeRequest } } },
+  }),
+);
 
 const { installGatewayRequestGuard } = await import("./gateway-request-guard");
 

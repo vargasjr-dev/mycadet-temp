@@ -10,7 +10,6 @@ import {
 const dependencies = (
   overrides: Partial<FeedbackDependencies> = {},
 ): FeedbackDependencies => ({
-  ipc: { handle: () => undefined },
   app: { getAppMetrics: () => [] },
   powerMonitor: { getSystemIdleTime: () => 12 },
   os: {

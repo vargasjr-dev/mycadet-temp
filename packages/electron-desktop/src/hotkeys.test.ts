@@ -1,45 +1,40 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { HotkeysIpc } from "./hotkeys";
+import { electronMock, recordedIpcHandlers } from "../test-setup";
 
 let hotkeys: Record<string, string> = {};
 let listener: (() => void) | null = null;
 
-// Capture the `handle` registrations so the IPC handlers can be invoked
-// directly. The sender-origin guard and schema parsing inside the real
-// `handle` are covered by `ipc.test.ts`; here we drive the handler bodies.
-type Registration = {
-  channel: string;
-  fn: (args: unknown[]) => unknown;
-};
-const handleRegistrations: Registration[] = [];
-// `on` is included (as a no-op) even though `hotkeys.ts` only uses `handle`:
-// this mock leaks into co-run test files via the global module registry, so
-// the full `./ipc` surface keeps siblings that import `on` resolvable
-// regardless of file order.
+// The handlers ride the shared registrar, whose `ipcMain.handle` the shared
+// surface records; tests invoke the recorded wrappers directly. The
+// sender-origin guard and schema parsing inside the registrar are covered
+// by `ipc.test.ts`; here we drive the handler bodies.
 // `./hotkeys` (via `./commands`) imports `BrowserWindow` from electron; stub
 // the surface the broadcast path touches.
-mock.module("electron", () => ({
-  BrowserWindow: { getAllWindows: () => [] },
-}));
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: { getAllWindows: () => [] },
+  }),
+);
 
 const { resolveHotkeyCatalog, installHotkeysIpc, __resetForTesting } =
   await import("./hotkeys");
 const { configureHotkeySettings } = await import("./commands");
 
-const ipc: HotkeysIpc = {
-  handle: (channel, _schema, fn) => {
-    handleRegistrations.push({
-      channel,
-      fn: (args) => fn(args as never, undefined as never),
-    });
-  },
+// The IPC wrapper rejects any sender whose frame origin isn't the app
+// renderer's; the fake sender derives from the guard's own resolver.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
 };
 
 const invoke = (channel: string, args: unknown[]): unknown => {
-  const registration = handleRegistrations.find((r) => r.channel === channel);
-  if (!registration) throw new Error(`No handler for ${channel}`);
-  return registration.fn(args);
+  const handler = recordedIpcHandlers.get(channel);
+  if (!handler) throw new Error(`No handler for ${channel}`);
+  return handler(allowedEvent, ...args);
 };
 
 beforeEach(() => {
@@ -58,13 +53,13 @@ beforeEach(() => {
       };
     },
   });
-  handleRegistrations.length = 0;
+  recordedIpcHandlers.clear();
   __resetForTesting();
 });
 
 describe("installHotkeysIpc with an exclusion", () => {
   test("a shell that excludes a command offers no row and takes no override", () => {
-    installHotkeysIpc({ ...ipc, exclude: ["toggleVoice"] });
+    installHotkeysIpc({ exclude: ["toggleVoice"] });
 
     const catalog = invoke("cadet:hotkeys:get", []) as Array<{ key: string }>;
     expect(catalog.map((c) => c.key)).not.toContain("toggleVoice");
@@ -131,7 +126,7 @@ describe("resolveHotkeyCatalog", () => {
 
 describe("cadet:hotkeys:set", () => {
   beforeEach(() => {
-    installHotkeysIpc(ipc);
+    installHotkeysIpc();
   });
 
   test("persists a valid accelerator, merging into existing overrides", () => {

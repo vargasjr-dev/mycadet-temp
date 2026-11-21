@@ -1,63 +1,36 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { z } from "zod";
+import {
+  electronMock,
+  recordedIpcHandlers,
+  recordedIpcOnListeners,
+} from "../test-setup";
 
 const sentMessages: Array<{ channel: string; payload: unknown }> = [];
-mock.module("electron", () => ({
-  BrowserWindow: {
-    getAllWindows: () => [
-      {
-        isDestroyed: () => false,
-        webContents: {
-          send: (channel: string, payload: unknown) => {
-            sentMessages.push({ channel, payload });
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: {
+      getAllWindows: () => [
+        {
+          isDestroyed: () => false,
+          webContents: {
+            send: (channel: string, payload: unknown) => {
+              sentMessages.push({ channel, payload });
+            },
           },
         },
-      },
-    ],
-  },
-}));
+      ],
+    },
+  }),
+);
 
 // Capture the channel + schema + handler that `installStatusIpc` registers,
 // without dragging in the real `ipcMain` / sender-origin guard (that guard is
 // covered by `ipc.test.ts`). The captured schema is exercised directly so we
 // assert the payload contract the renderer must satisfy.
-type OnRegistration = {
-  channel: string;
-  schema: z.ZodType<unknown[]>;
-  fn: (args: unknown[]) => void;
-};
-const registrations: OnRegistration[] = [];
-const onMock = mock(
-  (
-    channel: string,
-    schema: z.ZodType<unknown[]>,
-    fn: (args: unknown[]) => void,
-  ) => {
-    registrations.push({ channel, schema, fn });
-  },
-);
 
-type HandleRegistration = {
-  channel: string;
-  schema: z.ZodType<unknown[]>;
-  fn: (args: unknown[]) => unknown;
-};
-const handleRegistrations: HandleRegistration[] = [];
-const handleMock = mock(
-  (
-    channel: string,
-    schema: z.ZodType<unknown[]>,
-    fn: (args: unknown[]) => unknown,
-  ) => {
-    handleRegistrations.push({ channel, schema, fn });
-  },
-);
-mock.module("./presence-runtime", () => ({
-  on: onMock,
-  handle: handleMock,
-  log: { info: () => {} },
-}));
+// The presence-runtime indirection is gone: status rides the shared
+// registrar, whose ipcMain registrations the shared surface records.
 
 const {
   ASSISTANT_STATUSES,
@@ -79,15 +52,27 @@ const {
   shouldPulse,
   statusMenuTitle,
   __resetForTesting,
+  __statusSchemasForTesting,
 } = await import("./status");
+
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
+};
+const registeredOn = (channel: string) => {
+  const listener = recordedIpcOnListeners.get(channel)?.[0];
+  if (!listener) throw new Error(`no listener registered for ${channel}`);
+  return listener;
+};
 
 beforeEach(() => {
   __resetForTesting();
-  registrations.length = 0;
-  handleRegistrations.length = 0;
+  recordedIpcOnListeners.clear();
+  recordedIpcHandlers.clear();
   sentMessages.length = 0;
-  onMock.mockClear();
-  handleMock.mockClear();
 });
 
 describe("statusMenuTitle", () => {
@@ -182,13 +167,14 @@ describe("installStatusIpc", () => {
   test("registers the connection channel once, even across repeated calls", () => {
     installStatusIpc();
     installStatusIpc();
-    expect(registrations).toHaveLength(1);
-    expect(registrations[0]?.channel).toBe("cadet:status:connection");
+    expect([...recordedIpcOnListeners.keys()]).toEqual([
+      "cadet:status:connection",
+    ]);
   });
 
   test("the schema accepts every known status and rejects anything else", () => {
     installStatusIpc();
-    const schema = registrations[0]!.schema;
+    const schema = __statusSchemasForTesting.connection;
     for (const status of ASSISTANT_STATUSES) {
       expect(schema.safeParse([status]).success).toBe(true);
     }
@@ -201,7 +187,7 @@ describe("installStatusIpc", () => {
     installStatusIpc();
     const seen: string[] = [];
     onStatusChange((status) => seen.push(status));
-    registrations[0]!.fn(["thinking"]);
+    registeredOn("cadet:status:connection")(allowedEvent, "thinking");
     expect(getStatus()).toBe("thinking");
     expect(seen).toEqual(["thinking"]);
   });
@@ -272,47 +258,43 @@ describe("installConnectivityIpc", () => {
   test("registers device and retry channels once", () => {
     installConnectivityIpc();
     installConnectivityIpc();
-    const channels = registrations.map((r) => r.channel);
     expect(
-      channels.filter((c) => c === "cadet:connectivity:device"),
+      [...recordedIpcOnListeners.keys()].filter(
+        (c) => c === "cadet:connectivity:device",
+      ),
     ).toHaveLength(1);
-    const handled = handleRegistrations.map((r) => r.channel);
     expect(
-      handled.filter((c) => c === "cadet:connectivity:retry"),
+      [...recordedIpcHandlers.keys()].filter(
+        (c) => c === "cadet:connectivity:retry",
+      ),
     ).toHaveLength(1);
   });
 
   test("device channel drives deviceOnline signal", () => {
     installConnectivityIpc();
-    const deviceReg = registrations.find(
-      (r) => r.channel === "cadet:connectivity:device",
-    )!;
-    deviceReg.fn([false]);
+    const deviceReg = registeredOn("cadet:connectivity:device");
+    deviceReg(allowedEvent, false);
     expect(getConnectivity()).toBe("device-offline");
-    deviceReg.fn([true]);
+    deviceReg(allowedEvent, true);
     expect(getConnectivity()).toBe("online");
   });
 
   test("retry runs the probe and returns the post-probe state", async () => {
     const onRetry = mock(() => Promise.resolve());
     installConnectivityIpc(onRetry);
-    const retryReg = handleRegistrations.find(
-      (r) => r.channel === "cadet:connectivity:retry",
-    )!;
+    const retryReg = recordedIpcHandlers.get("cadet:connectivity:retry")!;
     setBackendReachable(false);
-    expect(await retryReg.fn([])).toBe("backend-unreachable");
+    expect(await retryReg(allowedEvent)).toBe("backend-unreachable");
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   test("retry rebroadcasts the current state even when unchanged", async () => {
     installConnectivityIpc();
-    const retryReg = handleRegistrations.find(
-      (r) => r.channel === "cadet:connectivity:retry",
-    )!;
+    const retryReg = recordedIpcHandlers.get("cadet:connectivity:retry")!;
     // State is "online" and never transitions, so the change-gated broadcast
     // in setConnectivity stays silent — a desynced renderer depends on this
     // unconditional resend to recover.
-    expect(await retryReg.fn([])).toBe("online");
+    expect(await retryReg(allowedEvent)).toBe("online");
     const msgs = sentMessages.filter(
       (m) => m.channel === "cadet:connectivity:state",
     );
@@ -321,20 +303,15 @@ describe("installConnectivityIpc", () => {
 
   test("registers the get channel for current state queries", () => {
     installConnectivityIpc();
-    const getReg = handleRegistrations.find(
-      (r) => r.channel === "cadet:connectivity:get",
-    );
-    expect(getReg).toBeDefined();
+    expect(recordedIpcHandlers.has("cadet:connectivity:get")).toBe(true);
   });
 
   test("get channel returns the current connectivity state", () => {
     installConnectivityIpc();
-    const getReg = handleRegistrations.find(
-      (r) => r.channel === "cadet:connectivity:get",
-    )!;
-    expect(getReg.fn([])).toBe("online");
+    const getReg = recordedIpcHandlers.get("cadet:connectivity:get")!;
+    expect(getReg(allowedEvent)).toBe("online");
     setDeviceOnline(false);
-    expect(getReg.fn([])).toBe("device-offline");
+    expect(getReg(allowedEvent)).toBe("device-offline");
   });
 
   test("CONNECTIVITY_STATES contains the three expected values", () => {

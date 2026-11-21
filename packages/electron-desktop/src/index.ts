@@ -18,14 +18,29 @@ export {
   APP_PROTOCOL,
   APP_RENDERER_BASE_PROD,
   RENDERER_BASE_PROD,
-  getDevRendererBase,
-  getRendererBase,
-  getRendererRootUrl,
-  usesAppProtocolRenderer,
 } from "./app-config";
 export { startApp } from "./app-lifecycle";
+export { ensureVisible } from "./main-window";
+export { default as log } from "./app-logger";
+export { writeCliLocator } from "./cli-installer";
+export { provisionCliForWrapper } from "./cli-path-installer";
+export {
+  provisionCliForCurrentUser,
+  resolveCliPathFlowOptions,
+} from "./win32-cli/cli-path-flow";
+export {
+  CLI_RUNTIME_ENTRIES,
+  readRuntimeManifest,
+} from "./win32-cli/cli-installer";
+export {
+  resolveCliLauncherPaths,
+  uninstallCliLauncher,
+} from "./win32-cli/cli-launcher";
+export {
+  createHelperToastFactory,
+  resolveHelperToastBinaryPath,
+} from "./helper-toast-factory";
 export { registerCompanionSurfaceSync } from "./companion-menu";
-export { default as log, getLogFilePaths } from "./app-logger";
 export {
   createAllowedOriginResolver,
   isAllowedOrigin,
@@ -33,7 +48,6 @@ export {
 } from "./app-origin";
 export { getAppName } from "./app-name";
 export type { AllowedOrigin } from "./app-origin";
-export { registerAppProtocol } from "./app-protocol-forward";
 export {
   getAccentHex,
   getAvatarPng,
@@ -44,42 +58,17 @@ export {
 export { avatarBitmap } from "./avatar-image";
 export { handleBundleFile, installBundleFlow } from "./bundle-flow";
 export { createBundleHostProvider } from "./bundle-host";
-export {
-  BUNDLES_DIR_NAME,
-  CADET_PROTOCOL,
-  configureBundlePlatform,
-} from "./bundle-platform";
-export { registerCadetProtocol } from "./cadet-protocol";
+export { BUNDLES_DIR_NAME, configureBundlePlatform } from "./bundle-platform";
 export { BridgeCapabilityRegistry } from "./capability-registry";
 export {
-  closeCommandPaletteWindow,
   configureCommandPaletteWindow,
   installCommandPaletteWindow,
-  isCommandPaletteWindowFocused,
   openCommandPaletteWindow,
-  repositionCommandPaletteWindow,
 } from "./command-palette-window";
-export {
-  acceleratorOption,
-  configureHotkeySettings,
-  dispatchToFocused,
-  onHotkeyOverridesChange,
-  settingsHotkeySettings,
-} from "./commands";
+export { acceleratorOption, dispatchToFocused } from "./commands";
 export type { CadetCommand, HotkeySettingsProvider } from "./commands";
-export {
-  companionSizeSubmenus,
-  companionVisibilityItem,
-} from "./companion-menu";
-export { installConnectivityProbe } from "./connectivity-probe";
-export { installCsp } from "./csp";
-export {
-  configureDeepLinks,
-  hasPendingDeepLinks,
-  installDeepLinks,
-  resolveAuthCallbackScheme,
-  resolveRegisteredSchemes,
-} from "./deep-links";
+export { companionSizeSubmenus } from "./companion-menu";
+export { hasPendingDeepLinks, installDeepLinks } from "./deep-links";
 export { getDeviceId } from "./device-id";
 export { areChromeDevToolsEnabled } from "./devtools";
 export { installDiagnosticsIpc } from "./diagnostics";
@@ -92,7 +81,6 @@ export {
   createDictationOverlayController,
   installDictationOverlay,
   positionDictationOverlayInWorkArea,
-  repositionDictationOverlayWindow,
 } from "./dictation-overlay-window";
 export type { DictationOverlayState } from "./dictation-overlay-window";
 export {
@@ -105,13 +93,7 @@ export {
 export { installDownloads } from "./downloads";
 export { configureFeedback, installFeedbackIpc } from "./feedback";
 export type { FeedbackDependencies } from "./feedback";
-export {
-  configureFileOpen,
-  handleFileOpenArgv,
-  hasPendingFiles,
-  installFileOpen,
-  onFileOpen,
-} from "./file-open";
+export { hasPendingFiles, onFileOpen } from "./file-open";
 export { createFileOpenPreloadBridge } from "./file-open-preload";
 export {
   configureFloatingWindows,
@@ -119,18 +101,12 @@ export {
   createWindowRouteResolver,
   getFloatingWindow,
 } from "./floating-window";
-export { installGatewayRequestGuard } from "./gateway-request-guard";
 export { installGlobalShortcuts } from "./global-shortcuts";
-export { buildHelperToastRequest } from "./helper-toast-request";
 export { createCuHelperProxyExecutor } from "./host-proxy/cu-executor";
 export { HostBrowserExecutor } from "./host-proxy/executors/host-browser-executor";
 export { hostFileExecutor } from "./host-proxy/executors/host-file-executor";
-export {
-  __testing,
-  createHostShellExecutor,
-} from "./host-proxy/executors/host-shell-executor";
+export { createHostShellExecutor } from "./host-proxy/executors/host-shell-executor";
 export type { HostShellSpec } from "./host-proxy/executors/host-shell-executor";
-export { __testing as routerTesting } from "./host-proxy/router";
 export { hostTransferExecutor } from "./host-proxy/executors/host-transfer-executor";
 export { createHostUiSnapshotExecutor } from "./host-proxy/executors/host-ui-snapshot-executor";
 export type { CuHelperClient } from "./host-proxy/helper-proxy-executor";
@@ -144,35 +120,20 @@ export type { HostProxyExecutor, HostProxyRuntime } from "./host-proxy/router";
 export { createHostProxyRuntime } from "./host-proxy/runtime";
 export type { HostProxySseMessage } from "./host-proxy/sse";
 export { installHotkeysIpc } from "./hotkeys";
-export { getName, installIdentityIpc, onNameChange, setName } from "./identity";
+export { getName, onNameChange, setName } from "./identity";
 export { installImageContextMenu } from "./image-context-menu";
 export {
   applyAlphaMask,
   compositeCentered,
   roundedRectCoverage,
 } from "./image-mask";
-export { createIpcRegistrar } from "./ipc";
 export type { IpcHandle } from "./ipc";
 export {
   configureLoginItem,
   installLoginItem,
   installLoginItemIpc,
 } from "./login-item";
-export {
-  buildDesktopMenu,
-  conversationFileMenuItems,
-  editMenu,
-  editMenuItems,
-  fileMenu,
-  helpMenu,
-  historyNavigationMenuItems,
-  installDesktopMenu,
-  refreshDesktopMenuCliPath,
-  setDesktopHasCloudSession,
-  viewMenu,
-  viewMenuItems,
-  windowMenu,
-} from "./menu";
+export { installDesktopMenu, refreshDesktopMenuCliPath } from "./menu";
 export type { CliPathMenuState } from "./menu";
 export { configureNativeAuth, installNativeAuth } from "./native-auth";
 export type { NativeAuthCallback } from "./native-auth";
@@ -190,9 +151,7 @@ export type {
   NotificationCreateOptions,
   NotificationLike,
 } from "./notifications";
-export { installPermissionHandler } from "./permissions";
 export { configurePopoutWindows, installPopoutWindows } from "./popout-window";
-export { installPowerEvents } from "./power-events";
 export {
   createBundleConfirmBridge,
   createDeepLinksBridge,
@@ -204,11 +163,9 @@ export {
   createPermissionSetupBridge,
   createUpdateBridge,
 } from "./preload";
-export { configurePresenceRuntime } from "./presence-runtime";
 export {
   configureQuickInputWindow,
   installQuickInput,
-  repositionQuickInputWindow,
   toggleQuickInput,
 } from "./quick-input-window";
 export {
@@ -219,13 +176,7 @@ export {
   setSessionTokenLogger,
 } from "./session-token-store";
 export { onSettingChange, readSetting, writeSetting } from "./settings";
-export {
-  getStatus,
-  installConnectivityIpc,
-  installStatusIpc,
-  onStatusChange,
-} from "./status";
-export { configureStatusIconFallback } from "./status-icon";
+export { getStatus } from "./status";
 export { installTextContextMenu } from "./text-context-menu";
 export { configureTrayModel, installTray } from "./tray-model";
 export type { TrayHandlers, TrayMenuIcon } from "./tray-model";
@@ -249,9 +200,5 @@ export {
   writeOnboardingActive,
   writeTitleBarOverlayTheme,
 } from "./window-state";
-export {
-  createWindow,
-  hardenedWebPreferences,
-  installWebContentsSecurity,
-} from "./windows";
+export { createWindow, hardenedWebPreferences } from "./windows";
 export type { CreateWindowOptions } from "./windows";

@@ -9,7 +9,7 @@ import {
   FILE_OPEN_UNSUBSCRIBE,
 } from "@mycadet/ipc-contract";
 
-import type { createIpcRegistrar } from "./ipc";
+import { handle, on } from "./ipc";
 
 /**
  * Inbound file-open events for `.cadet` bundles.
@@ -32,12 +32,8 @@ import type { createIpcRegistrar } from "./ipc";
 
 const CADET_EXT_RE = /\.cadet$/i;
 
-type IpcRegistrar = ReturnType<typeof createIpcRegistrar>;
-
 export interface FileOpenDependencies {
   ensureMainWindowVisible: () => void | Promise<void>;
-  handle: IpcRegistrar["handle"];
-  on: IpcRegistrar["on"];
 }
 
 let dependencies: FileOpenDependencies | null = null;
@@ -157,7 +153,6 @@ export const installFileOpen = (): void => {
     return;
   }
   installed = true;
-  const { handle, on } = getDependencies();
 
   app.on("will-finish-launching", () => {
     app.on("open-file", (event, filePath) => {
@@ -188,6 +183,12 @@ export const installFileOpen = (): void => {
 
   on(FILE_OPEN_UNSUBSCRIBE, z.tuple([]), (_args, event) => {
     subscribers.delete(event.sender);
+  });
+
+  // Re-launches route their file argv through here; every shell shares the
+  // same routing (macOS additionally focuses its main window on the event).
+  app.on("second-instance", (_event, argv, workingDirectory) => {
+    handleFileOpenArgv(argv, workingDirectory);
   });
 };
 

@@ -7,7 +7,7 @@ import {
   type CadetCommand,
 } from "@mycadet/ipc-contract";
 
-import type { IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 import { createModuleConfiguration } from "./module-configuration";
 import type { CreateWindowOptions } from "./windows";
 
@@ -37,7 +37,6 @@ export interface QuickInputWindowDependencies {
   createWindow: (options: CreateWindowOptions) => BrowserWindow;
   dispatchToMain: (command: CadetCommand) => void;
   ensureMainWindowVisible: () => void | Promise<void>;
-  handle: IpcHandle;
   platform: "darwin" | "win32" | "linux";
   resolveRoute: (route: string) => string;
 }
@@ -132,8 +131,7 @@ export const installQuickInput = (): void => {
     return;
   }
   installed = true;
-  const { dispatchToMain, ensureMainWindowVisible, handle } =
-    configuration.get();
+  const { dispatchToMain, ensureMainWindowVisible } = configuration.get();
 
   handle(QUICK_INPUT_SUBMIT, z.tuple([z.string()]), async ([message]) => {
     if (quickInputWindow && !quickInputWindow.isDestroyed()) {

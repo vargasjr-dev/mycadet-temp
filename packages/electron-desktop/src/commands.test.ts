@@ -99,7 +99,6 @@ configureCommandPaletteWindow({
   currentMainWindow: () => null,
   dispatchToMain: (command) => sentToMain.push(command),
   ensureMainWindowVisible: () => undefined,
-  handle: () => undefined,
 });
 
 let mockHotkeys: unknown = null;

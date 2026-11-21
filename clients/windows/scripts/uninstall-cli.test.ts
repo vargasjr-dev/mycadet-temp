@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import path from "node:path";
 
-import { resolveCliLauncherPaths } from "@mycadet/electron-desktop/classic-shell";
+import { resolveCliLauncherPaths } from "@mycadet/electron-desktop";
 import { uninstallPackagedCli } from "./uninstall-cli";
 
 const EXEC_PATH = path.join(

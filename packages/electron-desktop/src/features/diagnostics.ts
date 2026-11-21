@@ -12,7 +12,6 @@ import { writeSetting as writeSharedSetting } from "../settings";
 import { getSessionToken } from "../session-token-store";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
-import { handle, on } from "../ipc";
 import { getLogFilePaths } from "../app-logger";
 
 declare const __CADET_BUILD_SHA__: string;
@@ -21,7 +20,6 @@ const commitSha =
 const releaseChannel = resolveEnvironmentName();
 
 const feedback: FeedbackDependencies = {
-  ipc: { handle },
   app,
   powerMonitor,
   os,
@@ -41,7 +39,7 @@ configureFeedback(feedback);
 export const install = (): void => {
   // Persist the renderer's effective diagnostics consent. Sentry reporting
   // is gone; this keeps the user's choice durable for the settings surface.
-  installDiagnosticsIpc({ on }, (enabled) =>
+  installDiagnosticsIpc((enabled) =>
     writeSharedSetting("shareDiagnostics", enabled),
   );
   installFeedbackIpc();

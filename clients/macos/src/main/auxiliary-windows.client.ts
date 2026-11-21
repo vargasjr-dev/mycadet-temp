@@ -1,5 +1,4 @@
 import { configureCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
-import { configureDictationOverlayWindow } from "@mycadet/electron-desktop";
 import {
   configureFloatingWindows,
   createWindowRouteResolver,
@@ -14,7 +13,6 @@ import {
 } from "@mycadet/electron-desktop/window-state";
 
 import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
-import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { current, dispatchToMain, ensureVisible } from "./main-window";
 import { createWindow } from "@mycadet/electron-desktop";
 
@@ -29,20 +27,16 @@ configureCommandPaletteWindow({
   currentMainWindow: current,
   dispatchToMain,
   ensureMainWindowVisible: ensureVisible,
-  handle,
 });
 configureQuickInputWindow({
   createWindow,
   dispatchToMain,
   ensureMainWindowVisible: ensureVisible,
-  handle,
   platform: "darwin",
   resolveRoute,
 });
-configureDictationOverlayWindow({ handle, on });
 configurePopoutWindows({
   createWindow,
-  handle,
   resolveRoute,
   restoreBounds,
   trackWindowState,

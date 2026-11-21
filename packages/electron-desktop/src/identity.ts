@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { on } from "./presence-runtime";
+import { on } from "./ipc";
 
 /**
  * Active assistant display name (e.g. "Aria"), published by the renderer

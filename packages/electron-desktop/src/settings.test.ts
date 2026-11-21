@@ -2,8 +2,9 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { electronMock } from "../test-setup";
 
-mock.module("electron", () => ({ default: {} }));
+mock.module("electron", () => electronMock({ default: {} }));
 
 const { createAppSettingsStore } = await import("./settings");
 

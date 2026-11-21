@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
-import type { IpcHandle } from "./ipc";
+import { electronMock, recordedIpcHandlers } from "../test-setup";
 
 let openAtLogin = false;
 const getLoginItemSettings = mock(() => ({ openAtLogin }));
@@ -8,12 +8,14 @@ const setLoginItemSettings = mock((settings: { openAtLogin: boolean }) => {
   openAtLogin = settings.openAtLogin;
 });
 
-mock.module("electron", () => ({
-  app: {
-    getLoginItemSettings,
-    setLoginItemSettings,
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      getLoginItemSettings,
+      setLoginItemSettings,
+    },
+  }),
+);
 
 const {
   __resetLoginItemForTesting,
@@ -22,15 +24,19 @@ const {
   installLoginItemIpc,
 } = await import("./login-item");
 
-type Handler = (args: unknown[]) => unknown;
-const handlers = new Map<string, Handler>();
-const handle: IpcHandle = (channel, _schema, fn): void => {
-  handlers.set(channel, (args) => fn(args as never, {} as never));
+// The handlers ride the shared registrar, whose `ipcMain.handle` the shared
+// surface records; the fake events derive their origin from the guard.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
 };
 
 beforeEach(() => {
   __resetLoginItemForTesting();
-  handlers.clear();
+  recordedIpcHandlers.clear();
   openAtLogin = false;
   setLoginItemSettings.mockClear();
   getLoginItemSettings.mockClear();
@@ -38,11 +44,13 @@ beforeEach(() => {
 
 test("identifies the app entry for an unpackaged login item", () => {
   const identity = { path: "/path/to/electron", args: ["/path/to/app"] };
-  configureLoginItem({ handle, identity });
+  configureLoginItem({ identity });
   installLoginItemIpc();
 
-  expect(handlers.get("cadet:launchAtLogin:get")?.([])).toBe(false);
-  handlers.get("cadet:launchAtLogin:set")?.([true]);
+  expect(
+    recordedIpcHandlers.get("cadet:launchAtLogin:get")?.(allowedEvent),
+  ).toBe(false);
+  recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
 
   expect(getLoginItemSettings).toHaveBeenCalledWith(identity);
   expect(setLoginItemSettings).toHaveBeenCalledWith({
@@ -52,14 +60,16 @@ test("identifies the app entry for an unpackaged login item", () => {
 });
 
 test("reads and changes the operating-system login item", () => {
-  configureLoginItem({ handle });
+  configureLoginItem({});
   installLoginItemIpc();
 
-  expect(handlers.get("cadet:launchAtLogin:get")?.([])).toBe(false);
-  handlers.get("cadet:launchAtLogin:set")?.([true]);
+  const get = recordedIpcHandlers.get("cadet:launchAtLogin:get");
+  const set = recordedIpcHandlers.get("cadet:launchAtLogin:set");
+  expect(get?.(allowedEvent)).toBe(false);
+  set?.(allowedEvent, true);
 
   expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: true });
-  expect(handlers.get("cadet:launchAtLogin:get")?.([])).toBe(true);
+  expect(get?.(allowedEvent)).toBe(true);
 });
 
 test("keeps a persisted setting synchronized with the login item", () => {
@@ -70,7 +80,6 @@ test("keeps a persisted setting synchronized with the login item", () => {
   });
 
   configureLoginItem({
-    handle,
     store: {
       read: () => stored,
       subscribe: (next) => {
@@ -89,7 +98,7 @@ test("keeps a persisted setting synchronized with the login item", () => {
   expect(write).toHaveBeenCalledWith(false);
   expect(setLoginItemSettings).toHaveBeenCalledWith({ openAtLogin: false });
 
-  handlers.get("cadet:launchAtLogin:set")?.([true]);
+  recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
   notify();
 
   expect(write).toHaveBeenLastCalledWith(true);

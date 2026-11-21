@@ -25,7 +25,6 @@ import { restoreBounds, track as trackWindowState } from "../window-state";
 import { createWindow } from "../windows";
 import log from "../app-logger";
 import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";
-import { handle, on } from "../ipc";
 import { current, dispatchToMain, ensureVisible } from "../main-window";
 
 const resolveRoute = createWindowRouteResolver(() =>
@@ -42,13 +41,11 @@ export const install = (): void => {
     currentMainWindow: current,
     dispatchToMain,
     ensureMainWindowVisible: ensureVisible,
-    handle,
   });
   configureQuickInputWindow({
     createWindow,
     dispatchToMain,
     ensureMainWindowVisible: ensureVisible,
-    handle,
     platform: process.platform === "win32" ? "win32" : "linux",
     resolveRoute,
   });
@@ -59,12 +56,9 @@ export const install = (): void => {
     closeOnHide: true,
     pollCursorForHover: true,
     log: (message) => log.info(message),
-    handle,
-    on,
   });
   configurePopoutWindows({
     createWindow,
-    handle,
     resolveRoute,
     restoreBounds,
     trackWindowState,

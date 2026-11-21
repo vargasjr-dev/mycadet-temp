@@ -121,7 +121,7 @@ mock.module("@mycadet/native-sidecar/supervisor", () => ({
   NativeSidecarClient: FakeSidecarClient,
 }));
 
-const { createHelperToastFactory } = await import("../features/notifications");
+const { createHelperToastFactory } = await import("../helper-toast-factory");
 const { install: windowAttentionInstall } =
   await import("../features/window-attention");
 const { install: shareInstall, sanitizeFilename } =
@@ -152,7 +152,10 @@ describe("window attention feature", () => {
 
 describe("helper toast factory", () => {
   test("show sends the toast over RPC and activation events route by token", async () => {
-    const create = createHelperToastFactory("/helper.exe");
+    const create = createHelperToastFactory({
+      helperPath: "/helper.exe",
+      name: "windows-helper",
+    });
     const seen: Array<{ event: string; index?: number }> = [];
     const toast = create({
       title: "T",
@@ -204,7 +207,10 @@ describe("helper toast factory", () => {
       const avatarPng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const avatarHash =
         "0f4636c78f65d3639ece5a064b5ae753e3408614a14fb18ab4d7540d2c248543";
-      const create = createHelperToastFactory("/helper.exe");
+      const create = createHelperToastFactory({
+        helperPath: "/helper.exe",
+        name: "windows-helper",
+      });
       const toast = create({
         title: "Weekly plan",
         body: "B",
@@ -246,7 +252,10 @@ describe("helper toast factory", () => {
     await writeFile(file, "");
     userDataDir = file;
     try {
-      const create = createHelperToastFactory("/helper.exe");
+      const create = createHelperToastFactory({
+        helperPath: "/helper.exe",
+        name: "windows-helper",
+      });
       create({
         title: "Weekly plan",
         body: "B",
@@ -277,7 +286,10 @@ describe("helper toast factory", () => {
   test("a synchronous client throw acks as a failed delivery", async () => {
     FakeSidecarClient.throwOnCall = "windows-helper is not available";
     try {
-      const create = createHelperToastFactory("/helper.exe");
+      const create = createHelperToastFactory({
+        helperPath: "/helper.exe",
+        name: "windows-helper",
+      });
       const failures: unknown[] = [];
       const toast = create({
         title: "T",

@@ -5,7 +5,7 @@
  * the subtitle, and the picture travels as a file path the helper reads.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "../test-setup";
 
 mock.module("electron", () =>
   electronMock({
@@ -56,22 +56,22 @@ const resolveNotificationAvatarPath = mock(() => {
   }
   return STAGED_AVATAR_PATH;
 });
-mock.module("../notification-avatar-path", () => ({
+mock.module("./notification-avatar-path", () => ({
   resolveNotificationAvatarPath,
 }));
 
-mock.module("../ipc", () => ({
+mock.module("./ipc", () => ({
   handle: () => undefined,
   handleSync: () => undefined,
   on: () => undefined,
 }));
-mock.module("../main-window", () => ({ ensureVisible: () => undefined }));
-mock.module("../app-logger", () => ({
+mock.module("./main-window", () => ({ ensureVisible: () => undefined }));
+mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
   default: { warn: () => undefined, info: () => undefined },
 }));
 
-const { createHelperToastFactory } = await import("../features/notifications");
+const { createHelperToastFactory } = await import("./helper-toast-factory");
 
 const AVATAR_PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 const AVATAR_HASH = "a".repeat(64);
@@ -93,7 +93,10 @@ const baseOptions = {
 const showToast = async (
   options: Parameters<ReturnType<typeof createHelperToastFactory>>[0],
 ): Promise<void> => {
-  const toast = createHelperToastFactory("/helper")(options);
+  const toast = createHelperToastFactory({
+    helperPath: "/helper",
+    name: "linux-helper",
+  })(options);
   toast.show();
   // `show()` defers the call so a synchronous throw still acks as a failed
   // delivery, so the params land a couple of microtasks later.

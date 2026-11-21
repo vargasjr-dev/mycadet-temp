@@ -24,7 +24,7 @@ import {
   showNotificationPayloadSchema,
 } from "@mycadet/ipc-contract";
 
-import type { IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 import {
   __resetNotificationIdentityMemoryForTesting,
   forgetNotificationIdentityPublisherSource,
@@ -107,8 +107,6 @@ export interface NotificationCreateOptions {
 }
 
 export interface NotificationsRuntime {
-  /** The client's sender-validated IPC registrar. */
-  ipc: { handle: IpcHandle };
   /** Bring the app's main window to front on click/action. */
   ensureVisible: () => void | Promise<void>;
   /** Defaults to `console`. */
@@ -617,8 +615,7 @@ const identityPublisherSource = (sender: {
 };
 
 export const installNotifications = (): void => {
-  const ipc = requireRuntime().ipc;
-  ipc.handle(
+  handle(
     NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER,
     z.tuple([registerNotificationIdentityPublisherPayloadSchema]),
     ([payload], event) =>
@@ -627,7 +624,7 @@ export const installNotifications = (): void => {
         payload.publisherSessionId,
       ),
   );
-  ipc.handle(
+  handle(
     NOTIFICATIONS_PREPARE_IDENTITY,
     z.tuple([prepareNotificationIdentityPayloadSchema]),
     ([payload], event) => {
@@ -637,7 +634,7 @@ export const installNotifications = (): void => {
       );
     },
   );
-  ipc.handle(
+  handle(
     NOTIFICATIONS_RESET_IDENTITIES,
     z.tuple([resetNotificationIdentitiesPayloadSchema]),
     ([payload], event) => {
@@ -647,11 +644,18 @@ export const installNotifications = (): void => {
       );
     },
   );
-  ipc.handle(NOTIFICATIONS_SHOW, showPayloadSchema, ([payload]) =>
+  handle(NOTIFICATIONS_SHOW, showPayloadSchema, ([payload]) =>
     showNotification(payload),
   );
 
   pruneTimer = setInterval(pruneStaleEntries, PRUNE_INTERVAL_MS);
+};
+
+// Test seam: the channel boundary schemas, for tests asserting the parse.
+export const __boundarySchemasForTesting = {
+  show: showPayloadSchema,
+  prepareIdentity: z.tuple([prepareNotificationIdentityPayloadSchema]),
+  resetIdentities: z.tuple([resetNotificationIdentitiesPayloadSchema]),
 };
 
 // Test seam

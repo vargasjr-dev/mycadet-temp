@@ -1,40 +1,34 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock, recordedIpcOnListeners } from "../test-setup";
 
-import type { z } from "zod";
+mock.module("electron", () => electronMock());
 
-// Capture the channel + schema + handler that `installAvatarIpc` registers,
-// without dragging in the real `ipcMain` / sender-origin guard (covered by
-// `ipc.test.ts`). The captured schema is exercised directly to assert the
-// payload contract the renderer must satisfy.
-type OnRegistration = {
-  channel: string;
-  schema: z.ZodType<unknown[]>;
-  fn: (args: unknown[]) => void;
+// The fire-and-forget channel rides the shared registrar, whose ipcMain
+// listener the shared surface records; the captured schema is exercised
+// directly to assert the payload contract the renderer must satisfy.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
 };
-const registrations: OnRegistration[] = [];
-const onMock = mock(
-  (
-    channel: string,
-    schema: z.ZodType<unknown[]>,
-    fn: (args: unknown[]) => void,
-  ) => {
-    registrations.push({ channel, schema, fn });
-  },
-);
-mock.module("./presence-runtime", () => ({ on: onMock }));
 
 const {
   getAvatarPng,
   onAvatarChange,
   setAvatar,
   installAvatarIpc,
+  __avatarSchemasForTesting,
   __resetForTesting,
 } = await import("./avatar");
 
+const registered = (channel: string) =>
+  recordedIpcOnListeners.get(channel)?.[0];
+
 beforeEach(() => {
   __resetForTesting();
-  registrations.length = 0;
-  onMock.mockClear();
+  recordedIpcOnListeners.clear();
 });
 
 describe("avatar cache", () => {
@@ -75,7 +69,7 @@ describe("installAvatarIpc", () => {
   test("registers both channels once, even across repeated calls", () => {
     installAvatarIpc();
     installAvatarIpc();
-    expect(registrations.map((r) => r.channel)).toEqual([
+    expect([...recordedIpcOnListeners.keys()]).toEqual([
       "cadet:icon:setAvatar",
       "cadet:icon:setCharacter",
     ]);
@@ -83,7 +77,7 @@ describe("installAvatarIpc", () => {
 
   test("the character schema takes the three trait ids, or null", () => {
     installAvatarIpc();
-    const schema = registrations[1]!.schema;
+    const schema = __avatarSchemasForTesting.setCharacter;
     expect(
       schema.safeParse([
         { bodyShape: "burst", eyeStyle: "curious", color: "teal" },
@@ -98,7 +92,7 @@ describe("installAvatarIpc", () => {
 
   test("the schema accepts a Uint8Array or null and rejects anything else", () => {
     installAvatarIpc();
-    const schema = registrations[0]!.schema;
+    const schema = __avatarSchemasForTesting.setAvatar;
     expect(schema.safeParse([new Uint8Array([1, 2, 3])]).success).toBe(true);
     expect(schema.safeParse([null]).success).toBe(true);
     expect(schema.safeParse(["nope"]).success).toBe(false);
@@ -113,7 +107,10 @@ describe("installAvatarIpc", () => {
     const seen: number[] = [];
     onAvatarChange(() => seen.push(getAvatarPng()?.length ?? -1));
 
-    registrations[0]!.fn([new Uint8Array([9, 8, 7, 6])]);
+    registered("cadet:icon:setAvatar")!(
+      allowedEvent,
+      new Uint8Array([9, 8, 7, 6]),
+    );
     const cached = getAvatarPng();
     expect(Buffer.isBuffer(cached)).toBe(true);
     expect([...cached!]).toEqual([9, 8, 7, 6]);
@@ -123,7 +120,7 @@ describe("installAvatarIpc", () => {
   test("a null payload clears the cache", () => {
     installAvatarIpc();
     setAvatar(Buffer.from([1, 2, 3]));
-    registrations[0]!.fn([null]);
+    registered("cadet:icon:setAvatar")!(allowedEvent, null);
     expect(getAvatarPng()).toBeNull();
   });
 });

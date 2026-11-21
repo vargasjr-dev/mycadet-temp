@@ -11,7 +11,6 @@ import {
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import { startAuthCallback } from "../auth-callback";
-import { handle, handleSync } from "../ipc";
 import log from "../app-logger";
 import { ensureVisible } from "../main-window";
 
@@ -45,7 +44,6 @@ export const install = (): void => {
       ensureVisible();
     },
     getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
-    ipc: { handle, handleSync },
     openExternal: (url) => shell.openExternal(url),
     removeCookie: (url, name) =>
       session.defaultSession.cookies.remove(url, name),

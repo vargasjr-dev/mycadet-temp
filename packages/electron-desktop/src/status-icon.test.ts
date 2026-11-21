@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 // `./status` transitively imports `./ipc` (→ `ipcMain`) at module load; stub
 // it so this test only needs the `nativeImage` surface, mocked below.
@@ -19,16 +20,18 @@ const createFromBufferMock = mock((_buf: unknown) => ({ resize: resizeMock }));
 // color explicitly, so a single value across statuses keeps them consistent.
 const getSystemColorMock = mock((_name: string) => "#34c759ff");
 
-mock.module("electron", () => ({
-  BrowserWindow: { getAllWindows: () => [] },
-  nativeImage: {
-    createFromBuffer: createFromBufferMock,
-    createFromBitmap: createFromBitmapMock,
-  },
-  systemPreferences: {
-    getSystemColor: getSystemColorMock,
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: { getAllWindows: () => [] },
+    nativeImage: {
+      createFromBuffer: createFromBufferMock,
+      createFromBitmap: createFromBitmapMock,
+    },
+    systemPreferences: {
+      getSystemColor: getSystemColorMock,
+    },
+  }),
+);
 
 const {
   buildStatusIcon,

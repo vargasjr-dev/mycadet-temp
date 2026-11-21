@@ -6,7 +6,7 @@ import { z } from "zod";
 import type { DeepLink } from "@mycadet/ipc-contract";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
-import type { IpcHandle, IpcOn } from "./ipc";
+import { handle, on } from "./ipc";
 
 /**
  * Inbound deep links — `cadet://` URL scheme. The OS routes any user
@@ -54,9 +54,7 @@ export type { DeepLink };
 
 export interface DeepLinkRuntime {
   ensureVisible: () => void | Promise<void>;
-  handle: IpcHandle;
   initialArgv: readonly string[];
-  on: IpcOn;
 }
 
 let runtime: DeepLinkRuntime | null = null;
@@ -320,13 +318,9 @@ export const installDeepLinks = (): void => {
   // buffer. The next link's `handleDeepLink` decision (buffer vs
   // broadcast-only) is governed by `subscriberCount`, not by
   // whether drain has been called.
-  currentRuntime.handle(
-    "cadet:deepLinks:drain",
-    z.tuple([]),
-    (): DeepLink[] => {
-      return pending.splice(0, pending.length);
-    },
-  );
+  handle("cadet:deepLinks:drain", z.tuple([]), (): DeepLink[] => {
+    return pending.splice(0, pending.length);
+  });
 
   // Subscriber tracking — see the `subscribers` comment above for
   // the model. The fire-and-forget `on` channel is sufficient — these
@@ -335,26 +329,18 @@ export const installDeepLinks = (): void => {
   // `destroyed` listener is the defense-in-depth for the cases
   // where the React effect cleanup doesn't run before the
   // webContents is torn down.
-  currentRuntime.on(
-    "cadet:deepLinks:subscribe",
-    z.tuple([]),
-    (_args, event) => {
-      if (subscribers.has(event.sender)) {
-        return;
-      }
-      subscribers.add(event.sender);
-      event.sender.once("destroyed", () => {
-        subscribers.delete(event.sender);
-      });
-    },
-  );
-  currentRuntime.on(
-    "cadet:deepLinks:unsubscribe",
-    z.tuple([]),
-    (_args, event) => {
+  on("cadet:deepLinks:subscribe", z.tuple([]), (_args, event) => {
+    if (subscribers.has(event.sender)) {
+      return;
+    }
+    subscribers.add(event.sender);
+    event.sender.once("destroyed", () => {
       subscribers.delete(event.sender);
-    },
-  );
+    });
+  });
+  on("cadet:deepLinks:unsubscribe", z.tuple([]), (_args, event) => {
+    subscribers.delete(event.sender);
+  });
 
   app.on("second-instance", (_event, argv) => {
     const url = extractDeepLinkFromArgv(argv);

@@ -11,7 +11,7 @@ import {
   type DownloadDoneEvent,
 } from "@mycadet/ipc-contract";
 
-import { handle as sharedHandle, type IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 
 /**
  * Downloads: files a renderer download into the host's Downloads folder and
@@ -139,17 +139,15 @@ let installed = false;
  * Wire the download handler and the reveal channel. Call once from
  * `whenReady`; idempotent. The registrar is the shared origin-validating IPC
  * `handle`, so reveal requests from anything but the app renderer are
- * rejected before dispatch; tests may inject a capturing registrar.
+ * rejected before dispatch.
  */
-export const installDownloads = ({
-  handle: registrar = sharedHandle,
-}: { handle?: IpcHandle } = {}): void => {
+export const installDownloads = (): void => {
   if (installed) {
     return;
   }
   installed = true;
 
-  registrar(DOWNLOADS_REVEAL, RevealArgs, ([id]) => {
+  handle(DOWNLOADS_REVEAL, RevealArgs, ([id]) => {
     const savedPath = revealable.get(id);
     if (savedPath) {
       shell.showItemInFolder(savedPath);

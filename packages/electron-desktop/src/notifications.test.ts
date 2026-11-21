@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-import type { z } from "zod";
+import { electronMock, recordedIpcHandlers } from "../test-setup";
 
 /**
  * Unit coverage for the main-process notification bridge added in LUM-1873.
@@ -93,43 +93,29 @@ const createFromBufferMock = mock((buffer: Buffer) => ({
   nativeImageOf: buffer,
 }));
 
-mock.module("electron", () => ({
-  Notification: MockNotification,
-  nativeImage: { createFromBuffer: createFromBufferMock },
-  BrowserWindow: {
-    getAllWindows: () => [
-      {
-        isDestroyed: () => false,
-        webContents: {
-          send: (channel: string, payload: unknown) => {
-            sentMessages.push({ channel, payload });
+mock.module("electron", () =>
+  electronMock({
+    Notification: MockNotification,
+    nativeImage: { createFromBuffer: createFromBufferMock },
+    BrowserWindow: {
+      getAllWindows: () => [
+        {
+          isDestroyed: () => false,
+          webContents: {
+            send: (channel: string, payload: unknown) => {
+              sentMessages.push({ channel, payload });
+            },
           },
         },
-      },
-    ],
-  },
-}));
-
-// --- Injected runtime seams (IPC registrar + ensureVisible spies) ----------
-
-type HandleRegistration = {
-  channel: string;
-  schema: z.ZodType<unknown[]>;
-  fn: (args: unknown[], event?: unknown) => unknown;
-};
-const handleRegistrations: HandleRegistration[] = [];
-const handleMock = mock(
-  (
-    channel: string,
-    schema: z.ZodType<unknown[]>,
-    fn: (args: unknown[], event?: unknown) => unknown,
-  ) => {
-    handleRegistrations.push({ channel, schema, fn });
-  },
+      ],
+    },
+  }),
 );
-const ipc = {
-  handle: handleMock as unknown as import("./ipc").IpcHandle,
-};
+
+// --- Injected runtime seams (ensureVisible spy) -----------------------------
+
+// The channels ride the shared registrar, whose `ipcMain.handle` the shared
+// surface records; tests invoke the recorded wrappers directly.
 const quietLogger = { warn: () => undefined };
 const ensureVisibleMock = mock(() => Promise.resolve());
 
@@ -139,6 +125,7 @@ const {
   NOTIFICATION_CATEGORIES,
   __resetForTesting,
   __setDeliveryTimeoutForTesting,
+  __boundarySchemasForTesting,
   isPreparedNotificationSenderCurrent,
 } = await import("./notifications");
 
@@ -160,54 +147,53 @@ const defaultSender = {
   id: 1,
   once: () => undefined,
 };
-const defaultEvent = { sender: defaultSender };
+// The IPC wrapper rejects any sender whose frame origin isn't the app
+// renderer's; the fake event derives the origin from the guard's own
+// resolver and carries the sender the handler bodies read.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const defaultEvent = {
+  sender: defaultSender,
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
+};
 
 interface ShowResult {
   success: boolean;
   errorMessage?: string;
 }
 
-const showHandler = (): HandleRegistration => {
-  const reg = handleRegistrations.find((r) => r.channel === SHOW_CHANNEL);
-  if (!reg) throw new Error(`no handler registered for ${SHOW_CHANNEL}`);
-  return reg;
-};
-
-const handlerFor = (channel: string): HandleRegistration => {
-  const registration = handleRegistrations.find(
-    (candidate) => candidate.channel === channel,
-  );
-  if (!registration) {
-    throw new Error(`no handler registered for ${channel}`);
-  }
-  return registration;
+const wrapperFor = (channel: string): ((...args: unknown[]) => unknown) => {
+  const handler = recordedIpcHandlers.get(channel);
+  if (!handler) throw new Error(`no handler registered for ${channel}`);
+  return handler;
 };
 
 const prepareIdentity = (payload: Record<string, unknown>): void => {
-  const { schema, fn } = handlerFor(PREPARE_CHANNEL);
-  fn(schema.parse([payload]), defaultEvent);
+  wrapperFor(PREPARE_CHANNEL)(defaultEvent, payload);
 };
 
 const resetIdentities = (payload: Record<string, unknown>): void => {
-  const { schema, fn } = handlerFor(RESET_CHANNEL);
-  fn(schema.parse([payload]), defaultEvent);
+  wrapperFor(RESET_CHANNEL)(defaultEvent, payload);
 };
 
-/** Invoke the registered show handler the way `./ipc` would (tuple arg). */
+/** Invoke the registered show handler the way a validated IPC message would. */
 const show = (payload: Record<string, unknown>): Promise<ShowResult> =>
-  showHandler().fn([payload]) as Promise<ShowResult>;
+  wrapperFor(SHOW_CHANNEL)(defaultEvent, payload) as Promise<ShowResult>;
 
 /** The same, through the boundary schema, for what the parse itself decides. */
-const showParsed = (payload: Record<string, unknown>): Promise<ShowResult> => {
-  const { schema, fn } = showHandler();
-  return fn(schema.parse([payload])) as Promise<ShowResult>;
-};
+const showParsed = (payload: Record<string, unknown>): Promise<ShowResult> =>
+  show(payload);
 
 /** What the boundary hands the handler, for asserting on what survived it. */
 const parseShowPayload = (
   payload: Record<string, unknown>,
 ): Record<string, unknown> =>
-  showHandler().schema.parse([payload])[0] as Record<string, unknown>;
+  __boundarySchemasForTesting.show.parse([payload])[0] as unknown as Record<
+    string,
+    unknown
+  >;
 
 const BASE_TIME = new Date("2026-06-05T12:00:00.000Z").getTime();
 const at = (msOffset: number) => setSystemTime(new Date(BASE_TIME + msOffset));
@@ -218,13 +204,11 @@ beforeEach(() => {
   notificationSupported = true;
   constructed.length = 0;
   sentMessages.length = 0;
-  handleRegistrations.length = 0;
-  handleMock.mockClear();
+  recordedIpcHandlers.clear();
   ensureVisibleMock.mockClear();
   createFromBufferMock.mockClear();
   at(0);
   configureNotifications({
-    ipc,
     ensureVisible: ensureVisibleMock,
     logger: quietLogger,
   });
@@ -240,11 +224,11 @@ afterEach(() => {
 
 describe("installNotifications", () => {
   test("registers the show handler on the notifications channel", () => {
-    expect(handleRegistrations.map((r) => r.channel)).toContain(SHOW_CHANNEL);
+    expect([...recordedIpcHandlers.keys()]).toContain(SHOW_CHANNEL);
   });
 
   test("registers validated identity preparation and reset handlers", () => {
-    expect(handleRegistrations.map((r) => r.channel)).toEqual(
+    expect([...recordedIpcHandlers.keys()]).toEqual(
       expect.arrayContaining([
         REGISTER_PUBLISHER_CHANNEL,
         PREPARE_CHANNEL,
@@ -252,7 +236,7 @@ describe("installNotifications", () => {
       ]),
     );
     expect(() =>
-      handlerFor(PREPARE_CHANNEL).schema.parse([
+      __boundarySchemasForTesting.prepareIdentity.parse([
         {
           identity: {
             scopeId: OPAQUE_SCOPE_A,
@@ -267,14 +251,14 @@ describe("installNotifications", () => {
       ]),
     ).toThrow();
     expect(() =>
-      handlerFor(RESET_CHANNEL).schema.parse([
+      __boundarySchemasForTesting.resetIdentities.parse([
         { scopeId: OPAQUE_SCOPE_A, scopeEpoch: 1, identityRevision: 2 },
       ]),
     ).toThrow();
   });
 
   test("the captured schema accepts a valid payload and rejects an unknown category", () => {
-    const { schema } = showHandler();
+    const schema = __boundarySchemasForTesting.show;
     expect(() =>
       schema.parse([{ category: "notificationIntent", title: "t", body: "b" }]),
     ).not.toThrow();
@@ -742,7 +726,6 @@ describe("sender", () => {
   test("warns when the boundary drops a sender the renderer sent", async () => {
     const warnings: string[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: {
         warn: (...args: unknown[]) => {
@@ -792,7 +775,6 @@ describe("sender", () => {
   test("hands the factory the decoded avatar bytes", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -822,7 +804,6 @@ describe("sender", () => {
   test("degrades inline sender decoration with a raw scope to plain", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -851,7 +832,6 @@ describe("sender", () => {
     const created: NotificationCreateOptions[] = [];
     const warnings: string[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: {
         warn: (...args: unknown[]) => warnings.push(String(args[0])),
@@ -911,7 +891,6 @@ describe("sender", () => {
   test("uses an exact prepared identity when show carries no avatar bytes", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -953,7 +932,6 @@ describe("sender", () => {
   test("an event name takes precedence over prepared memory", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -985,7 +963,6 @@ describe("sender", () => {
   test("an exact prepared store name precedes renderer memory", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -1019,7 +996,6 @@ describe("sender", () => {
   test("uses title only for display and omits the duplicate group title", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -1057,7 +1033,6 @@ describe("sender", () => {
   test("app presentation ignores warm assistant identity memory", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -1089,7 +1064,6 @@ describe("sender", () => {
   test("scope reset rejects delayed preparation and removes its sender", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -1130,7 +1104,6 @@ describe("sender", () => {
   test("does not use an identity prepared for another scope", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -1162,7 +1135,6 @@ describe("sender", () => {
   test("omits the sender from the factory options when the payload carries none", async () => {
     const created: NotificationCreateOptions[] = [];
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: (options) => {
@@ -1207,7 +1179,6 @@ describe("sender", () => {
         new MockNotification(options) as unknown as NotificationLike,
     );
     configureNotifications({
-      ipc,
       ensureVisible: ensureVisibleMock,
       logger: quietLogger,
       create: customFactory,

@@ -1,9 +1,12 @@
 import { describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
-mock.module("electron", () => ({
-  BrowserWindow: class {},
-  screen: { getCursorScreenPoint: () => ({ x: 0, y: 0 }) },
-}));
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: class {},
+    screen: { getCursorScreenPoint: () => ({ x: 0, y: 0 }) },
+  }),
+);
 
 const { CURSOR_HOVER_POLL_MS, createCursorHoverPoller } =
   await import("./dictation-overlay-window");

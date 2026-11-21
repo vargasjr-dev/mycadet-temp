@@ -1,22 +1,19 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import type { NativeAuthOptions } from "./native-auth";
+import {
+  electronMock,
+  recordedIpcHandlers,
+  recordedIpcOnListeners,
+} from "../test-setup";
 
-// Capture IPC registrations so tests can invoke the handlers directly.
-const ipcHandlers: Record<string, (args: unknown[]) => unknown> = {};
-const ipcSyncHandlers: Record<string, () => unknown> = {};
-
-const ipc = {
-  handle: (
-    channel: string,
-    _schema: unknown,
-    fn: (args: unknown[]) => unknown,
-  ) => {
-    ipcHandlers[channel] = fn;
-  },
-  handleSync: (channel: string, fn: () => unknown) => {
-    ipcSyncHandlers[channel] = fn;
-  },
+// The handlers ride the shared registrar, whose ipcMain registrations the
+// shared surface records; tests invoke the recorded wrappers directly.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
 };
 
 // Capture the OAuth start URL so tests can read back the generated `state`.
@@ -28,41 +25,43 @@ const cookieRemoveCalls: Array<{ url: string; name: string }> = [];
 // Capture the post-login app-refocus calls.
 const refocus = { appFocusSteal: 0, ensureVisible: 0 };
 
-mock.module("electron", () => ({
-  net: {
-    // Routed by URL: serves the real workos-pkce module's three network
-    // legs (config discovery, WorkOS code exchange, session exchange) and
-    // the legacy /accounts/native/exchange.
-    fetch: (url: string) => {
-      let body: unknown;
-      if (url.includes("/_allauth/app/v1/config")) {
-        body = {
-          data: {
-            socialaccount: {
-              providers: [
-                {
-                  id: "workos-oidc",
-                  name: "WorkOS",
-                  client_id: "client_um_test",
-                  flows: ["provider_redirect", "provider_token"],
-                },
-              ],
+mock.module("electron", () =>
+  electronMock({
+    net: {
+      // Routed by URL: serves the real workos-pkce module's three network
+      // legs (config discovery, WorkOS code exchange, session exchange) and
+      // the legacy /accounts/native/exchange.
+      fetch: (url: string) => {
+        let body: unknown;
+        if (url.includes("/_allauth/app/v1/config")) {
+          body = {
+            data: {
+              socialaccount: {
+                providers: [
+                  {
+                    id: "workos-oidc",
+                    name: "WorkOS",
+                    client_id: "client_um_test",
+                    flows: ["provider_redirect", "provider_token"],
+                  },
+                ],
+              },
             },
-          },
-        };
-      } else if (url.includes("/user_management/authenticate")) {
-        body = { access_token: "access-token-abc", user: {} };
-      } else if (url.includes("/_allauth/app/v1/auth/provider/token")) {
-        body = { meta: { session_token: "sess-tok-123" } };
-      } else {
-        body = { session_token: "sess-tok-123" };
-      }
-      return Promise.resolve(
-        new Response(JSON.stringify(body), { status: 200 }),
-      );
+          };
+        } else if (url.includes("/user_management/authenticate")) {
+          body = { access_token: "access-token-abc", user: {} };
+        } else if (url.includes("/_allauth/app/v1/auth/provider/token")) {
+          body = { meta: { session_token: "sess-tok-123" } };
+        } else {
+          body = { session_token: "sess-tok-123" };
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify(body), { status: 200 }),
+        );
+      },
     },
-  },
-}));
+  }),
+);
 
 // Capture session-token-store interactions.
 const store = {
@@ -88,7 +87,6 @@ configureNativeAuth({
     refocus.ensureVisible += 1;
   },
   getCloudUrl: () => "https://platform.example",
-  ipc: ipc as NativeAuthOptions["ipc"],
   openExternal: (url) => {
     lastOpenedUrl = url;
   },
@@ -116,8 +114,8 @@ afterEach(() => {
   cookieRemoveCalls.length = 0;
   refocus.appFocusSteal = 0;
   refocus.ensureVisible = 0;
-  for (const key of Object.keys(ipcHandlers)) delete ipcHandlers[key];
-  for (const key of Object.keys(ipcSyncHandlers)) delete ipcSyncHandlers[key];
+  recordedIpcHandlers.clear();
+  recordedIpcOnListeners.clear();
 });
 
 describe("generateState", () => {
@@ -138,10 +136,12 @@ describe("installNativeAuth session-token wiring", () => {
   test("persists the exchanged token on successful PKCE login", async () => {
     installNativeAuth();
 
-    const startOAuth = ipcHandlers["cadet:auth:startOAuth"];
+    const startOAuth = recordedIpcHandlers.get("cadet:auth:startOAuth");
     expect(startOAuth).toBeDefined();
 
-    const pending = startOAuth([{}]) as Promise<{ sessionToken: string }>;
+    const pending = startOAuth!(allowedEvent, {}) as Promise<{
+      sessionToken: string;
+    }>;
 
     // Wait for the async setup (config fetch + listener bind) to open the
     // browser at the WorkOS authorize URL.
@@ -192,10 +192,10 @@ describe("installNativeAuth session-token wiring", () => {
     });
     installNativeAuth();
 
-    const signOut = ipcHandlers["cadet:auth:signOut"];
+    const signOut = recordedIpcHandlers.get("cadet:auth:signOut");
     expect(signOut).toBeDefined();
 
-    await signOut([]);
+    await signOut!(allowedEvent);
     expect(store.clearCalls).toBe(1);
     expect(getPreparedNotificationIdentity(identity)).toBeNull();
     expect(
@@ -212,14 +212,17 @@ describe("installNativeAuth session-token wiring", () => {
   test("cancelOAuth stops an active loopback flow", async () => {
     installNativeAuth();
 
-    const pending = ipcHandlers["cadet:auth:startOAuth"]!([{}]) as Promise<{
+    const pending = recordedIpcHandlers.get("cadet:auth:startOAuth")!(
+      allowedEvent,
+      {},
+    ) as Promise<{
       sessionToken: string;
     }>;
     while (!lastOpenedUrl) {
       await Bun.sleep(1);
     }
 
-    await ipcHandlers["cadet:auth:cancelOAuth"]!([]);
+    await recordedIpcHandlers.get("cadet:auth:cancelOAuth")!(allowedEvent);
     await expect(pending).rejects.toThrow("Auth flow cancelled");
   });
 
@@ -227,8 +230,12 @@ describe("installNativeAuth session-token wiring", () => {
     installNativeAuth();
     store.saved.push("cached-tok");
 
-    const getToken = ipcSyncHandlers["cadet:auth:getSessionToken"];
-    expect(getToken).toBeDefined();
-    expect(getToken()).toBe("cached-tok");
+    const listener = recordedIpcOnListeners.get(
+      "cadet:auth:getSessionToken",
+    )?.[0];
+    expect(listener).toBeDefined();
+    const syncEvent: { returnValue?: string } = { ...allowedEvent };
+    listener?.(syncEvent);
+    expect(syncEvent.returnValue).toBe("cached-tok");
   });
 });

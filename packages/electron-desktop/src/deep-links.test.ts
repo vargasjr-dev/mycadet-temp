@@ -9,6 +9,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
+import { electronMock } from "../test-setup";
 
 // Capture the `will-finish-launching` and `open-url` subscriptions
 // from `app.on` so tests can fire them. `setAsDefaultProtocolClient`
@@ -33,9 +34,15 @@ const makeSender = (): {
   };
 };
 const subscribeWith = (s: ReturnType<typeof makeSender>) =>
-  ipcOnListeners.get("cadet:deepLinks:subscribe")?.({ sender: s.sender });
+  ipcOnListeners.get("cadet:deepLinks:subscribe")?.({
+    ...allowedEvent,
+    sender: s.sender,
+  });
 const unsubscribeWith = (s: ReturnType<typeof makeSender>) =>
-  ipcOnListeners.get("cadet:deepLinks:unsubscribe")?.({ sender: s.sender });
+  ipcOnListeners.get("cadet:deepLinks:unsubscribe")?.({
+    ...allowedEvent,
+    sender: s.sender,
+  });
 const appListeners = new Map<string, Listener>();
 const appOnMock = mock((event: string, listener: Listener) => {
   appListeners.set(event, listener);
@@ -72,18 +79,20 @@ const withEnvironment = (environment: string, run: () => void): void => {
 
 let appIsReady = true;
 let appIsPackaged = false;
-mock.module("electron", () => ({
-  app: {
-    on: appOnMock,
-    setAsDefaultProtocolClient: setAsDefaultProtocolClientMock,
-    isReady: () => appIsReady,
-    get isPackaged() {
-      return appIsPackaged;
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      on: appOnMock,
+      setAsDefaultProtocolClient: setAsDefaultProtocolClientMock,
+      isReady: () => appIsReady,
+      get isPackaged() {
+        return appIsPackaged;
+      },
     },
-  },
-  ipcMain: { handle: ipcHandleMock, on: ipcOnMock },
-  BrowserWindow: { getAllWindows: () => windows },
-}));
+    ipcMain: { handle: ipcHandleMock, on: ipcOnMock },
+    BrowserWindow: { getAllWindows: () => windows },
+  }),
+);
 
 const ensureMainWindowVisibleMock = mock(async () => undefined);
 
@@ -99,7 +108,15 @@ const {
   resolveRegisteredSchemes,
 } = await import("./deep-links");
 
-const allowedEvent = {};
+// The registrar's sender guard checks `senderFrame.origin` against the
+// guard's own resolver; the fake events derive it.
+const { protocol: allowedProtocol, host: allowedHost } =
+  await import("./app-origin").then(({ resolveAllowedOrigin }) =>
+    resolveAllowedOrigin(),
+  );
+const allowedEvent = {
+  senderFrame: { origin: `${allowedProtocol}//${allowedHost}` },
+};
 
 const makeWindow = (destroyed = false) => ({
   isDestroyed: () => destroyed,
@@ -109,20 +126,7 @@ const makeWindow = (destroyed = false) => ({
 const configureTestRuntime = (initialArgv: readonly string[] = []): void => {
   configureDeepLinks({
     ensureVisible: ensureMainWindowVisibleMock,
-    handle: (channel, schema, fn) => {
-      ipcHandleMock(channel, (event, ...args) =>
-        fn(schema.parse(args), event as never),
-      );
-    },
     initialArgv,
-    on: (channel, schema, fn) => {
-      ipcOnListeners.set(channel, (event, ...args) => {
-        const parsed = schema.safeParse(args);
-        if (parsed.success) {
-          fn(parsed.data, event as never);
-        }
-      });
-    },
   });
 };
 

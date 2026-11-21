@@ -45,7 +45,13 @@ mock.module("electron", () =>
 );
 mock.module("../main-window", () => ({ ensureVisible }));
 
-const { install: fileOpenInstall } = await import("../features/file-open");
+const {
+  configureFileOpen,
+  handleFileOpenArgv,
+  installFileOpen: fileOpenInstall,
+} = await import("../file-open");
+
+configureFileOpen({ ensureMainWindowVisible: ensureVisible });
 const { resolveAllowedOrigin } = await import("../app-origin");
 
 const makeEvent = () => {
@@ -67,11 +73,14 @@ const makeEvent = () => {
 };
 
 test("delivers canonical first-instance and second-instance file paths once", () => {
+  // startApp routes the cold-launch argv right after installing; the shell's
+  // argv is what the OS handed the first instance.
   const originalArgv = process.argv;
   const firstPath = "exports/例.cadet";
-  process.argv = ["Cadet.exe", firstPath, firstPath, "notes.txt"];
+  const launchArgv = ["Cadet.exe", firstPath, firstPath, "notes.txt"];
   try {
     fileOpenInstall();
+    handleFileOpenArgv(launchArgv);
   } finally {
     process.argv = originalArgv;
   }

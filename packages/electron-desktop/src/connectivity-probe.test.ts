@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -16,27 +17,29 @@ mock.module("./status", () => ({
 let fetchCalls: string[] = [];
 let fetchHeaders: (Record<string, string> | undefined)[] = [];
 let fetchBehavior: "ok" | "http-error" | "reject" = "ok";
-mock.module("electron", () => ({
-  app: {
-    on: () => {},
-  },
-  BrowserWindow: {
-    getAllWindows: () => [],
-  },
-  net: {
-    fetch: (url: string, init?: { headers?: Record<string, string> }) => {
-      fetchCalls.push(url);
-      fetchHeaders.push(init?.headers);
-      if (fetchBehavior === "reject") {
-        return Promise.reject(new Error("connection refused"));
-      }
-      return Promise.resolve({ ok: fetchBehavior === "ok" } as Response);
+mock.module("electron", () =>
+  electronMock({
+    app: {
+      on: () => {},
     },
-  },
-  powerMonitor: {
-    on: () => {},
-  },
-}));
+    BrowserWindow: {
+      getAllWindows: () => [],
+    },
+    net: {
+      fetch: (url: string, init?: { headers?: Record<string, string> }) => {
+        fetchCalls.push(url);
+        fetchHeaders.push(init?.headers);
+        if (fetchBehavior === "reject") {
+          return Promise.reject(new Error("connection refused"));
+        }
+        return Promise.resolve({ ok: fetchBehavior === "ok" } as Response);
+      },
+    },
+    powerMonitor: {
+      on: () => {},
+    },
+  }),
+);
 
 // Control the lockfile data returned by getLockfileData.
 type LockfileEntry = {

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { POPOUT_OPEN } from "@mycadet/ipc-contract";
 
-import type { IpcHandle } from "./ipc";
+import { handle } from "./ipc";
 import { createModuleConfiguration } from "./module-configuration";
 import type { CreateWindowOptions } from "./windows";
 
@@ -46,7 +46,6 @@ type RestoredBounds = Pick<
 
 export interface PopoutWindowDependencies {
   createWindow: (options: CreateWindowOptions) => BrowserWindow;
-  handle: IpcHandle;
   resolveRoute: (route: string) => string;
   restoreBounds?: (
     key: string,
@@ -149,7 +148,6 @@ export const installPopoutWindows = (): void => {
     return;
   }
   installed = true;
-  const { handle } = configuration.get();
 
   handle(POPOUT_OPEN, z.tuple([z.string()]), ([conversationId]) => {
     openPopout(conversationId);

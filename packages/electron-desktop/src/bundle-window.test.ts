@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 // ---------------------------------------------------------------------------
 // Stubs
@@ -99,17 +100,19 @@ const fromPartitionMock = mock(
   }),
 );
 
-mock.module("electron", () => ({
-  app: { isPackaged: false, getPath: () => "/fake/user-data" },
-  session: { fromPartition: fromPartitionMock },
-  BrowserWindow: class {
-    constructor(options: Record<string, unknown>) {
-      const win = makeWindow(options);
-      constructed.push(win);
-      Object.assign(this, win);
-    }
-  },
-}));
+mock.module("electron", () =>
+  electronMock({
+    app: { isPackaged: false, getPath: () => "/fake/user-data" },
+    session: { fromPartition: fromPartitionMock },
+    BrowserWindow: class {
+      constructor(options: Record<string, unknown>) {
+        const win = makeWindow(options);
+        constructed.push(win);
+        Object.assign(this, win);
+      }
+    },
+  }),
+);
 
 const createCadetHandlerMock = mock(
   (_bundlesRoot: string) => async (_req: Request) => new Response("ok"),

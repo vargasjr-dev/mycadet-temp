@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { electronMock, recordedIpcHandlers } from "../test-setup";
+
+mock.module("electron", () => electronMock());
+
 /**
  * Regression cover for the auto-updater's leaked download promise.
  *
@@ -33,8 +37,6 @@ mock.module("electron-updater", () => ({
   },
 }));
 
-const registeredChannels: string[] = [];
-
 const {
   checkForUpdates,
   installAutoUpdate,
@@ -42,14 +44,7 @@ const {
   resolveUpdateFeedUrl,
 } = await import("./auto-update");
 
-installAutoUpdate({
-  ipc: {
-    handle: (channel: string) => {
-      registeredChannels.push(channel);
-    },
-  },
-  platform: "win-electron",
-});
+installAutoUpdate({ platform: "win-electron" });
 
 /** Collect unhandled rejections raised while `run` settles. */
 const unhandledDuring = async (run: () => void): Promise<unknown[]> => {
@@ -73,7 +68,7 @@ const unhandledDuring = async (run: () => void): Promise<unknown[]> => {
 
 describe("installAutoUpdate", () => {
   test("registers the update IPC channels and leaves the updater idle unpackaged", () => {
-    expect(registeredChannels).toEqual([
+    expect([...recordedIpcHandlers.keys()]).toEqual([
       "cadet:update:getState",
       "cadet:update:check",
       "cadet:update:install",

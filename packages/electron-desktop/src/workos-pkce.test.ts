@@ -1,21 +1,24 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { electronMock } from "../test-setup";
 
 // net.fetch routes by URL so each WorkOS/platform call can be asserted.
 let fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
 let fetchResponses: Record<string, () => Response> = {};
 
-mock.module("electron", () => ({
-  net: {
-    fetch: (url: string, init?: RequestInit) => {
-      fetchCalls.push({ url, init });
-      const match = Object.entries(fetchResponses).find(([prefix]) =>
-        url.includes(prefix),
-      );
-      if (!match) throw new Error(`Unexpected fetch: ${url}`);
-      return Promise.resolve(match[1]());
+mock.module("electron", () =>
+  electronMock({
+    net: {
+      fetch: (url: string, init?: RequestInit) => {
+        fetchCalls.push({ url, init });
+        const match = Object.entries(fetchResponses).find(([prefix]) =>
+          url.includes(prefix),
+        );
+        if (!match) throw new Error(`Unexpected fetch: ${url}`);
+        return Promise.resolve(match[1]());
+      },
     },
-  },
-}));
+  }),
+);
 
 const {
   buildAuthorizeUrl,
