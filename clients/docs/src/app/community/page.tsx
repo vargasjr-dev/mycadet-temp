@@ -1,3 +1,7 @@
+// TODO: Here's where this page is falling short of https://vellum.ai/community
+// - The page's background gradient is more inviting, not just black
+// - The Join Discord button is Discord's color, not just white
+// - The fun characters at the bottom of the page pre-scroll saying "Welcome!, Glad you're here!, Join us!"
 import type { Metadata } from "next";
 
 import { createMetadata } from "@/lib/metadata";
@@ -14,6 +18,14 @@ export const metadata: Metadata = createMetadata({
 
 export default function CommunityPage() {
   return (
+    // TODO:
+    // Let's update the layout of the Community page to match the layout we have in Cadet Cloud, and bring the Downloads
+    // page over
+
+    // In general, I'm hoping that `clients/docs` can replace our full marketing frontend (or as much as possible) from
+    // mycadet-cloud, as we continue to make as much of mycadet-cloud open source as possible
+
+    // It's okay if things like auth doesn't work for now
     <main className="min-h-screen bg-white text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
       {/* Hero */}
       <section className="border-b border-zinc-100 px-6 py-20 text-center dark:border-zinc-900">
