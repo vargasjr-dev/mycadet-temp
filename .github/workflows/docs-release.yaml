@@ -63,12 +63,23 @@ jobs:
         run: |
           SITE=docs-frontend-site
           mkdir -p "$SITE/_next"
-          # The marketing routes' prerendered HTML — the pages the cloud
-          # web twin serves from the bucket. The /docs/* page routes are
-          # NOT here; the docs-site service owns those.
+          # Every prerendered page the cloud web twin serves from the
+          # bucket: the marketing routes, the /docs index, the /docs/*
+          # tree, and the not-found page (the mirror's 404 fallback).
+          # The /plugins/[name] detail pages are dynamic — those stay on
+          # the docs-site service until they go client-rendered.
           cp clients/docs/.next/server/app/index.html "$SITE/"
           cp clients/docs/.next/server/app/community.html "$SITE/"
           cp clients/docs/.next/server/app/downloads.html "$SITE/"
+          cp clients/docs/.next/server/app/pricing.html "$SITE/"
+          cp clients/docs/.next/server/app/plugins.html "$SITE/"
+          cp clients/docs/.next/server/app/docs.html "$SITE/"
+          cp clients/docs/.next/server/app/_not-found.html "$SITE/404.html"
+          cp -R clients/docs/.next/server/app/docs "$SITE/docs"
+          # The app's public assets under the /docs ingress prefix
+          # (favicons, QRs) — placed at SITE/docs/ so the object paths
+          # match the URLs that reference them.
+          cp -R clients/docs/public/docs "$SITE/docs"
           # Content-hashed client chunks, referenced as /docs/_next/* (the
           # app's assetPrefix). Uploaded append-only bucket-side so older
           # builds' references keep resolving.
