@@ -7,10 +7,8 @@ import type { DraggablePermissionKind } from "@mycadet/ipc-contract";
 
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
 import { getMacHelperAppPath } from "./sidecar/mac-helper-path";
-import {
-  openPermissionSettingsPane,
-  preparePermissionPresentation,
-} from "./permissions-strategy";
+import { openPermissionSettingsPane } from "./permissions-strategy";
+import { preparePermissionPresentation } from "@mycadet/electron-desktop/permissions";
 
 /**
  * The surfaces only this OS has for the permission guide: the helper app

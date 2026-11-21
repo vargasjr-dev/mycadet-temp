@@ -1,4 +1,3 @@
-import type { NativeImage } from "electron";
 import { beforeEach, expect, mock, test } from "bun:test";
 
 type TrayRuntime = {
@@ -91,10 +90,8 @@ test("exposes menu accelerators and themed icons with no shell input", () => {
   expect(trayRuntime?.icon("settings")).toBe(themedIcon);
 });
 
-test("the shell's icon renderer and companion wiring win over the defaults", () => {
-  const shellIcon = { template: true } as unknown as NativeImage;
+test("the shared icon and label answer for every shell; only companion varies", () => {
   install({
-    icon: () => shellIcon,
     companion: {
       supported: () => true,
       hidden: () => false,
@@ -102,12 +99,11 @@ test("the shell's icon renderer and companion wiring win over the defaults", () 
       setVisible: () => undefined,
       setSize: () => undefined,
     },
-    removePairedLabel: "Remove from this Mac\u2026",
   });
 
-  expect(trayRuntime?.icon("settings")).toBe(shellIcon);
+  expect(trayRuntime?.icon("settings")).toBe(themedIcon);
   expect(trayRuntime?.companionSupported()).toBe(true);
   expect(trayRuntime?.companionHidden()).toBe(false);
   expect(trayRuntime?.companionSize("height")).toBe("small");
-  expect(trayRuntime?.removePairedLabel).toBe("Remove from this Mac\u2026");
+  expect(trayRuntime?.removePairedLabel).toBe("Remove from this device\u2026");
 });

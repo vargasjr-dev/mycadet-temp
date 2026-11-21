@@ -133,8 +133,8 @@ import { buildShareTargetSnapshot } from "./share-targets";
 import { getPermissionsService } from "@mycadet/electron-desktop";
 import {
   onPermissionPresentation,
-  openPermissionSettingsPane,
-} from "./permissions-strategy";
+} from "@mycadet/electron-desktop/permissions";
+import { openPermissionSettingsPane } from "./permissions-strategy";
 import {
   answerScreenRecordingRefusal,
   isScreenRecordingRefusal,

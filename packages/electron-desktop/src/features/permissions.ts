@@ -47,6 +47,30 @@ export interface PermissionsNativeProvider {
 
 let nativeProvider: PermissionsNativeProvider | null = null;
 
+/**
+ * The permission surfaces' presentation registry: shells with notification
+ * addon flows or settings hand-offs re-prepare the renderer's permission
+ * presentation by calling `preparePermissionPresentation`; listeners (the
+ * companion surface's permission rows) react.
+ */
+const presentationListeners = new Set<() => void>();
+
+export const onPermissionPresentation = (
+  listener: () => void,
+): (() => void) => {
+  presentationListeners.add(listener);
+  return () => {
+    presentationListeners.delete(listener);
+  };
+};
+
+export const preparePermissionPresentation = (): void => {
+  for (const listener of presentationListeners) {
+    listener();
+  }
+};
+
+
 export const configurePermissionsNative = (
   provider: PermissionsNativeProvider | null,
 ): void => {
@@ -134,7 +158,7 @@ const mapMediaStatus = (status: string): SystemPermissionStatus =>
     ? (status as SystemPermissionStatus)
     : "unknown";
 
-const describeError = (err: unknown): string =>
+export const describeError = (err: unknown): string =>
   err instanceof Error ? err.message : String(err);
 
 const allWindowsWebContents = () =>

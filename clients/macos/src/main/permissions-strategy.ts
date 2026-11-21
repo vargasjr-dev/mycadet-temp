@@ -9,6 +9,12 @@ import type {
 import type { PermissionsShellInputs } from "@mycadet/electron-desktop";
 import { isPreparedNotificationSenderCurrent } from "@mycadet/electron-desktop/notifications";
 import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
+import {
+  describeError,
+  onPermissionPresentation,
+  preparePermissionPresentation,
+} from "@mycadet/electron-desktop/permissions";
+import { resolveEnvironmentName } from "@mycadet/shared";
 
 import { runAppleScript } from "./appleScriptExecutor";
 import {
@@ -28,23 +34,6 @@ import {
 } from "./notifier";
 import { readScreenRecordingPermission } from "./screen-recording-permission";
 import { typeIntoFrontApp } from "./textInsertion";
-
-const presentationListeners = new Set<() => void>();
-
-export const onPermissionPresentation = (
-  listener: () => void,
-): (() => void) => {
-  presentationListeners.add(listener);
-  return () => {
-    presentationListeners.delete(listener);
-  };
-};
-
-export const preparePermissionPresentation = (): void => {
-  for (const listener of presentationListeners) {
-    listener();
-  }
-};
 
 const SECURITY_PANE_URL =
   "x-apple.systempreferences:com.apple.preference.security";
@@ -71,9 +60,6 @@ const isMacHelperPermissionKind = (
   kind: SystemPermissionKind,
 ): kind is MacHelperPermissionKind => HELPER_PERMISSION_KINDS.has(kind);
 
-const describeError = (err: unknown): string =>
-  err instanceof Error ? err.message : String(err);
-
 const isAutomationDeniedError = (err: unknown): boolean => {
   const message = describeError(err).toLowerCase();
   return (
@@ -89,7 +75,7 @@ const isAutomationDeniedError = (err: unknown): boolean => {
 
 const resolveAppBundleId = (): string => {
   if (!app.isPackaged) return "com.github.Electron";
-  const env = process.env.CADET_ENVIRONMENT || "production";
+  const env = resolveEnvironmentName();
   return env === "production"
     ? "ai.mycadet.electron"
     : `ai.mycadet.electron-${env}`;

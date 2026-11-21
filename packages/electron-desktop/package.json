@@ -20,6 +20,7 @@
     "./ipc": "./src/ipc.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
     "./notifications": "./src/notifications.ts",
+    "./permissions": "./src/features/permissions.ts",
     "./preload": "./src/preload.ts",
     "./session-token-store": "./src/session-token-store.ts",
     "./settings": "./src/settings.ts",

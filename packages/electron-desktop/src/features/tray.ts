@@ -76,12 +76,6 @@ const dispatch = (command: CadetCommand): void => {
 
 /** The tray surfaces only the shell has. Absent fields take shared answers. */
 export interface ShellTrayInputs {
-  /**
-   * The shell's own tray-menu icon renderer — a build that ships template
-   * images or themed glyphs of its own. Absent, the shared theme-aware
-   * renderer answers.
-   */
-  icon?: (icon: TrayMenuIcon) => NativeImage | undefined;
   /** The shell's companion-surface wiring. Absent, the surface doesn't exist. */
   companion?: {
     supported: () => boolean;
@@ -91,8 +85,6 @@ export interface ShellTrayInputs {
     setSize: (axis: CompanionSizeAxis, size: CompanionSize) => void;
     replayIntro?: () => void;
   };
-  /** The paired-device removal row's copy — the shell's own wording. */
-  removePairedLabel?: string;
 }
 
 /**
@@ -111,12 +103,12 @@ export const install = (tray?: ShellTrayInputs): void => {
     companionHidden: tray?.companion?.hidden ?? (() => true),
     companionSize: tray?.companion?.size ?? (() => DEFAULT_COMPANION_SIZE),
     dispatch,
-    icon: tray?.icon ?? ((menu) => ICONS[menu]()),
+    icon: (menu) => ICONS[menu](),
     onboardingActive: readOnboardingActive,
     openComponentGallery: () => {
       void shell.openExternal("http://localhost:6007");
     },
-    removePairedLabel: tray?.removePairedLabel ?? "Remove from this PC\u2026",
+    removePairedLabel: "Remove from this device\u2026",
     setCompanionSize: tray?.companion?.setSize ?? (() => undefined),
     setCompanionVisible: tray?.companion?.setVisible ?? (() => undefined),
     ...(tray?.companion?.replayIntro

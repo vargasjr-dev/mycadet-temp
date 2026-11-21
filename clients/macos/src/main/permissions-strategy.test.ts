@@ -150,8 +150,10 @@ mock.module("./notifier", () => ({
   requestNotifierAuthorization: () => authorizationRequest(),
 }));
 
-const { permissionsShell, onPermissionPresentation } =
-  await import("./permissions-strategy");
+const { permissionsShell } = await import("./permissions-strategy");
+const { onPermissionPresentation } = await import(
+  "@mycadet/electron-desktop/permissions"
+);
 
 const nativeNotifier = (isSupported = true): Notifier => ({
   isSupported: () => isSupported,

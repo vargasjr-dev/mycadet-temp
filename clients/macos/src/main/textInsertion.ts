@@ -277,10 +277,8 @@ export const typeIntoFrontAppWithDeps = async (
   return result;
 };
 
-const typeIntoFrontApp = (text: string): Promise<TextInsertionResult> =>
+export const typeIntoFrontApp = (text: string): Promise<TextInsertionResult> =>
   typeIntoFrontAppWithDeps(text, defaultDeps);
-
-export { typeIntoFrontApp };
 
 /**
  * Undo the last edit in the application in front, the way its Edit menu
