@@ -1318,6 +1318,10 @@ function buildStandaloneSurfaceData(
   // of top-level `fields` may omit the latter entirely.
   const raw = request.data;
   const hasFields = Array.isArray(raw.fields) && raw.fields.length > 0;
+  // The fields passthrough is deliberate: FormSurfaceDataSchema's own parse
+  // applies the same recordArray(FormFieldSchema) normalization, and this
+  // pipeline's contract is that FUTURE additive keys (on the form and its
+  // fields) survive untouched — a zod parse here would strip them.
   const fields: FormSurfaceData["fields"] = hasFields
     ? (raw.fields as FormSurfaceData["fields"])
     : [];
@@ -2196,22 +2200,16 @@ export async function handleSurfaceAction(
     let attachments: UserMessageAttachment[] = [];
     let actionDataForText = mergedData;
     if (mergedData && Array.isArray(mergedData.files)) {
-      const files = mergedData.files as Array<Record<string, unknown>>;
-      attachments = files
-        .filter(
-          (f) =>
-            typeof f.filename === "string" &&
-            typeof f.mimeType === "string" &&
-            typeof f.data === "string",
-        )
-        .map((f) => ({
-          filename: f.filename as string,
-          mimeType: f.mimeType as string,
-          data: f.data as string,
-          ...(typeof f.extractedText === "string"
-            ? { extractedText: f.extractedText }
-            : {}),
-        }));
+      const attachmentFileSchema = z.object({
+        filename: z.string(),
+        mimeType: z.string(),
+        data: z.string(),
+        extractedText: z.string().optional(),
+      });
+      attachments = z
+        .array(attachmentFileSchema)
+        .catch([])
+        .parse(mergedData.files);
       // Only remove files from the text payload when we successfully parsed
       // attachments — otherwise preserve the original data so the model still
       // sees the files field (e.g. IDs/paths from dynamic app actions).
@@ -2307,7 +2305,7 @@ export async function handleSurfaceAction(
 
     maybeCompleteSurfaceAfterAction(ctx, surfaceId, actionId, mergedData, {
       liveSurfaceType: stored?.surfaceType,
-      liveSurfaceData: stored?.data as Record<string, unknown> | undefined,
+      liveSurfaceData: stored?.data,
       requesterCanAccessMemory,
       submittedData: actionDataForText,
     });
@@ -2418,7 +2416,7 @@ export async function handleSurfaceAction(
 
   // Build a human-readable summary so the LLM clearly understands the
   // user's decision instead of parsing raw JSON.
-  const surfaceData = stored?.data as Record<string, unknown> | undefined;
+  const surfaceData = stored?.data;
   const summary = buildCompletionSummary(
     pending.surfaceType,
     actionId,
@@ -2431,22 +2429,16 @@ export async function handleSurfaceAction(
   let pendingAttachments: UserMessageAttachment[] = [];
   let mergedDataForText = mergedData;
   if (mergedData && Array.isArray(mergedData.files)) {
-    const files = mergedData.files as Array<Record<string, unknown>>;
-    pendingAttachments = files
-      .filter(
-        (f) =>
-          typeof f.filename === "string" &&
-          typeof f.mimeType === "string" &&
-          typeof f.data === "string",
-      )
-      .map((f) => ({
-        filename: f.filename as string,
-        mimeType: f.mimeType as string,
-        data: f.data as string,
-        ...(typeof f.extractedText === "string"
-          ? { extractedText: f.extractedText }
-          : {}),
-      }));
+    const attachmentFileSchema = z.object({
+      filename: z.string(),
+      mimeType: z.string(),
+      data: z.string(),
+      extractedText: z.string().optional(),
+    });
+    pendingAttachments = z
+      .array(attachmentFileSchema)
+      .catch([])
+      .parse(mergedData.files);
     // Only remove files from the text payload when we successfully parsed
     // attachments — otherwise preserve the original data so the model still
     // sees the files field.

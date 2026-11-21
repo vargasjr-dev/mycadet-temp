@@ -1,3 +1,5 @@
+import type { AnsweredQuestion } from "../api/events/question-answered.js";
+import type { ToolActivityMetadata } from "../api/events/tool-result.js";
 import type { ToolDefinition } from "../tools/tool-types.js";
 
 /**
@@ -95,12 +97,38 @@ export interface ToolUseContent {
       thoughtSignature?: string;
     };
   };
+  /** Internal riders stamped on the persisted block; stripped on the wire. */
+  _startedAt?: number;
+  _completedAt?: number;
+  _previewStartedAt?: number;
+  _answeredQuestion?: AnsweredQuestion;
+  _confirmationDecision?: string;
+  _confirmationLabel?: string;
+  _riskLevel?: string;
+  _riskReason?: string;
+  _autoApproved?: boolean;
+  _matchedTrustRuleId?: string;
+  _approvalMode?: string;
+  _approvalReason?: string;
+  _riskThreshold?: string;
+  _riskScopeOptions?: Array<{ pattern: string; label: string }>;
+  _riskAllowlistOptions?: Array<{
+    label: string;
+    description: string;
+    pattern: string;
+  }>;
+  _riskDirectoryScopeOptions?: Array<{ scope: string; label: string }>;
+  /** Activity metadata for external provider tools, stamped at result time. */
+  _activityMetadata?: ToolActivityMetadata;
 }
 
 export interface ThinkingContent {
   type: "thinking";
   thinking: string;
   signature: string;
+  /** Internal timing riders, attached when the block completes. Stripped on the wire. */
+  _startedAt?: number;
+  _completedAt?: number;
 }
 
 export interface RedactedThinkingContent {
@@ -122,6 +150,8 @@ export interface ServerToolUseContent {
   id: string;
   name: string;
   input: Record<string, unknown>;
+  /** Internal rider naming the tool activity this block produced. Stripped on the wire. */
+  _activityMetadata?: ToolActivityMetadata;
 }
 
 export interface WebSearchToolResultContent {

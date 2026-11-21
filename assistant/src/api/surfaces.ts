@@ -116,7 +116,7 @@ const tolerantNumber = () => z.number().finite().optional().catch(undefined);
  * Array of records: a non-array collapses to `[]` and non-object entries are
  * dropped, so one malformed entry never rejects the whole surface.
  */
-function recordArray<T extends z.ZodType>(entry: T) {
+export function recordArray<T extends z.ZodType>(entry: T) {
   return z.preprocess(
     (value) => (Array.isArray(value) ? value.filter(isRecord) : []),
     z.array(entry),

@@ -16,14 +16,9 @@
  *   testable in isolation.
  */
 
-import type {
-  MediaStreamDtmfEvent,
-  MediaStreamEvent,
-  MediaStreamMarkEvent,
-  MediaStreamMediaEvent,
-  MediaStreamStartEvent,
-  MediaStreamStopEvent,
-} from "./media-stream-protocol.js";
+import { z } from "zod";
+
+import type { MediaStreamEvent } from "./media-stream-protocol.js";
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -34,214 +29,76 @@ export type ParseResult =
   | { ok: false; error: string };
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Per-event schemas
 // ---------------------------------------------------------------------------
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return v !== null && typeof v === "object" && !Array.isArray(v);
-}
+const startSchema = z.object({
+  event: z.literal("start"),
+  sequenceNumber: z.string(),
+  streamSid: z.string(),
+  start: z.object({
+    accountSid: z.string(),
+    streamSid: z.string(),
+    callSid: z.string(),
+    tracks: z.array(z.string()),
+    // customParameters can be missing; default to empty object
+    customParameters: z.record(z.string(), z.string()).catch({}),
+    mediaFormat: z.object({
+      encoding: z.string(),
+      sampleRate: z.number(),
+      channels: z.number(),
+    }),
+  }),
+});
 
-function isString(v: unknown): v is string {
-  return typeof v === "string";
-}
+const mediaSchema = z.object({
+  event: z.literal("media"),
+  sequenceNumber: z.string(),
+  streamSid: z.string(),
+  media: z.object({
+    track: z.string(),
+    chunk: z.string(),
+    timestamp: z.string(),
+    payload: z.string(),
+  }),
+});
 
-function isStringArray(v: unknown): v is string[] {
-  return Array.isArray(v) && v.every((item) => typeof item === "string");
-}
+const dtmfSchema = z.object({
+  event: z.literal("dtmf"),
+  sequenceNumber: z.string(),
+  streamSid: z.string(),
+  dtmf: z.object({
+    digit: z.string(),
+    duration: z.string().optional(),
+  }),
+});
 
-// ---------------------------------------------------------------------------
-// Per-event validators
-// ---------------------------------------------------------------------------
+const markSchema = z.object({
+  event: z.literal("mark"),
+  sequenceNumber: z.string(),
+  streamSid: z.string(),
+  mark: z.object({
+    name: z.string(),
+  }),
+});
 
-function validateStart(raw: Record<string, unknown>): ParseResult {
-  if (!isString(raw.sequenceNumber)) {
-    return { ok: false, error: "start: missing or invalid sequenceNumber" };
-  }
-  if (!isString(raw.streamSid)) {
-    return { ok: false, error: "start: missing or invalid streamSid" };
-  }
+const stopSchema = z.object({
+  event: z.literal("stop"),
+  sequenceNumber: z.string(),
+  streamSid: z.string(),
+  stop: z.object({
+    accountSid: z.string(),
+    callSid: z.string(),
+  }),
+});
 
-  const start = raw.start;
-  if (!isRecord(start)) {
-    return { ok: false, error: "start: missing or invalid start object" };
-  }
-  if (!isString(start.accountSid)) {
-    return { ok: false, error: "start: missing start.accountSid" };
-  }
-  if (!isString(start.streamSid)) {
-    return { ok: false, error: "start: missing start.streamSid" };
-  }
-  if (!isString(start.callSid)) {
-    return { ok: false, error: "start: missing start.callSid" };
-  }
-  if (!isStringArray(start.tracks)) {
-    return { ok: false, error: "start: missing or invalid start.tracks" };
-  }
-
-  // customParameters can be missing; default to empty object
-  const customParameters = isRecord(start.customParameters)
-    ? (start.customParameters as Record<string, string>)
-    : {};
-
-  // mediaFormat is required
-  const mf = start.mediaFormat;
-  if (!isRecord(mf)) {
-    return { ok: false, error: "start: missing start.mediaFormat" };
-  }
-  if (!isString(mf.encoding)) {
-    return { ok: false, error: "start: missing mediaFormat.encoding" };
-  }
-  if (typeof mf.sampleRate !== "number") {
-    return { ok: false, error: "start: missing mediaFormat.sampleRate" };
-  }
-  if (typeof mf.channels !== "number") {
-    return { ok: false, error: "start: missing mediaFormat.channels" };
-  }
-
-  const event: MediaStreamStartEvent = {
-    event: "start",
-    sequenceNumber: raw.sequenceNumber as string,
-    streamSid: raw.streamSid as string,
-    start: {
-      accountSid: start.accountSid as string,
-      streamSid: start.streamSid as string,
-      callSid: start.callSid as string,
-      tracks: start.tracks as string[],
-      customParameters,
-      mediaFormat: {
-        encoding: mf.encoding as string,
-        sampleRate: mf.sampleRate as number,
-        channels: mf.channels as number,
-      },
-    },
-  };
-  return { ok: true, event };
-}
-
-function validateMedia(raw: Record<string, unknown>): ParseResult {
-  if (!isString(raw.sequenceNumber)) {
-    return { ok: false, error: "media: missing or invalid sequenceNumber" };
-  }
-  if (!isString(raw.streamSid)) {
-    return { ok: false, error: "media: missing or invalid streamSid" };
-  }
-
-  const media = raw.media;
-  if (!isRecord(media)) {
-    return { ok: false, error: "media: missing or invalid media object" };
-  }
-  if (!isString(media.track)) {
-    return { ok: false, error: "media: missing media.track" };
-  }
-  if (!isString(media.chunk)) {
-    return { ok: false, error: "media: missing media.chunk" };
-  }
-  if (!isString(media.timestamp)) {
-    return { ok: false, error: "media: missing media.timestamp" };
-  }
-  if (!isString(media.payload)) {
-    return { ok: false, error: "media: missing media.payload" };
-  }
-
-  const event: MediaStreamMediaEvent = {
-    event: "media",
-    sequenceNumber: raw.sequenceNumber as string,
-    streamSid: raw.streamSid as string,
-    media: {
-      track: media.track as string,
-      chunk: media.chunk as string,
-      timestamp: media.timestamp as string,
-      payload: media.payload as string,
-    },
-  };
-  return { ok: true, event };
-}
-
-function validateDtmf(raw: Record<string, unknown>): ParseResult {
-  if (!isString(raw.sequenceNumber)) {
-    return { ok: false, error: "dtmf: missing or invalid sequenceNumber" };
-  }
-  if (!isString(raw.streamSid)) {
-    return { ok: false, error: "dtmf: missing or invalid streamSid" };
-  }
-
-  const dtmf = raw.dtmf;
-  if (!isRecord(dtmf)) {
-    return { ok: false, error: "dtmf: missing or invalid dtmf object" };
-  }
-  if (!isString(dtmf.digit)) {
-    return { ok: false, error: "dtmf: missing dtmf.digit" };
-  }
-
-  const event: MediaStreamDtmfEvent = {
-    event: "dtmf",
-    streamSid: raw.streamSid as string,
-    sequenceNumber: raw.sequenceNumber as string,
-    dtmf: {
-      digit: dtmf.digit as string,
-      ...(isString(dtmf.duration) ? { duration: dtmf.duration as string } : {}),
-    },
-  };
-  return { ok: true, event };
-}
-
-function validateMark(raw: Record<string, unknown>): ParseResult {
-  if (!isString(raw.sequenceNumber)) {
-    return { ok: false, error: "mark: missing or invalid sequenceNumber" };
-  }
-  if (!isString(raw.streamSid)) {
-    return { ok: false, error: "mark: missing or invalid streamSid" };
-  }
-
-  const mark = raw.mark;
-  if (!isRecord(mark)) {
-    return { ok: false, error: "mark: missing or invalid mark object" };
-  }
-  if (!isString(mark.name)) {
-    return { ok: false, error: "mark: missing mark.name" };
-  }
-
-  const event: MediaStreamMarkEvent = {
-    event: "mark",
-    streamSid: raw.streamSid as string,
-    sequenceNumber: raw.sequenceNumber as string,
-    mark: {
-      name: mark.name as string,
-    },
-  };
-  return { ok: true, event };
-}
-
-function validateStop(raw: Record<string, unknown>): ParseResult {
-  if (!isString(raw.sequenceNumber)) {
-    return { ok: false, error: "stop: missing or invalid sequenceNumber" };
-  }
-  if (!isString(raw.streamSid)) {
-    return { ok: false, error: "stop: missing or invalid streamSid" };
-  }
-
-  const stop = raw.stop;
-  if (!isRecord(stop)) {
-    return { ok: false, error: "stop: missing or invalid stop object" };
-  }
-  if (!isString(stop.accountSid)) {
-    return { ok: false, error: "stop: missing stop.accountSid" };
-  }
-  if (!isString(stop.callSid)) {
-    return { ok: false, error: "stop: missing stop.callSid" };
-  }
-
-  const event: MediaStreamStopEvent = {
-    event: "stop",
-    streamSid: raw.streamSid as string,
-    sequenceNumber: raw.sequenceNumber as string,
-    stop: {
-      accountSid: stop.accountSid as string,
-      callSid: stop.callSid as string,
-    },
-  };
-  return { ok: true, event };
-}
+const frameSchema = z.discriminatedUnion("event", [
+  startSchema,
+  mediaSchema,
+  dtmfSchema,
+  markSchema,
+  stopSchema,
+]);
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -252,7 +109,11 @@ function validateStop(raw: Record<string, unknown>): ParseResult {
  * Any event whose `event` field is not in this set is treated as
  * unrecognised and rejected.
  */
-const KNOWN_EVENTS = new Set(["start", "media", "dtmf", "mark", "stop"]);
+const KNOWN_EVENTS: string[] = ["start", "media", "dtmf", "mark", "stop"];
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
 
 /**
  * Parse and validate a raw WebSocket message string into a typed
@@ -275,26 +136,22 @@ export function parseMediaStreamFrame(raw: string): ParseResult {
   }
 
   const eventType = parsed.event;
-  if (!isString(eventType)) {
+  if (typeof eventType !== "string") {
     return { ok: false, error: "Missing or non-string 'event' field" };
   }
 
-  if (!KNOWN_EVENTS.has(eventType)) {
+  if (!KNOWN_EVENTS.includes(eventType)) {
     return { ok: false, error: `Unrecognised event type: "${eventType}"` };
   }
 
-  switch (eventType) {
-    case "start":
-      return validateStart(parsed);
-    case "media":
-      return validateMedia(parsed);
-    case "dtmf":
-      return validateDtmf(parsed);
-    case "mark":
-      return validateMark(parsed);
-    case "stop":
-      return validateStop(parsed);
-    default:
-      return { ok: false, error: `Unrecognised event type: "${eventType}"` };
+  const result = frameSchema.safeParse(parsed);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    const path = issue.path.map(String).join(".");
+    return {
+      ok: false,
+      error: `${eventType}: missing or invalid ${path || "frame"} object`,
+    };
   }
+  return { ok: true, event: result.data };
 }

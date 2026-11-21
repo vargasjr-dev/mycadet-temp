@@ -12,6 +12,7 @@ import {
 } from "@mycadet/service-contracts/redacted-credential";
 import type pino from "pino";
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import { onActivationToolCall } from "../activation/turn-hooks.js";
 import type { AgentEvent } from "../agent/loop.js";
@@ -73,6 +74,7 @@ import type {
   ContentBlock,
   ImageContent,
   Message,
+  ToolUseContent,
 } from "../providers/types.js";
 import { getCurrentSeq } from "../runtime/assistant-stream-state.js";
 import { conversationRevealNonce } from "../runtime/reveal-nonce.js";
@@ -763,10 +765,15 @@ export function buildPersistedAssistantContent(
   legacyFallbackCandidates: readonly ResolvedRevealCandidate[] = [],
 ): ContentBlock[] {
   const { cleanedContent } = cleanAssistantContent(rawBlocks);
-  const cleaned = cleanedContent as ContentBlock[];
+  const cleaned = cleanedContent.filter(
+    (b): b is ContentBlock =>
+      typeof b === "object" &&
+      b != null &&
+      z.object({ type: z.string() }).loose().safeParse(b).success,
+  );
   const withSurfaces: ContentBlock[] = [...cleaned];
   for (const surface of surfaces) {
-    withSurfaces.push({
+    const surfaceBlock: ContentBlock = {
       type: "ui_surface",
       surfaceId: surface.surfaceId,
       surfaceType: surface.surfaceType,
@@ -782,11 +789,12 @@ export function buildPersistedAssistantContent(
       ...(surface.completionSummary
         ? { completionSummary: surface.completionSummary }
         : {}),
-    } as unknown as ContentBlock);
+    };
+    withSurfaces.push(surfaceBlock);
   }
   return withSurfaces.map((block) => {
     if (block.type === "text") {
-      const tb = block as Extract<ContentBlock, { type: "text" }>;
+      const tb = block;
       // Persisted text is redacted twice over: the scanner's matches get the
       // legacy `<redacted type="…" />` marker, and a route-proven reveal
       // candidate's exact plaintext never persists raw even when the scanner
@@ -810,7 +818,7 @@ export function buildPersistedAssistantContent(
     if (block.type === "server_tool_use" && activityByToolUseId) {
       const activity = activityByToolUseId.get(block.id);
       if (activity) {
-        return { ...block, _activityMetadata: activity } as ContentBlock;
+        return { ...block, _activityMetadata: activity };
       }
     }
     return block;
@@ -850,7 +858,7 @@ export function stampThinkingTiming(
       ...block,
       _startedAt: timing.startedAt,
       _completedAt: timing.completedAt,
-    } as ContentBlock;
+    };
   });
 }
 
@@ -1546,7 +1554,11 @@ export function handleToolUse(
   // only STAGED until `handleToolResult` sees the reveal actually succeed
   // (see `pendingRevealRefsByToolUse` — priming at propose time would read
   // plaintext for a command that approval/cancellation may still block).
-  const command = (event.input as { command?: unknown } | undefined)?.command;
+  const command = z
+    .object({ command: z.unknown().optional() })
+    .loose()
+    .catch({})
+    .parse(event.input ?? {}).command;
   if (typeof command === "string" && command.length > 0) {
     // Id-form refs resolve to service/field NOW (metadata-only lookup): the
     // same compound command may remove the credential after revealing it,
@@ -1671,7 +1683,9 @@ function handleToolOutputChunk(
         VALID_SUB_TYPES.has(parsed.subType)
       ) {
         structured = {
-          subType: parsed.subType as "tool_start" | "tool_complete" | "status",
+          subType: z
+            .enum(["tool_start", "tool_complete", "status"])
+            .parse(parsed.subType),
           subToolName:
             typeof parsed.subToolName === "string"
               ? parsed.subToolName
@@ -1839,7 +1853,7 @@ export function handleInputJsonDelta(
 function buildToolResultBlocks(
   pending: ReadonlyMap<string, PendingToolResult>,
   revealCandidates: readonly ResolvedRevealCandidate[] = [],
-) {
+): ContentBlock[] {
   // Tool results keep the legacy `<redacted type/>` marker (NOT sentinels):
   // history maps tool_result content to `toolCall.result`, which the tool
   // detail panel renders via CodeBlock — a path with no markdown/chip
@@ -1964,7 +1978,7 @@ async function persistPendingToolResultRow(
   const batchBlocks = buildToolResultBlocks(
     state.pendingToolResults,
     await resolvedRevealCandidatesForState(state),
-  ) as ContentBlock[];
+  );
   const writer = state.inflightWriters.get(rowId);
   const persisted = writer
     ? appendInflightSnapshot(writer, batchBlocks, seq, deps.rlog)
@@ -2023,7 +2037,7 @@ export async function finalizePendingToolResultRow(
           conversationId,
           conv.createdAt,
           rowId,
-          blocks as ContentBlock[],
+          blocks,
           state.computerUseToolNames,
         )
       : blocks;
@@ -2459,7 +2473,7 @@ function stampToolUseBlockEarly(
   state: EventHandlerState,
   toolUseId: string,
   what: string,
-  apply: (block: Record<string, unknown>) => boolean,
+  apply: (block: ToolUseContent) => boolean,
 ): void {
   const messageId = state.lastAssistantMessageId;
   if (!messageId) {
@@ -2477,11 +2491,10 @@ function stampToolUseBlockEarly(
     if (block.type !== "tool_use") {
       continue;
     }
-    const rec = block as unknown as Record<string, unknown>;
-    if (rec.id !== toolUseId) {
+    if (block.id !== toolUseId) {
       continue;
     }
-    if (!apply(rec)) {
+    if (!apply(block)) {
       return;
     }
     try {
@@ -2505,11 +2518,11 @@ function recordToolStartOnPersistedMessage(
   toolUseId: string,
   startedAt: number,
 ): void {
-  stampToolUseBlockEarly(state, toolUseId, "tool start time", (rec) => {
-    if (rec._startedAt === startedAt) {
+  stampToolUseBlockEarly(state, toolUseId, "tool start time", (block) => {
+    if (block._startedAt === startedAt) {
       return false;
     }
-    rec._startedAt = startedAt;
+    block._startedAt = startedAt;
     return true;
   });
 }
@@ -2527,13 +2540,18 @@ function recordToolPreviewStartOnPersistedMessage(
   toolUseId: string,
   previewStartedAt: number,
 ): void {
-  stampToolUseBlockEarly(state, toolUseId, "tool preview-start time", (rec) => {
-    if (rec._previewStartedAt === previewStartedAt) {
-      return false;
-    }
-    rec._previewStartedAt = previewStartedAt;
-    return true;
-  });
+  stampToolUseBlockEarly(
+    state,
+    toolUseId,
+    "tool preview-start time",
+    (block) => {
+      if (block._previewStartedAt === previewStartedAt) {
+        return false;
+      }
+      block._previewStartedAt = previewStartedAt;
+      return true;
+    },
+  );
 }
 
 /**
@@ -2546,22 +2564,20 @@ function recordAnsweredQuestionOnPersistedMessage(
   toolUseId: string,
   answeredQuestion: AnsweredQuestion,
 ): void {
-  stampToolUseBlockEarly(state, toolUseId, "answered question", (rec) => {
+  stampToolUseBlockEarly(state, toolUseId, "answered question", (block) => {
     // Narrow the persisted marker rather than casting it: the row is data read
     // back from the database, so its shape is an assumption until checked. Any
     // value that is not a record with a string `requestId` is treated as absent
     // and overwritten, which is the safe direction for a dedup check.
-    const existing: unknown = rec._answeredQuestion;
-    const existingRequestId =
-      typeof existing === "object" &&
-      existing !== null &&
-      typeof (existing as { requestId?: unknown }).requestId === "string"
-        ? (existing as { requestId: string }).requestId
-        : undefined;
+    const existingRequestId = z
+      .object({ requestId: z.string().optional() })
+      .loose()
+      .catch({})
+      .parse(block._answeredQuestion).requestId;
     if (existingRequestId === answeredQuestion.requestId) {
       return false;
     }
-    rec._answeredQuestion = answeredQuestion;
+    block._answeredQuestion = answeredQuestion;
     return true;
   });
 }
@@ -2591,65 +2607,64 @@ function annotatePersistedAssistantMessage(
   let modified = false;
   for (const block of content) {
     if (block.type === "tool_use") {
-      const rec = block as unknown as Record<string, unknown>;
-      const id = rec.id as string | undefined;
+      const id = block.id;
       if (!id) {
         continue;
       }
 
       const ts = state.toolCallTimestamps.get(id);
       if (ts) {
-        rec._startedAt = ts.startedAt;
+        block._startedAt = ts.startedAt;
         if (ts.completedAt != null) {
-          rec._completedAt = ts.completedAt;
+          block._completedAt = ts.completedAt;
         }
         modified = true;
       }
       const previewStartedAt = state.toolPreviewStartedAt.get(id);
       if (previewStartedAt != null) {
-        rec._previewStartedAt = previewStartedAt;
+        block._previewStartedAt = previewStartedAt;
         modified = true;
       }
       const confirmation = state.toolConfirmationOutcomes.get(id);
       if (confirmation) {
-        rec._confirmationDecision = confirmation.decision;
-        rec._confirmationLabel = confirmation.label;
+        block._confirmationDecision = confirmation.decision;
+        block._confirmationLabel = confirmation.label;
         modified = true;
       }
       const risk = state.toolRiskOutcomes.get(id);
       if (risk) {
-        rec._riskLevel = risk.riskLevel;
+        block._riskLevel = risk.riskLevel;
         if (risk.riskReason) {
-          rec._riskReason = risk.riskReason;
+          block._riskReason = risk.riskReason;
         }
-        rec._autoApproved = risk.autoApproved;
+        block._autoApproved = risk.autoApproved;
         if (risk.matchedTrustRuleId) {
-          rec._matchedTrustRuleId = risk.matchedTrustRuleId;
+          block._matchedTrustRuleId = risk.matchedTrustRuleId;
         }
         if (risk.approvalMode) {
-          rec._approvalMode = risk.approvalMode;
+          block._approvalMode = risk.approvalMode;
         }
         if (risk.approvalReason) {
-          rec._approvalReason = risk.approvalReason;
+          block._approvalReason = risk.approvalReason;
         }
         if (risk.riskThreshold) {
-          rec._riskThreshold = risk.riskThreshold;
+          block._riskThreshold = risk.riskThreshold;
         }
         // Persist the 3 risk-option arrays so the rule editor's chip ladder
         // survives chat-history reload. These mirror the same-named fields
         // on the live `tool_result` event; clients should read them back via
         // `shared.ts` and treat them identically to the live values.
         if (risk.riskScopeOptions && risk.riskScopeOptions.length > 0) {
-          rec._riskScopeOptions = risk.riskScopeOptions;
+          block._riskScopeOptions = risk.riskScopeOptions;
         }
         if (risk.riskAllowlistOptions && risk.riskAllowlistOptions.length > 0) {
-          rec._riskAllowlistOptions = risk.riskAllowlistOptions;
+          block._riskAllowlistOptions = risk.riskAllowlistOptions;
         }
         if (
           risk.riskDirectoryScopeOptions &&
           risk.riskDirectoryScopeOptions.length > 0
         ) {
-          rec._riskDirectoryScopeOptions = risk.riskDirectoryScopeOptions;
+          block._riskDirectoryScopeOptions = risk.riskDirectoryScopeOptions;
         }
         modified = true;
       }
@@ -2660,12 +2675,12 @@ function annotatePersistedAssistantMessage(
       // `buildPersistedAssistantContent`.
       const activity = state.toolActivityMetadata.get(id);
       if (activity) {
-        rec._activityMetadata = activity;
+        block._activityMetadata = activity;
         modified = true;
       }
       const answeredQuestion = state.toolAnsweredQuestions.get(id);
       if (answeredQuestion) {
-        rec._answeredQuestion = answeredQuestion;
+        block._answeredQuestion = answeredQuestion;
         modified = true;
       }
     }
@@ -2676,7 +2691,7 @@ function annotatePersistedAssistantMessage(
   // at write time. We append them here after all tools have completed.
   if (deps.ctx.currentTurnSurfaces.length > 0) {
     for (const surface of deps.ctx.currentTurnSurfaces) {
-      content.push({
+      const surfaceBlock: ContentBlock = {
         type: "ui_surface",
         surfaceId: surface.surfaceId,
         surfaceType: surface.surfaceType,
@@ -2692,7 +2707,8 @@ function annotatePersistedAssistantMessage(
         ...(surface.completionSummary
           ? { completionSummary: surface.completionSummary }
           : {}),
-      } as unknown as ContentBlock);
+      };
+      content.push(surfaceBlock);
     }
     modified = true;
     deps.ctx.currentTurnSurfaces = [];
@@ -2798,7 +2814,7 @@ export function handleMaxTokensReached(
     "Surfacing max-tokens continuation card",
   );
 
-  deps.onEvent({
+  const show: UiSurfaceShow = {
     type: "ui_surface_show",
     conversationId: deps.ctx.conversationId,
     surfaceId,
@@ -2808,7 +2824,8 @@ export function handleMaxTokensReached(
     actions,
     display: "inline",
     persistent: true,
-  } as UiSurfaceShow);
+  };
+  deps.onEvent(show);
 }
 
 export async function handleMessageComplete(
@@ -2956,7 +2973,7 @@ export async function handleMessageComplete(
   // the same shape as the finalize.
   const contentForPersistence = stampThinkingTiming(
     buildPersistedAssistantContent(
-      event.message.content as ContentBlock[],
+      event.message.content,
       deps.ctx.currentTurnSurfaces,
       state.toolActivityMetadata,
       await resolvedRevealCandidatesForState(state),
@@ -3358,9 +3375,14 @@ export async function dispatchAgentEvent(
         const results: WebSearchResultItem[] = rawBlocks
           .filter(
             (r): r is { type: string; title: string; url: string } =>
-              typeof r === "object" &&
-              r != null &&
-              (r as { type?: string }).type === "web_search_result",
+              z
+                .object({
+                  type: z.literal("web_search_result"),
+                  title: z.string(),
+                  url: z.string(),
+                })
+                .loose()
+                .safeParse(r).success,
           )
           .map((r, i) => {
             const domain = extractDomain(r.url);

@@ -19,12 +19,24 @@
 import { createHash, randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
 
+import { z } from "zod";
+
 import { getIsCloud } from "../config/env-registry.js";
 import { parseScopeList } from "../oauth/scope-utils.js";
 import { getLogger } from "../util/logger.js";
 import { renderOAuthCompletionPage as renderLoopbackPage } from "./oauth-completion-page.js";
 
 const log = getLogger("oauth2");
+
+/** Wire-shaped unknowns read through zod, with lenient fallbacks. */
+const stringParam = (v: unknown): string | undefined =>
+  z.string().optional().catch(undefined).parse(v);
+
+const numberParam = (v: unknown): number | undefined =>
+  z.number().optional().catch(undefined).parse(v);
+
+const recordParam = (v: unknown): Record<string, unknown> | undefined =>
+  z.record(z.string(), z.unknown()).optional().catch(undefined).parse(v);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -191,11 +203,14 @@ export async function exchangeCodeForTokens(
     const safeDetail: Record<string, unknown> = {};
     let errorCode = "";
     try {
-      const parsed = JSON.parse(rawBody) as Record<string, unknown>;
+      const parsed = z
+        .record(z.string(), z.unknown())
+        .catch({})
+        .parse(JSON.parse(rawBody));
       const err = parsed.error;
       if (err && typeof err === "object") {
         // Anthropic-style nested error: `{ error: { type, message } }`.
-        const nested = err as Record<string, unknown>;
+        const nested = z.record(z.string(), z.unknown()).catch({}).parse(err);
         if (nested.message !== undefined) {
           safeDetail.error = String(nested.message);
         }
@@ -224,30 +239,28 @@ export async function exchangeCodeForTokens(
     throw new Error(`OAuth2 token exchange failed (${detail})`);
   }
 
-  const tokenData = (await tokenResp.json()) as Record<string, unknown>;
+  const tokenData = z
+    .record(z.string(), z.unknown())
+    .catch({})
+    .parse(await tokenResp.json());
 
   // Slack V2 OAuth returns user tokens nested under `authed_user`
-  const authedUser = tokenData.authed_user as
-    | Record<string, unknown>
-    | undefined;
+  const authedUser = recordParam(tokenData.authed_user);
   const tokenSource = authedUser?.access_token ? authedUser : tokenData;
 
   const tokens: OAuth2TokenResult = {
     accessToken:
-      (tokenSource.access_token as string) ??
-      (tokenData.access_token as string),
+      stringParam(tokenSource.access_token) ??
+      stringParam(tokenData.access_token) ??
+      "", // absent access tokens fall through to the flow's own error path
     refreshToken:
-      (tokenSource.refresh_token as string | undefined) ??
-      (tokenData.refresh_token as string | undefined),
+      stringParam(tokenSource.refresh_token) ??
+      stringParam(tokenData.refresh_token),
     expiresIn:
-      (tokenSource.expires_in as number | undefined) ??
-      (tokenData.expires_in as number | undefined),
-    scope:
-      (tokenSource.scope as string | undefined) ??
-      (tokenData.scope as string | undefined),
+      numberParam(tokenSource.expires_in) ?? numberParam(tokenData.expires_in),
+    scope: stringParam(tokenSource.scope) ?? stringParam(tokenData.scope),
     tokenType:
-      (tokenSource.token_type as string | undefined) ??
-      (tokenData.token_type as string | undefined),
+      stringParam(tokenSource.token_type) ?? stringParam(tokenData.token_type),
   };
 
   const grantedScopes =
@@ -465,7 +478,11 @@ function startLoopbackServerAndWaitForCode(
     );
 
     server.listen(loopbackPort ?? 0, "localhost", () => {
-      const addr = server.address() as { port: number };
+      const addr = z
+        .object({ port: z.number() })
+        .loose()
+        .catch({ port: 0 })
+        .parse(server.address());
       boundRedirectUri = `http://localhost:${addr.port}${effectiveCallbackPath}`;
 
       log.info(
@@ -736,7 +753,11 @@ function startLoopbackServerForPreparedFlow(
     }
 
     server.listen(loopbackPort ?? 0, "localhost", () => {
-      const addr = server.address() as { port: number };
+      const addr = z
+        .object({ port: z.number() })
+        .loose()
+        .catch({ port: 0 })
+        .parse(server.address());
       const redirectUri = `http://localhost:${addr.port}${effectiveCallbackPath}`;
       listening = true;
       resolveSetup({ redirectUri, codePromise });
@@ -938,7 +959,10 @@ export async function refreshOAuth2Token(
       const safeDetail: Record<string, unknown> = {};
       let errorCode = "";
       try {
-        const parsed = JSON.parse(rawBody) as Record<string, unknown>;
+        const parsed = z
+          .record(z.string(), z.unknown())
+          .catch({})
+          .parse(JSON.parse(rawBody));
         if (parsed.error) {
           safeDetail.error = String(parsed.error);
           errorCode = String(parsed.error);
@@ -971,14 +995,17 @@ export async function refreshOAuth2Token(
       continue;
     }
 
-    const data = (await resp.json()) as Record<string, unknown>;
+    const data = z
+      .record(z.string(), z.unknown())
+      .catch({})
+      .parse(await resp.json());
 
     return {
-      accessToken: data.access_token as string,
-      refreshToken: (data.refresh_token as string | undefined) ?? refreshToken,
-      expiresIn: data.expires_in as number | undefined,
-      scope: data.scope as string | undefined,
-      tokenType: data.token_type as string | undefined,
+      accessToken: stringParam(data.access_token) ?? "",
+      refreshToken: stringParam(data.refresh_token) ?? refreshToken,
+      expiresIn: numberParam(data.expires_in),
+      scope: stringParam(data.scope),
+      tokenType: stringParam(data.token_type),
     };
   }
 

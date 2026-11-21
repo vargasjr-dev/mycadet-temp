@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import OpenAI from "openai";
+import { z } from "zod";
 
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "../../prompts/cache-boundary.js";
 import { isAbortReason } from "../../util/abort-reasons.js";
@@ -140,7 +141,14 @@ export function detectVisionNotSupported(
   error: InstanceType<typeof OpenAI.APIError>,
   extraMessage?: string,
 ): boolean {
-  const haystack = `${error.message} ${extraMessage ?? ""} ${JSON.stringify((error as { error?: unknown }).error ?? "")}`;
+  const apiErrorBody = z
+    .object({ error: z.unknown().optional() })
+    .loose()
+    .catch({})
+    .parse(error);
+  const haystack = `${error.message} ${extraMessage ?? ""} ${JSON.stringify(
+    apiErrorBody.error ?? "",
+  )}`;
   return VISION_NOT_SUPPORTED_PATTERNS.some((re) => re.test(haystack));
 }
 
@@ -308,7 +316,11 @@ function openaiCompatErrorHaystack(error: unknown): string {
 }
 
 function isClientErrorStatus(error: unknown): boolean {
-  const status = (error as { status?: unknown }).status;
+  const status = z
+    .object({ status: z.unknown().optional() })
+    .loose()
+    .catch({})
+    .parse(error).status;
   return typeof status === "number" && status >= 400 && status < 500;
 }
 
@@ -332,7 +344,10 @@ function containsLocalJsonSchemaReference(value: unknown): boolean {
       continue;
     }
 
-    const record = current as Record<string, unknown>;
+    const record = z
+      .record(z.string(), z.unknown())
+      .catch(() => ({}))
+      .parse(current);
     const ref = record.$ref;
     if (typeof ref === "string" && (ref === "#" || ref.startsWith("#/"))) {
       return true;
@@ -366,11 +381,23 @@ function protectJsonSchemaToolResult(payload: string): string {
     : payload;
 }
 
+/** The reasoning param shapes OpenAI-compatible wires may carry. */
+const reasoningParamsSchema = z
+  .object({
+    reasoning_effort: z.unknown().optional(),
+    reasoning: z
+      .object({
+        effort: z.unknown().optional(),
+        enabled: z.unknown().optional(),
+      })
+      .loose()
+      .nullable()
+      .optional(),
+  })
+  .loose();
+
 function carriesReasoningOptOut(params: unknown): boolean {
-  const p = params as {
-    reasoning_effort?: unknown;
-    reasoning?: { effort?: unknown } | null;
-  };
+  const p = reasoningParamsSchema.catch({}).parse(params);
   return (
     p.reasoning_effort === "none" ||
     (typeof p.reasoning === "object" &&
@@ -425,10 +452,7 @@ function isReasoningOptOutRejection(error: unknown, params: unknown): boolean {
  * `reasoning.enabled: true` (OpenRouter / Vercel AI Gateway).
  */
 export function isThinkingEnabledOnWire(params: unknown): boolean {
-  const p = params as {
-    reasoning_effort?: unknown;
-    reasoning?: { effort?: unknown; enabled?: unknown } | null;
-  };
+  const p = reasoningParamsSchema.catch({}).parse(params);
   const nested = p.reasoning;
   if (nested && typeof nested === "object") {
     if (nested.enabled === true) {
@@ -461,7 +485,11 @@ function isThinkingModeToolChoiceRejection(
   error: unknown,
   params: unknown,
 ): boolean {
-  const p = params as { tool_choice?: unknown };
+  const p = z
+    .object({ tool_choice: z.unknown().optional() })
+    .loose()
+    .catch(() => ({}))
+    .parse(params);
   if (p.tool_choice === undefined) {
     return false;
   }
@@ -485,6 +513,9 @@ function assistantReasoningExtras(
   if (msg.role !== "assistant") {
     return null;
   }
+  // The wire may carry reasoning fields the SDK's assistant-message type lags
+  // on; callers mutate through this view (strip/backfill), so it must alias
+  // msg rather than a zod copy.
   return msg as OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam &
     AssistantReasoningExtras;
 }
@@ -492,7 +523,11 @@ function assistantReasoningExtras(
 function paramsMessages(
   params: unknown,
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] | undefined {
-  const messages = (params as { messages?: unknown }).messages;
+  const messages = z
+    .object({ messages: z.unknown().optional() })
+    .loose()
+    .catch({})
+    .parse(params).messages;
   return Array.isArray(messages)
     ? (messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[])
     : undefined;
@@ -649,7 +684,11 @@ function messagesCarryFlattenableContentPartsArrays(params: unknown): boolean {
     return false;
   }
   return arrays.every((msg) =>
-    (msg.content as Array<{ type: string }>).every(isTextualContentPart),
+    z
+      .array(z.object({ type: z.string() }).loose())
+      .catch([])
+      .parse(msg.content)
+      .every(isTextualContentPart),
   );
 }
 
@@ -689,9 +728,15 @@ function flattenContentPartsToStrings(params: unknown): boolean {
     if (!Array.isArray(msg.content)) {
       continue;
     }
-    const parts = msg.content as Array<
-      { type: "text"; text: string } | { type: "refusal"; refusal: string }
-    >;
+    const parts = z
+      .array(
+        z.union([
+          z.object({ type: z.literal("text"), text: z.string() }),
+          z.object({ type: z.literal("refusal"), refusal: z.string() }),
+        ]),
+      )
+      .catch([])
+      .parse(msg.content);
     if (!parts.every(isTextualContentPart)) {
       continue;
     }
@@ -798,7 +843,11 @@ export function mapNeutralToolChoice(
   if (toolChoice == null || typeof toolChoice !== "object") {
     return undefined;
   }
-  const tc = toolChoice as { type?: unknown; name?: unknown };
+  const tc = z
+    .object({ type: z.unknown().optional(), name: z.unknown().optional() })
+    .loose()
+    .catch({})
+    .parse(toolChoice);
   switch (tc.type) {
     case "auto":
       return "auto";
@@ -918,20 +967,13 @@ export class OpenAIChatCompletionsProvider implements Provider {
     options?: SendMessageOptions,
   ): Promise<ProviderResponse> {
     const { tools, systemPrompt, config, onEvent, signal } = options ?? {};
-    const configObj = config as Record<string, unknown> | undefined;
-    const maxTokens = configObj?.max_tokens as number | undefined;
-    const modelOverride = configObj?.model as string | undefined;
-    const effort = configObj?.effort as string | undefined;
-    const logitBias = configObj?.logit_bias as
-      | Record<string, number>
-      | undefined;
-    const topP = configObj?.top_p as number | undefined;
-    const usageAttributionHeaders = configObj?.usageAttributionHeaders as
-      | Record<string, string>
-      | undefined;
-    const perRequestHeaders = configObj?.requestHeaders as
-      | Record<string, string>
-      | undefined;
+    const maxTokens = config?.max_tokens;
+    const modelOverride = config?.model;
+    const effort = config?.effort;
+    const logitBias = config?.logit_bias;
+    const topP = config?.top_p;
+    const usageAttributionHeaders = config?.usageAttributionHeaders;
+    const perRequestHeaders = config?.requestHeaders;
 
     // Per-tool keys whose object schemas were rewritten to JSON strings for the
     // wire, to be decoded back on the response. Empty unless
@@ -971,7 +1013,7 @@ export class OpenAIChatCompletionsProvider implements Provider {
       // `prompt_cache_key`). `RetryProvider` stamps it from the durable
       // conversation id for providers in PROMPT_CACHE_KEY_PROVIDERS; omitted
       // from the wire when absent.
-      const promptCacheKey = configObj?.promptCacheKey;
+      const promptCacheKey = config?.promptCacheKey;
       if (typeof promptCacheKey === "string" && promptCacheKey.length > 0) {
         params.prompt_cache_key = promptCacheKey;
       }
@@ -992,9 +1034,8 @@ export class OpenAIChatCompletionsProvider implements Provider {
       // `reasoning.effort` via `buildExtraCreateParams`. Skip the flat
       // `reasoning_effort` assignment in that case to avoid sending both forms,
       // which OpenRouter rejects on reasoning models.
-      const nestedReasoningEffort = (
-        params as { reasoning?: { effort?: unknown } }
-      ).reasoning?.effort;
+      const nestedReasoningEffort =
+        reasoningParamsSchema.parse(params).reasoning?.effort;
       const reasoningEffort = effort
         ? EFFORT_TO_REASONING_EFFORT[effort]
         : undefined;
@@ -1005,11 +1046,11 @@ export class OpenAIChatCompletionsProvider implements Provider {
           this.resolveMaxReasoningEffort(effortModel),
         );
         const supported = this.resolveSupportedReasoningEfforts(effortModel);
-        params.reasoning_effort = (
-          supported
-            ? snapReasoningEffortToSupported(clamped, supported)
-            : clamped
-        ) as OpenAI.Chat.Completions.ChatCompletionCreateParams["reasoning_effort"];
+        const snapped = supported
+          ? snapReasoningEffortToSupported(clamped, supported)
+          : clamped;
+        params.reasoning_effort =
+          snapped as OpenAI.Chat.Completions.ChatCompletionCreateParams["reasoning_effort"];
       }
 
       const offeredToolNames = new Set((tools ?? []).map((t) => t.name));
@@ -1046,12 +1087,12 @@ export class OpenAIChatCompletionsProvider implements Provider {
         // wire. Catalog providers that honor `none` / forced choices still
         // receive them; the generic openai-compatible adapter drops every
         // explicit value in thinking mode via `omitToolChoiceWhenReasoning`.
-        const callerToolChoice = mapNeutralToolChoice(configObj?.tool_choice);
+        const callerToolChoice = mapNeutralToolChoice(config?.tool_choice);
+        const autoChoice: OpenAI.Chat.Completions.ChatCompletionToolChoiceOption =
+          "auto";
         const toolChoice =
           callerToolChoice ??
-          (this.defaultToolChoiceAuto
-            ? ("auto" as OpenAI.Chat.Completions.ChatCompletionToolChoiceOption)
-            : undefined);
+          (this.defaultToolChoiceAuto ? autoChoice : undefined);
         xmlToolCallSalvageEnabled =
           this.salvageXmlToolCalls && toolChoice !== "none";
         if (toolChoice !== undefined) {
@@ -1196,8 +1237,13 @@ export class OpenAIChatCompletionsProvider implements Provider {
         if (extraBody) {
           Object.assign(params, extraBody);
         }
+        const providerParam = z
+          .object({ provider: z.unknown().optional() })
+          .loose()
+          .catch({})
+          .parse(params).provider;
         const optOutKey = `${this.client.baseURL}|${params.model}|${JSON.stringify(
-          (params as { provider?: unknown }).provider ?? null,
+          providerParam ?? null,
         )}`;
         if (
           reasoningOptOutRejecters.has(optOutKey) &&
@@ -1273,15 +1319,24 @@ export class OpenAIChatCompletionsProvider implements Provider {
             // they carry visible text, otherwise fall through to the flat
             // field. The encrypted-only case must fall through too, so the
             // flat `reasoning` field isn't silently dropped.
-            const deltaWithReasoning = choice.delta as {
-              reasoning?: string | null;
-              reasoning_content?: string | null;
-              reasoning_details?: Array<{
-                type?: string;
-                summary?: string | null;
-                text?: string | null;
-              }> | null;
-            };
+            const deltaWithReasoning = z
+              .object({
+                reasoning: z.string().nullable().optional(),
+                reasoning_content: z.string().nullable().optional(),
+                reasoning_details: z
+                  .array(
+                    z.object({
+                      type: z.string().optional(),
+                      summary: z.string().nullable().optional(),
+                      text: z.string().nullable().optional(),
+                    }),
+                  )
+                  .nullable()
+                  .optional(),
+              })
+              .loose()
+              .catch({})
+              .parse(choice.delta);
 
             let sawVisibleDetail = false;
             const reasoningDetails = deltaWithReasoning.reasoning_details;
@@ -1349,9 +1404,13 @@ export class OpenAIChatCompletionsProvider implements Provider {
             }
             // OpenRouter normalizes upstream finish reasons and carries the
             // raw value in `native_finish_reason`.
-            const nativeFinishReason = (
-              choice as { native_finish_reason?: string | null }
-            ).native_finish_reason;
+            const nativeFinishReason = z
+              .object({
+                native_finish_reason: z.string().nullable().optional(),
+              })
+              .loose()
+              .catch({})
+              .parse(choice).native_finish_reason;
             if (nativeFinishReason) {
               upstreamFinishReason = nativeFinishReason;
             }
@@ -1360,22 +1419,29 @@ export class OpenAIChatCompletionsProvider implements Provider {
           if (chunk.usage) {
             promptTokens = chunk.usage.prompt_tokens;
             completionTokens = chunk.usage.completion_tokens;
-            const completionDetails = (
-              chunk.usage as {
-                completion_tokens_details?: { reasoning_tokens?: number };
-              }
-            ).completion_tokens_details;
-            reasoningTokens = completionDetails?.reasoning_tokens ?? 0;
-            const promptDetails = (
-              chunk.usage as {
-                prompt_tokens_details?: {
-                  cached_tokens?: number;
-                  cache_write_tokens?: number;
-                };
-              }
-            ).prompt_tokens_details;
-            cachedPromptTokens = promptDetails?.cached_tokens ?? 0;
-            cacheWritePromptTokens = promptDetails?.cache_write_tokens ?? 0;
+            const usageDetails = z
+              .object({
+                completion_tokens_details: z
+                  .object({ reasoning_tokens: z.number().optional() })
+                  .loose()
+                  .optional(),
+                prompt_tokens_details: z
+                  .object({
+                    cached_tokens: z.number().optional(),
+                    cache_write_tokens: z.number().optional(),
+                  })
+                  .loose()
+                  .optional(),
+              })
+              .loose()
+              .catch({})
+              .parse(chunk.usage);
+            reasoningTokens =
+              usageDetails.completion_tokens_details?.reasoning_tokens ?? 0;
+            cachedPromptTokens =
+              usageDetails.prompt_tokens_details?.cached_tokens ?? 0;
+            cacheWritePromptTokens =
+              usageDetails.prompt_tokens_details?.cache_write_tokens ?? 0;
           }
 
           // OpenAI-compatible providers (e.g. opencode/OpenRouter) may omit

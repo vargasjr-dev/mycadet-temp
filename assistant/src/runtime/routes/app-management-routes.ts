@@ -19,6 +19,13 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
+/** Route params and body fields arrive untyped off the wire; read them through zod. */
+const stringParam = (v: unknown): string | undefined =>
+  z.string().optional().catch(undefined).parse(v);
+
+const recordParam = (v: unknown): Record<string, unknown> | undefined =>
+  z.record(z.string(), z.unknown()).optional().catch(undefined).parse(v);
+
 import {
   type AppPin,
   listAppPins,
@@ -395,9 +402,11 @@ function forkSharedApp(
   const manifestPath = join(dir, appUuid, "manifest.json");
   if (existsSync(manifestPath)) {
     try {
-      const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as {
-        format_version?: unknown;
-      };
+      const manifest = z
+        .object({ format_version: z.unknown().optional() })
+        .loose()
+        .catch({})
+        .parse(JSON.parse(readFileSync(manifestPath, "utf-8")));
       sharedFormatVersion = manifest.format_version;
     } catch {
       // Malformed manifest — treated as unsupported below.
@@ -464,7 +473,10 @@ async function openBundle(filePath: string): Promise<Record<string, unknown>> {
   let manifest: Record<string, unknown>;
   if (manifestFile) {
     const manifestText = await manifestFile.async("text");
-    manifest = JSON.parse(manifestText) as Record<string, unknown>;
+    manifest = z
+      .record(z.string(), z.unknown())
+      .catch({})
+      .parse(JSON.parse(manifestText));
   } else {
     manifest = {
       format_version: 0,
@@ -532,7 +544,7 @@ async function importBundle(
     const syntheticReq = new Request("http://localhost", {
       method: "POST",
       headers: { "content-type": contentType },
-      body: rawBody.buffer as ArrayBuffer,
+      body: new Uint8Array(rawBody),
     });
 
     let formData: FormData;
@@ -712,10 +724,15 @@ function handleListApps({ queryParams }: RouteHandlerArgs) {
 }
 
 async function handleOpenBundle({ body }: RouteHandlerArgs) {
-  if (!body?.filePath) {
+  const filePath = z
+    .object({ filePath: z.string().optional() })
+    .loose()
+    .catch({})
+    .parse(body ?? {}).filePath;
+  if (!filePath) {
     throw new BadRequestError("filePath is required");
   }
-  return openBundle(body.filePath as string);
+  return openBundle(filePath);
 }
 
 async function handleImportBundle({ rawBody, headers }: RouteHandlerArgs) {
@@ -734,10 +751,15 @@ function handleListSharedApps() {
 }
 
 function handleForkSharedApp({ body, headers }: RouteHandlerArgs) {
-  if (!body?.uuid) {
+  const uuid = z
+    .object({ uuid: z.string().optional() })
+    .loose()
+    .catch({})
+    .parse(body ?? {}).uuid;
+  if (!uuid) {
     throw new BadRequestError("uuid is required");
   }
-  const result = forkSharedApp(body.uuid as string);
+  const result = forkSharedApp(uuid);
   if (!result.success) {
     throw new BadRequestError(result.error);
   }
@@ -750,17 +772,24 @@ function handleSignBundle({ body }: RouteHandlerArgs) {
     throw new BadRequestError("payload is required");
   }
 
-  const payload = body.payload as string;
-  const signature = body.signature as string | undefined;
-  const keyId = body.keyId as string | undefined;
-  const publicKey = body.publicKey as string | undefined;
+  const payload = stringParam(body?.payload);
+  const signature = stringParam(body?.signature);
+  const keyId = stringParam(body?.keyId);
+  const publicKey = stringParam(body?.publicKey);
+  if (!payload) {
+    throw new BadRequestError("payload is required");
+  }
 
   if (signature && keyId && publicKey) {
-    let contentHashes: Record<string, string> = {};
+    let contentHashes: Record<string, string>;
     try {
-      const parsed = JSON.parse(payload) as {
-        content_hashes?: Record<string, string>;
-      };
+      const parsed = z
+        .object({
+          content_hashes: z.record(z.string(), z.string()).optional(),
+        })
+        .loose()
+        .catch({})
+        .parse(JSON.parse(payload));
       contentHashes = parsed.content_hashes ?? {};
     } catch {
       throw new BadRequestError("payload is not valid JSON");
@@ -793,26 +822,32 @@ function handleSigningIdentity() {
 }
 
 function handleQueryAppData({ pathParams, queryParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
   const method = queryParams?.method ?? "query";
   if (method !== "query") {
     throw new BadRequestError(
       "GET app-data only supports method=query; use POST for mutations",
     );
   }
+  if (!appId) {
+    throw new BadRequestError("id is required");
+  }
   const result = getAppDataResult(method, appId);
   return { success: true, result };
 }
 
 function handleMutateAppData({ pathParams, body }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new BadRequestError("id is required");
+  }
   assertNotPluginApp(appId, "modify a plugin app's data");
-  const method = (body?.method as string) ?? "create";
+  const method = stringParam(body?.method) ?? "create";
   const result = getAppDataResult(
     method,
     appId,
-    body?.recordId as string | undefined,
-    body?.data as Record<string, unknown> | undefined,
+    stringParam(body?.recordId),
+    recordParam(body?.data),
   );
   return { success: true, result };
 }
@@ -877,7 +912,10 @@ async function compilePluginAppHtmlEphemeral(
 }
 
 async function handleOpenApp({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   const source = resolveAppSource(appId);
   if (!source) {
     throw new NotFoundError(`App not found: ${appId}`);
@@ -971,7 +1009,10 @@ function assertNotPluginApp(appId: string, action: string): void {
 }
 
 function handleDeleteApp({ pathParams, headers }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   assertNotPluginApp(appId, "delete a plugin app");
   deleteApp(appId);
   /* `deleteApp` cannot do this itself: it is filesystem-level and runs where no
@@ -995,7 +1036,10 @@ function existingAppIds(): string[] {
 }
 
 function handlePinApp({ pathParams, body = {}, headers }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   const { pinned, color } = parseBody(appPinBodySchema, body);
   const existing = existingAppIds();
   /* A pin only means anything against an app that exists: the list starts from
@@ -1019,23 +1063,36 @@ function handlePinApp({ pathParams, body = {}, headers }: RouteHandlerArgs) {
 }
 
 function handleGetPreview({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   const preview = getAppPreview(appId);
   return { appId, preview: preview ?? null };
 }
 
 function handleUpdatePreview({ pathParams, body }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   assertNotPluginApp(appId, "update a plugin app's preview");
   if (!body?.preview) {
     throw new BadRequestError("preview is required");
   }
-  updateApp(appId, { preview: body.preview as string });
+  const preview = stringParam(body?.preview);
+  if (!preview) {
+    throw new BadRequestError("preview is required");
+  }
+  updateApp(appId, { preview });
   return { success: true, appId };
 }
 
 async function handleBundle({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   assertNotPluginApp(appId, "bundle a plugin app");
   const result = await packageApp(appId);
   return {
@@ -1047,7 +1104,10 @@ async function handleBundle({ pathParams }: RouteHandlerArgs) {
 }
 
 async function handleShareCloud({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = stringParam(pathParams?.id);
+  if (!appId) {
+    throw new NotFoundError("App not found: no id given");
+  }
   assertNotPluginApp(appId, "share a plugin app");
   const result = await packageApp(appId);
   const bundleData = readFileSync(result.bundlePath);

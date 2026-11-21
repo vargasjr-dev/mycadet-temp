@@ -1390,17 +1390,6 @@ export class AnthropicProvider implements Provider {
         finalMessage(): Promise<Anthropic.Message>;
       }
 
-      /**
-       * The single bridge between the SDK's two stream classes. The beta
-       * stream's event types don't unify with MessageStream's at the type
-       * level (they're a superset), but both satisfy UnifiedStream
-       * structurally at runtime — the beta stream crosses here once,
-       * documented, instead of every call site asserting.
-       */
-      function toUnifiedStream(betaStream: unknown): UnifiedStream {
-        return betaStream as UnifiedStream;
-      }
-
       // Fast mode: use the beta endpoint with speed: "fast" for the Opus
       // models that support it (5.5, 5, 4.8 — 4.7 lost support in July 2026).
       const useFastMode = speed === "fast" && effectiveModel.includes("opus");
@@ -1456,9 +1445,13 @@ export class AnthropicProvider implements Provider {
               ...(useFastMode ? { speed: "fast" as const } : {}),
               ...(betas.length > 0 ? { betas } : {}),
             } as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming;
-            stream = toUnifiedStream(
-              this.client.beta.messages.stream(betaParams, requestOptions),
-            );
+            // The beta stream's finalMessage carries beta-only content blocks
+            // (compaction) so the classes don't unify at the type level; the
+            // listeners used here are identical.
+            stream = this.client.beta.messages.stream(
+              betaParams,
+              requestOptions,
+            ) as unknown as UnifiedStream;
           } else {
             stream = this.client.messages.stream(streamParams, requestOptions);
           }
@@ -1692,11 +1685,6 @@ export class AnthropicProvider implements Provider {
               },
               "Salvaged stream with unparseable tool-call arguments; returning _raw-wrapped tool call",
             );
-            // The salvaged turn is degraded by design: the shadow only
-            // accumulated content/usage, and the SDK's accumulator died
-            // before the full Message shape (id, role, stop_sequence) ever
-            // existed. This is the salvage boundary — the one place a
-            // partial object is passed off as the response.
             return {
               ...salvaged.message,
               model: streamParams.model,
