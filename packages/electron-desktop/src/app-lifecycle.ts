@@ -113,21 +113,9 @@ export interface DesktopAppInputs {
   helperToastName?: string;
 
   /**
-   * Message to VargasJR:
-   *
-   * We delete UpdateFeedPlatform and reduce to string bc ideally,
-   * we don't even mention the words linux, windows (OS), or macos
-   * anywhere in this package. I can conceive of a future where there
-   * are a ton more desktop and OS providers (Omarchy is getting alot of attention),
-   * and don't want to lock ourselves in to the big 3.
-   *
-   * We might ourselves produce a desktop operating system specific to just
-   * running this app.
-   *
-   * (Digested from the prototype: the same principle dissolved the
-   * prototype's `CmdOrCtrl` input — the `togglefullscreen` ROLE assigns
-   * each platform's own default chord, so no per-shell accelerator value
-   * is needed at all.)
+   * The update feed's platform — a plain string the shell passes. The
+   * package never derives an OS from `process.platform` and never names
+   * one.
    */
   platform: string;
   /**

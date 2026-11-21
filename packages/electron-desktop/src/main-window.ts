@@ -32,12 +32,7 @@ import { createWindow } from "./windows";
 const MAIN_MIN_SIZE = { width: 800, height: 600 } as const;
 const DEFAULT_WINDOW_TITLE = "Cadet";
 
-/**
- * How the window's chrome draws, per shell: the macOS traffic lights over a
- * hidden title bar, the Windows caption overlay, or the plain system frame.
- * A shell-passed value — the chrome is build configuration, not something
- * the shared code derives from the OS it happens to run on.
- */
+/** Shell-passed chrome: hidden (traffic lights), hiddenOverlay (caption overlay), or systemFrame. */
 export type MainWindowTitleBarMode = "hidden" | "hiddenOverlay" | "systemFrame";
 
 interface MainWindowConfiguration {
@@ -52,29 +47,12 @@ export const configureMainWindow = (next: MainWindowConfiguration): void => {
   configuration.configure(next);
 };
 
-/**
- * Windows draws its caption buttons in a native overlay whose height is
- * fixed by the builder config; the same renderer reports themes for it.
- */
+/** The native caption overlay's height, matching the renderer's inline title bar. */
 const TITLE_BAR_HEIGHT = 44;
 
-// macOS traffic-light (window controls) position for the main-app layout.
-//
-// The renderer's chat header (`clients/web` `ChatLayoutHeader`) renders as a
-// unified ~44px title bar whose icon row sits *inline* with the window
-// controls. To line them up we vertically centre the ~14px-tall traffic
-// light cluster in that bar — `(44 − 14) / 2 ≈ 15` — and inset it ~19px from
-// the left edge (matching the macOS default), so the header's left padding
-// clears the cluster.
-//
-// Compact / pre-app surfaces (onboarding, the `/account/*` auth screens) have
-// no such title bar, so they keep the system-default position. Those surfaces
-// drive the setOnboarding IPC; the main app drives the reset.
+// Traffic lights: vertically centred in the renderer's inline title bar, mac-default inset.
 const MAIN_WINDOW_BUTTON_POSITION = { x: 19, y: 15 } as const;
 
-// The traffic lights are macOS chrome — on other desktops the API simply
-// isn't there, and absence of the API is the no-op. Capability detection
-// keeps this an OS-agnostic call site.
 const applyWindowButtonPosition = (
   win: BrowserWindow,
   position: { x: number; y: number } | null,
@@ -91,13 +69,7 @@ let currentTitle = DEFAULT_WINDOW_TITLE;
 
 const readiness = createWindowReadiness<BrowserWindow>();
 
-// Visibility-change subscribers. The dock's state machine follows
-// main-window show/hide/closed transitions without having to scan every
-// BrowserWindow and identify "main." `browser-window-created` would fire
-// BEFORE `mainWindow = win` lands (the Electron event is synchronous inside
-// the constructor), so any identity check at that hook is racy. This
-// subscription fires AFTER the assignment so `current()` is correct by the
-// time the listener runs.
+// Visibility subscribers (the dock); fires after assignment, so current() is live.
 type VisibilityListener = () => void;
 const visibilityListeners: VisibilityListener[] = [];
 
@@ -111,9 +83,7 @@ const fireVisibilityChange = (): void => {
   for (const listener of visibilityListeners) listener();
 };
 
-// A close waiting for the window to come out of fullscreen before it hides.
-// Withdrawn by `ensureVisible`, so a press that brings the app back during
-// the exit animation is not undone by the hide landing after it.
+// A close waiting out the fullscreen-exit animation; ensureVisible withdraws it.
 let cancelPendingHide: (() => void) | null = null;
 
 const installSameOriginNavigationGuard = (win: BrowserWindow): void => {
@@ -138,13 +108,8 @@ const installSameOriginNavigationGuard = (win: BrowserWindow): void => {
 };
 
 const createMainWindow = (): BrowserWindow => {
-  // Onboarding and the main app share the same sizing: restore the user's
-  // saved state, which defaults to maximized (the work area) when nothing
-  // has been persisted yet. A saved fullscreen session includes
-  // `fullscreen: true` on the constructor; a windowed session omits the key
-  // so the platform's native fullscreen affordance stays. The persisted
-  // onboarding flag only drives the traffic-light position (compact
-  // surfaces have no inline title bar).
+  // Onboarding and the main app share sizing; the persisted onboarding flag
+  // drives only the traffic-light position.
   const onboardingActive = readOnboardingActive();
   const { maximized, fullscreen, ...restoredBounds } = restoreBounds(
     "main",
@@ -166,9 +131,7 @@ const createMainWindow = (): BrowserWindow => {
           },
         }
       : titleBarMode === "hidden"
-        ? // macOS: hidden chrome keeps the traffic lights — the renderer
-          // content extends up to the top edge behind them.
-          { titleBarStyle: "hidden" as const }
+        ? { titleBarStyle: "hidden" as const }
         : {};
   const win = createWindow({
     browserWindow: {
@@ -181,31 +144,21 @@ const createMainWindow = (): BrowserWindow => {
       show: false,
     },
     navigation: { installGuard: installSameOriginNavigationGuard },
-    // This window owns the live-voice session, which keeps running (and
-    // keeps a floating panel on screen) while the user works in another app.
+    // Live voice keeps running while the user works in another app.
     backgroundThrottling: false,
   });
 
-  // `fullscreenable` as a constructor option doesn't guarantee the
-  // `.fullScreenPrimary` collection behavior on macOS Tahoe; asserting it
-  // post-construction does. A no-op on the other desktops.
+  // Post-construction assert: the constructor option alone misses macOS
+  // Tahoe's `.fullScreenPrimary` behavior.
   win.setFullScreenable(true);
 
-  // Main owns the window title (the active assistant's name). Block the
-  // renderer's static `<title>` ("Cadet") from overriding it via
-  // page-title updates, then seed the current name — the identity
-  // subscription in `installMainWindow` keeps it live.
+  // Main owns the title; block the renderer's static `<title>`.
   win.webContents.on("page-title-updated", (event) => {
     event.preventDefault();
   });
   win.setTitle(currentTitle);
 
-  // Line the traffic lights up with the renderer's inline title bar for the
-  // main app; the compact onboarding / auth window keeps the system
-  // default. Done before `show` (the window is created hidden) so there's
-  // no flicker of the cluster jumping into place. The setOnboarding IPC
-  // keeps this in sync as the user crosses between compact and main
-  // surfaces.
+  // Position before `show` so the cluster never flickers; setOnboarding keeps it in sync.
   if (titleBarMode === "hidden") {
     applyWindowButtonPosition(
       win,
@@ -213,15 +166,10 @@ const createMainWindow = (): BrowserWindow => {
     );
   }
 
-  // Both modes share the main-app sizing now, so bounds are persisted
-  // unconditionally — a resize during onboarding is a legitimate "main"
-  // size and should survive the transition and the next launch.
+  // Bounds persist unconditionally — an onboarding resize is a legitimate main size.
   trackWindowState("main", win);
 
-  // Readiness resolves only after BOTH the renderer has loaded AND the
-  // window has shown + focused. Per-window state keyed via WeakMap so
-  // concurrent `createWindow` calls can't cross-resolve each other's
-  // promise.
+  // Readiness resolves after BOTH load and show; WeakMap-keyed per window.
   const ready = readiness.arm(win);
   win.webContents.once("did-finish-load", () => {
     ready.markLoaded();
@@ -236,27 +184,17 @@ const createMainWindow = (): BrowserWindow => {
     ready.markShown();
   });
 
-  // Visibility transitions feed the dock state machine (via
-  // `onMainWindowVisibilityChange`). Subscribed here — not in the
-  // listener — so dock doesn't need to know how to identify "main".
   win.on("show", fireVisibilityChange);
   win.on("hide", fireVisibilityChange);
 
-  // **The close button puts the window away; only a quit takes it down.**
-  // This renderer is the one that runs calls and owns the voice key, and
-  // the companion stays on screen after the window goes. Destroying it
-  // would leave a press on Talk or a double tap of the key with nowhere to
-  // land but a new window, which has to show itself to exist, so a user who
-  // closed the app to be rid of it would get it back on their next press.
-  // Hidden, it answers those presses where they were made, and anything
-  // that raises the app shows this same window again.
+  // The close button hides; only a quit takes the window down — this
+  // renderer owns calls and the voice key, and the companion outlives it.
   win.on("close", (event) => {
     if (isQuitting || win.isDestroyed()) {
       return;
     }
     event.preventDefault();
-    // A fullscreen window hidden in place leaves its Space behind, empty
-    // and black, so it comes out of fullscreen first and hides on arrival.
+    // A fullscreen hide leaves its Space black — exit fullscreen, hide on arrival.
     if (win.isFullScreen()) {
       cancelPendingHide?.();
       const hideOnArrival = (): void => {
@@ -275,16 +213,11 @@ const createMainWindow = (): BrowserWindow => {
   });
 
   win.on("closed", () => {
-    // Unblock any pending `await ensureVisible()` so callers that hit the
-    // destroyed-before-ready race (network failure during load, user quit
-    // mid-load) don't hang forever. The caller's follow-up dispatch then
-    // sees `current() === null` and no-ops; that's the right semantics,
-    // since the window only closes for real on a quit.
+    // Unblock pending `await ensureVisible()` so destroyed-before-ready callers don't hang.
     ready.release();
     if (mainWindow === win) {
       mainWindow = null;
     }
-    // Subscribers (dock) re-read `current()` which is now null.
     fireVisibilityChange();
   });
 
@@ -294,10 +227,7 @@ const createMainWindow = (): BrowserWindow => {
   });
 
   mainWindow = win;
-  // Fire AFTER assignment so subscribers see the new window via `current()`
-  // if they query it. The window itself isn't visible yet (created with
-  // `show: false`); the `show`/`hide` listeners above drive subsequent
-  // transitions.
+  // Fire after assignment so subscribers' current() is live.
   fireVisibilityChange();
   return win;
 };
@@ -347,14 +277,9 @@ export const toggleVisibility = (): void => {
 };
 
 /**
- * Put the native color scheme on the scheme the app paints.
- *
- * Chromium washes a caption button on hover and press with a translucent
- * layer whose color comes from the native frame, not from the overlay's own
- * color, so a dark title bar under a light system scheme is washed in black
- * on black and the buttons stop responding to the pointer. Reporting the
- * app's scheme puts that wash on the right side of the surface underneath
- * it.
+ * Put the native color scheme on the scheme the app paints — Chromium's
+ * caption-button hover wash takes its color from the native frame, so a
+ * mismatched scheme washes the buttons out.
  */
 const syncNativeColorScheme = (colorScheme: ColorScheme): void => {
   const systemPrefersDark =
@@ -366,13 +291,8 @@ const syncNativeColorScheme = (colorScheme: ColorScheme): void => {
 };
 
 /**
- * Paint the native caption buttons in the renderer's theme.
- *
- * The overlay is OS chrome drawn over the webview, so it can't inherit the
- * themed title bar it sits in: the colors have to be handed to it. They're
- * persisted as well as applied because they're `BrowserWindow` constructor
- * options, so the next launch builds its window themed instead of opening
- * on the system caption colors until the renderer reports its theme.
+ * Paint the native caption buttons in the renderer's theme; persisted
+ * because they're constructor options.
  */
 const setTitleBarOverlay = (theme: TitleBarOverlayTheme): void => {
   writeTitleBarOverlayTheme(theme);
@@ -398,12 +318,9 @@ const setAssistantName = (name: string | null): void => {
 };
 
 /**
- * Switch the main window between the onboarding and main-app layouts. Both
- * share the same sizing — the only per-mode difference is the traffic-light
- * position, since the inline title bar exists only on the main-app surface.
- * The mode is persisted so the next launch positions the traffic lights
- * without a flicker. Re-asserting the current mode (the renderer fires this
- * on every navigation) is a cheap no-op past the early return.
+ * Switch the main window between the onboarding and main-app layouts —
+ * the only difference is the traffic-light position. Persisted so the next
+ * launch positions without a flicker.
  */
 export const setOnboarding = (active: boolean): void => {
   const wasActive = readOnboardingActive();
@@ -414,9 +331,6 @@ export const setOnboarding = (active: boolean): void => {
   if (active === wasActive) return;
 
   if (configuration.get().titleBarMode === "hidden") {
-    // Re-centre (or reset) the traffic lights to match the layout we're
-    // moving into — the inline title bar exists only on the main-app
-    // surface.
     applyWindowButtonPosition(
       win,
       active ? null : { ...MAIN_WINDOW_BUTTON_POSITION },
@@ -436,17 +350,12 @@ export const installMainWindow = (): void => {
   handle(MAIN_WINDOW_ENSURE_VISIBLE, z.tuple([]), async () => {
     await ensureVisible();
   });
-  // Renderer-driven onboarding mode. The renderer is the only side that
-  // knows whether the current route is an onboarding step, so it toggles
-  // the mode (traffic-light position) on/off as the user navigates.
+  // The renderer is the only side that knows the route is an onboarding step.
   handle(MAIN_WINDOW_SET_ONBOARDING, z.tuple([z.boolean()]), ([active]) => {
     setOnboarding(active);
   });
-  // The chooser's switch-to-origin: the renderer hands over a remembered
-  // https base and the window loads it itself. `loadURL` does not fire
-  // `will-navigate`, so the same-origin guard above — which ejects
-  // renderer-initiated cross-origin navigations to the system browser —
-  // stays intact for everything but this one deliberate escape.
+  // The chooser's switch-to-origin: a remembered https base the window loads
+  // directly (`loadURL` bypasses `will-navigate`, so the guard stays intact).
   handle(MAIN_WINDOW_NAVIGATE_TO, z.tuple([z.string()]), ([url]) => {
     let parsed: URL;
     try {
@@ -463,10 +372,8 @@ export const installMainWindow = (): void => {
     MAIN_WINDOW_SET_TITLE_BAR_OVERLAY,
     z.tuple([titleBarOverlayThemeSchema]),
     ([theme], event) => {
-      // Only the window wearing the overlay describes it. Every window runs
-      // the same renderer bundle and reports whatever theme it applied: the
-      // offscreen theme-stage window stages arbitrary workspace tokens for
-      // screenshots, and auxiliary windows carry no workspace theme at all.
+      // Only the window wearing the overlay describes it — stage and
+      // auxiliary windows run the same bundle and report too.
       if (event.sender !== mainWindow?.webContents) {
         return;
       }
@@ -476,16 +383,11 @@ export const installMainWindow = (): void => {
   on(IDENTITY_NAME, z.tuple([z.string()]), ([name]) => {
     setAssistantName(name);
   });
-  // Seed the title from the persisted identity so a fresh process (or a
-  // recreated window) shows the assistant's name, not the fallback, before
-  // the renderer's first publish.
+  // Seed the title from the persisted identity before the renderer's first publish.
   setAssistantName(getName());
 
-  // What lets the close button's close through. `before-quit` covers the
-  // quit chords and the menus. An update install is the one quit that
-  // closes the windows before it says so: the updater's `quitAndInstall`
-  // announces `before-quit-for-update`, closes every window, and only then
-  // quits.
+  // before-quit covers the quit chords and menus; the updater's
+  // quitAndInstall announces before-quit-for-update first.
   const letCloseThrough = (): void => {
     isQuitting = true;
   };

@@ -75,13 +75,7 @@ startApp({
   },
   ...(nativeNotifications ? { notifications: nativeNotifications } : {}),
   async setup() {
-    // The dock — this shell's launcher icon/badge — stays client-side.
     installDock();
-
-    // The installs below are this shell's own product surfaces (the helper
-    // bridge, the companion support modules, the share sheet, the native
-    // notification plumbing, the tray, relocation); their shared logic
-    // folds into the package in later rounds.
 
     installHotkeyHelper();
     installCompanionPermissionGuide();
