@@ -20,10 +20,10 @@ const execMock = mock(
   },
 );
 const execOutputMock = mock(async (_cmd: string, args: string[] = []) => {
-  if (args[0] !== "inspect") throw new Error(`unexpected: ${args[0]}`);
-  if (args[2] === "{{.State.Status}}") return inspectStatus;
-  if (args[2] === "{{.State.Running}}") return "false";
-  throw new Error(`unexpected inspect format: ${args[2]}`);
+  if (args[1] !== "inspect") throw new Error(`unexpected: ${args[1]}`);
+  if (args[3] === "{{.State.Status}}") return inspectStatus;
+  if (args[3] === "{{.State.Running}}") return "false";
+  throw new Error(`unexpected inspect format: ${args[3]}`);
 });
 
 mock.module("../exec", () => ({
@@ -49,10 +49,10 @@ beforeEach(() => {
   execMock.mockReset();
   execOutputMock.mockReset();
   execOutputMock.mockImplementation(async (_cmd, args = []) => {
-    if (args[0] !== "inspect") throw new Error(`unexpected: ${args[0]}`);
-    if (args[2] === "{{.State.Status}}") return inspectStatus;
-    if (args[2] === "{{.State.Running}}") return "false";
-    throw new Error(`unexpected inspect format: ${args[2]}`);
+    if (args[1] !== "inspect") throw new Error(`unexpected: ${args[1]}`);
+    if (args[3] === "{{.State.Status}}") return inspectStatus;
+    if (args[3] === "{{.State.Running}}") return "false";
+    throw new Error(`unexpected inspect format: ${args[3]}`);
   });
   inspectStatus = "running";
 });
@@ -77,4 +77,13 @@ test("the docker leg narrates the containers-stopped line itself", async () => {
 test("the docker leg stays silent for headless hosts (no log)", async () => {
   await sleepDocker(entry, {});
   expect(execMock).toHaveBeenCalled();
+});
+
+test("a missing container is skipped", async () => {
+  execOutputMock.mockImplementation(async (_cmd, args = []) => {
+    if (args[0] === "container") throw new Error("No such container: x");
+    throw new Error("no such object: x");
+  });
+  await sleepDocker(entry, {});
+  expect(execMock).not.toHaveBeenCalled();
 });

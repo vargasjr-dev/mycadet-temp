@@ -89,7 +89,7 @@ beforeEach(async () => {
   commands.on("docker", ["info"], {});
   commands.on(
     "docker",
-    (args) => args[0] === "inspect",
+    (args) => args[0] === "inspect" || args[1] === "inspect",
     ({ args }) => {
       const container = args.at(-1)!;
       if (args.includes("--format"))
