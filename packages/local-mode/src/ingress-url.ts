@@ -1,64 +1,81 @@
 /**
- * The host's one-line ingress publication: tell an assistant's gateway the
- * public base URL its users' browsers dial, right after hatch leases the
- * guardian token. The gateway records it through the same route its tunnel
- * uses (POST /v1/ingress/domains → the shared `writeManagedPublicBaseUrl`
- * machinery), tagged `hatch` — the pairing mint then reads the saved URL
- * instead of falling back to the internal bind URL (the docker pair's
- * printed link pointed at the container port before this existed).
- *
- * The tag is the ownership marker: the tunnel's reconcile and loss
- * handling only touch `tunnel`-tagged URLs, so a dead tunnel cannot clear
- * a hatch-recorded one, and a live tunnel's publication supersedes it.
- *
- * Best-effort by design: a failed save only costs the freshly hatched
- * assistant its pairing-link precision — the mint's loopback fallback
- * answers, exactly as it did before this existed. The assistant is still
- * hatched either way.
+ * Gateway ingress notification: once ANYONE knows the gateway's public
+ * base URL, the gateway learns it here — publisher-agnostic on purpose.
+ * The tunnel dispatch (`cadet tunnel`'s tunnel level, or the daemon's
+ * auto-tunnel) calls it when a provider has a public URL; the hatch layer
+ * calls it right after leasing the guardian token, with the entry's own
+ * gateway URL, so the pairing mint reads a saved address instead of
+ * falling back to the internal bind port. The caller's tag
+ * (`publicBaseUrlManagedBy`) is the ownership marker the gateway's tunnel
+ * reconcile keys on: a dead tunnel cannot clear a hatch-recorded URL, and
+ * a live tunnel's publication supersedes one.
  */
-export async function saveIngressPublicBaseUrl(options: {
-  gatewayUrl: string;
-  bearerToken?: string;
-  publicBaseUrl: string;
-  log?: (msg: string) => void;
-  fetchImpl?: typeof fetch;
-}): Promise<void> {
-  const log = options.log ?? (() => {});
 
-  if (!options.bearerToken) {
-    log(
-      "⚠️  Ingress URL not recorded because the guardian token was not leased.\n" +
-        "   Pairing still works — the link falls back to the gateway's default port.",
-    );
-    return;
+import { getGatewayUrl } from "./lockfile-contract";
+import { findAssistant } from "./operations/lookup";
+import { loadGuardianToken } from "./guardian-token";
+import { loopbackSafeFetch } from "./loopback-fetch";
+import { DEFAULT_PORTS } from "./ports";
+
+/**
+ * Where the gateway for this run's assistant answers. The entry's recorded
+ * loopback gateway port when one resolves; the global gateway port otherwise.
+ */
+function gatewayUrlFor(assistantId: string | undefined): string {
+  if (assistantId) {
+    const entry = findAssistant(assistantId);
+    if (entry) {
+      return getGatewayUrl(entry);
+    }
   }
+  return `http://127.0.0.1:${DEFAULT_PORTS.gateway}`;
+}
 
-  const fetchImpl = options.fetchImpl ?? fetch;
+/**
+ * Tell the gateway the public URL to record as its ingress base — the same
+ * route and config machinery its own tunnel machinery uses. Best-effort: a
+ * gateway that is down never fails the publisher that fronts it.
+ */
+export async function notifyGatewayOfPublicUrl(
+  publicUrl: string,
+  assistantId: string | undefined,
+  options?: {
+    /** Overrides the entry-derived gateway URL. */
+    gatewayUrl?: string;
+    /** Overrides the token file (hatch has the fresh lease in hand). */
+    bearerToken?: string;
+    /** The ownership tag; the gateway defaults to `tunnel`. */
+    managedBy?: string;
+    /** Overrides the default console.warn sink. */
+    log?: (msg: string) => void;
+  },
+): Promise<void> {
+  const log = options?.log ?? console.warn;
   try {
-    const response = await fetchImpl(
-      `${options.gatewayUrl.replace(/\/$/, "")}/v1/ingress/domains`,
+    const token =
+      options?.bearerToken ??
+      (assistantId ? loadGuardianToken(assistantId)?.accessToken : undefined);
+    const res = await loopbackSafeFetch(
+      `${(options?.gatewayUrl ?? gatewayUrlFor(assistantId)).replace(/\/$/, "")}/v1/ingress/domains`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${options.bearerToken}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          publicBaseUrl: options.publicBaseUrl,
-          managedBy: "hatch",
+          publicBaseUrl: publicUrl,
+          managedBy: options?.managedBy ?? "tunnel",
         }),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(5_000),
       },
     );
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      throw new Error(`HTTP ${response.status}${body ? `: ${body}` : ""}`);
+    if (!res.ok) {
+      throw new Error(`gateway responded ${res.status}`);
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+  } catch (err) {
     log(
-      `⚠️  Failed to record the ingress URL: ${message}\n` +
-        "   Pairing still works — the link falls back to the gateway's default port.",
+      `   ⚠ Could not record the ingress domain with the gateway: ${err instanceof Error ? err.message : String(err)}.`,
     );
   }
 }

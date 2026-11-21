@@ -4,7 +4,6 @@ import {
 } from "../../lifecycle-reporter";
 import { findAssistant } from "../../operations/lookup";
 import type { HatchAssistantResult } from "../../operations/types";
-import { saveIngressPublicBaseUrl } from "../../ingress-url";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";
 import { getGatewayUrl } from "../../lockfile-contract";
@@ -225,16 +224,6 @@ export async function hatchLocal(params: {
     gatewayUrl: getGatewayUrl(entry),
     bearerToken: guardianAccessToken,
     configValues: hatchConfigValues,
-  });
-
-  // Record the loopback port map as the gateway's public base URL, right
-  // after the lease hands us the bearer — the pairing mint reads it instead
-  // of re-deriving the port from its own environment. Best-effort: a failed
-  // save costs only link precision.
-  await saveIngressPublicBaseUrl({
-    gatewayUrl: getGatewayUrl(entry),
-    bearerToken: guardianAccessToken,
-    publicBaseUrl: getGatewayUrl(entry),
   });
 
   if (provider !== undefined && provider !== null && !guardianAccessToken) {

@@ -60,7 +60,7 @@ export {
 } from "./cloud-releases";
 
 export { fetchGatewayPs } from "./daemon-readiness";
-export { saveIngressPublicBaseUrl } from "./ingress-url";
+export { notifyGatewayOfPublicUrl } from "./ingress-url";
 export { cliCommand } from "./environment";
 export { resolveEnvironmentName } from "@mycadet/shared/seeds";
 

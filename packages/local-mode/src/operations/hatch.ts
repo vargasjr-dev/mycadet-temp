@@ -1,5 +1,7 @@
 import type { LifecycleReporter } from "../lifecycle-reporter";
 import { ensureLockfile } from "../lockfile";
+import { notifyGatewayOfPublicUrl } from "../ingress-url";
+import { getGatewayUrl } from "../lockfile-contract";
 import { hatchCloud } from "../remotes/cloud/hatch";
 import { hatchDocker } from "../remotes/docker/hatch";
 import { hatchLocal } from "../remotes/local/hatch";
@@ -60,6 +62,18 @@ export async function hatchAssistant(
   // its xdg directory), so the assistant's absence is recorded state and the
   // next writer has its home.
   if (!result.ok) ensureLockfile();
+  // One ingress publication for every leg: once the lease has handed the
+  // entry a guardian token, tell the gateway its own public address — the
+  // entry's gateway URL — so the pairing mint reads a saved value instead
+  // of falling back to the internal bind port. Best-effort; the tunnel's
+  // later publication supersedes it (its tag owns the reconcile).
+  if (result.ok && result.ready && result.assistant) {
+    await notifyGatewayOfPublicUrl(
+      getGatewayUrl(result.assistant),
+      result.assistant.assistantId,
+      { managedBy: "hatch" },
+    );
+  }
   return result;
 }
 

@@ -19,7 +19,9 @@ import { dockerResourceNames } from "./common";
  * result parses to the pair payload (single-line JSON, persisted by the
  * caller). Without one it is the bare remote-web challenge mint the
  * `cadet pair` command wraps — the command's raw stdout, whose last line
- * is the challenge JSON.
+ * is the challenge JSON. The challenge's URL comes from the ingress URL
+ * hatch recorded with the gateway (managedBy "hatch") — no env surgery
+ * here; the container cannot know its host port, only the saved record.
  */
 export function pairDocker(entry: DockerAssistant): Promise<string>;
 export function pairDocker(
@@ -31,17 +33,7 @@ export async function pairDocker(
   device?: PairDeviceIdentity,
 ): Promise<string | PairOperationResult<GuardianTokenData>> {
   const container = dockerResourceNames(entry.assistantId).gatewayContainer;
-  const args = [
-    "exec",
-    "-e",
-    `GATEWAY_PORT=${entry.port}`,
-    container,
-    "bun",
-    "run",
-    "gateway",
-    "pairing",
-    "mint",
-  ];
+  const args = ["exec", container, "bun", "run", "gateway", "pairing", "mint"];
   if (device) {
     args.push(
       "--platform",

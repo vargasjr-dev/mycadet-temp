@@ -25,7 +25,6 @@ import { join } from "node:path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
-import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as serversLib from "../lib/servers/common.js";
 import * as localModeModule from "@mycadet/local-mode";
@@ -37,7 +36,6 @@ import type {
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
-const realGatewayNotify = { ...gatewayNotify };
 const realNgrok = { ...ngrok };
 const realServersLib = { ...serversLib };
 const realTailscaleTunnel = { ...tailscaleTunnel };
@@ -82,12 +80,8 @@ mock.module("../lib/tunnels/tailscale.js", () => ({
 }));
 
 const notifyGatewayOfPublicUrlMock = mock<
-  typeof gatewayNotify.notifyGatewayOfPublicUrl
+  typeof localModeModule.notifyGatewayOfPublicUrl
 >(async () => {});
-mock.module("../lib/tunnels/gateway-notify.js", () => ({
-  ...realGatewayNotify,
-  notifyGatewayOfPublicUrl: notifyGatewayOfPublicUrlMock,
-}));
 
 const EDGE_PORT = 18080;
 
@@ -110,9 +104,11 @@ mock.module("../lib/servers/common.js", () => ({
 mock.module("@mycadet/local-mode", () => ({
   ...localModeModule,
   // servers/nginx.ts no longer re-exports the ingress reads — the tunnel
-  // flow imports them from the package, so mock them here.
+  // flow imports them from the package, so mock them here. The publisher
+  // migrated here too (the hatch layer shares it), so mock it here.
   isAppServerRunning: isAppServerRunningMock,
   readAppServerState: readAppServerStateMock,
+  notifyGatewayOfPublicUrl: notifyGatewayOfPublicUrlMock,
 }));
 
 const { tunnel } = await import("../commands/tunnel.js");

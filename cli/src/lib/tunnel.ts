@@ -9,7 +9,7 @@ import {
   NGROK_PROVIDER,
   saveNgrokDomain,
 } from "./tunnels/ngrok.js";
-import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
+import { notifyGatewayOfPublicUrl } from "@mycadet/local-mode";
 import { type TunnelProviderName } from "@mycadet/service-contracts/ingress";
 import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
 import {
