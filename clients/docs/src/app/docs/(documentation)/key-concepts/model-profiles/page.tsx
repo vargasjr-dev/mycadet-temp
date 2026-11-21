@@ -1,13 +1,19 @@
-import { ModelProfilesContent } from "@/app/docs/_components/model-profiles-content";
+import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "Model Profiles - Cadet Docs",
   description:
-    "Control which LLM model and settings your assistant uses for each job — conversations, memory, background tasks — and optimize token costs with profiles and call-site overrides.",
+    "Control which LLM your assistant uses for each job — conversations, memory work, scheduled tasks — and override it per call-site when you need to.",
   path: "/docs/key-concepts/model-profiles",
 });
 
 export default function ModelProfilesPage() {
-  return <ModelProfilesContent />;
+  return (
+    <MarkdownDoc
+      file="key-concepts/model-profiles"
+      title="Model Profiles"
+      breadcrumb="Docs / Key Concepts / Model Profiles"
+    />
+  );
 }

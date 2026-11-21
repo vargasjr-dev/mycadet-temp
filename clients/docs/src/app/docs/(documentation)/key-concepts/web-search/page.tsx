@@ -1,13 +1,19 @@
-import { WebSearchContent } from "@/app/docs/_components/web-search-content";
+import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "Web Search - Cadet Docs",
   description:
-    "How web search works in Cadet: managed vs bring your own, the four built-in providers (Provider Native, Perplexity, Brave, Tavily), the fallback chain, and how it's billed.",
+    "How your assistant looks things up online: the six built-in providers, the fallback chain, and how each one is billed.",
   path: "/docs/key-concepts/web-search",
 });
 
 export default function WebSearchPage() {
-  return <WebSearchContent />;
+  return (
+    <MarkdownDoc
+      file="key-concepts/web-search"
+      title="Web Search"
+      breadcrumb="Docs / Key Concepts / Web Search"
+    />
+  );
 }

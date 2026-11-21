@@ -6,6 +6,8 @@ import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 
 import { MermaidDiagram } from "@/app/docs/_components/mermaid-diagram";
+import { DocsVideo } from "@/app/docs/_components/docs-video";
+import { DOCS_VIDEOS, type DocsVideoSlug } from "@/lib/docs/videos";
 import { navCardsFromList } from "@/lib/nav-cards";
 
 interface ReleaseMarkdownProps {
@@ -60,6 +62,10 @@ export function ReleaseMarkdown({
               return (
                 <MermaidDiagram code={String(children).replace(/\n$/, "")} />
               );
+            }
+            if (/language-docs-video\b/.test(className ?? "")) {
+              const slug = String(children).trim() as DocsVideoSlug;
+              if (slug in DOCS_VIDEOS) return <DocsVideo video={slug} />;
             }
             return (
               <code className={className} {...props}>

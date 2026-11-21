@@ -1,4 +1,4 @@
-import { KeyConceptsContent } from "@/app/docs/_components/key-concepts-content";
+import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
@@ -8,6 +8,13 @@ export const metadata = createMetadata({
   path: "/docs/key-concepts",
 });
 
-export default function KeyConceptsPage() {
-  return <KeyConceptsContent />;
+export default function KeyConceptsIndexPage() {
+  return (
+    <MarkdownDoc
+      file="key-concepts"
+      title="Key Concepts"
+      breadcrumb="Docs / Key Concepts"
+      navCards
+    />
+  );
 }

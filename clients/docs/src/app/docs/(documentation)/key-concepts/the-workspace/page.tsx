@@ -1,13 +1,19 @@
-import { TheWorkspaceContent } from "@/app/docs/_components/the-workspace-content";
+import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
   title: "The Workspace - Cadet Docs",
   description:
-    "The Cadet workspace — folder structure, IDENTITY.md, SOUL.md, USER.md, LOOKS.md, config.json, and skills directory.",
+    "Your assistant's brain is a folder — IDENTITY.md, SOUL.md, USER.md, NOW.md, and everything else in the workspace.",
   path: "/docs/key-concepts/the-workspace",
 });
 
 export default function TheWorkspacePage() {
-  return <TheWorkspaceContent />;
+  return (
+    <MarkdownDoc
+      file="key-concepts/the-workspace"
+      title="The Workspace"
+      breadcrumb="Docs / Key Concepts / The Workspace"
+    />
+  );
 }
