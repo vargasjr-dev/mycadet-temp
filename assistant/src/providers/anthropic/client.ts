@@ -109,7 +109,7 @@ export function detectAnthropicContextOverflow(
     return null;
   }
   const body = apiErrorBody(error);
-  const innerMessage = (body?.error?.message ?? body?.message) ?? "";
+  const innerMessage = body?.error?.message ?? body?.message ?? "";
   const topLevelMessage = error.message ?? "";
   const combined = `${innerMessage} ${topLevelMessage}`;
   if (!/prompt.?is.?too.?long|prompt_too_long/i.test(combined)) {
