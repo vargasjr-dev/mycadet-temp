@@ -213,7 +213,7 @@ mock.module("./identity", () => ({
   getName: () => persistedName,
   onNameChange: () => () => undefined,
 }));
-let persistedName: string | null = null;
+const persistedName: string | null = null;
 
 let onboardingActive = false;
 let restoredBounds: {
