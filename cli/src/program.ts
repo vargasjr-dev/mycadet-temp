@@ -87,7 +87,10 @@ export function buildCadetProgram(): Command {
   program
     .name("cadet")
     .description("Utilities for managing your Cadet assistants")
-    .version(`@mycadet/cli v${stampedVersion(cliPkg.version)}`, "-v, --version");
+    .version(
+      `@mycadet/cli v${stampedVersion(cliPkg.version)}`,
+      "-v, --version",
+    );
 
   // Color Commander-emitted error output red (unknown commands, parse
   // errors). Plain success output and --help text are untouched. The `red`

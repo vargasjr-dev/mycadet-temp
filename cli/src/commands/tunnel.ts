@@ -103,9 +103,7 @@ async function startTunnelFlow(
     // proxy) from the lockfile itself — no per-assistant threading here.
     edge = await ensureAppServer();
   } catch (err) {
-    console.error(
-      `Error: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
 
@@ -152,7 +150,9 @@ function providersSection(): string {
   }
   lines.push("");
   lines.push("Examples:");
-  lines.push(`  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER}`);
+  lines.push(
+    `  $ ${cliCommand()} tunnel start --provider ${DEFAULT_TUNNEL_PROVIDER}`,
+  );
   const domainExample = PROVIDER_META[DEFAULT_TUNNEL_PROVIDER].domainExample;
   if (domainExample) {
     lines.push(

@@ -375,7 +375,10 @@ export async function printRootProcessDetail(
       name === "tunnel" ? "Tunnel agent:" : `Tunnel agent (${name}):`,
     );
     if (!tunnel) {
-      console.log(`  not running.`);
+      // No record at all — distinct from a record whose process died
+      // ("not running"): this machine has never started a tunnel. Mirrors
+      // the app server branch's distinction above.
+      console.log(`  not recorded — start it with \`cadet tunnel start\``);
       return true;
     }
     if (name !== "tunnel" && (provider ?? DEFAULT_TUNNEL_PROVIDER) !== name) {

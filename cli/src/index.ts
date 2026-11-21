@@ -9,7 +9,6 @@ import {
   setLocalSourceRoot,
 } from "@mycadet/local-mode";
 
-import cliPkg from "../package.json";
 import { buildCadetProgram } from "./program";
 import { client } from "./commands/client";
 import { red } from "./lib/color";
