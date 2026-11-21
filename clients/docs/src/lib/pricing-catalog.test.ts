@@ -12,6 +12,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 
 import { fetchLegalPageContent } from "@/lib/discover-docs-routes";
 import { loadPlansCatalog } from "@/lib/plans-catalog";
+import { PUBLIC_API_BASE } from "@/lib/plugins-catalog";
 
 const REAL_FETCH = globalThis.fetch;
 afterAll(() => {
@@ -41,18 +42,21 @@ const CATALOG_BODY: unknown = {
 };
 
 describe("loadPlansCatalog", () => {
-  test("degrades to null when the cloud API URL is unset", async () => {
-    const previous = process.env.CADET_CLOUD_API_URL;
-    delete process.env.CADET_CLOUD_API_URL;
-    try {
-      expect(await loadPlansCatalog()).toBeNull();
-    } finally {
-      if (previous) {process.env.CADET_CLOUD_API_URL = previous;}
-    }
+  test("fetches through the public /api proxy", async () => {
+    let requested: string | undefined;
+    globalThis.fetch = Object.assign(
+      async (input: RequestInfo | URL) => {
+        requested = String(input);
+        return new Response(JSON.stringify(CATALOG_BODY), { status: 200 });
+      },
+      { preconnect: () => {} },
+    );
+    const catalog = await loadPlansCatalog();
+    expect(catalog).not.toBeNull();
+    expect(requested).toBe(`${PUBLIC_API_BASE}/plans`);
   });
 
-  test("parses the /v1/plans body and drops junk rows", async () => {
-    process.env.CADET_CLOUD_API_URL = "https://cloud.example";
+  test("parses the catalog body and drops junk rows", async () => {
     globalThis.fetch = Object.assign(
       async () => new Response(JSON.stringify(CATALOG_BODY), { status: 200 }),
       { preconnect: () => {} },
@@ -66,7 +70,6 @@ describe("loadPlansCatalog", () => {
   });
 
   test("degrades to null on a non-200", async () => {
-    process.env.CADET_CLOUD_API_URL = "https://cloud.example";
     globalThis.fetch = Object.assign(
       async () => new Response("no", { status: 503 }),
       { preconnect: () => {} },

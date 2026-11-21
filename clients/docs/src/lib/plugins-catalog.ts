@@ -1,8 +1,9 @@
 // Ported from mycadet-cloud's lib/plugins-catalog — the OSS marketing
 // pages fetch the same public catalog the cloud app renders from, so the
-// marketplace has one source of truth on the cloud side. The env var is
-// the same CADET_CLOUD_API_URL the cloud app sets; a miss/unset env
-// degrades to the honest unavailable state — never a broken page.
+// marketplace has one source of truth on the cloud side. The base is the
+// web app's public /api surface, which forwards to the cloud-api — this
+// repository carries no cloud URL of its own. A failed fetch degrades to
+// the honest unavailable state — never a broken page.
 
 export interface CatalogRow {
   name: string;
@@ -33,10 +34,7 @@ export function catalogRowsFromResponse(data: unknown): CatalogRow[] {
   return rows.filter(isCatalogRow);
 }
 
-export function cloudApiUrl(): string | undefined {
-  const value = process.env.CADET_CLOUD_API_URL;
-  return value ? value.replace(/\/$/, "") : undefined;
-}
+export const PUBLIC_API_BASE = "https://mycadet.ai/api";
 
 // The loader lives here so the grid and every detail page fetch the SAME
 // catalog through the SAME code path — they can't drift. The failure paths
@@ -44,13 +42,8 @@ export function cloudApiUrl(): string | undefined {
 // cloud app (a server component calling into a "use client" module), so it
 // doesn't get to be quiet again.
 export async function loadCatalog(): Promise<CatalogRow[] | null> {
-  const base = cloudApiUrl();
-  if (!base) {
-    console.error("[plugins] CADET_CLOUD_API_URL is not set");
-    return null;
-  }
   try {
-    const res = await fetch(`${base}/v1/plugins`, {
+    const res = await fetch(`${PUBLIC_API_BASE}/plugins`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) {

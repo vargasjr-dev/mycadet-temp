@@ -1,10 +1,11 @@
 // The pricing page's data loader. Plan naming, pricing, and copy live on
-// the cloud side (served by the public GET /v1/plans route) — the source
-// repository never carries price values or product metadata, so the page
-// fetches the catalog before rendering and degrades to the honest
-// unavailable state when the API is unset or down.
+// the cloud side (served by the cloud-api's public /plans route through
+// the web app's /api proxy) — the source repository never carries price
+// values or product metadata, so the page fetches the catalog before
+// rendering and degrades to the honest unavailable state when the API is
+// down.
 
-import { cloudApiUrl } from "@/lib/plugins-catalog";
+import { PUBLIC_API_BASE } from "@/lib/plugins-catalog";
 
 export type PlanVariant = "infra" | "usage" | "infra_usage";
 
@@ -65,13 +66,8 @@ function catalogFromResponse(data: unknown): PlansCatalog | null {
 }
 
 export async function loadPlansCatalog(): Promise<PlansCatalog | null> {
-  const base = cloudApiUrl();
-  if (!base) {
-    console.error("[pricing] CADET_CLOUD_API_URL is not set");
-    return null;
-  }
   try {
-    const res = await fetch(`${base}/v1/plans`, {
+    const res = await fetch(`${PUBLIC_API_BASE}/plans`, {
       next: { revalidate: 300 },
     });
     if (!res.ok) {
