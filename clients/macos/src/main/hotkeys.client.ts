@@ -1,7 +1,7 @@
 import { installHotkeysIpc as installSharedHotkeysIpc } from "@mycadet/electron-desktop";
 
 import "./commands.client";
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 
 export const installHotkeysIpc = (): void => {
   // Talk is the voice key's double tap on this shell, so the chord is not on

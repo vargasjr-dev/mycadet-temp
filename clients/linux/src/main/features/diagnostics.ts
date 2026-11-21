@@ -2,10 +2,6 @@ import { app, powerMonitor } from "electron";
 import fs from "node:fs/promises";
 import os from "node:os";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import {
   installDiagnosticsIpc,
   configureFeedback,
@@ -17,7 +13,7 @@ import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
-import { handle, on } from "../ipc.client";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { getLogFilePaths } from "@mycadet/electron-desktop";
 
 declare const __CADET_BUILD_SHA__: string;
@@ -43,16 +39,11 @@ const feedback: FeedbackDependencies = {
 
 configureFeedback(feedback);
 
-const diagnosticsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "diagnostics",
-  install: () => {
-    // Persist the renderer's effective diagnostics consent. Sentry reporting
-    // is gone; this keeps the user's choice durable for the settings surface.
-    installDiagnosticsIpc({ on }, (enabled) =>
-      writeSharedSetting("shareDiagnostics", enabled),
-    );
-    installFeedbackIpc();
-  },
+export const install = (): void => {
+  // Persist the renderer's effective diagnostics consent. Sentry reporting
+  // is gone; this keeps the user's choice durable for the settings surface.
+  installDiagnosticsIpc({ on }, (enabled) =>
+    writeSharedSetting("shareDiagnostics", enabled),
+  );
+  installFeedbackIpc();
 };
-
-export default diagnosticsFeature;

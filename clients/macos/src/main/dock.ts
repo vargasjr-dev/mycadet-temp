@@ -11,7 +11,7 @@ import {
   compositeCentered,
   roundedRectCoverage,
 } from "@mycadet/electron-desktop";
-import { on } from "./ipc";
+import { on } from "@mycadet/electron-desktop/ipc";
 import {
   current as currentMainWindow,
   onMainWindowVisibilityChange,

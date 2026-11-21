@@ -1,7 +1,4 @@
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
+import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   HOTKEY_SETTINGS,
   type HotkeySettingsProvider,
@@ -20,11 +17,6 @@ const hotkeySettings: HotkeySettingsProvider = {
   subscribe: (listener) => onSettingChange("hotkeys", listener),
 };
 
-const appSettingsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "app-settings",
-  install: (capabilities) => {
-    capabilities.provide(HOTKEY_SETTINGS, hotkeySettings);
-  },
+export const install = (capabilities: DesktopCapabilityRegistry): void => {
+  capabilities.provide(HOTKEY_SETTINGS, hotkeySettings);
 };
-
-export default appSettingsFeature;

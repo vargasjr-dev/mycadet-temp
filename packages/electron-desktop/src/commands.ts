@@ -3,6 +3,12 @@ import { BrowserWindow } from "electron";
 import { DEFAULT_ACCELERATORS, type CadetCommand } from "@mycadet/ipc-contract";
 
 import { capabilityToken } from "./capability-registry";
+import {
+  closeCommandPaletteWindow,
+  dispatchToMainWindow,
+  isCommandPaletteWindowFocused,
+  openCommandPaletteWindow,
+} from "./command-palette-window";
 
 export type { CadetCommand };
 
@@ -113,6 +119,22 @@ export const acceleratorOption = (
  * user expects Cmd+N to operate on the popped-out window they're in.
  */
 export const dispatchToFocused = (command: CadetCommand): void => {
+  // The palette window is not a command target: a palette command toggles
+  // it (open when unfocused, dismiss while focused), and any other command
+  // fired while it holds focus belongs to the main window, whose renderer
+  // alone speaks the app command protocol.
+  if (command.kind === "commandPalette") {
+    if (isCommandPaletteWindowFocused()) {
+      closeCommandPaletteWindow();
+      return;
+    }
+    openCommandPaletteWindow();
+    return;
+  }
+  if (isCommandPaletteWindowFocused()) {
+    dispatchToMainWindow(command);
+    return;
+  }
   const target =
     BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
   target?.webContents.send("cadet:command", command);

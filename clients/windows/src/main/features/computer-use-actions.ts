@@ -11,7 +11,6 @@ import { app, BrowserWindow } from "electron";
 
 import {
   capabilityToken,
-  type CapabilityModule,
   type DesktopCapabilityRegistry,
 } from "@mycadet/electron-desktop/capability-registry";
 import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop";
@@ -138,14 +137,9 @@ export const createWindowsHostCuExecutor = (
   });
 };
 
-const computerUseActionsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "computer-use-actions",
-  install: (capabilities) => {
-    capabilities.provide(COMPUTER_USE_ACTION_EXECUTORS, {
-      host_cu: createWindowsHostCuExecutor(),
-      teardown: shutdownSharedCuHelper,
-    });
-  },
+export const install = (capabilities: DesktopCapabilityRegistry): void => {
+  capabilities.provide(COMPUTER_USE_ACTION_EXECUTORS, {
+    host_cu: createWindowsHostCuExecutor(),
+    teardown: shutdownSharedCuHelper,
+  });
 };
-
-export default computerUseActionsFeature;

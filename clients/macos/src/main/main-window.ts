@@ -9,11 +9,11 @@ import {
 } from "@mycadet/electron-desktop/window-state";
 
 import { APP_RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
-import { resolveAllowedOrigin } from "./app-origin";
+import { resolveAllowedOrigin } from "@mycadet/electron-desktop/app-origin";
 import { decideNavigation } from "./auth-nav";
 import { type CadetCommand } from "@mycadet/electron-desktop/commands";
 import { getName, onNameChange } from "@mycadet/electron-desktop";
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 import { createWindow } from "@mycadet/electron-desktop";
 
 // Default state for the main window once onboarding is done: maximized — a

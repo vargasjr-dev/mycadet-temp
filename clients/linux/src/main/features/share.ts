@@ -4,12 +4,7 @@ import path from "node:path";
 import { BrowserWindow, dialog } from "electron";
 import { z } from "zod";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
-
-import { handle } from "../ipc.client";
+import { handle } from "@mycadet/electron-desktop/ipc";
 
 /**
  * Linux `share.shareFile(bytes, filename)` bridge. There is no app-invokable
@@ -33,25 +28,20 @@ export const sanitizeFilename = (filename: string): string => {
   return base.length > 0 ? base : "download";
 };
 
-const share: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "share",
-  install: () => {
-    handle(
-      "cadet:share:file",
-      ShareFileArgs,
-      async ([bytes, filename], event): Promise<void> => {
-        const window = BrowserWindow.fromWebContents(event.sender);
-        const options = { defaultPath: sanitizeFilename(filename) };
-        const { canceled, filePath } = window
-          ? await dialog.showSaveDialog(window, options)
-          : await dialog.showSaveDialog(options);
-        if (canceled || !filePath) {
-          return;
-        }
-        await writeFile(filePath, bytes);
-      },
-    );
-  },
+export const install = (): void => {
+  handle(
+    "cadet:share:file",
+    ShareFileArgs,
+    async ([bytes, filename], event): Promise<void> => {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      const options = { defaultPath: sanitizeFilename(filename) };
+      const { canceled, filePath } = window
+        ? await dialog.showSaveDialog(window, options)
+        : await dialog.showSaveDialog(options);
+      if (canceled || !filePath) {
+        return;
+      }
+      await writeFile(filePath, bytes);
+    },
+  );
 };
-
-export default share;

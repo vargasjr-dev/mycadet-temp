@@ -1,7 +1,11 @@
 import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from "electron";
 import { z } from "zod";
 
-import { isAllowedOrigin, type AllowedOrigin } from "./app-origin";
+import {
+  isAllowedOrigin,
+  resolveAllowedOrigin,
+  type AllowedOrigin,
+} from "./app-origin";
 
 export type AllowedOriginResolver = () => AllowedOrigin;
 export type OriginValidator = typeof isAllowedOrigin;
@@ -65,3 +69,12 @@ export const createIpcRegistrar = (
 };
 
 export type IpcRegistrar = ReturnType<typeof createIpcRegistrar>;
+
+/**
+ * The app's registrar: every main-process feature shares one — the sender
+ * guard reads the build's renderer origin, the same resolver the navigation
+ * guard and app-protocol forward read. The shells import this trio instead
+ * of each constructing their own.
+ */
+export const { handle, handleSync, on } =
+  createIpcRegistrar(resolveAllowedOrigin);

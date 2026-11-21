@@ -53,7 +53,7 @@ mock.module("electron-log/main", () => {
 });
 
 const { routerTesting } = await import("@mycadet/electron-desktop");
-const { default: hostProxyFeature } = await import("./features/host-proxy");
+const { install: hostProxyInstall } = await import(".//features/host-proxy");
 const { COMPUTER_USE_ACTION_EXECUTORS } =
   await import("./features/computer-use-actions");
 const { DesktopCapabilityRegistry } =
@@ -65,7 +65,7 @@ afterEach(() => {
 });
 
 test("installs the bridge with the portable executors and tears down on quit", async () => {
-  hostProxyFeature.install(new DesktopCapabilityRegistry());
+  hostProxyInstall(new DesktopCapabilityRegistry());
 
   // The bridge install is deferred a microtask so the lockfile watcher's
   // initial read (a later-sorted feature) lands first.
@@ -96,7 +96,7 @@ test("installs the computer-use executor contributed by its capability", async (
     teardown: () => undefined,
   });
 
-  hostProxyFeature.install(registry);
+  hostProxyInstall(registry);
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   expect(routerTesting.executors.has("host_cu")).toBe(true);

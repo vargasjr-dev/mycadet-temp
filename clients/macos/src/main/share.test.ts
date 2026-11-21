@@ -16,7 +16,7 @@ type Registration = {
   fn: Handler;
 };
 const handleRegistrations: Registration[] = [];
-mock.module("./ipc", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (channel: string, schema: z.ZodType<unknown[]>, fn: Handler) => {
     handleRegistrations.push({ channel, schema, fn });
   },

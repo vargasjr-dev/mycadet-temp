@@ -153,7 +153,7 @@ mock.module("@mycadet/electron-desktop/floating-window", () => ({
     return win;
   },
 }));
-mock.module("./ipc", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (
     channel: string,
     schema: { parse: (...args: any[]) => any },

@@ -60,7 +60,7 @@ mock.module("electron", () =>
     Notification: FakeNotification,
   }),
 );
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (channel: string, _schema: unknown, handler: Handler) => {
     handlers.set(channel, handler);
   },
@@ -74,7 +74,7 @@ mock.module("./windows-helper", () => ({
   getWindowsHelperClient: () => ({ call: helperCall }),
 }));
 
-const { default: permissionsFeature } = await import("./features/permissions");
+const { install: permissionsInstall } = await import(".//features/permissions");
 
 beforeEach(() => {
   handlers.clear();
@@ -84,7 +84,7 @@ beforeEach(() => {
   mediaStatus.mockReset();
   mediaStatus.mockImplementation(() => "granted");
   notificationOutcome = "show";
-  permissionsFeature.install({} as never);
+  permissionsInstall();
 });
 
 test("uses the Windows helper for permission states and text insertion", async () => {

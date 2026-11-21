@@ -5,10 +5,7 @@
 
 import { app } from "electron";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
+import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   installHostProxyBridge,
   createHostProxyRuntime,
@@ -18,18 +15,15 @@ import { hostBashExecutor } from "../executors/host-bash-adapter";
 import { log } from "@mycadet/electron-desktop";
 import { COMPUTER_USE_ACTION_EXECUTORS } from "./computer-use-actions";
 
-const hostProxy: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "host-proxy",
-  install: (capabilities) => {
-    // Deferred one microtask: capability modules install synchronously in
-    // path order, and the bridge seeds its connections from the lockfile,
-    // which the presence module (sorted later) fills with its initial
-    // synchronous read. Deferring lets the bridge observe assistants already
-    // present at startup.
-    queueMicrotask(() => {
-      installBridge(capabilities);
-    });
-  },
+export const install = (capabilities: DesktopCapabilityRegistry): void => {
+  // Deferred one microtask: capability modules install synchronously in
+  // path order, and the bridge seeds its connections from the lockfile,
+  // which the presence module (sorted later) fills with its initial
+  // synchronous read. Deferring lets the bridge observe assistants already
+  // present at startup.
+  queueMicrotask(() => {
+    installBridge(capabilities);
+  });
 };
 
 const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
@@ -43,5 +37,3 @@ const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
   );
   app.once("before-quit", teardown);
 };
-
-export default hostProxy;

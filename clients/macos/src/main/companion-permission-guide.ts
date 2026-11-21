@@ -36,7 +36,7 @@ import {
 } from "@mycadet/electron-desktop/avatar";
 
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
-import { handle, on } from "./ipc";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import {
   GUIDE_HEIGHT,

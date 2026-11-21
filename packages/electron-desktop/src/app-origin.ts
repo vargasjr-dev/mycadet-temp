@@ -1,7 +1,5 @@
 import { app } from "electron";
 
-import { resolveEnvironmentName } from "@mycadet/shared";
-
 import {
   APP_HOST,
   APP_PROTOCOL,
@@ -90,13 +88,4 @@ export const isAllowedOrigin = (
     }
   }
   return parsed.protocol === allowed.protocol && parsed.host === allowed.host;
-};
-
-export const getAppName = () => {
-  const envName = resolveEnvironmentName();
-  if (envName === "production") {
-    return "Cadet";
-  } else {
-    return `Cadet ${envName.slice(0, 1).toUpperCase()}${envName.slice(1)}`;
-  }
 };

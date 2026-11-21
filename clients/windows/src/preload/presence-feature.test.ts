@@ -21,13 +21,13 @@ mock.module("electron", () =>
   }),
 );
 
-const presence = (await import("./features/presence")).default;
+const { install: presenceInstall } = await import("./features/presence");
 
 type FakeCapability = Record<string, (...args: unknown[]) => unknown>;
 
 test("contributes the complete presence bridge", () => {
   const contributions = new Map<string, unknown>();
-  presence.install({
+  presenceInstall({
     contribute: (key: string, value: unknown) => contributions.set(key, value),
   } as never);
 
@@ -44,7 +44,7 @@ test("contributes the complete presence bridge", () => {
 
 test("publishes flags, status, identity, avatar, and unread state", () => {
   const contributions = new Map<string, FakeCapability>();
-  presence.install({
+  presenceInstall({
     contribute: (key: string, value: unknown) =>
       contributions.set(key, value as FakeCapability),
   } as never);
@@ -68,7 +68,7 @@ test("publishes flags, status, identity, avatar, and unread state", () => {
 
 test("delivers power and current connectivity state with cleanup", async () => {
   const contributions = new Map<string, FakeCapability>();
-  presence.install({
+  presenceInstall({
     contribute: (key: string, value: unknown) =>
       contributions.set(key, value as FakeCapability),
   } as never);

@@ -25,7 +25,7 @@ type Registration = {
 };
 const onRegistrations: Registration[] = [];
 const handleRegistrations: Registration[] = [];
-mock.module("./ipc", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   on: (
     channel: string,
     schema: z.ZodType<unknown[]>,

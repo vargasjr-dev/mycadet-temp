@@ -1,17 +1,108 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-let mockHotkeys: unknown = null;
+import { electronMock } from "../test-setup";
 
-mock.module("electron", () => ({
-  BrowserWindow: { getFocusedWindow: () => null, getAllWindows: () => [] },
-}));
+/**
+ * The dispatcher's window stubs: a constructible window (the palette's
+ * createWindow dep builds these) and a controllable focused-window static —
+ * the two levers every dispatch route reads.
+ */
+type Listener = (...args: unknown[]) => void;
+
+class StubWindow {
+  static focused: StubWindow | null = null;
+
+  static getFocusedWindow() {
+    return StubWindow.focused;
+  }
+
+  static getAllWindows() {
+    return StubWindow.focused ? [StubWindow.focused] : [];
+  }
+
+  private windowListeners = new Map<string, Listener[]>();
+  private windowDestroyed = false;
+
+  close = mock(() => {
+    this.windowDestroyed = true;
+    for (const listener of this.windowListeners.get("closed") ?? []) {
+      listener();
+    }
+  });
+  show = mock(() => undefined);
+  focus = mock(() => undefined);
+  getBounds = () => ({ x: 0, y: 0, width: 584, height: 444 });
+  setPosition = mock(() => undefined);
+  setAlwaysOnTop = mock(() => undefined);
+  setVisibleOnAllWorkspaces = mock(() => undefined);
+  loadURL = mock(() => Promise.resolve());
+  on = mock((event: string, listener: Listener) => {
+    const listeners = this.windowListeners.get(event) ?? [];
+    listeners.push(listener);
+    this.windowListeners.set(event, listeners);
+  });
+  isDestroyed = () => this.windowDestroyed;
+  webContents = {
+    isDestroyed: () => false,
+    on: mock((_event: string, _listener: Listener) => undefined),
+    send: mock(() => undefined),
+  };
+}
+
+const createdWindows: StubWindow[] = [];
+const sentToMain: unknown[] = [];
+
+mock.module("electron", () =>
+  electronMock({
+    BrowserWindow: StubWindow,
+    // electronMock replaces top-level keys (member identity matters), so the
+    // screen surface the palette's positioning reads comes complete.
+    screen: {
+      getDisplayMatching: () => ({
+        workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+      }),
+      getDisplayNearestPoint: () => ({
+        workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+      }),
+      getPrimaryDisplay: () => ({
+        workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+      }),
+      getAllDisplays: () => [],
+      getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+      on: () => undefined,
+    },
+  }),
+);
 
 const {
   configureHotkeySettings,
   DEFAULT_ACCELERATORS,
+  dispatchToFocused,
   GLOBAL_SHORTCUT_DEFAULTS,
   resolveAccelerator,
 } = await import("./commands");
+const { configureCommandPaletteWindow, __resetForTesting } =
+  await import("./command-palette-window");
+const { configureFloatingWindows } = await import("./floating-window");
+
+configureFloatingWindows({
+  createWindow: () => {
+    const win = new StubWindow();
+    createdWindows.push(win);
+    return win as unknown as Electron.BrowserWindow;
+  },
+  platform: "linux",
+  resolveRoute: (route: string) => `https://app.local${route}`,
+});
+
+configureCommandPaletteWindow({
+  currentMainWindow: () => null,
+  dispatchToMain: (command) => sentToMain.push(command),
+  ensureMainWindowVisible: () => undefined,
+  handle: () => undefined,
+});
+
+let mockHotkeys: unknown = null;
 
 configureHotkeySettings({
   read: () =>
@@ -22,8 +113,20 @@ configureHotkeySettings({
   subscribe: () => () => undefined,
 });
 
+beforeEach(() => {
+  StubWindow.focused = null;
+  createdWindows.length = 0;
+  sentToMain.length = 0;
+});
+
 afterEach(() => {
   mockHotkeys = null;
+  __resetForTesting();
+  for (const win of createdWindows.splice(0)) {
+    if (!win.isDestroyed()) {
+      win.close();
+    }
+  }
 });
 
 describe("resolveAccelerator", () => {
@@ -91,5 +194,51 @@ describe("compiled accelerator defaults", () => {
       .filter(([, kinds]) => kinds.length > 1)
       .map(([accelerator, kinds]) => `${accelerator}: ${kinds.join(", ")}`);
     expect(collisions).toEqual([]);
+  });
+});
+
+describe("dispatchToFocused", () => {
+  test("opens the palette window on a palette command aimed at a renderer", () => {
+    StubWindow.focused = new StubWindow();
+
+    dispatchToFocused({ kind: "commandPalette" });
+
+    expect(createdWindows).toHaveLength(1);
+    expect(StubWindow.focused.webContents.send).not.toHaveBeenCalled();
+  });
+
+  test("closes the focused palette when the palette command fires again", () => {
+    dispatchToFocused({ kind: "commandPalette" });
+    const palette = createdWindows[0]!;
+    StubWindow.focused = palette;
+
+    dispatchToFocused({ kind: "commandPalette" });
+
+    expect(palette.close).toHaveBeenCalledTimes(1);
+  });
+
+  test("keeps other commands on the focused renderer's command stream", () => {
+    const focused = new StubWindow();
+    StubWindow.focused = focused;
+
+    dispatchToFocused({ kind: "newConversation" });
+
+    expect(createdWindows).toHaveLength(0);
+    expect(focused.webContents.send).toHaveBeenCalledWith("cadet:command", {
+      kind: "newConversation",
+    });
+  });
+
+  test("routes other commands to the main window while the palette is focused", () => {
+    dispatchToFocused({ kind: "commandPalette" });
+    const palette = createdWindows[0]!;
+    StubWindow.focused = palette;
+
+    dispatchToFocused({ kind: "openSettings" });
+
+    expect(palette.webContents.send).not.toHaveBeenCalledWith("cadet:command", {
+      kind: "openSettings",
+    });
+    expect(sentToMain).toEqual([{ kind: "openSettings" }]);
   });
 });

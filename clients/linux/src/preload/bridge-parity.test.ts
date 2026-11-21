@@ -1,14 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import { electronMock } from "@mycadet/electron-desktop/test-setup";
-import type { IpcRenderer } from "electron";
-import { readdirSync } from "node:fs";
-import path from "node:path";
 
-import {
-  BridgeCapabilityRegistry,
-  installCapabilityModules,
-  type CapabilityModuleExport,
-} from "@mycadet/electron-desktop/capability-registry";
 import { CADET_BRIDGE_KEYS, type CadetBridge } from "@mycadet/ipc-contract";
 
 const exposed = new Map<string, unknown>();
@@ -31,31 +23,13 @@ mock.module("electron", () =>
   }),
 );
 
-const { createLinuxCoreBridge, LINUX_NOT_APPLICABLE_CAPABILITIES } =
-  await import("./core-capabilities");
+const { LINUX_NOT_APPLICABLE_CAPABILITIES } = await import("./core-capabilities");
 
-const featuresDir = path.join(import.meta.dir, "features");
-const featureModules: Record<
-  string,
-  CapabilityModuleExport<BridgeCapabilityRegistry<CadetBridge>>
-> = {};
-for (const file of readdirSync(featuresDir)) {
-  if (!file.endsWith(".ts") || file.endsWith(".test.ts")) {
-    continue;
-  }
-  featureModules[`./features/${file}`] = (await import(
-    path.join(featuresDir, file)
-  )) as CapabilityModuleExport<BridgeCapabilityRegistry<CadetBridge>>;
-}
 
-const composeLinuxBridge = (): Partial<CadetBridge> => {
-  const registry = new BridgeCapabilityRegistry<CadetBridge>(
-    createLinuxCoreBridge(ipcRenderer as unknown as IpcRenderer),
-  );
-  installCapabilityModules(registry, featureModules);
-  return registry.build();
-};
-
+// The composition under test is the shell's own preload index — the
+// same module the packaged preload runs — not a test-side rebuild.
+await import("./index");
+const linuxBridge = exposed.get("cadet") as CadetBridge;
 await import("../../../macos/src/preload/index");
 const macBridge = exposed.get("cadet") as CadetBridge;
 
@@ -106,7 +80,7 @@ const MACOS_ONLY_SURFACE = [
 ];
 
 test("the composed Linux bridge satisfies every applicable CadetBridge key", () => {
-  const bridge = composeLinuxBridge();
+  const bridge = linuxBridge;
 
   for (const key of required) {
     expect(bridge[key], key).toBeDefined();
@@ -120,7 +94,7 @@ test("the Linux bridge matches the macOS bridge surface up to the documented del
   expect(macBridge.hostOS).toBe("macos");
   expect(Object.keys(macBridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
 
-  const bridge = composeLinuxBridge();
+  const bridge = linuxBridge;
   const shared = required.filter((key) => key !== "hostOS");
   const linuxSurface = shared.flatMap((key) => surface(bridge[key], key));
   const macSurface = shared.flatMap((key) => surface(macBridge[key], key));

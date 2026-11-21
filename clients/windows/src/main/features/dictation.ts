@@ -1,10 +1,6 @@
 import { BrowserWindow, app, type WebContents } from "electron";
 import { z } from "zod";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import {
   DICTATION_PUSH_SAMPLE_RATE,
   dictationPartialsHelperResultSchema,
@@ -30,7 +26,7 @@ import {
   type NativeSidecarState,
 } from "@mycadet/native-sidecar/supervisor";
 
-import { handle, on } from "../ipc.client";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { getWindowsHelperClient } from "../windows-helper";
 
@@ -246,12 +242,7 @@ export const installDictation = (): void => {
   });
 };
 
-const dictation: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "dictation",
-  install: installDictation,
-};
-
-export default dictation;
+export const install = (): void => installDictation();
 
 export const __resetForTesting = (
   factory?: () => NativeSidecarClient,

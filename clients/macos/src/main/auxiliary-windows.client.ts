@@ -14,7 +14,7 @@ import {
 } from "@mycadet/electron-desktop/window-state";
 
 import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
-import { handle, on } from "./ipc";
+import { handle, on } from "@mycadet/electron-desktop/ipc";
 import { current, dispatchToMain, ensureVisible } from "./main-window";
 import { createWindow } from "@mycadet/electron-desktop";
 

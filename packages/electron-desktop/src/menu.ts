@@ -29,26 +29,21 @@ import { areChromeDevToolsEnabled } from "./devtools";
 import type { IpcHandle } from "./ipc";
 import { readOnboardingActive } from "./window-state";
 
-/** Builds one command row: the platform's dispatch + accelerator flavor. */
+/** Builds one command row: the accelerator flavor + the focused-window
+ * dispatch (which owns the palette-aware routing). */
 export type MenuCommandItem = (
   label: string,
   command: CadetCommand,
   enabled?: boolean,
 ) => MenuItemConstructorOptions;
 
-/** Where a menu row's click hands the command. macOS's dispatch is
- * palette-aware; the default steps the focused window. */
-export type MenuDispatch = (command: CadetCommand) => void;
-
 /** The one row builder every menu group shares. */
-const commandItem =
-  (dispatch: MenuDispatch): MenuCommandItem =>
-  (label, command, enabled) => ({
-    label,
-    ...acceleratorOption(command.kind),
-    ...(enabled === undefined ? {} : { enabled }),
-    click: () => dispatch(command),
-  });
+const commandItem = (): MenuCommandItem => (label, command, enabled) => ({
+  label,
+  ...acceleratorOption(command.kind),
+  ...(enabled === undefined ? {} : { enabled }),
+  click: () => dispatchToFocused(command),
+});
 
 /** Step the focused window's history; no-op when nothing is focused. */
 export const navigateFocused = (direction: "back" | "forward"): void => {
@@ -147,12 +142,9 @@ const installCliRow = (installCli: (() => void) | undefined) => ({
 
 /** The File menu: the conversation rows plus the platform's session tail. */
 export const fileMenu = (
-  options: {
-    dispatch?: MenuDispatch;
-    sessionTail?: MenuItemConstructorOptions[];
-  } = {},
+  options: { sessionTail?: MenuItemConstructorOptions[] } = {},
 ): MenuItemConstructorOptions => {
-  const item = commandItem(options.dispatch ?? dispatchToFocused);
+  const item = commandItem();
   return {
     id: "file",
     label: "File",
@@ -164,28 +156,24 @@ export const fileMenu = (
 };
 
 /** The Edit menu — shared whole. */
-export const editMenu = (
-  options: { dispatch?: MenuDispatch } = {},
-): MenuItemConstructorOptions => ({
+export const editMenu = (): MenuItemConstructorOptions => ({
   id: "edit",
   label: "Edit",
-  submenu: editMenuItems(commandItem(options.dispatch ?? dispatchToFocused)),
+  submenu: editMenuItems(commandItem()),
 });
 
 /** The View menu — shared whole bar the fullscreen chord. */
 export const viewMenu = (
-  options: { dispatch?: MenuDispatch; fullscreenAccelerator?: string } = {},
+  options: { fullscreenAccelerator?: string } = {},
 ): MenuItemConstructorOptions => ({
   id: "view",
   label: "View",
-  submenu: viewMenuItems(commandItem(options.dispatch ?? dispatchToFocused), {
+  submenu: viewMenuItems(commandItem(), {
     fullscreenAccelerator: options.fullscreenAccelerator,
   }),
 });
 
 export interface WindowMenuOptions {
-  /** macOS dispatches palette-aware; the default steps the focused window. */
-  dispatch?: MenuDispatch;
   /** macOS zooms in place of the frameless close role. */
   zoomRole?: boolean;
   /** Rows appended after a separator (macOS: companion toggle, front). */
@@ -193,11 +181,10 @@ export interface WindowMenuOptions {
 }
 
 export const windowMenu = ({
-  dispatch,
   zoomRole,
   tail,
 }: WindowMenuOptions = {}): MenuItemConstructorOptions => {
-  const item = commandItem(dispatch ?? dispatchToFocused);
+  const item = commandItem();
   return {
     id: "window",
     label: "Window",
@@ -212,7 +199,6 @@ export const windowMenu = ({
 };
 
 export interface HelpMenuOptions {
-  dispatch?: MenuDispatch;
   openAbout?: () => void;
   checkForUpdates?: () => void;
   /** macOS checks for updates from its app menu instead. */
@@ -222,7 +208,7 @@ export interface HelpMenuOptions {
 export const helpMenu = (
   options: HelpMenuOptions = {},
 ): MenuItemConstructorOptions => {
-  const item = commandItem(options.dispatch ?? dispatchToFocused);
+  const item = commandItem();
   return {
     id: "help",
     label: "Help",
@@ -302,7 +288,7 @@ export const buildDesktopMenu = ({
   DesktopMenuDeps,
   "handle" | "onOnboardingChange"
 >): MenuItemConstructorOptions[] => {
-  const item = commandItem(dispatchToFocused);
+  const item = commandItem();
 
   return [
     fileMenu({ sessionTail: sessionFileTail(item, installCli) }),

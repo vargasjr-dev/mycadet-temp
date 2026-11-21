@@ -5,7 +5,7 @@ import path from "node:path";
 import { BrowserWindow, ShareMenu } from "electron";
 import { z } from "zod";
 
-import { handle } from "./ipc";
+import { handle } from "@mycadet/electron-desktop/ipc";
 
 /**
  * macOS Share Sheet bridge.

@@ -112,6 +112,14 @@ export const installWebContentsSecurity = (
     if (event.level === "debug") {
       return;
     }
+    // The DevTools frontend speaks the Chrome DevTools Protocol to the
+    // renderer, and Electron implements only part of it — its unsupported
+    // requests (`Autofill.enable`, `Autofill.setAddresses`) surface here as
+    // console errors attributed to the devtools bundle itself. That is the
+    // inspector's own chatter, never the app's, so it never forwards.
+    if (event.sourceId.startsWith("devtools://")) {
+      return;
+    }
     const line = `[renderer wc=${contents.id}] ${event.message}`;
     if (event.level === "error") {
       options.logger.error(line);

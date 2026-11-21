@@ -251,7 +251,8 @@ const {
   setOnboarding,
   toggleVisibility,
 } = await import("./main-window");
-const { resolveAllowedOrigin } = await import("./app-origin");
+const { resolveAllowedOrigin } =
+  await import("@mycadet/electron-desktop/app-origin");
 
 // The IPC wrapper rejects any sender whose frame origin isn't the
 // app renderer's, so the handler must be invoked with a frame at the

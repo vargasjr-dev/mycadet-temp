@@ -33,7 +33,7 @@ mock.module("./main-window", () => ({
 
 let handler: ((args: unknown[], event: { sender: Sender }) => unknown) | null =
   null;
-mock.module("./ipc.client", () => ({
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   handle: (
     _channel: string,
     _schema: unknown,
@@ -74,8 +74,9 @@ mock.module("./windows-helper", () => ({
   getWindowsHelperClient: () => helper,
 }));
 
-const feature = (await import("./features/voice-mode-chord")).default;
-feature.install({} as never);
+const { install: installVoiceModeChord } =
+  await import("./features/voice-mode-chord");
+installVoiceModeChord();
 
 test("restores the main window binding after a helper restart", async () => {
   const activator = { kind: "modifierOnly", modifiers: ["control"] };

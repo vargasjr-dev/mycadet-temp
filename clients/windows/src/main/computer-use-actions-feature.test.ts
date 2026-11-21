@@ -18,7 +18,7 @@ const { DesktopCapabilityRegistry } =
 const {
   COMPUTER_USE_ACTION_EXECUTORS,
   createWindowsHostCuExecutor,
-  default: computerUseActionsFeature,
+  install: computerUseActionsInstall,
   protectComputerUseCapture,
 } = await import("./features/computer-use-actions");
 
@@ -26,7 +26,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 test("provides the host_cu executor through the capability registry", () => {
   const registry = new DesktopCapabilityRegistry();
-  computerUseActionsFeature.install(registry);
+  computerUseActionsInstall(registry);
   const provided = registry.require(COMPUTER_USE_ACTION_EXECUTORS);
   expect(typeof provided.host_cu.handleRequest).toBe("function");
   expect(typeof provided.teardown).toBe("function");

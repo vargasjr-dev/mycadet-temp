@@ -1,9 +1,5 @@
 import { app, session, shell, type Event } from "electron";
 
-import type {
-  CapabilityModule,
-  DesktopCapabilityRegistry,
-} from "@mycadet/electron-desktop/capability-registry";
 import {
   resolveAuthCallbackScheme,
   configureNativeAuth,
@@ -18,7 +14,7 @@ import {
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import { startLinuxAuthCallback } from "../auth-callback";
-import { handle, handleSync } from "../ipc.client";
+import { handle, handleSync } from "@mycadet/electron-desktop/ipc";
 import { log } from "@mycadet/electron-desktop";
 import { ensureVisible } from "../main-window";
 
@@ -43,38 +39,33 @@ const subscribeToAuthCallback = (
   };
 };
 
-const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
-  id: "native-auth",
-  install: () => {
-    const authScheme = resolveAuthCallbackScheme();
-    setSessionTokenLogger(log);
-    configureNativeAuth({
-      activateWindow: () => {
-        app.focus({ steal: true });
-        ensureVisible();
-      },
-      getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
-      ipc: { handle, handleSync },
-      openExternal: (url) => shell.openExternal(url),
-      removeCookie: (url, name) =>
-        session.defaultSession.cookies.remove(url, name),
-      ...(app.isPackaged
-        ? {
-            startCallback: (expectedState: string) =>
-              startLinuxAuthCallback(expectedState, {
-                scheme: authScheme,
-                subscribe: subscribeToAuthCallback,
-              }),
-          }
-        : {}),
-      sessionStore: {
-        clear: clearSessionToken,
-        get: getSessionToken,
-        save: saveSessionToken,
-      },
-    });
-    installNativeAuth();
-  },
+export const install = (): void => {
+  const authScheme = resolveAuthCallbackScheme();
+  setSessionTokenLogger(log);
+  configureNativeAuth({
+    activateWindow: () => {
+      app.focus({ steal: true });
+      ensureVisible();
+    },
+    getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
+    ipc: { handle, handleSync },
+    openExternal: (url) => shell.openExternal(url),
+    removeCookie: (url, name) =>
+      session.defaultSession.cookies.remove(url, name),
+    ...(app.isPackaged
+      ? {
+          startCallback: (expectedState: string) =>
+            startLinuxAuthCallback(expectedState, {
+              scheme: authScheme,
+              subscribe: subscribeToAuthCallback,
+            }),
+        }
+      : {}),
+    sessionStore: {
+      clear: clearSessionToken,
+      get: getSessionToken,
+      save: saveSessionToken,
+    },
+  });
+  installNativeAuth();
 };
-
-export default authFeature;

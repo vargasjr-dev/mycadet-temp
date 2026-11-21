@@ -1,9 +1,7 @@
 import { app } from "electron";
 import type { MainLogger } from "electron-log";
 
-import { getAppName } from "./app-origin";
-
-export { getAppName };
+import { getAppName } from "./app-name";
 
 /**
  * The app-lifecycle seam every desktop client shares.

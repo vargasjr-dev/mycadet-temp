@@ -31,6 +31,17 @@ mock.module("electron", () => ({
     setApplicationMenu: () => undefined,
   },
   shell: { openExternal: () => Promise.resolve() },
+  // The command graph's palette module links `screen` for its positioning;
+  // no test here drives a palette window, so the bindings need only exist.
+  screen: {
+    getDisplayMatching: () => ({
+      workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+    }),
+    getDisplayNearestPoint: () => ({
+      workArea: { x: 0, y: 0, width: 1920, height: 1080 },
+    }),
+    getCursorScreenPoint: () => ({ x: 0, y: 0 }),
+  },
 }));
 
 let onboardingActive = false;

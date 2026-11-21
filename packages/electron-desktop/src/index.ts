@@ -27,10 +27,10 @@ export { startApp } from "./app-lifecycle";
 export { default as log, getLogFilePaths } from "./app-logger";
 export {
   createAllowedOriginResolver,
-  getAppName,
   isAllowedOrigin,
   resolveAllowedOrigin,
 } from "./app-origin";
+export { getAppName } from "./app-name";
 export type { AllowedOrigin } from "./app-origin";
 export { registerAppProtocol } from "./app-protocol-forward";
 export {
@@ -54,13 +54,8 @@ export {
   BridgeCapabilityRegistry,
   DesktopCapabilityRegistry,
   capabilityToken,
-  installCapabilityModules,
 } from "./capability-registry";
-export type {
-  CapabilityModule,
-  CapabilityModuleExport,
-  MainWindowController,
-} from "./capability-registry";
+export type { MainWindowController } from "./capability-registry";
 export {
   closeCommandPaletteWindow,
   configureCommandPaletteWindow,
