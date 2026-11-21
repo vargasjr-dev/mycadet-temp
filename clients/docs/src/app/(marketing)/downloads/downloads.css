@@ -1,0 +1,175 @@
+.dl-section {
+  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 56px 24px 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dl-sub {
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 560px;
+  text-align: center;
+}
+
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 36px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .dl-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .dl-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dl-card {
+  background: #fff;
+  border: 1px solid #e2e1dc;
+  border-radius: 14px;
+  padding: 26px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.dl-card h2 {
+  font-size: 19px;
+  letter-spacing: -0.2px;
+}
+
+.dl-tagline {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dl-visual {
+  min-height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-qr {
+  background: #fff;
+  border: 1px solid #e2e1dc;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.dl-note {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.dl-qr-soon {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
+.dl-visual-soon svg {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.dl-card .dl-cta-soon {
+  cursor: not-allowed;
+  background: transparent;
+  border: 1.5px dashed #b9b7ae;
+  color: var(--muted);
+  font-family: inherit;
+}
+
+@keyframes dl-soon-shake {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-1.2deg);
+  }
+  75% {
+    transform: rotate(1.2deg);
+  }
+}
+
+.dl-card .dl-cta-soon:hover {
+  background: transparent;
+  animation: dl-soon-shake 0.35s ease-in-out 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-card .dl-cta-soon:hover {
+    animation: none;
+  }
+}
+
+.dl-card .dl-cta {
+  width: 100%;
+  text-align: center;
+  border-radius: 999px;
+  padding: 11px 22px;
+  margin-top: auto;
+}
+
+.dl-code-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.dl-code {
+  flex: 1;
+  min-width: 0;
+  background: #262624;
+  color: #f5f4ef;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: left;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.dl-link {
+  color: var(--green);
+  font-size: 14px;
+  margin-top: auto;
+}
+
+.dl-footnote {
+  margin-top: 32px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Dark-mode surfaces: the docs app's visitors carry a theme preference
+   (.dark on <html>), unlike the cloud's light-only marketing pages. */
+.dark .marketing .dl-card {
+  background: var(--card);
+  border-color: var(--border);
+}
+.dark .marketing .dl-qr {
+  background: var(--card);
+  border-color: var(--border);
+}
+.dark .marketing .dl-card .dl-cta-soon {
+  border-color: #4a4a44;
+}

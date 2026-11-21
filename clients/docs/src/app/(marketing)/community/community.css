@@ -1,0 +1,177 @@
+/*
+ * The community page: an inviting multicolor wash instead of flat
+ * white/black, the Discord button in Discord's blurple, and the character
+ * cast pooled along the fold saying hi in speech bubbles. Light and dark
+ * both get the glows — never a flat background.
+ */
+.marketing .community {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  background:
+    radial-gradient(
+      1100px 520px at 12% -8%,
+      rgba(242, 199, 68, 0.2),
+      transparent 62%
+    ),
+    radial-gradient(
+      950px 500px at 88% -6%,
+      rgba(224, 86, 124, 0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 540px at 50% 112%,
+      rgba(46, 139, 74, 0.18),
+      transparent 65%
+    ),
+    radial-gradient(
+      700px 420px at 72% 38%,
+      rgba(47, 163, 154, 0.1),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #fbfaf7 0%, #f4f4ea 100%);
+}
+
+.dark .marketing .community {
+  background:
+    radial-gradient(
+      1100px 520px at 12% -8%,
+      rgba(242, 199, 68, 0.1),
+      transparent 62%
+    ),
+    radial-gradient(
+      950px 500px at 88% -6%,
+      rgba(154, 107, 216, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 540px at 50% 112%,
+      rgba(46, 139, 74, 0.2),
+      transparent 65%
+    ),
+    radial-gradient(
+      700px 420px at 72% 38%,
+      rgba(47, 163, 154, 0.08),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #171a17 0%, #101311 100%);
+}
+
+/* ── Hero: copy on top, the cast pooling along the fold ── */
+.marketing .community-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 61px);
+}
+
+.marketing .community-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 72px 24px 0;
+  text-align: center;
+}
+
+.marketing .community-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+.marketing .community-hero-copy h1 {
+  font-size: clamp(44px, 6vw, 64px);
+  letter-spacing: -2.2px;
+  line-height: 1.05;
+  font-weight: 800;
+  margin: 0 0 16px;
+}
+
+.marketing .community-sub {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.55;
+  margin: 0 0 26px;
+}
+
+/* Discord's blurple — the button should read as Discord's own. */
+.marketing .btn-discord {
+  background: #5865f2;
+}
+.marketing .btn-discord:hover {
+  background: #4752c4;
+}
+
+/* ── The pool + speech bubbles ── */
+.marketing .community-pool {
+  position: relative;
+  flex: 1;
+  min-height: 300px;
+}
+
+/* The bubbles float above the pile; characters slide under them. */
+.marketing .community-bubble {
+  position: absolute;
+  z-index: 2;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 16px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(38, 38, 36, 0.1);
+  animation: community-float 5s ease-in-out infinite;
+}
+.marketing .community-bubble::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+@keyframes community-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marketing .community-bubble {
+    animation: none;
+  }
+}
+
+/* ── Welcome copy + closing CTA ── */
+.marketing .community-body {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 16.5px;
+  line-height: 1.7;
+}
+
+.marketing .community-cta {
+  padding: 56px 24px 88px;
+  text-align: center;
+}
+.marketing .community-cta h2 {
+  font-size: clamp(30px, 4vw, 40px);
+  letter-spacing: -1.2px;
+  margin: 0 0 24px;
+}

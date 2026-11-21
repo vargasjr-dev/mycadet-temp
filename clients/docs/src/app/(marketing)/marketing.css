@@ -1,0 +1,199 @@
+/*
+ * The marketing pages' chrome, ported from mycadet-cloud's globals.css
+ * (nav, footer, buttons, and the character avalanche). Selectors are
+ * scoped under .marketing so nothing leaks into the docs routes, and the
+ * cloud's global :root variables become .marketing-scoped ones that flip
+ * under the docs app's `.dark` class — the cloud ships light-only, but
+ * this app's visitors carry a theme preference.
+ */
+.marketing {
+  --green: #23793d;
+  --green-dark: #1c5c30;
+  --ink: #262624;
+  --muted: #6b6b66;
+  --bg: #faf9f6;
+  --card: #fff;
+  --border: #e2e1dc;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.dark .marketing {
+  --green: #4caf6e;
+  --green-dark: #3d9459;
+  --ink: #eceae4;
+  --muted: #a3a29b;
+  --bg: #141613;
+  --card: #1d1f1c;
+  --border: #32352f;
+}
+
+.marketing a {
+  color: var(--green);
+}
+
+/* ── Buttons ── */
+.marketing .btn {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+.marketing .btn:hover {
+  background: var(--green-dark);
+}
+.marketing .btn-lg {
+  padding: 14px 32px;
+  font-size: 17px;
+}
+
+/* ── Nav ── */
+.marketing .nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 32px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.marketing .nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.marketing .nav-brand a {
+  display: flex;
+}
+.marketing .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.marketing .nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.marketing .nav-link {
+  color: var(--ink);
+  font-size: 15px;
+  text-decoration: none;
+}
+.marketing .nav-link:hover {
+  color: var(--green);
+}
+@media (max-width: 860px) {
+  .marketing .nav {
+    flex-wrap: nowrap;
+    gap: 10px;
+    justify-content: flex-start;
+    padding: 12px 20px;
+  }
+  .marketing .nav-links,
+  .marketing .nav-cta {
+    display: none;
+  }
+}
+
+/* ── Footer ── */
+.marketing .footer {
+  background: #1d1d1b;
+  color: #d6d5d0;
+  margin-top: 0;
+}
+.marketing .footer-inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 56px 32px 26px;
+}
+.marketing .footer-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.marketing .footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.marketing .footer-col h4 {
+  color: #8a8a85;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.marketing .footer-col a {
+  color: #cfcec9;
+  text-decoration: none;
+  font-size: 14.5px;
+  padding: 5px 0;
+  width: fit-content;
+}
+.marketing .footer-col a:hover {
+  color: #fff;
+}
+.marketing .footer-base {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #35342f;
+  margin-top: 40px;
+  padding-top: 22px;
+  font-size: 13.5px;
+}
+.marketing .footer-base a {
+  color: #cfcec9;
+}
+.marketing .footer-social {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.marketing .footer-social a {
+  color: #cfcec9;
+  display: flex;
+}
+.marketing .footer-social a:hover {
+  color: #fff;
+}
+
+/* ── The character avalanche (see components/character-avalanche.tsx) ── */
+.marketing .avalanche {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.marketing .av-char {
+  position: absolute;
+  display: block;
+}
+.marketing .av-bob {
+  display: block;
+  animation: av-bob 5s ease-in-out infinite;
+}
+@keyframes av-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marketing .av-bob {
+    animation: none;
+  }
+}
