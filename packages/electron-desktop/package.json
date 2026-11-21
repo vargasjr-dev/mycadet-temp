@@ -16,7 +16,6 @@
     "./bundle-flow": "./src/bundle-flow.ts",
     "./bundle-platform": "./src/bundle-platform.ts",
     "./capability-registry": "./src/capability-registry.ts",
-    "./classic-shell": "./src/classic-shell.ts",
     "./command-palette-window": "./src/command-palette-window.ts",
     "./commands": "./src/commands.ts",
     "./file-open": "./src/file-open.ts",

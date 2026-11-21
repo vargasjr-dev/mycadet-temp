@@ -7,12 +7,7 @@
  * reachable only within the package — which keeps the surface auditable
  * and the preload bundles lean.
  */
-export {
-  configureAboutRuntime,
-  getVersionInfo,
-  installAbout,
-  openAboutWindow,
-} from "./about";
+export { getVersionInfo, openAboutWindow } from "./about";
 export {
   APP_HOST,
   APP_PROTOCOL,
@@ -20,14 +15,6 @@ export {
   RENDERER_BASE_PROD,
 } from "./app-config";
 export { startApp } from "./app-lifecycle";
-export { ensureVisible } from "./main-window";
-export { default as log } from "./app-logger";
-export { writeCliLocator } from "./cli-installer";
-export { provisionCliForWrapper } from "./cli-path-installer";
-export {
-  provisionCliForCurrentUser,
-  resolveCliPathFlowOptions,
-} from "./win32-cli/cli-path-flow";
 export {
   CLI_RUNTIME_ENTRIES,
   readRuntimeManifest,
@@ -36,10 +23,6 @@ export {
   resolveCliLauncherPaths,
   uninstallCliLauncher,
 } from "./win32-cli/cli-launcher";
-export {
-  createHelperToastFactory,
-  resolveHelperToastBinaryPath,
-} from "./helper-toast-factory";
 export { registerCompanionSurfaceSync } from "./companion-menu";
 export {
   createAllowedOriginResolver,
@@ -56,22 +39,15 @@ export {
   onAvatarChange,
 } from "./avatar";
 export { avatarBitmap } from "./avatar-image";
-export { handleBundleFile, installBundleFlow } from "./bundle-flow";
 export { createBundleHostProvider } from "./bundle-host";
 export { BUNDLES_DIR_NAME, configureBundlePlatform } from "./bundle-platform";
 export { BridgeCapabilityRegistry } from "./capability-registry";
-export {
-  configureCommandPaletteWindow,
-  installCommandPaletteWindow,
-  openCommandPaletteWindow,
-} from "./command-palette-window";
 export { acceleratorOption, dispatchToFocused } from "./commands";
 export type { CadetCommand, HotkeySettingsProvider } from "./commands";
 export { companionSizeSubmenus } from "./companion-menu";
-export { hasPendingDeepLinks, installDeepLinks } from "./deep-links";
+export { hasPendingDeepLinks } from "./deep-links";
 export { getDeviceId } from "./device-id";
 export { areChromeDevToolsEnabled } from "./devtools";
-export { installDiagnosticsIpc } from "./diagnostics";
 export { createDictationEscapeMonitor } from "./dictation-escape-monitor";
 export {
   DICTATION_OVERLAY_ALWAYS_ON_TOP_LEVEL,
@@ -90,10 +66,9 @@ export {
   requestDictationTranscription,
   toAudioBuffer,
 } from "./dictation-routing";
-export { installDownloads } from "./downloads";
-export { configureFeedback, installFeedbackIpc } from "./feedback";
+export { configureFeedback } from "./feedback";
 export type { FeedbackDependencies } from "./feedback";
-export { hasPendingFiles, onFileOpen } from "./file-open";
+export { hasPendingFiles } from "./file-open";
 export { createFileOpenPreloadBridge } from "./file-open-preload";
 export {
   configureFloatingWindows,
@@ -119,9 +94,7 @@ export {
 export type { HostProxyExecutor, HostProxyRuntime } from "./host-proxy/router";
 export { createHostProxyRuntime } from "./host-proxy/runtime";
 export type { HostProxySseMessage } from "./host-proxy/sse";
-export { installHotkeysIpc } from "./hotkeys";
 export { getName, onNameChange, setName } from "./identity";
-export { installImageContextMenu } from "./image-context-menu";
 export {
   applyAlphaMask,
   compositeCentered,
@@ -133,17 +106,13 @@ export {
   installLoginItem,
   installLoginItemIpc,
 } from "./login-item";
-export { installDesktopMenu, refreshDesktopMenuCliPath } from "./menu";
-export type { CliPathMenuState } from "./menu";
 export { configureNativeAuth, installNativeAuth } from "./native-auth";
 export type { NativeAuthCallback } from "./native-auth";
 export { resolveNotificationAvatarPath } from "./notification-avatar-path";
 export {
   CATEGORY_ACTIONS,
   NOTIFICATION_CATEGORIES,
-  configureNotifications,
   createElectronNotification,
-  installNotifications,
   isPreparedNotificationSenderCurrent,
 } from "./notifications";
 export type {
@@ -151,7 +120,7 @@ export type {
   NotificationCreateOptions,
   NotificationLike,
 } from "./notifications";
-export { configurePopoutWindows, installPopoutWindows } from "./popout-window";
+export { configurePopoutWindows } from "./popout-window";
 export {
   createBundleConfirmBridge,
   createDeepLinksBridge,
@@ -163,11 +132,7 @@ export {
   createPermissionSetupBridge,
   createUpdateBridge,
 } from "./preload";
-export {
-  configureQuickInputWindow,
-  installQuickInput,
-  toggleQuickInput,
-} from "./quick-input-window";
+export { configureQuickInputWindow } from "./quick-input-window";
 export {
   clearSessionToken,
   getSessionToken,
@@ -177,10 +142,8 @@ export {
 } from "./session-token-store";
 export { onSettingChange, readSetting, writeSetting } from "./settings";
 export { getStatus } from "./status";
-export { installTextContextMenu } from "./text-context-menu";
 export { configureTrayModel, installTray } from "./tray-model";
 export type { TrayHandlers, TrayMenuIcon } from "./tray-model";
-export { installWindowAttention } from "./window-attention";
 export { createWindowReadiness } from "./window-readiness";
 export {
   clearCompanionIntroSeen,

@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { electronMock, recordedIpcHandlers } from "../test-setup";
 
-mock.module("electron", () => electronMock());
-
 /**
  * Regression cover for the auto-updater's leaked download promise.
  *

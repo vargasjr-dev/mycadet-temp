@@ -1,14 +1,8 @@
-import { app, session, shell, type Event } from "electron";
+import { app, type Event } from "electron";
 
 import { configureNativeAuth, installNativeAuth } from "../native-auth";
 import { resolveAuthCallbackScheme } from "../deep-links";
-import {
-  clearSessionToken,
-  getSessionToken,
-  saveSessionToken,
-  setSessionTokenLogger,
-} from "../session-token-store";
-import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
+import { setSessionTokenLogger } from "../session-token-store";
 
 import { startAuthCallback } from "../auth-callback";
 import log from "../app-logger";
@@ -43,10 +37,6 @@ export const install = (): void => {
       app.focus({ steal: true });
       ensureVisible();
     },
-    getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
-    openExternal: (url) => shell.openExternal(url),
-    removeCookie: (url, name) =>
-      session.defaultSession.cookies.remove(url, name),
     ...(app.isPackaged
       ? {
           startCallback: (expectedState: string) =>
@@ -56,11 +46,6 @@ export const install = (): void => {
             }),
         }
       : {}),
-    sessionStore: {
-      clear: clearSessionToken,
-      get: getSessionToken,
-      save: saveSessionToken,
-    },
   });
   installNativeAuth();
 };

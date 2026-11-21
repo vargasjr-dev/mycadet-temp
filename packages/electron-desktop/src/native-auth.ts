@@ -1,9 +1,13 @@
 import crypto from "node:crypto";
 import { z } from "zod";
 
+import { session, shell } from "electron";
+
+import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
+
 import { handle, handleSync } from "./ipc";
 import { clearNotificationIdentityMemory } from "./notification-identity-memory";
-import type {
+import {
   clearSessionToken,
   getSessionToken,
   saveSessionToken,
@@ -31,10 +35,15 @@ export interface NativeAuthCallback {
 
 export interface NativeAuthOptions {
   activateWindow: () => void | Promise<void>;
+  startCallback?: (expectedState: string) => Promise<NativeAuthCallback>;
+}
+
+interface NativeAuthRuntime {
+  activateWindow: () => void | Promise<void>;
+  startCallback?: (expectedState: string) => Promise<NativeAuthCallback>;
   getCloudUrl: () => string;
   openExternal: (url: string) => void | Promise<void>;
   removeCookie: (url: string, name: string) => Promise<void>;
-  startCallback?: (expectedState: string) => Promise<NativeAuthCallback>;
   sessionStore: {
     clear: typeof clearSessionToken;
     get: typeof getSessionToken;
@@ -42,13 +51,30 @@ export interface NativeAuthOptions {
   };
 }
 
-let runtime: NativeAuthOptions | null = null;
+// The pieces every consumer shipped identically — the cloud URL from the
+// local config, the OS browser hand-off, the legacy-cookie eviction, and the
+// session-token store — are the package's own dependencies now; callers
+// bring only the window they want focused and, on the shells whose auth
+// callback rides the deep-link scheme, the callback starter.
+const runtimeFor = (options: NativeAuthOptions): NativeAuthRuntime => ({
+  ...options,
+  getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
+  openExternal: (url) => shell.openExternal(url),
+  removeCookie: (url, name) => session.defaultSession.cookies.remove(url, name),
+  sessionStore: {
+    clear: clearSessionToken,
+    get: getSessionToken,
+    save: saveSessionToken,
+  },
+});
+
+let runtime: NativeAuthRuntime | null = null;
 
 export const configureNativeAuth = (options: NativeAuthOptions): void => {
-  runtime = options;
+  runtime = runtimeFor(options);
 };
 
-const getRuntime = (): NativeAuthOptions => {
+const getRuntime = (): NativeAuthRuntime => {
   if (!runtime) {
     throw new Error("Native auth is not configured");
   }

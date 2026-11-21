@@ -1,47 +1,34 @@
-import "./env-seed";
+import "./auxiliary-windows.client";
 import { app, Notification } from "electron";
 
-import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
 import {
+  configureNativeAuth,
+  hasPendingDeepLinks,
+  hasPendingFiles,
   installDictationOverlay,
-  installPopoutWindows,
-  installQuickInput,
+  installLoginItemIpc,
+  installNativeAuth,
+  openAboutWindow,
+  registerCompanionSurfaceSync,
+  startApp,
 } from "@mycadet/electron-desktop";
-import { openAboutWindow } from "@mycadet/electron-desktop/about";
-import { installAbout } from "./about.client";
-import { installMacBundleWorkflow } from "./bundles";
-import { handleBundleFile } from "@mycadet/electron-desktop/bundle-flow";
-import { onFileOpen } from "@mycadet/electron-desktop/file-open";
-import { installDownloads } from "@mycadet/electron-desktop";
-import { installNotifications } from "@mycadet/electron-desktop/notifications";
-import "./auxiliary-windows.client";
-import { installDock } from "./dock";
-import { installShare } from "./share";
-import { installWindowAttentionFeature } from "./window-attention";
-import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
-import { installDiagnosticsIpc } from "./desktop-diagnostics";
-import { installFeedbackIpc } from "@mycadet/electron-desktop";
-import { installGlobalShortcuts } from "./global-shortcuts.client";
-import { installHotkeyHelper } from "./hotkey-helper";
-import { installHotkeysIpc } from "./hotkeys.client";
-import {
-  installImageContextMenu,
-  installTextContextMenu,
-} from "@mycadet/electron-desktop";
-import { installLoginItem } from "./login-item.client";
-import { installLoginItemIpc, startApp } from "@mycadet/electron-desktop";
-import { installHostProxyBridge } from "./host-proxy-adapter";
+import { setSessionTokenLogger } from "@mycadet/electron-desktop/session-token-store";
 import log from "@mycadet/electron-desktop/app-logger";
 
-// Session tokens log through the same app logger (was session-token-store.client).
+// Session tokens log through the same app logger.
 setSessionTokenLogger(log);
+
+import { installDock } from "./dock";
+import { installShare } from "./share";
+import { installHostProxyBridge } from "./host-proxy-adapter";
+import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
+import { installHotkeyHelper } from "./hotkey-helper";
+import { installLoginItem } from "./login-item.client";
 import {
   ensureVisible as ensureMainWindowVisible,
   installMainWindow,
   toggleVisibility as toggleMainWindowVisibility,
 } from "./main-window";
-import { installDesktopMenu } from "@mycadet/electron-desktop";
-import { setSessionTokenLogger } from "@mycadet/electron-desktop/session-token-store";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -65,15 +52,6 @@ import {
 } from "./companion-window";
 import { installTextInsertionIpc } from "./textInsertion";
 import { installTray } from "./tray.client";
-import {
-  hasPendingDeepLinks,
-  hasPendingFiles,
-  installNativeAuth,
-  provisionCliForWrapper,
-  refreshDesktopMenuCliPath,
-  registerCompanionSurfaceSync,
-  writeCliLocator,
-} from "@mycadet/electron-desktop";
 
 const isDev = !app.isPackaged;
 
@@ -82,14 +60,6 @@ const isDev = !app.isPackaged;
 if (isDev) {
   app.commandLine.appendSwitch("use-mock-keychain");
 }
-
-// Packaged builds all share the same package.json `name` (`@mycadet/macos`),
-// so Electron resolves `app.getPath("userData")` to the same directory for
-// every environment. This causes `requestSingleInstanceLock()` collisions
-// when multiple environment builds (dev, staging, production) run side-by-side.
-// startApp appends an environment suffix for non-production builds from the
-// baked define; production keeps the original path for backwards compatibility.
-declare const __CADET_ENVIRONMENT__: string;
 
 // The addon takes the notifications the assistant avatar can ride on only
 // when it says it can have them: an unbundled run loads it fine and then
@@ -104,9 +74,17 @@ const nativeNotifications = isNotifierSupported()
 // App lifecycle
 // ---------------------------------------------------------------------------
 
-startApp(
-  log,
-  async () => {
+startApp({
+  ensureVisible: ensureMainWindowVisible,
+  // Launches arrive through `open-url`/`open-file` events on this shell,
+  // never through argv.
+  initialArgv: [],
+  // Dev packs the renderer dists (see `bun run dev`) and serves them
+  // through the same `app://mycadet.ai` origin as packaged builds, so
+  // the handler and the gateway guard are unconditional.
+  rendererUsesAppProtocol: () => true,
+  ...(nativeNotifications ? { notifications: nativeNotifications } : {}),
+  async setup() {
     // Install into /Applications before any other setup. On the first packaged
     // launch from a mounted DMG (or ~/Downloads), the app silently moves itself
     // there and relaunches — the "double-click to install" half of the DMG flow.
@@ -118,10 +96,6 @@ startApp(
       return;
     }
 
-    installMacBundleWorkflow();
-    onFileOpen(handleBundleFile);
-    installHotkeysIpc();
-    installDiagnosticsIpc();
     installLoginItem();
     installLoginItemIpc();
     installHotkeyHelper();
@@ -129,27 +103,17 @@ startApp(
     // The identity (assistant name) channel registers in startApp, before
     // this setup, so About, the Tray, and the main window see any name the
     // renderer publishes during bootstrap.
-    installAbout();
-    installFeedbackIpc();
     installTextInsertionIpc();
-    installCommandPaletteWindow();
     // The shared desktop menu — the same installer the classic-desktop
     // shells ride, with every row wired inside the package (About, updates,
     // the CLI wrapper rows, the session toggle, onboarding, the companion
     // tail). This side registers the one action only it owns: the surface
     // sync the menu's Show Companion row and the tray both go through.
     registerCompanionSurfaceSync(setCompanionSurfaceVisible);
-    installDesktopMenu();
-    installQuickInput();
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
     installCompanionWindow();
-    installPopoutWindows();
-    installGlobalShortcuts();
     installDock();
     installShare();
-    // Files renderer downloads into ~/Downloads instead of prompting a Save
-    // panel. Distinct from `installShare`, which is the "send elsewhere" intent.
-    installDownloads();
     if (nativeNotifications) {
       // Electron builds its notification presenter lazily, on the first
       // `Notification.isSupported()` or `new Notification()`, and the presenter
@@ -164,8 +128,6 @@ startApp(
       registerNativeNotificationCategories();
       app.on("before-quit", restoreNotifierDelegate);
     }
-    installNotifications();
-    installWindowAttentionFeature();
     installEscapeMonitor();
     const teardownHostProxy = installHostProxyBridge();
     app.on("before-quit", teardownHostProxy);
@@ -173,6 +135,12 @@ startApp(
       toggleMainWindow: toggleMainWindowVisibility,
       ensureMainWindow: ensureMainWindowVisible,
       openAbout: openAboutWindow,
+    });
+    configureNativeAuth({
+      activateWindow: () => {
+        app.focus({ steal: true });
+        ensureMainWindowVisible();
+      },
     });
     installNativeAuth();
     installMainWindow();
@@ -207,54 +175,4 @@ startApp(
       ensureMainWindowVisible();
     });
   },
-  {
-    ensureVisible: ensureMainWindowVisible,
-    // Launches arrive through `open-url`/`open-file` events on this shell,
-    // never through argv.
-    initialArgv: [],
-    // Dev packs the renderer dists (see `bun run dev`) and serves them
-    // through the same `app://mycadet.ai` origin as packaged builds, so
-    // the handler and the gateway guard are unconditional.
-    rendererUsesAppProtocol: () => true,
-    environmentName:
-      typeof __CADET_ENVIRONMENT__ === "string"
-        ? __CADET_ENVIRONMENT__
-        : "production",
-    ...(nativeNotifications ? { notifications: nativeNotifications } : {}),
-    provisionCli: () => {
-      if (!app.isPackaged) {
-        return;
-      }
-      // Refresh the PATH-wrapper locator every launch so app moves and
-      // version bumps self-heal even if no CLI invocation happens this session.
-      writeCliLocator();
-      // Wrapper users also get the pinned CLI provisioned eagerly so a
-      // version bump rewrites the locator now (and prunes old versions)
-      // rather than after the next in-app CLI action.
-      void provisionCliForWrapper()
-        .then((provisioned) =>
-          provisioned ? refreshDesktopMenuCliPath() : undefined,
-        )
-        .catch((err: unknown) => {
-          log.error("[app] startup CLI provisioning failed:", err);
-        });
-    },
-  },
-);
-
-app.on("second-instance", () => {
-  // Behavior change vs prior code path: previously a second-instance
-  // launch was a no-op when the main window had been destroyed. Now
-  // we recreate so the user always sees a window in response to
-  // re-launching the app. File argv routes through startApp's file-open
-  // wiring.
-  ensureMainWindowVisible();
-});
-
-app.on("web-contents-created", (_event, contents) => {
-  // Right-click on an image → native "Copy Image" menu. Wired here so every
-  // surface (main window, popouts, command palette, child popups) gets it.
-  // startApp's own web-contents subscription carries the security wiring.
-  installImageContextMenu(contents);
-  installTextContextMenu(contents);
 });

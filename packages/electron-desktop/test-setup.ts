@@ -1,20 +1,6 @@
 import { mock } from "bun:test";
 
 /**
- * Complete `electron` module mock, shared by the three desktop clients and
- * this package's own suite. The real module is a native binary that
- * isn't loadable off-Electron (CI runs `bun test` on plain Node Linux), so
- * `import { app, BrowserWindow, … } from "electron"` would throw the moment
- * any main-process file is imported. The desktop clients import package
- * modules through the package root, whose graph pulls most of electron's
- * main-process surface at load time — so every named value import anywhere
- * under `packages/electron-desktop` must resolve here. Individual tests can still re-mock specific call sites
- * (e.g. `screen.getDisplayMatching`) via their own `mock.module("electron",
- * …)` call inside the test file — bun snapshots a mocked module's namespace
- * at first import, so a re-registration (not an in-place patch) is what a
- * later import sees.
- */
-/**
  * Every `ipcMain.handle` registration the package's modules make against the
  * shared surface, keyed by channel. Tests that removed the handle-injection
  * seams (the registrar is always the shared one) capture handlers here
@@ -330,6 +316,20 @@ export const electronMock = (
 
 export const electronModuleMock = (): unknown => electronMock();
 
+/**
+ * Complete `electron` module mock, shared by the three desktop clients and
+ * this package's own suite. The real module is a native binary that
+ * isn't loadable off-Electron (CI runs `bun test` on plain Node Linux), so
+ * `import { app, BrowserWindow, … } from "electron"` would throw the moment
+ * any main-process file is imported. The desktop clients import package
+ * modules through the package root, whose graph pulls most of electron's
+ * main-process surface at load time — so every named value import anywhere
+ * under `packages/electron-desktop` must resolve here. Individual tests can
+ * still re-mock specific call sites (e.g. `screen.getDisplayMatching`) via
+ * their own `mock.module("electron", …)` call inside the test file — bun
+ * snapshots a mocked module's namespace at first import, so a re-registration
+ * (not an in-place patch) is what a later import sees.
+ */
 mock.module("electron", electronModuleMock);
 
 /**

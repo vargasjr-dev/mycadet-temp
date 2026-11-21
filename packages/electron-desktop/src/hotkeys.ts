@@ -18,12 +18,12 @@ import { handle } from "./ipc";
 /**
  * Catalog commands this shell does not offer. They render no row and take
  * no override, and their global shortcut is never registered because the
- * shell passes no handler for them. The macOS shell excludes Talk: its
- * voice key (a double tap of Fn) is the keyboard way into a call there.
+ * shell passes no handler for them. macOS excludes Talk: its voice key (a
+ * double tap of Fn) is the keyboard way into a call there, so the exclusion
+ * is the platform's own, not a caller option.
  */
-export interface HotkeysIpc {
-  exclude?: readonly string[];
-}
+const macOSExclusions = (): readonly string[] =>
+  process.platform === "darwin" ? ["toggleVoice"] : [];
 
 export type { HotkeyScope, ResolvedHotkey };
 
@@ -166,11 +166,11 @@ let teardown: (() => void) | null = null;
  * broadcast to every window whenever the hotkeys setting changes (including
  * changes a different window initiated) so open settings views stay in sync.
  */
-export const installHotkeysIpc = ({ exclude = [] }: HotkeysIpc = {}): void => {
+export const installHotkeysIpc = (): void => {
   if (teardown) {
     return;
   }
-  excludedKeys = new Set(exclude);
+  excludedKeys = new Set(macOSExclusions());
 
   handle("cadet:hotkeys:get", z.tuple([]), () => resolveHotkeyCatalog());
   handle(

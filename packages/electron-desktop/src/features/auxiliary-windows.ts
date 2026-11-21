@@ -2,17 +2,15 @@ import { app, screen } from "electron";
 
 import {
   configureCommandPaletteWindow,
-  installCommandPaletteWindow,
   repositionCommandPaletteWindow,
 } from "../command-palette-window";
 import {
   configureFloatingWindows,
   createWindowRouteResolver,
 } from "../floating-window";
-import { configurePopoutWindows, installPopoutWindows } from "../popout-window";
+import { configurePopoutWindows } from "../popout-window";
 import {
   configureQuickInputWindow,
-  installQuickInput,
   repositionQuickInputWindow,
 } from "../quick-input-window";
 import {
@@ -31,6 +29,13 @@ const resolveRoute = createWindowRouteResolver(() =>
   getRendererBase(app.isPackaged),
 );
 
+/**
+ * Configure and install the classic shells' auxiliary-window surfaces: the
+ * floating-window wiring and the dictation overlay with its escape monitor.
+ * The installs for the command palette, quick input, and popouts are
+ * `startApp`'s — shared with the macOS shell, which configures the same
+ * modules with its own window accessors.
+ */
 export const install = (): void => {
   configureFloatingWindows({
     createWindow,
@@ -65,10 +70,7 @@ export const install = (): void => {
   });
 
   installEscapeMonitor();
-  installCommandPaletteWindow();
-  installQuickInput();
   installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
-  installPopoutWindows();
 
   const repositionTransientWindows = (): void => {
     repositionCommandPaletteWindow();

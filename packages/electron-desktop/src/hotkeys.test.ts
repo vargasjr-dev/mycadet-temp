@@ -57,16 +57,26 @@ beforeEach(() => {
   __resetForTesting();
 });
 
-describe("installHotkeysIpc with an exclusion", () => {
+describe("installHotkeysIpc with the macOS exclusion", () => {
   test("a shell that excludes a command offers no row and takes no override", () => {
-    installHotkeysIpc({ exclude: ["toggleVoice"] });
+    // The exclusion is the platform's own (macOS's Talk chord rides the
+    // voice key's double tap); stamp darwin and reinstall to exercise it.
+    const original = process.platform;
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    try {
+      __resetForTesting();
+      installHotkeysIpc();
 
-    const catalog = invoke("cadet:hotkeys:get", []) as Array<{ key: string }>;
-    expect(catalog.map((c) => c.key)).not.toContain("toggleVoice");
-    expect(() =>
-      invoke("cadet:hotkeys:set", ["toggleVoice", "CmdOrCtrl+Shift+T"]),
-    ).toThrow("Unknown hotkey command: toggleVoice");
-    expect(hotkeys).toEqual({});
+      const catalog = invoke("cadet:hotkeys:get", []) as Array<{ key: string }>;
+      expect(catalog.map((c) => c.key)).not.toContain("toggleVoice");
+      expect(() =>
+        invoke("cadet:hotkeys:set", ["toggleVoice", "CmdOrCtrl+Shift+T"]),
+      ).toThrow("Unknown hotkey command: toggleVoice");
+      expect(hotkeys).toEqual({});
+    } finally {
+      Object.defineProperty(process, "platform", { value: original });
+      __resetForTesting();
+    }
   });
 });
 

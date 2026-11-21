@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import {
+  electronAppOverride,
   electronMock,
   recordedIpcHandlers,
   recordedIpcOnListeners,
@@ -25,8 +26,33 @@ const cookieRemoveCalls: Array<{ url: string; name: string }> = [];
 // Capture the post-login app-refocus calls.
 const refocus = { appFocusSteal: 0, ensureVisible: 0 };
 
+// The cloud URL, browser hand-off, cookie eviction, and session store are
+// the package's own dependencies now — mocked at their seams.
+const store = { saved: [] as string[], clearCalls: 0 };
+
 mock.module("electron", () =>
   electronMock({
+    app: electronAppOverride({
+      focus: () => {
+        refocus.appFocusSteal += 1;
+      },
+    }),
+    shell: {
+      openExternal: (url: string) => {
+        lastOpenedUrl = url;
+        return Promise.resolve();
+      },
+    },
+    session: {
+      defaultSession: {
+        cookies: {
+          remove: (url: string, name: string) => {
+            cookieRemoveCalls.push({ url, name });
+            return Promise.resolve();
+          },
+        },
+      },
+    },
     net: {
       // Routed by URL: serves the real workos-pkce module's three network
       // legs (config discovery, WorkOS code exchange, session exchange) and
@@ -63,11 +89,22 @@ mock.module("electron", () =>
   }),
 );
 
-// Capture session-token-store interactions.
-const store = {
-  saved: [] as string[],
-  clearCalls: 0,
-};
+// The session-token store is native-auth's own dependency now; mock it at
+// its module seam and capture the interactions.
+mock.module("./session-token-store", () => ({
+  clearSessionToken: () => {
+    store.clearCalls += 1;
+  },
+  getSessionToken: () => store.saved.at(-1) ?? null,
+  saveSessionToken: (token: string) => {
+    store.saved.push(token);
+  },
+  onSessionTokenChange: () => () => undefined,
+  setSessionTokenLogger: () => undefined,
+}));
+mock.module("@mycadet/local-mode", () => ({
+  resolveLocalConfigFromEnv: () => ({ cloudUrl: "https://platform.example" }),
+}));
 
 const {
   __resetForTesting,
@@ -85,23 +122,6 @@ configureNativeAuth({
   activateWindow: () => {
     refocus.appFocusSteal += 1;
     refocus.ensureVisible += 1;
-  },
-  getCloudUrl: () => "https://platform.example",
-  openExternal: (url) => {
-    lastOpenedUrl = url;
-  },
-  removeCookie: (url, name) => {
-    cookieRemoveCalls.push({ url, name });
-    return Promise.resolve();
-  },
-  sessionStore: {
-    save: (token) => {
-      store.saved.push(token);
-    },
-    clear: () => {
-      store.clearCalls += 1;
-    },
-    get: () => store.saved.at(-1) ?? null,
   },
 });
 

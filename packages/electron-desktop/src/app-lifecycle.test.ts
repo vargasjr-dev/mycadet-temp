@@ -7,12 +7,13 @@ import {
 } from "../test-setup";
 
 // The lifecycle seam owns everything the three shells shipped identically:
-// the lock, the schemes, the userData suffix, the launch capture, and — on
-// ready — the universal installs, the protocol stack, the identity slice,
-// and the notification runtime, before handing over to the client's setup.
-// Electron is mocked so the test drives resolve and reject paths without an
-// Electron runtime; the shared surface's ipcMain registry records the
-// universal channel registrations.
+// the lock, the schemes, the userData suffix, the launch capture, the
+// second-instance focus, and — on ready — the universal installs, the
+// protocol stack, the identity slice, the notification runtime, the universal
+// app surface, and the classic-desktop composition, before handing over to
+// the client's setup. Electron is mocked so the test drives resolve and
+// reject paths without an Electron runtime; each install below is a
+// recorder, so the test asserts the ORDER the surface assembles in.
 let readyResolve: (() => void) | null = null;
 const logCalls: Array<[string, ...unknown[]]> = [];
 const appListeners = new Map<string, Array<() => void>>();
@@ -42,27 +43,83 @@ mock.module("electron", () =>
   }),
 );
 
-// startApp's single-purpose module is mocked here (nothing else imports it,
-// so no co-run pollution).
+// startApp's single-purpose dependencies are mocked here (nothing else
+// imports them, so no co-run pollution).
 const calls: string[] = [];
+const recorder = (name: string) => () => {
+  calls.push(name);
+};
+
 mock.module("./universal-wiring", () => ({
-  installUniversalFeatures: () => {
-    calls.push("universal-wiring");
+  installUniversalFeatures: recorder("universal-wiring"),
+}));
+mock.module("./app-logger", () => ({
+  default: {
+    info: (...args: unknown[]) => logCalls.push(["info", ...args]),
+    error: (...args: unknown[]) => logCalls.push(["error", ...args]),
+    warn: (...args: unknown[]) => logCalls.push(["warn", ...args]),
   },
+  getLogFilePaths: () => [],
+}));
+mock.module("./main-window", () => ({
+  current: () => null,
+  dispatchToMain: () => undefined,
+  ensureVisible: async () => calls.push("ensure-visible"),
+  installMainWindow: recorder("main-window"),
+}));
+mock.module("./hotkeys", () => ({ installHotkeysIpc: recorder("hotkeys") }));
+mock.module("./about", () => ({
+  configureAboutRuntime: () => undefined,
+  installAbout: recorder("about"),
+}));
+mock.module("./menu", () => ({
+  installDesktopMenu: recorder("menu"),
+  refreshDesktopMenuCliPath: () => undefined,
+}));
+mock.module("./global-shortcuts", () => ({
+  installGlobalShortcuts: recorder("global-shortcuts"),
+}));
+mock.module("./quick-input-window", () => ({
+  installQuickInput: recorder("quick-input"),
+  toggleQuickInput: () => undefined,
+}));
+mock.module("./downloads", () => ({ installDownloads: recorder("downloads") }));
+mock.module("./command-palette-window", () => ({
+  installCommandPaletteWindow: recorder("palette"),
+}));
+mock.module("./popout-window", () => ({
+  installPopoutWindows: recorder("popouts"),
+}));
+mock.module("./features/bundles", () => ({ install: recorder("bundles") }));
+mock.module("./features/diagnostics", () => ({
+  install: recorder("diagnostics"),
+}));
+mock.module("./features/window-attention", () => ({
+  install: recorder("window-attention"),
+}));
+mock.module("./features/auth", () => ({ install: recorder("auth") }));
+mock.module("./features/auxiliary-windows", () => ({
+  install: recorder("auxiliary-windows"),
+}));
+mock.module("./features/dictation", () => ({
+  install: recorder("dictation"),
+}));
+mock.module("./features/host-proxy", () => ({
+  install: recorder("host-proxy"),
+}));
+mock.module("./features/login-item", () => ({
+  install: recorder("login-item"),
+}));
+mock.module("./features/permissions", () => ({
+  install: recorder("permissions"),
+}));
+mock.module("./features/tray", () => ({ install: recorder("tray") }));
+mock.module("./features/share", () => ({ install: recorder("share") }));
+mock.module("./features/voice-mode-chord", () => ({
+  install: recorder("voice-mode-chord"),
 }));
 
 const { startApp } = await import("./app-lifecycle");
-
-// The seam's contract is the full electron-log MainLogger; the test drives
-// only info/error, so the stub carries those and casts.
-const log = {
-  info: (...args: unknown[]) => logCalls.push(["info", ...args]),
-  error: (...args: unknown[]) => logCalls.push(["error", ...args]),
-} as unknown as Parameters<typeof startApp>[0];
-
-const inputs = {
-  ensureVisible: () => undefined,
-} as Parameters<typeof startApp>[2];
 
 const drain = async () => {
   readyResolve!();
@@ -80,21 +137,48 @@ beforeEach(() => {
   lockWinner = true;
 });
 
+/** The universal surface, in the order startApp assembles it. */
+const universalSurface = [
+  "universal-wiring",
+  "bundles",
+  "hotkeys",
+  "about",
+  "menu",
+  "global-shortcuts",
+  "diagnostics",
+  "downloads",
+  "palette",
+  "quick-input",
+  "popouts",
+  "window-attention",
+];
+
+/** The classic composition, appended on the classic platforms. */
+const classicSurface = [
+  "auth",
+  "auxiliary-windows",
+  "login-item",
+  "dictation",
+  "host-proxy",
+  "main-window",
+  "permissions",
+  "tray",
+  "share",
+  "voice-mode-chord",
+];
+
 describe("startApp", () => {
-  test("logs ready, wires the universal installs and channels, and runs setup once Electron is ready", async () => {
+  test("logs ready, assembles the universal surface in order, and runs setup once Electron is ready", async () => {
     let ran = false;
-    startApp(
-      log,
-      () => {
+    startApp({
+      setup: () => {
         ran = true;
       },
-      inputs,
-    );
+    });
 
     await drain();
 
     expect(ran).toBe(true);
-    expect(calls).toEqual(["universal-wiring"]);
     expect(
       logCalls.some(
         ([level, message]) => level === "info" && message === "[app] ready",
@@ -106,15 +190,62 @@ describe("startApp", () => {
     expect(appListeners.has("web-contents-created")).toBe(true);
   });
 
+  test("a lock loser quits and skips everything past the early wiring", async () => {
+    lockWinner = false;
+
+    let ran = false;
+    startApp({
+      setup: () => {
+        ran = true;
+      },
+    });
+
+    await drain();
+
+    expect(appCalls).toContain("quit");
+    expect(ran).toBe(false);
+    // Only the universal wiring (settings provider + auto-update) ran; the
+    // universal app surface, the classic composition, and the client's own
+    // setup are all behind the lock gate.
+    expect(calls).toEqual(["universal-wiring"]);
+  });
+
+  test("a second-instance launch focuses the client's main window", async () => {
+    startApp({});
+
+    const secondInstance = appListeners.get("second-instance") ?? [];
+    expect(secondInstance).toHaveLength(1);
+    secondInstance[0]!();
+    expect(calls).toContain("ensure-visible");
+  });
+
+  test("the client's setup runs after the classic composition on the classic platforms", async () => {
+    let ran = false;
+    startApp({
+      setup: () => {
+        ran = true;
+      },
+    });
+
+    await drain();
+
+    expect(ran).toBe(true);
+    if (process.platform === "darwin") {
+      // The classic composition is skipped; the client's own setup follows
+      // the universal surface directly.
+      expect(calls).toEqual(universalSurface);
+      return;
+    }
+    expect(calls).toEqual([...universalSurface, ...classicSurface]);
+  });
+
   test("reports a failed setup as `[app] whenReady setup failed`", async () => {
     const boom = new Error("install blew up");
-    startApp(
-      log,
-      () => {
+    startApp({
+      setup: () => {
         throw boom;
       },
-      inputs,
-    );
+    });
 
     await drain();
 
@@ -124,25 +255,5 @@ describe("startApp", () => {
     );
     expect(failure).toBeDefined();
     expect(failure![2]).toBe(boom);
-  });
-
-  test("a lock loser quits and skips its own setup", async () => {
-    lockWinner = false;
-
-    let ran = false;
-    startApp(
-      log,
-      () => {
-        ran = true;
-      },
-      inputs,
-    );
-
-    await drain();
-
-    expect(appCalls).toContain("quit");
-    expect(ran).toBe(false);
-    // The universal block still ran; only the client's setup is gated.
-    expect(calls).toEqual(["universal-wiring"]);
   });
 });

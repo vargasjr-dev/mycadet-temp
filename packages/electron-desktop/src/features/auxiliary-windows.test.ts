@@ -184,7 +184,7 @@ mock.module("../app-logger", () => ({
 
 const { install: auxiliaryWindowsInstall } =
   await import("../features/auxiliary-windows");
-const { toggleQuickInput } = await import("../index");
+const { toggleQuickInput } = await import("../quick-input-window");
 beforeAll(() => {
   auxiliaryWindowsInstall();
 });
