@@ -1,16 +1,22 @@
 /**
- * Guardian-authed recording of a tunnel's public URL.
+ * Guardian-authed recording of a public base URL.
  *
- *   POST /v1/ingress/domains — the CLI (its ngrok agent, today) tells the
- *   gateway the public URL its tunnel published; the gateway writes
- *   `ingress.publicBaseUrl` + `publicBaseUrlManagedBy: "tunnel"` in its own
- *   config via the same machinery its own tunnel uses, so both publishers
- *   record through one path and the gateway's existing loss handling clears
- *   it uniformly. Write-only: reads keep flowing through the config the
- *   gateway already serves. While we ship one bundle the gateway still hosts
- *   the ngrok-related logic; once the bundle splits, the gateway manages its
- *   own tunnel (mycadet.ai vs <assistant>.mycadet.bot) and this route is what
- *   the CLI-side publishers migrate onto.
+ *   POST /v1/ingress/domains — a publisher tells the gateway the public
+ *   URL its users' browsers dial; the gateway writes `ingress.publicBaseUrl`
+ *   + `publicBaseUrlManagedBy` in its own config via the same machinery its
+ *   own tunnel uses, so all publishers record through one path. Two
+ *   publishers today: the CLI's tunnel agent (`managedBy: "tunnel"`, the
+ *   default — while we ship one bundle the gateway still hosts the
+ *   ngrok-related logic) and hatch, whose post-lease save records the
+ *   loopback port map (`managedBy: "hatch"`, set by the caller) so the
+ *   pairing mint never has to fall back to the internal bind URL. The tag
+ *   is the ownership marker: the tunnel's reconcile and loss handling only
+ *   touch `tunnel`-tagged URLs, so a dead tunnel cannot clear a
+ *   hatch-recorded one, and a live tunnel's publication supersedes it.
+ *   Write-only: reads keep flowing through the config the gateway already
+ *   serves. Once the bundle splits, the gateway manages its own tunnel
+ *   (mycadet.ai vs <assistant>.mycadet.bot) and this route is what the
+ *   CLI-side publishers migrate onto.
  */
 
 import { z } from "zod";
@@ -27,6 +33,13 @@ import type { RouteDefinition } from "./types.js";
 
 const SaveIngressDomainRequestSchema = z.object({
   publicBaseUrl: z.string(),
+  // Who is publishing — the ownership marker the tunnel's reconcile keys
+  // on. Lowercase kebab words; the default keeps the existing tunnel
+  // callers unchanged.
+  managedBy: z
+    .string()
+    .regex(/^[a-z][a-z0-9-]{0,31}$/)
+    .optional(),
 });
 
 export async function handleSaveIngressDomain(
@@ -65,8 +78,12 @@ export async function handleSaveIngressDomain(
     );
   }
 
-  // No-op (no write) when the URL is already recorded as tunnel-managed.
-  await writeManagedPublicBaseUrl(publicUrl, configFile);
+  // No-op (no write) when the URL is already recorded under this tag.
+  await writeManagedPublicBaseUrl(
+    publicUrl,
+    configFile,
+    parsed.data.managedBy ?? "tunnel",
+  );
   return Response.json({ ok: true });
 }
 

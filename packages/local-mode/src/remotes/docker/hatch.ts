@@ -37,6 +37,7 @@ import {
 } from "../../daemon-readiness";
 import { loopbackSafeFetch } from "../../loopback-fetch";
 import { configureHatchProviderApiKey } from "../../provider-credentials";
+import { saveIngressPublicBaseUrl } from "../../ingress-url";
 import { saveLockfileAssistant } from "../../lockfile";
 import { exec, execOutput } from "../../exec";
 import { buildImage, serviceImageConfigs, startFileWatcher } from "./watch";
@@ -906,6 +907,17 @@ export async function hatchDocker(
         gatewayUrl,
         bearerToken: guardianAccessToken,
         configValues: hatchConfigValues,
+        log,
+      });
+
+      // Record the loopback port map as the gateway's public base URL,
+      // right after the lease hands us the bearer — the pairing mint reads
+      // it instead of falling back to the container's internal bind port.
+      // Best-effort: a failed save costs only link precision.
+      await saveIngressPublicBaseUrl({
+        gatewayUrl,
+        bearerToken: guardianAccessToken,
+        publicBaseUrl: gatewayUrl,
         log,
       });
 

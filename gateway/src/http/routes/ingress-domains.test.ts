@@ -106,6 +106,52 @@ describe("POST /v1/ingress/domains", () => {
     expect(afterSecond).toBe(afterFirst);
   });
 
+  test("records a caller-supplied tag so the publishers' ownership stays distinct", async () => {
+    // Hatch's post-lease save records the loopback port map under its own
+    // tag — the tunnel's reconcile and loss handling key on `tunnel`, so a
+    // dead tunnel cannot clear a hatch-recorded URL.
+    const res = await handleSaveIngressDomain(
+      request({ publicBaseUrl: "http://localhost:7832", managedBy: "hatch" }),
+      "10.0.0.1",
+      new ConfigFileCache(),
+    );
+
+    expect(res.status).toBe(200);
+    expect(readSavedIngress()).toMatchObject({
+      publicBaseUrl: "http://localhost:7832",
+      publicBaseUrlManagedBy: "hatch",
+    });
+  });
+
+  test("a later tunnel publication supersedes a hatch-recorded URL", async () => {
+    const configFile = new ConfigFileCache();
+    await handleSaveIngressDomain(
+      request({ publicBaseUrl: "http://localhost:7832", managedBy: "hatch" }),
+      "10.0.0.1",
+      configFile,
+    );
+    await handleSaveIngressDomain(
+      request({ publicBaseUrl: "https://foo.ngrok.app" }),
+      "10.0.0.1",
+      configFile,
+    );
+
+    expect(readSavedIngress()).toMatchObject({
+      publicBaseUrl: "https://foo.ngrok.app",
+      publicBaseUrlManagedBy: "tunnel",
+    });
+  });
+
+  test("rejects a malformed managedBy tag", async () => {
+    const res = await handleSaveIngressDomain(
+      request({ publicBaseUrl: "https://foo.ngrok.app", managedBy: "Tunnel!" }),
+      "127.0.0.1",
+      new ConfigFileCache(),
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   test("does not gate on the peer IP — auth lives in the edge-guardian strategy", async () => {
     // The docker hatch's gateway sees the host CLI as a non-loopback peer
     // (the docker bridge IP); peer-IP gating here 403'd valid

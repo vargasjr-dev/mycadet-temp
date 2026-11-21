@@ -843,21 +843,22 @@ const TUNNEL_MANAGED_BY = "tunnel";
 export async function writeManagedPublicBaseUrl(
   publicUrl: string,
   configFile: ConfigFileCache,
+  managedBy: string = TUNNEL_MANAGED_BY,
 ): Promise<void> {
   return mutateGatewayConfigFile(
     configFile,
-    "Cannot publish Tunnel public URL because config.json is malformed",
+    "Cannot publish the public URL because config.json is malformed",
     (data) => {
       const ingress = getMutableIngress(data);
       if (
         ingress.publicBaseUrl === publicUrl &&
-        ingress.publicBaseUrlManagedBy === TUNNEL_MANAGED_BY
+        ingress.publicBaseUrlManagedBy === managedBy
       ) {
         return false;
       }
 
       ingress.publicBaseUrl = publicUrl;
-      ingress.publicBaseUrlManagedBy = TUNNEL_MANAGED_BY;
+      ingress.publicBaseUrlManagedBy = managedBy;
       data.ingress = ingress;
       return true;
     },
