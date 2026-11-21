@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import {
   UNPARSEABLE_TOOL_ARGS_SDK_MESSAGE,
   wrapUnparseableToolArgs,
@@ -19,6 +21,21 @@ export interface ShadowStreamEvent {
   index?: number;
   content_block?: unknown;
   delta?: unknown;
+}
+
+/**
+ * Every SDK stream event satisfies this shape structurally (a `type` string
+ * plus optional fields), so the shadow reads it without the caller casting.
+ */
+export function toShadowStreamEvent(event: unknown): ShadowStreamEvent {
+  return z
+    .object({
+      type: z.string(),
+      index: z.number().optional(),
+      content_block: z.unknown().optional(),
+      delta: z.unknown().optional(),
+    })
+    .parse(event);
 }
 
 export interface SalvagedStream {

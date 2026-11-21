@@ -26,8 +26,17 @@ import { ConfirmationSurfaceData } from "../api/surfaces.js";
 import { DynamicPagePreview } from "../api/surfaces.js";
 import { DynamicPageSurfaceData } from "../api/surfaces.js";
 import { FormSurfaceData } from "../api/surfaces.js";
+import { FormSurfaceDataSchema } from "../api/surfaces.js";
 import { SurfaceData } from "../api/surfaces.js";
 import { SurfaceType } from "../api/surfaces.js";
+
+/** The ui_surface block shape every surface probe matches on. */
+const uiSurfaceBlockSchema = z
+  .object({
+    type: z.literal("ui_surface"),
+    surfaceId: z.string(),
+  })
+  .loose();
 import { TableColumn } from "../api/surfaces.js";
 import { TableRow } from "../api/surfaces.js";
 import {
@@ -297,14 +306,14 @@ function findPersistedSurfaceBlock(
     }
     const blocks: unknown[] = rows[r].content;
     const blockIndex = blocks.findIndex((pb) => {
-      const rb = pb as Record<string, unknown>;
-      return rb.type === "ui_surface" && rb.surfaceId === surfaceId;
+      const parsed = uiSurfaceBlockSchema.safeParse(pb);
+      return parsed.success && parsed.data.surfaceId === surfaceId;
     });
     if (blockIndex !== -1) {
       return {
         rowId: rows[r].id,
         blocks,
-        block: blocks[blockIndex] as Record<string, unknown>,
+        block: uiSurfaceBlockSchema.parse(blocks[blockIndex]),
         blockIndex,
       };
     }
@@ -503,12 +512,15 @@ export function markSurfaceCompleted(
         continue;
       }
       for (const block of msg.content) {
-        const b = block as Record<string, unknown>;
-        if (b.type === "ui_surface" && b.surfaceId === surfaceId) {
-          b.completed = true;
-          b.completionSummary = summary;
-          break outer;
+        if (!uiSurfaceBlockSchema.safeParse(block).success) {
+          continue;
         }
+        // Mutation boundary: the block is mutated in place, so the schema
+        // view above only gates it; the write goes through the record.
+        const b = block as Record<string, unknown>;
+        b.completed = true;
+        b.completionSummary = summary;
+        break outer;
       }
     }
   }
@@ -640,8 +652,8 @@ function removeSurfaceBlock(
         continue;
       }
       const idx = msg.content.findIndex((block) => {
-        const b = block as Record<string, unknown>;
-        return b.type === "ui_surface" && b.surfaceId === surfaceId;
+        const parsed = uiSurfaceBlockSchema.safeParse(block);
+        return parsed.success && parsed.data.surfaceId === surfaceId;
       });
       if (idx !== -1) {
         msg.content.splice(idx, 1);
@@ -705,7 +717,7 @@ function normalizeTaskProgressSteps(
           : "pending";
       return { ...step, label, status };
     })
-    .filter((step) => (step.label as string).trim().length > 0);
+    .filter((step) => step.label.trim().length > 0);
 }
 
 /**
@@ -1021,7 +1033,10 @@ function buildChoiceActions(data: ChoiceSurfaceData): SurfaceAction[] {
 }
 
 function isTaskProgressCardData(data: SurfaceData | Record<string, unknown>) {
-  return (data as Record<string, unknown>).template === "task_progress";
+  return z
+    .object({ template: z.literal("task_progress") })
+    .loose()
+    .safeParse(data).success;
 }
 
 function isSlackTaskProgressUiException(
@@ -1095,8 +1110,12 @@ export function createSurfaceMutex(): SurfaceMutex {
     return next;
   };
 
-  Object.defineProperty(mutex, "size", { get: () => chains.size });
-  return mutex as SurfaceMutex;
+  return Object.assign(mutex, {
+    /** Number of surfaces with an active chain — exposed for tests. */
+    get size() {
+      return chains.size;
+    },
+  });
 }
 
 // ── Standalone surface lifecycle ────────────────────────────────────
@@ -1187,9 +1206,12 @@ export function showStandaloneSurface(
   const actions = request.actions?.map((a) => ({
     id: a.id,
     label: a.label,
-    style: (a.variant === "danger"
-      ? "destructive"
-      : (a.variant ?? "secondary")) as "primary" | "secondary" | "destructive",
+    style:
+      a.variant === "danger"
+        ? ("destructive" as const)
+        : a.variant === "primary"
+          ? ("primary" as const)
+          : ("secondary" as const),
   }));
 
   return new Promise<InteractiveUiResult>((resolve) => {
@@ -1300,7 +1322,8 @@ function buildStandaloneSurfaceData(
     ? (raw.fields as FormSurfaceData["fields"])
     : [];
 
-  return { surfaceType: "form", data: { ...raw, fields } as FormSurfaceData };
+  const form = FormSurfaceDataSchema.parse({ ...raw, fields });
+  return { surfaceType: "form", data: form };
 }
 
 /**
@@ -1473,11 +1496,18 @@ function handleDocumentContentChanged(
     return;
   }
 
-  const { title, content, wordCount } = data as {
-    title?: string;
-    content?: string;
-    wordCount?: number;
-  };
+  const parsed = z
+    .object({
+      title: z.string().optional(),
+      content: z.string().optional(),
+      wordCount: z.number().optional(),
+    })
+    .safeParse(data);
+  if (!parsed.success) {
+    log.warn({ surfaceId }, "content_changed action has malformed data");
+    return;
+  }
+  const { title, content, wordCount } = parsed.data;
 
   if (!title && !content) {
     log.warn({ surfaceId }, "content_changed action missing title or content");
@@ -1953,11 +1983,14 @@ export async function handleSurfaceAction(
   const standalone = ctx.pendingStandaloneSurfaces?.get(surfaceId);
   if (standalone) {
     const stored = ctx.surfaceState.get(surfaceId);
+    const storedData = stored
+      ? z.record(z.string(), z.unknown()).safeParse(stored.data).data
+      : undefined;
     const summary = buildCompletionSummary(
       standalone.surfaceType,
       actionId,
       data,
-      stored?.data as Record<string, unknown> | undefined,
+      storedData,
     );
 
     // Determine result status from the action.
@@ -2049,12 +2082,12 @@ export async function handleSurfaceAction(
   // launcher card `pending` is already set. Without this hoist the launch
   // branch would fall through into the pending path and the LLM round-trip
   // would happen on every click.
-  if (
-    data &&
-    typeof data === "object" &&
-    (data as Record<string, unknown>)._action === "launch_conversation"
-  ) {
-    const payload = data as Record<string, unknown>;
+  const launchProbe = z
+    .object({ _action: z.literal("launch_conversation") })
+    .loose()
+    .safeParse(data);
+  if (launchProbe.success) {
+    const payload = launchProbe.data;
     const title = typeof payload.title === "string" ? payload.title : "";
     const seedPrompt =
       typeof payload.seedPrompt === "string" ? payload.seedPrompt : "";

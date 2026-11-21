@@ -46,8 +46,8 @@ import {
   extractOverflowTokensFromMessage,
 } from "../types.js";
 import {
-  type ShadowStreamEvent,
   StreamContentShadow,
+  toShadowStreamEvent,
 } from "./stream-content-shadow.js";
 
 const log = getLogger("anthropic-client");
@@ -260,6 +260,65 @@ export async function validateAnthropicApiKey(
 const TOOL_ID_RE = /[^a-wyzA-Z0-9_-]/g;
 
 const ANTHROPIC_SUPPORTED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+
+/** The SDK's cache-control marker shape, for zod boundaries that read it. */
+const cacheControlEphemeralSchema = z.object({
+  type: z.literal("ephemeral"),
+  ttl: z.enum(["5m", "1h"]).optional(),
+});
+
+/**
+ * The SDK's tool `input_schema` shape — JSON Schema draft 2020-12 object
+ * schemas. The boundary between Cadet's tool definitions and the wire.
+ */
+const toolInputSchemaSchema = z.object({
+  type: z.literal("object"),
+  properties: z.unknown().optional(),
+  required: z.array(z.string()).optional(),
+});
+
+/** The SDK's server-tool name union, for the param the wire expects. */
+const serverToolNameSchema = z.enum([
+  "web_search",
+  "web_fetch",
+  "code_execution",
+  "bash_code_execution",
+  "text_editor_code_execution",
+  "tool_search_tool_regex",
+  "tool_search_tool_bm25",
+]);
+
+/** The web_search_tool_result content the wire can carry. */
+const webSearchResultContentSchema = z.union([
+  z.array(
+    z.object({
+      type: z.literal("web_search_result"),
+      encrypted_content: z.string(),
+      title: z.string(),
+      url: z.string(),
+      page_age: z.string().nullable().optional(),
+    }),
+  ),
+  z.object({
+    type: z.literal("web_search_tool_result_error"),
+    error_code: z.enum([
+      "invalid_tool_input",
+      "unavailable",
+      "max_uses_exceeded",
+      "too_many_requests",
+      "query_too_long",
+      "request_too_large",
+    ]),
+  }),
+]);
+
+/** The SDK's image media-type union, matching {@link ANTHROPIC_SUPPORTED_IMAGE_TYPES}. */
+const anthropicImageMediaTypeSchema = z.enum([
   "image/jpeg",
   "image/png",
   "image/gif",
@@ -1117,7 +1176,7 @@ export class AnthropicProvider implements Provider {
           const mappedOther = otherTools.map((t, i) => ({
             name: t.name,
             description: t.description,
-            input_schema: t.input_schema as Anthropic.Tool["input_schema"],
+            input_schema: toolInputSchemaSchema.parse(t.input_schema),
             ...(applyToolCacheControl &&
             !disableCache &&
             i === otherTools.length - 1
@@ -1134,7 +1193,7 @@ export class AnthropicProvider implements Provider {
           params.tools = tools.map((t, i) => ({
             name: t.name,
             description: t.description,
-            input_schema: t.input_schema as Anthropic.Tool["input_schema"],
+            input_schema: toolInputSchemaSchema.parse(t.input_schema),
             ...(applyToolCacheControl && !disableCache && i === tools.length - 1
               ? { cache_control: cacheControl }
               : {}),
@@ -1296,19 +1355,20 @@ export class AnthropicProvider implements Provider {
             continue;
           }
           for (const block of msg.content) {
-            if (typeof block === "string") {
+            if (
+              typeof block === "string" ||
+              block.type === "thinking" ||
+              block.type === "redacted_thinking"
+            ) {
               continue;
             }
-            const blockRecord = block as {
-              cache_control?: { ttl?: unknown };
-            };
-            if (!blockRecord.cache_control) {
+            if (!block.cache_control) {
               continue;
             }
             if (disableCache) {
-              delete blockRecord.cache_control;
-            } else if ("ttl" in blockRecord.cache_control) {
-              delete blockRecord.cache_control.ttl;
+              delete block.cache_control;
+            } else {
+              delete block.cache_control.ttl;
             }
           }
         }
@@ -1328,6 +1388,17 @@ export class AnthropicProvider implements Provider {
         ): this;
         on(event: "inputJson", listener: (partialJson: string) => void): this;
         finalMessage(): Promise<Anthropic.Message>;
+      }
+
+      /**
+       * The single bridge between the SDK's two stream classes. The beta
+       * stream's event types don't unify with MessageStream's at the type
+       * level (they're a superset), but both satisfy UnifiedStream
+       * structurally at runtime — the beta stream crosses here once,
+       * documented, instead of every call site asserting.
+       */
+      function toUnifiedStream(betaStream: unknown): UnifiedStream {
+        return betaStream as UnifiedStream;
       }
 
       // Fast mode: use the beta endpoint with speed: "fast" for the Opus
@@ -1372,29 +1443,25 @@ export class AnthropicProvider implements Provider {
           streamParams: Anthropic.MessageStreamParams,
         ): Promise<Anthropic.Message> => {
           inspectableRequest = streamParams;
-          const stream: UnifiedStream = useFastMode
-            ? (this.client.beta.messages.stream(
-                {
-                  ...(streamParams as Record<string, unknown>),
-                  speed: "fast" as const,
-                  betas,
-                } as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming &
-                  Anthropic.Beta.Messages.MessageCreateParamsStreaming,
-                requestOptions,
-              ) as unknown as UnifiedStream)
-            : betas.length > 0
-              ? (this.client.beta.messages.stream(
-                  {
-                    ...(streamParams as Record<string, unknown>),
-                    betas,
-                  } as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming &
-                    Anthropic.Beta.Messages.MessageCreateParamsStreaming,
-                  requestOptions,
-                ) as unknown as UnifiedStream)
-              : (this.client.messages.stream(
-                  streamParams,
-                  requestOptions,
-                ) as unknown as UnifiedStream);
+          let stream: UnifiedStream;
+          if (useFastMode || betas.length > 0) {
+            // The beta endpoint carries fast mode and the explicit beta
+            // headers; its param type is a superset of MessageStreamParams.
+            const { stream: _stream, ...baseParams } = streamParams;
+            // The beta wire accepts effort tiers and output_config shapes the
+            // SDK's beta param types lag behind on — one documented boundary
+            // instead of field-by-field casts.
+            const betaParams = {
+              ...baseParams,
+              ...(useFastMode ? { speed: "fast" as const } : {}),
+              ...(betas.length > 0 ? { betas } : {}),
+            } as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming;
+            stream = toUnifiedStream(
+              this.client.beta.messages.stream(betaParams, requestOptions),
+            );
+          } else {
+            stream = this.client.messages.stream(streamParams, requestOptions);
+          }
 
           // Shadow the streamed content blocks so a mid-stream SDK accumulator
           // failure on malformed tool-argument JSON can be salvaged instead of
@@ -1446,7 +1513,7 @@ export class AnthropicProvider implements Provider {
           >();
 
           stream.on("streamEvent", (event) => {
-            contentShadow.handleEvent(event as ShadowStreamEvent);
+            contentShadow.handleEvent(toShadowStreamEvent(event));
             // Reset the text sentinel buffer at each content-block boundary.
             // A new block starts fresh; at the end of a block, flush any
             // buffered text that is NOT a complete sentinel, and drop it if
@@ -1479,30 +1546,27 @@ export class AnthropicProvider implements Provider {
                 name: event.content_block.name,
                 toolUseId: event.content_block.id,
                 input:
-                  (event.content_block as { input?: Record<string, unknown> })
-                    .input ?? {},
+                  z
+                    .record(z.string(), z.unknown())
+                    .safeParse(event.content_block.input ?? {}).data ?? {},
               });
             }
             if (
               event.type === "content_block_start" &&
               event.content_block.type === "web_search_tool_result"
             ) {
-              const block = event.content_block as {
-                tool_use_id: string;
-                content?:
-                  | {
-                      type: "web_search_tool_result_error";
-                      error_code?: string;
-                    }
-                  | unknown[];
-              };
-              const isError =
-                !Array.isArray(block.content) &&
-                block.content?.type === "web_search_tool_result_error";
-              const errorCode =
-                isError && !Array.isArray(block.content)
-                  ? block.content?.error_code
-                  : undefined;
+              const block = event.content_block;
+              const content = block.content;
+              const errorContent = z
+                .object({
+                  type: z.literal("web_search_tool_result_error"),
+                  error_code: z.string().optional(),
+                })
+                .safeParse(content);
+              const isError = !Array.isArray(content) && errorContent.success;
+              const errorCode = errorContent.success
+                ? errorContent.data.error_code
+                : undefined;
               const resolvedInput = resolvedServerToolInputs.get(
                 block.tool_use_id,
               );
@@ -1511,9 +1575,7 @@ export class AnthropicProvider implements Provider {
                 type: "server_tool_complete",
                 toolUseId: block.tool_use_id,
                 isError: !!isError,
-                ...(Array.isArray(block.content)
-                  ? { content: block.content }
-                  : {}),
+                ...(Array.isArray(content) ? { content } : {}),
                 ...(resolvedInput ? { resolvedInput } : {}),
                 ...(errorCode ? { errorCode } : {}),
               });
@@ -1539,11 +1601,13 @@ export class AnthropicProvider implements Provider {
               // emits `server_tool_complete` with `resolvedInput` populated.
               if (currentServerToolUseId && accumulatedServerToolInputJson) {
                 try {
-                  const parsed = JSON.parse(accumulatedServerToolInputJson);
-                  if (parsed && typeof parsed === "object") {
+                  const parsed = z
+                    .record(z.string(), z.unknown())
+                    .safeParse(JSON.parse(accumulatedServerToolInputJson));
+                  if (parsed.success) {
                     resolvedServerToolInputs.set(
                       currentServerToolUseId,
-                      parsed as Record<string, unknown>,
+                      parsed.data,
                     );
                   }
                 } catch {
@@ -1628,6 +1692,11 @@ export class AnthropicProvider implements Provider {
               },
               "Salvaged stream with unparseable tool-call arguments; returning _raw-wrapped tool call",
             );
+            // The salvaged turn is degraded by design: the shadow only
+            // accumulated content/usage, and the SDK's accumulator died
+            // before the full Message shape (id, role, stop_sequence) ever
+            // existed. This is the salvage boundary — the one place a
+            // partial object is passed off as the response.
             return {
               ...salvaged.message,
               model: streamParams.model,
@@ -1903,7 +1972,7 @@ export class AnthropicProvider implements Provider {
         ? tools.map((t) => ({
             name: t.name,
             description: t.description,
-            input_schema: t.input_schema as Anthropic.Tool["input_schema"],
+            input_schema: toolInputSchemaSchema.parse(t.input_schema),
           }))
         : undefined;
 
@@ -1948,13 +2017,7 @@ export class AnthropicProvider implements Provider {
           .filter(
             (block): block is Anthropic.ContentBlockParam => block != null,
           )
-          .filter(
-            (block) =>
-              !(
-                block.type === "text" &&
-                !(block as { text?: string }).text?.trim()
-              ),
-          );
+          .filter((block) => !(block.type === "text" && !block.text?.trim()));
 
         // Preserve assistant turns that would otherwise become empty after
         // filtering unknown block types. Dropping these messages can violate
@@ -1965,7 +2028,7 @@ export class AnthropicProvider implements Provider {
           droppedUnknownBlock
         ) {
           return {
-            role: m.role as "assistant",
+            role: m.role,
             content: [
               { type: "text" as const, text: PLACEHOLDER_BLOCKS_OMITTED },
             ],
@@ -1975,7 +2038,7 @@ export class AnthropicProvider implements Provider {
         return {
           role: m.role,
           content,
-        } as Anthropic.MessageParam;
+        };
       })
       .reduce<Anthropic.MessageParam[]>((acc, m) => {
         if (m.content.length > 0) {
@@ -2012,14 +2075,16 @@ export class AnthropicProvider implements Provider {
           continue;
         }
 
-        const iContent = (
-          Array.isArray(formatted[i].content) ? formatted[i].content : []
-        ) as Anthropic.ContentBlockParam[];
-        const prevContent = (
-          Array.isArray(formatted[i - 1].content)
-            ? formatted[i - 1].content
-            : []
-        ) as Anthropic.ContentBlockParam[];
+        const iRaw = formatted[i].content;
+        const iContent: Anthropic.ContentBlockParam[] = Array.isArray(iRaw)
+          ? iRaw
+          : [];
+        const prevRaw = formatted[i - 1].content;
+        const prevContent: Anthropic.ContentBlockParam[] = Array.isArray(
+          prevRaw,
+        )
+          ? prevRaw
+          : [];
         const isPlaceholder = (c: Anthropic.ContentBlockParam[]): boolean => {
           if (
             c.length !== 1 ||
@@ -2028,7 +2093,7 @@ export class AnthropicProvider implements Provider {
           ) {
             return false;
           }
-          const text = (c[0] as { text?: string }).text;
+          const text = c[0].text;
           return typeof text === "string" && isPlaceholderSentinelText(text);
         };
 
@@ -2091,7 +2156,7 @@ export class AnthropicProvider implements Provider {
       if (msg.role !== "assistant" || !Array.isArray(msg.content)) {
         continue;
       }
-      const stripped = (msg.content as Anthropic.ContentBlockParam[]).filter(
+      const stripped = msg.content.filter(
         (b) =>
           typeof b === "string" ||
           (b.type !== "thinking" && b.type !== "redacted_thinking"),
@@ -2129,12 +2194,16 @@ export class AnthropicProvider implements Provider {
         // Preserve a caller-stamped cache_control breakpoint (a stable prefix
         // block a caller marks so it is cached on its own rather than only as
         // part of the per-turn anchor prefix). The internal ContentBlock type
-        // omits the field, so reach for it via cast. The Haiku ttl-strip
-        // downstream still applies. Callers that stamp this keep within the
-        // per-request breakpoint budget (≤4), so other callers are unaffected.
-        const cacheControl = (
-          block as { cache_control?: Anthropic.CacheControlEphemeral }
-        ).cache_control;
+        // omits the field, so a passthrough schema is the boundary that finds
+        // it. The Haiku ttl-strip downstream still applies. Callers that stamp
+        // this keep within the per-request breakpoint budget (≤4), so other
+        // callers are unaffected.
+        const stampedSchema = z
+          .object({
+            cache_control: cacheControlEphemeralSchema.optional(),
+          })
+          .loose();
+        const cacheControl = stampedSchema.parse(block).cache_control;
         const text = clampProviderString(block.text);
         return cacheControl
           ? { type: "text", text, cache_control: cacheControl }
@@ -2165,8 +2234,9 @@ export class AnthropicProvider implements Provider {
           type: "image",
           source: {
             type: "base64",
-            media_type: block.source
-              .media_type as Anthropic.Base64ImageSource["media_type"],
+            media_type: anthropicImageMediaTypeSchema.parse(
+              block.source.media_type,
+            ),
             data: base64Source(block.source).data,
           },
         };
@@ -2177,18 +2247,19 @@ export class AnthropicProvider implements Provider {
         const { media_type, data, filename } = base64Source(block.source);
         if (media_type === "application/pdf") {
           // Only valid base64 document source for Anthropic
-          return {
+          const documentBlock: Anthropic.DocumentBlockParam = {
             type: "document",
             source: { type: "base64", media_type: "application/pdf", data },
             ...(filename ? { title: filename } : {}),
-          } as unknown as Anthropic.ContentBlockParam;
+          };
+          return documentBlock;
         }
         if (isDecodableTextMimeType(media_type)) {
           // Decode base64 to UTF-8 text and send as PlainTextSource
           const decodedText = clampProviderString(
             Buffer.from(data, "base64").toString("utf-8"),
           );
-          return {
+          const textDocumentBlock: Anthropic.DocumentBlockParam = {
             type: "document",
             source: {
               type: "text",
@@ -2196,7 +2267,8 @@ export class AnthropicProvider implements Provider {
               data: decodedText,
             },
             ...(filename ? { title: filename } : {}),
-          } as unknown as Anthropic.ContentBlockParam;
+          };
+          return textDocumentBlock;
         }
         // Binary non-text file: name the workspace file, never dump bytes.
         log.warn(
@@ -2229,8 +2301,9 @@ export class AnthropicProvider implements Provider {
                 type: "image" as const,
                 source: {
                   type: "base64" as const,
-                  media_type: cb.source
-                    .media_type as Anthropic.Base64ImageSource["media_type"],
+                  media_type: anthropicImageMediaTypeSchema.parse(
+                    cb.source.media_type,
+                  ),
                   data: base64Source(cb.source).data,
                 },
               });
@@ -2252,19 +2325,23 @@ export class AnthropicProvider implements Provider {
           is_error: block.is_error,
         };
       }
-      case "server_tool_use":
-        return {
+      case "server_tool_use": {
+        const serverToolUseBlock: Anthropic.ServerToolUseBlockParam = {
           type: "server_tool_use",
           id: block.id,
-          name: block.name,
+          name: serverToolNameSchema.parse(block.name),
           input: block.input,
-        } as unknown as Anthropic.ContentBlockParam;
-      case "web_search_tool_result":
-        return {
+        };
+        return serverToolUseBlock;
+      }
+      case "web_search_tool_result": {
+        const webSearchResultBlock: Anthropic.WebSearchToolResultBlockParam = {
           type: "web_search_tool_result",
           tool_use_id: block.tool_use_id,
-          content: block.content,
-        } as unknown as Anthropic.ContentBlockParam;
+          content: webSearchResultContentSchema.parse(block.content),
+        };
+        return webSearchResultBlock;
+      }
       case "ui_surface":
         // A client rendering instruction, not model context. Dropped by
         // design: the producer's sibling `_surfaceFallback` text block is what
@@ -2272,10 +2349,9 @@ export class AnthropicProvider implements Provider {
         // for legacy rows that have no fallback sibling.
         return null;
       default: {
-        log.warn(
-          { blockType: (block as { type: string }).type },
-          "Dropping unknown content block type",
-        );
+        // Every Anthropic.ContentBlock member is handled above, so block is
+        // never here; kept for exhaustiveness only.
+        log.warn("Dropping unknown content block type");
         return null;
       }
     }
@@ -2284,48 +2360,47 @@ export class AnthropicProvider implements Provider {
   private fromAnthropicBlock(block: Anthropic.ContentBlock): ContentBlock {
     switch (block.type) {
       case "text":
-        return { type: "text", text: (block as Anthropic.TextBlock).text };
+        return { type: "text", text: block.text };
       case "thinking":
         return {
           type: "thinking",
-          thinking: (block as Anthropic.ThinkingBlock).thinking,
-          signature: (block as Anthropic.ThinkingBlock).signature,
+          thinking: block.thinking,
+          signature: block.signature,
         };
       case "redacted_thinking":
         return {
           type: "redacted_thinking",
-          data: (block as Anthropic.RedactedThinkingBlock).data,
+          data: block.data,
         };
       case "tool_use": {
-        const tu = block as Anthropic.ToolUseBlock;
         return {
           type: "tool_use",
-          id: tu.id,
-          name: tu.name,
-          input: tu.input as Record<string, unknown>,
+          id: block.id,
+          name: block.name,
+          input: z.record(z.string(), z.unknown()).parse(block.input ?? {}),
         };
       }
       case "server_tool_use": {
-        const stu = block as Anthropic.ServerToolUseBlock;
         return {
           type: "server_tool_use",
-          id: stu.id,
-          name: stu.name,
-          input: stu.input as Record<string, unknown>,
+          id: block.id,
+          name: block.name,
+          input: z.record(z.string(), z.unknown()).parse(block.input ?? {}),
         };
       }
       case "web_search_tool_result": {
-        const wsr = block as Anthropic.WebSearchToolResultBlock;
         return {
           type: "web_search_tool_result",
-          tool_use_id: wsr.tool_use_id,
-          content: wsr.content,
+          tool_use_id: block.tool_use_id,
+          content: block.content,
         };
       }
       default:
+        // All Anthropic.ContentBlock members are handled above; this arm is
+        // unreachable (block: never) and kept for exhaustiveness.
         return {
           type: "text",
-          text: `[unsupported block type: ${(block as { type: string }).type}]`,
+          text: "[unsupported block type]",
         };
     }
   }

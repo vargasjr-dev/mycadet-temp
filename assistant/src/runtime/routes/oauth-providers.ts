@@ -94,74 +94,118 @@ function handleGetProvider({ pathParams = {} }: RouteHandlerArgs) {
   };
 }
 
-function handleRegisterProvider({ body = {} }: RouteHandlerArgs) {
-  const b = body as Record<string, unknown>;
-  const providerKey = b.provider_key as string | undefined;
-  const authUrl = b.auth_url as string | undefined;
-  const tokenUrl = b.token_url as string | undefined;
+/** The registration body — validated at the boundary instead of cast field by field. */
+const registerProviderBodySchema = z.object({
+  provider_key: z.string(),
+  auth_url: z.string(),
+  token_url: z.string(),
+  refresh_url: z.string().optional(),
+  base_url: z.string().optional(),
+  userinfo_url: z.string().optional(),
+  default_scopes: z.array(z.string()).optional(),
+  available_scopes: z
+    .union([
+      z.string(),
+      z.array(
+        z.object({
+          scope: z.string(),
+          description: z.string().optional(),
+        }),
+      ),
+    ])
+    .optional(),
+  scope_separator: z.string().optional(),
+  token_endpoint_auth_method: z.string().optional(),
+  token_exchange_body_format: z.string().optional(),
+  ping_url: z.string().optional(),
+  ping_method: z.string().optional(),
+  ping_headers: z.record(z.string(), z.string()).optional(),
+  ping_body: z.unknown().optional(),
+  revoke_url: z.string().optional(),
+  revoke_body_template: z.record(z.string(), z.string()).optional(),
+  display_name: z.string().optional(),
+  description: z.string().optional(),
+  dashboard_url: z.string().optional(),
+  logo_url: z.string().nullable().optional(),
+  client_id_placeholder: z.string().optional(),
+  requires_client_secret: z.boolean().optional(),
+  loopback_port: z.number().optional(),
+  injection_templates: z
+    .array(
+      z.object({
+        hostPattern: z.string(),
+        injectionType: z.string(),
+        headerName: z.string(),
+        valuePrefix: z.string(),
+      }),
+    )
+    .optional(),
+  app_type: z.string().optional(),
+  identity_url: z.string().optional(),
+  identity_method: z.string().optional(),
+  identity_headers: z.record(z.string(), z.string()).optional(),
+  identity_body: z.unknown().optional(),
+  identity_response_paths: z.array(z.string()).optional(),
+  identity_format: z.string().optional(),
+  identity_ok_field: z.string().optional(),
+  response_ok_field: z.string().optional(),
+  setup_notes: z.array(z.string()).optional(),
+});
 
-  if (!providerKey || !authUrl || !tokenUrl) {
+function handleRegisterProvider({ body = {} }: RouteHandlerArgs) {
+  const parsed = registerProviderBodySchema.safeParse(body);
+  if (!parsed.success) {
     throw new BadRequestError(
       "provider_key, auth_url, and token_url are required",
     );
   }
+  const b = parsed.data;
+  const providerKey = b.provider_key;
+  const authUrl = b.auth_url;
+  const tokenUrl = b.token_url;
 
   try {
     const row = registerProvider({
       provider: providerKey,
       authorizeUrl: authUrl,
       tokenExchangeUrl: tokenUrl,
-      refreshUrl: (b.refresh_url as string) ?? undefined,
-      baseUrl: (b.base_url as string) ?? undefined,
-      userinfoUrl: (b.userinfo_url as string) ?? undefined,
-      defaultScopes: (b.default_scopes as string[]) ?? [],
-      availableScopes: b.available_scopes as
-        | string
-        | Array<{ scope: string; description?: string }>
-        | undefined,
-      scopeSeparator: (b.scope_separator as string) ?? undefined,
-      tokenEndpointAuthMethod:
-        (b.token_endpoint_auth_method as string) ?? undefined,
-      tokenExchangeBodyFormat:
-        (b.token_exchange_body_format as string) ?? undefined,
-      pingUrl: (b.ping_url as string) ?? undefined,
-      pingMethod: (b.ping_method as string) ?? undefined,
-      pingHeaders: (b.ping_headers as Record<string, string>) ?? undefined,
+      refreshUrl: b.refresh_url ?? undefined,
+      baseUrl: b.base_url ?? undefined,
+      userinfoUrl: b.userinfo_url ?? undefined,
+      defaultScopes: b.default_scopes ?? [],
+      availableScopes: b.available_scopes ?? undefined,
+      scopeSeparator: b.scope_separator ?? undefined,
+      tokenEndpointAuthMethod: b.token_endpoint_auth_method ?? undefined,
+      tokenExchangeBodyFormat: b.token_exchange_body_format ?? undefined,
+      pingUrl: b.ping_url ?? undefined,
+      pingMethod: b.ping_method ?? undefined,
+      pingHeaders: b.ping_headers ?? undefined,
       pingBody: b.ping_body ?? undefined,
-      revokeUrl: (b.revoke_url as string) ?? undefined,
-      revokeBodyTemplate:
-        (b.revoke_body_template as Record<string, string>) ?? undefined,
-      displayLabel: (b.display_name as string) ?? undefined,
-      description: (b.description as string) ?? undefined,
-      dashboardUrl: (b.dashboard_url as string) ?? undefined,
-      logoUrl: (b.logo_url as string | null) ?? undefined,
-      clientIdPlaceholder: (b.client_id_placeholder as string) ?? undefined,
+      revokeUrl: b.revoke_url ?? undefined,
+      revokeBodyTemplate: b.revoke_body_template ?? undefined,
+      displayLabel: b.display_name ?? undefined,
+      description: b.description ?? undefined,
+      dashboardUrl: b.dashboard_url ?? undefined,
+      logoUrl: b.logo_url ?? undefined,
+      clientIdPlaceholder: b.client_id_placeholder ?? undefined,
       requiresClientSecret:
-        b.requires_client_secret !== undefined
-          ? (b.requires_client_secret as boolean)
+        b.requires_client_secret === undefined
+          ? undefined
+          : b.requires_client_secret
             ? 1
-            : 0
-          : undefined,
-      loopbackPort: (b.loopback_port as number) ?? undefined,
-      injectionTemplates:
-        (b.injection_templates as Array<{
-          hostPattern: string;
-          injectionType: string;
-          headerName: string;
-          valuePrefix: string;
-        }>) ?? undefined,
-      appType: (b.app_type as string) ?? undefined,
-      identityUrl: (b.identity_url as string) ?? undefined,
-      identityMethod: (b.identity_method as string) ?? undefined,
-      identityHeaders:
-        (b.identity_headers as Record<string, string>) ?? undefined,
+            : 0,
+      loopbackPort: b.loopback_port ?? undefined,
+      injectionTemplates: b.injection_templates ?? undefined,
+      appType: b.app_type ?? undefined,
+      identityUrl: b.identity_url ?? undefined,
+      identityMethod: b.identity_method ?? undefined,
+      identityHeaders: b.identity_headers ?? undefined,
       identityBody: b.identity_body ?? undefined,
-      identityResponsePaths:
-        (b.identity_response_paths as string[]) ?? undefined,
-      identityFormat: (b.identity_format as string) ?? undefined,
-      identityOkField: (b.identity_ok_field as string) ?? undefined,
-      responseOkField: (b.response_ok_field as string) ?? undefined,
-      setupNotes: (b.setup_notes as string[]) ?? undefined,
+      identityResponsePaths: b.identity_response_paths ?? undefined,
+      identityFormat: b.identity_format ?? undefined,
+      identityOkField: b.identity_ok_field ?? undefined,
+      responseOkField: b.response_ok_field ?? undefined,
+      setupNotes: b.setup_notes ?? undefined,
     });
 
     return { provider: serializeProviderFull(row) };
