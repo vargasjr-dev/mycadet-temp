@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
-import { writeFileAtomic } from "@mycadet/shared/atomic-write";
+import { writeFileAtomic } from "@mycadet/shared";
 
 import { safeStatSync } from "../util/fs.js";
 import {
@@ -221,15 +221,6 @@ function fillContextDefaultsForMissingKeys(
       target[key] = value;
     }
   }
-}
-
-/**
- * Write config JSON via the house atomic write — the temp-and-rename lives
- * in @mycadet/shared so every config-shaped file shares one contract; this
- * layer only shapes the JSON.
- */
-function writeConfigFile(configPath: string, config: unknown): void {
-  writeFileAtomic(configPath, JSON.stringify(config, null, 2) + "\n");
 }
 
 /**
@@ -819,7 +810,7 @@ function warnAndStripDeprecatedFields(
         for (const dotPath of found) {
           deleteNestedKeyByDotPath(raw as Record<string, unknown>, dotPath);
         }
-        writeConfigFile(configPath, raw);
+        writeFileAtomic(configPath, JSON.stringify(raw, null, 2) + "\n");
       }
     }
   } catch {
@@ -1096,7 +1087,10 @@ export function getConfig(): AssistantConfig {
         }
         // Strip dataDir (runtime-derived) from the persisted config
         const { dataDir: _, ...persistable } = seed;
-        writeConfigFile(configPath, persistable);
+        writeFileAtomic(
+          configPath,
+          JSON.stringify(persistable, null, 2) + "\n",
+        );
         log.info("Wrote default config to %s", configPath);
       } catch (err) {
         log.warn({ err }, "Failed to write default config file");
@@ -1253,7 +1247,7 @@ export function saveRawConfig(config: Record<string, unknown>): void {
   // Strip legacy apiKeys — provider keys belong in secure storage, not plaintext config
   delete config.apiKeys;
 
-  writeConfigFile(configPath, config);
+  writeFileAtomic(configPath, JSON.stringify(config, null, 2) + "\n");
 
   cached = null; // invalidate cache
   cachedFileSignature = null;
