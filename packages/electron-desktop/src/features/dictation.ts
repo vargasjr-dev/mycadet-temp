@@ -22,7 +22,7 @@ import {
   type HelperRestartResult,
 } from "@mycadet/ipc-contract";
 import {
-  type NativeSidecarClient,
+  NativeSidecarClient,
   type NativeSidecarState,
 } from "@mycadet/native-sidecar/supervisor";
 
@@ -62,18 +62,14 @@ const DICTATION_ERROR_SCHEMA = z.object({
   onDevice: z.boolean().optional(),
   willRetryServer: z.boolean().optional(),
 });
-let clientFactory = (): NativeSidecarClient => getSharedHelperClient();
-let client: NativeSidecarClient | null = null;
-const getClient = (): NativeSidecarClient => (client ??= clientFactory());
 
-/**
- * The helper client the dictation bridge supervises. A shell's other helper
- * halves (its hotkey bindings, its permission requests) share this one
- * client rather than supervising a second helper process.
- */
-export const helperClient = getClient;
+const getClient = () => {
+  return new NativeSidecarClient({
+    logger: log,
+  });
+};
 
-let quitRequest: { method: string; params?: unknown } = {
+const quitRequest: { method: string; params?: unknown } = {
   method: "dictation.setPartials",
   params: { enable: false },
 };
@@ -160,15 +156,11 @@ const handleHelperState = (state: NativeSidecarState): void => {
   }
 };
 
-export const install = (inputs?: DictationShellInputs): void => {
+export const install = (): void => {
   if (installed) {
     return;
   }
   installed = true;
-  if (inputs?.client) {
-    clientFactory = inputs.client;
-  }
-  quitRequest = inputs?.shutdownRequest ?? quitRequest;
   const helper = getClient();
 
   helper.onNotification("dictation.partial", DICTATION_TEXT_SCHEMA, (event) => {
@@ -286,22 +278,10 @@ export const install = (inputs?: DictationShellInputs): void => {
   });
 };
 
-export const __resetForTesting = (
-  factory?: () => NativeSidecarClient,
-): void => {
+export const __resetForTesting = (): void => {
   installed = false;
   dictationOwners.clear();
   dictationPartialsQueue = Promise.resolve();
   transcriptionRequestSequence = 0;
   audioChunkCount = 0;
-  quitRequest = { method: "dictation.setPartials", params: { enable: false } };
-  clientFactory = factory ?? getSharedHelperClient;
-  try {
-    // A supervised helper left running keeps its respawn timers — a later
-    // test's writes land on the wrong child. Settle it before dropping it.
-    client?.shutdown();
-  } catch {
-    // The client was already gone.
-  }
-  client = null;
 };

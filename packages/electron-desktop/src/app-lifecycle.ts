@@ -170,12 +170,6 @@ export interface DesktopAppInputs {
    */
   permissionGuide?: PermissionGuideInputs;
   /**
-   * The shell's helper surfaces for the dictation bridge — its sidecar
-   * client factory, its extra state handling, its quit request. Absent,
-   * the shared helper client answers.
-   */
-  dictation?: DictationShellInputs;
-  /**
    * The shell's watch state and companion check. Absent, the hotkey family
    * installs with nothing to provide or restore.
    */
@@ -480,7 +474,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installPermissionGuide(inputs.permissionGuide);
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
-      installDictation(inputs.dictation);
+      installDictation();
       installHelperHotkeys(inputs.hotkeys);
       if (process.platform !== "darwin") {
         installVoiceModeChord();

@@ -78,8 +78,6 @@ type StreamSubscription = {
 };
 
 export interface NativeSidecarClientOptions {
-  name: string;
-  resolveExecutablePath: () => string;
   logger: {
     info: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;
@@ -89,7 +87,6 @@ export interface NativeSidecarClientOptions {
   spawnArgs?: string[];
   /** Extra environment merged over process.env for the spawned helper. */
   spawnEnv?: Record<string, string>;
-  platform?: NodeJS.Platform;
   spawn?: () => ChildProcessWithoutNullStreams;
   initialBackoffMs?: number;
   maxBackoffMs?: number;
@@ -122,7 +119,7 @@ const DEFAULT_RESPONSE_TIMEOUT_MS = 2_000;
 const DEFAULT_MAX_FRAME_BYTES = Number.POSITIVE_INFINITY;
 
 export class NativeSidecarClient {
-  private readonly name: string;
+  private readonly name = "native-sidecar-client";
   private readonly resolveExecutablePath: () => string;
   private readonly logger: NativeSidecarClientOptions["logger"];
   private readonly responseTimeoutMs: number;
@@ -143,8 +140,7 @@ export class NativeSidecarClient {
   private readonly streamSubscriptions = new Set<StreamSubscription>();
 
   constructor(options: NativeSidecarClientOptions) {
-    this.name = options.name;
-    this.resolveExecutablePath = options.resolveExecutablePath;
+    this.resolveExecutablePath = () => "./some-standard-relative-path";
     this.logger = options.logger;
     this.responseTimeoutMs =
       options.responseTimeoutMs ?? DEFAULT_RESPONSE_TIMEOUT_MS;
@@ -153,10 +149,9 @@ export class NativeSidecarClient {
     if (options.spawnEnv) {
       this.spawnEnv = options.spawnEnv;
     }
-    this.platform = options.platform ?? process.platform;
+    this.platform = process.platform;
     this.spawnOverride = options.spawn;
     this.supervisor = new SidecarSupervisor({
-      name: this.name,
       logger: this.logger,
       spawn: () => this.spawnChild(),
       onStart: (child) => this.attachChild(child),

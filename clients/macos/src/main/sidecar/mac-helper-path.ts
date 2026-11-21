@@ -107,7 +107,7 @@ export const getMacHelperAppPath = (): string => {
   return path.join(binDir, `${resolveHelperBundleName(binDir)}.app`);
 };
 
-export const getMacHelperPath = (): string => {
+export const xgetMacHelperPath = (): string => {
   const appPath = getMacHelperAppPath();
   return path.join(
     appPath,

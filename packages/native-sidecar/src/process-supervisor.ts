@@ -14,7 +14,6 @@ export type SidecarState =
   | { status: "stopped"; reason?: string };
 
 export interface SidecarSupervisorOptions {
-  name: string;
   spawn: () => ChildProcessWithoutNullStreams;
   logger: {
     info: (...args: unknown[]) => void;
@@ -37,7 +36,6 @@ const DEFAULT_CIRCUIT_WINDOW_MS = 60_000;
 const DEFAULT_SHUTDOWN_GRACE_MS = 2_000;
 
 export class SidecarSupervisor {
-  private readonly name: string;
   private readonly spawnChild: () => ChildProcessWithoutNullStreams;
   private readonly logger: SidecarSupervisorOptions["logger"];
   private readonly onStart?: (child: ChildProcessWithoutNullStreams) => void;
@@ -58,7 +56,6 @@ export class SidecarSupervisor {
   private state: SidecarState = { status: "idle" };
 
   constructor(options: SidecarSupervisorOptions) {
-    this.name = options.name;
     this.spawnChild = options.spawn;
     this.logger = options.logger;
     this.onStart = options.onStart;
@@ -199,7 +196,7 @@ export class SidecarSupervisor {
       child = this.spawnChild();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`[${this.name}] failed to spawn: ${message}`);
+      this.logger.warn(`[sidecar-supervisor] failed to spawn: ${message}`);
       this.handleUnexpectedExit(`spawn failed: ${message}`);
       return null;
     }
@@ -218,18 +215,21 @@ export class SidecarSupervisor {
     };
 
     child.once("error", (err: Error) => {
-      this.logger.warn(`[${this.name}] process error: ${err.message}`);
+      this.logger.warn(`[sidecar-supervisor] process error: ${err.message}`);
       handleExit(err.message);
     });
-    child.once("close", (code: number | null, signal: NodeJS.Signals | null) => {
-      const suffix =
-        signal !== null
-          ? `signal ${signal}`
-          : code !== null
-            ? `exit ${code}`
-            : "closed";
-      handleExit(suffix);
-    });
+    child.once(
+      "close",
+      (code: number | null, signal: NodeJS.Signals | null) => {
+        const suffix =
+          signal !== null
+            ? `signal ${signal}`
+            : code !== null
+              ? `exit ${code}`
+              : "closed";
+        handleExit(suffix);
+      },
+    );
 
     this.onStart?.(child);
     this.setState({
@@ -262,10 +262,10 @@ export class SidecarSupervisor {
     ];
 
     if (this.crashTimestamps.length >= this.circuitCrashCount) {
-      const circuitReason = `${this.name} crashed ${this.crashTimestamps.length} times in ${Math.round(
+      const circuitReason = `sidecar-supervisor crashed ${this.crashTimestamps.length} times in ${Math.round(
         this.circuitWindowMs / 1_000,
       )}s`;
-      this.logger.warn(`[${this.name}] ${circuitReason}; circuit open`);
+      this.logger.warn(`[sidecar-supervisor] ${circuitReason}; circuit open`);
       this.setState({ status: "circuit-open", reason: circuitReason });
       return;
     }
@@ -277,7 +277,7 @@ export class SidecarSupervisor {
     this.attempt += 1;
     const retryAt = now + delay;
     this.logger.warn(
-      `[${this.name}] exited (${reason}); restarting in ${delay}ms`,
+      `[sidecar-supervisor] exited (${reason}); restarting in ${delay}ms`,
     );
     this.setState({
       status: "backing-off",
