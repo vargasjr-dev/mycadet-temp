@@ -12,7 +12,7 @@ export const install = (): void => {
   configureBundlePlatform({
     ...createBundleHostProvider(),
     bundlesRoot: () => path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
-    rendererBase: () => getRendererBase(app.isPackaged),
+    rendererBase: () => getRendererBase(),
   });
   installBundleFlow();
   const stopFileOpen = onFileOpen((filePath) => {

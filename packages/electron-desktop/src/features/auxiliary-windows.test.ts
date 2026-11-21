@@ -127,7 +127,6 @@ const trackWindowState = mock((_key: string, _win: unknown) => undefined);
 mock.module("../auto-update", () => ({
   installAutoUpdate: () => undefined,
   checkForUpdates: () => undefined,
-  resolveUpdateFeedPlatform: () => "linux",
 }));
 mock.module("../window-state", () => ({
   readOnboardingActive: () => false,

@@ -50,8 +50,12 @@ const recorder = (name: string) => () => {
   calls.push(name);
 };
 
-mock.module("./universal-wiring", () => ({
-  installUniversalFeatures: recorder("universal-wiring"),
+mock.module("./commands", () => ({
+  configureHotkeySettings: recorder("hotkey-settings"),
+  settingsHotkeySettings: {},
+}));
+mock.module("./auto-update", () => ({
+  installAutoUpdate: recorder("auto-update"),
 }));
 mock.module("./app-logger", () => ({
   default: {
@@ -62,6 +66,7 @@ mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
 }));
 mock.module("./main-window", () => ({
+  configureMainWindow: () => undefined,
   current: () => null,
   dispatchToMain: () => undefined,
   ensureVisible: async () => calls.push("ensure-visible"),
@@ -137,9 +142,12 @@ beforeEach(() => {
   lockWinner = true;
 });
 
-/** The universal surface, in the order startApp assembles it. */
+/** The universal surface, in the order startApp assembles it. The
+ * auth/auxiliary-windows/login-item/main-window composition is shared by
+ * every shell since the main-window fold. */
 const universalSurface = [
-  "universal-wiring",
+  "hotkey-settings",
+  "auto-update",
   "bundles",
   "hotkeys",
   "about",
@@ -151,16 +159,16 @@ const universalSurface = [
   "quick-input",
   "popouts",
   "window-attention",
-];
-
-/** The classic composition, appended on the classic platforms. */
-const classicSurface = [
   "auth",
   "auxiliary-windows",
   "login-item",
+  "main-window",
+];
+
+/** The classic-only composition, appended on the classic platforms. */
+const classicSurface = [
   "dictation",
   "host-proxy",
-  "main-window",
   "permissions",
   "tray",
   "share",
@@ -171,6 +179,8 @@ describe("startApp", () => {
   test("logs ready, assembles the universal surface in order, and runs setup once Electron is ready", async () => {
     let ran = false;
     startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
       setup: () => {
         ran = true;
       },
@@ -195,6 +205,8 @@ describe("startApp", () => {
 
     let ran = false;
     startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
       setup: () => {
         ran = true;
       },
@@ -204,14 +216,14 @@ describe("startApp", () => {
 
     expect(appCalls).toContain("quit");
     expect(ran).toBe(false);
-    // Only the universal wiring (settings provider + auto-update) ran; the
-    // universal app surface, the classic composition, and the client's own
+    // Only the early wiring (the settings provider + auto-update) ran; the
+    // universal app surface, the shared composition, and the client's own
     // setup are all behind the lock gate.
-    expect(calls).toEqual(["universal-wiring"]);
+    expect(calls).toEqual(["hotkey-settings", "auto-update"]);
   });
 
   test("a second-instance launch focuses the client's main window", async () => {
-    startApp({});
+    startApp({ platform: "test-electron", titleBarMode: "hidden" });
 
     const secondInstance = appListeners.get("second-instance") ?? [];
     expect(secondInstance).toHaveLength(1);
@@ -222,6 +234,8 @@ describe("startApp", () => {
   test("the client's setup runs after the classic composition on the classic platforms", async () => {
     let ran = false;
     startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
       setup: () => {
         ran = true;
       },
@@ -231,8 +245,8 @@ describe("startApp", () => {
 
     expect(ran).toBe(true);
     if (process.platform === "darwin") {
-      // The classic composition is skipped; the client's own setup follows
-      // the universal surface directly.
+      // The classic-only tail is skipped; the client's own setup follows
+      // the shared composition directly.
       expect(calls).toEqual(universalSurface);
       return;
     }
@@ -242,6 +256,8 @@ describe("startApp", () => {
   test("reports a failed setup as `[app] whenReady setup failed`", async () => {
     const boom = new Error("install blew up");
     startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
       setup: () => {
         throw boom;
       },

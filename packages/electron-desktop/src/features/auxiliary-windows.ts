@@ -1,4 +1,4 @@
-import { app, screen } from "electron";
+import { screen } from "electron";
 
 import {
   configureCommandPaletteWindow,
@@ -25,9 +25,7 @@ import log from "../app-logger";
 import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";
 import { current, dispatchToMain, ensureVisible } from "../main-window";
 
-const resolveRoute = createWindowRouteResolver(() =>
-  getRendererBase(app.isPackaged),
-);
+const resolveRoute = createWindowRouteResolver(() => getRendererBase());
 
 /**
  * Configure and install the classic shells' auxiliary-window surfaces: the
@@ -39,7 +37,6 @@ const resolveRoute = createWindowRouteResolver(() =>
 export const install = (): void => {
   configureFloatingWindows({
     createWindow,
-    platform: process.platform === "win32" ? "win32" : "linux",
     resolveRoute,
   });
   configureCommandPaletteWindow({
@@ -51,7 +48,6 @@ export const install = (): void => {
     createWindow,
     dispatchToMain,
     ensureMainWindowVisible: ensureVisible,
-    platform: process.platform === "win32" ? "win32" : "linux",
     resolveRoute,
   });
   // Native mouse-move forwarding for the click-through overlay is broken

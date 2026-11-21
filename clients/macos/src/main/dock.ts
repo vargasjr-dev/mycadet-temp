@@ -13,9 +13,9 @@ import {
 } from "@mycadet/electron-desktop";
 import { on } from "@mycadet/electron-desktop/ipc";
 import {
-  current as currentMainWindow,
+  currentMainWindow,
   onMainWindowVisibilityChange,
-} from "./main-window";
+} from "@mycadet/electron-desktop";
 import {
   getSessionToken,
   onSessionTokenChange,

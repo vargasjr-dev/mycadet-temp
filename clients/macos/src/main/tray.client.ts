@@ -27,7 +27,7 @@ import {
   setCompanionSurfaceSize,
   setCompanionSurfaceVisible,
 } from "./companion-window";
-import { dispatchToMain } from "./main-window";
+import { dispatchToMain } from "@mycadet/electron-desktop";
 import { menuIcon } from "./menu-icon";
 
 const ICONS: Record<TrayMenuIcon, NativeImage> = {

@@ -54,7 +54,6 @@ export type { DeepLink };
 
 export interface DeepLinkRuntime {
   ensureVisible: () => void | Promise<void>;
-  initialArgv: readonly string[];
 }
 
 let runtime: DeepLinkRuntime | null = null;
@@ -349,7 +348,7 @@ export const installDeepLinks = (): void => {
     }
   });
 
-  const initialUrl = extractDeepLinkFromArgv(currentRuntime.initialArgv);
+  const initialUrl = extractDeepLinkFromArgv(process.argv);
   if (initialUrl) {
     handleDeepLink(initialUrl);
   }

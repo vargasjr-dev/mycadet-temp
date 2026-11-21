@@ -194,7 +194,10 @@ describe("buildDesktopMenu", () => {
   });
 
   test("wires every provider it offers: updates, install row, commands", () => {
-    expect(enabled("Help", "Check for Updates...")).toBe(true);
+    const updatesRow = submenu("Help").find(
+      (item) => item.label === "Check for Updates...",
+    );
+    expect(typeof updatesRow?.click).toBe("function");
     expect(enabled("File", "Install cadet Command...")).toBe(true);
     expect(enabled("Window", "Pop Out Conversation")).toBeUndefined();
   });
@@ -239,6 +242,9 @@ describe("installDesktopMenu", () => {
   test("reports the top-level menu ids and labels", () => {
     const titles = handlers.get("cadet:menu:titles")?.([], {});
     expect(titles).toEqual([
+      // The app menu prepends on every platform — Electron no-ops the
+      // `appMenu` role where it doesn't apply.
+      { id: "undefined", label: "Cadet" },
       { id: "file", label: "File" },
       { id: "edit", label: "Edit" },
       { id: "view", label: "View" },
@@ -284,11 +290,11 @@ describe("installDesktopMenu", () => {
 });
 
 // ---------------------------------------------------------------------------
-// macOS: the app menu rides the same template. The module reads the platform
-// per call, so tests stamp it; the CLI rows are driven through the wrapper
-// family's state the menu wires itself.
+// The one template serves every platform — the tests stamp the platform only
+// where the CLI rows' state flows through it. The app menu prepends
+// everywhere, the Window menu carries the companion rows everywhere.
 // ---------------------------------------------------------------------------
-describe("buildDesktopMenu (macOS)", () => {
+describe("buildDesktopMenu (shared template)", () => {
   const setPlatform = (value: string) =>
     Object.defineProperty(process, "platform", { value });
 
@@ -314,54 +320,44 @@ describe("buildDesktopMenu (macOS)", () => {
     }
   };
 
-  test("prepends the app menu with About, updates, Settings, and roles", () =>
-    withPlatform("darwin", () => {
-      const rows = labels((buildDesktopMenu()[0]?.submenu ?? []) as MenuItem[]);
-      expect(rows[0]).toBe("About Cadet");
-      expect(rows).toContain("Check for Updates…");
-      expect(rows).toContain("Settings…");
-      expect(rows).toContain("Log In");
-      expect(rows).toContain("services");
-      expect(rows).toContain("hide");
-      expect(rows).toContain("quit");
-    }));
+  test("prepends the app menu with About, updates, Settings, and roles", () => {
+    const rows = labels((buildDesktopMenu()[0]?.submenu ?? []) as MenuItem[]);
+    expect(rows[0]).toBe("About Cadet");
+    expect(rows).toContain("Check for Updates…");
+    expect(rows).toContain("Settings…");
+    expect(rows).toContain("Log In");
+    expect(rows).toContain("services");
+    expect(rows).toContain("hide");
+    expect(rows).toContain("quit");
+  });
 
-  test("keeps the File menu free of the session tail on macOS", () =>
-    withPlatform("darwin", () => {
-      const fileRows = labels(
-        submenuOf(buildDesktopMenu() as MenuItem[], "File"),
-      );
-      expect(fileRows).not.toContain("Settings…");
-      expect(fileRows).not.toContain("Log In");
-      expect(fileRows).not.toContain("quit");
-      expect(fileRows).toContain("New Conversation");
-    }));
+  test("carries the session tail in the File menu on every platform", () => {
+    const fileRows = labels(
+      submenuOf(buildDesktopMenu() as MenuItem[], "File"),
+    );
+    expect(fileRows).toContain("New Conversation");
+    // The session tail — Settings, the Log In/Out toggle, the quit role —
+    // is the same tail on all three platforms now.
+    expect(fileRows).toContain("Log In");
+    expect(fileRows).toContain("quit");
+  });
 
-  test("applies the mac fullscreen chord, zoom role, and the companion tail", () =>
-    withPlatform("darwin", () => {
-      const template = buildDesktopMenu() as MenuItem[];
-      const viewSubmenu = submenuOf(template, "View");
-      expect(viewSubmenu.find((i) => i.role === "togglefullscreen")).toEqual({
-        role: "togglefullscreen",
-        accelerator: "Control+Command+F",
-      });
-      const windowSubmenu = submenuOf(template, "Window");
-      expect(windowSubmenu.some((i) => i.role === "zoom")).toBe(true);
-      // The tail is the menu's own rows now: the companion checkbox built
-      // from the shared state, then the front role.
-      expect(windowSubmenu.some((i) => i.label === "Show Companion")).toBe(
-        true,
-      );
-      expect(windowSubmenu.some((i) => i.role === "front")).toBe(true);
-    }));
-
-  test("drops the update rows from Help on macOS (the app menu owns them)", () =>
-    withPlatform("darwin", () => {
-      const helpRows = labels(
-        submenuOf(buildDesktopMenu() as MenuItem[], "Help"),
-      );
-      expect(helpRows).not.toContain("Check for Updates...");
-    }));
+  test("keeps the role's own fullscreen chord, zoom and close roles, and the companion rows", () => {
+    const template = buildDesktopMenu() as MenuItem[];
+    const viewSubmenu = submenuOf(template, "View");
+    // No accelerator override: the role assigns each platform's own default
+    // (Control+Command+F on macOS, F11 elsewhere).
+    expect(viewSubmenu.find((i) => i.role === "togglefullscreen")).toEqual({
+      role: "togglefullscreen",
+    });
+    const windowSubmenu = submenuOf(template, "Window");
+    expect(windowSubmenu.some((i) => i.role === "zoom")).toBe(true);
+    expect(windowSubmenu.some((i) => i.role === "close")).toBe(true);
+    // The tail is the menu's own rows now: the companion checkbox built
+    // from the shared state, then the front role.
+    expect(windowSubmenu.some((i) => i.label === "Show Companion")).toBe(true);
+    expect(windowSubmenu.some((i) => i.role === "front")).toBe(true);
+  });
 
   test("renders the CLI rows from the wrapper family's state", async () => {
     await withPlatform("darwin", async () => {

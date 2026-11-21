@@ -123,10 +123,9 @@ const makeWindow = (destroyed = false) => ({
   webContents: { send: mock(() => undefined) },
 });
 
-const configureTestRuntime = (initialArgv: readonly string[] = []): void => {
+const configureTestRuntime = (): void => {
   configureDeepLinks({
     ensureVisible: ensureMainWindowVisibleMock,
-    initialArgv,
   });
 };
 
@@ -424,14 +423,20 @@ describe("extractDeepLinkFromArgv", () => {
 
 describe("installDeepLinks", () => {
   test("delivers a cold-start argv link exactly once", () => {
-    configureTestRuntime(["Cadet.exe", "cadet://send?message=cold"]);
-    installDeepLinks();
+    const originalArgv = process.argv;
+    process.argv = ["Cadet.exe", "cadet://send?message=cold"];
+    try {
+      configureTestRuntime();
+      installDeepLinks();
 
-    const drain = ipcHandleMock.mock.calls.find(
-      (call) => call[0] === "cadet:deepLinks:drain",
-    )?.[1] as (event: unknown) => unknown[];
-    expect(drain(allowedEvent)).toEqual([{ kind: "send", message: "cold" }]);
-    expect(drain(allowedEvent)).toEqual([]);
+      const drain = ipcHandleMock.mock.calls.find(
+        (call) => call[0] === "cadet:deepLinks:drain",
+      )?.[1] as (event: unknown) => unknown[];
+      expect(drain(allowedEvent)).toEqual([{ kind: "send", message: "cold" }]);
+      expect(drain(allowedEvent)).toEqual([]);
+    } finally {
+      process.argv = originalArgv;
+    }
   });
 
   test("delivers a second-instance argv link exactly once", () => {

@@ -141,11 +141,11 @@ import {
   screenRecordingGranted,
 } from "./screen-recording-permission";
 import {
-  current as currentMainWindow,
+  currentMainWindow,
   dispatchToMain,
-  ensureVisible as ensureMainWindowVisible,
+  ensureMainWindowVisible,
   onMainWindowVisibilityChange,
-} from "./main-window";
+} from "@mycadet/electron-desktop";
 
 /**
 /**

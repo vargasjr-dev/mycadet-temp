@@ -91,7 +91,6 @@ configureFloatingWindows({
     createdWindows.push(win);
     return win as unknown as Electron.BrowserWindow;
   },
-  platform: "linux",
   resolveRoute: (route: string) => `https://app.local${route}`,
 });
 

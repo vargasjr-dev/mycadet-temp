@@ -24,7 +24,6 @@ export interface QuickInputWindowDependencies {
   createWindow: (options: CreateWindowOptions) => BrowserWindow;
   dispatchToMain: (command: CadetCommand) => void;
   ensureMainWindowVisible: () => void | Promise<void>;
-  platform: "darwin" | "win32" | "linux";
   resolveRoute: (route: string) => string;
 }
 

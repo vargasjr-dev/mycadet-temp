@@ -11,7 +11,6 @@ import {
   createHostUiSnapshotExecutor,
 } from "@mycadet/electron-desktop";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
 import { showCompanionCoachmarks } from "./companion-window";
 import { hostBashExecutor } from "./executors/host-bash-adapter";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
@@ -20,9 +19,7 @@ import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 
 export const installHostProxyBridge = (): (() => void) => {
   const browserExecutor = new HostBrowserExecutor();
-  const uiSnapshotExecutor = createHostUiSnapshotExecutor({
-    resolveRendererBase: () => RENDERER_BASE_PROD,
-  });
+  const uiSnapshotExecutor = createHostUiSnapshotExecutor();
   const runtime: HostProxyRuntime = {
     ...createHostProxyClientHeaders({
       interfaceId: "macos",

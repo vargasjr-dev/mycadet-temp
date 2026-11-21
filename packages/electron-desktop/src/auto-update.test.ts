@@ -35,12 +35,8 @@ mock.module("electron-updater", () => ({
   },
 }));
 
-const {
-  checkForUpdates,
-  installAutoUpdate,
-  resolveUpdateFeedPlatform,
-  resolveUpdateFeedUrl,
-} = await import("./auto-update");
+const { checkForUpdates, installAutoUpdate, resolveUpdateFeedUrl } =
+  await import("./auto-update");
 
 installAutoUpdate({ platform: "win-electron" });
 
@@ -122,22 +118,6 @@ describe("resolveUpdateFeedUrl", () => {
       }
     }
   };
-
-  test("derives the feed platform from the running platform", () => {
-    const original = process.platform;
-    const setPlatform = (value: string) =>
-      Object.defineProperty(process, "platform", { value });
-    try {
-      setPlatform("darwin");
-      expect(resolveUpdateFeedPlatform()).toBe("mac-electron");
-      setPlatform("win32");
-      expect(resolveUpdateFeedPlatform()).toBe("win-electron");
-      setPlatform("linux");
-      expect(resolveUpdateFeedPlatform()).toBe("linux-electron");
-    } finally {
-      setPlatform(original);
-    }
-  });
 
   test("resolves the release channel itself and keeps platforms and architectures isolated", () => {
     withEnvironment("production", () => {

@@ -6,13 +6,7 @@ import path from "node:path";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
 import { getAppName } from "./app-name";
-import {
-  APP_HOST,
-  APP_PROTOCOL,
-  APP_RENDERER_BASE_PROD,
-  getRendererBase,
-  usesAppProtocolRenderer,
-} from "./app-config";
+import { APP_HOST, APP_PROTOCOL, getRendererBase } from "./app-config";
 import { registerAppProtocol } from "./app-protocol-forward";
 import { BUNDLES_DIR_NAME, CADET_PROTOCOL } from "./bundle-platform";
 import { registerCadetProtocol } from "./cadet-protocol";
@@ -77,7 +71,8 @@ import { provisionCliForWrapper } from "./cli-path-installer";
 import { writeCliLocator } from "./cli-installer";
 import log from "./app-logger";
 import { configureHotkeySettings, settingsHotkeySettings } from "./commands";
-import { installAutoUpdate, UpdateFeedPlatform } from "./auto-update";
+import { installAutoUpdate } from "./auto-update";
+import { configureMainWindow } from "./main-window";
 
 /**
  * The client's own pieces of the lifecycle — the seams that genuinely
@@ -92,23 +87,6 @@ export interface DesktopAppInputs {
    * pass nothing: the classic-desktop composition below is already theirs.
    */
   setup?: () => void | Promise<void>;
-  /**
-   * Bring the client's main window to front. Defaults to the shared
-   * main-window module's — the macOS shell passes its own, its window
-   * being its own creation.
-   */
-  ensureVisible?: () => void | Promise<void>;
-  /**
-   * The argv this client receives launches through. macOS reads `open-url`
-   * events instead and passes `[]`; the classic shells pass `process.argv`.
-   */
-  initialArgv?: readonly string[];
-  /**
-   * Whether the renderer is served from `app://`. Defaults to the packaged
-   * check the classic shells shipped; macOS packs its renderer dists for dev
-   * too, so it passes `() => true`.
-   */
-  rendererUsesAppProtocol?: () => boolean;
   /**
    * The toast factory notifications deliver through. Absent, the shared
    * module's `electron.Notification` default delivers click-only toasts.
@@ -137,26 +115,28 @@ export interface DesktopAppInputs {
   /**
    * Message to VargasJR:
    *
-   * This is psuedocode. If Electron automatically handles `CmdOrCtrl` (they might)
-   * then we don't need this. If they don't, then we simplify let each shim pass this
-   * through
-   *
-   */
-  CmdOrCtrl: "Command" | "Control";
-  /**
-   * Message to VargasJR:
-   *
    * We delete UpdateFeedPlatform and reduce to string bc ideally,
    * we don't even mention the words linux, windows (OS), or macos
    * anywhere in this package. I can conceive of a future where there
    * are a ton more desktop and OS providers (Omarchy is getting alot of attention),
    * and don't want to lock ourselves in to the big 3.
-   * 
-   * We might ourselves produce a desktop operating system specific to just 
-   * running this app. 
    *
+   * We might ourselves produce a desktop operating system specific to just
+   * running this app.
+   *
+   * (Digested from the prototype: the same principle dissolved the
+   * prototype's `CmdOrCtrl` input — the `togglefullscreen` ROLE assigns
+   * each platform's own default chord, so no per-shell accelerator value
+   * is needed at all.)
    */
   platform: string;
+  /**
+   * How the main window's chrome draws — the macOS traffic lights over a
+   * hidden title bar, the Windows caption overlay, or the plain system
+   * frame. Build configuration the shell carries; the shared code never
+   * derives it.
+   */
+  titleBarMode: "hidden" | "hiddenOverlay" | "systemFrame";
 }
 
 // In prod, register `app://` and `cadet://` as "standard" + "secure" schemes
@@ -266,9 +246,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
     app.quit();
   }
 
-  const ensureMainWindow = async (): Promise<void> => {
-    await (inputs.ensureVisible ?? ensureVisible)();
-  };
+  const ensureMainWindow = (): Promise<void> => ensureVisible();
 
   // Re-launches focus the existing window instead of spawning a parallel
   // main process. A second-instance launch recreates the main window when it
@@ -279,6 +257,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
 
   applyUserDataSuffix(resolveEnvironmentName());
   registerPrivilegedSchemes();
+  configureMainWindow({ titleBarMode: inputs.titleBarMode });
 
   // Deep-link plumbing — registered before `whenReady` so the
   // `will-finish-launching` subscription captures URLs delivered AT
@@ -287,7 +266,6 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
   // the launching URL — the #1 deep-link bug in Electron apps.
   configureDeepLinks({
     ensureVisible: ensureMainWindow,
-    initialArgv: inputs.initialArgv ?? process.argv,
   });
   installDeepLinks();
   configureFileOpen({ ensureMainWindowVisible: ensureMainWindow });
@@ -295,7 +273,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
   // Cold-launch argv: files the OS handed the first instance before the
   // handlers existed. macOS reads `open-file` events instead, so its input
   // is empty and this is a no-op.
-  handleFileOpenArgv(inputs.initialArgv ?? process.argv);
+  handleFileOpenArgv(process.argv);
 
   // The client's precheck — the macOS move-to-Applications relaunch — runs
   // before anything is wired: it may quit this process, and a relaunch that
@@ -330,20 +308,14 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       configureHotkeySettings(settingsHotkeySettings);
       installAutoUpdate({ platform: inputs.platform });
 
-      // Dev on the classic shells serves the renderer from the dev server,
-      // so only packaged builds ride the `app://` origin there; macOS packs
-      // its renderer dists for dev too, so its handler and gateway guard
-      // are unconditional.
-      const rendererUsesAppProtocol =
-        inputs.rendererUsesAppProtocol ??
-        (() => usesAppProtocolRenderer(app.isPackaged));
-      if (rendererUsesAppProtocol()) {
-        registerAppProtocol();
-        installGatewayRequestGuard({
-          appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
-          resolveAllowedOrigin,
-        });
-      }
+      // Every build mode — packaged or dev — serves the renderer over the
+      // app protocol (dev reads the source-tree dists), so the handler and
+      // the gateway guard register unconditionally.
+      registerAppProtocol();
+      installGatewayRequestGuard({
+        appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
+        resolveAllowedOrigin,
+      });
       registerCadetProtocol(
         path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
       );
@@ -403,19 +375,13 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // presence module's initial read lands first).
       installBundles();
       installHotkeysIpc();
-      // The About window renders the app bundle's root on macOS (its dev
-      // builds pack the renderer dists) and the web mount on the classic
-      // shells, whose dev builds serve it from the dev server.
       configureAboutRuntime({
-        rendererBase: () =>
-          process.platform === "darwin"
-            ? APP_RENDERER_BASE_PROD
-            : getRendererBase(rendererUsesAppProtocol()),
+        rendererBase: () => getRendererBase(),
         getAssistantName: getName,
         onAssistantNameChange: onNameChange,
       });
       installAbout();
-      installDesktopMenu({ CmdOrCtrl: inputs.CmdOrCtrl });
+      installDesktopMenu();
       installGlobalShortcuts({
         handlers: {
           globalHotkey: () => {
@@ -446,19 +412,20 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installPopoutWindows();
       installWindowAttentionFeature();
 
-      // The classic-desktop composition: the features that are genuinely
-      // classic-desktop-only. The macOS shell carries its own twins (the
-      // share sheet, the tray with its companion rows, the companion
-      // permissions) or ships none of it (no helper dictation bridge —
-      // the native helper client has no darwin path), and installs them in
-      // its own setup.
+      // The composition every shell shares now: auth, the auxiliary
+      // windows, the login item, and the main window are the same on all
+      // three. The installs below are the compositions still owned by the
+      // classic shells alone — the helper dictation bridge and the
+      // host-proxy runtime (R11/R9), the tray's companion rows, the share
+      // sheet, the permissions service, and the voice-mode chord (R9+) —
+      // each folds into this shared run when its round lands.
+      installAuth();
+      installAuxiliaryWindows();
+      installLoginItem();
+      installMainWindow();
       if (process.platform !== "darwin") {
-        installAuth();
-        installAuxiliaryWindows();
-        installLoginItem();
         installDictation();
         installHostProxy();
-        installMainWindow();
         installPermissions();
         installTray();
         installShare();

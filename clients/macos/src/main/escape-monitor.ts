@@ -1,7 +1,7 @@
 import { createDictationEscapeMonitor } from "@mycadet/electron-desktop";
 
 import log from "@mycadet/electron-desktop/app-logger";
-import { dispatchToMain } from "./main-window";
+import { dispatchToMain } from "@mycadet/electron-desktop";
 
 const monitor = createDictationEscapeMonitor({
   cancel: () => dispatchToMain({ kind: "cancelDictation" }),

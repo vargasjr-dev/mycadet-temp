@@ -27,17 +27,9 @@ handleSync("cadet:config:get", () => ({
   version: getVersionInfo().version,
 }));
 
-// This shell's toast-helper identity: the supervised sidecar's executable
-// name, its dev-override env var, and the sidecar client name it registers
-// under. startApp resolves the binary and builds the factory; absent a
-// helper binary, the shared default electron.Notification path delivers
-// click-only toasts. Everything else in the lifecycle — the lock, the
-// schemes, the launch capture, the universal surface, the CLI provisioning
-// (the launcher flow on this platform), the second-instance focus — is
-// startApp's.
 startApp({
-  CmdOrCtrl: "Control",
   platform: "win-electron",
+  titleBarMode: "hiddenOverlay",
   helperToastExecutable: "Cadet.WindowsHelper.exe",
   helperToastOverrideEnvVar: "CADET_WINDOWS_HELPER_PATH",
   helperToastName: "windows-helper",

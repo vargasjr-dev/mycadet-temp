@@ -6,11 +6,9 @@ import log from "./app-logger";
 import { resolveEnvironmentName } from "@mycadet/shared";
 import type { UpdateState, UpdateStatus } from "@mycadet/ipc-contract";
 
-import type { UpdateFeedPlatform } from "./auto-update-contract";
 import { handle } from "./ipc";
 
 export type { UpdateState, UpdateStatus };
-export type { UpdateFeedPlatform } from "./auto-update-contract";
 
 /**
  * Platform- and architecture-isolated generic feed URL for this build's
@@ -18,7 +16,7 @@ export type { UpdateFeedPlatform } from "./auto-update-contract";
  * the same baked define the packaged build ships with).
  */
 export const resolveUpdateFeedUrl = (
-  platform: UpdateFeedPlatform,
+  platform: string,
   arch: string,
 ): string => {
   const environment = resolveEnvironmentName();
@@ -28,10 +26,11 @@ export const resolveUpdateFeedUrl = (
 
 interface AutoUpdateOptions {
   /**
-   * The updater feed's platform bucket, e.g. `linux-electron`. Defaults to
-   * this process's platform, which is all the three shells ever passed.
+   * The updater feed's platform bucket the shell ships its updates in,
+   * e.g. `linux-electron`. A plain string — the shell passes it, the
+   * package never derives one from the OS it happens to run on.
    */
-  platform: UpdateFeedPlatform;
+  platform: string;
 }
 
 let currentState: UpdateState = { status: "idle" };

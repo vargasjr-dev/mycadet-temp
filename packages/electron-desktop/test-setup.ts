@@ -225,6 +225,10 @@ const pristineElectronSurface: Record<string, unknown> = {
     getAllDisplays: () => [],
     on: () => undefined,
   },
+  autoUpdater: {
+    on: () => undefined,
+    once: () => undefined,
+  },
   shell: {
     openExternal: () => Promise.resolve(),
     openPath: () => Promise.resolve(""),
@@ -342,3 +346,15 @@ export const electronLogModuleMock = () => ({
 });
 
 mock.module("electron-log/main", electronLogModuleMock);
+
+/**
+ * EXPERIMENT (Vargas's #915 thread 4652393542): can the per-client
+ * mock.module shims collapse into ONE setup() the package exports?
+ * bun scopes mock.module interception to the registering package
+ * (#894 fact) — this settles whether the scoping keys on the call
+ * site's package or the executing test's package.
+ */
+export function setup(): void {
+  mock.module("electron", electronMock);
+  mock.module("electron-log/main", electronLogModuleMock);
+}

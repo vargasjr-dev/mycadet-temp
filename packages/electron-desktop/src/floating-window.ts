@@ -46,7 +46,6 @@ export interface CreateFloatingWindowOptions {
 
 export interface FloatingWindowDependencies {
   createWindow: (options: CreateWindowOptions) => BrowserWindow;
-  platform: "darwin" | "win32" | "linux";
   resolveRoute: (route: string) => string;
 }
 
@@ -145,12 +144,11 @@ export const createFloatingWindow = ({
   focusOnShow = false,
   callerShows = false,
   alwaysOnTopLevel = "floating",
-  visibleOnAllWorkspaces = true,
   ignoreMouseEvents = false,
   browserWindow,
   position,
 }: CreateFloatingWindowOptions): BrowserWindow => {
-  const { createWindow, platform, resolveRoute } = configuration.get();
+  const { createWindow, resolveRoute } = configuration.get();
   const existing = getFloatingWindow(kind);
   if (existing) {
     applyPosition(existing, position);

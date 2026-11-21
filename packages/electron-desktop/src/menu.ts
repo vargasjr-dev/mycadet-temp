@@ -140,7 +140,7 @@ export const viewMenuItems = (
   { role: "zoomIn" },
   { role: "zoomOut" },
   separator(),
-  { role: "togglefullscreen", accelerator: "CmdOrCtrl+F" },
+  { role: "togglefullscreen" },
 ];
 
 /** The Windows/Linux install row: a direct click, not a command dispatch. */
@@ -434,16 +434,8 @@ export const buildDesktopMenu = (): MenuItemConstructorOptions[] => {
   ];
 };
 
-export type CmdOrCtrlEnum = "Command" | "Control";
-
-interface InstallDesktopMenuOptions {
-  CmdOrCtrl: CmdOrCtrlEnum;
-}
-
 /** Installs the desktop menu, popup IPC included. */
-export const installDesktopMenu = (
-  options: InstallDesktopMenuOptions,
-): void => {
+export const installDesktopMenu = (): void => {
   const apply = (): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(buildDesktopMenu()));
   };
@@ -457,7 +449,6 @@ export const installDesktopMenu = (
     buildDesktopMenu().map((item) => ({
       id: String(item.id),
       label: String(item.label),
-      // TODO: post process accelerators using `options.CmdOrCtrl`
     })),
   );
   handle(

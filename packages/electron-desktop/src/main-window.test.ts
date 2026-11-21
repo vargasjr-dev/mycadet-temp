@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { electronMock } from "../test-setup";
 
-// This suite asserts the Windows title-bar overlay behavior, which the
-// module branches on at call time. The isolated runner gives each test file
-// its own process, so the stamp is safe to hold for the whole file.
-Object.defineProperty(process, "platform", { value: "win32" });
 import {
   IDENTITY_NAME,
   MAIN_WINDOW_ENSURE_VISIBLE,
@@ -30,6 +26,11 @@ type WindowListener = (event?: CloseEvent) => void;
 interface WindowStub {
   state: WindowState;
   options: Record<string, unknown>;
+  setWindowButtonPosition?: ReturnType<typeof mock>;
+  setFullScreen: ReturnType<typeof mock>;
+  setFullScreenable: ReturnType<typeof mock>;
+  isFullScreen: () => boolean;
+  off: (event: string, handler: WindowListener) => WindowStub;
   emit: (event: string, payload?: CloseEvent) => void;
   webContents: {
     emit: (event: string) => void;
@@ -67,6 +68,9 @@ const createWindowMock = mock(
       focused: false,
       minimized: false,
       visible: false,
+      // A constructor fullscreen session starts the window fullscreen, the
+      // way Electron would.
+      fullScreen: options.browserWindow.fullscreen === true,
     };
     const listeners = new Map<string, WindowListener[]>();
     const webListeners = new Map<string, Array<() => void>>();
@@ -117,8 +121,20 @@ const createWindowMock = mock(
       }),
       isDestroyed: () => state.destroyed,
       isFocused: () => state.focused,
+      isFullScreen: () => state.fullScreen,
       isMinimized: () => state.minimized,
       isVisible: () => state.visible,
+      setFullScreen: mock(() => {
+        state.fullScreen = false;
+      }),
+      setFullScreenable: mock(() => undefined),
+      setWindowButtonPosition: mock(() => undefined),
+      off(event, handler) {
+        const handlers = listeners.get(event) ?? [];
+        const next = handlers.filter((h) => h !== handler);
+        listeners.set(event, next);
+        return stub;
+      },
       on(event, handler) {
         const handlers = listeners.get(event) ?? [];
         handlers.push(handler);
@@ -167,14 +183,24 @@ const nativeThemeStub: {
 /** The override in force, read through a call so cases assert unnarrowed. */
 const themeSource = (): string => nativeThemeStub.themeSource;
 
+const updaterListeners = new Map<string, (event?: unknown) => void>();
+
 mock.module("electron", () =>
   electronMock({
     app: {
       getVersion: () => "0.0.0",
       getName: () => "Cadet",
       isPackaged: false,
+      on: (event: string, listener: () => void) => {
+        appListeners.set(event, listener);
+      },
       once: (event: string, listener: () => void) => {
         appListeners.set(event, listener);
+      },
+    },
+    autoUpdater: {
+      on: (event: string, listener: (event?: unknown) => void) => {
+        updaterListeners.set(event, listener);
       },
     },
     BrowserWindow: class {},
@@ -183,6 +209,13 @@ mock.module("electron", () =>
   }),
 );
 
+mock.module("./identity", () => ({
+  getName: () => persistedName,
+  onNameChange: () => () => undefined,
+}));
+let persistedName: string | null = null;
+
+let onboardingActive = false;
 let restoredBounds: {
   x?: number;
   y?: number;
@@ -193,7 +226,9 @@ let restoredBounds: {
 } = { width: 1280, height: 800 };
 const trackMock = mock(() => undefined);
 const writeOnboardingActiveMock = mock((_active: boolean) => undefined);
-const setOnboardingMock = mock((_active: boolean) => undefined);
+const setOnboardingMock = mock((active: boolean) => {
+  onboardingActive = active;
+});
 let persistedOverlayTheme: TitleBarOverlayTheme | null = null;
 const writeTitleBarOverlayThemeMock = mock(
   (_theme: TitleBarOverlayTheme) => undefined,
@@ -212,7 +247,7 @@ mock.module("./window-state", () => ({
   writeCompanionSize: () => undefined,
   restoreBounds: () => restoredBounds,
   track: trackMock,
-  readOnboardingActive: () => false,
+  readOnboardingActive: () => onboardingActive,
   writeOnboardingActive: writeOnboardingActiveMock,
   onOnboardingChange: () => () => undefined,
   setOnboarding: setOnboardingMock,
@@ -250,9 +285,13 @@ mock.module("./ipc", () => ({
 
 const {
   __resetForTesting,
+  configureMainWindow,
+  current,
   dispatchToMain,
   ensureVisible,
+  hide,
   installMainWindow,
+  setOnboarding,
   toggleVisibility,
 } = await import("./main-window");
 
@@ -271,6 +310,8 @@ beforeEach(() => {
   appListeners.clear();
   invokeHandlers.clear();
   eventHandlers.clear();
+  onboardingActive = false;
+  configureMainWindow({ titleBarMode: "hiddenOverlay" });
   restoredBounds = { width: 1280, height: 800 };
   persistedOverlayTheme = null;
   nativeThemeStub.themeSource = "system";
@@ -596,24 +637,175 @@ describe("Windows main window", () => {
     expect(win.state.visible).toBe(true);
   });
 
-  test("hides on close and allows close while quitting", () => {
+  test("dispatches to a hidden window and brings it back", () => {
+    // The close button HIDES the window (the close is cancelled) — commands
+    // still reach it, and a later ensureVisible shows the SAME window.
     installMainWindow();
     const win = constructed[0];
     if (!win) {
       throw new Error("expected a window");
     }
-    const hideClose = mock(() => undefined);
 
-    win.emit("close", { preventDefault: hideClose });
+    win.emit("close", { preventDefault: mock(() => undefined) });
+    dispatchToMain({ kind: "startVoice" });
+    expect(win.webContents.send).toHaveBeenCalledWith("cadet:command", {
+      kind: "startVoice",
+    });
 
-    expect(hideClose).toHaveBeenCalledTimes(1);
+    void ensureVisible();
+    expect(constructed).toHaveLength(1);
+    expect(win.state.visible).toBe(true);
+  });
+});
+
+describe("close button — the fullscreen exit dance", () => {
+  const pressClose = (win: WindowStub): boolean => {
+    const event = { preventDefault: mock(() => undefined) };
+    win.emit("close", event as never);
+    return event.preventDefault.mock.calls.length > 0;
+  };
+
+  test("hides the window instead of closing it", () => {
+    installMainWindow();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+
+    expect(pressClose(win)).toBe(true);
     expect(win.hide).toHaveBeenCalledTimes(1);
+    expect(win.isDestroyed()).toBe(false);
+    expect(current()).not.toBeNull();
+  });
 
-    const quitClose = mock(() => undefined);
+  test("leaves fullscreen first and hides once it has", () => {
+    restoredBounds = { width: 1280, height: 800, fullscreen: true };
+    installMainWindow();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+
+    expect(pressClose(win)).toBe(true);
+    expect(win.setFullScreen).toHaveBeenCalledWith(false);
+    expect(win.hide).not.toHaveBeenCalled();
+
+    win.emit("leave-full-screen");
+    expect(win.hide).toHaveBeenCalledTimes(1);
+  });
+
+  test("a reopen during the fullscreen exit keeps the window up", () => {
+    restoredBounds = { width: 1280, height: 800, fullscreen: true };
+    installMainWindow();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+    win.emit("ready-to-show");
+    pressClose(win);
+
+    void ensureVisible();
+    win.emit("leave-full-screen");
+
+    expect(win.hide).not.toHaveBeenCalled();
+    expect(win.isVisible()).toBe(true);
+  });
+
+  test("lets the close through once the app is quitting", () => {
+    installMainWindow();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+
     appListeners.get("before-quit")?.();
-    win.emit("close", { preventDefault: quitClose });
 
-    expect(quitClose).not.toHaveBeenCalled();
-    expect(win.hide).toHaveBeenCalledTimes(1);
+    expect(pressClose(win)).toBe(false);
+    expect(win.hide).not.toHaveBeenCalled();
+  });
+
+  test("lets the close through for an update install", () => {
+    installMainWindow();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+
+    updaterListeners.get("before-quit-for-update")?.();
+
+    expect(pressClose(win)).toBe(false);
+    expect(win.hide).not.toHaveBeenCalled();
+  });
+});
+
+describe("mac chrome — hidden title bar with traffic lights", () => {
+  beforeEach(() => {
+    configureMainWindow({ titleBarMode: "hidden" });
+  });
+
+  test("creates the window hidden with no overlay", () => {
+    void ensureVisible();
+    expect(constructed[0]?.options).toMatchObject({
+      titleBarStyle: "hidden",
+      minWidth: 800,
+      minHeight: 600,
+      fullscreenable: true,
+    });
+    expect(constructed[0]?.options.titleBarOverlay).toBeUndefined();
+    expect(constructed[0]?.setFullScreenable).toHaveBeenCalledWith(true);
+  });
+
+  test("restores a saved fullscreen session on the constructor", () => {
+    restoredBounds = { width: 1280, height: 800, fullscreen: true };
+    void ensureVisible();
+    expect(constructed[0]?.options.fullscreen).toBe(true);
+  });
+
+  test("leaves a saved windowed session windowed", () => {
+    restoredBounds = { width: 1280, height: 800, fullscreen: false };
+    void ensureVisible();
+    expect(constructed[0]?.options.fullscreen).toBeUndefined();
+    expect(constructed[0]?.options.fullscreenable).toBe(true);
+  });
+
+  test("centres the traffic lights for the main app, resets for onboarding", () => {
+    onboardingActive = true;
+    void ensureVisible();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+    expect(win.setWindowButtonPosition).toHaveBeenCalledWith(null);
+
+    setOnboarding(false);
+    expect(win.setWindowButtonPosition).toHaveBeenLastCalledWith({
+      x: 19,
+      y: 15,
+    });
+  });
+
+  test("persists the onboarding mode without resizing", () => {
+    void ensureVisible();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+
+    setOnboarding(true);
+    expect(win.setTitle).toHaveBeenCalledTimes(1);
+  });
+
+  test("the traffic-light API missing is the no-op", () => {
+    // Other desktops have no such API; capability detection keeps the call
+    // site clean rather than branching on the OS.
+    void ensureVisible();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+    const pos = win.setWindowButtonPosition;
+    (win as unknown as Record<string, unknown>)["setWindowButtonPosition"] =
+      undefined;
+    expect(() => setOnboarding(false)).not.toThrow();
+    win.setWindowButtonPosition = pos;
+  });
+});
+
+describe("hide", () => {
+  test("hides a live window and no-ops a destroyed one", () => {
+    void ensureVisible();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+    win.emit("ready-to-show");
+
+    hide();
+    expect(win.state.visible).toBe(false);
+
+    win.state.destroyed = true;
+    expect(() => hide()).not.toThrow();
   });
 });

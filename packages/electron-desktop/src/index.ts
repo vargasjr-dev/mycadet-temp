@@ -16,6 +16,17 @@ export {
 } from "./app-config";
 export { startApp } from "./app-lifecycle";
 export {
+  configureMainWindow,
+  current as currentMainWindow,
+  dispatchToMain,
+  ensureVisible as ensureMainWindowVisible,
+  hide as hideMainWindow,
+  installMainWindow,
+  onMainWindowVisibilityChange,
+  setOnboarding as setMainWindowOnboarding,
+  toggleVisibility as toggleMainWindowVisibility,
+} from "./main-window";
+export {
   CLI_RUNTIME_ENTRIES,
   readRuntimeManifest,
 } from "./win32-cli/cli-installer";
@@ -24,11 +35,7 @@ export {
   uninstallCliLauncher,
 } from "./win32-cli/cli-launcher";
 export { registerCompanionSurfaceSync } from "./companion-menu";
-export {
-  createAllowedOriginResolver,
-  isAllowedOrigin,
-  resolveAllowedOrigin,
-} from "./app-origin";
+export { isAllowedOrigin, resolveAllowedOrigin } from "./app-origin";
 export { getAppName } from "./app-name";
 export type { AllowedOrigin } from "./app-origin";
 export {

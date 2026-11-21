@@ -234,9 +234,8 @@ describe("installTray", () => {
 
     expect(trays).toHaveLength(1);
     const tray = trays[0];
-    expect(tray?.setIgnoreDoubleClickEvents).toHaveBeenCalledTimes(
-      process.platform === "darwin" ? 1 : 0,
-    );
+    // The call is unconditional — the API no-ops where it doesn't apply.
+    expect(tray?.setIgnoreDoubleClickEvents).toHaveBeenCalledTimes(1);
     expect(handlerFor(tray, "click")).toBeDefined();
     expect(handlerFor(tray, "right-click")).toBeDefined();
   });

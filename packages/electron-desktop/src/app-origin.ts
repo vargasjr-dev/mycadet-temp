@@ -1,63 +1,26 @@
-import { app } from "electron";
-
-import {
-  APP_HOST,
-  APP_PROTOCOL,
-  getDevRendererBase,
-  usesAppProtocolRenderer,
-} from "./app-config";
+import { APP_HOST, APP_PROTOCOL } from "./app-config";
 
 /**
  * The single origin the renderer legitimately runs at, expressed as a
- * structured protocol + host pair rather than a string. Packaged, the
- * renderer loads over the privileged `app://mycadet.ai` scheme
- * (registered `standard` + `secure` in `index.ts`), so a frame's
- * `origin` is a real tuple origin. In dev it loads over the Vite /
- * edge-proxy HTTP origin honored from `CADET_DEV_URL`.
+ * structured protocol + host pair rather than a string. The renderer always
+ * loads over the privileged `app://mycadet.ai` scheme (registered
+ * `standard` + `secure` in `index.ts`), so a frame's `origin` is a real
+ * tuple origin in every build mode.
  */
 export interface AllowedOrigin {
   protocol: string;
   host: string;
 }
 
-export interface AppOriginOptions {
-  appHost: string;
-  appProtocol: string;
-  getDevRendererBase: () => string;
-  isPackaged: () => boolean;
-}
-
 /**
- * Resolve the renderer origin for the current build. Read at call time
- * (not cached) so packaged-vs-dev is decided at the moment of the check and
- * a development URL honored mid-process stays authoritative - the same
- * property the navigation guard and the IPC sender guard both rely on.
+ * The one resolver for every client: the renderer's origin is a build-time
+ * constant, so the guard compares against the app origin and nothing else.
+ * Read at call time so the same property the navigation guard and the IPC
+ * sender guard both rely on stays a single shared shape.
  */
-export const createAllowedOriginResolver =
-  (options: AppOriginOptions): (() => AllowedOrigin) =>
-  () => {
-    if (options.isPackaged()) {
-      return {
-        protocol: `${options.appProtocol}:`,
-        host: options.appHost,
-      };
-    }
-    const devUrl = new URL(options.getDevRendererBase());
-    return { protocol: devUrl.protocol, host: devUrl.host };
-  };
-
-/**
- * The Windows/Linux clients' resolver: the factory's options are the same
- * app-config constants on both, so the wiring lives here rather than being
- * duplicated per client. (macOS keeps a constant resolver — its dev mode
- * packs the renderer dists and rides this same `app://` protocol, so there
- * is no dev-server origin to honor.)
- */
-export const resolveAllowedOrigin = createAllowedOriginResolver({
-  appHost: APP_HOST,
-  appProtocol: APP_PROTOCOL,
-  getDevRendererBase,
-  isPackaged: () => usesAppProtocolRenderer(app.isPackaged),
+export const resolveAllowedOrigin = (): AllowedOrigin => ({
+  protocol: `${APP_PROTOCOL}:`,
+  host: APP_HOST,
 });
 
 /**

@@ -1,16 +1,5 @@
-/**
- * The complete `electron` module mock is defined once in the electron
- * package — one surface for the three desktop shells and the package's own
- * suite. bun scopes `mock.module` interception to the package that calls
- * it, so this shim registers the shared factories here, in the shell's own
- * scope; test files import `electronMock` from the package directly.
- */
-import { mock } from "bun:test";
+// EXPERIMENT: the shim's mock.module calls moved into the package's
+// setup() (Vargas's #915 thread 4652393542).
+import { setup } from "@mycadet/electron-desktop/test-setup";
 
-import {
-  electronLogModuleMock,
-  electronMock,
-} from "@mycadet/electron-desktop/test-setup";
-
-mock.module("electron", electronMock);
-mock.module("electron-log/main", electronLogModuleMock);
+setup();
