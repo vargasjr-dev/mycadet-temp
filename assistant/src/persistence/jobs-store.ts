@@ -46,7 +46,6 @@ export type MemoryJobType =
   | "media_processing"
   | "embed_media"
   | "embed_attachment"
-  | "generate_conversation_starters"
   | "embed_graph_node"
   | "embed_pkb_file"
   | "graph_extract"
@@ -114,7 +113,6 @@ export const SLOW_LLM_JOB_TYPES: MemoryJobType[] = [
   "graph_extract",
   "conversation_analyze",
   "build_conversation_summary",
-  "generate_conversation_starters",
   "memory_v2_sweep",
   "memory_v2_consolidate",
   "memory_v3_maintain",

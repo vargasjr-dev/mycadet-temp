@@ -97,14 +97,14 @@ describe("resolveCallSiteConfig", () => {
         provider: "openai",
       },
       callSites: {
-        conversationStarters: {
+        conversationTitle: {
           model: "claude-haiku-4-5-20251001",
           effort: "low",
         },
       },
     });
 
-    const resolved = resolveCallSiteConfig("conversationStarters", llm);
+    const resolved = resolveCallSiteConfig("conversationTitle", llm);
 
     expect(resolved.provider).toBe("anthropic");
     expect(resolved.model).toBe("claude-haiku-4-5-20251001");
@@ -769,7 +769,6 @@ describe("resolveCallSiteConfig", () => {
       "recall",
       "conversationSummarization",
       "commitMessage",
-      "conversationStarters",
       "replySuggestion",
       "conversationTitle",
       "identityIntro",

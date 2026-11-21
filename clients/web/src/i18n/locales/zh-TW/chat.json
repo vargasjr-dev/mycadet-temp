@@ -400,8 +400,7 @@
   "chatRouteContent": {
     "askTheDoctor": "詢問 Doctor",
     "goToDoctor": "前往 Doctor",
-    "openPage": "開啟頁面",
-    "suggestionFallback": "建議"
+    "openPage": "開啟頁面"
   },
   "chatRuleEditorModal": {
     "applyTo": "套用至",
@@ -568,9 +567,6 @@
     "labelLoaded": "{count, plural, other {已載入 # 個資產}}",
     "ariaLabelLoaded": "對話資產，{count, plural, other {已載入 # 個項目}}",
     "ariaLabelLoadedUnseen": "對話資產，{count, plural, other {已載入 # 個項目}}（有未查看的變更）"
-  },
-  "conversationStarterDock": {
-    "caption": "試試這些建議："
   },
   "conversationStarterGrid": {
     "sendAria": "傳送：{label}"
@@ -1093,9 +1089,6 @@
     "letsDoIt": "開始吧！",
     "thingsWeCanDo": "我們可以做的事：",
     "whatWellNeed": "我們需要準備的項目："
-  },
-  "suggestionLibrary": {
-    "scrollForMore": "向下捲動以查看更多"
   },
   "surfaceActions": {
     "submitFailed": "提交失敗。請再試一次。"

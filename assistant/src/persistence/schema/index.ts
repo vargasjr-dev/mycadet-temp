@@ -3,7 +3,6 @@ export * from "./bookmarks.js";
 export * from "./calls.js";
 export * from "./contacts.js";
 export * from "./conversation-groups.js";
-export * from "./conversation-starters.js";
 export * from "./conversation-tool-surfaces.js";
 export * from "./conversations.js";
 export * from "./documents.js";

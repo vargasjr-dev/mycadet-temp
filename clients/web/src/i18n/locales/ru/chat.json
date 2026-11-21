@@ -308,9 +308,6 @@
     "ariaLabelLoaded": "Ресурсы беседы, {count, plural, one {# загруженный элемент} few {# загруженных элемента} many {# загруженных элементов} other {# загруженного элемента}}",
     "ariaLabelLoadedUnseen": "Ресурсы беседы, {count, plural, one {# загруженный элемент} few {# загруженных элемента} many {# загруженных элементов} other {# загруженного элемента}} (непросмотренные изменения)"
   },
-  "conversationStarterDock": {
-    "caption": "Подсказки:"
-  },
   "copyIdToClipboard": {
     "conversationCopied": "ID диалога скопирован в буфер обмена.",
     "conversationFailed": "Не удалось скопировать ID диалога.",

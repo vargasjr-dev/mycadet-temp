@@ -400,8 +400,7 @@
   "chatRouteContent": {
     "askTheDoctor": "询问 Doctor",
     "goToDoctor": "前往 Doctor",
-    "openPage": "打开页面",
-    "suggestionFallback": "建议"
+    "openPage": "打开页面"
   },
   "chatRuleEditorModal": {
     "applyTo": "应用于",
@@ -568,9 +567,6 @@
     "labelLoaded": "{count, plural, other {已加载 # 个资源}}",
     "ariaLabelLoaded": "对话资源，{count, plural, other {已加载 # 项}}",
     "ariaLabelLoadedUnseen": "对话资源，{count, plural, other {已加载 # 项}}（有未查看的更改）"
-  },
-  "conversationStarterDock": {
-    "caption": "尝试以下建议："
   },
   "conversationStarterGrid": {
     "sendAria": "发送：{label}"
@@ -1093,9 +1089,6 @@
     "letsDoIt": "开始吧！",
     "thingsWeCanDo": "我们可以做：",
     "whatWellNeed": "我们需要："
-  },
-  "suggestionLibrary": {
-    "scrollForMore": "向下滚动查看更多"
   },
   "surfaceActions": {
     "submitFailed": "提交失败。请重试。"

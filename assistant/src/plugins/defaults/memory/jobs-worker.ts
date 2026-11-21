@@ -170,7 +170,6 @@ const LEGACY_JOB_TYPES = new Set([
   "refresh_monthly_summary",
   "journal_carry_forward",
   "generate_capability_cards",
-  "generate_thread_starters",
   "memory_v2_rebuild_edges",
   // Retired memory-v3 job types — handlers were removed in the v3 rip. Kept
   // here so pre-upgrade rows enqueued by the old write path drop gracefully.
