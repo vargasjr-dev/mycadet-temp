@@ -1,6 +1,5 @@
-import { inArray } from "drizzle-orm";
 import type { Schemas } from "@qdrant/js-client-rest";
-
+import { inArray } from "drizzle-orm";
 
 import { usesConceptPageMemory } from "../../../../config/memory-v3-gate.js";
 import { withQdrantBreaker } from "../../../../persistence/embeddings/qdrant-circuit-breaker.js";

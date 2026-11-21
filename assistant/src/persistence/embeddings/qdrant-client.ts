@@ -2,8 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import type { Schemas } from "@qdrant/js-client-rest";
+import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 

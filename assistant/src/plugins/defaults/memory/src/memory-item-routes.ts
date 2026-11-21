@@ -18,6 +18,7 @@
  * POST   /v1/memory-nodes/update — replace content on the single node matching content
  */
 
+import type { Schemas } from "@qdrant/js-client-rest";
 import {
   and,
   asc,
@@ -29,7 +30,6 @@ import {
   ne,
   notInArray,
 } from "drizzle-orm";
-import type { Schemas } from "@qdrant/js-client-rest";
 import { z } from "zod";
 
 import { getConfig } from "../../../../config/loader.js";
