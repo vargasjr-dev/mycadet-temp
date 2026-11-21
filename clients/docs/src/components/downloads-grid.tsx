@@ -28,29 +28,42 @@ const CARD_TAGLINES: Record<DownloadsCardId, string> = {
   terminal: "Your assistant, on your own hardware.",
 };
 
-const COMING_SOON: Record<Exclude<DownloadsCardId, "mac" | "terminal">, string> = {
+const COMING_SOON: Record<
+  Exclude<DownloadsCardId, "mac" | "terminal" | "windows">,
+  string
+> = {
   iphone: "📱 Coming soon!",
   android: "🤖 Coming soon!",
   chrome: "🌐 Coming soon!",
-  windows: "🪟 Coming soon!",
 };
 
 const COMING_SOON_NOTES: Record<
-  Exclude<DownloadsCardId, "mac" | "terminal">,
+  Exclude<DownloadsCardId, "mac" | "terminal" | "windows">,
   string
 > = {
   iphone: "Your pocket cadet is still in training — check back soon.",
   android: "This pocket cadet is still in training too — check back soon.",
   chrome: "Your browser cadet is still drilling — check back soon.",
-  windows: "Your PC cadet is still in boot camp — check back soon.",
 };
 
 // The desktop builds live in the updates bucket the release handler
 // publishes to — this deployment's own channel serves the link (the prod
 // marketing site hands out the prod build, the dev deployment the dev one).
-const MAC_DOWNLOAD_URLS: Record<"dev" | "prod", string> = {
-  dev: "https://storage.googleapis.com/mycadet-dev-releases/mac-electron/arm64/mycadet-electron-dev.dmg",
-  prod: "https://storage.googleapis.com/mycadet-prod-releases/mac-electron/arm64/mycadet-electron.dmg",
+// Mac's installer keeps a version-free name; windows' NSIS installer name
+// carries the version, so its card links the channel's feed root, where
+// latest.yml and the current installer live.
+const DESKTOP_DOWNLOAD_URLS: Record<
+  "mac" | "windows",
+  Record<"dev" | "prod", string>
+> = {
+  mac: {
+    dev: "https://storage.googleapis.com/mycadet-dev-releases/mac-electron/arm64/mycadet-electron-dev.dmg",
+    prod: "https://storage.googleapis.com/mycadet-prod-releases/mac-electron/arm64/mycadet-electron.dmg",
+  },
+  windows: {
+    dev: "https://storage.googleapis.com/mycadet-dev-releases/win-electron/x64/",
+    prod: "https://storage.googleapis.com/mycadet-prod-releases/win-electron/x64/",
+  },
 };
 
 function comingSoonFor(
@@ -63,8 +76,6 @@ function comingSoonFor(
       return { note: COMING_SOON_NOTES.android, label: COMING_SOON.android };
     case "chrome":
       return { note: COMING_SOON_NOTES.chrome, label: COMING_SOON.chrome };
-    case "windows":
-      return { note: COMING_SOON_NOTES.windows, label: COMING_SOON.windows };
     default:
       return null;
   }
@@ -164,7 +175,13 @@ function Glyph({ id }: { id: DownloadsCardId }) {
   }
 }
 
-function Card({ id, environment }: { id: DownloadsCardId; environment: "dev" | "prod" }) {
+function Card({
+  id,
+  environment,
+}: {
+  id: DownloadsCardId;
+  environment: "dev" | "prod";
+}) {
   return (
     <div className="dl-card">
       <h2>{CARD_TITLES[id]}</h2>
@@ -174,7 +191,9 @@ function Card({ id, environment }: { id: DownloadsCardId; environment: "dev" | "
         <div className="dl-visual">
           <div className="dl-qr dl-qr-soon">
             <Image
-              src={id === "iphone" ? "/docs/qr-iphone.png" : "/docs/qr-android.png"}
+              src={
+                id === "iphone" ? "/docs/qr-iphone.png" : "/docs/qr-android.png"
+              }
               alt={
                 id === "iphone"
                   ? "QR code that opens Cadet on an iPhone"
@@ -187,7 +206,7 @@ function Card({ id, environment }: { id: DownloadsCardId; environment: "dev" | "
         </div>
       ) : (
         <div className="dl-visual">
-          {id === "terminal" ? (
+          {id === "terminal" || id === "windows" ? (
             <Glyph id={id} />
           ) : (
             <div className="dl-visual-soon">
@@ -207,15 +226,18 @@ function Card({ id, environment }: { id: DownloadsCardId; environment: "dev" | "
             Read the local hosting guide
           </a>
         </>
-      ) : id === "mac" ? (
+      ) : id === "mac" || id === "windows" ? (
         <>
           <p className="dl-note">
             {environment === "dev"
               ? "The dev channel's latest build, straight from the release train."
               : "The latest release, straight from the release train."}
           </p>
-          <a className="btn dl-cta" href={MAC_DOWNLOAD_URLS[environment]}>
-            Download for Mac
+          <a
+            className="btn dl-cta"
+            href={DESKTOP_DOWNLOAD_URLS[id][environment]}
+          >
+            Download for {id === "mac" ? "Mac" : "Windows"}
           </a>
         </>
       ) : comingSoonFor(id) ? (

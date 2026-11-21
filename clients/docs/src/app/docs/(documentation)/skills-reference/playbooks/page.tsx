@@ -2,7 +2,7 @@ import { SkillsReferencePlaybooksContent } from "@/app/docs/_components/skills-r
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Playbooks - Cadet Docs",
+  title: "Playbooks | Cadet Docs",
   description:
     "Playbooks skill for Cadet — trigger-action automation rules for handling incoming messages.",
   path: "/docs/skills-reference/playbooks",

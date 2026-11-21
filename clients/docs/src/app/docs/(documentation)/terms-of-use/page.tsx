@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/metadata";
 import { routes } from "@/lib/routes";
 
 export const metadata = createMetadata({
-  title: "Terms of Service - Cadet",
+  title: "Terms of Service | Cadet",
   description:
     "Cadet's terms of service — the agreement governing your use of the assistant cloud and services.",
   path: routes.docs.legal.termsOfUse,

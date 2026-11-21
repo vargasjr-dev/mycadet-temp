@@ -1,0 +1,577 @@
+/*
+ * The landing page's styles, extracted verbatim from mycadet-cloud's
+ * globals.css: the silhouette word-rotation (220-271), the hero +
+ * avalanche layout (272-376), and the four-chapter pinned scrollytelling
+ * block (454-866). Selectors sit under .marketing for the shared theme
+ * vars; the page adds the gradient wash so the landing never sits on a
+ * flat background.
+ */
+.silhouette {
+  position: relative;
+  display: inline-block;
+  min-width: 4.6em;
+  text-align: center;
+  color: var(--green);
+}
+/* The incoming word is in-flow so the line keeps real height — both spans
+   absolute left the tagline's slot zero-height and the word drifted behind
+   the CTA. Only the outgoing word floats. */
+.silhouette-out {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.silhouette-in {
+  display: inline-block;
+  animation: silhouette-in 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.silhouette-out {
+  animation: silhouette-out 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes silhouette-in {
+  from {
+    transform: translateY(-0.9em);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes silhouette-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0.9em);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .silhouette-in,
+  .silhouette-out {
+    animation: none;
+  }
+  .silhouette-out {
+    display: none;
+  }
+}
+
+/* ── Landing page: wordmark top left, the character avalanche pouring in
+   from the top right and pooling along the bottom edge (the Vellum-shaped
+   hero, with Cadet's own cast) ── */
+.landing {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* A full first viewport for the hero (nav height subtracted) so the
+     avalanche gets the whole opening screen and the footer starts below
+     the fold, like the Vellum shape. */
+  min-height: calc(100dvh - 60px);
+  /* The pool runs past the bottom edge on purpose — clip it so the page
+     below (the footer) starts on a clean line. `clip` (not `hidden`):
+     hidden makes .landing a scroll container, which silently disables
+     position: sticky for the chapters pin below. */
+  overflow: clip;
+}
+.landing-hero {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  padding: 56px 48px 0;
+}
+/* The copy sits above the avalanche so characters slide under it, never
+   over the words. */
+.hero-copy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 640px;
+  padding-top: 4vh;
+}
+.hero-copy h1 {
+  font-size: clamp(56px, 8vw, 88px);
+  letter-spacing: -3px;
+  line-height: 1;
+  font-weight: 800;
+}
+/* The title is also the secret knock for preview mode: rapid clicks
+   shouldn't select the word or zoom the page. No visual feedback — the
+   gated section appearing IS the signal. */
+.hero-title {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.hero-tagline {
+  color: var(--ink);
+  font-size: clamp(19px, 2.2vw, 23px);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+.hero-cta {
+  margin-top: 18px;
+}
+.hero-notice {
+  margin: 14px 0 0;
+  text-align: left;
+}
+.avalanche {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.av-char {
+  position: absolute;
+  display: block;
+}
+.av-bob {
+  display: block;
+  animation: av-bob 5s ease-in-out infinite;
+}
+@keyframes av-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .av-bob {
+    animation: none;
+  }
+}
+/* Phones: the pile scales down toward the bottom right so the top-left
+   copy keeps a clear lane. */
+@media (max-width: 720px) {
+  .landing-hero {
+    padding: 36px 22px 0;
+  }
+  .avalanche {
+    transform: scale(0.72);
+    transform-origin: 75% 100%;
+  }
+}
+
+/* ── The four-chapter scroll section (the Vellum-shaped scrollytelling
+   block): one 400vh section, a pinned viewport, four chapters. ── */
+.chapters {
+  height: 400vh; /* four viewports of scroll drive one pinned stage */
+  transition: background 700ms ease;
+}
+
+.chapters-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(320px, 480px) 1fr;
+  align-items: center;
+  gap: 24px;
+  padding: 88px 0 72px 6vw;
+}
+
+.chapters-copy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 30px;
+  max-width: 460px;
+}
+
+.chapter h3 {
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: rgba(255, 253, 245, 0.45);
+  transition: color 400ms ease;
+}
+
+.chapter.on h3 {
+  color: rgba(30, 22, 12, 0.92);
+}
+
+/* the titles are click-to-scroll: a button reset to read as the h3 */
+.chapter-jump {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chapter.on .chapter-jump:hover {
+  opacity: 0.72;
+}
+
+.chapter p {
+  margin: 14px 0 0;
+  max-width: 44ch;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: rgba(255, 253, 245, 0.9);
+  animation: chapter-copy-in 420ms ease both;
+}
+
+@keyframes chapter-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chapters-stage {
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+}
+
+.dials,
+.mems,
+.orbit,
+.vault {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 450ms ease,
+    visibility 0s linear 450ms;
+}
+
+.dials.on,
+.mems.on,
+.orbit.on,
+.vault.on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 450ms ease;
+}
+
+/* Chapter 2 — the memory web rotates a full 360° in 3D, like a coin */
+.mems.on {
+  animation: mems-spin 28s linear infinite;
+}
+
+@keyframes mems-spin {
+  from {
+    transform: perspective(1300px) rotateY(0deg);
+  }
+  to {
+    transform: perspective(1300px) rotateY(360deg);
+  }
+}
+
+/* Chapter 1 — the personality dials */
+
+.dials-line {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  top: 50%;
+  border-top: 2px dashed rgba(255, 253, 245, 0.55);
+}
+
+.dial {
+  position: absolute;
+  top: 50%;
+  width: 0;
+}
+
+.dial-bar {
+  position: absolute;
+  top: 0;
+  left: -13px;
+  width: 26px;
+  border-radius: 14px;
+  background: #fdfcf7;
+  transform-origin: top center;
+  transform: scaleY(0);
+  transition: transform 700ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.dial-bar.up {
+  top: auto;
+  bottom: 0;
+  transform-origin: bottom center;
+}
+
+.dials.on .dial-bar {
+  transform: scaleY(1);
+  /* after the entrance spring settles (per-bar inline delay), the bars
+     keep oscillating around their heights — his "bars in the bar graph
+     oscillating" ask */
+  animation-name: dial-oscillate;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes dial-oscillate {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(0.55);
+  }
+}
+
+.dial-label {
+  position: absolute;
+  top: 158px; /* clears the deepest below-line bar */
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fdfcf7;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.dial-label.up {
+  top: auto;
+  bottom: 166px; /* clears the tallest above-line bar */
+}
+
+.dials.on .dial-label {
+  opacity: 1;
+}
+
+/* Chapter 2 — the memory graph */
+
+.mems-node {
+  fill: rgba(255, 253, 245, 0.85);
+  opacity: 0;
+  transform: scale(0.4);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 350ms ease,
+    transform 350ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.mems.on .mems-node {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.mems-edge {
+  stroke: rgba(12, 46, 42, 0.3);
+  stroke-width: 1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 900ms ease;
+}
+
+.mems.on .mems-edge {
+  stroke-dashoffset: 0;
+}
+
+.mems-pill {
+  opacity: 0;
+  transform: scale(0.7);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 350ms ease,
+    transform 350ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.mems.on .mems-pill {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.mems-pill rect {
+  fill: #f5f2ea;
+}
+
+.mems-pill.big rect {
+  fill: #fdfcf7;
+}
+
+.mems-pill .mems-dot {
+  fill: #f5f2ea;
+}
+
+.mems-pill text {
+  fill: #20201c;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mems-pill.big text {
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.mems-eyes {
+  opacity: 0;
+  transition: opacity 500ms ease 600ms;
+}
+
+.mems.on .mems-eyes {
+  opacity: 1;
+}
+
+/* Chapter 3 — the orbit */
+
+.orbit-path {
+  stroke: rgba(255, 253, 245, 0.6);
+  stroke-width: 2;
+}
+
+.orbit-pill-time {
+  fill: #8a8a80;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.orbit-pill-text {
+  fill: #20201c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Chapter 4 — the vault */
+
+.vault-item {
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 420ms ease,
+    transform 420ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+.vault.on .vault-item {
+  opacity: 1;
+  transform: none;
+}
+
+/* the eyes hop device → device as hard cuts (steps(1,end) holds each
+   position until the next keyframe), with a ~70ms blink at every hop so
+   the jump reads as a teleport rather than a slide */
+.vault-eyes {
+  animation:
+    vault-teleport 9s steps(1, end) infinite,
+    vault-blink 9s linear infinite;
+}
+
+@keyframes vault-teleport {
+  0% {
+    transform: translate(650px, 105px); /* the cloud */
+  }
+  25% {
+    transform: translate(384px, 225px); /* the yellow cast member */
+  }
+  50% {
+    transform: translate(455px, 430px); /* the laptop screen */
+  }
+  75% {
+    transform: translate(759px, 445px); /* the phone */
+  }
+}
+
+@keyframes vault-blink {
+  0%,
+  25%,
+  50%,
+  75%,
+  100% {
+    opacity: 0;
+  }
+  0.4%,
+  24.6%,
+  25.4%,
+  49.6%,
+  50.4%,
+  74.6%,
+  75.4%,
+  99.6% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 820px) {
+  .chapters-pin {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 12px;
+    padding: 72px 6vw 20px;
+  }
+
+  .chapters-copy {
+    max-width: none;
+    gap: 18px;
+  }
+
+  .chapter h3 {
+    font-size: 24px;
+  }
+
+  .chapter p {
+    font-size: 14.5px;
+  }
+
+  /* keep the stage from swallowing the copy on short screens */
+  .chapters-stage {
+    min-height: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapters {
+    transition: none;
+  }
+
+  .chapter p {
+    animation: none;
+  }
+
+  .dial-bar,
+  .dial-label,
+  .mems-node,
+  .mems-edge,
+  .mems-pill,
+  .mems-eyes,
+  .vault-item {
+    transition: none !important;
+  }
+
+  /* no continuous motion: bars hold still, the web stays flat, the eyes
+     park on the vault box */
+  .dials.on .dial-bar,
+  .mems.on,
+  .vault-eyes {
+    animation: none !important;
+  }
+
+  .vault-eyes {
+    transform: translate(384px, 225px);
+  }
+}

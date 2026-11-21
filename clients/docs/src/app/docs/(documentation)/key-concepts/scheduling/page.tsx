@@ -2,7 +2,7 @@ import { MarkdownDoc } from "@/app/docs/_components/markdown-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Scheduling - Cadet Docs",
+  title: "Scheduling | Cadet Docs",
   description:
     "How your assistant works on its own clock: one-shot schedules, recurring cadences, heartbeats, watchers, and playbooks.",
   path: "/docs/key-concepts/scheduling",

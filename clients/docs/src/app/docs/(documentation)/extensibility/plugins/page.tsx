@@ -2,7 +2,7 @@ import { ExtensibilityPluginsContent } from "@/app/docs/_components/extensibilit
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Plugins - Cadet Docs",
+  title: "Plugins | Cadet Docs",
   description:
     "How a plugin is laid out on disk, what its package.json manifest declares, and the single @mycadet/plugin-api package every surface imports from.",
   path: "/docs/extensibility/plugins",

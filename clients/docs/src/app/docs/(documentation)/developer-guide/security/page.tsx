@@ -2,7 +2,7 @@ import { DeveloperGuideSecurityContent } from "@/app/docs/_components/developer-
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Security & Permissions - Developer Guide - Cadet Docs",
+  title: "Security & Permissions | Developer Guide | Cadet Docs",
   description:
     "Sandbox model, credential storage, trust rules, and permission modes for Cadet Cloud.",
   path: "/docs/developer-guide/security",

@@ -27,7 +27,7 @@ describe("getting-started.md", () => {
 
   test("covers cloud sign up, downloads, and the self-host CLI install", () => {
     expect(md).toContain("https://www.mycadet.ai/account/signup");
-    expect(md).toContain("https://www.mycadet.ai/downloads");
+    expect(md).toContain("/downloads");
     expect(md).toContain("npm install -g @mycadet/cli");
   });
 

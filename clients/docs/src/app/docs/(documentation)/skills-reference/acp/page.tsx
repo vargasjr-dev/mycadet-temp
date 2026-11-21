@@ -2,7 +2,7 @@ import { SkillsReferenceACPContent } from "@/app/docs/_components/skills-referen
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "ACP - Cadet Docs",
+  title: "ACP | Cadet Docs",
   description:
     "ACP skill for Cadet — delegates development tasks through the Agent Client Protocol.",
   path: "/docs/skills-reference/acp",

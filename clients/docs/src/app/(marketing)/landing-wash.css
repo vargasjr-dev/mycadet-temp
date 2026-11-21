@@ -1,0 +1,56 @@
+/*
+ * The landing's background: the same inviting multicolor wash as the
+ * community page (cadet-yellow and petal-pink glows up top, cadet-green
+ * pooling at the bottom), so the index never sits on a flat background in
+ * either theme. The four-chapter section below morphs its own background
+ * per chapter — the wash lives on .landing (the hero's first viewport).
+ */
+.marketing .landing {
+  background:
+    radial-gradient(
+      1100px 520px at 12% -8%,
+      rgba(242, 199, 68, 0.2),
+      transparent 62%
+    ),
+    radial-gradient(
+      950px 500px at 88% -6%,
+      rgba(224, 86, 124, 0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 540px at 50% 112%,
+      rgba(46, 139, 74, 0.18),
+      transparent 65%
+    ),
+    radial-gradient(
+      700px 420px at 72% 38%,
+      rgba(47, 163, 154, 0.1),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #fbfaf7 0%, #f4f4ea 100%);
+}
+
+.dark .marketing .landing {
+  background:
+    radial-gradient(
+      1100px 520px at 12% -8%,
+      rgba(242, 199, 68, 0.1),
+      transparent 62%
+    ),
+    radial-gradient(
+      950px 500px at 88% -6%,
+      rgba(154, 107, 216, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 540px at 50% 112%,
+      rgba(46, 139, 74, 0.2),
+      transparent 65%
+    ),
+    radial-gradient(
+      700px 420px at 72% 38%,
+      rgba(47, 163, 154, 0.08),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #171a17 0%, #101311 100%);
+}

@@ -2,7 +2,7 @@ import { SkillsReferenceTasksContent } from "@/app/docs/_components/skills-refer
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Tasks - Cadet Docs",
+  title: "Tasks | Cadet Docs",
   description:
     "Tasks skill for Cadet — a two-layer task system with reusable templates and a prioritized work queue.",
   path: "/docs/skills-reference/tasks",

@@ -2,7 +2,7 @@ import { DeveloperGuideGetStartedContent } from "@/app/docs/_components/develope
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Get Started - Cadet Developer Guide",
+  title: "Get Started | Cadet Developer Guide",
   description:
     "Developer on-ramp for Cadet: repo layout, local dev setup, CLI, HTTP API, and SSE event stream.",
   path: "/docs/developer-guide/get-started",

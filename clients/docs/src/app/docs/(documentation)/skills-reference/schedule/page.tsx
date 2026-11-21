@@ -2,7 +2,7 @@ import { SkillsReferenceScheduleContent } from "@/app/docs/_components/skills-re
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Schedule - Cadet Docs",
+  title: "Schedule | Cadet Docs",
   description:
     "Schedule skill for Cadet — recurring and one-shot scheduled actions using cron syntax, RRULE patterns, or simple timestamps.",
   path: "/docs/skills-reference/schedule",

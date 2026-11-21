@@ -5,7 +5,7 @@ import { fetchReleases } from "@/lib/releases-server";
 export const dynamic = "force-dynamic";
 
 export const metadata = createMetadata({
-  title: "Releases - Cadet Docs",
+  title: "Releases | Cadet Docs",
   description:
     "Cadet release notes, versioning, update channels, and how to stay up to date with the latest features and fixes.",
   path: "/docs/releases",

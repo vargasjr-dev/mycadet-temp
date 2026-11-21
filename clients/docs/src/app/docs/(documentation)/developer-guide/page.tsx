@@ -2,7 +2,7 @@ import { DeveloperGuideContent } from "@/app/docs/_components/developer-guide-co
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Developer Guide - Cadet Docs",
+  title: "Developer Guide | Cadet Docs",
   description:
     "Technical reference for contributors and developers working on Cadet Cloud.",
   path: "/docs/developer-guide",

@@ -3,7 +3,7 @@ import { createMetadata } from "@/lib/metadata";
 import { routes } from "@/lib/routes";
 
 export const metadata = createMetadata({
-  title: "Privacy Notice - Cadet",
+  title: "Privacy Notice | Cadet",
   description:
     "Cadet's privacy notice explaining how we collect, use, disclose and otherwise process your information.",
   path: routes.docs.legal.privacyPolicy,

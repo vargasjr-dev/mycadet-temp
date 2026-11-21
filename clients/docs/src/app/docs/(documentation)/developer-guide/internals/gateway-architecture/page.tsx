@@ -2,7 +2,7 @@ import { InternalDoc } from "@/app/docs/_components/internal-doc";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Gateway Architecture - Cadet Docs",
+  title: "Gateway Architecture | Cadet Docs",
   description: "Ingress boundary — webhooks, Telegram, Twilio, and the reverse proxy.",
   path: "/docs/developer-guide/internals/gateway-architecture",
 });

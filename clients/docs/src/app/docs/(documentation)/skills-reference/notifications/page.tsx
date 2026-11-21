@@ -2,7 +2,7 @@ import { SkillsReferenceNotificationsContent } from "@/app/docs/_components/skil
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Notifications - Cadet Docs",
+  title: "Notifications | Cadet Docs",
   description:
     "Notifications skill for Cadet — sends notifications through a unified routing system across connected channels.",
   path: "/docs/skills-reference/notifications",

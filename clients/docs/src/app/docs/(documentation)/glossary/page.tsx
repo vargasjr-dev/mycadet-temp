@@ -2,7 +2,7 @@ import GlossaryMarkdown from "@/app/docs/_components/glossary-markdown";
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Glossary - Cadet Docs",
+  title: "Glossary | Cadet Docs",
   description:
     "Cadet glossary — shared definitions for assistant, guardian, personal intelligence, memory, skills, channels, gateway, and other key terms.",
   path: "/docs/glossary",

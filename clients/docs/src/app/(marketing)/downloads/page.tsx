@@ -5,9 +5,9 @@ import DownloadsGrid from "@/components/downloads-grid";
 import "./downloads.css";
 
 export const metadata: Metadata = {
-  title: "Downloads — Cadet",
+  title: "Downloads | Cadet",
   description:
-    "Every cadet app is still in training — for now, run the whole stack locally from your terminal.",
+    "Download Cadet for Mac, Windows, and Terminal — every desktop app in one place, ready to run on your own machine.",
 };
 
 // Ported from mycadet-cloud's app/(marketing)/downloads/page.tsx so the

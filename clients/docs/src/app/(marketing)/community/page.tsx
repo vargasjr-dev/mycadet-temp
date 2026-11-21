@@ -10,7 +10,7 @@ const DISCORD_URL = "https://discord.gg/ZABd9V2zM8";
 const SIGNUP_URL = "/account/signup";
 
 export const metadata: Metadata = createMetadata({
-  title: "Community - Cadet",
+  title: "Community | Cadet",
   description:
     "Join the Cadet community — connect with others, share ideas, and discover what your assistant can become.",
   path: "/community",
@@ -72,8 +72,8 @@ export default function CommunityPage() {
         <p>
           The Cadet community is where owners compare setups, show off what
           their assistants automated this week, and get unstuck fast — usually
-          from someone who hit the same wall yesterday. Bring a question,
-          leave a screenshot.
+          from someone who hit the same wall yesterday. Bring a question, leave
+          a screenshot.
         </p>
       </section>
 

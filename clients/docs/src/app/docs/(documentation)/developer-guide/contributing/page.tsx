@@ -2,7 +2,7 @@ import { DeveloperGuideContributingContent } from "@/app/docs/_components/develo
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Contributing - Cadet Docs",
+  title: "Contributing | Cadet Docs",
   description:
     "How to set up the Cadet repo locally, run tests, follow code conventions, and submit a pull request.",
   path: "/docs/developer-guide/contributing",

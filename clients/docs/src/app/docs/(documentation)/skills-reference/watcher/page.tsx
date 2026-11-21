@@ -2,7 +2,7 @@ import { SkillsReferenceWatcherContent } from "@/app/docs/_components/skills-ref
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Watcher - Cadet Docs",
+  title: "Watcher | Cadet Docs",
   description:
     "Watcher skill for Cadet — polls external services for changes and notifies you when something happens.",
   path: "/docs/skills-reference/watcher",

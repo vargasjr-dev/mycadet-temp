@@ -155,7 +155,7 @@ export function DeveloperGuideGetStartedContent() {
             <li>
               Install the{" "}
               <Link
-                href="https://www.mycadet.ai/downloads"
+                href="/downloads"
                 className={linkClass}
               >
                 desktop app

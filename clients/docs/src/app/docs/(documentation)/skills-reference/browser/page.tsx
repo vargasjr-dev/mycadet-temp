@@ -2,7 +2,7 @@ import { SkillsReferenceBrowserContent } from "@/app/docs/_components/skills-ref
 import { createMetadata } from "@/lib/metadata";
 
 export const metadata = createMetadata({
-  title: "Browser - Cadet Docs",
+  title: "Browser | Cadet Docs",
   description:
     "Browser skill for Cadet — navigate web pages, interact with content, and extract information.",
   path: "/docs/skills-reference/browser",
