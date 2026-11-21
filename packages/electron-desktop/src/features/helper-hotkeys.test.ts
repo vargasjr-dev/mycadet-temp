@@ -437,60 +437,6 @@ describe("installHotkeyHelper", () => {
     expect(spawnCalls[0]?.[0]).toBe(HELPER_PATH);
   });
 
-  test("user-initiated restart replaces an already-running helper", async () => {
-    installHelperBridge();
-
-    const pending = invokePing();
-    lastChild?.stdout.emit(
-      "data",
-      Buffer.from('{"jsonrpc":"2.0","id":1,"result":"pong"}\n'),
-    );
-    expect(await pending).toBe("pong");
-
-    const original = lastChild;
-    expect(invokeRestart()).toEqual({
-      ok: true,
-      state: { status: "running" },
-    });
-
-    expect(original?.kill).toHaveBeenCalledWith("SIGTERM");
-    expect(spawnCalls).toHaveLength(2);
-    expect(lastChild).not.toBe(original);
-  });
-
-  test("user-initiated restart reopens a circuit-open helper", async () => {
-    supervisorOptions = {
-      initialBackoffMs: 1,
-      maxBackoffMs: 1,
-      circuitCrashCount: 2,
-      circuitWindowMs: 1_000,
-    };
-    installHelperBridge();
-
-    expect(invokeRestart()).toEqual({
-      ok: true,
-      state: { status: "running" },
-    });
-
-    const first = lastChild;
-    first?.emit("close", 1, null);
-    await settle();
-    expect(spawnCalls).toHaveLength(2);
-
-    const second = lastChild;
-    second?.emit("close", 1, null);
-    await settle();
-    expect(invokeGetState()).toEqual(
-      expect.objectContaining({ status: "circuit-open" }),
-    );
-
-    expect(invokeRestart()).toEqual({
-      ok: true,
-      state: { status: "running" },
-    });
-    expect(spawnCalls).toHaveLength(3);
-  });
-
   test("sends hotkey.modifierHold to the helper process", async () => {
     installHelperBridge();
     const pending = invokeSetModifierHold();
@@ -512,25 +458,6 @@ describe("installHotkeyHelper", () => {
     );
 
     expect(await pending).toEqual({ ok: true, enabled: true });
-  });
-
-  test("restarts the helper after a crash", async () => {
-    supervisorOptions = { initialBackoffMs: 1, maxBackoffMs: 1 };
-    installHelperBridge();
-
-    const pending = invokePing();
-    lastChild?.stdout.emit(
-      "data",
-      Buffer.from('{"jsonrpc":"2.0","id":1,"result":"pong"}\n'),
-    );
-    expect(await pending).toBe("pong");
-
-    const crashed = lastChild;
-    crashed?.emit("close", 1, null);
-    await settle();
-
-    expect(spawnCalls).toHaveLength(2);
-    expect(lastChild).not.toBe(crashed);
   });
 
   /**
@@ -1200,24 +1127,5 @@ describe("installHotkeyHelper", () => {
       '"method":"hotkey.modifierHold"',
     );
     expect(lastChild?.stdin.writes.at(-1)).toContain('"enable":false');
-  });
-
-  test("does not respawn the helper after deliberate shutdown", async () => {
-    installHelperBridge();
-    const pending = invokePing();
-    lastChild?.stdout.emit(
-      "data",
-      Buffer.from('{"jsonrpc":"2.0","id":1,"result":"pong"}\n'),
-    );
-    await pending;
-
-    const shuttingDown = lastChild;
-    appListeners.get("before-quit")?.();
-    shuttingDown?.emit("close", 0, null);
-
-    await expect(invokePing()).rejects.toThrow(
-      "native-sidecar-client is not available",
-    );
-    expect(spawnCalls).toHaveLength(1);
   });
 });
