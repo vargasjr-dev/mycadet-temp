@@ -4,12 +4,11 @@
  * The card is the unit of the sidebar: Pinned, each custom group, each
  * channel, and the chat list are all this same shell with different contents.
  *
- * This component owns *only* the card surface. The header, chevron, collapse
- * behavior, collapsed-only indicator, row list, and drag-to-reorder all come
- * from {@link ConversationNavSection}. Anything that belongs to "a sidebar
- * section" belongs there, not here, so every section reads identically in
- * typography, geometry, and pointer behavior whether or not it sits on a
- * card.
+ * This component owns *only* the card surface. The header, row list, and
+ * drag-to-reorder all come from {@link ConversationNavSection}. Anything that
+ * belongs to "a sidebar section" belongs there, not here, so every section
+ * reads identically in typography, geometry, and pointer behavior whether or
+ * not it sits on a card.
  *
  * That layer is also what keeps the two menus distinct. A section's own
  * actions (mark all read, archive all, rename, delete, reorder) come from a
@@ -19,9 +18,6 @@
  * never share a surface: right-clicking a header offers section actions,
  * right-clicking a row offers that row's.
  *
- * Sections stay members of one {@link CollapsibleNavSection.Root} so their
- * open state is managed in a single place; the card surface sits between the
- * root and the item.
  *
  * Purely presentational. It owns no query and no membership rule: rows and
  * indicator are handed in, which is what lets every section load from its own
@@ -30,7 +26,7 @@
  * and its contents always describe the same rows (LUM-3008).
  */
 
-import { useLayoutEffect, useRef, type ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
 import { Card } from "@mycadet/design-library";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -50,100 +46,7 @@ export function SidebarSectionCard({
   drag,
   ...section
 }: SidebarSectionCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
   const { overlayCards } = useConversationListContext();
-
-  /* `width` toggling between the sizing keywords `fit-content` and a
-     percentage doesn't animate smoothly on its own - measured directly,
-     Chromium holds the *old* value for the whole transition and only
-     snaps at the very end, `interpolate-size: allow-keywords` included, so
-     a plain CSS toggle can't do this. A real pixel value can: it's an
-     ordinary length, so transitioning between it and a percentage is the
-     same kind of interpolation `border-radius` or any other numeric
-     property already does reliably.
-
-     So this measures the pill's own collapsed width and republishes it as
-     a CSS var - but not by waiting to observe the card at its collapsed
-     size, because a section that starts open (Chats, Pinned) or has never
-     been collapsed yet would have no value to fall back on for its very
-     first collapse, hitting the exact keyword-transition problem this
-     exists to avoid. Instead it forces the measurement regardless of
-     current open state: temporarily hides the row list (the one thing
-     that can make the card wider than its own header) and collapses the
-     card to `fit-content` to read its true hug width, then restores both -
-     synchronously, in the same layout-effect pass, so nothing paints in
-     between and there's no visible flash. Re-measures whenever the header
-     content that determines that width could have changed.
-
-     The collapsed-only indicator gets the inverse treatment for the same
-     reason the row list gets hidden: the measurement runs in whatever state
-     the card is in, but the value it produces is spent in the collapsed
-     state. An open card holds its indicator at `display:none` (the rows
-     carry their own dots), so measuring around it under-reports the hug
-     width by the dot's cell, and the collapsed header pays that deficit out
-     of its label - "From Ada" rendered as "From ...". Forcing it visible for
-     the measurement makes the measured configuration the one the pill will
-     actually show. */
-  const hasCollapsedIndicator = section.collapsedIndicator != null;
-  useLayoutEffect(() => {
-    const measure = () => {
-      const card = cardRef.current;
-      if (!card) {
-        return;
-      }
-      const content = card.querySelector<HTMLElement>(".sidebar-section-list");
-      const indicator = card.querySelector<HTMLElement>(
-        '[data-slot="collapsible-nav-section-indicator"]',
-      );
-      const prevContentDisplay = content?.style.display;
-      const prevIndicatorDisplay = indicator?.style.display;
-      const prevCardWidth = card.style.width;
-      if (content) {
-        content.style.display = "none";
-      }
-      if (indicator) {
-        indicator.style.display = "flex";
-      }
-      card.style.width = "fit-content";
-      const width = card.getBoundingClientRect().width;
-      card.style.width = prevCardWidth;
-      if (content) {
-        content.style.display = prevContentDisplay ?? "";
-      }
-      if (indicator) {
-        indicator.style.display = prevIndicatorDisplay ?? "";
-      }
-      /* Ceiled: the hug width is fractional and republishing it exactly
-         leaves the label with exactly its own fractional width, where
-         sub-pixel rounding still trips `text-overflow` into an ellipsis on
-         the last glyph. A whole pixel of headroom costs nothing visible and
-         keeps the label whole. */
-      card.style.setProperty(
-        "--section-collapsed-width",
-        `${Math.ceil(width)}px`,
-      );
-    };
-
-    measure();
-
-    /* The hug width is text metrics, and on a cold load this effect runs
-       before the webfont has: measured under the fallback face, every pill
-       is a few pixels off and every label ellipsizes on its first collapse.
-       One corrective pass when the fonts settle; on later runs the promise
-       is already resolved and the extra pass is an idempotent no-op. */
-    let cancelled = false;
-    document.fonts?.ready.then(
-      () => {
-        if (!cancelled) {
-          measure();
-        }
-      },
-      () => {},
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [section.icon, section.label, hasCollapsedIndicator]);
 
   /* The card is what drags, not the header inside it. A section is a card
      now, so grabbing one should pick up the whole object; with the handle on
@@ -153,7 +56,6 @@ export function SidebarSectionCard({
      on the edge being inserted against. */
   return (
     <Card.Root
-      ref={cardRef}
       bordered={false}
       noPadding
       className={cn(
@@ -206,42 +108,19 @@ export function SidebarSectionCard({
            edge. Only the rail collapses to the measured hug width. */
         overlayCards
           ? "w-full rounded-[16px] border-0 pt-3 pr-3 pb-3 pl-2"
-          : "w-[var(--section-collapsed-width,fit-content)] rounded-[18px] has-[>[data-state=open]]:w-full",
-        /* `width` toggles between the measured `--section-collapsed-width`
-           (a real length - see the layout effect above) and a percentage,
-           not a length and a sizing keyword, so an ordinary transition
-           interpolates it exactly like it would `border-radius`.
-
-           The two directions want different timing, because the row list's
-           content and height (`.sidebar-section-list` in tokens.css) both
-           collapse instantly, with no animation of their own, and each
-           direction lines its own width behavior up with that:
-
-           - Collapsing: content and height are already at their closed
-             values in that same instant, so width is the one thing left to
-             visibly animate - a quick 100ms is enough to read as a
-             deliberate motion without holding up the rest, which has
-             already finished.
-           - Expanding: content becomes visible in that first instant too,
-             so width has to already be at its full value right then
-             (`step-start`, an immediate snap) - if it eased in instead, the
-             now-visible content would sit at full width inside a box still
-             catching up to it. */
-        "transition-[width] duration-[100ms]",
-        "has-[>[data-state=open]]:ease-[step-start]",
-        "ease-[var(--anim-ease-out)]",
+          : "w-full rounded-[18px]",
         /* Only the bottom-most section ever takes leftover flex space (see
            `isLast` on `ConversationRowList`): flex-grow has no notion of
-           "this section needs the room," so giving every open section a
-           share stretched a two-row group into a mostly-empty box the same
-           size as a busy one beside it. Even the last one hugs its rows and
-           only shrinks (`min-h-0`) under the rail's space; it fills
-           (`flex-1`) only around a windowed row list, which needs a definite
-           height. The marker is the list's own `data-slot`, since only the
-           list knows which path it took. */
+           "this section needs the room," so giving every section a share
+           stretched a two-row group into a mostly-empty box the same size
+           as a busy one beside it. Even the last one hugs its rows and only
+           shrinks (`min-h-0`) under the rail's space; it fills (`flex-1`)
+           only around a windowed row list, which needs a definite height.
+           The marker is the list's own `data-slot`, since only the list
+           knows which path it took. */
         !section.unbounded &&
           section.isLast &&
-          "has-[>[data-state=open]]:flex has-[>[data-state=open]]:min-h-0 has-[>[data-state=open]]:flex-col has-[[data-slot=conversation-list-windowed]]:flex-1",
+          "min-h-0 flex flex-col has-[[data-slot=conversation-list-windowed]]:flex-1",
         /* The card is the drag handle, so it says so. Every interactive thing
            inside it sets its own `cursor-pointer`, which wins wherever one is
            actually under the pointer - so the grab cursor shows on the card's

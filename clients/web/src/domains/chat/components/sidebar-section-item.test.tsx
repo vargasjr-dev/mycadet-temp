@@ -78,10 +78,7 @@ function renderSection(section: SidebarSection, overlayCards = false) {
             onSelect: () => {},
           }}
         >
-          <CollapsibleNavSection.Root
-            type="multiple"
-            defaultValue={[section.key]}
-          >
+          <CollapsibleNavSection.Root>
             <SidebarSectionItem section={section} groupMenu={() => ({})} />
           </CollapsibleNavSection.Root>
         </ConversationListProvider>

@@ -25,15 +25,6 @@ import { create } from "zustand";
 
 import { createSelectors } from "@/utils/create-selectors";
 import {
-  loadOpenCategories,
-  loadOpenCustomGroups,
-  loadOpenPrimary,
-  PRIMARY_SECTION_KEYS,
-  saveOpenCategories,
-  saveOpenCustomGroups,
-  saveOpenPrimary,
-} from "@/domains/chat/utils/sidebar-group-collapse-storage";
-import {
   loadSectionOrder,
   saveSectionOrder,
 } from "@/domains/chat/utils/sidebar-section-order";
@@ -44,13 +35,6 @@ import {
 
 export interface SidebarLayoutState {
   assistantId: string | null;
-  openCategories: string[];
-  openCustomGroups: string[];
-  /**
-   * Open state of the always-present primary sections (Pinned, Chats).
-   * Defaults to both open (see {@link loadOpenPrimary}).
-   */
-  openPrimary: string[];
   /**
    * The user's section order preference - a sparse, advisory list of section
    * keys, not the set of sections that render. Empty means "no preference
@@ -62,9 +46,6 @@ export interface SidebarLayoutState {
 
 export interface SidebarLayoutActions {
   setAssistantId: (assistantId: string) => void;
-  setOpenCategories: (next: string[]) => void;
-  setOpenCustomGroups: (next: string[]) => void;
-  setOpenPrimary: (next: string[]) => void;
   setSectionOrder: (next: string[]) => void;
 }
 
@@ -76,11 +57,6 @@ export type SidebarLayoutStore = SidebarLayoutState & SidebarLayoutActions;
 
 const INITIAL_STATE: SidebarLayoutState = {
   assistantId: null,
-  openCategories: [],
-  openCustomGroups: [],
-  // Pinned + Chats start open; the real per-assistant value loads on
-  // setAssistantId.
-  openPrimary: [...PRIMARY_SECTION_KEYS],
   sectionOrder: [],
 };
 
@@ -97,35 +73,8 @@ const useSidebarLayoutStoreBase = create<SidebarLayoutStore>()((set, get) => ({
     }
     set({
       assistantId,
-      openCategories: loadOpenCategories(assistantId),
-      openCustomGroups: loadOpenCustomGroups(assistantId),
-      openPrimary: loadOpenPrimary(assistantId),
       sectionOrder: loadSectionOrder(assistantId),
     });
-  },
-
-  setOpenCategories: (next: string[]) => {
-    set({ openCategories: next });
-    const { assistantId } = get();
-    if (assistantId) {
-      saveOpenCategories(assistantId, next);
-    }
-  },
-
-  setOpenCustomGroups: (next: string[]) => {
-    set({ openCustomGroups: next });
-    const { assistantId } = get();
-    if (assistantId) {
-      saveOpenCustomGroups(assistantId, next);
-    }
-  },
-
-  setOpenPrimary: (next: string[]) => {
-    set({ openPrimary: next });
-    const { assistantId } = get();
-    if (assistantId) {
-      saveOpenPrimary(assistantId, next);
-    }
   },
 
   setSectionOrder: (next: string[]) => {

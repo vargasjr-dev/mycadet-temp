@@ -1,51 +1,17 @@
-// Persist the sidebar conversation group expand/collapse state to localStorage
-// so that the user's last-known toggle state for each collapsible group
-// (per-channel sections and custom groups) survives
-// page reloads. The same file keeps a fourth bucket, the sections the user
-// has expanded from their mid height to their full height (see
-// `expandable` on `ConversationRowList`), so that choice survives a reload
-// too.
+// The sidebar's section-key namespace. The fold state this file used to hold
+// (per-assistant open/closed buckets in localStorage, plus the sections the
+// user had expanded past their mid height) died with the fold: sections do
+// not collapse and do not cap, so there is nothing left to persist.
 //
-// Primary sections (Pinned / Chats), built-in sections (the per-channel
-// sections), and custom groups are stored under SEPARATE keys, chiefly
-// because they have different defaults: primary sections default to OPEN, the
-// other two to closed.
-//
-// Storage buckets are not accordion roots. Every section - Pinned, Chats, the
-// channel sections, and the custom groups - renders in a *single*
-// CollapsibleNavSection.Root, because the user can order them freely and a
-// custom group may sit between two built-in sections. The sidebar splits that
-// root's one value array back into these three buckets with
-// `isKnownPrimaryKey` / `isKnownCategoryKey`; anything matching neither is a
-// custom group id.
-
-import { parseStringArray } from "@/domains/chat/utils/storage-validators";
-import { createKeyedStorageAccessor } from "@/utils/typed-storage";
-
-/**
- * The always-present primary sections (Pinned and Chats). Unlike the built-in
- * categories and custom groups, these default to OPEN.
- */
-export const PRIMARY_SECTION_KEYS = ["pinned", "recents"] as const;
-
-/**
- * True for the primary sections. The sidebar renders primary
- * and category sections in a single accordion root so they share one uniform
- * gap, then splits the accordion's value array back into the two storage
- * buckets with this predicate.
- */
-export function isKnownPrimaryKey(key: string): boolean {
-  return (PRIMARY_SECTION_KEYS as readonly string[]).includes(key);
-}
+// What survives is the key convention the sections themselves are keyed by.
 
 /** Prefix marking a collapsible category as a per-channel origin section. */
 const CHANNEL_SECTION_PREFIX = "channel:";
 
 /**
  * Collapse-state key for an origin channel's sidebar section (e.g.
- * `"telegram"` → `"channel:telegram"`). Prefixed so {@link loadOpenCategories}
- * can accept any channel without an exhaustive allowlist while still dropping
- * unrecognized stale keys.
+ * `"telegram"` → `"channel:telegram"`). Prefixed so it can accept any
+ * channel without an exhaustive allowlist.
  */
 export function channelSectionKey(channelId: string): string {
   return `${CHANNEL_SECTION_PREFIX}${channelId}`;
@@ -54,114 +20,4 @@ export function channelSectionKey(channelId: string): string {
 /** True for a per-origin-channel section key (e.g. `"channel:slack"`). */
 export function isChannelSectionKey(key: string): boolean {
   return key.startsWith(CHANNEL_SECTION_PREFIX);
-}
-
-/**
- * True for the built-in collapsible categories (every `channel:` section).
- * Exported so the sidebar can route a key from the
- * shared accordion root into the right storage bucket: primary, category, or
- * - matching neither - a custom group id.
- */
-export function isKnownCategoryKey(category: string): boolean {
-  /* Channel sections are the only built-in category keys. Legacy persisted
-     "background"/"scheduled" entries fail this check, so `loadOpenCategories`
-     drops them at load and the next save rewrites storage without them. */
-  return isChannelSectionKey(category);
-}
-
-const categoriesStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `cadet:sidebar-open-categories:${assistantId}`,
-  scope: "user",
-  parse: parseStringArray,
-  serialize: JSON.stringify,
-  fallback: [],
-});
-
-const customGroupsStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `cadet:sidebar-open-custom-groups:${assistantId}`,
-  scope: "user",
-  parse: parseStringArray,
-  serialize: JSON.stringify,
-  fallback: [],
-});
-
-// Primary sections default to OPEN: the fallback returns both keys, so a
-// first-time user (no stored key) sees Pinned + Chats expanded. A stored empty
-// array is distinct — it means the user explicitly collapsed both — because
-// createKeyedStorageAccessor only falls back when the key is absent.
-const primaryStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `cadet:sidebar-open-primary:${assistantId}`,
-  scope: "user",
-  parse: parseStringArray,
-  serialize: JSON.stringify,
-  fallback: ["pinned", "recents"],
-});
-
-/* Sections expanded past their mid height. Defaults to none: a section rests
-   at its cap until the user asks for the rest. Keys are section keys from the
-   same namespace as the buckets above (`recents`, `channel:slack`, ...). */
-const expandedStorage = createKeyedStorageAccessor<string[]>({
-  keyFn: (assistantId) => `cadet:sidebar-expanded-sections:${assistantId}`,
-  scope: "user",
-  parse: parseStringArray,
-  serialize: JSON.stringify,
-  fallback: [],
-});
-
-/** Load open built-in sidebar category keys, filtering stale values. */
-export function loadOpenCategories(assistantId: string): string[] {
-  return categoriesStorage.load(assistantId).filter(isKnownCategoryKey);
-}
-
-export function saveOpenCategories(
-  assistantId: string,
-  openCategories: string[],
-): void {
-  categoriesStorage.save(assistantId, openCategories);
-}
-
-export function loadOpenCustomGroups(assistantId: string): string[] {
-  return customGroupsStorage.load(assistantId);
-}
-
-export function saveOpenCustomGroups(
-  assistantId: string,
-  openGroups: string[],
-): void {
-  customGroupsStorage.save(assistantId, openGroups);
-}
-
-/** Load the open primary sections (Pinned, Chats). Defaults to both open. */
-export function loadOpenPrimary(assistantId: string): string[] {
-  return primaryStorage.load(assistantId).filter(isKnownPrimaryKey);
-}
-
-export function saveOpenPrimary(
-  assistantId: string,
-  openPrimary: string[],
-): void {
-  primaryStorage.save(assistantId, openPrimary);
-}
-
-/**
- * Subscribe to the sections one assistant has expanded past their mid
- * height.
- *
- * Storage is the source of truth here, as it is for the view mode, rather
- * than a value the layout store snapshots in an effect after mount: the
- * first paint already carries the choice, so a section the user expanded
- * does not paint at its cap and then grow once the effect runs, and a
- * change made in one window reaches every other window on the same
- * assistant. With no assistant there is nothing stored, and the empty key
- * reads the fallback.
- */
-export function useExpandedSections(assistantId: string | null): string[] {
-  return expandedStorage.useValue(assistantId ?? "");
-}
-
-export function saveExpandedSections(
-  assistantId: string,
-  expandedSections: string[],
-): void {
-  expandedStorage.save(assistantId, expandedSections);
 }

@@ -1,8 +1,7 @@
 /**
  * Which sections the sidebar has, and in what order.
  *
- * Owns the section *list*, collapse/expand state, attention-forced expansion,
- * and the user's section order. It does not own a section's contents: Pinned
+ * Owns the section *list* and the user's section order. It does not own a section's contents: Pinned
  * and each custom group fetch their own rows where they render, through
  * {@link useSectionConversations}. What this hook still puts on
  * {@link SidebarSection.all} is the list derived from the foreground page,
@@ -53,11 +52,7 @@ import {
   type CustomGroup,
 } from "@/domains/chat/utils/group-conversations";
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
-import {
-  channelSectionKey,
-  isKnownCategoryKey,
-  isKnownPrimaryKey,
-} from "@/domains/chat/utils/sidebar-group-collapse-storage";
+import { channelSectionKey } from "@/domains/chat/utils/sidebar-group-collapse-storage";
 import {
   mergeSectionOrder,
   moveSectionKey,
@@ -81,7 +76,6 @@ import { RECENTS_SECTION_LABEL } from "@/domains/chat/utils/sidebar-section-icon
  * Returning a fresh `[]` would give every dependent memo a new identity on
  * each render.
  */
-const EMPTY_KEYS: string[] = [];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -162,16 +156,6 @@ export interface SidebarState {
    * does nothing.
    */
   canMoveSection: (key: string, delta: -1 | 1) => boolean;
-
-  /**
-   * Open keys for the single accordion root that holds *every* section -
-   * merged from the primary, category, and custom-group storage buckets.
-   * One root keeps section spacing uniform and lets the three section types
-   * interleave in any order.
-   */
-  effectiveOpenSections: string[];
-  /** Splits the accordion's value array back into its three storage buckets. */
-  onOpenSectionsChange: (next: string[]) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -181,13 +165,11 @@ export interface SidebarState {
 export interface UseSidebarStateParams {
   conversations: Conversation[];
   conversationGroups?: ConversationGroup[];
-  attentionConversationIds?: Set<string>;
 }
 
 export function useSidebarState({
   conversations,
   conversationGroups,
-  attentionConversationIds,
 }: UseSidebarStateParams): SidebarState {
   const assistantId = useActiveAssistantId();
   // --- Layout store hydration ---
@@ -200,12 +182,6 @@ export function useSidebarState({
     }
   }, [assistantId]);
 
-  const openCategories = useSidebarLayoutStore.use.openCategories();
-  const openCustomGroups = useSidebarLayoutStore.use.openCustomGroups();
-  const openPrimary = useSidebarLayoutStore.use.openPrimary();
-  const setOpenCategories = useSidebarLayoutStore.use.setOpenCategories();
-  const setOpenCustomGroups = useSidebarLayoutStore.use.setOpenCustomGroups();
-  const setOpenPrimary = useSidebarLayoutStore.use.setOpenPrimary();
   const sectionOrder = useSidebarLayoutStore.use.sectionOrder();
   const setSectionOrder = useSidebarLayoutStore.use.setSectionOrder();
 
@@ -447,67 +423,6 @@ export function useSidebarState({
     [orderAfterMove],
   );
 
-  // --- Open/closed state ---
-
-  // The three storage buckets exist because they have different defaults
-  // (Pinned/Chats open, the rest closed). That split is a *storage* concern:
-  // every section shares one accordion root, so reads merge the buckets into
-  // one value array and writes route each key back to its owner.
-  const storedOpenSections = useMemo(
-    () => [...openPrimary, ...openCategories, ...openCustomGroups],
-    [openPrimary, openCategories, openCustomGroups],
-  );
-
-  // Sections a conversation needing attention forces open, whatever the user
-  // last chose. One pass over `sections` covers every type - each section
-  // already carries its own conversations, so there's nothing type-specific
-  // left to special-case here.
-  const attentionOpenKeys = useMemo(() => {
-    if (!attentionConversationIds || attentionConversationIds.size === 0) {
-      return EMPTY_KEYS;
-    }
-    const keys = sections
-      .filter((section) =>
-        section.all.some((c) => attentionConversationIds.has(c.conversationId)),
-      )
-      .map((section) => section.key);
-    return keys.length > 0 ? keys : EMPTY_KEYS;
-  }, [sections, attentionConversationIds]);
-
-  // Held open by attention rather than by the user. Radix builds each
-  // `onValueChange` payload from the current value array, so these ride along
-  // when the user toggles some *other* section — persisting them would outlive
-  // the attention that opened them and leave the section stuck open.
-  const forcedOpenKeys = useMemo(() => {
-    const stored = new Set(storedOpenSections);
-    return new Set(attentionOpenKeys.filter((key) => !stored.has(key)));
-  }, [storedOpenSections, attentionOpenKeys]);
-
-  const effectiveOpenSections = useMemo(
-    () =>
-      forcedOpenKeys.size === 0
-        ? storedOpenSections
-        : [...new Set([...storedOpenSections, ...attentionOpenKeys])],
-    [storedOpenSections, attentionOpenKeys, forcedOpenKeys],
-  );
-
-  // Routes each key from the shared root back to the bucket that owns it.
-  // Anything that is neither a primary key nor a built-in category key is a
-  // custom group id.
-  const onOpenSectionsChange = useCallback(
-    (next: string[]) => {
-      const toPersist = next.filter((key) => !forcedOpenKeys.has(key));
-      setOpenPrimary(toPersist.filter(isKnownPrimaryKey));
-      setOpenCategories(toPersist.filter(isKnownCategoryKey));
-      setOpenCustomGroups(
-        toPersist.filter(
-          (key) => !isKnownPrimaryKey(key) && !isKnownCategoryKey(key),
-        ),
-      );
-    },
-    [forcedOpenKeys, setOpenPrimary, setOpenCategories, setOpenCustomGroups],
-  );
-
   return {
     viewMode,
     onViewModeChange: setViewMode,
@@ -515,7 +430,5 @@ export function useSidebarState({
     onReorderSections,
     onMoveSection,
     canMoveSection,
-    effectiveOpenSections,
-    onOpenSectionsChange,
   };
 }

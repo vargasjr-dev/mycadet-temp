@@ -1,15 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
-import { channelSectionKey } from "@/domains/chat/utils/sidebar-group-collapse-storage";
 
 function resetStore() {
-  useSidebarLayoutStore.setState({
-    assistantId: null,
-    openCategories: [],
-    openCustomGroups: [],
-    openPrimary: ["pinned", "recents"],
-  });
+  useSidebarLayoutStore.setState({ assistantId: null, sectionOrder: [] });
 }
 
 afterEach(() => {
@@ -18,150 +12,44 @@ afterEach(() => {
 });
 
 describe("SidebarLayoutStore", () => {
-  test("defaults to no open categories or custom groups", () => {
-    const state = useSidebarLayoutStore.getState();
-    expect(state.openCategories).toEqual([]);
-    expect(state.openCustomGroups).toEqual([]);
-    expect(state.assistantId).toBeNull();
-  });
-
-  test("setAssistantId hydrates from localStorage", () => {
-    localStorage.setItem(
-      "cadet:sidebar-open-categories:asst-1",
-      JSON.stringify([channelSectionKey("slack"), channelSectionKey("email")]),
-    );
-    localStorage.setItem(
-      "cadet:sidebar-open-custom-groups:asst-1",
-      JSON.stringify(["grp-abc"]),
-    );
-
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-
-    const state = useSidebarLayoutStore.getState();
-    expect(state.assistantId).toBe("asst-1");
-    expect(state.openCategories).toEqual([
-      channelSectionKey("slack"),
-      channelSectionKey("email"),
-    ]);
-    expect(state.openCustomGroups).toEqual(["grp-abc"]);
-  });
-
-  test("legacy background/scheduled open-keys are dropped at hydration", () => {
-    // No section carries those keys; loading filters them, and the next
-    // save rewrites storage without them.
-    localStorage.setItem(
-      "cadet:sidebar-open-categories:asst-1",
-      JSON.stringify(["background", "scheduled", channelSectionKey("slack")]),
-    );
-
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([
-      channelSectionKey("slack"),
-    ]);
-  });
-
   test("setAssistantId no-ops when assistantId is unchanged", () => {
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
     useSidebarLayoutStore
       .getState()
-      .setOpenCategories([channelSectionKey("slack")]);
+      .setSectionOrder(["pinned", "recents", "channel:slack"]);
 
+    // A second set with the same id must not wipe the in-memory state.
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
 
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([
-      channelSectionKey("slack"),
+    expect(useSidebarLayoutStore.getState().sectionOrder).toEqual([
+      "pinned",
+      "recents",
+      "channel:slack",
     ]);
   });
 
-  test("setOpenCategories persists to localStorage", () => {
+  test("switching assistant re-hydrates section order from storage", () => {
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    useSidebarLayoutStore
-      .getState()
-      .setOpenCategories([channelSectionKey("slack")]);
+    useSidebarLayoutStore.getState().setSectionOrder(["recents", "pinned"]);
 
-    const raw = localStorage.getItem("cadet:sidebar-open-categories:asst-1");
-    expect(JSON.parse(raw!)).toEqual([channelSectionKey("slack")]);
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([
-      channelSectionKey("slack"),
-    ]);
-  });
-
-  test("setOpenCustomGroups persists to localStorage", () => {
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    useSidebarLayoutStore.getState().setOpenCustomGroups(["grp-1", "grp-2"]);
-
-    const raw = localStorage.getItem("cadet:sidebar-open-custom-groups:asst-1");
-    expect(JSON.parse(raw!)).toEqual(["grp-1", "grp-2"]);
-  });
-
-  test("switching assistant re-hydrates from new assistant's storage", () => {
+    // A different assistant's own stored preference, unrelated to asst-1's.
     localStorage.setItem(
-      "cadet:sidebar-open-categories:asst-1",
-      JSON.stringify([channelSectionKey("email")]),
+      "cadet:sidebar-section-order:asst-2",
+      JSON.stringify(["pinned", "recents"]),
     );
-    localStorage.setItem(
-      "cadet:sidebar-open-categories:asst-2",
-      JSON.stringify([channelSectionKey("slack")]),
-    );
-
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([
-      channelSectionKey("email"),
-    ]);
-
     useSidebarLayoutStore.getState().setAssistantId("asst-2");
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([
-      channelSectionKey("slack"),
-    ]);
-  });
-
-  test("falls back to defaults when localStorage has invalid data", () => {
-    localStorage.setItem("cadet:sidebar-open-categories:asst-1", "not-json");
-
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([]);
-  });
-
-  test("setOpenCategories does not persist when no assistantId is set", () => {
-    useSidebarLayoutStore
-      .getState()
-      .setOpenCategories([channelSectionKey("slack")]);
-
-    expect(useSidebarLayoutStore.getState().openCategories).toEqual([
-      channelSectionKey("slack"),
-    ]);
-    expect(localStorage.length).toBe(0);
-  });
-
-  test("openPrimary defaults to every primary section open when nothing is stored", () => {
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    // The assistant-initiated-threads section died with its flag (#346),
-    // so the default-open set is just the pinned + recents pair now.
-    expect(useSidebarLayoutStore.getState().openPrimary).toEqual([
+    expect(useSidebarLayoutStore.getState().sectionOrder).toEqual([
       "pinned",
       "recents",
     ]);
   });
 
-  test("setOpenPrimary persists to localStorage", () => {
-    useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    useSidebarLayoutStore.getState().setOpenPrimary(["pinned"]);
+  test("falls back to defaults when localStorage has invalid data", () => {
+    localStorage.setItem("cadet:sidebar-section-order:asst-1", "not-json");
 
-    const raw = localStorage.getItem("cadet:sidebar-open-primary:asst-1");
-    expect(JSON.parse(raw!)).toEqual(["pinned"]);
-    expect(useSidebarLayoutStore.getState().openPrimary).toEqual(["pinned"]);
-  });
-
-  test("setAssistantId hydrates a collapsed primary section from storage", () => {
-    // Stored empty array = user collapsed both; must not fall back to open.
-    localStorage.setItem(
-      "cadet:sidebar-open-primary:asst-1",
-      JSON.stringify([]),
-    );
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    expect(useSidebarLayoutStore.getState().openPrimary).toEqual([]);
+
+    expect(useSidebarLayoutStore.getState().sectionOrder).toEqual([]);
   });
 });
 

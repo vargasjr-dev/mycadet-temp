@@ -14,10 +14,6 @@ import { useCommandPaletteStore } from "@/stores/command-palette-store";
 
 import { CollapsibleNavSection } from "@/components/collapsible-nav-section";
 import { SIDEBAR_STACK_GAP } from "@/components/sidebar-nav-geometry";
-import {
-  getGroupIndicatorState,
-  GroupIndicatorDot,
-} from "@/domains/chat/components/collapsed-group-icon";
 import { CollapsedRailSections } from "@/domains/chat/components/collapsed-rail-sections";
 import {
   ConversationListProvider,
@@ -47,6 +43,10 @@ import type { Conversation } from "@/types/conversation-types";
 import { Button, cn, SideMenu, toast } from "@mycadet/design-library";
 
 export interface AssistantSideMenuProps extends UseSidebarStateParams {
+  /** Conversations to light up (processing/attention) in the rail's own
+   *  tiles and the rows; the fold state this once also drove is gone. */
+  attentionConversationIds?: Set<string>;
+
   assistantName?: string | null;
   /**
    * The conversation list's first load is still in flight. Draws placeholder
@@ -274,7 +274,6 @@ export function AssistantSideMenu({
   const sidebar = useSidebarState({
     conversations,
     conversationGroups,
-    attentionConversationIds,
   });
 
   const isCollapsedRail = collapsed && variant === "rail";
@@ -393,22 +392,6 @@ export function AssistantSideMenu({
   // Shared context for every conversation row (Pinned, Recents, channel
   // sections, custom groups, rail flyout): the action callbacks,
   // active/processing/attention state, and drag controller the rows read.
-  // Activity dot for a collapsed section header — surfaces processing/unread
-  // conversations that live in a collapsed section (attention already
-  // force-opens the section via effectiveOpen*). Null when the section is idle.
-  const collapsedActivityDot = (
-    conversations: Conversation[],
-    section: SidebarSection,
-  ): ReactNode => {
-    const state = getGroupIndicatorState(
-      conversations,
-      processingConversationIds,
-      attentionConversationIds,
-      section.unread,
-    );
-    return state ? <GroupIndicatorDot state={state} /> : null;
-  };
-
   const listContext: ConversationListContextValue = {
     overlayCards: variant === "overlay",
     scrollParent:
@@ -495,7 +478,6 @@ export function AssistantSideMenu({
         sectionMenu(section, conversations, getAllRows)
       }
       drag={sectionDragFor(section)}
-      collapsedIndicator={collapsedActivityDot}
       // The rail's bottom-most section claims leftover space (see
       // `unbounded` on `ConversationRowList`): flex-grow doesn't know
       // which open section "needs" the room, so giving every open section
@@ -671,7 +653,6 @@ export function AssistantSideMenu({
                   the assistant cluster above, not as a section-header
                   action. */}
                 <CollapsibleNavSection.Root
-                  type="multiple"
                   /* On the rail, min-h-0 flex-1 claims the body's height so
                      the bottom-most open card's flex-fill has leftover space
                      to take. Without it every layer below sizes to content,
@@ -684,8 +665,6 @@ export function AssistantSideMenu({
                     SIDEBAR_STACK_GAP,
                     variant === "rail" && "min-h-0 flex-1",
                   )}
-                  value={sidebar.effectiveOpenSections}
-                  onValueChange={sidebar.onOpenSectionsChange}
                 >
                   {/* Every section is a card, in the user's own order, with
                     nothing between them: the cards' own surfaces are what

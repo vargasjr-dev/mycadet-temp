@@ -25,16 +25,11 @@
  */
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import type { ReactNode } from "react";
 
 import { useTranslation } from "@/i18n";
 
 import type { CollapsibleNavSectionDrag } from "@/components/collapsible-nav-section";
 import { SidebarSectionEmptyState } from "@/domains/chat/components/sidebar-section-empty-state";
-import {
-  saveExpandedSections,
-  useExpandedSections,
-} from "@/domains/chat/utils/sidebar-group-collapse-storage";
 import { SidebarSectionCard } from "@/domains/chat/components/sidebar-section-card";
 import {
   GroupActionsMenu,
@@ -63,17 +58,6 @@ export interface SidebarSectionItemProps {
   /** Section drag-reorder wiring; omit to pin the section in place. */
   drag?: CollapsibleNavSectionDrag;
   /**
-   * Whether the header collapses the section. Defaults to `true`; `false`
-   * drops the chevron and the header's toggle, for a section something
-   * outside it opens and closes.
-   */
-  collapsible?: boolean;
-  /** Activity dot shown in the header only while the section is collapsed. */
-  collapsedIndicator?: (
-    conversations: Conversation[],
-    section: SidebarSection,
-  ) => ReactNode;
-  /**
    * Whether this is the bottom-most section in the list. Only it claims the
    * sidebar's leftover space when open; every section above it always sizes
    * to its own content (capped and scrolling internally past a point), since
@@ -88,27 +72,12 @@ export function SidebarSectionItem({
   section,
   groupMenu: buildGroupMenu,
   drag,
-  collapsible,
-  collapsedIndicator,
   isLast,
 }: SidebarSectionItemProps) {
   const assistantId = useActiveAssistantId();
   const { t } = useTranslation("chat");
   const { conversations, hasMore, resolved, loadMore, getAllRows } =
     useSectionConversations(assistantId, section);
-
-  /* Read from storage on render (see `useExpandedSections`), so a section
-     the user expanded is at its full height on the first paint rather than
-     growing there after a hydration effect. */
-  const expandedSections = useExpandedSections(assistantId);
-  const expanded = expandedSections.includes(section.key);
-  const onExpandedChange = (next: boolean) => {
-    if (assistantId === null) {
-      return;
-    }
-    const rest = expandedSections.filter((key) => key !== section.key);
-    saveExpandedSections(assistantId, next ? [...rest, section.key] : rest);
-  };
 
   /* Every section handed to this component renders. Whether a section exists
      at all is `use-sidebar-state`'s answer, and it has to stay the only one:
@@ -123,7 +92,6 @@ export function SidebarSectionItem({
   };
   return (
     <SidebarSectionCard
-      value={section.key}
       icon={sectionIcon(section)}
       label={section.label}
       /* The name in the emphasised ink rather than the shared header
@@ -137,21 +105,12 @@ export function SidebarSectionItem({
          (the channel-grouping toggle) on top of the bulk ones. */
       trailing={<GroupActionsMenu label={section.label} {...groupMenu} />}
       groupMenu={groupMenu}
-      collapsedIndicator={collapsedIndicator?.(conversations, section)}
       drag={drag}
-      collapsible={collapsible}
-      // Pinned collapses like every other section (one component, one
-      // behavior; its open state defaults open and persists like the
-      // rest). It is the one section that never caps/scrolls internally:
-      // it grows to fit its own rows instead.
+      // Sections do not fold and do not cap: every section renders all of
+      // its rows. Pinned stays the one section that never caps/scrolls
+      // internally — it grows to fit its own rows.
       unbounded={section.type === "pinned"}
       isLast={isLast}
-      /* Which sections rest at the mid height, whatever the flag: the cap is
-         the section's shape, and only the control that grows past it goes
-         away (see `ConversationRowList`). */
-      expandable={section.type === "recents" || section.type === "channel"}
-      expanded={expanded}
-      onExpandedChange={onExpandedChange}
       items={conversations}
       onEndReached={hasMore ? loadMore : undefined}
       /* The two sections that render at zero, so the two with anything to

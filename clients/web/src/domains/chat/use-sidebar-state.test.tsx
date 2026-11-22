@@ -54,8 +54,6 @@ afterEach(() => {
   sidebarSectionsImpl = null;
   useSidebarLayoutStore.setState({
     assistantId: null,
-    openCategories: [],
-    openCustomGroups: [],
     sectionOrder: [],
   });
 });
@@ -115,116 +113,6 @@ describe("useSidebarState grouping", () => {
       sectionFor(result.current.sections, "channel:telegram").all,
     ).toHaveLength(2);
     expect(sectionFor(result.current.sections, "recents").all).toHaveLength(1);
-  });
-});
-
-describe("useSidebarState open-section persistence", () => {
-  // Every section shares one accordion root, so every
-  // toggle emits the whole value array — including sections that attention
-  // forced open. Persisting those would outlive the attention that opened
-  // them and leave the section stuck open across reloads.
-  test("does not persist a section that only attention forced open", () => {
-    seedGroupedView();
-    const conversations = [
-      makeConversation(0),
-      makeConversation(1, {
-        conversationId: "slack-1",
-        originChannel: "slack",
-        groupId: undefined,
-      }),
-    ];
-
-    const { result } = renderHook(() =>
-      useSidebarState({
-        conversations,
-        attentionConversationIds: new Set(["slack-1"]),
-      }),
-    );
-
-    // Attention reveals the Slack section without the user touching it.
-    expect(result.current.effectiveOpenSections).toContain("channel:slack");
-
-    // Collapsing Chats emits the forced key alongside the real change.
-    act(() =>
-      result.current.onOpenSectionsChange(
-        result.current.effectiveOpenSections.filter((k) => k !== "recents"),
-      ),
-    );
-
-    expect(useSidebarLayoutStore.getState().openCategories).not.toContain(
-      "channel:slack",
-    );
-    expect(useSidebarLayoutStore.getState().openPrimary).not.toContain(
-      "recents",
-    );
-  });
-
-  test("persists a section the user opened themselves", () => {
-    seedGroupedView();
-    const conversations = [
-      makeConversation(0),
-      makeConversation(1, {
-        conversationId: "slack-1",
-        originChannel: "slack",
-        groupId: undefined,
-      }),
-    ];
-
-    const { result } = renderHook(() => useSidebarState({ conversations }));
-
-    act(() =>
-      result.current.onOpenSectionsChange([
-        ...result.current.effectiveOpenSections,
-        "channel:slack",
-      ]),
-    );
-
-    expect(useSidebarLayoutStore.getState().openCategories).toContain(
-      "channel:slack",
-    );
-  });
-});
-
-describe("useSidebarState custom-group open-section persistence", () => {
-  // Custom groups share the one accordion root with every other section, and
-  // attention forces them open the same way - so their writes need the same
-  // filter, or a group the user never opened stays expanded once the
-  // attention clears. The write must also land in the custom-group bucket,
-  // not the primary or category bucket the same array carries.
-  test("does not persist a custom group that only attention forced open", () => {
-    const conversations = [
-      makeConversation(0, { conversationId: "g1", groupId: "grp-a" }),
-      makeConversation(1, { conversationId: "g2", groupId: "grp-b" }),
-    ];
-    const conversationGroups = [
-      { id: "grp-a", name: "Alpha", sortPosition: 0, isSystemGroup: false },
-      { id: "grp-b", name: "Beta", sortPosition: 1, isSystemGroup: false },
-    ];
-
-    const { result } = renderHook(() =>
-      useSidebarState({
-        conversations,
-        conversationGroups,
-        attentionConversationIds: new Set(["g2"]),
-      }),
-    );
-
-    expect(result.current.effectiveOpenSections).toContain("grp-b");
-
-    // Opening Alpha emits Beta's forced key alongside the real change.
-    act(() =>
-      result.current.onOpenSectionsChange([
-        ...result.current.effectiveOpenSections,
-        "grp-a",
-      ]),
-    );
-
-    const stored = useSidebarLayoutStore.getState().openCustomGroups;
-    expect(stored).toContain("grp-a");
-    expect(stored).not.toContain("grp-b");
-    // The shared array also carried "recents"; it must not leak into the
-    // custom-group bucket.
-    expect(stored).not.toContain("recents");
   });
 });
 

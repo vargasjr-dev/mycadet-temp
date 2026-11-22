@@ -28,7 +28,6 @@ interface NavSectionStoryArgs {
   label: string;
   showIcon: boolean;
   showTrailing: boolean;
-  defaultOpen: boolean;
 }
 
 const meta: Meta<NavSectionStoryArgs> = {
@@ -50,7 +49,6 @@ const meta: Meta<NavSectionStoryArgs> = {
     label: { control: "text" },
     showIcon: { control: "boolean" },
     showTrailing: { control: "boolean" },
-    defaultOpen: { control: "boolean" },
   },
 };
 
@@ -78,17 +76,11 @@ export const Default: Story = {
     label: "Recents",
     showIcon: true,
     showTrailing: false,
-    defaultOpen: true,
   },
-  render: ({ label, showIcon, showTrailing, defaultOpen }) => (
+  render: ({ label, showIcon, showTrailing }) => (
     <SideMenuFrame>
-      <CollapsibleNavSection.Root
-        type="multiple"
-        className="gap-3"
-        defaultValue={defaultOpen ? ["section"] : []}
-      >
+      <CollapsibleNavSection.Root className="gap-3">
         <CollapsibleNavSection.Section
-          value="section"
           icon={showIcon ? Clock : undefined}
           label={label}
           trailing={
@@ -119,13 +111,8 @@ export const MultipleSections: Story = {
   },
   render: () => (
     <SideMenuFrame>
-      <CollapsibleNavSection.Root
-        type="multiple"
-        className="gap-3"
-        defaultValue={["pinned", "recents"]}
-      >
+      <CollapsibleNavSection.Root className="gap-3">
         <CollapsibleNavSection.Section
-          value="pinned"
           icon={Pin}
           label="Pinned"
           trailing={<SectionActionsButton label="Pinned" />}
@@ -136,21 +123,13 @@ export const MultipleSections: Story = {
             <SideMenu.Item label="Hiring loop" />
           </SideMenu.SubList>
         </CollapsibleNavSection.Section>
-        <CollapsibleNavSection.Section
-          value="recents"
-          icon={Clock}
-          label="Recents"
-        >
+        <CollapsibleNavSection.Section icon={Clock} label="Recents">
           <SideMenu.SubList>
             <SideMenu.Item label="Plan a trip to Tokyo" />
             <SideMenu.Item label="Refactor sidebar component" />
           </SideMenu.SubList>
         </CollapsibleNavSection.Section>
-        <CollapsibleNavSection.Section
-          value="favorites"
-          icon={Star}
-          label="Favorites"
-        >
+        <CollapsibleNavSection.Section icon={Star} label="Favorites">
           <SideMenu.SubList>
             <SideMenu.Item label="Saved snippet" />
           </SideMenu.SubList>
@@ -165,17 +144,11 @@ export const NoIcon: Story = {
     label: "Conversations",
     showIcon: false,
     showTrailing: false,
-    defaultOpen: true,
   },
-  render: ({ label, showTrailing, defaultOpen }) => (
+  render: ({ label, showTrailing }) => (
     <SideMenuFrame>
-      <CollapsibleNavSection.Root
-        type="multiple"
-        className="gap-3"
-        defaultValue={defaultOpen ? ["section"] : []}
-      >
+      <CollapsibleNavSection.Root className="gap-3">
         <CollapsibleNavSection.Section
-          value={label}
           label={label}
           trailing={
             showTrailing ? <SectionActionsButton label={label} /> : undefined

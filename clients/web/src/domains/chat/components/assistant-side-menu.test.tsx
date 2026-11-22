@@ -157,7 +157,6 @@ import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu
 import { CONVERSATION_LIST_VIRTUALIZE_THRESHOLD } from "@/domains/chat/components/conversation-nav-section";
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
-import { saveExpandedSections } from "@/domains/chat/utils/sidebar-group-collapse-storage";
 import type * as UsePinnedApps from "@/hooks/use-pinned-apps";
 import { makeAppSummary } from "@/types/app-summary.test-helper";
 import type { AppSummary } from "@/types/app-types";
@@ -177,8 +176,6 @@ beforeEach(() => {
   useSidebarLayoutStore.setState({
     assistantId: null,
     sectionOrder: [],
-    openCategories: [],
-    openCustomGroups: [],
   });
 });
 
@@ -525,10 +522,11 @@ describe("AssistantSideMenu · section scrolling", () => {
     expect(html).not.toContain(">Show less<");
   });
 
-  test("a long section scrolls within its own cap", () => {
+  test("a long section renders all of its rows and lets the body scroll", () => {
+    // Under the virtualize threshold, so the rows mount and are countable.
     const container = parse(
       renderMenu({
-        conversations: Array.from({ length: 40 }, (_, index) =>
+        conversations: Array.from({ length: 20 }, (_, index) =>
           makeConversation({
             conversationId: `r${index}`,
             title: `Recent ${index}`,
@@ -537,10 +535,12 @@ describe("AssistantSideMenu · section scrolling", () => {
       }),
     );
 
-    const scrollport = container.querySelector<HTMLElement>(
-      '[data-slot="collapsible"] .overflow-y-auto, [data-slot="collapsible"] [data-slot="virtual-list"]',
-    );
-    expect(scrollport).not.toBeNull();
+    // No per-section cap: no section nests a scroller of its own (the
+    // sidebar body is the scrollport), and every row is present.
+    for (const section of sectionElements(container)) {
+      expect(section.querySelector(".overflow-y-auto")).toBeNull();
+    }
+    expect(container.textContent).toContain("Recent 19");
   });
 });
 
@@ -1341,10 +1341,10 @@ function sectionLabels(container: HTMLElement): (string | undefined)[] {
 }
 
 describe("AssistantSideMenu · section spacing", () => {
-  // One accordion root holds every section, so its gap is the only thing
+  // One stack root holds every section, so its gap is the only thing
   // separating them - no boundary can pick up the Body's larger gap instead,
   // and a custom group can sit between two built-in sections.
-  test("every section type shares a single accordion root", () => {
+  test("every section type shares a single stack root", () => {
     const container = parse(
       renderMenu({
         conversations: LAYOUT_CONVERSATIONS,
@@ -1562,14 +1562,11 @@ describe("AssistantSideMenu · equal section treatment", () => {
     pinnedAppsFixture = [];
   });
 
-  // Pinned is the one section that doesn't cap: it grows to fit its own
-  // rows (user-curated, expected to stay short). Every derived section -
-  // Chats and each channel section - claims whatever space is left and
-  // scrolls within itself, so a busy section can never push its
-  // neighbours out of reach. Regression guard: a polish pass once unbound
-  // Chats onto the sidebar body, which parked the channel sections below
-  // hundreds of rows.
-  test("Chats and channel sections cap/scroll internally; Pinned doesn't", () => {
+  // Sections do not fold and do not cap: every section renders all of its
+  // rows, and the sidebar body is the one scrollport. No section nests a
+  // scroller of its own, so nothing pushes its neighbours out of reach by
+  // hiding them behind a fold.
+  test("no section nests a scroller or folds its rows", () => {
     // A real DOM render, not `parse`: `scrollParent` only takes effect once
     // the sidebar body's ref has mounted.
     const { container } = render(
@@ -1582,99 +1579,16 @@ describe("AssistantSideMenu · equal section treatment", () => {
       }),
     );
     try {
-      // Channel sections default closed (only Pinned/Chats default open),
-      // so Slack's row list isn't mounted until its header opens it. Going
-      // through the title also exercises the whole-header toggle.
-      const slackTrigger = Array.from(
-        container.querySelectorAll<HTMLElement>(
-          '[data-slot="collapsible-nav-section-title"]',
-        ),
-      ).find((el) => el.textContent?.includes("Slack"));
-      act(() => {
-        slackTrigger?.click();
-      });
-
       const sections = sectionElements(container);
       const labels = sectionLabels(container);
-      const pinned = sections[labels.indexOf("Pinned")];
-      const chats = sections[labels.indexOf("Chats")];
-      const slack = sections[labels.indexOf("Slack")];
-      if (!pinned || !chats || !slack) {
-        throw new Error("expected Pinned, Chats, and Slack sections");
+      if (!labels.includes("Slack")) {
+        throw new Error("expected a Slack section");
       }
-
-      expect(pinned.querySelector(".overflow-y-auto")).toBeNull();
-      expect(chats.querySelector(".overflow-y-auto")).not.toBeNull();
-      expect(slack.querySelector(".overflow-y-auto")).not.toBeNull();
-    } finally {
-      cleanup();
-    }
-  });
-
-  /**
-   * Renders the rail for real (not `parse`): the sizing is decided by
-   * `isLast`, and a section that defaults closed has no row list to size
-   * until its header mounts one. `openSections` clicks the named headers
-   * first - only Pinned and Chats default open.
-   */
-  function renderRail(openSections: string[] = []) {
-    const { container } = render(
-      createElement(SideMenuUnderTest, {
-        collapsed: false,
-        variant: "rail",
-        conversations: LAYOUT_CONVERSATIONS,
-        conversationGroups: LAYOUT_GROUPS,
-        onSelectConversation: () => {},
-      }),
-    );
-    for (const label of openSections) {
-      const trigger = Array.from(
-        container.querySelectorAll<HTMLElement>(
-          '[data-slot="collapsible-nav-section-title"]',
-        ),
-      ).find((el) => el.textContent?.includes(label));
-      act(() => {
-        trigger?.click();
-      });
-    }
-    const sections = sectionElements(container);
-    const labels = sectionLabels(container);
-    return (label: string): HTMLElement => {
-      const scroller =
-        sections[labels.indexOf(label)]?.querySelector<HTMLElement>(
-          ".overflow-y-auto",
-        );
-      if (!scroller) {
-        throw new Error(`expected a scrolling row list in "${label}"`);
+      for (const section of sections) {
+        expect(section.querySelector(".overflow-y-auto")).toBeNull();
       }
-      return scroller;
-    };
-  }
-
-  /*
-   * The test above asks only whether a section scrolls, and every sized
-   * section does - so it passes whether the bottom-most one rests at the mid
-   * height or fills the rail. That is the difference users see: a
-   * bottom-most section that fills runs a hundred threads down the rail's
-   * whole height, so it rests at the same cap the sections above it take
-   * and grows to the rail's leftover height only on request (the Expand
-   * control writes `cadet:sidebar-expanded-sections`, which the section
-   * reads on render). These pin the rest height and the growth themselves.
-   */
-  test("the bottom-most section rests at the mid height; the ones above it cap", () => {
-    // Grouped: Pinned, Alpha, Chats, Slack. Slack is bottom-most.
-    const scroller = renderRail(["Slack"]);
-    try {
-      expect(scroller("Chats").style.maxHeight).toBe(
-        `${SIDEBAR_SECTION_MAX_HEIGHT}px`,
-      );
-      // The same cap, but as the last section it hugs its rows and shrinks
-      // under the rail's space rather than committing to a fill.
-      expect(scroller("Slack").style.maxHeight).toBe(
-        `${SIDEBAR_SECTION_MAX_HEIGHT}px`,
-      );
-      expect(scroller("Slack").classList.contains("flex-1")).toBe(false);
-      expect(scroller("Slack").classList.contains("min-h-0")).toBe(true);
+      // Every section's rows render with it — nothing waits on a fold.
+      expect(container.textContent).toContain("Slack one");
     } finally {
       cleanup();
     }
@@ -1751,50 +1665,14 @@ describe("AssistantSideMenu · equal section treatment", () => {
     }
   });
 
-  test("ungrouped, Chats is bottom-most: rests at the mid height and grows on request", () => {
-    // No channel sections, so Chats sits last and holds every conversation
-    // the curated sections didn't claim.
-    localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
-    const scroller = renderRail(["Alpha"]);
-    try {
-      expect(scroller("Chats").style.maxHeight).toBe(
-        `${SIDEBAR_SECTION_MAX_HEIGHT}px`,
-      );
-      expect(scroller("Chats").classList.contains("flex-1")).toBe(false);
-      // Still capped, since Chats sits under it - the mid height is
-      // positional, not "every section may grow now".
-      expect(scroller("Alpha").style.maxHeight).toBe(
-        `${SIDEBAR_SECTION_MAX_HEIGHT}px`,
-      );
-
-      // Expanded, the cap goes and the scroller takes the rail's leftover
-      // height, still hugging its rows rather than filling. Alpha is
-      // untouched: the choice is the last section's alone.
-      act(() => {
-        saveExpandedSections("asst-1", ["recents"]);
-      });
-      expect(scroller("Chats").style.maxHeight).toBe("");
-      expect(scroller("Chats").classList.contains("flex-1")).toBe(false);
-      expect(scroller("Chats").classList.contains("min-h-0")).toBe(true);
-      expect(scroller("Alpha").style.maxHeight).toBe(
-        `${SIDEBAR_SECTION_MAX_HEIGHT}px`,
-      );
-    } finally {
-      cleanup();
-    }
-  });
-
-  /*
-   * Past CONVERSATION_LIST_VIRTUALIZE_THRESHOLD the bottom-most section
-   * windows its rows through virtuoso, and a windowed list renders only what
-   * fits its viewport: unlike mounted rows, it has no natural height of its
-   * own. At the mid height that is simply the cap as a fixed height. Expanded,
-   * its box needs two things, and losing either blanks the whole list while
-   * the caches stay fully populated: the accordion root must forward the
-   * sidebar body's height down to the card's flex-fill, and the box itself
-   * must floor at the section cap so a squeezed (or broken) chain still
-   * yields a scrollable section rather than a zero-height one.
-   */
+  /* Past CONVERSATION_LIST_VIRTUALIZE_THRESHOLD the bottom-most section
+     windows its rows through virtuoso, and a windowed list renders only what
+     fits its viewport: unlike mounted rows, it has no natural height of its
+     own. Its box needs two things, and losing either blanks the whole list
+     while the caches stay fully populated: the stack root must pass the
+     sidebar body's height down to the card's flex-fill, and the box itself
+     must floor at the section cap so a squeezed (or broken) chain still
+     yields a scrollable section rather than a zero-height one. */
   function renderWindowedChats() {
     localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     const container = parse(
@@ -1828,26 +1706,14 @@ describe("AssistantSideMenu · equal section treatment", () => {
     return { container, box: windowed.parentElement };
   }
 
-  test("past the virtualize threshold, Chats windows into a fixed box at the mid height", () => {
-    const { box } = renderWindowedChats();
-
-    expect(box.style.height).toBe(`${SIDEBAR_SECTION_MAX_HEIGHT}px`);
-    expect(box.classList.contains("flex-1")).toBe(false);
-  });
-
-  test("expanded past the virtualize threshold, Chats windows into a bounded, filling box", () => {
-    // What the Expand control writes.
-    localStorage.setItem(
-      "cadet:sidebar-expanded-sections:asst-1",
-      JSON.stringify(["recents"]),
-    );
+  test("past the virtualize threshold, Chats windows into a bounded, filling box", () => {
     const { container, box } = renderWindowedChats();
 
     expect(box.classList.contains("flex-1")).toBe(true);
     expect(box.style.minHeight).toBe(`${SIDEBAR_SECTION_MAX_HEIGHT}px`);
 
-    // The fill above the floor only resolves if the accordion root passes
-    // the body's height to the card's flex-fill.
+    // The fill above the floor only resolves if the stack root passes the
+    // body's height to the card's flex-fill.
     const root = container.querySelector<HTMLElement>(
       '[data-slot="collapsible"]',
     );
@@ -1876,11 +1742,19 @@ describe("AssistantSideMenu · equal section treatment", () => {
          implementation detail this should survive. What matters is that the
          section is draggable at all. */
       expect(section.closest('[draggable="true"]')).not.toBeNull();
+      // No fold affordance on any of them: no chevron and no title trigger.
+      // (The trailing "…" menu button is the header's one button, and it is
+      // a menu trigger, not a fold.)
       const header = section.querySelector<HTMLElement>(
         '[data-slot="collapsible-nav-section-header"]',
       );
-      // A disclosure chevron, on every one.
-      expect(header?.querySelector("svg")).not.toBeNull();
+      expect(header).not.toBeNull();
+      expect(
+        header?.querySelector('[data-slot="collapsible-nav-section-chevron"]'),
+      ).toBeNull();
+      expect(
+        header?.querySelector('[data-slot="collapsible-nav-section-title"]'),
+      ).toBeNull();
     }
   });
 });

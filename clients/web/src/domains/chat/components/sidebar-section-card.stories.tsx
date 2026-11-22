@@ -3,29 +3,20 @@
  *
  * Every sidebar section is this card: Pinned, each custom group, each
  * channel, and the chat list. The card is only the surface; the header,
- * collapse, indicator, and menus come from `CollapsibleNavSection.Section`,
- * so these stories mount the real section machinery and the real
- * {@link ConversationRow} rather than stand-in markup.
- *
- * Sections share one `CollapsibleNavSection.Root`, which is how the sidebar
- * mounts them, so `defaultValue` decides which cards start open.
+ * row list, and menus come from `ConversationNavSection`, so these stories
+ * mount the real section machinery and the real {@link ConversationRow}
+ * rather than stand-in markup.
  */
-
-import { useState } from "react";
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { CollapsibleNavSection } from "@/components/collapsible-nav-section";
-import { GroupIndicatorDot } from "@/domains/chat/components/collapsed-group-icon";
 import { ConversationListProvider } from "@/domains/chat/components/conversation-list-context";
 import {
   GroupActionsMenu,
   type GroupMenuItemsProps,
 } from "@/domains/chat/components/group-actions-menu";
-import {
-  SidebarSectionCard,
-  type SidebarSectionCardProps,
-} from "@/domains/chat/components/sidebar-section-card";
+import { SidebarSectionCard } from "@/domains/chat/components/sidebar-section-card";
 import type { Conversation } from "@/types/conversation-types";
 
 function conversation(
@@ -144,13 +135,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Pinned carries the hover "…" and grows to fit its rows rather than
- * capping and scrolling within itself, as it does in the sidebar today.
- */
+/** Pinned carries the hover "…" and grows to fit its rows. */
 export const Pinned: Story = {
   args: {
-    value: "pinned",
     label: "Pinned",
     items: PINNED,
     unbounded: true,
@@ -158,66 +145,50 @@ export const Pinned: Story = {
     trailing: <GroupActionsMenu label="Pinned" {...PINNED_MENU} />,
   },
   render: (args) => (
-    <CollapsibleNavSection.Root type="multiple" defaultValue={["pinned"]}>
+    <CollapsibleNavSection.Root>
       <SidebarSectionCard {...args} />
     </CollapsibleNavSection.Root>
   ),
 };
 
 /**
- * A custom group, collapsed, carrying its unread dot in the header.
+ * A custom group carrying its unread dot on a row.
  *
- * No leading icon: `CollapsibleNavSection.Section` renders `icon` only in its
- * non-collapsible branch, so a collapsible section drops it. The design gives
- * custom groups a folder glyph, which means the shared section component needs
- * to render icons on collapsible headers before these cards can show one. That
- * is a change to a component the current sidebar renders through, so it is
- * tracked separately rather than folded into this presentational slice.
+ * No leading icon, as in the sidebar today: the design gives custom groups a
+ * folder glyph, which the shared section component does not draw yet. That is
+ * a change to a component the sidebar renders through, so it is tracked
+ * separately rather than folded into this presentational slice.
  */
-export const CollapsedGroup: Story = {
+export const CustomGroup: Story = {
   args: {
-    value: "car-chat",
     label: "Car Chat",
     items: [],
-    collapsedIndicator: <GroupIndicatorDot state="unread" />,
     groupMenu: CUSTOM_GROUP_MENU,
     trailing: <GroupActionsMenu label="Car Chat" {...CUSTOM_GROUP_MENU} />,
   },
   render: (args) => (
-    <CollapsibleNavSection.Root type="multiple" defaultValue={[]}>
+    <CollapsibleNavSection.Root>
       <SidebarSectionCard {...args} />
     </CollapsibleNavSection.Root>
   ),
 };
 
-/** Expanded, the header dot gives way to the row's own indicator. */
 export const Chats: Story = {
   args: {
-    value: "chats",
     label: "Chats",
     items: CHATS,
-    collapsedIndicator: <GroupIndicatorDot state="unread" />,
   },
   render: (args) => (
-    <CollapsibleNavSection.Root type="multiple" defaultValue={["chats"]}>
+    <CollapsibleNavSection.Root>
       <SidebarSectionCard {...args} />
     </CollapsibleNavSection.Root>
   ),
 };
 
 /**
- * Thirty-plus threads: the case the expand control exists for. As the
- * rail's bottom-most section, Chats rests at the same mid height every
- * non-last section caps at, scrolling within itself, with "Expand" pinned
- * at the card's foot. Expanded, the card grows to whatever height the rail
- * has left (here, the frame) and the rows keep scrolling the same way;
- * "Collapse" brings it back. The choice persists per section in the real
- * sidebar; the story keeps it in local state.
- *
- * Mounted inside a frame the height of a small laptop's rail, because that
- * is where the geometry matters: the card hugs its rows rather than
- * stretching to the frame, and past thirty rows the list windows
- * (virtualizes) with the control still in place.
+ * Thirty-plus threads: the case the row list windows (virtualizes) for.
+ * The section renders all of its rows in one scrolling rail — there is no
+ * cap to expand past.
  */
 /* Synthetic titles at the widths a real list runs to, from a few words to
    one that truncates, so the rows read as a list rather than a repeated
@@ -257,60 +228,17 @@ function railFrame(Story: () => React.ReactElement) {
   );
 }
 
-/**
- * The real sidebar keeps `expanded` in the layout store; the story holds
- * it here so the control is live in the Canvas.
- */
-function ExpandableChats({
-  initiallyExpanded = false,
-  ...args
-}: SidebarSectionCardProps & { initiallyExpanded?: boolean }) {
-  const [expanded, setExpanded] = useState(initiallyExpanded);
-  return (
-    <CollapsibleNavSection.Root
-      type="multiple"
-      defaultValue={["chats"]}
-      className="min-h-0 flex-1"
-    >
-      <SidebarSectionCard
-        {...args}
-        expanded={expanded}
-        onExpandedChange={setExpanded}
-      />
-    </CollapsibleNavSection.Root>
-  );
-}
-
 export const ChatsThirtyPlus: Story = {
   name: "Chats · thirty-plus threads",
   args: {
-    value: "chats",
     label: "Chats",
     items: MANY_CHATS,
     isLast: true,
-    expandable: true,
     groupMenu: CHATS_MENU,
     trailing: <GroupActionsMenu label="Chats" {...CHATS_MENU} />,
   },
   decorators: [railFrame],
-  render: (args) => <ExpandableChats {...args} />,
-};
-
-/** The same section already expanded to the frame's full height. */
-export const ChatsThirtyPlusExpanded: Story = {
-  ...ChatsThirtyPlus,
-  name: "Chats · thirty-plus threads, expanded",
-  render: (args) => <ExpandableChats {...args} initiallyExpanded />,
-};
-
-/**
- * Twelve threads: past the cap, so the control shows, but short enough
- * that expanding hugs the rows rather than filling the frame.
- */
-export const ChatsJustPastTheCap: Story = {
-  ...ChatsThirtyPlus,
-  name: "Chats · just past the cap",
-  args: { ...ChatsThirtyPlus.args, items: MANY_CHATS.slice(0, 12) },
+  render: (args) => <SidebarSectionCard {...args} />,
 };
 
 /**
@@ -319,7 +247,7 @@ export const ChatsJustPastTheCap: Story = {
  * The header's actions are the section's. This is the Chats card, so: mark all
  * read, archive all, reorder, plus the channel-grouping toggle it owns now that
  * the sidebar-wide "Conversations" header is gone. No rename or delete - those
- * belong to a custom group, and the Chats list is not one (see `CollapsedGroup`
+ * belong to a custom group, and the Chats list is not one (see `CustomGroup`
  * for the menu that has them). They are reachable from the hover "…", from
  * right-clicking the header, and from a long-press on touch, all rendered from
  * one `groupMenu`.
@@ -329,14 +257,13 @@ export const ChatsJustPastTheCap: Story = {
  */
 export const SectionMenuVersusRowMenu: Story = {
   args: {
-    value: "chats",
     label: "Chats",
     items: CHATS.slice(0, 4),
     groupMenu: CHATS_MENU,
     trailing: <GroupActionsMenu label="Chats" {...CHATS_MENU} />,
   },
   render: (args) => (
-    <CollapsibleNavSection.Root type="multiple" defaultValue={["chats"]}>
+    <CollapsibleNavSection.Root>
       <SidebarSectionCard {...args} />
     </CollapsibleNavSection.Root>
   ),
@@ -344,14 +271,10 @@ export const SectionMenuVersusRowMenu: Story = {
 
 /** The sidebar's stack: curated cards above, the chat list below. */
 export const Composed: Story = {
-  args: { value: "pinned", label: "Pinned", items: PINNED },
+  args: { label: "Pinned", items: PINNED },
   render: () => (
-    <CollapsibleNavSection.Root
-      type="multiple"
-      defaultValue={["pinned", "chats"]}
-    >
+    <CollapsibleNavSection.Root>
       <SidebarSectionCard
-        value="pinned"
         label="Pinned"
         items={PINNED}
         unbounded
@@ -359,15 +282,12 @@ export const Composed: Story = {
         trailing={<GroupActionsMenu label="Pinned" {...PINNED_MENU} />}
       />
       <SidebarSectionCard
-        value="car-chat"
         label="Car Chat"
         items={[]}
-        collapsedIndicator={<GroupIndicatorDot state="unread" />}
         groupMenu={CUSTOM_GROUP_MENU}
         trailing={<GroupActionsMenu label="Car Chat" {...CUSTOM_GROUP_MENU} />}
       />
       <SidebarSectionCard
-        value="chats"
         label="Chats"
         items={CHATS}
         groupMenu={CHATS_MENU}
