@@ -39,11 +39,16 @@ const listResponseProbe = z.object({
   results: z.array(z.unknown()),
   count: z.number(),
 });
+// The route's declared response body — what the cloud returns and what the
+// CLI's AttachmentMeta consumes. A probe shaped differently than the wire
+// makes every element fail and .catch([]) silently swallow the list.
 const attachmentMetaSchema = z.object({
-  message_id: z.string(),
+  id: z.string(),
   filename: z.string(),
   content_type: z.string(),
-  size: z.number().optional(),
+  size_bytes: z.number(),
+  content_id: z.string(),
+  created_at: z.string(),
 });
 const attachmentListProbe = z
   .object({ results: z.array(attachmentMetaSchema).optional().catch([]) })

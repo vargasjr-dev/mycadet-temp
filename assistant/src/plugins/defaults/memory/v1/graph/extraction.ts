@@ -486,6 +486,14 @@ const EXTRACT_TOOL_SCHEMA = {
  */
 const optStr = z.string().optional().catch(undefined);
 const optNum = z.number().optional().catch(undefined);
+// LLMs frequently stringify epoch ms; let the raw value through and let
+// parseEpochMs() coerce it — a strict number schema would .catch() the
+// string to undefined before the coercion ever runs.
+const optEventDate = z
+  .union([z.number(), z.string()])
+  .nullable()
+  .optional()
+  .catch(undefined);
 
 const rawCreateNodeSchema = z.object({
   temp_id: optStr,
@@ -503,14 +511,14 @@ const rawCreateNodeSchema = z.object({
   significance: optNum,
   confidence: optNum,
   source_type: optStr,
-  event_date: optNum,
+  event_date: optEventDate,
   triggers: z
     .array(
       z.object({
         type: optStr,
         schedule: optStr,
         condition: optStr,
-        event_date: optNum,
+        event_date: optEventDate,
         ramp_days: optNum,
         follow_up_days: optNum,
         recurring: z.boolean().optional().catch(undefined),
@@ -546,7 +554,7 @@ const rawUpdateNodeSchema = z.object({
   significance: optNum,
   confidence: optNum,
   fidelity: optStr,
-  event_date: z.number().nullable().optional().catch(undefined),
+  event_date: optEventDate,
 });
 
 const rawNewEdgeSchema = z.object({

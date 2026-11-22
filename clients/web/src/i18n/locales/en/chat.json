@@ -1092,15 +1092,6 @@
   "subagentSpawnGroup": {
     "stopSubagentAria": "Stop subagent"
   },
-  "suggestionCard": {
-    "openAria": "Open suggestion: {title}"
-  },
-  "suggestionDetailPanel": {
-    "closeAria": "Close",
-    "letsDoIt": "Let's do it!",
-    "thingsWeCanDo": "Things we can do:",
-    "whatWellNeed": "Here's what we'll need:"
-  },
   "surfaceActions": {
     "submitFailed": "Failed to submit. Please try again."
   },

@@ -86,6 +86,14 @@ export function asConversation<TExtra extends object = object>(
     isStale: () => false,
     hasInFlightWork: () => false,
     modeSessions: mockUnownedModeSessions(),
+    // The prototype inheritance below carries the real class's
+    // `hasNoClient` getter (`currentTurnIsNonInteractive ?? true`), which
+    // on a bare double resolves TRUE and silently flips every
+    // interactivity-gated path (ui_show's awaitAction, wake delivery).
+    // A double is an in-turn, human-present conversation unless it opts
+    // out — matching the falsy `hasNoClient` these doubles had before the
+    // prototype-based rebuild.
+    currentTurnIsNonInteractive: false,
     ...mock,
   });
   return conversation;

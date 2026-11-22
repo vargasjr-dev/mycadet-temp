@@ -77,6 +77,9 @@ mock.module("../runtime/agent-wake.js", () => ({
 const registeredTools: BackgroundTool[] = [];
 
 mock.module("../tools/background-tool-registry.js", () => ({
+  // #941's shell observability reads this constant off the registry module;
+  // a mock without it fails the transitive import at load.
+  CONVERSATION_ABORT_REASON: "conversation_user_abort",
   registerBackgroundTool: (tool: BackgroundTool) => {
     registeredTools.push(tool);
   },

@@ -231,7 +231,10 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { thinking: { type: "disabled" } },
     });
 
-    expect(lastStreamParams!.thinking).toEqual({ type: "disabled" });
+    expect(lastStreamParams!.thinking).toEqual({
+      type: "disabled",
+      block_binding: { prefix_mismatch_behavior: "drop_block" },
+    });
   });
 
   test("drops unsigned thinking blocks from prior assistant messages", async () => {
@@ -3304,7 +3307,10 @@ describe("OpenRouterProvider — Anthropic dispatch", () => {
       config: { thinking: { type: "adaptive" } },
     });
 
-    expect(lastStreamParams!.thinking).toEqual({ type: "adaptive" });
+    expect(lastStreamParams!.thinking).toEqual({
+      type: "adaptive",
+      block_binding: { prefix_mismatch_behavior: "drop_block" },
+    });
     // The OpenAI-compat `reasoning` parameter must NOT be sent on the
     // native Messages API path.
     expect(lastStreamParams!.reasoning).toBeUndefined();
@@ -3321,7 +3327,10 @@ describe("OpenRouterProvider — Anthropic dispatch", () => {
       config: { thinking: { type: "disabled" } },
     });
 
-    expect(lastStreamParams!.thinking).toEqual({ type: "disabled" });
+    expect(lastStreamParams!.thinking).toEqual({
+      type: "disabled",
+      block_binding: { prefix_mismatch_behavior: "drop_block" },
+    });
     expect(lastStreamParams!.reasoning).toBeUndefined();
   });
 

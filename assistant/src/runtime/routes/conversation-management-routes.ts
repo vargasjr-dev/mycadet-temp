@@ -508,7 +508,11 @@ function handleSurfaceConversation({
 }
 
 function handleCancelGeneration({ pathParams = {} }: RouteHandlerArgs) {
-  const resolvedId = resolveOrThrow(pathParams.id!);
+  // Raw-ID fallback, NOT a 404: an id unknown to the DB must still reach
+  // cancelGeneration — cancelGeneration owns the "unknown → no-op"
+  // semantics, and refusing here would strand a cancel for a conversation
+  // the key store hasn't flushed yet, leaving the stream running.
+  const resolvedId = resolveConversationId(pathParams.id!) ?? pathParams.id!;
   const cancelled = cancelGeneration(resolvedId);
   return { ok: true, cancelled, conversationId: resolvedId };
 }

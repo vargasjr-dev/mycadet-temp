@@ -272,19 +272,26 @@ export class CadetQdrantClient {
           // Detect whether the collection uses unnamed vectors (legacy) vs
           // named vectors: the SDK types config as the unnamed VectorParams
           // or the named map, and only a real {size: number} shape answers.
-          const vectorParamsProbe = z
-            .object({ size: z.number() })
-            .nullable()
-            .catch(null);
-          const namedVectorsProbe = z
-            .object({ dense: vectorParamsProbe.optional() })
-            .nullable()
-            .catch(null);
-          const unnamedParse = vectorParamsProbe.safeParse(vectorsConfig);
-          const isUnnamedVectors = unnamedParse.success;
+          // NOTE: a .catch() schema must never back a safeParse — the catch
+          // converts a FAILED validation into a SUCCESSFUL one carrying the
+          // fallback, so `success` stops meaning "matched the shape" and
+          // every named collection reads as legacy-unnamed (delete on every
+          // boot). Match on the discriminating key instead.
+          const isUnnamedVectors =
+            vectorsConfig != null &&
+            typeof vectorsConfig === "object" &&
+            "size" in vectorsConfig;
+          const namedVectorsShape = z
+            .object({
+              dense: z.object({ size: z.number() }).optional(),
+            })
+            .nullable();
+          const namedParse = namedVectorsShape.safeParse(vectorsConfig);
           const currentSize = isUnnamedVectors
-            ? unnamedParse.data?.size
-            : namedVectorsProbe.parse(vectorsConfig)?.dense?.size;
+            ? (vectorsConfig as { size?: number }).size
+            : namedParse.success
+              ? namedParse.data?.dense?.size
+              : undefined;
 
           const dimMismatch =
             currentSize != null && currentSize !== this.vectorSize;

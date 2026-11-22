@@ -1081,15 +1081,6 @@
   "subagentSpawnGroup": {
     "stopSubagentAria": "停止子代理"
   },
-  "suggestionCard": {
-    "openAria": "開啟建議：{title}"
-  },
-  "suggestionDetailPanel": {
-    "closeAria": "關閉",
-    "letsDoIt": "開始吧！",
-    "thingsWeCanDo": "我們可以做的事：",
-    "whatWellNeed": "我們需要準備的項目："
-  },
   "surfaceActions": {
     "submitFailed": "提交失敗。請再試一次。"
   },

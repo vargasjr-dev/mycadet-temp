@@ -1699,11 +1699,14 @@ export function describeCronExpression(expr: string | null): string {
         _states: z
           .object({
             pattern: z.object({
-              minute: z.array(z.boolean()),
-              hour: z.array(z.boolean()),
-              day: z.array(z.boolean()),
-              month: z.array(z.boolean()),
-              dayOfWeek: z.array(z.boolean()),
+              // Croner's bit-fields are 0/1 NUMBERS (dayOfWeek is a bitmask,
+              // 0 = unselected) — booleans fail validation and degrade the
+              // description to the raw expression.
+              minute: z.array(z.number()),
+              hour: z.array(z.number()),
+              day: z.array(z.number()),
+              month: z.array(z.number()),
+              dayOfWeek: z.array(z.number()),
               starDOM: z.boolean(),
               starDOW: z.boolean(),
             }),

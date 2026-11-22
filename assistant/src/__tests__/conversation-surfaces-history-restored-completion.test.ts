@@ -103,11 +103,16 @@ const {
   surfaceProxyResolver,
 } = await import("../daemon/conversation-surfaces.js");
 
+// Also AFTER mock.module: the helper value-imports Conversation, whose
+// module graph loads conversation-surfaces — statically it would bind the
+// REAL logger before the mock and the rejection-warn asserts would see
+// nothing.
+const { asConversation } = await import("./helpers/mock-conversation.js");
+
 import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
-import { asConversation } from "./helpers/mock-conversation.js";
 
 const CONVERSATION_ID = "conv-history-restored-1";
 
