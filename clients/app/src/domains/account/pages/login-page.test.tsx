@@ -33,7 +33,6 @@ describeAuthEntryContract("LoginPage", {
   Page: LoginPage,
   route: ROUTE,
   authScreenText: "Welcome to Cadet",
-  oauthTriggerText: "Log In",
 });
 
 describe("LoginPage sign-up cross-link", () => {
@@ -66,7 +65,10 @@ describe("LoginPage native split", () => {
     renderEntry();
 
     expect(screen.getByText("Welcome to Cadet")).toBeTruthy();
-    expect(screen.getByText("Log In")).toBeTruthy();
+    const comingSoon = screen
+      .getByText("Coming Soon!")
+      .closest("button") as HTMLButtonElement;
+    expect(comingSoon.disabled).toBe(true);
     expect(screen.getByText("Sign up")).toBeTruthy();
     // The account is not optional here — that route past it belongs to the
     // local client's copy of this screen.
@@ -110,31 +112,22 @@ describe("LoginPage native split", () => {
 });
 
 /**
- * The browser hands off by navigating the page to the provider, so the screen
- * is on its way out the moment the button is pressed. A Cancel offered there
- * flashes and disappears, and there is nothing it could stop — only Electron's
- * flow, which keeps this screen mounted, is interruptible.
+ * The login hand-off is not wired up yet: the primary button reads Coming
+ * Soon! and stays inert — no flow can start from it, on any press.
  */
 describe("LoginPage web handoff", () => {
   setupAuthEntry();
 
-  const logInButton = () => screen.getByText("Log In").closest("button");
-
-  test("the log-in button goes inert rather than offering Cancel", () => {
+  test("the login button is Coming Soon! and starts no flow", () => {
     renderAuthEntry(LoginPage, ROUTE, entryUrl(ROUTE, CHECKOUT));
-    fireEvent.click(screen.getByText("Log In"));
 
-    expect(screen.queryByText("Cancel")).toBeNull();
-    expect(logInButton()?.disabled).toBe(true);
-    expect(authEntry.authFlowCalls).toHaveLength(1);
-  });
+    const button = screen
+      .getByText("Coming Soon!")
+      .closest("button") as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
 
-  test("a second press cannot open a second flow", () => {
-    renderAuthEntry(LoginPage, ROUTE, entryUrl(ROUTE, CHECKOUT));
-    fireEvent.click(screen.getByText("Log In"));
-    fireEvent.click(screen.getByText("Log In"));
-
-    expect(authEntry.authFlowCalls).toHaveLength(1);
+    expect(authEntry.authFlowCalls).toHaveLength(0);
   });
 });
 

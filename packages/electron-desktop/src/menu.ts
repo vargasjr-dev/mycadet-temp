@@ -20,8 +20,8 @@ import {
   acceleratorOption,
   dispatchToFocused,
   onHotkeyOverridesChange,
-  type CadetCommand,
 } from "./commands";
+import { type CadetCommand } from "@mycadet/ipc-contract";
 import { areChromeDevToolsEnabled } from "./devtools";
 import { openAboutWindow } from "./about";
 import { checkForUpdates } from "./auto-update";

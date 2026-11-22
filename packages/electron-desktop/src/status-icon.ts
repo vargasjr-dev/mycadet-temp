@@ -6,12 +6,8 @@ import {
 } from "./assets/menu-bar-glyph";
 import { avatarBitmap } from "./avatar-image";
 import { applyAlphaMask, circleCoverage } from "./image-mask";
-import {
-  PULSE_FRAME_COUNT,
-  pulseOpacityFrames,
-  shouldPulse,
-  type AssistantStatus,
-} from "./status";
+import { PULSE_FRAME_COUNT, pulseOpacityFrames, shouldPulse } from "./status";
+import { type AssistantStatus } from "@mycadet/ipc-contract";
 
 export interface Rgb {
   r: number;

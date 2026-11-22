@@ -50,7 +50,8 @@ export { createBundleHostProvider } from "./bundle-host";
 export { BUNDLES_DIR_NAME, configureBundlePlatform } from "./bundle-platform";
 export { BridgeCapabilityRegistry } from "./capability-registry";
 export { acceleratorOption, dispatchToFocused } from "./commands";
-export type { CadetCommand, HotkeySettingsProvider } from "./commands";
+export type { HotkeySettingsProvider } from "./commands";
+export type { CadetCommand } from "@mycadet/ipc-contract";
 export { companionSizeSubmenus } from "./companion-menu";
 export { hasPendingDeepLinks } from "./deep-links";
 export { getDeviceId } from "./device-id";
@@ -67,7 +68,7 @@ export {
   installDictationOverlay,
   positionDictationOverlayInWorkArea,
 } from "./dictation-overlay-window";
-export type { DictationOverlayState } from "./dictation-overlay-window";
+export type { DictationOverlayState } from "@mycadet/ipc-contract";
 export {
   DICTATION_PUSH_SAMPLE_RATE,
   DictationOwnerRouter,
@@ -76,7 +77,7 @@ export {
   toAudioBuffer,
 } from "./dictation-routing";
 export { configureFeedback } from "./feedback";
-export type { FeedbackDependencies } from "./feedback";
+export type { FeedbackDependencies } from "./diagnostics-contract";
 export { hasPendingFiles } from "./file-open";
 export { createFileOpenPreloadBridge } from "./file-open-preload";
 export {
@@ -120,10 +121,10 @@ export type { NativeAuthCallback } from "./native-auth";
 export { resolveNotificationAvatarPath } from "./notification-avatar-path";
 export {
   CATEGORY_ACTIONS,
-  NOTIFICATION_CATEGORIES,
   createElectronNotification,
   isPreparedNotificationSenderCurrent,
 } from "./notifications";
+export { NOTIFICATION_CATEGORIES } from "@mycadet/ipc-contract";
 export type {
   CategoryAction,
   NotificationCreateOptions,

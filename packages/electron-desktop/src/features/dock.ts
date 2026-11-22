@@ -4,22 +4,19 @@ import { readLockfile } from "@mycadet/local-mode";
 import { app, nativeImage, type NativeImage } from "electron";
 import { z } from "zod";
 
-import { onAvatarChange } from "@mycadet/electron-desktop/avatar";
-import { avatarBitmap } from "@mycadet/electron-desktop/avatar-image";
+import { onAvatarChange } from "../avatar";
+import { avatarBitmap } from "../avatar-image";
 import {
   applyAlphaMask,
   compositeCentered,
   roundedRectCoverage,
-} from "@mycadet/electron-desktop";
-import { on } from "@mycadet/electron-desktop/ipc";
+} from "../image-mask";
+import { on } from "../ipc";
 import {
-  currentMainWindow,
+  current as currentMainWindow,
   onMainWindowVisibilityChange,
-} from "@mycadet/electron-desktop";
-import {
-  getSessionToken,
-  onSessionTokenChange,
-} from "@mycadet/electron-desktop/session-token-store";
+} from "../main-window";
+import { getSessionToken, onSessionTokenChange } from "../session-token-store";
 
 /**
  * Dock integration: avatar icon + unread-count badge + visibility.

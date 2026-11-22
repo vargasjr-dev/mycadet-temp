@@ -141,8 +141,8 @@ interface AuthEntryPage {
   route: string;
   /** Text that renders only once the auth screen itself is on screen. */
   authScreenText: string;
-  /** The control that hands off to OAuth. */
-  oauthTriggerText: string;
+  /** The control that hands off to OAuth, when the page wires one up. */
+  oauthTriggerText?: string;
 }
 
 export function describeAuthEntryContract(
@@ -238,13 +238,18 @@ export function describeAuthEntryContract(
       expect(currentLocation()).toBe("/assistant");
     });
 
-    test("a hostile returnTo is sanitized before it reaches the auth flow", () => {
-      renderEntry(entryUrl(route, HOSTILE_DESTINATION));
-      fireEvent.click(screen.getByText(oauthTriggerText));
+    // The flow-sanitization contract only binds pages that wire the OAuth
+    // hand-off up; a page whose hand-off is not live (login's Coming Soon!)
+    // skips it.
+    if (oauthTriggerText) {
+      test("a hostile returnTo is sanitized before it reaches the auth flow", () => {
+        renderEntry(entryUrl(route, HOSTILE_DESTINATION));
+        fireEvent.click(screen.getByText(oauthTriggerText));
 
-      expect(authEntry.authFlowCalls).toHaveLength(1);
-      expect(authEntry.authFlowCalls[0]?.returnTo).toBe("/assistant");
-    });
+        expect(authEntry.authFlowCalls).toHaveLength(1);
+        expect(authEntry.authFlowCalls[0]?.returnTo).toBe("/assistant");
+      });
+    }
 
     test("an unsettled session with returnTo neither redirects nor offers OAuth", () => {
       authEntry.authenticated = true;

@@ -150,7 +150,7 @@ mock.module("../notifier", () => ({
 }));
 
 const { permissionsShell } = await import("./permissions-strategy");
-const { onPermissionPresentation } = await import("./permissions");
+const { onPermissionPresentation } = await import("./permission-presentation");
 
 const nativeNotifier = (isSupported = true): Notifier => ({
   isSupported: () => isSupported,

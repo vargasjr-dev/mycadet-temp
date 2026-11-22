@@ -1,10 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../test-setup";
 
 import type { z } from "zod";
 
 // Keep pure policy tests independent of Electron window state.
-mock.module("./main-window", () => ({
+mock.module("../main-window", () => ({
   current: () => null,
   onMainWindowVisibilityChange: () => undefined,
 }));
@@ -25,7 +25,7 @@ type Registration = {
 };
 const onRegistrations: Registration[] = [];
 const handleRegistrations: Registration[] = [];
-mock.module("@mycadet/electron-desktop/ipc", () => ({
+mock.module("../ipc", () => ({
   on: (
     channel: string,
     schema: z.ZodType<unknown[]>,
@@ -41,7 +41,7 @@ mock.module("@mycadet/electron-desktop/ipc", () => ({
     handleRegistrations.push({ channel, schema, fn });
   },
 }));
-mock.module("@mycadet/electron-desktop/avatar", () => ({
+mock.module("../avatar", () => ({
   setAvatar: () => undefined,
   setCharacter: () => undefined,
   __resetForTesting: () => undefined,
@@ -57,7 +57,7 @@ mock.module("@mycadet/electron-desktop/avatar", () => ({
 // registered listeners so tests can simulate token changes.
 let mockToken: string | null = null;
 const tokenChangeListeners = new Set<() => void>();
-mock.module("@mycadet/electron-desktop/session-token-store", () => ({
+mock.module("../session-token-store", () => ({
   __resetForTesting: "__resetForTesting",
   clearSessionToken: () => undefined,
   saveSessionToken: () => undefined,
@@ -83,7 +83,7 @@ mock.module("@mycadet/local-mode", () => ({
 }));
 
 const avatarBitmapMock = mock((_size: number): Buffer | null => null);
-mock.module("@mycadet/electron-desktop/avatar-image", () => ({
+mock.module("../avatar-image", () => ({
   avatarBitmap: avatarBitmapMock,
 }));
 

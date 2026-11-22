@@ -7,8 +7,6 @@ import JSZip from "jszip";
 import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
 import type { BundleScanData } from "@mycadet/ipc-contract";
 
-export type { BundleScanData } from "@mycadet/ipc-contract";
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

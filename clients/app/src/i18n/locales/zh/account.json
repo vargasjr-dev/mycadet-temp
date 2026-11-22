@@ -93,7 +93,8 @@
     "body": "您的专属智能助手触手可及。",
     "cancel": "取消",
     "logIn": "登录",
-    "continueWithoutAccount": "不登录继续"
+    "continueWithoutAccount": "不登录继续",
+    "comingSoon": "即将推出！"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "助手",

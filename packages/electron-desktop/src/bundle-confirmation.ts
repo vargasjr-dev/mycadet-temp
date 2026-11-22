@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getBundlePlatform } from "./bundle-platform";
 import { handle, on } from "./ipc";
-import type { BundleScanData } from "./bundle-manager";
+import { BundleScanData } from "@mycadet/ipc-contract";
 import { createWindow } from "./windows";
 
 let confirmationWindow: BrowserWindow | null = null;

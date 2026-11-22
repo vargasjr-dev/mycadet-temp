@@ -73,8 +73,6 @@ const COMMIT_SHA: string =
 
 const COPYRIGHT = (): string => `© ${new Date().getFullYear()} Vargas JR LLC`;
 
-export type { AppVersionInfo };
-
 export const getVersionInfo = (): AppVersionInfo => ({
   appName: APP_NAME,
   version: VERSION,

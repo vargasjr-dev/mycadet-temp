@@ -278,9 +278,6 @@ const invokeGetState = () => invoke("cadet:helper:state:get");
 
 const invokeRestart = () => invoke("cadet:helper:restart");
 
-const wait = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
-
 /** Several loop turns: the fixed sleeps here are settle windows, and a
  * single 5ms hop loses to the client's lazy spawn once cores saturate. */
 const settle = async (): Promise<void> => {

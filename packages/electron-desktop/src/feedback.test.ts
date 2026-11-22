@@ -4,8 +4,8 @@ import {
   collectDiagnostics,
   collectRedactedLogs,
   configureFeedback,
-  type FeedbackDependencies,
 } from "./feedback";
+import { type FeedbackDependencies } from "./diagnostics-contract";
 
 const dependencies = (
   overrides: Partial<FeedbackDependencies> = {},

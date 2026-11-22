@@ -32,6 +32,12 @@ import { getAccentHex, getAvatarPng, onAvatarChange } from "../avatar";
 import { handle, on } from "../ipc";
 import log from "../app-logger";
 import { getPermissionsService } from "./permissions";
+import {
+  dragTarget,
+  listSettingsWindows,
+  onYieldToSettings,
+  openSettingsPane,
+} from "./permission-guide-values";
 
 import { PERMISSION_GUIDE_MIN_HEIGHT } from "@mycadet/ipc-contract";
 
@@ -349,13 +355,13 @@ export async function beginPermissionGuide(
   );
 }
 
-export const installPermissionGuide = (
-  inputs?: PermissionGuideInputs,
-): void => {
-  if (!inputs) {
-    return;
-  }
-  guideInputs = inputs;
+export const installPermissionGuide = (): void => {
+  guideInputs = {
+    dragTarget,
+    openSettingsPane,
+    listSettingsWindows,
+    onYieldToSettings,
+  };
   const service = getPermissionsService();
   if (!service) {
     return;

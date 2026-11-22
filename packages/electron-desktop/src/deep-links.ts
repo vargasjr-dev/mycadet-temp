@@ -50,8 +50,6 @@ import { handle, on } from "./ipc";
  *   - https://www.electronjs.org/docs/latest/api/app#appsetasdefaultprotocolclientprotocol-path-args
  */
 
-export type { DeepLink };
-
 export interface DeepLinkRuntime {
   ensureVisible: () => void | Promise<void>;
 }

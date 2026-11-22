@@ -4,7 +4,6 @@ import { BrowserWindow, nativeImage, Notification } from "electron";
 import { z } from "zod";
 
 import {
-  NOTIFICATION_CATEGORIES,
   NOTIFICATION_SENDER_NAME_MAX_CHARS,
   NOTIFICATIONS_ACTION,
   NOTIFICATIONS_PREPARE_IDENTITY,
@@ -142,7 +141,6 @@ const requireRuntime = (): NotificationsRuntime => {
  * The four categories mirror the Swift app's
  * `UNNotificationCategory` registrations.
  */
-export { NOTIFICATION_CATEGORIES, type NotificationCategory };
 
 export interface CategoryAction {
   type: "button";
@@ -188,8 +186,6 @@ const CATEGORY_COOLDOWN_MS: Record<NotificationCategory, number> = {
 // IPC payload schemas
 // ---------------------------------------------------------------------------
 
-export type { ShowNotificationPayload };
-
 /**
  * The parsed payload, plus whether the renderer sent a `sender` the schema had
  * to drop. The schema degrades a malformed sender to none so the user still
@@ -212,8 +208,6 @@ const showPayloadSchema = z.tuple([
 // ---------------------------------------------------------------------------
 // Notification action event (main → renderer)
 // ---------------------------------------------------------------------------
-
-export type { NotificationActionEvent };
 
 /**
  * Check whether a captured renderer sender still matches the exact prepared

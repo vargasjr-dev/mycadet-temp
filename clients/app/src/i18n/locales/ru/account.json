@@ -93,7 +93,8 @@
     "body": "Личный интеллект уже в одном шаге.",
     "cancel": "Отмена",
     "logIn": "Войти",
-    "continueWithoutAccount": "Continue without account"
+    "continueWithoutAccount": "Continue without account",
+    "comingSoon": "Скоро!"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Ассистенты",

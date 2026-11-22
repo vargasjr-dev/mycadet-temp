@@ -3,9 +3,9 @@ import { z } from "zod";
 
 import type { HotkeyScope, ResolvedHotkey } from "@mycadet/ipc-contract";
 
+import { DEFAULT_ACCELERATORS } from "@mycadet/ipc-contract";
 import { isValidAccelerator } from "./accelerator";
 import {
-  DEFAULT_ACCELERATORS,
   GLOBAL_SHORTCUT_DEFAULTS,
   onHotkeyOverridesChange,
   readHotkeyOverride,
@@ -20,8 +20,6 @@ import { handle } from "./ipc";
  * no override, and their global shortcut is never registered because the
  * shell passes no handler for them.
  */
-
-export type { HotkeyScope, ResolvedHotkey };
 
 interface HotkeyCommand {
   /** Key into `settings.hotkeys` and the matching defaults map. */

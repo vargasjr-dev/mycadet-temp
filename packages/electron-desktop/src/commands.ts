@@ -10,11 +10,7 @@ import {
 } from "./command-palette-window";
 import { onSettingChange, readSetting, writeSetting } from "./settings";
 
-export type { CadetCommand };
-
 export type CadetCommandKind = CadetCommand["kind"];
-
-export { DEFAULT_ACCELERATORS };
 
 export interface HotkeySettingsProvider {
   read: () => Record<string, string>;

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { DEFAULT_ACCELERATORS } from "@mycadet/ipc-contract";
 
 import { electronMock } from "../test-setup";
 
@@ -76,7 +77,6 @@ mock.module("electron", () =>
 
 const {
   configureHotkeySettings,
-  DEFAULT_ACCELERATORS,
   dispatchToFocused,
   GLOBAL_SHORTCUT_DEFAULTS,
   resolveAccelerator,

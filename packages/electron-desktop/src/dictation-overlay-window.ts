@@ -69,12 +69,6 @@ export const DONE_HIDE_MS = 800;
 /** How long error states stay up — mirrors the recording store's 3 s. */
 export const ERROR_HIDE_MS = 3000;
 
-export type {
-  DictationOverlayHitRegion,
-  DictationOverlayMessage,
-  DictationOverlayState,
-};
-
 export interface DictationOverlayWindowDependencies {
   closeOnHide?: boolean;
   /**

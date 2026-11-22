@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { ASSISTANT_STATUSES, CONNECTIVITY_STATES } from "@mycadet/ipc-contract";
 
 import {
   electronMock,
@@ -33,8 +34,6 @@ mock.module("electron", () =>
 // registrar, whose ipcMain registrations the shared surface records.
 
 const {
-  ASSISTANT_STATUSES,
-  CONNECTIVITY_STATES,
   PULSE_FRAME_COUNT,
   PULSE_MAX_OPACITY,
   PULSE_MIN_OPACITY,

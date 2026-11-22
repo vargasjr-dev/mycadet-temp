@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { BundleScanData, BundleMetadata } from "./bundle-manager";
+import type { BundleMetadata } from "./bundle-manager";
+import { BundleScanData } from "@mycadet/ipc-contract";
 import { electronMock } from "../test-setup";
 
 // ---------------------------------------------------------------------------

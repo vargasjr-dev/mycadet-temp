@@ -178,30 +178,8 @@ mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
   default: { warn: () => undefined },
 }));
-const { installPermissionGuide } = await import("./permission-guide");
-// The full state surface, with the kinds under test riding the toggle.
-const state = (): PermissionsState => {
-  const status = (): PermissionStatus =>
-    restricted ? "restricted" : granted ? "granted" : "denied";
-  const item = (kind: PermissionKind): PermissionStateItem => ({
-    kind,
-    status: status(),
-    canRequest: true,
-    canOpenSettings: true,
-    requiresRestart: false,
-  });
-  return {
-    accessibility: item("accessibility"),
-    screen: item("screen"),
-    microphone: item("microphone"),
-    speechRecognition: item("speechRecognition"),
-    inputMonitoring: item("inputMonitoring"),
-    automation: item("automation"),
-    notifications: item("notifications"),
-  };
-};
-// The shell's own guide surfaces, as fixtures.
-installPermissionGuide({
+// The guide's shell values, as fixtures — install assembles them itself.
+mock.module("./permission-guide-values", () => ({
   dragTarget: async () => {
     await iconWait;
     if (iconEmpty) {
@@ -224,7 +202,31 @@ installPermissionGuide({
     }));
   },
   onYieldToSettings: preparePresentation,
-});
+}));
+const { installPermissionGuide } = await import("./permission-guide");
+// The full state surface, with the kinds under test riding the toggle.
+const state = (): PermissionsState => {
+  const status = (): PermissionStatus =>
+    restricted ? "restricted" : granted ? "granted" : "denied";
+  const item = (kind: PermissionKind): PermissionStateItem => ({
+    kind,
+    status: status(),
+    canRequest: true,
+    canOpenSettings: true,
+    requiresRestart: false,
+  });
+  return {
+    accessibility: item("accessibility"),
+    screen: item("screen"),
+    microphone: item("microphone"),
+    speechRecognition: item("speechRecognition"),
+    inputMonitoring: item("inputMonitoring"),
+    automation: item("automation"),
+    notifications: item("notifications"),
+  };
+};
+// The shell's own guide surfaces ride the mocked values module above.
+installPermissionGuide();
 const get = (): PermissionGuideState | null =>
   handles.get("cadet:permissions:guide:get")!([]);
 const begin = (

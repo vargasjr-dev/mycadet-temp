@@ -93,7 +93,8 @@
     "body": "Your own personal intelligence is just a step away.",
     "cancel": "Cancel",
     "logIn": "Log In",
-    "continueWithoutAccount": "Continue without account"
+    "continueWithoutAccount": "Continue without account",
+    "comingSoon": "Coming Soon!"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Assistants",

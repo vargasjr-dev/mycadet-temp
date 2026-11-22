@@ -125,17 +125,27 @@ mock.module("./features/login-item", () => ({
 mock.module("./features/permissions", () => ({
   install: recorder("permissions"),
   getPermissionsService: () => null,
-  // The companion's refusal flow reads both through this module.
-  onPermissionPresentation: () => () => {},
-  preparePermissionPresentation: () => {},
 }));
 // The per-OS permission arms resolve inside the package; the composition
 // test pins the installs, not the OS answers.
 mock.module("./features/permissions-strategy", () => ({
   permissionsStrategy: () => ({}),
+  describeError: (err: unknown) => String(err),
 }));
 mock.module("./features/permission-guide-values", () => ({
-  permissionGuideInputs: () => undefined,
+  dragTarget: async () => ({ file: "/mock.app", icon: null }),
+  openSettingsPane: async () => undefined,
+  listSettingsWindows: async () => [],
+  onYieldToSettings: () => undefined,
+}));
+mock.module("./dictation-escape-monitor", () => ({
+  createDictationEscapeMonitor: () => ({
+    install: () => undefined,
+    setRecording: () => undefined,
+  }),
+}));
+mock.module("./dictation-overlay-window", () => ({
+  installDictationOverlay: recorder("dictation-overlay"),
 }));
 mock.module("./features/tray", () => ({ install: recorder("tray") }));
 mock.module("./features/companion-window", () => ({
@@ -199,8 +209,15 @@ const universalSurface = [
   "companion-window",
 ];
 
-/** The classic-only composition, appended on the classic platforms. */
-const classicSurface = ["dictation", "helper-hotkeys", "voice-mode-chord"];
+/** The classic-only composition, appended on the classic platforms. The
+ * dictation overlay follows the dictation install; its escape-monitor half
+ * is wired inside the composition itself (no install recorder — one arm). */
+const classicSurface = [
+  "dictation",
+  "dictation-overlay",
+  "helper-hotkeys",
+  "voice-mode-chord",
+];
 
 describe("startApp", () => {
   test("logs ready, assembles the universal surface in order, and runs setup once Electron is ready", async () => {

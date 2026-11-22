@@ -21,8 +21,8 @@ import {
   PULSE_FRAME_INTERVAL_MS,
   shouldPulse,
   statusMenuTitle,
-  type AssistantStatus,
 } from "./status";
+import { type AssistantStatus } from "@mycadet/ipc-contract";
 import { invalidateIconCache, statusFrames } from "./status-icon";
 import {
   companionSizeSubmenus,

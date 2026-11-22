@@ -27,8 +27,6 @@ import type { PowerEvent, PowerEventKind } from "@mycadet/ipc-contract";
  * Reference: https://www.electronjs.org/docs/latest/api/power-monitor
  */
 
-export type { PowerEvent, PowerEventKind };
-
 const DEBOUNCE_MS = 1_000;
 
 // Most-recent emit timestamp per kind. Module-scope so tests can read

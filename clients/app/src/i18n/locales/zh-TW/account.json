@@ -92,7 +92,8 @@
     "body": "您的專屬智慧助理近在咫尺。",
     "cancel": "取消",
     "logIn": "登入",
-    "continueWithoutAccount": "不登入繼續"
+    "continueWithoutAccount": "不登入繼續",
+    "comingSoon": "即將推出！"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "助理",

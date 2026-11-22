@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { electronMock } from "../../test-setup";
+import type { PermissionsShellInputs } from "./permissions";
 
 import {
   PERMISSIONS_GET_STATE,
@@ -13,6 +14,15 @@ import {
 } from "@mycadet/ipc-contract";
 
 type Handler = (args: unknown[]) => unknown;
+
+// The per-OS arm, as a test knob: install resolves the shell inputs
+// internally now, so the tests stage what the strategy should answer.
+let strategyInputs: PermissionsShellInputs = {};
+mock.module("./permissions-strategy", () => ({
+  permissionsStrategy: () => strategyInputs,
+  describeError: (err: unknown): string =>
+    err instanceof Error ? err.message : String(err),
+}));
 
 const handlers = new Map<string, Handler>();
 const openExternal = mock(async () => undefined);
@@ -98,7 +108,8 @@ beforeEach(() => {
   mediaStatus.mockReset();
   mediaStatus.mockImplementation(() => "granted");
   notificationOutcome = "show";
-  permissionsInstall({ settingsUris: WINDOWS_SETTINGS_URIS });
+  strategyInputs = { settingsUris: WINDOWS_SETTINGS_URIS };
+  permissionsInstall();
 });
 
 test("uses the helper sidecar for permission states and text insertion", async () => {
@@ -207,7 +218,7 @@ test("the shell's own reads, requests, and insertion win over the defaults", asy
   const requested: SystemPermissionKind[] = [];
   const inserted: string[] = [];
   const askedFor: SystemPermissionKind[] = [];
-  permissionsInstall({
+  strategyInputs = {
     settingsUris: { microphone: "shell://mic-pane" },
     readStatus: async (kind) => {
       reads.push(kind);
@@ -224,7 +235,8 @@ test("the shell's own reads, requests, and insertion win over the defaults", asy
       inserted.push(text);
       return { status: "inserted" };
     },
-  });
+  };
+  permissionsInstall();
 
   const state = (await handlers.get(PERMISSIONS_GET_STATE)!([])) as Record<
     string,
@@ -250,14 +262,15 @@ test("the shell's own reads, requests, and insertion win over the defaults", asy
 
 test("a throwing shell read surfaces in the item's error field", async () => {
   handlers.clear();
-  permissionsInstall({
+  strategyInputs = {
     readStatus: async (kind) => {
       if (kind === "screen") {
         throw new Error("consent store unreachable");
       }
       return undefined;
     },
-  });
+  };
+  permissionsInstall();
   const state = (await handlers.get(PERMISSIONS_GET_STATE)!([])) as Record<
     string,
     { status: SystemPermissionStatus; error?: string }

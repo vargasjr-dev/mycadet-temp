@@ -2,9 +2,7 @@ import { BrowserWindow } from "electron";
 import { z } from "zod";
 
 import {
-  ASSISTANT_STATUSES,
   type AssistantStatus,
-  CONNECTIVITY_STATES,
   type ConnectivityState,
   assistantStatusSchema,
 } from "@mycadet/ipc-contract";
@@ -21,7 +19,6 @@ import log from "./app-logger";
  * IPC channel. Main owns only the presentation (icon composition, pulse
  * timer, menu header), so this module never reaches into connection code.
  */
-export { ASSISTANT_STATUSES, type AssistantStatus };
 
 /**
  * Tooltip / menu-header text per status. `assistantName` falls back to
@@ -164,8 +161,6 @@ export const installStatusIpc = (): void => {
 // Orthogonal to AssistantStatus — you can be "thinking" AND "device-offline".
 // Assistant status drives the tray icon (renderer is source of truth);
 // connectivity drives in-app banners (main is source of truth).
-
-export { CONNECTIVITY_STATES, type ConnectivityState };
 
 type ConnectivityListener = (state: ConnectivityState) => void;
 

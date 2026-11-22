@@ -4,11 +4,9 @@ import { z } from "zod";
 
 import log from "./app-logger";
 import { resolveEnvironmentName } from "@mycadet/shared";
-import type { UpdateState, UpdateStatus } from "@mycadet/ipc-contract";
+import type { UpdateState } from "@mycadet/ipc-contract";
 
 import { handle } from "./ipc";
-
-export type { UpdateState, UpdateStatus };
 
 /**
  * Platform- and architecture-isolated generic feed URL for this build's

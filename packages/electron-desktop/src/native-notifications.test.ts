@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { NOTIFICATION_CATEGORIES } from "@mycadet/ipc-contract";
 import { electronMock } from "../test-setup";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -101,8 +102,7 @@ mock.module("./notifier", () => ({
       : null,
 }));
 
-const { CATEGORY_ACTIONS, NOTIFICATION_CATEGORIES } =
-  await import("./notifications");
+const { CATEGORY_ACTIONS } = await import("./notifications");
 const {
   createNativeNotificationFactory,
   registerNativeNotificationCategories,

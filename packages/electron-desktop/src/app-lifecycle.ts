@@ -55,11 +55,11 @@ import { install as installAuxiliaryWindows } from "./features/auxiliary-windows
 import { install as installHostProxy } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
 import { install as installPermissions } from "./features/permissions";
-import { permissionsStrategy } from "./features/permissions-strategy";
 import { install as installDictation } from "./features/dictation";
+import { createDictationEscapeMonitor } from "./dictation-escape-monitor";
+import { installDictationOverlay } from "./dictation-overlay-window";
 import { install as installHelperHotkeys } from "./features/helper-hotkeys";
 import { installPermissionGuide } from "./features/permission-guide";
-import { permissionGuideInputs } from "./features/permission-guide-values";
 import { install as installTray } from "./features/tray";
 import {
   installCompanionWindow,
@@ -422,8 +422,8 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installHostProxy(inputs.interfaceId);
       installTray();
       installShare();
-      installPermissions(permissionsStrategy());
-      installPermissionGuide(permissionGuideInputs());
+      installPermissions();
+      installPermissionGuide();
       // The companion surface joins the shared composition on every
       // desktop; the hidden preference is the runtime off-switch. The
       // menu-facing visibility entry dispatches into the window wiring, so
@@ -433,6 +433,18 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
       installDictation();
+      // The dictation overlay and the escape monitor are a pair: the overlay
+      // reports the recording lifecycle to the renderer, and the monitor
+      // holds the global Escape shortcut while recording, cancelling into
+      // the focused window's dictation session.
+      const escapeMonitor = createDictationEscapeMonitor({
+        cancel: () => dispatchToMain({ kind: "cancelDictation" }),
+        log,
+      });
+      escapeMonitor.install();
+      installDictationOverlay({
+        onRecordingLifecycle: escapeMonitor.setRecording,
+      });
       installHelperHotkeys();
       if (process.platform !== "darwin") {
         installVoiceModeChord();

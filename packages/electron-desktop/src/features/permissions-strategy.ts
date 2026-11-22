@@ -9,8 +9,11 @@ import type {
 import type { PermissionsShellInputs } from "./permissions";
 import { isPreparedNotificationSenderCurrent } from "../notifications";
 import { resolveNotificationAvatarPath } from "../notification-avatar-path";
-import { describeError, preparePermissionPresentation } from "./permissions";
+import { preparePermissionPresentation } from "./permission-presentation";
 import { resolveEnvironmentName } from "@mycadet/shared";
+
+export const describeError = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err);
 
 import { runAppleScript } from "../apple-script-executor";
 import {
@@ -316,11 +319,6 @@ const startPolling = (
   pollTimers.set(kind, timer);
 };
 
-/**
- * This OS answers every kind itself: native framework reads for the
- * app-launch permissions, the helper's consent-store for the kinds the
- * helper owns, and the addon's authorization flow for notifications.
- */
 // The windows arm: the OS's own settings deep links. Windows asks for no
 // richer flow — its privacy pages are the request surface.
 const WINDOWS_SETTINGS_URIS: Partial<Record<SystemPermissionKind, string>> = {
@@ -348,6 +346,11 @@ export const permissionsStrategy = (): PermissionsShellInputs => {
   }
 };
 
+/**
+ * This OS answers every kind itself: native framework reads for the
+ * app-launch permissions, the helper's consent-store for the kinds the
+ * helper owns, and the addon's authorization flow for notifications.
+ */
 export const permissionsShell: PermissionsShellInputs = {
   settingsUris: SETTINGS_PANES,
   readStatus,

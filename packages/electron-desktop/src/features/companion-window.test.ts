@@ -487,19 +487,24 @@ mock.module("./screen-recording-permission", () => ({
 }));
 
 mock.module("./permissions", () => ({
-  onPermissionPresentation: (listener: () => void) => {
-    permissionPresentationListeners.push(listener);
-    return () => {};
-  },
   getPermissionsService: () => ({
     openSettings: async (kind: string) => {
       settingsOpened.push(`pane:${kind}`);
     },
   }),
-  preparePermissionPresentation: () => {},
   openPermissionSettingsPane: async (kind: string) => {
     settingsOpened.push(`pane:${kind}`);
   },
+}));
+
+// The presentation registry left `./permissions` for its own module; the
+// companion reads it there now, so the same registry backs both.
+mock.module("./permission-presentation", () => ({
+  onPermissionPresentation: (listener: () => void) => {
+    permissionPresentationListeners.push(listener);
+    return () => {};
+  },
+  preparePermissionPresentation: () => {},
 }));
 
 let guideError: Error | null = null;

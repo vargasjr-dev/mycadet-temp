@@ -1,3 +1,4 @@
+import { NOTIFICATION_CATEGORIES } from "@mycadet/ipc-contract";
 import {
   afterEach,
   beforeEach,
@@ -122,7 +123,6 @@ const ensureVisibleMock = mock(() => Promise.resolve());
 const {
   configureNotifications,
   installNotifications,
-  NOTIFICATION_CATEGORIES,
   __resetForTesting,
   __setDeliveryTimeoutForTesting,
   __boundarySchemasForTesting,

@@ -26,11 +26,11 @@ import { resolveNotificationAvatarPath } from "./notification-avatar-path";
 import {
   CATEGORY_ACTIONS,
   createElectronNotification,
-  NOTIFICATION_CATEGORIES,
   type CategoryAction,
   type NotificationCreateOptions,
   type NotificationLike,
 } from "./notifications";
+import { NOTIFICATION_CATEGORIES } from "@mycadet/ipc-contract";
 
 import log from "./app-logger";
 import {

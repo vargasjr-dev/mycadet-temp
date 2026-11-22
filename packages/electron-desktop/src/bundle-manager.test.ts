@@ -11,8 +11,8 @@ import {
   removeBundle,
   stripUnsafeEntries,
   unpackBundle,
-  type BundleScanData,
 } from "./bundle-manager";
+import { type BundleScanData } from "@mycadet/ipc-contract";
 import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
 
 let tmpDir: string;

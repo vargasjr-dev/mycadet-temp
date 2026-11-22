@@ -7,8 +7,6 @@ import { FEEDBACK_DIAGNOSTICS, FEEDBACK_LOGS } from "@mycadet/ipc-contract";
 import type { FeedbackDependencies } from "./diagnostics-contract";
 import { redactText, REDACTION_VERSION } from "./redact";
 
-export type { FeedbackDependencies } from "./diagnostics-contract";
-
 let app: FeedbackDependencies["app"];
 let powerMonitor: FeedbackDependencies["powerMonitor"];
 let os: FeedbackDependencies["os"];

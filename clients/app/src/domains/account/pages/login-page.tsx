@@ -86,8 +86,6 @@ function WebLoginForm({ returnTo }: { returnTo: string | null }) {
 
   return (
     <AuthWelcomeScreen
-      returnTo={returnTo}
-      errorContext="web_login"
       secondary={{ label: t("loginPage.signUp"), href: signUpHref }}
     />
   );

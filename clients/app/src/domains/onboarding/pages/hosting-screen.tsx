@@ -49,7 +49,8 @@ const HOSTING_OPTIONS: HostingOption[] = [
  * The funnel's hosting choice, ported from web's
  * `/assistant/onboarding/hosting` — now `/account/onboarding/hosting`, rendered
  * with the account screens' compact chrome. Without a live cloud session the
- * cloud card carries the login hand-off to the app's own login page.
+ * cloud card doesn't render at all: the account-less funnel has no cloud to
+ * offer, so the choice is local or docker and nothing else.
  */
 export function HostingScreen() {
   const { t } = useTranslation("account");
@@ -60,7 +61,11 @@ export function HostingScreen() {
     hasCloudSession ? "cloud" : "local",
   );
 
-  const showLogin = !hasCloudSession;
+  // The cloud card only exists when a live session can back it: without one
+  // the card is absent, not merely de-selected.
+  const options = hasCloudSession
+    ? HOSTING_OPTIONS
+    : HOSTING_OPTIONS.filter((opt) => opt.mode !== "cloud");
 
   const onContinue = () => {
     if (selected === "cloud") {
@@ -109,23 +114,13 @@ export function HostingScreen() {
           onKeyDown={handleRadioCardArrowNav}
           className="mt-8 grid w-full gap-2"
         >
-          {HOSTING_OPTIONS.map((opt) => (
+          {options.map((opt) => (
             <HostingCard
               key={opt.mode}
               option={opt}
               selected={selected === opt.mode}
               tabStop={selected === opt.mode}
               onSelect={() => setSelected(opt.mode)}
-              loginLabel={t("actions.loginToUse")}
-              onLogin={
-                opt.mode === "cloud" && showLogin
-                  ? () => {
-                      void navigate(
-                        `${routes.account.login}?returnTo=${encodeURIComponent(routes.account.onboarding.hosting)}`,
-                      );
-                    }
-                  : undefined
-              }
             />
           ))}
         </div>
@@ -156,17 +151,12 @@ function HostingCard({
   selected,
   tabStop,
   onSelect,
-  loginLabel,
-  onLogin,
 }: {
   option: HostingOption;
   selected: boolean;
   /** The radiogroup's single roving tab stop lands on this card. */
   tabStop: boolean;
   onSelect: () => void;
-  loginLabel: string;
-  /** Present on the cloud card when logging in brings the session. */
-  onLogin?: () => void;
 }) {
   return (
     <div
@@ -209,16 +199,6 @@ function HostingCard({
           {option.subtitle}
         </span>
       </div>
-      {onLogin && (
-        <Button
-          variant="primary"
-          size="regular"
-          className="shrink-0"
-          onClick={onLogin}
-        >
-          {loginLabel}
-        </Button>
-      )}
       <div
         className={[
           "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",

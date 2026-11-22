@@ -12,7 +12,8 @@ import {
   openBundleConfirmation,
   installBundleConfirmation,
 } from "./bundle-confirmation";
-import { unpackBundle, type BundleScanData } from "./bundle-manager";
+import { unpackBundle } from "./bundle-manager";
+import { type BundleScanData } from "@mycadet/ipc-contract";
 import { getBundlePlatform, type ActiveBundleGateway } from "./bundle-platform";
 import { openBundleWindow } from "./bundle-window";
 

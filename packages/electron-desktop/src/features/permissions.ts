@@ -32,6 +32,7 @@ import { handle } from "../ipc";
 import log from "../app-logger";
 import { current } from "../main-window";
 import { getSharedHelperClient } from "../native-helper-client";
+import { describeError, permissionsStrategy } from "./permissions-strategy";
 
 /**
  * Provider backed by the native helper sidecar (`permissions.state` and
@@ -47,29 +48,6 @@ export interface PermissionsNativeProvider {
 }
 
 let nativeProvider: PermissionsNativeProvider | null = null;
-
-/**
- * The permission surfaces' presentation registry: shells with notification
- * addon flows or settings hand-offs re-prepare the renderer's permission
- * presentation by calling `preparePermissionPresentation`; listeners (the
- * companion surface's permission rows) react.
- */
-const presentationListeners = new Set<() => void>();
-
-export const onPermissionPresentation = (
-  listener: () => void,
-): (() => void) => {
-  presentationListeners.add(listener);
-  return () => {
-    presentationListeners.delete(listener);
-  };
-};
-
-export const preparePermissionPresentation = (): void => {
-  for (const listener of presentationListeners) {
-    listener();
-  }
-};
 
 export const configurePermissionsNative = (
   provider: PermissionsNativeProvider | null,
@@ -159,9 +137,6 @@ const mapMediaStatus = (status: string): SystemPermissionStatus =>
   SYSTEM_PERMISSION_STATUSES.includes(status as SystemPermissionStatus)
     ? (status as SystemPermissionStatus)
     : "unknown";
-
-export const describeError = (err: unknown): string =>
-  err instanceof Error ? err.message : String(err);
 
 const allWindowsWebContents = () =>
   BrowserWindow.getAllWindows()
@@ -422,7 +397,10 @@ let installedService: PermissionsService | null = null;
 export const getPermissionsService = (): PermissionsService | null =>
   installedService;
 
-export const install = (inputs: PermissionsShellInputs = {}): void => {
+export const install = (): void => {
+  // The per-OS arm resolves here, inside the feature — the composition
+  // just installs.
+  const inputs = permissionsStrategy();
   configurePermissionsNative(createNativeProvider());
   const service = new PermissionsService(inputs);
   installedService = service;

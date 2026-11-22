@@ -3,11 +3,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 
 import { installDiagnosticsIpc } from "../diagnostics";
-import {
-  configureFeedback,
-  installFeedbackIpc,
-  type FeedbackDependencies,
-} from "../feedback";
+import { configureFeedback, installFeedbackIpc } from "../feedback";
+import type { FeedbackDependencies } from "../diagnostics-contract";
 import { writeSetting as writeSharedSetting } from "../settings";
 import { getSessionToken } from "../session-token-store";
 import { resolveEnvironmentName } from "@mycadet/shared";

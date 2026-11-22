@@ -132,7 +132,7 @@ import { getPermissionsService } from "./permissions";
 import {
   onPermissionPresentation,
   preparePermissionPresentation,
-} from "./permissions";
+} from "./permission-presentation";
 import {
   answerScreenRecordingRefusal,
   isScreenRecordingRefusal,
