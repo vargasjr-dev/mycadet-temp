@@ -202,11 +202,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         icon: icon(CreditCard),
       },
       {
-        label: "Architecture",
-        href: "/docs/architecture",
-        icon: icon(Layers),
-      },
-      {
         label: "Vision",
         href: "/docs/vision",
         icon: icon(Sparkles),
