@@ -45,6 +45,8 @@ let redeemInviteNativeMock: ReturnType<typeof mock<RedeemFn>> = mock(
   async () => ({ ok: true, type: "redeemed", memberId: "ct_1" }),
 );
 
+const contactCoreStub = mock(async () => ({}));
+
 // Mirrors the real InviteNativeError (statusCode + code) so the invites_redeem
 // route's parse rejection carries a 400 over the IPC wire.
 class MockInviteNativeError extends Error {
@@ -68,6 +70,11 @@ mock.module("../../http/routes/contacts-control-plane-proxy.js", () => ({
     revokeInviteNativeMock(...args),
   redeemInviteNative: (...args: Parameters<RedeemFn>) =>
     redeemInviteNativeMock(...args),
+  // The server aggregates the full production route table now, so the
+  // contact handlers load through it too and the mock must cover their
+  // proxy imports. The invite tests never call them.
+  mergeContactsCore: contactCoreStub,
+  updateContactChannelCore: contactCoreStub,
 }));
 
 // ContactStore backs the voice-invite routes; stub it so importing the module

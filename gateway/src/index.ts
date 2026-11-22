@@ -1110,7 +1110,11 @@ async function main() {
     ensurePublicIngressLiveForCredentialLink,
   );
 
-  const shutdownTasks = [
+  // The lifecycle starts. Each one returns its stop thunk, so this list is
+  // the shutdown order as a side effect of starting — when the remaining
+  // stops standardize onto the pattern, the SIGTERM drain below is just
+  // this list.
+  const shutdownTasks: (() => Promise<void> | void)[] = [
     startIpcServer(),
     startSleepWakeDetector(),
     startInboundEventExpirationCleanup(),
@@ -1122,8 +1126,9 @@ async function main() {
     // The task list is uniform: each entry runs once at signal time. Class
     // methods ride as arrows so `this` survives the call — a bare
     // `credentialWatcher.stop` would dereference nothing and crash the
-    // shutdown. The lifecycle thunks (sleep/wake, discord, slack, the dedup
-    // sweep) are already module closures, so they ride bare.
+    // shutdown. Discord and slack ride bare as module closures; the IPC
+    // server, sleep/wake, and the dedup sweep arrive via the spread of the
+    // starts above, in start order.
     const allShutdownTasks: (() => Promise<void> | void)[] = [
       () => credentialWatcher.stop(),
       () => configFileWatcher.stop(),

@@ -84,30 +84,13 @@ export type IpcRoute = {
   handler: IpcMethodHandler;
 };
 
-/**
- * Define a schema-validated route whose handler receives the parsed params
- * already typed.
- *
- * The server validates `req.params` against `schema` and passes the parsed
- * value to the handler, but {@link IpcMethodHandler} widens it back to
- * `Record<string, unknown>`; recovering the type at each handler means either
- * a cast or a second `schema.parse()` of data the server just validated. This
- * helper does that narrowing once, where the guarantee is made.
- *
- * New schema-validated routes use this. Older routes still parse their params
- * a second time inside the handler, which is redundant but harmless.
- */
-export function ipcRoute<S extends z.ZodType>(route: {
-  method: string;
-  schema: S;
-  handler: (params: z.output<S>) => unknown | Promise<unknown>;
-}): IpcRoute {
-  return {
-    method: route.method,
-    schema: route.schema,
-    // Safe by construction: the server validated with this exact schema.
-    handler: (params) => route.handler(params as z.output<S>),
-  };
+/** Optional configuration for {@link GatewayIpcServer}. */
+export interface GatewayIpcServerOptions {
+  /**
+   * How often the socket-file watchdog stats the listening socket path.
+   * Set to `0` to disable. Defaults to {@link SocketWatchdog}'s 5000ms.
+   */
+  watchdogIntervalMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,14 +111,14 @@ export class GatewayIpcServer {
    */
   private legacyServers = new Set<Server>();
 
-  constructor() {
+  constructor(routes: IpcRoute[] = ROUTES, options?: GatewayIpcServerOptions) {
     const resolution = resolveIpcSocketPath("gateway");
     this.socketPath = resolution.path;
     log.info(
       { source: resolution.source, path: resolution.path },
       "Gateway IPC socket path resolved",
     );
-    for (const route of ROUTES) {
+    for (const route of routes) {
       this.methods.set(route.method, route.handler);
       if (route.schema) {
         this.schemas.set(route.method, route.schema);
@@ -144,6 +127,7 @@ export class GatewayIpcServer {
 
     this.watchdog = new SocketWatchdog({
       socketPath: this.socketPath,
+      intervalMs: options?.watchdogIntervalMs,
       getServer: () => this.server,
       createServer: () => this.createListeningServer(),
       onRebind: (newServer, oldServer) => {

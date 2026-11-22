@@ -24,7 +24,8 @@ import {
 } from "../db/webhook-ingress-route-store.js";
 import { markPluginWebhookRoutesDirty } from "../channels/plugin-webhook-route-sync.js";
 import { PLUGIN_WEBHOOK_PATH_PREFIX } from "../tunnel/path-utils.js";
-import { ipcRoute, type IpcRoute } from "./server.js";
+import { ipcRoute } from "./route.js";
+import type { IpcRoute } from "./server.js";
 
 /**
  * The contract carries `type` as free text, so the caller is told here that
