@@ -1,10 +1,6 @@
-import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import {
-  fetchAssistantAdminAccess,
-  setAssistantAdminAccess,
-} from "@app/domains/account/assistants/assistants-management-api";
+import { setAssistantAdminAccess } from "@app/domains/account/assistants/assistants-management-api";
 import { useTranslation } from "@app/i18n";
 import { Button } from "@design/components/button";
 import { toast } from "@design/components/toast";
@@ -14,32 +10,29 @@ import { toast } from "@design/components/toast";
  * assistants-management page. The flag opts the assistant's row into the
  * cloud's internal-admin seam (log downloads today) — the owner flips it
  * here, which is what makes a down cadet debuggable: the assistant itself
- * can't consent to anything while it's failing health checks. A
- * self-hosted assistant has no such flag on the cloud (the dial 404s) and
- * the panel reads as not available.
+ * can't consent to anything while it's failing health checks. The flag's
+ * current value rides the row the selection state already holds (the
+ * cloud's list union carries it); a row without one (self-hosted) reads
+ * as not available.
  */
 export function AssistantAdminAccessPanel({
   assistantId,
+  adminAccessEnabled,
 }: {
   assistantId: string;
+  adminAccessEnabled: boolean | null | undefined;
 }) {
   const { t } = useTranslation("account");
-  const [enabled, setEnabled] = useState<boolean | null | undefined>(undefined);
+  // Local optimism: the toggle writes through and reflects its own flip;
+  // the prop re-seeds whenever the selection (or its row) changes.
+  const [enabled, setEnabled] = useState<boolean | null | undefined>(
+    adminAccessEnabled,
+  );
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    const result = await fetchAssistantAdminAccess(assistantId);
-    if (result.ok) {
-      setEnabled(result.data);
-    } else {
-      setEnabled(undefined);
-    }
-  }, [assistantId]);
-
   useEffect(() => {
-    setEnabled(undefined);
-    void load();
-  }, [load]);
+    setEnabled(adminAccessEnabled);
+  }, [assistantId, adminAccessEnabled]);
 
   async function toggle() {
     if (enabled === null || enabled === undefined) {
@@ -57,7 +50,7 @@ export function AssistantAdminAccessPanel({
     }
   }
 
-  if (enabled === null) {
+  if (enabled === null || enabled === undefined) {
     return (
       <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
         {t("assistantsPage.adminAccess.notAvailable")}
@@ -67,18 +60,14 @@ export function AssistantAdminAccessPanel({
 
   return (
     <div className="flex items-center gap-3">
-      {enabled === undefined ? (
-        <Loader2 className="h-4 w-4 animate-spin text-[var(--content-tertiary)]" />
-      ) : (
-        <span className="text-body-medium-lighter text-[var(--content-default)]">
-          {enabled
-            ? t("assistantsPage.adminAccess.stateOn")
-            : t("assistantsPage.adminAccess.stateOff")}
-        </span>
-      )}
+      <span className="text-body-medium-lighter text-[var(--content-default)]">
+        {enabled
+          ? t("assistantsPage.adminAccess.stateOn")
+          : t("assistantsPage.adminAccess.stateOff")}
+      </span>
       <Button
         variant="outlined"
-        disabled={busy || enabled === undefined}
+        disabled={busy}
         onClick={() => {
           void toggle();
         }}

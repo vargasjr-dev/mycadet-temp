@@ -60,6 +60,16 @@ export const AssistantChoiceSchema = z.object({
    * the build's own remote.
    */
   remote: RemoteSchema.nullish().catch(() => undefined),
+  /**
+   * The cloud row's admin-access opt-in (the owner's toggle on the
+   * management page reads it from the selection state). Only the cloud's
+   * list union carries it — self-hosted rows and servers predating the
+   * field decode to undefined, which the panel reads as not available.
+   */
+  allow_admin_access: z
+    .boolean()
+    .nullish()
+    .catch(() => undefined),
 });
 
 export const AssistantResolutionSchema = z.discriminatedUnion("status", [

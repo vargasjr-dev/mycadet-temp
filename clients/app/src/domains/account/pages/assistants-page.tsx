@@ -118,7 +118,10 @@ export function AssistantsPage() {
                 <h3 className="mb-3 text-body-large-default text-[var(--content-default)]">
                   {t("assistantsPage.adminAccessSection")}
                 </h3>
-                <AssistantAdminAccessPanel assistantId={selected.id} />
+                <AssistantAdminAccessPanel
+                  assistantId={selected.id}
+                  adminAccessEnabled={selected.allow_admin_access}
+                />
               </section>
             </>
           )}
