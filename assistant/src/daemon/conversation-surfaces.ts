@@ -1131,11 +1131,12 @@ export function createSurfaceMutex(): SurfaceMutex {
     return next;
   };
 
-  return Object.assign(mutex, {
-    /** Number of surfaces with an active chain — exposed for tests. */
-    get size() {
-      return chains.size;
-    },
+  // defineProperty, NOT Object.assign: assign invokes the getter ONCE at
+  // assignment time (chains still empty) and stamps a static 0 — the count
+  // would never move again.
+  return Object.defineProperty(mutex, "size", {
+    get: () => chains.size,
+    configurable: true,
   });
 }
 

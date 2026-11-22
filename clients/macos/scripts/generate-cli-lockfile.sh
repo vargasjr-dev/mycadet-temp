@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$SCRIPT_DIR/.."
-REPO_DIR="$APP_DIR/.."
+REPO_DIR="$APP_DIR/../.."
 SEED_DIR="$APP_DIR/resources/cli-lockfile"
 
 # The installer (and its PINNED_CLI_VERSION) lives in the electron-desktop
