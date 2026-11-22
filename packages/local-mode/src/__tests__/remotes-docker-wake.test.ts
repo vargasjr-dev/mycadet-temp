@@ -157,6 +157,18 @@ describe("wakeDocker — the docker wake leg", () => {
     expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
   });
 
+  test("a partly missing group is removed before it is recreated", async () => {
+    startFailures = [undefined, NO_SUCH_CONTAINER];
+
+    await wakeDocker(makeEntry());
+
+    const firstRun = dockerCalls.findIndex((c) => c.args[0] === "run");
+    expect(dockerCalls.slice(0, firstRun)).toContainEqual({
+      cmd: "docker",
+      args: ["rm", "--force", "docker-1-assistant"],
+    });
+  });
+
   test("a recreate failure comes back as a structured 500 — the leg never throws", async () => {
     startFailures = [
       NO_SUCH_CONTAINER,
