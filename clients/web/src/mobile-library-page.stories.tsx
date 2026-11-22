@@ -181,6 +181,7 @@ function MobileLibraryPage() {
       <ChatLayoutHeader
         isMobile={isMobile}
         drawerOpen={false}
+        collapsed
         toggleSidebar={() => {}}
         mobileTopBar={mobileTopBar}
       />

@@ -25,6 +25,7 @@ export function IntelligenceSectionStoryFrame({
       <ChatLayoutHeader
         isMobile={isMobile}
         drawerOpen={false}
+        collapsed
         toggleSidebar={() => {}}
         mobileTopBar={mobileTopBar}
         topBarCenter={topBarCenter}

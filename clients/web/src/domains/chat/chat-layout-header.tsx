@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu as MenuIcon,
+  PanelLeft,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, type ReactNode } from "react";
@@ -48,9 +49,8 @@ export const CHAT_LAYOUT_HEADER_SELECTOR = `[data-slot="${CHAT_LAYOUT_HEADER_SLO
 export interface ChatLayoutHeaderProps {
   isMobile: boolean;
   drawerOpen: boolean;
+  collapsed: boolean;
   sidebarWidth?: number;
-  /** Mobile only: flips the navigation drawer. The desktop sidebar is
-   *  always open — its expand/collapse toggle is deleted. */
   toggleSidebar: () => void;
   /** Fades out and disables every header control (the in-chat onboarding
    *  prototype's focused stage) while keeping the bar itself for layout
@@ -83,6 +83,7 @@ export interface ChatLayoutHeaderProps {
 export function ChatLayoutHeader({
   isMobile,
   drawerOpen,
+  collapsed,
   sidebarWidth,
   toggleSidebar,
   controlsHidden = false,
@@ -237,8 +238,9 @@ export function ChatLayoutHeader({
             style={{
               // `minWidth` reserves the sidebar column on desktop only. The
               // Electron inset clears the inline traffic lights at any width.
-              // The sidebar is always open, so the reserve is always its width.
-              ...(isMobile ? {} : { minWidth: sidebarWidth ?? 230 }),
+              ...(isMobile
+                ? {}
+                : { minWidth: collapsed ? 48 : (sidebarWidth ?? 230) }),
               ...macosTrafficLightStyle,
             }}
           >
@@ -252,7 +254,17 @@ export function ChatLayoutHeader({
                 tooltip={t("chatLayoutHeader.openNavigationAria")}
                 onClick={toggleSidebar}
               />
-            ) : null}
+            ) : (
+              <Button
+                variant="ghost"
+                iconOnly={<PanelLeft />}
+                aria-label={t("chatLayoutHeader.toggleSidebarAria")}
+                aria-expanded={!collapsed}
+                aria-controls="chat-side-menu"
+                tooltip={t("chatLayoutHeader.toggleSidebarAria")}
+                onClick={toggleSidebar}
+              />
+            )}
             {!isMobile ? (
               <>
                 <Button

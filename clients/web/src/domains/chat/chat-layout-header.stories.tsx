@@ -82,6 +82,7 @@ function Harness({
     <ChatLayoutHeader
       isMobile={isMobile}
       drawerOpen={false}
+      collapsed={false}
       toggleSidebar={() => {}}
       topBarCenter={
         <span className="min-w-0 truncate text-sm font-medium text-[var(--content-default)]">

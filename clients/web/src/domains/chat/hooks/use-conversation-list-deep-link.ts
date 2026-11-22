@@ -21,6 +21,8 @@ interface UseConversationListDeepLinkOptions {
   isMobile: boolean;
   /** Bring the mobile drawer in. */
   openDrawer: () => void;
+  /** Uncollapse the sidebar a wider window keeps the list in. */
+  expandSidebar: () => void;
 }
 
 /**
@@ -56,6 +58,7 @@ interface UseConversationListDeepLinkOptions {
 export function useConversationListDeepLink({
   isMobile,
   openDrawer,
+  expandSidebar,
 }: UseConversationListDeepLinkOptions): void {
   const pendingAt = usePendingDeepLinkStore.use.pendingConversationListAt();
   const { pathname } = useLocation();
@@ -73,8 +76,10 @@ export function useConversationListDeepLink({
       return;
     }
     if (!isMobile) {
-      // A wide window keeps the list on screen as the always-open sidebar,
-      // so the request is already satisfied — nothing is waiting on a route.
+      // A wide window keeps the list on screen as the sidebar, so the whole
+      // request is making sure it is not collapsed. Nothing is waiting on a
+      // route here: uncollapsing survives navigation, so it is done at once.
+      expandSidebar();
       consume();
       return;
     }
@@ -84,5 +89,5 @@ export function useConversationListDeepLink({
     }
     openDrawer();
     consume();
-  }, [pendingAt, isMobile, pathname, openDrawer]);
+  }, [pendingAt, isMobile, pathname, openDrawer, expandSidebar]);
 }

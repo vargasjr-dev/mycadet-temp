@@ -68,6 +68,7 @@ describe("useChatLayoutShortcuts answers every chord the web build advertises", 
   /** What proves the app answered a given command, per command. */
   const answered: Record<string, () => boolean | Promise<boolean>> = {
     newConversation: () => handlers.onNewConversation.mock.calls.length === 1,
+    sidebarToggle: () => handlers.toggleSidebar.mock.calls.length === 1,
     navigateBack: () => handlers.onGoBack.mock.calls.length === 1,
     navigateForward: () => handlers.onGoForward.mock.calls.length === 1,
     // Off Electron the window open resolves false and the store is the fallback.
