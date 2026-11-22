@@ -35,7 +35,7 @@ import { installImageContextMenu } from "./image-context-menu";
 import { installTextContextMenu } from "./text-context-menu";
 import { installHotkeysIpc } from "./hotkeys";
 import { configureAboutRuntime, installAbout } from "./about";
-import { installDesktopMenu, refreshDesktopMenuCliPath } from "./menu";
+import { installDesktopMenu } from "./menu";
 import { installGlobalShortcuts } from "./global-shortcuts";
 import { installQuickInput, toggleQuickInput } from "./quick-input-window";
 import {
@@ -197,15 +197,9 @@ const provisionPackagedCli = (): void => {
     return;
   }
   writeCliLocator();
-  void provisionCliForWrapper()
-    .then((provisioned) =>
-      process.platform === "darwin" && provisioned
-        ? refreshDesktopMenuCliPath()
-        : undefined,
-    )
-    .catch((err: unknown) => {
-      log.error("[app] startup CLI provisioning failed:", err);
-    });
+  void provisionCliForWrapper().catch((err: unknown) => {
+    log.error("[app] startup CLI provisioning failed:", err);
+  });
 };
 
 /**

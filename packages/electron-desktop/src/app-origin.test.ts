@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  isAllowedOrigin,
-  resolveAllowedOrigin,
-} from "@mycadet/electron-desktop/app-origin";
+import { isAllowedOrigin, resolveAllowedOrigin } from "./app-origin";
 
 describe("resolveAllowedOrigin", () => {
   test("resolves the app://mycadet.ai tuple origin in every build", () => {

@@ -6,7 +6,7 @@ import {
   ERROR_HIDE_MS,
   createDictationOverlayController,
   positionDictationOverlayInWorkArea,
-} from "@mycadet/electron-desktop";
+} from "./dictation-overlay-window";
 import { type DictationOverlayState } from "@mycadet/ipc-contract";
 
 type Harness = {

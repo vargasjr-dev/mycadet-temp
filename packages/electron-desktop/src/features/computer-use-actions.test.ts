@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 
-import type { HostProxyPoster } from "@mycadet/electron-desktop";
-import type { HostProxySseMessage } from "@mycadet/electron-desktop";
+import type { HostProxyPoster } from "../host-proxy/poster";
+import type { HostProxySseMessage } from "../host-proxy/sse";
 
 // Keep electron-log's file backend out of the test process.
 mock.module("../app-logger", () => ({

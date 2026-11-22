@@ -145,6 +145,7 @@ export const createFloatingWindow = ({
   callerShows = false,
   alwaysOnTopLevel = "floating",
   ignoreMouseEvents = false,
+  visibleOnAllWorkspaces,
   browserWindow,
   position,
 }: CreateFloatingWindowOptions): BrowserWindow => {
@@ -179,10 +180,15 @@ export const createFloatingWindow = ({
   if (ignoreMouseEvents) {
     applyIgnoreMouseEvents(win, ignoreMouseEvents);
   }
-  win.setVisibleOnAllWorkspaces(true, {
-    visibleOnFullScreen: true,
-    skipTransformProcessType: true,
-  });
+  // Floating panels default to following the cursor across Spaces (and
+  // staying visible over full-screen apps); an explicit opt-out — the
+  // permission guide must not haunt every Space — skips it.
+  if (visibleOnAllWorkspaces !== false) {
+    win.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true,
+      skipTransformProcessType: true,
+    });
+  }
 
   const cleanup = (): void => {
     if (floatingWindows.get(kind) === win) {

@@ -128,6 +128,10 @@ mock.module("./shell-path", () => ({
 // behavior; only the install entry point is faked.
 const ensureCliInstalledMock = mock(async (): Promise<void> => undefined);
 const realCliInstaller = await import("./cli-installer");
+const refreshDesktopMenuCliPathMock = mock(() => undefined);
+mock.module("./menu", () => ({
+  refreshDesktopMenuCliPath: refreshDesktopMenuCliPathMock,
+}));
 mock.module("./cli-installer", () => ({
   ...realCliInstaller,
   ensureCliInstalled: ensureCliInstalledMock,
@@ -164,6 +168,7 @@ afterEach(() => {
   resolveShellPathCalls = 0;
   findExecutablesCalls.length = 0;
   ensureCliInstalledMock.mockClear();
+  refreshDesktopMenuCliPathMock.mockClear();
 });
 
 // --- Path helpers ---
@@ -349,6 +354,7 @@ describe("provisionCliForWrapper", () => {
 
     expect(await provisionCliForWrapper()).toBe(true);
     expect(ensureCliInstalledMock).toHaveBeenCalledTimes(1);
+    expect(refreshDesktopMenuCliPathMock).toHaveBeenCalledTimes(1);
   });
 
   test("skips provisioning when the wrapper is absent", async () => {
@@ -356,6 +362,7 @@ describe("provisionCliForWrapper", () => {
 
     expect(await provisionCliForWrapper()).toBe(false);
     expect(ensureCliInstalledMock).not.toHaveBeenCalled();
+    expect(refreshDesktopMenuCliPathMock).not.toHaveBeenCalled();
   });
 
   test("skips provisioning for a foreign wrapper", async () => {

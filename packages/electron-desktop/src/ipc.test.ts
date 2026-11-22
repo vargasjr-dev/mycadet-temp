@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../test-setup";
 import { z } from "zod";
 
 // Capture what `handle`/`on` register so the tests can invoke the
@@ -26,9 +26,8 @@ mock.module("electron", () =>
   }),
 );
 
-const { handle, on } = await import("@mycadet/electron-desktop/ipc");
-const { resolveAllowedOrigin } =
-  await import("@mycadet/electron-desktop/app-origin");
+const { handle, on } = await import("./ipc");
+const { resolveAllowedOrigin } = await import("./app-origin");
 
 // The guard derives the allowed origin from the same resolver the
 // production code uses — the constant `app://mycadet.ai` origin — so the

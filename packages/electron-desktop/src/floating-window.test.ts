@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../test-setup";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
+import { RENDERER_BASE_PROD } from "./app-config";
 
 type Listener = () => void;
 
@@ -127,14 +127,13 @@ const {
   createFloatingWindow,
   createWindowRouteResolver,
   getFloatingWindow,
-} = await import("@mycadet/electron-desktop/floating-window");
+} = await import("./floating-window");
 
 configureFloatingWindows({
   createWindow: (opts) => {
     stagedOpts = opts;
     return new BrowserWindow(opts.browserWindow);
   },
-  platform: "darwin",
   resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
 });
 
@@ -194,7 +193,7 @@ describe("createFloatingWindow", () => {
       ],
     ]);
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
-      "app://mycadet.ai/assistant/dictation-overlay",
+      "app://mycadet.ai/web/assistant/dictation-overlay",
     );
   });
 
@@ -210,7 +209,7 @@ describe("createFloatingWindow", () => {
     const win = lastWindow();
 
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
-      "app://mycadet.ai/assistant/command-palette",
+      "app://mycadet.ai/web/assistant/command-palette",
     );
   });
 

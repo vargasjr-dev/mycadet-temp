@@ -116,9 +116,13 @@ export const installQuickInput = (): void => {
     return;
   }
   installed = true;
-  const { dispatchToMain, ensureMainWindowVisible } = configuration.get();
 
+  // The dependencies read lazily, like the palette's and the popouts': the
+  // composition configures this module from `installAuxiliaryWindows`,
+  // which the lifecycle may run after this install registers its channels.
   handle(QUICK_INPUT_SUBMIT, z.tuple([z.string()]), async ([message]) => {
+    const { dispatchToMain, ensureMainWindowVisible } = configuration.get();
+
     if (quickInputWindow && !quickInputWindow.isDestroyed()) {
       quickInputWindow.close();
     }

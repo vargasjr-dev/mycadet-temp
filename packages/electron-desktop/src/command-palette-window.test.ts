@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../test-setup";
 
-import type { IpcHandle } from "@mycadet/electron-desktop";
+import type { IpcHandle } from "./ipc";
 
-import { RENDERER_BASE_PROD } from "@mycadet/electron-desktop";
+import { RENDERER_BASE_PROD } from "./app-config";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -229,7 +229,7 @@ mock.module("./windows", () => ({
   createWindow: createWindowMock,
 }));
 
-mock.module("@mycadet/electron-desktop/ipc", () => ({
+mock.module("./ipc", () => ({
   handle: handleMock,
 }));
 
@@ -239,7 +239,7 @@ mock.module("./main-window", () => ({
   dispatchToMain: dispatchToMainMock,
 }));
 
-mock.module("@mycadet/electron-desktop/settings", () => ({
+mock.module("./settings", () => ({
   createAppSettingsStore: () => undefined,
   readHotkeyOverride: () => null,
   readSetting: () => null,
@@ -247,7 +247,7 @@ mock.module("@mycadet/electron-desktop/settings", () => ({
   onSettingChange: () => () => {},
 }));
 
-mock.module("@mycadet/electron-desktop/about", () => ({
+mock.module("./about", () => ({
   configureAboutRuntime: () => undefined,
   getVersionInfo: () => ({ version: "0.0.0" }),
   installAbout: () => undefined,
@@ -258,7 +258,7 @@ mock.module("./devtools", () => ({
   areChromeDevToolsEnabled: () => false,
 }));
 
-mock.module("@mycadet/electron-desktop/window-state", () => ({
+mock.module("./window-state", () => ({
   clearCompanionIntroSeen: () => undefined,
   readCompanionCallDock: () => undefined,
   readCompanionIntroSeenVersion: () => undefined,
@@ -303,13 +303,12 @@ const {
   installCommandPaletteWindow,
   openCommandPaletteWindow,
   selectCommandPaletteCommand,
-} = await import("@mycadet/electron-desktop/command-palette-window");
+} = await import("./command-palette-window");
 const { configureFloatingWindows, createWindowRouteResolver } =
-  await import("@mycadet/electron-desktop/floating-window");
+  await import("./floating-window");
 
 configureFloatingWindows({
   createWindow: createWindowMock,
-  platform: "darwin",
   resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
 });
 configureCommandPaletteWindow({
@@ -368,7 +367,7 @@ describe("openCommandPaletteWindow", () => {
     expect(win.show).toHaveBeenCalledTimes(1);
     expect(win.focus).toHaveBeenCalledTimes(1);
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
-      "app://mycadet.ai/assistant/floating/command-palette",
+      "app://mycadet.ai/web/assistant/floating/command-palette",
     );
 
     openCommandPaletteWindow();
