@@ -18,6 +18,8 @@ import {
   type ChannelSocketHealthIpcResponse,
 } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
+import { getDiscordGatewayClient } from "../discord/lifecycle.js";
+import { getSlackSocketClient } from "../slack/lifecycle.js";
 import type { ChannelConnectionHealth } from "../channels/types.js";
 import type { IpcRoute } from "./server.js";
 
@@ -39,16 +41,16 @@ export type SocketHealthSources = Partial<
 >;
 
 /**
- * The live channel clients' getters, wired once by `index.ts` at startup.
- * The getters themselves close over the process's own client slots, so the
- * teardown/rebuild lifecycle reads through unchanged — the routes resolve
- * `sources` at request time the way `getConfig()` resolves config.
+ * The live channel clients' getters, resolved straight from each channel's
+ * lifecycle singleton. Each client is torn down and rebuilt on a credential
+ * change, so the getter indirection keeps the teardown/rebuild lifecycle
+ * reading through unchanged — the routes resolve `sources` at request time
+ * the way `getConfig()` resolves config.
  */
-let sources: SocketHealthSources = {};
-
-export function setChannelSocketHealthSources(next: SocketHealthSources): void {
-  sources = next;
-}
+const sources: SocketHealthSources = {
+  slack: getSlackSocketClient,
+  discord: getDiscordGatewayClient,
+};
 
 export const channelSocketHealthRoutes: IpcRoute[] = [
   {

@@ -19,16 +19,11 @@ import { upsertContactChannel } from "../verification/contact-helpers.js";
 export function createDiscordInboundEventHandler(options: {
   config: GatewayConfig;
   log: Logger;
-  notifyRecordActivity: () => void;
   forwardQueue: ConversationTaskQueue;
 }): DiscordGatewayEventHandler {
-  const { config, log, notifyRecordActivity, forwardQueue } = options;
+  const { config, log, forwardQueue } = options;
 
   return (event, attachmentRefs) => {
-    // Reset the cloud idle-sleep timer so inbound Discord activity keeps
-    // the assistant awake like any other channel.
-    notifyRecordActivity();
-
     // A guild channel is a room the actor is standing in, not their private
     // delivery address. Recording it as externalChatId would post private
     // notices in public, so only DMs carry that field. Only the two

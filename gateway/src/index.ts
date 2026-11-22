@@ -1,16 +1,13 @@
-import { eventRefersToAnotherMessage } from "./channels/inbound-event.js";
-import { buildSlackSourceMetadata } from "./slack/source-metadata.js";
 import { randomBytes } from "node:crypto";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 import { getAuthRateLimiter } from "./auth-rate-limiter.js";
 import { initSigningKey } from "./auth/token-service.js";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
-import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { getConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 import { loadConfig } from "./config.js";
+import { CircuitBreakerOpenError } from "./runtime/client.js";
 import { getCredentials } from "./credential-cache.js";
-import { readSavedIngressPublicBaseUrl } from "./remote-web/public-base-url.js";
 import { credentialKey } from "./credential-key.js";
 import {
   CredentialWatcher,
@@ -85,26 +82,9 @@ import {
   bindCloudIdentityCredentialCache,
   ensureCloudIdentityIds,
 } from "./cloud-identity.js";
-import { CircuitBreakerOpenError, uploadAttachment } from "./runtime/client.js";
-import {
-  appendFailedAttachmentNotice,
-  ingestAttachments,
-} from "./attachments/ingest.js";
-import { createConversationTaskQueue } from "./channels/conversation-queue.js";
-import { notifyRecordActivity } from "./channels/record-activity.js";
 import { buildSchema } from "./schema.js";
-import {
-  createSlackSocketModeClient,
-  type SlackSocketModeClient,
-} from "./slack/socket-mode.js";
-import { downloadSlackFile } from "./slack/download.js";
-import { slackBotContactNote } from "./slack/actor.js";
-import {
-  getDiscordGatewayClient,
-  startDiscordGateway,
-} from "./discord/lifecycle.js";
-import { handleInbound } from "./handlers/handle-inbound.js";
-import { upsertContactChannel } from "./verification/contact-helpers.js";
+import { startDiscordGateway } from "./discord/lifecycle.js";
+import { getSlackSocketClient, startSlackGateway } from "./slack/lifecycle.js";
 import { checkAuthRateLimit } from "./http/middleware/rate-limit.js";
 import {
   extractBearerToken,
@@ -124,8 +104,6 @@ import { createRouter, type GetClientIp } from "./http/router.js";
 import { ROUTES, webhookDedupCaches } from "./http/routes/index.js";
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
-import { fetchImpl } from "./fetch.js";
-import { isNewCommand, handleNewCommand } from "./webhook-pipeline.js";
 import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { registerEmailCallbackRoute } from "./email/register-callback.js";
 import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
@@ -144,10 +122,7 @@ import { channelPermissionRoutes } from "./ipc/channel-permission-handlers.js";
 import { trustVerdictRoutes } from "./ipc/trust-verdict-handlers.js";
 import { guardianDeliveryRoutes } from "./ipc/guardian-delivery-handlers.js";
 import { logTailRoutes } from "./ipc/log-tail-handlers.js";
-import {
-  channelSocketHealthRoutes,
-  setChannelSocketHealthSources,
-} from "./ipc/channel-socket-health-handlers.js";
+import { channelSocketHealthRoutes } from "./ipc/channel-socket-health-handlers.js";
 import {
   credentialRequestRoutes,
   setEnsurePublicIngressLiveForCredentialLinks,
@@ -988,247 +963,7 @@ async function main() {
     });
   }
 
-  // ── Slack Socket Mode lifecycle ──
-  let slackSocketClient: SlackSocketModeClient | null = null;
-  const slackForwardQueue = createConversationTaskQueue();
-  // Guards concurrent startSlackSocket calls: at boot both the credential
-  // watcher's and the config-file watcher's initial polls fire it, and the
-  // second call can pass the stop() guard while the first is still awaiting
-  // credentials, leaving the first client running (open WebSocket, reconnect
-  // loop, cleanup timer) with no reference to stop it.
-  let slackStartGeneration = 0;
-
-  async function startSlackSocket(): Promise<void> {
-    const generation = ++slackStartGeneration;
-    if (slackSocketClient) {
-      slackSocketClient.stop();
-      slackSocketClient = null;
-    }
-
-    const botToken = await credentialCache.get(
-      credentialKey("slack_channel", "bot_token"),
-    );
-    const appToken = await credentialCache.get(
-      credentialKey("slack_channel", "app_token"),
-    );
-    // A newer call started while we awaited credentials, so let it own the
-    // client. Everything below is synchronous, so one check suffices.
-    if (generation !== slackStartGeneration) {
-      return;
-    }
-    if (!botToken || !appToken) return;
-
-    const threadModeRaw = configFileCache.getString("slack", "threadMode");
-    const threadMode =
-      threadModeRaw === "mention_only" ||
-      threadModeRaw === "mention_then_thread"
-        ? threadModeRaw
-        : "mention_then_thread";
-
-    slackSocketClient = createSlackSocketModeClient(
-      { appToken, botToken, gatewayConfig: config, threadMode },
-      (normalized) => {
-        // Notify the cloud of inbound activity so the idle-sleep timer
-        // is reset for this assistant (fire-and-forget).
-        notifyRecordActivity();
-
-        const { threadTs, channel } = normalized;
-        const params = new URLSearchParams({ channel });
-        if (threadTs) params.set("threadTs", threadTs);
-        // For non-threaded DMs, pass the original message ts so the runtime
-        // can target it for emoji-based thinking indicators.
-        const origMessageTs = normalized.event.source.messageId;
-        if (!threadTs && origMessageTs) params.set("messageTs", origMessageTs);
-        const replyCallbackUrl = `${readSavedIngressPublicBaseUrl()}/deliver/slack?${params}`;
-
-        const refersToAnotherMessage = eventRefersToAnotherMessage(
-          normalized.event.message,
-        );
-        const slackSourceMetadata = buildSlackSourceMetadata(normalized);
-
-        // Handle /new command — reset conversation before it reaches the runtime
-        if (isNewCommand(normalized.event.message.content)) {
-          handleNewCommand(
-            config,
-            "slack",
-            normalized.event.message.conversationExternalId,
-            async (text) => {
-              await fetchImpl("https://slack.com/api/chat.postMessage", {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${botToken}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  channel,
-                  text,
-                  ...(threadTs ? { thread_ts: threadTs } : {}),
-                }),
-              });
-            },
-            log,
-            threadTs,
-          );
-          return;
-        }
-
-        const forward = async () => {
-          // Seed contact channel for the Slack actor (dual-write, fire-and-forget).
-          // Covers both DMs (externalChatId = DM channel) and workspace messages.
-          // Bot/app senders are classified as 'assistant' contacts with a
-          // provenance note instead of the default 'human'.
-          // An unattributed event (a delete Slack names no human author for)
-          // carries the channel's synthetic system id, not a person; seeding
-          // a contact from it would mint a record for nobody.
-          if (
-            normalized.event.actor.actorExternalId &&
-            !normalized.event.source.actorUnattributed
-          ) {
-            void upsertContactChannel({
-              sourceChannel: "slack",
-              externalUserId: normalized.event.actor.actorExternalId,
-              ...(normalized.event.source.chatType === "im"
-                ? {
-                    externalChatId:
-                      normalized.event.message.conversationExternalId,
-                  }
-                : {}),
-              displayName: normalized.event.actor.displayName,
-              username: normalized.event.actor.username,
-              ...(normalized.botSender
-                ? {
-                    contactType: "assistant" as const,
-                    notes: slackBotContactNote(normalized.botSender),
-                  }
-                : {}),
-            }).catch(() => {});
-          }
-
-          try {
-            // Download and upload attachments if present. An event that acts
-            // on another message brings no media of its own.
-            let attachmentIds: string[] | undefined;
-            const eventAttachments = normalized.event.message.attachments;
-            if (
-              eventAttachments &&
-              eventAttachments.length > 0 &&
-              normalized.slackFiles &&
-              !refersToAnotherMessage
-            ) {
-              // Guardian-actor bypass: when the Slack sender is the
-              // assistant's owner, the upload is marked trustedSource so the
-              // assistant accepts arbitrary MIME types and extensions
-              // (e.g. .mkv, .dmg) for downstream processing. Resolved once
-              // per message — the assistant re-checks gateway-service auth
-              // before honoring the flag, so impersonation is not possible.
-              // Lookup failures (e.g. assistant.db unavailable) default to
-              // strict handling so non-guardian uploads still flow through
-              // the normal validation path instead of being dropped.
-              const slackActorId = normalized.event.actor.actorExternalId;
-              let isGuardianActor = false;
-              if (slackActorId) {
-                try {
-                  isGuardianActor = !!(await findGuardianForChannelActor(
-                    "slack",
-                    slackActorId,
-                  ));
-                } catch (err) {
-                  log.warn(
-                    { err, slackActorId },
-                    "Guardian lookup failed; defaulting to strict attachment validation",
-                  );
-                }
-              }
-
-              const result = await ingestAttachments(
-                config,
-                "slack",
-                eventAttachments,
-                log,
-                {
-                  download: (att, maxBytes) => {
-                    const slackFile = normalized.slackFiles?.get(att.fileId);
-                    if (!slackFile) {
-                      throw new Error(
-                        `No SlackFile found for attachment ${att.fileId}`,
-                      );
-                    }
-                    return downloadSlackFile(slackFile, botToken, maxBytes);
-                  },
-                  upload: (downloaded) =>
-                    uploadAttachment(
-                      config,
-                      { ...downloaded, trustedSource: isGuardianActor },
-                      { skipCircuitBreaker: true },
-                    ),
-                  failurePolicy: { mode: "skip" },
-                },
-              );
-              attachmentIds = result.attachmentIds;
-              normalized.event.message.content = appendFailedAttachmentNotice(
-                normalized.event.message.content,
-                result,
-              );
-            }
-
-            await handleInbound(config, normalized.event, {
-              replyCallbackUrl,
-              routingOverride: normalized.routing,
-              ...(Object.keys(slackSourceMetadata).length > 0
-                ? { sourceMetadata: slackSourceMetadata }
-                : {}),
-              ...(attachmentIds && attachmentIds.length > 0
-                ? { attachmentIds }
-                : {}),
-            }).catch((err) => {
-              log.error(
-                { err, channel, threadTs },
-                "Failed to forward Slack event to runtime",
-              );
-            });
-          } catch (err) {
-            log.error(
-              { err, channel, threadTs },
-              "Failed to process Slack event — delivering message without attachments",
-            );
-            await handleInbound(config, normalized.event, {
-              replyCallbackUrl,
-              routingOverride: normalized.routing,
-              ...(Object.keys(slackSourceMetadata).length > 0
-                ? { sourceMetadata: slackSourceMetadata }
-                : {}),
-            }).catch((fwdErr) => {
-              log.error(
-                { err: fwdErr, channel, threadTs },
-                "Failed to forward Slack event to runtime (fallback)",
-              );
-            });
-          }
-        };
-
-        // Slack thread/DM context is now assembled on the daemon from
-        // persisted message rows (see `assembleSlackChronologicalMessages`
-        // in the assistant), so the gateway no longer fetches per-turn
-        // thread/DM context to inject as transport hints.
-        void slackForwardQueue
-          .enqueue(normalized.event.message.conversationExternalId, forward)
-          .catch((err) => {
-            log.error(
-              { err, channel, threadTs },
-              "Unhandled error in Slack forward",
-            );
-          });
-
-        // Approval message replacement is handled by the assistant's
-        // direct Slack delivery path (messaging/providers/slack/send.ts).
-      },
-    );
-
-    slackSocketClient.start().catch((err) => {
-      log.error({ err }, "Failed to start Slack Socket Mode client");
-    });
-    log.info("Slack Socket Mode client started");
-  }
+  const stopSlackClient = startSlackGateway();
 
   const stopDiscordClient = startDiscordGateway();
 
@@ -1288,14 +1023,6 @@ async function main() {
         log.error(
           { err },
           "Failed to reconcile Telegram webhook after credential change",
-        );
-      });
-    }
-    if (changed.has("slack_channel")) {
-      startSlackSocket().catch((err) => {
-        log.error(
-          { err },
-          "Failed to restart Slack Socket Mode after credential change",
         );
       });
     }
@@ -1391,15 +1118,6 @@ async function main() {
       maybeStartTunnelForTwilio("twilio config changed");
     }
 
-    if (event.changedKeys.has("slack")) {
-      startSlackSocket().catch((err) => {
-        log.error(
-          { err },
-          "Failed to restart Slack Socket Mode after config change",
-        );
-      });
-    }
-
     // Side effect: re-register email callback when ingress URL changes so
     // the cloud callback route points at the new self-hosted URL. A
     // Tunnel-only publicBaseUrl change is the tunnel registering, which
@@ -1423,15 +1141,12 @@ async function main() {
 
   configFileWatcher.start();
 
-  // Wire the two stateless IPC route constants' live dependencies once: the
-  // channel clients and the ingress hook are entrypoint-owned (torn down and
-  // rebuilt as credentials and the tunnel come and go), and the routes read
-  // them at request time — the same call-time resolution `getConfig()` gives
-  // the config-shaped deps.
-  setChannelSocketHealthSources({
-    slack: () => slackSocketClient,
-    discord: getDiscordGatewayClient,
-  });
+  // Wire the stateless IPC route constant's live dependency once: the
+  // ingress hook is entrypoint-owned (torn down and rebuilt as credentials
+  // and the tunnel come and go), and the route reads it at request time —
+  // the same call-time resolution `getConfig()` gives the config-shaped
+  // deps. The channel clients resolve inside the health handlers, straight
+  // from their lifecycle singletons.
   setEnsurePublicIngressLiveForCredentialLinks(
     ensurePublicIngressLiveForCredentialLink,
   );
@@ -1467,7 +1182,7 @@ async function main() {
     log.info("System wake detected — reconnecting channels");
 
     // Force-reconnect Slack WebSocket (may be half-open after sleep)
-    slackSocketClient?.forceReconnect();
+    getSlackSocketClient()?.forceReconnect();
 
     // Invalidate caches so next read picks up any config changes (e.g. a new tunnel URL)
     configFileCache.invalidate();
@@ -1485,25 +1200,22 @@ async function main() {
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
-    const shutdownTasks: Promise<void>[] = [];
+    const shutdownTasks: (() => Promise<void>)[] = [];
     sleepWakeDetector.stop();
     credentialWatcher.stop();
     configFileWatcher.stop();
     const tunnelStop = tunnelClient?.stop();
-    if (tunnelStop) shutdownTasks.push(tunnelStop);
-    shutdownTasks.push(stopDiscordClient());
+    if (tunnelStop) shutdownTasks.push(() => tunnelStop);
+    shutdownTasks.push(stopDiscordClient);
+    shutdownTasks.push(stopSlackClient);
     ipcServer.stop();
     telegramDedupCache.stopCleanup();
     whatsappDedupCache.stopCleanup();
     emailDedupCache.stopCleanup();
     clearInterval(inboundDedupCleanup);
-    if (slackSocketClient) {
-      slackSocketClient.stop();
-      slackSocketClient = null;
-    }
     setTimeout(() => {
       log.info("Drain window elapsed, stopping server");
-      void Promise.allSettled(shutdownTasks).then(() => {
+      void Promise.allSettled(shutdownTasks.map((task) => task())).then(() => {
         server.stop(true);
         process.exit(0);
       });

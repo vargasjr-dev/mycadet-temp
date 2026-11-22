@@ -4,7 +4,6 @@
  */
 
 import { createConversationTaskQueue } from "../channels/conversation-queue.js";
-import { notifyRecordActivity } from "../channels/record-activity.js";
 import { getConfig } from "../config.js";
 import { getCredentials } from "../credential-cache.js";
 import { getConfigFileCache } from "../config-file-cache.js";
@@ -63,7 +62,6 @@ async function start(
     createDiscordInboundEventHandler({
       config: getConfig(),
       log,
-      notifyRecordActivity,
       forwardQueue,
     }),
   );

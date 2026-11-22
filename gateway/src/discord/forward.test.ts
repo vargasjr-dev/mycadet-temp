@@ -44,10 +44,8 @@ const noopLog = {
 
 function makeHandler() {
   return createDiscordInboundEventHandler({
-    config: {
-    } as GatewayConfig,
+    config: {} as GatewayConfig,
     log: noopLog,
-    notifyRecordActivity: () => {},
     forwardQueue: createConversationTaskQueue(),
   });
 }
