@@ -6,6 +6,7 @@ import {
   ensureDockerInstalled,
 } from "../../remotes/docker/hatch";
 import { getDefaultPorts, findOpenPort } from "../../ports";
+import { portsReservedByOthers } from "../../operations/lookup";
 import { saveLockfileAssistant } from "../../lockfile";
 import { initializeRootArchive } from "../../root-backup";
 import { ownVersion } from "../../environment";
@@ -35,7 +36,10 @@ export async function initializeDockerTeleportTarget(
   // env-default is the preferred starting point and we walk upward on
   // collision so concurrent instances don't fight over a bind.
   const preferredGatewayPort = getDefaultPorts().gateway;
-  const gatewayPort = await findOpenPort(preferredGatewayPort);
+  const reserved = portsReservedByOthers();
+  const gatewayPort = await findOpenPort(preferredGatewayPort, {
+    exclude: reserved,
+  });
   if (gatewayPort !== preferredGatewayPort) {
     log(
       `Preferred gateway port ${preferredGatewayPort} is in use; allocated ${gatewayPort} for this instance.`,
@@ -43,7 +47,7 @@ export async function initializeDockerTeleportTarget(
   }
   const preferredAssistantPort = getDefaultPorts().daemon;
   const assistantPort = await findOpenPort(preferredAssistantPort, {
-    exclude: [gatewayPort],
+    exclude: [gatewayPort, ...reserved],
   });
   if (assistantPort !== preferredAssistantPort) {
     log(

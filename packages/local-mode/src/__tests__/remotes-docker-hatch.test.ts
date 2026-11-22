@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, test, expect } from "bun:test";
+import { afterEach, beforeEach, describe, test, expect, spyOn } from "bun:test";
 import {
   mkdirSync,
   mkdtempSync,
@@ -15,9 +15,13 @@ import {
   type ServiceName,
 } from "../remotes/docker/statefulset";
 import {
+  hatchDocker,
   pullImage,
   resolveDockerProviderCredentialSetupAction,
 } from "../remotes/docker/hatch";
+import * as execModule from "../exec";
+import { saveLockfileAssistant } from "../lockfile";
+import { findOpenPort, getDefaultPorts } from "../ports";
 import { collectWatchTargets } from "../remotes/docker/watch";
 import { ASSISTANT_INTERNAL_PORT } from "../ports";
 import { dockerResourceNames } from "../remotes/docker/common";
@@ -455,5 +459,55 @@ describe("collectWatchTargets", () => {
     // THEN absent paths are not emitted
     expect(dirs).toEqual([join(repoRoot, "packages", "contracts-only", "src")]);
     expect(files).toEqual([join(repoRoot, "gateway", "package.json")]);
+  });
+});
+
+describe("hatchDocker port choice", () => {
+  test("skips a port a sleeping assistant recorded", async () => {
+    // Reserve the exact port this hatch would otherwise pick.
+    const wouldPick = await findOpenPort(getDefaultPorts().gateway);
+    saveLockfileAssistant({
+      assistantId: "sleeping",
+      cloud: "docker",
+      port: wouldPick,
+    });
+    for (const key of [
+      "CADET_ASSISTANT_IMAGE",
+      "CADET_GATEWAY_IMAGE",
+      "CADET_CREDENTIAL_EXECUTOR_IMAGE",
+    ]) {
+      process.env[key] = "image:test";
+    }
+    let published: string | undefined;
+    const execSpy = spyOn(execModule, "exec").mockImplementation(
+      async (_cmd: string, args: string[] = []) => {
+        if (args[0] === "run" && args.includes("newcomer-assistant")) {
+          published = args.find((arg) => arg.endsWith(":7830"));
+          throw new Error("stop after the port is chosen");
+        }
+      },
+    );
+    const execOutputSpy = spyOn(execModule, "execOutput").mockResolvedValue("");
+
+    try {
+      await hatchDocker({
+        name: "newcomer",
+        reporter: {
+          progress: () => {},
+          log: () => {},
+          warn: () => {},
+          error: () => {},
+        },
+      });
+
+      expect(published).toBeDefined();
+      expect(published).not.toBe(`${wouldPick}:7830`);
+    } finally {
+      execSpy.mockRestore();
+      execOutputSpy.mockRestore();
+      delete process.env.CADET_ASSISTANT_IMAGE;
+      delete process.env.CADET_GATEWAY_IMAGE;
+      delete process.env.CADET_CREDENTIAL_EXECUTOR_IMAGE;
+    }
   });
 });

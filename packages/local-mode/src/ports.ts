@@ -130,10 +130,14 @@ function isPortInUseError(err: unknown): boolean {
  * available when `probePort()` returns false (nothing listening). Scans up to
  * 100 ports above the base before giving up.
  */
-export async function findAvailablePort(basePort: number): Promise<number> {
+export async function findAvailablePort(
+  basePort: number,
+  exclude: number[] = [],
+): Promise<number> {
   const maxOffset = 100;
   for (let offset = 0; offset < maxOffset; offset++) {
     const port = basePort + offset;
+    if (exclude.includes(port)) continue;
     const inUse = await probePort(port);
     if (!inUse) return port;
   }

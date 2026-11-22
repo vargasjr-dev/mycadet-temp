@@ -1,4 +1,4 @@
-import { loadAllAssistants } from "../../operations/lookup";
+import { portsReservedByOthers } from "../../operations/lookup";
 import { findOpenPort } from "../../ports";
 import { getDefaultPorts } from "../../ports";
 import { findPidListeningOnPort } from "./common";
@@ -44,7 +44,7 @@ export interface PortHealDeps {
   isPortFree?: (port: number) => Promise<boolean>;
   /** The pid listening on a port, when discoverable. Defaults to lsof. */
   findListenerPid?: (port: number) => number | undefined;
-  /** Ports recorded by OTHER local entries in the lockfile. */
+  /** Ports recorded by OTHER local and Docker entries in the lockfile. */
   otherReservedPorts?: () => number[];
   /** Whether a listener pid belongs to one of our own processes. */
   isOurProcess?: (pid: number) => boolean;
@@ -93,19 +93,6 @@ function makeAllocator(
   };
 }
 
-/** Ports recorded by every OTHER local entry in the lockfile. */
-function otherReservedPortsDefault(assistantId: string): number[] {
-  const reserved: number[] = [];
-  for (const other of loadAllAssistants()) {
-    if (other.assistantId === assistantId) continue;
-    if (other.cloud !== "local") continue;
-    if (other.daemonPort !== undefined) reserved.push(other.daemonPort);
-    if (other.port !== undefined) reserved.push(other.port);
-    if (other.cesPort !== undefined) reserved.push(other.cesPort);
-  }
-  return reserved;
-}
-
 /**
  * Reallocate every recorded port a foreign process holds, in place.
  * Returns the moves, or null when there was nothing to heal (not a local
@@ -122,7 +109,7 @@ export async function healConflictedLocalPorts(
   const isOurProcess = deps.isOurProcess ?? isCadetProcess;
   const allocatePort = deps.allocatePort ?? makeAllocator(isPortFree);
   const reserved = new Set<number>(
-    deps.otherReservedPorts?.() ?? otherReservedPortsDefault(entry.assistantId),
+    deps.otherReservedPorts?.() ?? portsReservedByOthers(entry.assistantId),
   );
   // The entry's own remaining recorded ports are claims too — the new
   // daemon port must not take the gateway's, and every field must move OFF

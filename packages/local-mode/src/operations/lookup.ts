@@ -15,6 +15,24 @@ export function loadAllAssistants(): LockfileAssistant[] {
   return readLockfile().assistants;
 }
 
+/**
+ * Host ports that other local and Docker assistants have recorded. A
+ * sleeping assistant isn't listening, so a plain "is it free" check misses
+ * them and a new assistant would take its ports.
+ */
+export function portsReservedByOthers(assistantId?: string): number[] {
+  const reserved: (number | undefined)[] = [];
+  for (const other of loadAllAssistants()) {
+    if (other.assistantId === assistantId) continue;
+    if (other.cloud === "local") {
+      reserved.push(other.port, other.daemonPort, other.cesPort);
+    } else if (other.cloud === "docker") {
+      reserved.push(other.port, other.daemonPort);
+    }
+  }
+  return reserved.filter((port) => port !== undefined);
+}
+
 export function findAssistant(id?: string | null): LockfileAssistant | null {
   const lockfile = readLockfile();
   if (!id) {

@@ -20,6 +20,7 @@ import {
   buildHatchConfigValues,
 } from "../local/hatch-config";
 import { generateInstanceName } from "../../naming";
+import { portsReservedByOthers } from "../../operations/lookup";
 import {
   ASSISTANT_INTERNAL_PORT,
   findOpenPort,
@@ -655,7 +656,9 @@ export async function hatchDocker(
       gatewayPort = params.gatewayPort;
     } else {
       const preferredGatewayPort = getDefaultPorts().gateway;
-      gatewayPort = await findOpenPort(preferredGatewayPort);
+      gatewayPort = await findOpenPort(preferredGatewayPort, {
+        exclude: portsReservedByOthers(),
+      });
       if (gatewayPort !== preferredGatewayPort) {
         log(
           `Preferred gateway port ${preferredGatewayPort} is in use; allocated ${gatewayPort} for this instance.`,
@@ -670,7 +673,7 @@ export async function hatchDocker(
     } else {
       const preferredAssistantPort = getDefaultPorts().daemon;
       assistantPort = await findOpenPort(preferredAssistantPort, {
-        exclude: [gatewayPort],
+        exclude: [gatewayPort, ...portsReservedByOthers()],
       });
       if (assistantPort !== preferredAssistantPort) {
         log(

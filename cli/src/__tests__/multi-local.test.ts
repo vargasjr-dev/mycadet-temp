@@ -27,7 +27,11 @@ import {
   removeLockfileAssistant,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
-import { DEFAULT_DAEMON_PORT, DEFAULT_GATEWAY_PORT } from "../lib/constants.js";
+import {
+  DEFAULT_CES_PORT,
+  DEFAULT_DAEMON_PORT,
+  DEFAULT_GATEWAY_PORT,
+} from "../lib/constants.js";
 import { mockOsHomedir } from "./helpers/os-mock.js";
 import { makeEntry, readEntry } from "./helpers/lockfile-entry.js";
 
@@ -175,6 +179,26 @@ describe("multi-local", () => {
 
       // AND it gets its own dedicated instance directory
       expect(b.instanceDir).toContain("instance-b");
+    });
+
+    test("skips the ports sleeping assistants recorded, local or docker", async () => {
+      // Nothing is listening: both assistants are asleep.
+      makeEntry({
+        assistantId: "sleeping-local",
+        daemonPort: DEFAULT_DAEMON_PORT,
+        cesPort: DEFAULT_CES_PORT,
+      });
+      makeEntry({
+        assistantId: "sleeping-docker",
+        cloud: "docker",
+        port: DEFAULT_GATEWAY_PORT,
+      });
+
+      const res = await allocateLocalPlacement("newcomer");
+
+      expect(res.daemonPort).not.toBe(DEFAULT_DAEMON_PORT);
+      expect(res.port).not.toBe(DEFAULT_GATEWAY_PORT);
+      expect(res.cesPort).not.toBe(DEFAULT_CES_PORT);
     });
 
     test("skips ports that probePort reports as in-use", async () => {
