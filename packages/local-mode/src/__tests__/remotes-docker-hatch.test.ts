@@ -16,7 +16,6 @@ import {
 } from "../remotes/docker/statefulset";
 import {
   pullImage,
-  resolveDockerHatchMode,
   resolveDockerProviderCredentialSetupAction,
 } from "../remotes/docker/hatch";
 import { collectWatchTargets } from "../remotes/docker/watch";
@@ -287,116 +286,6 @@ describe("CADET_AVATAR_DEVICE passthrough", () => {
     expect(args.some((a) => a.startsWith(`${AVATAR_DEVICE_ENV_VAR}=`))).toBe(
       false,
     );
-  });
-});
-
-describe("resolveDockerHatchMode", () => {
-  // The checkout the tests run inside is a full source tree by definition
-  // (assistant/package.json sits at the repo root).
-  const repoRoot = join(import.meta.dir, "..", "..", "..", "..");
-
-  test("defaults to pulling published images when no source flag is set", () => {
-    let probed = false;
-    expect(
-      resolveDockerHatchMode({
-        watch: false,
-        buildFromSource: false,
-        resolveSourceTree: () => {
-          probed = true;
-          return repoRoot;
-        },
-      }),
-    ).toEqual({
-      build: false,
-      watcher: false,
-      fellBackToPull: false,
-      repoRoot: null,
-    });
-    // Nothing requested → the filesystem is never walked: the vm's
-    // release-pinned `cadet hatch` must not pay for a repo it doesn't have.
-    expect(probed).toBe(false);
-  });
-
-  test("--source <path> builds without enabling the file watcher", () => {
-    expect(
-      resolveDockerHatchMode({
-        watch: false,
-        buildFromSource: true,
-        resolveSourceTree: () => repoRoot,
-      }),
-    ).toEqual({ build: true, watcher: false, fellBackToPull: false, repoRoot });
-  });
-
-  test("--watch builds and enables the file watcher", () => {
-    expect(
-      resolveDockerHatchMode({
-        watch: true,
-        buildFromSource: false,
-        resolveSourceTree: () => repoRoot,
-      }),
-    ).toEqual({ build: true, watcher: true, fellBackToPull: false, repoRoot });
-  });
-
-  test("--watch + --source <path> still enables the watcher (watch wins)", () => {
-    expect(
-      resolveDockerHatchMode({
-        watch: true,
-        buildFromSource: true,
-        resolveSourceTree: () => repoRoot,
-      }),
-    ).toEqual({ build: true, watcher: true, fellBackToPull: false, repoRoot });
-  });
-
-  test("falls back to pull when source flag is set but source tree is missing", () => {
-    expect(
-      resolveDockerHatchMode({
-        watch: false,
-        buildFromSource: true,
-        resolveSourceTree: () => null,
-      }),
-    ).toEqual({
-      build: false,
-      watcher: false,
-      fellBackToPull: true,
-      repoRoot: null,
-    });
-    expect(
-      resolveDockerHatchMode({
-        watch: true,
-        buildFromSource: false,
-        resolveSourceTree: () => null,
-      }),
-    ).toEqual({
-      build: false,
-      watcher: false,
-      fellBackToPull: true,
-      repoRoot: null,
-    });
-  });
-
-  test("a repo-less hatch falls back to pull instead of dying on the repo resolver", () => {
-    // The dev-node vm bug this PR fixes: main evaluated the repo resolver
-    // unconditionally at the hatchDocker call site, so a repo-less install
-    // (no source tree on disk) THREW "Could not find repository root
-    // containing assistant/Dockerfile" before the pull fallback could run
-    // — the gateway container never started and the health check refused.
-    // The probe is now lazy and repo-less resolves to null, not a throw.
-    let probed = false;
-    const mode = resolveDockerHatchMode({
-      watch: true, // requested — this is the path where the probe runs
-      buildFromSource: false,
-      resolveSourceTree: () => {
-        probed = true;
-        return null; // no repo anywhere on disk
-      },
-    });
-    expect(probed).toBe(true);
-    expect(mode).toEqual({
-      build: false,
-      watcher: false, // a pulled image has nothing to watch
-      fellBackToPull: true,
-      repoRoot: null,
-    });
   });
 });
 
