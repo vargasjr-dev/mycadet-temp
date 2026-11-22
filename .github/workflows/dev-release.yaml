@@ -1155,6 +1155,10 @@ jobs:
             rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/linux --filter=@mycadet/web --filter=@mycadet/app
           fi
 
+      # generate-icon needs rsvg-convert (librsvg2-bin) — not on the runner image
+      - name: Install librsvg2-bin
+        run: sudo apt-get update -q && sudo apt-get install -y -q librsvg2-bin
+
       - name: Set up Electron binary
         run: bun run setup
 
