@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import type { WebContents } from "electron";
 import { electronMock } from "../../test-setup";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -34,16 +35,23 @@ const writeFileMock = mock((_path: string, _data: unknown) =>
 const readdirMock = mock((_path: string) => Promise.resolve<string[]>([]));
 const rmMock = mock((_path: string, _opts: unknown) => Promise.resolve());
 const statMock = mock((_path: string) => Promise.resolve({ mtimeMs: 0 }));
+const copyFileMock = mock((_from: string, _to: string) => Promise.resolve());
 mock.module("node:fs/promises", () => ({
   mkdtemp: mkdtempMock,
   writeFile: writeFileMock,
   readdir: readdirMock,
   rm: rmMock,
   stat: statMock,
+  copyFile: copyFileMock,
 }));
 
 // What the share sheet was handed, recorded by the stub class below.
 const sharePopups: Array<{ filePaths: string[]; window?: unknown }> = [];
+
+// What the Save-As dialog answers, re-set per test.
+const saveDialogMock = mock((_options: unknown) =>
+  Promise.resolve({ canceled: true, filePath: "" }),
+);
 
 mock.module("electron", () =>
   electronMock({
@@ -61,6 +69,10 @@ mock.module("electron", () =>
         });
       }
     },
+    // The classic shells' Save-As: the whole dialog object rides the
+    // top-level replace rule, and showSaveDialog is the only member the
+    // share feature reads.
+    dialog: { showSaveDialog: saveDialogMock },
   }),
 );
 
@@ -70,7 +82,8 @@ afterEach(() => {
   Object.defineProperty(process, "platform", { value: realPlatform });
 });
 
-const { install, sweepStaleShareDirs } = await import("./share");
+const { install, sharePresenter, sweepStaleShareDirs } =
+  await import("./share");
 
 install();
 
@@ -84,6 +97,9 @@ const shareReg = (): Registration =>
 // A stand-in for `IpcMainInvokeEvent` — the handler only reads `.sender`.
 const fakeSender = { id: 1 };
 const fakeEvent = { sender: fakeSender };
+// The presenters' param types name WebContents; the handler path (driven
+// through the untyped registration above) needs no such cast.
+const senderAsWebContents = fakeSender as unknown as WebContents;
 
 const bytes = new Uint8Array([1, 2, 3, 4]);
 const expectedDir = `${path.join(tmpdir(), "cadet-share-")}abc123`;
@@ -100,6 +116,11 @@ beforeEach(() => {
   statMock.mockImplementation((_path: string) =>
     Promise.resolve({ mtimeMs: Date.now() }),
   );
+  copyFileMock.mockClear();
+  saveDialogMock.mockClear();
+  saveDialogMock.mockImplementation(() =>
+    Promise.resolve({ canceled: true, filePath: "" }),
+  );
 });
 
 describe("install wiring", () => {
@@ -110,7 +131,7 @@ describe("install wiring", () => {
     expect(matches).toHaveLength(1);
   });
 
-  test("kicks off a single startup sweep for a shell with a presenter", () => {
+  test("kicks off a single startup sweep", () => {
     expect(readdirCallsAtInstall).toBe(1);
   });
 });
@@ -174,6 +195,47 @@ describe("staged share handler", () => {
     // service is done reading the file. The just-written (fresh) dir is
     // never swept — only stale dirs are.
     expect(rmMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("the classic shells' Save-As presenter", () => {
+  // The selector reads the platform at call time, so the classic arm is
+  // driven under a non-darwin pin; afterEach restores the real one.
+  const presenter = () => {
+    Object.defineProperty(process, "platform", { value: "linux" });
+    return sharePresenter();
+  };
+  const stagedPath = path.join(expectedDir, "report.pdf");
+
+  test("lands the staged file through Save-As at the sanitized name", async () => {
+    saveDialogMock.mockImplementation(() =>
+      Promise.resolve({
+        canceled: false,
+        filePath: "/home/me/Downloads/report.pdf",
+      }),
+    );
+
+    await presenter()({
+      filePath: stagedPath,
+      sender: senderAsWebContents,
+    });
+
+    // The anchor-less dialog arm — the sender's window doesn't resolve in
+    // this suite — carries the staged file's sanitized basename.
+    expect(saveDialogMock).toHaveBeenCalledWith({ defaultPath: "report.pdf" });
+    expect(copyFileMock).toHaveBeenCalledWith(
+      stagedPath,
+      "/home/me/Downloads/report.pdf",
+    );
+  });
+
+  test("a canceled Save-As leaves the staged file for the stale sweep", async () => {
+    await presenter()({
+      filePath: stagedPath,
+      sender: senderAsWebContents,
+    });
+
+    expect(copyFileMock).not.toHaveBeenCalled();
   });
 });
 

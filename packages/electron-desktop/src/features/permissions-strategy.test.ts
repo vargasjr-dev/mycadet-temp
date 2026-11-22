@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../test-setup";
 
 import type {
   Notifier,
   NotifierAuthorizationResult,
   NotifierRequest,
-} from "@mycadet/electron-desktop/notifier";
+} from "../notifier";
 import {
   SYSTEM_PERMISSION_KINDS,
   type PermissionNotificationPresentation,
@@ -87,16 +87,16 @@ mock.module("electron", () =>
   }),
 );
 
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
+mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
 }));
 
-mock.module("./appleScriptExecutor", () => ({
+mock.module("../apple-script-executor", () => ({
   runAppleScript: async () => "",
 }));
 
-mock.module("@mycadet/electron-desktop/helper-permissions", () => ({
+mock.module("./helper-permissions", () => ({
   queryFreshHelperPermission: async () => "granted",
   queryHelperPermission: async () => helperInputMonitoringStatus,
   requestHelperPermission: async (kind: string) => {
@@ -106,7 +106,7 @@ mock.module("@mycadet/electron-desktop/helper-permissions", () => ({
 
 // The text-insertion flow's helper seams; the strategy's insertText never
 // runs in this suite.
-mock.module("@mycadet/electron-desktop/helper-hotkeys", () => ({
+mock.module("../helper-hotkeys", () => ({
   readFrontAppFocus: async () => ({
     takesText: true,
     helperAnswered: true,
@@ -127,11 +127,11 @@ let nativeShowError: Error | null = null;
 const nativePosts: NotifierRequest[] = [];
 const resolveNotificationAvatarPath = mock(() => "/tmp/avatar.png");
 
-mock.module("@mycadet/electron-desktop/notification-avatar-path", () => ({
+mock.module("../notification-avatar-path", () => ({
   resolveNotificationAvatarPath,
 }));
 
-mock.module("@mycadet/electron-desktop/notifications", () => ({
+mock.module("../notifications", () => ({
   __resetForTesting: () => undefined,
   __setDeliveryTimeoutForTesting: () => undefined,
   CATEGORY_ACTIONS: {},
@@ -143,15 +143,14 @@ mock.module("@mycadet/electron-desktop/notifications", () => ({
     preparedSenderCurrent && /^scope:v1:[a-f0-9]{64}$/.test(identity.scopeId),
 }));
 
-mock.module("@mycadet/electron-desktop/notifier", () => ({
+mock.module("../notifier", () => ({
   getNotifier: () => notifier,
   isNotifierSupported: () => notifier?.isSupported() ?? false,
   requestNotifierAuthorization: () => authorizationRequest(),
 }));
 
 const { permissionsShell } = await import("./permissions-strategy");
-const { onPermissionPresentation } =
-  await import("@mycadet/electron-desktop/permissions");
+const { onPermissionPresentation } = await import("./permissions");
 
 const nativeNotifier = (isSupported = true): Notifier => ({
   isSupported: () => isSupported,

@@ -2,14 +2,14 @@ import { BrowserWindow, clipboard, type Data } from "electron";
 
 import type { TextInsertionResult } from "@mycadet/ipc-contract";
 
-import { runAppleScript } from "@mycadet/electron-desktop/apple-script-executor";
+import { runAppleScript } from "../apple-script-executor";
 import {
   type FrontAppFocus,
   postFrontAppShortcut,
   readFrontAppFocus,
   type ShortcutOutcome,
-} from "@mycadet/electron-desktop/helper-hotkeys";
-import log from "@mycadet/electron-desktop/app-logger";
+} from "./helper-hotkeys";
+import log from "../app-logger";
 
 const CLIPBOARD_RESTORE_DELAY_MS = 500;
 const PASTE_SHORTCUT_SCRIPT =

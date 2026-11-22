@@ -129,6 +129,14 @@ mock.module("./features/permissions", () => ({
   onPermissionPresentation: () => () => {},
   preparePermissionPresentation: () => {},
 }));
+// The per-OS permission arms resolve inside the package; the composition
+// test pins the installs, not the OS answers.
+mock.module("./features/permissions-strategy", () => ({
+  permissionsStrategy: () => ({}),
+}));
+mock.module("./features/permission-guide-values", () => ({
+  permissionGuideInputs: () => undefined,
+}));
 mock.module("./features/tray", () => ({ install: recorder("tray") }));
 mock.module("./features/companion-window", () => ({
   installCompanionWindow: recorder("companion-window"),

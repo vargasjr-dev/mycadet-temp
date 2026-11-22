@@ -100,24 +100,27 @@ export const registerNativeNotificationCategories = (): void => {
 };
 
 /**
- * The darwin factory: notifications that can carry category action buttons
- * (the avatar rides them). `null` where the OS says the module cannot run —
- * an unbundled load reports unsupported rather than raising.
+ * The addon's factory: notifications that can carry category action buttons
+ * (the avatar rides them). `{}` wherever the addon cannot run — an absent,
+ * disabled, or unbundled load reports unsupported and the Electron
+ * presenter answers instead, so the notifier serves every desktop the
+ * addon ships for.
  */
 export const nativeNotificationOverrides =
   (): Partial<NotificationsRuntime> => {
-    if (process.platform !== "darwin" || !isNotifierSupported()) {
+    if (!isNotifierSupported()) {
       return {};
     }
     return createNativeNotificationFactory();
   };
 
 /**
- * The darwin notifier delegate and its categories, wired once the factory
- * exists; the delegate's release rides the app quit. No-op elsewhere.
+ * The notifier delegate and its categories, wired once the factory exists;
+ * the delegate's release rides the app quit. No-op where the addon cannot
+ * run — every call under here is null-safe on the addon's absence.
  */
 export const installNativeNotifier = (): void => {
-  if (process.platform !== "darwin" || !isNotifierSupported()) {
+  if (!isNotifierSupported()) {
     return;
   }
   registerNativeNotificationCategories();

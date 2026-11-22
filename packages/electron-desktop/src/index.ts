@@ -55,14 +55,8 @@ export { companionSizeSubmenus } from "./companion-menu";
 export { hasPendingDeepLinks } from "./deep-links";
 export { getDeviceId } from "./device-id";
 export { areChromeDevToolsEnabled } from "./devtools";
-export { shareMenuPresenter } from "./features/share";
 export { getPermissionsService } from "./features/permissions";
 export { beginPermissionGuide } from "./features/permission-guide";
-export type { PermissionGuideInputs } from "./features/permission-guide";
-export type {
-  PermissionsRequestContext,
-  PermissionsShellInputs,
-} from "./features/permissions";
 export { createDictationEscapeMonitor } from "./dictation-escape-monitor";
 export {
   DICTATION_OVERLAY_ALWAYS_ON_TOP_LEVEL,

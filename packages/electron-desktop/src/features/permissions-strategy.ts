@@ -6,31 +6,28 @@ import type {
   SystemPermissionKind,
   SystemPermissionStatus,
 } from "@mycadet/ipc-contract";
-import type { PermissionsShellInputs } from "@mycadet/electron-desktop";
-import { isPreparedNotificationSenderCurrent } from "@mycadet/electron-desktop/notifications";
-import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
-import {
-  describeError,
-  preparePermissionPresentation,
-} from "@mycadet/electron-desktop/permissions";
+import type { PermissionsShellInputs } from "./permissions";
+import { isPreparedNotificationSenderCurrent } from "../notifications";
+import { resolveNotificationAvatarPath } from "../notification-avatar-path";
+import { describeError, preparePermissionPresentation } from "./permissions";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
-import { runAppleScript } from "@mycadet/electron-desktop/apple-script-executor";
+import { runAppleScript } from "../apple-script-executor";
 import {
   queryFreshHelperPermission,
   queryHelperPermission,
   requestHelperPermission,
   type HelperPermissionKind,
-} from "@mycadet/electron-desktop/helper-permissions";
-import log from "@mycadet/electron-desktop/app-logger";
+} from "./helper-permissions";
+import log from "../app-logger";
 import {
   getNotifier,
   isNotifierSupported,
   requestNotifierAuthorization,
   type NotifierAuthorizationResult,
-} from "@mycadet/electron-desktop/notifier";
-import { readScreenRecordingPermission } from "@mycadet/electron-desktop/screen-recording-permission";
-import { typeIntoFrontApp, undoInFrontApp } from "./textInsertion";
+} from "../notifier";
+import { readScreenRecordingPermission } from "./screen-recording-permission";
+import { typeIntoFrontApp, undoInFrontApp } from "./text-insertion";
 
 const SECURITY_PANE_URL =
   "x-apple.systempreferences:com.apple.preference.security";
@@ -196,7 +193,9 @@ const notificationStatus = {
   current: initialNotificationStatus(),
 };
 
-const automationStatus = { current: "unknown" as SystemPermissionStatus };
+const automationStatus: { current: SystemPermissionStatus } = {
+  current: "unknown",
+};
 
 const helperRequests = new Set<SystemPermissionKind>();
 
@@ -322,6 +321,33 @@ const startPolling = (
  * app-launch permissions, the helper's consent-store for the kinds the
  * helper owns, and the addon's authorization flow for notifications.
  */
+// The windows arm: the OS's own settings deep links. Windows asks for no
+// richer flow — its privacy pages are the request surface.
+const WINDOWS_SETTINGS_URIS: Partial<Record<SystemPermissionKind, string>> = {
+  screen: "ms-settings:privacy-graphicscaptureprogrammatic",
+  microphone: "ms-settings:privacy-microphone",
+  speechRecognition: "ms-settings:privacy-speech",
+  notifications: "ms-settings:notifications",
+  // No automation pane here — the privacy hub is the landing page.
+  automation: "ms-settings:privacy",
+};
+
+/**
+ * The shell inputs the composition installs, resolved per OS: this file's
+ * macOS strategy, the windows deep links, and the shared defaults for
+ * linux.
+ */
+export const permissionsStrategy = (): PermissionsShellInputs => {
+  switch (process.platform) {
+    case "darwin":
+      return permissionsShell;
+    case "win32":
+      return { settingsUris: WINDOWS_SETTINGS_URIS };
+    default:
+      return {};
+  }
+};
+
 export const permissionsShell: PermissionsShellInputs = {
   settingsUris: SETTINGS_PANES,
   readStatus,

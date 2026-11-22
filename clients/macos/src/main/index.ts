@@ -4,7 +4,6 @@ import {
   hasPendingDeepLinks,
   hasPendingFiles,
   installDictationOverlay,
-  ensureMainWindowVisible,
   startApp,
 } from "@mycadet/electron-desktop";
 import log from "@mycadet/electron-desktop/app-logger";
@@ -17,8 +16,6 @@ import {
   relocateToApplicationsFolder,
 } from "./move-to-applications";
 import { markRelocationSkipped } from "./install-location";
-import { permissionGuide } from "./permission-guide-values";
-import { permissionsShell } from "./permissions-strategy";
 
 const isDev = !app.isPackaged;
 
@@ -36,8 +33,6 @@ startApp({
   platform: "mac-electron",
   interfaceId: "macos",
   titleBarMode: "hidden",
-  permissions: permissionsShell,
-  permissionGuide,
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();
@@ -52,9 +47,6 @@ startApp({
     installEscapeMonitor();
     void promptToRelocateIfStranded().catch((err: unknown) => {
       log.error("[app] relocation prompt failed:", err);
-    });
-    app.on("activate", () => {
-      ensureMainWindowVisible();
     });
   },
 });

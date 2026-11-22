@@ -1,4 +1,11 @@
-import { mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdtemp,
+  readdir,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 
@@ -8,11 +15,10 @@ import { z } from "zod";
 import { handle } from "../ipc";
 
 /**
- * `share.shareFile(bytes, filename)` for every desktop shell. The shell
- * decides what presenting a shared file means: the classic shells present
- * the documented export fallback (a Save-As dialog writing the bytes
- * directly); a shell with a native share surface passes a `present`
- * callback and receives a staged temp file instead.
+ * `share.shareFile(bytes, filename)` for every desktop shell. The bytes are
+ * always staged to a temp file and handed to a presenter: macOS shows the
+ * native share sheet on the staged file, and the classic shells land it
+ * through the documented export fallback (a Save-As dialog).
  *
  * Staged files are cleaned by reclaiming only STALE staged dirs — ones old
  * enough that no in-flight transfer could still be reading them — because
@@ -39,10 +45,9 @@ export type SharePresenter = (file: {
 }) => Promise<void> | void;
 
 /**
- * The native share-sheet presenter for shells whose OS provides one. The
- * menu is built lazily — a shell that never wires `present` never
- * constructs it. The popup's anchor option is `window` (the documented
- * `browserWindow` name is ignored at runtime).
+ * The native share-sheet presenter. The menu is built lazily — the class
+ * resolves at present time, not module load. The popup's anchor option is
+ * `window` (the documented `browserWindow` name is ignored at runtime).
  */
 export const shareMenuPresenter = (): SharePresenter => {
   return async ({ filePath, sender }) => {
@@ -99,40 +104,48 @@ export const sanitizeFilename = (filename: string): string => {
   return base.length > 0 ? base : "download";
 };
 
+/**
+ * The classic shells' presenter: the documented export fallback. The
+ * staged file lands through a Save-As dialog; a cancel leaves it staged
+ * for the stale sweep.
+ */
+const saveAsPresenter = (): SharePresenter => {
+  return async ({ filePath, sender }) => {
+    const window = BrowserWindow.fromWebContents(sender);
+    const options = { defaultPath: sanitizeFilename(filePath) };
+    const { canceled, filePath: target } = window
+      ? await dialog.showSaveDialog(window, options)
+      : await dialog.showSaveDialog(options);
+    if (canceled || !target) {
+      return;
+    }
+    await copyFile(filePath, target);
+  };
+};
+
+/**
+ * Every desktop stages and presents: macOS shows the native share sheet,
+ * the classic shells land the staged file through Save-As.
+ */
+export const sharePresenter = (): SharePresenter =>
+  process.platform === "darwin" ? shareMenuPresenter() : saveAsPresenter();
+
 // Reclaim stale staged files an earlier run left behind.
 export const install = (): void => {
-  const share =
-    process.platform === "darwin"
-      ? { present: shareMenuPresenter() }
-      : undefined;
-  if (share) {
-    void sweepStaleShareDirs();
-  }
+  const present = sharePresenter();
+  void sweepStaleShareDirs();
 
   handle(
     "cadet:share:file",
     ShareFileArgs,
     async ([bytes, filename], event): Promise<void> => {
-      if (share) {
-        void sweepStaleShareDirs();
+      void sweepStaleShareDirs();
 
-        const dir = await mkdtemp(path.join(tmpdir(), SHARE_TMP_PREFIX));
-        // Keep the write inside the temp dir.
-        const filePath = path.join(dir, path.basename(filename));
-        await writeFile(filePath, bytes);
-        await share.present({ filePath, sender: event.sender });
-        return;
-      }
-
-      const window = BrowserWindow.fromWebContents(event.sender);
-      const options = { defaultPath: sanitizeFilename(filename) };
-      const { canceled, filePath } = window
-        ? await dialog.showSaveDialog(window, options)
-        : await dialog.showSaveDialog(options);
-      if (canceled || !filePath) {
-        return;
-      }
+      const dir = await mkdtemp(path.join(tmpdir(), SHARE_TMP_PREFIX));
+      // Keep the write inside the temp dir.
+      const filePath = path.join(dir, path.basename(filename));
       await writeFile(filePath, bytes);
+      await present({ filePath, sender: event.sender });
     },
   );
 };

@@ -54,16 +54,12 @@ import { install as installAuth } from "./features/auth";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
 import { install as installHostProxy } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
-import {
-  install as installPermissions,
-  type PermissionsShellInputs,
-} from "./features/permissions";
+import { install as installPermissions } from "./features/permissions";
+import { permissionsStrategy } from "./features/permissions-strategy";
 import { install as installDictation } from "./features/dictation";
 import { install as installHelperHotkeys } from "./features/helper-hotkeys";
-import {
-  installPermissionGuide,
-  type PermissionGuideInputs,
-} from "./features/permission-guide";
+import { installPermissionGuide } from "./features/permission-guide";
+import { permissionGuideInputs } from "./features/permission-guide-values";
 import { install as installTray } from "./features/tray";
 import {
   installCompanionWindow,
@@ -137,19 +133,6 @@ export interface DesktopAppInputs {
    * derives it.
    */
   titleBarMode: "hidden" | "hiddenOverlay" | "systemFrame";
-
-  /**
-   * The shell's own permission surfaces — its OS reads, request actions,
-   * settings panes, and insertion machinery. Absent, the shared defaults
-   * answer (the helper sidecar and the notification probe).
-   */
-  permissions?: PermissionsShellInputs;
-  /**
-   * The shell's permission-guide surfaces — its drag target, its settings
-   * pane opener, its settings-window list. Absent, the guide doesn't
-   * install.
-   */
-  permissionGuide?: PermissionGuideInputs;
 }
 
 // In prod, register `app://` and `cadet://` as "standard" + "secure" schemes
@@ -430,11 +413,17 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installAuxiliaryWindows();
       installLoginItem();
       installMainWindow();
+      // The dock icon's re-activate: bring the main window back (the same
+      // seam the file-open flow shows). The event only fires on macOS, so
+      // on the other desktops the listener sits unused.
+      app.on("activate", () => {
+        ensureVisible();
+      });
       installHostProxy(inputs.interfaceId);
       installTray();
       installShare();
-      installPermissions(inputs.permissions);
-      installPermissionGuide(inputs.permissionGuide);
+      installPermissions(permissionsStrategy());
+      installPermissionGuide(permissionGuideInputs());
       // The companion surface joins the shared composition on every
       // desktop; the hidden preference is the runtime off-switch. The
       // menu-facing visibility entry dispatches into the window wiring, so
