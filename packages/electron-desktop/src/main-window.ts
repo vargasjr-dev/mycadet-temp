@@ -22,7 +22,7 @@ import { createWindowReadiness } from "./window-readiness";
 import { createModuleConfiguration } from "./module-configuration";
 import { z } from "zod";
 
-import { getRendererBase } from "./app-config";
+import { getRendererRootUrl } from "./app-config";
 import { isAllowedOrigin, resolveAllowedOrigin } from "./app-origin";
 import { handle, on } from "./ipc";
 import { getName } from "./identity";
@@ -221,7 +221,11 @@ const createMainWindow = (): BrowserWindow => {
     fireVisibilityChange();
   });
 
-  const loadTarget = getRendererBase();
+  // The main window roots at the APP shell — the web bundle is an auxiliary
+  // mount (`/web/assistant`) that auxiliary windows and the shell's iframe
+  // use. Loading the web mount here rendered the web bundle as the root
+  // document (its own session-restore took over from there).
+  const loadTarget = getRendererRootUrl();
   win.loadURL(loadTarget).catch((err: unknown) => {
     log.error(`[main-window] loadURL failed for ${loadTarget}:`, err);
   });

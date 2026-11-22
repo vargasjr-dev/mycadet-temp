@@ -10,6 +10,8 @@ import {
   type TitleBarOverlayTheme,
 } from "@mycadet/ipc-contract";
 
+import { APP_RENDERER_BASE_PROD } from "./app-config";
+
 interface WindowState {
   destroyed: boolean;
   focused: boolean;
@@ -324,6 +326,19 @@ beforeEach(() => {
 afterEach(destroyWindows);
 
 describe("Windows main window", () => {
+  test("boots on the app-shell root, never the auxiliary web mount", () => {
+    void ensureVisible();
+
+    const loadCalls = (constructed[0]?.loadURL as ReturnType<typeof mock>).mock
+      .calls as Array<[string]>;
+    // The web bundle is an auxiliary mount (`/web/assistant`); loading it as
+    // the root document hands the boot to the web app's own session-restore.
+    expect(loadCalls[0]?.[0]).toBe(APP_RENDERER_BASE_PROD);
+    for (const [url] of loadCalls) {
+      expect(String(url)).not.toContain("/web/assistant");
+    }
+  });
+
   test("restores bounds with title-bar controls and live-voice timers enabled", () => {
     restoredBounds = { x: 40, y: 60, width: 1000, height: 700 };
     void ensureVisible();
