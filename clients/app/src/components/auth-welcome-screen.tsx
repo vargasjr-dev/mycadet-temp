@@ -1,7 +1,16 @@
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 
 import { AccountShell } from "@app/components/account/account-shell";
+import { startAuthFlow } from "@app/lib/auth/auth-flow";
+import { PROVIDER_ID } from "@app/domains/account/provider";
+import { buildProviderCallbackUrl } from "@app/domains/account/provider-callback";
+import {
+  nativeAuthErrorDetail,
+  nativeAuthErrorKey,
+} from "@app/domains/account/native-auth-error";
+import { captureError } from "@mycadet/design-library/utils/capture-error";
+import { getElectronBridge } from "@app/runtime/electron-bridge";
 import { useTranslation } from "@app/i18n";
 import { Button } from "@mycadet/design-library/components/button";
 
@@ -67,28 +76,91 @@ export function WelcomeScreenCopy({
   );
 }
 
-/**
- * Account welcome actions around the app-owned copy and shell. The login
- * hand-off is not wired up yet: the primary button reads Coming Soon! and
- * stays inert, leaving the secondary action as the only way forward.
- */
+/** Account login actions around the app-owned welcome copy and shell.
+ * Production builds read Coming Soon! and stay inert — the login hand-off
+ * is not wired up for production yet — while dev and local builds keep the
+ * real login flow. */
 export function AuthWelcomeScreen({
+  returnTo,
   secondary,
+  errorContext,
 }: {
+  /** Destination after login; null leaves it to the post-auth fallback. */
+  returnTo: string | null;
   secondary: WelcomeSecondaryAction;
+  /** Error-report `context` tag for a failed handoff. */
+  errorContext?: string;
 }) {
   const { t } = useTranslation("account");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const flowIdRef = useRef(0);
+  const login = async () => {
+    const flowId = ++flowIdRef.current;
+    setError(null);
+    setLoading(true);
+    try {
+      await startAuthFlow(PROVIDER_ID, buildProviderCallbackUrl(returnTo), {
+        returnTo,
+      });
+    } catch (err) {
+      if (flowId !== flowIdRef.current) return;
+      captureError(err, {
+        context: errorContext ?? "account_login",
+        tags: { authError: nativeAuthErrorDetail(err) ?? "unclassified" },
+      });
+      setError(t(nativeAuthErrorKey(err)));
+      setLoading(false);
+    }
+  };
+  const cancel = () => {
+    flowIdRef.current++;
+    setLoading(false);
+    setError(null);
+    if (getElectronBridge()) void getElectronBridge()?.auth?.cancelOAuth?.();
+  };
 
+  // Only the desktop shell keeps this screen up while the login runs: it hands
+  // off to the system browser and waits for the deep link back. Every other
+  // path navigates the page to the provider (`startProviderRedirect`, or the
+  // loopback redirect in standalone local mode), so the screen is on its way
+  // out and `cancel()` — which only reaches the Electron main process — has
+  // nothing to stop. Offering Cancel there just flickers the button on its way
+  // off screen; the button still goes inert so a second click can't open a
+  // second flow.
+  const cancellable = Boolean(getElectronBridge());
+  const awaitingRedirect = loading && !cancellable;
+
+  // Leaving the screen mid-login would strand the OAuth window (and, on
+  // Electron, the main process's pending flow) behind us, so the secondary
+  // action cancels first whichever way it leaves.
+  const handleSecondary = () => {
+    if (loading) {
+      cancel();
+    }
+    secondary.onSelect?.();
+  };
+
+  const SECONDARY_CLASS = "h-11 text-base";
   const secondaryButton = secondary.href ? (
-    <Button variant="ghost" size="regular" fullWidth asChild>
-      <Link to={secondary.href}>{secondary.label}</Link>
+    <Button
+      variant="ghost"
+      size="regular"
+      fullWidth
+      className={SECONDARY_CLASS}
+      asChild
+    >
+      <Link to={secondary.href} onClick={handleSecondary}>
+        {secondary.label}
+      </Link>
     </Button>
   ) : (
     <Button
       variant="ghost"
       size="regular"
       fullWidth
-      onClick={secondary.onSelect}
+      className={SECONDARY_CLASS}
+      onClick={handleSecondary}
     >
       {secondary.label}
     </Button>
@@ -96,10 +168,25 @@ export function AuthWelcomeScreen({
 
   return (
     <WelcomeScreenShell>
-      <WelcomeScreenCopy>
-        <Button variant="primary" size="large" fullWidth disabled>
-          {t("welcome.comingSoon")}
-        </Button>
+      <WelcomeScreenCopy error={error}>
+        {import.meta.env.PROD ? (
+          // Production: the login hand-off is not wired up yet — the
+          // primary button reads Coming Soon! and stays inert, leaving the
+          // secondary action as the only way forward.
+          <Button variant="primary" size="large" fullWidth disabled>
+            {t("welcome.comingSoon")}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="large"
+            fullWidth
+            disabled={awaitingRedirect}
+            onClick={loading && cancellable ? cancel : () => void login()}
+          >
+            {loading && cancellable ? t("welcome.cancel") : t("welcome.logIn")}
+          </Button>
+        )}
         {secondaryButton}
       </WelcomeScreenCopy>
     </WelcomeScreenShell>

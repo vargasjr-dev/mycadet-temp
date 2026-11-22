@@ -4,6 +4,7 @@
     "electron-builder.config.cjs",
     "scripts/afterSign.js",
     "scripts/afterPack.js",
+    "src/main/index.ts",
     "src/preload/index.ts",
     "src/**/*.test.ts",
     "scripts/**/*.ts"

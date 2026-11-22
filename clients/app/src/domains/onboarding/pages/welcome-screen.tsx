@@ -32,6 +32,7 @@ export function WelcomeScreen() {
 
   return (
     <AuthWelcomeScreen
+      returnTo={null}
       secondary={{
         label: t("welcome.continueWithoutAccount"),
         onSelect: handleContinueWithoutAccount,

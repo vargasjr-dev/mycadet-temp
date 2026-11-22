@@ -214,6 +214,14 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
  * stranded afterwards.
  */
 export async function promptToRelocateIfStranded(): Promise<void> {
+  try {
+    await promptRelocationFlow();
+  } catch (err) {
+    log.error("[app] relocation prompt failed:", err);
+  }
+}
+
+async function promptRelocationFlow(): Promise<void> {
   if (!isStrandedOutsideApplications()) {
     return;
   }

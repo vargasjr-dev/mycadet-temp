@@ -5,7 +5,6 @@ import {
   hasPendingFiles,
   startApp,
 } from "@mycadet/electron-desktop";
-import log from "@mycadet/electron-desktop/app-logger";
 
 import {
   promptToRelocateIfStranded,
@@ -36,9 +35,7 @@ startApp({
     }
     return relocateToApplicationsFolder();
   },
-  async setup() {
-    void promptToRelocateIfStranded().catch((err: unknown) => {
-      log.error("[app] relocation prompt failed:", err);
-    });
+  setup() {
+    void promptToRelocateIfStranded();
   },
 });

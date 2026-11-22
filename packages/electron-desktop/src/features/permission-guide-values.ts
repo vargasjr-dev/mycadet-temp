@@ -7,7 +7,6 @@ import type { DraggablePermissionKind } from "@mycadet/ipc-contract";
 import { defaultCaptureSourceDeps } from "./companion-capture-sources";
 import { getMacHelperAppPath } from "../native-helper-client";
 import { openPermissionSettingsPane } from "./permissions-strategy";
-import { preparePermissionPresentation } from "./permission-presentation";
 
 /**
  * The helper app to drag into the list, with its icon: resolved only in
@@ -43,6 +42,3 @@ export const listSettingsWindows = async (): Promise<
   (await defaultCaptureSourceDeps.listWindows())
     .filter((win) => win.bundleId === "com.apple.systempreferences")
     .map((win) => ({ id: win.windowId, bounds: win.bounds }));
-
-/** Runs when the guide yields focus to the OS settings surface. */
-export const onYieldToSettings = preparePermissionPresentation;

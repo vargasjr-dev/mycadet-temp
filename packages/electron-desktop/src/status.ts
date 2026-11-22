@@ -11,16 +11,6 @@ import { handle, on } from "./ipc";
 import log from "./app-logger";
 
 /**
- * Assistant connection status driving the menu-bar (Tray) indicator.
- * Five states, each with its own color and "thinking pulses" behavior.
- *
- * The renderer is the source of truth — it holds the live gateway/auth
- * connection and publishes transitions over the `cadet:status:connection`
- * IPC channel. Main owns only the presentation (icon composition, pulse
- * timer, menu header), so this module never reaches into connection code.
- */
-
-/**
  * Tooltip / menu-header text per status. `assistantName` falls back to
  * "Assistant" so the line reads naturally before the renderer has published
  * an identity.

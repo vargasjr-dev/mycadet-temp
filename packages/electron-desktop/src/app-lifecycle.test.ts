@@ -136,13 +136,6 @@ mock.module("./features/permission-guide-values", () => ({
   dragTarget: async () => ({ file: "/mock.app", icon: null }),
   openSettingsPane: async () => undefined,
   listSettingsWindows: async () => [],
-  onYieldToSettings: () => undefined,
-}));
-mock.module("./dictation-escape-monitor", () => ({
-  createDictationEscapeMonitor: () => ({
-    install: () => undefined,
-    setRecording: () => undefined,
-  }),
 }));
 mock.module("./dictation-overlay-window", () => ({
   installDictationOverlay: recorder("dictation-overlay"),
@@ -211,7 +204,7 @@ const universalSurface = [
 
 /** The classic-only composition, appended on the classic platforms. The
  * dictation overlay follows the dictation install; its escape-monitor half
- * is wired inside the composition itself (no install recorder — one arm). */
+ * is wired inside installDictationOverlay itself. */
 const classicSurface = [
   "dictation",
   "dictation-overlay",

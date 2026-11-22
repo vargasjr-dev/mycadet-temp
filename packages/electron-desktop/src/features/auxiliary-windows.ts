@@ -22,7 +22,6 @@ import { getRendererBase } from "../app-config";
 import { restoreBounds, track as trackWindowState } from "../window-state";
 import { createWindow } from "../windows";
 import log from "../app-logger";
-import { installEscapeMonitor, setDictationRecording } from "../escape-monitor";
 import { current, dispatchToMain, ensureVisible } from "../main-window";
 
 const resolveRoute = createWindowRouteResolver(() => getRendererBase());
@@ -65,8 +64,7 @@ export const install = (): void => {
     trackWindowState,
   });
 
-  installEscapeMonitor();
-  installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
+  installDictationOverlay();
 
   const repositionTransientWindows = (): void => {
     repositionCommandPaletteWindow();

@@ -56,7 +56,6 @@ import { install as installHostProxy } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
 import { install as installPermissions } from "./features/permissions";
 import { install as installDictation } from "./features/dictation";
-import { createDictationEscapeMonitor } from "./dictation-escape-monitor";
 import { installDictationOverlay } from "./dictation-overlay-window";
 import { install as installHelperHotkeys } from "./features/helper-hotkeys";
 import { installPermissionGuide } from "./features/permission-guide";
@@ -433,18 +432,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
       installDictation();
-      // The dictation overlay and the escape monitor are a pair: the overlay
-      // reports the recording lifecycle to the renderer, and the monitor
-      // holds the global Escape shortcut while recording, cancelling into
-      // the focused window's dictation session.
-      const escapeMonitor = createDictationEscapeMonitor({
-        cancel: () => dispatchToMain({ kind: "cancelDictation" }),
-        log,
-      });
-      escapeMonitor.install();
-      installDictationOverlay({
-        onRecordingLifecycle: escapeMonitor.setRecording,
-      });
+      installDictationOverlay();
       installHelperHotkeys();
       if (process.platform !== "darwin") {
         installVoiceModeChord();

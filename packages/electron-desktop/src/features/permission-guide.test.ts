@@ -179,6 +179,10 @@ mock.module("../app-logger", () => ({
   default: { warn: () => undefined },
 }));
 // The guide's shell values, as fixtures — install assembles them itself.
+mock.module("./permission-presentation", () => ({
+  preparePermissionPresentation: preparePresentation,
+  onPermissionPresentation: () => () => undefined,
+}));
 mock.module("./permission-guide-values", () => ({
   dragTarget: async () => {
     await iconWait;
@@ -201,7 +205,6 @@ mock.module("./permission-guide-values", () => ({
       bounds: win.bounds,
     }));
   },
-  onYieldToSettings: preparePresentation,
 }));
 const { installPermissionGuide } = await import("./permission-guide");
 // The full state surface, with the kinds under test riding the toggle.

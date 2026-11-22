@@ -1,6 +1,12 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { DICTATION_OVERLAY_ALWAYS_ON_TOP_LEVEL, DONE_HIDE_MS, ERROR_HIDE_MS, createDictationOverlayController, positionDictationOverlayInWorkArea } from "@mycadet/electron-desktop";
+import {
+  DICTATION_OVERLAY_ALWAYS_ON_TOP_LEVEL,
+  DONE_HIDE_MS,
+  ERROR_HIDE_MS,
+  createDictationOverlayController,
+  positionDictationOverlayInWorkArea,
+} from "@mycadet/electron-desktop";
 import { type DictationOverlayState } from "@mycadet/ipc-contract";
 
 type Harness = {
