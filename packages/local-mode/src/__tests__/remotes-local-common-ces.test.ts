@@ -11,8 +11,12 @@ import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
 import { resolveIpcEndpoint } from "@mycadet/ipc-server-utils";
 
-import { resolveCesSocketPath, startCes } from "../remotes/local/common";
-import { setLocalSourceRoot } from "../source-root";
+import {
+  findCesDir,
+  resolveCesSocketPath,
+  startCes,
+} from "../remotes/local/common";
+import { getLocalSourceRoot, setLocalSourceRoot } from "../source-root";
 
 // resolveCesDir walks the reported source tree for a credential-executor
 // sibling — the same report the CLI's entrypoint makes in production.
@@ -172,5 +176,40 @@ describe("startCes", () => {
         platform: "linux",
       }).path,
     );
+  });
+
+  test("finds the monorepo packages/ layout under the reported root", () => {
+    /**
+     * The CLI reports the repo root as its source tree; the
+     * credential-executor source lives at
+     * `<root>/packages/credential-executor`. The walk must probe that
+     * layout — the returned path proves the probe hit the reported tree
+     * (and not node_modules resolution's workspace copy).
+     */
+
+    // GIVEN a reported root shaped like the monorepo
+    const root = mkdtempSync(join(tmpdir(), "ces-monorepo-"));
+    const cesDir = join(root, "packages", "credential-executor");
+    mkdirSync(join(cesDir, "src"), { recursive: true });
+    writeFileSync(
+      join(cesDir, "package.json"),
+      JSON.stringify({ name: "@mycadet/credential-executor" }),
+    );
+    writeFileSync(join(cesDir, "src", "main.ts"), "");
+
+    const reportedRoot = getLocalSourceRoot();
+    setLocalSourceRoot(root);
+    try {
+      // WHEN the source resolves
+      const resolved = findCesDir();
+
+      // THEN it came from the reported tree's packages/ nesting
+      expect(resolved).toBe(cesDir);
+    } finally {
+      setLocalSourceRoot(
+        reportedRoot ?? join(import.meta.dir, "..", "..", "..", ".."),
+      );
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

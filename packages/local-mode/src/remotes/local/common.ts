@@ -44,7 +44,11 @@ import {
 
 const _require = createRequire(import.meta.url);
 
-const LOCAL_RUNTIME_PACKAGE = "cadet";
+// The self-managed runtime metapackage — meta/package.json's "Install the
+// full Cadet stack locally" manifest, whose dependencies are the published
+// @mycadet/{assistant,gateway,credential-executor} sources the resolvers
+// below probe.
+const LOCAL_RUNTIME_PACKAGE = "mycadet";
 const PATH_DELIMITER = pathListDelimiter(platform());
 const DEFAULT_EXECUTABLE_PATH =
   platform() === "win32"
@@ -872,14 +876,24 @@ export function localSourceCommandEntry(
   }
 }
 
-function resolveCesDir(entry?: LocalAssistant): string {
+/**
+ * Resolve the credential-executor source dir, or undefined when neither a
+ * self-managed runtime install, the reported source tree, nor node_modules
+ * has one. The wake leg's provisioning hook probes this before the service
+ * starts, so a naked released install installs the runtime instead of dying.
+ */
+export function findCesDir(entry?: LocalAssistant): string | undefined {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
   // Reported source tree / npm sibling: walk up from the reported root
-  // until a `credential-executor/` sibling appears.
+  // until a `credential-executor/` sibling appears. The monorepo nests it
+  // under `packages/`, so probe that layout before walking.
   const sourceRoot = getLocalSourceRoot();
   if (sourceRoot) {
+    const monorepoDir = join(sourceRoot, "packages", "credential-executor");
+    if (isCesSourceDir(monorepoDir)) return monorepoDir;
+
     let sourceDir = join(sourceRoot, "credential-executor");
     let probeDir = sourceRoot;
     while (!isCesSourceDir(sourceDir) && probeDir !== dirname(probeDir)) {
@@ -898,10 +912,18 @@ function resolveCesDir(entry?: LocalAssistant): string {
     );
     return dirname(pkgPath);
   } catch {
+    return undefined;
+  }
+}
+
+function resolveCesDir(entry?: LocalAssistant): string {
+  const cesDir = findCesDir(entry);
+  if (!cesDir) {
     throw new Error(
       "credential-executor not found. Ensure @mycadet/credential-executor is installed or run from the source tree.",
     );
   }
+  return cesDir;
 }
 
 /**
