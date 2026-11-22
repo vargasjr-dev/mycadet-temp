@@ -183,7 +183,9 @@ describe("ps table", () => {
     expect(text).toContain("0.0%");
     expect(logLines.filter((line) => line.startsWith("─"))).toHaveLength(2);
     const child = logLines.find((line) => line.startsWith("  bash"))!;
-    expect(child.indexOf("…")).toBe(29);
+    expect(child.indexOf("…")).toBe(14);
+    expect(child.slice(0, 30)).toHaveLength(30);
+    expect(child.slice(30, 32)).toBe("  ");
     expect(
       logLines.find((line) => line.startsWith("    bun test")),
     ).toBeDefined();

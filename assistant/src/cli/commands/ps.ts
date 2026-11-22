@@ -10,6 +10,7 @@
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
+import { truncateCommandLabel } from "../../util/process-tree.js";
 import { applyCommandHelp } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { log } from "../logger.js";
@@ -49,13 +50,9 @@ interface Row {
   ram: string;
 }
 
-function truncate(label: string, width: number): string {
-  return label.length <= width ? label : label.slice(0, width - 1) + "…";
-}
-
 function flattenEntries(entry: ProcessEntry, depth: number, rows: Row[]): void {
   rows.push({
-    name: truncate(
+    name: truncateCommandLabel(
       "  ".repeat(Math.min(depth, 10)) + entry.name,
       PROCESS_NAME_WIDTH,
     ),

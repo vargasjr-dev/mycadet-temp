@@ -139,13 +139,16 @@ export function deriveName(command: string): string {
  */
 export const MAX_COMMAND_LABEL_LENGTH = 60;
 
-export function truncateCommandLabel(label: string): string {
-  if (label.length <= MAX_COMMAND_LABEL_LENGTH) {
+export function truncateCommandLabel(
+  label: string,
+  maxLength = MAX_COMMAND_LABEL_LENGTH,
+): string {
+  if (label.length <= maxLength) {
     return label;
   }
-  const head = 16;
-  const tail = MAX_COMMAND_LABEL_LENGTH - head - 1; // 1 char for the ellipsis
-  return `${label.slice(0, head)}…${label.slice(-tail)}`;
+  const head = Math.min(16, Math.floor((maxLength - 1) / 2));
+  const tail = maxLength - head - 1; // 1 char for the ellipsis
+  return `${label.slice(0, head)}…${label.slice(label.length - tail)}`;
 }
 
 /**
