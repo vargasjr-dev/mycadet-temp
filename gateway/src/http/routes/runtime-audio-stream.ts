@@ -24,6 +24,7 @@
  * matters, since it leaves the daemon unable to tell one caller from another.
  */
 
+import type { ServerWebSocket } from "bun";
 import type { Logger } from "pino";
 
 import {
@@ -34,7 +35,8 @@ import {
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { parseSub } from "../../auth/subject.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig, type GatewayConfig } from "../../config.js";
+import { z } from "zod";
 import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
 import { isWebsocketUpgradeRequest } from "../utils.js";
 
@@ -49,12 +51,23 @@ function byteLength(frame: string | Uint8Array): number {
   return typeof frame === "string" ? frame.length : frame.byteLength;
 }
 
+export const runtimeAudioStreamSocketState = {
+  upstream: z.custom<WebSocket>(() => true).optional(),
+  pendingMessages: z
+    .array(
+      z.union([
+        z.string(),
+        z.instanceof(ArrayBuffer),
+        z.custom<Uint8Array>((v) => v instanceof Uint8Array),
+      ]),
+    )
+    .optional(),
+};
+
 /** The state every audio-stream proxy socket carries, whatever it streams. */
-export interface RuntimeAudioStreamState {
-  config: GatewayConfig;
-  upstream?: WebSocket;
-  pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
-}
+export type RuntimeAudioStreamState = z.infer<
+  z.ZodObject<typeof runtimeAudioStreamSocketState>
+>;
 
 /**
  * The outcome of the shared authorization: proceed, carrying whatever identity
@@ -202,13 +215,13 @@ export function createRuntimeAudioStreamHandlers<
   closeOnDroppedFrame = false,
 }: RuntimeAudioStreamHandlerOptions<T>) {
   return {
-    open(ws: import("bun").ServerWebSocket<T>) {
+    open(ws: ServerWebSocket<T>) {
       const context = logContext(ws.data);
       ws.data.pendingMessages = [];
 
       const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
         buildWsUpstreamUrl({
-          baseUrl: ws.data.config.assistantRuntimeBaseUrl,
+          baseUrl: getConfig().assistantRuntimeBaseUrl,
           path: upstreamPath,
           extraParams: upstreamParams(ws.data),
         });
@@ -278,7 +291,7 @@ export function createRuntimeAudioStreamHandlers<
     },
 
     message(
-      ws: import("bun").ServerWebSocket<T>,
+      ws: ServerWebSocket<T>,
       message: string | ArrayBuffer | Uint8Array,
     ) {
       // Client audio frames on to the runtime.
@@ -297,7 +310,7 @@ export function createRuntimeAudioStreamHandlers<
       }
     },
 
-    close(ws: import("bun").ServerWebSocket<T>, code: number, reason: string) {
+    close(ws: ServerWebSocket<T>, code: number, reason: string) {
       const context = logContext(ws.data);
       log.info({ code, reason, ...context }, `${label} downstream WS closed`);
       ws.data.pendingMessages = undefined;

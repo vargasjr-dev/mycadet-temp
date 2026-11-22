@@ -6,10 +6,12 @@ import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twi
 
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
-import { ServerWebSocket } from "bun";
+import { Server, ServerWebSocket } from "bun";
 import { z } from "zod";
+
+import { runtimeAudioStreamSocketState } from "./runtime-audio-stream.js";
 
 const log = getLogger("twilio-media-ws");
 
@@ -26,25 +28,14 @@ const RELAY_TOKEN_PROFILE: ScopeProfile = "gateway_service_v1";
 // Cap buffered messages to prevent unbounded memory growth if upstream stalls
 const MAX_PENDING_MESSAGES = 100;
 
-/**
- * The socket data the Twilio media upgrade handler attaches, pinned as a
- * zod schema: the dispatch in `index.ts` discriminates sockets by
- * `safeParse` on it. The runtime-state half (the upstream socket, the
- * pending frame buffer) never crosses the wire and stays hand-modeled on
- * the type.
- */
 export const mediaStreamSocketDataSchema = z.object({
   wsType: z.literal("twilio-media-stream"),
   callSessionId: z.string(),
   assistantRuntimeBaseUrl: z.string(),
+  ...runtimeAudioStreamSocketState,
 });
 
-export type MediaStreamSocketData = z.infer<
-  typeof mediaStreamSocketDataSchema
-> & {
-  upstream?: WebSocket;
-  pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
-};
+export type MediaStreamSocketData = z.infer<typeof mediaStreamSocketDataSchema>;
 
 /** Discriminate an untyped socket as a Twilio media stream socket. */
 export function isMediaStreamSocketData(
@@ -96,45 +87,44 @@ export function extractMediaStreamMetadata(url: URL): {
 }
 
 /**
- * Create a WebSocket upgrade handler that proxies Twilio Media Stream
- * frames between Twilio and the runtime's /v1/calls/media-stream endpoint.
- *
- * Uses the same edge-token auth model as the relay websocket upgrades.
+ * The `/webhooks/twilio/media-stream` WebSocket upgrade handler: proxies
+ * Twilio Media Stream frames between Twilio and the runtime's
+ * /v1/calls/media-stream endpoint. Uses the same edge-token auth model as
+ * the relay websocket upgrades.
  */
-export function createTwilioMediaWebsocketHandler(config: GatewayConfig) {
-  return function handleUpgrade(
-    req: Request,
-    server: import("bun").Server<unknown>,
-  ): Response | undefined {
-    const url = new URL(req.url);
-    const { callSessionId, token: pathToken } = extractMediaStreamMetadata(url);
+export function handleTwilioMediaWs(
+  req: Request,
+  server: Server<unknown>,
+): Response | undefined {
+  const config = getConfig();
+  const url = new URL(req.url);
+  const { callSessionId, token: pathToken } = extractMediaStreamMetadata(url);
 
-    if (!callSessionId) {
-      log.warn("Media stream WS upgrade without callSessionId");
-      return new Response("Missing callSessionId", { status: 400 });
-    }
+  if (!callSessionId) {
+    log.warn("Media stream WS upgrade without callSessionId");
+    return new Response("Missing callSessionId", { status: 400 });
+  }
 
-    // Authenticate before upgrading. Twilio passes the token via path
-    // segments (primary) or query parameters (legacy fallback) since
-    // WebSocket upgrades don't support arbitrary headers.
-    const authResponse = checkMediaStreamAuth(req, url, pathToken);
-    if (authResponse) return authResponse;
+  // Authenticate before upgrading. Twilio passes the token via path
+  // segments (primary) or query parameters (legacy fallback) since
+  // WebSocket upgrades don't support arbitrary headers.
+  const authResponse = checkMediaStreamAuth(req, url, pathToken);
+  if (authResponse) return authResponse;
 
-    const upgraded = server.upgrade(req, {
-      data: {
-        wsType: "twilio-media-stream",
-        callSessionId,
-        assistantRuntimeBaseUrl: config.assistantRuntimeBaseUrl,
-      } satisfies MediaStreamSocketData,
-    });
+  const upgraded = server.upgrade(req, {
+    data: {
+      wsType: "twilio-media-stream",
+      callSessionId,
+      assistantRuntimeBaseUrl: config.assistantRuntimeBaseUrl,
+    } satisfies MediaStreamSocketData,
+  });
 
-    if (!upgraded) {
-      return new Response("WebSocket upgrade failed", { status: 500 });
-    }
+  if (!upgraded) {
+    return new Response("WebSocket upgrade failed", { status: 500 });
+  }
 
-    // Return undefined to indicate upgrade was handled
-    return undefined;
-  };
+  // Return undefined to indicate upgrade was handled
+  return undefined;
 }
 
 /**
@@ -259,7 +249,7 @@ export function openTwilioMediaWebsocket(
 }
 
 export function messageTwilioMediaStream(
-  ws: import("bun").ServerWebSocket<MediaStreamSocketData>,
+  ws: ServerWebSocket<MediaStreamSocketData>,
   message: string | ArrayBuffer | Uint8Array,
 ) {
   // Forward Twilio -> runtime

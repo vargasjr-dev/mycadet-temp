@@ -32,10 +32,8 @@ import { webhookRouteRoutes } from "./webhook-route-handlers.js";
 
 const PATH = "/webhooks/telegram";
 
-const routes = webhookRouteRoutes;
-
 function route(method: string) {
-  const found = routes.find((r) => r.method === method);
+  const found = webhookRouteRoutes.find((r) => r.method === method);
   if (!found) throw new Error(`No route registered for ${method}`);
   return found;
 }

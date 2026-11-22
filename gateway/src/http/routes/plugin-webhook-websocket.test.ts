@@ -1,29 +1,16 @@
 import { createHmac } from "node:crypto";
 
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 import "../../__tests__/test-preload.js";
 import { initSigningKey } from "../../auth/token-service.js";
 import type { PluginIngressResolution } from "../../channels/plugin-ingress-approvals.js";
+import type { CredentialCache } from "../../credential-cache.js";
 import type { GatewayConfig } from "../../config.js";
 import { signHandshakeUrl } from "../plugin-ingress-handshake.js";
 import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
-import {
-  createPluginWebhookWebsocketHandler,
-  closePluginWebhookWebsocket,
-  messagePluginWebhookWebsocket,
-  openPluginWebhookWebsocket,
-  pluginWebhookSocketDataSchema,
-  type PluginWebhookSocketData,
-} from "./plugin-webhook-websocket.js";
 import { IngressRoute } from "../../channels/plugin-ingress.js";
-
-/** The flattened lifecycle handlers, under the tests' historical name. */
-const handlers = {
-  open: openPluginWebhookWebsocket,
-  message: messagePluginWebhookWebsocket,
-  close: closePluginWebhookWebsocket,
-};
+import type { PluginWebhookSocketData } from "./plugin-webhook-websocket.js";
 
 setTestSigningKey();
 initSigningKey();
@@ -33,6 +20,36 @@ const CONFIG = {
   runtimeTimeoutMs: 1000,
   maxWebhookPayloadBytes: 1024,
 } as GatewayConfig;
+
+// The upgrade handler reads its seams at call time; the tests swap them
+// through module-level holders. findServableRoute and the rest of the
+// approvals module keep their real implementations.
+let currentResolution: () => PluginIngressResolution = () =>
+  resolution({ approved: [] });
+let currentCredentials: CredentialCache | undefined;
+const realApprovals =
+  await import("../../channels/plugin-ingress-approvals.js");
+mock.module("../../channels/plugin-ingress-approvals.js", () => ({
+  ...realApprovals,
+  resolveCachedPluginIngress: () => currentResolution(),
+}));
+const realConfig = await import("../../config.js");
+mock.module("../../config.js", () => ({
+  ...realConfig,
+  getConfig: () => CONFIG,
+}));
+const realCredentialCache = await import("../../credential-cache.js");
+mock.module("../../credential-cache.js", () => ({
+  ...realCredentialCache,
+  getCredentials: () => currentCredentials,
+}));
+
+const {
+  handlePluginWebhookWs,
+  closePluginWebhookWebsocket,
+  messagePluginWebhookWebsocket,
+  pluginWebhookSocketDataSchema,
+} = await import("./plugin-webhook-websocket.js");
 
 const PLUGIN_SECRET = "plugin-webhook-secret";
 const CADET_SECRET = "platform-webhook-secret";
@@ -46,12 +63,10 @@ const ROUTE = {
   description: "events",
 };
 
-function credentialsFor(entries: Record<string, string>) {
+function credentialsFor(entries: Record<string, string>): CredentialCache {
   return {
     get: async (key: string) => entries[key],
-  } as unknown as Parameters<
-    typeof createPluginWebhookWebsocketHandler
-  >[0]["credentials"];
+  } as unknown as CredentialCache;
 }
 
 const CREDENTIALS = credentialsFor({
@@ -117,11 +132,9 @@ function makeHandler(
     credentials?: ReturnType<typeof credentialsFor>;
   } = {},
 ) {
-  return createPluginWebhookWebsocketHandler({
-    config: CONFIG,
-    resolve: overrides.resolve ?? (() => approvedWith([ROUTE])),
-    credentials: overrides.credentials ?? CREDENTIALS,
-  });
+  currentResolution = overrides.resolve ?? (() => approvedWith([ROUTE]));
+  currentCredentials = overrides.credentials ?? CREDENTIALS;
+  return handlePluginWebhookWs;
 }
 
 describe("upgrade gate", () => {
@@ -531,7 +544,6 @@ function socketData(
 ): PluginWebhookSocketData {
   return {
     wsType: "plugin-webhook",
-    config: CONFIG,
     plugin: "example",
     path: "realtime",
     queue: [],
@@ -565,7 +577,7 @@ describe("frame delivery", () => {
     });
     const { ws } = fakeSocket(data);
 
-    handlers.message(ws, evt("joined"));
+    messagePluginWebhookWebsocket(ws, evt("joined"));
     await settle();
 
     expect(calls).toHaveLength(1);
@@ -588,7 +600,7 @@ describe("frame delivery", () => {
     const { ws, closes } = fakeSocket(data);
 
     for (const frame of ["not json", '"a bare string"', "42", "[1,2,3]"]) {
-      handlers.message(ws, frame);
+      messagePluginWebhookWebsocket(ws, frame);
     }
     await settle();
 
@@ -604,7 +616,7 @@ describe("frame delivery", () => {
     });
     const { ws, closes } = fakeSocket(data);
 
-    handlers.message(ws, new Uint8Array([0, 255, 10, 123]).buffer);
+    messagePluginWebhookWebsocket(ws, new Uint8Array([0, 255, 10, 123]).buffer);
     await settle();
 
     expect(seen).toEqual([new Uint8Array([0, 255, 10, 123])]);
@@ -631,8 +643,8 @@ describe("frame delivery", () => {
     });
     const { ws } = fakeSocket(data);
 
-    handlers.message(ws, evt("first"));
-    handlers.message(ws, evt("second"));
+    messagePluginWebhookWebsocket(ws, evt("first"));
+    messagePluginWebhookWebsocket(ws, evt("second"));
     await settle();
 
     // Second must not have started while first is still in flight.
@@ -655,8 +667,8 @@ describe("frame delivery", () => {
     });
     const { ws } = fakeSocket(data);
 
-    handlers.message(ws, evt("boom"));
-    handlers.message(ws, evt("after"));
+    messagePluginWebhookWebsocket(ws, evt("boom"));
+    messagePluginWebhookWebsocket(ws, evt("after"));
     await settle();
 
     expect(seen).toEqual(["boom", "after"]);
@@ -670,7 +682,10 @@ describe("frame delivery", () => {
     });
     const { ws, closes } = fakeSocket(data);
 
-    handlers.message(ws, JSON.stringify({ event: "x".repeat(2048) }));
+    messagePluginWebhookWebsocket(
+      ws,
+      JSON.stringify({ event: "x".repeat(2048) }),
+    );
     await settle();
 
     expect(closes).toHaveLength(1);
@@ -692,7 +707,10 @@ describe("frame delivery", () => {
     // Each frame is under the per-frame cap, and there are fewer than
     // MAX_PENDING_FRAMES of them — only the byte budget can reject these.
     for (let i = 0; i < 20; i++) {
-      handlers.message(ws, JSON.stringify({ event: "x".repeat(900) }));
+      messagePluginWebhookWebsocket(
+        ws,
+        JSON.stringify({ event: "x".repeat(900) }),
+      );
     }
 
     expect(closes).toHaveLength(1);
@@ -709,7 +727,8 @@ describe("frame delivery", () => {
     );
     const { ws, closes } = fakeSocket(data);
 
-    for (let i = 0; i < 150; i++) handlers.message(ws, evt(`frame-${i}`));
+    for (let i = 0; i < 150; i++)
+      messagePluginWebhookWebsocket(ws, evt(`frame-${i}`));
 
     expect(closes).toHaveLength(1);
     expect(closes[0]!.code).toBe(1008);
@@ -719,8 +738,8 @@ describe("frame delivery", () => {
     const data = socketData(async () => null);
     const { ws } = fakeSocket(data);
 
-    handlers.message(ws, evt("one"));
-    handlers.message(ws, evt("two"));
+    messagePluginWebhookWebsocket(ws, evt("one"));
+    messagePluginWebhookWebsocket(ws, evt("two"));
     await settle();
 
     expect(data.queue).toEqual([]);
@@ -739,10 +758,10 @@ describe("frame delivery", () => {
     });
     const { ws } = fakeSocket(data);
 
-    handlers.message(ws, evt("first"));
-    handlers.message(ws, evt("second"));
+    messagePluginWebhookWebsocket(ws, evt("first"));
+    messagePluginWebhookWebsocket(ws, evt("second"));
     await settle();
-    handlers.close(ws, 1000, "done");
+    closePluginWebhookWebsocket(ws, 1000, "done");
     release?.();
     await settle();
 
@@ -759,8 +778,8 @@ describe("frame delivery", () => {
     });
     const { ws } = fakeSocket(data);
 
-    handlers.close(ws, 1000, "done");
-    handlers.message(ws, evt("late"));
+    closePluginWebhookWebsocket(ws, 1000, "done");
+    messagePluginWebhookWebsocket(ws, evt("late"));
     await settle();
 
     expect(seen).toEqual([]);

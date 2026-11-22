@@ -41,9 +41,11 @@ This separation aims to uphold two crucial invariants:
 - the Assistant is unable to edit data in the Gateway directly.
 - the Assistant is unable to read the secrets stored in the Credential Vault directly.
 
-Colors on the arrows carry the access story: green is read/write, blue
-read-only, violet metadata-only (the Assistant may read what the Credential
-Vault says about it, and nothing else).
+Colors on the arrows carry the access meaning:
+
+- green is read/write
+- blue read-only
+- violet read-metadata-only
 
 ```mermaid
 flowchart LR
@@ -77,14 +79,6 @@ The Gateway is the front door controlling all of the data that comes from the ou
 - `$GATEWAY_SECURITY_DIR` - The location where the gateway manages all of its data, including logs and its own SQlite database. Default: `/gateway-security`
 - IPC Clients - How it communicates to the Assistant and the Credential Vault
 - Tunnel Client - How it connects directly to the outside world, when not receiving its requests from the Operator.
-
-The components, as a diagram: requests from the outside world arrive at the
-Web Server (directly, or handed over by the Operator); the Web Server proxies
-them to the Assistant; the Assistant reads Gateway data back through the IPC
-Server; the IPC Clients carry the Gateway's own calls out to the Assistant and
-the Credential Vault; the Tunnel Client dials out when the Gateway must reach
-the outside world itself; and everything the Gateway persists — its logs and
-its SQLite database — lives in `$GATEWAY_SECURITY_DIR`.
 
 ```mermaid
 flowchart LR

@@ -20,36 +20,33 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
   findCadetGuardian: async () => ({ principalId: GUARDIAN_PRINCIPAL }),
 }));
 
+let testConfig = makeConfig();
+mock.module("../config.js", () => ({
+  getConfig: () => testConfig,
+}));
+
 const {
   closeWatchStreamWebsocket,
-  createWatchStreamWebsocketHandler,
+  handleWatchStreamWs,
   messageWatchStreamWebsocket,
   openWatchStreamWebsocket,
   watchStreamUpstreamParams,
 } = await import("../http/routes/watch-stream-websocket.js");
 
-/** The flattened lifecycle handlers, under the tests' historical name. */
-const handlers = {
-  open: openWatchStreamWebsocket,
-  message: messageWatchStreamWebsocket,
-  close: closeWatchStreamWebsocket,
-};
-
 // ---------------------------------------------------------------------------
-// createWatchStreamWebsocketHandler: upgrade handler tests
+// handleWatchStreamWs: upgrade handler tests
 // ---------------------------------------------------------------------------
 
-describe("createWatchStreamWebsocketHandler", () => {
+describe("handleWatchStreamWs", () => {
   const TEST_TOKEN = mintEdgeToken();
 
   test("upgrades when the token query parameter is valid", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&sampleRate=16000`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -61,7 +58,6 @@ describe("createWatchStreamWebsocketHandler", () => {
   });
 
   test("upgrades when the Authorization header is valid", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       "http://localhost:7830/v1/watch/stream?mimeType=audio/pcm",
       {
@@ -73,18 +69,17 @@ describe("createWatchStreamWebsocketHandler", () => {
     );
     const server = makeFakeServer();
 
-    expect(await handler(req, server)).toBeUndefined();
+    expect(await handleWatchStreamWs(req, server)).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
   test("carries an explicit conversation and host client through", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&conversationId=conv-1&clientId=host-1`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    await handler(req, server);
+    await handleWatchStreamWs(req, server);
 
     expect(upgradedData<WatchStreamSocketData>(server)).toMatchObject({
       conversationId: "conv-1",
@@ -98,13 +93,12 @@ describe("createWatchStreamWebsocketHandler", () => {
    * same as absent, or the runtime would be handed an empty id to file against.
    */
   test("reads blank optional parameters as absent", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&conversationId=%20&clientId=`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    await handler(req, server);
+    await handleWatchStreamWs(req, server);
 
     const data = upgradedData<WatchStreamSocketData>(server);
     expect(data.conversationId).toBeUndefined();
@@ -117,13 +111,12 @@ describe("createWatchStreamWebsocketHandler", () => {
    * reads the same thing, and this proxy is the one place between them.
    */
   test("carries the capture target through to the runtime", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&captureWindowId=4242`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    await handler(req, server);
+    await handleWatchStreamWs(req, server);
 
     const data = upgradedData<WatchStreamSocketData>(server);
     expect(data.captureWindowId).toBe(4242);
@@ -144,61 +137,56 @@ describe("createWatchStreamWebsocketHandler", () => {
   });
 
   test("reads a blank capture id as absent", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&captureDisplayId=`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    await handler(req, server);
+    await handleWatchStreamWs(req, server);
     expect(
       upgradedData<WatchStreamSocketData>(server).captureDisplayId,
     ).toBeUndefined();
   });
 
   test("refuses a capture id that is not a whole number", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     for (const bad of ["-1", "1.5", "abc", "0x10"]) {
       const req = new Request(
         `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&captureWindowId=${bad}`,
         { headers: { upgrade: "websocket" } },
       );
-      const res = await handler(req, makeFakeServer());
+      const res = await handleWatchStreamWs(req, makeFakeServer());
       expect(res?.status).toBe(400);
     }
   });
 
   test("refuses a display and a window named together", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm&captureDisplayId=1&captureWindowId=2`,
       { headers: { upgrade: "websocket" } },
     );
-    const res = await handler(req, makeFakeServer());
+    const res = await handleWatchStreamWs(req, makeFakeServer());
     expect(res?.status).toBe(400);
   });
 
   test("returns 401 when no token is provided", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       "http://localhost:7830/v1/watch/stream?mimeType=audio/pcm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(401);
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
   test("returns 401 when the token is invalid", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       "http://localhost:7830/v1/watch/stream?token=bad-token&mimeType=audio/pcm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(401);
     expect(server.upgrade).not.toHaveBeenCalled();
@@ -210,77 +198,69 @@ describe("createWatchStreamWebsocketHandler", () => {
    * token minted for machine to machine traffic.
    */
   test("returns 401 for a service token, which has no actor principal", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${mintServiceEdgeToken()}&mimeType=audio/pcm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(401);
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
   test("returns 400 when mimeType is missing", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(400);
     expect(server.upgrade).not.toHaveBeenCalled();
   });
 
   test("returns 426 when the request is not a WebSocket upgrade", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm`,
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(426);
   });
 
   test("returns 500 when the Bun upgrade fails", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${TEST_TOKEN}&mimeType=audio/pcm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer(false);
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(500);
   });
 
   test("allows an unauthenticated upgrade when auth is disabled (dev bypass)", async () => {
-    const handler = createWatchStreamWebsocketHandler(
-      makeConfig({ runtimeProxyRequireAuth: false }),
-    );
+    testConfig = makeConfig({ runtimeProxyRequireAuth: false });
     const req = new Request(
       "http://localhost:7830/v1/watch/stream?mimeType=audio/pcm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
 
-    expect(await handler(req, server)).toBeUndefined();
+    expect(await handleWatchStreamWs(req, server)).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
   test("still requires mimeType when auth is disabled", async () => {
-    const handler = createWatchStreamWebsocketHandler(
-      makeConfig({ runtimeProxyRequireAuth: false }),
-    );
+    testConfig = makeConfig({ runtimeProxyRequireAuth: false });
     const req = new Request("http://localhost:7830/v1/watch/stream", {
       headers: { upgrade: "websocket" },
     });
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(400);
   });
@@ -290,13 +270,13 @@ describe("createWatchStreamWebsocketHandler", () => {
    * identity upstream, so the route has to opt into the guardian pin.
    */
   test("refuses a non-guardian actor", async () => {
-    const handler = createWatchStreamWebsocketHandler(makeConfig());
+    testConfig = makeConfig();
     const req = new Request(
       `http://localhost:7830/v1/watch/stream?token=${mintEdgeToken("someone-else")}&mimeType=audio/pcm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleWatchStreamWs(req, server);
 
     expect(res!.status).toBe(403);
     expect(server.upgrade).not.toHaveBeenCalled();
@@ -311,7 +291,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
   const makeWatchWs = () =>
     createFakeDownstreamWs<WatchStreamSocketData>({
       wsType: "watch-stream",
-      config: makeConfig(),
       mimeType: "audio/pcm",
       sampleRate: 16000,
     });
@@ -321,7 +300,7 @@ describe("getWatchStreamWebsocketHandlers", () => {
 
     // Dialing upstream fails in a test process; the buffer is set up first.
     try {
-      handlers.open(ws as never);
+      openWatchStreamWebsocket(ws as never);
     } catch {
       // The WebSocket constructor may throw here.
     }
@@ -338,7 +317,7 @@ describe("getWatchStreamWebsocketHandlers", () => {
     const ws = makeWatchWs();
     ws.data.pendingMessages = [];
 
-    handlers.message(ws as never, "narration-frame");
+    messageWatchStreamWebsocket(ws as never, "narration-frame");
 
     expect(ws.data.pendingMessages).toContain("narration-frame");
   });
@@ -347,7 +326,7 @@ describe("getWatchStreamWebsocketHandlers", () => {
     const ws = makeWatchWs();
     ws.data.pendingMessages = new Array(100).fill("x");
 
-    handlers.message(ws as never, "overflow-frame");
+    messageWatchStreamWebsocket(ws as never, "overflow-frame");
 
     expect(ws.close).toHaveBeenCalledWith(1008, "Buffer overflow");
   });
@@ -361,7 +340,7 @@ describe("getWatchStreamWebsocketHandlers", () => {
     };
     ws.data.upstream = upstream as unknown as WebSocket;
 
-    handlers.message(ws as never, "narration-frame");
+    messageWatchStreamWebsocket(ws as never, "narration-frame");
 
     expect(upstream.send).toHaveBeenCalledWith("narration-frame");
     expect(ws.data.pendingMessages).toEqual([]);
@@ -376,7 +355,7 @@ describe("getWatchStreamWebsocketHandlers", () => {
     };
     ws.data.upstream = upstream as unknown as WebSocket;
 
-    handlers.close(ws as never, 1000, "normal");
+    closeWatchStreamWebsocket(ws as never, 1000, "normal");
 
     expect(ws.data.pendingMessages).toBeUndefined();
     expect(upstream.close).toHaveBeenCalledWith(1000, "normal");
@@ -390,7 +369,7 @@ describe("getWatchStreamWebsocketHandlers", () => {
     };
     ws.data.upstream = upstream as unknown as WebSocket;
 
-    handlers.close(ws as never, 1000, "normal");
+    closeWatchStreamWebsocket(ws as never, 1000, "normal");
 
     expect(upstream.close).not.toHaveBeenCalled();
   });
@@ -408,23 +387,24 @@ describe("a dropped downstream frame does not end a watch session", () => {
     runtime?.server.stop(true);
   });
 
-  const makeViewerWs = (sendStatus?: number) =>
-    createFakeDownstreamWs<WatchStreamSocketData>(
+  const makeViewerWs = (sendStatus?: number) => {
+    testConfig = makeConfig({
+      assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
+    });
+    return createFakeDownstreamWs<WatchStreamSocketData>(
       {
         wsType: "watch-stream",
-        config: makeConfig({
-          assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
-        }),
         mimeType: "audio/pcm",
       },
       { sendStatus },
     );
+  };
 
   test("keeps both sides open when a send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"session_started"}');
     const ws = makeViewerWs(0);
 
-    handlers.open(ws as never);
+    openWatchStreamWebsocket(ws as never);
     await waitFor(() => ws.sent.length > 0);
     await settle();
 
@@ -436,7 +416,7 @@ describe("a dropped downstream frame does not end a watch session", () => {
     runtime = startFakeRuntime("");
     const ws = makeViewerWs(0);
 
-    handlers.open(ws as never);
+    openWatchStreamWebsocket(ws as never);
     await waitFor(() => ws.sent.length > 0);
     await settle();
 

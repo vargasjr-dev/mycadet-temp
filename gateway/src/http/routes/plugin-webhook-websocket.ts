@@ -17,15 +17,16 @@
  * the bytes the caller sent: text or binary, well-formed JSON or not.
  */
 
+import { Server, ServerWebSocket } from "bun";
 import { z } from "zod";
 
 import {
   findServableRoute,
-  type PluginIngressResolution,
+  resolveCachedPluginIngress,
 } from "../../channels/plugin-ingress-approvals.js";
 import type { IngressSigner } from "../../channels/plugin-ingress.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getConfig, type GatewayConfig } from "../../config.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import {
   resolveCredentialWithRefresh,
@@ -78,49 +79,32 @@ export type IpcCall = (
   opts?: IpcCallOptions,
 ) => Promise<unknown>;
 
-/**
- * The socket data the plugin webhook upgrade handler attaches, pinned as a
- * zod schema: the dispatch in `index.ts` discriminates sockets by
- * `safeParse` on it. The runtime-state half (config, the delivery queue and
- * its bookkeeping, the IPC caller) never crosses the wire and stays
- * hand-modeled on the type.
- */
 export const pluginWebhookSocketDataSchema = z.object({
   wsType: z.literal("plugin-webhook"),
   plugin: z.string(),
   path: z.string(),
+  queue: z.array(
+    z.union([z.string(), z.custom<Uint8Array>((v) => v instanceof Uint8Array)]),
+  ),
+  queuedBytes: z.number(),
+  delivering: z.boolean(),
+  closed: z.boolean(),
+  ipcCall: z.custom<IpcCall>(() => true).optional(),
 });
 
 export type PluginWebhookSocketData = z.infer<
   typeof pluginWebhookSocketDataSchema
-> & {
-  config: GatewayConfig;
-  /** Frames waiting on the in-flight delivery. */
-  queue: (string | Uint8Array)[];
-  /** Bytes held in {@link queue}, tracked so the cap is on memory not count. */
-  queuedBytes: number;
-  /** True while a delivery is outstanding, so they stay serialised. */
-  delivering: boolean;
-  closed: boolean;
-  ipcCall?: IpcCall;
-};
+>;
 
 /** Discriminate an untyped socket as a plugin webhook socket. */
 export function isPluginWebhookSocketData(
-  ws: import("bun").ServerWebSocket<unknown>,
-): ws is import("bun").ServerWebSocket<PluginWebhookSocketData> {
+  ws: ServerWebSocket<unknown>,
+): ws is ServerWebSocket<PluginWebhookSocketData> {
   return pluginWebhookSocketDataSchema.safeParse(ws.data).success;
 }
 
 function signingCredentialKey(plugin: string, signer: IngressSigner): string {
   return credentialKey(signer === "cadet" ? "cadet" : plugin, "webhook_secret");
-}
-
-export interface PluginWebhookWsDeps {
-  config: GatewayConfig;
-  resolve: () => PluginIngressResolution;
-  credentials: CredentialCache | undefined;
-  ipcCall?: IpcCall;
 }
 
 /**
@@ -131,127 +115,124 @@ export interface PluginWebhookWsDeps {
  * upgrading. An upgrade cannot be un-done once accepted, so everything is
  * checked first.
  */
-export function createPluginWebhookWebsocketHandler(deps: PluginWebhookWsDeps) {
-  const { config, resolve, credentials, ipcCall } = deps;
+export async function handlePluginWebhookWs(
+  req: Request,
+  server: Server<unknown>,
+  plugin: string,
+  path: string,
+): Promise<Response | undefined> {
+  const resolve = resolveCachedPluginIngress;
+  const credentials = getCredentials();
 
-  return async function handleUpgrade(
-    req: Request,
-    server: import("bun").Server<unknown>,
-    plugin: string,
-    path: string,
-  ): Promise<Response | undefined> {
-    if (!isWebsocketUpgradeRequest(req)) {
-      return new Response("Upgrade Required", { status: 426 });
-    }
+  if (!isWebsocketUpgradeRequest(req)) {
+    return new Response("Upgrade Required", { status: 426 });
+  }
 
-    let route: ReturnType<typeof findServableRoute>;
-    try {
-      route = findServableRoute(resolve(), plugin, path, "websocket");
-    } catch (err) {
-      log.error({ err, plugin }, "Failed to resolve plugin ingress");
-      return new Response("Internal Server Error", { status: 500 });
-    }
-    if (!route) {
-      // Quiet for the same reason as the HTTP half: anyone can reach this.
-      log.debug({ plugin, path }, "No servable websocket ingress route");
-      return new Response("Not Found", { status: 404 });
-    }
+  let route: ReturnType<typeof findServableRoute>;
+  try {
+    route = findServableRoute(resolve(), plugin, path, "websocket");
+  } catch (err) {
+    log.error({ err, plugin }, "Failed to resolve plugin ingress");
+    return new Response("Internal Server Error", { status: 500 });
+  }
+  if (!route) {
+    // Quiet for the same reason as the HTTP half: anyone can reach this.
+    log.debug({ plugin, path }, "No servable websocket ingress route");
+    return new Response("Not Found", { status: 404 });
+  }
 
-    const secretKey = signingCredentialKey(plugin, route.signer);
-    const secret = await resolveCredentialWithRefresh(credentials, secretKey);
-    if (!secret) {
+  const secretKey = signingCredentialKey(plugin, route.signer);
+  const secret = await resolveCredentialWithRefresh(credentials, secretKey);
+  if (!secret) {
+    log.warn(
+      { plugin, path, signer: route.signer },
+      "Plugin webhook secret is not configured — refusing upgrade",
+    );
+    return new Response("Webhook secret not configured", { status: 409 });
+  }
+
+  const url = new URL(req.url);
+
+  // Both branches verify through the refresh helper rather than against the
+  // secret read above: one that rotated while the cache still held the old
+  // value would otherwise fail an upgrade that is actually valid.
+  if (route.handshake === "signed-query") {
+    // The caller was handed a URL and nothing else, so the whole credential
+    // is in the query string. It carries its own expiry instead of a
+    // freshness window: the URL is minted long before it is dialed.
+    let rejection: string | undefined;
+    const valid = await verifySecretWithRefresh({
+      credentials,
+      key: secretKey,
+      verify: (candidate) => {
+        const result = verifySignedQueryHandshake({
+          url,
+          pathname: url.pathname,
+          secret: candidate,
+        });
+        // Kept for the log line below. On a retry against a refreshed
+        // secret this holds the second attempt's reason, which is the one
+        // that decided the outcome.
+        if (!result.ok) {
+          rejection = result.reason;
+        }
+        return result.ok;
+      },
+      log,
+      label: "Plugin webhook WS signed-query handshake",
+    });
+    if (!valid) {
+      log.warn(
+        { plugin, path, signer: route.signer, rejection },
+        "Plugin webhook WS: signed-query handshake rejected",
+      );
+      return new Response("Forbidden", { status: 403 });
+    }
+  } else {
+    // A handshake carries no body to sign, so the signature covers the
+    // timestamp and the path instead, and the timestamp bounds how long a
+    // captured handshake stays usable.
+    const timestamp = req.headers.get(CADET_TIMESTAMP_HEADER);
+    if (!timestamp || !timestampWithinTolerance(timestamp)) {
+      log.warn(
+        { plugin, path },
+        "Plugin webhook WS: missing or stale timestamp",
+      );
+      return new Response("Forbidden", { status: 403 });
+    }
+    const signed = handshakeSignedPayload(timestamp, url.pathname);
+    const valid = await verifySecretWithRefresh({
+      credentials,
+      key: secretKey,
+      verify: (candidate) =>
+        verifyCadetSignature(req.headers, signed, candidate),
+      log,
+      label: "Plugin webhook WS handshake",
+    });
+    if (!valid) {
       log.warn(
         { plugin, path, signer: route.signer },
-        "Plugin webhook secret is not configured — refusing upgrade",
+        "Plugin webhook WS: signature verification failed",
       );
-      return new Response("Webhook secret not configured", { status: 409 });
+      return new Response("Forbidden", { status: 403 });
     }
+  }
 
-    const url = new URL(req.url);
-
-    // Both branches verify through the refresh helper rather than against the
-    // secret read above: one that rotated while the cache still held the old
-    // value would otherwise fail an upgrade that is actually valid.
-    if (route.handshake === "signed-query") {
-      // The caller was handed a URL and nothing else, so the whole credential
-      // is in the query string. It carries its own expiry instead of a
-      // freshness window: the URL is minted long before it is dialed.
-      let rejection: string | undefined;
-      const valid = await verifySecretWithRefresh({
-        credentials,
-        key: secretKey,
-        verify: (candidate) => {
-          const result = verifySignedQueryHandshake({
-            url,
-            pathname: url.pathname,
-            secret: candidate,
-          });
-          // Kept for the log line below. On a retry against a refreshed
-          // secret this holds the second attempt's reason, which is the one
-          // that decided the outcome.
-          if (!result.ok) {
-            rejection = result.reason;
-          }
-          return result.ok;
-        },
-        log,
-        label: "Plugin webhook WS signed-query handshake",
-      });
-      if (!valid) {
-        log.warn(
-          { plugin, path, signer: route.signer, rejection },
-          "Plugin webhook WS: signed-query handshake rejected",
-        );
-        return new Response("Forbidden", { status: 403 });
-      }
-    } else {
-      // A handshake carries no body to sign, so the signature covers the
-      // timestamp and the path instead, and the timestamp bounds how long a
-      // captured handshake stays usable.
-      const timestamp = req.headers.get(CADET_TIMESTAMP_HEADER);
-      if (!timestamp || !timestampWithinTolerance(timestamp)) {
-        log.warn(
-          { plugin, path },
-          "Plugin webhook WS: missing or stale timestamp",
-        );
-        return new Response("Forbidden", { status: 403 });
-      }
-      const signed = handshakeSignedPayload(timestamp, url.pathname);
-      const valid = await verifySecretWithRefresh({
-        credentials,
-        key: secretKey,
-        verify: (candidate) =>
-          verifyCadetSignature(req.headers, signed, candidate),
-        log,
-        label: "Plugin webhook WS handshake",
-      });
-      if (!valid) {
-        log.warn(
-          { plugin, path, signer: route.signer },
-          "Plugin webhook WS: signature verification failed",
-        );
-        return new Response("Forbidden", { status: 403 });
-      }
-    }
-
-    const upgraded = server.upgrade(req, {
-      data: {
-        wsType: "plugin-webhook",
-        config,
-        plugin,
-        path,
-        queue: [],
-        queuedBytes: 0,
-        delivering: false,
-        closed: false,
-        ipcCall,
-      } satisfies PluginWebhookSocketData,
-    });
-    if (!upgraded) {
-      return new Response("WebSocket upgrade failed", { status: 500 });
-    }
-    return undefined;
-  };
+  const upgraded = server.upgrade(req, {
+    data: {
+      wsType: "plugin-webhook",
+      plugin,
+      path,
+      queue: [],
+      queuedBytes: 0,
+      delivering: false,
+      closed: false,
+    } satisfies PluginWebhookSocketData,
+  });
+  if (!upgraded) {
+    return new Response("WebSocket upgrade failed", { status: 500 });
+  }
+  return undefined;
 }
 
 /**
@@ -265,7 +246,8 @@ async function deliverFrame(
   data: PluginWebhookSocketData,
   frame: string | Uint8Array,
 ): Promise<void> {
-  const { config, plugin, path } = data;
+  const { plugin, path } = data;
+  const config = getConfig();
   const call = data.ipcCall ?? ipcCallAssistant;
   const bytes =
     typeof frame === "string" ? new TextEncoder().encode(frame) : frame;
@@ -319,7 +301,7 @@ async function drain(data: PluginWebhookSocketData): Promise<void> {
  * every one of those frames would close again.
  */
 function refuse(
-  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+  ws: ServerWebSocket<PluginWebhookSocketData>,
   code: number,
   reason: string,
 ): void {
@@ -330,7 +312,7 @@ function refuse(
 }
 
 export function openPluginWebhookWebsocket(
-  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+  ws: ServerWebSocket<PluginWebhookSocketData>,
 ) {
   log.info(
     { plugin: ws.data.plugin, path: ws.data.path },
@@ -343,7 +325,7 @@ export function openPluginWebhookWebsocket(
  * delivery pump, refusing frames the plugin's route could never accept.
  */
 export function messagePluginWebhookWebsocket(
-  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+  ws: ServerWebSocket<PluginWebhookSocketData>,
   message: string | ArrayBuffer | Uint8Array,
 ) {
   const data = ws.data;
@@ -356,7 +338,7 @@ export function messagePluginWebhookWebsocket(
   // A single oversized frame is refused rather than queued: it could
   // never be delivered anyway, since it exceeds what the plugin's route
   // accepts as a webhook payload.
-  if (size > data.config.maxWebhookPayloadBytes) {
+  if (size > getConfig().maxWebhookPayloadBytes) {
     log.warn(
       { plugin: data.plugin, path: data.path, size },
       "Plugin webhook frame exceeds the webhook payload cap — closing connection",
@@ -367,7 +349,7 @@ export function messagePluginWebhookWebsocket(
 
   if (
     data.queue.length >= MAX_PENDING_FRAMES ||
-    data.queuedBytes + size > maxQueuedBytes(data.config)
+    data.queuedBytes + size > maxQueuedBytes(getConfig())
   ) {
     log.warn(
       {
@@ -393,7 +375,7 @@ export function messagePluginWebhookWebsocket(
  * stream ended.
  */
 export function closePluginWebhookWebsocket(
-  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+  ws: ServerWebSocket<PluginWebhookSocketData>,
   code: number,
   reason: string,
 ) {

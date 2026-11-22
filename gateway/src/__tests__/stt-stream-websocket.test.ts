@@ -23,36 +23,34 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
   findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
+let testConfig = makeConfig();
+mock.module("../config.js", () => ({
+  getConfig: () => testConfig,
+}));
+
 const {
   closeSttStreamWebsocket,
-  createSttStreamWebsocketHandler,
+  handleSttStreamWs,
   messageSttStreamWebsocket,
   openSttStreamWebsocket,
 } = await import("../http/routes/stt-stream-websocket.js");
 
-/** The flattened lifecycle handlers, under the tests' historical name. */
-const handlers = {
-  open: openSttStreamWebsocket,
-  message: messageSttStreamWebsocket,
-  close: closeSttStreamWebsocket,
-};
-
 // ---------------------------------------------------------------------------
-// createSttStreamWebsocketHandler — upgrade handler tests
+// handleSttStreamWs — upgrade handler tests
 // ---------------------------------------------------------------------------
 
-describe("createSttStreamWebsocketHandler", () => {
+describe("handleSttStreamWs", () => {
   const TEST_TOKEN = mintEdgeToken();
 
   test("upgrades when token query parameter is valid and required params present", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}&provider=deepgram&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -60,7 +58,7 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("upgrades when Authorization header is valid", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       "http://localhost:7830/v1/stt/stream?provider=deepgram&mimeType=audio/webm",
       {
@@ -71,7 +69,7 @@ describe("createSttStreamWebsocketHandler", () => {
       },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -79,13 +77,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 401 when no token is provided", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       "http://localhost:7830/v1/stt/stream?provider=deepgram&mimeType=audio/webm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -94,13 +92,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 401 when token is invalid", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       "http://localhost:7830/v1/stt/stream?token=bad-token&provider=deepgram&mimeType=audio/webm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -110,13 +108,13 @@ describe("createSttStreamWebsocketHandler", () => {
   test("returns 401 for service tokens (requires actor principal)", () => {
     const serviceToken = mintServiceEdgeToken();
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${serviceToken}&provider=deepgram&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -125,13 +123,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("upgrades successfully when provider is omitted (config-authoritative)", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -143,13 +141,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 400 when mimeType is missing", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}&provider=deepgram`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(400);
@@ -157,13 +155,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 400 when mimeType is missing and provider is also missing", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(400);
@@ -171,12 +169,12 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 426 when upgrade header is not websocket", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}&provider=deepgram&mimeType=audio/webm`,
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(426);
@@ -184,13 +182,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 500 when Bun.serve upgrade fails", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}&provider=deepgram&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer(false); // upgrade returns false
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(500);
@@ -198,13 +196,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("allows unauthenticated upgrade when auth is disabled (dev bypass)", () => {
     const config = makeConfig({ runtimeProxyRequireAuth: false });
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       "http://localhost:7830/v1/stt/stream?provider=deepgram&mimeType=audio/webm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -212,13 +210,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("upgrades when auth is disabled and provider is omitted", () => {
     const config = makeConfig({ runtimeProxyRequireAuth: false });
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       "http://localhost:7830/v1/stt/stream?mimeType=audio/webm",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -226,13 +224,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("returns 400 when auth is disabled but mimeType is missing", () => {
     const config = makeConfig({ runtimeProxyRequireAuth: false });
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       "http://localhost:7830/v1/stt/stream?provider=deepgram",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = handler(req, server);
+    const res = handleSttStreamWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(400);
@@ -240,13 +238,13 @@ describe("createSttStreamWebsocketHandler", () => {
 
   test("passes sampleRate to socket data when provided", () => {
     const config = makeConfig();
-    const handler = createSttStreamWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${TEST_TOKEN}&provider=deepgram&mimeType=audio/webm&sampleRate=16000`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    handler(req, server);
+    handleSttStreamWs(req, server);
 
     expect(upgradedData<SttStreamSocketData>(server)).toMatchObject({
       provider: "deepgram",
@@ -264,7 +262,6 @@ describe("getSttStreamWebsocketHandlers", () => {
   const makeSttWs = () =>
     createFakeDownstreamWs<SttStreamSocketData>({
       wsType: "stt-stream",
-      config: makeConfig(),
       provider: "deepgram",
       mimeType: "audio/webm",
     });
@@ -275,7 +272,7 @@ describe("getSttStreamWebsocketHandlers", () => {
     // The open handler creates a WebSocket to upstream which will fail in test,
     // but pendingMessages should be initialized before that happens.
     try {
-      handlers.open(ws as never);
+      openSttStreamWebsocket(ws as never);
     } catch {
       // WebSocket constructor may throw in test environment
     }
@@ -287,7 +284,7 @@ describe("getSttStreamWebsocketHandlers", () => {
     const ws = makeSttWs();
     ws.data.pendingMessages = [];
 
-    handlers.message(ws as never, "test-audio-frame");
+    messageSttStreamWebsocket(ws as never, "test-audio-frame");
 
     expect(ws.data.pendingMessages).toContain("test-audio-frame");
   });
@@ -296,7 +293,7 @@ describe("getSttStreamWebsocketHandlers", () => {
     const ws = makeSttWs();
     ws.data.pendingMessages = new Array(100).fill("x"); // At MAX_PENDING_MESSAGES
 
-    handlers.message(ws as never, "overflow-frame");
+    messageSttStreamWebsocket(ws as never, "overflow-frame");
 
     expect(ws.close).toHaveBeenCalledWith(1008, "Buffer overflow");
   });
@@ -311,7 +308,7 @@ describe("getSttStreamWebsocketHandlers", () => {
     };
     ws.data.upstream = fakeUpstream as unknown as WebSocket;
 
-    handlers.close(ws as never, 1000, "normal");
+    closeSttStreamWebsocket(ws as never, 1000, "normal");
 
     expect(ws.data.pendingMessages).toBeUndefined();
     expect(fakeUpstream.close).toHaveBeenCalledWith(1000, "normal");
@@ -326,7 +323,7 @@ describe("getSttStreamWebsocketHandlers", () => {
     };
     ws.data.upstream = fakeUpstream as unknown as WebSocket;
 
-    handlers.close(ws as never, 1000, "normal");
+    closeSttStreamWebsocket(ws as never, 1000, "normal");
 
     expect(fakeUpstream.close).not.toHaveBeenCalled();
   });
@@ -344,23 +341,24 @@ describe("a dropped downstream frame does not end a dictation session", () => {
     runtime?.server.stop(true);
   });
 
-  const makeViewerWs = (sendStatus?: number) =>
-    createFakeDownstreamWs<SttStreamSocketData>(
+  const makeViewerWs = (sendStatus?: number) => {
+    testConfig = makeConfig({
+      assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
+    });
+    return createFakeDownstreamWs<SttStreamSocketData>(
       {
         wsType: "stt-stream",
-        config: makeConfig({
-          assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
-        }),
         mimeType: "audio/webm",
       },
       { sendStatus },
     );
+  };
 
   test("keeps both sides open when a send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"transcript","text":"hello"}');
     const ws = makeViewerWs(0);
 
-    handlers.open(ws as never);
+    openSttStreamWebsocket(ws as never);
     await waitFor(() => ws.sent.length > 0);
     await settle();
 
@@ -372,7 +370,7 @@ describe("a dropped downstream frame does not end a dictation session", () => {
     runtime = startFakeRuntime("");
     const ws = makeViewerWs(0);
 
-    handlers.open(ws as never);
+    openSttStreamWebsocket(ws as never);
     await waitFor(() => ws.sent.length > 0);
     await settle();
 
@@ -394,25 +392,23 @@ describe("a dropped downstream frame does not end a dictation session", () => {
  */
 describe("dictation is not a guardian-only surface", () => {
   test("admits an actor who is not the bound guardian", async () => {
-    const handler = createSttStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${mintEdgeToken("some-other-actor")}&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
 
-    expect(handler(req, server)).toBeUndefined();
+    expect(handleSttStreamWs(req, server)).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
   test("never consults the guardian binding at all", async () => {
-    const handler = createSttStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${mintEdgeToken("some-other-actor")}&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
 
-    handler(req, makeFakeServer());
+    handleSttStreamWs(req, makeFakeServer());
 
     expect(mockFindCadetGuardian).not.toHaveBeenCalled();
   });
@@ -422,13 +418,12 @@ describe("dictation is not a guardian-only surface", () => {
    * would make it async, so the signature is itself evidence of the posture.
    */
   test("stays a synchronous upgrade handler", () => {
-    const handler = createSttStreamWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?token=${mintEdgeToken()}&mimeType=audio/webm`,
       { headers: { upgrade: "websocket" } },
     );
 
-    const result = handler(req, makeFakeServer());
+    const result = handleSttStreamWs(req, makeFakeServer());
 
     expect(result).not.toBeInstanceOf(Promise);
   });
@@ -444,7 +439,7 @@ describe("dictation is not a guardian-only surface", () => {
  * valid actor, and tunnel only mints a token for a user with access to this
  * assistant, which is the same standing an actor token proves.
  */
-describe("createSttStreamWebsocketHandler: tunnel-attested managed auth", () => {
+describe("handleSttStreamWs: tunnel-attested managed auth", () => {
   const TUNNEL_USER_ID = "11111111-1111-1111-1111-111111111111";
   const TUNNEL_ORG_ID = "22222222-2222-2222-2222-222222222222";
 
@@ -481,16 +476,14 @@ describe("createSttStreamWebsocketHandler: tunnel-attested managed auth", () => 
     if (bridgeProof) {
       setTunnelBridgeAuthHeader(headers);
     }
-    const handler = createSttStreamWebsocketHandler(
-      makeConfig(tunnelBaseUrl ? { tunnelBaseUrl } : {}),
-    );
+    testConfig = makeConfig(tunnelBaseUrl ? { tunnelBaseUrl } : {});
     const query = token ? `&token=${token}` : "";
     const req = new Request(
       `http://localhost:7830/v1/stt/stream?mimeType=audio/pcm${query}`,
       { headers },
     );
     const server = makeFakeServer();
-    return { res: handler(req, server), server };
+    return { res: handleSttStreamWs(req, server), server };
   };
 
   test("admits an attested caller with the bridge proof and no token", () => {

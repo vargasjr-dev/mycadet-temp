@@ -54,19 +54,17 @@ mock.module("../cloud-identity.js", () => ({
   },
 }));
 
+let testConfig = makeConfig();
+mock.module("../config.js", () => ({
+  getConfig: () => testConfig,
+}));
+
 const {
   closeLiveVoiceWebsocket,
-  createLiveVoiceWebsocketHandler,
+  handleLiveVoiceWs,
   messageLiveVoiceWebsocket,
   openLiveVoiceWebsocket,
 } = await import("../http/routes/live-voice-websocket.js");
-
-/** The flattened lifecycle handlers, under the tests' historical name. */
-const handlers = {
-  open: openLiveVoiceWebsocket,
-  message: messageLiveVoiceWebsocket,
-  close: closeLiveVoiceWebsocket,
-};
 
 const WS_CONNECTING = WebSocket.CONNECTING;
 const WS_OPEN = WebSocket.OPEN;
@@ -106,20 +104,23 @@ beforeEach(() => {
     principalId: GUARDIAN_PRINCIPAL,
   }));
   mockReadCredential = mock(async () => TUNNEL_USER_ID);
+  // Per-test config overrides must not leak into later tests now the
+  // handlers read the module-level holder.
+  testConfig = makeConfig();
 });
 
-describe("createLiveVoiceWebsocketHandler", () => {
+describe("handleLiveVoiceWs", () => {
   const TEST_TOKEN = mintEdgeToken();
 
   test("upgrades when token query parameter is a valid actor edge token", async () => {
     const config = makeConfig();
-    const handler = createLiveVoiceWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -127,7 +128,6 @@ describe("createLiveVoiceWebsocketHandler", () => {
     expect(server.upgrade).toHaveBeenCalledWith(req, expect.anything());
     expect(upgradedData<LiveVoiceSocketData>(server)).toEqual({
       wsType: "live-voice",
-      config,
       guardianPrincipalId: "test-user",
     });
   });
@@ -137,25 +137,23 @@ describe("createLiveVoiceWebsocketHandler", () => {
     // verbatim shape every scoped forwarder carries. The mirror admits it
     // and discards the id, like the route table's tunnel/status mirror.
     const config = makeConfig();
-    const handler = createLiveVoiceWebsocketHandler(config);
+    testConfig = config;
     const req = new Request(
       `http://localhost:7830/v1/assistants/assistant-1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
     expect(upgradedData<LiveVoiceSocketData>(server)).toEqual({
       wsType: "live-voice",
-      config,
       guardianPrincipalId: "test-user",
     });
   });
 
   test("upgrades when Authorization header is a valid actor edge token", async () => {
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request("http://localhost:7830/v1/live-voice", {
       headers: {
         upgrade: "websocket",
@@ -163,19 +161,18 @@ describe("createLiveVoiceWebsocketHandler", () => {
       },
     });
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
   test("returns 401 when auth is required and no token is provided", async () => {
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request("http://localhost:7830/v1/live-voice", {
       headers: { upgrade: "websocket" },
     });
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -183,13 +180,12 @@ describe("createLiveVoiceWebsocketHandler", () => {
   });
 
   test("returns 401 when token is invalid", async () => {
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       "http://localhost:7830/v1/live-voice?token=bad-token",
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -198,13 +194,12 @@ describe("createLiveVoiceWebsocketHandler", () => {
 
   test("returns 401 when token lacks an actor principal", async () => {
     const serviceToken = mintServiceEdgeToken();
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${serviceToken}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -213,24 +208,23 @@ describe("createLiveVoiceWebsocketHandler", () => {
 
   test("allows unauthenticated upgrade when runtime proxy auth is disabled", async () => {
     const config = makeConfig({ runtimeProxyRequireAuth: false });
-    const handler = createLiveVoiceWebsocketHandler(config);
+    testConfig = config;
     const req = new Request("http://localhost:7830/v1/live-voice", {
       headers: { upgrade: "websocket" },
     });
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
   });
 
   test("returns 426 when upgrade header is not websocket", async () => {
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(426);
@@ -238,13 +232,12 @@ describe("createLiveVoiceWebsocketHandler", () => {
   });
 
   test("returns 500 when Bun.serve upgrade fails", async () => {
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer(false);
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(500);
@@ -258,13 +251,12 @@ describe("createLiveVoiceWebsocketHandler", () => {
     mockFindCadetGuardian = mock(async () => ({
       principalId: "someone-else",
     }));
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(403);
@@ -273,13 +265,12 @@ describe("createLiveVoiceWebsocketHandler", () => {
 
   test("returns 403 when no guardian binding exists", async () => {
     mockFindCadetGuardian = mock(async () => null);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(403);
@@ -290,13 +281,12 @@ describe("createLiveVoiceWebsocketHandler", () => {
     mockFindCadetGuardian = mock(async () => {
       throw new Error("gateway db unavailable");
     });
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(503);
@@ -345,9 +335,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("managed mode + valid X-Tunnel-* headers with bridge proof authorizes the upgrade", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeTunnelReq(), server);
+    const res = await handleLiveVoiceWs(makeTunnelReq(), server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -361,9 +350,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
    */
   test("managed mode carries the bound guardian's principal on the socket", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    await handler(makeTunnelReq(), server);
+    await handleLiveVoiceWs(makeTunnelReq(), server);
 
     const call = (server.upgrade as ReturnType<typeof mock>).mock
       .calls[0] as unknown[];
@@ -379,9 +367,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
     mockReadCredential = mock(
       async () => "99999999-9999-9999-9999-999999999999",
     );
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeTunnelReq(), server);
+    const res = await handleLiveVoiceWs(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(403);
@@ -391,9 +378,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
   test("managed mode + bridge proof but no platform_user_id stored is rejected", async () => {
     setPlatform(true);
     mockReadCredential = mock(async () => undefined);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeTunnelReq(), server);
+    const res = await handleLiveVoiceWs(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(403);
@@ -405,9 +391,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
     mockReadCredential = mock(async () => {
       throw new Error("credential store unavailable");
     });
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeTunnelReq(), server);
+    const res = await handleLiveVoiceWs(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(503);
@@ -416,9 +401,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("managed mode + spoofed X-Tunnel-* headers without bridge proof is rejected", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(
+    const res = await handleLiveVoiceWs(
       makeTunnelReq(undefined, { bridgeAuth: false }),
       server,
     );
@@ -430,12 +414,11 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("managed mode without tunnel headers and without actor JWT is rejected", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request("http://localhost:7830/v1/live-voice", {
       headers: { upgrade: "websocket" },
     });
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -444,9 +427,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("managed mode with X-Tunnel-Actor other than 'user' is rejected", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(
+    const res = await handleLiveVoiceWs(
       makeTunnelReq({
         "x-tunnel-user-id": TUNNEL_USER_ID,
         "x-tunnel-org-id": TUNNEL_ORG_ID,
@@ -462,9 +444,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("managed mode missing org id falls through and is rejected", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(
+    const res = await handleLiveVoiceWs(
       makeTunnelReq({
         "x-tunnel-user-id": TUNNEL_USER_ID,
         "x-tunnel-actor": "user",
@@ -479,9 +460,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("a gateway with no tunnel does NOT trust X-Tunnel-* headers even with bridge proof", async () => {
     setPlatform(false);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(makeTunnelReq(), server);
+    const res = await handleLiveVoiceWs(makeTunnelReq(), server);
 
     expect(res).toBeInstanceOf(Response);
     expect(res!.status).toBe(401);
@@ -495,11 +475,9 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
    */
   test("a locally hosted gateway with a tunnel trusts an attested caller with bridge proof", async () => {
     setPlatform(false);
-    const handler = createLiveVoiceWebsocketHandler(
-      makeConfig({ tunnelBaseUrl: "https://tunnel.example.test" }),
-    );
+    testConfig = makeConfig({ tunnelBaseUrl: "https://tunnel.example.test" });
     const server = makeFakeServer();
-    const res = await handler(makeTunnelReq(), server);
+    const res = await handleLiveVoiceWs(makeTunnelReq(), server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -512,11 +490,9 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("a locally hosted gateway with a tunnel still ignores spoofed headers without bridge proof", async () => {
     setPlatform(false);
-    const handler = createLiveVoiceWebsocketHandler(
-      makeConfig({ tunnelBaseUrl: "https://tunnel.example.test" }),
-    );
+    testConfig = makeConfig({ tunnelBaseUrl: "https://tunnel.example.test" });
     const server = makeFakeServer();
-    const res = await handler(
+    const res = await handleLiveVoiceWs(
       makeTunnelReq(undefined, { bridgeAuth: false }),
       server,
     );
@@ -527,13 +503,12 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
   test("managed mode still accepts a valid actor edge JWT (no tunnel headers)", async () => {
     setPlatform(true);
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request(
       `http://localhost:7830/v1/live-voice?token=${TEST_TOKEN}`,
       { headers: { upgrade: "websocket" } },
     );
     const server = makeFakeServer();
-    const res = await handler(req, server);
+    const res = await handleLiveVoiceWs(req, server);
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
@@ -543,11 +518,12 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 describe("the live voice websocket handlers", () => {
   const OriginalWebSocket = globalThis.WebSocket;
   let fakeUpstream: ReturnType<typeof createFakeUpstreamWs>;
-  const makeLiveVoiceWs = (config = makeConfig()) =>
-    createFakeDownstreamWs<LiveVoiceSocketData>({
+  const makeLiveVoiceWs = (config = makeConfig()) => {
+    testConfig = config;
+    return createFakeDownstreamWs<LiveVoiceSocketData>({
       wsType: "live-voice",
-      config,
     });
+  };
 
   beforeEach(() => {
     fakeUpstream = createFakeUpstreamWs();
@@ -570,7 +546,7 @@ describe("the live voice websocket handlers", () => {
       makeConfig({ assistantRuntimeBaseUrl: "http://runtime.internal:7821" }),
     );
 
-    handlers.open(ws as never);
+    openLiveVoiceWebsocket(ws as never);
 
     const MockWS = globalThis.WebSocket as unknown as ReturnType<typeof mock>;
     const call = MockWS.mock.calls[0] as unknown[];
@@ -588,9 +564,9 @@ describe("the live voice websocket handlers", () => {
     const ws = makeLiveVoiceWs();
     const binaryFrame = new Uint8Array([1, 2, 3]);
 
-    handlers.open(ws as never);
-    handlers.message(ws as never, '{"type":"start"}');
-    handlers.message(ws as never, binaryFrame);
+    openLiveVoiceWebsocket(ws as never);
+    messageLiveVoiceWebsocket(ws as never, '{"type":"start"}');
+    messageLiveVoiceWebsocket(ws as never, binaryFrame);
 
     expect(ws.data.pendingMessages).toEqual(['{"type":"start"}', binaryFrame]);
     expect(fakeUpstream.sent).toEqual([]);
@@ -600,9 +576,9 @@ describe("the live voice websocket handlers", () => {
     const ws = makeLiveVoiceWs();
     const binaryFrame = new Uint8Array([4, 5, 6]);
 
-    handlers.open(ws as never);
-    handlers.message(ws as never, '{"type":"start"}');
-    handlers.message(ws as never, binaryFrame);
+    openLiveVoiceWebsocket(ws as never);
+    messageLiveVoiceWebsocket(ws as never, '{"type":"start"}');
+    messageLiveVoiceWebsocket(ws as never, binaryFrame);
 
     fakeUpstream.readyState = WS_OPEN;
     fakeUpstream.emit("open");
@@ -615,10 +591,10 @@ describe("the live voice websocket handlers", () => {
     const ws = makeLiveVoiceWs();
     const binaryFrame = new Uint8Array([9, 8, 7]);
 
-    handlers.open(ws as never);
+    openLiveVoiceWebsocket(ws as never);
     fakeUpstream.readyState = WS_OPEN;
     fakeUpstream.emit("open");
-    handlers.message(ws as never, binaryFrame);
+    messageLiveVoiceWebsocket(ws as never, binaryFrame);
 
     expect(fakeUpstream.sent).toEqual([binaryFrame]);
     expect(fakeUpstream.sent[0]).toBe(binaryFrame);
@@ -627,7 +603,7 @@ describe("the live voice websocket handlers", () => {
   test("forwards upstream text and binary frames to the downstream socket", async () => {
     const ws = makeLiveVoiceWs();
 
-    handlers.open(ws as never);
+    openLiveVoiceWebsocket(ws as never);
     fakeUpstream.emit("message", { data: '{"type":"ready"}' });
     fakeUpstream.emit("message", { data: new Uint8Array([5, 6]).buffer });
 
@@ -639,11 +615,11 @@ describe("the live voice websocket handlers", () => {
   test("closes downstream with 1008 on pending buffer overflow", async () => {
     const ws = makeLiveVoiceWs();
 
-    handlers.open(ws as never);
+    openLiveVoiceWebsocket(ws as never);
     for (let i = 0; i < 100; i++) {
-      handlers.message(ws as never, `msg-${i}`);
+      messageLiveVoiceWebsocket(ws as never, `msg-${i}`);
     }
-    handlers.message(ws as never, "overflow");
+    messageLiveVoiceWebsocket(ws as never, "overflow");
 
     expect(ws.closes).toEqual([{ code: 1008, reason: "Buffer overflow" }]);
   });
@@ -651,9 +627,9 @@ describe("the live voice websocket handlers", () => {
   test("downstream close clears pending messages and closes connecting upstream", async () => {
     const ws = makeLiveVoiceWs();
 
-    handlers.open(ws as never);
-    handlers.message(ws as never, "pending");
-    handlers.close(ws as never, 1000, "client closed");
+    openLiveVoiceWebsocket(ws as never);
+    messageLiveVoiceWebsocket(ws as never, "pending");
+    closeLiveVoiceWebsocket(ws as never, 1000, "client closed");
 
     expect(ws.data.pendingMessages).toBeUndefined();
     expect(fakeUpstream.closes).toEqual([
@@ -664,7 +640,7 @@ describe("the live voice websocket handlers", () => {
   test("upstream close and error events close the downstream socket", async () => {
     const ws = makeLiveVoiceWs();
 
-    handlers.open(ws as never);
+    openLiveVoiceWebsocket(ws as never);
     fakeUpstream.emit("close", { code: 1001, reason: "going away" });
     fakeUpstream.emit("error", new Event("error"));
 
@@ -692,7 +668,7 @@ describe("live voice gateway boundary", () => {
       "utf8",
     );
 
-    expect(source).toContain("createLiveVoiceWebsocketHandler");
+    expect(source).toContain("handleLiveVoiceWs");
     expect(source).toContain("isLiveVoiceSocketData(ws)");
     expect(source).toContain("openLiveVoiceWebsocket(ws)");
 
@@ -788,9 +764,8 @@ describe("createLiveVoiceWebsocketHandler — revocation", () => {
       })
       .run();
 
-    const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const server = makeFakeServer();
-    const res = await handler(
+    const res = await handleLiveVoiceWs(
       new Request(`http://127.0.0.1:7830/v1/live-voice?token=${jwt}`, {
         headers: { upgrade: "websocket" },
       }),

@@ -5,65 +5,58 @@
  * so this upgrade is the only place a non-guardian actor can be refused.
  */
 
+import { Server, ServerWebSocket } from "bun";
+
 import {
   createRuntimeAudioStreamHandlers,
-  type RuntimeAudioStreamState,
+  runtimeAudioStreamSocketState,
 } from "./runtime-audio-stream.js";
 import { authorizeGuardianStream } from "./guardian-pin.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { z } from "zod";
 
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("desktop-stream-ws");
 
-/**
- * The socket data the desktop upgrade handler attaches, pinned as a zod
- * schema: the dispatch in `index.ts` discriminates sockets by `safeParse` on
- * it. The route takes no parameters — the schema is the discriminant — and
- * the runtime-state half (`config`, the upstream socket, the pending frame
- * buffer) never crosses the wire and stays hand-modeled on the type.
- */
 export const desktopStreamSocketDataSchema = z.object({
   wsType: z.literal("desktop-stream"),
+  ...runtimeAudioStreamSocketState,
 });
 
 export type DesktopStreamSocketData = z.infer<
   typeof desktopStreamSocketDataSchema
-> &
-  RuntimeAudioStreamState;
+>;
 
 /** Discriminate an untyped socket as a desktop stream socket. */
 export function isDesktopStreamSocketData(
-  ws: import("bun").ServerWebSocket<unknown>,
-): ws is import("bun").ServerWebSocket<DesktopStreamSocketData> {
+  ws: ServerWebSocket<unknown>,
+): ws is ServerWebSocket<DesktopStreamSocketData> {
   return desktopStreamSocketDataSchema.safeParse(ws.data).success;
 }
 
-/** Upgrade handler for `/v1/desktop/stream`; the route takes no parameters. */
-export function createDesktopStreamWebsocketHandler(config: GatewayConfig) {
-  return async function handleUpgrade(
-    req: Request,
-    server: import("bun").Server<unknown>,
-  ): Promise<Response | undefined> {
-    const denied = await authorizeGuardianStream(req, config, log);
-    if (denied) {
-      return denied;
-    }
+/** The `/v1/desktop/stream` upgrade handler; the route takes no parameters. */
+export async function handleDesktopStreamWs(
+  req: Request,
+  server: Server<unknown>,
+): Promise<Response | undefined> {
+  const config = getConfig();
+  const denied = await authorizeGuardianStream(req, config, log);
+  if (denied) {
+    return denied;
+  }
 
-    const upgraded = server.upgrade(req, {
-      data: {
-        wsType: "desktop-stream",
-        config,
-      } satisfies DesktopStreamSocketData,
-    });
+  const upgraded = server.upgrade(req, {
+    data: {
+      wsType: "desktop-stream",
+    } satisfies DesktopStreamSocketData,
+  });
 
-    if (!upgraded) {
-      return new Response("WebSocket upgrade failed", { status: 500 });
-    }
+  if (!upgraded) {
+    return new Response("WebSocket upgrade failed", { status: 500 });
+  }
 
-    return undefined;
-  };
+  return undefined;
 }
 
 /** `Bun.serve` handlers pumping RFB bytes to the runtime's `/v1/desktop/stream`. */

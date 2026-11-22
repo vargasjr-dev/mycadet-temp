@@ -1,3 +1,4 @@
+import { Server, ServerWebSocket } from "bun";
 import {
   buildWsUpstreamUrl,
   forwardedIdentityHeaders,
@@ -7,7 +8,7 @@ import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import { parseSub } from "../../auth/subject.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig, type GatewayConfig } from "../../config.js";
 import { z } from "zod";
 
 import { getLogger } from "../../logger.js";
@@ -19,6 +20,7 @@ import {
   requireBoundGuardian,
   requireManagedGuardian,
 } from "./guardian-pin.js";
+import { runtimeAudioStreamSocketState } from "./runtime-audio-stream.js";
 import { isWebsocketUpgradeRequest } from "../utils.js";
 
 const log = getLogger("live-voice-ws");
@@ -30,73 +32,51 @@ const MAX_PENDING_MESSAGES = 100;
 // `guardian-pin.js`, shared with the watch stream so the two guardian-only
 // surfaces cannot drift into two ideas of who owns them.
 
-/**
- * The socket data the live-voice upgrade handler attaches, pinned as a zod
- * schema: the dispatch in `index.ts` discriminates sockets by `safeParse` on
- * it. The runtime-state half (`config`, the upstream socket, the pending
- * frame buffer) never crosses the wire and stays hand-modeled on the type.
- */
 export const liveVoiceSocketDataSchema = z.object({
   wsType: z.literal("live-voice"),
-  /**
-   * The guardian this socket was admitted for, read from the gateway's own
-   * binding at admission.
-   *
-   * The daemon cannot work this out for itself. It is reached through a
-   * service token, so every socket looks the same to it, and any answer it
-   * resolved independently would be a second, later reading of a binding that
-   * can change in between. This is the one the admission decision was
-   * actually made against.
-   */
+  ...runtimeAudioStreamSocketState,
   guardianPrincipalId: z.string().optional(),
 });
 
-export type LiveVoiceSocketData = z.infer<typeof liveVoiceSocketDataSchema> & {
-  config: GatewayConfig;
-  upstream?: WebSocket;
-  pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
-};
+export type LiveVoiceSocketData = z.infer<typeof liveVoiceSocketDataSchema>;
 
 /** Discriminate an untyped socket as a live voice socket. */
 export function isLiveVoiceSocketData(
-  ws: import("bun").ServerWebSocket<unknown>,
-): ws is import("bun").ServerWebSocket<LiveVoiceSocketData> {
+  ws: ServerWebSocket<unknown>,
+): ws is ServerWebSocket<LiveVoiceSocketData> {
   return liveVoiceSocketDataSchema.safeParse(ws.data).success;
 }
 
 /**
- * Create a WebSocket upgrade handler that proxies live voice frames between
- * gateway clients and the runtime's /v1/live-voice endpoint.
+ * The `/v1/live-voice` WebSocket upgrade handler: proxies live voice frames
+ * between gateway clients and the runtime's /v1/live-voice endpoint.
  */
-export function createLiveVoiceWebsocketHandler(config: GatewayConfig) {
-  return async function handleUpgrade(
-    req: Request,
-    server: import("bun").Server<unknown>,
-  ): Promise<Response | undefined> {
-    if (!isWebsocketUpgradeRequest(req)) {
-      return new Response("Upgrade Required", { status: 426 });
-    }
+export async function handleLiveVoiceWs(
+  req: Request,
+  server: Server<unknown>,
+): Promise<Response | undefined> {
+  if (!isWebsocketUpgradeRequest(req)) {
+    return new Response("Upgrade Required", { status: 426 });
+  }
 
-    const url = new URL(req.url);
-    const admission = await checkLiveVoiceAuth(req, url, config);
-    if (admission.response) return admission.response;
+  const url = new URL(req.url);
+  const admission = await checkLiveVoiceAuth(req, url, getConfig());
+  if (admission.response) return admission.response;
 
-    const upgraded = server.upgrade(req, {
-      data: {
-        wsType: "live-voice",
-        config,
-        ...(admission.guardianPrincipalId
-          ? { guardianPrincipalId: admission.guardianPrincipalId }
-          : {}),
-      } satisfies LiveVoiceSocketData,
-    });
+  const upgraded = server.upgrade(req, {
+    data: {
+      wsType: "live-voice",
+      ...(admission.guardianPrincipalId
+        ? { guardianPrincipalId: admission.guardianPrincipalId }
+        : {}),
+    } satisfies LiveVoiceSocketData,
+  });
 
-    if (!upgraded) {
-      return new Response("WebSocket upgrade failed", { status: 500 });
-    }
+  if (!upgraded) {
+    return new Response("WebSocket upgrade failed", { status: 500 });
+  }
 
-    return undefined;
-  };
+  return undefined;
 }
 
 /**
@@ -231,9 +211,9 @@ async function checkLiveVoiceAuth(
  * protocol and audio frames to the runtime.
  */
 export function openLiveVoiceWebsocket(
-  ws: import("bun").ServerWebSocket<LiveVoiceSocketData>,
+  ws: ServerWebSocket<LiveVoiceSocketData>,
 ) {
-  const { config } = ws.data;
+  const config = getConfig();
 
   ws.data.pendingMessages = [];
 
@@ -305,7 +285,7 @@ export function openLiveVoiceWebsocket(
  * until the upstream dial connects.
  */
 export function messageLiveVoiceWebsocket(
-  ws: import("bun").ServerWebSocket<LiveVoiceSocketData>,
+  ws: ServerWebSocket<LiveVoiceSocketData>,
   message: string | ArrayBuffer | Uint8Array,
 ) {
   const upstream = ws.data.upstream;
@@ -328,7 +308,7 @@ export function messageLiveVoiceWebsocket(
  * dial unless it already finished.
  */
 export function closeLiveVoiceWebsocket(
-  ws: import("bun").ServerWebSocket<LiveVoiceSocketData>,
+  ws: ServerWebSocket<LiveVoiceSocketData>,
   code: number,
   reason: string,
 ) {

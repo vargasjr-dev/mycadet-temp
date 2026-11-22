@@ -19,63 +19,37 @@
  * shared gate, where it would take dictation with it.
  */
 
+import { Server, ServerWebSocket } from "bun";
+
 import {
   createRuntimeAudioStreamHandlers,
-  type RuntimeAudioStreamState,
+  runtimeAudioStreamSocketState,
 } from "./runtime-audio-stream.js";
 import { authorizeGuardianStream } from "./guardian-pin.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { z } from "zod";
 
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("watch-stream-ws");
 
-/**
- * The socket data the watch upgrade handler attaches, pinned as a zod schema:
- * the dispatch in `index.ts` discriminates sockets by `safeParse` on it, so
- * the discriminant and the fields the handlers rely on cannot drift. The
- * runtime-state half (`config`, the upstream socket, the pending frame
- * buffer) never crosses the wire and stays hand-modeled on the type.
- */
 export const watchStreamSocketDataSchema = z.object({
   wsType: z.literal("watch-stream"),
-  /** MIME type of the narration audio (`audio/pcm` from the web capture). */
+  ...runtimeAudioStreamSocketState,
   mimeType: z.string(),
-  /** Sample rate in Hz, when applicable. */
   sampleRate: z.number().optional(),
-  /**
-   * Conversation the session's timeline is filed against, when the client
-   * names one. Absent lets the runtime mint a conversation for the session,
-   * which is what the companion surface's Watch does: it starts a session
-   * rather than joining a thread.
-   */
   conversationId: z.string().optional(),
-  /**
-   * Host client whose screen the session reads, when the client names one.
-   * Absent lets the runtime resolve the actor's own host, which is the only
-   * choice on a machine with one.
-   */
   clientId: z.string().optional(),
-  /**
-   * The display the session reads, by `CGDirectDisplayID`, when the client
-   * picked one. Carried verbatim: the runtime validates the pair and the host
-   * honours it. Absent, with no window either, is the whole screen.
-   */
   captureDisplayId: z.number().optional(),
-  /** The window the session reads, by `CGWindowID`, when the client picked one. */
   captureWindowId: z.number().optional(),
 });
 
-export type WatchStreamSocketData = z.infer<
-  typeof watchStreamSocketDataSchema
-> &
-  RuntimeAudioStreamState;
+export type WatchStreamSocketData = z.infer<typeof watchStreamSocketDataSchema>;
 
 /** Discriminate an untyped socket as a watch stream socket. */
 export function isWatchStreamSocketData(
-  ws: import("bun").ServerWebSocket<unknown>,
-): ws is import("bun").ServerWebSocket<WatchStreamSocketData> {
+  ws: ServerWebSocket<unknown>,
+): ws is ServerWebSocket<WatchStreamSocketData> {
   return watchStreamSocketDataSchema.safeParse(ws.data).success;
 }
 
@@ -142,66 +116,60 @@ export function watchStreamUpstreamParams(
  * way to tell one actor from another. This upgrade is therefore the only place
  * a non-guardian actor can be refused, so it is refused here.
  */
-export function createWatchStreamWebsocketHandler(config: GatewayConfig) {
-  return async function handleUpgrade(
-    req: Request,
-    server: import("bun").Server<unknown>,
-  ): Promise<Response | undefined> {
-    const denied = await authorizeGuardianStream(req, config, log);
-    if (denied) {
-      return denied;
-    }
+export async function handleWatchStreamWs(
+  req: Request,
+  server: Server<unknown>,
+): Promise<Response | undefined> {
+  const config = getConfig();
+  const denied = await authorizeGuardianStream(req, config, log);
+  if (denied) {
+    return denied;
+  }
 
-    const url = new URL(req.url);
-    const mimeType = url.searchParams.get("mimeType");
-    if (!mimeType) {
-      return new Response("Missing required query parameter: mimeType", {
-        status: 400,
-      });
-    }
-
-    const sampleRateRaw = url.searchParams.get("sampleRate");
-    const sampleRate = sampleRateRaw ? parseInt(sampleRateRaw, 10) : undefined;
-    const conversationId =
-      url.searchParams.get("conversationId")?.trim() || undefined;
-    const clientId = url.searchParams.get("clientId")?.trim() || undefined;
-    const captureDisplay = parseCaptureId(url.searchParams, "captureDisplayId");
-    if ("error" in captureDisplay) {
-      return new Response(captureDisplay.error, { status: 400 });
-    }
-    const captureWindow = parseCaptureId(url.searchParams, "captureWindowId");
-    if ("error" in captureWindow) {
-      return new Response(captureWindow.error, { status: 400 });
-    }
-    if (
-      captureDisplay.value !== undefined &&
-      captureWindow.value !== undefined
-    ) {
-      return new Response(
-        "captureDisplayId and captureWindowId are exclusive",
-        { status: 400 },
-      );
-    }
-
-    const upgraded = server.upgrade(req, {
-      data: {
-        wsType: "watch-stream",
-        config,
-        mimeType,
-        sampleRate,
-        conversationId,
-        clientId,
-        captureDisplayId: captureDisplay.value,
-        captureWindowId: captureWindow.value,
-      } satisfies WatchStreamSocketData,
+  const url = new URL(req.url);
+  const mimeType = url.searchParams.get("mimeType");
+  if (!mimeType) {
+    return new Response("Missing required query parameter: mimeType", {
+      status: 400,
     });
+  }
 
-    if (!upgraded) {
-      return new Response("WebSocket upgrade failed", { status: 500 });
-    }
+  const sampleRateRaw = url.searchParams.get("sampleRate");
+  const sampleRate = sampleRateRaw ? parseInt(sampleRateRaw, 10) : undefined;
+  const conversationId =
+    url.searchParams.get("conversationId")?.trim() || undefined;
+  const clientId = url.searchParams.get("clientId")?.trim() || undefined;
+  const captureDisplay = parseCaptureId(url.searchParams, "captureDisplayId");
+  if ("error" in captureDisplay) {
+    return new Response(captureDisplay.error, { status: 400 });
+  }
+  const captureWindow = parseCaptureId(url.searchParams, "captureWindowId");
+  if ("error" in captureWindow) {
+    return new Response(captureWindow.error, { status: 400 });
+  }
+  if (captureDisplay.value !== undefined && captureWindow.value !== undefined) {
+    return new Response("captureDisplayId and captureWindowId are exclusive", {
+      status: 400,
+    });
+  }
 
-    return undefined;
-  };
+  const upgraded = server.upgrade(req, {
+    data: {
+      wsType: "watch-stream",
+      mimeType,
+      sampleRate,
+      conversationId,
+      clientId,
+      captureDisplayId: captureDisplay.value,
+      captureWindowId: captureWindow.value,
+    } satisfies WatchStreamSocketData,
+  });
+
+  if (!upgraded) {
+    return new Response("WebSocket upgrade failed", { status: 500 });
+  }
+
+  return undefined;
 }
 
 /**

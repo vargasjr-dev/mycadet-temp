@@ -18,42 +18,44 @@ import {
 } from "./credential-watcher.js";
 import {
   closeTwilioMediaStream,
-  createTwilioMediaWebsocketHandler,
+  handleTwilioMediaWs,
   isMediaStreamSocketData,
   messageTwilioMediaStream,
   openTwilioMediaWebsocket,
 } from "./http/routes/twilio-media-websocket.js";
 import {
   closeSttStreamWebsocket,
-  createSttStreamWebsocketHandler,
+  handleSttStreamWs,
   isSttStreamSocketData,
   messageSttStreamWebsocket,
   openSttStreamWebsocket,
 } from "./http/routes/stt-stream-websocket.js";
 import {
   closeWatchStreamWebsocket,
-  createWatchStreamWebsocketHandler,
+  handleWatchStreamWs,
   isWatchStreamSocketData,
   messageWatchStreamWebsocket,
   openWatchStreamWebsocket,
 } from "./http/routes/watch-stream-websocket.js";
 import {
   closeDesktopStreamWebsocket,
-  createDesktopStreamWebsocketHandler,
+  handleDesktopStreamWs,
   isDesktopStreamSocketData,
   messageDesktopStreamWebsocket,
   openDesktopStreamWebsocket,
 } from "./http/routes/desktop-stream-websocket.js";
 import {
   closeSpeechRelayWebsocket,
-  createSpeechRelayUpgradeHandler,
+  handleSpeechRelaySttWs,
+  handleSpeechRelaySttV2Ws,
+  handleSpeechRelayTtsWs,
   isSpeechRelaySocketData,
   messageSpeechRelayWebsocket,
   openSpeechRelayWebsocket,
 } from "./http/routes/speech-relay-websocket.js";
 import {
   closeLiveVoiceWebsocket,
-  createLiveVoiceWebsocketHandler,
+  handleLiveVoiceWs,
   isLiveVoiceSocketData,
   messageLiveVoiceWebsocket,
   openLiveVoiceWebsocket,
@@ -62,12 +64,11 @@ import { initTrustRuleCache } from "./risk/trust-rule-cache.js";
 import { initAdmissionPolicyCache } from "./risk/admission-policy-cache.js";
 import {
   closePluginWebhookWebsocket,
-  createPluginWebhookWebsocketHandler,
+  handlePluginWebhookWs,
   isPluginWebhookSocketData,
   messagePluginWebhookWebsocket,
   openPluginWebhookWebsocket,
 } from "./http/routes/plugin-webhook-websocket.js";
-import { resolveCachedPluginIngress } from "./channels/plugin-ingress-approvals.js";
 import {
   reconcilePluginWebhookRoutes,
   watchPluginIngressForWebhookRoutes,
@@ -429,17 +430,6 @@ async function main() {
 
   const isTelegramConfigured = () => telegramReady;
 
-  const handleTwilioMediaWs = createTwilioMediaWebsocketHandler(config);
-  const handlePluginWebhookWs = createPluginWebhookWebsocketHandler({
-    config,
-    resolve: resolveCachedPluginIngress,
-    credentials: credentialCache,
-  });
-  const handleSttStreamWs = createSttStreamWebsocketHandler(config);
-  const handleWatchStreamWs = createWatchStreamWebsocketHandler(config);
-  const handleDesktopStreamWs = createDesktopStreamWebsocketHandler(config);
-  const handleLiveVoiceWs = createLiveVoiceWebsocketHandler(config);
-
   // Assistant-scoped mirrors of the browser stream sockets: the scoped data
   // plane emits /v1/assistants/<id>/<route> — the same verbatim shape every
   // scoped forwarder carries — so the upgrade pre-router admits the scoped
@@ -470,26 +460,6 @@ async function main() {
       upgrade: handleDesktopStreamWs,
     },
   ];
-  const handleSpeechRelaySttWs = createSpeechRelayUpgradeHandler(
-    config,
-    "stt",
-    { credentials: credentialCache },
-  );
-  // Managed STT v2 (Flux). Separate handler rather than a param on v1: the
-  // contract version is the endpoint, and v2 accepts query params v1 must
-  // keep rejecting.
-  const handleSpeechRelaySttV2Ws = createSpeechRelayUpgradeHandler(
-    config,
-    "stt",
-    { credentials: credentialCache },
-    "v2",
-  );
-  const handleSpeechRelayTtsWs = createSpeechRelayUpgradeHandler(
-    config,
-    "tts",
-    { credentials: credentialCache },
-  );
-
   // ── Route table ──
   // One routes array, owned by the routes barrel: every HTTP route is
   // declared in a per-domain ROUTES array and concatenated there, in

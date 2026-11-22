@@ -10,10 +10,7 @@ const tailResult = {
 };
 
 const tailGatewayLogsMock = mock(
-  (
-    _config: GatewayConfig,
-    _params?: Record<string, unknown>,
-  ): typeof tailResult => tailResult,
+  (_params?: Record<string, unknown>): typeof tailResult => tailResult,
 );
 
 mock.module("../http/routes/log-tail.js", () => ({
