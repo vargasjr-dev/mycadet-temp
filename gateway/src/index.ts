@@ -84,7 +84,7 @@ import {
 } from "./cloud-identity.js";
 import { buildSchema } from "./schema.js";
 import { startDiscordGateway } from "./discord/lifecycle.js";
-import { getSlackSocketClient, startSlackGateway } from "./slack/lifecycle.js";
+import { startSlackGateway } from "./slack/lifecycle.js";
 import { checkAuthRateLimit } from "./http/middleware/rate-limit.js";
 import {
   extractBearerToken,
@@ -1151,26 +1151,7 @@ async function main() {
 
   void refreshRouteSchema();
 
-  // ── Sleep/wake detection ──
-  // Detect system sleep/wake transitions and force-reconnect channels
-  // that may have stale connections after the OS suspended the process.
-  const stopSleepWakeDetector = startSleepWakeDetector(() => {
-    log.info("System wake detected — reconnecting channels");
-
-    // Force-reconnect Slack WebSocket (may be half-open after sleep)
-    getSlackSocketClient()?.forceReconnect();
-
-    // Invalidate caches so next read picks up any config changes (e.g. a new tunnel URL)
-    configFileCache.invalidate();
-    credentialCache.invalidate();
-
-    // Re-register Telegram webhook with current ingress URL
-    if (telegramReady) {
-      reconcileTelegramWebhook(telegramCaches).catch((err) => {
-        log.error({ err }, "Failed to reconcile Telegram webhook after wake");
-      });
-    }
-  });
+  const stopSleepWakeDetector = startSleepWakeDetector();
 
   const stopInboundEventExpirationCleanup =
     startInboundEventExpirationCleanup();
@@ -1184,7 +1165,6 @@ async function main() {
     // shutdown. The lifecycle thunks (sleep/wake, discord, slack, the dedup
     // sweep) are already module closures, so they ride bare.
     const shutdownTasks: (() => Promise<void> | void)[] = [
-      stopSleepWakeDetector,
       () => credentialWatcher.stop(),
       () => configFileWatcher.stop(),
       () => tunnelClient.stop(),
@@ -1194,6 +1174,7 @@ async function main() {
       () => telegramDedupCache.stopCleanup(),
       () => whatsappDedupCache.stopCleanup(),
       () => emailDedupCache.stopCleanup(),
+      stopSleepWakeDetector,
       stopInboundEventExpirationCleanup,
     ];
 
