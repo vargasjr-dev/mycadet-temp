@@ -18,7 +18,6 @@
     "@mycadet/electron-desktop",
     "@mycadet/ipc-contract",
     "@mycadet/local-mode",
-    "@mycadet/native-sidecar",
     "@mycadet/shared",
     "electron-log",
     "electron-store",

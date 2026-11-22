@@ -16,10 +16,10 @@
  * who never invoke computer use pay nothing.
  */
 
-import log from "@mycadet/electron-desktop/app-logger";
-import { NativeSidecarClient as MacHelperClient } from "@mycadet/electron-desktop/sidecar-supervisor";
+import log from "../app-logger";
+import { NativeSidecarClient as MacHelperClient } from "./supervisor";
 
-import { getSharedHelperPath } from "@mycadet/electron-desktop/native-helper-client";
+import { getSharedHelperPath } from "../native-helper-client";
 
 // Computer-use / app-control actions run an accessibility-tree walk, a settle
 // delay, and a screen capture before responding — well past the default 2s

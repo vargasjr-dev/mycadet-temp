@@ -13,14 +13,14 @@ import log from "@mycadet/electron-desktop/app-logger";
 
 import { installDock } from "./dock";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
-import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
+import { shutdownSharedCuHelper } from "@mycadet/electron-desktop/shared-cu-helper";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
-import { showCompanionCoachmarks } from "./companion-window";
+import { showCompanionCoachmarks } from "@mycadet/electron-desktop/companion-window";
 import {
   replayCompanionIntro,
   setCompanionSurfaceSize,
   setCompanionSurfaceVisible,
-} from "./companion-window";
+} from "@mycadet/electron-desktop/companion-window";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -40,7 +40,7 @@ import { permissionsShell } from "./permissions-strategy";
 import {
   installCompanionWindow,
   syncCompanionSurface,
-} from "./companion-window";
+} from "@mycadet/electron-desktop/companion-window";
 import {
   readCompanionHidden,
   readCompanionSize,

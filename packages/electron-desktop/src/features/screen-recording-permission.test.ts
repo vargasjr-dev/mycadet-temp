@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { JsonRpcHelperError } from "@mycadet/electron-desktop/sidecar-supervisor";
+import { JsonRpcHelperError } from "../sidecar/supervisor";
 
 let helperStatus = "denied";
 let helperReads = 0;
 let helperShutdowns = 0;
 
-mock.module("@mycadet/electron-desktop/helper-permissions", () => ({
+mock.module("./helper-permissions", () => ({
   queryFreshHelperPermission: async (kind: string) => {
     expect(kind).toBe("screen");
     helperReads += 1;
@@ -14,13 +14,13 @@ mock.module("@mycadet/electron-desktop/helper-permissions", () => ({
   },
 }));
 
-mock.module("./sidecar/shared-cu-helper", () => ({
+mock.module("../sidecar/shared-cu-helper", () => ({
   shutdownSharedCuHelper: () => {
     helperShutdowns += 1;
   },
 }));
 
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
+mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
   default: { info: () => undefined, warn: () => undefined },
 }));

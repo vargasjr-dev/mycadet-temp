@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../test-setup";
 import { EventEmitter } from "node:events";
 
 import {
@@ -28,8 +28,8 @@ import {
   dockedAvatarCentre,
   geometryFor,
   placeCanvas,
-} from "@mycadet/electron-desktop/companion-geometry";
-import { companionSizeSubmenus } from "@mycadet/electron-desktop";
+} from "./companion-geometry";
+import { companionSizeSubmenus } from "../companion-menu";
 
 // The module under test reaches `main-window.ts` to hand Talk to the renderer
 // that owns the live-voice session, and that chain loads `electron-store`, a
@@ -89,7 +89,7 @@ let companionOpen = true;
 let companionHidden = false;
 
 /** Every channel main has sent the app's window, most recent last. */
-const mainSends: { channel: string; payload: any }[] = [];
+const mainSends: { channel: string; payload: unknown }[] = [];
 
 /**
  * The app's window, as far as this module reads it: whether it exists and
@@ -188,7 +188,7 @@ const surface = {
 // `any` at the erased ipc seams (test files relax no-explicit-any): the
 // invoker hands schema-parsed args to handlers registered with their own
 // narrow types, and callers read a channel's reply at the shape they own.
-type Invoker = (args: unknown[], sender?: any) => any;
+type Invoker = (args: unknown[], sender?: unknown) => unknown;
 
 /**
  * The renderer behind IPC sends, including the lifecycle a running call owns
@@ -486,12 +486,17 @@ mock.module("./screen-recording-permission", () => ({
   readScreenRecordingPermission: async () => "denied",
 }));
 
-mock.module("./permissions-service", () => ({
+mock.module("./permissions", () => ({
   onPermissionPresentation: (listener: () => void) => {
     permissionPresentationListeners.push(listener);
     return () => {};
   },
-  getPermissionsService: () => ({}),
+  getPermissionsService: () => ({
+    openSettings: async (kind: string) => {
+      settingsOpened.push(`pane:${kind}`);
+    },
+  }),
+  preparePermissionPresentation: () => {},
   openPermissionSettingsPane: async (kind: string) => {
     settingsOpened.push(`pane:${kind}`);
   },
@@ -499,7 +504,7 @@ mock.module("./permissions-service", () => ({
 
 let guideError: Error | null = null;
 
-mock.module("./companion-permission-guide", () => ({
+mock.module("./permission-guide", () => ({
   beginPermissionGuide: async (_service: unknown, kind: string) => {
     if (guideError) {
       throw guideError;
@@ -508,7 +513,7 @@ mock.module("./companion-permission-guide", () => ({
   },
 }));
 
-mock.module("@mycadet/electron-desktop/ipc", () => ({
+mock.module("../ipc", () => ({
   on: register(listeners),
   handle: register(invocable),
 }));
@@ -516,7 +521,7 @@ mock.module("@mycadet/electron-desktop/ipc", () => ({
 /** Main's show/hide/destroy listeners, so a case can fire one. */
 const visibilityListeners: (() => void)[] = [];
 
-mock.module("./main-window", () => ({
+mock.module("../main-window", () => ({
   // Its existence decides whether a press is dispatched straight into a
   // renderer or has to build one first, and whether a visibility change is the
   // window being destroyed; whether it is showing decides, with the app's
@@ -684,7 +689,7 @@ const openGlow = (options: {
 const zonesWindow = (): GlowWindow | null =>
   others.get("companion-dock-zones") ?? null;
 
-mock.module("@mycadet/electron-desktop/floating-window", () => ({
+mock.module("../floating-window", () => ({
   listFloatingWindows: () => undefined,
   repositionFloatingWindow: () => undefined,
   configureFloatingWindows: () => undefined,
@@ -711,7 +716,7 @@ mock.module("@mycadet/electron-desktop/floating-window", () => ({
       : (others.get(kind) ?? null),
 }));
 
-mock.module("@mycadet/electron-desktop/avatar", () => ({
+mock.module("../avatar", () => ({
   setAvatar: () => undefined,
   setCharacter: () => undefined,
   __resetForTesting: () => undefined,
@@ -733,7 +738,7 @@ const flags: Record<string, boolean> = { "companion-surface": true };
 /** Main's `featureFlags` listeners, so a case can fire a targeting change. */
 const flagListeners: (() => void)[] = [];
 
-mock.module("@mycadet/electron-desktop/settings", () => ({
+mock.module("../settings", () => ({
   createAppSettingsStore: () => undefined,
   writeSetting: () => undefined,
   readSetting: () => flags,
@@ -769,7 +774,7 @@ let storedDock: CompanionDock = "bottom";
  */
 let introSeen = Number.MAX_SAFE_INTEGER;
 
-mock.module("@mycadet/electron-desktop/window-state", () => ({
+mock.module("../window-state", () => ({
   readOnboardingActive: () => false,
   onCompanionHiddenChange: () => () => undefined,
   readTitleBarOverlayTheme: () => undefined,
@@ -832,13 +837,13 @@ const {
   __resetFrameScrollWatchForTesting,
   frameScrollEnded,
   provideFrameScrollWatch,
-} = await import("@mycadet/electron-desktop/frame-scroll-watch");
+} = await import("./frame-scroll-watch");
 
 const {
   __resetCoachmarkPressWatchForTesting,
   coachmarkPressed,
   provideCoachmarkPressWatch,
-} = await import("@mycadet/electron-desktop/coachmark-press-watch");
+} = await import("./coachmark-press-watch");
 
 installCompanionWindow();
 
@@ -965,7 +970,7 @@ const takeReports = (): CompanionIntroReport[] => {
       "No handler registered for cadet:companion:takeIntroReports",
     );
   }
-  return pull([]);
+  return pull([]) as CompanionIntroReport[];
 };
 
 /** The state a renderer mounting on the surface would pull. */
@@ -974,7 +979,7 @@ const state = (): CompanionSurfaceState => {
   if (!pull) {
     throw new Error("No handler registered for cadet:companion:getState");
   }
-  return pull([]);
+  return pull([]) as CompanionSurfaceState;
 };
 
 /**
@@ -986,7 +991,7 @@ const introStage = (): boolean => {
   if (!pull) {
     throw new Error("No handler registered for cadet:companion:getIntroStage");
   }
-  return pull([]);
+  return pull([]) as boolean;
 };
 
 /** Whether the app should announce the due introduction before it begins. */
@@ -997,7 +1002,7 @@ const introAnnouncement = (): boolean => {
       "No handler registered for cadet:companion:getIntroAnnouncement",
     );
   }
-  return pull([]);
+  return pull([]) as boolean;
 };
 
 /** Accept the app announcement and begin the surface's introduction. */
@@ -3868,7 +3873,7 @@ describe("the watch flag when the app's window goes away", () => {
 
 // The identity main holds, which is what opens the surface after a sign-in.
 // Imported after the mocks for the same reason the module under test is.
-const { setName } = await import("@mycadet/electron-desktop");
+const { setName } = await import("../identity");
 
 describe("the surface while the app is in front", () => {
   test("steps off the screen when the app comes forward", () => {
@@ -5654,7 +5659,7 @@ describe("the chord the introduction asks for", () => {
   const asked = (): (string | null)[] =>
     mainSends
       .filter((sent) => sent.channel === "cadet:companion:introChord")
-      .map((sent) => sent.payload);
+      .map((sent) => sent.payload as string | null);
 
   /** What a window mounting mid-run pulls, which is the beat rather than the push. */
   const introChord = (): string | null => {
@@ -5664,7 +5669,7 @@ describe("the chord the introduction asks for", () => {
         "No handler registered for cadet:companion:getIntroChord",
       );
     }
-    return pull([]);
+    return pull([]) as string | null;
   };
 
   /** An install owed a run, with the surface reaching the screen. */
@@ -5771,7 +5776,7 @@ describe("the introduction's reports", () => {
   const reports = (): CompanionIntroReport[] =>
     mainSends
       .filter((sent) => sent.channel === "cadet:companion:introReport")
-      .map((sent) => sent.payload);
+      .map((sent) => sent.payload as CompanionIntroReport);
 
   /**
    * An install owed a run, with the surface reaching the screen. The surface is

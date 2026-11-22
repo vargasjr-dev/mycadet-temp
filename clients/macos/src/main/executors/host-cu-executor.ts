@@ -27,7 +27,7 @@ import {
 import { z } from "zod";
 
 import log from "@mycadet/electron-desktop/app-logger";
-import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
+import { getSharedCuHelper } from "@mycadet/electron-desktop/shared-cu-helper";
 
 /** The one tool answered here rather than by the helper. */
 export const POINT_AT_TOOL = "computer_use_point_at";

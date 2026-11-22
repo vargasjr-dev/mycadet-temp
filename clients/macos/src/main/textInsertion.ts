@@ -2,7 +2,7 @@ import { BrowserWindow, clipboard, type Data } from "electron";
 
 import type { TextInsertionResult } from "@mycadet/ipc-contract";
 
-import { runAppleScript } from "./appleScriptExecutor";
+import { runAppleScript } from "@mycadet/electron-desktop/apple-script-executor";
 import {
   type FrontAppFocus,
   postFrontAppShortcut,

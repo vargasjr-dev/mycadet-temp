@@ -12,10 +12,10 @@
 import {
   queryFreshHelperPermission,
   type HelperPermissionStatus,
-} from "@mycadet/electron-desktop/helper-permissions";
-import log from "@mycadet/electron-desktop/app-logger";
-import { JsonRpcHelperError } from "@mycadet/electron-desktop/sidecar-supervisor";
-import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
+} from "./helper-permissions";
+import log from "../app-logger";
+import { JsonRpcHelperError } from "../sidecar/supervisor";
+import { shutdownSharedCuHelper } from "../sidecar/shared-cu-helper";
 
 /**
  * The code the helper answers a capture with when the grant is missing, as

@@ -15,7 +15,7 @@ import {
 } from "@mycadet/electron-desktop/permissions";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
-import { runAppleScript } from "./appleScriptExecutor";
+import { runAppleScript } from "@mycadet/electron-desktop/apple-script-executor";
 import {
   queryFreshHelperPermission,
   queryHelperPermission,
@@ -29,7 +29,7 @@ import {
   requestNotifierAuthorization,
   type NotifierAuthorizationResult,
 } from "./notifier";
-import { readScreenRecordingPermission } from "./screen-recording-permission";
+import { readScreenRecordingPermission } from "@mycadet/electron-desktop/screen-recording-permission";
 import { typeIntoFrontApp, undoInFrontApp } from "./textInsertion";
 
 const SECURITY_PANE_URL =

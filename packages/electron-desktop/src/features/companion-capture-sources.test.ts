@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../test-setup";
 
 import type {
   CaptureSourceDeps,
@@ -21,11 +21,11 @@ mock.module("electron", () =>
     screen: { getAllDisplays: () => [], getPrimaryDisplay: () => ({ id: 0 }) },
   }),
 );
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
+mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
   default: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },
 }));
-mock.module("./appleScriptExecutor", () => ({
+mock.module("../apple-script-executor", () => ({
   runAppleScript: async () => "",
 }));
 /**
@@ -37,7 +37,7 @@ let helperCall: (
   method: string,
   params?: unknown,
 ) => Promise<unknown> = async () => ({ windows: [] });
-mock.module("./sidecar/shared-cu-helper", () => ({
+mock.module("../sidecar/shared-cu-helper", () => ({
   getSharedCuHelper: () => ({
     call: (method: string, params?: unknown) => helperCall(method, params),
   }),

@@ -36,10 +36,10 @@ import type {
   WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
 
-import { runAppleScript } from "./appleScriptExecutor";
-import log from "@mycadet/electron-desktop/app-logger";
+import { runAppleScript } from "../apple-script-executor";
+import log from "../app-logger";
 import type { HelperShareTarget } from "./share-targets";
-import { getSharedCuHelper } from "./sidecar/shared-cu-helper";
+import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 
 /** Chrome, as `NSRunningApplication` names it and as AppleScript addresses it. */
 export const CHROME_BUNDLE_ID = "com.google.Chrome";

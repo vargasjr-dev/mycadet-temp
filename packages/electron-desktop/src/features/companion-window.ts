@@ -67,7 +67,7 @@ import {
   type VoiceActivityState,
   type WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
-import { companionSizeSubmenus } from "@mycadet/electron-desktop";
+import { companionSizeSubmenus } from "../companion-menu";
 
 import {
   clearCompanionIntroSeen,
@@ -79,22 +79,16 @@ import {
   writeCompanionIntroSeen,
   writeCompanionSize,
   writeCompanionHidden,
-} from "@mycadet/electron-desktop/window-state";
+} from "../window-state";
 
 import {
   getAccentHex,
   getAvatarPng,
   getCharacter,
   onAvatarChange,
-} from "@mycadet/electron-desktop/avatar";
-import {
-  getName as getAssistantName,
-  onNameChange,
-} from "@mycadet/electron-desktop";
-import {
-  createFloatingWindow,
-  getFloatingWindow,
-} from "@mycadet/electron-desktop/floating-window";
+} from "../avatar";
+import { getName as getAssistantName, onNameChange } from "../identity";
+import { createFloatingWindow, getFloatingWindow } from "../floating-window";
 import {
   captureSourceThumbnail,
   captureTargetFrame,
@@ -108,9 +102,9 @@ import {
   unwatchCoachmarkPress,
   watchCoachmarkPress,
   type CoachmarkPressRect,
-} from "@mycadet/electron-desktop/coachmark-press-watch";
-import { beginPermissionGuide } from "@mycadet/electron-desktop";
-import { setPointerOnCompanion } from "@mycadet/electron-desktop/companion-pointer";
+} from "./coachmark-press-watch";
+import { beginPermissionGuide } from "./permission-guide";
+import { setPointerOnCompanion } from "./companion-pointer";
 import {
   closeCompanionPopover,
   POPOVER_KIND,
@@ -119,11 +113,8 @@ import {
   type CompanionPopoverAnchor,
   type PopoverSide,
 } from "./companion-popover-window";
-import {
-  unwatchFrameScroll,
-  watchFrameScroll,
-} from "@mycadet/electron-desktop/frame-scroll-watch";
-import { handle, on } from "@mycadet/electron-desktop/ipc";
+import { unwatchFrameScroll, watchFrameScroll } from "./frame-scroll-watch";
+import { handle, on } from "../ipc";
 import {
   avatarOffsetFor,
   cardGrowthFor,
@@ -134,23 +125,25 @@ import {
   nearestDock,
   placeCanvas,
   type CompanionGeometry,
-} from "@mycadet/electron-desktop/companion-geometry";
-import log from "@mycadet/electron-desktop/app-logger";
+} from "./companion-geometry";
+import log from "../app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
-import { getPermissionsService } from "@mycadet/electron-desktop";
-import { onPermissionPresentation } from "@mycadet/electron-desktop/permissions";
-import { openPermissionSettingsPane } from "./permissions-strategy";
+import { getPermissionsService } from "./permissions";
+import {
+  onPermissionPresentation,
+  preparePermissionPresentation,
+} from "./permissions";
 import {
   answerScreenRecordingRefusal,
   isScreenRecordingRefusal,
   screenRecordingGranted,
 } from "./screen-recording-permission";
 import {
-  currentMainWindow,
+  current as currentMainWindow,
   dispatchToMain,
-  ensureMainWindowVisible,
+  ensureVisible as ensureMainWindowVisible,
   onMainWindowVisibilityChange,
-} from "@mycadet/electron-desktop";
+} from "../main-window";
 
 /**
 /**
@@ -3189,7 +3182,8 @@ const askForScreenRecording = async (): Promise<void> => {
   } catch (err) {
     log.warn("[companion] could not show the Screen Recording guide:", err);
     try {
-      await openPermissionSettingsPane("screen");
+      preparePermissionPresentation();
+      await getPermissionsService()?.openSettings("screen");
     } catch (paneErr) {
       log.warn(
         "[companion] could not open Screen Recording settings:",
