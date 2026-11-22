@@ -2,7 +2,6 @@ import {
   consoleLifecycleReporter,
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
-import { hatchNameConflict } from "../../operations/lookup";
 import type { HatchAssistantResult } from "../../operations/types";
 import { saveLockfileAssistant } from "../../lockfile";
 import type { LocalAssistant } from "../../lockfile-contract";
@@ -105,11 +104,6 @@ export async function hatchLocal(params: {
   let entry: LocalAssistant;
   try {
     const hatched = await withLocalHatchLock(async () => {
-      const conflict = hatchNameConflict(instanceName);
-      if (conflict) {
-        throw new HatchConflict(conflict);
-      }
-
       const fresh: LocalAssistant = {
         assistantId: instanceName,
         cloud: "local",
@@ -141,14 +135,6 @@ export async function hatchLocal(params: {
     });
     entry = hatched.entry;
   } catch (error) {
-    if (error instanceof HatchConflict) {
-      return {
-        ok: false,
-        status: 409,
-        error: error.message,
-        assistantId: instanceName,
-      };
-    }
     return {
       ok: false,
       status: 500,
@@ -254,5 +240,3 @@ export async function hatchLocal(params: {
 
   return { ok: true, assistant: entry, ready: true, cookies };
 }
-
-export class HatchConflict extends Error {}

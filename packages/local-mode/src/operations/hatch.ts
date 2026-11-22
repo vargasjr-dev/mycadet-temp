@@ -84,8 +84,8 @@ async function hatchRemote(
   // No two assistants may share a name — ids key the lockfile, the token
   // files, and the docker resources. Refused here, before any leg runs, so
   // every remote answers 409 without building or starting anything. (The
-  // local leg re-asserts this inside withLocalHatchLock — the only
-  // serialized point, cross-process — reusing this same helper.)
+  // local leg's withLocalHatchLock serializes cross-process starts for port
+  // allocation; the name check itself lives only here.)
   if (params.name) {
     const conflict = hatchNameConflict(params.name);
     if (conflict) {
