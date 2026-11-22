@@ -275,6 +275,7 @@ mock.module("electron", () =>
     app: {
       getVersion: () => "0.0.0",
       getName: () => "Cadet",
+      getAppPath: () => "/repo/clients/macos",
       isPackaged: false,
       on: (event: string, listener: (...args: unknown[]) => void) => {
         appListeners.push({ event, listener });
@@ -482,6 +483,10 @@ mock.module("./screen-recording-permission", () => ({
   answerScreenRecordingRefusal: async (ask: () => Promise<unknown>) => {
     await ask();
   },
+  // The permissions strategy reads the helper's own grant through this
+  // module; these tests never walk that far, but the mock replaces the
+  // module for every importer in the graph.
+  readScreenRecordingPermission: async () => "denied",
 }));
 
 mock.module("./permissions-service", () => ({
@@ -838,13 +843,13 @@ const {
   __resetFrameScrollWatchForTesting,
   frameScrollEnded,
   provideFrameScrollWatch,
-} = await import("./frame-scroll-watch");
+} = await import("@mycadet/electron-desktop/frame-scroll-watch");
 
 const {
   __resetCoachmarkPressWatchForTesting,
   coachmarkPressed,
   provideCoachmarkPressWatch,
-} = await import("./coachmark-press-watch");
+} = await import("@mycadet/electron-desktop/coachmark-press-watch");
 
 installCompanionWindow();
 

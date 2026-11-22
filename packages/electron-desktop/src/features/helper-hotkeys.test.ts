@@ -3,11 +3,6 @@ import { EventEmitter } from "node:events";
 
 import { electronMock } from "../../test-setup";
 import { FakeChild } from "../test-helpers";
-import type {
-  HelperHotkeyPressRect,
-  HelperHotkeysShellInputs,
-} from "./helper-hotkeys";
-
 class FakeHotkeyChild extends FakeChild {
   stdin = {
     writes: new Array<string>(),
@@ -174,76 +169,19 @@ const {
   postFrontAppShortcut,
 } = await import("./helper-hotkeys");
 
-/**
- * The shell's watch state, in fixture form: the state the real watch modules
- * keep (wanted-or-not, the rectangles) with the sends they are handed at
- * install.
- */
-const makeScrollWatch = () => {
-  let send: ((enable: boolean) => void) | null = null;
-  let onEnded: (() => void) | null = null;
-  let watched = false;
-  return {
-    provide: (s: (enable: boolean) => void) => {
-      send = s;
-    },
-    watch: (cb: () => void) => {
-      onEnded = cb;
-      watched = true;
-      send?.(true);
-    },
-    ended: () => onEnded?.(),
-    unwatch: () => {
-      watched = false;
-      send?.(false);
-    },
-    isWatched: () => watched,
-    reset: () => {
-      send = null;
-      onEnded = null;
-      watched = false;
-    },
-  };
-};
+const {
+  __resetFrameScrollWatchForTesting,
+  watchFrameScroll,
+  unwatchFrameScroll,
+} = await import("./frame-scroll-watch");
 
-const makePressWatch = () => {
-  let send: ((rects: readonly HelperHotkeyPressRect[]) => void) | null = null;
-  let onPressed: ((index: number) => void) | null = null;
-  let rects: readonly HelperHotkeyPressRect[] | null = null;
-  return {
-    provide: (s: (rects: readonly HelperHotkeyPressRect[]) => void) => {
-      send = s;
-    },
-    watch: (
-      next: readonly HelperHotkeyPressRect[],
-      cb: (index: number) => void,
-    ) => {
-      rects = next;
-      onPressed = cb;
-      send?.(next);
-    },
-    pressed: (index: number) => {
-      // One-shot on the shell's side too: the first report consumes it.
-      const cb = onPressed;
-      onPressed = null;
-      cb?.(index);
-    },
-    unwatch: () => {
-      rects = null;
-      send?.([]);
-    },
-    watchedRects: () => rects,
-    reset: () => {
-      send = null;
-      onPressed = null;
-      rects = null;
-    },
-  };
-};
+const {
+  __resetCoachmarkPressWatchForTesting,
+  watchCoachmarkPress,
+  unwatchCoachmarkPress,
+} = await import("./coachmark-press-watch");
 
-let scrollWatch = makeScrollWatch();
-let pressWatch = makePressWatch();
-let pointerOnCompanion = false;
+const { setPointerOnCompanion } = await import("./companion-pointer");
 
 /**
  * The composition the mac shell runs: the shared helper client supervises
@@ -252,18 +190,7 @@ let pointerOnCompanion = false;
  */
 const installHelperBridge = (): void => {
   installDictationHelper();
-  const inputs: HelperHotkeysShellInputs = {
-    watches: {
-      provideFrameScrollWatch: scrollWatch.provide,
-      frameScrollEnded: () => scrollWatch.ended(),
-      isFrameScrollWatched: () => scrollWatch.isWatched(),
-      provideCoachmarkPressWatch: pressWatch.provide,
-      coachmarkPressed: (index: number) => pressWatch.pressed(index),
-      watchedCoachmarkPress: () => pressWatch.watchedRects(),
-    },
-    isPointerOnCompanion: () => pointerOnCompanion,
-  };
-  installHelperHotkeys(inputs);
+  installHelperHotkeys();
 };
 
 const CTRL_OPTION = { kind: "modifierOnly", modifiers: ["control", "option"] };
@@ -389,15 +316,15 @@ beforeEach(() => {
   supervisorOptions = {};
   nextWebContentsId = 1;
   defaultSender = makeWebContents();
-  pointerOnCompanion = false;
+  __resetFrameScrollWatchForTesting();
+  __resetCoachmarkPressWatchForTesting();
+  setPointerOnCompanion(false);
 });
 
 afterEach(() => {
   __resetForTesting();
   resetDictation();
   resetSharedHelperClient();
-  scrollWatch = makeScrollWatch();
-  pressWatch = makePressWatch();
 });
 
 describe("installHotkeyHelper", () => {
@@ -889,7 +816,7 @@ describe("installHotkeyHelper", () => {
   test("keeps a press on the companion out of the input activity it forwards", async () => {
     installHelperBridge();
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
-    pointerOnCompanion = true;
+    setPointerOnCompanion(true);
 
     lastChild?.stdout.emit(
       "data",
@@ -899,7 +826,7 @@ describe("installHotkeyHelper", () => {
       "cadet:helper:input:activity",
     );
 
-    pointerOnCompanion = false;
+    setPointerOnCompanion(false);
     lastChild?.stdout.emit(
       "data",
       Buffer.from('{"jsonrpc":"2.0","method":"input.activity"}\n'),
@@ -944,7 +871,7 @@ describe("installHotkeyHelper", () => {
     expect(await registerHold()).toEqual({ ok: true, enabled: true });
 
     let ended = 0;
-    scrollWatch.watch(() => {
+    watchFrameScroll(() => {
       ended += 1;
     });
     await settle();
@@ -964,7 +891,7 @@ describe("installHotkeyHelper", () => {
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"method":"input.setScrollWatch"');
 
-    scrollWatch.unwatch();
+    unwatchFrameScroll();
     await settle();
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"enable":false');
@@ -982,7 +909,7 @@ describe("installHotkeyHelper", () => {
 
     const pressed: number[] = [];
     const rect = { x: 120, y: 80, width: 60, height: 20 };
-    pressWatch.watch([rect], (index) => {
+    watchCoachmarkPress([rect], (index) => {
       pressed.push(index);
     });
     await settle();
@@ -1014,8 +941,8 @@ describe("installHotkeyHelper", () => {
     );
     expect(pressed).toEqual([0]);
 
-    pressWatch.watch([rect], () => {});
-    pressWatch.unwatch();
+    watchCoachmarkPress([rect], () => {});
+    unwatchCoachmarkPress();
     await settle();
     writes = lastChild?.stdin.writes.join("") ?? "";
     expect(writes).toContain('"rects":[]');

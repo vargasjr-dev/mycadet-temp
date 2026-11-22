@@ -781,8 +781,8 @@ let unsubscribeState: (() => void) | null = null;
  * Install the helper's hotkey family: the voice key's hold and chords, the
  * front-application reads the words ride, and the input watches. The
  * bindings, owners, and restores are the same over any helper that speaks
- * the protocol; the shell contributes only its watch state and its
- * companion check.
+ * the protocol; the watch state and the companion check are this feature's
+ * own modules beside it.
  */
 export const install = (): void => {
   if (installed) return;

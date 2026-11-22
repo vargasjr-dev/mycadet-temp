@@ -62,9 +62,7 @@ import {
   type PermissionsShellInputs,
 } from "./features/permissions";
 import { install as installDictation } from "./features/dictation";
-import {
-  install as installHelperHotkeys,
-} from "./features/helper-hotkeys";
+import { install as installHelperHotkeys } from "./features/helper-hotkeys";
 import {
   installPermissionGuide,
   type PermissionGuideInputs,

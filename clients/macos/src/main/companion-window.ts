@@ -115,9 +115,9 @@ import {
   unwatchCoachmarkPress,
   watchCoachmarkPress,
   type CoachmarkPressRect,
-} from "./coachmark-press-watch";
+} from "@mycadet/electron-desktop/coachmark-press-watch";
 import { beginPermissionGuide } from "@mycadet/electron-desktop";
-import { setPointerOnCompanion } from "./companion-pointer";
+import { setPointerOnCompanion } from "@mycadet/electron-desktop/companion-pointer";
 import {
   closeCompanionPopover,
   POPOVER_KIND,
@@ -126,7 +126,10 @@ import {
   type CompanionPopoverAnchor,
   type PopoverSide,
 } from "./companion-popover-window";
-import { unwatchFrameScroll, watchFrameScroll } from "./frame-scroll-watch";
+import {
+  unwatchFrameScroll,
+  watchFrameScroll,
+} from "@mycadet/electron-desktop/frame-scroll-watch";
 import { handle, on } from "@mycadet/electron-desktop/ipc";
 import log from "@mycadet/electron-desktop/app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
