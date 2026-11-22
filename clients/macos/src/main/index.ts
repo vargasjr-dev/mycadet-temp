@@ -12,14 +12,7 @@ import log from "@mycadet/electron-desktop/app-logger";
 
 import { installDock } from "./dock";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
-import { shutdownSharedCuHelper } from "@mycadet/electron-desktop/shared-cu-helper";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
-import { showCompanionCoachmarks } from "@mycadet/electron-desktop/companion-window";
-import {
-  replayCompanionIntro,
-  setCompanionSurfaceSize,
-  setCompanionSurfaceVisible,
-} from "@mycadet/electron-desktop/companion-window";
 
 import {
   promptToRelocateIfStranded,
@@ -37,10 +30,6 @@ import {
 } from "./notifier";
 import { permissionGuide } from "./permission-guide-values";
 import { permissionsShell } from "./permissions-strategy";
-import {
-  readCompanionHidden,
-  readCompanionSize,
-} from "@mycadet/electron-desktop/window-state";
 
 const isDev = !app.isPackaged;
 
@@ -69,24 +58,7 @@ startApp({
   titleBarMode: "hidden",
   hostProxy: {
     supports: { windowCapture: true, sequence: true, coachmarks: true },
-    hostCu: {
-      executor: createHostCuExecutor({
-        showCoachmarks: showCompanionCoachmarks,
-      }),
-      teardown: shutdownSharedCuHelper,
-    },
-  },
-  tray: {
-    companion: {
-      // Every build of this shell has the companion surface; the tray
-      // preference is the only thing that turns it off.
-      supported: () => true,
-      hidden: readCompanionHidden,
-      size: readCompanionSize,
-      setVisible: setCompanionSurfaceVisible,
-      setSize: setCompanionSurfaceSize,
-      replayIntro: replayCompanionIntro,
-    },
+    hostCu: { executor: createHostCuExecutor() },
   },
   share: { present: shareMenuPresenter() },
   permissions: permissionsShell,

@@ -24,7 +24,7 @@ mock.module("../window-state", () => ({
   readCompanionCallDock: () => undefined,
   readCompanionHidden: () => false,
   readCompanionIntroSeenVersion: () => undefined,
-  readCompanionSize: () => undefined,
+  readCompanionSize: () => "small",
   readTitleBarOverlayTheme: () => undefined,
   restoreBounds: () => undefined,
   track: () => undefined,
@@ -71,8 +71,11 @@ mock.module("../taskbar", () => ({
 }));
 mock.module("../main-window", () => ({
   current: () => null,
+  dispatchToMain: () => undefined,
   ensureVisible: () => undefined,
   toggleVisibility: () => undefined,
+  // The companion's surface wiring rides the tray's graph now.
+  onMainWindowVisibilityChange: () => () => {},
 }));
 
 const { install } = await import("./tray");
@@ -90,16 +93,8 @@ test("exposes menu accelerators and themed icons with no shell input", () => {
   expect(trayRuntime?.icon("settings")).toBe(themedIcon);
 });
 
-test("the shared icon and label answer for every shell; only companion varies", () => {
-  install({
-    companion: {
-      supported: () => true,
-      hidden: () => false,
-      size: () => "small",
-      setVisible: () => undefined,
-      setSize: () => undefined,
-    },
-  });
+test("every desktop has the companion surface; the rows answer from the package", () => {
+  install();
 
   expect(trayRuntime?.icon("settings")).toBe(themedIcon);
   expect(trayRuntime?.companionSupported()).toBe(true);

@@ -11,7 +11,16 @@ import {
   installTray,
   type TrayMenuIcon,
 } from "../tray-model";
-import { readOnboardingActive } from "../window-state";
+import {
+  readCompanionHidden,
+  readCompanionSize,
+  readOnboardingActive,
+} from "../window-state";
+import {
+  replayCompanionIntro,
+  setCompanionSurfaceSize,
+  setCompanionSurfaceVisible,
+} from "./companion-window";
 import { installTaskbar } from "../taskbar";
 import {
   MENU_ICON_CIRCLECHECK,
@@ -23,12 +32,7 @@ import {
   MENU_ICON_SETTINGS,
 } from "../assets/menu-icons";
 import { menuIcon } from "../menu-icon";
-import {
-  DEFAULT_COMPANION_SIZE,
-  type CadetCommand,
-  type CompanionSize,
-  type CompanionSizeAxis,
-} from "@mycadet/ipc-contract";
+import { type CadetCommand } from "@mycadet/ipc-contract";
 
 const ICONS: Record<TrayMenuIcon, () => NativeImage> = {
   check: menuIcon(MENU_ICON_CIRCLECHECK),
@@ -74,34 +78,24 @@ const dispatch = (command: CadetCommand): void => {
   }
 };
 
-/** The tray surfaces only the shell has. Absent fields take shared answers. */
-export interface ShellTrayInputs {
-  /** The shell's companion-surface wiring. Absent, the surface doesn't exist. */
-  companion?: {
-    supported: () => boolean;
-    hidden: () => boolean;
-    size: (axis: CompanionSizeAxis) => CompanionSize;
-    setVisible: (visible: boolean) => void;
-    setSize: (axis: CompanionSizeAxis, size: CompanionSize) => void;
-    replayIntro?: () => void;
-  };
-}
-
 /**
  * The tray installs on every desktop. One model, assembled here: the shared
- * answers (accelerator, dispatch, onboarding, the component gallery) with
- * the shell's surfaces passed in where only it has them. The taskbar-button
- * surface rides along on every desktop — the overlay icon no-ops where the
- * OS has no taskbar buttons.
+ * answers (accelerator, dispatch, onboarding, the component gallery) with the
+ * package's own companion answers — every desktop has the surface, and the
+ * hidden preference is what turns it off. The taskbar-button surface rides
+ * along on every desktop — the overlay icon no-ops where the OS has no
+ * taskbar buttons.
  */
-export const install = (tray?: ShellTrayInputs): void => {
+export const install = (): void => {
   const icon = getTrayIcon();
   configureStatusIconFallback(icon.isEmpty() ? null : icon);
   configureTrayModel({
     accelerator: acceleratorOption,
-    companionSupported: tray?.companion?.supported ?? (() => false),
-    companionHidden: tray?.companion?.hidden ?? (() => true),
-    companionSize: tray?.companion?.size ?? (() => DEFAULT_COMPANION_SIZE),
+    // Every desktop has the companion surface, so the rows answer from the
+    // package's own modules — there is no per-shell companion input.
+    companionSupported: () => true,
+    companionHidden: readCompanionHidden,
+    companionSize: readCompanionSize,
     dispatch,
     icon: (menu) => ICONS[menu](),
     onboardingActive: readOnboardingActive,
@@ -109,11 +103,9 @@ export const install = (tray?: ShellTrayInputs): void => {
       void shell.openExternal("http://localhost:6007");
     },
     removePairedLabel: "Remove from this device\u2026",
-    setCompanionSize: tray?.companion?.setSize ?? (() => undefined),
-    setCompanionVisible: tray?.companion?.setVisible ?? (() => undefined),
-    ...(tray?.companion?.replayIntro
-      ? { replayCompanionIntro: tray.companion.replayIntro }
-      : {}),
+    replayCompanionIntro,
+    setCompanionSize: setCompanionSurfaceSize,
+    setCompanionVisible: setCompanionSurfaceVisible,
   });
   installTray({
     ensureMainWindow: async () => ensureVisible(),

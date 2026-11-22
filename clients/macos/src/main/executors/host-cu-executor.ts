@@ -27,6 +27,7 @@ import {
 import { z } from "zod";
 
 import log from "@mycadet/electron-desktop/app-logger";
+import { showCompanionCoachmarks } from "@mycadet/electron-desktop/companion-window";
 import { getSharedCuHelper } from "@mycadet/electron-desktop/shared-cu-helper";
 
 /** The one tool answered here rather than by the helper. */
@@ -344,14 +345,14 @@ class PointAtExecutor implements HostProxyExecutor {
 
 interface HostCuExecutorDeps {
   helper?: CuHelperClient;
-  /** What draws the marks. Absent means this client answers that it cannot. */
+  /** What draws the marks; the companion surface is the default painter. */
   showCoachmarks?: CoachmarkPainter;
 }
 
 export function createHostCuExecutor(
   deps: HostCuExecutorDeps = {},
 ): HostProxyExecutor {
-  const { helper, showCoachmarks } = deps;
+  const { helper, showCoachmarks = showCompanionCoachmarks } = deps;
   return new PointAtExecutor(
     createCuHelperProxyExecutor({
       logger: log,

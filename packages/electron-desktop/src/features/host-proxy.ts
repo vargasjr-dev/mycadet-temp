@@ -11,6 +11,7 @@ import { createHostProxyRuntime } from "../host-proxy/runtime";
 import { installHostProxyBridge } from "../host-proxy/router";
 import type { HostProxyExecutor } from "../host-proxy/router";
 
+import { shutdownSharedCuHelper } from "../sidecar/shared-cu-helper";
 import log from "../app-logger";
 import { computerUseExecutors } from "./computer-use-actions";
 
@@ -22,7 +23,11 @@ export interface ShellHostProxyInputs {
     coachmarks?: boolean;
   };
   /** The shell's computer-use executor. Absent, the native-helper proxy answers. */
-  hostCu?: { executor: HostProxyExecutor; teardown(): void };
+  hostCu?: {
+    executor: HostProxyExecutor;
+    /** The package's CU-helper shutdown is the default. */
+    teardown?: () => void;
+  };
   /** Extra teardown the shell needs on quit. */
   teardown?: () => void;
 }
@@ -49,7 +54,12 @@ const installBridge = (
   // the native-helper proxy answers — it fails closed where no helper
   // binary exists.
   const shellCu = inputs.hostCu
-    ? { executor: inputs.hostCu.executor, teardown: inputs.hostCu.teardown }
+    ? {
+        executor: inputs.hostCu.executor,
+        // The shell's executor rides the package's CU helper client, so its
+        // shutdown is the default teardown.
+        teardown: inputs.hostCu.teardown ?? shutdownSharedCuHelper,
+      }
     : (() => {
         const cu = computerUseExecutors();
         return { executor: cu.host_cu, teardown: cu.teardown };

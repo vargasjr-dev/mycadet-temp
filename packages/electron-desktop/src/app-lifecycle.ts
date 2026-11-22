@@ -67,7 +67,7 @@ import {
   installPermissionGuide,
   type PermissionGuideInputs,
 } from "./features/permission-guide";
-import { install as installTray, type ShellTrayInputs } from "./features/tray";
+import { install as installTray } from "./features/tray";
 import {
   installCompanionWindow,
   setCompanionSurfaceVisible as applyCompanionSurfaceVisibility,
@@ -162,7 +162,6 @@ export interface DesktopAppInputs {
    * The shell's tray surfaces — its companion wiring. Absent, the classic
    * notification-area runtime answers.
    */
-  tray?: ShellTrayInputs;
   /**
    * The shell's native share surface. Absent, sharing presents with the
    * Save-As dialog fallback.
@@ -460,27 +459,24 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // three. The installs below are the compositions still owned by the
       // classic shells alone — the helper dictation bridge and the
       // host-proxy runtime (R11/R9), the companion
-      // surface (declared through the tray's companion rows), the share
-      // sheet, the permissions service, and the voice-mode chord (R9+) —
-      // each folds into this shared run when its round lands.
+      // surface, the share sheet, the permissions service, and the
+      // voice-mode chord (R9+) — each folds into this shared run when its
+      // round lands.
       installAuth();
       installAuxiliaryWindows();
       installLoginItem();
       installMainWindow();
       installHostProxy(inputs.interfaceId, inputs.hostProxy);
-      installTray(inputs.tray);
+      installTray();
       installShare(inputs.share);
       installPermissions(inputs.permissions);
       installPermissionGuide(inputs.permissionGuide);
-      // The companion surface joins the shared composition when the shell
-      // declares it — the tray's companion rows are the declaration, and the
-      // hidden preference is the runtime off-switch. The menu-facing
-      // visibility entry dispatches into the window wiring, so the two
-      // halves are introduced here, at the composition root.
-      if (inputs.tray?.companion?.supported()) {
-        registerCompanionSurfaceSync(applyCompanionSurfaceVisibility);
-        installCompanionWindow();
-      }
+      // The companion surface joins the shared composition on every
+      // desktop; the hidden preference is the runtime off-switch. The
+      // menu-facing visibility entry dispatches into the window wiring, so
+      // the two halves are introduced here, at the composition root.
+      registerCompanionSurfaceSync(applyCompanionSurfaceVisibility);
+      installCompanionWindow();
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
       installDictation();
@@ -490,9 +486,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       }
 
       await inputs.setup?.();
-      if (inputs.tray?.companion?.supported()) {
-        syncCompanionSurface();
-      }
+      syncCompanionSurface();
     })
     .catch((err: unknown) => {
       log.error("[app] whenReady setup failed:", err);

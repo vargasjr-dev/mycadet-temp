@@ -188,6 +188,7 @@ const universalSurface = [
   "tray",
   "share",
   "permissions",
+  "companion-window",
 ];
 
 /** The classic-only composition, appended on the classic platforms. */
@@ -242,20 +243,11 @@ describe("startApp", () => {
     expect(calls).toEqual(["hotkey-settings", "auto-update"]);
   });
 
-  test("a shell declaring the companion gets the surface installed before its setup and synced after", async () => {
+  test("the companion surface installs before setup and syncs after, on every desktop", async () => {
     startApp({
       platform: "test-electron",
       titleBarMode: "hidden",
       interfaceId: "test",
-      tray: {
-        companion: {
-          supported: () => true,
-          hidden: () => false,
-          size: () => "medium",
-          setVisible: () => undefined,
-          setSize: () => undefined,
-        },
-      },
     });
 
     await drain();
@@ -271,19 +263,6 @@ describe("startApp", () => {
     expect(calls.indexOf("companion-sync")).toBeGreaterThan(
       calls.indexOf("companion-window"),
     );
-  });
-
-  test("a shell with no companion declaration installs no companion surface", async () => {
-    startApp({
-      platform: "test-electron",
-      titleBarMode: "hidden",
-      interfaceId: "test",
-    });
-
-    await drain();
-
-    expect(calls).not.toContain("companion-window");
-    expect(calls).not.toContain("companion-sync");
   });
 
   test("a second-instance launch focuses the client's main window", async () => {
@@ -319,7 +298,12 @@ describe("startApp", () => {
       expect(calls).toEqual(universalSurface);
       return;
     }
-    expect(calls).toEqual([...universalSurface, ...classicSurface]);
+    expect(calls).toEqual([
+      ...universalSurface,
+      ...classicSurface,
+      // The companion's initial sync runs once the shell's own setup is done.
+      "companion-sync",
+    ]);
   });
 
   test("reports a failed setup as `[app] whenReady setup failed`", async () => {
