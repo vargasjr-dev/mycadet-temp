@@ -54,12 +54,16 @@ export async function wakeDocker(
   const log = (msg: string): void => logger.log(msg);
   const startAll = async (): Promise<void> => {
     const res = dockerResourceNames(entry.assistantId);
-    for (const container of [
-      res.assistantContainer,
-      res.gatewayContainer,
-      res.cesContainer,
-    ]) {
-      await exec("docker", ["start", container]);
+    await exec("docker", ["start", res.assistantContainer]);
+    const assistantSince = await runningSince(res.assistantContainer);
+    for (const sidecar of [res.gatewayContainer, res.cesContainer]) {
+      // The gateway and CES use the assistant's network. If one was already
+      // running before the assistant started again, it's stuck on the old
+      // network and needs a restart.
+      const since = await runningSince(sidecar);
+      const stale =
+        since !== null && assistantSince !== null && since < assistantSince;
+      await exec("docker", [stale ? "restart" : "start", sidecar]);
     }
   };
   try {
@@ -169,6 +173,26 @@ async function containersDriftFromLockfile(
     if (applied.highBytes !== entry.machine?.memory?.high) return true;
   }
   return false;
+}
+
+/** When the container started (ms), or null if it isn't running. */
+async function runningSince(container: string): Promise<number | null> {
+  try {
+    const out = await execOutput("docker", [
+      "container",
+      "inspect",
+      "--format",
+      "{{.State.Running}} {{.State.StartedAt}}",
+      container,
+    ]);
+    const [running, startedAt = ""] = out.trim().split(" ");
+    if (running !== "true") return null;
+    // Docker gives nanoseconds, but Date.parse only reads milliseconds.
+    const since = Date.parse(startedAt.replace(/(\.\d{3})\d+/, "$1"));
+    return Number.isNaN(since) ? null : since;
+  } catch {
+    return null;
+  }
 }
 
 /** Force-remove the three service containers (recreation's precursor). */

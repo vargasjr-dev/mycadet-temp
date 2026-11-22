@@ -39,6 +39,10 @@ const execModuleMock = mock(
       if (args[0] === "start") {
         const failure = startFailures.shift();
         if (failure) throw new Error(failure);
+        const container = args[1] ?? "";
+        if (!runningSince.has(container)) {
+          runningSince.set(container, "2026-11-22T12:00:00.123456789Z");
+        }
         return;
       }
       if (recreateFailure) throw recreateFailure;
@@ -62,11 +66,17 @@ const execOutputModuleMock = mock(
       }
       return inspectedImage;
     }
+    if (args[0] === "container" && args[2] === "--format") {
+      const since = runningSince.get(args[4] ?? "");
+      return since ? `true ${since}` : "false 0001-01-01T00:00:00Z";
+    }
     throw new Error(`unexpected execOutput: ${args.join(" ")}`);
   },
 );
 /** The image the drift probe sees on the existing containers. */
 let inspectedImage: string;
+/** Which containers are running, and when they started. */
+let runningSince: Map<string, string>;
 let logSpy: ReturnType<typeof spyOn>;
 
 mock.module("../exec", () => ({
@@ -130,6 +140,7 @@ beforeEach(() => {
   // Default: the existing containers run exactly what the lockfile says —
   // the plain-start wake. Drift tests override this.
   inspectedImage = "mycadet/mycadet-assistant:v0.12.7";
+  runningSince = new Map();
   readyResult = true;
   waitForReadyMock.mockClear();
 });
@@ -145,6 +156,36 @@ describe("wakeDocker — the docker wake leg", () => {
     expect(result).toEqual({ ok: true });
     expect(startedContainers()).toBe(3);
     expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
+  });
+
+  test("a crashed assistant restarts the sidecars still running on its old network", async () => {
+    runningSince = new Map([
+      ["docker-1-gateway", "2026-11-22T10:00:00.5Z"],
+      ["docker-1-credential-executor", "2026-11-22T10:00:00.5Z"],
+    ]);
+
+    const result = await wakeDocker(makeEntry());
+
+    expect(result).toEqual({ ok: true });
+    const restarted = dockerCalls
+      .filter(({ args }) => args[0] === "restart")
+      .map(({ args }) => args[1]);
+    expect(restarted).toEqual([
+      "docker-1-gateway",
+      "docker-1-credential-executor",
+    ]);
+  });
+
+  test("a running assistant leaves its sidecars alone", async () => {
+    runningSince = new Map([
+      ["docker-1-assistant", "2026-11-22T10:00:00.1Z"],
+      ["docker-1-gateway", "2026-11-22T10:00:00.2Z"],
+      ["docker-1-credential-executor", "2026-11-22T10:00:00.2Z"],
+    ]);
+
+    await wakeDocker(makeEntry());
+
+    expect(dockerCalls.some(({ args }) => args[0] === "restart")).toBe(false);
   });
 
   test("a never-created container group is recreated from the recorded images and the start retried", async () => {
