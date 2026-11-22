@@ -1,5 +1,5 @@
 import { describe, expect, test, mock, beforeEach, afterEach } from "bun:test";
-import { SleepWakeDetector } from "../sleep-wake-detector.js";
+import { startSleepWakeDetector } from "../sleep-wake-detector.js";
 
 // Suppress logger output during tests
 mock.module("../logger.js", () => ({
@@ -12,8 +12,8 @@ mock.module("../logger.js", () => ({
   initLogger: () => {},
 }));
 
-describe("SleepWakeDetector", () => {
-  let detector: SleepWakeDetector;
+describe("startSleepWakeDetector", () => {
+  let stopSleepWakeDetector: (() => void) | null = null;
   let onWake: ReturnType<typeof mock>;
   let originalDateNow: () => number;
   let fakeNow: number;
@@ -26,13 +26,12 @@ describe("SleepWakeDetector", () => {
   });
 
   afterEach(() => {
-    detector?.stop();
+    stopSleepWakeDetector?.();
     Date.now = originalDateNow;
   });
 
   test("does not fire callback on normal ticks", async () => {
-    detector = new SleepWakeDetector(onWake, 50, 2);
-    detector.start();
+    stopSleepWakeDetector = startSleepWakeDetector(onWake, 50, 2);
 
     // Advance time normally (within threshold)
     fakeNow += 55;
@@ -42,8 +41,7 @@ describe("SleepWakeDetector", () => {
   });
 
   test("fires callback when elapsed time exceeds threshold", async () => {
-    detector = new SleepWakeDetector(onWake, 50, 2);
-    detector.start();
+    stopSleepWakeDetector = startSleepWakeDetector(onWake, 50, 2);
 
     // Wait for first tick at normal time
     await new Promise((r) => setTimeout(r, 60));
@@ -58,9 +56,9 @@ describe("SleepWakeDetector", () => {
   });
 
   test("stop prevents further callbacks", async () => {
-    detector = new SleepWakeDetector(onWake, 50, 2);
-    detector.start();
-    detector.stop();
+    const stop = startSleepWakeDetector(onWake, 50, 2);
+    stop();
+    stopSleepWakeDetector = stop;
 
     fakeNow += 500;
     await new Promise((r) => setTimeout(r, 70));
@@ -68,11 +66,10 @@ describe("SleepWakeDetector", () => {
     expect(onWake).not.toHaveBeenCalled();
   });
 
-  test("start after stop resets cleanly", async () => {
-    detector = new SleepWakeDetector(onWake, 50, 2);
-    detector.start();
-    detector.stop();
-    detector.start();
+  test("a second start resets cleanly", async () => {
+    const firstStop = startSleepWakeDetector(onWake, 50, 2);
+    firstStop();
+    stopSleepWakeDetector = startSleepWakeDetector(onWake, 50, 2);
 
     // Normal tick — should not fire
     fakeNow += 55;

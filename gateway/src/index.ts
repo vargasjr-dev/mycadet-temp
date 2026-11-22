@@ -102,7 +102,7 @@ import {
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { createRouter, type GetClientIp } from "./http/router.js";
 import { ROUTES, webhookDedupCaches } from "./http/routes/index.js";
-import { SleepWakeDetector } from "./sleep-wake-detector.js";
+import { startSleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { registerEmailCallbackRoute } from "./email/register-callback.js";
@@ -1154,7 +1154,7 @@ async function main() {
   // ── Sleep/wake detection ──
   // Detect system sleep/wake transitions and force-reconnect channels
   // that may have stale connections after the OS suspended the process.
-  const sleepWakeDetector = new SleepWakeDetector(() => {
+  const stopSleepWakeDetector = startSleepWakeDetector(() => {
     log.info("System wake detected — reconnecting channels");
 
     // Force-reconnect Slack WebSocket (may be half-open after sleep)
@@ -1171,7 +1171,6 @@ async function main() {
       });
     }
   });
-  sleepWakeDetector.start();
 
   const stopInboundEventExpirationCleanup =
     startInboundEventExpirationCleanup();
@@ -1181,11 +1180,11 @@ async function main() {
     draining = true;
     // The task list is uniform: each entry runs once at signal time. Class
     // methods ride as arrows so `this` survives the call — a bare
-    // `sleepWakeDetector.stop` would dereference nothing and crash the
-    // shutdown. The lifecycle thunks (discord, slack, the dedup sweep) are
-    // already module closures, so they ride bare.
+    // `credentialWatcher.stop` would dereference nothing and crash the
+    // shutdown. The lifecycle thunks (sleep/wake, discord, slack, the dedup
+    // sweep) are already module closures, so they ride bare.
     const shutdownTasks: (() => Promise<void> | void)[] = [
-      () => sleepWakeDetector.stop(),
+      stopSleepWakeDetector,
       () => credentialWatcher.stop(),
       () => configFileWatcher.stop(),
       () => tunnelClient.stop(),

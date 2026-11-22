@@ -7,38 +7,42 @@ const log = getLogger("sleep-wake-detector");
  * a periodic timer checks if the elapsed time between ticks far exceeds
  * the expected interval, which indicates the process was suspended.
  */
-export class SleepWakeDetector {
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private lastTick: number = 0;
 
-  constructor(
-    private onWake: () => void,
-    private intervalMs: number = 10_000,
-    private thresholdMultiplier: number = 2,
-  ) {}
+const SLEEP_WAKE_TICK_INTERVAL_MS = 10_000;
+const SLEEP_WAKE_GAP_MULTIPLIER = 2;
 
-  start(): void {
-    this.stop();
-    this.lastTick = Date.now();
-    this.timer = setInterval(() => {
-      const now = Date.now();
-      const elapsed = now - this.lastTick;
-      this.lastTick = now;
+let timer: ReturnType<typeof setInterval> | null = null;
+let lastTick = 0;
 
-      if (elapsed > this.intervalMs * this.thresholdMultiplier) {
-        log.info(
-          { elapsedMs: elapsed, expectedMs: this.intervalMs },
-          "System wake detected (epoch gap)",
-        );
-        this.onWake();
-      }
-    }, this.intervalMs);
-  }
+/**
+ * Starts the epoch-gap tick and returns the stop thunk, per the gateway's
+ * `const stopX = startX()` lifecycle pattern. A second start replaces any
+ * prior run (resetting the tick baseline), so the detector can be recycled.
+ */
+export function startSleepWakeDetector(
+  onWake: () => void,
+  intervalMs = SLEEP_WAKE_TICK_INTERVAL_MS,
+  thresholdMultiplier = SLEEP_WAKE_GAP_MULTIPLIER,
+): () => void {
+  if (timer) clearInterval(timer);
+  lastTick = Date.now();
+  timer = setInterval(() => {
+    const now = Date.now();
+    const elapsed = now - lastTick;
+    lastTick = now;
 
-  stop(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    if (elapsed > intervalMs * thresholdMultiplier) {
+      log.info(
+        { elapsedMs: elapsed, expectedMs: intervalMs },
+        "System wake detected (epoch gap)",
+      );
+      onWake();
     }
-  }
+  }, intervalMs);
+  return () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  };
 }
