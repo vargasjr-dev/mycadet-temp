@@ -46,7 +46,7 @@ const fullTweak = {
       nonInteractiveLatestTurnCompression: "truncate" as const,
     },
   },
-  openrouter: { only: [] as string[] },
+  openrouter: { only: [] },
 };
 
 type Fallback = {

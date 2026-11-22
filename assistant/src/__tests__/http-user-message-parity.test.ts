@@ -208,7 +208,7 @@ function makeConversation(overrides: Record<string, unknown> = {}) {
       deduplicated: false,
     })),
     runAgentLoop: mock(async () => undefined),
-    getMessages: () => [] as unknown[],
+    getMessages: () => [],
     assistantId: "self",
     trustContext: undefined,
     hasPendingConfirmation: () => false,

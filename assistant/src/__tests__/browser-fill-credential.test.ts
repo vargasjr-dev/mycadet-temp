@@ -184,7 +184,7 @@ function defaultMetadata(service: string, field: string) {
     service,
     field,
     allowedTools: ["browser_fill_credential"],
-    allowedDomains: [] as string[],
+    allowedDomains: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

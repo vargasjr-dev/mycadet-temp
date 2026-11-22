@@ -260,7 +260,7 @@ function attachCreateSubcommand(parent: Command): void {
       "--model <id>",
       "Model id offered by this provider (repeatable; required for openai-compatible)",
       collectRepeatable,
-      [] as string[],
+      [],
     )
     .option("--json", "Output as JSON")
     .action(
@@ -336,7 +336,7 @@ function attachUpdateSubcommand(parent: Command): void {
       "--model <id>",
       "Model id offered by this provider (repeatable; openai-compatible)",
       collectRepeatable,
-      [] as string[],
+      [],
     )
     .option("--json", "Output as JSON")
     .action(

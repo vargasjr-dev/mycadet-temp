@@ -172,7 +172,7 @@ export function registerMcpCommand(program: Command): void {
             acc.push(val);
             return acc;
           },
-          [] as string[],
+          [],
         )
         .action(
           async (

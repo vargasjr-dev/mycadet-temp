@@ -417,7 +417,7 @@ Examples:
             `Option "${flags}" not found on "email send" — is it declared in email.help.ts?`,
           );
         }
-        option.argParser(collect).default([] as string[]);
+        option.argParser(collect).default([]);
         send.setOptionValueWithSource(option.attributeName(), [], "default");
       }
       send.action(

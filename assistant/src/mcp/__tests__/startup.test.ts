@@ -25,7 +25,7 @@ function startResult(servers: unknown[] = []) {
     discoveredToolCount: servers.length,
     keptToolCount: servers.length,
     droppedToolCount: 0,
-    truncatedServerIds: [] as string[],
+    truncatedServerIds: [],
   };
 }
 

@@ -65,7 +65,7 @@ type BackfillDmFn = (
 ) => Promise<Message[]>;
 
 const backfillDmMock = mock<BackfillDmFn>(async () => []);
-const backfillThreadMock = mock(async () => [] as Message[]);
+const backfillThreadMock = mock(async () => []);
 
 mock.module("../messaging/providers/slack/backfill.js", () => ({
   backfillDm: (channelId: string, opts?: { limit?: number; before?: string }) =>

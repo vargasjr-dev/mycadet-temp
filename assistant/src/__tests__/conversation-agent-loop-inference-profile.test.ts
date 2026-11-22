@@ -119,7 +119,7 @@ function makeCtx(
     agentLoop: {
       run: agentLoopRun,
       getToolTokenBudget: () => 0,
-      getResolvedTools: () => [] as ToolDefinition[],
+      getResolvedTools: () => [],
       getActiveModel: () => undefined,
       compactionCircuit: new CompactionCircuit("test-conv"),
     } as unknown as Conversation["agentLoop"],

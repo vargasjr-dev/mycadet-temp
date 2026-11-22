@@ -106,7 +106,7 @@ export function attachRequestOptions(command: Command): Command {
       "-H, --header <header>",
       "Request header (repeatable, format: 'Key: Value')",
       collectHeader,
-      [] as string[],
+      [],
     )
     .option(
       "-d, --data <data>",

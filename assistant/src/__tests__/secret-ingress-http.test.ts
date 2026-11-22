@@ -167,7 +167,7 @@ function makeSendMessageDeps() {
     enqueueMessage: () => ({ queued: true, requestId: "queued-id" }),
     persistUserMessage: persistUserMessageMock,
     runAgentLoop: runAgentLoopMock,
-    getMessages: () => [] as unknown[],
+    getMessages: () => [],
     assistantId: "self",
     trustContext: undefined,
     hasPendingConfirmation: () => false,

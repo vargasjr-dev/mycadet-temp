@@ -224,7 +224,7 @@ async function checkConnection(
     connectionId,
     provider,
     accountInfo,
-    missingScopes: [] as string[],
+    missingScopes: [],
   };
 
   // 1. Check token presence via the centralized resolver. Manual-token

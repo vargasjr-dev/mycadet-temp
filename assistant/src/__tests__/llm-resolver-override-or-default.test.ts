@@ -25,7 +25,7 @@ const completeCustom = {
   temperature: 0.4,
   thinking: { enabled: false, streamThinking: false },
   contextWindow: schemaBase.contextWindow,
-  openrouter: { only: [] as string[] },
+  openrouter: { only: [] },
 };
 
 const anthropicDp = {

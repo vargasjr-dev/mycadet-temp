@@ -133,7 +133,7 @@ describe("compaction summary calls — historical web-search sanitization", () =
 
     // AND a snapshot of the caller's array so we can assert it is not mutated
     const inputSnapshot = serializeBlocks(messages);
-    const sink = { sent: [] as Message[] };
+    const sink = { sent: [] };
 
     // WHEN compaction runs over that history
     const result = await runAssistantDrivenCompaction({
@@ -173,7 +173,7 @@ describe("compaction summary calls — historical web-search sanitization", () =
     ];
 
     const inputSnapshot = serializeBlocks(messages);
-    const sink = { sent: [] as Message[] };
+    const sink = { sent: [] };
 
     // WHEN emergency compaction splits at the last tool pair and summarizes the
     // prefix

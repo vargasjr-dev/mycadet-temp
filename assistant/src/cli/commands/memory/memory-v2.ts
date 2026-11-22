@@ -411,7 +411,7 @@ export function registerMemoryV2Command(memory: Command): void {
         acc.push(val);
         return acc;
       },
-      [] as string[],
+      [],
     )
     .option(
       "--trace <conversationId:turn>",

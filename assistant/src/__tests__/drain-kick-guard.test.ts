@@ -69,7 +69,7 @@ function makeFakeConversation(
     queue,
     pendingSteerRepair: false,
     preactivatedSkillIds: undefined as string[] | undefined,
-    messages: [] as unknown[],
+    messages: [],
     surfaceActionRequestIds: new Set<string>(),
     activeSurfaceId: undefined,
     ensureHostProxiesForTurn: () => {},

@@ -80,7 +80,7 @@ export type AcpAgentProfile = AcpAgentConfig & { command: string };
 // so a single accidental `args.push(...)` from one caller would corrupt every
 // subsequent read. Cast through `unknown` because `AcpAgentConfig.args` is
 // `string[]` (Zod-inferred) but the value is genuinely immutable at runtime.
-const FROZEN_EMPTY_ARGS = Object.freeze([] as string[]) as unknown as string[];
+const FROZEN_EMPTY_ARGS = Object.freeze([]) as unknown as string[];
 
 /**
  * Default ACP agent profiles that ship with the assistant.

@@ -111,7 +111,7 @@ let mockReducerStepFn:
   | ((msgs: Message[], cfg: unknown, state: unknown) => unknown)
   | null = null;
 const makeInitialReducerState = () => ({
-  appliedTiers: [] as string[],
+  appliedTiers: [],
   injectionMode: "full" as const,
   exhausted: false,
 });

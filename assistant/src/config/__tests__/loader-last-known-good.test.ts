@@ -64,7 +64,7 @@ function writeRawConfig(contents: string): void {
 
 /** A synthetic irreparable-issue set for driving the ladder directly. */
 const IRREPARABLE_ISSUES = [
-  { path: [] as PropertyKey[], message: "synthetic irreparable issue" },
+  { path: [], message: "synthetic irreparable issue" },
 ];
 
 describe("config recovery ladder for cleanup-resistant invalid config", () => {

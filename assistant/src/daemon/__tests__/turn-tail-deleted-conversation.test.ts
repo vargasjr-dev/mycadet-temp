@@ -123,7 +123,7 @@ const rlog = makeMockLogger() as Parameters<
 
 /** Settles one turn's content and hands back the history it left behind. */
 async function runSettle(): Promise<Message[]> {
-  const ctx = { conversationId: CONVERSATION_ID, messages: [] as Message[] };
+  const ctx = { conversationId: CONVERSATION_ID, messages: [] };
   await settleTurnContent({
     ctx,
     state: {
@@ -172,7 +172,7 @@ describe("settleTurnContent conversation deleted after the terminal SSE", () => 
   });
 
   test("exports a queued attachment target only once when it is the final row", async () => {
-    const ctx = { conversationId: CONVERSATION_ID, messages: [] as Message[] };
+    const ctx = { conversationId: CONVERSATION_ID, messages: [] };
 
     await settleTurnContent({
       ctx,
@@ -188,7 +188,7 @@ describe("settleTurnContent conversation deleted after the terminal SSE", () => 
   });
 
   test("exports an earlier attachment target before the final private row", async () => {
-    const ctx = { conversationId: CONVERSATION_ID, messages: [] as Message[] };
+    const ctx = { conversationId: CONVERSATION_ID, messages: [] };
 
     await settleTurnContent({
       ctx,
