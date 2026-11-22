@@ -18,6 +18,11 @@ on:
         description: "Release version string (e.g. 0.6.0, 0.6.1-staging.1)"
         required: true
         type: string
+      tolerate_failure:
+        description: "Continue (green) when the build fails (release-channel canary)"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: windows-build-${{ inputs.environment }}
@@ -26,6 +31,7 @@ concurrency:
 jobs:
   build:
     name: Build native payload
+    continue-on-error: ${{ inputs.tolerate_failure }}
     runs-on: windows-2025
     timeout-minutes: 90
     environment: ${{ inputs.environment }}
@@ -160,6 +166,7 @@ jobs:
   package-and-sign:
     name: Package and sign
     needs: [build]
+    continue-on-error: ${{ inputs.tolerate_failure }}
     runs-on: windows-2025
     timeout-minutes: 90
     environment: ${{ inputs.environment }}

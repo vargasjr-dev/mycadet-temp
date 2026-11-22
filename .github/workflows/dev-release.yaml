@@ -1642,13 +1642,13 @@ jobs:
     needs: [compute-version]
     # Canary: a failed windows leg (e.g. missing Azure Trusted Signing
     # secrets on the dev environment) must not red the dev release.
-    continue-on-error: true
     permissions:
       contents: read
     uses: ./.github/workflows/release-windows.yaml
     with:
       environment: dev
       version: ${{ needs.compute-version.outputs.version }}
+      tolerate_failure: true
     secrets: inherit
 
   # ── Slack notification (first failure only) ──────────────────────────
