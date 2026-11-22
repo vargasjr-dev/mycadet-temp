@@ -5,7 +5,6 @@ import {
   hasPendingFiles,
   installDictationOverlay,
   ensureMainWindowVisible,
-  registerCompanionSurfaceSync,
   shareMenuPresenter,
   startApp,
 } from "@mycadet/electron-desktop";
@@ -21,6 +20,7 @@ import {
   setCompanionSurfaceSize,
   setCompanionSurfaceVisible,
 } from "@mycadet/electron-desktop/companion-window";
+
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -37,10 +37,6 @@ import {
 } from "./notifier";
 import { permissionGuide } from "./permission-guide-values";
 import { permissionsShell } from "./permissions-strategy";
-import {
-  installCompanionWindow,
-  syncCompanionSurface,
-} from "@mycadet/electron-desktop/companion-window";
 import {
   readCompanionHidden,
   readCompanionSize,
@@ -106,9 +102,7 @@ startApp({
   async setup() {
     installDock();
 
-    registerCompanionSurfaceSync(setCompanionSurfaceVisible);
     installDictationOverlay({ onRecordingLifecycle: setDictationRecording });
-    installCompanionWindow();
     if (nativeNotifications) {
       Notification.isSupported();
       ensureNotifierDelegate();
@@ -116,7 +110,6 @@ startApp({
       app.on("before-quit", restoreNotifierDelegate);
     }
     installEscapeMonitor();
-    syncCompanionSurface();
     void promptToRelocateIfStranded().catch((err: unknown) => {
       log.error("[app] relocation prompt failed:", err);
     });

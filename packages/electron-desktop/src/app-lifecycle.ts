@@ -68,6 +68,12 @@ import {
   type PermissionGuideInputs,
 } from "./features/permission-guide";
 import { install as installTray, type ShellTrayInputs } from "./features/tray";
+import {
+  installCompanionWindow,
+  setCompanionSurfaceVisible as applyCompanionSurfaceVisibility,
+  syncCompanionSurface,
+} from "./features/companion-window";
+import { registerCompanionSurfaceSync } from "./companion-menu";
 import { install as installShare, type SharePresenter } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
 import {
@@ -453,7 +459,8 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // windows, the login item, and the main window are the same on all
       // three. The installs below are the compositions still owned by the
       // classic shells alone — the helper dictation bridge and the
-      // host-proxy runtime (R11/R9), the tray's companion rows, the share
+      // host-proxy runtime (R11/R9), the companion
+      // surface (declared through the tray's companion rows), the share
       // sheet, the permissions service, and the voice-mode chord (R9+) —
       // each folds into this shared run when its round lands.
       installAuth();
@@ -465,6 +472,15 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installShare(inputs.share);
       installPermissions(inputs.permissions);
       installPermissionGuide(inputs.permissionGuide);
+      // The companion surface joins the shared composition when the shell
+      // declares it — the tray's companion rows are the declaration, and the
+      // hidden preference is the runtime off-switch. The menu-facing
+      // visibility entry dispatches into the window wiring, so the two
+      // halves are introduced here, at the composition root.
+      if (inputs.tray?.companion?.supported()) {
+        registerCompanionSurfaceSync(applyCompanionSurfaceVisibility);
+        installCompanionWindow();
+      }
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
       installDictation();
@@ -474,6 +490,9 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       }
 
       await inputs.setup?.();
+      if (inputs.tray?.companion?.supported()) {
+        syncCompanionSurface();
+      }
     })
     .catch((err: unknown) => {
       log.error("[app] whenReady setup failed:", err);

@@ -71,6 +71,9 @@ mock.module("./main-window", () => ({
   dispatchToMain: () => undefined,
   ensureVisible: async () => calls.push("ensure-visible"),
   installMainWindow: recorder("main-window"),
+  // The companion's surface wiring reads the main window's visibility, so
+  // the module is in this composition's graph.
+  onMainWindowVisibilityChange: () => () => {},
 }));
 mock.module("./hotkeys", () => ({ installHotkeysIpc: recorder("hotkeys") }));
 mock.module("./about", () => ({
@@ -122,8 +125,17 @@ mock.module("./features/login-item", () => ({
 mock.module("./features/permissions", () => ({
   install: recorder("permissions"),
   getPermissionsService: () => null,
+  // The companion's refusal flow reads both through this module.
+  onPermissionPresentation: () => () => {},
+  preparePermissionPresentation: () => {},
 }));
 mock.module("./features/tray", () => ({ install: recorder("tray") }));
+mock.module("./features/companion-window", () => ({
+  installCompanionWindow: recorder("companion-window"),
+  syncCompanionSurface: recorder("companion-sync"),
+  setCompanionSurfaceVisible: () => undefined,
+  showCompanionCoachmarks: () => undefined,
+}));
 mock.module("./features/share", () => ({ install: recorder("share") }));
 mock.module("./features/helper-hotkeys", () => ({
   install: recorder("helper-hotkeys"),
@@ -228,6 +240,50 @@ describe("startApp", () => {
     // universal app surface, the shared composition, and the client's own
     // setup are all behind the lock gate.
     expect(calls).toEqual(["hotkey-settings", "auto-update"]);
+  });
+
+  test("a shell declaring the companion gets the surface installed before its setup and synced after", async () => {
+    startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
+      interfaceId: "test",
+      tray: {
+        companion: {
+          supported: () => true,
+          hidden: () => false,
+          size: () => "medium",
+          setVisible: () => undefined,
+          setSize: () => undefined,
+        },
+      },
+    });
+
+    await drain();
+
+    expect(calls).toContain("companion-window");
+    // The menu-facing visibility entry is introduced to the window wiring
+    // before anything can dispatch through it.
+    expect(calls.indexOf("companion-window")).toBeGreaterThan(
+      calls.indexOf("permissions"),
+    );
+    // The initial sync runs once the shell's own setup is done — the same
+    // point the classic shell's setup used to sync at.
+    expect(calls.indexOf("companion-sync")).toBeGreaterThan(
+      calls.indexOf("companion-window"),
+    );
+  });
+
+  test("a shell with no companion declaration installs no companion surface", async () => {
+    startApp({
+      platform: "test-electron",
+      titleBarMode: "hidden",
+      interfaceId: "test",
+    });
+
+    await drain();
+
+    expect(calls).not.toContain("companion-window");
+    expect(calls).not.toContain("companion-sync");
   });
 
   test("a second-instance launch focuses the client's main window", async () => {
