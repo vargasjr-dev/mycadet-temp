@@ -315,6 +315,15 @@ export async function ensureDockerInstalled(): Promise<void> {
   // Always add ~/.local/bin to PATH so previously installed binaries are found.
   ensureLocalBinOnPath();
 
+  // If Docker already answers (Docker Desktop, OrbStack, a running Colima,
+  // Linux), there's nothing to install.
+  try {
+    await exec("docker", ["info"]);
+    return;
+  } catch {
+    // Docker isn't running yet. Install or start it below.
+  }
+
   const isLinux = platform() === "linux";
 
   // On Linux, Docker runs natively — only need the docker CLI + daemon.
