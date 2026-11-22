@@ -18,6 +18,15 @@ import * as wakeOps from "../operations/wake";
 import type { LockfileAssistant } from "../lockfile-contract";
 import { restoreAssistant } from "../operations/restore";
 
+// Restore saves entries through the real lockfile path: isolate it.
+const configHome = mkdtempSync(join(tmpdir(), "restore-operation-config-"));
+const prevConfigHome = process.env.XDG_CONFIG_HOME;
+process.env.XDG_CONFIG_HOME = configHome;
+afterAll(() => {
+  if (prevConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+  else process.env.XDG_CONFIG_HOME = prevConfigHome;
+});
+
 const cloudLeg = spyOn(cloudRestore, "restoreCloud");
 const localLeg = spyOn(localRestore, "restoreLocal");
 const dockerLeg = spyOn(dockerRestore, "restoreDocker");
