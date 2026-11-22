@@ -45,10 +45,9 @@ mock.module("../daemon/host-bash-proxy.js", () => ({
   },
 }));
 
-import { buildShellInvocation } from "../util/shell-invocation.js";
-
 import { hostShellTool } from "../tools/host-terminal/host-shell.js";
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
+import { buildShellInvocation } from "../util/shell-invocation.js";
 
 const testDirs: string[] = [];
 

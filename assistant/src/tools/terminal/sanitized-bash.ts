@@ -9,7 +9,6 @@
 
 import { spawn } from "node:child_process";
 
-import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 
 import {
@@ -17,6 +16,7 @@ import {
   watchShellProcessStart,
 } from "../../util/host-process.js";
 import { getWorkspaceDir } from "../../util/layout.js";
+import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";
 import { buildSanitizedEnv } from "./safe-env.js";
 

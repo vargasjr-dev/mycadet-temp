@@ -1,10 +1,10 @@
-import { buildShellInvocation } from "../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 
 import { buildSanitizedEnv } from "../tools/terminal/safe-env.js";
 import { terminateProcessTree } from "../util/host-process.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { buildShellInvocation } from "../util/shell-invocation.js";
 import { safeStringSlice } from "../util/unicode.js";
 
 const log = getLogger("run-script");

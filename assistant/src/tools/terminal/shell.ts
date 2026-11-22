@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 
-import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 import { z } from "zod";
 
@@ -17,6 +16,7 @@ import {
 } from "../../util/host-process.js";
 import { getDataDir } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
+import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { trackToolProcess } from "../../util/tool-process-context.js";
 import type { CompletedBackgroundTool } from "../background-tool-registry.js";
 import {

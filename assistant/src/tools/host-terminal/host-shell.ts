@@ -11,7 +11,6 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
-import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 import { prependUniquePathEntries } from "@mycadet/environments/shell";
 import { z } from "zod";
@@ -29,6 +28,7 @@ import {
   watchShellProcessStart,
 } from "../../util/host-process.js";
 import { getLogger } from "../../util/logger.js";
+import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { trackToolProcess } from "../../util/tool-process-context.js";
 import type { CompletedBackgroundTool } from "../background-tool-registry.js";
 import {

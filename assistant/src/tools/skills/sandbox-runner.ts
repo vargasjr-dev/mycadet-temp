@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
-import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 
 import { PLUGIN_NAME_ENV } from "../../plugin-api/plugin-name-env.js";
@@ -13,6 +12,7 @@ import {
   terminateProcessTree,
   watchShellProcessStart,
 } from "../../util/host-process.js";
+import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { trackToolProcess } from "../../util/tool-process-context.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";

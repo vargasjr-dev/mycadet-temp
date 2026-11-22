@@ -23,12 +23,11 @@
 
 import { spawn } from "node:child_process";
 
-import { buildShellInvocation } from "../util/shell-invocation.js";
-
 import { buildSanitizedEnv } from "../tools/terminal/safe-env.js";
 import { stripAnsiSequences } from "../util/ansi.js";
 import { terminateProcessTree } from "../util/host-process.js";
 import { getLogger } from "../util/logger.js";
+import { buildShellInvocation } from "../util/shell-invocation.js";
 
 const log = getLogger("inline-command-runner");
 

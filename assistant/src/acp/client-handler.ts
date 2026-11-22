@@ -31,7 +31,6 @@ import type {
   WriteTextFileRequest,
   WriteTextFileResponse,
 } from "@agentclientprotocol/sdk";
-import { CHILD_OOM_SCORE_ADJ } from "../util/shell-invocation.js";
 
 import type { AcpSessionUpdateEvent } from "../api/events/acp-session-update.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -40,6 +39,7 @@ import { redactSensitiveFields } from "../security/redaction.js";
 import { redactSecrets } from "../security/secret-scanner.js";
 import { getLogger } from "../util/logger.js";
 import { withOomScoreAdj } from "../util/oom-priority.js";
+import { CHILD_OOM_SCORE_ADJ } from "../util/shell-invocation.js";
 
 const log = getLogger("acp:client-handler");
 
