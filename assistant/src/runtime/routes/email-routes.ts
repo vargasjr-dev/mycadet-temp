@@ -81,6 +81,8 @@ import {
   listEmailAddresses,
   type RegisteredEmailAddress,
 } from "../../email/registered-inbox.js";
+import { ipcCall, IpcCallError } from "../../ipc/gateway-client.js";
+import { getLogger } from "../../util/logger.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
   BadRequestError,
@@ -105,6 +107,67 @@ async function requireClient(): Promise<CadetCloudClient> {
     );
   }
   return client;
+}
+
+// ── The plugin email lane (BYO email via the gateway) ────────────────
+
+const log = getLogger("email-routes");
+
+/**
+ * The merged email surface spans two products: Cadet Cloud Email rows
+ * (cloud's store, cloud addresses) and the plugin lane's rows (the
+ * gateway's BYO-provider history — the assistant's own account). Gateway
+ * rows carry `gw:`-prefixed ids and `source: "gateway"` so reply_to
+ * dispatches to the right backend without the model knowing either store.
+ */
+const GATEWAY_ID_PREFIX = "gw:";
+
+const gatewayEmailRowProbe = z.object({
+  id: z.number(),
+  direction: z.enum(["in", "out"]),
+  fromAddr: z.string(),
+  toAddr: z.string(),
+  subject: z.string().nullable(),
+  createdAt: z.number(),
+});
+const gatewayEmailListResponseProbe = z.object({
+  messages: z.array(gatewayEmailRowProbe).catch([]),
+});
+const gatewayEmailReplyResponseProbe = z.object({
+  message: z.object({ id: z.number() }),
+});
+
+function gatewayRowToListItem(row: GatewayEmailRow): Record<string, unknown> {
+  return {
+    id: `${GATEWAY_ID_PREFIX}${row.id}`,
+    direction: row.direction === "in" ? "inbound" : "outbound",
+    from_address: row.fromAddr,
+    to_addresses: [row.toAddr],
+    subject: row.subject ?? "",
+    created_at: new Date(row.createdAt).toISOString(),
+    source: "gateway",
+  };
+}
+
+/**
+ * The plugin lane's rows, newest first. Degrades to [] when the gateway is
+ * unreachable or has no email history — the merged list stays useful.
+ */
+async function fetchPluginEmailRows(
+  limit: number,
+): Promise<Record<string, unknown>[]> {
+  try {
+    const result = gatewayEmailListResponseProbe.parse(
+      await ipcCall("email_list", { limit }),
+    );
+    return result.messages.map(gatewayRowToListItem);
+  } catch (err) {
+    log.debug(
+      { err },
+      "Plugin email lane unavailable — listing cloud email only",
+    );
+    return [];
+  }
 }
 
 // ── Handlers ──────────────────────────────────────────────────────────
@@ -258,7 +321,18 @@ async function handleEmailList({ queryParams = {} }: RouteHandlerArgs) {
   }
 
   const data = listResponseProbe.parse(await response.json());
-  return { results: data.results, count: data.count };
+  const cloudItems = data.results.map((row) =>
+    typeof row === "object" && row !== null
+      ? { ...row, source: "cloud" }
+      : row,
+  );
+  const pluginItems = await fetchPluginEmailRows(
+    queryParams.limit ? Number(queryParams.limit) : 50,
+  );
+  return {
+    results: [...pluginItems, ...cloudItems],
+    count: pluginItems.length + data.count,
+  };
 }
 
 async function handleEmailDownload({ queryParams = {} }: RouteHandlerArgs) {
@@ -292,6 +366,41 @@ async function handleEmailSend({ body = {} }: RouteHandlerArgs) {
   const bcc = send.bcc;
   const attachments = send.attachments;
   const reply_to = send.reply_to;
+
+  // The plugin lane: a `gw:` reply_to threads through the gateway's own
+  // provider account — the address the sender actually emailed — with real
+  // threading headers and the quoted tail. Cloud rows keep the cloud path.
+  if (reply_to?.startsWith(GATEWAY_ID_PREFIX)) {
+    const gatewayRowId = Number(reply_to.slice(GATEWAY_ID_PREFIX.length));
+    if (!Number.isInteger(gatewayRowId) || gatewayRowId <= 0) {
+      throw new BadRequestError(`Unknown reply_to: ${reply_to}`);
+    }
+    let result: unknown;
+    try {
+      result = await ipcCall("email_reply", {
+        reply_to: gatewayRowId,
+        text: (text ?? "").replace(/\\n/g, "\n"),
+      });
+    } catch (err) {
+      // IpcCallError mirrors the gateway's HTTP-style status onto the wire.
+      const statusCode = err instanceof IpcCallError ? err.statusCode : 502;
+      const detail =
+        err instanceof Error ? err.message : "Gateway email reply failed";
+      throw new RouteError(detail, "EMAIL_REPLY_FAILED", statusCode ?? 502);
+    }
+    const parsed = gatewayEmailReplyResponseProbe.safeParse(result);
+    if (!parsed.success) {
+      throw new RouteError(
+        "Gateway email reply returned an unexpected shape",
+        "EMAIL_REPLY_FAILED",
+        502,
+      );
+    }
+    return {
+      delivery_id: `${GATEWAY_ID_PREFIX}${parsed.data.message.id}`,
+      status: "sent",
+    };
+  }
 
   const client = await requireClient();
 
