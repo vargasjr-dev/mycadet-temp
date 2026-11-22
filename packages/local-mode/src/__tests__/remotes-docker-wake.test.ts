@@ -1,6 +1,3 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
   afterAll,
   afterEach,
@@ -11,15 +8,6 @@ import {
   spyOn,
   test,
 } from "bun:test";
-
-// A recreate saves the entry through the real lockfile path: isolate it.
-const configHome = mkdtempSync(join(tmpdir(), "docker-wake-config-"));
-const prevConfigHome = process.env.XDG_CONFIG_HOME;
-process.env.XDG_CONFIG_HOME = configHome;
-afterAll(() => {
-  if (prevConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
-  else process.env.XDG_CONFIG_HOME = prevConfigHome;
-});
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // can restore them — bun runs every test file in one process with a shared

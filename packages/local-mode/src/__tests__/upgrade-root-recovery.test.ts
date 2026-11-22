@@ -3,9 +3,6 @@
  * versioned rollback's stop → install → wake sequence. The subprocess fake
  * harness stays cli-side (shared with the teleport tests).
  */
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
 import * as backups from "../backup-ops";
 import * as dockerUpgrade from "../remotes/docker/upgrade";
@@ -15,15 +12,6 @@ import * as localMode from "..";
 import * as sleepDockerModule from "../remotes/docker/sleep";
 import { mockChildProcessSpawn } from "./helpers/child-process-mock";
 import type { LockfileAssistant } from "../lockfile-contract";
-
-// The recovery wake writes the device id under the real config dir: isolate it.
-const configHome = mkdtempSync(join(tmpdir(), "upgrade-recovery-config-"));
-const prevConfigHome = process.env.XDG_CONFIG_HOME;
-process.env.XDG_CONFIG_HOME = configHome;
-afterAll(() => {
-  if (prevConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
-  else process.env.XDG_CONFIG_HOME = prevConfigHome;
-});
 
 const capture = spyOn(backups, "createBackup");
 const images = spyOn(dockerUpgrade, "captureImageRefs");
