@@ -73,9 +73,12 @@ describe("onboarding funnel history contract", () => {
     click("Continue");
 
     const { to, opts } = navigatedWith();
-    // Cloud skips the api-key step, so this handoff carries the new-assistant
-    // marker itself (see `NEW_ASSISTANT_PARAM`) straight into research.
-    expect(to).toBe(`${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`);
+    // Cloud hatches through the same provisioning screen as every other
+    // hosting: the handoff carries the new-assistant marker itself (see
+    // `NEW_ASSISTANT_PARAM`) straight into hatching.
+    expect(to).toBe(
+      `${routes.onboarding.hatching}?hosting=cloud&${NEW_ASSISTANT_PARAM}=1`,
+    );
     expect(opts).toEqual({ replace: true });
   });
 

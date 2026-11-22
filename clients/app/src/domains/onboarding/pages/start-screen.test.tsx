@@ -31,13 +31,13 @@ describe("StartScreen", () => {
   // The CTA creates an assistant, so it carries the new-assistant marker: this
   // screen is the Back target in platform mode, and without the marker a user
   // whose selected assistant is already onboarded is bounced to /assistant on
-  test("the single CTA re-enters the funnel as a new-assistant walk", () => {
+  test("the single CTA enters the walk at hatching as a new-assistant walk", () => {
     render(<StartScreen />);
 
     fireEvent.click(screen.getByText("Create your assistant"));
 
     expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/onboarding/research?new_assistant=1",
+      "/account/onboarding/hatching?hosting=cloud&new_assistant=1",
       { replace: true },
     );
   });

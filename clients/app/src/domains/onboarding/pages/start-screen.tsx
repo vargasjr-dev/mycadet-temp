@@ -14,9 +14,10 @@ import { Button } from "@mycadet/design-library/components/button";
  * The in-SPA landing spot for "Back" in platform mode (its only happy-path
  * predecessor, hosting, is local-only, and the marketing host `/` would
  * navigate a Capacitor staging/dev shell onto production). Deliberately a
- * single-CTA welcome: the button re-enters the funnel at research, which
- * hatches the assistant. Not wired as the funnel entrypoint — reached only
- * via Back — so the happy path is unchanged.
+ * single-CTA welcome: the button enters the walk at hatching (the platform
+ * walk's managed cloud hatch), which hands off to the assistant page — the
+ * research funnel is out of the walk for now. Not wired as the funnel
+ * entrypoint — reached only via Back — so the happy path is unchanged.
  */
 export function StartScreen() {
   const { t } = useTranslation("account");
@@ -39,7 +40,7 @@ export function StartScreen() {
             fullWidth
             onClick={() =>
               void navigate(
-                `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
+                `${routes.onboarding.hatching}?hosting=cloud&${NEW_ASSISTANT_PARAM}=1`,
                 SETUP_NAVIGATE,
               )
             }

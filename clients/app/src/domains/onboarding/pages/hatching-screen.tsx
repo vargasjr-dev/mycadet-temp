@@ -7,7 +7,6 @@ import { resolveAssistant } from "@app/assistant/resolve-assistant";
 import { writeSelectedAssistantId } from "@app/assistant/selected-assistant-storage";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { AccountShell } from "@app/components/account/account-shell";
-import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
 import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
@@ -171,22 +170,20 @@ export function HatchingScreen() {
         // brand-new one instead of reusing this resolved promise and avatar.
         releaseHatchGuard();
         releaseHatchTraits();
-        // The handoff carries the hatched assistant in history state so
-        // research adopts exactly this assistant, not whatever a stale
-        // selection resolves to — whatever the hosting, the hatch that
-        // resolved an id is the one research adopts. A walk whose hatch
-        // never resolved an id hands off bare (research owns the managed
-        // background hatch). Either way the route itself stays bare: the
-        // state survives a refresh (same history entry) without query
-        // params to keep alive.
+        // The onboarding funnel (research/intro/face) is skipped for now —
+        // the hatch hands off straight to the assistant page, which resolves
+        // the just-hatched assistant (it is already the selected one). The
+        // funnel stays registered for re-introduction. The handoff carries
+        // the hatched assistant in history state, the chooser's convention,
+        // so a refresh (same history entry) keeps it without query params.
         if (readyAssistantId) {
-          void navigate(routes.onboarding.research, {
+          void navigate(routes.assistant, {
             ...SETUP_NAVIGATE,
             state: assistantSelectionState(readyAssistantId),
           });
           return;
         }
-        void navigate(routes.onboarding.research, SETUP_NAVIGATE);
+        void navigate(routes.assistant, SETUP_NAVIGATE);
       }, COMPLETION_NAVIGATE_DELAY_MS);
     };
 
@@ -356,14 +353,13 @@ export function HatchingScreen() {
               size="large"
               fullWidth
               onClick={() => {
-                // The hosting choice is the walk's data: a local/docker walk
-                // backs up to its hosting step; a cloud walk came through
-                // research and returns there.
-                const to =
-                  hosting && hosting !== "cloud"
-                    ? routes.account.onboarding.hosting
-                    : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`;
-                void navigate(to, SETUP_NAVIGATE);
+                // The hosting choice is the walk's data: back up to the
+                // hosting step, where the walk's hatch can be re-chosen and
+                // re-run (the research funnel is out of the walk for now).
+                void navigate(
+                  routes.account.onboarding.hosting,
+                  SETUP_NAVIGATE,
+                );
               }}
             >
               {t("actions.back")}

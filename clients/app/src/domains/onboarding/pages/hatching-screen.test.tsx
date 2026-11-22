@@ -2,7 +2,7 @@
  * Behavioral tests for the hatching screen's app-native port: the hatch rides
  * the shell's one operator route — POST /v1/assistants/hatch with the funnel's
  * hosting choice as the remote param (local, docker, cloud) — then the
- * resolution poll, then the research handoff.
+ * resolution poll, then the assistant-page handoff.
  *
  * The screen keeps module-level hatch guards, so every test drives the flow to
  * a genuine completion (which releases them) to stay isolated. Self-contained
@@ -19,7 +19,6 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { routes } from "@app/utils/routes";
 
 // --- Mutable per-test state, reset in beforeEach ------------------------------
@@ -162,7 +161,7 @@ describe("hatching screen", () => {
     composeSvgOverride = null;
   });
 
-  test("the local hatch polls the resolution endpoint then hands off to research with the hatched assistant in state", async () => {
+  test("the local hatch polls the resolution endpoint then hands off to the assistant page with the hatched assistant in state", async () => {
     searchParams = new URLSearchParams("hosting=local");
     resolutionReadyFromCall = 2;
     render(<HatchingScreen />);
@@ -174,7 +173,7 @@ describe("hatching screen", () => {
     expect(writeSelectionMock).toHaveBeenCalledWith("local-1");
     // The resolution answered notReady once, so the wait loop polled again.
     expect(resolutionCallCount).toBe(2);
-    expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
+    expect(navigateMock).toHaveBeenCalledWith(routes.assistant, {
       replace: true,
       state: { assistantSelection: { id: "local-1" } },
     });
@@ -195,7 +194,7 @@ describe("hatching screen", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  test("the docker hatch passes the docker remote and carries the hatched assistant to research", async () => {
+  test("the docker hatch passes the docker remote and carries the hatched assistant to the assistant page", async () => {
     searchParams = new URLSearchParams("hosting=docker");
     render(<HatchingScreen />);
 
@@ -203,13 +202,13 @@ describe("hatching screen", () => {
       timeout: 5000,
     });
     expect(hatchAssistantMock).toHaveBeenCalledWith("docker");
-    expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
+    expect(navigateMock).toHaveBeenCalledWith(routes.assistant, {
       replace: true,
       state: { assistantSelection: { id: "local-1" } },
     });
   });
 
-  test("the cloud hatch passes the cloud remote and carries the hatched assistant to research", async () => {
+  test("the cloud hatch passes the cloud remote and carries the hatched assistant to the assistant page", async () => {
     searchParams = new URLSearchParams("hosting=cloud");
     render(<HatchingScreen />);
 
@@ -226,7 +225,7 @@ describe("hatching screen", () => {
     );
     // Hosting-agnostic handoff: the id the hatch resolved rides the state,
     // the route stays bare.
-    expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
+    expect(navigateMock).toHaveBeenCalledWith(routes.assistant, {
       replace: true,
       state: { assistantSelection: { id: "local-1" } },
     });
@@ -248,7 +247,7 @@ describe("hatching screen", () => {
       timeout: 5000,
     });
     expect(hatchAssistantMock).toHaveBeenCalledTimes(2);
-    expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
+    expect(navigateMock).toHaveBeenCalledWith(routes.assistant, {
       replace: true,
       state: { assistantSelection: { id: "local-1" } },
     });
@@ -266,14 +265,14 @@ describe("hatching screen", () => {
     );
   });
 
-  test("back exits a cloud walk to research with the new-assistant marker", async () => {
+  test("back exits a cloud walk to hosting like every other walk", async () => {
     searchParams = new URLSearchParams("fail=1");
     render(<HatchingScreen />);
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeDefined());
     fireEvent.click(screen.getByText("Back"));
     expect(navigateMock).toHaveBeenCalledWith(
-      `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
+      routes.account.onboarding.hosting,
       { replace: true },
     );
   });
