@@ -32,9 +32,8 @@ const MAX_PENDING_MESSAGES = 100;
 // `guardian-pin.js`, shared with the watch stream so the two guardian-only
 // surfaces cannot drift into two ideas of who owns them.
 
-export const liveVoiceSocketDataSchema = z.object({
+export const liveVoiceSocketDataSchema = runtimeAudioStreamSocketState.extend({
   wsType: z.literal("live-voice"),
-  ...runtimeAudioStreamSocketState,
   guardianPrincipalId: z.string().optional(),
 });
 

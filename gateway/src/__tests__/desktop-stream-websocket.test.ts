@@ -114,7 +114,10 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
     const url = runtime.upgradeUrl()!;
     expect(url.pathname).toBe("/v1/desktop/stream");
-    expect(url.searchParams.size).toBe(0);
+    // The socket data rides the dial as string query params; no token ever
+    // does — identity rides the headers.
+    expect(url.searchParams.get("wsType")).toBe("desktop-stream");
+    expect(url.searchParams.get("token")).toBeNull();
     // Identity rides the upgrade request's headers, not the URL.
     const dialHeaders = runtime.upgradeHeaders()!;
     expect(dialHeaders.get("x-cadet-subject")).toBe("svc:gateway:self");

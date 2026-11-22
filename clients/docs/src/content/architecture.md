@@ -80,7 +80,11 @@ The Gateway is the front door controlling all of the data that comes from the ou
 - IPC Clients - How it communicates to the Assistant and the Credential Vault
 - Tunnel Client - How it connects directly to the outside world, when not receiving its requests from the Operator.
 
-<!-- The gateway box makes the arrows hard to see. Maybe we use similar arrow colors as our RW, RO, RM convention above -->
+The arrows keep the access convention from the data-plane diagram above:
+green edges write (the Gateway reaching the Assistant and the Credential
+Vault), blue edges are the Assistant reading back, and violet edges are
+metadata only (how the IPC endpoints find each other inside
+`$GATEWAY_SECURITY_DIR`).
 
 ```mermaid
 flowchart LR
@@ -111,4 +115,7 @@ flowchart LR
   TunnelClient -.-> WebServer
   WebServer -.-> SecurityDir
   IpcServer -.-> SecurityDir
+  linkStyle 1,3,4 stroke:#22c55e
+  linkStyle 2 stroke:#3b82f6
+  linkStyle 7,8 stroke:#a855f7
 ```

@@ -77,34 +77,6 @@ function parseCaptureId(
 }
 
 /**
- * The upstream query for a socket: what the runtime's own upgrade handler
- * reads. The capture ids ride through untouched, since the frame the client
- * draws around what it picked is only honest if the runtime reads the same
- * thing. Exported for unit tests.
- */
-export function watchStreamUpstreamParams(
-  data: WatchStreamSocketData,
-): Record<string, string> {
-  const params: Record<string, string> = { mimeType: data.mimeType };
-  if (data.sampleRate !== undefined) {
-    params.sampleRate = String(data.sampleRate);
-  }
-  if (data.conversationId) {
-    params.conversationId = data.conversationId;
-  }
-  if (data.clientId) {
-    params.clientId = data.clientId;
-  }
-  if (data.captureDisplayId !== undefined) {
-    params.captureDisplayId = String(data.captureDisplayId);
-  }
-  if (data.captureWindowId !== undefined) {
-    params.captureWindowId = String(data.captureWindowId);
-  }
-  return params;
-}
-
-/**
  * Create the upgrade handler for `/v1/watch/stream`.
  *
  * Authenticates the downstream caller here and dials upstream with a

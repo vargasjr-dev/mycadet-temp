@@ -28,12 +28,13 @@ const RELAY_TOKEN_PROFILE: ScopeProfile = "gateway_service_v1";
 // Cap buffered messages to prevent unbounded memory growth if upstream stalls
 const MAX_PENDING_MESSAGES = 100;
 
-export const mediaStreamSocketDataSchema = z.object({
-  wsType: z.literal("twilio-media-stream"),
-  callSessionId: z.string(),
-  assistantRuntimeBaseUrl: z.string(),
-  ...runtimeAudioStreamSocketState,
-});
+export const mediaStreamSocketDataSchema = runtimeAudioStreamSocketState.extend(
+  {
+    wsType: z.literal("twilio-media-stream"),
+    callSessionId: z.string(),
+    assistantRuntimeBaseUrl: z.string(),
+  },
+);
 
 export type MediaStreamSocketData = z.infer<typeof mediaStreamSocketDataSchema>;
 

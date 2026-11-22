@@ -57,8 +57,11 @@ export function buildWsUpstreamUrl(opts: WsUpstreamOptions): WsUpstreamResult {
   const query = new URLSearchParams();
   if (opts.extraParams) {
     for (const [key, value] of Object.entries(opts.extraParams)) {
-      if (typeof value !== "string") continue;
-      query.set(key, value);
+      // Scalars ride the dial — numbers included: the runtime's watch route
+      // reads numeric capture ids (and stt its sample rate) off this query.
+      // Anything structured (the upstream socket, pending frames) does not.
+      if (typeof value !== "string" && typeof value !== "number") continue;
+      query.set(key, String(value));
     }
   }
   const qs = query.size > 0 ? `?${query.toString()}` : "";

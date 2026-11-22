@@ -78,8 +78,11 @@ jobs:
           cp -R clients/docs/.next/server/app/docs "$SITE/docs"
           # The app's public assets under the /docs ingress prefix
           # (favicons, QRs) — placed at SITE/docs/ so the object paths
-          # match the URLs that reference them.
-          cp -R clients/docs/public/docs "$SITE/docs"
+          # match the URLs that reference them. The docs page tree above
+          # already created SITE/docs, so copy the CONTENTS in: a plain
+          # `cp -R public/docs SITE/docs` would nest a second docs/ inside
+          # and every asset would 404 one level deep.
+          cp -R clients/docs/public/docs/. "$SITE/docs/"
           # Content-hashed client chunks, referenced as /docs/_next/* (the
           # app's assetPrefix). Uploaded append-only bucket-side so older
           # builds' references keep resolving.

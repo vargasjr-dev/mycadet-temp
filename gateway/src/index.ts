@@ -84,15 +84,14 @@ import {
 import {
   bindCloudIdentityCredentialCache,
   ensureCloudIdentityIds,
-  resolveCloudAssistantIdOrUndefined,
 } from "./cloud-identity.js";
-import { getCloudBaseUrl } from "./cloud-url.js";
 import { CircuitBreakerOpenError, uploadAttachment } from "./runtime/client.js";
 import {
   appendFailedAttachmentNotice,
   ingestAttachments,
 } from "./attachments/ingest.js";
 import { createConversationTaskQueue } from "./channels/conversation-queue.js";
+import { notifyRecordActivity } from "./channels/record-activity.js";
 import { buildSchema } from "./schema.js";
 import {
   createSlackSocketModeClient,
@@ -100,8 +99,10 @@ import {
 } from "./slack/socket-mode.js";
 import { downloadSlackFile } from "./slack/download.js";
 import { slackBotContactNote } from "./slack/actor.js";
-import { DiscordGatewayClient } from "./discord/gateway-socket.js";
-import { createDiscordInboundEventHandler } from "./discord/forward.js";
+import {
+  getDiscordGatewayClient,
+  startDiscordGateway,
+} from "./discord/lifecycle.js";
 import { handleInbound } from "./handlers/handle-inbound.js";
 import { upsertContactChannel } from "./verification/contact-helpers.js";
 import { checkAuthRateLimit } from "./http/middleware/rate-limit.js";
@@ -997,47 +998,6 @@ async function main() {
   // loop, cleanup timer) with no reference to stop it.
   let slackStartGeneration = 0;
 
-  /** Fire-and-forget: notify the cloud of inbound Slack activity so the
-   *  idle-sleep timer is reset for this assistant.
-   *  Throttled to at most one outbound POST per 30 seconds. */
-  let lastRecordActivityTs = 0;
-  async function notifyRecordActivity(): Promise<void> {
-    const now = Date.now();
-    if (now - lastRecordActivityTs < 30_000) return;
-    lastRecordActivityTs = now;
-
-    try {
-      const [assistantApiKey, assistantId] = await Promise.all([
-        credentialCache.get(credentialKey("cadet", "assistant_api_key")),
-        resolveCloudAssistantIdOrUndefined(),
-      ]);
-      const cloudBaseUrl = getCloudBaseUrl();
-
-      if (!cloudBaseUrl || !assistantApiKey || !assistantId) return;
-
-      const res = await fetchImpl(
-        `${cloudBaseUrl}/v1/assistants/${assistantId}/record-activity/`,
-        {
-          method: "POST",
-          headers: { Authorization: `Api-Key ${assistantApiKey.trim()}` },
-          signal: AbortSignal.timeout(10_000),
-        },
-      );
-
-      if (!res.ok) {
-        log.warn(
-          { status: res.status },
-          "Non-OK response from record-activity endpoint",
-        );
-      }
-    } catch (err) {
-      log.debug(
-        { err },
-        "Failed to notify platform of Slack activity for idle sleep",
-      );
-    }
-  }
-
   async function startSlackSocket(): Promise<void> {
     const generation = ++slackStartGeneration;
     if (slackSocketClient) {
@@ -1270,63 +1230,7 @@ async function main() {
     log.info("Slack Socket Mode client started");
   }
 
-  // TODO: move starting the discord client into its own file such that
-  // the only lift in this file is:
-  // 
-  // const stopDiscordClient = startDiscordGateway();
-  // ...
-  // shutdownTasks.push(stopDiscordClient);
-  let discordGatewayClient: DiscordGatewayClient | null = null;
-  const discordForwardQueue = createConversationTaskQueue();
-
-  async function startDiscordGateway(): Promise<void> {
-    if (discordGatewayClient) {
-      discordGatewayClient.stop();
-      discordGatewayClient = null;
-    }
-
-    const botToken = await credentialCache.get(
-      credentialKey("discord_channel", "bot_token"),
-    );
-    if (!botToken) {
-      return;
-    }
-
-    // Room admission defers to Discord's own channel permissions. A
-    // non-empty legacy allow-list is persisted operator intent, so it keeps
-    // gating rooms until the operator clears it; the log names the way out.
-    const readLegacyAllowedChannelIds = (): ReadonlySet<string> | undefined => {
-      const ids =
-        configFileCache.getStringArray("discord", "allowedChannelIds") ?? [];
-      return ids.length > 0 ? new Set(ids) : undefined;
-    };
-    if (readLegacyAllowedChannelIds() !== undefined) {
-      log.warn(
-        "discord.allowedChannelIds is a legacy setting and is still " +
-          "enforced: the bot answers mentions only in listed channels. To " +
-          "adopt Discord's own permission model, scope the bot with View " +
-          "Channel permissions in Discord and remove the config entry.",
-      );
-    }
-
-    discordGatewayClient = new DiscordGatewayClient(
-      {
-        botToken,
-        readLegacyAllowedChannelIds,
-      },
-      createDiscordInboundEventHandler({
-        config,
-        log,
-        notifyRecordActivity,
-        forwardQueue: discordForwardQueue,
-      }),
-    );
-
-    discordGatewayClient.start().catch((err) => {
-      log.error({ err }, "Failed to start Discord Gateway client");
-    });
-    log.info("Discord Gateway client started");
-  }
+  const stopDiscordClient = startDiscordGateway();
 
   /**
    * Fingerprint of the Telegram bot token the dedup cache's watermark belongs
@@ -1387,15 +1291,6 @@ async function main() {
         );
       });
     }
-    if (changed.has("discord_channel")) {
-      startDiscordGateway().catch((err) => {
-        log.error(
-          { err },
-          "Failed to restart Discord Gateway after credential change",
-        );
-      });
-    }
-
     if (changed.has("slack_channel")) {
       startSlackSocket().catch((err) => {
         log.error(
@@ -1535,7 +1430,7 @@ async function main() {
   // the config-shaped deps.
   setChannelSocketHealthSources({
     slack: () => slackSocketClient,
-    discord: () => discordGatewayClient,
+    discord: getDiscordGatewayClient,
   });
   setEnsurePublicIngressLiveForCredentialLinks(
     ensurePublicIngressLiveForCredentialLink,
@@ -1596,6 +1491,7 @@ async function main() {
     configFileWatcher.stop();
     const tunnelStop = tunnelClient?.stop();
     if (tunnelStop) shutdownTasks.push(tunnelStop);
+    shutdownTasks.push(stopDiscordClient());
     ipcServer.stop();
     telegramDedupCache.stopCleanup();
     whatsappDedupCache.stopCleanup();
@@ -1604,10 +1500,6 @@ async function main() {
     if (slackSocketClient) {
       slackSocketClient.stop();
       slackSocketClient = null;
-    }
-    if (discordGatewayClient) {
-      discordGatewayClient.stop();
-      discordGatewayClient = null;
     }
     setTimeout(() => {
       log.info("Drain window elapsed, stopping server");

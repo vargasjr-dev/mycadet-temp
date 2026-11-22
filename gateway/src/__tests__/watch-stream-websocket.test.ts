@@ -30,7 +30,6 @@ const {
   handleWatchStreamWs,
   messageWatchStreamWebsocket,
   openWatchStreamWebsocket,
-  watchStreamUpstreamParams,
 } = await import("../http/routes/watch-stream-websocket.js");
 
 // ---------------------------------------------------------------------------
@@ -106,9 +105,9 @@ describe("handleWatchStreamWs", () => {
   });
 
   /**
-   * The companion's pick. Both ids ride the upstream dial verbatim: the frame
-   * the client draws around what it picked is only honest if the runtime
-   * reads the same thing, and this proxy is the one place between them.
+   * The companion's pick. The frame the client draws around what it picked
+   * is only honest if the runtime reads the same thing, and this proxy is
+   * the one place between them.
    */
   test("carries the capture target through to the runtime", async () => {
     const req = new Request(
@@ -121,19 +120,6 @@ describe("handleWatchStreamWs", () => {
     const data = upgradedData<WatchStreamSocketData>(server);
     expect(data.captureWindowId).toBe(4242);
     expect(data.captureDisplayId).toBeUndefined();
-    expect(watchStreamUpstreamParams(data)).toMatchObject({
-      captureWindowId: "4242",
-    });
-    expect(
-      watchStreamUpstreamParams({
-        ...data,
-        captureWindowId: undefined,
-        captureDisplayId: 7,
-      }),
-    ).toMatchObject({ captureDisplayId: "7" });
-    expect(
-      watchStreamUpstreamParams({ ...data, captureWindowId: undefined }),
-    ).not.toHaveProperty("captureWindowId");
   });
 
   test("reads a blank capture id as absent", async () => {
@@ -313,6 +299,31 @@ describe("getWatchStreamWebsocketHandlers", () => {
    * this proxy has an upstream to send to. The first fraction of a second of
    * narration is exactly the part a transcriber needs.
    */
+  test("the capture target rides the upstream dial", async () => {
+    const runtime = startFakeRuntime('{"type":"session_started"}');
+    try {
+      testConfig = makeConfig({
+        assistantRuntimeBaseUrl: `http://127.0.0.1:${runtime.server.port}`,
+      });
+      const ws = createFakeDownstreamWs<WatchStreamSocketData>({
+        wsType: "watch-stream",
+        mimeType: "audio/pcm",
+        captureWindowId: 4242,
+      });
+
+      openWatchStreamWebsocket(ws as never);
+      await runtime.connected;
+
+      // The socket data rides the upstream dial as scalar query params, so
+      // the runtime reads the same capture target the client drew.
+      const url = runtime.upgradeUrl()!;
+      expect(url.searchParams.get("captureWindowId")).toBe("4242");
+      expect(url.searchParams.has("captureDisplayId")).toBe(false);
+    } finally {
+      runtime.server.stop(true);
+    }
+  });
+
   test("message buffers frames that arrive before upstream connects", async () => {
     const ws = makeWatchWs();
     ws.data.pendingMessages = [];
@@ -376,12 +387,12 @@ describe("getWatchStreamWebsocketHandlers", () => {
 });
 
 /**
- * Watch carries JSON lifecycle and timeline frames, each self-contained. A
- * dropped one costs a fragment, not the session, so the desktop stream's
- * teardown must not reach this route: the usual trigger is a runtime frame
- * landing just after the browser socket closed.
+ * Watch tears down on a dropped frame like the desktop stream does: a
+ * narrated session that outruns its viewer is not worth continuing at a
+ * loss. An empty frame is not a drop — Bun reports a byte count, so a
+ * zero-byte write never reads as one.
  */
-describe("a dropped downstream frame does not end a watch session", () => {
+describe("a dropped downstream frame ends the watch session", () => {
   let runtime: FakeRuntime;
   afterEach(() => {
     runtime?.server.stop(true);
@@ -400,16 +411,17 @@ describe("a dropped downstream frame does not end a watch session", () => {
     );
   };
 
-  test("keeps both sides open when a send is dropped", async () => {
+  test("closes both sides when a downstream send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"session_started"}');
     const ws = makeViewerWs(0);
 
     openWatchStreamWebsocket(ws as never);
-    await waitFor(() => ws.sent.length > 0);
-    await settle();
+    const upstreamClose = mock(ws.data.upstream!.close.bind(ws.data.upstream));
+    ws.data.upstream!.close = upstreamClose;
+    await waitFor(() => ws.closes.length > 0);
 
-    expect(ws.closes).toEqual([]);
-    expect(ws.data.upstream!.readyState).toBe(WebSocket.OPEN);
+    expect(ws.closes[0]).toEqual({ code: 1011, reason: "Viewer too slow" });
+    expect(upstreamClose).toHaveBeenCalledWith(1011, "Viewer too slow");
   });
 
   test("does not treat an empty frame as a dropped one", async () => {
