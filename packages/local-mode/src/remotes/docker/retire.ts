@@ -14,6 +14,28 @@ export async function removeContainer(containerName: string): Promise<void> {
   }
 }
 
+/** Remove an instance's containers, network and volumes, skipping any that are already gone. */
+export async function removeDockerResources(
+  assistantId: string,
+): Promise<void> {
+  const res = dockerResourceNames(assistantId);
+  for (const container of [
+    res.cesContainer,
+    res.gatewayContainer,
+    res.assistantContainer,
+  ]) {
+    await exec("docker", ["rm", "-f", container]).catch(() => {});
+  }
+  await exec("docker", ["network", "rm", res.network]).catch(() => {});
+  for (const claim of DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates) {
+    await exec("docker", [
+      "volume",
+      "rm",
+      claim.dockerVolume(assistantId),
+    ]).catch(() => {});
+  }
+}
+
 export async function retireDocker(entry: DockerAssistant): Promise<void> {
   console.log(
     `\u{1F5D1}\ufe0f  Stopping Docker containers for '${entry.assistantId}'...\n`,
@@ -35,27 +57,7 @@ export async function retireDocker(entry: DockerAssistant): Promise<void> {
   }
 
   await sleepDocker(entry);
-
-  const res = dockerResourceNames(entry.assistantId);
-
-  await removeContainer(res.cesContainer);
-  await removeContainer(res.gatewayContainer);
-  await removeContainer(res.assistantContainer);
-
-  // Remove network and volumes
-  try {
-    await exec("docker", ["network", "rm", res.network]);
-  } catch {
-    // network may not exist
-  }
-  for (const claim of DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates) {
-    const vol = claim.dockerVolume(entry.assistantId);
-    try {
-      await exec("docker", ["volume", "rm", vol]);
-    } catch {
-      // volume may not exist
-    }
-  }
+  await removeDockerResources(entry.assistantId);
 
   // Future: consider stopping Colima VM when no Docker instances remain.
   // Considerations:

@@ -511,3 +511,62 @@ describe("hatchDocker port choice", () => {
     }
   });
 });
+
+describe("hatchDocker", () => {
+  test("a hatch that fails before it's saved removes what it created", async () => {
+    for (const key of [
+      "CADET_ASSISTANT_IMAGE",
+      "CADET_GATEWAY_IMAGE",
+      "CADET_CREDENTIAL_EXECUTOR_IMAGE",
+    ]) {
+      process.env[key] = "image:test";
+    }
+    const calls: string[][] = [];
+    const execSpy = spyOn(execModule, "exec").mockImplementation(
+      async (_cmd: string, args: string[] = []) => {
+        calls.push(args);
+        if (args[0] === "run" && args.includes("d9-assistant")) {
+          throw new Error(
+            "Bind for 127.0.0.1:7821 failed: port is already allocated",
+          );
+        }
+      },
+    );
+    const execOutputSpy = spyOn(execModule, "execOutput").mockResolvedValue("");
+
+    try {
+      const result = await hatchDocker({
+        name: "d9",
+        reporter: {
+          progress: () => {},
+          log: () => {},
+          warn: () => {},
+          error: () => {},
+        },
+      });
+
+      expect(result.ok).toBe(false);
+      expect(calls).toContainEqual(["rm", "-f", "d9-assistant"]);
+      expect(calls).toContainEqual(["network", "rm", "d9-net"]);
+      const removedVolumes = calls
+        .filter((args) => args[0] === "volume" && args[1] === "rm")
+        .map((args) => args[2])
+        .sort();
+      expect(removedVolumes).toEqual([
+        "d9-assistant-ipc",
+        "d9-ces-data",
+        "d9-ces-sec",
+        "d9-gateway-ipc",
+        "d9-gateway-sec",
+        "d9-socket",
+        "d9-workspace",
+      ]);
+    } finally {
+      execSpy.mockRestore();
+      execOutputSpy.mockRestore();
+      delete process.env.CADET_ASSISTANT_IMAGE;
+      delete process.env.CADET_GATEWAY_IMAGE;
+      delete process.env.CADET_CREDENTIAL_EXECUTOR_IMAGE;
+    }
+  });
+});
