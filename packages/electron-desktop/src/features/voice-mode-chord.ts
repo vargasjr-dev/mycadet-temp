@@ -11,7 +11,7 @@ import {
 } from "@mycadet/ipc-contract";
 
 import { handle } from "../ipc";
-import log from "../app-logger";
+import { log } from "../app-logger";
 import { current } from "../main-window";
 import { getSharedHelperClient } from "../native-helper-client";
 

@@ -81,7 +81,7 @@ mock.module("../ipc", () => ({
 }));
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { warn: mock(() => undefined) },
+  log: { warn: mock(() => undefined) },
 }));
 mock.module("../main-window", () => ({ current: () => null }));
 mock.module("../native-helper-client", () => ({

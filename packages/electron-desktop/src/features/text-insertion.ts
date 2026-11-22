@@ -9,7 +9,7 @@ import {
   readFrontAppFocus,
   type ShortcutOutcome,
 } from "./helper-hotkeys";
-import log from "../app-logger";
+import { log } from "../app-logger";
 
 const CLIPBOARD_RESTORE_DELAY_MS = 500;
 const PASTE_SHORTCUT_SCRIPT =

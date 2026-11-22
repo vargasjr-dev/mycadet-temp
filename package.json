@@ -28,7 +28,6 @@
     "packages/design-library",
     "packages/egress-proxy",
     "packages/electron-desktop",
-    "packages/electron-utils",
     "packages/environments",
     "packages/gateway-client",
     "packages/ipc-contract",

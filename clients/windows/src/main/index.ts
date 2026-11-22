@@ -1,13 +1,6 @@
 import { app } from "electron";
 
-import {
-  APP_HOST,
-  APP_PROTOCOL,
-  getDeviceId,
-  getVersionInfo,
-  startApp,
-} from "@mycadet/electron-desktop";
-import { handleSync } from "@mycadet/electron-desktop/ipc";
+import { startApp } from "@mycadet/electron-desktop";
 
 // Toasts and taskbar grouping key off the AppUserModelID, which must match
 // the installed shortcut's id — the builder config is the single source, so
@@ -20,12 +13,6 @@ app.setAppUserModelId(
     ? __CADET_APP_USER_MODEL_ID__
     : "ai.mycadet.electron",
 );
-
-handleSync("cadet:config:get", () => ({
-  baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
-  deviceId: getDeviceId(),
-  version: getVersionInfo().version,
-}));
 
 startApp({
   platform: "win-electron",

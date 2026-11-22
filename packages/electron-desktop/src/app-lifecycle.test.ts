@@ -58,7 +58,7 @@ mock.module("./auto-update", () => ({
   installAutoUpdate: recorder("auto-update"),
 }));
 mock.module("./app-logger", () => ({
-  default: {
+  log: {
     info: (...args: unknown[]) => logCalls.push(["info", ...args]),
     error: (...args: unknown[]) => logCalls.push(["error", ...args]),
     warn: (...args: unknown[]) => logCalls.push(["warn", ...args]),

@@ -22,10 +22,7 @@ export const resolveRelativePath = (
 ): ResolveResult => {
   const resolved = path.normalize(path.join(rendererRoot, relativePath));
   const rendererRootWithSep = rendererRoot + path.sep;
-  if (
-    resolved !== rendererRoot &&
-    !resolved.startsWith(rendererRootWithSep)
-  ) {
+  if (resolved !== rendererRoot && !resolved.startsWith(rendererRootWithSep)) {
     return { kind: "forbidden" };
   }
   return { kind: "ok", resolved };

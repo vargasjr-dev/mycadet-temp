@@ -19,7 +19,6 @@ export const SHARED_DESKTOP_INLINE_DEPS = [
   "electron-store",
   "conf",
   "zod",
-  "@mycadet/electron-utils",
   "@mycadet/electron-desktop",
   "@mycadet/ipc-contract",
   "@mycadet/local-mode",

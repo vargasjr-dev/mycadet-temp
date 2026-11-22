@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { electronMock } from "../test-setup";
 
-import { RENDERER_BASE_PROD } from "./app-config";
-
 type Listener = () => void;
 
 type StubWebContents = {
@@ -122,20 +120,15 @@ mock.module("electron", () =>
 );
 
 const { BrowserWindow } = await import("electron");
-const {
-  configureFloatingWindows,
-  createFloatingWindow,
-  createWindowRouteResolver,
-  getFloatingWindow,
-} = await import("./floating-window");
-
-configureFloatingWindows({
-  createWindow: (opts) => {
+mock.module("./windows", () => ({
+  createWindow: (opts: CreateWindowOptions) => {
     stagedOpts = opts;
     return new BrowserWindow(opts.browserWindow);
   },
-  resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
-});
+}));
+
+const { createFloatingWindow, getFloatingWindow } =
+  await import("./floating-window");
 
 let nextKind = 1;
 const kind = (name: string): string => `${name}-${nextKind++}`;

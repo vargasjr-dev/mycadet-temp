@@ -8,8 +8,8 @@
  * and the preload bundles lean.
  */
 
-export { getVersionInfo } from "./about";
 export { APP_HOST, APP_PROTOCOL } from "./app-config";
+export { log } from "./app-logger";
 export { startApp } from "./app-lifecycle";
 export {
   current as currentMainWindow,

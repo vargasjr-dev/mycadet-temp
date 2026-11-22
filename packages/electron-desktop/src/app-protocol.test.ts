@@ -24,10 +24,12 @@ describe("resolveAppProtocolPath - allowed paths", () => {
   });
 
   test("resolves a top-level file inside the root", () => {
-    expect(resolveAppProtocolPath(ROOT, "app://mycadet.ai/index.html")).toEqual({
-      kind: "ok",
-      resolved: path.join(ROOT, "index.html"),
-    });
+    expect(resolveAppProtocolPath(ROOT, "app://mycadet.ai/index.html")).toEqual(
+      {
+        kind: "ok",
+        resolved: path.join(ROOT, "index.html"),
+      },
+    );
   });
 
   test("resolves nested asset paths inside the root", () => {
@@ -180,7 +182,11 @@ describe("resolveAppProtocolPath - mount-prefix stripping", () => {
     // `/favicon.ico` lives at the bare protocol root. Stays under
     // `rendererRoot/favicon.ico` (where Vite emits favicon).
     expect(
-      resolveAppProtocolPath(ROOT, "app://mycadet.ai/favicon.ico", "/assistant"),
+      resolveAppProtocolPath(
+        ROOT,
+        "app://mycadet.ai/favicon.ico",
+        "/assistant",
+      ),
     ).toEqual({ kind: "ok", resolved: path.join(ROOT, "favicon.ico") });
   });
 

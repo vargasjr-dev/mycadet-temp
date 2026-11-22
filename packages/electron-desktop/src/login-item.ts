@@ -48,9 +48,17 @@ const writeLaunchAtLogin = (enabled: boolean): void => {
 };
 
 const syncLoginItem = (): void => {
+  const desired = readLaunchAtLogin();
+  // Skip the native registration when the OS already agrees: macOS refuses
+  // login-item writes in contexts without the user's LaunchServices consent
+  // (automation runners, unsigned builds) and Electron turns the refusal
+  // into an ERROR-level "Operation not permitted" log line.
+  if (app.getLoginItemSettings(runtime.identity).openAtLogin === desired) {
+    return;
+  }
   app.setLoginItemSettings({
-    openAtLogin: readLaunchAtLogin(),
-    ...runtime?.identity,
+    openAtLogin: desired,
+    ...runtime.identity,
   });
 };
 

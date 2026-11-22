@@ -12,7 +12,7 @@ import { app } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import log from "./app-logger";
+import { log } from "./app-logger";
 
 const ADDON_FILENAME = "cadet-notifier.node";
 

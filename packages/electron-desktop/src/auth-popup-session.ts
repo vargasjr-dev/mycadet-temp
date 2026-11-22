@@ -196,13 +196,17 @@ export const navigationDetailsFromArgs = (
     };
   }
 
-  if (first && typeof first === "object") {
-    const details = first as { url?: unknown; isMainFrame?: unknown };
-    if (typeof details.url === "string") {
+  const isDetails = (
+    value: unknown,
+  ): value is { url?: unknown; isMainFrame?: unknown } =>
+    typeof value === "object" && value !== null;
+
+  if (isDetails(first)) {
+    if (typeof first.url === "string") {
       return {
-        url: details.url,
+        url: first.url,
         isMainFrame:
-          typeof details.isMainFrame === "boolean" ? details.isMainFrame : true,
+          typeof first.isMainFrame === "boolean" ? first.isMainFrame : true,
       };
     }
   }

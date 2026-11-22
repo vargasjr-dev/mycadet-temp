@@ -14,30 +14,13 @@ import {
   repositionFloatingWindow,
 } from "./floating-window";
 import { handle } from "./ipc";
-import { createModuleConfiguration } from "./module-configuration";
+import { current, dispatchToMain, ensureVisible } from "./main-window";
 
 const COMMAND_PALETTE_KIND = "commandPalette";
 const COMMAND_PALETTE_PATH = "/floating/command-palette";
 
 const PANEL_WIDTH = 584;
 const PANEL_HEIGHT = 444;
-
-export interface CommandPaletteWindowDependencies {
-  // Narrowed to the visibility trio the palette reads: callers hand the
-  // window they have, and only presence-and-state matters here.
-  currentMainWindow: () => Pick<
-    BrowserWindow,
-    "isDestroyed" | "isVisible" | "isMinimized"
-  > | null;
-  dispatchToMain: (command: CadetCommand) => void;
-  ensureMainWindowVisible: () => void | Promise<void>;
-}
-
-const configuration =
-  createModuleConfiguration<CommandPaletteWindowDependencies>(
-    "Command palette window module",
-  );
-export const configureCommandPaletteWindow = configuration.configure;
 
 type PayloadCommandKind = Extract<
   CadetCommand,
@@ -168,24 +151,22 @@ export const isCommandPaletteWindowFocused = (): boolean => {
 };
 
 /**
- * The configured main-window dispatcher, for the shared command dispatch: a
- * command aimed at "the focused window" must never target this palette
- * window — its renderer only speaks the palette protocol — so while the
- * palette holds focus, the command routes to the app's main window.
+ * The main-window dispatcher, for the shared command dispatch: a command
+ * aimed at "the focused window" must never target this palette window — its
+ * renderer only speaks the palette protocol — so while the palette holds
+ * focus, the command routes to the app's main window.
  */
 export const dispatchToMainWindow = (command: CadetCommand): void =>
-  configuration.get().dispatchToMain(command);
+  dispatchToMain(command);
 
 export const selectCommandPaletteCommand = async (
   command: CommandPaletteDispatchCommand,
 ): Promise<void> => {
   closeCommandPaletteWindow();
 
-  const { currentMainWindow, dispatchToMain, ensureMainWindowVisible } =
-    configuration.get();
-  const main = currentMainWindow();
+  const main = current();
   if (!main || main.isDestroyed() || !main.isVisible() || main.isMinimized()) {
-    await ensureMainWindowVisible();
+    await ensureVisible();
   }
 
   dispatchToMain(command);

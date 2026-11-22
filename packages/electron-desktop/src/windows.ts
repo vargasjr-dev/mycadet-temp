@@ -9,7 +9,7 @@ import path from "node:path";
 import {
   type CookieJar,
   createAuthPopupSignInTracker,
-} from "@mycadet/electron-utils/auth-popup-session";
+} from "./auth-popup-session";
 
 import { areChromeDevToolsEnabled } from "./devtools";
 

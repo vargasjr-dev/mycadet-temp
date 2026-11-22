@@ -178,14 +178,24 @@ mock.module("../main-window", () => ({
 }));
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { info: () => undefined, warn: logWarn },
+  log: { info: () => undefined, warn: logWarn },
 }));
 
 const { install: auxiliaryWindowsInstall } =
   await import("../features/auxiliary-windows");
-const { toggleQuickInput } = await import("../quick-input-window");
+const { installCommandPaletteWindow } =
+  await import("../command-palette-window");
+const { installQuickInput, toggleQuickInput } =
+  await import("../quick-input-window");
+const { installPopoutWindows } = await import("../popout-window");
 beforeAll(() => {
+  // The composition only owns the overlay install and the display
+  // listeners; each window module registers its own channels, so the
+  // composition test installs them explicitly.
   auxiliaryWindowsInstall();
+  installCommandPaletteWindow();
+  installQuickInput();
+  installPopoutWindows();
 });
 beforeEach(() => {
   created.length = 0;
@@ -208,11 +218,11 @@ describe("Windows auxiliary windows", () => {
     expect(created).toHaveLength(1);
     const { options, window } = created[0]!;
     expect(options.browserWindow).toMatchObject({
+      type: "panel",
       frame: false,
       focusable: true,
       skipTaskbar: true,
     });
-    expect(options.browserWindow).not.toHaveProperty("type");
     expect(window.focus).toHaveBeenCalledTimes(2);
   });
 
@@ -227,7 +237,7 @@ describe("Windows auxiliary windows", () => {
       alwaysOnTop: true,
     });
     expect(window.loadURL).toHaveBeenCalledWith(
-      "http://localhost:5173/assistant/quick-input",
+      "app://mycadet.ai/web/assistant/quick-input",
     );
     window.emit("blur");
     expect(window.isDestroyed()).toBe(true);
@@ -245,7 +255,7 @@ describe("Windows auxiliary windows", () => {
     expect(window.setAlwaysOnTop).toHaveBeenCalledWith(true, "screen-saver");
     expect(window.showInactive).toHaveBeenCalledTimes(1);
     expect(window.loadURL).toHaveBeenCalledWith(
-      "http://localhost:5173/assistant/floating/dictation-overlay",
+      "app://mycadet.ai/web/assistant/floating/dictation-overlay",
     );
     onListeners.get("cadet:dictationOverlay:setState")?.([{ kind: "dismiss" }]);
     expect(window.isDestroyed()).toBe(true);
@@ -288,26 +298,17 @@ describe("Windows auxiliary windows", () => {
     onListeners.get("cadet:dictationOverlay:setState")?.([{ kind: "dismiss" }]);
   });
 
-  test("loads auxiliary windows from the app origin in local-renderer dev", () => {
-    // CADET_LOCAL_RENDERER serves the main window over app:// while
-    // CADET_DEV_URL names the remote platform; auxiliary windows must
-    // follow the main window or the IPC sender guard rejects them.
-    process.env.CADET_LOCAL_RENDERER = "true";
-    process.env.CADET_DEV_URL = "https://dev-assistant.example.com/assistant";
-    try {
-      onListeners.get("cadet:dictationOverlay:setState")?.([
-        { kind: "recording", transcription: "" },
-      ]);
-      expect(created[0]!.window.loadURL).toHaveBeenCalledWith(
-        "app://mycadet.ai/assistant/floating/dictation-overlay",
-      );
-    } finally {
-      onListeners.get("cadet:dictationOverlay:setState")?.([
-        { kind: "dismiss" },
-      ]);
-      delete process.env.CADET_LOCAL_RENDERER;
-      delete process.env.CADET_DEV_URL;
-    }
+  test("loads auxiliary windows from the app origin", () => {
+    // Auxiliary windows are always served from the packaged app origin —
+    // the IPC sender guard rejects any other sender — so there is no dev
+    // base to fall back to.
+    onListeners.get("cadet:dictationOverlay:setState")?.([
+      { kind: "recording", transcription: "" },
+    ]);
+    expect(created[0]!.window.loadURL).toHaveBeenCalledWith(
+      "app://mycadet.ai/web/assistant/floating/dictation-overlay",
+    );
+    onListeners.get("cadet:dictationOverlay:setState")?.([{ kind: "dismiss" }]);
   });
 
   test("repositions transient windows after a display change", () => {
@@ -338,7 +339,7 @@ describe("Windows auxiliary windows", () => {
     expect(options.browserWindow).not.toHaveProperty("parent");
     expect(options.backgroundThrottling).toBe(false);
     expect(popout.loadURL).toHaveBeenCalledWith(
-      "http://localhost:5173/assistant/conversations/conv-123?popout=1",
+      "app://mycadet.ai/web/assistant/conversations/conv-123?popout=1",
     );
     expect(popout.focus).toHaveBeenCalledTimes(2);
   });

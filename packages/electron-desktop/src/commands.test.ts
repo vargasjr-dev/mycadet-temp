@@ -81,24 +81,22 @@ const {
   GLOBAL_SHORTCUT_DEFAULTS,
   resolveAccelerator,
 } = await import("./commands");
-const { configureCommandPaletteWindow, __resetForTesting } =
-  await import("./command-palette-window");
-const { configureFloatingWindows } = await import("./floating-window");
+const { __resetForTesting } = await import("./command-palette-window");
 
-configureFloatingWindows({
+// The unrolled window modules read their wiring from their own imports, so
+// the seams live on those sources now.
+mock.module("./main-window", () => ({
+  current: () => null,
+  dispatchToMain: (command: { kind: string }) => sentToMain.push(command),
+  ensureVisible: () => undefined,
+}));
+mock.module("./windows", () => ({
   createWindow: () => {
     const win = new StubWindow();
     createdWindows.push(win);
     return win as unknown as Electron.BrowserWindow;
   },
-  resolveRoute: (route: string) => `https://app.local${route}`,
-});
-
-configureCommandPaletteWindow({
-  currentMainWindow: () => null,
-  dispatchToMain: (command) => sentToMain.push(command),
-  ensureMainWindowVisible: () => undefined,
-});
+}));
 
 let mockHotkeys: unknown = null;
 

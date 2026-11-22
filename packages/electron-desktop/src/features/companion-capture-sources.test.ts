@@ -23,7 +23,7 @@ mock.module("electron", () =>
 );
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },
+  log: { warn: () => {}, info: () => {}, debug: () => {}, error: () => {} },
 }));
 mock.module("../apple-script-executor", () => ({
   runAppleScript: async () => "",

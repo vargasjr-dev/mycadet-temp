@@ -2,7 +2,7 @@ import { app, net, protocol, session } from "electron";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
-import log from "./app-logger";
+import { log } from "./app-logger";
 import { type AllowedOrigin } from "./app-origin";
 import { getDeviceId } from "./device-id";
 import {
@@ -11,7 +11,7 @@ import {
   servedConfigFromLockfile,
   type CookieJar,
 } from "@mycadet/local-mode";
-import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
+import { planAppProtocolAssetRequest } from "./app-protocol";
 
 /**
  * The `app://` protocol handler all three desktop clients share: one

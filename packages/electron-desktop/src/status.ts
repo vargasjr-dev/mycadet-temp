@@ -8,7 +8,7 @@ import {
 } from "@mycadet/ipc-contract";
 
 import { handle, on } from "./ipc";
-import log from "./app-logger";
+import { log } from "./app-logger";
 
 /**
  * Tooltip / menu-header text per status. `assistantName` falls back to

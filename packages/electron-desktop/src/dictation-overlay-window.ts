@@ -19,11 +19,10 @@ import {
   getFloatingWindow,
   repositionFloatingWindow,
 } from "./floating-window";
-import log from "./app-logger";
+import { log } from "./app-logger";
 import { createDictationEscapeMonitor } from "./dictation-escape-monitor";
 import { handle, on } from "./ipc";
 import { dispatchToMain } from "./main-window";
-import { createModuleConfiguration } from "./module-configuration";
 
 /**
  * System-wide dictation overlay — a floating panel pinned
@@ -72,31 +71,21 @@ export const DONE_HIDE_MS = 800;
 /** How long error states stay up — mirrors the recording store's 3 s. */
 export const ERROR_HIDE_MS = 3000;
 
-export interface DictationOverlayWindowDependencies {
-  closeOnHide?: boolean;
-  /**
-   * Poll the cursor from main and hit-test it against the renderer-reported
-   * Stop region, toggling interactivity directly. Windows workaround:
-   * Electron forwards mouse moves to a click-through window
-   * (`setIgnoreMouseEvents(true, { forward: true })`) through a low-level
-   * hook that posts to a child HWND cached once at window creation and
-   * never refreshed (electron/electron#15376, #49982; fix pending in
-   * #52633), and the hook is blind while an elevated window is in front
-   * (#33281). Either way the page never sees the pointer reach the Stop
-   * button, never asks to become interactive, and the click falls through
-   * to the app behind. `webContents.sendInputEvent` is no fix: it requires
-   * a focused window, and this one is deliberately unfocusable.
-   */
-  pollCursorForHover?: boolean;
-  /** Diagnostic sink for overlay lifecycle and hit-test decisions. */
-  log?: (message: string) => void;
-}
+// Hiding tears the overlay down — the next session rebuilds it, and a
+// hidden panel would keep its renderer warm for nothing.
+const CLOSE_ON_HIDE = true;
 
-const configuration =
-  createModuleConfiguration<DictationOverlayWindowDependencies>(
-    "Dictation overlay window module",
-  );
-export const configureDictationOverlayWindow = configuration.configure;
+// Electron forwards mouse moves to a click-through window
+// (`setIgnoreMouseEvents(true, { forward: true })`) through a low-level
+// hook that posts to a child HWND cached once at window creation and never
+// refreshed (electron/electron#15376, #49982; fix pending in #52633), and
+// the hook is blind while an elevated window is in front (#33281). Either
+// way the page never sees the pointer reach the Stop button, never asks to
+// become interactive, and the click falls through to the app behind.
+// `webContents.sendInputEvent` is no fix: it requires a focused window,
+// and this one is deliberately unfocusable — so the cursor is polled from
+// main instead.
+const POLL_CURSOR_FOR_HOVER = true;
 
 const dictationOverlayMessageSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -298,7 +287,7 @@ let overlayInteractive = false;
 let overlayHitRegion: DictationOverlayHitRegion | null = null;
 
 const debug = (message: string): void => {
-  configuration.get().log?.(`[dictation-overlay] ${message}`);
+  log.info(`[dictation-overlay] ${message}`);
 };
 
 const setOverlayInteractive = (interactive: boolean): void => {
@@ -384,9 +373,8 @@ const showOverlay = (): void => {
   // session left behind.
   overlayInteractive = false;
   overlayHitRegion = null;
-  const poll = Boolean(configuration.get().pollCursorForHover);
-  debug(`show (pollCursorForHover=${poll})`);
-  if (poll) {
+  debug(`show (pollCursorForHover=${POLL_CURSOR_FOR_HOVER})`);
+  if (POLL_CURSOR_FOR_HOVER) {
     hoverPoller.start();
   }
 };
@@ -399,7 +387,7 @@ const hideOverlay = (): void => {
   const win = getFloatingWindow(OVERLAY_KIND);
   if (win) {
     setOverlayInteractive(false);
-    if (configuration.get().closeOnHide) {
+    if (CLOSE_ON_HIDE) {
       win.close();
     } else {
       win.hide();

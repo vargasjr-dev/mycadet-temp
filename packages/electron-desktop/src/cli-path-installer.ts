@@ -20,6 +20,7 @@ import {
   resolveShellPath,
   splitPathEntries,
 } from "./shell-path";
+import { refreshDesktopMenuCliPath } from "./menu";
 
 /** Ownership/migration marker embedded in every wrapper we write. */
 export const WRAPPER_MARKER = "# cadet-cli-wrapper v1";
@@ -116,11 +117,6 @@ export async function provisionCliForWrapper(): Promise<boolean> {
     return false;
   }
   await ensureCliInstalled();
-  // A version bump rewrote the locator: re-run the menu's wrapper detection
-  // so the CLI rows reflect it without waiting for the next menu-triggering
-  // event. The menu's own platform guard decides whether the rows exist,
-  // so the refresh is safe to request on every platform.
-  const { refreshDesktopMenuCliPath } = await import("./menu");
   await refreshDesktopMenuCliPath();
   return true;
 }

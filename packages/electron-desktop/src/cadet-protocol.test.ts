@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { describe, expect, mock, test } from "bun:test";
 
-import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
+import { resolveRelativePath } from "./app-protocol";
 import { electronMock } from "../test-setup";
 
 mock.module("electron", () =>

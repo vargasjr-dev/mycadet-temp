@@ -10,9 +10,6 @@
 export const APP_VERSION_INFO = "cadet:app:versionInfo";
 export const APP_OPEN_WEBSITE = "cadet:app:openWebsite";
 
-// Config
-export const CONFIG_GET = "cadet:config:get";
-
 // Text insertion
 export const TEXT_INSERT = "cadet:text:insertIntoFrontApp";
 export const TEXT_UNDO = "cadet:text:undoInFrontApp";

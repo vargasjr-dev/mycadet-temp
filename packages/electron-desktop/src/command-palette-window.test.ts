@@ -3,8 +3,6 @@ import { electronMock } from "../test-setup";
 
 import type { IpcHandle } from "./ipc";
 
-import { RENDERER_BASE_PROD } from "./app-config";
-
 type Listener = (...args: unknown[]) => void;
 
 type StubWebContents = {
@@ -296,26 +294,22 @@ mock.module("./cli-path-flow", () => ({
   isCliPathFlowInFlight: () => false,
 }));
 
+mock.module("./main-window", () => ({
+  current: () => currentMainWindow,
+  dispatchToMain: dispatchToMainMock,
+  ensureVisible: ensureVisibleMock,
+}));
+mock.module("./windows", () => ({
+  createWindow: createWindowMock,
+}));
+
 const {
   __resetForTesting,
   commandPaletteDispatchCommandSchema,
-  configureCommandPaletteWindow,
   installCommandPaletteWindow,
   openCommandPaletteWindow,
   selectCommandPaletteCommand,
 } = await import("./command-palette-window");
-const { configureFloatingWindows, createWindowRouteResolver } =
-  await import("./floating-window");
-
-configureFloatingWindows({
-  createWindow: createWindowMock,
-  resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
-});
-configureCommandPaletteWindow({
-  currentMainWindow: () => currentMainWindow,
-  dispatchToMain: dispatchToMainMock,
-  ensureMainWindowVisible: ensureVisibleMock,
-});
 
 beforeEach(() => {
   for (const { win } of created) {

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import JSZip from "jszip";
 
-import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
+import { resolveRelativePath } from "./app-protocol";
 import type { BundleScanData } from "@mycadet/ipc-contract";
 
 // ---------------------------------------------------------------------------

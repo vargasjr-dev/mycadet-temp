@@ -103,6 +103,13 @@ mock.module("./window-state", () => ({
     companionHiddenListeners.push(listener);
     return () => undefined;
   },
+  // The main window's surface, now in this graph since the unrolled
+  // command-palette module imports it directly.
+  readTitleBarOverlayTheme: () => undefined,
+  writeTitleBarOverlayTheme: () => undefined,
+  restoreBounds: () => ({ width: 1280, height: 800 }),
+  setOnboarding: () => undefined,
+  track: () => undefined,
 }));
 mock.module("./devtools", () => ({
   areChromeDevToolsEnabled: () => chromeDevTools,

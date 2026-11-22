@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
+// The barrel's graph probes the notifier addon by path; this run is
+// packaged (appState.isPackaged), so give the probe a resources root whose
+// addon is simply absent — the probe reports unsupported and moves on.
+process.resourcesPath = "/mock/resources";
+
 type ConflictType = "exists" | "existsAndRunning";
 type ConflictHandler = (conflictType: ConflictType) => boolean;
 
@@ -45,7 +50,10 @@ mock.module("electron", () =>
       whenReady: () => Promise.resolve(),
       on: () => undefined,
       off: () => undefined,
-      getPath: () => "/tmp",
+      // The barrel's log export pulls the logger (which probes these) and
+      // the notifier addon's path probe into this graph.
+      getAppPath: () => "/mock/app",
+      getPath: () => "/tmp/cadet-userdata",
       getName: () => "Cadet",
       getVersion: () => "0.0.0-test",
       get isPackaged() {

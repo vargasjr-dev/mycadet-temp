@@ -24,7 +24,7 @@ import {
 import { type NativeSidecarState } from "../sidecar/supervisor";
 
 import { handle, on } from "../ipc";
-import log from "../app-logger";
+import { log } from "../app-logger";
 import { getSharedHelperClient } from "../native-helper-client";
 
 /**

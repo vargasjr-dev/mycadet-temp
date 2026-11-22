@@ -22,7 +22,7 @@ mock.module("../sidecar/shared-cu-helper", () => ({
 
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { info: () => undefined, warn: () => undefined },
+  log: { info: () => undefined, warn: () => undefined },
 }));
 
 const {

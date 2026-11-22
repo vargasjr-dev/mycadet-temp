@@ -160,7 +160,7 @@ mock.module("./windows", () => ({
 }));
 mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { error: () => undefined },
+  log: { error: () => undefined },
 }));
 /**
  * Windows' own light/dark setting and the app's override of it, which is what

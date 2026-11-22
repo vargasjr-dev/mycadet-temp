@@ -15,24 +15,15 @@ mock.module("./ipc", () => ({
 const dispatches: unknown[] = [];
 let ensuredVisible = 0;
 
-const {
-  installQuickInput,
-  configureQuickInputWindow,
-  // Imported for the type shape only — the submit handler's contract.
-} = await import("./quick-input-window");
+mock.module("./main-window", () => ({
+  current: () => null,
+  dispatchToMain: (command: unknown) => dispatches.push(command),
+  ensureVisible: () => {
+    ensuredVisible += 1;
+  },
+}));
 
-const configure = () => {
-  configureQuickInputWindow({
-    createWindow: () => {
-      throw new Error("not expected in this test");
-    },
-    dispatchToMain: (command: unknown) => dispatches.push(command),
-    ensureMainWindowVisible: () => {
-      ensuredVisible += 1;
-    },
-    resolveRoute: (route: string) => `http://localhost:5173${route}`,
-  });
-};
+const { installQuickInput } = await import("./quick-input-window");
 
 // The module's `installed` flag persists across tests, so the channel
 // registrations made by the first install stay in `handleListeners` for
@@ -52,9 +43,7 @@ describe("installQuickInput", () => {
     expect(handleListeners.size).toBe(2);
   });
 
-  test("the submit handler dispatches once configured", async () => {
-    configure();
-
+  test("the submit handler dispatches to the main window", async () => {
     await handleListeners.get("cadet:quickInput:submit")!(["hello world"]);
 
     expect(ensuredVisible).toBe(1);

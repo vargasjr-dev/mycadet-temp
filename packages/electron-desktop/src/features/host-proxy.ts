@@ -12,7 +12,7 @@ import { app } from "electron";
 import { createHostProxyRuntime } from "../host-proxy/runtime";
 import { installHostProxyBridge } from "../host-proxy/router";
 
-import log from "../app-logger";
+import { log } from "../app-logger";
 import { computerUseExecutors } from "./computer-use-actions";
 
 export const install = (interfaceId: string): void => {

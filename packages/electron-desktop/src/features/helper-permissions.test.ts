@@ -42,7 +42,7 @@ mock.module("node:child_process", () => ({
 
 mock.module("../../app-logger", () => ({
   getLogFilePaths: () => [],
-  default: { info: () => undefined, warn: () => undefined },
+  log: { info: () => undefined, warn: () => undefined },
 }));
 
 const { queryFreshHelperPermission, requestHelperPermission } =

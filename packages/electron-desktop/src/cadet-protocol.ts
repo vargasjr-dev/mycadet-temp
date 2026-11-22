@@ -15,7 +15,7 @@ import { pathToFileURL } from "node:url";
 import { net, protocol } from "electron";
 
 import { CADET_PROTOCOL } from "./bundle-platform";
-import { resolveRelativePath } from "@mycadet/electron-utils/app-protocol";
+import { resolveRelativePath } from "./app-protocol";
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html",

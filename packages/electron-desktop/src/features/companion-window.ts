@@ -126,7 +126,7 @@ import {
   placeCanvas,
   type CompanionGeometry,
 } from "./companion-geometry";
-import log from "../app-logger";
+import { log } from "../app-logger";
 import { buildShareTargetSnapshot } from "./share-targets";
 import { getPermissionsService } from "./permissions";
 import {

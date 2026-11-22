@@ -7,7 +7,7 @@ import {
   isStrandedOutsideApplications,
   recordInstallLocation,
 } from "./install-location";
-import log from "@mycadet/electron-desktop/app-logger";
+import { log } from "@mycadet/electron-desktop";
 
 // Build-time define (see electron.vite.config.ts) — the same CADET_ENVIRONMENT
 // that electron-builder.config.cjs derives `productName` from.

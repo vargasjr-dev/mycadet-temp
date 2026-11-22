@@ -79,9 +79,16 @@ test("identifies the app entry for an unpackaged login item", () => {
   expect(
     recordedIpcHandlers.get("cadet:launchAtLogin:get")?.(allowedEvent),
   ).toBe(false);
-  recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
 
-  expect(getLoginItemSettingsCalls).toEqual([[identity]]);
+  // The seed read happens once at install. Nothing is registered natively
+  // until the toggle: the OS already agrees with the stored value, so the
+  // sync skips the write (macOS refuses login-item registrations in
+  // contexts without the user's LaunchServices consent — QA runners,
+  // unsigned builds — and the refusal is an ERROR-level Electron log).
+  expect(getLoginItemSettingsCalls[0]).toEqual([identity]);
+  expect(setLoginItemSettingsCalls).toEqual([]);
+
+  recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
   expect(setLoginItemSettingsCalls).toContainEqual({
     openAtLogin: true,
     ...identity,
@@ -126,11 +133,15 @@ test("keeps a persisted setting synchronized with the login item", () => {
   installLoginItemIpc();
 
   expect(write).toHaveBeenCalledWith(false);
-  expect(setLoginItemSettingsCalls).toContainEqual({ openAtLogin: false });
+  // The OS already agrees with the stored value, so install performs no
+  // native registration (macOS refuses login-item writes in contexts
+  // without the user's LaunchServices consent — QA runners, unsigned
+  // builds — and the refusal is an ERROR-level Electron log line).
+  expect(setLoginItemSettingsCalls).toEqual([]);
 
   recordedIpcHandlers.get("cadet:launchAtLogin:set")?.(allowedEvent, true);
   notify();
 
   expect(write).toHaveBeenLastCalledWith(true);
-  expect(setLoginItemSettingsCalls.at(-1)).toEqual({ openAtLogin: true });
+  expect(setLoginItemSettingsCalls).toEqual([{ openAtLogin: true }]);
 });

@@ -78,7 +78,7 @@ import {
 } from "./win32-cli/cli-path-flow";
 import { provisionCliForWrapper } from "./cli-path-installer";
 import { writeCliLocator } from "./cli-installer";
-import log from "./app-logger";
+import { log } from "./app-logger";
 import { configureHotkeySettings, settingsHotkeySettings } from "./commands";
 import { installAutoUpdate } from "./auto-update";
 import { configureMainWindow } from "./main-window";

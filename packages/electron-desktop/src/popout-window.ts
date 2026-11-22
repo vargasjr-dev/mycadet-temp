@@ -3,9 +3,11 @@ import { z } from "zod";
 
 import { POPOUT_OPEN } from "@mycadet/ipc-contract";
 
+import { getRendererBase } from "./app-config";
+import { createWindowRouteResolver } from "./floating-window";
 import { handle } from "./ipc";
-import { createModuleConfiguration } from "./module-configuration";
-import type { CreateWindowOptions } from "./windows";
+import { restoreBounds, track } from "./window-state";
+import { createWindow } from "./windows";
 
 /**
  * Conversation pop-out windows — independent BrowserWindows showing a single
@@ -44,20 +46,7 @@ type RestoredBounds = Pick<
   "fullscreen" | "height" | "width" | "x" | "y"
 > & { maximized?: boolean };
 
-export interface PopoutWindowDependencies {
-  createWindow: (options: CreateWindowOptions) => BrowserWindow;
-  resolveRoute: (route: string) => string;
-  restoreBounds?: (
-    key: string,
-    defaults: { width: number; height: number },
-  ) => RestoredBounds;
-  trackWindowState?: (key: string, win: BrowserWindow) => void;
-}
-
-const configuration = createModuleConfiguration<PopoutWindowDependencies>(
-  "Popout window module",
-);
-export const configurePopoutWindows = configuration.configure;
+const resolveRoute = createWindowRouteResolver(getRendererBase);
 
 /**
  * Registry of open pop-out windows keyed by conversation ID. Lets us focus an
@@ -69,8 +58,6 @@ const popouts = new Map<string, BrowserWindow>();
  * Open (or focus) a pop-out window for the given conversation.
  */
 export const openPopout = (conversationId: string): void => {
-  const { createWindow, resolveRoute, restoreBounds, trackWindowState } =
-    configuration.get();
   const existing = popouts.get(conversationId);
   if (existing && !existing.isDestroyed()) {
     if (existing.isMinimized()) {
@@ -83,8 +70,10 @@ export const openPopout = (conversationId: string): void => {
 
   const stateKey = `thread.${conversationId}`;
   // `maximized` is not a BrowserWindow option; apply it once shown.
-  const { maximized, ...sizing }: RestoredBounds =
-    restoreBounds?.(stateKey, POPOUT_DEFAULT_BOUNDS) ?? POPOUT_DEFAULT_BOUNDS;
+  const { maximized, ...sizing }: RestoredBounds = restoreBounds(
+    stateKey,
+    POPOUT_DEFAULT_BOUNDS,
+  );
 
   const win = createWindow({
     browserWindow: {
@@ -112,7 +101,7 @@ export const openPopout = (conversationId: string): void => {
     },
   });
 
-  trackWindowState?.(stateKey, win);
+  track(stateKey, win);
   popouts.set(conversationId, win);
 
   win.once("ready-to-show", () => {

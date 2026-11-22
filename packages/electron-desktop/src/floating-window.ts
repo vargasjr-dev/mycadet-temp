@@ -1,7 +1,7 @@
 import type { BrowserWindow, BrowserWindowConstructorOptions } from "electron";
 
-import { createModuleConfiguration } from "./module-configuration";
-import type { CreateWindowOptions } from "./windows";
+import { getRendererBase } from "./app-config";
+import { createWindow } from "./windows";
 
 type AlwaysOnTopLevel = NonNullable<
   Parameters<BrowserWindow["setAlwaysOnTop"]>[1]
@@ -44,20 +44,12 @@ export interface CreateFloatingWindowOptions {
   position?: FloatingWindowPosition;
 }
 
-export interface FloatingWindowDependencies {
-  createWindow: (options: CreateWindowOptions) => BrowserWindow;
-  resolveRoute: (route: string) => string;
-}
-
 export const createWindowRouteResolver =
   (getBase: () => string) =>
   (route: string): string =>
     `${getBase()}${route.startsWith("/") ? route : `/${route}`}`;
 
-const configuration = createModuleConfiguration<FloatingWindowDependencies>(
-  "Floating window module",
-);
-export const configureFloatingWindows = configuration.configure;
+const resolveRoute = createWindowRouteResolver(getRendererBase);
 
 const floatingWindows = new Map<string, BrowserWindow>();
 
@@ -149,7 +141,6 @@ export const createFloatingWindow = ({
   browserWindow,
   position,
 }: CreateFloatingWindowOptions): BrowserWindow => {
-  const { createWindow, resolveRoute } = configuration.get();
   const existing = getFloatingWindow(kind);
   if (existing) {
     applyPosition(existing, position);

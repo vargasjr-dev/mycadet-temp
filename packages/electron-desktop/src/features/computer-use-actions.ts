@@ -17,7 +17,7 @@ import {
   getWindowsHelperPath,
 } from "../native-helper-client";
 import { NativeSidecarClient } from "../sidecar/supervisor";
-import log from "../app-logger";
+import { log } from "../app-logger";
 
 export interface ComputerUseActionExecutors {
   host_cu: HostProxyExecutor;

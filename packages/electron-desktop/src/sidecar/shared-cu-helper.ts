@@ -16,7 +16,7 @@
  * who never invoke computer use pay nothing.
  */
 
-import log from "../app-logger";
+import { log } from "../app-logger";
 import { NativeSidecarClient as MacHelperClient } from "./supervisor";
 
 import { getSharedHelperPath } from "../native-helper-client";

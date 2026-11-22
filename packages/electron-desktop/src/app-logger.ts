@@ -1,4 +1,6 @@
-import log from "electron-log/main";
+import electronLog from "electron-log/main";
+
+export const log = electronLog;
 
 /**
  * A failed write to stdout/stderr surfaces as an `error` event on the stream a
@@ -26,8 +28,6 @@ log.transports.file.maxSize = 10 * 1024 * 1024; // 10 MB
 log.transports.file.fileName = "cadet.log";
 log.transports.file.format =
   "[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] [{processType}] {text}";
-
-export default log;
 
 export const getLogFilePaths = (): string[] => [
   log.transports.file.getFile().path,

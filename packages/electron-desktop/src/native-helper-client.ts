@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { NativeSidecarClient } from "./sidecar/supervisor";
 
-import log from "./app-logger";
+import { log } from "./app-logger";
 
 /**
  * The native helper sidecar client, one per process. macOS ships the helper
