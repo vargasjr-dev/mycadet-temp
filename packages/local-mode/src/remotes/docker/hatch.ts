@@ -484,25 +484,39 @@ function hasFullSourceTree(root: string): boolean {
 export function resolveDockerHatchMode(opts: {
   watch: boolean;
   buildFromSource: boolean;
-  fullSourceTreeAvailable: boolean;
-}): { build: boolean; watcher: boolean; fellBackToPull: boolean } {
+  // Probed only when the requested mode could use a source tree: a
+  // repo-less install (a global npm install, the vm's release-pinned
+  // `cadet hatch`) never pays the walk and never dies for want of a repo.
+  resolveSourceTree: () => string | null;
+}): {
+  build: boolean;
+  watcher: boolean;
+  fellBackToPull: boolean;
+  repoRoot: string | null;
+} {
   const requested =
     opts.watch || opts.buildFromSource || resolveEnvironmentName() === "local";
   if (!requested) {
-    return { build: false, watcher: false, fellBackToPull: false };
+    return {
+      build: false,
+      watcher: false,
+      fellBackToPull: false,
+      repoRoot: null,
+    };
   }
-  if (!opts.fullSourceTreeAvailable) {
-    return { build: false, watcher: false, fellBackToPull: true };
+  const repoRoot = opts.resolveSourceTree();
+  if (repoRoot === null || !hasFullSourceTree(repoRoot)) {
+    return { build: false, watcher: false, fellBackToPull: true, repoRoot };
   }
-  return { build: true, watcher: opts.watch, fellBackToPull: false };
+  return { build: true, watcher: opts.watch, fellBackToPull: false, repoRoot };
 }
 
 /**
  * Locate the repository root by walking up from `cli/src/lib/` until we
  * find a directory containing the expected Dockerfiles — null when the
  * CLI is running without a source tree (a global install, the vm's
- * release-pinned hatch). The pull path doesn't need one; the build path
- * requires it via requireRepoRoot().
+ * release-pinned hatch). Only probed when the hatch actually wants a
+ * source tree; the pull path never needs one.
  */
 function findRepoRoot(): string | null {
   // cli/src/lib/ -> repo root (works when running from source via bun)
@@ -541,21 +555,6 @@ function findRepoRoot(): string | null {
   }
 
   return null;
-}
-
-/**
- * The strict resolver: the build-from-source flow needs a real repo root,
- * and running without one is the caller's error to phrase.
- */
-function requireRepoRoot(): string {
-  const root = findRepoRoot();
-  if (root === null) {
-    throw new Error(
-      "Could not find repository root containing assistant/Dockerfile. " +
-        "Run this command from within the mycadet repository.",
-    );
-  }
-  return root;
 }
 
 async function buildAllImages(
@@ -702,21 +701,18 @@ export async function hatchDocker(
         ? params.sourcePath
         : null;
     const buildFromSource = sourcePath !== null;
-    // A repo-less environment (the vm's release-pinned `cadet hatch
-    // --remote docker`, a global install) must NOT die here — the pull
-    // path below resolves images from the CLI version without a repo.
-    // Only the build path needs a real repo root.
-    const repoRoot = sourcePath ? resolve(sourcePath) : findRepoRoot();
-    const fullSourceTreeAvailable =
-      repoRoot !== null && hasFullSourceTree(repoRoot);
-
     const mode = resolveDockerHatchMode({
       watch,
       buildFromSource,
-      fullSourceTreeAvailable,
+      // Probed lazily, only if the resolved mode wants a source tree: the
+      // vm's release-pinned `cadet hatch --remote docker` (no repo on
+      // disk) must not die hunting for one — it pulls the release images.
+      resolveSourceTree: () =>
+        sourcePath !== null ? resolve(sourcePath) : findRepoRoot(),
     });
     // Honour the resolved mode for the rest of the flow.
     watch = mode.watcher;
+    const repoRoot = mode.repoRoot;
 
     if (mode.build && repoRoot) {
       const localTag = `local-${instanceName}`;
