@@ -52,10 +52,7 @@ import { install as installBundles } from "./features/bundles";
 import { install as installDiagnostics } from "./features/diagnostics";
 import { install as installAuth } from "./features/auth";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
-import {
-  install as installHostProxy,
-  type ShellHostProxyInputs,
-} from "./features/host-proxy";
+import { install as installHostProxy } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
 import {
   install as installPermissions,
@@ -157,7 +154,6 @@ export interface DesktopAppInputs {
    * computer-use executor only its build ships. Absent, the shared
    * composition answers with the shared defaults.
    */
-  hostProxy?: ShellHostProxyInputs;
   /**
    * The shell's tray surfaces — its companion wiring. Absent, the classic
    * notification-area runtime answers.
@@ -454,19 +450,17 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installPopoutWindows();
       installWindowAttentionFeature();
 
-      // The composition every shell shares now: auth, the auxiliary
-      // windows, the login item, and the main window are the same on all
-      // three. The installs below are the compositions still owned by the
-      // classic shells alone — the helper dictation bridge and the
-      // host-proxy runtime (R11/R9), the companion
-      // surface, the share sheet, the permissions service, and the
-      // voice-mode chord (R9+) — each folds into this shared run when its
-      // round lands.
+      // The composition every shell shares: auth, the auxiliary windows,
+      // the login item, the main window, the host-proxy runtime, the tray,
+      // the share sheet, the permissions service, the permission guide,
+      // the companion surface, and the helper bridges (dictation, hotkeys,
+      // the voice-mode chord everywhere but darwin) all install right
+      // here, followed by the shell's own setup.
       installAuth();
       installAuxiliaryWindows();
       installLoginItem();
       installMainWindow();
-      installHostProxy(inputs.interfaceId, inputs.hostProxy);
+      installHostProxy(inputs.interfaceId);
       installTray();
       installShare(inputs.share);
       installPermissions(inputs.permissions);

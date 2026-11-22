@@ -11,7 +11,6 @@ import {
 import log from "@mycadet/electron-desktop/app-logger";
 
 import { installDock } from "./dock";
-import { createHostCuExecutor } from "./executors/host-cu-executor";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
 
 import {
@@ -56,10 +55,6 @@ startApp({
   platform: "mac-electron",
   interfaceId: "macos",
   titleBarMode: "hidden",
-  hostProxy: {
-    supports: { windowCapture: true, sequence: true, coachmarks: true },
-    hostCu: { executor: createHostCuExecutor() },
-  },
   share: { present: shareMenuPresenter() },
   permissions: permissionsShell,
   permissionGuide,

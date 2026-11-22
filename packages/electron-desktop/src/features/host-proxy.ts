@@ -1,64 +1,39 @@
 /**
  * Installs the shared host-proxy bridge so daemon host_* requests reach
- * the executors. The runtime is the shared portable body; the shell
- * contributes only what its own build ships — capability flags and its
- * computer-use executor.
+ * the executors. The runtime is the shared portable body, and so is the
+ * wiring: the darwin client answers computer-use in this process (the
+ * companion surface it draws on is a window the helper cannot see) and
+ * everywhere else the native-helper proxy answers — it fails closed where
+ * no helper binary exists.
  */
 
 import { app } from "electron";
 
 import { createHostProxyRuntime } from "../host-proxy/runtime";
 import { installHostProxyBridge } from "../host-proxy/router";
-import type { HostProxyExecutor } from "../host-proxy/router";
 
 import { shutdownSharedCuHelper } from "../sidecar/shared-cu-helper";
 import log from "../app-logger";
 import { computerUseExecutors } from "./computer-use-actions";
+import { createHostCuExecutor } from "./host-cu-executor";
 
-export interface ShellHostProxyInputs {
-  /** Capability flags the shell's build ships. */
-  supports?: {
-    windowCapture?: boolean;
-    sequence?: boolean;
-    coachmarks?: boolean;
-  };
-  /** The shell's computer-use executor. Absent, the native-helper proxy answers. */
-  hostCu?: {
-    executor: HostProxyExecutor;
-    /** The package's CU-helper shutdown is the default. */
-    teardown?: () => void;
-  };
-  /** Extra teardown the shell needs on quit. */
-  teardown?: () => void;
-}
-
-export const install = (
-  interfaceId: string,
-  inputs: ShellHostProxyInputs = {},
-): void => {
+export const install = (interfaceId: string): void => {
   // Deferred one microtask: capability modules install synchronously in
   // path order, and the bridge seeds its connections from the lockfile,
   // which the presence module (sorted later) fills with its initial
   // synchronous read. Deferring lets the bridge observe assistants already
   // present at startup.
   queueMicrotask(() => {
-    installBridge(interfaceId, inputs);
+    installBridge(interfaceId);
   });
 };
 
-const installBridge = (
-  interfaceId: string,
-  inputs: ShellHostProxyInputs,
-): void => {
-  // The shell's computer-use executor when it contributes one; otherwise
-  // the native-helper proxy answers — it fails closed where no helper
-  // binary exists.
-  const shellCu = inputs.hostCu
+const installBridge = (interfaceId: string): void => {
+  const darwin = process.platform === "darwin";
+  const shellCu = darwin
     ? {
-        executor: inputs.hostCu.executor,
-        // The shell's executor rides the package's CU helper client, so its
-        // shutdown is the default teardown.
-        teardown: inputs.hostCu.teardown ?? shutdownSharedCuHelper,
+        executor: createHostCuExecutor(),
+        teardown: shutdownSharedCuHelper,
       }
     : (() => {
         const cu = computerUseExecutors();
@@ -67,9 +42,14 @@ const installBridge = (
   const teardown = installHostProxyBridge(
     createHostProxyRuntime({
       interfaceId,
-      ...(inputs.supports ? { supports: inputs.supports } : {}),
+      // The darwin client can draw on its own companion surface, capture
+      // the screen around it, and walk its element tree in order.
+      ...(darwin
+        ? {
+            supports: { windowCapture: true, sequence: true, coachmarks: true },
+          }
+        : {}),
       hostCu: shellCu,
-      ...(inputs.teardown ? { teardown: inputs.teardown } : {}),
       logger: log,
     }),
   );

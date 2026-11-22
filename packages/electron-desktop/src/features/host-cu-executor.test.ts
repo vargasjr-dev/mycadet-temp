@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-// Avoid pulling electron (via shared-cu-helper → mac-helper-path) and the
-// electron-log file backend into the test process.
+// Avoid pulling electron (via shared-cu-helper → native-helper-client) and
+// the electron-log file backend into the test process.
 mock.module("electron-log/main", () => {
   const noop = () => {};
   return {
@@ -22,17 +22,6 @@ mock.module("electron-log/main", () => {
     },
   };
 });
-mock.module("../sidecar/shared-cu-helper", () => ({
-  CU_HELPER_TIMEOUT_MS: 20_000,
-  getSharedCuHelper: () => {
-    throw new Error("shared helper should not be used in tests");
-  },
-}));
-
-// What draws the marks, handed to the executor the way the app hands it the
-// real one. Only the answer matters here: why the marks did not stand, or
-// null for marks that did.
-let refusal: CoachmarkRefusal | null = null;
 /**
  * Stands in for the window layer, and tags the marks the way it does: bounds
  * given outright keep their ring, a named control resolves to a place.
@@ -59,17 +48,46 @@ const showCoachmarks = mock(
       : { kind: "refused", refusal },
 );
 
+mock.module("./companion-window", () => ({
+  showCompanionCoachmarks: showCoachmarks,
+}));
+// The executor imports the shared client directly (no dependency
+// injection), so the fake client is what the module mock hands back.
+let currentHelper: CuHelperClient | null = null;
+mock.module("../sidecar/shared-cu-helper", () => ({
+  CU_HELPER_TIMEOUT_MS: 20_000,
+  getSharedCuHelper: () => {
+    if (!currentHelper) {
+      throw new Error("no fake helper installed for this test");
+    }
+    return currentHelper;
+  },
+}));
+
+// What draws the marks, handed to the executor the way the app hands it the
+// real one. Only the answer matters here: why the marks did not stand, or
+// null for marks that did.
+let refusal: CoachmarkRefusal | null = null;
+
+import type { HostProxyExecutor } from "../host-proxy/router";
 import { createHostCuExecutor, POINT_AT_TOOL } from "./host-cu-executor";
 import type {
   CoachmarkRefusal,
   CoachmarkRequest,
   CoachmarkResult,
 } from "@mycadet/ipc-contract";
+import type { CuHelperClient } from "../host-proxy/helper-proxy-executor";
 import {
   HostProxyPoster,
   type HostCuResultPayload,
-} from "@mycadet/electron-desktop";
-import type { HostProxySseMessage } from "@mycadet/electron-desktop";
+} from "../host-proxy/poster";
+import type { HostProxySseMessage } from "../host-proxy/sse";
+
+/** Installs the fake client the direct import will resolve. */
+const makeExecutor = (helper: CuHelperClient): HostProxyExecutor => {
+  currentHelper = helper;
+  return createHostCuExecutor();
+};
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -138,7 +156,7 @@ describe("hostCuExecutor", () => {
       screenHeightPt: 982,
       executionResult: "clicked",
     });
-    const executor = createHostCuExecutor({ helper });
+    const executor = makeExecutor(helper);
     const { poster, posted } = makePoster();
 
     executor.handleRequest(request(), poster);
@@ -164,7 +182,7 @@ describe("hostCuExecutor", () => {
 
   test("posts an error when toolName is missing", async () => {
     const helper = helperReturning({});
-    const executor = createHostCuExecutor({ helper });
+    const executor = makeExecutor(helper);
     const { poster, posted } = makePoster();
 
     executor.handleRequest(request({ toolName: undefined }), poster);
@@ -183,7 +201,7 @@ describe("hostCuExecutor", () => {
         throw new Error("helper exploded");
       }),
     };
-    const executor = createHostCuExecutor({ helper });
+    const executor = makeExecutor(helper);
     const { poster, posted } = makePoster();
 
     executor.handleRequest(request(), poster);
@@ -197,7 +215,7 @@ describe("hostCuExecutor", () => {
 
   test("drops the result when the request was cancelled", async () => {
     const helper = helperReturning({ executionResult: "done" });
-    const executor = createHostCuExecutor({ helper });
+    const executor = makeExecutor(helper);
     const { poster, posted } = makePoster();
 
     executor.handleRequest(request(), poster);
@@ -231,7 +249,7 @@ describe("pointing at the shared surface", () => {
 
   test("draws the marks without going to the helper", async () => {
     const helper = helperReturning({});
-    const executor = createHostCuExecutor({ helper, showCoachmarks });
+    const executor = makeExecutor(helper);
     const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
@@ -249,10 +267,7 @@ describe("pointing at the shared surface", () => {
   });
 
   test("says so when the marks were taken down", async () => {
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt({ marks: [] }), poster);
@@ -266,10 +281,7 @@ describe("pointing at the shared surface", () => {
   /** What the assistant is told, for one refusal. */
   const refusedWith = async (reason: CoachmarkRefusal): Promise<string> => {
     refusal = reason;
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
@@ -352,10 +364,7 @@ describe("pointing at the shared surface", () => {
    */
   test("posts nothing for a pointing that was cancelled mid-lookup", async () => {
     const letGo = paintHeldBy();
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
@@ -374,10 +383,7 @@ describe("pointing at the shared surface", () => {
    */
   test("a cancelled pointing takes nothing down", async () => {
     const letGo = paintHeldBy();
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
@@ -390,10 +396,7 @@ describe("pointing at the shared surface", () => {
 
   /** A cancel for a pointing that already answered changes nothing. */
   test("a cancel after the marks are up leaves them up", async () => {
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(pointAt(), poster);
@@ -420,10 +423,7 @@ describe("pointing at the shared surface", () => {
         candidateCount: 312,
       },
     }));
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(
@@ -448,10 +448,7 @@ describe("pointing at the shared surface", () => {
         candidates: Array.from({ length: 30 }, (_, i) => `Control ${i}`),
       },
     }));
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(
@@ -464,10 +461,7 @@ describe("pointing at the shared surface", () => {
   });
 
   test("refuses coordinates measured against some other surface", async () => {
-    const executor = createHostCuExecutor({
-      helper: helperReturning({}),
-      showCoachmarks,
-    });
+    const executor = makeExecutor(helperReturning({}));
     const { poster, posted } = makePoster();
 
     executor.handleRequest(
@@ -480,24 +474,9 @@ describe("pointing at the shared surface", () => {
     expect(posted[0]?.executionError).toContain("Invalid marks");
   });
 
-  /**
-   * A client with nowhere to draw says so, rather than reporting marks it
-   * never placed. Every desktop client shares this executor; only one of them
-   * has the frame.
-   */
-  test("answers that it cannot draw when nothing is wired to", async () => {
-    const executor = createHostCuExecutor({ helper: helperReturning({}) });
-    const { poster, posted } = makePoster();
-
-    executor.handleRequest(pointAt(), poster);
-    await tick();
-
-    expect(posted[0]?.executionError).toContain("cannot draw on the screen");
-  });
-
   test("still forwards every other tool to the helper", async () => {
     const helper = helperReturning({ executionResult: "clicked" });
-    const executor = createHostCuExecutor({ helper, showCoachmarks });
+    const executor = makeExecutor(helper);
     const { poster } = makePoster();
 
     executor.handleRequest(request(), poster);

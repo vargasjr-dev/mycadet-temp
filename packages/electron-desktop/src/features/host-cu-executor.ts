@@ -1,6 +1,6 @@
 /**
- * macOS binding of the shared computer-use host-proxy executor: it resolves the
- * mac-helper sidecar as the `cu.perform` transport.
+ * The darwin arm of the shared computer-use host-proxy executor: it resolves
+ * the mac-helper sidecar as the `cu.perform` transport.
  *
  * One tool never reaches the helper. `computer_use_point_at` draws on the
  * frame around the surface a call is being shown, and that frame is a window
@@ -9,13 +9,10 @@
  * one path to this machine the path it already has.
  */
 
-import { createCuHelperProxyExecutor } from "@mycadet/electron-desktop";
-import type {
-  CuHelperClient,
-  HostProxyPoster,
-  HostProxyExecutor,
-  HostProxySseMessage,
-} from "@mycadet/electron-desktop";
+import { createCuHelperProxyExecutor } from "../host-proxy/cu-executor";
+import type { HostProxyExecutor } from "../host-proxy/router";
+import type { HostProxyPoster } from "../host-proxy/poster";
+import type { HostProxySseMessage } from "../host-proxy/sse";
 import {
   COMPANION_COACHMARK_CAPTION_MAX,
   COMPANION_COACHMARK_MAX,
@@ -26,9 +23,9 @@ import {
 } from "@mycadet/ipc-contract";
 import { z } from "zod";
 
-import log from "@mycadet/electron-desktop/app-logger";
-import { showCompanionCoachmarks } from "@mycadet/electron-desktop/companion-window";
-import { getSharedCuHelper } from "@mycadet/electron-desktop/shared-cu-helper";
+import log from "../app-logger";
+import { showCompanionCoachmarks } from "./companion-window";
+import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 
 /** The one tool answered here rather than by the helper. */
 export const POINT_AT_TOOL = "computer_use_point_at";
@@ -200,9 +197,6 @@ type CoachmarkPainter = (
   conversationId?: string,
 ) => Promise<CoachmarkResult>;
 
-const UNWIRED =
-  "This client cannot draw on the screen: no coachmark painter is wired.";
-
 /**
  * The one line the assistant reads, for each way a set of marks can end.
  *
@@ -246,7 +240,7 @@ class PointAtExecutor implements HostProxyExecutor {
 
   constructor(
     private readonly helper: HostProxyExecutor,
-    private readonly paint: CoachmarkPainter | undefined,
+    private readonly paint: CoachmarkPainter,
   ) {}
 
   handleRequest(message: HostProxySseMessage, poster: HostProxyPoster): void {
@@ -269,10 +263,6 @@ class PointAtExecutor implements HostProxyExecutor {
       return;
     }
     const paint = this.paint;
-    if (!paint) {
-      void poster.postCuResult({ requestId, executionError: UNWIRED });
-      return;
-    }
     const { marks } = parsed.data;
     // The conversation the daemon addressed this request to, which is what
     // lets the window layer tell the call's own turn from any other running
@@ -343,23 +333,14 @@ class PointAtExecutor implements HostProxyExecutor {
   }
 }
 
-interface HostCuExecutorDeps {
-  helper?: CuHelperClient;
-  /** What draws the marks; the companion surface is the default painter. */
-  showCoachmarks?: CoachmarkPainter;
-}
-
-export function createHostCuExecutor(
-  deps: HostCuExecutorDeps = {},
-): HostProxyExecutor {
-  const { helper, showCoachmarks = showCompanionCoachmarks } = deps;
+export function createHostCuExecutor(): HostProxyExecutor {
   return new PointAtExecutor(
     createCuHelperProxyExecutor({
       logger: log,
       supportsWindowCapture: true,
       supportsSequence: true,
-      resolveHelper: helper ? () => helper : getSharedCuHelper,
+      resolveHelper: getSharedCuHelper,
     }),
-    showCoachmarks,
+    showCompanionCoachmarks,
   );
 }
