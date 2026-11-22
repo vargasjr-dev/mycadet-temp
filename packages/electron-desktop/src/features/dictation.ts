@@ -21,7 +21,7 @@ import {
   type DictationPartialsResult,
   type HelperRestartResult,
 } from "@mycadet/ipc-contract";
-import { type NativeSidecarState } from "@mycadet/native-sidecar/supervisor";
+import { type NativeSidecarState } from "../sidecar/supervisor";
 
 import { handle, on } from "../ipc";
 import log from "../app-logger";

@@ -24,11 +24,7 @@ import { resolveVersion } from "../../packages/shared/version";
 // runtime `require(...)` calls. The cross-client rules (and the sandboxed
 // preload rationale) live in the shared list; only macOS-specific deps are
 // added here. Guarded by scripts/preload-externals.test.ts.
-const DEPS_TO_INLINE = [
-  ...SHARED_DESKTOP_INLINE_DEPS,
-  "electron-updater",
-  "@mycadet/native-sidecar",
-];
+const DEPS_TO_INLINE = [...SHARED_DESKTOP_INLINE_DEPS, "electron-updater"];
 
 // Resolved at config-evaluation time and inlined into the main bundle via
 // Vite's `define`. Prefer the CI-provided GITHUB_SHA (7-char prefix);

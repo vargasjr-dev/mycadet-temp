@@ -92,13 +92,20 @@ describe("NativeSidecarClient", () => {
         children.push(child);
         return asChild(child);
       },
+      // The ping is never answered on purpose; a short injected deadline
+      // flushes it without pinning the test to wall-clock behavior under
+      // load.
+      responseTimeoutMs: 50,
     });
 
     await client.call("system.ping").catch(() => undefined);
 
     client.shutdown();
     children[0]!.emit("close", 0, null);
-    await expect(client.call("system.ping")).rejects.toThrow("not available");
+    expect(() => client.call("system.ping")).toThrow("not available");
+    // Outwait the supervisor's own respawn backoff: a respawn would show up
+    // as a second child, and none may arrive after a deliberate shutdown.
+    await Bun.sleep(1_200);
     expect(children).toHaveLength(1);
   });
 
@@ -139,11 +146,14 @@ describe("NativeSidecarClient", () => {
       initialBackoffMs: 1,
       maxBackoffMs: 1,
       circuitCrashCount: 2,
-      circuitWindowMs: 1_000,
+      // Long enough that core contention cannot close the window before the
+      // test walks the crash-retry sequence.
+      circuitWindowMs: 60_000,
     });
 
     expect(client.retry()).toMatchObject({ status: "running" });
     children[0]!.emit("close", 1, null);
+    await Bun.sleep(5);
     children[1]!.emit("close", 1, null);
     expect(client.getState()).toMatchObject({ status: "circuit-open" });
 

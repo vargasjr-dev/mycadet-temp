@@ -14,7 +14,7 @@ import {
   type HelperPermissionStatus,
 } from "@mycadet/electron-desktop/helper-permissions";
 import log from "@mycadet/electron-desktop/app-logger";
-import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
+import { JsonRpcHelperError } from "@mycadet/electron-desktop/sidecar-supervisor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 
 /**

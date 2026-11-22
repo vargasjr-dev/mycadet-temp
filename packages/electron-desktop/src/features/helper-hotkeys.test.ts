@@ -141,8 +141,7 @@ const makeWebContents = (): FakeWebContents => {
 let defaultSender = makeWebContents();
 
 const { default: log } = await import("../app-logger");
-const { NativeSidecarClient } =
-  await import("@mycadet/native-sidecar/supervisor");
+const { NativeSidecarClient } = await import("../sidecar/supervisor");
 
 let sharedClient: InstanceType<typeof NativeSidecarClient> | null = null;
 let supervisorOptions: Record<string, unknown> = {};

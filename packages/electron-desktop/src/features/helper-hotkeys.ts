@@ -24,7 +24,7 @@ import type {
 import { handle } from "../ipc";
 import log from "../app-logger";
 import { getSharedHelperClient } from "../native-helper-client";
-import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
+import { JsonRpcHelperError } from "../sidecar/supervisor";
 
 import {
   coachmarkPressed,

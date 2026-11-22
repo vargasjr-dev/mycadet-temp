@@ -117,7 +117,7 @@ class FakeSidecarClient {
     return Promise.resolve({ success: true });
   }
 }
-mock.module("@mycadet/native-sidecar/supervisor", () => ({
+mock.module("../sidecar/supervisor", () => ({
   NativeSidecarClient: FakeSidecarClient,
 }));
 

@@ -12,11 +12,7 @@ import { resolveVersion } from "../../packages/shared/version";
 //
 // No renderer config: the renderer is the clients/web/ Vite project, served in
 // dev via http://localhost:5173 and in prod via a custom `app://` protocol.
-const DEPS_TO_INLINE = [
-  ...SHARED_DESKTOP_INLINE_DEPS,
-  "electron-updater",
-  "@mycadet/native-sidecar",
-];
+const DEPS_TO_INLINE = [...SHARED_DESKTOP_INLINE_DEPS, "electron-updater"];
 
 const resolveBunVersion = (): string => {
   try {

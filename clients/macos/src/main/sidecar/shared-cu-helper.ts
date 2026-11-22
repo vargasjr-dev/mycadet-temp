@@ -17,7 +17,7 @@
  */
 
 import log from "@mycadet/electron-desktop/app-logger";
-import { NativeSidecarClient as MacHelperClient } from "@mycadet/native-sidecar/supervisor";
+import { NativeSidecarClient as MacHelperClient } from "@mycadet/electron-desktop/sidecar-supervisor";
 
 import { getSharedHelperPath } from "@mycadet/electron-desktop/native-helper-client";
 

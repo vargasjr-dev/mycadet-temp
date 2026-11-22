@@ -1,4 +1,3 @@
-
 import { createRequire } from "node:module";
 
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
@@ -18,10 +17,7 @@ import { resolveVersion } from "../../packages/shared/version";
 // preload rationale) live in the shared list; Windows also starts its native
 // helper through the local sidecar package. Guarded by
 // scripts/preload-externals.test.ts.
-const DEPS_TO_INLINE = [
-  ...SHARED_DESKTOP_INLINE_DEPS,
-  "@mycadet/native-sidecar",
-];
+const DEPS_TO_INLINE = [...SHARED_DESKTOP_INLINE_DEPS];
 
 // The installer shortcut and `app.setAppUserModelId` must agree, so the
 // builder config is the single source of the id.

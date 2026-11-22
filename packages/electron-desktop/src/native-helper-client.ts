@@ -2,7 +2,7 @@ import { app } from "electron";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
+import { NativeSidecarClient } from "./sidecar/supervisor";
 
 import log from "./app-logger";
 

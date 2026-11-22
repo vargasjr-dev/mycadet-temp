@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
+import { JsonRpcHelperError } from "@mycadet/electron-desktop/sidecar-supervisor";
 
 let helperStatus = "denied";
 let helperReads = 0;

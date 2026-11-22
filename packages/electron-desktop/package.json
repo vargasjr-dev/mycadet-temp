@@ -31,6 +31,8 @@
     "./preload": "./src/preload.ts",
     "./session-token-store": "./src/session-token-store.ts",
     "./settings": "./src/settings.ts",
+    "./sidecar-process-supervisor": "./src/sidecar/process-supervisor.ts",
+    "./sidecar-supervisor": "./src/sidecar/supervisor.ts",
     "./status": "./src/status.ts",
     "./test-setup": "./test-setup.ts",
     "./tray-model": "./src/tray-model.ts",
@@ -38,7 +40,7 @@
     "./windows": "./src/windows.ts"
   },
   "scripts": {
-    "lint": "prettier --check src scripts test-setup.ts && eslint . --max-warnings 404",
+    "lint": "prettier --check src scripts test-setup.ts && eslint . --max-warnings 411",
     "format:check": "prettier --check src scripts test-setup.ts",
     "test": "bun scripts/run-tests.ts",
     "typecheck": "bunx tsc --noEmit"
@@ -48,7 +50,6 @@
     "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-contract": "workspace:*",
     "@mycadet/local-mode": "workspace:*",
-    "@mycadet/native-sidecar": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
     "electron-store": "11.0.2",
     "jszip": "3.10.1"

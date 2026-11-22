@@ -9,7 +9,7 @@ import type {
   NotificationCreateOptions,
   NotificationLike,
 } from "./notifications";
-import { NativeSidecarClient } from "@mycadet/native-sidecar/supervisor";
+import { NativeSidecarClient } from "./sidecar/supervisor";
 
 import log from "./app-logger";
 

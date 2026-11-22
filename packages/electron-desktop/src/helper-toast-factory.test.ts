@@ -34,7 +34,7 @@ interface HelperCall {
   params: Record<string, unknown>;
 }
 const calls: HelperCall[] = [];
-mock.module("@mycadet/native-sidecar/supervisor", () => ({
+mock.module("./sidecar/supervisor", () => ({
   NativeSidecarClient: class {
     onNotification(): void {}
     call(method: string, params: Record<string, unknown>): Promise<unknown> {
