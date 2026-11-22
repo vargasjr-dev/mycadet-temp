@@ -1330,14 +1330,13 @@ jobs:
   # ── Electron macOS build (arm64 + x64) ────────────────────────────────
   # Builds the Electron-wrapped macOS app for each architecture, code-signs,
   # notarizes, and uploads as release assets. A failure on either arch fails
-  # this job and blocks the release.
+  # this job but never blocks the release (canary).
   build-electron:
-    # DISABLED for now: the Apple signing material (DEVID_CERTIFICATE_P12 /
-    # DEVID_CERTIFICATE_PASSWORD) is only configured on the `dev` environment,
-    # not on production, so the macOS codesign step fails on release
-    # runs. Re-enable by deleting this line once the signing secrets are added
-    # to the release environments.
-    if: false
+    # Dev-release-style canary: runs on every release but never blocks the
+    # rest of the train. A red job here usually means the production
+    # environment is missing the Apple signing material
+    # (DEVID_CERTIFICATE_P12 / DEVID_CERTIFICATE_PASSWORD).
+    continue-on-error: true
     # No publish dep: the bundled CLI floats to the `latest` dist-tag at runtime.
     needs: [extract-version]
     runs-on: macos-26
@@ -1573,11 +1572,10 @@ jobs:
           rm -rf ~/.private_keys 2>/dev/null || true
 
   build-electron-windows:
-    # DISABLED alongside the mac build-electron: a shippable nsis installer
-    # needs Windows Authenticode signing material (a EV/Digital ID cert
-    # secret, e.g. WINDOWS_CERTIFICATE_P12 / WINDOWS_CERTIFICATE_PASSWORD),
-    # which is not configured yet. Re-enable by deleting this line together
-    # with build-electron's once both signing secrets exist.
+    # SUPERSEDED: windows installers ship through the release-windows.yaml
+    # reusable (Azure Trusted Signing, wired below as `build-windows`). This
+    # electron-builder nsis job stays offline so windows is not built twice;
+    # delete it (or this marker) if it is ever wanted back.
     if: false
     needs: [extract-version]
     runs-on: windows-latest
@@ -1649,13 +1647,11 @@ jobs:
           retention-days: 7
 
   build-electron-linux:
-    # DISABLED alongside the mac build-electron: the AppImage itself needs no
-    # signing, but the auto-update story for linux is undecided (AppImage has
-    # no electron-updater feed parity with mac/win), and shipping an
-    # installer without an update path strands installs. Re-enable by
-    # deleting this line together with build-electron's once the update
-    # approach is settled.
-    if: false
+    # Dev-release-style canary: runs on every release but never blocks the
+    # rest of the train. The AppImage needs no signing; the electron-updater
+    # feed for linux is still undecided, so this ships installers without an
+    # update path for now.
+    continue-on-error: true
     needs: [extract-version]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -1707,13 +1703,15 @@ jobs:
           retention-days: 7
 
   release:
-    # build-electron + build-chrome-extension are out of the release gate:
-    # electron is slow and independent of the tag/GitHub Release, and the
-    # chrome-extension channel is offline for now (both jobs carry the
-    # offline marker). Re-add them here when either returns.
+    # The electron desktop jobs and the windows reusable ride as canaries
+    # (continue-on-error): they always report success to needs, so the
+    # release publishes whatever artifacts exist and warns about the rest.
     needs:
       [
         extract-version,
+        build-electron,
+        build-electron-linux,
+        build-windows,
         publish-npm-assistant-prod,
         publish-npm-cli-prod,
         publish-npm-credential-executor-prod,
@@ -1780,21 +1778,19 @@ jobs:
           name: chrome-extension-crx-zip
           path: chrome-extension-artifacts
 
-      # Electron is offline for now (build-electron carries the `if: false`
-      # marker, same as the chrome-extension channel), so these downloads skip
-      # entirely rather than fail-tolerantly with "Artifact not found" noise.
-      # When electron returns, delete these markers together with
-      # build-electron's and re-harden the DMG requirement in the
-      # create-release step.
+      # The electron jobs are canaries (continue-on-error), so a failed leg
+      # uploads no artifact. These downloads fail-tolerantly: a missing
+      # artifact warns and the release ships without the DMG rather than
+      # blocking the train.
       - name: Download Electron DMG artifact (arm64)
-        if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
+        continue-on-error: true
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: macos-build-electron
           path: electron-artifacts
 
       - name: Download Electron DMG artifact (x64)
-        if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
+        continue-on-error: true
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: macos-build-electron-x64
@@ -2048,7 +2044,9 @@ jobs:
 
   build-windows:
     needs: [extract-version]
-    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
+    # Canary: a failed windows leg (e.g. missing Azure Trusted Signing
+    # secrets on the environment) must not red the release.
+    continue-on-error: true
     permissions:
       contents: read
     uses: ./.github/workflows/release-windows.yaml

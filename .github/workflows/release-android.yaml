@@ -11,6 +11,11 @@ on:
         description: "Release version string"
         required: true
         type: string
+      tolerate_failure:
+        description: "Continue (green) when the build fails (dev-channel canary)"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: android-release-${{ inputs.environment }}
@@ -19,6 +24,7 @@ concurrency:
 jobs:
   build-and-upload:
     runs-on: ubuntu-24.04
+    continue-on-error: ${{ inputs.tolerate_failure }}
     environment: ${{ inputs.environment }}
     timeout-minutes: 45
     outputs:
