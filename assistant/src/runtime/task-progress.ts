@@ -1,16 +1,13 @@
 import type { StreamPlan, StreamPlanStep } from "@mycadet/gateway-client";
 
 import { coerceSurfaceDataRecord } from "../api/surfaces.js";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+import { isPlainObject } from "../util/object.js";
 
 /** Read a `task_progress` surface payload into typed steps, if it is one. */
 export function getTaskProgressDataFromSurfaceData(
   data: unknown,
 ): StreamPlan | undefined {
-  if (!isRecord(data)) {
+  if (!isPlainObject(data)) {
     return undefined;
   }
   if (data.template !== "task_progress") {
@@ -20,12 +17,12 @@ export function getTaskProgressDataFromSurfaceData(
 }
 
 function parseTaskProgressData(value: unknown): StreamPlan | undefined {
-  if (!isRecord(value) || !Array.isArray(value.steps)) {
+  if (!isPlainObject(value) || !Array.isArray(value.steps)) {
     return undefined;
   }
 
   const steps = value.steps.flatMap((step): StreamPlanStep[] => {
-    if (!isRecord(step)) {
+    if (!isPlainObject(step)) {
       return [];
     }
     if (typeof step.label !== "string") {
@@ -90,7 +87,7 @@ export function mergeTaskProgressData(
   existing: StreamPlan | undefined,
   data: unknown,
 ): StreamPlan | undefined {
-  if (!isRecord(data)) {
+  if (!isPlainObject(data)) {
     return existing;
   }
   const update = getTaskProgressDataFromSurfaceData(data);
@@ -104,6 +101,6 @@ export function mergeTaskProgressData(
   return parseTaskProgressData({
     title: existing.title,
     steps: existing.steps,
-    ...(isRecord(data.templateData) ? data.templateData : {}),
+    ...(isPlainObject(data.templateData) ? data.templateData : {}),
   });
 }

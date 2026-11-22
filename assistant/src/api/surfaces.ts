@@ -20,14 +20,12 @@
 
 import { z } from "zod";
 
+import { isPlainObject } from "../util/object.js";
+
 /**
  * Local plain-object check. This package is copied verbatim into consumer
  * node_modules, so it must not import helpers from outside `api/`.
  */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 /**
  * Coerce a surface `data` payload to a plain object. Models sometimes
  * double-encode the nested `data` argument as a JSON string
@@ -38,13 +36,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function coerceSurfaceDataRecord(
   value: unknown,
 ): Record<string, unknown> {
-  if (isRecord(value)) {
+  if (isPlainObject(value)) {
     return value;
   }
   if (typeof value === "string") {
     try {
       const parsed: unknown = JSON.parse(value);
-      if (isRecord(parsed)) {
+      if (isPlainObject(parsed)) {
         return parsed;
       }
     } catch {
@@ -118,7 +116,7 @@ const tolerantNumber = () => z.number().finite().optional().catch(undefined);
  */
 export function recordArray<T extends z.ZodType>(entry: T) {
   return z.preprocess(
-    (value) => (Array.isArray(value) ? value.filter(isRecord) : []),
+    (value) => (Array.isArray(value) ? value.filter(isPlainObject) : []),
     z.array(entry),
   );
 }
@@ -229,7 +227,7 @@ const ChoiceOptionsSchema = z.preprocess((value) => {
     return [];
   }
   return value.flatMap((option) => {
-    if (!isRecord(option)) {
+    if (!isPlainObject(option)) {
       return [];
     }
     const id = typeof option.id === "string" ? option.id.trim() : "";

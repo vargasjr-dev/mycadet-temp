@@ -18,6 +18,7 @@
 
 import { z } from "zod";
 
+import { isPlainObject } from "../util/object.js";
 import type { MediaStreamEvent } from "./media-stream-protocol.js";
 
 // ---------------------------------------------------------------------------
@@ -111,10 +112,6 @@ const frameSchema = z.discriminatedUnion("event", [
  */
 const KNOWN_EVENTS: string[] = ["start", "media", "dtmf", "mark", "stop"];
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return v !== null && typeof v === "object" && !Array.isArray(v);
-}
-
 /**
  * Parse and validate a raw WebSocket message string into a typed
  * {@link MediaStreamEvent}.
@@ -131,7 +128,7 @@ export function parseMediaStreamFrame(raw: string): ParseResult {
     return { ok: false, error: "Invalid JSON" };
   }
 
-  if (!isRecord(parsed)) {
+  if (!isPlainObject(parsed)) {
     return { ok: false, error: "Frame is not a JSON object" };
   }
 

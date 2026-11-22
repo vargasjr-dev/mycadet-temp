@@ -77,6 +77,7 @@ import {
 import { publishActivationProgressChanged } from "../runtime/sync/resource-sync-events.js";
 import { getDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isPlainObject } from "../util/object.js";
 
 const log = getLogger("activation-progress-store");
 
@@ -128,10 +129,6 @@ interface ActivationSnapshot {
   readOnly: boolean;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 /**
  * Read what a newer document still has in common with this schema, field by
  * field, so a client on an older build shows the progress it can understand
@@ -145,7 +142,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 function parseForwardCompatible(document: unknown): ActivationProgress {
   const progress = emptyActivationProgress();
-  if (!isRecord(document)) {
+  if (!isPlainObject(document)) {
     return progress;
   }
   const { listId, modalDismissedAt, allDoneShownAt } =
@@ -166,7 +163,7 @@ function parseForwardCompatible(document: unknown): ActivationProgress {
   if (parsedAllDoneShownAt.success) {
     progress.allDoneShownAt = parsedAllDoneShownAt.data;
   }
-  if (isRecord(document.tasks)) {
+  if (isPlainObject(document.tasks)) {
     for (const [taskId, task] of Object.entries(document.tasks)) {
       if (!ACTIVATION_ID_PATTERN.test(taskId)) {
         continue;
@@ -212,7 +209,7 @@ function readActivationSnapshot(): ActivationSnapshot {
 
   // The version is read before the shape is, so a document this build cannot
   // parse is still recognized as one it must not overwrite.
-  const version = isRecord(document) ? document.version : undefined;
+  const version = isPlainObject(document) ? document.version : undefined;
   if (typeof version === "number" && version > ACTIVATION_PROGRESS_VERSION) {
     log.warn(
       { path, version, supported: ACTIVATION_PROGRESS_VERSION },
@@ -498,7 +495,7 @@ function progressLockIsStale(lockPath: string): boolean {
   } catch {
     holder = null;
   }
-  const pid = isRecord(holder) ? holder.pid : undefined;
+  const pid = isPlainObject(holder) ? holder.pid : undefined;
   if (typeof pid === "number" && Number.isInteger(pid) && pid > 0) {
     return pid !== process.pid && !processIsAlive(pid);
   }

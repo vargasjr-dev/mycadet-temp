@@ -1,6 +1,7 @@
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { ProviderError, type ProviderErrorReason } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { fileBlockToProviderText } from "../file-block-text.js";
 import { recordProviderRequestDiagnostics } from "../request-diagnostics.js";
@@ -84,12 +85,8 @@ function resolveBaseUrl(baseURL?: string): string {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function isJevQuestion(value: unknown): value is JevQuestion {
-  if (!isRecord(value)) {
+  if (!isPlainObject(value)) {
     return false;
   }
   const type = value.type;
@@ -106,7 +103,7 @@ function isJevQuestion(value: unknown): value is JevQuestion {
 }
 
 function isJevQuestions(value: unknown): value is JevQuestions {
-  if (!isRecord(value)) {
+  if (!isPlainObject(value)) {
     return false;
   }
   const entries = Object.entries(value);
@@ -122,7 +119,7 @@ export function noulFromAnswer(answer: unknown): number | undefined {
     return answer;
   }
   if (
-    isRecord(answer) &&
+    isPlainObject(answer) &&
     typeof answer.noul === "number" &&
     Number.isFinite(answer.noul)
   ) {
@@ -149,7 +146,7 @@ export function parseSystemOneOverride(
   } catch {
     return null;
   }
-  if (!isRecord(parsed) || !isJevQuestions(parsed.questions)) {
+  if (!isPlainObject(parsed) || !isJevQuestions(parsed.questions)) {
     return null;
   }
   return {
@@ -250,7 +247,7 @@ function extractErrorMessage(bodyText: string, status: number): string {
         detail?: unknown;
       };
       const nested =
-        parsed.error && isRecord(parsed.error)
+        parsed.error && isPlainObject(parsed.error)
           ? parsed.error.message
           : parsed.error;
       const candidate = nested ?? parsed.message ?? parsed.detail;
@@ -441,7 +438,7 @@ export class JevProvider implements Provider {
           { reason: "bad_request", rawBody: bodyText, rawRequest: request },
         );
       }
-      if (!isRecord(parsed) || !isRecord(parsed.answers)) {
+      if (!isPlainObject(parsed) || !isPlainObject(parsed.answers)) {
         throw new ProviderError(
           "TypeSafe returned a response without answers.",
           JEV_PROVIDER_ID,
@@ -449,7 +446,7 @@ export class JevProvider implements Provider {
           { reason: "bad_request", rawBody: bodyText, rawRequest: request },
         );
       }
-      const usage = isRecord(parsed.usage) ? parsed.usage : undefined;
+      const usage = isPlainObject(parsed.usage) ? parsed.usage : undefined;
       return {
         model:
           typeof parsed.model === "string" && parsed.model.length > 0

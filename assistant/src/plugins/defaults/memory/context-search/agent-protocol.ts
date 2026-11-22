@@ -2,6 +2,7 @@ import {
   type RecallSource,
   RecallSourceSchema,
 } from "../../../../api/events/tool-result.js";
+import { isPlainObject } from "../../../../util/object.js";
 import { truncate } from "../host-utils.js";
 import { normalizeRecallSources } from "./limits.js";
 import type { RecallEvidence } from "./types.js";
@@ -275,7 +276,7 @@ export function validateFinishRecallPayload(
   payload: unknown,
   evidence: readonly RecallEvidence[],
 ): RecallFinishValidationResult {
-  if (!isRecord(payload)) {
+  if (!isPlainObject(payload)) {
     return fallbackFinish("malformed_finish_payload");
   }
 
@@ -369,10 +370,6 @@ function fallbackFinish(
       unresolved,
     },
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function readNonEmptyString(value: unknown): string | null {

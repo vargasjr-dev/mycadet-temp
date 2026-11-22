@@ -3,6 +3,8 @@
  * (Firecrawl hosted `/v2/*` and fastCRW `/v1/*`).
  */
 
+import { z } from "zod";
+
 import { isPlainObject } from "../../util/object.js";
 
 export const FASTCRW_DEFAULT_API_BASE = "https://api.fastcrw.com";
@@ -33,9 +35,19 @@ export interface FirecrawlCompatSearchResult {
   category?: string;
 }
 
-/** A search payload row: any plain object (every field is optional). */
+/** The zod schema that actually guarantees a search row's field types. */
+export const FirecrawlCompatSearchResultSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  snippet: z.string().optional(),
+  url: z.string().optional(),
+  category: z.string().optional(),
+});
+
+/** A search payload row, validated by its zod schema (a plain-object check
+ * alone says nothing about the field types). */
 function isSearchRow(value: unknown): value is FirecrawlCompatSearchResult {
-  return isPlainObject(value);
+  return FirecrawlCompatSearchResultSchema.safeParse(value).success;
 }
 
 /**

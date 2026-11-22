@@ -9,6 +9,7 @@ import {
 } from "../persistence/attachments-store.js";
 import { rawAll, rawGet, rawRun } from "../persistence/raw-query.js";
 import { getLogger } from "../util/logger.js";
+import { isPlainObject } from "../util/object.js";
 
 const log = getLogger("live-voice-archive");
 
@@ -209,10 +210,6 @@ function buildFilename(input: {
   )}`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function isLiveVoiceRole(value: unknown): value is LiveVoiceAudioArchiveRole {
   return value === "user" || value === "assistant";
 }
@@ -220,7 +217,7 @@ function isLiveVoiceRole(value: unknown): value is LiveVoiceAudioArchiveRole {
 function isArtifactMetadata(
   value: unknown,
 ): value is LiveVoiceAudioArtifactMetadata {
-  if (!isRecord(value)) {
+  if (!isPlainObject(value)) {
     return false;
   }
   return (
@@ -262,7 +259,7 @@ function readMessageMetadata(
     return "invalid_metadata";
   }
 
-  if (!isRecord(parsed)) {
+  if (!isPlainObject(parsed)) {
     return "invalid_metadata";
   }
 

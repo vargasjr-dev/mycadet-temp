@@ -1,5 +1,6 @@
 import type { VoiceEscalationProfileSource } from "../calls/voice-escalation-target.js";
 import { type ClientOs, parseClientOs } from "../channels/types.js";
+import { isPlainObject } from "../util/object.js";
 import {
   parseShareTargetSnapshot,
   type ShareTargetSnapshot,
@@ -899,7 +900,7 @@ export function parseLiveVoiceClientTextFrame(
 export function validateLiveVoiceClientFrame(
   value: unknown,
 ): LiveVoiceParseResult<LiveVoiceClientFrame> {
-  if (!isRecord(value)) {
+  if (!isPlainObject(value)) {
     return protocolError(
       "invalid_frame",
       "Live voice frame must be a JSON object",
@@ -1411,7 +1412,7 @@ function validateStartFrame(
     );
   }
 
-  if (!isRecord(value.audio)) {
+  if (!isPlainObject(value.audio)) {
     return protocolError(
       "invalid_field",
       "start frame field audio must be an object",
@@ -1648,10 +1649,6 @@ function isLiveVoiceTurnDetectionMode(
     typeof value === "string" &&
     (LIVE_VOICE_TURN_DETECTION_MODES as readonly string[]).includes(value)
   );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function isNonEmptyString(value: unknown): value is string {

@@ -43,6 +43,8 @@
 import { EventEmitter } from "node:events";
 import { mock } from "bun:test";
 
+import { isPlainObject } from "../util/object.js";
+
 // ---------------------------------------------------------------------------
 // Shared matching kernel
 // ---------------------------------------------------------------------------
@@ -85,10 +87,6 @@ export type MockResponse<I> =
   | boolean
   | null;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 /** Subset match: every key in `expected` must deep-match the same key in `actual`. */
 function deepMatches(expected: unknown, actual: unknown): boolean {
   if (expected === actual) {
@@ -100,7 +98,7 @@ function deepMatches(expected: unknown, actual: unknown): boolean {
       expected.every((entry, index) => deepMatches(entry, actual[index]))
     );
   }
-  if (!isRecord(expected) || !isRecord(actual)) {
+  if (!isPlainObject(expected) || !isPlainObject(actual)) {
     return false;
   }
   return Object.keys(expected).every(
@@ -258,14 +256,14 @@ function compileIpcMatcher(matcher: unknown): CompiledMatcher<IpcCallRecord> {
   if (typeof matcher === "function") {
     return { match: (req) => matcher(req), describe: "(predicate)" };
   }
-  const spec = isRecord(matcher) ? matcher : {};
+  const spec = isPlainObject(matcher) ? matcher : {};
   const method = typeof spec.method === "string" ? spec.method : undefined;
-  const params = isRecord(spec.params) ? spec.params : undefined;
+  const params = isPlainObject(spec.params) ? spec.params : undefined;
   return {
     match: (req) =>
       (method === undefined || req.method === method) &&
       (params === undefined ||
-        (isRecord(req.params) && deepMatches(params, req.params))),
+        (isPlainObject(req.params) && deepMatches(params, req.params))),
     describe: JSON.stringify(matcher),
   };
 }
@@ -619,7 +617,7 @@ async function ensureCliClientMock(): Promise<void> {
 }
 
 function normalizeCliResponse(value: unknown): Record<string, unknown> {
-  if (isRecord(value)) {
+  if (isPlainObject(value)) {
     if (typeof value.error === "string") {
       const result: Record<string, unknown> = { ok: false, error: value.error };
       if (typeof value.statusCode === "number") {
@@ -698,10 +696,10 @@ async function fakeCliIpcCallBinary(
   if (value instanceof Uint8Array) {
     return { ok: true, headers: {}, bytes: value };
   }
-  if (isRecord(value) && "bytes" in value) {
+  if (isPlainObject(value) && "bytes" in value) {
     return {
       ok: true,
-      headers: isRecord(value.headers) ? value.headers : {},
+      headers: isPlainObject(value.headers) ? value.headers : {},
       bytes: value.bytes,
     };
   }
@@ -720,10 +718,10 @@ async function fakeCliIpcCallStream(
   if (value instanceof Uint8Array || typeof value === "string") {
     return { ok: true, headers: {}, body: streamFrom(value), abort: () => {} };
   }
-  if (isRecord(value) && "body" in value) {
+  if (isPlainObject(value) && "body" in value) {
     return {
       ok: true,
-      headers: isRecord(value.headers) ? value.headers : {},
+      headers: isPlainObject(value.headers) ? value.headers : {},
       body: streamFrom(value.body),
       abort: () => {},
     };
@@ -756,7 +754,7 @@ function compileHttpMatcher(
   if (typeof matcher === "function") {
     return { match: (req) => matcher(req), describe: "(predicate)" };
   }
-  const spec = isRecord(matcher) ? matcher : {};
+  const spec = isPlainObject(matcher) ? matcher : {};
   const method =
     typeof spec.method === "string" ? spec.method.toUpperCase() : undefined;
   const url = typeof spec.url === "string" ? spec.url : undefined;
@@ -835,12 +833,12 @@ function toResponse(value: unknown): Response {
   if (value instanceof Response) {
     return value;
   }
-  if (isRecord(value) && isResponseEnvelope(value)) {
+  if (isPlainObject(value) && isResponseEnvelope(value)) {
     const status = typeof value.status === "number" ? value.status : 200;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (isRecord(value.headers)) {
+    if (isPlainObject(value.headers)) {
       for (const [key, headerValue] of Object.entries(value.headers)) {
         headers[key] = String(headerValue);
       }

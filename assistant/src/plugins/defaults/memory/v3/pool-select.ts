@@ -69,6 +69,7 @@ import {
 } from "../../../../context/token-estimator.js";
 import { classifyConversationError } from "../../../../daemon/conversation-error.js";
 import type { PendingConversationNotice } from "../../../../daemon/conversation-notices.js";
+import { isPlainObject } from "../../../../util/object.js";
 import { redactLogString, truncate } from "../host-utils.js";
 import {
   cachedTextBlock,
@@ -527,16 +528,12 @@ type TypesafeNoulQuestion = {
   criteria: { yes: string; no: string };
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function noulFromAnswer(answer: unknown): number | undefined {
   if (typeof answer === "number" && Number.isFinite(answer)) {
     return answer;
   }
   if (
-    isRecord(answer) &&
+    isPlainObject(answer) &&
     typeof answer.noul === "number" &&
     Number.isFinite(answer.noul)
   ) {
@@ -900,7 +897,7 @@ function answersFromSelectorResponse(
   response: ProviderResponse,
 ): Record<string, unknown> | null {
   const raw = response.rawResponse;
-  if (isRecord(raw) && isRecord(raw.answers)) {
+  if (isPlainObject(raw) && isPlainObject(raw.answers)) {
     return raw.answers;
   }
   const textBlock = response.content.find((block) => block.type === "text");
@@ -909,7 +906,7 @@ function answersFromSelectorResponse(
   }
   try {
     const parsed: unknown = JSON.parse(textBlock.text);
-    return isRecord(parsed) ? parsed : null;
+    return isPlainObject(parsed) ? parsed : null;
   } catch {
     return null;
   }

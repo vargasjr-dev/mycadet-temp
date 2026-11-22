@@ -29,6 +29,7 @@ import {
   extractFirecrawlCompatSearchResults,
   FASTCRW_DEFAULT_API_BASE,
   type FirecrawlCompatSearchResult,
+  FirecrawlCompatSearchResultSchema,
   resolveProviderApiUrl,
   searchResultSnippet,
 } from "./firecrawl-compat.js";
@@ -283,14 +284,6 @@ const TavilySearchResponseSchema = z.object({
       }),
     )
     .optional(),
-});
-
-const FirecrawlCompatSearchResultSchema = z.object({
-  title: z.string().optional(),
-  description: z.string().optional(),
-  snippet: z.string().optional(),
-  url: z.string().optional(),
-  category: z.string().optional(),
 });
 
 const FirecrawlCompatSearchResponseSchema = z.object({
