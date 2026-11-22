@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { join } from "path";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   checkHealth,
@@ -15,9 +15,14 @@ import { red } from "./lib/color";
 import { setActiveAssistant } from "./lib/assistant-config";
 import { findAssistant } from "@mycadet/local-mode";
 
-// Report where the source tree lives for local file resolution
+// Report where the source tree lives for local file resolution. Compiled
+// or bundled hosts have a virtual import.meta.dir that is not on disk —
+// reporting it would send every resolver walking a ghost tree.
 if (typeof import.meta.dir === "string") {
-  setLocalSourceRoot(join(import.meta.dir, "..", ".."));
+  const sourceRoot = join(import.meta.dir, "..", "..");
+  if (existsSync(sourceRoot)) {
+    setLocalSourceRoot(sourceRoot);
+  }
 }
 
 /**

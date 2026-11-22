@@ -16,7 +16,11 @@ import {
   resolveCesSocketPath,
   startCes,
 } from "../remotes/local/common";
-import { getLocalSourceRoot, setLocalSourceRoot } from "../source-root";
+import {
+  getLocalSourceRoot,
+  resetLocalSourceRoot,
+  setLocalSourceRoot,
+} from "../source-root";
 
 // resolveCesDir walks the reported source tree for a credential-executor
 // sibling — the same report the CLI's entrypoint makes in production.
@@ -208,6 +212,42 @@ describe("startCes", () => {
       setLocalSourceRoot(
         reportedRoot ?? join(import.meta.dir, "..", "..", "..", ".."),
       );
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("finds the source from the cwd when no root is reported", () => {
+    /**
+     * Bundled hosts report nothing (or a ghost path) for their own
+     * position — the cwd a hatch was launched from is the anchor that
+     * still knows where the checkout is. This is the arm that finds the
+     * assistant and gateway sources on the same machine, so the CES
+     * resolver must walk it too.
+     */
+
+    // GIVEN no reported root and a cwd inside a tree with the source
+    const reportedRoot = getLocalSourceRoot();
+    resetLocalSourceRoot();
+    const root = mkdtempSync(join(tmpdir(), "ces-cwd-"));
+    const cesDir = join(root, "credential-executor");
+    mkdirSync(join(cesDir, "src"), { recursive: true });
+    writeFileSync(
+      join(cesDir, "package.json"),
+      JSON.stringify({ name: "@mycadet/credential-executor" }),
+    );
+    writeFileSync(join(cesDir, "src", "main.ts"), "");
+
+    const originalCwd = process.cwd();
+    process.chdir(root);
+    try {
+      // WHEN the source resolves
+      const resolved = findCesDir();
+
+      // THEN it came from the cwd's tree
+      expect(resolved).toBe(cesDir);
+    } finally {
+      process.chdir(originalCwd);
+      if (reportedRoot !== undefined) setLocalSourceRoot(reportedRoot);
       rmSync(root, { recursive: true, force: true });
     }
   });

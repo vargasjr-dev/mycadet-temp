@@ -350,6 +350,31 @@ function isGatewaySourceDir(dir: string): boolean {
   }
 }
 
+/**
+ * Walk up from a start dir probing for the credential-executor source: the
+ * dir itself (the reported root may BE the package) or a
+ * `credential-executor/` child at each level (the repo root layout). The
+ * same shape findAssistantSourceFrom uses, because the anchors that find
+ * one find the other.
+ */
+function findCesSourceFrom(startDir: string): string | undefined {
+  let current = startDir;
+  while (true) {
+    if (isCesSourceDir(current)) {
+      return current;
+    }
+    const nestedCandidate = join(current, "credential-executor");
+    if (isCesSourceDir(nestedCandidate)) {
+      return nestedCandidate;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      return undefined;
+    }
+    current = parent;
+  }
+}
+
 function isCesSourceDir(dir: string): boolean {
   const pkgPath = join(dir, "package.json");
   if (!existsSync(pkgPath) || !existsSync(join(dir, "src", "main.ts")))
@@ -885,16 +910,18 @@ export function findCesDir(entry?: LocalAssistant): string | undefined {
   // until a `credential-executor/` sibling appears.
   const sourceRoot = getLocalSourceRoot();
   if (sourceRoot) {
-    let sourceDir = join(sourceRoot, "credential-executor");
-    let probeDir = sourceRoot;
-    while (!isCesSourceDir(sourceDir) && probeDir !== dirname(probeDir)) {
-      probeDir = dirname(probeDir);
-      sourceDir = join(probeDir, "credential-executor");
-    }
-    if (isCesSourceDir(sourceDir)) {
-      return sourceDir;
-    }
+    const fromRoot = findCesSourceFrom(sourceRoot);
+    if (fromRoot) return fromRoot;
   }
+
+  // Bundled hosts report garbage (or nothing) for their own position —
+  // find the sources from the anchors a spawned process still has: the
+  // cwd it was launched from, and the binary's dir.
+  const fromCwd = findCesSourceFrom(process.cwd());
+  if (fromCwd) return fromCwd;
+
+  const fromExec = findCesSourceFrom(dirname(process.execPath));
+  if (fromExec) return fromExec;
 
   // npm-installed elsewhere on disk: resolve via the package entry.
   try {
