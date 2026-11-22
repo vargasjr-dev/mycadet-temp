@@ -112,27 +112,8 @@ import {
   isOnlyTunnelPublicBaseUrlChange,
   shouldSyncTwilioPhoneWebhooksAfterConfigChange,
 } from "./twilio/webhook-sync-trigger.js";
-import { GatewayIpcServer } from "./ipc/server.js";
-import { contactRoutes } from "./ipc/contact-handlers.js";
-import { inviteRoutes } from "./ipc/invite-handlers.js";
-import { verificationSessionRoutes } from "./ipc/verification-session-handlers.js";
-import { guardianRequestRoutes } from "./ipc/guardian-request-handlers.js";
-import { admissionPolicyRoutes } from "./ipc/admission-policy-handlers.js";
-import { channelPermissionRoutes } from "./ipc/channel-permission-handlers.js";
-import { trustVerdictRoutes } from "./ipc/trust-verdict-handlers.js";
-import { guardianDeliveryRoutes } from "./ipc/guardian-delivery-handlers.js";
-import { logTailRoutes } from "./ipc/log-tail-handlers.js";
-import { channelSocketHealthRoutes } from "./ipc/channel-socket-health-handlers.js";
-import {
-  credentialRequestRoutes,
-  setEnsurePublicIngressLiveForCredentialLinks,
-} from "./ipc/credential-request-handlers.js";
-import { slackThreadRoutes } from "./ipc/slack-thread-handlers.js";
-import { thresholdRoutes } from "./ipc/threshold-handlers.js";
-import { trustRulesRoutes } from "./ipc/trust-rules-handlers.js";
-import { riskClassificationRoutes } from "./ipc/risk-classification-handlers.js";
-import { tunnelRoutes } from "./ipc/tunnel-handlers.js";
-import { webhookRouteRoutes } from "./ipc/webhook-route-handlers.js";
+import { startIpcServer } from "./ipc/server.js";
+import { setEnsurePublicIngressLiveForCredentialLinks } from "./ipc/credential-request-handlers.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
@@ -754,7 +735,7 @@ async function main() {
     ) {
       const upgradeResult = handleTwilioMediaWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     // Plugin ingress declared as `websocket`. Claimed only for a genuine
@@ -770,7 +751,7 @@ async function main() {
           match[2]!,
         );
         if (upgradeResult !== undefined) return upgradeResult;
-        return undefined as unknown as Response;
+        return undefined;
       }
     }
 
@@ -779,14 +760,14 @@ async function main() {
         if (!mirror.pattern.test(url.pathname)) continue;
         const upgradeResult = await mirror.upgrade(req, server);
         if (upgradeResult !== undefined) return upgradeResult;
-        return undefined as unknown as Response;
+        return undefined;
       }
     }
 
     if (url.pathname === "/v1/stt/stream") {
       const upgradeResult = handleSttStreamWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     // Reachable both ways: directly on a self-hosted ingress with an actor
@@ -799,7 +780,7 @@ async function main() {
       if (upgradeResult !== undefined) {
         return upgradeResult;
       }
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     // Guardian-only through the same gate as the watch stream.
@@ -808,13 +789,13 @@ async function main() {
       if (upgradeResult !== undefined) {
         return upgradeResult;
       }
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     if (url.pathname === "/v1/live-voice") {
       const upgradeResult = await handleLiveVoiceWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     // Managed-speech relay: daemon-only egress to tunnel. NOT in
@@ -822,19 +803,19 @@ async function main() {
     if (url.pathname === "/v1/speech/stt/stream") {
       const upgradeResult = await handleSpeechRelaySttWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     if (url.pathname === "/v2/speech/stt/stream") {
       const upgradeResult = await handleSpeechRelaySttV2Ws(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     if (url.pathname === "/v1/speech/tts/stream") {
       const upgradeResult = await handleSpeechRelayTtsWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
-      return undefined as unknown as Response;
+      return undefined;
     }
 
     // Attach a trace ID to every non-healthcheck request for
@@ -895,6 +876,8 @@ async function main() {
     if (webviewOrigin) return withCorsHeaders(notFound, webviewOrigin);
     return notFound;
   }
+
+  void refreshRouteSchema();
 
   log.info({ port: server.port }, "Gateway HTTP server listening");
 
@@ -1127,34 +1110,11 @@ async function main() {
     ensurePublicIngressLiveForCredentialLink,
   );
 
-  // ── IPC server ──
-  const ipcServer = new GatewayIpcServer([
-    ...contactRoutes,
-    ...inviteRoutes,
-    ...verificationSessionRoutes,
-    ...guardianRequestRoutes,
-    ...slackThreadRoutes,
-    ...thresholdRoutes,
-    ...admissionPolicyRoutes,
-    ...channelPermissionRoutes,
-    ...trustVerdictRoutes,
-    ...guardianDeliveryRoutes,
-    ...riskClassificationRoutes,
-    ...logTailRoutes,
-    ...channelSocketHealthRoutes,
-    ...trustRulesRoutes,
-    ...tunnelRoutes,
-    ...webhookRouteRoutes,
-    ...credentialRequestRoutes,
-  ]);
-  ipcServer.start();
-
-  void refreshRouteSchema();
-
-  const stopSleepWakeDetector = startSleepWakeDetector();
-
-  const stopInboundEventExpirationCleanup =
-    startInboundEventExpirationCleanup();
+  const shutdownTasks = [
+    startIpcServer(),
+    startSleepWakeDetector(),
+    startInboundEventExpirationCleanup(),
+  ];
 
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
@@ -1164,21 +1124,19 @@ async function main() {
     // `credentialWatcher.stop` would dereference nothing and crash the
     // shutdown. The lifecycle thunks (sleep/wake, discord, slack, the dedup
     // sweep) are already module closures, so they ride bare.
-    const shutdownTasks: (() => Promise<void> | void)[] = [
+    const allShutdownTasks: (() => Promise<void> | void)[] = [
       () => credentialWatcher.stop(),
       () => configFileWatcher.stop(),
       () => tunnelClient.stop(),
       stopDiscordClient,
       stopSlackClient,
-      () => ipcServer.stop(),
       () => telegramDedupCache.stopCleanup(),
       () => whatsappDedupCache.stopCleanup(),
       () => emailDedupCache.stopCleanup(),
-      stopSleepWakeDetector,
-      stopInboundEventExpirationCleanup,
+      ...shutdownTasks,
     ];
 
-    const shutdownPromises = shutdownTasks.map((task) => task());
+    const shutdownPromises = allShutdownTasks.map((task) => task());
     setTimeout(() => {
       log.info("Drain window elapsed, stopping server");
       void Promise.allSettled(shutdownPromises).then(() => {
