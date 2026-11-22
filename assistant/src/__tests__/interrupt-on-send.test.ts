@@ -232,14 +232,14 @@ function registerBusyTurn(
       return true;
     },
     abortController: hasController
-      ? {
+      ? Object.assign(Object.create(AbortController.prototype), {
           abort: (reason: AbortReason) => {
             aborts.push(reason);
             if (releaseOnAbort) {
               release();
             }
           },
-        }
+        })
       : null,
     denyAllPendingConfirmations: () => {
       denyAllCount += 1;
@@ -271,9 +271,10 @@ function registerBusyTurn(
     },
   };
 
-  setConversation(CONV, asConversation(fake));
+  const conversation = asConversation(fake);
+  setConversation(CONV, conversation);
   return {
-    conversation: asConversation(fake),
+    conversation,
     messages,
     aborts,
     activityEvents,

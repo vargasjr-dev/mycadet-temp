@@ -9,9 +9,15 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { createAssistantMessage } from "../agent/message-types.js";
+import type {
+  TurnChannelContext,
+  TurnInterfaceContext,
+} from "../channels/types.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type { EnqueueMessageOptions } from "../daemon/conversation-messaging.js";
 import { persistUserMessage } from "../daemon/conversation-messaging.js";
+import type { HostCuProxy } from "../daemon/host-cu-proxy.js";
+import type { TrustContext } from "../daemon/trust-context-types.js";
 import * as gatewayClient from "../ipc/gateway-client.js";
 import {
   addMessage,
@@ -43,7 +49,7 @@ import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
 const testDir = process.env.CADET_WORKSPACE_DIR!;
@@ -94,134 +100,85 @@ function resetConversationsDir(): void {
 }
 
 function createFakeConversation(conversationId: string): Conversation {
-  const conversation = {
+  // Turn-scoped context the double models with plain locals; the real class
+  // holds these on the instance, and the accessors below read them through
+  // the same closure the methods write. Processing/owner stay FIELDS on the
+  // double: the routes read and write them directly.
+  let turnChannelContext: TurnChannelContext | null = null;
+  let turnInterfaceContext: TurnInterfaceContext | null = null;
+
+  const conversation: Conversation & {
+    processing: boolean;
+    owner: number;
+  } = asConversation({
     conversationId,
-    processing: false,
-    currentRequestId: undefined as string | undefined,
+    currentRequestId: undefined,
     modeSessions: mockUnownedModeSessions(),
-    abortController: null as AbortController | null,
-    trustContext: undefined as unknown,
-    turnChannelContext: null as {
-      userMessageChannel: string;
-      assistantMessageChannel: string;
-    } | null,
-    turnInterfaceContext: null as {
-      userMessageInterface: string;
-      assistantMessageInterface: string;
-    } | null,
-    messages: [] as Array<unknown>,
-    hostCuProxy: undefined as unknown,
-    currentTurnSourceActorPrincipalId: undefined as string | undefined,
+    abortController: null,
+    trustContext: undefined,
+    messages: [],
+    currentTurnSourceActorPrincipalId: undefined,
     pendingSteerRepair: false,
     pendingInterruptRepair: false,
     usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
-    isProcessing(this: { processing: boolean }) {
-      return this.processing;
-    },
+    processing: false,
+    owner: 0,
+    isProcessing: () => conversation.processing,
     /** Polls the flag rather than modelling waiters; the fakes here release
      *  synchronously from their own abort listener. */
-    async waitForIdle(
-      this: { processing: boolean },
-      { timeoutMs }: { timeoutMs: number },
-    ) {
+    waitForIdle: async ({ timeoutMs }: { timeoutMs: number }) => {
       const deadline = Date.now() + Math.min(timeoutMs, 250);
-      while (this.processing && Date.now() < deadline) {
+      while (conversation.processing && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 1));
       }
-      return !this.processing;
+      return !conversation.processing;
     },
-    setProcessing(
-      this: { processing: boolean; owner: number },
-      value: boolean,
-    ) {
-      this.processing = value;
-      this.owner = value ? this.owner + 1 : 0;
+    setProcessing: (value: boolean) => {
+      conversation.processing = value;
+      conversation.owner = value ? conversation.owner + 1 : 0;
     },
-    owner: 0,
-    async acquireProcessingFenced(this: {
-      processing: boolean;
-      owner: number;
-    }) {
-      if (this.processing) {
+    acquireProcessingFenced: async () => {
+      if (conversation.processing) {
         return null;
       }
-      this.processing = true;
-      this.owner += 1;
-      return this.owner;
+      conversation.processing = true;
+      conversation.owner += 1;
+      return conversation.owner;
     },
-    releaseProcessing(
-      this: { processing: boolean; owner: number },
-      claim: number,
-    ) {
-      if (claim !== this.owner) {
+    releaseProcessing: (claim: number) => {
+      if (claim !== conversation.owner) {
         return false;
       }
-      this.processing = false;
-      this.owner = 0;
+      conversation.processing = false;
+      conversation.owner = 0;
       return true;
     },
     setChannelCapabilities: () => {},
     setAssistantId: () => {},
-    setTrustContext(this: { trustContext: unknown }, ctx: unknown) {
-      this.trustContext = ctx;
+    setTrustContext: (ctx: TrustContext) => {
+      conversation.trustContext = ctx;
     },
     setAuthContext: () => {},
     setCommandIntent: () => {},
-    setTurnChannelContext(
-      this: {
-        turnChannelContext: {
-          userMessageChannel: string;
-          assistantMessageChannel: string;
-        } | null;
-      },
-      ctx: { userMessageChannel: string; assistantMessageChannel: string },
-    ) {
-      this.turnChannelContext = ctx;
+    setTurnChannelContext: (ctx: TurnChannelContext | null) => {
+      turnChannelContext = ctx;
     },
-    getTurnChannelContext(this: {
-      turnChannelContext: {
-        userMessageChannel: string;
-        assistantMessageChannel: string;
-      } | null;
-    }) {
-      return this.turnChannelContext;
+    getTurnChannelContext: () => turnChannelContext,
+    setTurnInterfaceContext: (ctx: TurnInterfaceContext | null) => {
+      turnInterfaceContext = ctx;
     },
-    setTurnInterfaceContext(
-      this: {
-        turnInterfaceContext: {
-          userMessageInterface: string;
-          assistantMessageInterface: string;
-        } | null;
-      },
-      ctx: {
-        userMessageInterface: string;
-        assistantMessageInterface: string;
-      },
-    ) {
-      this.turnInterfaceContext = ctx;
-    },
-    getTurnInterfaceContext(this: {
-      turnInterfaceContext: {
-        userMessageInterface: string;
-        assistantMessageInterface: string;
-      } | null;
-    }) {
-      return this.turnInterfaceContext;
-    },
+    getTurnInterfaceContext: () => turnInterfaceContext,
     ensureActorScopedHistory: async () => {},
     replayActivityState: () => {},
-
-    setHostCuProxy(this: { hostCuProxy: unknown }, proxy: unknown) {
-      this.hostCuProxy = proxy;
+    hostCuProxy: undefined,
+    setHostCuProxy: (proxy: HostCuProxy | undefined) => {
+      conversation.hostCuProxy = proxy;
     },
     restoreBrowserProxyAvailability: () => {},
-    preactivatedSkillIds: undefined as string[] | undefined,
-    addPreactivatedSkillId(
-      this: { preactivatedSkillIds: string[] | undefined },
-      skillId: string,
-    ) {
-      this.preactivatedSkillIds = [
-        ...(this.preactivatedSkillIds ?? []),
+    preactivatedSkillIds: undefined,
+    addPreactivatedSkillId: (skillId: string) => {
+      conversation.preactivatedSkillIds = [
+        ...(conversation.preactivatedSkillIds ?? []),
         skillId,
       ];
     },
@@ -236,73 +193,49 @@ function createFakeConversation(conversationId: string): Conversation {
     getQueueDepth: () => 0,
     handleConfirmationResponse: () => {},
     handleSecretResponse: () => {},
-    getMessages(this: { messages: Array<unknown> }) {
-      return this.messages as never[];
-    },
-    persistUserMessage(
-      this: Conversation,
+    getMessages: () => conversation.messages,
+    persistUserMessage: (
       options: Parameters<typeof persistUserMessage>[1],
-    ): Promise<{ id: string; deduplicated: boolean }> {
-      return persistUserMessage(
-        this as Parameters<typeof persistUserMessage>[0],
-        options,
-      );
-    },
-    async runAgentLoop(
-      this: {
-        conversationId: string;
-        turnChannelContext: {
-          userMessageChannel: string;
-          assistantMessageChannel: string;
-        } | null;
-        turnInterfaceContext: {
-          userMessageInterface: string;
-          assistantMessageInterface: string;
-        } | null;
-        trustContext: unknown;
-        messages: Array<unknown>;
-        processing: boolean;
-        abortController: AbortController | null;
-        currentRequestId?: string;
-      },
+    ): Promise<{ id: string; deduplicated: boolean }> =>
+      persistUserMessage(conversation, options),
+    runAgentLoop: async (
       _content: string,
       _userMessageId: string,
       options?: { onEvent?: (msg: Record<string, unknown>) => void },
-    ): Promise<void> {
+    ): Promise<void> => {
       const onEvent = options?.onEvent ?? (() => {});
       const assistantText = "Synthetic assistant reply";
       const assistantMessage = createAssistantMessage(assistantText);
       const assistantMetadata = {
-        ...provenanceFromTrustContext(this.trustContext as never),
-        ...(this.turnChannelContext
+        ...provenanceFromTrustContext(conversation.trustContext),
+        ...(turnChannelContext
           ? {
-              userMessageChannel: this.turnChannelContext.userMessageChannel,
+              userMessageChannel: turnChannelContext.userMessageChannel,
               assistantMessageChannel:
-                this.turnChannelContext.assistantMessageChannel,
+                turnChannelContext.assistantMessageChannel,
             }
           : {}),
-        ...(this.turnInterfaceContext
+        ...(turnInterfaceContext
           ? {
-              userMessageInterface:
-                this.turnInterfaceContext.userMessageInterface,
+              userMessageInterface: turnInterfaceContext.userMessageInterface,
               assistantMessageInterface:
-                this.turnInterfaceContext.assistantMessageInterface,
+                turnInterfaceContext.assistantMessageInterface,
             }
           : {}),
       };
 
       const persistedAssistant = await addMessage(
-        this.conversationId,
+        conversationId,
         "assistant",
         JSON.stringify(assistantMessage.content),
         { metadata: assistantMetadata },
       );
-      this.messages.push(assistantMessage);
+      conversation.messages.push(assistantMessage);
 
-      const conversationRow = getConversation(this.conversationId);
+      const conversationRow = getConversation(conversationId);
       if (conversationRow) {
         syncMessageToDisk(
-          this.conversationId,
+          conversationId,
           persistedAssistant.id,
           conversationRow.createdAt,
         );
@@ -311,20 +244,20 @@ function createFakeConversation(conversationId: string): Conversation {
       onEvent({
         type: "assistant_text_delta",
         text: assistantText,
-        conversationId: this.conversationId,
+        conversationId,
       });
       onEvent({
         type: "message_complete",
-        conversationId: this.conversationId,
+        conversationId,
       });
 
-      this.processing = false;
-      this.abortController = null;
-      this.currentRequestId = undefined;
+      conversation.processing = false;
+      conversation.abortController = null;
+      conversation.currentRequestId = undefined;
     },
-  };
+  });
 
-  return asConversationDouble(conversation);
+  return conversation;
 }
 
 function getOrCreateFakeConversation(conversationId: string): Conversation {

@@ -38,7 +38,7 @@ beforeAll(async () => {
   await initializeDb();
 });
 
-import type { AgentLoopRunOptions } from "../agent/loop.js";
+import { AgentLoop, type AgentLoopRunOptions } from "../agent/loop.js";
 import type { Conversation } from "../daemon/conversation.js";
 import { RetryProvider } from "../providers/retry.js";
 import type {
@@ -80,7 +80,7 @@ function makeTarget(): {
 
   const target = {
     conversationId: "conv-wake-override",
-    agentLoop: {
+    agentLoop: Object.assign(Object.create(AgentLoop.prototype), {
       run: async (options: AgentLoopRunOptions) => {
         runArgs.push({
           messages: [...options.messages],
@@ -90,7 +90,7 @@ function makeTarget(): {
         // Wake never yields at a checkpoint, so the pause-reason is null.
         return { history: options.messages, exitReason: null };
       },
-    },
+    }),
     messages,
     // The wake trims its own run input; no row here is tagged as a camera
     // frame, so the real pass would return the array unchanged too.

@@ -584,6 +584,7 @@ describe("schedule result notification wiring", () => {
           id,
           asConversation({
             ...ctx,
+            surfaceState: new Map(),
             snapshotQueuedMessages: () => queue.snapshot(),
             abortScheduledRun: (run: string) => abortScheduledRun(ctx, run),
           }),

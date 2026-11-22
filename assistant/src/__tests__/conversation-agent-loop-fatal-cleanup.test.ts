@@ -70,11 +70,12 @@ mock.module("../persistence/conversation-crud.js", () => ({
 }));
 
 import { runAgentLoopImpl } from "../daemon/conversation-agent-loop.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import type { QueueDrainReason } from "../daemon/conversation-queue-manager.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeCtx(overrides: Partial<Context> = {}): Conversation {
   let processing = true;
-  return asConversationDouble({
+  const ctx: Conversation = asConversation({
     conversationId: "conv-fatal",
     messages: [{ role: "user", content: [{ type: "text", text: "hello" }] }],
     isProcessing: () => processing,
@@ -120,12 +121,7 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     preactivatedSkillIds: undefined,
     skillProjectionState: new Map(),
     skillProjectionCache: new Map() as Context["skillProjectionCache"],
-    usageStats: {
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-      totalEstimatedCost: 0,
-      model: "",
-    },
+    usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     turnCount: 0,
     lastAssistantAttachments: [],
     lastAttachmentWarnings: [],
@@ -136,15 +132,14 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     emitActivityState: () => {},
     getQueueDepth: () => 0,
     hasQueuedMessages: () => false,
-    drainQueue: async (_reason?: string) => {},
+    drainQueue: async (_reason?: QueueDrainReason) => {},
     // Forwards to drainQueue so tests that spy the drain observe the agent
     // loop's post-turn kick through the guarded entry point.
-    kickDrainQueue(
-      this: { drainQueue: (reason?: string) => unknown },
-      reason: string = "loop_complete",
+    kickDrainQueue: async (
+      reason: QueueDrainReason = "loop_complete",
       _origin?: string,
-    ) {
-      return this.drainQueue(reason);
+    ): Promise<void> => {
+      await ctx.drainQueue(reason);
     },
     getTurnInterfaceContext: () => null,
     getTurnChannelContext: () => null,
@@ -154,6 +149,7 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     graphMemory: {} as Context["graphMemory"],
     ...overrides,
   });
+  return ctx;
 }
 
 type Context = Conversation;

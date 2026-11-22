@@ -13,6 +13,7 @@
  */
 import { afterEach, describe, expect, test } from "bun:test";
 
+import type { Conversation } from "../daemon/conversation.js";
 import type { QueuedMessage } from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
@@ -25,7 +26,10 @@ import {
 } from "../daemon/handlers/conversations.js";
 import type { QuestionPromptResult } from "../permissions/question-prompter.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockMessageQueue,
+} from "./helpers/mock-conversation.js";
 
 interface ParkedTurn {
   abortCount: () => number;
@@ -47,27 +51,27 @@ function registerParkedTurn(id: string): ParkedTurn {
   let abortCount = 0;
   const emitted: string[] = [];
   const queue = new Map<string, QueuedMessage>();
-  const fake = {
+  const fake: Conversation = asConversation({
     isProcessing: () => true,
-    queue: {
+    queue: mockMessageQueue({
       findByRequestId: (requestId: string) => queue.get(requestId),
       promoteToHead: (requestId: string) => queue.get(requestId),
-    },
+    }),
     removeQueuedMessage: (requestId: string) => {
       const item = queue.get(requestId);
       queue.delete(requestId);
       return item;
     },
     pendingSteerRepair: false,
-    abortController: {
+    abortController: Object.assign(Object.create(AbortController.prototype), {
       abort: () => {
         abortCount += 1;
       },
-    },
+    }),
     hasAnyPendingConfirmation: () => false,
     denyAllPendingConfirmations: () => {},
-  };
-  setConversation(id, asConversationDouble(fake));
+  });
+  setConversation(id, fake);
   const enqueue = (
     message: Partial<QueuedMessage> & { requestId: string },
   ): void => {

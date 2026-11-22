@@ -20,7 +20,10 @@ setBroadcastOverrideForTesting((msg: AssistantEvent) => {
   broadcasts.push(msg);
 });
 
-import type { QueuedMessage } from "../daemon/conversation-queue-manager.js";
+import type {
+  QueuedMessage,
+  QueueDrainReason,
+} from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
   setConversation,
@@ -30,7 +33,22 @@ import {
   steerToMessage,
 } from "../daemon/handlers/conversations.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+
+/** A minimal queued message the queue fakes can hand back for `requestId`. */
+function queuedItem(requestId: string): QueuedMessage {
+  return {
+    content: "",
+    attachments: [],
+    requestId,
+    onEvent: () => {},
+    sentAt: 0,
+  };
+}
+
+import {
+  asConversation,
+  mockMessageQueue,
+} from "./helpers/mock-conversation.js";
 
 const CONV = "queued-cancel-conv";
 
@@ -42,19 +60,26 @@ function registerWithQueuedMessage(
   queued: Partial<QueuedMessage> | undefined,
 ): AssistantEvent[] {
   const sent: AssistantEvent[] = [];
-  const item = queued
-    ? { ...queued, onEvent: (msg: AssistantEvent) => sent.push(msg) }
+  const item: QueuedMessage | undefined = queued
+    ? {
+        ...queued,
+        content: queued.content ?? "",
+        attachments: queued.attachments ?? [],
+        requestId: queued.requestId ?? "",
+        sentAt: queued.sentAt ?? 0,
+        onEvent: (msg: AssistantEvent) => sent.push(msg),
+      }
     : undefined;
-  const fake = {
+  const fake = asConversation({
     conversationId: CONV,
     isProcessing: () => false,
-    queue: {
+    queue: mockMessageQueue({
       findByRequestId: (requestId: string) =>
         item?.requestId === requestId ? item : undefined,
-    },
+    }),
     removeQueuedMessage: () => item,
-  };
-  setConversation(CONV, asConversationDouble(fake));
+  });
+  setConversation(CONV, fake);
   return sent;
 }
 
@@ -72,25 +97,24 @@ interface LatchedTurn {
 function registerLatchedTurn(): LatchedTurn {
   let processing = true;
   const drainReasons: string[] = [];
-  const fake = {
+  const fake = asConversation({
     conversationId: CONV,
     isProcessing: () => processing,
     setProcessing: (value: boolean) => {
       processing = value;
     },
     abortController: null,
-    queue: {
-      findByRequestId: (requestId: string) => ({ requestId }),
-      promoteToHead: (requestId: string) => ({ requestId }),
-    },
+    queue: mockMessageQueue({
+      findByRequestId: (requestId: string) => queuedItem(requestId),
+      promoteToHead: (requestId: string) => queuedItem(requestId),
+    }),
     pendingSteerRepair: false,
-    kickDrainQueue: (reason: string) => {
+    kickDrainQueue: async (reason: QueueDrainReason = "loop_complete") => {
       drainReasons.push(reason);
-      return Promise.resolve();
     },
     denyAllPendingConfirmations: () => {},
-  };
-  setConversation(CONV, asConversationDouble(fake));
+  });
+  setConversation(CONV, fake);
   return {
     cleared: () => !processing,
     drainReasons,

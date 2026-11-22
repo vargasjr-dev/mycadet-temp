@@ -19,7 +19,7 @@ beforeAll(async () => {
   await initializeDb();
 });
 
-import type { AgentLoopRunOptions } from "../agent/loop.js";
+import { AgentLoop, type AgentLoopRunOptions } from "../agent/loop.js";
 import type { Conversation } from "../daemon/conversation.js";
 import { canSpawnSubagentsForTurn } from "../daemon/conversation-tool-setup.js";
 import type { Message } from "../providers/types.js";
@@ -27,7 +27,7 @@ import {
   __resetWakeChainForTests,
   wakeAgentForOpportunity,
 } from "../runtime/agent-wake.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 /** Stands in for the `01-parallel-tasks` section's rendered body. */
 const DELEGATION_SECTION = "[delegation section]";
@@ -42,20 +42,20 @@ function makeTarget(onRun: (conv: Conversation) => void): {
   let processing = false;
   let loopPrompt = "";
 
-  const target = {
+  const target: Conversation = asConversation({
     conversationId: "conv-wake-delegation",
     currentCallSite: "mainAgent",
     toolsDisabledDepth: 0,
     hasNoClient: false,
-    agentLoop: {
+    agentLoop: Object.assign(Object.create(AgentLoop.prototype), {
       run: async (options: AgentLoopRunOptions) => {
-        onRun(asConversationDouble(target));
+        onRun(target);
         return { history: options.messages, exitReason: null };
       },
       setSystemPrompt: (prompt: string) => {
         loopPrompt = prompt;
       },
-    },
+    }),
     messages,
     trimAgedSightFrames: (msgs: Message[]) => msgs,
     getMessages: () => messages,
@@ -72,15 +72,15 @@ function makeTarget(onRun: (conv: Conversation) => void): {
     maybeCompact: async () => null,
     // The wake scope the allowlist is applied through, which is what the
     // delegation gate reads.
-    subagentAllowedTools: undefined as ReadonlySet<string> | undefined,
-    subagentToolGateMode: undefined as string | undefined,
+    subagentAllowedTools: undefined,
+    subagentToolGateMode: undefined,
     toolContextPin: undefined,
-    delegateIndependentTasksReplay: undefined as boolean | undefined,
-    preactivatedSkillIds: undefined as readonly string[] | undefined,
-    setSubagentAllowedTools: (tools?: ReadonlySet<string>) => {
+    delegateIndependentTasksReplay: undefined,
+    preactivatedSkillIds: undefined,
+    setSubagentAllowedTools: (tools?: Set<string>) => {
       target.subagentAllowedTools = tools;
     },
-    setPreactivatedSkillIds: (ids?: readonly string[]) => {
+    setPreactivatedSkillIds: (ids?: string[]) => {
       target.preactivatedSkillIds = ids;
     },
     // The section's gate, rendered as a marker so the assertions turn on the
@@ -89,14 +89,12 @@ function makeTarget(onRun: (conv: Conversation) => void): {
     // over the derivation.
     buildCurrentSystemPrompt: () =>
       (target.delegateIndependentTasksReplay ??
-      canSpawnSubagentsForTurn(asConversationDouble(target)))
+      canSpawnSubagentsForTurn(target))
         ? `base ${DELEGATION_SECTION}`
         : "base",
     // Mirrors `Conversation.syncLoopSystemPrompt`.
     syncLoopSystemPrompt: () => {
-      const next = (
-        target as unknown as Conversation
-      ).buildCurrentSystemPrompt();
+      const next = target.buildCurrentSystemPrompt();
       if (next === target.systemPrompt) {
         return;
       }
@@ -105,9 +103,9 @@ function makeTarget(onRun: (conv: Conversation) => void): {
     },
     systemPrompt: "",
     modelOverride: undefined,
-  };
+  });
   return {
-    target: asConversationDouble(target),
+    target,
     loopPrompt: () => loopPrompt,
   };
 }

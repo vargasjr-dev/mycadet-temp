@@ -37,7 +37,10 @@ import {
   evictConversationsForReload,
   getOrCreateConversation,
 } from "../daemon/conversation-store.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 interface FakeConversation {
   disposed: boolean;
@@ -53,8 +56,8 @@ function register(
     scheduledDispatch?: boolean;
     stale?: boolean;
   },
-): FakeConversation {
-  const fake: FakeConversation & Record<string, unknown> = {
+): Conversation & FakeConversation {
+  const fake: Conversation & FakeConversation = asConversation({
     disposed: false,
     markedStale: false,
     conversationId: id,
@@ -69,14 +72,12 @@ function register(
       : new Map(),
     isProcessing: () => state.processing,
     hasQueuedMessages: () => state.queued,
-    modeSessions: {
+    modeSessions: mockUnownedModeSessions({
       hasResidentWork: () => state.modeSessionWork === true,
-    },
+    }),
     isStale: () => state.stale === true || fake.markedStale,
     hasInFlightWork() {
-      return Conversation.prototype.hasInFlightWork.call(
-        asConversationDouble(fake),
-      );
+      return Conversation.prototype.hasInFlightWork.call(fake);
     },
     dispose() {
       fake.disposed = true;
@@ -84,8 +85,8 @@ function register(
     markStale() {
       fake.markedStale = true;
     },
-  };
-  setConversation(id, asConversationDouble(fake));
+  });
+  setConversation(id, fake);
   return fake;
 }
 
@@ -179,9 +180,8 @@ describe("evictConversationsForReload", () => {
       processing: false,
       queued: false,
     });
-    const release = Conversation.prototype.acquireLiveVoiceResidency.call(
-      asConversationDouble(resident),
-    );
+    const release =
+      Conversation.prototype.acquireLiveVoiceResidency.call(resident);
 
     evictConversationsForReload();
 

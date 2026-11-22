@@ -59,6 +59,7 @@ mock.module("../daemon/disk-pressure-guard.js", () => ({
   }),
 }));
 
+import { AgentLoop } from "../agent/loop.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   __resetWakeChainForTests,
@@ -71,13 +72,13 @@ function makeTarget(): Conversation {
   let processing = false;
   const target = {
     conversationId: "conv-wake-callsite",
-    agentLoop: {
+    agentLoop: Object.assign(Object.create(AgentLoop.prototype), {
       run: async ({ messages }: { messages: Message[] }) => ({
         history: messages,
         exitReason: null,
         newMessages: [],
       }),
-    },
+    }),
     messages,
     // The wake trims its own run input; no row here is tagged as a camera
     // frame, so the real pass would return the array unchanged too.

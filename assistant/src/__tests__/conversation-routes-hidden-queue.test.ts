@@ -119,6 +119,10 @@ mock.module("../ipc/gateway-client.js", () => ({
 }));
 
 import type { Conversation } from "../daemon/conversation.js";
+import type {
+  QueuedMessage,
+  QueueDrainReason,
+} from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
   setConversation,
@@ -126,10 +130,24 @@ import {
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockMessageQueue,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 const CONV_ID = "conv-hidden-queue";
+
+/** A minimal queued message the queue fake can hand back for a requestId. */
+function queuedItem(requestId: string): QueuedMessage {
+  return {
+    content: "",
+    attachments: [],
+    requestId,
+    onEvent: () => {},
+    sentAt: 0,
+  };
+}
 
 interface BusyConversationSpies {
   conversation: Conversation;
@@ -152,20 +170,20 @@ function makeConversationWithPendingConfirmation(
   let denyAllCount = 0;
   let abortCount = 0;
   let agentLoopOptions: Record<string, unknown> | undefined;
-  const conversation = asConversationDouble({
+  const conversation: Conversation = asConversation({
     conversationId: CONV_ID,
     messages: [],
-    abortController: {
+    abortController: Object.assign(Object.create(AbortController.prototype), {
       abort: () => {
         abortCount += 1;
       },
-    },
+    }),
     currentRequestId: undefined,
     modeSessions: mockUnownedModeSessions(),
-    queue: {
+    queue: mockMessageQueue({
       length: 0,
-      promoteToHead: (requestId: string) => ({ requestId }),
-    },
+      promoteToHead: (requestId: string) => queuedItem(requestId),
+    }),
     pendingSteerRepair: false,
     // Stores rather than discarding, so a test can observe which trust the
     // route resolved and move the slot afterwards.
@@ -203,14 +221,13 @@ function makeConversationWithPendingConfirmation(
     },
     setPreactivatedSkillIds: () => {},
     drainQueue: async (_reason?: string) => {},
-    kickDrainQueue(
-      this: { drainQueue: (reason?: string) => unknown },
-      reason: string = "loop_complete",
+    kickDrainQueue: async (
+      reason?: QueueDrainReason,
       _origin?: string,
-    ) {
-      return this.drainQueue(reason);
+    ): Promise<void> => {
+      await conversation.drainQueue(reason);
     },
-    warmPromptCache: () => {},
+    warmPromptCache: async () => {},
     getMessages: () => [],
     assistantId: "self",
     trustContext: undefined,

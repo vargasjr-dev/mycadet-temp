@@ -110,7 +110,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import { RuntimeHttpServer } from "../runtime/http-server.js";
 import type { ApprovalConversationGenerator } from "../runtime/http-types.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -122,10 +122,10 @@ await initializeDb();
 function makeCompletingConversation(): Conversation {
   let processing = false;
   const messages: unknown[] = [];
-  return asConversationDouble({
+  return asConversation({
     modeSessions: mockUnownedModeSessions(),
     isProcessing: () => processing,
-    persistUserMessage: (options: { requestId?: string }) => {
+    persistUserMessage: async (options: { requestId?: string }) => {
       processing = true;
       return { id: options.requestId ?? "msg-1", deduplicated: false };
     },
@@ -172,10 +172,10 @@ function makeHangingConversation(): Conversation {
     onEvent?: (msg: AssistantEvent) => void;
     requestId?: string;
   }> = [];
-  return asConversationDouble({
+  return asConversation({
     modeSessions: mockUnownedModeSessions(),
     isProcessing: () => processing,
-    persistUserMessage: (options: { requestId?: string }) => {
+    persistUserMessage: async (options: { requestId?: string }) => {
       processing = true;
       return { id: options.requestId ?? "msg-1", deduplicated: false };
     },
@@ -250,16 +250,16 @@ function makePendingApprovalConversation(
     pending.delete(resolvedRequestId);
   });
 
-  const conversation = asConversationDouble({
+  const conversation = asConversation({
     modeSessions: mockUnownedModeSessions(),
     isProcessing: () => processing,
-    persistUserMessage: (options: { requestId?: string }) => ({
+    persistUserMessage: async (options: { requestId?: string }) => ({
       id: options.requestId ?? "msg-1",
       deduplicated: false,
     }),
     setChannelCapabilities: () => {},
     setAssistantId: () => {},
-    trustContext: undefined as unknown,
+    trustContext: undefined,
     setTrustContext(this: { trustContext: unknown }, ctx: unknown) {
       this.trustContext = ctx;
     },

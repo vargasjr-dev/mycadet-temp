@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { asConversation } from "../__tests__/helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "../__tests__/helpers/mock-conversation.js";
 import {
   clearConversations,
   setConversation,
@@ -17,7 +20,7 @@ describe("pending interaction mode-session waits", () => {
     setConversation(
       "conv-1",
       asConversation({
-        modeSessions: { invalidateStructuralWait },
+        modeSessions: mockUnownedModeSessions({ invalidateStructuralWait }),
       }),
     );
   });

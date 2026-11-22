@@ -48,7 +48,7 @@ import {
 import { initializeDb } from "../persistence/db-init.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 beforeAll(async () => {
   await initializeDb();
 });
@@ -79,7 +79,7 @@ const CHOICE_PAYLOAD = {
 const EXPECTED_SUMMARY = 'User chose: "Clean up my inbox"';
 
 function makeContext(): Conversation {
-  return asConversationDouble({
+  return asConversation({
     conversationId: CONVERSATION_ID,
     trustContext: { trustClass: "guardian", sourceChannel: "cadet" },
     sendToClient: () => {},

@@ -22,11 +22,14 @@ import {
   queueConversationNotice,
   resetConversationNoticesForTests,
 } from "../daemon/conversation-notices.js";
+import { MessageQueue } from "../daemon/conversation-queue-manager.js";
 import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
+import type { UsageContext } from "../daemon/conversation-usage.js";
 import type { SyncInvalidationTag } from "../daemon/message-types/sync.js";
 import { desktopAutomationLease } from "../desktop/desktop-automation-lease.js";
 import { UserPromptSubmitContext } from "../hooks/types.js";
 import type { EmitSignalParams } from "../notifications/emit-signal.js";
+import { PermissionPrompter } from "../permissions/prompter.js";
 import type { AttentionState } from "../persistence/conversation-attention-store.js";
 import type {
   AddMessageOptions,
@@ -34,6 +37,8 @@ import type {
   MessageRow,
 } from "../persistence/conversation-crud.js";
 import { getConversationDirName } from "../persistence/conversation-directories.js";
+import type { ContextWindowResult } from "../plugins/defaults/compaction/window-manager.js";
+import { ContextWindowManager } from "../plugins/defaults/compaction/window-manager.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import type { IndexMessageInput } from "../plugins/defaults/memory/indexer.js";
 import { registerPlugin } from "../plugins/registry.js";
@@ -44,10 +49,8 @@ import type {
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
-import type {
-  UsageAttributionInput,
-  UsageAttributionSnapshot,
-} from "../usage/attribution.js";
+import type { UsageActor } from "../usage/actors.js";
+import type { UsageAttributionSnapshot } from "../usage/attribution.js";
 import {
   resolveUsageAttribution,
   type UsageAttributionInput,
@@ -894,7 +897,10 @@ import {
   recordInjected as recordV3Injected,
 } from "../plugins/defaults/memory/v3/ever-injected-store.js";
 import { installFastTimers } from "./fast-timers.js";
-import { asConversation } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 import {
   createMockProvider,
   type ScriptedResponse,
@@ -948,18 +954,11 @@ function makeCtx(
     toolExecutor,
   });
 
-  const modeSessions = {
-    getTurnOwner: () => undefined,
-    getTerminalDisposition: () => undefined,
-    keepsSessionOpenAfterTurn: () => false,
-    trackPersistedRow: () => false,
-    recordStructuralWait: () => false,
+  const modeSessions = mockUnownedModeSessions({
     invalidateStructuralWait: mock(() => false),
-    beginDraining: () => false,
-    finalizeTurn: () => false,
     releaseTurn: () => false,
-    transferTurn: () => false,
-  };
+    transferTurn: () => undefined,
+  });
 
   const ctx = asConversation({
     conversationId: "test-conv",
@@ -983,11 +982,14 @@ function makeCtx(
     },
     systemPrompt: "system prompt",
 
-    contextWindowManager: {
-      updateConfig: () => {},
-      shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
-      maybeCompact: async () => ({ compacted: false }),
-    },
+    contextWindowManager: Object.assign(
+      Object.create(ContextWindowManager.prototype),
+      {
+        updateConfig: () => {},
+        shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
+        maybeCompact: async () => noCompactionResult(),
+      },
+    ),
     conversationType: mockConversationRow?.conversationType ?? undefined,
     source: mockConversationRow?.source ?? undefined,
     contextSummary: mockConversationRow?.contextSummary ?? null,
@@ -1026,8 +1028,8 @@ function makeCtx(
     lastAttachmentWarnings: [],
 
     hasNoClient: false,
-    prompter: {},
-    queue: {},
+    prompter: Object.create(PermissionPrompter.prototype),
+    queue: Object.create(MessageQueue.prototype),
 
     getWorkspaceGitService: () => ({ ensureInitialized: async () => {} }),
     commitTurnChanges: async () => {},
@@ -1056,28 +1058,41 @@ function makeCtx(
     syncLoopSystemPrompt: () => {},
     modelOverride: undefined,
 
-    graphMemory: {
-      onCompacted: async () => true,
-      prepareMemory: async () => ({
-        runMessages: [],
-        injectedTokens: 0,
-        latencyMs: 0,
-        mode: "none" as const,
-      }),
-      reinjectCachedMemory: (messages: Message[]) => ({
-        runMessages: messages,
-        injectedTokens: 0,
-      }),
-      retrackCachedNodes: () => {},
-      recordPkbQueryVectors: () => {},
-    },
+    graphMemory: Object.assign(
+      Object.create(ConversationGraphMemory.prototype),
+      {
+        onCompacted: async () => true,
+        prepareMemory: async () => ({
+          runMessages: [],
+          injectedTokens: 0,
+          latencyMs: 0,
+          mode: "none" as const,
+          injectedBlockText: null,
+          metrics: null,
+        }),
+        reinjectCachedMemory: (messages: Message[]) => ({
+          runMessages: messages,
+          injectedTokens: 0,
+        }),
+        retrackCachedNodes: () => {},
+        recordPkbQueryVectors: () => {},
+      },
+    ),
 
     ...ctxOverrides,
   });
   // Reactive overflow recovery resolves the turn-scoped reduction ladder off
   // the manager; give every fake manager the ladder methods unless a test
   // supplied its own.
-  if (typeof ctx.contextWindowManager.reduceOverflowOneRung !== "function") {
+  // An own-prop probe, not a typeof probe: the doubled manager is grafted
+  // onto the real class, whose prototype carries the ladder methods, so only
+  // a member the double itself supplied counts as "has its own".
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      ctx.contextWindowManager,
+      "reduceOverflowOneRung",
+    )
+  ) {
     Object.assign(ctx.contextWindowManager, makeOverflowLadderStub());
   }
   fakeContextWindowManagers.set(conversationId, ctx.contextWindowManager);
@@ -1123,6 +1138,25 @@ const DAILY_LIMIT_ASSISTANT_REPLY =
   "I had to stop because you hit your daily credit limit. Raise the limit in Settings → Billing and we can pick up where we left off, or I can continue once it resets.";
 
 type CompactionResult = Parameters<typeof applyCompactionResult>[1];
+
+/** A manager result that skips compaction, shaped as the real return. */
+function noCompactionResult(): ContextWindowResult {
+  return {
+    messages: [],
+    compacted: false,
+    previousEstimatedInputTokens: 0,
+    estimatedInputTokens: 0,
+    maxInputTokens: 0,
+    thresholdTokens: 0,
+    compactedMessages: 0,
+    compactedPersistedMessages: 0,
+    summaryCalls: 0,
+    summaryInputTokens: 0,
+    summaryOutputTokens: 0,
+    summaryModel: "",
+    summaryText: "",
+  };
+}
 
 function makeCompactionResult(
   overrides?: Partial<CompactionResult>,
@@ -1170,11 +1204,14 @@ function overflowAfterToolTurnScenario(): NonNullable<
       },
     ],
     toolExecutor: async () => ({ content: "ok", isError: false }),
-    contextWindowManager: {
-      updateConfig: () => {},
-      shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
-      maybeCompact: async () => ({ compacted: false }),
-    },
+    contextWindowManager: Object.assign(
+      Object.create(ContextWindowManager.prototype),
+      {
+        updateConfig: () => {},
+        shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
+        maybeCompact: async () => noCompactionResult(),
+      },
+    ),
   };
 }
 
@@ -1282,8 +1319,8 @@ function makeModeSessionDouble(options?: {
   const beginDraining = mock(() => true);
   const finalizeTurn = mock(() => true);
   const releaseTurn = mock(() => true);
-  const transferTurn = mock(() => true);
-  const coordinator = {
+  const transferTurn = mock(() => undefined);
+  const coordinator = mockUnownedModeSessions({
     getTurnOwner: () => owner,
     getTerminalDisposition: () => options?.terminalDisposition,
     keepsSessionOpenAfterTurn: () => options?.sourceLifetime ?? false,
@@ -1293,7 +1330,7 @@ function makeModeSessionDouble(options?: {
     finalizeTurn,
     releaseTurn,
     transferTurn,
-  };
+  });
   return {
     coordinator,
     trackPersistedRow,
@@ -2592,6 +2629,9 @@ describe("session-agent-loop", () => {
       );
       expect(usageCall).toBeDefined();
       const attribution = usageCall?.[12];
+      if (!attribution) {
+        throw new Error("usage was not recorded");
+      }
       expect(attribution.callSite).toBe("callAgent");
     });
 
@@ -2776,6 +2816,9 @@ describe("session-agent-loop", () => {
       expect(mainAgentCall?.[0]).toMatchObject({ providerName: "anthropic" });
       expect(mainAgentCall?.[3]).toBe("claude-sonnet-5");
       const attribution = mainAgentCall?.[12];
+      if (!attribution || !("forceOverrideProfile" in attribution)) {
+        throw new Error("the turn did not carry a forced override profile");
+      }
       expect(attribution.callSite).toBe("mainAgent");
       expect(attribution.overrideProfile).toBe("backupProfile");
       expect(attribution.forceOverrideProfile).toBe(true);
@@ -3908,7 +3951,16 @@ describe("session-agent-loop", () => {
         conversationId: "test-conv",
         latestAssistantMessageId: "prior-result",
         latestAssistantMessageAt: startedAt + 2,
+        lastSeenAssistantMessageId: null,
         lastSeenAssistantMessageAt: null,
+        lastSeenEventAt: null,
+        lastSeenConfidence: null,
+        lastSeenSignalType: null,
+        lastSeenSourceChannel: null,
+        lastSeenSource: null,
+        lastSeenEvidenceText: null,
+        createdAt: startedAt,
+        updatedAt: startedAt + 2,
       };
       mockConversationRow = {
         ...mockConversationRow,
@@ -4583,11 +4635,14 @@ describe("session-agent-loop", () => {
           ),
           textResponse("retry succeeded"),
         ],
-        contextWindowManager: {
-          updateConfig: () => {},
-          shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
-          maybeCompact: async () => ({ compacted: false }),
-        },
+        contextWindowManager: Object.assign(
+          Object.create(ContextWindowManager.prototype),
+          {
+            updateConfig: () => {},
+            shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
+            maybeCompact: async () => noCompactionResult(),
+          },
+        ),
       });
       await runAgentLoopImpl(ctx, "hi", "msg-1", () => {});
 
@@ -5175,38 +5230,41 @@ describe("session-agent-loop", () => {
           userMessageChannel: "slack" as const,
           assistantMessageChannel: "slack" as const,
         }),
-        contextWindowManager: {
-          updateConfig: () => {},
-          shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
-          maybeCompact: async (messages: Message[]) => {
-            maybeCompactInputs.push(messages);
-            // Drop back under budget so the post-compaction provider call
-            // proceeds.
-            mockEstimateTokens = 1000;
-            return {
-              compacted: true,
-              messages: [
-                {
-                  role: "user",
-                  content: [{ type: "text", text: "summary" }],
-                },
-                messages[messages.length - 1]!,
-              ],
-              compactedPersistedMessages: 2,
-              previousEstimatedInputTokens: 90_000,
-              estimatedInputTokens: 5_000,
-              maxInputTokens: 100_000,
-              thresholdTokens: 80_000,
-              compactedMessages: 2,
-              summaryCalls: 1,
-              summaryInputTokens: 100,
-              summaryOutputTokens: 20,
-              summaryModel: "mock-model",
-              summaryText: "summary",
-              summaryFailed: false,
-            };
+        contextWindowManager: Object.assign(
+          Object.create(ContextWindowManager.prototype),
+          {
+            updateConfig: () => {},
+            shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
+            maybeCompact: async (messages: Message[]) => {
+              maybeCompactInputs.push(messages);
+              // Drop back under budget so the post-compaction provider call
+              // proceeds.
+              mockEstimateTokens = 1000;
+              return {
+                compacted: true,
+                messages: [
+                  {
+                    role: "user",
+                    content: [{ type: "text", text: "summary" }],
+                  },
+                  messages[messages.length - 1]!,
+                ],
+                compactedPersistedMessages: 2,
+                previousEstimatedInputTokens: 90_000,
+                estimatedInputTokens: 5_000,
+                maxInputTokens: 100_000,
+                thresholdTokens: 80_000,
+                compactedMessages: 2,
+                summaryCalls: 1,
+                summaryInputTokens: 100,
+                summaryOutputTokens: 20,
+                summaryModel: "mock-model",
+                summaryText: "summary",
+                summaryFailed: false,
+              };
+            },
           },
-        },
+        ),
       });
 
       await runAgentLoopImpl(
@@ -5296,37 +5354,40 @@ describe("session-agent-loop", () => {
           userMessageChannel: "slack" as const,
           assistantMessageChannel: "slack" as const,
         }),
-        contextWindowManager: {
-          updateConfig: () => {},
-          shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
-          maybeCompact: async (messages: Message[]) => {
-            maybeCompactInputs.push(messages);
-            // The mid-loop gate compacted its in-loop basis; drop the estimate
-            // back under budget so the post-compaction provider call proceeds.
-            mockEstimateTokens = 1000;
-            return {
-              compacted: true,
-              messages: [
-                {
-                  role: "user",
-                  content: [{ type: "text", text: "summary" }],
-                },
-              ],
-              compactedPersistedMessages: 2,
-              previousEstimatedInputTokens: 90_000,
-              estimatedInputTokens: 5_000,
-              maxInputTokens: 100_000,
-              thresholdTokens: 80_000,
-              compactedMessages: 2,
-              summaryCalls: 1,
-              summaryInputTokens: 100,
-              summaryOutputTokens: 20,
-              summaryModel: "mock-model",
-              summaryText: "summary",
-              summaryFailed: false,
-            };
+        contextWindowManager: Object.assign(
+          Object.create(ContextWindowManager.prototype),
+          {
+            updateConfig: () => {},
+            shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
+            maybeCompact: async (messages: Message[]) => {
+              maybeCompactInputs.push(messages);
+              // The mid-loop gate compacted its in-loop basis; drop the estimate
+              // back under budget so the post-compaction provider call proceeds.
+              mockEstimateTokens = 1000;
+              return {
+                compacted: true,
+                messages: [
+                  {
+                    role: "user",
+                    content: [{ type: "text", text: "summary" }],
+                  },
+                ],
+                compactedPersistedMessages: 2,
+                previousEstimatedInputTokens: 90_000,
+                estimatedInputTokens: 5_000,
+                maxInputTokens: 100_000,
+                thresholdTokens: 80_000,
+                compactedMessages: 2,
+                summaryCalls: 1,
+                summaryInputTokens: 100,
+                summaryOutputTokens: 20,
+                summaryModel: "mock-model",
+                summaryText: "summary",
+                summaryFailed: false,
+              };
+            },
           },
-        },
+        ),
       });
 
       await runAgentLoopImpl(ctx, "next reply", "user-msg-mid-loop", () => {});
@@ -5708,6 +5769,7 @@ describe("session-agent-loop", () => {
       const ctx = makeCtx({
         contextCompactedMessageCount: 5,
         trustContext: {
+          sourceChannel: "cadet",
           trustClass: "guardian",
         },
       });
@@ -5735,6 +5797,7 @@ describe("session-agent-loop", () => {
       const ctx = makeCtx({
         contextCompactedMessageCount: 5,
         trustContext: {
+          sourceChannel: "cadet",
           trustClass: "unknown",
         },
       });
@@ -5860,15 +5923,15 @@ describe("session-agent-loop", () => {
     function noopPipelineManager(
       order: string[],
     ): Conversation["contextWindowManager"] {
-      return {
+      return Object.assign(Object.create(ContextWindowManager.prototype), {
         updateConfig: () => {},
         shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
         maybeCompact: async (messages: Message[]) => {
           order.push("pipeline");
           mockEstimateTokens = 1000;
-          return { compacted: false, messages };
+          return { ...noCompactionResult(), messages };
         },
-      };
+      });
     }
 
     test("a budget-gate run that finds nothing to summarize resets the ledgers before re-injection", async () => {
@@ -5919,7 +5982,7 @@ describe("session-agent-loop", () => {
     function compactingPipelineManager(
       order: string[],
     ): Conversation["contextWindowManager"] {
-      return {
+      return Object.assign(Object.create(ContextWindowManager.prototype), {
         updateConfig: () => {},
         shouldCompact: () => ({ needed: false, estimatedTokens: 0 }),
         maybeCompact: async (messages: Message[]) => {
@@ -5938,7 +6001,7 @@ describe("session-agent-loop", () => {
             summaryFailed: false,
           };
         },
-      };
+      });
     }
 
     test("resets the ledgers on the strip's durable marker write when a later marker write would fail", async () => {
@@ -6367,7 +6430,10 @@ describe("session-agent-loop", () => {
         return true;
       });
       const ctx = makeCtx({
-        graphMemory: { onCompacted },
+        graphMemory: Object.assign(
+          Object.create(ConversationGraphMemory.prototype),
+          { onCompacted },
+        ),
       });
 
       await applyCompactionResult(
@@ -6390,7 +6456,10 @@ describe("session-agent-loop", () => {
       });
       const onCompacted = mock(async (_count: number) => true);
       const ctx = makeCtx({
-        graphMemory: { onCompacted },
+        graphMemory: Object.assign(
+          Object.create(ConversationGraphMemory.prototype),
+          { onCompacted },
+        ),
       });
 
       await expect(
@@ -6406,7 +6475,10 @@ describe("session-agent-loop", () => {
       });
       const onCompacted = mock(async (_count: number) => true);
       const ctx = makeCtx({
-        graphMemory: { onCompacted },
+        graphMemory: Object.assign(
+          Object.create(ConversationGraphMemory.prototype),
+          { onCompacted },
+        ),
       });
 
       // The marker write is best-effort, so the durable commit still lands.
@@ -6429,7 +6501,10 @@ describe("session-agent-loop", () => {
       });
       const onCompacted = mock(async (_count: number) => true);
       const ctx = makeCtx({
-        graphMemory: { onCompacted },
+        graphMemory: Object.assign(
+          Object.create(ConversationGraphMemory.prototype),
+          { onCompacted },
+        ),
       });
 
       await applyCompactionResult(

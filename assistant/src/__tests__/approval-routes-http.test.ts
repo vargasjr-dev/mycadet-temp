@@ -56,7 +56,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import { RuntimeHttpServer } from "../runtime/http-server.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
-import { asConversationDouble } from "./helpers/mock-conversation.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -69,9 +69,9 @@ function makeIdleSession(opts?: {
   onSecret?: (requestId: string, value?: string, delivery?: string) => void;
 }): Conversation {
   let processing = false;
-  return asConversationDouble({
+  return asConversation({
     isProcessing: () => processing,
-    persistUserMessage: (options: { requestId?: string }) => {
+    persistUserMessage: async (options: { requestId?: string }) => {
       processing = true;
       return { id: options.requestId ?? "msg-1", deduplicated: false };
     },
@@ -132,9 +132,9 @@ function makeConfirmationEmittingSession(opts?: {
   let processing = false;
   const reqId = opts?.confirmRequestId ?? "confirm-req-1";
   const tool = opts?.toolName ?? "shell_command";
-  return asConversationDouble({
+  return asConversation({
     isProcessing: () => processing,
-    persistUserMessage: (options: { requestId?: string }) => {
+    persistUserMessage: async (options: { requestId?: string }) => {
       processing = true;
       return { id: options.requestId ?? "msg-1", deduplicated: false };
     },

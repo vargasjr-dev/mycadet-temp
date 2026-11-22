@@ -6,7 +6,10 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockChannelCapabilities,
+} from "../../__tests__/helpers/mock-conversation.js";
 import { CONSOLIDATION_ALLOWED_TOOLS } from "../../plugins/defaults/memory/substrate/consolidation-tool-surface.js";
 import {
   setBroadcastOverrideForTesting,
@@ -61,14 +64,24 @@ type SkillProjectionCache =
 
 function makeCtx(
   overrides: Partial<Omit<Conversation, "channelCapabilities">> & {
-    channelCapabilities?: Partial<ChannelCapabilities>;
+    channelCapabilities?: Pick<
+      ChannelCapabilities,
+      "channel" | "supportsDynamicUi"
+    > &
+      Partial<ChannelCapabilities>;
   } = {},
 ): Conversation {
+  const { channelCapabilities, ...rest } = overrides;
   return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: {} as SkillProjectionCache,
     toolsDisabledDepth: 0,
-    ...overrides,
+    ...rest,
+    // A partial capability set is filled out to the real shape here; the
+    // call sites only name the members they care about.
+    ...(channelCapabilities
+      ? { channelCapabilities: mockChannelCapabilities(channelCapabilities) }
+      : {}),
   });
 }
 

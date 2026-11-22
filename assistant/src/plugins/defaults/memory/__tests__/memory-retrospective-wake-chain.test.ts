@@ -35,6 +35,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { asConversation } from "../../../../__tests__/helpers/mock-conversation.js";
 import { AgentLoop } from "../../../../agent/loop.js";
 import type { Conversation } from "../../../../daemon/conversation.js";
+import type { TrustContext } from "../../../../daemon/trust-context-types.js";
 import {
   addMessage,
   createConversation,
@@ -61,6 +62,7 @@ import type {
 import { wakeAgentForOpportunity as importedWake } from "../../../../runtime/agent-wake.js";
 import * as realAgentWakeModule from "../../../../runtime/agent-wake.js";
 import { ToolDefinition } from "../../../../tools/tool-types.js";
+import { ContextWindowManager } from "../../compaction/window-manager.js";
 import {
   MEMORY_RETROSPECTIVE_FORK_SOURCE,
   MEMORY_RETROSPECTIVE_GROUP_ID,
@@ -168,14 +170,14 @@ function makeForkConversationDouble(forkId: string): Conversation {
 
   let processing = false;
   let activeAllowedTools: Set<string> | undefined;
-  let persistentTrust: unknown;
-  let turnTrust: unknown;
+  let persistentTrust: TrustContext | undefined;
+  let turnTrust: TrustContext | undefined;
 
   const conversation = {
     conversationId: forkId,
     agentLoop,
     provider: scriptedProvider,
-    usageStats: {},
+    usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     messages,
     // The wake trims its own run input; nothing here is tagged as a camera
     // frame, so the real pass would return the array unchanged too.
@@ -201,24 +203,25 @@ function makeForkConversationDouble(forkId: string): Conversation {
     currentCallSite: undefined,
     currentTurnOverrideProfile: undefined,
     hasNoClient: false,
-    get currentTurnTrustContext() {
+    get currentTurnTrustContext(): TrustContext | undefined {
       return turnTrust;
     },
-    set currentTurnTrustContext(value: unknown) {
+    set currentTurnTrustContext(value: TrustContext | undefined) {
       turnTrust = value;
     },
-    get trustContext() {
+    get trustContext(): TrustContext | undefined {
       return persistentTrust;
     },
-    setTrustContext: (ctx: unknown) => {
-      persistentTrust = ctx ?? undefined;
+    setTrustContext: (ctx: TrustContext) => {
+      persistentTrust = ctx;
     },
     maybeCompact: async () => null,
     // The wake rebuilds the loop prompt under its per-turn stamps.
     syncLoopSystemPrompt: () => {},
-    contextWindowManager: {
-      estimateInputTokens: () => 1_000,
-    },
+    contextWindowManager: Object.assign(
+      Object.create(ContextWindowManager.prototype),
+      { estimateInputTokens: () => 1_000 },
+    ),
     getTurnChannelContext: () => null,
     getTurnInterfaceContext: () => null,
     buildCurrentSystemPrompt: () => "chain-test system prompt",

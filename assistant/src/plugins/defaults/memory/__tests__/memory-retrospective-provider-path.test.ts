@@ -259,6 +259,7 @@ import type {
 } from "../../../../providers/types.js";
 import { setBroadcastOverrideForTesting } from "../../../../runtime/assistant-event-hub.js";
 import { ProviderError } from "../../../../util/errors.js";
+import { ContextWindowManager } from "../../compaction/window-manager.js";
 import { memoryRetrospectiveJob } from "../memory-retrospective-job.js";
 
 // ---------------------------------------------------------------------------
@@ -357,16 +358,24 @@ function makeForkConversationDouble(): Conversation {
     setTrustContext: (_ctx: unknown) => {},
     currentTurnTrustContext: undefined,
     wakePersonaOverride: undefined,
-    contextWindowManager: { estimateInputTokens: () => 0 },
+    contextWindowManager: Object.assign(
+      Object.create(ContextWindowManager.prototype),
+      { estimateInputTokens: () => 0 },
+    ),
     getTurnChannelContext: () => null,
     getTurnInterfaceContext: () => null,
     buildCurrentSystemPrompt: () => "test-system-prompt",
-    provider: { name: "fake-provider" },
-    usageStats: {},
-    modelOverride: undefined,
-    agentLoop: {
-      run: (options: Parameters<AgentLoop["run"]>[0]) => realLoop.run(options),
+    provider: {
+      name: "fake-provider",
+      sendMessage: async () => {
+        throw new Error("no requests expected in this test");
+      },
     },
+    usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
+    modelOverride: undefined,
+    agentLoop: Object.assign(Object.create(AgentLoop.prototype), {
+      run: (options: Parameters<AgentLoop["run"]>[0]) => realLoop.run(options),
+    }),
   };
   return asConversation(conversation);
 }

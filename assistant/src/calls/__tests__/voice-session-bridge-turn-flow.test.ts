@@ -274,7 +274,7 @@ describe("voice-session-bridge", () => {
     const session = asConversation({
       isProcessing: () => false,
       currentRequestId: undefined as string | undefined,
-      persistUserMessage: (options: { requestId?: string }) => {
+      persistUserMessage: async (options: { requestId?: string }) => {
         session.currentRequestId = options.requestId;
         return { id: "test-msg-id", deduplicated: false };
       },
@@ -410,7 +410,7 @@ describe("voice-session-bridge", () => {
     const session = asConversation({
       isProcessing: () => false,
       currentRequestId: undefined as string | undefined,
-      persistUserMessage: (options: { requestId?: string }) => {
+      persistUserMessage: async (options: { requestId?: string }) => {
         session.currentRequestId = options.requestId;
         return { id: "test-msg-id", deduplicated: false };
       },
@@ -1587,7 +1587,7 @@ describe("voice-session-bridge", () => {
     const session = asConversation({
       isProcessing: () => false,
       currentRequestId: undefined as string | undefined,
-      persistUserMessage: (options: { requestId?: string }) => {
+      persistUserMessage: async (options: { requestId?: string }) => {
         session.currentRequestId = options.requestId;
         return { id: "test-msg-id", deduplicated: false };
       },
