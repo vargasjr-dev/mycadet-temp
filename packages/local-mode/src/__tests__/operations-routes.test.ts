@@ -778,10 +778,21 @@ describe("the webhook row — /webhooks/* bridges to the fronted gateway", () =>
     seedEntry({ assistantId: "assistant-1", cloud: "local", port: 7830 });
     const realFetch = globalThis.fetch;
     let dialInit: RequestInit | undefined;
-    globalThis.fetch = mock(async (_input: unknown, init?: RequestInit) => {
-      dialInit = init;
-      return new Response("bridged");
-    }) as unknown as typeof fetch;
+    globalThis.fetch = Object.assign(
+      async (
+        _input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        dialInit = init;
+        return new Response("bridged");
+      },
+      {
+        preconnect: (
+          _url: string | URL,
+          _options?: Record<string, boolean>,
+        ): void => {},
+      },
+    );
     try {
       await dispatch("/webhooks/telegram", "POST");
     } finally {
