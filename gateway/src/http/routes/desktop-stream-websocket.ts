@@ -8,7 +8,9 @@
 import { Server, ServerWebSocket } from "bun";
 
 import {
-  createRuntimeAudioStreamHandlers,
+  closeRuntimeAudioStream,
+  messageRuntimeAudioStream,
+  openRuntimeAudioStream,
   runtimeAudioStreamSocketState,
 } from "./runtime-audio-stream.js";
 import { authorizeGuardianStream } from "./guardian-pin.js";
@@ -19,10 +21,10 @@ import { getLogger } from "../../logger.js";
 
 const log = getLogger("desktop-stream-ws");
 
-export const desktopStreamSocketDataSchema = z.object({
-  wsType: z.literal("desktop-stream"),
-  ...runtimeAudioStreamSocketState,
-});
+export const desktopStreamSocketDataSchema =
+  runtimeAudioStreamSocketState.extend({
+    wsType: z.literal("desktop-stream"),
+  });
 
 export type DesktopStreamSocketData = z.infer<
   typeof desktopStreamSocketDataSchema
@@ -49,7 +51,7 @@ export async function handleDesktopStreamWs(
   const upgraded = server.upgrade(req, {
     data: {
       wsType: "desktop-stream",
-    } satisfies DesktopStreamSocketData,
+    },
   });
 
   if (!upgraded) {
@@ -59,23 +61,25 @@ export async function handleDesktopStreamWs(
   return undefined;
 }
 
-/** `Bun.serve` handlers pumping RFB bytes to the runtime's `/v1/desktop/stream`. */
-const {
-  open: openDesktopStreamWebsocket,
-  message: messageDesktopStreamWebsocket,
-  close: closeDesktopStreamWebsocket,
-} = createRuntimeAudioStreamHandlers<DesktopStreamSocketData>({
-  upstreamPath: "/v1/desktop/stream",
-  log,
-  label: "desktop stream",
-  // RFB has no resync: one dropped frame corrupts the framebuffer for the
-  // rest of the session, so a drop ends it. The JSON streams next door do
-  // not opt in.
-  closeOnDroppedFrame: true,
-});
+const label = "desktop stream";
 
-export {
-  openDesktopStreamWebsocket,
-  messageDesktopStreamWebsocket,
-  closeDesktopStreamWebsocket,
-};
+export const openDesktopStreamWebsocket = (
+  ws: ServerWebSocket<DesktopStreamSocketData>,
+) =>
+  openRuntimeAudioStream({
+    ws,
+    label,
+    closeOnDroppedFrame: true,
+    upstreamPath: "/v1/desktop/stream",
+  });
+
+export const messageDesktopStreamWebsocket = (
+  ws: ServerWebSocket<DesktopStreamSocketData>,
+  message: string | ArrayBuffer | Uint8Array<ArrayBufferLike>,
+) => messageRuntimeAudioStream({ ws, message, label });
+
+export const closeDesktopStreamWebsocket = (
+  ws: ServerWebSocket<DesktopStreamSocketData>,
+  code: number,
+  reason: string,
+) => closeRuntimeAudioStream({ ws, code, reason, label });
