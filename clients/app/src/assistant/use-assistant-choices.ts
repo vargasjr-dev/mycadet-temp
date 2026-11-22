@@ -41,41 +41,38 @@ export function useAssistantChoices() {
       controller.abort();
       settle({ status: "error" });
     }, 10_000);
-    void Promise.resolve()
-      .then(() => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        return listAssistantChoices({
-          apiBaseUrl: "/",
-          signal: controller.signal,
-        });
-      })
-      .then(
-        (value) => {
-          if (controller.signal.aborted || value === undefined) {
-            return;
-          }
-          clearTimeout(timer);
-          // The contract IS the answer: selection rows, the empty arm (the
-          // screen derives its own empty state from the row count), or the
-          // unauthenticated arm — the chooser renders all three.
-          settle(value);
-        },
-        (error) => {
-          if (!controller.signal.aborted) {
-            console.error(
-              `Assistant list request failed: ${describeError(error)}`,
-            );
-            clearTimeout(timer);
-            settle({ status: "error" });
-          }
-        },
-      );
-    return () => {
+    const clear = () => {
       clearTimeout(timer);
       controller.abort();
     };
+    if (controller.signal.aborted) {
+      return clear;
+    }
+    listAssistantChoices({
+      apiBaseUrl: "/",
+      signal: controller.signal,
+    }).then(
+      (value) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        clearTimeout(timer);
+        // The contract IS the answer: selection rows, the empty arm (the
+        // screen derives its own empty state from the row count), or the
+        // unauthenticated arm — the chooser renders all three.
+        settle(value);
+      },
+      (error) => {
+        if (!controller.signal.aborted) {
+          console.error(
+            `Assistant list request failed ${window.location.origin}: ${describeError(error)}`,
+          );
+          clearTimeout(timer);
+          settle({ status: "error" });
+        }
+      },
+    );
+    return clear;
   }, [attempt, key]);
   const state: AssistantChoicesState =
     result?.key === key ? result.state : { status: "loading" };
