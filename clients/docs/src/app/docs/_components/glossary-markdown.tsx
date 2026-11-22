@@ -64,7 +64,7 @@ export default function GlossaryMarkdown() {
 
   return (
     <>
-      <DocsContent title="Glossary" breadcrumb="Docs / Key Concepts / Glossary">
+      <DocsContent title="Glossary" breadcrumb="Docs / Glossary">
         <p className="mb-6 text-zinc-600">{intro}</p>
 
         <section id="terms" className="mb-8">
