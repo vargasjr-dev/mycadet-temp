@@ -267,6 +267,17 @@
     "signInRequired": "Sign in to manage your assistants.",
     "empty": "No assistants on this account yet.",
     "upgradesSection": "Version",
-    "backupsSection": "Backups"
+    "backupsSection": "Backups",
+    "adminAccessSection": "Admin access",
+    "adminAccess": {
+      "stateOn": "Enabled — the assistant's data may be fetched through the cloud's admin seam (log downloads).",
+      "stateOff": "Disabled — the cloud's admin tooling cannot fetch this assistant's data.",
+      "enable": "Enable admin access",
+      "disable": "Disable admin access",
+      "working": "Working…",
+      "updated": "Admin access updated.",
+      "updateFailed": "The admin access update failed.",
+      "notAvailable": "Admin access applies to cloud-hosted assistants only."
+    }
   }
 }

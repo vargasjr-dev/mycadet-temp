@@ -267,6 +267,17 @@
     "signInRequired": "Inicia sesión para administrar tus asistentes.",
     "empty": "Aún no hay asistentes en esta cuenta.",
     "upgradesSection": "Versión",
-    "backupsSection": "Copias de seguridad"
+    "backupsSection": "Copias de seguridad",
+    "adminAccessSection": "Acceso de administrador",
+    "adminAccess": {
+      "stateOn": "Activado: los datos del asistente pueden obtenerse a través de la vía de administración de la nube.",
+      "stateOff": "Desactivado: las herramientas de administración de la nube no pueden obtener los datos de este asistente.",
+      "enable": "Activar acceso de administrador",
+      "disable": "Desactivar acceso de administrador",
+      "working": "Trabajando…",
+      "updated": "Acceso de administrador actualizado.",
+      "updateFailed": "Error al actualizar el acceso de administrador.",
+      "notAvailable": "El acceso de administrador solo aplica a asistentes alojados en la nube."
+    }
   }
 }

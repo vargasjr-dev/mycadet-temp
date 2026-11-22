@@ -328,3 +328,60 @@ export function compareParsed(a: ParsedSemver, b: ParsedSemver): number {
   }
   return comparePreRelease(a.pre, b.pre);
 }
+
+const AdminAccessSchema = z.object({ enabled: z.boolean() });
+
+/**
+ * Read the assistant's admin-access flag — whether the assistant's data
+ * may ride the cloud's internal-admin seam (log downloads today). A
+ * self-hosted assistant has no such flag: the 404 reads as `null`.
+ */
+export async function fetchAssistantAdminAccess(
+  assistantId: string,
+): Promise<ManagementResult<boolean | null>> {
+  const result = await dial(
+    scoped(assistantId, "/admin-access/"),
+    "Failed to read assistant admin access.",
+  );
+  if (!result.ok) {
+    return result.status === 404
+      ? { ok: true, status: 404, data: null }
+      : result;
+  }
+  const parsed = AdminAccessSchema.safeParse(result.data);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      status: result.status,
+      error: toErrorObject(parsed.error.message, undefined),
+    };
+  }
+  return { ok: true, status: result.status, data: parsed.data.enabled };
+}
+
+export async function setAssistantAdminAccess(
+  assistantId: string,
+  enabled: boolean,
+): Promise<ManagementResult<boolean>> {
+  const result = await dial(
+    scoped(assistantId, "/admin-access/"),
+    "Failed to update assistant admin access.",
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    },
+  );
+  if (!result.ok) {
+    return result;
+  }
+  const parsed = AdminAccessSchema.safeParse(result.data);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      status: result.status,
+      error: toErrorObject(parsed.error.message, undefined),
+    };
+  }
+  return { ok: true, status: result.status, data: parsed.data.enabled };
+}

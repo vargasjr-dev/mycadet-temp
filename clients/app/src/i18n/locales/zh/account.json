@@ -267,6 +267,17 @@
     "signInRequired": "登录以管理你的助手。",
     "empty": "此账户还没有助手。",
     "upgradesSection": "版本",
-    "backupsSection": "备份"
+    "backupsSection": "备份",
+    "adminAccessSection": "管理员访问",
+    "adminAccess": {
+      "stateOn": "已启用 — 可通过云端管理通道获取该助手的数据。",
+      "stateOff": "已禁用 — 云端管理工具无法获取该助手的数据。",
+      "enable": "启用管理员访问",
+      "disable": "禁用管理员访问",
+      "working": "处理中…",
+      "updated": "管理员访问已更新。",
+      "updateFailed": "管理员访问更新失败。",
+      "notAvailable": "管理员访问仅适用于云端托管的助手。"
+    }
   }
 }

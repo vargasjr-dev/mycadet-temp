@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useParams } from "react-router";
 
 import { AssistantBackupsTable } from "@app/domains/account/assistants/assistant-backups-table";
+import { AssistantAdminAccessPanel } from "@app/domains/account/assistants/assistant-admin-access-panel";
 import { AssistantUpgradesPanel } from "@app/domains/account/assistants/assistant-upgrades-panel";
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
@@ -61,8 +62,7 @@ export function AssistantsPage() {
     );
   }
 
-  const assistants =
-    state.status === "selection" ? state.assistants : [];
+  const assistants = state.status === "selection" ? state.assistants : [];
 
   const selected =
     selectedId != null
@@ -113,6 +113,12 @@ export function AssistantsPage() {
                   {t("assistantsPage.backupsSection")}
                 </h3>
                 <AssistantBackupsTable assistantId={selected.id} />
+              </section>
+              <section>
+                <h3 className="mb-3 text-body-large-default text-[var(--content-default)]">
+                  {t("assistantsPage.adminAccessSection")}
+                </h3>
+                <AssistantAdminAccessPanel assistantId={selected.id} />
               </section>
             </>
           )}
