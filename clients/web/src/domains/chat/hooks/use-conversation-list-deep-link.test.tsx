@@ -11,7 +11,6 @@ const { __resetPendingDeepLinkForTesting, usePendingDeepLinkStore } =
   await import("@/stores/pending-deep-link-store");
 
 const openDrawer = mock(() => {});
-const expandSidebar = mock(() => {});
 
 /**
  * The layout's shape around the drain: the close-on-navigation effect that
@@ -24,13 +23,9 @@ function Host({ isMobile }: { isMobile: boolean }) {
     setDrawerOpen(true);
     openDrawer();
   }, []);
-  const stableExpand = useCallback(() => {
-    expandSidebar();
-  }, []);
   useConversationListDeepLink({
     isMobile,
     openDrawer: stableOpen,
-    expandSidebar: stableExpand,
   });
   return (
     <>
@@ -67,7 +62,6 @@ const parkedAt = () =>
 
 beforeEach(() => {
   openDrawer.mockClear();
-  expandSidebar.mockClear();
   __resetPendingDeepLinkForTesting();
 });
 
@@ -81,7 +75,6 @@ describe("useConversationListDeepLink", () => {
     renderHost();
 
     expect(openDrawer).not.toHaveBeenCalled();
-    expect(expandSidebar).not.toHaveBeenCalled();
   });
 
   test("drains a park made before the layout mounted, the cold-launch case", () => {
@@ -163,12 +156,11 @@ describe("useConversationListDeepLink", () => {
     expect(parkedAt()).toBeNull();
   });
 
-  test("a wide window uncollapses the sidebar instead, and spends the park at once", () => {
+  test("a wide window spends the park at once — the sidebar is always open", () => {
     park();
 
     renderHost({ isMobile: false, at: routes.assistant });
 
-    expect(expandSidebar).toHaveBeenCalledTimes(1);
     expect(openDrawer).not.toHaveBeenCalled();
     expect(parkedAt()).toBeNull();
   });
@@ -182,7 +174,6 @@ describe("useConversationListDeepLink", () => {
     renderHost({ at: routes.conversation("conv-1") });
 
     expect(openDrawer).not.toHaveBeenCalled();
-    expect(expandSidebar).not.toHaveBeenCalled();
     expect(parkedAt()).toBeNull();
   });
 });

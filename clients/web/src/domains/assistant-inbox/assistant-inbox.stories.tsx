@@ -113,13 +113,11 @@ const shellDecorator: Decorator<InboxStoryArgs> = function ChatShell(
   Story,
   context,
 ) {
-  const { collapsed } = context.args;
   return (
     <div className="flex h-screen gap-4 bg-[var(--surface-base)] p-4">
       <aside className="w-fit shrink-0 overflow-hidden">
         <AssistantSideMenu
           assistantName={MOCK_ASSISTANT_NAME}
-          collapsed={collapsed}
           variant="rail"
           width={280}
           onWidthChange={() => {}}

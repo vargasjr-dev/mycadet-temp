@@ -214,7 +214,6 @@ function renderMenu(props: {
   conversations: Conversation[];
   conversationGroups?: ConversationGroup[];
   activeConversationId?: string;
-  collapsed?: boolean;
   variant?: "rail" | "overlay";
   includeFooterAction?: boolean;
   isLoadingConversations?: boolean;
@@ -228,7 +227,6 @@ function renderMenu(props: {
   const includeFooterAction = props.includeFooterAction ?? true;
   const { container } = render(
     createElement(SideMenuUnderTest, {
-      collapsed: props.collapsed ?? false,
       variant: props.variant ?? "rail",
       conversations: props.conversations,
       isLoadingConversations: props.isLoadingConversations,
@@ -326,11 +324,9 @@ describe("AssistantSideMenu · Chats category rows", () => {
       makeConversation({ conversationId: "regular", title: "Regular thread" }),
     ];
 
-    const expandedHtml = renderMenu({ conversations });
-    const collapsedHtml = renderMenu({ conversations, collapsed: true });
+    const html = renderMenu({ conversations });
 
-    expect(expandedHtml).not.toContain(">Pinned<");
-    expect(collapsedHtml).not.toContain('aria-label="Pinned"');
+    expect(html).not.toContain(">Pinned<");
   });
 
   test("omits chat count badges from the Chats section rows", () => {
@@ -391,13 +387,6 @@ describe("AssistantSideMenu · All view", () => {
   // header that carried it was on screen in every view. It now belongs to the
   // Chats section's own menu, so it is asserted against both views together;
   // see the "channel grouping toggle" block below.
-
-  test("the collapsed rail reaches the flat list through a Chats icon", () => {
-    const html = renderMenu({ conversations, collapsed: true });
-
-    expect(html).toContain('aria-label="Chats"');
-    expect(html).toContain('aria-label="Pinned"');
-  });
 });
 
 describe("AssistantSideMenu · drawer inset", () => {
@@ -406,11 +395,10 @@ describe("AssistantSideMenu · drawer inset", () => {
      stacked on the page layout's own, reading as bare space around the whole
      drawer. The overlay is a full-bleed sheet and keeps it. */
   test("the rail hands its horizontal inset to the cards, not the panel", () => {
-    for (const collapsed of [false, true]) {
+    {
       const container = parse(
         renderMenu({
           conversations: [makeConversation({ conversationId: "r1" })],
-          collapsed,
         }),
       );
       const nav = container.querySelector<HTMLElement>("nav");
@@ -601,16 +589,6 @@ describe("AssistantSideMenu · footer slot behavior", () => {
     expect(html).not.toContain('data-slot="side-menu-footer"');
   });
 
-  test("renders the footer action on the collapsed rail", () => {
-    const conversations = [
-      makeConversation({ conversationId: "a", title: "Alpha" }),
-    ];
-
-    const html = renderMenu({ conversations, collapsed: true });
-
-    expect(html).toContain("Preferences");
-  });
-
   test("the rail footer carries no separator", () => {
     const conversations = [
       makeConversation({ conversationId: "a", title: "Alpha" }),
@@ -722,7 +700,6 @@ describe("AssistantSideMenu · overlay bottom scroll reserve", () => {
     try {
       const { container } = render(
         createElement(SideMenuUnderTest, {
-          collapsed: false,
           variant: "overlay",
           conversations,
           onSelectConversation: () => {},
@@ -766,7 +743,6 @@ describe("AssistantSideMenu · overlay bottom scroll reserve", () => {
 
 describe("AssistantSideMenu · new conversation affordance", () => {
   const baseProps = {
-    collapsed: false,
     variant: "rail" as const,
     conversations: [makeConversation({ conversationId: "a", title: "Alpha" })],
     onSelectConversation: () => {},
@@ -988,7 +964,6 @@ describe("AssistantSideMenu · section header menus", () => {
   }) {
     return render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "rail" as const,
         conversations,
         onSelectConversation: () => {},
@@ -1178,7 +1153,6 @@ describe("AssistantSideMenu · channel grouping toggle", () => {
     setSectionRows(conversations);
     return render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "rail" as const,
         conversations,
         onSelectConversation: () => {},
@@ -1426,27 +1400,6 @@ describe("AssistantSideMenu · default section order", () => {
     expect(labels.indexOf("Alpha")).toBeLessThan(labels.indexOf("Chats"));
     expect(labels.indexOf("Alpha")).toBeLessThan(labels.indexOf("Slack"));
   });
-
-  test("the collapsed rail lists the same sections in the same order", () => {
-    const container = parse(
-      renderMenu({
-        conversations: LAYOUT_CONVERSATIONS,
-        conversationGroups: LAYOUT_GROUPS,
-        collapsed: true,
-      }),
-    );
-
-    // The rail renders icon tiles, so the section identity is in the label.
-    const railLabels = Array.from(
-      container.querySelectorAll<HTMLElement>("[aria-label]"),
-    )
-      .map((el) => el.getAttribute("aria-label"))
-      .filter((label): label is string =>
-        ["Pinned", "Alpha", "Chats", "Slack"].includes(label ?? ""),
-      );
-
-    expect(railLabels).toEqual(["Pinned", "Alpha", "Chats", "Slack"]);
-  });
 });
 
 /* Membership in `sidebar.sections` and what renders are decided by one
@@ -1532,36 +1485,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
   // is uniform by construction, and the expanded rail dropped its own for the
   // same reason. Asserted against both pinned-app states because the rule
   // used to be conditional on them.
-  test("the collapsed rail's header carries no separator, pinned apps or not", () => {
-    for (const pinnedApps of [
-      [],
-      [makeAppSummary({ id: "app-1", name: "Vex Ops", pinSortPosition: 1 })],
-    ]) {
-      pinnedAppsFixture = pinnedApps;
-
-      const container = parse(
-        renderMenu({
-          conversations: LAYOUT_CONVERSATIONS,
-          conversationGroups: LAYOUT_GROUPS,
-          collapsed: true,
-        }),
-      );
-
-      const header = container.querySelector<HTMLElement>(
-        '[data-slot="side-menu-header"]',
-      );
-      if (!header) {
-        throw new Error("expected the rail's non-scrolling header");
-      }
-
-      expect(
-        header.querySelectorAll('[data-slot="side-menu-separator"]'),
-      ).toHaveLength(0);
-    }
-
-    pinnedAppsFixture = [];
-  });
-
   // Pinned is the one section that doesn't cap: it grows to fit its own
   // rows (user-curated, expected to stay short). Every derived section -
   // Chats and each channel section - claims whatever space is left and
@@ -1574,7 +1497,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
     // the sidebar body's ref has mounted.
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "rail",
         conversations: LAYOUT_CONVERSATIONS,
         conversationGroups: LAYOUT_GROUPS,
@@ -1620,7 +1542,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
   function renderRail(openSections: string[] = []) {
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "rail",
         conversations: LAYOUT_CONVERSATIONS,
         conversationGroups: LAYOUT_GROUPS,
@@ -1683,7 +1604,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
   test("the overlay drawer lets the body scroll Chats clear of the floating pills", () => {
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "overlay",
         conversations: LAYOUT_CONVERSATIONS,
         conversationGroups: LAYOUT_GROUPS,
@@ -1715,7 +1635,6 @@ describe("AssistantSideMenu · equal section treatment", () => {
     localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "overlay",
         conversations: Array.from(
           { length: CONVERSATION_LIST_VIRTUALIZE_THRESHOLD + 1 },
@@ -1920,7 +1839,6 @@ describe("AssistantSideMenu · section reordering", () => {
   test("the card is the drag handle, the drag image and the drop edge", async () => {
     const { container } = render(
       createElement(SideMenuUnderTest, {
-        collapsed: false,
         variant: "rail" as const,
         conversations: LAYOUT_CONVERSATIONS,
         conversationGroups: LAYOUT_GROUPS,
@@ -2026,7 +1944,6 @@ describe("AssistantSideMenu · section reordering", () => {
     async (label, expected) => {
       const { container } = render(
         createElement(SideMenuUnderTest, {
-          collapsed: false,
           variant: "rail" as const,
           conversations: LAYOUT_CONVERSATIONS,
           conversationGroups: LAYOUT_GROUPS,

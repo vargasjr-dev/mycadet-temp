@@ -59,7 +59,6 @@ export type CommandShortcutKey =
  */
 export const WEB_ACCELERATORS: Partial<Record<CommandShortcutKey, string>> = {
   newConversation: "CmdOrCtrl+Shift+O",
-  sidebarToggle: "CmdOrCtrl+\\",
   commandPalette: "CmdOrCtrl+K",
   navigateBack: "CmdOrCtrl+[",
   navigateForward: "CmdOrCtrl+]",

@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { CSP_POLICY } from "./csp";
+import { CSP_POLICY, frameableCspPolicy } from "./csp";
 
 /** Extract the value for a single CSP directive from a policy string. */
 function directiveValue(
@@ -34,6 +34,22 @@ describe("CSP_POLICY", () => {
     for (const dir of required) {
       expect(CSP_POLICY).toContain(dir);
     }
+  });
+
+  test("the web mount's documents frame; the shell never does", () => {
+    // The shell's AssistantFrame iframes the /web mount — the mount's own
+    // documents must admit their same-origin parent, or the frame dies with
+    // ERR_BLOCKED_BY_RESPONSE (the desktop's blocked boot).
+    expect(directiveValue("frame-ancestors", frameableCspPolicy())).toBe(
+      "'self'",
+    );
+    // The frameable variant differs ONLY in frame-ancestors — every other
+    // directive (frame-src's navigate-out confinement included) carries over.
+    expect(frameableCspPolicy().replace("frame-ancestors 'self'", "")).toBe(
+      CSP_POLICY.replace("frame-ancestors 'none'", ""),
+    );
+    // The shell's own documents stay unframable.
+    expect(directiveValue("frame-ancestors")).toBe("'none'");
   });
 
   test("frame-src confines where a sandboxed frame can navigate", () => {

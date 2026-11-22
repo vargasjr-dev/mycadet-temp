@@ -123,7 +123,6 @@ function Layout() {
         <ChatLayoutHeader
           isMobile={isMobile}
           drawerOpen={false}
-          collapsed={false}
           toggleSidebar={toggleSidebar}
         />
       )}

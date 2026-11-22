@@ -9,13 +9,8 @@ import {
 } from "react";
 import { useLocation, useNavigate, useNavigationType } from "react-router";
 
-import { MOBILE_MEDIA_QUERY, useIsMobile } from "@/hooks/use-is-mobile";
-import {
-  getLocalBool,
-  getLocalNumber,
-  setLocalBool,
-  setLocalNumber,
-} from "@/utils/local-settings";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { getLocalNumber, setLocalNumber } from "@/utils/local-settings";
 import {
   conversationIdForPath,
   isAboutAssistantPath,
@@ -66,7 +61,6 @@ import { useIsNativePlatform } from "@/runtime/native-platform";
 import { isPopoutWindow, openPopoutWindow } from "@/runtime/popout-window";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { Conversation } from "@/types/conversation-types";
 import { requestComposerFocus } from "./composer-focus";
@@ -107,15 +101,10 @@ const CommandPalette = lazy(() =>
   })),
 );
 
-const SIDEBAR_COLLAPSED_STORAGE_KEY = "cadet:sidebar:collapsed";
 const SIDEBAR_WIDTH_STORAGE_KEY = "cadet:sidebar:width";
 const DEFAULT_SIDEBAR_WIDTH = 230;
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 400;
-
-function readPersistedCollapsed(): boolean {
-  return getLocalBool(SIDEBAR_COLLAPSED_STORAGE_KEY, false);
-}
 
 function readPersistedWidth(): number {
   const raw = getLocalNumber(SIDEBAR_WIDTH_STORAGE_KEY, DEFAULT_SIDEBAR_WIDTH);
@@ -128,7 +117,6 @@ function readPersistedWidth(): number {
 type SideMenuVariant = "rail" | "overlay";
 
 interface SideMenuRenderArgs {
-  collapsed: boolean;
   variant: SideMenuVariant;
   width?: number;
   onWidthChange?: (width: number) => void;
@@ -149,11 +137,6 @@ export function ChatLayout({
   const navigationType = useNavigationType();
 
   const [isPopout] = useState(() => isPopoutWindow(location.search));
-
-  const sidebarCollapseRequested =
-    useOnboardingFocusStore.use.sidebarCollapseRequested();
-  const consumeSidebarCollapse =
-    useOnboardingFocusStore.use.consumeSidebarCollapse();
 
   const assistantId = useActiveAssistantId();
 
@@ -255,14 +238,7 @@ export function ChatLayout({
 
   const isIdentityActive = isAboutAssistantPath(location.pathname);
 
-  const [collapsed, setCollapsed] = useState<boolean>(readPersistedCollapsed);
   const [sidebarWidth, setSidebarWidth] = useState<number>(readPersistedWidth);
-
-  const effectiveCollapsed = collapsed;
-
-  useEffect(() => {
-    setLocalBool(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed);
-  }, [collapsed]);
 
   const handleSidebarWidthChange = useCallback((width: number) => {
     setSidebarWidth(width);
@@ -275,8 +251,6 @@ export function ChatLayout({
     (document.activeElement as HTMLElement | null)?.blur();
     setDrawerOpen(true);
   }, []);
-
-  const expandSidebarForDeepLink = useCallback(() => setCollapsed(false), []);
 
   useEffect(() => {
     if (!isMobile) {
@@ -291,35 +265,22 @@ export function ChatLayout({
   useConversationListDeepLink({
     isMobile,
     openDrawer: openDrawerForDeepLink,
-    expandSidebar: expandSidebarForDeepLink,
   });
-
-  useEffect(() => {
-    if (!sidebarCollapseRequested) {
-      return;
-    }
-
-    setCollapsed(true);
-    setDrawerOpen(false);
-    consumeSidebarCollapse();
-  }, [sidebarCollapseRequested, consumeSidebarCollapse]);
 
   const voiceRoomVisible = useIsVoiceRoomVisible();
 
   const drawerVisible = isMobile && drawerOpen;
 
+  // Mobile-only now: the drawer's slide-over. The desktop sidebar is always
+  // open — the expand/collapse toggle (and its rail mode) is deleted.
   const toggleSidebar = useCallback(() => {
     haptic.light();
-    if (window.matchMedia(MOBILE_MEDIA_QUERY).matches) {
-      setDrawerOpen((value) => {
-        if (!value) {
-          (document.activeElement as HTMLElement | null)?.blur();
-        }
-        return !value;
-      });
-    } else {
-      setCollapsed((value) => !value);
-    }
+    setDrawerOpen((value) => {
+      if (!value) {
+        (document.activeElement as HTMLElement | null)?.blur();
+      }
+      return !value;
+    });
   }, []);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
@@ -332,7 +293,6 @@ export function ChatLayout({
   );
 
   useChatLayoutShortcuts({
-    toggleSidebar,
     onGoBack: handleGoBack,
     onGoForward: handleGoForward,
     onNewConversation: startNewConversation,
@@ -511,9 +471,6 @@ export function ChatLayout({
     find: () => {
       useCommandPaletteStore.getState().toggle();
     },
-    sidebarToggle: () => {
-      toggleSidebar();
-    },
     commandPalette: () => {
       void openCommandPaletteWindow()
         .then((opened) => {
@@ -617,7 +574,6 @@ export function ChatLayout({
   const renderSideMenu = (args: SideMenuRenderArgs): ReactNode => (
     <AssistantSideMenu
       assistantName={assistantName}
-      collapsed={args.collapsed}
       variant={args.variant}
       width={args.width}
       onWidthChange={args.onWidthChange}
@@ -685,7 +641,6 @@ export function ChatLayout({
         <ChatLayoutHeader
           isMobile={isMobile}
           drawerOpen={drawerOpen}
-          collapsed={effectiveCollapsed}
           sidebarWidth={sidebarWidth}
           toggleSidebar={toggleSidebar}
           topBarCenter={topBarCenter}
@@ -717,7 +672,6 @@ export function ChatLayout({
             aria-label={t("chatLayout.navigationAria")}
           >
             {renderSideMenu({
-              collapsed: effectiveCollapsed,
               variant: "rail",
               width: sidebarWidth,
               onWidthChange: handleSidebarWidthChange,
@@ -768,7 +722,6 @@ export function ChatLayout({
                 }}
               >
                 {renderSideMenu({
-                  collapsed: false,
                   variant: "overlay",
                   onClose: closeDrawer,
                 })}

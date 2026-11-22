@@ -188,7 +188,7 @@ const GROUPS: ConversationGroup[] = [
      conversations on purpose: an empty section renders in both states - a
      muted tile on the rail, a headed card when expanded - and it holds its
      place either way. In the shared set rather than one story, so the
-     collapsed and expanded stories differ only by `collapsed`.
+     stories differ only by their `variant`.
 
      Not named "Archive": archived conversations are excluded from the sidebar
      entirely (`groupConversations` drops anything with `archivedAt`), so a
@@ -275,7 +275,6 @@ function withAvatar(client: QueryClient) {
 
 const SHARED_ARGS = {
   assistantName: "Vex",
-  collapsed: false,
   variant: "rail",
   /* `chat-layout` always hands the expanded rail a width and a width setter,
      which is what mounts the drag-resize handle at the rail's edge. Omitting
@@ -379,43 +378,6 @@ export const GroupedView: Story = {
   args: { ...SHARED_ARGS },
 };
 
-/* The collapsed rail: one circle per section, each carrying the same
-   indicator its expanded header shows. The rail's geometry only exists at
-   this width, and it is where the last two geometry bugs shipped, so it gets
-   its own surface rather than living as a control on another story.
-
-   "Archive" is seeded with no conversations to draw the empty-section tile:
-   still a circle in the column and still a hover target, so the tooltip
-   explaining why it does nothing stays reachable. It's muted rather than
-   natively disabled for exactly that reason. */
-export const CollapsedRail: Story = {
-  name: "Collapsed rail · grouped view",
-  beforeEach: () => seedViewMode("asst-collapsed", "grouped"),
-  args: {
-    ...SHARED_ARGS,
-    collapsed: true,
-    footerAction: <PreferencesMenu assistantId="asst-story" />,
-  },
-};
-
-/* The same rail in the default view, which is the one most users see. The two
-   views put a different section set in the column, and the rail is where a
-   section list going wrong is hardest to spot, so each view gets its own
-   collapsed surface rather than sharing one. */
-export const CollapsedRailAllView: Story = {
-  name: "Collapsed rail · all view",
-  beforeEach: () => seedViewMode("asst-collapsed-all", "all"),
-  args: {
-    ...SHARED_ARGS,
-    collapsed: true,
-    footerAction: <PreferencesMenu assistantId="asst-story" />,
-  },
-};
-
-/* What a cold load looks like before the conversation list resolves. The list
-   is one query that settles only once every page of it is in, so on a busy
-   assistant this state holds for seconds, and the placeholders are what keep
-   it distinguishable from an assistant with no conversations at all. */
 export const LoadingConversations: Story = {
   name: "Loading conversations",
   beforeEach: () => seedViewMode("asst-loading", "all"),
@@ -441,19 +403,6 @@ export const UploadedImageAvatar: Story = {
   args: {
     ...SHARED_ARGS,
     assistantName: "Haze II",
-  },
-};
-
-/** The same row on the collapsed rail, where the image fills the tile. */
-export const UploadedImageAvatarCollapsed: Story = {
-  name: "Identity row · uploaded image avatar, collapsed",
-  beforeEach: () => seedViewMode("asst-image", "all"),
-  decorators: [withAvatar(IMAGE_AVATAR_CLIENT)],
-  args: {
-    ...SHARED_ARGS,
-    assistantName: "Haze II",
-    collapsed: true,
-    footerAction: <PreferencesMenu assistantId="asst-story" />,
   },
 };
 
@@ -516,7 +465,6 @@ export const OverlayDrawer: Story = {
     ...SHARED_ARGS,
     conversations: LONG_CONVERSATIONS,
     variant: "overlay",
-    collapsed: false,
     onClose: () => {},
     /* `chat-layout` switches the trigger for the overlay; the story does the
        same so the pill it shows is the one the drawer actually mounts. */

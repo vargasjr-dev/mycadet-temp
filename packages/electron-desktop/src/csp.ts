@@ -86,14 +86,30 @@ export const CSP_POLICY = [
   "form-action 'self'",
 ].join("; ");
 
+/**
+ * The frameable variant for the web bundle's mount: its documents render
+ * INSIDE the app shell's AssistantFrame (same-origin, the shape `frame-src
+ * 'self'` invites), so their `frame-ancestors` must admit the shell instead
+ * of forbidding every parent. Everything else — the shell itself above all —
+ * stays unframable.
+ */
+export const frameableCspPolicy = (): string =>
+  CSP_POLICY.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+
 export const installCsp = (): void => {
   session.defaultSession.webRequest.onHeadersReceived(
     { urls: ["app://*/*"] },
     (details, callback) => {
+      // The web bundle's documents (and only those) render framed by the
+      // shell — a `frame-ancestors 'none'` on the mount makes the shell's
+      // own AssistantFrame load die with ERR_BLOCKED_BY_RESPONSE.
+      const frameable = new URL(details.url).pathname.startsWith("/web");
       callback({
         responseHeaders: {
           ...details.responseHeaders,
-          "Content-Security-Policy": [CSP_POLICY],
+          "Content-Security-Policy": [
+            frameable ? frameableCspPolicy() : CSP_POLICY,
+          ],
         },
       });
     },

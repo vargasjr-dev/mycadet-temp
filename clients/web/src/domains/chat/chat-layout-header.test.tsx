@@ -101,7 +101,6 @@ function renderHeader(
     <ChatLayoutHeader
       isMobile
       drawerOpen={false}
-      collapsed={false}
       toggleSidebar={() => {}}
       {...props}
     />,

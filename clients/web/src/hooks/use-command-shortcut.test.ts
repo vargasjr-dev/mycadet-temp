@@ -72,7 +72,6 @@ afterEach(() => {
 describe("in a browser", () => {
   test("answers with the chord the web app binds for itself", () => {
     expect(commandAccelerator("newConversation")).toBe("CmdOrCtrl+Shift+O");
-    expect(commandAccelerator("sidebarToggle")).toBe("CmdOrCtrl+\\");
   });
 
   test("has no shortcut for a desktop-only command", () => {

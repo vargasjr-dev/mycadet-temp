@@ -18,7 +18,6 @@ import {
   getGroupIndicatorState,
   GroupIndicatorDot,
 } from "@/domains/chat/components/collapsed-group-icon";
-import { CollapsedRailSections } from "@/domains/chat/components/collapsed-rail-sections";
 import {
   ConversationListProvider,
   type ConversationListContextValue,
@@ -67,7 +66,6 @@ export interface AssistantSideMenuProps extends UseSidebarStateParams {
   conversationsFailed?: boolean;
   /** Refetch the conversation list. Omit to draw the failure without a retry. */
   onRetryConversations?: () => void;
-  collapsed: boolean;
   variant: "rail" | "overlay";
   width?: number;
   onWidthChange?: (width: number) => void;
@@ -231,7 +229,6 @@ export function AssistantSideMenu({
   conversationsFailed,
   onRetryConversations,
   assistantName,
-  collapsed,
   variant,
   width,
   onWidthChange,
@@ -277,9 +274,9 @@ export function AssistantSideMenu({
     attentionConversationIds,
   });
 
-  const isCollapsedRail = collapsed && variant === "rail";
-  /* Mirrors `SideMenu`'s own condition for mounting the resize handle. */
-  const isResizable = variant === "rail" && !collapsed && onWidthChange != null;
+  /* Mirrors `SideMenu`'s own condition for mounting the resize handle. The
+     rail is always open — the expand/collapse toggle is deleted. */
+  const isResizable = variant === "rail" && onWidthChange != null;
 
   /* Both gated on an empty list, not on their flag alone: a refetch over a
      populated sidebar keeps drawing the rows it already has rather than
@@ -514,7 +511,7 @@ export function AssistantSideMenu({
   const builtInNav = (
     <SideMenuBuiltInNav
       assistantName={assistantName}
-      collapsed={collapsed}
+      collapsed={false}
       variant={variant}
       isIntelligenceActive={isIntelligenceActive}
       onOpenIntelligence={onOpenIntelligence}
@@ -531,7 +528,7 @@ export function AssistantSideMenu({
     <ConversationListProvider value={listContext}>
       <SideMenu
         ariaLabel={t("assistantSideMenu.navAria")}
-        collapsed={collapsed}
+        collapsed={false}
         variant={variant}
         width={width}
         onWidthChange={onWidthChange}
@@ -605,9 +602,8 @@ export function AssistantSideMenu({
                  cluster's own top padding supplies the 1rem gap beneath it. */
                 `-mx-3 ${SIDEBAR_STACK_GAP} mb-24 px-3 ${OVERLAY_LIST_ROUNDED_CLIP} native-mobile:pt-11 ${NATIVE_MOBILE_LIST_TOP_FADE}`
               : /* The top inset is the same stack gap: the header closes
-                   with no rule, so without it the first card (or the
-                   collapsed rail's first group icon) butts against the
-                   last pill while every other pair is spaced. */
+                   with no rule, so without it the first card butts against
+                   the last pill while every other pair is spaced. */
                 `${SIDEBAR_STACK_GAP} pt-2`
           }
           style={
@@ -646,13 +642,7 @@ export function AssistantSideMenu({
               {builtInNav}
             </div>
           ) : null}
-          {isCollapsedRail ? (
-            <CollapsedRailSections
-              sections={listSections}
-              processingConversationIds={processingConversationIds}
-              attentionConversationIds={attentionConversationIds}
-            />
-          ) : showConversationError ? (
+          {showConversationError ? (
             <SidebarConversationError onRetry={onRetryConversations} />
           ) : showConversationSkeleton ? (
             <SidebarConversationSkeleton />

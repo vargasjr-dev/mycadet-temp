@@ -19,13 +19,13 @@ export function WelcomeScreen() {
     // `replace`, like every other step of the setup flow: the funnel occupies a
     // single history entry so a Back press can never re-enter it (see
     // `SETUP_NAVIGATE` in `onboarding-navigation.ts`). The list assistants api
-    // owns the "already have assistants" answer — no session (the literal
-    // no-account path) reads as none, so the flow lands on hosting: the
-    // choose-assistant screen is skipped (it only bounced an empty list to
-    // hosting anyway) and the remote-hatching walk starts immediately.
+    // owns the branch: assistants already on file land on the chooser so the
+    // user picks (or connects a remote); none — the literal no-account path
+    // reads as none — lands on hosting, skipping the chooser (its zero state
+    // only bounced to hosting anyway) and starting the remote-hatching walk.
     void listAssistants().then((result) => {
       if (result.ok && result.data.length > 0) {
-        void navigate(routes.assistant, SETUP_NAVIGATE);
+        void navigate(routes.account.selectAssistant, SETUP_NAVIGATE);
       } else {
         void navigate(routes.account.onboarding.hosting, SETUP_NAVIGATE);
       }

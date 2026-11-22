@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu as MenuIcon,
-  PanelLeft,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, type ReactNode } from "react";
@@ -49,8 +48,9 @@ export const CHAT_LAYOUT_HEADER_SELECTOR = `[data-slot="${CHAT_LAYOUT_HEADER_SLO
 export interface ChatLayoutHeaderProps {
   isMobile: boolean;
   drawerOpen: boolean;
-  collapsed: boolean;
   sidebarWidth?: number;
+  /** Mobile only: flips the navigation drawer. The desktop sidebar is
+   *  always open — its expand/collapse toggle is deleted. */
   toggleSidebar: () => void;
   /** Fades out and disables every header control (the in-chat onboarding
    *  prototype's focused stage) while keeping the bar itself for layout
@@ -83,7 +83,6 @@ export interface ChatLayoutHeaderProps {
 export function ChatLayoutHeader({
   isMobile,
   drawerOpen,
-  collapsed,
   sidebarWidth,
   toggleSidebar,
   controlsHidden = false,
@@ -238,33 +237,24 @@ export function ChatLayoutHeader({
             style={{
               // `minWidth` reserves the sidebar column on desktop only. The
               // Electron inset clears the inline traffic lights at any width.
-              ...(isMobile
-                ? {}
-                : { minWidth: collapsed ? 48 : (sidebarWidth ?? 230) }),
+              // The sidebar is always open, so the reserve is always its width.
+              ...(isMobile ? {} : { minWidth: sidebarWidth ?? 230 }),
               ...macosTrafficLightStyle,
             }}
           >
-            {isMobile ? (
-              <Button
-                variant="ghost"
-                iconOnly={<MenuIcon />}
-                aria-label={t("chatLayoutHeader.openNavigationAria")}
-                aria-expanded={drawerOpen}
-                aria-controls="chat-side-menu"
-                tooltip={t("chatLayoutHeader.openNavigationAria")}
-                onClick={toggleSidebar}
-              />
-            ) : (
-              <Button
-                variant="ghost"
-                iconOnly={<PanelLeft />}
-                aria-label={t("chatLayoutHeader.toggleSidebarAria")}
-                aria-expanded={!collapsed}
-                aria-controls="chat-side-menu"
-                tooltip={t("chatLayoutHeader.toggleSidebarAria")}
-                onClick={toggleSidebar}
-              />
-            )}
+            // The desktop PanelLeft toggle is gone: the sidebar is always //
+            open, so the header's left cluster only carries the mobile // drawer
+            button. isMobile ? (
+            <Button
+              variant="ghost"
+              iconOnly={<MenuIcon />}
+              aria-label={t("chatLayoutHeader.openNavigationAria")}
+              aria-expanded={drawerOpen}
+              aria-controls="chat-side-menu"
+              tooltip={t("chatLayoutHeader.openNavigationAria")}
+              onClick={toggleSidebar}
+            />
+            ) : null
             {!isMobile ? (
               <>
                 <Button
