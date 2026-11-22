@@ -84,15 +84,6 @@ export type IpcRoute = {
   handler: IpcMethodHandler;
 };
 
-/** Optional configuration for {@link GatewayIpcServer}. */
-export interface GatewayIpcServerOptions {
-  /**
-   * How often the socket-file watchdog stats the listening socket path.
-   * Set to `0` to disable. Defaults to {@link SocketWatchdog}'s 5000ms.
-   */
-  watchdogIntervalMs?: number;
-}
-
 // ---------------------------------------------------------------------------
 // Server
 // ---------------------------------------------------------------------------
@@ -111,14 +102,15 @@ export class GatewayIpcServer {
    */
   private legacyServers = new Set<Server>();
 
-  constructor(routes: IpcRoute[] = ROUTES, options?: GatewayIpcServerOptions) {
+  // TODO: don't add the constructor args back, it was intentionally removed
+  constructor() {
     const resolution = resolveIpcSocketPath("gateway");
     this.socketPath = resolution.path;
     log.info(
       { source: resolution.source, path: resolution.path },
       "Gateway IPC socket path resolved",
     );
-    for (const route of routes) {
+    for (const route of ROUTES) {
       this.methods.set(route.method, route.handler);
       if (route.schema) {
         this.schemas.set(route.method, route.schema);
@@ -127,7 +119,6 @@ export class GatewayIpcServer {
 
     this.watchdog = new SocketWatchdog({
       socketPath: this.socketPath,
-      intervalMs: options?.watchdogIntervalMs,
       getServer: () => this.server,
       createServer: () => this.createListeningServer(),
       onRebind: (newServer, oldServer) => {

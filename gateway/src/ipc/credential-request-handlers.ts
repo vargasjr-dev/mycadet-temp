@@ -26,6 +26,7 @@ import { getLogger } from "../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 import { resolvePublicHttpBaseUrl } from "../runtime/client.js";
 import type { IpcRoute } from "./server.js";
+import { enablePublicIngress, getTunnelClient } from "../tunnel/client.js";
 
 const log = getLogger("credential-requests");
 
@@ -88,18 +89,25 @@ export interface CreateCredentialRequestDeps {
   ensurePublicIngressLive?: () => Promise<void>;
 }
 
-/**
- * The ingress hook, wired once by `index.ts` at startup: enabling public
- * ingress and starting the Tunnel is entrypoint-owned behavior (it owns the
- * tunnel client and the credential cache), while the route itself is
- * stateless. Resolved at request time, like `getConfig()`.
- */
-let ensurePublicIngressLive: (() => Promise<void>) | undefined;
+function maybeStartTunnelForCredentialLink(reason: string): void {
+  const tunnelClient = getTunnelClient();
+  if (!tunnelClient || tunnelClient.isRunning()) {
+    return;
+  }
+  log.info({ reason }, "Starting Tunnel after credential link minted");
+  tunnelClient.start();
+}
 
-export function setEnsurePublicIngressLiveForCredentialLinks(
-  hook: () => Promise<void>,
-): void {
-  ensurePublicIngressLive = hook;
+async function ensurePublicIngressLiveForCredentialLink(): Promise<void> {
+  const configFileCache = getConfigFileCache();
+
+  if (
+    configFileCache.getBoolean("ingress", "enabled", { force: true }) === false
+  ) {
+    await enablePublicIngress(configFileCache);
+    log.info("Auto-enabled public ingress for credential link creation");
+  }
+  maybeStartTunnelForCredentialLink("credential link minted");
 }
 
 export const credentialRequestRoutes: IpcRoute[] = [
@@ -114,7 +122,7 @@ export const credentialRequestRoutes: IpcRoute[] = [
         parsed,
         {
           getCloudAssistantId: () => resolveCloudAssistantIdOrUndefined(),
-          ensurePublicIngressLive,
+          ensurePublicIngressLive: ensurePublicIngressLiveForCredentialLink,
         },
       );
     },

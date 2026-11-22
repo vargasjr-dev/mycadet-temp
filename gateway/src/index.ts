@@ -113,12 +113,11 @@ import {
   shouldSyncTwilioPhoneWebhooksAfterConfigChange,
 } from "./twilio/webhook-sync-trigger.js";
 import { startIpcServer } from "./ipc/server.js";
-import { setEnsurePublicIngressLiveForCredentialLinks } from "./ipc/credential-request-handlers.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
-import { enablePublicIngress, getTunnelClient } from "./tunnel/client.js";
+import { getTunnelClient } from "./tunnel/client.js";
 import {
   APP_VERSION,
   VERSION_HEADER_NAME,
@@ -231,6 +230,8 @@ function startLogRetentionSweep(config: LogFileConfig): void {
   interval.unref();
 }
 
+type StopTask = () => Promise<void> | void;
+
 async function main() {
   const config = loadConfig();
   initLogger(config.logFile);
@@ -277,23 +278,21 @@ async function main() {
   // credential watcher callback whenever credentials change.
   let telegramReady = false;
   let cadetReady = false;
-  let tunnelStartRequested = false;
 
   function maybeStartTunnelForTwilio(
     reason: string,
     twilioCredentials?: Record<string, string> | null,
-  ): boolean {
-    if (tunnelStartRequested || !tunnelClient) {
-      return tunnelStartRequested;
+  ): void {
+    if (!tunnelClient || tunnelClient.isRunning()) {
+      return;
     }
     if (!hasTwilioSetupStarted(configFileCache, twilioCredentials)) {
-      return false;
+      return;
     }
 
-    tunnelStartRequested = true;
     log.info({ reason }, "Starting Tunnel after Twilio setup detected");
     tunnelClient.start();
-    return true;
+    return;
   }
 
   /**
@@ -308,50 +307,13 @@ async function main() {
    * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
    * tunnel serves both — and `tunnelClient.start()` is idempotent.
    */
-  function startTunnelForLiveVoice(reason: string): boolean {
-    if (tunnelStartRequested || !tunnelClient) {
-      return tunnelStartRequested;
+  function startTunnelForLiveVoice(reason: string) {
+    if (!tunnelClient || tunnelClient.isRunning()) {
+      return;
     }
-
-    tunnelStartRequested = true;
     log.info({ reason }, "Starting Tunnel for live voice");
     tunnelClient.start();
     return true;
-  }
-
-  /**
-   * Start the Tunnel when a credential link is minted. Unlike the Twilio
-   * and live-voice paths this has no precondition: creating a one-time
-   * credential link is itself the request to expose public ingress, and the
-   * tunnel is the browser's route to the credential-entry page. Shares the
-   * `tunnelStartRequested` latch — one tunnel serves every ingress consumer —
-   * and `tunnelClient.start()` is idempotent.
-   */
-  function maybeStartTunnelForCredentialLink(reason: string): boolean {
-    if (tunnelStartRequested || !tunnelClient) {
-      return tunnelStartRequested;
-    }
-    tunnelStartRequested = true;
-    log.info({ reason }, "Starting Tunnel after credential link minted");
-    tunnelClient.start();
-    return true;
-  }
-
-  /**
-   * Make public ingress live for a freshly minted credential link: enable it
-   * when explicitly disabled (only an explicit `false` — a default `undefined`
-   * already means enabled on platform) and start the Tunnel so the link
-   * is actually reachable.
-   */
-  async function ensurePublicIngressLiveForCredentialLink(): Promise<void> {
-    if (
-      configFileCache.getBoolean("ingress", "enabled", { force: true }) ===
-      false
-    ) {
-      await enablePublicIngress(configFileCache);
-      log.info("Auto-enabled public ingress for credential link creation");
-    }
-    maybeStartTunnelForCredentialLink("credential link minted");
   }
 
   async function readTwilioCredentialsForTunnelStartup(): Promise<Record<
@@ -1100,36 +1062,19 @@ async function main() {
 
   configFileWatcher.start();
 
-  // Wire the stateless IPC route constant's live dependency once: the
-  // ingress hook is entrypoint-owned (torn down and rebuilt as credentials
-  // and the tunnel come and go), and the route reads it at request time —
-  // the same call-time resolution `getConfig()` gives the config-shaped
-  // deps. The channel clients resolve inside the health handlers, straight
-  // from their lifecycle singletons.
-  setEnsurePublicIngressLiveForCredentialLinks(
-    ensurePublicIngressLiveForCredentialLink,
-  );
-
-  // The lifecycle starts. Each one returns its stop thunk, so this list is
-  // the shutdown order as a side effect of starting — when the remaining
-  // stops standardize onto the pattern, the SIGTERM drain below is just
-  // this list.
-  const shutdownTasks: (() => Promise<void> | void)[] = [
-    startIpcServer(),
-    startSleepWakeDetector(),
-    startInboundEventExpirationCleanup(),
+  const tasks: (() => StopTask)[] = [
+    startIpcServer,
+    // TODO now move config file watcher into its own file and conform to the pattern
+    startConfigFileWatcher,
+    startSleepWakeDetector,
+    startInboundEventExpirationCleanup,
   ];
+  const shutdownTasks = tasks.map((task) => task());
 
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
-    // The task list is uniform: each entry runs once at signal time. Class
-    // methods ride as arrows so `this` survives the call — a bare
-    // `credentialWatcher.stop` would dereference nothing and crash the
-    // shutdown. Discord and slack ride bare as module closures; the IPC
-    // server, sleep/wake, and the dedup sweep arrive via the spread of the
-    // starts above, in start order.
-    const allShutdownTasks: (() => Promise<void> | void)[] = [
+    const allShutdownTasks: StopTask[] = [
       () => credentialWatcher.stop(),
       () => configFileWatcher.stop(),
       () => tunnelClient.stop(),
@@ -1141,7 +1086,7 @@ async function main() {
       ...shutdownTasks,
     ];
 
-    const shutdownPromises = allShutdownTasks.map((task) => task());
+    const shutdownPromises = allShutdownTasks.map((stopTask) => stopTask());
     setTimeout(() => {
       log.info("Drain window elapsed, stopping server");
       void Promise.allSettled(shutdownPromises).then(() => {

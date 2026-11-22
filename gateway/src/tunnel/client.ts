@@ -248,6 +248,10 @@ export class TunnelClient {
     });
   }
 
+  isRunning(): boolean {
+    return this.running;
+  }
+
   async stop(): Promise<void> {
     this.running = false;
     this.connecting = false;
