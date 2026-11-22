@@ -13,7 +13,7 @@ import {
   queryFreshHelperPermission,
   type HelperPermissionStatus,
 } from "./helper-permissions";
-import { log } from "../app-logger";
+import log from "../app-logger";
 import { JsonRpcHelperError } from "../sidecar/supervisor";
 import { shutdownSharedCuHelper } from "../sidecar/shared-cu-helper";
 

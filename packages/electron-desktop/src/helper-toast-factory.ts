@@ -11,7 +11,7 @@ import type {
 } from "./notifications";
 import { NativeSidecarClient } from "./sidecar/supervisor";
 
-import { log } from "./app-logger";
+import log from "./app-logger";
 
 /**
  * The helper toast mechanism: delivery through the native helper's

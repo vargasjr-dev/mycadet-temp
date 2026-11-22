@@ -26,7 +26,7 @@ import { getRendererBase } from "./app-config";
 import { isAllowedOrigin, resolveAllowedOrigin } from "./app-origin";
 import { handle, on } from "./ipc";
 import { getName } from "./identity";
-import { log } from "./app-logger";
+import log from "./app-logger";
 import { createWindow } from "./windows";
 
 const MAIN_MIN_SIZE = { width: 800, height: 600 } as const;

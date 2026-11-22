@@ -31,7 +31,7 @@ const warnings: unknown[][] = [];
 const infos: unknown[][] = [];
 mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
-  log: {
+  default: {
     info: (...args: unknown[]) => infos.push(args),
     warn: (...args: unknown[]) => warnings.push(args),
   },

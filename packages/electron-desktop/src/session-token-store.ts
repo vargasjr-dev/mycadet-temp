@@ -2,7 +2,7 @@ import { app, safeStorage } from "electron";
 import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { log } from "./app-logger";
+import log from "./app-logger";
 
 const TOKEN_FILENAME = "session.enc";
 

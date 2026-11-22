@@ -44,7 +44,7 @@ mock.module("../ipc", () => ({
 }));
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  log: { warn: () => undefined },
+  default: { warn: () => undefined },
 }));
 
 class FakeHelper {

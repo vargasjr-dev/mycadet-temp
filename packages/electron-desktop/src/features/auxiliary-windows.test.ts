@@ -178,7 +178,7 @@ mock.module("../main-window", () => ({
 }));
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  log: { info: () => undefined, warn: logWarn },
+  default: { info: () => undefined, warn: logWarn },
 }));
 
 const { install: auxiliaryWindowsInstall } =

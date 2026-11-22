@@ -28,6 +28,13 @@
  */
 
 /** The cookie fields this module reads. Structural subset of Electron's `Cookie`. */
+import z from "zod";
+
+const detailsShape = z.object({
+  isMainFrame: z.unknown().optional(),
+  url: z.unknown().optional(),
+});
+
 export interface AuthCookie {
   name: string;
   domain?: string;
@@ -196,17 +203,15 @@ export const navigationDetailsFromArgs = (
     };
   }
 
-  const isDetails = (
-    value: unknown,
-  ): value is { url?: unknown; isMainFrame?: unknown } =>
-    typeof value === "object" && value !== null;
-
-  if (isDetails(first)) {
-    if (typeof first.url === "string") {
+  const details = detailsShape.safeParse(first);
+  if (details.success) {
+    if (typeof details.data.url === "string") {
       return {
-        url: first.url,
+        url: details.data.url,
         isMainFrame:
-          typeof first.isMainFrame === "boolean" ? first.isMainFrame : true,
+          typeof details.data.isMainFrame === "boolean"
+            ? details.data.isMainFrame
+            : true,
       };
     }
   }

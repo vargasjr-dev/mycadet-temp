@@ -19,7 +19,7 @@ import {
   getFloatingWindow,
   repositionFloatingWindow,
 } from "./floating-window";
-import { log } from "./app-logger";
+import log from "./app-logger";
 import { createDictationEscapeMonitor } from "./dictation-escape-monitor";
 import { handle, on } from "./ipc";
 import { dispatchToMain } from "./main-window";

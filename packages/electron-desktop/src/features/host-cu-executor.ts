@@ -23,7 +23,7 @@ import {
 } from "@mycadet/ipc-contract";
 import { z } from "zod";
 
-import { log } from "../app-logger";
+import log from "../app-logger";
 import { showCompanionCoachmarks } from "./companion-window";
 import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 

@@ -3,8 +3,7 @@ import { z } from "zod";
 
 import { POPOUT_OPEN } from "@mycadet/ipc-contract";
 
-import { getRendererBase } from "./app-config";
-import { createWindowRouteResolver } from "./floating-window";
+import { resolveRoute } from "./floating-window";
 import { handle } from "./ipc";
 import { restoreBounds, track } from "./window-state";
 import { createWindow } from "./windows";
@@ -45,8 +44,6 @@ type RestoredBounds = Pick<
   BrowserWindowConstructorOptions,
   "fullscreen" | "height" | "width" | "x" | "y"
 > & { maximized?: boolean };
-
-const resolveRoute = createWindowRouteResolver(getRendererBase);
 
 /**
  * Registry of open pop-out windows keyed by conversation ID. Lets us focus an

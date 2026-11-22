@@ -37,7 +37,7 @@ import type {
 } from "@mycadet/ipc-contract";
 
 import { runAppleScript } from "../apple-script-executor";
-import { log } from "../app-logger";
+import log from "../app-logger";
 import type { HelperShareTarget } from "./share-targets";
 import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 

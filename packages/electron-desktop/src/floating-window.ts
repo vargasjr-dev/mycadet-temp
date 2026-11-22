@@ -44,12 +44,8 @@ export interface CreateFloatingWindowOptions {
   position?: FloatingWindowPosition;
 }
 
-export const createWindowRouteResolver =
-  (getBase: () => string) =>
-  (route: string): string =>
-    `${getBase()}${route.startsWith("/") ? route : `/${route}`}`;
-
-const resolveRoute = createWindowRouteResolver(getRendererBase);
+export const resolveRoute = (route: string): string =>
+  `${getRendererBase()}${route.startsWith("/") ? route : `/${route}`}`;
 
 const floatingWindows = new Map<string, BrowserWindow>();
 

@@ -176,7 +176,7 @@ mock.module("./permissions", () => ({
 }));
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  log: { warn: () => undefined },
+  default: { warn: () => undefined },
 }));
 // The guide's shell values, as fixtures — install assembles them itself.
 mock.module("./permission-presentation", () => ({

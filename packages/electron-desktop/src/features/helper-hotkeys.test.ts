@@ -100,7 +100,7 @@ mock.module("node:fs", () => ({
 
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  log: {
+  default: {
     info: mock(() => undefined),
     warn: mock(() => undefined),
   },
@@ -140,7 +140,7 @@ const makeWebContents = (): FakeWebContents => {
 
 let defaultSender = makeWebContents();
 
-const { log } = await import("../app-logger");
+const { default: log } = await import("../app-logger");
 const { NativeSidecarClient } = await import("../sidecar/supervisor");
 
 let sharedClient: InstanceType<typeof NativeSidecarClient> | null = null;

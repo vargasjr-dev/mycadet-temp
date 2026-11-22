@@ -7,8 +7,7 @@ import {
   type CadetCommand,
 } from "@mycadet/ipc-contract";
 
-import { getRendererBase } from "./app-config";
-import { createWindowRouteResolver } from "./floating-window";
+import { resolveRoute } from "./floating-window";
 import { handle } from "./ipc";
 import { dispatchToMain, ensureVisible } from "./main-window";
 import { createWindow } from "./windows";
@@ -21,8 +20,6 @@ const QUICK_INPUT_PATH = "/quick-input";
 
 const PANEL_WIDTH = 720;
 const PANEL_HEIGHT = 72;
-
-const resolveRoute = createWindowRouteResolver(getRendererBase);
 
 let quickInputWindow: BrowserWindow | null = null;
 

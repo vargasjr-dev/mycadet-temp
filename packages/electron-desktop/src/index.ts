@@ -9,7 +9,7 @@
  */
 
 export { APP_HOST, APP_PROTOCOL } from "./app-config";
-export { log } from "./app-logger";
+export { default as log } from "./app-logger";
 export { startApp } from "./app-lifecycle";
 export {
   current as currentMainWindow,

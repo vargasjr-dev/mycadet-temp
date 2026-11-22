@@ -32,7 +32,7 @@ import {
 } from "./notifications";
 import { NOTIFICATION_CATEGORIES } from "@mycadet/ipc-contract";
 
-import { log } from "./app-logger";
+import log from "./app-logger";
 import {
   ensureNotifierDelegate,
   restoreNotifierDelegate,

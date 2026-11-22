@@ -62,7 +62,7 @@ mock.module("../ipc", () => ({
 }));
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  log: { info: () => undefined, warn: () => undefined },
+  default: { info: () => undefined, warn: () => undefined },
 }));
 mock.module("../main-window", () => ({
   ensureVisible: () => Promise.resolve(),

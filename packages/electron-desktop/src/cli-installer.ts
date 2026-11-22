@@ -14,7 +14,7 @@ import {
 import { homedir } from "node:os";
 import path from "node:path";
 
-import { log } from "./app-logger";
+import log from "./app-logger";
 
 // Empty by default: the happy path floats to the environment's dist-tag.
 // Set by hand to pin the bundled CLI to an exact version.

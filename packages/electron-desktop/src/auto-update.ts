@@ -2,7 +2,7 @@ import { app, BrowserWindow } from "electron";
 import { autoUpdater } from "electron-updater";
 import { z } from "zod";
 
-import { log } from "./app-logger";
+import log from "./app-logger";
 import { resolveEnvironmentName } from "@mycadet/shared";
 import type { UpdateState } from "@mycadet/ipc-contract";
 

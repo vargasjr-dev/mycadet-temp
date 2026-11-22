@@ -5,7 +5,7 @@ import type { HostProxySseMessage } from "../host-proxy/sse";
 
 // Keep electron-log's file backend out of the test process.
 mock.module("../app-logger", () => ({
-  log: {
+  default: {
     info: () => undefined,
     warn: () => undefined,
     error: () => undefined,

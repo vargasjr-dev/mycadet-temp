@@ -30,7 +30,7 @@ import {
 import { createFloatingWindow } from "../floating-window";
 import { getAccentHex, getAvatarPng, onAvatarChange } from "../avatar";
 import { handle, on } from "../ipc";
-import { log } from "../app-logger";
+import log from "../app-logger";
 import { getPermissionsService } from "./permissions";
 import {
   dragTarget,

@@ -13,8 +13,6 @@ import { basename, join, relative } from "node:path";
 import { Glob } from "bun";
 
 export interface IsolatedTestOptions {
-  /** Test files outside the collected globs that should always run. */
-  extraFiles?: string[];
   /**
    * Drops a collected file from the run (assistant uses this for benchmark,
    * known-broken, and experimental-only files).
@@ -41,6 +39,10 @@ const TEST_DIFF_BASE = "origin/main";
 const PATTERNS = [
   "src/**/*.test.{ts,tsx}",
   "scripts/**/*.test.{ts,js}",
+  // Root-level and vite-config tests (the app shell's plugin suite lives
+  // outside src/).
+  "*.test.{ts,tsx}",
+  "vite/**/*.test.{ts,tsx}",
   ".storybook/**/*.test.{ts,tsx}",
   "eslint-rules/**/*.test.mjs",
 ];
@@ -56,7 +58,6 @@ const PER_TEST_TIMEOUT_MS =
 const KILL_GRACE_MS = 10_000;
 
 export async function runIsolatedTests({
-  extraFiles = [],
   filter,
   bunTestArgs = [],
   setup,
@@ -96,7 +97,6 @@ export async function runIsolatedTests({
     ...PATTERNS.flatMap((pattern) => [
       ...new Glob(pattern).scanSync({ cwd, dot: true }),
     ]),
-    ...extraFiles,
   ]
     .sort()
     .filter((file) => filter?.(file) ?? true);
@@ -108,9 +108,7 @@ export async function runIsolatedTests({
   const diffed = TEST_DIFF_ONLY ? diffTestFiles(allFiles, cwd) : null;
   const scoped = diffed ?? allFiles;
   if (diffed && scoped.length === 0) {
-    console.log(
-      `No test files changed vs ${TEST_DIFF_BASE} — nothing to run.`,
-    );
+    console.log(`No test files changed vs ${TEST_DIFF_BASE} — nothing to run.`);
     return;
   }
   // Longest-first ordering (when a durations file exists) before sharding, so
@@ -166,7 +164,13 @@ export async function runIsolatedTests({
     while (next < files.length) {
       const file = files[next++];
       results.push(
-        await runOneFile(file, { cwd, timeoutMs, bunTestArgs, resultsDir, coverage }),
+        await runOneFile(file, {
+          cwd,
+          timeoutMs,
+          bunTestArgs,
+          resultsDir,
+          coverage,
+        }),
       );
     }
   }
@@ -178,7 +182,9 @@ export async function runIsolatedTests({
   // before the failure exit so durations persist even when tests fail.
   const durationsOutput = process.env.TEST_DURATIONS_OUTPUT ?? "";
   if (durationsOutput) {
-    const sortedResults = [...results].sort((a, b) => b.elapsedMs - a.elapsedMs);
+    const sortedResults = [...results].sort(
+      (a, b) => b.elapsedMs - a.elapsedMs,
+    );
     writeFileSync(
       durationsOutput,
       sortedResults.map((r) => `${r.elapsedMs}\t${r.file}`).join("\n") + "\n",

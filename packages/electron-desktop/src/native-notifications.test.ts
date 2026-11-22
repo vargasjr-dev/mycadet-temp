@@ -54,7 +54,7 @@ mock.module("electron", () =>
 const warnings: unknown[][] = [];
 mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
-  log: {
+  default: {
     info: () => undefined,
     warn: (...args: unknown[]) => warnings.push(args),
   },

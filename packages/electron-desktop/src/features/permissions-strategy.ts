@@ -22,7 +22,7 @@ import {
   requestHelperPermission,
   type HelperPermissionKind,
 } from "./helper-permissions";
-import { log } from "../app-logger";
+import log from "../app-logger";
 import {
   getNotifier,
   isNotifierSupported,

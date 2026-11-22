@@ -6,7 +6,6 @@ on:
     paths:
       - "patches/**"
       - "packages/electron-desktop/**"
-      - "packages/electron-utils/**"
       - ".github/workflows/pr-electron.yaml"
   workflow_dispatch:
 concurrency:
@@ -38,6 +37,3 @@ jobs:
         working-directory: packages/electron-desktop
         run: bun run lint
 
-      - name: Lint electron-utils
-        working-directory: packages/electron-utils
-        run: bun run lint

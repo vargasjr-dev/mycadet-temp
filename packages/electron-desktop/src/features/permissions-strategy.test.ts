@@ -89,7 +89,7 @@ mock.module("electron", () =>
 
 mock.module("../app-logger", () => ({
   getLogFilePaths: () => [],
-  log: { info: () => undefined, warn: () => undefined },
+  default: { info: () => undefined, warn: () => undefined },
 }));
 
 mock.module("../apple-script-executor", () => ({

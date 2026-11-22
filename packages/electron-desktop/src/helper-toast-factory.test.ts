@@ -68,7 +68,7 @@ mock.module("./ipc", () => ({
 mock.module("./main-window", () => ({ ensureVisible: () => undefined }));
 mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
-  log: { warn: () => undefined, info: () => undefined },
+  default: { warn: () => undefined, info: () => undefined },
 }));
 
 const { createHelperToastFactory } = await import("./helper-toast-factory");

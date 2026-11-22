@@ -47,7 +47,7 @@ mock.module("./about", () => ({
   getVersionInfo: () => ({ version: "9.9.9" }),
 }));
 mock.module("./app-logger", () => ({
-  log: { error: mock(), warning: mock(), info: mock(), warn: mock() },
+  default: { error: mock(), warning: mock(), info: mock(), warn: mock() },
 }));
 mock.module("@mycadet/local-mode", () => ({
   readLockfile: () => ({}),
