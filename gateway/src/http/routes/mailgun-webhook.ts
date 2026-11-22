@@ -14,6 +14,7 @@ import {
   resolveEmailCredentialOrRelease,
   runEmailInboundPipeline,
 } from "../../email/inbound-pipeline.js";
+import { buildEmailReceivedRecorder } from "../../email/record-received.js";
 import type { CadetEmailPayload } from "../../email/normalize.js";
 import {
   evaluateSenderAuthentication,
@@ -268,6 +269,7 @@ export function createMailgunWebhookHandler(
 ) {
   // 24-hour TTL — Mailgun token is unique per webhook delivery
   const dedupCache = new StringDedupCache(24 * 60 * 60_000);
+  const recordReceived = buildEmailReceivedRecorder(caches);
 
   const handler = async (req: Request): Promise<Response> => {
     const traceId = req.headers.get("x-trace-id") ?? undefined;
@@ -384,6 +386,7 @@ export function createMailgunWebhookHandler(
       cadetPayload,
       traceId,
       sendReply: apiKey ? buildMailgunReplySender(apiKey, tlog) : undefined,
+      recordReceived,
     });
   };
 

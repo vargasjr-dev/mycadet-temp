@@ -15,6 +15,7 @@ import {
   resolveEmailCredentialOrRelease,
   runEmailInboundPipeline,
 } from "../../email/inbound-pipeline.js";
+import { buildEmailReceivedRecorder } from "../../email/record-received.js";
 import type { CadetEmailPayload } from "../../email/normalize.js";
 import {
   evaluateSenderAuthentication,
@@ -284,6 +285,7 @@ export function createResendWebhookHandler(
   caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
 ) {
   const dedupCache = new StringDedupCache(24 * 60 * 60_000);
+  const recordReceived = buildEmailReceivedRecorder(caches);
 
   const handler = async (req: Request): Promise<Response> => {
     const traceId = req.headers.get("x-trace-id") ?? undefined;
@@ -426,6 +428,7 @@ export function createResendWebhookHandler(
       traceId,
       sendReply: apiKey ? buildResendReplySender(apiKey, tlog) : undefined,
       logFields: { emailId },
+      recordReceived,
     });
   };
 

@@ -17,6 +17,7 @@ import {
 } from "./attachments.js";
 import type { CadetEmailPayload } from "./normalize.js";
 import { normalizeEmailWebhook } from "./normalize.js";
+import type { EmailReceivedRecord } from "./record-received.js";
 
 /**
  * Sends a reply email through the provider's API. `kind` selects the log
@@ -49,6 +50,15 @@ export interface EmailInboundPipelineOptions {
   sendReply: EmailReplySender | undefined;
   /** Extra fields for the received/forwarded log lines (e.g. Resend emailId). */
   logFields?: Record<string, unknown>;
+  /**
+   * Best-effort recorder for the cloud email history. The gateway is the
+   * only place that holds the full normalized payload (RFC message_id,
+   * threading headers, body) — and without a row in the emails table the
+   * model's reply_to can never reference an inbound message. Undefined
+   * (self-hosted without cloud credentials, or tests) skips recording;
+   * a recorder failure must never reach the conversation path.
+   */
+  recordReceived?: (record: EmailReceivedRecord) => Promise<void>;
 }
 
 /**
@@ -112,6 +122,7 @@ export async function runEmailInboundPipeline(
     traceId,
     sendReply,
     logFields,
+    recordReceived,
   } = opts;
 
   const mark = () => {
@@ -270,6 +281,28 @@ export async function runEmailInboundPipeline(
         { status: "forwarded", eventId, ...logFields },
         `${label} email message forwarded to runtime`,
       );
+      // The runtime conversation now carries the message — also give the
+      // cloud email history its row so a later reply_to can reference this
+      // message and thread. Fire-and-forget: recording never blocks or
+      // fails the conversation path, and the recorder itself never throws.
+      if (recordReceived) {
+        void recordReceived({
+          messageId: cadetPayload.messageId,
+          ...(cadetPayload.inReplyTo
+            ? { inReplyTo: cadetPayload.inReplyTo }
+            : {}),
+          ...(cadetPayload.references
+            ? { references: cadetPayload.references }
+            : {}),
+          from: senderAddress,
+          to: recipientAddress,
+          ...(cadetPayload.subject ? { subject: cadetPayload.subject } : {}),
+          text: cadetPayload.strippedText ?? cadetPayload.bodyText,
+          ...(cadetPayload.timestamp
+            ? { timestamp: cadetPayload.timestamp }
+            : {}),
+        });
+      }
     }
 
     // When the runtime denies the message (ACL rejection) and provides

@@ -113,3 +113,83 @@ describe("runEmailInboundPipeline sender-authentication threading", () => {
     expect(capturedOptions?.senderAuthenticated).toBeUndefined();
   });
 });
+
+describe("runEmailInboundPipeline cloud received-recording", () => {
+  it("records received mail after a successful forward", async () => {
+    const recorded: unknown[] = [];
+    await runEmailInboundPipeline({
+      config: {} as GatewayConfig,
+      log: noopLog,
+      label: "Resend",
+      source: "resend",
+      dedupCache: new StringDedupCache(60_000),
+      dedupKey: "",
+      cadetPayload: makePayload({
+        from: "shannon@example.com",
+        subject: "My cadet.ai Issue",
+        strippedText: "I was never charged.",
+        inReplyTo: "<root@example.com>",
+        references: "<root@example.com>",
+        timestamp: "2026-11-20T10:30:00Z",
+      }),
+      traceId: undefined,
+      sendReply: undefined,
+      recordReceived: async (r) => {
+        recorded.push(r);
+      },
+    });
+    expect(recorded.length).toBe(1);
+    expect(recorded[0]).toEqual({
+      messageId: "<msg-1@example.com>",
+      inReplyTo: "<root@example.com>",
+      references: "<root@example.com>",
+      from: "shannon@example.com",
+      to: "bot@example.com",
+      subject: "My cadet.ai Issue",
+      text: "I was never charged.",
+      timestamp: "2026-11-20T10:30:00Z",
+    });
+  });
+
+  it("does not record a message the runtime rejected", async () => {
+    const recorded: unknown[] = [];
+    handleInboundMock.mockImplementation(
+      async () =>
+        ({
+          forwarded: false,
+          rejected: true,
+          runtimeResponse: {
+            accepted: false,
+            duplicate: false,
+            eventId: "evt-1",
+          },
+        }) as never,
+    );
+    try {
+      await runEmailInboundPipeline({
+        config: {} as GatewayConfig,
+        log: noopLog,
+        label: "Resend",
+        source: "resend",
+        dedupCache: new StringDedupCache(60_000),
+        dedupKey: "",
+        cadetPayload: makePayload(),
+        traceId: undefined,
+        sendReply: undefined,
+        recordReceived: async (r) => {
+          recorded.push(r);
+        },
+      });
+    } finally {
+      handleInboundMock.mockImplementation(async (_config, _event, options) => {
+        capturedOptions = options as HandleInboundOptions;
+        return {
+          forwarded: true,
+          rejected: false,
+          runtimeResponse: { accepted: true, duplicate: false, eventId: "evt-1" },
+        };
+      });
+    }
+    expect(recorded.length).toBe(0);
+  });
+});
