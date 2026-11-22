@@ -6,9 +6,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$SCRIPT_DIR/.."
+REPO_DIR="$APP_DIR/../.."
 SEED_DIR="$APP_DIR/resources/cli-lockfile"
 
-VERSION=$(grep -o 'PINNED_CLI_VERSION = "[^"]*"' "$APP_DIR/src/main/cli-installer.ts" \
+# The installer (and its PINNED_CLI_VERSION) lives in the electron-desktop
+# package since the mac-shim slimming — not in the app's own src/main/.
+VERSION=$(grep -o 'PINNED_CLI_VERSION = "[^"]*"' \
+  "$REPO_DIR/packages/electron-desktop/src/cli-installer.ts" \
   | sed 's/PINNED_CLI_VERSION = "//;s/"//')
 
 # Local builds drive the repo CLI source directly (see getLocalCliEntry in
