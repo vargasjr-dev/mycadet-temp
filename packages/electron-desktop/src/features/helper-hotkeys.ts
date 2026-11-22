@@ -26,6 +26,18 @@ import log from "../app-logger";
 import { getSharedHelperClient } from "../native-helper-client";
 import { JsonRpcHelperError } from "@mycadet/native-sidecar/supervisor";
 
+import {
+  coachmarkPressed,
+  provideCoachmarkPressWatch,
+  watchedCoachmarkPress,
+} from "./coachmark-press-watch";
+import { isPointerOnCompanion } from "./companion-pointer";
+import {
+  frameScrollEnded,
+  isFrameScrollWatched,
+  provideFrameScrollWatch,
+} from "./frame-scroll-watch";
+
 /**
  * Where a pointed-at control is, in screen points with a top-left origin.
  * The shell that draws coachmarks owns the geometry; this feature only
@@ -59,18 +71,6 @@ export interface HelperHotkeysWatches {
   coachmarkPressed(index: number): void;
   /** The rectangles the marks currently want watched, or `null` when none. */
   watchedCoachmarkPress(): readonly HelperHotkeyPressRect[] | null;
-}
-
-/**
- * The shell's answers for the hotkey family. Everything here defaults to a
- * working absence: no watch state means nothing to provide or restore, and a
- * missing companion check means no activity report is ever a companion's own
- * click.
- */
-export interface HelperHotkeysShellInputs {
-  watches?: HelperHotkeysWatches;
-  /** Whether the pointer is on the shell's companion surface right now. */
-  isPointerOnCompanion?: () => boolean;
 }
 
 const HOTKEY_EVENT_SCHEMA = z.union([
@@ -672,7 +672,7 @@ const sendHotkeyEventToOwner = (event: HotkeyEvent): void => {
 const sendInputActivityToOwner = (): void => {
   // A press on the companion is a press on Cadet's own controls: the offer
   // those controls answer must not be taken down by the click answering it.
-  if (shellPointerCheck?.()) {
+  if (isPointerOnCompanion()) {
     return;
   }
   hotkeyOwnerTarget()?.send(HELPER_INPUT_ACTIVITY_EVENT);
@@ -771,7 +771,6 @@ const handleHelperState = (state: { status: string }): void => {
 
 let installed = false;
 let shellWatches: HelperHotkeysWatches | null = null;
-let shellPointerCheck: (() => boolean) | null = null;
 let unsubscribeHotkeyEvents: (() => void) | null = null;
 let unsubscribeInputActivity: (() => void) | null = null;
 let unsubscribeScrollEnded: (() => void) | null = null;
@@ -785,11 +784,17 @@ let unsubscribeState: (() => void) | null = null;
  * the protocol; the shell contributes only its watch state and its
  * companion check.
  */
-export const install = (inputs?: HelperHotkeysShellInputs): void => {
+export const install = (): void => {
   if (installed) return;
   installed = true;
-  shellWatches = inputs?.watches ?? null;
-  shellPointerCheck = inputs?.isPointerOnCompanion ?? null;
+  shellWatches = {
+    provideFrameScrollWatch,
+    frameScrollEnded,
+    isFrameScrollWatched,
+    provideCoachmarkPressWatch,
+    coachmarkPressed,
+    watchedCoachmarkPress,
+  };
 
   unsubscribeState = getSharedHelperClient().onState(handleHelperState);
   unsubscribeHotkeyEvents = getSharedHelperClient().onNotification(
@@ -874,7 +879,6 @@ export const install = (inputs?: HelperHotkeysShellInputs): void => {
 export const __resetForTesting = (): void => {
   installed = false;
   shellWatches = null;
-  shellPointerCheck = null;
   modifierHoldBinding = { kind: "off" };
   desiredModifierHold = { kind: "off" };
   modifierHoldInFlight = null;
