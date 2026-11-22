@@ -87,7 +87,11 @@ function registerFakeConversation(id: string, toolNames: string[]): void {
     id,
     asConversation({
       getRegisteredToolDefinitions: () =>
-        toolNames.map((name) => ({ name, description: "", input_schema: {} })),
+        toolNames.map((name) => ({
+          name,
+          description: "",
+          input_schema: { type: "object", properties: {}, required: [] },
+        })),
     }),
   );
 }
