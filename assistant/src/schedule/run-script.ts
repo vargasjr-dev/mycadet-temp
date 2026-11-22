@@ -1,4 +1,4 @@
-import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellInvocation } from "../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 
 import { buildSanitizedEnv } from "../tools/terminal/safe-env.js";

@@ -77,7 +77,6 @@ bash scripts/generate-icon.sh
 bash scripts/generate-dmg-background.sh
 bash scripts/build-mac-helper.sh
 bash scripts/build-notifier.sh
-bash scripts/build-capture-sources.sh
 # The web bundle is iframed from the assistant's version at runtime; the pack
 # ships only the app dist.
 bun run build:app

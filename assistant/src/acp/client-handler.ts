@@ -31,7 +31,7 @@ import type {
   WriteTextFileRequest,
   WriteTextFileResponse,
 } from "@agentclientprotocol/sdk";
-import { CHILD_OOM_SCORE_ADJ } from "@mycadet/environments/shell";
+import { CHILD_OOM_SCORE_ADJ } from "../util/shell-invocation.js";
 
 import type { AcpSessionUpdateEvent } from "../api/events/acp-session-update.js";
 import type { AssistantEvent } from "../api/index.js";

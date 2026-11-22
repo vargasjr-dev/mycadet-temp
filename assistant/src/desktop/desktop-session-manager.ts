@@ -11,7 +11,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { createConnection } from "node:net";
 import { join } from "node:path";
 
-import { CHILD_OOM_SCORE_ADJ } from "@mycadet/environments/shell";
+import { CHILD_OOM_SCORE_ADJ } from "../util/shell-invocation.js";
 
 import { getIsContainerized } from "../config/env-registry.js";
 import { connectCdpWsTransport } from "../tools/browser/cdp-client/cdp-inspect/ws-transport.js";

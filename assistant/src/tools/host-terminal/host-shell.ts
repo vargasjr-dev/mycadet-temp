@@ -11,7 +11,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
-import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 import { prependUniquePathEntries } from "@mycadet/environments/shell";
 import { z } from "zod";

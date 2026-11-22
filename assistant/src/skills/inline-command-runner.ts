@@ -23,7 +23,7 @@
 
 import { spawn } from "node:child_process";
 
-import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellInvocation } from "../util/shell-invocation.js";
 
 import { buildSanitizedEnv } from "../tools/terminal/safe-env.js";
 import { stripAnsiSequences } from "../util/ansi.js";

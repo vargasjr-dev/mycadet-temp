@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
-import { buildShellInvocation } from "@mycadet/environments/shell";
+import { buildShellInvocation } from "../../util/shell-invocation.js";
 import { buildShellSpawnFlags } from "@mycadet/environments/shell";
 
 import { PLUGIN_NAME_ENV } from "../../plugin-api/plugin-name-env.js";

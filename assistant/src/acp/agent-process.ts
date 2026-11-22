@@ -23,7 +23,7 @@ import type {
   SetSessionConfigOptionRequest,
 } from "@agentclientprotocol/sdk";
 import * as acp from "@agentclientprotocol/sdk";
-import { CHILD_OOM_SCORE_ADJ } from "@mycadet/environments/shell";
+import { CHILD_OOM_SCORE_ADJ } from "../util/shell-invocation.js";
 
 import { getLogger } from "../util/logger.js";
 import { withOomScoreAdj } from "../util/oom-priority.js";

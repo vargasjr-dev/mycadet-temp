@@ -43,22 +43,12 @@ mock.module("../sidecar/shared-cu-helper", () => ({
   }),
 }));
 
-// The addon lister is a mock here so the default deps' cutover — addon
-// first, helper as the fallback — can be pinned in both directions.
-let addonList: ((includeOffscreen?: boolean) => HelperWindow[] | null) | null =
-  null;
-mock.module("./native-capture-sources", () => ({
-  listWindowsWithAddon: (includeOffscreen?: boolean) =>
-    addonList ? addonList(includeOffscreen) : null,
-}));
-
 const {
   CHROME_BUNDLE_ID,
   THUMBNAIL_CONCURRENCY,
   THUMBNAIL_MAX_HEIGHT,
   THUMBNAIL_MAX_WIDTH,
   bringForward,
-  defaultCaptureSourceDeps,
   captureSourceThumbnail,
   chromeWindowFor,
   listCaptureSources,
@@ -750,50 +740,5 @@ describe("a picker preview", () => {
     }
     expect(await all).toHaveLength(asked);
     expect(peak).toBe(THUMBNAIL_CONCURRENCY);
-  });
-});
-
-describe("the addon's place in the default listWindows", () => {
-  test("the addon's answer rides and the helper is never asked", async () => {
-    let helperAsked = 0;
-    helperCall = async () => {
-      helperAsked += 1;
-      return { windows: [] };
-    };
-    const native = window({ windowId: 7, onScreen: true });
-    addonList = () => [native];
-    try {
-      expect(await defaultCaptureSourceDeps.listWindows()).toEqual([native]);
-      expect(helperAsked).toBe(0);
-    } finally {
-      addonList = null;
-      helperCall = async () => ({ windows: [] });
-    }
-  });
-
-  test("an unavailable addon falls back to the helper, passing the off-screen ask", async () => {
-    const asks: Array<boolean | undefined> = [];
-    helperCall = async (_method, params) => {
-      const includeOffscreen =
-        typeof params === "object" &&
-        params !== null &&
-        "includeOffscreen" in params
-          ? params.includeOffscreen
-          : undefined;
-      asks.push(
-        typeof includeOffscreen === "boolean" ? includeOffscreen : undefined,
-      );
-      return { windows: [window({ windowId: 2 })] };
-    };
-    addonList = () => null;
-    try {
-      expect(await defaultCaptureSourceDeps.listWindows()).toHaveLength(1);
-      expect(asks).toEqual([undefined]);
-      expect(await defaultCaptureSourceDeps.listWindows(true)).toHaveLength(1);
-      expect(asks).toEqual([undefined, true]);
-    } finally {
-      addonList = null;
-      helperCall = async () => ({ windows: [] });
-    }
   });
 });
