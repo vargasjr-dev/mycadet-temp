@@ -65,6 +65,19 @@ export function asConversation<TExtra extends object = object>(
 }
 
 /**
+ * Behavior-neutral widening for doubles stored somewhere production READS:
+ * unlike asConversation this supplies no derived members and no defaults —
+ * the double is exactly what the caller wrote, so production sees undefined
+ * for every member the test did not set, same as a raw cast produced. The
+ * widening is confined here instead of one `as unknown as` per site.
+ */
+export function asConversationDouble<T extends object>(
+  mock: T,
+): Conversation & T {
+  return mock as unknown as Conversation & T;
+}
+
+/**
  * Fill a partial capability set out to a full `ChannelCapabilities`.
  *
  * Surface tests care about `channel` and `supportsDynamicUi`; the remaining

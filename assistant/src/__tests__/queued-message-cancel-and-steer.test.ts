@@ -20,7 +20,6 @@ setBroadcastOverrideForTesting((msg: AssistantEvent) => {
   broadcasts.push(msg);
 });
 
-import type { Conversation } from "../daemon/conversation.js";
 import type { QueuedMessage } from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
@@ -31,6 +30,7 @@ import {
   steerToMessage,
 } from "../daemon/handlers/conversations.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 
 const CONV = "queued-cancel-conv";
 
@@ -54,7 +54,7 @@ function registerWithQueuedMessage(
     },
     removeQueuedMessage: () => item,
   };
-  setConversation(CONV, fake as unknown as Conversation);
+  setConversation(CONV, asConversationDouble(fake));
   return sent;
 }
 
@@ -90,7 +90,7 @@ function registerLatchedTurn(): LatchedTurn {
     },
     denyAllPendingConfirmations: () => {},
   };
-  setConversation(CONV, fake as unknown as Conversation);
+  setConversation(CONV, asConversationDouble(fake));
   return {
     cleared: () => !processing,
     drainReasons,

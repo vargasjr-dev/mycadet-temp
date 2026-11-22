@@ -11,7 +11,6 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
 import type { QueuedMessage } from "../daemon/conversation-queue-manager.js";
 import {
   clearConversations,
@@ -24,6 +23,7 @@ import {
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { handleListMessages } from "../runtime/routes/conversation-routes.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -49,12 +49,12 @@ function registerLiveConversation(
   conversationId: string,
   queued: QueuedMessage[],
 ): void {
-  const stub = {
+  const stub = asConversation({
     snapshotQueuedMessages: () => queued,
     // A conversation only holds a queue while it is mid-turn; mirror that so
     // `isConversationProcessing` (which prefers the live instance) reports busy.
     isProcessing: () => true,
-  } as unknown as Conversation;
+  });
   setConversation(conversationId, stub);
 }
 

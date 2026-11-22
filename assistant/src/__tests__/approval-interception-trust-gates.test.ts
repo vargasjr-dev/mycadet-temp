@@ -24,12 +24,12 @@ mock.module("../runtime/local-actor-identity.js", () => ({
   findLocalGuardianPrincipalId: async () => _anchorPrincipalId,
 }));
 
-import type { Conversation } from "../daemon/conversation.js";
 import { initializeDb } from "../persistence/db-init.js";
 import * as approvalMessageComposer from "../runtime/approval-message-composer.js";
 import * as gatewayClient from "../runtime/gateway-client.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { handleApprovalInterception } from "../runtime/routes/guardian-approval-interception.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -46,10 +46,10 @@ function registerPendingInteraction(
   input: Record<string, unknown> = TOOL_INPUT,
 ): ReturnType<typeof mock> {
   const handleConfirmationResponse = mock(() => {});
-  const _mockSession = {
+  const _mockSession = asConversation({
     handleConfirmationResponse,
     ensureActorScopedHistory: async () => {},
-  } as unknown as Conversation;
+  });
   _conversationMocks.set(conversationId, _mockSession);
 
   pendingInteractions.register(requestId, {

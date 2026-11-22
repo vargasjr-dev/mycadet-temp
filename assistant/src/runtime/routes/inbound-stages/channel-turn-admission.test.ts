@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { Conversation } from "../../../daemon/conversation.js";
+import { asConversation } from "../../../__tests__/helpers/mock-conversation.js";
 import {
   clearConversations,
   setConversation,
@@ -58,7 +58,7 @@ function makeFakeConversation(initiallyProcessing: boolean): FakeConversation {
 }
 
 function register(conversationId: string, fake: FakeConversation): void {
-  setConversation(conversationId, fake as unknown as Conversation);
+  setConversation(conversationId, asConversation(fake));
 }
 
 beforeEach(() => {

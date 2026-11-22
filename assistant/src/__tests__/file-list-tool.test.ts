@@ -9,7 +9,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
 import {
   isToolActiveForContext,
   SUBAGENT_ONLY_TOOL_NAMES,
@@ -21,6 +20,7 @@ import {
 } from "../tools/shared/filesystem/file-ops-service.js";
 import { sandboxPolicy } from "../tools/shared/filesystem/path-policy.js";
 import type { ToolContext } from "../tools/types.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -199,31 +199,31 @@ describe("file_list subagent visibility", () => {
   });
 
   test("isToolActiveForContext hides file_list when isSubagent is false", () => {
-    const ctx = {
+    const ctx = asConversation({
       skillProjectionState: new Map(),
       skillProjectionCache: {},
       toolsDisabledDepth: 0,
-    } as unknown as Conversation;
+    });
     expect(isToolActiveForContext("file_list", ctx)).toBe(false);
   });
 
   test("isToolActiveForContext hides file_list when isSubagent is undefined", () => {
-    const ctx = {
+    const ctx = asConversation({
       skillProjectionState: new Map(),
       skillProjectionCache: {},
       toolsDisabledDepth: 0,
       isSubagent: undefined,
-    } as unknown as Conversation;
+    });
     expect(isToolActiveForContext("file_list", ctx)).toBe(false);
   });
 
   test("isToolActiveForContext shows file_list when isSubagent is true", () => {
-    const ctx = {
+    const ctx = asConversation({
       skillProjectionState: new Map(),
       skillProjectionCache: {},
       toolsDisabledDepth: 0,
       isSubagent: true,
-    } as unknown as Conversation;
+    });
     expect(isToolActiveForContext("file_list", ctx)).toBe(true);
   });
 });

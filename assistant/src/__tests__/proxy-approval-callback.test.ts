@@ -13,13 +13,14 @@ mock.module("../security/redaction.js", () => ({
 import type { Conversation } from "../daemon/conversation.js";
 import { createProxyApprovalCallback } from "../daemon/conversation-tool-setup.js";
 import { PermissionPrompter } from "../permissions/prompter.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function makeContext(overrides?: Partial<Conversation>): Conversation {
-  return {
+  return asConversation({
     conversationId: "conv-test",
     workingDir: "/tmp/test-project",
     abortController: null,
@@ -27,7 +28,7 @@ function makeContext(overrides?: Partial<Conversation>): Conversation {
     emit: () => {},
     surfacesByAppId: new Map(),
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 function makeAskMissingCredentialRequest(

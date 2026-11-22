@@ -169,7 +169,7 @@ mock.module("../../channel-reply-delivery.js", () => ({
 
 import { hasDeliverableAssistantText } from "@mycadet/service-contracts/no-response";
 
-import type { Conversation } from "../../../daemon/conversation.js";
+import { asConversation } from "../../../__tests__/helpers/mock-conversation.js";
 import { CONVERSATION_BUSY_MESSAGE } from "../../../daemon/conversation-messaging.js";
 import {
   clearConversations,
@@ -886,7 +886,7 @@ describe("processChannelMessageInBackground — admission (queue if busy)", () =
           idleWaiters.add(notify);
         }),
     };
-    setConversation(conversationId, fake as unknown as Conversation);
+    setConversation(conversationId, asConversation(fake));
     return {
       release: () => {
         processing = false;

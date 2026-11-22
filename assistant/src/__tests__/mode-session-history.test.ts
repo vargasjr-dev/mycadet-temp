@@ -7,7 +7,6 @@ setConfig("memory", { enabled: false });
 import type { ModeSessionDescriptor } from "../api/mode-session.js";
 import type { ConversationMessage } from "../api/responses/conversation-message.js";
 import { setModeSessionRecoveryHealthy } from "../config/session-groups-gate.js";
-import type { Conversation } from "../daemon/conversation.js";
 import { ConversationModeSessionCoordinator } from "../daemon/conversation-mode-session.js";
 import {
   clearConversations,
@@ -24,6 +23,7 @@ import {
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { handleListMessages } from "../runtime/routes/conversation-routes.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -36,11 +36,14 @@ function registerCoordinator(
   conversationId: string,
   coordinator: ConversationModeSessionCoordinator,
 ): void {
-  setConversation(conversationId, {
-    modeSessions: coordinator,
-    isProcessing: () => false,
-    snapshotQueuedMessages: () => [],
-  } as unknown as Conversation);
+  setConversation(
+    conversationId,
+    asConversation({
+      modeSessions: coordinator,
+      isProcessing: () => false,
+      snapshotQueuedMessages: () => [],
+    }),
+  );
 }
 
 describe("mode-session history projection", () => {

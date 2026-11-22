@@ -12,7 +12,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -48,7 +48,7 @@ mock.module("../daemon/conversation-interrupt.js", () => ({
 const enqueued: string[] = [];
 const drainKicks: string[] = [];
 
-const fakeConversation = {
+const fakeConversation = asConversation({
   isProcessing: () => conversationProcessing,
   enqueueMessage: ({ content }: { content: string }) => {
     enqueued.push(content);
@@ -57,7 +57,7 @@ const fakeConversation = {
   kickDrainQueue: async (_reason?: string, origin?: string) => {
     drainKicks.push(origin ?? "");
   },
-} as unknown as Conversation;
+});
 
 mock.module("../daemon/conversation-store.js", () => ({
   getOrCreateConversation: async () => fakeConversation,

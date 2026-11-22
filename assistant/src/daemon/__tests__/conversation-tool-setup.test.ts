@@ -6,6 +6,7 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import { CONSOLIDATION_ALLOWED_TOOLS } from "../../plugins/defaults/memory/substrate/consolidation-tool-surface.js";
 import {
   setBroadcastOverrideForTesting,
@@ -63,12 +64,12 @@ function makeCtx(
     channelCapabilities?: Partial<ChannelCapabilities>;
   } = {},
 ): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: {} as SkillProjectionCache,
     toolsDisabledDepth: 0,
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 beforeEach(() => {

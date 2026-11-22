@@ -37,6 +37,7 @@ import {
   evictConversationsForReload,
   getOrCreateConversation,
 } from "../daemon/conversation-store.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 
 interface FakeConversation {
   disposed: boolean;
@@ -74,7 +75,7 @@ function register(
     isStale: () => state.stale === true || fake.markedStale,
     hasInFlightWork() {
       return Conversation.prototype.hasInFlightWork.call(
-        fake as unknown as Conversation,
+        asConversationDouble(fake),
       );
     },
     dispose() {
@@ -84,7 +85,7 @@ function register(
       fake.markedStale = true;
     },
   };
-  setConversation(id, fake as unknown as Conversation);
+  setConversation(id, asConversationDouble(fake));
   return fake;
 }
 
@@ -179,7 +180,7 @@ describe("evictConversationsForReload", () => {
       queued: false,
     });
     const release = Conversation.prototype.acquireLiveVoiceResidency.call(
-      resident as unknown as Conversation,
+      asConversationDouble(resident),
     );
 
     evictConversationsForReload();

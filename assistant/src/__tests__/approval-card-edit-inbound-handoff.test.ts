@@ -24,7 +24,6 @@ mock.module("../runtime/local-actor-identity.js", () => ({
 
 import type { TrustVerdict } from "@mycadet/gateway-client";
 
-import type { Conversation } from "../daemon/conversation.js";
 import * as providers from "../messaging/providers/index.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
@@ -33,6 +32,7 @@ import {
   handleChannelInbound,
   setAdapterProcessMessage,
 } from "./helpers/channel-test-adapter.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -104,10 +104,10 @@ function registerPendingInteraction(
   requestId: string,
   conversationId: string,
 ): void {
-  const _mockSession = {
+  const _mockSession = asConversation({
     handleConfirmationResponse: mock(() => {}),
     ensureActorScopedHistory: async () => {},
-  } as unknown as Conversation;
+  });
   _conversationMocks.set(conversationId, _mockSession);
 
   pendingInteractions.register(requestId, {

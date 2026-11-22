@@ -27,6 +27,7 @@ import {
   __resetWakeChainForTests,
   wakeAgentForOpportunity,
 } from "../runtime/agent-wake.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 
 /** Stands in for the `01-parallel-tasks` section's rendered body. */
 const DELEGATION_SECTION = "[delegation section]";
@@ -48,7 +49,7 @@ function makeTarget(onRun: (conv: Conversation) => void): {
     hasNoClient: false,
     agentLoop: {
       run: async (options: AgentLoopRunOptions) => {
-        onRun(target as unknown as Conversation);
+        onRun(asConversationDouble(target));
         return { history: options.messages, exitReason: null };
       },
       setSystemPrompt: (prompt: string) => {
@@ -88,7 +89,7 @@ function makeTarget(onRun: (conv: Conversation) => void): {
     // over the derivation.
     buildCurrentSystemPrompt: () =>
       (target.delegateIndependentTasksReplay ??
-      canSpawnSubagentsForTurn(target as unknown as Conversation))
+      canSpawnSubagentsForTurn(asConversationDouble(target)))
         ? `base ${DELEGATION_SECTION}`
         : "base",
     // Mirrors `Conversation.syncLoopSystemPrompt`.
@@ -106,7 +107,7 @@ function makeTarget(onRun: (conv: Conversation) => void): {
     modelOverride: undefined,
   };
   return {
-    target: target as unknown as Conversation,
+    target: asConversationDouble(target),
     loopPrompt: () => loopPrompt,
   };
 }

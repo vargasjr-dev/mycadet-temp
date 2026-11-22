@@ -78,7 +78,6 @@ function seedGatewayGuardian(
 
 import { eq } from "drizzle-orm";
 
-import type { Conversation } from "../daemon/conversation.js";
 import { readSlackMetadata } from "../messaging/providers/slack/message-metadata.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
@@ -87,6 +86,7 @@ import { messages } from "../persistence/schema/conversations.js";
 import { isReactionEvent } from "../runtime/routes/inbound-stages/reaction-intercept.js";
 import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
@@ -434,9 +434,12 @@ describe("Slack reaction event persistence", () => {
   test("a persisted reaction stale-marks the resident conversation", async () => {
     const conversationId = seedStoredMessage("1700000000.111111");
     const markHistoryStale = mock(() => {});
-    _conversationMocks.set(conversationId, {
-      markHistoryStale,
-    } as unknown as Conversation);
+    _conversationMocks.set(
+      conversationId,
+      asConversation({
+        markHistoryStale,
+      }),
+    );
 
     const resp = await handleChannelInbound(
       buildReactionRequest("reaction:thumbsup"),
@@ -450,9 +453,12 @@ describe("Slack reaction event persistence", () => {
   test("a duplicate reaction does not stale-mark again", async () => {
     const conversationId = seedStoredMessage("1700000000.111111");
     const markHistoryStale = mock(() => {});
-    _conversationMocks.set(conversationId, {
-      markHistoryStale,
-    } as unknown as Conversation);
+    _conversationMocks.set(
+      conversationId,
+      asConversation({
+        markHistoryStale,
+      }),
+    );
     const sharedExternalMessageId = `${SLACK_CHANNEL_ID}:1700000000.777777:bob`;
     const makeReq = () =>
       buildReactionRequest("reaction:tada", {

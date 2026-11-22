@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
 import {
   deleteConversation,
   setConversation,
@@ -19,6 +18,7 @@ import {
   tickInferenceProfileReaper,
 } from "../runtime/routes/inference-profile-session-reaper.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { waitFor } from "./helpers/wait-for.js";
 
 await initializeDb();
@@ -129,7 +129,7 @@ describe("inference-profile-session-reaper", () => {
       sessionId: string | null;
       expiresAt: number | null;
     }> = [];
-    const liveConversation = {
+    const liveConversation = asConversation({
       conversationId: conv.id,
       inferenceProfile: "balanced",
       inferenceProfileSessionId: "session-live",
@@ -151,7 +151,7 @@ describe("inference-profile-session-reaper", () => {
         this.inferenceProfileSessionId = state.sessionId;
         this.inferenceProfileExpiresAt = state.expiresAt;
       },
-    } as unknown as Conversation;
+    });
     setConversation(conv.id, liveConversation);
 
     // WHEN the reaper sweeps the expired session

@@ -8,6 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import * as configLoader from "../../config/loader.js";
 import type { AssistantConfig } from "../../config/schema.js";
 import {
@@ -35,12 +36,12 @@ function pluginTool(name: string): Tool {
 }
 
 function makeCtx(overrides: Partial<Conversation> = {}): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: { fingerprints: new Map() } as SkillProjectionCache,
     toolsDisabledDepth: 0,
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 let getConfigSpy: ReturnType<typeof spyOn> | undefined;

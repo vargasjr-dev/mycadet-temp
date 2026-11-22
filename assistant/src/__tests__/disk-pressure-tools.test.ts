@@ -7,6 +7,7 @@ import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.
 import { ToolDefinition } from "../tools/tool-types.js";
 import type { DiskUsageInfo } from "../util/disk-usage.js";
 import * as realDiskUsage from "../util/disk-usage.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 let diskSample: DiskUsageInfo | null = null;
 
@@ -70,12 +71,12 @@ function makeToolDef(name: string): ToolDefinition {
 function makeProjectionCtx(
   overrides: Partial<Conversation> = {},
 ): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: {} as SkillProjectionCache,
     toolsDisabledDepth: 0,
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 function setDiskUsage(usedMb: number, totalMb = 100): void {

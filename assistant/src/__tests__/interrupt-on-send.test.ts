@@ -46,6 +46,7 @@ let persistShouldFail = false;
 import * as conversationCrud from "../persistence/conversation-crud.js";
 import { ensureConversationExists } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 const {
   classifyInterruptEligibility,
@@ -270,9 +271,9 @@ function registerBusyTurn(
     },
   };
 
-  setConversation(CONV, fake as unknown as Conversation);
+  setConversation(CONV, asConversation(fake));
   return {
-    conversation: fake as unknown as Conversation,
+    conversation: asConversation(fake),
     messages,
     aborts,
     activityEvents,
@@ -924,12 +925,12 @@ describe("mayInterruptRunningTurn", () => {
 
 describe("repairInterruptedToolUseBlocks", () => {
   function fakeConversation(messages: Message[]): Conversation {
-    return {
+    return asConversation({
       conversationId: CONV,
       messages,
       pendingSteerRepair: false,
       pendingInterruptRepair: false,
-    } as unknown as Conversation;
+    });
   }
 
   test("writes one fact-only result per abandoned call", async () => {

@@ -32,6 +32,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { asConversation } from "../../../../__tests__/helpers/mock-conversation.js";
 import { AgentLoop } from "../../../../agent/loop.js";
 import type { Conversation } from "../../../../daemon/conversation.js";
 import {
@@ -224,7 +225,7 @@ function makeForkConversationDouble(forkId: string): Conversation {
     modelOverride: undefined,
     drainQueue: async () => {},
   };
-  return conversation as unknown as Conversation;
+  return asConversation(conversation);
 }
 
 // ── Module mocks ─────────────────────────────────────────────────────

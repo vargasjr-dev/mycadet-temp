@@ -12,7 +12,6 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
 import {
   clearConversations,
   setConversation,
@@ -29,6 +28,7 @@ import {
 import { RiskLevel } from "../tools/tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { getWorkspacePluginsDir } from "../util/layout.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 interface ToolListEntry {
   name: string;
@@ -83,10 +83,13 @@ const handler = (() => {
  * route reads, registered into the live conversation registry by id.
  */
 function registerFakeConversation(id: string, toolNames: string[]): void {
-  setConversation(id, {
-    getRegisteredToolDefinitions: () =>
-      toolNames.map((name) => ({ name, description: "", input_schema: {} })),
-  } as unknown as Conversation);
+  setConversation(
+    id,
+    asConversation({
+      getRegisteredToolDefinitions: () =>
+        toolNames.map((name) => ({ name, description: "", input_schema: {} })),
+    }),
+  );
 }
 
 /** Drop a `.disabled` sentinel into a plugin's workspace directory. */

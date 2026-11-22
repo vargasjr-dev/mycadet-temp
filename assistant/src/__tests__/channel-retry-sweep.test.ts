@@ -93,7 +93,6 @@ mock.module("../runtime/gateway-client.js", () => ({
   },
 }));
 
-import type { Conversation } from "../daemon/conversation.js";
 import {
   clearConversations,
   setConversation,
@@ -104,6 +103,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import * as deliveryCrud from "../persistence/delivery-crud.js";
 import { channelInboundEvents, messages } from "../persistence/schema/index.js";
 import { sweepFailedEvents } from "../runtime/channel-retry-sweep.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -1506,9 +1506,12 @@ describe("channel-retry-sweep", () => {
     // running). Reprocessing would throw the busy error, which
     // `recordProcessingFailure` classifies as fatal → dead_letter. The sweep
     // must instead re-defer: skip the turn, keep the event retryable.
-    setConversation(conversationId, {
-      isProcessing: () => true,
-    } as unknown as Conversation);
+    setConversation(
+      conversationId,
+      asConversation({
+        isProcessing: () => true,
+      }),
+    );
 
     let processMessageCalled = false;
     await sweepFailedEvents(async () => {
@@ -1540,9 +1543,12 @@ describe("channel-retry-sweep", () => {
       .from(channelInboundEvents)
       .where(eq(channelInboundEvents.id, eventId))
       .get()!.conversationId;
-    setConversation(conversationId, {
-      isProcessing: () => true,
-    } as unknown as Conversation);
+    setConversation(
+      conversationId,
+      asConversation({
+        isProcessing: () => true,
+      }),
+    );
 
     const noopProcess = async () => ({ messageId: "should-not-run" });
     // Far more sweeps than RETRY_MAX_ATTEMPTS (8): the old attempt-burning defer

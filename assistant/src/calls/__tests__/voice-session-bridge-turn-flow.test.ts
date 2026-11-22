@@ -36,6 +36,7 @@ mock.module("../../daemon/conversation-store.js", () => ({
   },
 }));
 
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import {
   createConversation,
   getMessages,
@@ -56,7 +57,7 @@ await initializeDb();
  * simulating assistant text deltas followed by message_complete.
  */
 function makeStreamingSession(events: AssistantEvent[]): Conversation {
-  return {
+  return asConversation({
     isProcessing: () => false,
     persistUserMessage: async () => ({
       id: "test-msg-id",
@@ -85,7 +86,7 @@ function makeStreamingSession(events: AssistantEvent[]): Conversation {
     // The image-bearing profile pin reads the leg's history.
     getMessages: () => [],
     abort: () => {},
-  } as unknown as Conversation;
+  });
 }
 
 function makePersistingStreamingSession(
@@ -270,7 +271,7 @@ describe("voice-session-bridge", () => {
     const conversation = createConversation("voice bridge abort test");
     let abortCalled = false;
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       currentRequestId: undefined as string | undefined,
       persistUserMessage: (options: { requestId?: string }) => {
@@ -295,7 +296,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -319,7 +320,7 @@ describe("voice-session-bridge", () => {
     ];
 
     let capturedOptions: Record<string, unknown> | undefined;
-    const session = {
+    const session = asConversation({
       ...makeStreamingSession(events),
       runAgentLoop: async (
         _content: string,
@@ -336,7 +337,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -367,7 +368,7 @@ describe("voice-session-bridge", () => {
     ];
 
     let capturedOptions: Record<string, unknown> | undefined;
-    const session = {
+    const session = asConversation({
       ...makeStreamingSession(events),
       runAgentLoop: async (
         _content: string,
@@ -384,7 +385,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -406,7 +407,7 @@ describe("voice-session-bridge", () => {
     const conversation = createConversation("voice bridge signal test");
     let abortCalled = false;
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       currentRequestId: undefined as string | undefined,
       persistUserMessage: (options: { requestId?: string }) => {
@@ -431,7 +432,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -463,14 +464,14 @@ describe("voice-session-bridge", () => {
     ];
 
     let capturedTurnChannelContext: unknown = null;
-    const session = {
+    const session = asConversation({
       ...makeStreamingSession(events),
       setTurnChannelContext: (ctx: unknown) => {
         capturedTurnChannelContext = ctx;
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -619,7 +620,7 @@ describe("voice-session-bridge", () => {
     ];
 
     let capturedTrustContext: unknown = null;
-    const session = {
+    const session = asConversation({
       ...makeStreamingSession(events),
       setTrustContext: (ctx: unknown) => {
         if (ctx != null) {
@@ -628,7 +629,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -664,7 +665,7 @@ describe("voice-session-bridge", () => {
     ];
 
     let capturedPrompt: string | null = null;
-    const session = {
+    const session = asConversation({
       ...makeStreamingSession(events),
       setVoiceCallControlPrompt: (prompt: string | null) => {
         if (prompt != null) {
@@ -673,7 +674,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -727,7 +728,7 @@ describe("voice-session-bridge", () => {
     ];
 
     let capturedPrompt: string | null = null;
-    const session = {
+    const session = asConversation({
       ...makeStreamingSession(events),
       setVoiceCallControlPrompt: (prompt: string | null) => {
         if (prompt != null) {
@@ -736,7 +737,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -782,7 +783,7 @@ describe("voice-session-bridge", () => {
       decisionContext?: string;
     }> = [];
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       persistUserMessage: async () => ({
         id: "test-msg-id",
@@ -830,7 +831,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -877,7 +878,7 @@ describe("voice-session-bridge", () => {
       decisionContext?: string;
     }> = [];
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       persistUserMessage: async () => ({
         id: "test-msg-id",
@@ -920,7 +921,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -963,7 +964,7 @@ describe("voice-session-bridge", () => {
       decision: string;
     }> = [];
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       persistUserMessage: async () => ({
         id: "test-msg-id",
@@ -998,7 +999,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -1033,7 +1034,7 @@ describe("voice-session-bridge", () => {
       decision: string;
     }> = [];
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       persistUserMessage: async () => ({
         id: "test-msg-id",
@@ -1068,7 +1069,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -1099,7 +1100,7 @@ describe("voice-session-bridge", () => {
       decision: string;
     }> = [];
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       persistUserMessage: async () => ({
         id: "test-msg-id",
@@ -1136,7 +1137,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -1179,7 +1180,7 @@ describe("voice-session-bridge", () => {
       broadcastMessage(msg);
       clientHandler(msg);
     };
-    return {
+    return asConversation({
       emit,
       isProcessing: () => false,
       persistUserMessage: async () => ({
@@ -1222,7 +1223,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
   }
 
   async function collectConfirmationWireOrder(
@@ -1325,7 +1326,7 @@ describe("voice-session-bridge", () => {
       delivery?: "store" | "transient_send";
     }> = [];
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       persistUserMessage: async () => ({
         id: "test-msg-id",
@@ -1363,7 +1364,7 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 
@@ -1583,7 +1584,7 @@ describe("voice-session-bridge", () => {
     const conversation = createConversation("voice bridge pre-abort test");
     let abortCalled = false;
 
-    const session = {
+    const session = asConversation({
       isProcessing: () => false,
       currentRequestId: undefined as string | undefined,
       persistUserMessage: (options: { requestId?: string }) => {
@@ -1608,7 +1609,7 @@ describe("voice-session-bridge", () => {
       },
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation;
+    });
 
     injectDeps(() => session);
 

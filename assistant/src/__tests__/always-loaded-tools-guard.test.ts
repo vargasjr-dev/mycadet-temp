@@ -13,13 +13,13 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
 import { isToolActiveForContext } from "../daemon/conversation-tool-setup.js";
 import {
   __resetRegistryForTesting,
   getAllToolDefinitions,
   initializeTools,
 } from "../tools/registry.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 afterAll(() => {
   __resetRegistryForTesting();
@@ -31,13 +31,13 @@ describe("always-loaded tool count", () => {
     const allDefs = getAllToolDefinitions();
 
     // Minimal context: no client, no capabilities
-    const minimalContext = {
+    const minimalContext = asConversation({
       skillProjectionState: new Map(),
       skillProjectionCache: {},
       toolsDisabledDepth: 0,
       hasNoClient: true,
       channelCapabilities: undefined,
-    } as unknown as Conversation;
+    });
 
     const activeTools = allDefs.filter((def) =>
       isToolActiveForContext(def.name, minimalContext),

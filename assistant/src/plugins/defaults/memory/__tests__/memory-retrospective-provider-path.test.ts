@@ -247,6 +247,7 @@ mock.module("../../../../persistence/llm-request-log-store.js", () => ({
   }),
 }));
 
+import { asConversation } from "../../../../__tests__/helpers/mock-conversation.js";
 import { AgentLoop } from "../../../../agent/loop.js";
 import type { Conversation } from "../../../../daemon/conversation.js";
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
@@ -367,7 +368,7 @@ function makeForkConversationDouble(): Conversation {
       run: (options: Parameters<AgentLoop["run"]>[0]) => realLoop.run(options),
     },
   };
-  return conversation as unknown as Conversation;
+  return asConversation(conversation);
 }
 
 // ---------------------------------------------------------------------------

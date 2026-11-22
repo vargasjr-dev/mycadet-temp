@@ -13,7 +13,6 @@
  */
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { Conversation } from "../daemon/conversation.js";
 import type { QueuedMessage } from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
@@ -26,6 +25,7 @@ import {
 } from "../daemon/handlers/conversations.js";
 import type { QuestionPromptResult } from "../permissions/question-prompter.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 
 interface ParkedTurn {
   abortCount: () => number;
@@ -67,7 +67,7 @@ function registerParkedTurn(id: string): ParkedTurn {
     hasAnyPendingConfirmation: () => false,
     denyAllPendingConfirmations: () => {},
   };
-  setConversation(id, fake as unknown as Conversation);
+  setConversation(id, asConversationDouble(fake));
   const enqueue = (
     message: Partial<QueuedMessage> & { requestId: string },
   ): void => {

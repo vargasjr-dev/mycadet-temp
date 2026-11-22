@@ -28,7 +28,6 @@ import {
 
 import { TrustClass } from "@mycadet/gateway-client";
 
-import type { Conversation } from "../../daemon/conversation.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
 import type { Message } from "../../providers/types.js";
 
@@ -125,7 +124,7 @@ mock.module("../../daemon/conversation-store.js", () => ({
   ...realConversationStoreModule,
   getOrCreateConversation: async (conversationId: string) =>
     forkMocksActive
-      ? (parentConversation as unknown as Conversation)
+      ? asConversationDouble(parentConversation)
       : realConversationStoreModule.getOrCreateConversation(conversationId),
 }));
 
@@ -173,6 +172,7 @@ mock.module("../../subagent/index.js", () => ({
       : realSubagentModule.getSubagentManager(),
 }));
 
+import { asConversationDouble } from "../../__tests__/helpers/mock-conversation.js";
 import { defaultSpawnBackgroundContinuation } from "../live-voice-session.js";
 
 async function spawnContinuation(): Promise<string> {

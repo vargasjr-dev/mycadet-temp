@@ -1,6 +1,7 @@
 import path from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { asConversation } from "../__tests__/helpers/mock-conversation.js";
 import type { ContentBlock, Message } from "../providers/types.js";
 import type { Conversation } from "./conversation.js";
 import { getInContextPkbPaths } from "./pkb-context-tracker.js";
@@ -13,7 +14,7 @@ const PKB_ROOT = path.join(WORKING_DIR, "pkb");
 // minimal object through `unknown` keeps the test isolated and pure while
 // still exercising the public type.
 function makeConversation(messages: Message[]): Conversation {
-  return { messages } as unknown as Conversation;
+  return asConversation({ messages });
 }
 
 function fileReadToolUse(filePath: string): ContentBlock {

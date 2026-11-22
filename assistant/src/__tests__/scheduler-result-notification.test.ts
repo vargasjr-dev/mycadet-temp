@@ -96,7 +96,6 @@ mock.module("../notifications/emit-signal.js", () => ({
 
 import type { AssistantEvent } from "../api/index.js";
 import { getConfig } from "../config/loader.js";
-import type { Conversation } from "../daemon/conversation.js";
 import {
   type AbortContext,
   abortScheduledRun,
@@ -125,6 +124,7 @@ import {
   removeBackgroundTool,
 } from "../tools/background-tool-registry.js";
 import { installFastTimers } from "./fast-timers.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
 await initializeDb();
@@ -298,11 +298,14 @@ describe("schedule result notification wiring", () => {
       const cronRunId = getScheduleRuns(schedule.id)[0].id;
       const child = attachRunningChild(conversationId, cronRunId);
       let continuationRunning = false;
-      setConversation(conversationId, {
-        isProcessing: () => continuationRunning,
-        currentTurnCronRunId: cronRunId,
-        snapshotQueuedMessages: () => [],
-      } as unknown as Conversation);
+      setConversation(
+        conversationId,
+        asConversation({
+          isProcessing: () => continuationRunning,
+          currentTurnCronRunId: cronRunId,
+          snapshotQueuedMessages: () => [],
+        }),
+      );
 
       // The advisor settles, then its notification starts the continuation
       // that writes the reply its guidance informed.
@@ -366,10 +369,13 @@ describe("schedule result notification wiring", () => {
         const finishWake = Promise.withResolvers<void>();
         delegateOnRun = (conversationId) => {
           addMessage(conversationId, "assistant", "The command is running.");
-          setConversation(conversationId, {
-            isProcessing: () => false,
-            snapshotQueuedMessages: () => [],
-          } as unknown as Conversation);
+          setConversation(
+            conversationId,
+            asConversation({
+              isProcessing: () => false,
+              snapshotQueuedMessages: () => [],
+            }),
+          );
           registerBackgroundTool({
             id: "bg-scheduled",
             cronRunId: getScheduleRuns(schedule.id)[0].id,
@@ -456,14 +462,17 @@ describe("schedule result notification wiring", () => {
             "The report is still running.",
           );
           const cronRunId = getScheduleRuns(schedule.id)[0].id;
-          setConversation(conversationId, {
-            isProcessing: () => false,
-            snapshotQueuedMessages: () => [],
-            abortScheduledRun: (runId: string) => {
-              expect(runId).toBe(cronRunId);
-              parentAborted = true;
-            },
-          } as unknown as Conversation);
+          setConversation(
+            conversationId,
+            asConversation({
+              isProcessing: () => false,
+              snapshotQueuedMessages: () => [],
+              abortScheduledRun: (runId: string) => {
+                expect(runId).toBe(cronRunId);
+                parentAborted = true;
+              },
+            }),
+          );
           if (kind === "wake") {
             wake = wakeAgentForOpportunity(
               {
@@ -475,10 +484,10 @@ describe("schedule result notification wiring", () => {
               {
                 resolveTarget: async () => {
                   await finishLookup.promise;
-                  return {
+                  return asConversation({
                     waitForIdle: async () => true,
                     isProcessing: () => false,
-                  } as unknown as Conversation;
+                  });
                 },
               },
             );
@@ -571,11 +580,14 @@ describe("schedule result notification wiring", () => {
           accumulatedSurfaceState: new Map(),
           kickDrainQueue: async () => {},
         } as unknown as AbortContext;
-        setConversation(id, {
-          ...ctx,
-          snapshotQueuedMessages: () => queue.snapshot(),
-          abortScheduledRun: (run: string) => abortScheduledRun(ctx, run),
-        } as unknown as Conversation);
+        setConversation(
+          id,
+          asConversation({
+            ...ctx,
+            snapshotQueuedMessages: () => queue.snapshot(),
+            abortScheduledRun: (run: string) => abortScheduledRun(ctx, run),
+          }),
+        );
         for (const owner of [undefined, runId, "run-other"]) {
           queue.push({
             content: "Follow-up",
@@ -668,28 +680,31 @@ describe("schedule result notification wiring", () => {
             onEvent: () => {},
           });
         }
-        setConversation(id, {
-          isProcessing: () => kind === "turn",
-          currentTurnCronRunId: undefined,
-          pendingQueuedDispatches:
-            kind === "dispatch"
-              ? new Map<string | null, Set<QueuedDispatch>>([
-                  [
-                    "run-other",
-                    new Set([
-                      { controller: new AbortController(), messages: [] },
-                    ]),
-                  ],
-                  [
-                    null,
-                    new Set([
-                      { controller: new AbortController(), messages: [] },
-                    ]),
-                  ],
-                ])
-              : new Map(),
-          snapshotQueuedMessages: () => queue.snapshot(),
-        } as unknown as Conversation);
+        setConversation(
+          id,
+          asConversation({
+            isProcessing: () => kind === "turn",
+            currentTurnCronRunId: undefined,
+            pendingQueuedDispatches:
+              kind === "dispatch"
+                ? new Map<string | null, Set<QueuedDispatch>>([
+                    [
+                      "run-other",
+                      new Set([
+                        { controller: new AbortController(), messages: [] },
+                      ]),
+                    ],
+                    [
+                      null,
+                      new Set([
+                        { controller: new AbortController(), messages: [] },
+                      ]),
+                    ],
+                  ])
+                : new Map(),
+            snapshotQueuedMessages: () => queue.snapshot(),
+          }),
+        );
         registerBackgroundTool({
           id: "owned-command",
           conversationId: id,
@@ -775,10 +790,10 @@ describe("schedule result notification wiring", () => {
           cronRunId: runId,
           onEvent: () => {},
         });
-        const live = {
+        const live = asConversation({
           isProcessing: () => false,
           snapshotQueuedMessages: () => queue.snapshot(),
-        } as unknown as Conversation;
+        });
         if (location === "parent") {
           setConversation(id, live);
         } else {
@@ -820,11 +835,14 @@ describe("schedule result notification wiring", () => {
         getScheduleRuns(schedule.id)[0].id,
         new Set([{ controller: new AbortController(), messages: [] }]),
       );
-      setConversation(id, {
-        isProcessing: () => false,
-        snapshotQueuedMessages: () => [],
-        pendingQueuedDispatches: dispatches,
-      } as unknown as Conversation);
+      setConversation(
+        id,
+        asConversation({
+          isProcessing: () => false,
+          snapshotQueuedMessages: () => [],
+          pendingQueuedDispatches: dispatches,
+        }),
+      );
       entered.resolve(id);
     };
     const scheduledRun = runDueSchedulesOnce();

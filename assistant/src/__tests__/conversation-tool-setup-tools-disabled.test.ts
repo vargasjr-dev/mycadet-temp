@@ -31,6 +31,7 @@ mock.module("../daemon/conversation-skill-tools.js", () => ({
 
 import type { Conversation } from "../daemon/conversation.js";
 import { createResolveToolsCallback } from "../daemon/conversation-tool-setup.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,12 +42,12 @@ function makeToolDef(name: string): ToolDefinition {
 }
 
 function makeCtx(overrides: Partial<Conversation> = {}): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: {} as SkillProjectionCache,
     toolsDisabledDepth: 0,
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 const EMPTY_HISTORY: Message[] = [];

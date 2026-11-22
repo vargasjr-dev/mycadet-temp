@@ -43,6 +43,7 @@ import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
 const testDir = process.env.CADET_WORKSPACE_DIR!;
@@ -323,7 +324,7 @@ function createFakeConversation(conversationId: string): Conversation {
     },
   };
 
-  return conversation as unknown as Conversation;
+  return asConversationDouble(conversation);
 }
 
 function getOrCreateFakeConversation(conversationId: string): Conversation {

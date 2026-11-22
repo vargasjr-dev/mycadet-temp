@@ -51,6 +51,7 @@ import {
   __resetWakeChainForTests,
   wakeAgentForOpportunity,
 } from "../runtime/agent-wake.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
 /**
@@ -112,7 +113,7 @@ function makeTarget(): {
     buildCurrentSystemPrompt: () => "mock-system-prompt",
     modelOverride: undefined,
   };
-  return { target: target as unknown as Conversation, runArgs };
+  return { target: asConversation(target), runArgs };
 }
 
 beforeEach(() => {

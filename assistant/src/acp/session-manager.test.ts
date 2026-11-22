@@ -2,7 +2,6 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { RequestError } from "@agentclientprotocol/sdk";
 
-import type { Conversation } from "../daemon/conversation.js";
 import {
   deleteConversation,
   setConversation,
@@ -40,6 +39,7 @@ mock.module("./prepare-agent-env.js", () => ({
   },
 }));
 
+import { asConversation } from "../__tests__/helpers/mock-conversation.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { modelOption } from "./__tests__/helpers/acp-model-option.js";
 import { CadetAcpClientHandler } from "./client-handler.js";
@@ -78,11 +78,11 @@ function mockConversation(opts?: { enqueueQueued?: boolean }) {
   const runAgentLoop = mock(async () => {
     resolveLoop();
   });
-  const conversation = {
+  const conversation = asConversation({
     enqueueMessage,
     persistUserMessage,
     runAgentLoop,
-  } as unknown as Conversation;
+  });
   return {
     conversation,
     enqueueMessage,

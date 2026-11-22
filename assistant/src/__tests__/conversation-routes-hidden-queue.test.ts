@@ -127,6 +127,7 @@ import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 
 const CONV_ID = "conv-hidden-queue";
 
@@ -151,7 +152,7 @@ function makeConversationWithPendingConfirmation(
   let denyAllCount = 0;
   let abortCount = 0;
   let agentLoopOptions: Record<string, unknown> | undefined;
-  const conversation = {
+  const conversation = asConversationDouble({
     conversationId: CONV_ID,
     messages: [],
     abortController: {
@@ -218,7 +219,7 @@ function makeConversationWithPendingConfirmation(
     setHostCuProxy: () => {},
     addPreactivatedSkillId: () => {},
     usageStats: { inputTokens: 1000, outputTokens: 500, estimatedCost: 0.05 },
-  } as unknown as Conversation;
+  });
   return {
     conversation,
     enqueuedMetadata: () => enqueuedMetadata,

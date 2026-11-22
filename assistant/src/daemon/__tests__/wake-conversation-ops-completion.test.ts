@@ -10,6 +10,7 @@ mock.module("../../runtime/sync/resource-sync-events.js", () => ({
   publishConversationMessagesChanged: () => {},
 }));
 
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import {
   createConversation,
   getMessages,
@@ -27,14 +28,14 @@ function makeConversationStub(
   conversationId: string,
   clientState: { hasNoClient?: boolean; headlessLock?: boolean } = {},
 ): Conversation {
-  return {
+  return asConversation({
     conversationId,
     trustContext: undefined,
     hasNoClient: clientState.hasNoClient ?? false,
     headlessLock: clientState.headlessLock ?? false,
     getTurnChannelContext: () => null,
     getTurnInterfaceContext: () => null,
-  } as unknown as Conversation;
+  });
 }
 
 function triggerMessage(): Message {

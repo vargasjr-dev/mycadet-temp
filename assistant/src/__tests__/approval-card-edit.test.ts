@@ -20,12 +20,12 @@ mock.module("../runtime/local-actor-identity.js", () => ({
   findLocalGuardianPrincipalId: async () => _anchorPrincipalId,
 }));
 
-import type { Conversation } from "../daemon/conversation.js";
 import * as providers from "../messaging/providers/index.js";
 import { initializeDb } from "../persistence/db-init.js";
 import * as gatewayClient from "../runtime/gateway-client.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { handleApprovalInterception } from "../runtime/routes/guardian-approval-interception.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
@@ -36,10 +36,10 @@ const TELEGRAM_CALLBACK_URL = "https://gateway.test/deliver/telegram?chat=1";
 const BUTTON_MESSAGE_ID = "4242";
 
 function registerPendingInteraction(requestId: string): void {
-  const _mockSession = {
+  const _mockSession = asConversation({
     handleConfirmationResponse: mock(() => {}),
     ensureActorScopedHistory: async () => {},
-  } as unknown as Conversation;
+  });
   _conversationMocks.set(CONVERSATION_ID, _mockSession);
 
   pendingInteractions.register(requestId, {

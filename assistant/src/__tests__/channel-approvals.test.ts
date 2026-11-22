@@ -21,6 +21,7 @@ import {
   handleChannelDecision,
 } from "../runtime/channel-approvals.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,10 +44,10 @@ function registerPendingConfirmation(
     executionTarget?: "sandbox" | "host";
   },
 ): void {
-  const mockSession = {
+  const mockSession = asConversation({
     handleConfirmationResponse: mock(() => {}),
     ensureActorScopedHistory: async () => {},
-  } as unknown as Conversation;
+  });
   conversationMocks.set(conversationId, mockSession);
 
   pendingInteractions.register(requestId, {

@@ -72,10 +72,11 @@ mock.module("../persistence/conversation-crud.js", () => ({
 }));
 
 import { runAgentLoopImpl } from "../daemon/conversation-agent-loop.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeCtx(overrides: Partial<Context> = {}): Conversation {
   let processing = true;
-  return {
+  return asConversation({
     conversationId: "conv-123",
     messages: [{ role: "user", content: [{ type: "text", text: "hello" }] }],
     isProcessing: () => processing,
@@ -152,7 +153,7 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     modelOverride: undefined,
     graphMemory: {} as Context["graphMemory"],
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 describe("runAgentLoopImpl disk pressure gate", () => {

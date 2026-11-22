@@ -9,6 +9,7 @@
 
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import * as configLoader from "../../config/loader.js";
 import type { AssistantConfig } from "../../config/schema.js";
 import type { Conversation } from "../conversation.js";
@@ -24,11 +25,11 @@ function withExclude(exclude: string[]): void {
 }
 
 function ctx(overrides: Partial<Conversation> = {}): Conversation {
-  return {
+  return asConversation({
     toolsDisabledDepth: 0,
     hasNoClient: false,
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 afterEach(() => {

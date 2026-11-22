@@ -62,6 +62,7 @@ import {
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { providerConnections } from "../persistence/schema/inference.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
 await initializeDb();
@@ -106,7 +107,7 @@ function resetDb() {
  * conversation.
  */
 function makeLiveConversationStub(conversationId: string): Conversation {
-  return {
+  return asConversation({
     conversationId,
     inferenceProfile: null as string | null,
     inferenceProfileSessionId: null as string | null,
@@ -127,7 +128,7 @@ function makeLiveConversationStub(conversationId: string): Conversation {
       this.inferenceProfileSessionId = state.sessionId;
       this.inferenceProfileExpiresAt = state.expiresAt;
     },
-  } as unknown as Conversation;
+  });
 }
 
 // ---------------------------------------------------------------------------

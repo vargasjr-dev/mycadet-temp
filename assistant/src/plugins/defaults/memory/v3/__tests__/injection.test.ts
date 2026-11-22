@@ -47,8 +47,8 @@ import {
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { asConversation } from "../../../../../__tests__/helpers/mock-conversation.js";
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
-import type { Conversation } from "../../../../../daemon/conversation.js";
 import * as schema from "../../../../../persistence/schema/index.js";
 import type { InjectionBlock } from "../../../../types.js";
 import { unwrapMemoryBlock } from "../../memory-marker.js";
@@ -172,7 +172,7 @@ let processingConversations = new Set<string>();
 mock.module("../../../../../daemon/conversation-registry.js", () => ({
   findConversationOrSubagent: (conversationId: string) =>
     processingConversations.has(conversationId)
-      ? ({ isProcessing: () => true } as unknown as Conversation)
+      ? asConversation({ isProcessing: () => true })
       : undefined,
 }));
 

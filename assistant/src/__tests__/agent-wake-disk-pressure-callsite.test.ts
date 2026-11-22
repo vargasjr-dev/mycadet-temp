@@ -64,6 +64,7 @@ import {
   __resetWakeChainForTests,
   wakeAgentForOpportunity,
 } from "../runtime/agent-wake.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeTarget(): Conversation {
   const messages: Message[] = [];
@@ -97,7 +98,7 @@ function makeTarget(): Conversation {
     // The wake rebuilds the loop prompt under its per-turn stamps.
     syncLoopSystemPrompt: () => {},
   };
-  return target as unknown as Conversation;
+  return asConversation(target);
 }
 
 beforeEach(() => {

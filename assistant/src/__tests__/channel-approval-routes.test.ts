@@ -64,7 +64,6 @@ mock.module("../daemon/approval-generators.js", () => ({
   createApprovalConversationGenerator: () => _testApprovalConversationGenerator,
 }));
 
-import type { Conversation } from "../daemon/conversation.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import * as deliveryChannels from "../persistence/delivery-channels.js";
@@ -78,6 +77,7 @@ import { handleChannelInbound } from "./helpers/channel-test-adapter.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
 import { bridgeState } from "./helpers/gateway-guardian-requests-store-bridge.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 import { seedContactChannel } from "./helpers/seed-contact-channel.js";
 
 await initializeDb();
@@ -144,10 +144,10 @@ function registerPendingInteraction(
   },
 ): ReturnType<typeof mock> {
   const handleConfirmationResponse = mock(() => {});
-  const _mockSession = {
+  const _mockSession = asConversation({
     handleConfirmationResponse,
     ensureActorScopedHistory: async () => {},
-  } as unknown as Conversation;
+  });
   _conversationMocks.set(conversationId, _mockSession);
 
   pendingInteractions.register(requestId, {

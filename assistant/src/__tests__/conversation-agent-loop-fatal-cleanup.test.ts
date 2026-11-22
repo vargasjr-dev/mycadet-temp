@@ -70,10 +70,11 @@ mock.module("../persistence/conversation-crud.js", () => ({
 }));
 
 import { runAgentLoopImpl } from "../daemon/conversation-agent-loop.js";
+import { asConversationDouble } from "./helpers/mock-conversation.js";
 
 function makeCtx(overrides: Partial<Context> = {}): Conversation {
   let processing = true;
-  return {
+  return asConversationDouble({
     conversationId: "conv-fatal",
     messages: [{ role: "user", content: [{ type: "text", text: "hello" }] }],
     isProcessing: () => processing,
@@ -152,7 +153,7 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     modelOverride: undefined,
     graphMemory: {} as Context["graphMemory"],
     ...overrides,
-  } as unknown as Conversation;
+  });
 }
 
 type Context = Conversation;

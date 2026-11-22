@@ -16,6 +16,7 @@ import {
   getAllToolDefinitions,
   initializeTools,
 } from "../tools/registry.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 afterAll(() => {
   __resetRegistryForTesting();
@@ -23,24 +24,24 @@ afterAll(() => {
 
 /** What a clientless wake looks like to the tool gate. */
 function clientlessContext(): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: {},
     toolsDisabledDepth: 0,
     hasNoClient: true,
     channelCapabilities: undefined,
-  } as unknown as Conversation;
+  });
 }
 
 /** The same conversation with a client attached, for contrast. */
 function clientfulContext(): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(),
     skillProjectionCache: {},
     toolsDisabledDepth: 0,
     hasNoClient: false,
     channelCapabilities: undefined,
-  } as unknown as Conversation;
+  });
 }
 
 describe("watch retrospective tool availability", () => {

@@ -99,7 +99,6 @@ mock.module("../persistence/subagent-store.js", () => ({
 
 setBroadcastOverrideForTesting(() => {});
 
-import type { Conversation } from "../daemon/conversation.js";
 import { isToolActiveForContext } from "../daemon/conversation-tool-setup.js";
 import { beginTurnFinalization } from "../daemon/turn-finalization.js";
 import { setLiveVoiceSessionManagerForTesting } from "../live-voice/live-voice-manager.js";
@@ -115,6 +114,7 @@ import {
   executeSubagentNotifyParent,
   notifyParentTool,
 } from "../tools/subagent/notify-parent.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ── Shared helpers ──────────────────────────────────────────────────
 
@@ -294,34 +294,34 @@ describe("notify_parent tool definition", () => {
   });
 
   test("is hidden from non-subagent context", () => {
-    const ctx = {
+    const ctx = asConversation({
       isSubagent: false,
       preactivatedSkillIds: [],
       skillProjectionState: new Map(),
       skillProjectionCache: new Map(),
       toolsDisabledDepth: 0,
-    } as unknown as Conversation;
+    });
     expect(isToolActiveForContext("notify_parent", ctx)).toBe(false);
   });
 
   test("is hidden when isSubagent is undefined", () => {
-    const ctx = {
+    const ctx = asConversation({
       preactivatedSkillIds: [],
       skillProjectionState: new Map(),
       skillProjectionCache: new Map(),
       toolsDisabledDepth: 0,
-    } as unknown as Conversation;
+    });
     expect(isToolActiveForContext("notify_parent", ctx)).toBe(false);
   });
 
   test("is visible to subagent context", () => {
-    const ctx = {
+    const ctx = asConversation({
       isSubagent: true,
       preactivatedSkillIds: [],
       skillProjectionState: new Map(),
       skillProjectionCache: new Map(),
       toolsDisabledDepth: 0,
-    } as unknown as Conversation;
+    });
     expect(isToolActiveForContext("notify_parent", ctx)).toBe(true);
   });
 });
