@@ -439,9 +439,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installDictation();
       installDictationOverlay();
       installHelperHotkeys();
-      if (process.platform !== "darwin") {
-        installVoiceModeChord();
-      }
+      installVoiceModeChord();
 
       await inputs.setup?.();
       syncCompanionSurface();

@@ -23,7 +23,6 @@ export {
   uninstallCliLauncher,
 } from "./win32-cli/cli-launcher";
 export { hasPendingDeepLinks } from "./deep-links";
-export { getDeviceId } from "./device-id";
 export { hasPendingFiles } from "./file-open";
 export { onAvatarChange } from "./avatar";
 export {

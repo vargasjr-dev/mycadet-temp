@@ -166,10 +166,13 @@ describe("the operator's cloud arm", () => {
     expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
   });
 
-  test("forwards with manual redirects and the ambient credentials mode", async () => {
+  test("forwards with manual redirects and credentials omitted", async () => {
     await dispatch(request("/_allauth/browser/v1/config"));
     expect(calls[0]?.init?.redirect).toBe("manual");
-    expect(calls[0]?.init?.credentials).toBeUndefined();
+    // The dial carries its own Authorization header; omitted credentials
+    // also keep undici's 401 credential-retry step off a streaming body,
+    // which would otherwise throw on a 401 answer instead of returning it.
+    expect(calls[0]?.init?.credentials).toBe("omit");
   });
 
   test("forwards unsafe requests from the app origin", async () => {

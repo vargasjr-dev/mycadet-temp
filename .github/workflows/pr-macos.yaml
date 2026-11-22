@@ -152,9 +152,71 @@ jobs:
             "$RUNNER_TEMP/smoke-notifier.js" \
             "$ADDON"
 
+  native-capture-sources:
+    name: Native Capture Sources (macOS)
+    runs-on: macos-26
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: clients/macos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter=@mycadet/macos
+
+      - name: Build the capture-sources addon
+        run: bash scripts/build-capture-sources.sh
+
+      # Installing does not download the Electron binary, and the smoke load
+      # below runs under Electron's ABI rather than plain Node's.
+      - name: Set up Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Smoke-load the addon under Electron
+        run: |
+          cat > "$RUNNER_TEMP/smoke-capture-sources.js" <<'JS'
+          const addon = { exports: {} };
+          process.dlopen(addon, process.argv[2]);
+          if (typeof addon.exports.list !== "function") {
+            console.error("cadet-capture-sources: missing export list");
+            process.exit(1);
+          }
+          const answer = addon.exports.list(false);
+          if (
+            !answer ||
+            typeof answer !== "object" ||
+            !Array.isArray(answer.windows)
+          ) {
+            console.error("cadet-capture-sources: list() returned no envelope");
+            process.exit(1);
+          }
+          console.log(
+            "cadet-capture-sources loaded;",
+            answer.windows.length,
+            "windows listed",
+          );
+          process.exit(0);
+          JS
+          ADDONS=(resources/capture-sources/*/cadet-capture-sources.node)
+          if [ "${#ADDONS[@]}" -ne 1 ] || [ ! -f "${ADDONS[0]}" ]; then
+            echo "::error::expected exactly one built capture-sources addon under resources/capture-sources, found: ${ADDONS[*]}"
+            exit 1
+          fi
+          ADDON="${ADDONS[0]}"
+          ELECTRON_RUN_AS_NODE=1 ./node_modules/.bin/electron \
+            "$RUNNER_TEMP/smoke-capture-sources.js" \
+            "$ADDON"
+
   checks:
     name: Type Check, Build & Test
-    needs: [typecheck, build, test, native]
+    needs: [typecheck, build, test, native, native-capture-sources]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -164,12 +226,13 @@ jobs:
           BUILD: ${{ needs.build.result }}
           TEST: ${{ needs.test.result }}
           NATIVE: ${{ needs.native.result }}
+          NATIVE_CAPTURE: ${{ needs.native-capture-sources.result }}
         run: |
           echo "Type Check: $TYPECHECK"
           echo "Build:      $BUILD"
           echo "Test:       $TEST"
           echo "Native:     $NATIVE"
-          for r in "$TYPECHECK" "$BUILD" "$TEST" "$NATIVE"; do
+          for r in "$TYPECHECK" "$BUILD" "$TEST" "$NATIVE" "$NATIVE_CAPTURE"; do
             if [ "$r" != "success" ]; then
               echo "::error::At least one macOS CI job failed."
               exit 1

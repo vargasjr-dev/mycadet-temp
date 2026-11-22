@@ -642,6 +642,15 @@ async function runProxyRoute(
     headers,
     ...(hasBody ? { body: request.body, duplex: "half" as const } : {}),
     redirect: "manual",
+    // Cookies ride the explicit `Cookie` header the dispatcher set; the
+    // ambient-credentials machinery is unused. Naming `omit` keeps
+    // undici's 401 credential-retry step off this request — that step
+    // (a browser-only path its current `isTraversableNavigable` stub
+    // wrongly runs in Node) throws `TypeError: fetch failed` on a 401
+    // answer to a streaming body instead of returning the 401 — the
+    // local-run failure loop at app boot. See undici issues #4910/#5018;
+    // drop this line once Electron's Node ships a fixed undici.
+    credentials: "omit",
   });
   const outHeaders = new Headers();
   upstream.headers.forEach((value, key) => {

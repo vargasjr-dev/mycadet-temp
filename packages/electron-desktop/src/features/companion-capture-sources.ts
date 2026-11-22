@@ -6,13 +6,15 @@
  * resolution of a pressed row into the display or window the session is
  * told to read (`WatchCaptureTarget`).
  *
- * **The windows come from the native helper, not from `desktopCapturer`.**
- * The frame the shell draws around a picked window has to follow it, which
- * takes the window's bounds, and `desktopCapturer` names windows without
- * saying where they are. The helper reads the window server's own list
- * (`CaptureSources.swift`), which carries bounds, owner and title in one
- * call, and the shell polls the same call to keep the frame on a window the
- * user is moving.
+ * **The windows come from the native capture-sources addon, with the helper
+ * as its fallback.** The frame the shell draws around a picked window has to
+ * follow it, which takes the window's bounds, and `desktopCapturer` names
+ * windows without saying where they are. The addon ports the helper's
+ * `CGWindowListCopyWindowInfo` call into this process (`native/capture-sources`),
+ * which carries bounds, owner and title in one call, and the shell polls the
+ * same call to keep the frame on a window the user is moving. Until the
+ * helper ships its last build, a machine without the addon (non-mac hosts,
+ * unbuilt checkouts) reads the same list from the helper instead.
  *
  * **A Chrome tab is a window with a step in front.** Chrome's scripting
  * interface lists tabs by Chrome's own window id and a tab index, neither of
@@ -38,6 +40,7 @@ import type {
 
 import { runAppleScript } from "../apple-script-executor";
 import log from "../app-logger";
+import { listWindowsWithAddon } from "./native-capture-sources";
 import type { HelperShareTarget } from "./share-targets";
 import { getSharedCuHelper } from "../sidecar/shared-cu-helper";
 
@@ -280,13 +283,22 @@ const readIcon = (appPath: string): Promise<string | undefined> => {
 };
 
 export const defaultCaptureSourceDeps: CaptureSourceDeps = {
-  listWindows: async (includeOffscreen = false) =>
-    parseHelperWindows(
+  listWindows: async (includeOffscreen = false) => {
+    // The addon answers in-process when it is built for this machine;
+    // the helper stays the fallback while it ships, and the only path
+    // when it does not (non-mac hosts, a checkout that never built the
+    // addon, a kill switch).
+    const native = await listWindowsWithAddon(includeOffscreen);
+    if (native) {
+      return native;
+    }
+    return parseHelperWindows(
       await getSharedCuHelper().call(
         "captureSources.list",
         includeOffscreen ? { includeOffscreen: true } : undefined,
       ),
-    ),
+    );
+  },
   listDisplays: () => {
     const primaryId = screen.getPrimaryDisplay().id;
     return screen.getAllDisplays().map((display) => ({

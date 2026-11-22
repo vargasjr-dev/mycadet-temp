@@ -774,6 +774,26 @@ describe("the webhook row — /webhooks/* bridges to the fronted gateway", () =>
     }
   });
 
+  test("the gateway dial carries omitted credentials", async () => {
+    seedEntry({ assistantId: "assistant-1", cloud: "local", port: 7830 });
+    const realFetch = globalThis.fetch;
+    let dialInit: RequestInit | undefined;
+    globalThis.fetch = mock(async (_input: unknown, init?: RequestInit) => {
+      dialInit = init;
+      return new Response("bridged");
+    }) as unknown as typeof fetch;
+    try {
+      await dispatch("/webhooks/telegram", "POST");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    // Cookies ride the dispatcher's explicit Cookie header; omitted
+    // credentials also keep undici's 401 credential-retry step off a
+    // streaming body, which would otherwise throw on a 401 answer
+    // instead of returning it.
+    expect(dialInit?.credentials).toBe("omit");
+  });
+
   test("near-miss roots match no row", async () => {
     seedEntry({ assistantId: "assistant-1", cloud: "local", port: 7830 });
     // The matching assert dispatches for real — the webhook row owns the

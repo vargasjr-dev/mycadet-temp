@@ -66,6 +66,12 @@ final class MacHelper: @unchecked Sendable {
     /// so "held" is per modifier rather than per bit.
     private var modifierHoldMasks: [UInt32] = []
     private var isModifierHoldDown = false
+    /// The voice-mode hold: modifier-only, hold-to-talk, the same edge
+    /// machinery as the dictation hold under its own method names, so the
+    /// desktop's voice-mode chord works wherever the helper does.
+    private var voiceChordMasks: [UInt32] = []
+    private var voiceChordDetector = ModifierHoldDetector()
+    private var isVoiceChordDown = false
     private var selectionReadSession = SelectionReadSession()
     /// The chord binding: the modifiers that must be held, and the keys that
     /// mean something with them. Its own binding rather than a mode of the
@@ -188,6 +194,18 @@ final class MacHelper: @unchecked Sendable {
                 enable: enable,
                 modifiers: modifiers,
                 keys: keys
+            )
+        }
+        // The voice-mode chord: hold-to-talk by modifiers alone. The
+        // desktop's contract answers {ok, enabled, reason} rather than a
+        // JsonRpc error, so the renderer can render a refusal.
+        router.register("hotkey.setVoiceModeChord") { [weak self] params in
+            guard let self else {
+                throw JsonRpcDispatchError.internalError("Helper is shutting down")
+            }
+            let object = params as? [String: Any] ?? [:]
+            return self.setVoiceModeChord(
+                activator: object["activator"] as? [String: Any]
             )
         }
         // What is highlighted in the application in front, read when the app
@@ -518,7 +536,9 @@ final class MacHelper: @unchecked Sendable {
     }
 
     func handleFlagsChanged(_ flags: CGEventFlags) {
-        feedModifierHold(modifiers: Self.carbonModifiers(flags))
+        let modifiers = Self.carbonModifiers(flags)
+        feedModifierHold(modifiers: modifiers)
+        feedVoiceChord(modifiers: modifiers)
     }
 
     /// The system switches a tap off when its callback runs long or on the
@@ -563,6 +583,9 @@ final class MacHelper: @unchecked Sendable {
     func handleRawKeyDown(_ event: CGEvent) -> Bool {
         for edge in modifierHoldDetector.keyDown() {
             emitModifierHold(edge: edge)
+        }
+        for edge in voiceChordDetector.keyDown() {
+            emitVoiceChord(edge: edge)
         }
         reportInputActivity()
         guard let key = chordKey(for: event) else {
@@ -1590,6 +1613,73 @@ final class MacHelper: @unchecked Sendable {
         return ["enabled": true]
     }
 
+    /// Arm or clear the voice-mode chord. Modifier-only, so there is no key
+    /// half to bind; the detector's edges are the contract's down/up events.
+    private func setVoiceModeChord(activator: [String: Any]?) -> [String: Any] {
+        let kind = activator?["kind"] as? String
+        let modifiers = (activator?["modifiers"] as? [String]) ?? []
+        guard kind == "off" || kind == "modifierOnly" else {
+            return ["ok": false, "reason": "Unknown activator kind"]
+        }
+        guard kind == "modifierOnly", !modifiers.isEmpty else {
+            for edge in voiceChordDetector.cancel() {
+                emitVoiceChord(edge: edge)
+            }
+            voiceChordMasks = []
+            releaseMonitorIfUnused()
+            return ["ok": true, "enabled": false]
+        }
+        var masks: [UInt32] = []
+        for name in modifiers {
+            guard let mask = Self.masks(forModifier: name) else {
+                return ["ok": false, "reason": "Unknown modifier \(name)"]
+            }
+            masks.append(mask)
+        }
+        for edge in voiceChordDetector.cancel() {
+            emitVoiceChord(edge: edge)
+        }
+        voiceChordMasks = masks
+        do {
+            try ensureMonitorInstalled()
+        } catch {
+            voiceChordMasks = []
+            releaseMonitorIfUnused()
+            return ["ok": false, "reason": "Input Monitoring not granted"]
+        }
+        return ["ok": true, "enabled": true]
+    }
+
+    private func feedVoiceChord(modifiers: UInt32) {
+        guard !voiceChordMasks.isEmpty else { return }
+
+        let targetUnion = voiceChordMasks.reduce(UInt32(0)) { $0 | $1 }
+        let edges = voiceChordDetector.flagsChanged(
+            targetHeld: voiceChordMasks.allSatisfy { (modifiers & $0) != 0 },
+            anyTargetHeld: (modifiers & targetUnion) != 0,
+            extraModifiersHeld: (modifiers & Self.everyModifierMask & ~targetUnion) != 0,
+            ordinaryKeyHeld: { self.anyOrdinaryKeyIsDown() }
+        )
+        for edge in edges {
+            emitVoiceChord(edge: edge)
+        }
+    }
+
+    private func emitVoiceChord(edge: ModifierHoldDetector.Edge) {
+        let state: String
+        switch edge {
+        case .down:
+            guard !isVoiceChordDown else { return }
+            isVoiceChordDown = true
+            state = "down"
+        case .up:
+            guard isVoiceChordDown else { return }
+            isVoiceChordDown = false
+            state = "up"
+        }
+        writeNotification(method: "hotkey.voiceModeChord", params: ["state": state])
+    }
+
     /// Close an open hold, so a binding that goes away does not stand a
     /// microphone open with nothing left to close it.
     private func cancelModifierHold() {
@@ -1696,7 +1786,8 @@ final class MacHelper: @unchecked Sendable {
     }
 
     private func releaseMonitorIfUnused() {
-        guard modifierHoldMasks.isEmpty, chordModifierMasks.isEmpty, !activityWatch
+        guard modifierHoldMasks.isEmpty, chordModifierMasks.isEmpty,
+            voiceChordMasks.isEmpty, !activityWatch
         else {
             return
         }

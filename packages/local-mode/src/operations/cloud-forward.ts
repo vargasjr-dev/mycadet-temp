@@ -105,6 +105,16 @@ export async function forwardCloudRequest(
         ...(hasBody ? { duplex: "half" as const } : {}),
         signal: request.signal ?? undefined,
         redirect: "manual",
+        // This dial carries its own Authorization header; undici's ambient
+        // credentials play no part. Naming that keeps undici's 401
+        // credential-retry step (a browser-only path its current
+        // `isTraversableNavigable` stub wrongly runs in Node) off this
+        // request: with credentials included, a 401 answer to a streaming
+        // body throws `TypeError: fetch failed` (cause "expected non-null
+        // body source") instead of returning the 401 — the local-run
+        // failure loop at app boot. See undici issues #4910/#5018; drop
+        // this line once Electron's Node ships a fixed undici.
+        credentials: "omit",
       });
     } catch (err) {
       const line = `[cloud-forward] fetch failed (attempt ${attempt + 1}) for ${request.method} ${forwardUrl}:`;

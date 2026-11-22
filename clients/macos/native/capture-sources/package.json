@@ -1,0 +1,8 @@
+{
+  "name": "cadet-capture-sources",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "description": "Objective-C++ Node addon that lists the window server's capturable windows in-process (the helper's captureSources.list, ported into the Electron main process). Built by clients/macos/scripts/build-capture-sources.sh; never installed as a dependency.",
+  "gypfile": true
+}
