@@ -23,7 +23,7 @@ import org.junit.rules.TemporaryFolder;
 
 public class AvatarCacheTest {
     private static final String CADET_SHA256 =
-        "2fc2a6dd013e7ab41c5a54ab8a254031ff329aa42c5815ac420f1facfe2542d1";
+        "4978c1d21cf6803f2771f333380e586644adbb1d88f1493d7a0abf3358095abd";
     private static final long NO_DEADLINE = 0;
 
     @Rule
