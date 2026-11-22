@@ -499,9 +499,12 @@ export function resolveDockerHatchMode(opts: {
 
 /**
  * Locate the repository root by walking up from `cli/src/lib/` until we
- * find a directory containing the expected Dockerfiles.
+ * find a directory containing the expected Dockerfiles — null when the
+ * CLI is running without a source tree (a global install, the vm's
+ * release-pinned hatch). The pull path doesn't need one; the build path
+ * requires it via requireRepoRoot().
  */
-function findRepoRoot(): string {
+function findRepoRoot(): string | null {
   // cli/src/lib/ -> repo root (works when running from source via bun)
   const sourceTreeRoot = join(import.meta.dir, "..", "..", "..");
   if (existsSync(join(sourceTreeRoot, "assistant", "Dockerfile"))) {
@@ -537,10 +540,22 @@ function findRepoRoot(): string {
     return cwdRoot;
   }
 
-  throw new Error(
-    "Could not find repository root containing assistant/Dockerfile. " +
-      "Run this command from within the mycadet repository.",
-  );
+  return null;
+}
+
+/**
+ * The strict resolver: the build-from-source flow needs a real repo root,
+ * and running without one is the caller's error to phrase.
+ */
+function requireRepoRoot(): string {
+  const root = findRepoRoot();
+  if (root === null) {
+    throw new Error(
+      "Could not find repository root containing assistant/Dockerfile. " +
+        "Run this command from within the mycadet repository.",
+    );
+  }
+  return root;
 }
 
 async function buildAllImages(
@@ -687,8 +702,13 @@ export async function hatchDocker(
         ? params.sourcePath
         : null;
     const buildFromSource = sourcePath !== null;
+    // A repo-less environment (the vm's release-pinned `cadet hatch
+    // --remote docker`, a global install) must NOT die here — the pull
+    // path below resolves images from the CLI version without a repo.
+    // Only the build path needs a real repo root.
     const repoRoot = sourcePath ? resolve(sourcePath) : findRepoRoot();
-    const fullSourceTreeAvailable = hasFullSourceTree(repoRoot);
+    const fullSourceTreeAvailable =
+      repoRoot !== null && hasFullSourceTree(repoRoot);
 
     const mode = resolveDockerHatchMode({
       watch,
