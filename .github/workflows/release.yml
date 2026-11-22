@@ -266,19 +266,12 @@ jobs:
           chrome-webstore-upload publish \
             --extension-id "$EXTENSION_ID"
 
-  push-assistant-image:
-    needs:
-      [
-        extract-version,
-        ci-assistant-lint,
-        ci-assistant-types,
-        ci-assistant-tests,
-      ]
+  build-assistant-image:
+    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
       contents: read
-      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -287,14 +280,9 @@ jobs:
             runner: ubuntu-latest
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
-    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Log in to Docker Hub
-        env:
-          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
@@ -303,47 +291,45 @@ jobs:
         run: |
           echo "image=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp release version into package.json
-        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
-
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .
-          file: assistant/Dockerfile
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,"name=${{ steps.image.outputs.image }}",push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=assistant-release-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,ignore-error=true,scope=assistant-release-${{ matrix.platform }}
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
       - name: Prepare platform suffix
         id: platform
         run: |
           platform="${{ matrix.platform }}"
           echo "suffix=${platform//\//-}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload digest
+      - name: Stamp release version into package.json
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
+
+      # Build-only: nothing is pushed. The tarball is consumed by the hatch
+      # suite and, after it passes, by the push job. Native arm runner — no
+      # QEMU emulation.
+      - name: Build image and export tarball
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: assistant/Dockerfile
+          platforms: ${{ matrix.platform }}
+          tags: docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}:ci-${{ steps.platform.outputs.suffix }}
+          outputs: type=docker,dest=/tmp/image.tar
+          cache-from: type=gha,scope=assistant-release-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ignore-error=true,scope=assistant-release-${{ matrix.platform }}
+
+      - name: Upload image tarball
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: assistant-digests-release-${{ steps.platform.outputs.suffix }}
-          path: /tmp/digests/*
+          name: assistant-image-release-${{ steps.platform.outputs.suffix }}
+          path: /tmp/image.tar
           retention-days: 1
 
   push-assistant-manifest:
     # The image job MUST be a direct need: needs.<job>.result only resolves
     # for jobs in this list, and the if below reads it. #143's port dropped
     # it, so every manifest silently skipped and nothing downstream ran.
-    # run-docker-integration-tests is the second gate: never tag an image
-    # that hasn't booted as a hatch (see that job).
-    needs: [extract-version, push-assistant-image, run-docker-integration-tests]
-    if: ${{ always() && !cancelled() && needs.push-assistant-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
+    # run-docker-integration-tests gates push-assistant-image, which gates
+    # this job: never tag an image that hasn't booted as a hatch.
+    needs: [extract-version, push-assistant-image]
+    if: ${{ !cancelled() && needs.push-assistant-image.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -413,30 +399,23 @@ jobs:
           path: /tmp/manifest-digest/*
           retention-days: 1
 
-  push-gateway-image:
+  build-gateway-image:
     needs: [extract-version, ci-gateway]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     permissions:
       contents: read
-      id-token: write
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    environment: production
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Log in to Docker Hub
-        env:
-          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
@@ -445,43 +424,41 @@ jobs:
         run: |
           echo "image=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp release version into package.json
-        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
-
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .
-          file: gateway/Dockerfile
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,"name=${{ steps.image.outputs.image }}",push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=gateway-release-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,ignore-error=true,scope=gateway-release-${{ matrix.platform }}
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
       - name: Prepare platform suffix
         id: platform
         run: |
           platform="${{ matrix.platform }}"
           echo "suffix=${platform//\//-}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload digest
+      - name: Stamp release version into package.json
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
+
+      # Build-only: nothing is pushed. The tarball is consumed by the hatch
+      # suite and, after it passes, by the push job. Native arm runner — no
+      # QEMU emulation.
+      - name: Build image and export tarball
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: gateway/Dockerfile
+          platforms: ${{ matrix.platform }}
+          tags: docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}:ci-${{ steps.platform.outputs.suffix }}
+          outputs: type=docker,dest=/tmp/image.tar
+          cache-from: type=gha,scope=gateway-release-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ignore-error=true,scope=gateway-release-${{ matrix.platform }}
+
+      - name: Upload image tarball
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: gateway-digests-release-${{ steps.platform.outputs.suffix }}
-          path: /tmp/digests/*
+          name: gateway-image-release-${{ steps.platform.outputs.suffix }}
+          path: /tmp/image.tar
           retention-days: 1
 
   push-gateway-manifest:
     # Direct need on the image job — see push-assistant-manifest above.
-    needs: [extract-version, push-gateway-image, run-docker-integration-tests]
-    if: ${{ always() && !cancelled() && needs.push-gateway-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
+    needs: [extract-version, push-gateway-image]
+    if: ${{ !cancelled() && needs.push-gateway-image.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -551,30 +528,23 @@ jobs:
           path: /tmp/manifest-digest/*
           retention-days: 1
 
-  push-credential-executor-image:
+  build-credential-executor-image:
     needs: [extract-version, ci-credential-executor]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     permissions:
       contents: read
-      id-token: write
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    environment: production
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Log in to Docker Hub
-        env:
-          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
@@ -583,48 +553,41 @@ jobs:
         run: |
           echo "image=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
 
-      - name: Stamp release version into package.json
-        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
-
-      - name: Build and push by digest
-        id: build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .
-          file: credential-executor/Dockerfile
-          platforms: ${{ matrix.platform }}
-          outputs: type=image,"name=${{ steps.image.outputs.image }}",push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=credential-executor-release-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,ignore-error=true,scope=credential-executor-release-${{ matrix.platform }}
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
       - name: Prepare platform suffix
         id: platform
         run: |
           platform="${{ matrix.platform }}"
           echo "suffix=${platform//\//-}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload digest
+      - name: Stamp release version into package.json
+        run: jq --arg v "${{ needs.extract-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
+
+      # Build-only: nothing is pushed. The tarball is consumed by the hatch
+      # suite and, after it passes, by the push job. Native arm runner — no
+      # QEMU emulation.
+      - name: Build image and export tarball
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: credential-executor/Dockerfile
+          platforms: ${{ matrix.platform }}
+          tags: docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}:ci-${{ steps.platform.outputs.suffix }}
+          outputs: type=docker,dest=/tmp/image.tar
+          cache-from: type=gha,scope=credential-executor-release-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,ignore-error=true,scope=credential-executor-release-${{ matrix.platform }}
+
+      - name: Upload image tarball
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: credential-executor-digests-release-${{ steps.platform.outputs.suffix }}
-          path: /tmp/digests/*
+          name: credential-executor-image-release-${{ steps.platform.outputs.suffix }}
+          path: /tmp/image.tar
           retention-days: 1
 
   push-credential-executor-manifest:
     # Direct need on the image job — see push-assistant-manifest above.
-    needs:
-      [
-        extract-version,
-        push-credential-executor-image,
-        run-docker-integration-tests,
-      ]
-    if: ${{ always() && !cancelled() && needs.push-credential-executor-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
+    needs: [extract-version, push-credential-executor-image]
+    if: ${{ !cancelled() && needs.push-credential-executor-image.result == 'success' }}
     outputs:
       repository: ${{ steps.tags.outputs.image_name }}
     runs-on: ubuntu-latest
@@ -695,27 +658,26 @@ jobs:
           retention-days: 1
 
   run-docker-integration-tests:
-    # Boots the three images that were just pushed as a real docker hatch
-    # (fresh network, fresh volumes, real container start) and runs the qa
-    # integration suite against them. Container-start bugs — volume modes,
-    # non-root users, socket creation — have no unit detector; this job is
-    # theirs (the CES socket dir fix shipped without any CI check that could
-    # have caught it). The manifest jobs below only tag images this job has
-    # booted: a failing hatch blocks the release.
+    # Boots the three images as a real docker hatch (fresh network, fresh
+    # volumes, real container start) and runs the qa integration suite
+    # against them — loaded from LOCAL tarballs, before anything reaches
+    # Docker Hub. Container-start bugs — volume modes, non-root users,
+    # socket creation — have no unit detector; this job is theirs (the CES
+    # socket dir fix shipped without any CI check that could have caught
+    # it). The push jobs only publish images this job has booted.
     needs:
       [
         extract-version,
         ci-cli,
-        push-assistant-image,
-        push-gateway-image,
-        push-credential-executor-image,
+        build-assistant-image,
+        build-gateway-image,
+        build-credential-executor-image,
       ]
-    if: ${{ !cancelled() && needs.extract-version.result == 'success' && needs.ci-cli.result == 'success' && needs.push-assistant-image.result == 'success' && needs.push-gateway-image.result == 'success' && needs.push-credential-executor-image.result == 'success' }}
+    if: ${{ !cancelled() && needs.extract-version.result == 'success' && needs.ci-cli.result == 'success' && needs.build-assistant-image.result == 'success' && needs.build-gateway-image.result == 'success' && needs.build-credential-executor-image.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
-    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -728,32 +690,37 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # One digest artifact per image, downloaded into its own directory —
-      # the files inside are named by digest hex, so merging them would lose
-      # which digest belongs to which image.
-      - name: Download assistant digest
+      # One image tarball per image, built on its native-arch runner. The
+      # suite boots the amd64 images (the platform this runner matches).
+      - name: Download assistant image
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: assistant-digests-release-linux-amd64
-          path: /tmp/digests/assistant
-      - name: Download gateway digest
+          name: assistant-image-release-linux-amd64
+          path: /tmp/images/assistant
+      - name: Download gateway image
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: gateway-digests-release-linux-amd64
-          path: /tmp/digests/gateway
-      - name: Download credential-executor digest
+          name: gateway-image-release-linux-amd64
+          path: /tmp/images/gateway
+      - name: Download credential-executor image
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: credential-executor-digests-release-linux-amd64
-          path: /tmp/digests/credential-executor
+          name: credential-executor-image-release-linux-amd64
+          path: /tmp/images/credential-executor
+
+      - name: Load images locally
+        run: |
+          docker load -i /tmp/images/assistant/image.tar
+          docker load -i /tmp/images/gateway/image.tar
+          docker load -i /tmp/images/credential-executor/image.tar
+          docker image ls --format '{{.Repository}}:{{.Tag}}' | grep mycadet
 
       - name: Resolve image refs
         run: |
-          digest_of() { ls "/tmp/digests/$1" | head -1; }
           {
-            echo "CADET_ASSISTANT_IMAGE=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}@sha256:$(digest_of assistant)"
-            echo "CADET_GATEWAY_IMAGE=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}@sha256:$(digest_of gateway)"
-            echo "CADET_CREDENTIAL_EXECUTOR_IMAGE=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}@sha256:$(digest_of credential-executor)"
+            echo "CADET_ASSISTANT_IMAGE=docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}:ci-linux-amd64"
+            echo "CADET_GATEWAY_IMAGE=docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}:ci-linux-amd64"
+            echo "CADET_CREDENTIAL_EXECUTOR_IMAGE=docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}:ci-linux-amd64"
           } >> "$GITHUB_ENV"
 
       - name: Verify image refs resolved
@@ -781,6 +748,180 @@ jobs:
       - name: Run the docker hatch integration suite
         working-directory: qa
         run: bun test docker-hatch.test.ts
+
+  push-assistant-image:
+    # The registry push IS the publish step: it only runs once the hatch
+    # suite has booted the locally built images, and on dev only on main for
+    # non-dry-run runs.
+    needs:
+      [
+        extract-version,
+        build-assistant-image,
+        run-docker-integration-tests,
+      ]
+    if: ${{ !cancelled() && needs.extract-version.result == 'success' && needs.build-assistant-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Download image tarball (linux/amd64)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: assistant-image-release-linux-amd64
+          path: /tmp/images/linux-amd64
+      - name: Download image tarball (linux/arm64)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: assistant-image-release-linux-arm64
+          path: /tmp/images/linux-arm64
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
+      - name: Push platform images and export digests
+        run: |
+          mkdir -p /tmp/digests/linux-amd64 /tmp/digests/linux-arm64
+          for SUFFIX in linux-amd64 linux-arm64; do
+            docker load -i "/tmp/images/${SUFFIX}/image.tar"
+            REF="docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}:ci-${SUFFIX}"
+            if ! docker push "$REF" > /tmp/push-${SUFFIX}.log 2>&1; then
+              cat /tmp/push-${SUFFIX}.log
+              exit 1
+            fi
+            DIGEST=$(grep -o 'sha256:[a-f0-9]\{64\}' /tmp/push-${SUFFIX}.log | tail -1 | cut -d: -f2)
+            test -n "$DIGEST" || { echo "::error::digest not captured for ${SUFFIX}"; exit 1; }
+            echo "${DIGEST}" > "/tmp/digests/${SUFFIX}/${DIGEST}"
+          done
+      - name: Upload digest (linux/amd64)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: assistant-digests-release-linux-amd64
+          path: /tmp/digests/linux-amd64/*
+          retention-days: 1
+      - name: Upload digest (linux/arm64)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: assistant-digests-release-linux-arm64
+          path: /tmp/digests/linux-arm64/*
+          retention-days: 1
+
+  push-gateway-image:
+    # The registry push IS the publish step: it only runs once the hatch
+    # suite has booted the locally built images, and on dev only on main for
+    # non-dry-run runs.
+    needs:
+      [
+        extract-version,
+        build-gateway-image,
+        run-docker-integration-tests,
+      ]
+    if: ${{ !cancelled() && needs.extract-version.result == 'success' && needs.build-gateway-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Download image tarball (linux/amd64)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gateway-image-release-linux-amd64
+          path: /tmp/images/linux-amd64
+      - name: Download image tarball (linux/arm64)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gateway-image-release-linux-arm64
+          path: /tmp/images/linux-arm64
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
+      - name: Push platform images and export digests
+        run: |
+          mkdir -p /tmp/digests/linux-amd64 /tmp/digests/linux-arm64
+          for SUFFIX in linux-amd64 linux-arm64; do
+            docker load -i "/tmp/images/${SUFFIX}/image.tar"
+            REF="docker.io/mycadet/${{ env.GATEWAY_IMAGE_NAME }}:ci-${SUFFIX}"
+            if ! docker push "$REF" > /tmp/push-${SUFFIX}.log 2>&1; then
+              cat /tmp/push-${SUFFIX}.log
+              exit 1
+            fi
+            DIGEST=$(grep -o 'sha256:[a-f0-9]\{64\}' /tmp/push-${SUFFIX}.log | tail -1 | cut -d: -f2)
+            test -n "$DIGEST" || { echo "::error::digest not captured for ${SUFFIX}"; exit 1; }
+            echo "${DIGEST}" > "/tmp/digests/${SUFFIX}/${DIGEST}"
+          done
+      - name: Upload digest (linux/amd64)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gateway-digests-release-linux-amd64
+          path: /tmp/digests/linux-amd64/*
+          retention-days: 1
+      - name: Upload digest (linux/arm64)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gateway-digests-release-linux-arm64
+          path: /tmp/digests/linux-arm64/*
+          retention-days: 1
+
+  push-credential-executor-image:
+    # The registry push IS the publish step: it only runs once the hatch
+    # suite has booted the locally built images, and on dev only on main for
+    # non-dry-run runs.
+    needs:
+      [
+        extract-version,
+        build-credential-executor-image,
+        run-docker-integration-tests,
+      ]
+    if: ${{ !cancelled() && needs.extract-version.result == 'success' && needs.build-credential-executor-image.result == 'success' && needs.run-docker-integration-tests.result == 'success' }}
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Download image tarball (linux/amd64)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: credential-executor-image-release-linux-amd64
+          path: /tmp/images/linux-amd64
+      - name: Download image tarball (linux/arm64)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: credential-executor-image-release-linux-arm64
+          path: /tmp/images/linux-arm64
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_ACCESS_TOKEN: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+        run: echo "$DOCKERHUB_ACCESS_TOKEN" | docker login -u mycadet --password-stdin
+      - name: Push platform images and export digests
+        run: |
+          mkdir -p /tmp/digests/linux-amd64 /tmp/digests/linux-arm64
+          for SUFFIX in linux-amd64 linux-arm64; do
+            docker load -i "/tmp/images/${SUFFIX}/image.tar"
+            REF="docker.io/mycadet/${{ env.CREDENTIAL_EXECUTOR_IMAGE_NAME }}:ci-${SUFFIX}"
+            if ! docker push "$REF" > /tmp/push-${SUFFIX}.log 2>&1; then
+              cat /tmp/push-${SUFFIX}.log
+              exit 1
+            fi
+            DIGEST=$(grep -o 'sha256:[a-f0-9]\{64\}' /tmp/push-${SUFFIX}.log | tail -1 | cut -d: -f2)
+            test -n "$DIGEST" || { echo "::error::digest not captured for ${SUFFIX}"; exit 1; }
+            echo "${DIGEST}" > "/tmp/digests/${SUFFIX}/${DIGEST}"
+          done
+      - name: Upload digest (linux/amd64)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: credential-executor-digests-release-linux-amd64
+          path: /tmp/digests/linux-amd64/*
+          retention-days: 1
+      - name: Upload digest (linux/arm64)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: credential-executor-digests-release-linux-arm64
+          path: /tmp/digests/linux-arm64/*
+          retention-days: 1
 
   push-docs-image:
     needs: [extract-version]
