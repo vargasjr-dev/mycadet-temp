@@ -178,18 +178,17 @@ describe("startCes", () => {
     );
   });
 
-  test("finds the monorepo packages/ layout under the reported root", () => {
+  test("finds the credential-executor sibling under the reported root", () => {
     /**
-     * The CLI reports the repo root as its source tree; the
-     * credential-executor source lives at
-     * `<root>/packages/credential-executor`. The walk must probe that
-     * layout — the returned path proves the probe hit the reported tree
-     * (and not node_modules resolution's workspace copy).
+     * The CLI reports the repo root as its source tree, and the
+     * credential-executor source is a top-level sibling there. The walk
+     * must hit it — the returned path proves the reported tree resolved
+     * (not node_modules resolution's workspace copy).
      */
 
-    // GIVEN a reported root shaped like the monorepo
-    const root = mkdtempSync(join(tmpdir(), "ces-monorepo-"));
-    const cesDir = join(root, "packages", "credential-executor");
+    // GIVEN a reported root with a top-level credential-executor sibling
+    const root = mkdtempSync(join(tmpdir(), "ces-source-tree-"));
+    const cesDir = join(root, "credential-executor");
     mkdirSync(join(cesDir, "src"), { recursive: true });
     writeFileSync(
       join(cesDir, "package.json"),
@@ -203,7 +202,7 @@ describe("startCes", () => {
       // WHEN the source resolves
       const resolved = findCesDir();
 
-      // THEN it came from the reported tree's packages/ nesting
+      // THEN it came from the reported tree
       expect(resolved).toBe(cesDir);
     } finally {
       setLocalSourceRoot(

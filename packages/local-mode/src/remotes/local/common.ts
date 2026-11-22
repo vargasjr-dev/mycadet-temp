@@ -44,10 +44,6 @@ import {
 
 const _require = createRequire(import.meta.url);
 
-// The self-managed runtime metapackage — meta/package.json's "Install the
-// full Cadet stack locally" manifest, whose dependencies are the published
-// @mycadet/{assistant,gateway,credential-executor} sources the resolvers
-// below probe.
 const LOCAL_RUNTIME_PACKAGE = "mycadet";
 const PATH_DELIMITER = pathListDelimiter(platform());
 const DEFAULT_EXECUTABLE_PATH =
@@ -879,21 +875,16 @@ export function localSourceCommandEntry(
 /**
  * Resolve the credential-executor source dir, or undefined when neither a
  * self-managed runtime install, the reported source tree, nor node_modules
- * has one. The wake leg's provisioning hook probes this before the service
- * starts, so a naked released install installs the runtime instead of dying.
+ * has one.
  */
 export function findCesDir(entry?: LocalAssistant): string | undefined {
   const runtimeCesDir = localRuntimeCesDir(entry);
   if (runtimeCesDir) return runtimeCesDir;
 
   // Reported source tree / npm sibling: walk up from the reported root
-  // until a `credential-executor/` sibling appears. The monorepo nests it
-  // under `packages/`, so probe that layout before walking.
+  // until a `credential-executor/` sibling appears.
   const sourceRoot = getLocalSourceRoot();
   if (sourceRoot) {
-    const monorepoDir = join(sourceRoot, "packages", "credential-executor");
-    if (isCesSourceDir(monorepoDir)) return monorepoDir;
-
     let sourceDir = join(sourceRoot, "credential-executor");
     let probeDir = sourceRoot;
     while (!isCesSourceDir(sourceDir) && probeDir !== dirname(probeDir)) {
@@ -924,6 +915,16 @@ function resolveCesDir(entry?: LocalAssistant): string {
     );
   }
   return cesDir;
+}
+
+/**
+ * Whether a start would resolve service sources without an install: a
+ * self-managed runtime, the reported source tree, or the process's own
+ * dependency tree. Probed with the credential-executor resolver — the
+ * strictest of the three starts' resolvers.
+ */
+export function hasLocalServiceSources(entry: LocalAssistant): boolean {
+  return findCesDir(entry) !== undefined;
 }
 
 /**

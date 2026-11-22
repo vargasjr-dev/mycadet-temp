@@ -10,7 +10,7 @@ import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
 import {
   ensureLocalRuntime,
-  findCesDir,
+  hasLocalServiceSources,
   startCes,
   startGateway,
   startLocalDaemon,
@@ -72,7 +72,7 @@ async function wakeLocalSteps(
   // "credential-executor not found". Install the runtime the resolvers
   // consume, but only when they would miss: dev source trees and prior
   // runtime installs resolve without a network round-trip.
-  if (!findCesDir(entry)) {
+  if (!hasLocalServiceSources(entry)) {
     console.log(
       "⬇️  Downloading local runtime packages (assistant, gateway, credential-executor)...",
     );

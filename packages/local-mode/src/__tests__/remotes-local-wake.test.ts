@@ -64,9 +64,9 @@ const startCesMock = mock<typeof realCommon.startCes>(async () => {});
 
 // The wake's runtime-provisioning probe: by default a source resolves (the
 // no-install fast path), and tests flip it to a miss to exercise the install.
-const findCesDirMock = mock<typeof realCommon.findCesDir>(
-  () => "/tmp/fake-ces-src",
-);
+const hasLocalServiceSourcesMock = mock<
+  typeof realCommon.hasLocalServiceSources
+>(() => true);
 const ensureLocalRuntimeMock = mock<typeof realCommon.ensureLocalRuntime>(
   () => ({ version: "v0.0.0", installDir: "/tmp/fake-runtime" }),
 );
@@ -76,7 +76,7 @@ mock.module("../remotes/local/common", () => ({
   startLocalDaemon: startLocalDaemonMock,
   startGateway: startGatewayMock,
   startCes: startCesMock,
-  findCesDir: findCesDirMock,
+  hasLocalServiceSources: hasLocalServiceSourcesMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
 }));
 
@@ -127,8 +127,8 @@ beforeEach(() => {
   startGatewayMock.mockResolvedValue("http://127.0.0.1:7830");
   startCesMock.mockReset();
   startCesMock.mockResolvedValue(undefined);
-  findCesDirMock.mockReset();
-  findCesDirMock.mockReturnValue("/tmp/fake-ces-src");
+  hasLocalServiceSourcesMock.mockReset();
+  hasLocalServiceSourcesMock.mockReturnValue(true);
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation(() => ({
     version: "v0.0.0",
@@ -217,8 +217,8 @@ describe("wakeLocal — the in-process local wake leg", () => {
      * runtime the resolvers consume before starting anything.
      */
 
-    // GIVEN nothing on this machine resolves a credential-executor source
-    findCesDirMock.mockReturnValue(undefined);
+    // GIVEN nothing on this machine resolves a service source
+    hasLocalServiceSourcesMock.mockReturnValue(false);
 
     // WHEN the leg runs
     const result = await wakeLocal(localEntry);
@@ -237,7 +237,7 @@ describe("wakeLocal — the in-process local wake leg", () => {
      */
 
     // GIVEN nothing resolves and the caller stamped its version
-    findCesDirMock.mockReturnValue(undefined);
+    hasLocalServiceSourcesMock.mockReturnValue(false);
     process.env.APP_VERSION = "0.13.0-dev.test";
 
     // WHEN the leg runs
