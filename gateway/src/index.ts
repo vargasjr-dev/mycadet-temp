@@ -1179,17 +1179,22 @@ async function main() {
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
+    // The task list is uniform: each entry runs once at signal time. Class
+    // methods ride as arrows so `this` survives the call — a bare
+    // `sleepWakeDetector.stop` would dereference nothing and crash the
+    // shutdown. The lifecycle thunks (discord, slack, the dedup sweep) are
+    // already module closures, so they ride bare.
     const shutdownTasks: (() => Promise<void> | void)[] = [
-      sleepWakeDetector.stop,
-      credentialWatcher.stop,
-      configFileWatcher.stop,
-      tunnelClient.stop,
+      () => sleepWakeDetector.stop(),
+      () => credentialWatcher.stop(),
+      () => configFileWatcher.stop(),
+      () => tunnelClient.stop(),
       stopDiscordClient,
       stopSlackClient,
-      ipcServer.stop,
-      telegramDedupCache.stopCleanup,
-      whatsappDedupCache.stopCleanup,
-      emailDedupCache.stopCleanup,
+      () => ipcServer.stop(),
+      () => telegramDedupCache.stopCleanup(),
+      () => whatsappDedupCache.stopCleanup(),
+      () => emailDedupCache.stopCleanup(),
       stopInboundEventExpirationCleanup,
     ];
 

@@ -43,11 +43,10 @@ This separation aims to uphold two crucial invariants:
 
 Colors on the arrows carry the access meaning:
 
-<!-- TODO: Update read/write to red to signify dangerous -->
-<!-- TODO: Come up with a fourth color to signify just traffic movement, to replace the white that looks bad in the Gateway subgraph below -->
-- red is read/write
+- red is read/write — the dangerous direction, worth seeing coming
 - blue read-only
 - violet read-metadata-only
+- orange is just traffic movement: packets flowing, no access either way
 
 ```mermaid
 flowchart LR
@@ -66,9 +65,9 @@ flowchart LR
   Assistant -.-> Gateway
   Gateway -.-> CES
   Assistant -.-> CES
-  linkStyle 1 stroke:#22c55e
+  linkStyle 1 stroke:#ef4444
   linkStyle 2 stroke:#3b82f6
-  linkStyle 3 stroke:#22c55e
+  linkStyle 3 stroke:#ef4444
   linkStyle 4 stroke:#a855f7
 ```
 
@@ -84,14 +83,11 @@ The Gateway is the front door controlling all of the data that comes from the ou
 - Scheduler - A process running routine work that keeps the Gateway healthy.
 
 The arrows keep the access convention from the data-plane diagram above:
-green edges write (the Gateway reaching the Assistant and the Credential
-Vault), blue edges are the Assistant reading back, and violet edges are
-metadata only (how the IPC endpoints find each other inside
-`$GATEWAY_SECURITY_DIR`).
+red edges write (the Gateway reaching the Assistant, the Credential Vault,
+and its own file system), blue edges are the Assistant reading back, and
+orange edges are just traffic moving through — the world reaching the Web
+Server, the Tunnel Client shuttling both ways.
 
-<!-- TODO: Make arrow from scheduler to FS the RW color -->
-<!-- TODO: Make arrow from IPC Server to FS the RO color -->
-<!-- TODO: Make arrow from Web Server to FS the RW color -->
 ```mermaid
 flowchart LR
   classDef world fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46
@@ -123,7 +119,7 @@ flowchart LR
   WebServer -.-> SecurityDir
   IpcServer -.-> SecurityDir
   Scheduler -.-> SecurityDir
-  linkStyle 1,3,4 stroke:#22c55e
-  linkStyle 2 stroke:#3b82f6
-  linkStyle 7,8 stroke:#a855f7
+  linkStyle 0,5,6 stroke:#f97316
+  linkStyle 1,3,4,7,9 stroke:#ef4444
+  linkStyle 2,8 stroke:#3b82f6
 ```

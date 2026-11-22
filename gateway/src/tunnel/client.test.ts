@@ -333,13 +333,19 @@ describe("enablePublicIngress", () => {
 
 describe("TunnelClient", () => {
   test("stays disabled when TUNNEL_BASE_URL is unset", async () => {
+    // The client always constructs now — the shutdown list wants a uniform
+    // stop — but with no base URL it is inert: start opens no socket and
+    // schedules no reconnect, and getStatus answers an idle client.
     const client = createTunnelClient(makeConfig(), {
       credentials: makeCredentials({}),
       configFile: makeConfigFileCache({ count: 0 }),
     });
 
-    expect(client).toBeUndefined();
+    client.start();
     await flushPromises();
+
+    expect(client.getStatus()).toEqual({ connected: false, publicUrl: null });
+    await client.stop();
   });
 
   test("retries without opening a socket when the assistant API key is missing", async () => {
@@ -1045,20 +1051,26 @@ describe("TunnelClient", () => {
     });
     expect(invalidations.count).toBe(2);
 
-    expect(
-      createTunnelClient(makeConfig(), {
-        credentials: makeCredentials({}),
-        configFile: makeConfigFileCache(invalidations),
-      }),
-    ).toBeUndefined();
+    const freshClient = createTunnelClient(makeConfig(), {
+      credentials: makeCredentials({}),
+      configFile: makeConfigFileCache(invalidations),
+    });
+    freshClient.start();
     await flushPromises();
 
+    // No TUNNEL_BASE_URL — the fresh client is inert, so the recorded URL
+    // keeps standing and the config file is left untouched.
+    expect(freshClient.getStatus()).toEqual({
+      connected: false,
+      publicUrl: null,
+    });
     expect(readConfig()).toEqual({
       ingress: {
         publicBaseUrl: "https://tunnel-public-2.example.test",
       },
     });
     expect(invalidations.count).toBe(2);
+    await freshClient.stop();
   });
 
   test("keeps a recorded Tunnel-managed public URL across startup — the publisher owns it", async () => {
@@ -1098,14 +1110,19 @@ describe("TunnelClient", () => {
       },
     });
 
-    expect(
-      createTunnelClient(makeConfig(), {
-        credentials: makeCredentials({}),
-        configFile: makeConfigFileCache(invalidations),
-      }),
-    ).toBeUndefined();
+    const managedClient = createTunnelClient(makeConfig(), {
+      credentials: makeCredentials({}),
+      configFile: makeConfigFileCache(invalidations),
+    });
+    managedClient.start();
     await flushPromises();
 
+    // The client is inert without a base URL: the recorded URL survives
+    // exactly as the publisher wrote it.
+    expect(managedClient.getStatus()).toEqual({
+      connected: false,
+      publicUrl: null,
+    });
     expect(readConfig()).toEqual({
       ingress: {
         publicBaseUrl: "https://host-tunnel.example.test",
@@ -1113,6 +1130,7 @@ describe("TunnelClient", () => {
       },
     });
     expect(invalidations.count).toBe(0);
+    await managedClient.stop();
 
     writeConfig({
       ingress: {
@@ -1120,13 +1138,18 @@ describe("TunnelClient", () => {
       },
     });
 
-    expect(
-      createTunnelClient(makeConfig(), {
-        credentials: makeCredentials({}),
-        configFile: makeConfigFileCache(invalidations),
-      }),
-    ).toBeUndefined();
+    const manualClient = createTunnelClient(makeConfig(), {
+      credentials: makeCredentials({}),
+      configFile: makeConfigFileCache(invalidations),
+    });
+    manualClient.start();
     await flushPromises();
+
+    expect(manualClient.getStatus()).toEqual({
+      connected: false,
+      publicUrl: null,
+    });
+    await manualClient.stop();
 
     expect(readConfig()).toEqual({
       ingress: {

@@ -207,7 +207,15 @@ export function eventRefersToAnotherMessage(
 
 const INBOUND_DEDUP_CLEANUP_INTERVAL_MS = 60 * 60 * 1_000;
 
-export function startInboundEventExpirationCleanup() {
+/**
+ * Sweeps expired inbound dedup claims on an interval. Hourly by default,
+ * because nothing depends on the sweep being timely: an expired claim is
+ * already reclaimed in place by the next delivery on the same key, so this
+ * is a size bound, not a correctness one. Returns the stop thunk.
+ */
+export function startInboundEventExpirationCleanup(
+  intervalMs = INBOUND_DEDUP_CLEANUP_INTERVAL_MS,
+) {
   const inboundDedupCleanup = setInterval(() => {
     try {
       const evicted = cleanupExpiredInboundEvents();
@@ -217,6 +225,6 @@ export function startInboundEventExpirationCleanup() {
     } catch (err) {
       log.warn({ err }, "Inbound dedup cleanup failed");
     }
-  }, INBOUND_DEDUP_CLEANUP_INTERVAL_MS);
+  }, intervalMs);
   return () => clearInterval(inboundDedupCleanup);
 }
