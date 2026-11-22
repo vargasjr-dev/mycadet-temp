@@ -6,6 +6,7 @@ import {
   startApp,
 } from "@mycadet/electron-desktop";
 
+import { installDock } from "./dock";
 import {
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
@@ -36,6 +37,7 @@ startApp({
     return relocateToApplicationsFolder();
   },
   setup() {
+    installDock();
     void promptToRelocateIfStranded();
   },
 });

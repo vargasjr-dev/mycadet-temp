@@ -141,7 +141,6 @@ mock.module("./dictation-overlay-window", () => ({
   installDictationOverlay: recorder("dictation-overlay"),
 }));
 mock.module("./features/tray", () => ({ install: recorder("tray") }));
-mock.module("./features/dock", () => ({ installDock: recorder("dock") }));
 mock.module("./features/companion-window", () => ({
   installCompanionWindow: recorder("companion-window"),
   syncCompanionSurface: recorder("companion-sync"),

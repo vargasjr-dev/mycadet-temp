@@ -52,7 +52,6 @@ import { install as installBundles } from "./features/bundles";
 import { install as installDiagnostics } from "./features/diagnostics";
 import { install as installAuth } from "./features/auth";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
-import { installDock } from "./features/dock";
 import { install as installHostProxy } from "./features/host-proxy";
 import { install as installLoginItem } from "./features/login-item";
 import { install as installPermissions } from "./features/permissions";
@@ -421,12 +420,6 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       });
       installHostProxy(inputs.interfaceId);
       installTray();
-      // The macOS Dock is the mac shell's presence surface: badge and
-      // visibility exist only where `app.dock` does, so the install gates
-      // on the shell rather than deriving an OS from the host.
-      if (inputs.platform === "mac-electron") {
-        installDock();
-      }
       installShare();
       installPermissions();
       installPermissionGuide();

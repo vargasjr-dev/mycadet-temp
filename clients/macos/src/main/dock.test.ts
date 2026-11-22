@@ -1,10 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "../../test-setup";
+import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import type { z } from "zod";
 
 // Keep pure policy tests independent of Electron window state.
-mock.module("../main-window", () => ({
+mock.module("./main-window", () => ({
   current: () => null,
   onMainWindowVisibilityChange: () => undefined,
 }));
@@ -25,7 +25,8 @@ type Registration = {
 };
 const onRegistrations: Registration[] = [];
 const handleRegistrations: Registration[] = [];
-mock.module("../ipc", () => ({
+const handleSyncRegistrations: { channel: string; fn: () => unknown }[] = [];
+mock.module("@mycadet/electron-desktop/ipc", () => ({
   on: (
     channel: string,
     schema: z.ZodType<unknown[]>,
@@ -40,8 +41,12 @@ mock.module("../ipc", () => ({
   ) => {
     handleRegistrations.push({ channel, schema, fn });
   },
+  // native-auth's top-level import; the dock never reads it.
+  handleSync: (channel: string, fn: () => unknown) => {
+    handleSyncRegistrations.push({ channel, fn });
+  },
 }));
-mock.module("../avatar", () => ({
+mock.module("@mycadet/electron-desktop/avatar", () => ({
   setAvatar: () => undefined,
   setCharacter: () => undefined,
   __resetForTesting: () => undefined,
@@ -57,7 +62,7 @@ mock.module("../avatar", () => ({
 // registered listeners so tests can simulate token changes.
 let mockToken: string | null = null;
 const tokenChangeListeners = new Set<() => void>();
-mock.module("../session-token-store", () => ({
+mock.module("@mycadet/electron-desktop/session-token-store", () => ({
   __resetForTesting: "__resetForTesting",
   clearSessionToken: () => undefined,
   saveSessionToken: () => undefined,
@@ -80,10 +85,18 @@ mock.module("@mycadet/local-mode", () => ({
     assistants: mockLockfileAssistants,
     activeAssistant: null,
   }),
+  // Every other name the package's sources import at top level resolves
+  // against this mock; the dock itself never reads any of them.
+  forwardOperatorRequest: () => undefined,
+  getGatewayUrl: () => undefined,
+  getGuardianAccessToken: () => undefined,
+  resolveConfigDir: () => "/tmp/cadet-config",
+  resolveLocalConfigFromEnv: () => undefined,
+  servedConfigFromLockfile: () => undefined,
 }));
 
 const avatarBitmapMock = mock((_size: number): Buffer | null => null);
-mock.module("../avatar-image", () => ({
+mock.module("@mycadet/electron-desktop/avatar-image", () => ({
   avatarBitmap: avatarBitmapMock,
 }));
 
@@ -115,6 +128,10 @@ mock.module("electron", () =>
       getVersion: () => "0.0.0",
       getName: () => "Cadet",
       isPackaged: false,
+      // The notifier addon's path probe and the session stores ride the
+      // permissions-strategy import; the dock never reads them.
+      getAppPath: () => "/mock/app",
+      getPath: () => "/tmp/cadet-userdata",
       dock: {
         setIcon: setIconMock,
         setBadge: setBadgeMock,
