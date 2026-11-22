@@ -31,7 +31,7 @@ export type WsUpstreamOptions = {
   /**
    * Additional query parameters to forward to the upstream.
    */
-  extraParams?: Record<string, string>;
+  extraParams?: Record<string, unknown>;
 };
 
 export type WsUpstreamResult = {
@@ -57,6 +57,7 @@ export function buildWsUpstreamUrl(opts: WsUpstreamOptions): WsUpstreamResult {
   const query = new URLSearchParams();
   if (opts.extraParams) {
     for (const [key, value] of Object.entries(opts.extraParams)) {
+      if (typeof value !== "string") continue;
       query.set(key, value);
     }
   }

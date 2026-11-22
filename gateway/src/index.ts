@@ -1270,22 +1270,12 @@ async function main() {
     log.info("Slack Socket Mode client started");
   }
 
-  // ── Discord Gateway lifecycle ──
-  // Credential-gated: the client exists only while a
-  // `discord_channel:bot_token` credential does. There is no feature flag, and
-  // removing the credential tears the connection down on the next watcher
-  // tick. Whether Discord is offered for setup is a separate question, decided
-  // by BASE_AVAILABLE_CHANNELS in the daemon, which lists it: a channel can be
-  // offered while no credential is stored, and the connection is what a stored
-  // one buys.
-  //
-  // Startup is the credential watcher's initial poll: it diffs against an
-  // empty baseline, so a token already stored at boot surfaces as
-  // `changed.has("discord_channel")` and starts the client — the same path
-  // the Slack socket boots through. This requires `discord_channel` to be
-  // registered in ALL_CREDENTIAL_SPECS (credential-reader.ts); the watcher
-  // only reads services listed there, and the registration is pinned by
-  // credential-reader.test.ts.
+  // TODO: move starting the discord client into its own file such that
+  // the only lift in this file is:
+  // 
+  // const stopDiscordClient = startDiscordGateway();
+  // ...
+  // shutdownTasks.push(stopDiscordClient);
   let discordGatewayClient: DiscordGatewayClient | null = null;
   const discordForwardQueue = createConversationTaskQueue();
 

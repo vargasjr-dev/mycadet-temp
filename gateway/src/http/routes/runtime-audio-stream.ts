@@ -1,27 +1,5 @@
 /**
- * The two halves every runtime audio-stream WebSocket proxy is made of: the
- * gate that decides whether a client may open one, and the pump that carries
- * frames between that client and the runtime.
- *
- * Shared by `/v1/stt/stream`, `/v1/watch/stream` and `/v1/desktop/stream`:
- * authenticate the downstream actor, dial upstream with a short-lived service
- * token, and pass frames through verbatim both ways, each side's close code
- * carried to the other. Only the upstream path and query parameters differ.
- *
- * **What the shared gate settles, and what it deliberately leaves open.** It
- * settles that the caller is *an* actor on this assistant: a valid edge JWT,
- * not revoked, carrying an actor principal, so a service credential cannot be
- * replayed into a client-facing socket. It does not settle whether that actor
- * is the one a particular surface belongs to, which is a question only the
- * route can answer. `/v1/watch/stream` answers it with `guardian-pin.ts`;
- * `/v1/stt/stream` answers that any actor will do. Adding the pin here would
- * take dictation with it.
- *
- * The upstream half carries only {@link mintServiceToken}, never anything the
- * client supplied: the runtime is unreachable from the public internet and
- * resolves the acting principal from its own guardian rather than from a
- * header this proxy could be talked into forwarding. That is also why the pin
- * matters, since it leaves the daemon unable to tell one caller from another.
+ * Helpers for Runtime Audio Streaming
  */
 
 import type { ServerWebSocket } from "bun";
@@ -39,6 +17,7 @@ import { getConfig, type GatewayConfig } from "../../config.js";
 import { z } from "zod";
 import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
 import { isWebsocketUpgradeRequest } from "../utils.js";
+import { getLogger } from "../../logger.js";
 
 /**
  * Cap on frames held while the upstream socket is still connecting, so a
@@ -51,7 +30,7 @@ function byteLength(frame: string | Uint8Array): number {
   return typeof frame === "string" ? frame.length : frame.byteLength;
 }
 
-export const runtimeAudioStreamSocketState = {
+export const runtimeAudioStreamSocketState = z.object({
   upstream: z.custom<WebSocket>(() => true).optional(),
   pendingMessages: z
     .array(
@@ -62,11 +41,11 @@ export const runtimeAudioStreamSocketState = {
       ]),
     )
     .optional(),
-};
+});
 
 /** The state every audio-stream proxy socket carries, whatever it streams. */
 export type RuntimeAudioStreamState = z.infer<
-  z.ZodObject<typeof runtimeAudioStreamSocketState>
+  typeof runtimeAudioStreamSocketState
 >;
 
 /**
@@ -195,133 +174,133 @@ export interface RuntimeAudioStreamHandlerOptions<
   closeOnDroppedFrame?: boolean;
 }
 
-/**
- * The `Bun.serve` WebSocket handlers that pump frames between a client and the
- * runtime.
- *
- * Frames that arrive before the upstream socket is open are buffered rather
- * than dropped: the client starts sending audio the moment its own socket
- * opens, and the first fraction of a second of speech is exactly the part a
- * transcriber needs most.
- */
-export function createRuntimeAudioStreamHandlers<
-  T extends RuntimeAudioStreamState,
->({
+const log = getLogger("runtime-audio-stream");
+
+export function openRuntimeAudioStream<T extends RuntimeAudioStreamState>({
+  ws,
   upstreamPath,
-  log,
   label,
-  upstreamParams = () => ({}),
-  logContext = () => ({}),
   closeOnDroppedFrame = false,
-}: RuntimeAudioStreamHandlerOptions<T>) {
-  return {
-    open(ws: ServerWebSocket<T>) {
-      const context = logContext(ws.data);
-      ws.data.pendingMessages = [];
+}: {
+  ws: ServerWebSocket<T>;
+  upstreamPath: string;
+  label: string;
+  closeOnDroppedFrame?: boolean;
+}) {
+  ws.data.pendingMessages = [];
 
-      const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
-        buildWsUpstreamUrl({
-          baseUrl: getConfig().assistantRuntimeBaseUrl,
-          path: upstreamPath,
-          extraParams: upstreamParams(ws.data),
-        });
+  const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
+    buildWsUpstreamUrl({
+      baseUrl: getConfig().assistantRuntimeBaseUrl,
+      path: upstreamPath,
+      extraParams: ws.data,
+    });
 
-      log.info(
-        { upstreamUrl: logSafeUpstreamUrl, ...context },
-        `Opening upstream ${label} WS to runtime`,
-      );
+  log.info(
+    { upstreamUrl: logSafeUpstreamUrl, label },
+    `Opening upstream WS to runtime`,
+  );
 
-      // The DOM lib's WebSocket declaration shadows Bun's here — it only
-      // knows the subprotocols overload, so the headers-init rides past it
-      // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
-      // tests lean on DOM-typed fetch, ~300 errors.)
-      const upstream = new WebSocket(upstreamUrl, {
-        headers: forwardedIdentityHeaders(),
-      } as never);
-      ws.data.upstream = upstream;
+  // The DOM lib's WebSocket declaration shadows Bun's here — it only
+  // knows the subprotocols overload, so the headers-init rides past it
+  // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
+  // tests lean on DOM-typed fetch, ~300 errors.)
+  const upstream = new WebSocket(upstreamUrl, {
+    headers: forwardedIdentityHeaders(),
+  } as never);
+  ws.data.upstream = upstream;
 
-      upstream.addEventListener("open", () => {
-        log.info(context, `Upstream ${label} WS connected`);
-        const pending = ws.data.pendingMessages;
-        if (pending) {
-          for (const msg of pending) {
-            upstream.send(msg);
-          }
-          ws.data.pendingMessages = undefined;
-        }
-      });
-
-      upstream.addEventListener("message", (event) => {
-        // Runtime events back to the client.
-        const data =
-          typeof event.data === "string"
-            ? event.data
-            : new Uint8Array(event.data as ArrayBuffer);
-        // Bun's send returns the byte count it wrote, and 0 for a frame
-        // dropped past its backpressure limit. An empty payload also writes
-        // zero bytes, so the drop only counts when there was something to
-        // send.
-        const dropped = ws.send(data) === 0 && byteLength(data) > 0;
-        if (!dropped) {
-          return;
-        }
-        if (!closeOnDroppedFrame) {
-          // Debug, not warn: the usual cause is a runtime frame landing just
-          // after the browser socket closed, once per session and harmless.
-          log.debug(context, `${label} dropped a downstream frame`);
-          return;
-        }
-        log.warn(context, `${label} dropped a downstream frame, closing`);
-        ws.close(1011, "Viewer too slow");
-        upstream.close(1011, "Viewer too slow");
-      });
-
-      upstream.addEventListener("close", (event) => {
-        log.info(
-          { code: event.code, ...context },
-          `Upstream ${label} WS closed`,
-        );
-        ws.close(event.code, event.reason);
-      });
-
-      upstream.addEventListener("error", (event) => {
-        log.error({ error: event, ...context }, `Upstream ${label} WS error`);
-        ws.close(1011, "Upstream error");
-      });
-    },
-
-    message(
-      ws: ServerWebSocket<T>,
-      message: string | ArrayBuffer | Uint8Array,
-    ) {
-      // Client audio frames on to the runtime.
-      const upstream = ws.data.upstream;
-      if (upstream && upstream.readyState === WebSocket.OPEN) {
-        upstream.send(message);
-        return;
+  upstream.addEventListener("open", () => {
+    log.info({ label }, `Upstream WS connected`);
+    const pending = ws.data.pendingMessages;
+    if (pending) {
+      for (const msg of pending) {
+        upstream.send(msg);
       }
-      if (ws.data.pendingMessages) {
-        if (ws.data.pendingMessages.length >= MAX_PENDING_MESSAGES) {
-          log.warn(`${label} pending message buffer overflow, closing`);
-          ws.close(1008, "Buffer overflow");
-          return;
-        }
-        ws.data.pendingMessages.push(message);
-      }
-    },
-
-    close(ws: ServerWebSocket<T>, code: number, reason: string) {
-      const context = logContext(ws.data);
-      log.info({ code, reason, ...context }, `${label} downstream WS closed`);
       ws.data.pendingMessages = undefined;
-      const upstream = ws.data.upstream;
-      if (
-        upstream &&
-        (upstream.readyState === WebSocket.OPEN ||
-          upstream.readyState === WebSocket.CONNECTING)
-      ) {
-        upstream.close(code, reason);
-      }
-    },
-  };
+    }
+  });
+
+  upstream.addEventListener("message", (event) => {
+    // Runtime events back to the client.
+    const data =
+      typeof event.data === "string"
+        ? event.data
+        : new Uint8Array(event.data as ArrayBuffer);
+    // Bun's send returns the byte count it wrote, and 0 for a frame
+    // dropped past its backpressure limit. An empty payload also writes
+    // zero bytes, so the drop only counts when there was something to
+    // send.
+    const dropped = ws.send(data) === 0 && byteLength(data) > 0;
+    if (!dropped) {
+      return;
+    }
+    if (!closeOnDroppedFrame) {
+      // Debug, not warn: the usual cause is a runtime frame landing just
+      // after the browser socket closed, once per session and harmless.
+      log.debug({ label }, `Dropped a downstream frame`);
+      return;
+    }
+    log.warn({ label }, `dropped a downstream frame, closing`);
+    ws.close(1011, "Viewer too slow");
+    upstream.close(1011, "Viewer too slow");
+  });
+
+  upstream.addEventListener("close", (event) => {
+    log.info({ code: event.code, label }, `Upstream WS closed`);
+    ws.close(event.code, event.reason);
+  });
+
+  upstream.addEventListener("error", (event) => {
+    log.error({ error: event, label }, `Upstream WS error`);
+    ws.close(1011, "Upstream error");
+  });
+}
+
+export function messageRuntimeAudioStream<T extends RuntimeAudioStreamState>({
+  ws,
+  message,
+  label,
+}: {
+  ws: ServerWebSocket<T>;
+  message: string | ArrayBuffer | Uint8Array;
+  label: string;
+}) {
+  // Client audio frames on to the runtime.
+  const upstream = ws.data.upstream;
+  if (upstream && upstream.readyState === WebSocket.OPEN) {
+    upstream.send(message);
+    return;
+  }
+  if (ws.data.pendingMessages) {
+    if (ws.data.pendingMessages.length >= MAX_PENDING_MESSAGES) {
+      log.warn({ label }, `pending message buffer overflow, closing`);
+      ws.close(1008, "Buffer overflow");
+      return;
+    }
+    ws.data.pendingMessages.push(message);
+  }
+}
+
+export function closeRuntimeAudioStream<T extends RuntimeAudioStreamState>({
+  ws,
+  code,
+  reason,
+  label,
+}: {
+  ws: ServerWebSocket<T>;
+  code: number;
+  reason: string;
+  label: string;
+}) {
+  log.info({ code, reason, label }, `downstream WS closed`);
+  ws.data.pendingMessages = undefined;
+  const upstream = ws.data.upstream;
+  if (
+    upstream &&
+    (upstream.readyState === WebSocket.OPEN ||
+      upstream.readyState === WebSocket.CONNECTING)
+  ) {
+    upstream.close(code, reason);
+  }
 }

@@ -25,7 +25,9 @@ import { z } from "zod";
 
 import {
   authorizeRuntimeAudioStream,
-  createRuntimeAudioStreamHandlers,
+  closeRuntimeAudioStream,
+  messageRuntimeAudioStream,
+  openRuntimeAudioStream,
   runtimeAudioStreamSocketState,
 } from "./runtime-audio-stream.js";
 import {
@@ -38,9 +40,8 @@ import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 
 const log = getLogger("stt-stream-ws");
 
-export const sttStreamSocketDataSchema = z.object({
+export const sttStreamSocketDataSchema = runtimeAudioStreamSocketState.extend({
   wsType: z.literal("stt-stream"),
-  ...runtimeAudioStreamSocketState,
   provider: z.string().optional(),
   mimeType: z.string(),
   sampleRate: z.number().optional(),
@@ -134,37 +135,24 @@ export function handleSttStreamWs(
   return undefined;
 }
 
-/**
- * WebSocket handler config for Bun.serve() that proxies STT audio
- * frames to the runtime's /v1/stt/stream endpoint.
- */
-const {
-  open: openSttStreamWebsocket,
-  message: messageSttStreamWebsocket,
-  close: closeSttStreamWebsocket,
-} = createRuntimeAudioStreamHandlers<SttStreamSocketData>({
-  upstreamPath: "/v1/stt/stream",
-  log,
-  label: "STT stream",
-  upstreamParams: ({ provider, mimeType, sampleRate }) => {
-    const params: Record<string, string> = { mimeType };
-    if (provider) {
-      params.provider = provider;
-    }
-    if (sampleRate !== undefined) {
-      params.sampleRate = String(sampleRate);
-    }
-    return params;
-  },
-  logContext: ({ provider, mimeType, sampleRate }) => ({
-    provider,
-    mimeType,
-    sampleRate,
-  }),
-});
+const label = "STT stream";
 
-export {
-  openSttStreamWebsocket,
-  messageSttStreamWebsocket,
-  closeSttStreamWebsocket,
-};
+export const openSttStreamWebsocket = (
+  ws: ServerWebSocket<SttStreamSocketData>,
+) =>
+  openRuntimeAudioStream({
+    ws,
+    label,
+    upstreamPath: "/v1/stt/stream",
+  });
+
+export const messageSttStreamWebsocket = (
+  ws: ServerWebSocket<SttStreamSocketData>,
+  message: string | ArrayBuffer | Uint8Array<ArrayBufferLike>,
+) => messageRuntimeAudioStream({ ws, message, label });
+
+export const closeSttStreamWebsocket = (
+  ws: ServerWebSocket<SttStreamSocketData>,
+  code: number,
+  reason: string,
+) => closeRuntimeAudioStream({ ws, code, reason, label });

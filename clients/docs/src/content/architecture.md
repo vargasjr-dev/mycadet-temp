@@ -21,11 +21,11 @@ flowchart LR
   Cadet2["Cadet 2"]:::cadet
   Cadet3["Cadet 3"]:::cadet
 
-  Clients --> Operator
-  Channels --> Operator
-  Operator --> Cadet1
-  Operator --> Cadet2
-  Operator --> Cadet3
+  Clients -.-> Operator
+  Channels -.-> Operator
+  Operator -.-> Cadet1
+  Operator -.-> Cadet2
+  Operator -.-> Cadet3
 ```
 
 ## How the Cadet Works
@@ -59,11 +59,11 @@ flowchart LR
   Assistant["Assistant"]:::assistant
   CES["Credential Vault&nbsp;"]:::vault
 
-  World <--> Gateway
-  Gateway -->|"read / write"| Assistant
-  Assistant -->|"read-only"| Gateway
-  Gateway -->|"read / write"| CES
-  Assistant -.->|"metadata, read-only"| CES
+  World <-.-> Gateway
+  Gateway -.-> Assistant
+  Assistant -.-> Gateway
+  Gateway -.-> CES
+  Assistant -.-> CES
   linkStyle 1 stroke:#22c55e
   linkStyle 2 stroke:#3b82f6
   linkStyle 3 stroke:#22c55e
@@ -79,6 +79,8 @@ The Gateway is the front door controlling all of the data that comes from the ou
 - `$GATEWAY_SECURITY_DIR` - The location where the gateway manages all of its data, including logs and its own SQlite database. Default: `/gateway-security`
 - IPC Clients - How it communicates to the Assistant and the Credential Vault
 - Tunnel Client - How it connects directly to the outside world, when not receiving its requests from the Operator.
+
+<!-- The gateway box makes the arrows hard to see. Maybe we use similar arrow colors as our RW, RO, RM convention above -->
 
 ```mermaid
 flowchart LR
@@ -100,12 +102,13 @@ flowchart LR
   Assistant["Assistant"]:::assistant
   CES["Credential Vault&nbsp;"]:::vault
 
-  World --> WebServer
-  WebServer --> Assistant
-  Assistant --> IpcServer
-  IpcClients --> Assistant
-  IpcClients --> CES
-  TunnelClient --> World
+  World -.-> WebServer
+  WebServer -.-> IpcClients
+  Assistant -.-> IpcServer
+  IpcClients -.-> Assistant
+  IpcClients -.-> CES
+  TunnelClient -.-> World
+  TunnelClient -.-> WebServer
   WebServer -.-> SecurityDir
   IpcServer -.-> SecurityDir
 ```
