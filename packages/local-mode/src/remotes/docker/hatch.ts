@@ -57,6 +57,7 @@ import {
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
 import { type ServiceName } from "./statefulset";
+import { removeDockerResources } from "./retire";
 import { startContainers } from "./wake";
 import {
   HOST_IMAGE_LOADER_URL,
@@ -632,6 +633,7 @@ export async function hatchDocker(
   const precollectedApiKey = params.precollectedApiKey;
   const version = params.version ?? "";
   let instanceName: string | undefined;
+  let saved = false;
 
   try {
     await ensureDockerInstalled();
@@ -872,6 +874,7 @@ export async function hatchDocker(
     const containersUpAt = Date.now();
     // The active-assistant switch rides the same locked write.
     saveLockfileAssistant(dockerEntry, instanceName);
+    saved = true;
 
     // Hatch always detaches; only watch mode keeps the log stream attached.
     const waitDetached = !watch;
@@ -969,6 +972,12 @@ export async function hatchDocker(
       cookies: guardianToken ? getGuardianTokenAsCookies(guardianToken) : [],
     };
   } catch (error) {
+    // Nothing in the lockfile points at this instance yet, so `cadet retire`
+    // couldn't clean it up and the next hatch with this name would trip
+    // over it. Remove whatever got created.
+    if (instanceName && !saved) {
+      await removeDockerResources(instanceName);
+    }
     return {
       ok: false,
       status: 500,

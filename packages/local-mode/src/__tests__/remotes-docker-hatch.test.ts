@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, test, expect } from "bun:test";
+import { afterEach, beforeEach, describe, test, expect, spyOn } from "bun:test";
 import {
   mkdirSync,
   mkdtempSync,
@@ -15,9 +15,11 @@ import {
   type ServiceName,
 } from "../remotes/docker/statefulset";
 import {
+  hatchDocker,
   pullImage,
   resolveDockerProviderCredentialSetupAction,
 } from "../remotes/docker/hatch";
+import * as execModule from "../exec";
 import { collectWatchTargets } from "../remotes/docker/watch";
 import { ASSISTANT_INTERNAL_PORT } from "../ports";
 import { dockerResourceNames } from "../remotes/docker/common";
@@ -455,5 +457,64 @@ describe("collectWatchTargets", () => {
     // THEN absent paths are not emitted
     expect(dirs).toEqual([join(repoRoot, "packages", "contracts-only", "src")]);
     expect(files).toEqual([join(repoRoot, "gateway", "package.json")]);
+  });
+});
+
+describe("hatchDocker", () => {
+  test("a hatch that fails before it's saved removes what it created", async () => {
+    for (const key of [
+      "CADET_ASSISTANT_IMAGE",
+      "CADET_GATEWAY_IMAGE",
+      "CADET_CREDENTIAL_EXECUTOR_IMAGE",
+    ]) {
+      process.env[key] = "image:test";
+    }
+    const calls: string[][] = [];
+    const execSpy = spyOn(execModule, "exec").mockImplementation(
+      async (_cmd: string, args: string[] = []) => {
+        calls.push(args);
+        if (args[0] === "run" && args.includes("d9-assistant")) {
+          throw new Error(
+            "Bind for 127.0.0.1:7821 failed: port is already allocated",
+          );
+        }
+      },
+    );
+    const execOutputSpy = spyOn(execModule, "execOutput").mockResolvedValue("");
+
+    try {
+      const result = await hatchDocker({
+        name: "d9",
+        reporter: {
+          progress: () => {},
+          log: () => {},
+          warn: () => {},
+          error: () => {},
+        },
+      });
+
+      expect(result.ok).toBe(false);
+      expect(calls).toContainEqual(["rm", "-f", "d9-assistant"]);
+      expect(calls).toContainEqual(["network", "rm", "d9-net"]);
+      const removedVolumes = calls
+        .filter((args) => args[0] === "volume" && args[1] === "rm")
+        .map((args) => args[2])
+        .sort();
+      expect(removedVolumes).toEqual([
+        "d9-assistant-ipc",
+        "d9-ces-data",
+        "d9-ces-sec",
+        "d9-gateway-ipc",
+        "d9-gateway-sec",
+        "d9-socket",
+        "d9-workspace",
+      ]);
+    } finally {
+      execSpy.mockRestore();
+      execOutputSpy.mockRestore();
+      delete process.env.CADET_ASSISTANT_IMAGE;
+      delete process.env.CADET_GATEWAY_IMAGE;
+      delete process.env.CADET_CREDENTIAL_EXECUTOR_IMAGE;
+    }
   });
 });
