@@ -4,8 +4,10 @@ import { mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
 import type { CredentialCache } from "../credential-cache.js";
 import {
+  closeSpeechRelayWebsocket,
   createSpeechRelayUpgradeHandler,
-  getSpeechRelayWebsocketHandlers,
+  messageSpeechRelayWebsocket,
+  openSpeechRelayWebsocket,
   tunnelOriginForPlatformHost,
   type SpeechRelaySocketData,
 } from "../http/routes/speech-relay-websocket.js";
@@ -16,6 +18,13 @@ import {
   mintEdgeToken,
   upgradedData,
 } from "./runtime-stream-test-utils.js";
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openSpeechRelayWebsocket,
+  message: messageSpeechRelayWebsocket,
+  close: closeSpeechRelayWebsocket,
+};
 
 /** The daemon's self-minted service token — the only accepted principal. */
 function mintDaemonServiceToken(): string {
@@ -521,7 +530,6 @@ const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 describe("getSpeechRelayWebsocketHandlers", () => {
   test("dials tunnel with the Api-Key header and pipes frames both ways", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());
 
     await handlers.open(ws as never);
@@ -546,7 +554,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("closes downstream with 1008 when pre-open buffered bytes exceed the cap", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());
     await handlers.open(ws as never);
 
@@ -564,7 +571,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("forwards upstream close codes and reasons to the daemon", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());
 
     await handlers.open(ws as never);
@@ -585,7 +591,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("sets arraybuffer binary mode on the upstream socket", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());
 
     await handlers.open(ws as never);
@@ -596,7 +601,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
     // A rejected handshake can emit close (or error+close) before the async
     // probe resolves; the raw close must not beat the synthesized frame.
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const fetchImpl = mock(
       async () =>
         new Response(
@@ -625,7 +629,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("a failed tunnel dial synthesizes a tunnel_error from the HTTP probe", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const fetchImpl = mock(
       async () =>
         new Response(JSON.stringify({ code: "invalid_key", detail: "bad" }), {
@@ -651,7 +654,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("missing API key closes with a synthesized tunnel_error, no dial", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const data = makeSocketData();
     data.deps.credentials = makeCredentials(undefined);
     const ws = new FakeDownstreamSocket(data);
@@ -685,7 +687,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("a daemon close during the credential read prevents the tunnel dial", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     let releaseRead: (v: string) => void = () => {};
     const data = makeSocketData();
     data.deps.credentials = {
@@ -706,7 +707,6 @@ describe("getSpeechRelayWebsocketHandlers", () => {
 
   test("daemon close is forwarded to tunnel", async () => {
     FakeUpstreamWebSocket.instances = [];
-    const handlers = getSpeechRelayWebsocketHandlers();
     const ws = new FakeDownstreamSocket(makeSocketData());
 
     await handlers.open(ws as never);

@@ -23,8 +23,19 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
   findCadetGuardian: () => mockFindCadetGuardian(),
 }));
 
-const { createSttStreamWebsocketHandler, getSttStreamWebsocketHandlers } =
-  await import("../http/routes/stt-stream-websocket.js");
+const {
+  closeSttStreamWebsocket,
+  createSttStreamWebsocketHandler,
+  messageSttStreamWebsocket,
+  openSttStreamWebsocket,
+} = await import("../http/routes/stt-stream-websocket.js");
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openSttStreamWebsocket,
+  message: messageSttStreamWebsocket,
+  close: closeSttStreamWebsocket,
+};
 
 // ---------------------------------------------------------------------------
 // createSttStreamWebsocketHandler — upgrade handler tests
@@ -259,7 +270,6 @@ describe("getSttStreamWebsocketHandlers", () => {
     });
 
   test("open handler initializes pending messages buffer", () => {
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeSttWs();
 
     // The open handler creates a WebSocket to upstream which will fail in test,
@@ -274,7 +284,6 @@ describe("getSttStreamWebsocketHandlers", () => {
   });
 
   test("message handler buffers messages when upstream is not connected", () => {
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeSttWs();
     ws.data.pendingMessages = [];
 
@@ -284,7 +293,6 @@ describe("getSttStreamWebsocketHandlers", () => {
   });
 
   test("message handler closes connection on buffer overflow", () => {
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeSttWs();
     ws.data.pendingMessages = new Array(100).fill("x"); // At MAX_PENDING_MESSAGES
 
@@ -294,7 +302,6 @@ describe("getSttStreamWebsocketHandlers", () => {
   });
 
   test("close handler cleans up pending messages and closes upstream", () => {
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeSttWs();
     ws.data.pendingMessages = ["some-data"];
 
@@ -311,7 +318,6 @@ describe("getSttStreamWebsocketHandlers", () => {
   });
 
   test("close handler is safe when upstream is already closed", () => {
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeSttWs();
 
     const fakeUpstream = {
@@ -352,7 +358,6 @@ describe("a dropped downstream frame does not end a dictation session", () => {
 
   test("keeps both sides open when a send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"transcript","text":"hello"}');
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeViewerWs(0);
 
     handlers.open(ws as never);
@@ -365,7 +370,6 @@ describe("a dropped downstream frame does not end a dictation session", () => {
 
   test("does not treat an empty frame as a dropped one", async () => {
     runtime = startFakeRuntime("");
-    const handlers = getSttStreamWebsocketHandlers();
     const ws = makeViewerWs(0);
 
     handlers.open(ws as never);

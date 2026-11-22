@@ -1,28 +1,28 @@
 /**
  * IPC route definitions for Tunnel status.
  *
- * Exports a factory that takes the optional TunnelClient and returns
- * a single `get_tunnel_status` IPC route. Returns disconnected/null when no
- * client is configured (e.g. TUNNEL_BASE_URL not set).
+ * Exports a single `get_tunnel_status` IPC route whose handler resolves the
+ * process-wide TunnelClient at call time — the `getConfig()` pattern: the
+ * client is torn down and rebuilt as the tunnel comes and goes, so a
+ * captured reference would answer for a client that is no longer the live
+ * one. Returns disconnected/null when no client is configured (e.g.
+ * TUNNEL_BASE_URL not set).
  */
 
 import type { TunnelStatusIpcResponse } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
-import type { TunnelClient } from "../tunnel/client.js";
+import { getTunnelClient } from "../tunnel/client.js";
 import type { IpcRoute } from "./server.js";
 
-export function createTunnelRoutes(
-  tunnelClient: TunnelClient | undefined,
-): IpcRoute[] {
-  return [
-    {
-      method: "get_tunnel_status",
-      handler: (): TunnelStatusIpcResponse => {
-        if (!tunnelClient) {
-          return { connected: false, publicUrl: null };
-        }
-        return tunnelClient.getStatus();
-      },
+export const tunnelRoutes: IpcRoute[] = [
+  {
+    method: "get_tunnel_status",
+    handler: (): TunnelStatusIpcResponse => {
+      const tunnelClient = getTunnelClient();
+      if (!tunnelClient) {
+        return { connected: false, publicUrl: null };
+      }
+      return tunnelClient.getStatus();
     },
-  ];
-}
+  },
+];

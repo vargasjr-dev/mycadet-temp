@@ -28,11 +28,11 @@ import {
 } from "../db/connection.js";
 import { webhookIngressRoutes } from "../db/schema.js";
 import { watchPluginIngressForWebhookRoutes } from "../channels/plugin-webhook-route-sync.js";
-import { createWebhookRouteRoutes } from "./webhook-route-handlers.js";
+import { webhookRouteRoutes } from "./webhook-route-handlers.js";
 
 const PATH = "/webhooks/telegram";
 
-const routes = createWebhookRouteRoutes();
+const routes = webhookRouteRoutes;
 
 function route(method: string) {
   const found = routes.find((r) => r.method === method);

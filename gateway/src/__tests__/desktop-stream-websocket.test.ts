@@ -20,9 +20,18 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 }));
 
 const {
+  closeDesktopStreamWebsocket,
   createDesktopStreamWebsocketHandler,
-  getDesktopStreamWebsocketHandlers,
+  messageDesktopStreamWebsocket,
+  openDesktopStreamWebsocket,
 } = await import("../http/routes/desktop-stream-websocket.js");
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openDesktopStreamWebsocket,
+  message: messageDesktopStreamWebsocket,
+  close: closeDesktopStreamWebsocket,
+};
 
 // ---------------------------------------------------------------------------
 // createDesktopStreamWebsocketHandler: upgrade handler tests
@@ -101,7 +110,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
   test("dials the runtime's /v1/desktop/stream with forwarded identity and no token param", async () => {
     runtime = startFakeRuntime();
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime);
 
     handlers.open(ws as never);
@@ -118,7 +126,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
   test("delivers the runtime's bytes downstream byte-identical", async () => {
     runtime = startFakeRuntime(RFB_BANNER);
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime);
 
     handlers.open(ws as never);
@@ -137,7 +144,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
    */
   test("closes both sides when a downstream send is dropped", async () => {
     runtime = startFakeRuntime(RFB_BANNER);
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime, 0);
 
     handlers.open(ws as never);
@@ -156,7 +162,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
    */
   test("does not treat an empty frame as a dropped one", async () => {
     runtime = startFakeRuntime(new Uint8Array(0));
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime, 0);
 
     handlers.open(ws as never);
@@ -168,7 +173,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
   test("delivers the viewer's bytes upstream byte-identical, including frames sent before the dial completes", async () => {
     runtime = startFakeRuntime();
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime);
     // Every byte value, so a text-vs-binary or encoding slip cannot hide.
     const early = new Uint8Array(256).map((_, i) => i);
@@ -187,7 +191,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
   test("propagates the runtime's close code downstream verbatim", async () => {
     runtime = startFakeRuntime();
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime);
 
     handlers.open(ws as never);
@@ -200,7 +203,6 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
   test("propagates the viewer's close code upstream verbatim", async () => {
     runtime = startFakeRuntime();
-    const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime);
 
     handlers.open(ws as never);

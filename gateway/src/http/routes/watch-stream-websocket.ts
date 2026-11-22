@@ -25,38 +25,59 @@ import {
 } from "./runtime-audio-stream.js";
 import { authorizeGuardianStream } from "./guardian-pin.js";
 import type { GatewayConfig } from "../../config.js";
+import { z } from "zod";
+
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("watch-stream-ws");
 
-export type WatchStreamSocketData = RuntimeAudioStreamState & {
-  wsType: "watch-stream";
+/**
+ * The socket data the watch upgrade handler attaches, pinned as a zod schema:
+ * the dispatch in `index.ts` discriminates sockets by `safeParse` on it, so
+ * the discriminant and the fields the handlers rely on cannot drift. The
+ * runtime-state half (`config`, the upstream socket, the pending frame
+ * buffer) never crosses the wire and stays hand-modeled on the type.
+ */
+export const watchStreamSocketDataSchema = z.object({
+  wsType: z.literal("watch-stream"),
   /** MIME type of the narration audio (`audio/pcm` from the web capture). */
-  mimeType: string;
+  mimeType: z.string(),
   /** Sample rate in Hz, when applicable. */
-  sampleRate?: number;
+  sampleRate: z.number().optional(),
   /**
    * Conversation the session's timeline is filed against, when the client
    * names one. Absent lets the runtime mint a conversation for the session,
    * which is what the companion surface's Watch does: it starts a session
    * rather than joining a thread.
    */
-  conversationId?: string;
+  conversationId: z.string().optional(),
   /**
    * Host client whose screen the session reads, when the client names one.
    * Absent lets the runtime resolve the actor's own host, which is the only
    * choice on a machine with one.
    */
-  clientId?: string;
+  clientId: z.string().optional(),
   /**
    * The display the session reads, by `CGDirectDisplayID`, when the client
    * picked one. Carried verbatim: the runtime validates the pair and the host
    * honours it. Absent, with no window either, is the whole screen.
    */
-  captureDisplayId?: number;
+  captureDisplayId: z.number().optional(),
   /** The window the session reads, by `CGWindowID`, when the client picked one. */
-  captureWindowId?: number;
-};
+  captureWindowId: z.number().optional(),
+});
+
+export type WatchStreamSocketData = z.infer<
+  typeof watchStreamSocketDataSchema
+> &
+  RuntimeAudioStreamState;
+
+/** Discriminate an untyped socket as a watch stream socket. */
+export function isWatchStreamSocketData(
+  ws: import("bun").ServerWebSocket<unknown>,
+): ws is import("bun").ServerWebSocket<WatchStreamSocketData> {
+  return watchStreamSocketDataSchema.safeParse(ws.data).success;
+}
 
 /**
  * Read one capture id off the query string: absent or blank is no id, and
@@ -187,24 +208,32 @@ export function createWatchStreamWebsocketHandler(config: GatewayConfig) {
  * WebSocket handlers for Bun.serve() that pump narration audio to the
  * runtime's `/v1/watch/stream` and its lifecycle frames back.
  */
-export function getWatchStreamWebsocketHandlers() {
-  return createRuntimeAudioStreamHandlers<WatchStreamSocketData>({
-    upstreamPath: "/v1/watch/stream",
-    log,
-    label: "watch stream",
-    upstreamParams: watchStreamUpstreamParams,
-    logContext: ({
-      mimeType,
-      sampleRate,
-      conversationId,
-      captureDisplayId,
-      captureWindowId,
-    }) => ({
-      mimeType,
-      sampleRate,
-      conversationId,
-      captureDisplayId,
-      captureWindowId,
-    }),
-  });
-}
+const {
+  open: openWatchStreamWebsocket,
+  message: messageWatchStreamWebsocket,
+  close: closeWatchStreamWebsocket,
+} = createRuntimeAudioStreamHandlers<WatchStreamSocketData>({
+  upstreamPath: "/v1/watch/stream",
+  log,
+  label: "watch stream",
+  upstreamParams: watchStreamUpstreamParams,
+  logContext: ({
+    mimeType,
+    sampleRate,
+    conversationId,
+    captureDisplayId,
+    captureWindowId,
+  }) => ({
+    mimeType,
+    sampleRate,
+    conversationId,
+    captureDisplayId,
+    captureWindowId,
+  }),
+});
+
+export {
+  openWatchStreamWebsocket,
+  messageWatchStreamWebsocket,
+  closeWatchStreamWebsocket,
+};

@@ -21,10 +21,19 @@ mock.module("../auth/guardian-bootstrap.js", () => ({
 }));
 
 const {
+  closeWatchStreamWebsocket,
   createWatchStreamWebsocketHandler,
-  getWatchStreamWebsocketHandlers,
+  messageWatchStreamWebsocket,
+  openWatchStreamWebsocket,
   watchStreamUpstreamParams,
 } = await import("../http/routes/watch-stream-websocket.js");
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openWatchStreamWebsocket,
+  message: messageWatchStreamWebsocket,
+  close: closeWatchStreamWebsocket,
+};
 
 // ---------------------------------------------------------------------------
 // createWatchStreamWebsocketHandler: upgrade handler tests
@@ -308,7 +317,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
     });
 
   test("open initializes the pending message buffer", async () => {
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeWatchWs();
 
     // Dialing upstream fails in a test process; the buffer is set up first.
@@ -327,7 +335,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
    * narration is exactly the part a transcriber needs.
    */
   test("message buffers frames that arrive before upstream connects", async () => {
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeWatchWs();
     ws.data.pendingMessages = [];
 
@@ -337,7 +344,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
   });
 
   test("message closes the socket rather than buffering without bound", async () => {
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeWatchWs();
     ws.data.pendingMessages = new Array(100).fill("x");
 
@@ -347,7 +353,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
   });
 
   test("message forwards straight through once upstream is open", async () => {
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeWatchWs();
     ws.data.pendingMessages = [];
     const upstream = {
@@ -363,7 +368,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
   });
 
   test("close releases the buffer and closes upstream with the same code", async () => {
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeWatchWs();
     ws.data.pendingMessages = ["some-data"];
     const upstream = {
@@ -379,7 +383,6 @@ describe("getWatchStreamWebsocketHandlers", () => {
   });
 
   test("close is safe when upstream is already gone", async () => {
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeWatchWs();
     const upstream = {
       readyState: WebSocket.CLOSED,
@@ -419,7 +422,6 @@ describe("a dropped downstream frame does not end a watch session", () => {
 
   test("keeps both sides open when a send is dropped", async () => {
     runtime = startFakeRuntime('{"type":"session_started"}');
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeViewerWs(0);
 
     handlers.open(ws as never);
@@ -432,7 +434,6 @@ describe("a dropped downstream frame does not end a watch session", () => {
 
   test("does not treat an empty frame as a dropped one", async () => {
     runtime = startFakeRuntime("");
-    const handlers = getWatchStreamWebsocketHandlers();
     const ws = makeViewerWs(0);
 
     handlers.open(ws as never);

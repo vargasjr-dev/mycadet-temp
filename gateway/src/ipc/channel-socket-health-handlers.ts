@@ -38,38 +38,46 @@ export type SocketHealthSources = Partial<
   >
 >;
 
-export function createChannelSocketHealthRoutes(
-  sources: SocketHealthSources,
-): IpcRoute[] {
-  return [
-    {
-      method: "channel_socket_health",
-      schema: ChannelSocketHealthIpcParamsSchema,
-      handler: (params?: Record<string, unknown>) => {
-        const { channel } = ChannelSocketHealthIpcParamsSchema.parse(params);
-        const source = sources[channel];
-        if (!source) {
-          return {
-            channel,
-            status: "unsupported",
-          } satisfies ChannelSocketHealthIpcResponse;
-        }
-        const client = source();
-        if (!client) {
-          return {
-            channel,
-            status: "not_configured",
-          } satisfies ChannelSocketHealthIpcResponse;
-        }
-        const health = client.getConnectionHealth();
+/**
+ * The live channel clients' getters, wired once by `index.ts` at startup.
+ * The getters themselves close over the process's own client slots, so the
+ * teardown/rebuild lifecycle reads through unchanged — the routes resolve
+ * `sources` at request time the way `getConfig()` resolves config.
+ */
+let sources: SocketHealthSources = {};
+
+export function setChannelSocketHealthSources(next: SocketHealthSources): void {
+  sources = next;
+}
+
+export const channelSocketHealthRoutes: IpcRoute[] = [
+  {
+    method: "channel_socket_health",
+    schema: ChannelSocketHealthIpcParamsSchema,
+    handler: (params?: Record<string, unknown>) => {
+      const { channel } = ChannelSocketHealthIpcParamsSchema.parse(params);
+      const source = sources[channel];
+      if (!source) {
         return {
           channel,
-          status: health.connected ? "connected" : "disconnected",
-          ...(health.lastLivenessAt === undefined
-            ? {}
-            : { lastLivenessAt: health.lastLivenessAt }),
+          status: "unsupported",
         } satisfies ChannelSocketHealthIpcResponse;
-      },
+      }
+      const client = source();
+      if (!client) {
+        return {
+          channel,
+          status: "not_configured",
+        } satisfies ChannelSocketHealthIpcResponse;
+      }
+      const health = client.getConnectionHealth();
+      return {
+        channel,
+        status: health.connected ? "connected" : "disconnected",
+        ...(health.lastLivenessAt === undefined
+          ? {}
+          : { lastLivenessAt: health.lastLivenessAt }),
+      } satisfies ChannelSocketHealthIpcResponse;
     },
-  ];
-}
+  },
+];

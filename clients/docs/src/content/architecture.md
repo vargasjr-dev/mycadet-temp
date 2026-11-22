@@ -41,12 +41,10 @@ This separation aims to uphold two crucial invariants:
 - the Assistant is unable to edit data in the Gateway directly.
 - the Assistant is unable to read the secrets stored in the Credential Vault directly.
 
-<!-- TODO: I want different color arrows signifying Read Only vs Read Write -->
-<!-- TODO: Arrow from Gateway -> Assistant should be RW -->
-<!-- TODO: Arrow from Gateway -> CES should be RW -->
-<!-- TODO: Arrow from Assistant -> Gateway should be RO -->
-<!-- TODO: Arrow from Assistant -> CES should be different from both of the above as its Metadata Read Only -->
-<!-- TODO: "Credential Vault" is bleeding it's 't' ever so slightly outside the bounds of its node -->
+Colors on the arrows carry the access story: green is read/write, blue
+read-only, violet metadata-only (the Assistant may read what the Credential
+Vault says about it, and nothing else).
+
 ```mermaid
 flowchart LR
   classDef world fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46
@@ -57,21 +55,63 @@ flowchart LR
   World["Outside world"]:::world
   Gateway["Gateway"]:::gateway
   Assistant["Assistant"]:::assistant
-  CES["Credential Vault"]:::vault
+  CES["Credential Vault&nbsp;"]:::vault
 
   World <--> Gateway
-  Gateway <--> Assistant
-  Gateway --> CES
-  Assistant --> CES
+  Gateway -->|"read / write"| Assistant
+  Assistant -->|"read-only"| Gateway
+  Gateway -->|"read / write"| CES
+  Assistant -.->|"metadata, read-only"| CES
+  linkStyle 1 stroke:#22c55e
+  linkStyle 2 stroke:#3b82f6
+  linkStyle 3 stroke:#22c55e
+  linkStyle 4 stroke:#a855f7
 ```
 
 ## How the Gateway Works
 
 The Gateway is the front door controlling all of the data that comes from the outside world into the Assistant. It is made up of the following components:
+
 - Web Server - The main listener routing both HTTP and WebSocket connections from the outside world
 - IPC Server - The main entrypoint where the Assistant can read data from the Gateway.
 - `$GATEWAY_SECURITY_DIR` - The location where the gateway manages all of its data, including logs and its own SQlite database. Default: `/gateway-security`
 - IPC Clients - How it communicates to the Assistant and the Credential Vault
 - Tunnel Client - How it connects directly to the outside world, when not receiving its requests from the Operator.
 
-<!-- TODO: Create a mermaid diagram that captures the above somehow -->
+The components, as a diagram: requests from the outside world arrive at the
+Web Server (directly, or handed over by the Operator); the Web Server proxies
+them to the Assistant; the Assistant reads Gateway data back through the IPC
+Server; the IPC Clients carry the Gateway's own calls out to the Assistant and
+the Credential Vault; the Tunnel Client dials out when the Gateway must reach
+the outside world itself; and everything the Gateway persists — its logs and
+its SQLite database — lives in `$GATEWAY_SECURITY_DIR`.
+
+```mermaid
+flowchart LR
+  classDef world fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46
+  classDef assistant fill:#dcfce7,stroke:#4ade80,color:#14532d
+  classDef vault fill:#fef9c3,stroke:#facc15,color:#713f12
+  classDef store fill:#f5f5f4,stroke:#a8a29e,color:#44403c
+
+  subgraph gatewayBox["Gateway"]
+    style gatewayBox fill:#dbeafe,stroke:#60a5fa,color:#1e3a8a
+    WebServer["Web Server"]
+    IpcServer["IPC Server"]
+    IpcClients["IPC Clients"]
+    TunnelClient["Tunnel Client"]
+    SecurityDir[("$GATEWAY_SECURITY_DIR")]
+  end
+
+  World["Outside world"]:::world
+  Assistant["Assistant"]:::assistant
+  CES["Credential Vault&nbsp;"]:::vault
+
+  World --> WebServer
+  WebServer --> Assistant
+  Assistant --> IpcServer
+  IpcClients --> Assistant
+  IpcClients --> CES
+  TunnelClient --> World
+  WebServer -.-> SecurityDir
+  IpcServer -.-> SecurityDir
+```

@@ -54,8 +54,19 @@ mock.module("../cloud-identity.js", () => ({
   },
 }));
 
-const { createLiveVoiceWebsocketHandler, getLiveVoiceWebsocketHandlers } =
-  await import("../http/routes/live-voice-websocket.js");
+const {
+  closeLiveVoiceWebsocket,
+  createLiveVoiceWebsocketHandler,
+  messageLiveVoiceWebsocket,
+  openLiveVoiceWebsocket,
+} = await import("../http/routes/live-voice-websocket.js");
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openLiveVoiceWebsocket,
+  message: messageLiveVoiceWebsocket,
+  close: closeLiveVoiceWebsocket,
+};
 
 const WS_CONNECTING = WebSocket.CONNECTING;
 const WS_OPEN = WebSocket.OPEN;
@@ -529,10 +540,9 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
   });
 });
 
-describe("getLiveVoiceWebsocketHandlers", () => {
+describe("the live voice websocket handlers", () => {
   const OriginalWebSocket = globalThis.WebSocket;
   let fakeUpstream: ReturnType<typeof createFakeUpstreamWs>;
-  let handlers: ReturnType<typeof getLiveVoiceWebsocketHandlers>;
   const makeLiveVoiceWs = (config = makeConfig()) =>
     createFakeDownstreamWs<LiveVoiceSocketData>({
       wsType: "live-voice",
@@ -549,7 +559,6 @@ describe("getLiveVoiceWebsocketHandlers", () => {
       CLOSED: WS_CLOSED,
     });
     globalThis.WebSocket = MockWS as unknown as typeof WebSocket;
-    handlers = getLiveVoiceWebsocketHandlers();
   });
 
   afterAll(() => {
@@ -684,11 +693,8 @@ describe("live voice gateway boundary", () => {
     );
 
     expect(source).toContain("createLiveVoiceWebsocketHandler");
-    expect(source).toContain("getLiveVoiceWebsocketHandlers");
-    expect(source).toContain("type LiveVoiceSocketData");
-    expect(source).toContain("function isLiveVoiceSocketData");
-    expect(source).toContain("const handleLiveVoiceWs");
-    expect(source).toContain("const liveVoiceWebsocketHandlers");
+    expect(source).toContain("isLiveVoiceSocketData(ws)");
+    expect(source).toContain("openLiveVoiceWebsocket(ws)");
 
     const liveVoiceRouteIndex = source.indexOf(
       'url.pathname === "/v1/live-voice"',
@@ -713,13 +719,13 @@ describe("live voice gateway boundary", () => {
     );
 
     expect(source).toMatch(
-      /if \(isLiveVoiceSocketData\(ws\.data\)\) \{\s+liveVoiceWebsocketHandlers\.open\(ws as never\);\s+return;\s+\}/,
+      /if \(isLiveVoiceSocketData\(ws\)\) \{\s+openLiveVoiceWebsocket\(ws\);\s+return;\s+\}/,
     );
     expect(source).toMatch(
-      /if \(isLiveVoiceSocketData\(ws\.data\)\) \{\s+liveVoiceWebsocketHandlers\.message\(ws as never, message\);\s+return;\s+\}/,
+      /if \(isLiveVoiceSocketData\(ws\)\) \{\s+messageLiveVoiceWebsocket\(ws, message\);\s+return;\s+\}/,
     );
     expect(source).toMatch(
-      /if \(isLiveVoiceSocketData\(ws\.data\)\) \{\s+liveVoiceWebsocketHandlers\.close\(ws as never, code, reason\);\s+return;\s+\}/,
+      /if \(isLiveVoiceSocketData\(ws\)\) \{\s+closeLiveVoiceWebsocket\(ws, code, reason\);\s+return;\s+\}/,
     );
   });
 });

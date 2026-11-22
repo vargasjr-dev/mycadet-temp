@@ -45,35 +45,33 @@ function assertUnreservedRouteType(type: string): void {
   }
 }
 
-export function createWebhookRouteRoutes(): IpcRoute[] {
-  return [
-    ipcRoute({
-      method: "register_webhook_route",
-      schema: RegisterWebhookRouteIpcParamsSchema,
-      handler: (params): RegisterWebhookRouteIpcResponse => {
-        assertUnreservedRouteType(params.type);
-        return { disabled: false, route: registerWebhookIngressRoute(params) };
-      },
-    }),
-    ipcRoute({
-      method: "unregister_webhook_route",
-      schema: UnregisterWebhookRouteIpcParamsSchema,
-      handler: (params): UnregisterWebhookRouteIpcResponse => {
-        const removed = unregisterWebhookIngressRoute(params.path);
-        // A removed row inside the plugin namespace may have been the only
-        // entry admitting a still-servable plugin route, so the reconcile
-        // poll is asked to settle the namespace again.
-        if (removed && params.path.startsWith(PLUGIN_WEBHOOK_PATH_PREFIX)) {
-          markPluginWebhookRoutesDirty();
-        }
-        return { removed };
-      },
-    }),
-    {
-      method: "list_webhook_routes",
-      handler: (): ListWebhookRoutesIpcResponse => ({
-        routes: listWebhookIngressRoutes(),
-      }),
+export const webhookRouteRoutes: IpcRoute[] = [
+  ipcRoute({
+    method: "register_webhook_route",
+    schema: RegisterWebhookRouteIpcParamsSchema,
+    handler: (params): RegisterWebhookRouteIpcResponse => {
+      assertUnreservedRouteType(params.type);
+      return { disabled: false, route: registerWebhookIngressRoute(params) };
     },
-  ];
-}
+  }),
+  ipcRoute({
+    method: "unregister_webhook_route",
+    schema: UnregisterWebhookRouteIpcParamsSchema,
+    handler: (params): UnregisterWebhookRouteIpcResponse => {
+      const removed = unregisterWebhookIngressRoute(params.path);
+      // A removed row inside the plugin namespace may have been the only
+      // entry admitting a still-servable plugin route, so the reconcile
+      // poll is asked to settle the namespace again.
+      if (removed && params.path.startsWith(PLUGIN_WEBHOOK_PATH_PREFIX)) {
+        markPluginWebhookRoutesDirty();
+      }
+      return { removed };
+    },
+  }),
+  {
+    method: "list_webhook_routes",
+    handler: (): ListWebhookRoutesIpcResponse => ({
+      routes: listWebhookIngressRoutes(),
+    }),
+  },
+];

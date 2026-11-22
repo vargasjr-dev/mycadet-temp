@@ -9,6 +9,7 @@ import type { ScopeProfile } from "../../auth/types.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
 import { ServerWebSocket } from "bun";
+import { z } from "zod";
 
 const log = getLogger("twilio-media-ws");
 
@@ -25,14 +26,32 @@ const RELAY_TOKEN_PROFILE: ScopeProfile = "gateway_service_v1";
 // Cap buffered messages to prevent unbounded memory growth if upstream stalls
 const MAX_PENDING_MESSAGES = 100;
 
-// TODO: Convert to zod schema
-export type MediaStreamSocketData = {
-  wsType: "twilio-media-stream";
-  callSessionId: string;
-  assistantRuntimeBaseUrl: string;
+/**
+ * The socket data the Twilio media upgrade handler attaches, pinned as a
+ * zod schema: the dispatch in `index.ts` discriminates sockets by
+ * `safeParse` on it. The runtime-state half (the upstream socket, the
+ * pending frame buffer) never crosses the wire and stays hand-modeled on
+ * the type.
+ */
+export const mediaStreamSocketDataSchema = z.object({
+  wsType: z.literal("twilio-media-stream"),
+  callSessionId: z.string(),
+  assistantRuntimeBaseUrl: z.string(),
+});
+
+export type MediaStreamSocketData = z.infer<
+  typeof mediaStreamSocketDataSchema
+> & {
   upstream?: WebSocket;
   pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
 };
+
+/** Discriminate an untyped socket as a Twilio media stream socket. */
+export function isMediaStreamSocketData(
+  ws: ServerWebSocket<unknown>,
+): ws is ServerWebSocket<MediaStreamSocketData> {
+  return mediaStreamSocketDataSchema.safeParse(ws.data).success;
+}
 
 /**
  * Extract `callSessionId` and auth `token` from the request.

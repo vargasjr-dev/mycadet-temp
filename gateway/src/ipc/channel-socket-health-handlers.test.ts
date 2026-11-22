@@ -1,11 +1,22 @@
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 
-import { createChannelSocketHealthRoutes } from "./channel-socket-health-handlers.js";
+import {
+  channelSocketHealthRoutes,
+  setChannelSocketHealthSources,
+  type SocketHealthSources,
+} from "./channel-socket-health-handlers.js";
 
-function route(sources: Parameters<typeof createChannelSocketHealthRoutes>[0]) {
-  const [only] = createChannelSocketHealthRoutes(sources);
+function route(sources: SocketHealthSources) {
+  // The routes are a constant whose sources are wired once — the test wires
+  // the registry the way index.ts does, then dials the constant.
+  setChannelSocketHealthSources(sources);
+  const [only] = channelSocketHealthRoutes;
   return (channel: string) => only.handler({ channel });
 }
+
+beforeEach(() => {
+  setChannelSocketHealthSources({});
+});
 
 describe("channel_socket_health", () => {
   test("reports a live connection with its last proof of liveness", async () => {

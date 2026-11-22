@@ -13,8 +13,11 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { generateInviteToken, hashInviteToken } from "@mycadet/gateway-client";
-import type { GatewayConfig } from "../config.js";
-import type { ConfigFileCache } from "../config-file-cache.js";
+import { getConfig, type GatewayConfig } from "../config.js";
+import {
+  getConfigFileCache,
+  type ConfigFileCache,
+} from "../config-file-cache.js";
 import {
   CredentialRequestStore,
   MAX_ACTIVE_CREDENTIAL_REQUESTS,
@@ -85,25 +88,38 @@ export interface CreateCredentialRequestDeps {
   ensurePublicIngressLive?: () => Promise<void>;
 }
 
-export function createCredentialRequestIpcRoutes(
-  config: GatewayConfig,
-  configFile: ConfigFileCache,
-  ensurePublicIngressLive: () => Promise<void>,
-): IpcRoute[] {
-  return [
-    {
-      method: "create_credential_request",
-      schema: CreateCredentialRequestSchema,
-      handler: async (params?: Record<string, unknown>) => {
-        const parsed = CreateCredentialRequestSchema.parse(params ?? {});
-        return createCredentialRequest(config, configFile, parsed, {
+/**
+ * The ingress hook, wired once by `index.ts` at startup: enabling public
+ * ingress and starting the Tunnel is entrypoint-owned behavior (it owns the
+ * tunnel client and the credential cache), while the route itself is
+ * stateless. Resolved at request time, like `getConfig()`.
+ */
+let ensurePublicIngressLive: (() => Promise<void>) | undefined;
+
+export function setEnsurePublicIngressLiveForCredentialLinks(
+  hook: () => Promise<void>,
+): void {
+  ensurePublicIngressLive = hook;
+}
+
+export const credentialRequestRoutes: IpcRoute[] = [
+  {
+    method: "create_credential_request",
+    schema: CreateCredentialRequestSchema,
+    handler: async (params?: Record<string, unknown>) => {
+      const parsed = CreateCredentialRequestSchema.parse(params ?? {});
+      return createCredentialRequest(
+        getConfig(),
+        getConfigFileCache(),
+        parsed,
+        {
           getCloudAssistantId: () => resolveCloudAssistantIdOrUndefined(),
           ensurePublicIngressLive,
-        });
-      },
+        },
+      );
     },
-  ];
-}
+  },
+];
 
 export async function createCredentialRequest(
   config: GatewayConfig,

@@ -17,6 +17,8 @@
  * the bytes the caller sent: text or binary, well-formed JSON or not.
  */
 
+import { z } from "zod";
+
 import {
   findServableRoute,
   type PluginIngressResolution,
@@ -76,11 +78,23 @@ export type IpcCall = (
   opts?: IpcCallOptions,
 ) => Promise<unknown>;
 
-export type PluginWebhookSocketData = {
-  wsType: "plugin-webhook";
+/**
+ * The socket data the plugin webhook upgrade handler attaches, pinned as a
+ * zod schema: the dispatch in `index.ts` discriminates sockets by
+ * `safeParse` on it. The runtime-state half (config, the delivery queue and
+ * its bookkeeping, the IPC caller) never crosses the wire and stays
+ * hand-modeled on the type.
+ */
+export const pluginWebhookSocketDataSchema = z.object({
+  wsType: z.literal("plugin-webhook"),
+  plugin: z.string(),
+  path: z.string(),
+});
+
+export type PluginWebhookSocketData = z.infer<
+  typeof pluginWebhookSocketDataSchema
+> & {
   config: GatewayConfig;
-  plugin: string;
-  path: string;
   /** Frames waiting on the in-flight delivery. */
   queue: (string | Uint8Array)[];
   /** Bytes held in {@link queue}, tracked so the cap is on memory not count. */
@@ -91,14 +105,11 @@ export type PluginWebhookSocketData = {
   ipcCall?: IpcCall;
 };
 
+/** Discriminate an untyped socket as a plugin webhook socket. */
 export function isPluginWebhookSocketData(
-  data: unknown,
-): data is PluginWebhookSocketData {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    (data as { wsType?: unknown }).wsType === "plugin-webhook"
-  );
+  ws: import("bun").ServerWebSocket<unknown>,
+): ws is import("bun").ServerWebSocket<PluginWebhookSocketData> {
+  return pluginWebhookSocketDataSchema.safeParse(ws.data).success;
 }
 
 function signingCredentialKey(plugin: string, signer: IngressSigner): string {
@@ -318,76 +329,81 @@ function refuse(
   ws.close(code, reason);
 }
 
-export function getPluginWebhookWebsocketHandlers() {
-  return {
-    open(ws: import("bun").ServerWebSocket<PluginWebhookSocketData>) {
-      log.info(
-        { plugin: ws.data.plugin, path: ws.data.path },
-        "Plugin webhook WS opened",
-      );
-    },
+export function openPluginWebhookWebsocket(
+  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+) {
+  log.info(
+    { plugin: ws.data.plugin, path: ws.data.path },
+    "Plugin webhook WS opened",
+  );
+}
 
-    message(
-      ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
-      message: string | ArrayBuffer | Uint8Array,
-    ) {
-      const data = ws.data;
-      if (data.closed) return;
+/**
+ * The plugin webhook message arm: queue the frame for the serialised
+ * delivery pump, refusing frames the plugin's route could never accept.
+ */
+export function messagePluginWebhookWebsocket(
+  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+  message: string | ArrayBuffer | Uint8Array,
+) {
+  const data = ws.data;
+  if (data.closed) return;
 
-      const frame =
-        message instanceof ArrayBuffer ? new Uint8Array(message) : message;
-      const size = frameByteLength(frame);
+  const frame =
+    message instanceof ArrayBuffer ? new Uint8Array(message) : message;
+  const size = frameByteLength(frame);
 
-      // A single oversized frame is refused rather than queued: it could
-      // never be delivered anyway, since it exceeds what the plugin's route
-      // accepts as a webhook payload.
-      if (size > data.config.maxWebhookPayloadBytes) {
-        log.warn(
-          { plugin: data.plugin, path: data.path, size },
-          "Plugin webhook frame exceeds the webhook payload cap — closing connection",
-        );
-        refuse(ws, 1009, "Frame too large");
-        return;
-      }
+  // A single oversized frame is refused rather than queued: it could
+  // never be delivered anyway, since it exceeds what the plugin's route
+  // accepts as a webhook payload.
+  if (size > data.config.maxWebhookPayloadBytes) {
+    log.warn(
+      { plugin: data.plugin, path: data.path, size },
+      "Plugin webhook frame exceeds the webhook payload cap — closing connection",
+    );
+    refuse(ws, 1009, "Frame too large");
+    return;
+  }
 
-      if (
-        data.queue.length >= MAX_PENDING_FRAMES ||
-        data.queuedBytes + size > maxQueuedBytes(data.config)
-      ) {
-        log.warn(
-          {
-            plugin: data.plugin,
-            path: data.path,
-            queued: data.queue.length,
-            queuedBytes: data.queuedBytes,
-          },
-          "Plugin webhook frame buffer overflow — closing connection",
-        );
-        refuse(ws, 1008, "Buffer overflow");
-        return;
-      }
+  if (
+    data.queue.length >= MAX_PENDING_FRAMES ||
+    data.queuedBytes + size > maxQueuedBytes(data.config)
+  ) {
+    log.warn(
+      {
+        plugin: data.plugin,
+        path: data.path,
+        queued: data.queue.length,
+        queuedBytes: data.queuedBytes,
+      },
+      "Plugin webhook frame buffer overflow — closing connection",
+    );
+    refuse(ws, 1008, "Buffer overflow");
+    return;
+  }
 
-      data.queue.push(frame);
-      data.queuedBytes += size;
-      void drain(data);
-    },
+  data.queue.push(frame);
+  data.queuedBytes += size;
+  void drain(data);
+}
 
-    close(
-      ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
-      code: number,
-      reason: string,
-    ) {
-      const data = ws.data;
-      data.closed = true;
-      // Frames not yet delivered are dropped: the caller is gone, and the
-      // plugin's view should not gain events after the stream ended.
-      const dropped = data.queue.length;
-      data.queue = [];
-      data.queuedBytes = 0;
-      log.info(
-        { plugin: data.plugin, path: data.path, code, reason, dropped },
-        "Plugin webhook WS closed",
-      );
-    },
-  };
+/**
+ * The plugin webhook close arm: mark closed and drop undelivered frames —
+ * the caller is gone and the plugin's view should not gain events after the
+ * stream ended.
+ */
+export function closePluginWebhookWebsocket(
+  ws: import("bun").ServerWebSocket<PluginWebhookSocketData>,
+  code: number,
+  reason: string,
+) {
+  const data = ws.data;
+  data.closed = true;
+  const dropped = data.queue.length;
+  data.queue = [];
+  data.queuedBytes = 0;
+  log.info(
+    { plugin: data.plugin, path: data.path, code, reason, dropped },
+    "Plugin webhook WS closed",
+  );
 }

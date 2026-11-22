@@ -4,8 +4,6 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { GatewayConfig } from "../config.js";
-
 const tailResult = {
   lines: [{ msg: "warn msg", level: 40 }],
   truncated: false,
@@ -22,37 +20,15 @@ mock.module("../http/routes/log-tail.js", () => ({
   tailGatewayLogs: tailGatewayLogsMock,
 }));
 
-const { createLogTailRoutes } = await import("./log-tail-handlers.js");
-
-function makeConfig(): GatewayConfig {
-  return {
-    assistantRuntimeBaseUrl: "http://localhost:7821",
-    logFile: { dir: undefined, retentionDays: 30 },
-    maxAttachmentBytes: {
-      telegram: 20 * 1024 * 1024,
-      slack: 100 * 1024 * 1024,
-      whatsapp: 16 * 1024 * 1024,
-      default: 100 * 1024 * 1024,
-    },
-    maxAttachmentConcurrency: 3,
-    maxWebhookPayloadBytes: 1024 * 1024,
-    port: 7830,
-    routingEntries: [],
-    runtimeInitialBackoffMs: 500,
-    runtimeMaxRetries: 2,
-    runtimeProxyRequireAuth: true,
-    runtimeTimeoutMs: 30000,
-    trustProxy: false,
-  } as GatewayConfig;
-}
+const { logTailRoutes } = await import("./log-tail-handlers.js");
 
 beforeEach(() => {
   tailGatewayLogsMock.mockClear();
 });
 
-describe("createLogTailRoutes", () => {
+describe("logTailRoutes", () => {
   test("registers gateway_logs_tail with optional params", () => {
-    const route = createLogTailRoutes(makeConfig())[0];
+    const route = logTailRoutes[0];
 
     expect(route.method).toBe("gateway_logs_tail");
     expect(route.schema?.safeParse(undefined).success).toBe(true);
@@ -60,12 +36,13 @@ describe("createLogTailRoutes", () => {
   });
 
   test("tails gateway logs through the IPC handler", () => {
-    const config = makeConfig();
-    const route = createLogTailRoutes(config)[0];
+    const route = logTailRoutes[0];
     const result = route.handler({ n: 2, level: "warn", module: "mcp" });
 
     expect(result).toBe(tailResult);
-    expect(tailGatewayLogsMock).toHaveBeenCalledWith(config, {
+    // Config is the handler's own business now — read at call time via
+    // getConfig() inside tailGatewayLogs, not threaded through the route.
+    expect(tailGatewayLogsMock).toHaveBeenCalledWith({
       n: 2,
       level: "warn",
       module: "mcp",

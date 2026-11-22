@@ -4,10 +4,19 @@ import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
 import { setTestSigningKey } from "./helpers/signing-key.js";
 import {
+  closeTwilioMediaStream,
   createTwilioMediaWebsocketHandler,
   extractMediaStreamMetadata,
-  getMediaStreamWebsocketHandlers,
+  messageTwilioMediaStream,
+  openTwilioMediaWebsocket,
 } from "../http/routes/twilio-media-websocket.js";
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openTwilioMediaWebsocket,
+  message: messageTwilioMediaStream,
+  close: closeTwilioMediaStream,
+};
 
 // ---------------------------------------------------------------------------
 // Auth setup — initialize signing key so JWT minting/validation works
@@ -425,10 +434,9 @@ describe("createTwilioMediaWebsocketHandler", () => {
 // WebSocket handler tests
 // ---------------------------------------------------------------------------
 
-describe("getMediaStreamWebsocketHandlers", () => {
+describe("the twilio media stream websocket handlers", () => {
   const OriginalWebSocket = globalThis.WebSocket;
   let fakeUpstream: ReturnType<typeof createFakeUpstreamWs>;
-  let handlers: ReturnType<typeof getMediaStreamWebsocketHandlers>;
 
   beforeEach(() => {
     fakeUpstream = createFakeUpstreamWs();
@@ -443,7 +451,6 @@ describe("getMediaStreamWebsocketHandlers", () => {
       CLOSED: WS_CLOSED,
     });
     globalThis.WebSocket = MockWS as unknown as typeof WebSocket;
-    handlers = getMediaStreamWebsocketHandlers();
   });
 
   // Restore after each file-level describe to avoid leaking

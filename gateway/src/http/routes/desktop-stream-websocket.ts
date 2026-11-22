@@ -11,13 +11,34 @@ import {
 } from "./runtime-audio-stream.js";
 import { authorizeGuardianStream } from "./guardian-pin.js";
 import type { GatewayConfig } from "../../config.js";
+import { z } from "zod";
+
 import { getLogger } from "../../logger.js";
 
 const log = getLogger("desktop-stream-ws");
 
-export type DesktopStreamSocketData = RuntimeAudioStreamState & {
-  wsType: "desktop-stream";
-};
+/**
+ * The socket data the desktop upgrade handler attaches, pinned as a zod
+ * schema: the dispatch in `index.ts` discriminates sockets by `safeParse` on
+ * it. The route takes no parameters — the schema is the discriminant — and
+ * the runtime-state half (`config`, the upstream socket, the pending frame
+ * buffer) never crosses the wire and stays hand-modeled on the type.
+ */
+export const desktopStreamSocketDataSchema = z.object({
+  wsType: z.literal("desktop-stream"),
+});
+
+export type DesktopStreamSocketData = z.infer<
+  typeof desktopStreamSocketDataSchema
+> &
+  RuntimeAudioStreamState;
+
+/** Discriminate an untyped socket as a desktop stream socket. */
+export function isDesktopStreamSocketData(
+  ws: import("bun").ServerWebSocket<unknown>,
+): ws is import("bun").ServerWebSocket<DesktopStreamSocketData> {
+  return desktopStreamSocketDataSchema.safeParse(ws.data).success;
+}
 
 /** Upgrade handler for `/v1/desktop/stream`; the route takes no parameters. */
 export function createDesktopStreamWebsocketHandler(config: GatewayConfig) {
@@ -46,14 +67,22 @@ export function createDesktopStreamWebsocketHandler(config: GatewayConfig) {
 }
 
 /** `Bun.serve` handlers pumping RFB bytes to the runtime's `/v1/desktop/stream`. */
-export function getDesktopStreamWebsocketHandlers() {
-  return createRuntimeAudioStreamHandlers<DesktopStreamSocketData>({
-    upstreamPath: "/v1/desktop/stream",
-    log,
-    label: "desktop stream",
-    // RFB has no resync: one dropped frame corrupts the framebuffer for the
-    // rest of the session, so a drop ends it. The JSON streams next door do
-    // not opt in.
-    closeOnDroppedFrame: true,
-  });
-}
+const {
+  open: openDesktopStreamWebsocket,
+  message: messageDesktopStreamWebsocket,
+  close: closeDesktopStreamWebsocket,
+} = createRuntimeAudioStreamHandlers<DesktopStreamSocketData>({
+  upstreamPath: "/v1/desktop/stream",
+  log,
+  label: "desktop stream",
+  // RFB has no resync: one dropped frame corrupts the framebuffer for the
+  // rest of the session, so a drop ends it. The JSON streams next door do
+  // not opt in.
+  closeOnDroppedFrame: true,
+});
+
+export {
+  openDesktopStreamWebsocket,
+  messageDesktopStreamWebsocket,
+  closeDesktopStreamWebsocket,
+};

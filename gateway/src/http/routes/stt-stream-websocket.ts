@@ -20,6 +20,8 @@
  * upstream.
  */
 
+import { z } from "zod";
+
 import {
   authorizeRuntimeAudioStream,
   createRuntimeAudioStreamHandlers,
@@ -35,8 +37,15 @@ import { requestHasTunnelBridgeAuth } from "../../tunnel/bridge-auth.js";
 
 const log = getLogger("stt-stream-ws");
 
-export type SttStreamSocketData = RuntimeAudioStreamState & {
-  wsType: "stt-stream";
+/**
+ * The socket data the STT upgrade handler attaches, pinned as a zod schema:
+ * the dispatch in `index.ts` discriminates sockets by `safeParse` on it, so
+ * the discriminant and the fields the handlers rely on cannot drift. The
+ * runtime-state half (`config`, the upstream socket, the pending frame
+ * buffer) never crosses the wire and stays hand-modeled on the type.
+ */
+export const sttStreamSocketDataSchema = z.object({
+  wsType: z.literal("stt-stream"),
   /**
    * Optional provider identifier for the STT streaming session (e.g.
    * "deepgram", "google-gemini"). The runtime is config-authoritative —
@@ -45,12 +54,22 @@ export type SttStreamSocketData = RuntimeAudioStreamState & {
    * metadata and the runtime logs a mismatch warning if it disagrees with
    * the configured provider.
    */
-  provider?: string;
+  provider: z.string().optional(),
   /** MIME type of the audio being streamed (e.g. "audio/webm;codecs=opus"). */
-  mimeType: string;
+  mimeType: z.string(),
   /** Sample rate in Hz, when applicable. */
-  sampleRate?: number;
-};
+  sampleRate: z.number().optional(),
+});
+
+export type SttStreamSocketData = z.infer<typeof sttStreamSocketDataSchema> &
+  RuntimeAudioStreamState;
+
+/** Discriminate an untyped socket as an STT stream socket. */
+export function isSttStreamSocketData(
+  ws: import("bun").ServerWebSocket<unknown>,
+): ws is import("bun").ServerWebSocket<SttStreamSocketData> {
+  return sttStreamSocketDataSchema.safeParse(ws.data).success;
+}
 
 /**
  * Create a WebSocket upgrade handler that proxies client STT audio frames
@@ -139,25 +158,33 @@ export function createSttStreamWebsocketHandler(config: GatewayConfig) {
  * WebSocket handler config for Bun.serve() that proxies STT audio
  * frames to the runtime's /v1/stt/stream endpoint.
  */
-export function getSttStreamWebsocketHandlers() {
-  return createRuntimeAudioStreamHandlers<SttStreamSocketData>({
-    upstreamPath: "/v1/stt/stream",
-    log,
-    label: "STT stream",
-    upstreamParams: ({ provider, mimeType, sampleRate }) => {
-      const params: Record<string, string> = { mimeType };
-      if (provider) {
-        params.provider = provider;
-      }
-      if (sampleRate !== undefined) {
-        params.sampleRate = String(sampleRate);
-      }
-      return params;
-    },
-    logContext: ({ provider, mimeType, sampleRate }) => ({
-      provider,
-      mimeType,
-      sampleRate,
-    }),
-  });
-}
+const {
+  open: openSttStreamWebsocket,
+  message: messageSttStreamWebsocket,
+  close: closeSttStreamWebsocket,
+} = createRuntimeAudioStreamHandlers<SttStreamSocketData>({
+  upstreamPath: "/v1/stt/stream",
+  log,
+  label: "STT stream",
+  upstreamParams: ({ provider, mimeType, sampleRate }) => {
+    const params: Record<string, string> = { mimeType };
+    if (provider) {
+      params.provider = provider;
+    }
+    if (sampleRate !== undefined) {
+      params.sampleRate = String(sampleRate);
+    }
+    return params;
+  },
+  logContext: ({ provider, mimeType, sampleRate }) => ({
+    provider,
+    mimeType,
+    sampleRate,
+  }),
+});
+
+export {
+  openSttStreamWebsocket,
+  messageSttStreamWebsocket,
+  closeSttStreamWebsocket,
+};

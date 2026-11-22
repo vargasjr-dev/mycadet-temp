@@ -10,11 +10,20 @@ import { signHandshakeUrl } from "../plugin-ingress-handshake.js";
 import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
 import {
   createPluginWebhookWebsocketHandler,
-  getPluginWebhookWebsocketHandlers,
-  isPluginWebhookSocketData,
+  closePluginWebhookWebsocket,
+  messagePluginWebhookWebsocket,
+  openPluginWebhookWebsocket,
+  pluginWebhookSocketDataSchema,
   type PluginWebhookSocketData,
 } from "./plugin-webhook-websocket.js";
 import { IngressRoute } from "../../channels/plugin-ingress.js";
+
+/** The flattened lifecycle handlers, under the tests' historical name. */
+const handlers = {
+  open: openPluginWebhookWebsocket,
+  message: messagePluginWebhookWebsocket,
+  close: closePluginWebhookWebsocket,
+};
 
 setTestSigningKey();
 initSigningKey();
@@ -125,7 +134,9 @@ describe("upgrade gate", () => {
     expect(res).toBeUndefined();
     expect(upgrades).toHaveLength(1);
     expect(upgrades[0]!.plugin).toBe("example");
-    expect(isPluginWebhookSocketData(upgrades[0])).toBe(true);
+    expect(pluginWebhookSocketDataSchema.safeParse(upgrades[0]).success).toBe(
+      true,
+    );
   });
 
   it("refuses a non-upgrade request", async () => {
@@ -548,7 +559,6 @@ describe("frame delivery", () => {
       params?: Record<string, unknown>;
       binary?: Uint8Array;
     }[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (method, params, opts) => {
       calls.push({ method, params, binary: opts?.binary });
       return null;
@@ -571,7 +581,6 @@ describe("frame delivery", () => {
     // The transport does not decide what a frame means. Anything the caller
     // sent reaches the plugin as the bytes it sent.
     const seen: string[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (_method, _params, opts) => {
       seen.push(new TextDecoder().decode(opts?.binary));
       return null;
@@ -589,7 +598,6 @@ describe("frame delivery", () => {
 
   it("delivers a binary frame as the same bytes", async () => {
     const seen: Uint8Array[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (_method, _params, opts) => {
       seen.push(opts!.binary!);
       return null;
@@ -610,7 +618,6 @@ describe("frame delivery", () => {
     const finished: string[] = [];
     let release: (() => void) | undefined;
 
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (_method, _params, opts) => {
       const event = JSON.parse(new TextDecoder().decode(opts?.binary)).event;
       started.push(event);
@@ -640,7 +647,6 @@ describe("frame delivery", () => {
     // A failed call is skipped, not retried — retrying would reorder it
     // behind frames that already arrived.
     const seen: string[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (_method, _params, opts) => {
       const event = JSON.parse(new TextDecoder().decode(opts?.binary)).event;
       seen.push(event);
@@ -658,7 +664,6 @@ describe("frame delivery", () => {
 
   it("refuses a single frame larger than the webhook payload cap", async () => {
     const calls: unknown[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (method) => {
       calls.push(method);
       return null;
@@ -676,7 +681,6 @@ describe("frame delivery", () => {
   it("bounds the queue by bytes, not just frame count", async () => {
     // 100 frames of Bun's maximum size would be gigabytes, so the count
     // alone is not a memory bound.
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(
       async () =>
         new Promise<unknown>(() => {
@@ -697,7 +701,6 @@ describe("frame delivery", () => {
   });
 
   it("closes a connection that outruns the buffer", async () => {
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(
       async () =>
         new Promise<unknown>(() => {
@@ -713,7 +716,6 @@ describe("frame delivery", () => {
   });
 
   it("releases queued bytes as frames are delivered", async () => {
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async () => null);
     const { ws } = fakeSocket(data);
 
@@ -727,7 +729,6 @@ describe("frame delivery", () => {
 
   it("drops undelivered frames when the caller goes away", async () => {
     const seen: string[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     let release: (() => void) | undefined;
     const data = socketData(async (_method, _params, opts) => {
       seen.push(JSON.parse(new TextDecoder().decode(opts?.binary)).event);
@@ -752,7 +753,6 @@ describe("frame delivery", () => {
 
   it("ignores frames that arrive after close", async () => {
     const seen: unknown[] = [];
-    const handlers = getPluginWebhookWebsocketHandlers();
     const data = socketData(async (method) => {
       seen.push(method);
       return null;
