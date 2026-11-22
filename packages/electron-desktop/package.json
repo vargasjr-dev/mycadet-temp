@@ -17,6 +17,7 @@
     "./command-palette-window": "./src/command-palette-window.ts",
     "./commands": "./src/commands.ts",
     "./companion-pointer": "./src/features/companion-pointer.ts",
+    "./companion-geometry": "./src/features/companion-geometry.ts",
     "./dictation": "./src/features/dictation.ts",
     "./file-open-preload": "./src/file-open-preload.ts",
     "./floating-window": "./src/floating-window.ts",
