@@ -33,6 +33,18 @@ export function findAssistant(id?: string | null): LockfileAssistant | null {
   return lockfile.assistants.find((entry) => entry.assistantId === id) ?? null;
 }
 
+/**
+ * Why a hatch can't take `name`: assistant ids key the lockfile, the token
+ * files, and the docker resources, so no two assistants may share one.
+ */
+export function hatchNameConflict(name: string): string | null {
+  if (!findAssistant(name)) return null;
+  return (
+    `An assistant named "${name}" is already hatched.\n` +
+    `Run \`cadet wake\` to restart it, or \`cadet retire ${name}\` to remove it first.`
+  );
+}
+
 export function getAssistantDisplayName(entry: LockfileAssistant): string {
   return entry.name?.trim() || entry.assistantId;
 }

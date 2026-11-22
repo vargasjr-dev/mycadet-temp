@@ -180,4 +180,37 @@ describe("hatchAssistant", () => {
     // The pre-existing entry is untouched — no second allocation ran.
     expect(readLockfile().assistants).toHaveLength(1);
   });
+
+  test("a duplicate docker name answers 409 before the docker leg runs", async () => {
+    saveLockfileAssistant({
+      assistantId: "hatch-op-dup",
+      cloud: "docker",
+      port: 7830,
+    });
+    const legCalls = hatchDockerMock.mock.calls.length;
+    const result = await hatchAssistant({
+      remote: "docker",
+      name: "hatch-op-dup",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(409);
+    expect(hatchDockerMock.mock.calls.length).toBe(legCalls);
+  });
+
+  test("a local hatch refuses a name a docker assistant already holds", async () => {
+    saveLockfileAssistant({
+      assistantId: "hatch-op-dup",
+      cloud: "docker",
+      port: 7830,
+    });
+    const result = await hatchAssistant({
+      remote: "local",
+      name: "hatch-op-dup",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(409);
+    expect(readLockfile().assistants[0]?.cloud).toBe("docker");
+  });
 });

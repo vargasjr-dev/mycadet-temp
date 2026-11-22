@@ -6,6 +6,7 @@ import { hatchCloud } from "../remotes/cloud/hatch";
 import { hatchDocker } from "../remotes/docker/hatch";
 import { hatchLocal } from "../remotes/local/hatch";
 import { hatchBaseten } from "../remotes/baseten/hatch";
+import { hatchNameConflict } from "./lookup";
 import { HatchAssistantResult } from "./types";
 
 /**
@@ -117,6 +118,12 @@ async function hatchRemote(
         precollectedApiKey,
         reporter,
       } = params;
+      if (name) {
+        const conflict = hatchNameConflict(name);
+        if (conflict) {
+          return { ok: false, status: 409, error: conflict, assistantId: name };
+        }
+      }
       return await hatchDocker({
         name,
         watch,
