@@ -198,6 +198,23 @@ describe("hatchAssistant", () => {
     expect(hatchDockerMock.mock.calls.length).toBe(legCalls);
   });
 
+  test("a duplicate baseten name answers 409 before the baseten leg runs", async () => {
+    saveLockfileAssistant({
+      assistantId: "hatch-op-dup",
+      cloud: "docker",
+      port: 7830,
+    });
+    const legCalls = basetenMock.mock.calls.length;
+    const result = await hatchAssistant({
+      remote: "baseten",
+      name: "hatch-op-dup",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(409);
+    expect(basetenMock.mock.calls.length).toBe(legCalls);
+  });
+
   test("a local hatch refuses a name a docker assistant already holds", async () => {
     saveLockfileAssistant({
       assistantId: "hatch-op-dup",

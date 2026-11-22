@@ -81,6 +81,22 @@ export async function hatchAssistant(
 async function hatchRemote(
   params: HatchAssistantParams,
 ): Promise<HatchAssistantResult> {
+  // No two assistants may share a name — ids key the lockfile, the token
+  // files, and the docker resources. Refused here, before any leg runs, so
+  // every remote answers 409 without building or starting anything. (The
+  // local leg re-asserts this inside withLocalHatchLock — the only
+  // serialized point, cross-process — reusing this same helper.)
+  if (params.name) {
+    const conflict = hatchNameConflict(params.name);
+    if (conflict) {
+      return {
+        ok: false,
+        status: 409,
+        error: conflict,
+        assistantId: params.name,
+      };
+    }
+  }
   switch (params.remote) {
     case "local": {
       const {
@@ -118,12 +134,6 @@ async function hatchRemote(
         precollectedApiKey,
         reporter,
       } = params;
-      if (name) {
-        const conflict = hatchNameConflict(name);
-        if (conflict) {
-          return { ok: false, status: 409, error: conflict, assistantId: name };
-        }
-      }
       return await hatchDocker({
         name,
         watch,
