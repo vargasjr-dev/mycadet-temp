@@ -170,12 +170,6 @@ export interface DesktopAppInputs {
    * answer (the helper sidecar and the notification probe).
    */
   permissions?: PermissionsShellInputs;
-  /**
-   * The shell's permission-guide surfaces — its drag target, its settings
-   * pane opener, its settings-window list. Absent, the guide doesn't
-   * install.
-   */
-  permissionGuide?: PermissionGuideInputs;
 }
 
 // In prod, register `app://` and `cadet://` as "standard" + "secure" schemes
@@ -466,7 +460,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installTray(inputs.tray);
       installShare(inputs.share);
       installPermissions(inputs.permissions);
-      installPermissionGuide(inputs.permissionGuide);
+      installPermissionGuide();
       // Still the classic shells' own composition until its round lands:
       // the voice-mode chord (R12).
       installDictation();

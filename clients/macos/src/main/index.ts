@@ -35,7 +35,6 @@ import {
   isNotifierSupported,
   restoreNotifierDelegate,
 } from "./notifier";
-import { permissionGuide } from "./permission-guide-values";
 import { permissionsShell } from "./permissions-strategy";
 import {
   installCompanionWindow,
@@ -94,7 +93,6 @@ startApp({
   },
   share: { present: shareMenuPresenter() },
   permissions: permissionsShell,
-  permissionGuide,
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();

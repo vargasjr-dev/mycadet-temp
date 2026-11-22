@@ -1,31 +1,3 @@
-/**
- * What a watch session could read, and how a pick becomes a target.
- *
- * The companion's Teach opens a picker (`companion-capture-picker.tsx`) and
- * this is the main-process half of it: the list the picker draws, and the
- * resolution of a pressed row into the display or window the session is
- * told to read (`WatchCaptureTarget`).
- *
- * **The windows come from the native helper, not from `desktopCapturer`.**
- * The frame the shell draws around a picked window has to follow it, which
- * takes the window's bounds, and `desktopCapturer` names windows without
- * saying where they are. The helper reads the window server's own list
- * (`CaptureSources.swift`), which carries bounds, owner and title in one
- * call, and the shell polls the same call to keep the frame on a window the
- * user is moving.
- *
- * **A Chrome tab is a window with a step in front.** Chrome's scripting
- * interface lists tabs by Chrome's own window id and a tab index, neither of
- * which the window server knows. Picking one has Chrome show that tab and
- * bring its window forward, after which the tab is the frontmost Chrome
- * window with that title, and that window is the target. The step is here so
- * the surface never has to know a tab is not a window.
- *
- * Everything the desktop is asked comes through {@link CaptureSourceDeps}, so
- * the resolution and the parsing can be exercised without a window server, a
- * helper process, or Chrome.
- */
-
 import { app, screen } from "electron";
 import { z } from "zod";
 
@@ -36,7 +8,6 @@ import type {
   WatchCaptureTarget,
 } from "@mycadet/ipc-contract";
 
-import { runAppleScript } from "./appleScriptExecutor";
 import log from "@mycadet/electron-desktop/app-logger";
 import type { HelperShareTarget } from "./share-targets";
 import { getSharedCuHelper } from "./sidecar/shared-cu-helper";
@@ -109,6 +80,8 @@ export interface ChromeTab {
 const FIELD_SEPARATOR = "";
 
 /**
+ * TODO: We should look into a cross compatible way to do this besides OSAscript
+ *
  * Every tab in every Chrome window, one per line: window id, index, whether
  * it is the window's active tab, and its title.
  */
@@ -298,10 +271,10 @@ export const defaultCaptureSourceDeps: CaptureSourceDeps = {
   pointerDisplayId: () =>
     screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id,
   listChromeTabs: async () =>
-    parseChromeTabs(await runAppleScript(LIST_CHROME_TABS_SCRIPT)),
+    parseChromeTabs(await runBash(LIST_CHROME_TABS_SCRIPT)),
   activateChromeTab: async (chromeWindowId, tabIndex) =>
     parseChromeWindowPlacement(
-      await runAppleScript(activateChromeTabScript(chromeWindowId, tabIndex)),
+      await runBash(activateChromeTabScript(chromeWindowId, tabIndex)),
     ),
   raiseWindow: async (windowId) => {
     const answer = await getSharedCuHelper().call("captureSources.raise", {

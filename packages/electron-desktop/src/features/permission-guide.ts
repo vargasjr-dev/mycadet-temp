@@ -31,9 +31,14 @@ import { createFloatingWindow } from "../floating-window";
 import { getAccentHex, getAvatarPng, onAvatarChange } from "../avatar";
 import { handle, on } from "../ipc";
 import log from "../app-logger";
-import { getPermissionsService } from "./permissions";
+import {
+  getPermissionsService,
+  preparePermissionPresentation,
+} from "./permissions";
 
 import { PERMISSION_GUIDE_MIN_HEIGHT } from "@mycadet/ipc-contract";
+import { openPermissionSettingsPane } from "./permissions-strategy";
+import { dragTarget, listSettingsWindows } from "./permission-guide-values";
 
 export const GUIDE_WIDTH = 560;
 export const GUIDE_HEIGHT = PERMISSION_GUIDE_MIN_HEIGHT;
@@ -70,22 +75,6 @@ export function permissionGuideBounds(
   };
 }
 
-/**
- * The surfaces only the shell's OS has: the app the user drags into the OS
- * settings list, and — where the OS even lets a window be found — the
- * settings windows the guide follows.
- */
-export interface PermissionGuideInputs {
-  /** The helper app to drag into the list, with its icon. */
-  dragTarget(): Promise<{ file: string; icon: NativeImage }>;
-  /** Open the kind's settings pane — the guide opens it beside itself. */
-  openSettingsPane(kind: DraggablePermissionKind): Promise<void>;
-  /** The OS settings windows, when the OS can name them. */
-  listSettingsWindows?(): Promise<Array<{ id?: number; bounds: Rectangle }>>;
-  /** Runs when the guide yields focus to the OS settings surface. */
-  onYieldToSettings?: () => void;
-}
-
 const GUIDE = "permission-guide";
 const kindSchema = z.enum(DRAGGABLE_PERMISSION_KINDS);
 const idSchema = z.number().int().positive();
@@ -114,7 +103,6 @@ interface GuideSession {
 let guide: GuideSession | null = null;
 let generation = 0;
 let guideOwner: WebContents | undefined;
-let guideInputs: PermissionGuideInputs | undefined;
 
 function refreshGuideAppearance(session: GuideSession): void {
   const png = getAvatarPng();
@@ -166,7 +154,7 @@ function guideSender(id: number, sender: WebContents): GuideSession | null {
 }
 
 async function followSettings(session: GuideSession): Promise<void> {
-  const windows = (await guideInputs?.listSettingsWindows?.()) ?? [];
+  const windows = (await listSettingsWindows?.()) ?? [];
   if (guide !== session || !session.ready || session.yieldedToSettings) {
     return;
   }
@@ -198,7 +186,7 @@ async function followSettings(session: GuideSession): Promise<void> {
 }
 
 function yieldToSettings(session: GuideSession): void {
-  guideInputs?.onYieldToSettings?.();
+  preparePermissionPresentation();
   session.yieldedToSettings = true;
   session.window.setAlwaysOnTop(false);
 }
@@ -217,9 +205,6 @@ export async function beginPermissionGuide(
   sender?: WebContents,
   source?: PermissionSourceRect,
 ): Promise<void> {
-  if (!guideInputs) {
-    return;
-  }
   dismissGuide();
   const id = generation;
   guideOwner = sender;
@@ -231,7 +216,7 @@ export async function beginPermissionGuide(
     guideOwner = undefined;
     return;
   }
-  const { file, icon } = await guideInputs.dragTarget();
+  const { file, icon } = await dragTarget();
   if (icon.isEmpty()) {
     throw new Error(
       "The permission app is unavailable. Reinstall Cadet and try again.",
@@ -297,7 +282,7 @@ export async function beginPermissionGuide(
   });
   publishGuide();
   try {
-    await guideInputs.openSettingsPane(kind);
+    await openPermissionSettingsPane(kind);
   } catch (error) {
     if (guide === session) {
       dismissGuide();
@@ -349,13 +334,7 @@ export async function beginPermissionGuide(
   );
 }
 
-export const installPermissionGuide = (
-  inputs?: PermissionGuideInputs,
-): void => {
-  if (!inputs) {
-    return;
-  }
-  guideInputs = inputs;
+export const installPermissionGuide = (): void => {
   const service = getPermissionsService();
   if (!service) {
     return;
