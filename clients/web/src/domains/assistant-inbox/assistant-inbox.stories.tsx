@@ -109,10 +109,7 @@ interface InboxStoryArgs {
  * row on the page background, the shrink-wrapped aside the rail sizes, and
  * the transparent main beside it that the inbox fills.
  */
-const shellDecorator: Decorator<InboxStoryArgs> = function ChatShell(
-  Story,
-  context,
-) {
+const shellDecorator: Decorator<InboxStoryArgs> = function ChatShell(Story) {
   return (
     <div className="flex h-screen gap-4 bg-[var(--surface-base)] p-4">
       <aside className="w-fit shrink-0 overflow-hidden">

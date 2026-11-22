@@ -119,7 +119,7 @@ mock.module(
 /* Pinned apps come from the daemon's app list. The pin list is a plain
    variable rather than seeded query data because `SideMenuUnderTest` builds its
    own QueryClient per render, so a test has nothing to seed. */
-let pinnedAppsFixture: AppSummary[] = [];
+const pinnedAppsFixture: AppSummary[] = [];
 
 mock.module(
   "@/hooks/use-pinned-apps",
@@ -159,7 +159,6 @@ import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
 import { useResolvedAssistantStore } from "@/stores/resolved-assistant-store";
 import { saveExpandedSections } from "@/domains/chat/utils/sidebar-group-collapse-storage";
 import type * as UsePinnedApps from "@/hooks/use-pinned-apps";
-import { makeAppSummary } from "@/types/app-summary.test-helper";
 import type { AppSummary } from "@/types/app-types";
 
 // Most of what follows describes the Grouped view's composition: the Chats
@@ -354,20 +353,6 @@ describe("AssistantSideMenu · All view", () => {
     localStorage.setItem("cadet:sidebar-view-mode:asst-1", "all");
     useSidebarLayoutStore.setState({ assistantId: null });
   });
-
-  const conversations = [
-    makeConversation({
-      conversationId: "p1",
-      title: "Pin one",
-      isPinned: true,
-    }),
-    makeConversation({ conversationId: "r1", title: "Recent one" }),
-    makeConversation({
-      conversationId: "s1",
-      title: "Slack one",
-      originChannel: "slack",
-    }),
-  ];
 
   test("carries no 'Show more' affordance", () => {
     const html = renderMenu({

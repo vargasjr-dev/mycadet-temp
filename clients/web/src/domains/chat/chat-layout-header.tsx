@@ -242,19 +242,17 @@ export function ChatLayoutHeader({
               ...macosTrafficLightStyle,
             }}
           >
-            // The desktop PanelLeft toggle is gone: the sidebar is always //
-            open, so the header's left cluster only carries the mobile // drawer
-            button. isMobile ? (
-            <Button
-              variant="ghost"
-              iconOnly={<MenuIcon />}
-              aria-label={t("chatLayoutHeader.openNavigationAria")}
-              aria-expanded={drawerOpen}
-              aria-controls="chat-side-menu"
-              tooltip={t("chatLayoutHeader.openNavigationAria")}
-              onClick={toggleSidebar}
-            />
-            ) : null
+            {isMobile ? (
+              <Button
+                variant="ghost"
+                iconOnly={<MenuIcon />}
+                aria-label={t("chatLayoutHeader.openNavigationAria")}
+                aria-expanded={drawerOpen}
+                aria-controls="chat-side-menu"
+                tooltip={t("chatLayoutHeader.openNavigationAria")}
+                onClick={toggleSidebar}
+              />
+            ) : null}
             {!isMobile ? (
               <>
                 <Button
