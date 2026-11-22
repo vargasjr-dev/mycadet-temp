@@ -43,7 +43,9 @@ This separation aims to uphold two crucial invariants:
 
 Colors on the arrows carry the access meaning:
 
-- green is read/write
+<!-- TODO: Update read/write to red to signify dangerous -->
+<!-- TODO: Come up with a fourth color to signify just traffic movement, to replace the white that looks bad in the Gateway subgraph below -->
+- red is read/write
 - blue read-only
 - violet read-metadata-only
 
@@ -76,9 +78,10 @@ The Gateway is the front door controlling all of the data that comes from the ou
 
 - Web Server - The main listener routing both HTTP and WebSocket connections from the outside world
 - IPC Server - The main entrypoint where the Assistant can read data from the Gateway.
-- `$GATEWAY_SECURITY_DIR` - The location where the gateway manages all of its data, including logs and its own SQlite database. Default: `/gateway-security`
+- File System - The location where the gateway manages all of its data, including logs and its own SQlite database. A default value of `/gateway-security` that can be overridden with `$GATEWAY_SECURITY_DIR`.
 - IPC Clients - How it communicates to the Assistant and the Credential Vault
 - Tunnel Client - How it connects directly to the outside world, when not receiving its requests from the Operator.
+- Scheduler - A process running routine work that keeps the Gateway healthy.
 
 The arrows keep the access convention from the data-plane diagram above:
 green edges write (the Gateway reaching the Assistant and the Credential
@@ -86,6 +89,9 @@ Vault), blue edges are the Assistant reading back, and violet edges are
 metadata only (how the IPC endpoints find each other inside
 `$GATEWAY_SECURITY_DIR`).
 
+<!-- TODO: Make arrow from scheduler to FS the RW color -->
+<!-- TODO: Make arrow from IPC Server to FS the RO color -->
+<!-- TODO: Make arrow from Web Server to FS the RW color -->
 ```mermaid
 flowchart LR
   classDef world fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46
@@ -99,7 +105,8 @@ flowchart LR
     IpcServer["IPC Server"]
     IpcClients["IPC Clients"]
     TunnelClient["Tunnel Client"]
-    SecurityDir[("$GATEWAY_SECURITY_DIR")]
+    SecurityDir[("File System")]
+    Scheduler["Scheduler"]
   end
 
   World["Outside world"]:::world
@@ -115,6 +122,7 @@ flowchart LR
   TunnelClient -.-> WebServer
   WebServer -.-> SecurityDir
   IpcServer -.-> SecurityDir
+  Scheduler -.-> SecurityDir
   linkStyle 1,3,4 stroke:#22c55e
   linkStyle 2 stroke:#3b82f6
   linkStyle 7,8 stroke:#a855f7

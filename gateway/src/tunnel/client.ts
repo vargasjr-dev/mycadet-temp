@@ -37,7 +37,6 @@ import {
   TUNNEL_BINARY_WEBSOCKET_HEADER,
 } from "./binary-websocket.js";
 import { TunnelWebSocketBridge } from "./websocket-bridge.js";
-import { getIsCloud } from "../cloud-url.js";
 
 const log = getLogger("tunnel-client");
 
@@ -69,7 +68,7 @@ export type WebSocketConstructorWithOptions = {
 };
 
 export type TunnelClientOptions = {
-  tunnelBaseUrl: string;
+  tunnelBaseUrl?: string;
   gatewayLoopbackBaseUrl: string;
   credentials: CredentialCache;
   configFile: ConfigFileCache;
@@ -234,7 +233,7 @@ export class TunnelClient {
   }
 
   start(): void {
-    if (this.running) return;
+    if (this.running || !this.options.tunnelBaseUrl) return;
     this.running = true;
     this.lastPublicIngressDisabled = this.isPublicIngressDisabled();
     this.unsubscribeConfigInvalidation ??= this.options.configFile.onInvalidate(
@@ -292,7 +291,8 @@ export class TunnelClient {
   }
 
   private async connect(): Promise<void> {
-    if (!this.running || this.connecting) {
+    const { tunnelBaseUrl } = this.options;
+    if (!this.running || this.connecting || !tunnelBaseUrl) {
       return;
     }
     this.connecting = true;
@@ -340,7 +340,7 @@ export class TunnelClient {
 
     let registerUrl: string;
     try {
-      registerUrl = buildRegisterWebSocketUrl(this.options.tunnelBaseUrl);
+      registerUrl = buildRegisterWebSocketUrl(tunnelBaseUrl);
     } catch (err) {
       this.connecting = false;
       log.error({ err }, "Invalid Tunnel base URL");
@@ -791,16 +791,7 @@ export function createTunnelClient(
     credentials: CredentialCache;
     configFile: ConfigFileCache;
   },
-): TunnelClient | undefined {
-  if (!config.tunnelBaseUrl) {
-    const isCloud = getIsCloud();
-    if (isCloud) {
-      log.warn(
-        "TUNNEL_BASE_URL is not configured on a cloud pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
-      );
-    }
-    return undefined;
-  }
+): TunnelClient {
   return new TunnelClient({
     tunnelBaseUrl: config.tunnelBaseUrl,
     gatewayLoopbackBaseUrl: getGatewayInternalBaseUrl(),
@@ -957,12 +948,12 @@ let cachedTunnelClient: TunnelClient | undefined | null = null;
  * config/credential/config-file caches. Undefined when no tunnel is
  * configured. The gateway server and the tunnel-status routes share it.
  */
-export function getTunnelClient(): TunnelClient | undefined {
-  if (cachedTunnelClient === null) {
-    cachedTunnelClient = createTunnelClient(getConfig(), {
+export function getTunnelClient(): TunnelClient {
+  if (!cachedTunnelClient) {
+    return (cachedTunnelClient = createTunnelClient(getConfig(), {
       credentials: getCredentials(),
       configFile: getConfigFileCache(),
-    });
+    }));
   }
   return cachedTunnelClient;
 }

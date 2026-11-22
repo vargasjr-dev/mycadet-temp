@@ -135,7 +135,6 @@ import { tunnelRoutes } from "./ipc/tunnel-handlers.js";
 import { webhookRouteRoutes } from "./ipc/webhook-route-handlers.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
-import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
 import { enablePublicIngress, getTunnelClient } from "./tunnel/client.js";
@@ -145,6 +144,7 @@ import {
   VERSION_HEADER_VALUE,
 } from "./version.js";
 import { isWebsocketUpgradeRequest } from "./http/utils.js";
+import { startInboundEventExpirationCleanup } from "./channels/inbound-event.js";
 process.title = "cadet-gateway";
 
 const log = getLogger("main");
@@ -226,15 +226,6 @@ function getClientIp(
 }
 
 /**
- * How often expired inbound dedup claims are swept.
- *
- * Hourly, because nothing depends on the sweep being timely: an expired claim
- * is already reclaimed in place by the next delivery on the same key, so this
- * is a size bound, not a correctness one.
- */
-const INBOUND_DEDUP_CLEANUP_INTERVAL_MS = 60 * 60 * 1_000;
-
-/**
  * Background log-retention sweep (field feedback item 8): the prune used to
  * run inside initLogger — and on every UTC rollover inside getLogger() —
  * both on hot paths. The gateway main process owns the interval now; a
@@ -296,7 +287,7 @@ async function main() {
   // write changes the advertised rules, so the tunnel re-advertises them on
   // its next connect.
   onWebhookIngressRoutesChanged(() => {
-    tunnelClient?.requestRulesRefresh("webhook-routes-changed");
+    tunnelClient.requestRulesRefresh("webhook-routes-changed");
   });
 
   // ── Integration readiness flags ──
@@ -928,21 +919,6 @@ async function main() {
   whatsappDedupCache.startCleanup();
   emailDedupCache.startCleanup();
 
-  // The persistent inbound claims sweep too, more slowly. Expired rows are
-  // already reclaimed in place by the next claim on the same key, so this only
-  // keeps the table from growing a row per message that nothing will read
-  // again.
-  const inboundDedupCleanup = setInterval(() => {
-    try {
-      const evicted = cleanupExpiredInboundEvents();
-      if (evicted > 0) {
-        log.debug({ evicted }, "Evicted expired inbound dedup claims");
-      }
-    } catch (err) {
-      log.warn({ err }, "Inbound dedup cleanup failed");
-    }
-  }, INBOUND_DEDUP_CLEANUP_INTERVAL_MS);
-
   const telegramCaches = {
     credentials: credentialCache,
     configFile: configFileCache,
@@ -1197,25 +1173,30 @@ async function main() {
   });
   sleepWakeDetector.start();
 
+  const stopInboundEventExpirationCleanup =
+    startInboundEventExpirationCleanup();
+
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
-    const shutdownTasks: (() => Promise<void>)[] = [];
-    sleepWakeDetector.stop();
-    credentialWatcher.stop();
-    configFileWatcher.stop();
-    const tunnelStop = tunnelClient?.stop();
-    if (tunnelStop) shutdownTasks.push(() => tunnelStop);
-    shutdownTasks.push(stopDiscordClient);
-    shutdownTasks.push(stopSlackClient);
-    ipcServer.stop();
-    telegramDedupCache.stopCleanup();
-    whatsappDedupCache.stopCleanup();
-    emailDedupCache.stopCleanup();
-    clearInterval(inboundDedupCleanup);
+    const shutdownTasks: (() => Promise<void> | void)[] = [
+      sleepWakeDetector.stop,
+      credentialWatcher.stop,
+      configFileWatcher.stop,
+      tunnelClient.stop,
+      stopDiscordClient,
+      stopSlackClient,
+      ipcServer.stop,
+      telegramDedupCache.stopCleanup,
+      whatsappDedupCache.stopCleanup,
+      emailDedupCache.stopCleanup,
+      stopInboundEventExpirationCleanup,
+    ];
+
+    const shutdownPromises = shutdownTasks.map((task) => task());
     setTimeout(() => {
       log.info("Drain window elapsed, stopping server");
-      void Promise.allSettled(shutdownTasks.map((task) => task())).then(() => {
+      void Promise.allSettled(shutdownPromises).then(() => {
         server.stop(true);
         process.exit(0);
       });
