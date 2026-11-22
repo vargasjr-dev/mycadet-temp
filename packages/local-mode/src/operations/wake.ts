@@ -28,7 +28,7 @@ export async function wakeAssistant(
     case "local":
       return await wakeLocal(entry, opts);
     case "docker":
-      return await wakeDocker(entry, opts);
+      return await wakeDocker(entry, { ...opts, waitUntilReady: true });
     case "baseten":
       return await wakeBaseten(entry);
     default:
