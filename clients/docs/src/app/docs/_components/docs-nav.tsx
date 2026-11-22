@@ -157,6 +157,11 @@ const NAV_ITEMS: DocsNavItem[] = [
     icon: icon(Boxes),
     children: [
       {
+        label: "Architecture",
+        href: "/docs/architecture",
+        icon: icon(Layers),
+      },
+      {
         label: "The Workspace",
         href: "/docs/key-concepts/the-workspace",
         icon: icon(FolderOpen),

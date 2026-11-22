@@ -1,5 +1,3 @@
-<!-- TODO: Let's actually move this tab to the top of the Key Concepts side nav -->
-
 Cadet is a digital assistant optimized for being hostable anywhere and accessible from anywhere. This page breaks down how it all works from the top down.
 
 ## The Cadet Ecosystem
@@ -10,17 +8,18 @@ There are three core components in the Cadet Ecosystem:
 - The Operator - the system that manages multiple Cadets through operations like hatching and retiring. Cadet Cloud is an example of an Operator.
 - The Cadet itself - the assistant that can be run anywhere, all the time, serving their guardians.
 
-<!-- TODO: The edges are almost the same color as the background -->
-<!-- TODO: Clients & Channels one color, Operator another, the three Cadets a third color, all light colors -->
-
 ```mermaid
 flowchart LR
-  Clients["Clients"]
-  Channels["Channels"]
-  Operator["Operator"]
-  Cadet1["Cadet 1"]
-  Cadet2["Cadet 2"]
-  Cadet3["Cadet 3"]
+  classDef clients fill:#dbeafe,stroke:#60a5fa,color:#1e3a8a
+  classDef operator fill:#dcfce7,stroke:#4ade80,color:#14532d
+  classDef cadet fill:#fef9c3,stroke:#facc15,color:#713f12
+
+  Clients["Clients"]:::clients
+  Channels["Channels"]:::clients
+  Operator["Operator"]:::operator
+  Cadet1["Cadet 1"]:::cadet
+  Cadet2["Cadet 2"]:::cadet
+  Cadet3["Cadet 3"]:::cadet
 
   Clients --> Operator
   Channels --> Operator
@@ -42,18 +41,20 @@ This separation aims to uphold two crucial invariants:
 - the Assistant is unable to edit data in the Gateway directly.
 - the Assistant is unable to read the secrets stored in the Credential Vault directly.
 
-<!-- TODO: make the Gateway -> Assistant edge bidirectional -->
-<!-- TODO: somehow also make an edge from Gate -->
-<!-- TODO: make the gateway, assistant, and CES three different light colots -->
-<!-- TODO: somehow have an arrow from the "outside world" into Gateway, or find some other way to make it obvious that Gateway is the entry point -->
-
 ```mermaid
 flowchart LR
-  Gateway["Gateway"]
-  Assistant["Assistant"]
-  CES["Credential Vault"]
+  classDef world fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46
+  classDef gateway fill:#dbeafe,stroke:#60a5fa,color:#1e3a8a
+  classDef assistant fill:#dcfce7,stroke:#4ade80,color:#14532d
+  classDef vault fill:#fef9c3,stroke:#facc15,color:#713f12
 
-  Gateway --> Assistant
-  Assistant --> CES
+  World["Outside world"]:::world
+  Gateway["Gateway"]:::gateway
+  Assistant["Assistant"]:::assistant
+  CES["Credential Vault"]:::vault
+
+  World <--> Gateway
+  Gateway <--> Assistant
   Gateway --> CES
+  Assistant --> CES
 ```

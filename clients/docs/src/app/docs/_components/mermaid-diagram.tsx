@@ -3,25 +3,51 @@
 import { useEffect, useId, useState } from "react";
 import mermaid from "mermaid";
 
-let mermaidInitialized = false;
+let mermaidInitializedFor: "default" | "dark" | null = null;
 let mermaidModule: typeof mermaid | null = null;
 
-async function getMermaid() {
+async function getMermaid(dark: boolean) {
   if (!mermaidModule) {
     mermaidModule = (await import("mermaid")).default;
   }
-  if (!mermaidInitialized) {
+  const theme = dark ? ("dark" as const) : ("default" as const);
+  if (mermaidInitializedFor !== theme) {
     // `loose` is what allows `click <node> <href>` directives to render as
-    // real links — that is the whole point for docs navigation.
+    // real links — that is the whole point for docs navigation. Re-init on a
+    // theme flip: with the light theme pinned, edge strokes nearly matched
+    // the dark page background and vanished.
     mermaidModule.initialize({
       startOnLoad: false,
       securityLevel: "loose",
-      theme: "default",
+      theme,
       flowchart: { htmlLabels: true },
     });
-    mermaidInitialized = true;
+    mermaidInitializedFor = theme;
   }
   return mermaidModule;
+}
+
+function usePrefersDark(): boolean {
+  const [dark, setDark] = useState(
+    () =>
+      typeof document !== "undefined" &&
+      document.documentElement.classList.contains("dark"),
+  );
+
+  useEffect(() => {
+    // The theme picker just toggles `.dark` on <html>; follow it so diagrams
+    // re-render in the matching mermaid theme.
+    const observer = new MutationObserver(() => {
+      setDark(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  return dark;
 }
 
 interface MermaidDiagramProps {
@@ -43,10 +69,11 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
   // A pure per-instance id (useId) instead of Math.random at render time;
   // mermaid rejects the colon-shaped default, so strip to [A-Za-z0-9-].
   const id = useId().replace(/[^a-zA-Z0-9-]/g, "");
+  const dark = usePrefersDark();
 
   useEffect(() => {
     let cancelled = false;
-    getMermaid()
+    getMermaid(dark)
       .then((m) => m.render(id, code))
       .then(({ svg: renderedSvg }) => {
         if (!cancelled) {
@@ -61,7 +88,7 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
     return () => {
       cancelled = true;
     };
-  }, [code, id]);
+  }, [code, id, dark]);
 
   const svg = rendered?.code === code ? rendered.svg : null;
   const failed = failedFor === code;
