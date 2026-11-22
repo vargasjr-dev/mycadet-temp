@@ -84,6 +84,7 @@ export async function wakeDocker(
       `Containers for '${entry.assistantId}' don't exist yet — recreating from the recorded images...`,
     );
     try {
+      await removeServiceContainers(entry);
       await recreateDockerContainers(entry, options);
       await startAll();
     } catch (recreateErr) {

@@ -30,6 +30,7 @@ export async function sleepDocker(
   ]) {
     try {
       const status = await execOutput("docker", [
+        "container",
         "inspect",
         "--format",
         "{{.State.Status}}",

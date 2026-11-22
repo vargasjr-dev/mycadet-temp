@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   afterAll,
   afterEach,
@@ -8,6 +11,15 @@ import {
   spyOn,
   test,
 } from "bun:test";
+
+// A recreate saves the entry through the real lockfile path: isolate it.
+const configHome = mkdtempSync(join(tmpdir(), "docker-wake-config-"));
+const prevConfigHome = process.env.XDG_CONFIG_HOME;
+process.env.XDG_CONFIG_HOME = configHome;
+afterAll(() => {
+  if (prevConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+  else process.env.XDG_CONFIG_HOME = prevConfigHome;
+});
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // can restore them — bun runs every test file in one process with a shared
@@ -155,6 +167,18 @@ describe("wakeDocker — the docker wake leg", () => {
       "Containers for 'docker-1' don't exist yet — recreating from the recorded images...",
     );
     expect(logSpy).toHaveBeenCalledWith("Docker containers started.");
+  });
+
+  test("a partly missing group is removed before it is recreated", async () => {
+    startFailures = [undefined, NO_SUCH_CONTAINER];
+
+    await wakeDocker(makeEntry());
+
+    const firstRun = dockerCalls.findIndex((c) => c.args[0] === "run");
+    expect(dockerCalls.slice(0, firstRun)).toContainEqual({
+      cmd: "docker",
+      args: ["rm", "--force", "docker-1-assistant"],
+    });
   });
 
   test("a recreate failure comes back as a structured 500 — the leg never throws", async () => {
