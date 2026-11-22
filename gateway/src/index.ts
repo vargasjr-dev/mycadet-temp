@@ -17,8 +17,10 @@ import {
   type CredentialChangeEvent,
 } from "./credential-watcher.js";
 import {
+  closeTwilioMediaStream,
   createTwilioMediaWebsocketHandler,
-  getMediaStreamWebsocketHandlers,
+  messageTwilioMediaStream,
+  openTwilioMediaWebsocket,
   type MediaStreamSocketData,
 } from "./http/routes/twilio-media-websocket.js";
 import {
@@ -127,7 +129,7 @@ import { admissionPolicyRoutes } from "./ipc/admission-policy-handlers.js";
 import { channelPermissionRoutes } from "./ipc/channel-permission-handlers.js";
 import { trustVerdictRoutes } from "./ipc/trust-verdict-handlers.js";
 import { guardianDeliveryRoutes } from "./ipc/guardian-delivery-handlers.js";
-import { createLogTailRoutes } from "./ipc/log-tail-handlers.js";
+import { logTailRoutes } from "./ipc/log-tail-handlers.js";
 import { createChannelSocketHealthRoutes } from "./ipc/channel-socket-health-handlers.js";
 import { createCredentialRequestIpcRoutes } from "./ipc/credential-request-handlers.js";
 import { slackThreadRoutes } from "./ipc/slack-thread-handlers.js";
@@ -148,6 +150,7 @@ import {
   VERSION_HEADER_VALUE,
 } from "./version.js";
 import { isWebsocketUpgradeRequest } from "./http/utils.js";
+import { ServerWebSocket } from "bun";
 process.title = "cadet-gateway";
 
 const log = getLogger("main");
@@ -194,15 +197,21 @@ function detectCredentialChanges(
 // Shared rate limiter for auth failures and unauthenticated endpoints
 const authRateLimiter = getAuthRateLimiter();
 
-function isMediaStreamSocketData(data: unknown): data is MediaStreamSocketData {
+// TODO: we can clean up all of the `ws as never`s below by using proper type discrimination
+// TODO: so copy the pattern to the rest below
+function isMediaStreamSocketData(
+  ws: ServerWebSocket<unknown>,
+): ws is ServerWebSocket<MediaStreamSocketData> {
+  // TODO: Use zod
   return (
-    !!data &&
-    typeof data === "object" &&
-    (data as { wsType?: unknown }).wsType === "twilio-media-stream"
+    !!ws.data &&
+    typeof ws.data === "object" &&
+    (ws.data as { wsType?: unknown }).wsType === "twilio-media-stream"
   );
 }
 
 function isSttStreamSocketData(data: unknown): data is SttStreamSocketData {
+  // TODO: Use zod
   return (
     !!data &&
     typeof data === "object" &&
@@ -519,7 +528,6 @@ async function main() {
     "tts",
     { credentials: credentialCache },
   );
-  const twilioMediaStreamWebsocketHandlers = getMediaStreamWebsocketHandlers();
   const pluginWebhookWebsocketHandlers = getPluginWebhookWebsocketHandlers();
   const sttStreamWebsocketHandlers = getSttStreamWebsocketHandlers();
   const watchStreamWebsocketHandlers = getWatchStreamWebsocketHandlers();
@@ -555,8 +563,10 @@ async function main() {
     maxRequestBodySize: 512 * 1024 * 1024,
     websocket: {
       open(ws) {
-        if (isMediaStreamSocketData(ws.data)) {
-          twilioMediaStreamWebsocketHandlers.open(ws as never);
+        if (isMediaStreamSocketData(ws)) {
+          // TODO: we can get rid of the `getHandlers()` pattern and start just importing what we need directly
+          // TODO: eventually, this will let us build a WS route table similar to our http route table
+          openTwilioMediaWebsocket(ws);
           return;
         }
         if (isPluginWebhookSocketData(ws.data)) {
@@ -586,8 +596,8 @@ async function main() {
         closeUnknownSocket(ws, "open");
       },
       message(ws, message) {
-        if (isMediaStreamSocketData(ws.data)) {
-          twilioMediaStreamWebsocketHandlers.message(ws as never, message);
+        if (isMediaStreamSocketData(ws)) {
+          messageTwilioMediaStream(ws, message);
           return;
         }
         if (isPluginWebhookSocketData(ws.data)) {
@@ -617,8 +627,8 @@ async function main() {
         closeUnknownSocket(ws, "message");
       },
       close(ws, code, reason) {
-        if (isMediaStreamSocketData(ws.data)) {
-          twilioMediaStreamWebsocketHandlers.close(ws as never, code, reason);
+        if (isMediaStreamSocketData(ws)) {
+          closeTwilioMediaStream(ws, code, reason);
           return;
         }
         if (isPluginWebhookSocketData(ws.data)) {
@@ -1612,7 +1622,9 @@ async function main() {
     ...trustVerdictRoutes,
     ...guardianDeliveryRoutes,
     ...riskClassificationRoutes,
-    ...createLogTailRoutes(config),
+    // TODO: The rest of these routes should be capable of the same
+    //       createXRoutes => xRoutes cleanup
+    ...logTailRoutes,
     ...createChannelSocketHealthRoutes({
       slack: () => slackSocketClient,
       discord: () => discordGatewayClient,

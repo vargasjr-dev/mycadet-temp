@@ -7,17 +7,14 @@
 
 import { GatewayLogsTailIpcParamsSchema } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
-import type { GatewayConfig } from "../config.js";
 import { tailGatewayLogs } from "../http/routes/log-tail.js";
 import type { IpcRoute } from "./server.js";
 
-export function createLogTailRoutes(config: GatewayConfig): IpcRoute[] {
-  return [
-    {
-      method: "gateway_logs_tail",
-      schema: GatewayLogsTailIpcParamsSchema,
-      handler: (params?: Record<string, unknown>) =>
-        tailGatewayLogs(config, GatewayLogsTailIpcParamsSchema.parse(params)),
-    },
-  ];
-}
+export const logTailRoutes: IpcRoute[] = [
+  {
+    method: "gateway_logs_tail",
+    schema: GatewayLogsTailIpcParamsSchema,
+    handler: (params?: Record<string, unknown>) =>
+      tailGatewayLogs(GatewayLogsTailIpcParamsSchema.parse(params)),
+  },
+];

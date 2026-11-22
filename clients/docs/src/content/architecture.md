@@ -41,6 +41,12 @@ This separation aims to uphold two crucial invariants:
 - the Assistant is unable to edit data in the Gateway directly.
 - the Assistant is unable to read the secrets stored in the Credential Vault directly.
 
+<!-- TODO: I want different color arrows signifying Read Only vs Read Write -->
+<!-- TODO: Arrow from Gateway -> Assistant should be RW -->
+<!-- TODO: Arrow from Gateway -> CES should be RW -->
+<!-- TODO: Arrow from Assistant -> Gateway should be RO -->
+<!-- TODO: Arrow from Assistant -> CES should be different from both of the above as its Metadata Read Only -->
+<!-- TODO: "Credential Vault" is bleeding it's 't' ever so slightly outside the bounds of its node -->
 ```mermaid
 flowchart LR
   classDef world fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46
@@ -58,3 +64,14 @@ flowchart LR
   Gateway --> CES
   Assistant --> CES
 ```
+
+## How the Gateway Works
+
+The Gateway is the front door controlling all of the data that comes from the outside world into the Assistant. It is made up of the following components:
+- Web Server - The main listener routing both HTTP and WebSocket connections from the outside world
+- IPC Server - The main entrypoint where the Assistant can read data from the Gateway.
+- `$GATEWAY_SECURITY_DIR` - The location where the gateway manages all of its data, including logs and its own SQlite database. Default: `/gateway-security`
+- IPC Clients - How it communicates to the Assistant and the Credential Vault
+- Tunnel Client - How it connects directly to the outside world, when not receiving its requests from the Operator.
+
+<!-- TODO: Create a mermaid diagram that captures the above somehow -->

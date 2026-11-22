@@ -6,7 +6,7 @@ import {
   type GatewayLogLevelName,
 } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
-import { getConfig, type GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import {
   getLogger,
   LOG_FILE_JSON_PATTERN,
@@ -48,13 +48,13 @@ function isLevelName(value: string): value is GatewayLogLevelName {
 }
 
 export function tailGatewayLogs(
-  config: GatewayConfig,
   params: TailGatewayLogsParams = {},
 ): TailGatewayLogsResult {
   const nRaw = params.n ?? 10;
   const n = Math.max(1, Math.min(1000, Number.isNaN(nRaw) ? 10 : nRaw));
   const minLevel = LEVEL_MAP[params.level ?? "info"];
   const moduleFilter = params.module;
+  const config = getConfig();
 
   try {
     if (!config.logFile.dir || !existsSync(config.logFile.dir)) {
@@ -118,7 +118,7 @@ export async function handleLogTail(req: Request): Promise<Response> {
   // Parse optional module filter
   const moduleFilter = searchParams.get("module") ?? undefined;
   return Response.json(
-    tailGatewayLogs(getConfig(), {
+    tailGatewayLogs({
       n,
       level: levelParam,
       module: moduleFilter,

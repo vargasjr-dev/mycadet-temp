@@ -8,6 +8,7 @@ import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
+import { ServerWebSocket } from "bun";
 
 const log = getLogger("twilio-media-ws");
 
@@ -24,15 +25,14 @@ const RELAY_TOKEN_PROFILE: ScopeProfile = "gateway_service_v1";
 // Cap buffered messages to prevent unbounded memory growth if upstream stalls
 const MAX_PENDING_MESSAGES = 100;
 
-type MediaStreamSocketData = {
+// TODO: Convert to zod schema
+export type MediaStreamSocketData = {
   wsType: "twilio-media-stream";
   callSessionId: string;
   assistantRuntimeBaseUrl: string;
   upstream?: WebSocket;
   pendingMessages?: (string | ArrayBuffer | Uint8Array)[];
 };
-
-export type { MediaStreamSocketData };
 
 /**
  * Extract `callSessionId` and auth `token` from the request.
@@ -172,118 +172,113 @@ function checkMediaStreamAuth(
   return null;
 }
 
+export function openTwilioMediaWebsocket(
+  ws: ServerWebSocket<MediaStreamSocketData>,
+) {
+  const { callSessionId, assistantRuntimeBaseUrl } = ws.data;
+
+  // Initialize message buffer for frames arriving before upstream connects
+  ws.data.pendingMessages = [];
+
+  // Build upstream URL to runtime with JWT service token for auth
+  const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
+    buildWsUpstreamUrl({
+      baseUrl: assistantRuntimeBaseUrl,
+      path: "/v1/calls/media-stream",
+      extraParams: { callSessionId },
+    });
+  log.info(
+    { callSessionId, upstreamUrl: logSafeUpstreamUrl },
+    "Opening upstream media-stream WS to runtime",
+  );
+
+  // The DOM lib's WebSocket declaration shadows Bun's here — it only
+  // knows the subprotocols overload, so the headers-init rides past it
+  // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
+  // tests lean on DOM-typed fetch, ~300 errors.)
+  const upstream = new WebSocket(upstreamUrl, {
+    headers: forwardedIdentityHeaders(),
+  } as never);
+  ws.data.upstream = upstream;
+
+  upstream.addEventListener("open", () => {
+    log.info({ callSessionId }, "Upstream media-stream WS connected");
+    // Flush any buffered messages
+    const pending = ws.data.pendingMessages;
+    if (pending) {
+      for (const msg of pending) {
+        upstream.send(msg);
+      }
+      ws.data.pendingMessages = undefined;
+    }
+  });
+
+  upstream.addEventListener("message", (event) => {
+    // Forward runtime -> Twilio
+    const data =
+      typeof event.data === "string"
+        ? event.data
+        : new Uint8Array(event.data as ArrayBuffer);
+    ws.send(data);
+  });
+
+  upstream.addEventListener("close", (event) => {
+    log.info(
+      { callSessionId, code: event.code },
+      "Upstream media-stream WS closed",
+    );
+    ws.close(event.code, event.reason);
+  });
+
+  upstream.addEventListener("error", (event) => {
+    log.error(
+      { callSessionId, error: event },
+      "Upstream media-stream WS error",
+    );
+    ws.close(1011, "Upstream error");
+  });
+}
+
+export function messageTwilioMediaStream(
+  ws: import("bun").ServerWebSocket<MediaStreamSocketData>,
+  message: string | ArrayBuffer | Uint8Array,
+) {
+  // Forward Twilio -> runtime
+  const upstream = ws.data.upstream;
+  if (upstream && upstream.readyState === WebSocket.OPEN) {
+    upstream.send(message);
+  } else if (ws.data.pendingMessages) {
+    // Buffer messages until upstream connects
+    if (ws.data.pendingMessages.length >= MAX_PENDING_MESSAGES) {
+      log.warn(
+        { callSessionId: ws.data.callSessionId },
+        "Media stream pending message buffer overflow — closing connection",
+      );
+      ws.close(1008, "Buffer overflow");
+      return;
+    }
+    ws.data.pendingMessages.push(message);
+  }
+}
+
 /**
  * WebSocket handler config for Bun.serve() that proxies media-stream
  * frames to the runtime.
  */
-export function getMediaStreamWebsocketHandlers() {
-  return {
-    open(ws: import("bun").ServerWebSocket<MediaStreamSocketData>) {
-      const { callSessionId, assistantRuntimeBaseUrl } = ws.data;
-
-      // Initialize message buffer for frames arriving before upstream connects
-      ws.data.pendingMessages = [];
-
-      // Build upstream URL to runtime with JWT service token for auth
-      const { url: upstreamUrl, logSafeUrl: logSafeUpstreamUrl } =
-        buildWsUpstreamUrl({
-          baseUrl: assistantRuntimeBaseUrl,
-          path: "/v1/calls/media-stream",
-          extraParams: { callSessionId },
-        });
-      log.info(
-        { callSessionId, upstreamUrl: logSafeUpstreamUrl },
-        "Opening upstream media-stream WS to runtime",
-      );
-
-      // The DOM lib's WebSocket declaration shadows Bun's here — it only
-      // knows the subprotocols overload, so the headers-init rides past it
-      // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
-      // tests lean on DOM-typed fetch, ~300 errors.)
-      const upstream = new WebSocket(upstreamUrl, {
-        headers: forwardedIdentityHeaders(),
-      } as never);
-      ws.data.upstream = upstream;
-
-      upstream.addEventListener("open", () => {
-        log.info({ callSessionId }, "Upstream media-stream WS connected");
-        // Flush any buffered messages
-        const pending = ws.data.pendingMessages;
-        if (pending) {
-          for (const msg of pending) {
-            upstream.send(msg);
-          }
-          ws.data.pendingMessages = undefined;
-        }
-      });
-
-      upstream.addEventListener("message", (event) => {
-        // Forward runtime -> Twilio
-        const data =
-          typeof event.data === "string"
-            ? event.data
-            : new Uint8Array(event.data as ArrayBuffer);
-        ws.send(data);
-      });
-
-      upstream.addEventListener("close", (event) => {
-        log.info(
-          { callSessionId, code: event.code },
-          "Upstream media-stream WS closed",
-        );
-        ws.close(event.code, event.reason);
-      });
-
-      upstream.addEventListener("error", (event) => {
-        log.error(
-          { callSessionId, error: event },
-          "Upstream media-stream WS error",
-        );
-        ws.close(1011, "Upstream error");
-      });
-    },
-
-    message(
-      ws: import("bun").ServerWebSocket<MediaStreamSocketData>,
-      message: string | ArrayBuffer | Uint8Array,
-    ) {
-      // Forward Twilio -> runtime
-      const upstream = ws.data.upstream;
-      if (upstream && upstream.readyState === WebSocket.OPEN) {
-        upstream.send(message);
-      } else if (ws.data.pendingMessages) {
-        // Buffer messages until upstream connects
-        if (ws.data.pendingMessages.length >= MAX_PENDING_MESSAGES) {
-          log.warn(
-            { callSessionId: ws.data.callSessionId },
-            "Media stream pending message buffer overflow — closing connection",
-          );
-          ws.close(1008, "Buffer overflow");
-          return;
-        }
-        ws.data.pendingMessages.push(message);
-      }
-    },
-
-    close(
-      ws: import("bun").ServerWebSocket<MediaStreamSocketData>,
-      code: number,
-      reason: string,
-    ) {
-      const { callSessionId, upstream } = ws.data;
-      log.info(
-        { callSessionId, code, reason },
-        "Twilio media-stream WS closed",
-      );
-      // Clear pending buffer so no messages are flushed after close
-      ws.data.pendingMessages = undefined;
-      if (
-        upstream &&
-        (upstream.readyState === WebSocket.OPEN ||
-          upstream.readyState === WebSocket.CONNECTING)
-      ) {
-        upstream.close(code, reason);
-      }
-    },
-  };
+export function closeTwilioMediaStream(
+  ws: ServerWebSocket<MediaStreamSocketData>,
+  code: number,
+  reason: string,
+) {
+  const { callSessionId, upstream } = ws.data;
+  log.info({ callSessionId, code, reason }, "Twilio media-stream WS closed");
+  // Clear pending buffer so no messages are flushed after close
+  ws.data.pendingMessages = undefined;
+  if (
+    upstream &&
+    (upstream.readyState === WebSocket.OPEN ||
+      upstream.readyState === WebSocket.CONNECTING)
+  ) {
+    upstream.close(code, reason);
+  }
 }
