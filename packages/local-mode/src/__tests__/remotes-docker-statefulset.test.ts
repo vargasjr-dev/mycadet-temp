@@ -190,6 +190,31 @@ describe("buildServiceRunArgs extra env routing", () => {
   });
 });
 
+describe("buildServiceRunArgs — timezone", () => {
+  const savedTz = process.env.TZ;
+  afterEach(() => {
+    if (savedTz === undefined) delete process.env.TZ;
+    else process.env.TZ = savedTz;
+  });
+
+  test("every container runs in the host's timezone", () => {
+    process.env.TZ = "Asia/Tokyo";
+    const runArgs = buildServiceRunArgs({
+      gatewayPort: 7830,
+      imageTags,
+      instanceName,
+      res: dockerResourceNames(instanceName),
+    });
+    for (const service of [
+      "assistant",
+      "gateway",
+      "credential-executor",
+    ] as const) {
+      expect(runArgs[service]()).toContain("TZ=Asia/Tokyo");
+    }
+  });
+});
+
 describe("buildServiceRunArgs — assistant", () => {
   test("does not grant elevated capabilities or disable security profiles", () => {
     const args = buildAssistantArgs();

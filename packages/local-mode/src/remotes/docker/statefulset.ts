@@ -292,7 +292,8 @@ export function getBuilderManagedEnvKeys(
   if (!container)
     throw new Error(`docker-statefulset: unknown service "${service}"`);
 
-  const always = new Set<string>(["PATH"]);
+  // We always set TZ ourselves below, so an old one shouldn't be copied over.
+  const always = new Set<string>(["PATH", "TZ"]);
   const hostForwarded: Array<{ name: string; hostVar: string }> = [];
   for (const entry of container.env) {
     if (entry.kind === "host") {
@@ -347,6 +348,8 @@ export function buildServiceRunArgs(
   } = opts;
 
   const result = {} as Record<ServiceName, () => string[]>;
+  // Containers default to UTC. Use the host's timezone so times match the user's.
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   for (const container of spec.containers) {
     const svc = container.internalName;
@@ -413,6 +416,10 @@ export function buildServiceRunArgs(
           const val = process.env[hostVar];
           if (val) args.push("-e", `${entry.name}=${val}`);
         }
+      }
+
+      if (timeZone) {
+        args.push("-e", `TZ=${timeZone}`);
       }
 
       if (svc === "gateway" && extraGatewayEnv) {

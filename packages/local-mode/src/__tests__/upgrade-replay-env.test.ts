@@ -67,6 +67,12 @@ describe("buildReplayEnv", () => {
     });
   });
 
+  test("a captured TZ is not replayed over the host's", () => {
+    expect(
+      buildReplayEnv({ TZ: "UTC", MY_CUSTOM_FLAG: "yes" }, "assistant"),
+    ).toEqual({ MY_CUSTOM_FLAG: "yes" });
+  });
+
   test("assistant: captured ANTHROPIC_API_KEY dropped when set on host", () => {
     process.env.ANTHROPIC_API_KEY = "sk-host";
     const replay = buildReplayEnv(
