@@ -36,7 +36,7 @@ export function createRowMapper<TRow, TDomain>(
   >;
 
   return (row: TRow): TDomain => {
-    const result : Record<string, unknown> = {};
+    const result: Record<string, unknown> = {};
     for (const [key, descriptor] of entries) {
       if (typeof descriptor === "string") {
         result[key] = row[descriptor as keyof TRow];
