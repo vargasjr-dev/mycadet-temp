@@ -26,7 +26,7 @@ import { getName, installIdentityIpc, onNameChange } from "./identity";
 import { installPowerEvents } from "./power-events";
 import { installConnectivityIpc, installStatusIpc } from "./status";
 import { installConnectivityProbe } from "./connectivity-probe";
-import { configureNotifications } from "./notifications";
+import { configureNotifications, installNotifications } from "./notifications";
 import {
   installNativeNotifier,
   nativeNotificationOverrides,
@@ -226,6 +226,14 @@ const provisionPackagedCli = (): void => {
  *   Linux), the packaged CLI provisioning, and the client's own setup.
  */
 export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
+  // The app EventEmitter fans out to a dozen legit before-quit tear-downs
+  // (taskbar, dictation, main-window close-through, power events, the
+  // notifier delegate, bundles, the permission guide, the host proxy, the
+  // companion, the tray), which trips Electron's default 10-listener
+  // warning on every boot. None of them accumulate per event - each module
+  // registers once - so the ceiling is a false positive, not a leak.
+  app.setMaxListeners(20);
+
   // Single-instance lock: relaunches focus the existing window instead of
   // spawning a parallel main process. The second-instance handler fires on
   // the instance that holds the lock (the primary).
@@ -346,6 +354,9 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
         ...nativeNotificationOverrides(),
       });
       installNativeNotifier();
+      // The preload registers its identity publisher eagerly, so the
+      // handlers must exist before any window loads.
+      installNotifications();
 
       // The instance that lost the single-instance lock is already
       // quitting. `app.quit()` requests a shutdown rather than halting the

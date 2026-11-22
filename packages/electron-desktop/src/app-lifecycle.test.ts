@@ -30,6 +30,9 @@ mock.module("electron", () =>
   electronMock({
     app: electronAppOverride({
       requestSingleInstanceLock: () => lockWinner,
+      // The composition raises the app emitter's listener ceiling for the
+      // legit before-quit fan-out.
+      setMaxListeners: () => undefined,
       on: (event: string, handler: () => void) => {
         const list = appListeners.get(event) ?? [];
         list.push(handler);

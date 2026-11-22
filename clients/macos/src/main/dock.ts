@@ -4,11 +4,11 @@ import { readLockfile } from "@mycadet/local-mode";
 import { app, nativeImage, type NativeImage } from "electron";
 import { z } from "zod";
 
-import { onAvatarChange } from "@mycadet/electron-desktop/avatar";
 import { avatarBitmap } from "@mycadet/electron-desktop/avatar-image";
 import {
   applyAlphaMask,
   compositeCentered,
+  onAvatarChange,
   roundedRectCoverage,
 } from "@mycadet/electron-desktop";
 import { on } from "@mycadet/electron-desktop/ipc";

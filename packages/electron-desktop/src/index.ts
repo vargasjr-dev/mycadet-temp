@@ -8,7 +8,6 @@
  * and the preload bundles lean.
  */
 
-export { APP_HOST, APP_PROTOCOL } from "./app-config";
 export { default as log } from "./app-logger";
 export { startApp } from "./app-lifecycle";
 export {
@@ -26,6 +25,7 @@ export {
 export { hasPendingDeepLinks } from "./deep-links";
 export { getDeviceId } from "./device-id";
 export { hasPendingFiles } from "./file-open";
+export { onAvatarChange } from "./avatar";
 export {
   applyAlphaMask,
   compositeCentered,

@@ -7,13 +7,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./app-name": "./src/app-name.ts",
-    "./app-origin": "./src/app-origin.ts",
     "./avatar": "./src/avatar.ts",
     "./avatar-image": "./src/avatar-image.ts",
     "./capability-registry": "./src/capability-registry.ts",
     "./file-open-preload": "./src/file-open-preload.ts",
     "./ipc": "./src/ipc.ts",
-    "./notifications": "./src/notifications.ts",
     "./preload": "./src/preload.ts",
     "./session-token-store": "./src/session-token-store.ts",
     "./settings": "./src/settings.ts",

@@ -293,7 +293,6 @@
       "version": "0.13.0",
       "dependencies": {
         "@mycadet/electron-desktop": "workspace:*",
-        "@mycadet/environments": "workspace:*",
         "@mycadet/ipc-contract": "workspace:*",
         "@mycadet/local-mode": "workspace:*",
         "electron-log": "5.4.4",
@@ -459,7 +458,6 @@
       "version": "0.13.0",
       "dependencies": {
         "@mycadet/electron-desktop": "workspace:*",
-        "@mycadet/environments": "workspace:*",
         "@mycadet/ipc-contract": "workspace:*",
         "@mycadet/local-mode": "workspace:*",
         "electron-log": "5.4.4",
