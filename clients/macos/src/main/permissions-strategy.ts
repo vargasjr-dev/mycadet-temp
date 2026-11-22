@@ -28,7 +28,7 @@ import {
   isNotifierSupported,
   requestNotifierAuthorization,
   type NotifierAuthorizationResult,
-} from "./notifier";
+} from "@mycadet/electron-desktop/notifier";
 import { readScreenRecordingPermission } from "@mycadet/electron-desktop/screen-recording-permission";
 import { typeIntoFrontApp, undoInFrontApp } from "./textInsertion";
 

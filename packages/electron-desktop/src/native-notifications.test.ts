@@ -1,10 +1,10 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../test-setup";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { NotificationCreateOptions } from "@mycadet/electron-desktop/notifications";
+import type { NotificationCreateOptions } from "./notifications";
 
 import type {
   NotifierCategory,
@@ -51,7 +51,7 @@ mock.module("electron", () =>
 );
 
 const warnings: unknown[][] = [];
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
+mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
   default: {
     info: () => undefined,
@@ -72,6 +72,8 @@ let notifierPresent = true;
 let showThrows = false;
 
 mock.module("./notifier", () => ({
+  // The quit-time delegate release rides the arm wired into this module.
+  restoreNotifierDelegate: () => undefined,
   registerNotifierCategories: (categories: NotifierCategory[]) => {
     registered.push(categories);
   },
@@ -100,7 +102,7 @@ mock.module("./notifier", () => ({
 }));
 
 const { CATEGORY_ACTIONS, NOTIFICATION_CATEGORIES } =
-  await import("@mycadet/electron-desktop/notifications");
+  await import("./notifications");
 const {
   createNativeNotificationFactory,
   registerNativeNotificationCategories,

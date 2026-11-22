@@ -7,7 +7,7 @@ import {
   mock,
   test,
 } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../test-setup";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -29,7 +29,7 @@ mock.module("electron", () => electronMock({ app: electronApp }));
 
 const warnings: unknown[][] = [];
 const infos: unknown[][] = [];
-mock.module("@mycadet/electron-desktop/app-logger", () => ({
+mock.module("./app-logger", () => ({
   getLogFilePaths: () => [],
   default: {
     info: (...args: unknown[]) => infos.push(args),

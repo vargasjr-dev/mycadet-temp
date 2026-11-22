@@ -26,11 +26,11 @@ import { getName, installIdentityIpc, onNameChange } from "./identity";
 import { installPowerEvents } from "./power-events";
 import { installConnectivityIpc, installStatusIpc } from "./status";
 import { installConnectivityProbe } from "./connectivity-probe";
+import { configureNotifications } from "./notifications";
 import {
-  configureNotifications,
-  type NotificationCreateOptions,
-  type NotificationLike,
-} from "./notifications";
+  installNativeNotifier,
+  nativeNotificationOverrides,
+} from "./native-notifications";
 import { installImageContextMenu } from "./image-context-menu";
 import { installTextContextMenu } from "./text-context-menu";
 import { installHotkeysIpc } from "./hotkeys";
@@ -71,7 +71,7 @@ import {
   syncCompanionSurface,
 } from "./features/companion-window";
 import { registerCompanionSurfaceSync } from "./companion-menu";
-import { install as installShare, type SharePresenter } from "./features/share";
+import { install as installShare } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
 import {
   createHelperToastFactory,
@@ -138,31 +138,6 @@ export interface DesktopAppInputs {
    */
   titleBarMode: "hidden" | "hiddenOverlay" | "systemFrame";
 
-  // To VargasJR: Everything under here is ripe for consolidation.
-  // I will show just two more in this prototype
-
-  /**
-   * The toast factory notifications deliver through. Absent, the shared
-   * module's `electron.Notification` default delivers click-only toasts.
-   */
-  notifications?: {
-    create?: (options: NotificationCreateOptions) => NotificationLike;
-    isSupported?: () => boolean;
-  };
-  /**
-   * The shell's host-proxy contributions — the capability flags and the
-   * computer-use executor only its build ships. Absent, the shared
-   * composition answers with the shared defaults.
-   */
-  /**
-   * The shell's tray surfaces — its companion wiring. Absent, the classic
-   * notification-area runtime answers.
-   */
-  /**
-   * The shell's native share surface. Absent, sharing presents with the
-   * Save-As dialog fallback.
-   */
-  share?: { present: SharePresenter };
   /**
    * The shell's own permission surfaces — its OS reads, request actions,
    * settings panes, and insertion machinery. Absent, the shared defaults
@@ -392,8 +367,9 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
               }),
             }
           : {}),
-        ...(inputs.notifications ?? {}),
+        ...nativeNotificationOverrides(),
       });
+      installNativeNotifier();
 
       // The instance that lost the single-instance lock is already
       // quitting. `app.quit()` requests a shutdown rather than halting the
@@ -450,19 +426,13 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installPopoutWindows();
       installWindowAttentionFeature();
 
-      // The composition every shell shares: auth, the auxiliary windows,
-      // the login item, the main window, the host-proxy runtime, the tray,
-      // the share sheet, the permissions service, the permission guide,
-      // the companion surface, and the helper bridges (dictation, hotkeys,
-      // the voice-mode chord everywhere but darwin) all install right
-      // here, followed by the shell's own setup.
       installAuth();
       installAuxiliaryWindows();
       installLoginItem();
       installMainWindow();
       installHostProxy(inputs.interfaceId);
       installTray();
-      installShare(inputs.share);
+      installShare();
       installPermissions(inputs.permissions);
       installPermissionGuide(inputs.permissionGuide);
       // The companion surface joins the shared composition on every

@@ -30,6 +30,8 @@
     "./ipc": "./src/ipc.ts",
     "./native-helper-client": "./src/native-helper-client.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
+    "./native-notifications": "./src/native-notifications.ts",
+    "./notifier": "./src/notifier.ts",
     "./notifications": "./src/notifications.ts",
     "./permissions": "./src/features/permissions.ts",
     "./preload": "./src/preload.ts",

@@ -21,7 +21,8 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { app } from "electron";
 
-import { resolveNotificationAvatarPath } from "@mycadet/electron-desktop/notification-avatar-path";
+import type { NotificationsRuntime } from "./notifications";
+import { resolveNotificationAvatarPath } from "./notification-avatar-path";
 import {
   CATEGORY_ACTIONS,
   createElectronNotification,
@@ -29,11 +30,12 @@ import {
   type CategoryAction,
   type NotificationCreateOptions,
   type NotificationLike,
-} from "@mycadet/electron-desktop/notifications";
+} from "./notifications";
 
-import log from "@mycadet/electron-desktop/app-logger";
+import log from "./app-logger";
 import {
   ensureNotifierDelegate,
+  restoreNotifierDelegate,
   getNotifier,
   isNotifierSupported,
   registerNotifierCategories,
@@ -95,6 +97,32 @@ export const registerNativeNotificationCategories = (): void => {
     byId.set(categoryId, { categoryId, actions });
   }
   registerNotifierCategories([...byId.values()]);
+};
+
+/**
+ * The darwin factory: notifications that can carry category action buttons
+ * (the avatar rides them). `null` where the OS says the module cannot run —
+ * an unbundled load reports unsupported rather than raising.
+ */
+export const nativeNotificationOverrides =
+  (): Partial<NotificationsRuntime> => {
+    if (process.platform !== "darwin" || !isNotifierSupported()) {
+      return {};
+    }
+    return createNativeNotificationFactory();
+  };
+
+/**
+ * The darwin notifier delegate and its categories, wired once the factory
+ * exists; the delegate's release rides the app quit. No-op elsewhere.
+ */
+export const installNativeNotifier = (): void => {
+  if (process.platform !== "darwin" || !isNotifierSupported()) {
+    return;
+  }
+  registerNativeNotificationCategories();
+  ensureNotifierDelegate();
+  app.once("before-quit", restoreNotifierDelegate);
 };
 
 export const createNativeNotificationFactory = (): {

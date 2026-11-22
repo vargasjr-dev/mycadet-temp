@@ -100,7 +100,11 @@ export const sanitizeFilename = (filename: string): string => {
 };
 
 // Reclaim stale staged files an earlier run left behind.
-export const install = (share?: { present: SharePresenter }): void => {
+export const install = (): void => {
+  const share =
+    process.platform === "darwin"
+      ? { present: shareMenuPresenter() }
+      : undefined;
   if (share) {
     void sweepStaleShareDirs();
   }

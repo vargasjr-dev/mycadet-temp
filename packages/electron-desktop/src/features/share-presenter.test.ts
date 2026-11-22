@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { electronMock } from "../../test-setup";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -42,18 +42,37 @@ mock.module("node:fs/promises", () => ({
   stat: statMock,
 }));
 
-mock.module("electron", () => electronMock({}));
+// What the share sheet was handed, recorded by the stub class below.
+const sharePopups: Array<{ filePaths: string[]; window?: unknown }> = [];
+
+mock.module("electron", () =>
+  electronMock({
+    // The darwin share sheet itself: the presenter builds it at present
+    // time; the stub records what it was handed.
+    ShareMenu: class {
+      filePaths: string[];
+      constructor(options: { filePaths: string[] }) {
+        this.filePaths = options.filePaths;
+      }
+      popup(options: { window?: unknown }) {
+        sharePopups.push({
+          filePaths: this.filePaths,
+          window: options.window,
+        });
+      }
+    },
+  }),
+);
+
+const realPlatform = process.platform;
+Object.defineProperty(process, "platform", { value: "darwin" });
+afterEach(() => {
+  Object.defineProperty(process, "platform", { value: realPlatform });
+});
 
 const { install, sweepStaleShareDirs } = await import("./share");
 
-// The test's stand-in for a shell's native share surface: it records what
-// the staged share handed it.
-const presented: Array<{ filePath: string; sender: unknown }> = [];
-const present = (file: { filePath: string; sender: unknown }): void => {
-  presented.push(file);
-};
-
-install({ present });
+install();
 
 // install kicks off a startup sweep (a `readdir`) synchronously; snapshot the
 // call count before `beforeEach` clears the mocks.
@@ -71,7 +90,7 @@ const expectedDir = `${path.join(tmpdir(), "cadet-share-")}abc123`;
 const STALE_MS = 60 * 60 * 1000;
 
 beforeEach(() => {
-  presented.length = 0;
+  sharePopups.length = 0;
   mkdtempMock.mockClear();
   writeFileMock.mockClear();
   rmMock.mockClear();
@@ -131,8 +150,10 @@ describe("staged share handler", () => {
     const expectedPath = path.join(expectedDir, "report.pdf");
     expect(writeFileMock).toHaveBeenCalledWith(expectedPath, bytes);
 
-    // …and the presenter is handed exactly that path, with the sender.
-    expect(presented).toEqual([{ filePath: expectedPath, sender: fakeSender }]);
+    // …and the share sheet is built on exactly that path.
+    expect(sharePopups).toEqual([
+      { filePaths: [expectedPath], window: undefined },
+    ]);
   });
 
   test("strips path components from the renderer filename, keeping the write inside the temp dir", async () => {
@@ -142,7 +163,7 @@ describe("staged share handler", () => {
     // THEN only the basename is used, so the write stays in the temp dir
     const expectedPath = path.join(expectedDir, "passwd");
     expect(writeFileMock).toHaveBeenCalledWith(expectedPath, bytes);
-    expect(presented[0]!.filePath).toBe(expectedPath);
+    expect(sharePopups[0]?.filePaths).toEqual([expectedPath]);
   });
 
   test("never deletes the fresh temp dir — only stale dirs are swept", async () => {

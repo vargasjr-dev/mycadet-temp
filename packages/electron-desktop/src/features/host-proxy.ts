@@ -12,10 +12,8 @@ import { app } from "electron";
 import { createHostProxyRuntime } from "../host-proxy/runtime";
 import { installHostProxyBridge } from "../host-proxy/router";
 
-import { shutdownSharedCuHelper } from "../sidecar/shared-cu-helper";
 import log from "../app-logger";
 import { computerUseExecutors } from "./computer-use-actions";
-import { createHostCuExecutor } from "./host-cu-executor";
 
 export const install = (interfaceId: string): void => {
   // Deferred one microtask: capability modules install synchronously in
@@ -29,27 +27,14 @@ export const install = (interfaceId: string): void => {
 };
 
 const installBridge = (interfaceId: string): void => {
-  const darwin = process.platform === "darwin";
-  const shellCu = darwin
-    ? {
-        executor: createHostCuExecutor(),
-        teardown: shutdownSharedCuHelper,
-      }
-    : (() => {
-        const cu = computerUseExecutors();
-        return { executor: cu.host_cu, teardown: cu.teardown };
-      })();
+  const cu = computerUseExecutors();
   const teardown = installHostProxyBridge(
     createHostProxyRuntime({
       interfaceId,
-      // The darwin client can draw on its own companion surface, capture
-      // the screen around it, and walk its element tree in order.
-      ...(darwin
-        ? {
-            supports: { windowCapture: true, sequence: true, coachmarks: true },
-          }
-        : {}),
-      hostCu: shellCu,
+      // The client can draw on its own companion surface, capture the
+      // screen around it, and walk its element tree in order.
+      supports: { windowCapture: true, sequence: true, coachmarks: true },
+      hostCu: { executor: cu.host_cu, teardown: cu.teardown },
       logger: log,
     }),
   );

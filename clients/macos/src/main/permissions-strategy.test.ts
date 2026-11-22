@@ -5,7 +5,7 @@ import type {
   Notifier,
   NotifierAuthorizationResult,
   NotifierRequest,
-} from "./notifier";
+} from "@mycadet/electron-desktop/notifier";
 import {
   SYSTEM_PERMISSION_KINDS,
   type PermissionNotificationPresentation,
@@ -143,7 +143,7 @@ mock.module("@mycadet/electron-desktop/notifications", () => ({
     preparedSenderCurrent && /^scope:v1:[a-f0-9]{64}$/.test(identity.scopeId),
 }));
 
-mock.module("./notifier", () => ({
+mock.module("@mycadet/electron-desktop/notifier", () => ({
   getNotifier: () => notifier,
   isNotifierSupported: () => notifier?.isSupported() ?? false,
   requestNotifierAuthorization: () => authorizationRequest(),
