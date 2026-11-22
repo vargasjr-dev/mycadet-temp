@@ -132,6 +132,7 @@ import { createChannelSocketHealthRoutes } from "./ipc/channel-socket-health-han
 import { createCredentialRequestIpcRoutes } from "./ipc/credential-request-handlers.js";
 import { slackThreadRoutes } from "./ipc/slack-thread-handlers.js";
 import { thresholdRoutes } from "./ipc/threshold-handlers.js";
+import { emailRoutes } from "./ipc/email-handlers.js";
 import { trustRulesRoutes } from "./ipc/trust-rules-handlers.js";
 import { riskClassificationRoutes } from "./ipc/risk-classification-handlers.js";
 import { createTunnelRoutes } from "./ipc/tunnel-handlers.js";
@@ -1625,6 +1626,7 @@ async function main() {
       configFileCache,
       ensurePublicIngressLiveForCredentialLink,
     ),
+    ...emailRoutes,
   ]);
   ipcServer.start();
 
