@@ -6,6 +6,7 @@ import type { Plugin } from "vite";
 import source from "../package.json";
 
 export const packageDependencies = {
+  "use-sync-external-store": source.dependencies["use-sync-external-store"],
   zod: source.dependencies.zod,
   i18next: source.dependencies.i18next,
   "react-i18next": source.dependencies["react-i18next"],
@@ -78,21 +79,23 @@ export function appPackage(): Plugin {
             version: source.version,
             license: "MIT",
             type: "module",
-            sideEffects: false,
+            sideEffects: ["**/*.css"],
             exports: Object.fromEntries(
               Object.entries(source.exports).map(([entry, conditions]) => [
                 entry,
-                Object.fromEntries(
-                  Object.entries(conditions).map(([condition, target]) => [
-                    condition,
-                    target.replace("./dist/package/", "./"),
-                  ]),
-                ),
+                typeof conditions === "string"
+                  ? conditions.replace("./dist/package/", "./")
+                  : Object.fromEntries(
+                      Object.entries(conditions).map(([condition, target]) => [
+                        condition,
+                        target.replace("./dist/package/", "./"),
+                      ]),
+                    ),
               ]),
             ),
-            peerDependencies: { react: ">=19.0.0" },
+            peerDependencies: { react: ">=19.0.0", "react-dom": ">=19.0.0" },
             dependencies: packageDependencies,
-            files: ["**/*.js", "types"],
+            files: ["**/*.js", "**/*.css", "types"],
           },
           null,
           2,

@@ -9,12 +9,9 @@
     "outDir": "./dist/package/types"
   },
   "include": [
-    "src/index.ts",
+    "src/package-api.ts",
     "src/contracts.ts",
     "src/i18n/i18next.d.ts"
   ],
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ]
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }

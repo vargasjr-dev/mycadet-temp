@@ -29,6 +29,7 @@ export function AssistantPage() {
 
   return (
     <AppShell
+      framePath={`${location.pathname}${location.search}${location.hash}`}
       assistantId={selection?.id}
       apiBaseUrl={selection?.apiBase}
       onNavigate={(path, options) => {

@@ -9,12 +9,8 @@ import { useElectronStatusSync } from "./hooks/use-electron-status-sync";
 import { AssistantFrame } from "./shell/assistant-frame";
 import { routes } from "./utils/routes";
 
-export interface AppShellProps {
-  apiBaseUrl?: string;
-  assistantId?: string;
-  onNavigate(path: string, options: { replace: boolean }): void;
-  title?: string;
-}
+import type { AppShellProps } from "./app-shell-props";
+export type { AppShellProps } from "./app-shell-props";
 
 /** Portable React entry. Resolves assistants through the host API; the host owns browser navigation. */
 export function AppShell(props: AppShellProps) {
@@ -61,6 +57,7 @@ function wakeFailureMessage(body: unknown): string | null {
 
 function AssistantShell({
   apiBaseUrl = "/",
+  framePath,
   assistantId,
   onNavigate,
   title,
@@ -163,6 +160,7 @@ function AssistantShell({
   return (
     <AssistantFrame
       key={`${assistant.id}:${assistant.version}`}
+      path={framePath}
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}
     />

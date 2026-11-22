@@ -6,7 +6,7 @@
     "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git"
   },
   "type": "module",
-  "description": "Cadet account/client shell \u2014 portable package plus a standalone bundle for self-hosted edges",
+  "description": "Cadet account/client shell — portable package plus a standalone bundle for self-hosted edges",
   "license": "MIT",
   "files": [
     "dist/package",
@@ -14,14 +14,15 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/package/types/index.d.ts",
+      "types": "./dist/package/types/package-api.d.ts",
       "default": "./dist/package/index.js"
     },
     "./contracts": {
       "types": "./dist/package/types/contracts.d.ts",
       "default": "./dist/package/contracts.js"
     },
-    "./capacitor.config.base": "./capacitor.config.base.ts"
+    "./capacitor.config.base": "./capacitor.config.base.ts",
+    "./style.css": "./dist/package/app.css"
   },
   "dependencies": {
     "@capacitor/app": "8.1.0",
@@ -43,7 +44,8 @@
     "react-i18next": "17.0.11",
     "react-router": "7.15.0",
     "zod": "4.3.6",
-    "zustand": "5.0.13"
+    "zustand": "5.0.13",
+    "use-sync-external-store": "1.7.0"
   },
   "devDependencies": {
     "@capacitor-community/camera-preview": "8.0.1",

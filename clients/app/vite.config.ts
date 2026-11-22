@@ -146,6 +146,7 @@ export default defineConfig(({ mode, command }) => {
               external: [
                 /^react(?:\/|$)/,
                 /^react-dom(?:\/|$)/,
+                /^use-sync-external-store(?:\/|$)/,
                 ...Object.keys(packageDependencies),
               ],
             },

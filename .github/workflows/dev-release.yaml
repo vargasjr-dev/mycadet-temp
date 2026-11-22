@@ -1687,7 +1687,9 @@ jobs:
       - name: Rewrite package.json for publish
         working-directory: clients/app
         run: |
-          jq '{name, version, license, type, description, files, exports, repository}' package.json > tmp && mv tmp package.json
+          jq --slurpfile library dist/package/package.json \
+            '{name, version, license, type, description, files, exports, repository} + ($library[0] | {dependencies, peerDependencies, sideEffects})' \
+            package.json > tmp && mv tmp package.json
 
       - name: Pack tarball
         working-directory: clients/app

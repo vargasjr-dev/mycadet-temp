@@ -7,22 +7,27 @@ import {
 } from "../assistant/resolution-contract";
 
 export interface AssistantFrameProps {
+  path?: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title: string;
 }
 
 const mount = "/web";
 
-function frameUrl(): string {
+function frameUrl(path?: string): string {
   return new URL(
-    `${mount}${location.pathname}${location.search}${location.hash}`,
+    `${mount}${path ?? `${location.pathname}${location.search}${location.hash}`}`,
     window.location.origin,
   ).href;
 }
 
-export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
+export function AssistantFrame({
+  onNavigate,
+  title,
+  path,
+}: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
-  const [src] = useState(frameUrl);
+  const [src] = useState(() => frameUrl(path));
   const currentPath = useRef(src);
   const frameOrigin = useMemo(() => window.location.origin, []);
   useEffect(() => {
@@ -90,7 +95,7 @@ export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
   }, [frameOrigin, onNavigate]);
 
   useEffect(() => {
-    const next = frameUrl();
+    const next = frameUrl(path);
     if (next !== currentPath.current) {
       currentPath.current = next;
       ref.current?.contentWindow?.postMessage(
@@ -98,7 +103,7 @@ export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
         frameOrigin,
       );
     }
-  }, [location, frameOrigin]);
+  }, [path, frameOrigin]);
 
   return (
     <iframe

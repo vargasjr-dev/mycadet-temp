@@ -138,54 +138,56 @@ export function DesktopChrome() {
   );
 }
 
-export const router = createBrowserRouter(
-  [
-    {
-      Component: DesktopChrome,
-      ErrorBoundary: RouteErrorBoundary,
-      HydrateFallback: RootHydrateFallback,
-      children: [
-        accountRoute,
-        consentRoute,
-        {
-          // Standalone About page rendered inside the Electron About
-          // BrowserWindow — metadata, not the app: a sibling of the auth
-          // tree so no auth middleware or shell chrome wraps it.
-          path: "/about",
-          HydrateFallback: RootHydrateFallback,
-          lazy: {
-            Component: () =>
-              import("@app/components/about-page").then((m) => m.AboutPage),
+export function createAppRouter(basename = "/") {
+  return createBrowserRouter(
+    [
+      {
+        Component: DesktopChrome,
+        ErrorBoundary: RouteErrorBoundary,
+        HydrateFallback: RootHydrateFallback,
+        children: [
+          accountRoute,
+          consentRoute,
+          {
+            // Standalone About page rendered inside the Electron About
+            // BrowserWindow — metadata, not the app: a sibling of the auth
+            // tree so no auth middleware or shell chrome wraps it.
+            path: "/about",
+            HydrateFallback: RootHydrateFallback,
+            lazy: {
+              Component: () =>
+                import("@app/components/about-page").then((m) => m.AboutPage),
+            },
           },
-        },
-        {
-          path: "/",
-          lazy: {
-            Component: () =>
-              import("@app/domains/onboarding/pages/welcome-screen").then(
-                (m) => m.WelcomeScreen,
-              ),
+          {
+            path: "/",
+            lazy: {
+              Component: () =>
+                import("@app/domains/onboarding/pages/welcome-screen").then(
+                  (m) => m.WelcomeScreen,
+                ),
+            },
           },
-        },
-        {
-          // The onboarding funnel's post-hatch steps — claimed before the
-          // /assistant/* shell catch-all so the funnel renders app-native
-          // (web's research route died with the research turn).
-          path: routes.onboarding.research,
-          Component: OnboardingFlowRoute,
-        },
-        { path: "/assistant/*", Component: AssistantPage },
-        {
-          path: "/logout",
-          lazy: {
-            Component: () =>
-              import("@app/domains/account/pages/logout-page").then(
-                (m) => m.LogoutPage,
-              ),
+          {
+            // The onboarding funnel's post-hatch steps — claimed before the
+            // /assistant/* shell catch-all so the funnel renders app-native
+            // (web's research route died with the research turn).
+            path: routes.onboarding.research,
+            Component: OnboardingFlowRoute,
           },
-        },
-      ],
-    },
-  ],
-  { future: { v8_middleware: true } },
-);
+          { path: "/assistant/*", Component: AssistantPage },
+          {
+            path: "/logout",
+            lazy: {
+              Component: () =>
+                import("@app/domains/account/pages/logout-page").then(
+                  (m) => m.LogoutPage,
+                ),
+            },
+          },
+        ],
+      },
+    ],
+    { basename, future: { v8_middleware: true } },
+  );
+}
