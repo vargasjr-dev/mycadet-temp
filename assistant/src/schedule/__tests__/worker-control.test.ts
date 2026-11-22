@@ -10,6 +10,8 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { fakeSubprocess } from "../../__tests__/helpers/spawn-stub.js";
+
 // Captured at module scope: the preload cleans up its env var between suites.
 const PRELOAD_WS = process.env.CADET_WORKSPACE_DIR!;
 
@@ -28,22 +30,20 @@ function stubProcessKill(
   permissionErrorPids: Set<number> = new Set(),
 ): () => void {
   const original = process.kill.bind(process);
-  process.kill = ((pid: number, signal?: string | number) => {
+  process.kill = (pid: number, signal?: string | number) => {
     if ((signal ?? 0) !== 0) {
       return true;
     }
     if (permissionErrorPids.has(pid)) {
-      const err = new Error("kill EPERM") as NodeJS.ErrnoException;
-      err.code = "EPERM";
+      const err = Object.assign(new Error("kill EPERM"), { code: "EPERM" });
       throw err;
     }
     if (livePids.has(pid)) {
       return true;
     }
-    const err = new Error("kill ESRCH") as NodeJS.ErrnoException;
-    err.code = "ESRCH";
+    const err = Object.assign(new Error("kill ESRCH"), { code: "ESRCH" });
     throw err;
-  }) as typeof process.kill;
+  };
   return () => {
     process.kill = original;
   };
@@ -51,21 +51,25 @@ function stubProcessKill(
 
 function stubBunSpawn(
   makeChild: () => {
-    unref: () => void;
-    kill: () => void;
     pid: number;
-    exited?: Promise<unknown>;
+    exited?: Promise<number>;
+    kill?: () => void;
+    unref?: () => void;
   },
 ): () => void {
   const original = Bun.spawn;
-  (Bun as { spawn: typeof Bun.spawn }).spawn = (() =>
-    makeChild()) as unknown as typeof Bun.spawn;
+  // Bun.spawn's type is the generic-overload pair; the worker path only ever
+  // takes the options-object form, so the double asserts through that
+  // signature and every OTHER member of the double is genuinely typed
+  // (fakeSubprocess builds a real Subprocess shape).
+  Bun.spawn = ((..._args: Parameters<typeof Bun.spawn>) =>
+    fakeSubprocess(makeChild())) as typeof Bun.spawn;
   return () => {
-    (Bun as { spawn: typeof Bun.spawn }).spawn = original;
+    Bun.spawn = original;
   };
 }
 
-function neverExits(): Promise<unknown> {
+function neverExits(): Promise<number> {
   return new Promise(() => {});
 }
 
@@ -260,13 +264,13 @@ describe("stopScheduleWorkerProcess", () => {
     writeFileSync(pidPath, String(process.pid));
     const signalled: Array<[number, string | number | undefined]> = [];
     const original = process.kill.bind(process);
-    process.kill = ((pid: number, signal?: string | number) => {
+    process.kill = (pid: number, signal?: string | number) => {
       if ((signal ?? 0) === 0) {
         return original(pid, signal);
       }
       signalled.push([pid, signal]);
       return true;
-    }) as typeof process.kill;
+    };
     try {
       expect(stopScheduleWorkerProcess()).toEqual({ status: "not_running" });
       expect(signalled).toEqual([]);
@@ -279,13 +283,13 @@ describe("stopScheduleWorkerProcess", () => {
     writeFileSync(pidPath, String(UNASSIGNABLE_PID));
     const signalled: Array<[number, string | number | undefined]> = [];
     const original = process.kill.bind(process);
-    process.kill = ((pid: number, signal?: string | number) => {
+    process.kill = (pid: number, signal?: string | number) => {
       if ((signal ?? 0) === 0) {
         return true;
       } // liveness probe
       signalled.push([pid, signal]);
       return true;
-    }) as typeof process.kill;
+    };
     try {
       expect(stopScheduleWorkerProcess()).toEqual({
         status: "running",

@@ -10,7 +10,9 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-const emittedSignals: Array<Record<string, unknown>> = [];
+import type { EmitSignalParams } from "../../notifications/emit-signal.js";
+
+const emittedSignals: EmitSignalParams[] = [];
 
 /** When set, merged into the next emit results (e.g. a failure reason). */
 let emitResultOverride: Record<string, unknown> | null = null;
@@ -22,7 +24,7 @@ let emitResultOverride: Record<string, unknown> | null = null;
 let emitGate: Promise<void> | null = null;
 
 mock.module("../../notifications/emit-signal.js", () => ({
-  emitNotificationSignal: async (params: Record<string, unknown>) => {
+  emitNotificationSignal: async (params: EmitSignalParams) => {
     emittedSignals.push(params);
     if (emitGate) {
       await emitGate;
@@ -58,7 +60,7 @@ mock.module("../../plugins/mtime-cache.js", () => ({
   },
 }));
 
-import { getDb } from "../../persistence/db-connection.js";
+import { getDb, getSqlite } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { listInstalledPluginDirs } from "../../plugins/installed-plugin-dirs.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
@@ -79,14 +81,16 @@ await initializeDb();
 const pluginsDir = getWorkspacePluginsDir();
 
 function getRawDb(): import("bun:sqlite").Database {
-  return (getDb() as unknown as { $client: import("bun:sqlite").Database })
-    .$client;
+  return getSqlite();
 }
 
 function rawJob(id: string): Record<string, unknown> {
   return getRawDb()
-    .query("SELECT * FROM cron_jobs WHERE id = ?")
-    .get(id) as Record<string, unknown>;
+    .query<
+      Record<string, unknown>,
+      [string]
+    >("SELECT * FROM cron_jobs WHERE id = ?")
+    .get(id)!;
 }
 
 /**
@@ -306,8 +310,11 @@ describe("reconcilePluginSchedules", () => {
     expect(disarmed.enabled).toBe(false);
     expect(disarmed.sourceKey).toBe(DIGEST_KEY);
     const runs = getRawDb()
-      .query("SELECT COUNT(*) AS n FROM cron_runs WHERE job_id = ?")
-      .get(created.id) as { n: number };
+      .query<
+        { n: number },
+        [string]
+      >("SELECT COUNT(*) AS n FROM cron_runs WHERE job_id = ?")
+      .get(created.id)!;
     expect(runs.n).toBe(1);
 
     emittedSignals.length = 0;
@@ -431,7 +438,7 @@ describe("reconcilePluginSchedules", () => {
     expect(signal.dedupeKey).toBe(
       `schedule-definition-error:${DIGEST_KEY}:${day}`,
     );
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = signal.contextPayload!;
     expect(payload.pluginName).toBe("news");
     expect(payload.scheduleName).toBe("digest");
     expect(payload.sourceKey).toBe(DIGEST_KEY);
@@ -458,7 +465,7 @@ describe("reconcilePluginSchedules", () => {
     expect(emittedSignals).toHaveLength(1);
     const signal = emittedSignals[0]!;
     expect(signal.sourceEventName).toBe("schedule.definition_error");
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = signal.contextPayload!;
     expect(payload.sourceKey).toBe("plugin:news/sync");
     expect(payload.paused).toBe(true);
 
@@ -488,7 +495,7 @@ describe("reconcilePluginSchedules", () => {
     expect(emittedSignals).toHaveLength(1);
     const signal = emittedSignals[0]!;
     expect(signal.sourceEventName).toBe("schedule.definition_error");
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = signal.contextPayload!;
     expect(payload.sourceKey).toBe("plugin:news/sync");
     expect(payload.paused).toBe(false);
   });
@@ -600,7 +607,7 @@ describe("reconcilePluginSchedules", () => {
     expect(emittedSignals).toHaveLength(1);
     const signal = emittedSignals[0]!;
     expect(signal.sourceEventName).toBe("schedule.definition_error");
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = signal.contextPayload!;
     expect(payload.pluginName).toBe("news");
     expect(payload.scheduleName).toBe("digest");
     expect(payload.sourceKey).toBe(DIGEST_KEY);
@@ -633,10 +640,7 @@ describe("reconcilePluginSchedules", () => {
       "schedule.definition_error",
     );
     // Nothing was ever armed, so nothing was paused.
-    const payload = emittedSignals[0]!.contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = emittedSignals[0]!.contextPayload!;
     expect(payload.paused).toBe(false);
   });
 
@@ -674,7 +678,7 @@ describe("reconcilePluginSchedules", () => {
     expect(signal.dedupeKey).toBe(
       `schedule-declared:plugin:news/sync:${sync.definitionHash}`,
     );
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = signal.contextPayload!;
     expect(payload.pluginName).toBe("news");
     expect(payload.scheduleName).toBe("sync");
     expect(payload.cadence).toBe("0 */2 * * *");
@@ -975,10 +979,7 @@ describe("reconcilePluginSchedules", () => {
     expect(emittedSignals[0]!.sourceEventName).toBe(
       "schedule.definition_error",
     );
-    const payload = emittedSignals[0]!.contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = emittedSignals[0]!.contextPayload!;
     expect(payload.reason).toContain("no upcoming occurrences");
   });
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import { credentialKey } from "../../../security/credential-key.js";
@@ -41,7 +42,11 @@ describe("web_search activity metadata", () => {
   // Return type is `any` so assertions can poke at provider-specific
   // metadata shapes without narrowing at every site.
   function execute(input: Record<string, unknown>): any {
-    return webSearchTool.execute(input, {} as any);
+    return webSearchTool.execute(input, {
+      conversationId: "test-conversation",
+      workingDir: "/tmp",
+      trustClass: "unknown",
+    });
   }
 
   // ---- Brave --------------------------------------------------------------
@@ -49,27 +54,29 @@ describe("web_search activity metadata", () => {
   test("Brave populates webSearch metadata on success", async () => {
     seedWebSearch("brave");
     secureKeys.set(BRAVE_KEY, "brave-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          web: {
-            results: [
-              {
-                title: "Brave One",
-                url: "https://example.com/one",
-                description: "First Brave result",
-                age: "1 day ago",
-              },
-              {
-                title: "Brave Two",
-                url: "https://other.example.org/two",
-                description: "Second result",
-              },
-            ],
-          },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            web: {
+              results: [
+                {
+                  title: "Brave One",
+                  url: "https://example.com/one",
+                  description: "First Brave result",
+                  age: "1 day ago",
+                },
+                {
+                  title: "Brave Two",
+                  url: "https://other.example.org/two",
+                  description: "Second result",
+                },
+              ],
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "brave query" });
     const meta = result.activityMetadata?.webSearch;
@@ -92,8 +99,9 @@ describe("web_search activity metadata", () => {
   test("Brave populates errorMessage and empty results on auth failure", async () => {
     seedWebSearch("brave");
     secureKeys.set(BRAVE_KEY, "bad-key");
-    globalThis.fetch = (async () =>
-      new Response("Forbidden", { status: 403 })) as any;
+    globalThis.fetch = fetchMock(
+      async () => new Response("Forbidden", { status: 403 }),
+    );
 
     const result = await execute({ query: "brave fail" });
     const meta = result.activityMetadata?.webSearch;
@@ -108,17 +116,19 @@ describe("web_search activity metadata", () => {
 
   test("Perplexity populates webSearch metadata from citations", async () => {
     secureKeys.set(PERPLEXITY_KEY, "pplx-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: "answer text" } }],
-          citations: [
-            "https://typescriptlang.org/docs",
-            "https://example.com/article",
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "answer text" } }],
+            citations: [
+              "https://typescriptlang.org/docs",
+              "https://example.com/article",
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "perplexity query" });
     const meta = result.activityMetadata?.webSearch;
@@ -136,11 +146,13 @@ describe("web_search activity metadata", () => {
 
   test("Perplexity populates errorMessage on rate-limit exhaustion", async () => {
     secureKeys.set(PERPLEXITY_KEY, "pplx-key");
-    globalThis.fetch = (async () =>
-      new Response("Too Many Requests", {
-        status: 429,
-        headers: { "retry-after": "0" },
-      })) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response("Too Many Requests", {
+          status: 429,
+          headers: { "retry-after": "0" },
+        }),
+    );
 
     const result = await execute({ query: "rate limited" });
     const meta = result.activityMetadata?.webSearch;
@@ -158,27 +170,29 @@ describe("web_search activity metadata", () => {
   test("Tavily populates webSearch metadata with favicon and score", async () => {
     seedWebSearch("tavily");
     secureKeys.set(TAVILY_KEY, "tvly-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          results: [
-            {
-              title: "Tavily One",
-              url: "https://docs.example.com/page",
-              content: "Tavily snippet text",
-              score: 0.87,
-              favicon: "https://docs.example.com/favicon.ico",
-            },
-            {
-              title: "Tavily Two",
-              url: "https://blog.example.org/post",
-              content: "Second tavily content",
-              score: 0.42,
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            results: [
+              {
+                title: "Tavily One",
+                url: "https://docs.example.com/page",
+                content: "Tavily snippet text",
+                score: 0.87,
+                favicon: "https://docs.example.com/favicon.ico",
+              },
+              {
+                title: "Tavily Two",
+                url: "https://blog.example.org/post",
+                content: "Second tavily content",
+                score: 0.42,
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "tavily query" });
     const meta = result.activityMetadata?.webSearch;
@@ -203,18 +217,20 @@ describe("web_search activity metadata", () => {
   test("Tavily falls back to url for missing title", async () => {
     seedWebSearch("tavily");
     secureKeys.set(TAVILY_KEY, "tvly-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          results: [
-            {
-              url: "https://example.net/article",
-              content: "No title here",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            results: [
+              {
+                url: "https://example.net/article",
+                content: "No title here",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "no title" });
     const meta = result.activityMetadata?.webSearch;
@@ -226,19 +242,21 @@ describe("web_search activity metadata", () => {
   test("Tavily falls back to url for empty string title", async () => {
     seedWebSearch("tavily");
     secureKeys.set(TAVILY_KEY, "tvly-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          results: [
-            {
-              title: "",
-              url: "https://example.net/empty-title",
-              content: "Empty title",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            results: [
+              {
+                title: "",
+                url: "https://example.net/empty-title",
+                content: "Empty title",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "empty title" });
     const meta = result.activityMetadata?.webSearch;
@@ -249,19 +267,21 @@ describe("web_search activity metadata", () => {
   test("Tavily falls back to url for whitespace-only title", async () => {
     seedWebSearch("tavily");
     secureKeys.set(TAVILY_KEY, "tvly-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          results: [
-            {
-              title: "   ",
-              url: "https://example.net/whitespace-title",
-              content: "Whitespace title",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            results: [
+              {
+                title: "   ",
+                url: "https://example.net/whitespace-title",
+                content: "Whitespace title",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "whitespace title" });
     const meta = result.activityMetadata?.webSearch;
@@ -272,8 +292,9 @@ describe("web_search activity metadata", () => {
   test("Tavily populates errorMessage on auth failure", async () => {
     seedWebSearch("tavily");
     secureKeys.set(TAVILY_KEY, "bad-key");
-    globalThis.fetch = (async () =>
-      new Response("Unauthorized", { status: 401 })) as any;
+    globalThis.fetch = fetchMock(
+      async () => new Response("Unauthorized", { status: 401 }),
+    );
 
     const result = await execute({ query: "tavily fail" });
     const meta = result.activityMetadata?.webSearch;
@@ -289,9 +310,9 @@ describe("web_search activity metadata", () => {
   test("top-level catch populates activityMetadata with errorMessage", async () => {
     seedWebSearch("perplexity");
     secureKeys.set(PERPLEXITY_KEY, "pplx-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       throw new Error("network down");
-    }) as any;
+    });
 
     const result = await execute({ query: "catch query" });
     expect(result.isError).toBe(true);

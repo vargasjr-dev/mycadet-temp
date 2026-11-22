@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type {
   WebSearchMetadata,
   WebSearchResultItem,
@@ -8,6 +10,7 @@ import { wrapUntrustedContent } from "../../security/untrusted-content.js";
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { faviconUrlForDomain } from "../../util/favicon.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import {
   DEFAULT_BASE_DELAY_MS,
   DEFAULT_MAX_RETRIES,
@@ -230,6 +233,175 @@ interface SerplySearchResponse {
   results?: SerplySearchResult[];
 }
 
+/** Response schemas: the provider payloads are untyped JSON off the wire. */
+const BraveSearchResponseSchema = z.object({
+  query: z
+    .object({
+      original: z.string(),
+      more_results_available: z.boolean().optional(),
+    })
+    .optional(),
+  web: z
+    .object({
+      results: z
+        .array(
+          z.object({
+            title: z.string(),
+            url: z.string(),
+            description: z.string(),
+            age: z.string().optional(),
+            extra_snippets: z.array(z.string()).optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+});
+
+const PerplexityResponseSchema = z.object({
+  choices: z
+    .array(
+      z.object({
+        message: z.object({ content: z.string().optional() }).optional(),
+      }),
+    )
+    .optional(),
+  citations: z.array(z.string()).optional(),
+});
+
+const TavilySearchResponseSchema = z.object({
+  query: z.string().optional(),
+  results: z
+    .array(
+      z.object({
+        title: z.string().optional(),
+        url: z.string().optional(),
+        content: z.string().optional(),
+        score: z.number().optional(),
+        raw_content: z.string().nullable().optional(),
+        favicon: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+const FirecrawlCompatSearchResultSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  snippet: z.string().optional(),
+  url: z.string().optional(),
+  category: z.string().optional(),
+});
+
+const FirecrawlCompatSearchResponseSchema = z.object({
+  success: z.boolean().optional(),
+  data: z
+    .union([
+      z.array(FirecrawlCompatSearchResultSchema),
+      z.object({
+        web: z.array(FirecrawlCompatSearchResultSchema).optional(),
+        results: z.array(FirecrawlCompatSearchResultSchema).optional(),
+        news: z.array(FirecrawlCompatSearchResultSchema).optional(),
+        images: z.array(z.unknown()).optional(),
+      }),
+    ])
+    .optional(),
+  warning: z.string().nullable().optional(),
+});
+
+const KeenableSearchResponseSchema = z.object({
+  query: z.string().optional(),
+  results: z
+    .array(
+      z.object({
+        title: z.string().optional(),
+        url: z.string().optional(),
+        description: z.string().optional(),
+        snippet: z.string().optional(),
+        published_at: z.string().optional(),
+        acquired_at: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+const SearxngSearchResponseSchema = z.object({
+  query: z.string().optional(),
+  results: z
+    .array(
+      z.object({
+        title: z.string().optional(),
+        url: z.string().optional(),
+        content: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+const TinyfishSearchResponseSchema = z.object({
+  query: z.string().optional(),
+  results: z
+    .array(
+      z.object({
+        position: z.number().optional(),
+        site_name: z.string().optional(),
+        title: z.string().optional(),
+        snippet: z.string().optional(),
+        url: z.string().optional(),
+        date: z.string().optional(),
+      }),
+    )
+    .optional(),
+  total_results: z.number().optional(),
+  page: z.number().optional(),
+});
+
+const ExaSearchResponseSchema = z.object({
+  requestId: z.string().optional(),
+  results: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        title: z.string().nullable().optional(),
+        url: z.string().optional(),
+        publishedDate: z.string().nullable().optional(),
+        author: z.string().nullable().optional(),
+        highlights: z.array(z.string()).optional(),
+      }),
+    )
+    .optional(),
+});
+
+const SerplySearchResponseSchema = z.object({
+  query: z.string().optional(),
+  total: z.number().optional(),
+  results: z
+    .array(
+      z.object({
+        title: z.string().nullable().optional(),
+        link: z.string().optional(),
+        description: z.string().nullable().optional(),
+        position: z.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * Parse a provider payload against its response schema. On a shape mismatch
+ * the empty response is returned: every formatter reads its fields as
+ * optional, so the old unchecked reads rendered a mismatched payload as zero
+ * results, and that is the behavior kept here.
+ */
+function parseSearchResponse<T>(
+  schema: z.ZodType<T>,
+  value: unknown,
+  fallback: T,
+): T {
+  const parsed = schema.safeParse(value);
+  return parsed.success ? parsed.data : fallback;
+}
+
 const SEARXNG_MISSING_INSTANCE_MESSAGE =
   "SearXNG needs an instance URL. Set API Base in Settings under Web Search.";
 const SEARXNG_JSON_DISABLED_MESSAGE =
@@ -245,7 +417,9 @@ function getWebSearchProvider(): WebSearchProvider {
   if (configured === "inference-provider-native") {
     return "perplexity";
   }
-  return configured as WebSearchProvider;
+  // The schema enum admits every catalog id; the one non-executable id is
+  // handled above, and the adapter-table guard rejects anything else.
+  return isWebSearchProvider(configured) ? configured : "perplexity";
 }
 
 async function getApiKey(
@@ -1086,7 +1260,10 @@ function networkFailureResult(
   err: unknown,
   signal?: AbortSignal,
 ): ToolExecutionResult {
-  if (signal?.aborted || isAbortReason((err as { reason?: unknown })?.reason)) {
+  if (
+    signal?.aborted ||
+    isAbortReason(isPlainObject(err) ? err.reason : undefined)
+  ) {
     throw err;
   }
   return backendFailureResult(
@@ -1128,7 +1305,11 @@ async function executeBraveSearch(
     }
 
     if (response.ok) {
-      const data = (await response.json()) as BraveSearchResponse;
+      const data = parseSearchResponse(
+        BraveSearchResponseSchema,
+        await response.json(),
+        {},
+      );
       return successfulBraveResult(data, query, startedAt);
     }
 
@@ -1204,7 +1385,11 @@ async function executePerplexitySearch(
     }
 
     if (response.ok) {
-      const data = (await response.json()) as PerplexityResponse;
+      const data = parseSearchResponse(
+        PerplexityResponseSchema,
+        await response.json(),
+        {},
+      );
       const durationMs = Date.now() - startedAt;
       return {
         content:
@@ -1302,7 +1487,11 @@ async function executeTavilySearch(
     }
 
     if (response.ok) {
-      const data = (await response.json()) as TavilySearchResponse;
+      const data = parseSearchResponse(
+        TavilySearchResponseSchema,
+        await response.json(),
+        {},
+      );
       const durationMs = Date.now() - startedAt;
       return {
         content:
@@ -1415,7 +1604,11 @@ async function executeFirecrawlCompatSearch(
     }
 
     if (response.ok) {
-      const data = (await response.json()) as FirecrawlCompatSearchResponse;
+      const data = parseSearchResponse(
+        FirecrawlCompatSearchResponseSchema,
+        await response.json(),
+        {},
+      );
       const durationMs = Date.now() - startedAt;
       return {
         content:
@@ -1563,7 +1756,11 @@ async function executeKeenableSearch(
     }
 
     if (response.ok) {
-      const data = (await response.json()) as KeenableSearchResponse;
+      const data = parseSearchResponse(
+        KeenableSearchResponseSchema,
+        await response.json(),
+        {},
+      );
       // Honor the requested result count client-side (the API returns a fixed set).
       if (data.results && data.results.length > count) {
         data.results = data.results.slice(0, count);
@@ -1689,7 +1886,11 @@ async function executeSearxngSearch(
     if (response.ok) {
       let data: SearxngSearchResponse;
       try {
-        data = JSON.parse(bodyText) as SearxngSearchResponse;
+        data = parseSearchResponse(
+          SearxngSearchResponseSchema,
+          JSON.parse(bodyText),
+          {},
+        );
       } catch {
         return errorResult(
           query,
@@ -1796,7 +1997,11 @@ async function executeTinyfishSearch(
     if (response.ok) {
       let data: TinyfishSearchResponse;
       try {
-        data = JSON.parse(bodyText) as TinyfishSearchResponse;
+        data = parseSearchResponse(
+          TinyfishSearchResponseSchema,
+          JSON.parse(bodyText),
+          {},
+        );
       } catch {
         return errorResult(
           query,
@@ -1924,7 +2129,11 @@ async function executeExaSearch(
     if (response.ok) {
       let data: ExaSearchResponse;
       try {
-        data = JSON.parse(bodyText) as ExaSearchResponse;
+        data = parseSearchResponse(
+          ExaSearchResponseSchema,
+          JSON.parse(bodyText),
+          {},
+        );
       } catch {
         return errorResult(
           query,
@@ -2046,7 +2255,11 @@ async function executeSerplySearch(
     if (response.ok) {
       let data: SerplySearchResponse;
       try {
-        data = JSON.parse(bodyText) as SerplySearchResponse;
+        data = parseSearchResponse(
+          SerplySearchResponseSchema,
+          JSON.parse(bodyText),
+          {},
+        );
       } catch {
         return errorResult(
           query,
@@ -2240,6 +2453,15 @@ const WEB_SEARCH_ADAPTERS: Record<WebSearchProvider, WebSearchAdapter> = {
   exa: exaSearchAdapter,
   serply: serplySearchAdapter,
 };
+
+/**
+ * Runtime membership in the adapter table: the config schema's provider field
+ * is derived from the catalog ids (a `string[]` at the type level), so the
+ * executable union is re-narrowed through the table that dispatches it.
+ */
+function isWebSearchProvider(value: string): value is WebSearchProvider {
+  return Object.hasOwn(WEB_SEARCH_ADAPTERS, value);
+}
 
 /**
  * Fallback chain derived from {@link WEB_SEARCH_ADAPTERS}. Sorted by each

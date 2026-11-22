@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import { credentialKey } from "../../../security/credential-key.js";
@@ -47,21 +48,23 @@ describe("executeFastcrwScrape", () => {
   test("hits the cloud default /v1/scrape endpoint", async () => {
     let capturedUrl = "";
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedHeaders = new Headers(init?.headers);
-      return scrapeResponse({
-        success: true,
-        data: {
-          markdown: "# Hello\n\nFrom fastCRW.",
-          metadata: {
-            title: "Example",
-            url: "https://example.com/",
-            statusCode: 200,
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedHeaders = new Headers(init?.headers);
+        return scrapeResponse({
+          success: true,
+          data: {
+            markdown: "# Hello\n\nFrom fastCRW.",
+            metadata: {
+              title: "Example",
+              url: "https://example.com/",
+              statusCode: 200,
+            },
           },
-        },
-      });
-    }) as typeof fetch;
+        });
+      },
+    );
 
     const result = await executeFastcrwScrape(
       { url: "https://example.com" },
@@ -78,13 +81,13 @@ describe("executeFastcrwScrape", () => {
   test("uses a custom API base from config", async () => {
     seedWebFetch("fastcrw", "http://localhost:3000/");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return scrapeResponse({
         success: true,
         data: { markdown: "local", metadata: { statusCode: 200 } },
       });
-    }) as typeof fetch;
+    });
 
     const result = await executeFastcrwScrape(
       { url: "https://example.com" },
@@ -114,8 +117,8 @@ describe("webFetchTool fastCRW dispatch", () => {
   test("routes to fastCRW when provider=fastcrw and a key is set", async () => {
     seedWebFetch("fastcrw");
     let fastcrwHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (String(url).includes("api.fastcrw.com")) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (String(String(input)).includes("api.fastcrw.com")) {
         fastcrwHit = true;
       }
       return scrapeResponse({
@@ -125,7 +128,7 @@ describe("webFetchTool fastCRW dispatch", () => {
           metadata: { statusCode: 200, url: "https://example.com/" },
         },
       });
-    }) as typeof fetch;
+    });
 
     const result = await execute({ url: "https://example.com" });
     expect(fastcrwHit).toBe(true);
@@ -137,17 +140,19 @@ describe("webFetchTool fastCRW dispatch", () => {
     secureKeys.delete(FASTCRW_KEY);
     let capturedUrl = "";
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = String(url);
-      capturedHeaders = new Headers(init?.headers);
-      return scrapeResponse({
-        success: true,
-        data: {
-          markdown: "self-host",
-          metadata: { statusCode: 200, url: "https://example.com/" },
-        },
-      });
-    }) as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(String(input));
+        capturedHeaders = new Headers(init?.headers);
+        return scrapeResponse({
+          success: true,
+          data: {
+            markdown: "self-host",
+            metadata: { statusCode: 200, url: "https://example.com/" },
+          },
+        });
+      },
+    );
 
     const result = await execute({ url: "https://example.com" });
     expect(capturedUrl).toBe("http://127.0.0.1:3000/v1/scrape");

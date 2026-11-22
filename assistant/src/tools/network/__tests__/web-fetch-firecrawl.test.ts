@@ -8,6 +8,7 @@ import {
   test,
 } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import { credentialKey } from "../../../security/credential-key.js";
@@ -60,7 +61,7 @@ describe("executeFirecrawlScrape", () => {
   });
 
   test("returns markdown content + metadata on success", async () => {
-    globalThis.fetch = (async () =>
+    globalThis.fetch = fetchMock(async () =>
       scrapeResponse({
         success: true,
         data: {
@@ -73,7 +74,8 @@ describe("executeFirecrawlScrape", () => {
             contentType: "text/html",
           },
         },
-      })) as any;
+      }),
+    );
 
     const result = await executeFirecrawlScrape(
       { url: "https://example.com" },
@@ -95,12 +97,14 @@ describe("executeFirecrawlScrape", () => {
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: Headers | null = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedBody = JSON.parse(init?.body as string);
-      capturedHeaders = new Headers(init?.headers);
-      return scrapeResponse({ success: true, data: { markdown: "ok" } });
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedBody = JSON.parse(String(init?.body));
+        capturedHeaders = new Headers(init?.headers);
+        return scrapeResponse({ success: true, data: { markdown: "ok" } });
+      },
+    );
 
     await executeFirecrawlScrape(
       { url: "https://example.com/docs" },
@@ -116,11 +120,12 @@ describe("executeFirecrawlScrape", () => {
   });
 
   test("honors max_chars windowing and emits a truncation notice", async () => {
-    globalThis.fetch = (async () =>
+    globalThis.fetch = fetchMock(async () =>
       scrapeResponse({
         success: true,
         data: { markdown: "abcdefghij", metadata: { statusCode: 200 } },
-      })) as any;
+      }),
+    );
 
     const result = await executeFirecrawlScrape(
       { url: "https://example.com", max_chars: 4 },
@@ -151,8 +156,9 @@ describe("executeFirecrawlScrape", () => {
   });
 
   test("empty markdown yields a no-content marker, not an error", async () => {
-    globalThis.fetch = (async () =>
-      scrapeResponse({ success: true, data: { markdown: "" } })) as any;
+    globalThis.fetch = fetchMock(async () =>
+      scrapeResponse({ success: true, data: { markdown: "" } }),
+    );
 
     const result = await executeFirecrawlScrape(
       { url: "https://example.com" },
@@ -164,10 +170,10 @@ describe("executeFirecrawlScrape", () => {
 
   test("rejects URLs with embedded credentials instead of forwarding them", async () => {
     let hit = false;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       hit = true;
       return scrapeResponse({ success: true, data: { markdown: "x" } });
-    }) as any;
+    });
 
     const result = await executeFirecrawlScrape(
       { url: "https://user:secret@example.com/page" },
@@ -181,12 +187,13 @@ describe("executeFirecrawlScrape", () => {
   });
 
   test("surfaces a payload-level failure on a 200 (success:false / error)", async () => {
-    globalThis.fetch = (async () =>
+    globalThis.fetch = fetchMock(async () =>
       scrapeResponse({
         success: false,
         error: "This website is no longer supported",
         data: {},
-      })) as any;
+      }),
+    );
 
     const result = await executeFirecrawlScrape(
       { url: "https://example.com" },
@@ -197,11 +204,13 @@ describe("executeFirecrawlScrape", () => {
   });
 
   test("surfaces invalid JSON as a clean error", async () => {
-    globalThis.fetch = (async () =>
-      new Response("<html>not json</html>", {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      })) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response("<html>not json</html>", {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
 
     const result = await executeFirecrawlScrape(
       { url: "https://example.com" },
@@ -214,8 +223,9 @@ describe("executeFirecrawlScrape", () => {
   test.each([401, 403])(
     "surfaces %d as an invalid-key error",
     async (status) => {
-      globalThis.fetch = (async () =>
-        new Response("Unauthorized", { status })) as any;
+      globalThis.fetch = fetchMock(
+        async () => new Response("Unauthorized", { status }),
+      );
 
       const result = await executeFirecrawlScrape(
         { url: "https://example.com" },
@@ -229,13 +239,13 @@ describe("executeFirecrawlScrape", () => {
 
   test("retries 429 then surfaces a rate-limit error", async () => {
     let callCount = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       callCount++;
       return new Response("Too Many Requests", {
         status: 429,
         headers: { "retry-after": "0" },
       });
-    }) as any;
+    });
 
     const result = await executeFirecrawlScrape(
       { url: "https://example.com" },
@@ -268,13 +278,13 @@ describe("web_fetch provider dispatch", () => {
     secureKeys.set(FIRECRAWL_KEY, "fc-key");
     mockResolveAddresses = ["93.184.216.34"]; // public → passes the DNS safety gate
     let hitUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      hitUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      hitUrl = String(input);
       return scrapeResponse({
         success: true,
         data: { markdown: "routed", metadata: { statusCode: 200 } },
       });
-    }) as any;
+    });
 
     const result = await execute({ url: "https://example.com" });
     expect(hitUrl).toContain(SCRAPE_URL);
@@ -285,12 +295,15 @@ describe("web_fetch provider dispatch", () => {
     seedWebFetch("firecrawl");
     secureKeys.delete(FIRECRAWL_KEY);
     let firecrawlHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (typeof url === "string" && url.includes(SCRAPE_URL)) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (
+        typeof String(input) === "string" &&
+        String(input).includes(SCRAPE_URL)
+      ) {
         firecrawlHit = true;
       }
       return new Response("", { status: 200 });
-    }) as any;
+    });
 
     const result = await execute({ url: "https://example.com" });
     // Built-in path runs (DNS stubbed to empty → resolve error), Firecrawl not hit.
@@ -302,12 +315,15 @@ describe("web_fetch provider dispatch", () => {
     seedWebFetch("default");
     secureKeys.set(FIRECRAWL_KEY, "fc-key");
     let firecrawlHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (typeof url === "string" && url.includes(SCRAPE_URL)) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (
+        typeof String(input) === "string" &&
+        String(input).includes(SCRAPE_URL)
+      ) {
         firecrawlHit = true;
       }
       return new Response("", { status: 200 });
-    }) as any;
+    });
 
     const result = await execute({ url: "https://example.com" });
     expect(firecrawlHit).toBe(false);
@@ -318,12 +334,15 @@ describe("web_fetch provider dispatch", () => {
     seedWebFetch("firecrawl");
     secureKeys.set(FIRECRAWL_KEY, "fc-key");
     let firecrawlHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (typeof url === "string" && url.includes(SCRAPE_URL)) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (
+        typeof String(input) === "string" &&
+        String(input).includes(SCRAPE_URL)
+      ) {
         firecrawlHit = true;
       }
       return new Response("", { status: 200 });
-    }) as any;
+    });
 
     const result = await execute({ url: "http://localhost:8080/admin" });
     expect(firecrawlHit).toBe(false);
@@ -337,12 +356,15 @@ describe("web_fetch provider dispatch", () => {
     secureKeys.set(FIRECRAWL_KEY, "fc-key");
     mockResolveAddresses = ["10.0.0.5"]; // public name, private address → blocked
     let firecrawlHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (typeof url === "string" && url.includes(SCRAPE_URL)) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (
+        typeof String(input) === "string" &&
+        String(input).includes(SCRAPE_URL)
+      ) {
         firecrawlHit = true;
       }
       return new Response("", { status: 200 });
-    }) as any;
+    });
 
     const result = await execute({
       url: "https://internal.example/secret?token=abc",
@@ -357,12 +379,15 @@ describe("web_fetch provider dispatch", () => {
     secureKeys.set(FIRECRAWL_KEY, "fc-key");
     mockResolveAddresses = ["93.184.216.34"];
     let firecrawlHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (typeof url === "string" && url.includes(SCRAPE_URL)) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (
+        typeof String(input) === "string" &&
+        String(input).includes(SCRAPE_URL)
+      ) {
         firecrawlHit = true;
       }
       return new Response("", { status: 200 });
-    }) as any;
+    });
 
     const result = await execute({ url: "ftp://example.com/file" });
     expect(firecrawlHit).toBe(false);

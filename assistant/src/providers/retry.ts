@@ -15,6 +15,7 @@ import {
   type ProviderErrorReason,
 } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
+import { isPlainObject } from "../util/object.js";
 import {
   computeRetryDelay,
   DEFAULT_BASE_DELAY_MS,
@@ -564,11 +565,12 @@ const EXACT_ROUTE_PIN_KEYS = [
   "provider_connection",
 ] as const;
 
-function hasExactRoutePin(
-  config: Record<string, unknown> | undefined,
-): boolean {
+function hasExactRoutePin(config: unknown): boolean {
+  if (!isPlainObject(config)) {
+    return false;
+  }
   return EXACT_ROUTE_PIN_KEYS.some((key) => {
-    const value = config?.[key];
+    const value = config[key];
     return typeof value === "string" && value.trim().length > 0;
   });
 }
@@ -581,10 +583,7 @@ function canReRouteToFallbackProfile(options?: SendMessageOptions): boolean {
   if (hasExactRoutePin(config)) {
     return false;
   }
-  const callSiteConfig = getConfig().llm.callSites?.[config.callSite] as
-    | Record<string, unknown>
-    | undefined;
-  return !hasExactRoutePin(callSiteConfig);
+  return !hasExactRoutePin(getConfig().llm.callSites?.[config.callSite]);
 }
 
 /**
@@ -917,10 +916,9 @@ function normalizeSendMessageOptions(
   if (
     nextConfig.thinking !== undefined &&
     !THINKING_EXTRA_FIELDS_AWARE_PROVIDERS.has(providerName) &&
-    typeof nextConfig.thinking === "object" &&
-    nextConfig.thinking !== null
+    isPlainObject(nextConfig.thinking)
   ) {
-    const wire = nextConfig.thinking as Record<string, unknown>;
+    const wire = nextConfig.thinking;
     if (wire.level !== undefined || wire.streamThinking !== undefined) {
       const scrubbed: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(wire)) {
@@ -941,9 +939,9 @@ function normalizeSendMessageOptions(
   // result, which is what the 400 gave them on every request.
   const forcedToolModel =
     typeof nextConfig.model === "string" ? nextConfig.model : "";
-  const forcedToolChoice = nextConfig.tool_choice as
-    | Record<string, unknown>
-    | undefined;
+  const forcedToolChoice = isPlainObject(nextConfig.tool_choice)
+    ? nextConfig.tool_choice
+    : undefined;
   if (
     forcedToolChoice != null &&
     (forcedToolChoice.type === "tool" || forcedToolChoice.type === "any") &&
@@ -982,7 +980,9 @@ function normalizeSendMessageOptions(
     if (isThinkingConfigDisabled(nextConfig.thinking)) {
       return false;
     }
-    const tc = nextConfig.tool_choice as Record<string, unknown> | undefined;
+    const tc = isPlainObject(nextConfig.tool_choice)
+      ? nextConfig.tool_choice
+      : undefined;
     if (tc == null || (tc.type !== "tool" && tc.type !== "any")) {
       return false;
     }
@@ -1185,13 +1185,25 @@ function addSanitizedHeader(
   }
 }
 
+declare global {
+  // The retriesExhausted tag rides every error the retry loop may rethrow,
+  // not just ProviderError instances, so the field is declared where the
+  // language declares Error itself.
+  interface Error {
+    /**
+     * Set by `RetryProvider` on the final thrown error when the retry loop
+     * burned through all attempts against a retryable error (transient
+     * network, 5xx, provider-overloaded, mid-stream corruption). Read it to
+     * suppress error-report noise for user-network flaps — the retry loop
+     * already did its job, and no engineering action would change the
+     * outcome.
+     */
+    retriesExhausted?: boolean;
+  }
+}
 /**
- * `RetryProvider` sets `retriesExhausted = true` on the final thrown error
- * when the retry loop burned through all attempts against a retryable error
- * (transient network, 5xx, provider-overloaded, mid-stream corruption).
- * Consumers can read it via `(err as { retriesExhausted?: boolean })` to
- * suppress error-report noise for user-network flaps — the retry loop
- * already did its job, and no engineering action would change the outcome.
+ * `RetryProvider` wraps an inner provider with the transient-error retry
+ * loop, the cloud-credential refresh, and the fallback-profile escalation.
  */
 export class RetryProvider implements Provider {
   public readonly name: string;
@@ -1647,8 +1659,7 @@ export class RetryProvider implements Provider {
         const retriesExhausted =
           retryAttempt >= DEFAULT_MAX_RETRIES && isRetryableError(error);
         if (retriesExhausted && error instanceof Error) {
-          (error as Error & { retriesExhausted?: boolean }).retriesExhausted =
-            true;
+          error.retriesExhausted = true;
         }
 
         this.attributeCredential(error);
@@ -1805,8 +1816,7 @@ export class RetryProvider implements Provider {
           // its way through the whole budget is recognizable to error reporting
           // as noise no engineering action would change.
           if (didRetry && isRetryableError(error) && error instanceof Error) {
-            (error as Error & { retriesExhausted?: boolean }).retriesExhausted =
-              true;
+            error.retriesExhausted = true;
           }
           throw error;
         }

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { executeWebFetch } from "../web-fetch.js";
 
 type RequestExecutor = (
@@ -29,7 +30,7 @@ const executeWithMockFetch = (
           redirect: "manual",
           signal: requestOptions.signal,
           headers: requestOptions.headers,
-        }) as Promise<Response>),
+        })),
   });
 
 describe("web_fetch activityMetadata", () => {
@@ -47,11 +48,13 @@ describe("web_fetch activityMetadata", () => {
     const body =
       "<!doctype html><html><head><title>Example Domain</title></head>" +
       "<body><p>Hello, world.</p></body></html>";
-    globalThis.fetch = (async () =>
-      new Response(body, {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com/" });
     expect(result.isError).toBe(false);
@@ -74,10 +77,10 @@ describe("web_fetch activityMetadata", () => {
 
   test("tracks redirect chains in finalUrl and redirectCount", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (rawUrl: string) => {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
       callCount++;
       if (callCount === 1) {
-        expect(rawUrl).toBe("https://example.com/start");
+        expect(String(input)).toBe("https://example.com/start");
         return new Response("", {
           status: 302,
           headers: { location: "https://example.com/middle" },
@@ -93,7 +96,7 @@ describe("web_fetch activityMetadata", () => {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
-    }) as unknown as typeof globalThis.fetch;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -111,11 +114,13 @@ describe("web_fetch activityMetadata", () => {
 
   test("flags truncation when content exceeds max_chars", async () => {
     const longBody = "x".repeat(50_000);
-    globalThis.fetch = (async () =>
-      new Response(longBody, {
-        status: 200,
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(longBody, {
+          status: 200,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+        }),
+    );
 
     const maxChars = 1_000;
     const result = await executeWithMockFetch({
@@ -165,12 +170,14 @@ describe("web_fetch activityMetadata", () => {
   });
 
   test("populates errorMessage and status on a 404 response", async () => {
-    globalThis.fetch = (async () =>
-      new Response("<title>Not Found</title>not here", {
-        status: 404,
-        statusText: "Not Found",
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response("<title>Not Found</title>not here", {
+          status: 404,
+          statusText: "Not Found",
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({
       url: "https://example.com/missing",
@@ -192,11 +199,13 @@ describe("web_fetch activityMetadata", () => {
     const body =
       "<!doctype html><html><head><title>App</title></head>" +
       `<body><div id="root"></div><script>${scriptPayload}</script></body></html>`;
-    globalThis.fetch = (async () =>
-      new Response(body, {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com/" });
     expect(result.isError).toBe(false);
@@ -210,11 +219,13 @@ describe("web_fetch activityMetadata", () => {
   test("flags mayRequireJavaScript when extracted text is under 200 chars", async () => {
     const body =
       '<!doctype html><html><head><title>Tiny</title></head><body><div id="app"></div></body></html>';
-    globalThis.fetch = (async () =>
-      new Response(body, {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com/" });
     expect(result.isError).toBe(false);
@@ -232,11 +243,13 @@ describe("web_fetch activityMetadata", () => {
     const body =
       "<!doctype html><html><head><title>Article</title></head>" +
       `<body>${paragraph.repeat(40)}</body></html>`;
-    globalThis.fetch = (async () =>
-      new Response(body, {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com/" });
     expect(result.isError).toBe(false);
@@ -257,11 +270,13 @@ describe("web_fetch activityMetadata", () => {
     const body =
       "<!doctype html><html><head><title>Article</title></head>" +
       `<body>${paragraph}<script>${scriptPayload}</script></body></html>`;
-    globalThis.fetch = (async () =>
-      new Response(body, {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(body, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com/" });
     expect(result.isError).toBe(false);

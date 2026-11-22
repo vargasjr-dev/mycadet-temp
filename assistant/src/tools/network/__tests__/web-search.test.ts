@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import { credentialKey } from "../../../security/credential-key.js";
@@ -90,14 +91,16 @@ describe("web_search tool", () => {
   test("provider native with a BYOK key uses the key", async () => {
     seedWebSearch(undefined, "inference-provider-native");
     setKey("perplexity", "pplx-test-key");
-    globalThis.fetch = (async () =>
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: "BYOK answer" } }],
-          citations: ["https://example.com"],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      )) as any;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "BYOK answer" } }],
+            citations: ["https://example.com"],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
 
     const result = await execute({ query: "native fallback query" });
 
@@ -118,17 +121,19 @@ describe("web_search tool", () => {
 
   test("executes Perplexity search successfully", async () => {
     setKey("perplexity", "pplx-test-key");
-    globalThis.fetch = (async (_url: string, _init?: RequestInit) => {
-      return new Response(
-        JSON.stringify({
-          choices: [
-            { message: { content: "Perplexity answer about TypeScript" } },
-          ],
-          citations: ["https://typescriptlang.org", "https://example.com/ts"],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (_input: RequestInfo | URL, _init?: RequestInit) => {
+        return new Response(
+          JSON.stringify({
+            choices: [
+              { message: { content: "Perplexity answer about TypeScript" } },
+            ],
+            citations: ["https://typescriptlang.org", "https://example.com/ts"],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({ query: "what is TypeScript" });
     expect(result.isError).toBe(false);
@@ -142,17 +147,19 @@ describe("web_search tool", () => {
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedBody = JSON.parse(init?.body as string);
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(
-        JSON.stringify({
-          choices: [{ message: { content: "answer" } }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedBody = JSON.parse(String(init?.body));
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "answer" } }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     await execute({ query: "test query" });
     expect(capturedUrl).toContain("perplexity.ai");
@@ -163,12 +170,12 @@ describe("web_search tool", () => {
 
   test("Perplexity returns no results message when response is empty", async () => {
     setKey("perplexity", "pplx-test-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({ choices: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "obscure query" });
     expect(result.isError).toBe(false);
@@ -177,9 +184,9 @@ describe("web_search tool", () => {
 
   test("Perplexity handles 401/403 auth errors", async () => {
     setKey("perplexity", "bad-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response("Unauthorized", { status: 401 });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -189,13 +196,13 @@ describe("web_search tool", () => {
   test("Perplexity handles 429 rate limit after max retries", async () => {
     setKey("perplexity", "pplx-key");
     let callCount = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       callCount++;
       return new Response("Too Many Requests", {
         status: 429,
         headers: { "retry-after": "0" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -207,9 +214,9 @@ describe("web_search tool", () => {
 
   test("Perplexity handles generic server error", async () => {
     setKey("perplexity", "pplx-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response("Internal Server Error", { status: 500 });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -223,7 +230,7 @@ describe("web_search tool", () => {
   test("executes Brave search successfully", async () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-test-key");
-    globalThis.fetch = (async (_url: string) => {
+    globalThis.fetch = fetchMock(async (_input: RequestInfo | URL) => {
       return new Response(
         JSON.stringify({
           web: {
@@ -245,7 +252,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test search" });
     expect(result.isError).toBe(false);
@@ -260,13 +267,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(JSON.stringify({ web: { results: [] } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     await execute({
       query: "test query",
@@ -285,13 +292,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(JSON.stringify({ web: { results: [] } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     await execute({ query: "test", count: 100, offset: 50 });
     const parsed = new URL(capturedUrl);
@@ -303,13 +310,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(JSON.stringify({ web: { results: [] } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     await execute({ query: "test", freshness: "invalid" });
     const parsed = new URL(capturedUrl);
@@ -319,12 +326,12 @@ describe("web_search tool", () => {
   test("Brave handles empty results", async () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({ web: { results: [] } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "no results for this" });
     expect(result.isError).toBe(false);
@@ -334,9 +341,9 @@ describe("web_search tool", () => {
   test("Brave handles 401 auth error", async () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "bad-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response("Forbidden", { status: 403 });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -347,7 +354,7 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-key");
     let callCount = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       callCount++;
       if (callCount <= 3) {
         return new Response("Rate Limited", {
@@ -372,7 +379,7 @@ describe("web_search tool", () => {
           headers: { "content-type": "application/json" },
         },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(false);
@@ -384,13 +391,15 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-direct-key");
     let capturedHeaders: Headers | undefined;
-    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(JSON.stringify({ web: { results: [] } }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(JSON.stringify({ web: { results: [] } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
 
     const result = await execute({ query: "direct query" });
 
@@ -405,7 +414,7 @@ describe("web_search tool", () => {
   test("executes Tavily search successfully", async () => {
     seedWebSearch("your-own", "tavily");
     setKey("tavily", "tvly-test-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({
           results: [
@@ -424,7 +433,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "what is TypeScript" });
     expect(result.isError).toBe(false);
@@ -439,15 +448,17 @@ describe("web_search tool", () => {
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedBody = JSON.parse(init?.body as string);
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(JSON.stringify({ results: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedBody = JSON.parse(String(init?.body));
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
 
     await execute({ query: "test query", count: 50, freshness: "pm" });
     expect(capturedUrl).toContain("api.tavily.com/search");
@@ -462,13 +473,15 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "tavily");
     setKey("tavily", "tvly-key");
     let capturedBody: any = null;
-    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
-      capturedBody = JSON.parse(init?.body as string);
-      return new Response(JSON.stringify({ results: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        capturedBody = JSON.parse(String(init?.body));
+        return new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
 
     await execute({ query: "test", freshness: "invalid" });
     expect(capturedBody.time_range).toBeUndefined();
@@ -477,12 +490,12 @@ describe("web_search tool", () => {
   test("Tavily returns no results message when response is empty", async () => {
     seedWebSearch("your-own", "tavily");
     setKey("tavily", "tvly-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({ results: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "obscure query" });
     expect(result.isError).toBe(false);
@@ -492,9 +505,9 @@ describe("web_search tool", () => {
   test.each([401, 403])("Tavily handles %d auth error", async (status) => {
     seedWebSearch("your-own", "tavily");
     setKey("tavily", "bad-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response("Auth error", { status });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -505,13 +518,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "tavily");
     setKey("tavily", "tvly-key");
     let callCount = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       callCount++;
       return new Response("Too Many Requests", {
         status: 429,
         headers: { "retry-after": "0" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -527,23 +540,25 @@ describe("web_search tool", () => {
     // No key set — keyless must still run instead of erroring on a missing key.
     let capturedUrl = "";
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(
-        JSON.stringify({
-          results: [
-            {
-              title: "Keenable Result 1",
-              url: "https://example.com/keenable-1",
-              description: "",
-              snippet: "First Keenable result",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(
+          JSON.stringify({
+            results: [
+              {
+                title: "Keenable Result 1",
+                url: "https://example.com/keenable-1",
+                description: "",
+                snippet: "First Keenable result",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({ query: "what is RAG" });
     expect(result.isError).toBe(false);
@@ -556,7 +571,7 @@ describe("web_search tool", () => {
 
   test("Keenable reads the page text from snippet, capped", async () => {
     seedWebSearch("your-own", "keenable");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({
           results: [
@@ -581,7 +596,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.content).toContain("line one line two");
@@ -599,15 +614,17 @@ describe("web_search tool", () => {
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedBody = JSON.parse(init?.body as string);
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(JSON.stringify({ results: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedBody = JSON.parse(String(init?.body));
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
 
     await execute({ query: "test query", count: 3, freshness: "pm" });
     expect(capturedUrl).toContain("api.keenable.ai/v1/search");
@@ -620,7 +637,7 @@ describe("web_search tool", () => {
 
   test("Keenable trims results to the requested count", async () => {
     seedWebSearch("your-own", "keenable");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({
           results: [
@@ -631,7 +648,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test", count: 2 });
     expect(result.content).toContain("A");
@@ -642,12 +659,12 @@ describe("web_search tool", () => {
   test.each([401, 403])("Keenable handles %d auth error", async (status) => {
     seedWebSearch("your-own", "keenable");
     setKey("keenable", "bad-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({ message: "unauthorized" }), {
         status,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -659,7 +676,7 @@ describe("web_search tool", () => {
   test("executes Firecrawl search successfully", async () => {
     seedWebSearch("your-own", "firecrawl");
     setKey("firecrawl", "fc-test-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({
           success: true,
@@ -680,7 +697,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "what is TypeScript" });
     expect(result.isError).toBe(false);
@@ -695,18 +712,20 @@ describe("web_search tool", () => {
     let capturedUrl = "";
     let capturedBody: any = null;
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedBody = JSON.parse(init?.body as string);
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(
-        JSON.stringify({ success: true, data: { web: [] } }),
-        {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedBody = JSON.parse(String(init?.body));
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(
+          JSON.stringify({ success: true, data: { web: [] } }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    );
 
     await execute({ query: "test query", count: 50, freshness: "pm" });
     expect(capturedUrl).toContain("api.firecrawl.dev/v2/search");
@@ -722,16 +741,18 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "firecrawl");
     setKey("firecrawl", "fc-key");
     let capturedBody: any = null;
-    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
-      capturedBody = JSON.parse(init?.body as string);
-      return new Response(
-        JSON.stringify({ success: true, data: { web: [] } }),
-        {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        capturedBody = JSON.parse(String(init?.body));
+        return new Response(
+          JSON.stringify({ success: true, data: { web: [] } }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    );
 
     await execute({ query: "test", freshness: "invalid" });
     expect(capturedBody.tbs).toBeUndefined();
@@ -740,7 +761,7 @@ describe("web_search tool", () => {
   test("Firecrawl returns no results message when response is empty", async () => {
     seedWebSearch("your-own", "firecrawl");
     setKey("firecrawl", "fc-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({ success: true, data: { web: [] } }),
         {
@@ -748,7 +769,7 @@ describe("web_search tool", () => {
           headers: { "content-type": "application/json" },
         },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "obscure query" });
     expect(result.isError).toBe(false);
@@ -758,9 +779,9 @@ describe("web_search tool", () => {
   test.each([401, 403])("Firecrawl handles %d auth error", async (status) => {
     seedWebSearch("your-own", "firecrawl");
     setKey("firecrawl", "bad-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response("Auth error", { status });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -771,13 +792,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "firecrawl");
     setKey("firecrawl", "fc-key");
     let callCount = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       callCount++;
       return new Response("Too Many Requests", {
         status: 429,
         headers: { "retry-after": "0" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -792,8 +813,8 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "fastcrw");
     setKey("fastcrw", "crw_live_test");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({
           success: true,
@@ -809,7 +830,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "rust scraper" });
     expect(result.isError).toBe(false);
@@ -822,8 +843,8 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "fastcrw", "http://localhost:3000/");
     setKey("fastcrw", "crw_live_test");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({
           success: true,
@@ -837,7 +858,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "flat" });
     expect(result.isError).toBe(false);
@@ -850,16 +871,18 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "fastcrw", "http://127.0.0.1:3000");
     setKey("fastcrw", undefined);
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: { results: [{ title: "Local", url: "https://local.test" }] },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: { results: [{ title: "Local", url: "https://local.test" }] },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({ query: "local" });
     expect(result.isError).toBe(false);
@@ -872,10 +895,10 @@ describe("web_search tool", () => {
   test("SearXNG errors when API Base is missing and does not fetch", async () => {
     seedWebSearch("your-own", "searxng");
     let fetchCalls = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       fetchCalls += 1;
       return new Response("{}", { status: 200 });
-    }) as any;
+    });
 
     const result = await execute({ query: "local search" });
     expect(result.isError).toBe(true);
@@ -888,22 +911,24 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "searxng", "http://127.0.0.1:8888/");
     let capturedUrl = "";
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(
-        JSON.stringify({
-          results: [
-            {
-              title: "SearXNG Result",
-              url: "https://example.com/searx",
-              content: "From a local instance",
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(
+          JSON.stringify({
+            results: [
+              {
+                title: "SearXNG Result",
+                url: "https://example.com/searx",
+                content: "From a local instance",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({ query: "open source search" });
     expect(result.isError).toBe(false);
@@ -921,14 +946,16 @@ describe("web_search tool", () => {
     setKey("searxng", "searx-token");
     let capturedUrl = "";
     let capturedHeaders: any = null;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedHeaders = new Headers(init?.headers);
-      return new Response(JSON.stringify({ results: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedHeaders = new Headers(init?.headers);
+        return new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
 
     await execute({ query: "fresh news", freshness: "pd" });
     expect(capturedUrl).toContain("time_range=day");
@@ -940,7 +967,7 @@ describe("web_search tool", () => {
 
   test("SearXNG trims results to the requested count", async () => {
     seedWebSearch("your-own", "searxng", "http://127.0.0.1:8888");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({
           results: [
@@ -951,7 +978,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test", count: 2 });
     expect(result.content).toContain("A");
@@ -961,12 +988,12 @@ describe("web_search tool", () => {
 
   test("SearXNG errors when the instance returns HTML instead of JSON", async () => {
     seedWebSearch("your-own", "searxng", "http://127.0.0.1:8888");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response("<!DOCTYPE html><html><body>search</body></html>", {
         status: 200,
         headers: { "content-type": "text/html" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);
@@ -980,28 +1007,30 @@ describe("web_search tool", () => {
     setKey("tinyfish", "tf_test");
     let capturedUrl = "";
     let capturedApiKey = "";
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedApiKey = new Headers(init?.headers).get("x-api-key") ?? "";
-      return new Response(
-        JSON.stringify({
-          query: "fresh tools",
-          results: [
-            {
-              position: 1,
-              site_name: "example.com",
-              title: "TinyFish Result",
-              snippet: "Fresh from TinyFish",
-              url: "https://example.com/tinyfish",
-              date: "2026-09-18",
-            },
-          ],
-          total_results: 1,
-          page: 0,
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedApiKey = new Headers(init?.headers).get("x-api-key") ?? "";
+        return new Response(
+          JSON.stringify({
+            query: "fresh tools",
+            results: [
+              {
+                position: 1,
+                site_name: "example.com",
+                title: "TinyFish Result",
+                snippet: "Fresh from TinyFish",
+                url: "https://example.com/tinyfish",
+                date: "2026-09-18",
+              },
+            ],
+            total_results: 1,
+            page: 0,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({ query: "fresh tools", freshness: "pw" });
 
@@ -1022,8 +1051,8 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "tinyfish", "https://search.example.com/api/");
     setKey("tinyfish", "tf_test");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({
           results: [
@@ -1034,7 +1063,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test", count: 2 });
 
@@ -1050,8 +1079,10 @@ describe("web_search tool", () => {
     async (status) => {
       seedWebSearch("your-own", "tinyfish");
       setKey("tinyfish", "tf_test");
-      globalThis.fetch = (async () =>
-        new Response(JSON.stringify({ error: "denied" }), { status })) as any;
+      globalThis.fetch = fetchMock(
+        async () =>
+          new Response(JSON.stringify({ error: "denied" }), { status }),
+      );
 
       const result = await execute({ query: "test" });
 
@@ -1067,24 +1098,26 @@ describe("web_search tool", () => {
     setKey("exa", "exa_test");
     let capturedUrl = "";
     let capturedInit: RequestInit | undefined;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedInit = init;
-      return new Response(
-        JSON.stringify({
-          requestId: "r1",
-          results: [
-            {
-              title: "Exa Result",
-              url: "https://example.com/exa",
-              publishedDate: "2026-09-18T00:00:00.000Z",
-              highlights: ["Fresh from Exa"],
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            requestId: "r1",
+            results: [
+              {
+                title: "Exa Result",
+                url: "https://example.com/exa",
+                publishedDate: "2026-09-18T00:00:00.000Z",
+                highlights: ["Fresh from Exa"],
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({
       query: "fresh tools",
@@ -1115,19 +1148,21 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "exa");
     setKey("exa", "exa_test");
     let capturedInit: RequestInit | undefined;
-    globalThis.fetch = (async (_url: string, init?: RequestInit) => {
-      capturedInit = init;
-      return new Response(
-        JSON.stringify({
-          results: [
-            { title: "A", url: "https://a.example.com", highlights: ["a"] },
-            { title: "B", url: "https://b.example.com", highlights: ["b"] },
-            { title: "C", url: "https://c.example.com", highlights: ["c"] },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            results: [
+              { title: "A", url: "https://a.example.com", highlights: ["a"] },
+              { title: "B", url: "https://b.example.com", highlights: ["b"] },
+              { title: "C", url: "https://c.example.com", highlights: ["c"] },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({ query: "test", count: 2 });
 
@@ -1142,8 +1177,9 @@ describe("web_search tool", () => {
   test.each([401, 402, 403])("Exa handles %d access error", async (status) => {
     seedWebSearch("your-own", "exa");
     setKey("exa", "exa_test");
-    globalThis.fetch = (async () =>
-      new Response(JSON.stringify({ error: "denied" }), { status })) as any;
+    globalThis.fetch = fetchMock(
+      async () => new Response(JSON.stringify({ error: "denied" }), { status }),
+    );
 
     const result = await execute({ query: "test" });
 
@@ -1158,25 +1194,27 @@ describe("web_search tool", () => {
     setKey("serply", "serply_test");
     let capturedUrl = "";
     let capturedInit: RequestInit | undefined;
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedInit = init;
-      return new Response(
-        JSON.stringify({
-          query: "fresh tools",
-          total: 1,
-          results: [
-            {
-              title: "Serply Result",
-              link: "https://example.com/serply",
-              description: "Fresh from Serply",
-              position: 1,
-            },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as any;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            query: "fresh tools",
+            total: 1,
+            results: [
+              {
+                title: "Serply Result",
+                link: "https://example.com/serply",
+                description: "Fresh from Serply",
+                position: 1,
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
 
     const result = await execute({
       query: "fresh tools",
@@ -1205,8 +1243,8 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "serply");
     setKey("serply", "serply_test");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({
           results: [
@@ -1217,7 +1255,7 @@ describe("web_search tool", () => {
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test", count: 2 });
 
@@ -1239,10 +1277,12 @@ describe("web_search tool", () => {
     async (status) => {
       seedWebSearch("your-own", "serply");
       setKey("serply", "serply_test");
-      globalThis.fetch = (async () =>
-        new Response(JSON.stringify({ detail: "Invalid API key" }), {
-          status,
-        })) as any;
+      globalThis.fetch = fetchMock(
+        async () =>
+          new Response(JSON.stringify({ detail: "Invalid API key" }), {
+            status,
+          }),
+      );
 
       const result = await execute({ query: "test" });
 
@@ -1257,13 +1297,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "perplexity");
     setKey("brave", "brave-fallback-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(JSON.stringify({ web: { results: [] } }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "fallback test" });
     expect(result.isError).toBe(false);
@@ -1274,15 +1314,15 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "brave");
     setKey("perplexity", "pplx-fallback-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string, _init?: RequestInit) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({
           choices: [{ message: { content: "fallback result" } }],
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "fallback test" });
     expect(result.isError).toBe(false);
@@ -1293,13 +1333,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "perplexity");
     setKey("tavily", "tvly-fallback-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(JSON.stringify({ results: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
-    }) as any;
+    });
 
     const result = await execute({ query: "fallback test" });
     expect(result.isError).toBe(false);
@@ -1310,8 +1350,8 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "perplexity");
     setKey("firecrawl", "fc-fallback-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({ success: true, data: { web: [] } }),
         {
@@ -1319,7 +1359,7 @@ describe("web_search tool", () => {
           headers: { "content-type": "application/json" },
         },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "fallback test" });
     expect(result.isError).toBe(false);
@@ -1330,13 +1370,13 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "tavily");
     setKey("perplexity", "pplx-fallback-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({ choices: [{ message: { content: "fallback" } }] }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "fallback test" });
     expect(result.isError).toBe(false);
@@ -1347,15 +1387,15 @@ describe("web_search tool", () => {
     seedWebSearch("your-own", "inference-provider-native");
     setKey("perplexity", "pplx-key");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return new Response(
         JSON.stringify({
           choices: [{ message: { content: "result" } }],
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(false);
@@ -1366,9 +1406,9 @@ describe("web_search tool", () => {
 
   test("handles fetch exceptions", async () => {
     setKey("perplexity", "pplx-key");
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       throw new Error("Network error: connection refused");
-    }) as any;
+    });
 
     const result = await execute({ query: "test" });
     expect(result.isError).toBe(true);

@@ -8,7 +8,7 @@
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { getDb } from "../../persistence/db-connection.js";
+import { getDb, getSqlite } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { RiskLevel } from "../../tools/tool-types.js";
 import { createSchedule } from "../schedule-store.js";
@@ -69,8 +69,7 @@ await initializeDb();
 let capturedMcpTools: string[] = [];
 
 function rawDb(): import("bun:sqlite").Database {
-  return (getDb() as unknown as { $client: import("bun:sqlite").Database })
-    .$client;
+  return getSqlite();
 }
 
 afterEach(() => {
@@ -102,12 +101,18 @@ describe("automatic schedule MCP readiness", () => {
     expect(result.completed).toBe(0);
     expect(processedPrompts).toEqual([]);
     const runs = rawDb()
-      .query("SELECT status FROM cron_runs WHERE job_id = ?")
-      .all(job.id) as Array<{ status: string }>;
+      .query<
+        { status: string },
+        [string]
+      >("SELECT status FROM cron_runs WHERE job_id = ?")
+      .all(job.id);
     expect(runs).toEqual([]);
     const row = rawDb()
-      .query("SELECT status, enabled FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { status: string; enabled: number };
+      .query<
+        { status: string; enabled: number },
+        [string]
+      >("SELECT status, enabled FROM cron_jobs WHERE id = ?")
+      .get(job.id)!;
     expect(row.status).toBe("active");
     expect(row.enabled).toBe(1);
   });

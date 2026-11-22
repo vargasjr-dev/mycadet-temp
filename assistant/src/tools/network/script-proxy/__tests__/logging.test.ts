@@ -9,7 +9,6 @@ import {
   sanitizeUrl,
   stripQueryString,
 } from "../../../../outbound-proxy/index.js";
-import type { CredentialInjectionTemplate } from "../../../credentials/policy-types.js";
 
 // ---------------------------------------------------------------------------
 // sanitizeHeaders
@@ -187,14 +186,14 @@ describe("buildDecisionTrace", () => {
           template: {
             hostPattern: "*.example.com",
             injectionType: "header",
-          } as CredentialInjectionTemplate,
+          },
         },
         {
           credentialId: "cred-2",
           template: {
             hostPattern: "*.example.com",
             injectionType: "header",
-          } as CredentialInjectionTemplate,
+          },
         },
       ],
     };

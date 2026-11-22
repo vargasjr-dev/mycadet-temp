@@ -219,8 +219,10 @@ export function computeNextRunAt(spec: ScheduleSpec, nowMs?: number): number {
 
     const useSet = hasSetConstructs(normalized);
     const tzid = spec.timezone ?? undefined;
+    // rrulestr types `forceset` weakly (RRule | RRuleSet either way), but
+    // both halves of the union declare the after()/before() pair used below.
     const parsed = useSet
-      ? (rrulestr(normalized, { forceset: true, tzid }) as RRuleSet)
+      ? rrulestr(normalized, { forceset: true, tzid })
       : rrulestr(normalized, { tzid });
     const next = parsed.after(new Date(now));
     if (!next) {

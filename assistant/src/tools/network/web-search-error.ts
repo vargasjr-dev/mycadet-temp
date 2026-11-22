@@ -12,6 +12,7 @@ import type { Logger } from "pino";
 
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { truncateForLog } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import { isRetryableNetworkError } from "../../util/retry.js";
 
 /**
@@ -148,10 +149,11 @@ function categoryFromError(
   // transport-shaped `cause` (e.g. ECONNRESET) short-circuits to "not a
   // failure" instead of being mislabeled a backend outage. A bare
   // AbortError/timeout with no tagged reason still falls through below.
+  const errFields = isPlainObject(error) ? error : {};
   if (
     isAbortReason(error) ||
-    isAbortReason((error as { reason?: unknown }).reason) ||
-    isAbortReason((error as { abortReason?: unknown }).abortReason)
+    isAbortReason(errFields.reason) ||
+    isAbortReason(errFields.abortReason)
   ) {
     return undefined;
   }
@@ -162,12 +164,8 @@ function categoryFromError(
     return "backend_unavailable";
   }
 
-  const name =
-    typeof (error as { name?: unknown }).name === "string"
-      ? (error as { name: string }).name
-      : "";
-  const haystack =
-    `${name} ${(error as { message?: unknown }).message ?? ""}`.toLowerCase();
+  const name = typeof errFields.name === "string" ? errFields.name : "";
+  const haystack = `${name} ${errFields.message ?? ""}`.toLowerCase();
 
   // web_search-only: treat aborts/timeouts/DNS/fetch failures (the cases
   // `isRetryableNetworkError` doesn't cover) as backend failures.
@@ -195,9 +193,10 @@ function buildRawDetail(input: WebSearchFailureInput): string {
     parts.push(`statusCode=${input.statusCode}`);
   }
   if (input.error != null) {
-    const err = input.error as { message?: unknown };
     const msg =
-      typeof err.message === "string" ? err.message : String(input.error);
+      isPlainObject(input.error) && typeof input.error.message === "string"
+        ? input.error.message
+        : String(input.error);
     if (msg) {
       parts.push(msg);
     }

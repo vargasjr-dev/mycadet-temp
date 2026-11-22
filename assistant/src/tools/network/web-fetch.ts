@@ -5,6 +5,8 @@ import {
 } from "node:https";
 import { Readable } from "node:stream";
 
+import { z } from "zod";
+
 import type {
   WebFetchMetadata,
   WebFetchProviderId,
@@ -205,6 +207,39 @@ function toConstructableStatus(status: number): number {
 
 const upstreamStatusByResponse = new WeakMap<Response, number>();
 
+/**
+ * Bridge a Node response stream into a fetch `Response` body.
+ *
+ * Node's `Readable.toWeb` would hand back `stream/web`'s ReadableStream, whose
+ * type disagrees with the DOM `BodyInit` member on `getReader`'s overload
+ * surface — so instead of asserting across the lib split, this pumps the
+ * chunks through a real `ReadableStream`: `pull` keeps the backpressure (a
+ * chunk is read only when the body's consumer asks), and a cancelled body
+ * destroys the upstream.
+ */
+function nodeStreamToResponseBody(
+  res: NodeHttpResponseLike,
+): ReadableStream<Uint8Array> {
+  const iterator = res[Symbol.asyncIterator]();
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { value, done } = await iterator.next();
+        if (done) {
+          controller.close();
+        } else {
+          controller.enqueue(value);
+        }
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+    async cancel() {
+      await iterator.return?.();
+    },
+  });
+}
+
 // Returns the real status the upstream server sent, which may fall outside the
 // range the `Response` object can represent (e.g. 999). Falls back to
 // `response.status` for responses built by native `fetch`, whose undici
@@ -225,7 +260,7 @@ export function buildFetchResponseFromNodeResponse(
     ? // Drain any unexpected bytes and produce a valid null-body fetch Response.
       (res.resume(),
       new Response(null, { status, statusText, headers: responseHeaders }))
-    : new Response(Readable.toWeb(res) as unknown as BodyInit, {
+    : new Response(nodeStreamToResponseBody(res), {
         status,
         statusText,
         headers: responseHeaders,
@@ -1152,6 +1187,73 @@ interface TinyfishFetchResponse {
   errors?: TinyfishFetchError[];
 }
 
+/** Response schemas: the provider payloads are untyped JSON off the wire. */
+const FirecrawlScrapeResponseSchema = z.object({
+  success: z.boolean().optional(),
+  data: z
+    .object({
+      markdown: z.string().optional(),
+      metadata: z
+        .object({
+          title: z.string().optional(),
+          description: z.string().optional(),
+          sourceURL: z.string().optional(),
+          url: z.string().optional(),
+          statusCode: z.number().optional(),
+          contentType: z.string().optional(),
+          error: z.string().optional(),
+        })
+        .optional(),
+      warning: z.string().nullable().optional(),
+    })
+    .optional(),
+  warning: z.string().nullable().optional(),
+  error: z.string().optional(),
+});
+
+const TinyfishFetchResponseSchema = z.object({
+  results: z
+    .array(
+      z.object({
+        url: z.string().optional(),
+        final_url: z.string().optional(),
+        title: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+        text: z
+          .union([z.string(), z.record(z.string(), z.unknown())])
+          .nullable()
+          .optional(),
+        format: z.string().optional(),
+        latency_ms: z.number().nullable().optional(),
+      }),
+    )
+    .optional(),
+  errors: z
+    .array(
+      z.object({
+        url: z.string().optional(),
+        error: z.string().optional(),
+        status: z.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * Parse a provider payload against its response schema. On a shape mismatch
+ * the empty response is returned: the readers treat every field as optional,
+ * so the old unchecked reads rendered a mismatched payload as a blank fetch,
+ * and that is the behavior kept here.
+ */
+function parseFetchResponse<T>(
+  schema: z.ZodType<T>,
+  value: unknown,
+  fallback: T,
+): T {
+  const parsed = schema.safeParse(value);
+  return parsed.success ? parsed.data : fallback;
+}
+
 function getWebFetchProvider(): WebFetchProviderId {
   const configured = getConfig().services["web-fetch"]?.provider ?? "default";
   if (
@@ -1355,7 +1457,11 @@ async function executeFirecrawlCompatScrape(
     if (response.ok) {
       let json: FirecrawlScrapeResponse;
       try {
-        json = (await response.json()) as FirecrawlScrapeResponse;
+        json = parseFetchResponse(
+          FirecrawlScrapeResponseSchema,
+          await response.json(),
+          {},
+        );
       } catch {
         return hostedScrapeErrorResult(
           safeRequestedUrl,
@@ -1636,7 +1742,11 @@ export async function executeTinyfishFetch(
     if (response.ok) {
       let payload: TinyfishFetchResponse;
       try {
-        payload = JSON.parse(bodyText) as TinyfishFetchResponse;
+        payload = parseFetchResponse(
+          TinyfishFetchResponseSchema,
+          JSON.parse(bodyText),
+          {},
+        );
       } catch {
         return hostedScrapeErrorResult(
           safeRequestedUrl,

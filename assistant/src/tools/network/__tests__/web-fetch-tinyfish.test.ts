@@ -8,6 +8,7 @@ import {
   test,
 } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import { credentialKey } from "../../../security/credential-key.js";
@@ -56,25 +57,27 @@ describe("executeTinyfishFetch", () => {
     let capturedUrl = "";
     let capturedBody: Record<string, unknown> = {};
     let capturedApiKey = "";
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
-      capturedUrl = url;
-      capturedBody = JSON.parse(String(init?.body));
-      capturedApiKey = new Headers(init?.headers).get("x-api-key") ?? "";
-      return fetchResponse({
-        results: [
-          {
-            url: "https://example.com/",
-            final_url: "https://www.example.com/",
-            title: "Example",
-            description: "An example page",
-            text: "# Example\n\nHello from TinyFish.",
-            format: "markdown",
-            latency_ms: 120,
-          },
-        ],
-        errors: [],
-      });
-    }) as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input);
+        capturedBody = JSON.parse(String(init?.body));
+        capturedApiKey = new Headers(init?.headers).get("x-api-key") ?? "";
+        return fetchResponse({
+          results: [
+            {
+              url: "https://example.com/",
+              final_url: "https://www.example.com/",
+              title: "Example",
+              description: "An example page",
+              text: "# Example\n\nHello from TinyFish.",
+              format: "markdown",
+              latency_ms: 120,
+            },
+          ],
+          errors: [],
+        });
+      },
+    );
 
     const result = await executeTinyfishFetch(
       { url: "https://example.com", timeout_seconds: 45 },
@@ -126,8 +129,8 @@ describe("executeTinyfishFetch", () => {
   test("uses a custom API base and applies character windows", async () => {
     seedWebFetch("tinyfish", "https://fetch.example.com/api/");
     let capturedUrl = "";
-    globalThis.fetch = (async (url: string) => {
-      capturedUrl = url;
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      capturedUrl = String(input);
       return fetchResponse({
         results: [
           {
@@ -139,7 +142,7 @@ describe("executeTinyfishFetch", () => {
         ],
         errors: [],
       });
-    }) as typeof fetch;
+    });
 
     const result = await executeTinyfishFetch(
       { url: "https://example.com", start_index: 2, max_chars: 4 },
@@ -153,7 +156,7 @@ describe("executeTinyfishFetch", () => {
   });
 
   test("surfaces per-URL errors from a successful HTTP response", async () => {
-    globalThis.fetch = (async () =>
+    globalThis.fetch = fetchMock(async () =>
       fetchResponse({
         results: [],
         errors: [
@@ -163,7 +166,8 @@ describe("executeTinyfishFetch", () => {
             status: 403,
           },
         ],
-      })) as unknown as typeof fetch;
+      }),
+    );
 
     const result = await executeTinyfishFetch(
       { url: "https://example.com" },
@@ -179,10 +183,10 @@ describe("executeTinyfishFetch", () => {
 
   test("rejects URL-embedded credentials before calling TinyFish", async () => {
     let fetchCalls = 0;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       fetchCalls += 1;
       return fetchResponse({ results: [], errors: [] });
-    }) as unknown as typeof fetch;
+    });
 
     const result = await executeTinyfishFetch(
       { url: "https://user:pass@example.com/private" },
@@ -214,8 +218,8 @@ describe("webFetchTool TinyFish dispatch", () => {
 
   test("routes public URLs to TinyFish when a key is stored", async () => {
     let tinyfishHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (String(url).includes("api.fetch.tinyfish.ai")) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (String(String(input)).includes("api.fetch.tinyfish.ai")) {
         tinyfishHit = true;
       }
       return fetchResponse({
@@ -229,7 +233,7 @@ describe("webFetchTool TinyFish dispatch", () => {
         ],
         errors: [],
       });
-    }) as typeof fetch;
+    });
 
     const result = await execute({ url: "https://example.com" });
 
@@ -239,12 +243,12 @@ describe("webFetchTool TinyFish dispatch", () => {
 
   test("does not send private targets to TinyFish", async () => {
     let tinyfishHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (String(url).includes("api.fetch.tinyfish.ai")) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (String(String(input)).includes("api.fetch.tinyfish.ai")) {
         tinyfishHit = true;
       }
       return new Response("", { status: 200 });
-    }) as typeof fetch;
+    });
 
     const result = await execute({ url: "http://localhost:8080/admin" });
 
@@ -257,12 +261,12 @@ describe("webFetchTool TinyFish dispatch", () => {
     secureKeys.delete(TINYFISH_KEY);
     mockResolveAddresses = [];
     let tinyfishHit = false;
-    globalThis.fetch = (async (url: string) => {
-      if (String(url).includes("api.fetch.tinyfish.ai")) {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
+      if (String(String(input)).includes("api.fetch.tinyfish.ai")) {
         tinyfishHit = true;
       }
       return new Response("", { status: 200 });
-    }) as typeof fetch;
+    });
 
     const result = await execute({ url: "https://example.com" });
 

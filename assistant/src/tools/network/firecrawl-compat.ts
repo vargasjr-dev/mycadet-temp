@@ -3,6 +3,8 @@
  * (Firecrawl hosted `/v2/*` and fastCRW `/v1/*`).
  */
 
+import { isPlainObject } from "../../util/object.js";
+
 export const FASTCRW_DEFAULT_API_BASE = "https://api.fastcrw.com";
 
 /**
@@ -31,6 +33,11 @@ export interface FirecrawlCompatSearchResult {
   category?: string;
 }
 
+/** A search payload row: any plain object (every field is optional). */
+function isSearchRow(value: unknown): value is FirecrawlCompatSearchResult {
+  return isPlainObject(value);
+}
+
 /**
  * Portable read of Firecrawl / fastCRW search payloads:
  * - grouped: `data.web` (Firecrawl `/v2/search`, hosted CRW with sources)
@@ -41,41 +48,34 @@ export interface FirecrawlCompatSearchResult {
 export function extractFirecrawlCompatSearchResults(
   data: unknown,
 ): FirecrawlCompatSearchResult[] {
-  if (!data || typeof data !== "object") {
+  if (!isPlainObject(data)) {
     return [];
   }
-  const root = data as Record<string, unknown>;
-  const payload = root.data;
+  const payload = data.data;
 
   if (Array.isArray(payload)) {
-    return payload as FirecrawlCompatSearchResult[];
+    return payload.filter(isSearchRow);
   }
 
-  if (payload && typeof payload === "object") {
-    const nested = payload as Record<string, unknown>;
-    if (Array.isArray(nested.web)) {
-      return nested.web as FirecrawlCompatSearchResult[];
+  if (isPlainObject(payload)) {
+    if (Array.isArray(payload.web)) {
+      return payload.web.filter(isSearchRow);
     }
     // Self-hosted CRW with sources:["web"] nests rows under data.results.web
     // (an object keyed by source), not data.results as a flat array.
-    if (
-      nested.results &&
-      typeof nested.results === "object" &&
-      !Array.isArray(nested.results)
-    ) {
-      const resultsBySource = nested.results as Record<string, unknown>;
+    if (isPlainObject(payload.results)) {
+      const resultsBySource = payload.results;
       if (Array.isArray(resultsBySource.web)) {
-        return resultsBySource.web as FirecrawlCompatSearchResult[];
+        return resultsBySource.web.filter(isSearchRow);
       }
-      const firstSourceKey = Object.keys(resultsBySource).find((key) =>
-        Array.isArray(resultsBySource[key]),
-      );
-      if (firstSourceKey) {
-        return resultsBySource[firstSourceKey] as FirecrawlCompatSearchResult[];
+      for (const rows of Object.values(resultsBySource)) {
+        if (Array.isArray(rows)) {
+          return rows.filter(isSearchRow);
+        }
       }
     }
-    if (Array.isArray(nested.results)) {
-      return nested.results as FirecrawlCompatSearchResult[];
+    if (Array.isArray(payload.results)) {
+      return payload.results.filter(isSearchRow);
     }
   }
 

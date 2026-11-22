@@ -215,10 +215,10 @@ describe("WEB_SEARCH_BACKEND_FAILURE_MESSAGE copy safety", () => {
 
 describe("logWebSearchBackendFailure", () => {
   test("captures the event and rawDetail without raw query text", () => {
-    const calls: unknown[][] = [];
+    const calls: Array<[Record<string, unknown>, string]> = [];
     const fakeLogger = {
-      warn: (...args: unknown[]) => {
-        calls.push(args);
+      warn: (obj: Record<string, unknown>, msg?: string) => {
+        calls.push([obj, msg ?? ""]);
       },
     } as unknown as Parameters<typeof logWebSearchBackendFailure>[0];
 
@@ -233,7 +233,7 @@ describe("logWebSearchBackendFailure", () => {
     });
 
     expect(calls).toHaveLength(1);
-    const [payload, msg] = calls[0] as [Record<string, unknown>, string];
+    const [payload, msg] = calls[0]!;
     expect(payload.event).toBe("web_search_backend_failure");
     expect(payload.tool).toBe("web_search");
     expect(payload.provider).toBe("anthropic");
