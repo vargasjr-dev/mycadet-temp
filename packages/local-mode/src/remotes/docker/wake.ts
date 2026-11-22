@@ -4,13 +4,20 @@ import type {
   DockerAssistant,
   MachineMemoryPolicy,
 } from "../../lockfile-contract";
-import type { LifecycleReporter, WakeAssistantOptions } from "../../operations/types";
+import type {
+  LifecycleReporter,
+  WakeAssistantOptions,
+} from "../../operations/types";
 import { consoleLifecycleReporter } from "../../lifecycle-reporter";
 import { exec, execOutput } from "../../exec";
 import { saveLockfileAssistant } from "../../lockfile";
 import { getOrCreateHostDeviceId } from "../../device-id";
 import { ASSISTANT_INTERNAL_PORT } from "../../ports";
-import { ensureDockerDaemonRunning, isNoSuchContainerError, dockerResourceNames } from "./common";
+import {
+  ensureDockerDaemonRunning,
+  isNoSuchContainerError,
+  dockerResourceNames,
+} from "./common";
 import { pullImage } from "./hatch";
 import {
   buildServiceRunArgs,
@@ -36,15 +43,14 @@ export interface WakeDockerOptions extends WakeAssistantOptions {
   extraAssistantEnv?: Record<string, string>;
   extraGatewayEnv?: Record<string, string>;
   gatewayPort?: number;
-  /** Wait for the gateway's `/readyz` after the containers come up. */
-  waitUntilReady?: boolean;
 }
 
 export async function wakeDocker(
   entry: DockerAssistant,
   options: WakeDockerOptions = {},
 ): Promise<WakeResult> {
-  const logger: LifecycleReporter = options.reporter ?? consoleLifecycleReporter;
+  const logger: LifecycleReporter =
+    options.reporter ?? consoleLifecycleReporter;
   const log = (msg: string): void => logger.log(msg);
   const startAll = async (): Promise<void> => {
     const res = dockerResourceNames(entry.assistantId);
@@ -99,18 +105,16 @@ export async function wakeDocker(
     }
     log("Docker containers started.");
   }
-  if (options.waitUntilReady) {
-    const gatewayUrl = new URL(
-      `http://127.0.0.1:${options.gatewayPort ?? entry.port}`,
-    );
-    const ready = await waitForReady(gatewayUrl.origin);
-    if (!ready) {
-      return {
-        ok: false,
-        status: 500,
-        error: "Containers failed to become ready within the timeout.",
-      };
-    }
+  const gatewayUrl = new URL(
+    `http://127.0.0.1:${options.gatewayPort ?? entry.port}`,
+  );
+  const ready = await waitForReady(gatewayUrl.origin);
+  if (!ready) {
+    return {
+      ok: false,
+      status: 500,
+      error: "Containers failed to become ready within the timeout.",
+    };
   }
   return { ok: true };
 }
@@ -211,7 +215,8 @@ async function recreateDockerContainers(
     "credential-executor": cesImage,
   };
   const res = dockerResourceNames(entry.assistantId);
-  const logger: LifecycleReporter = options.reporter ?? consoleLifecycleReporter;
+  const logger: LifecycleReporter =
+    options.reporter ?? consoleLifecycleReporter;
   const log = (msg: string): void => logger.log(msg);
 
   try {

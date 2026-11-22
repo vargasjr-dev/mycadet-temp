@@ -17,6 +17,7 @@ const realDockerCommon = {
   ...(await import("../remotes/docker/common")),
 };
 const realHatch = { ...(await import("../remotes/docker/hatch")) };
+const realDaemonReadiness = { ...(await import("../daemon-readiness")) };
 
 /**
  * The recreate arm under test: `wakeDocker` starts the three service
@@ -81,11 +82,22 @@ mock.module("../remotes/docker/hatch", () => ({
   ...realHatch,
   pullImage: async () => {},
 }));
+// The wake always waits for the gateway's /readyz — answer from here instead
+// of a real loopback fetch (nothing listens on the entry's port in tests).
+let readyResult: boolean;
+const waitForReadyMock = mock(
+  async (_runtimeUrl: string): Promise<boolean> => readyResult,
+);
+mock.module("../daemon-readiness", () => ({
+  ...realDaemonReadiness,
+  waitForReady: waitForReadyMock,
+}));
 
 afterAll(() => {
   mock.module("../exec", () => realExecModule);
   mock.module("../remotes/docker/common", () => realDockerCommon);
   mock.module("../remotes/docker/hatch", () => realHatch);
+  mock.module("../daemon-readiness", () => realDaemonReadiness);
 });
 
 import type { DockerAssistant } from "../lockfile-contract";
@@ -118,6 +130,8 @@ beforeEach(() => {
   // Default: the existing containers run exactly what the lockfile says —
   // the plain-start wake. Drift tests override this.
   inspectedImage = "mycadet/mycadet-assistant:v0.12.7";
+  readyResult = true;
+  waitForReadyMock.mockClear();
 });
 
 afterEach(() => {
@@ -167,6 +181,26 @@ describe("wakeDocker — the docker wake leg", () => {
       cmd: "docker",
       args: ["rm", "--force", "docker-1-assistant"],
     });
+  });
+
+  test("the wake waits for the gateway's /readyz before reporting ok", async () => {
+    const result = await wakeDocker(makeEntry());
+
+    expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");
+    expect(result.ok).toBe(true);
+  });
+
+  test("a ready wait that never comes answers 500", async () => {
+    readyResult = false;
+
+    const result = await wakeDocker(makeEntry());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.status).toBe(500);
+    expect(result.error).toBe(
+      "Containers failed to become ready within the timeout.",
+    );
   });
 
   test("a recreate failure comes back as a structured 500 — the leg never throws", async () => {

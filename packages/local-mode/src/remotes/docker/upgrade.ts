@@ -258,7 +258,6 @@ export async function upgradeDocker(
     extraAssistantEnv,
     extraGatewayEnv,
     gatewayPort,
-    waitUntilReady: true,
     reporter,
   });
   const ready = wake.ok;
@@ -348,7 +347,6 @@ export async function upgradeDocker(
           extraAssistantEnv,
           extraGatewayEnv,
           gatewayPort,
-          waitUntilReady: true,
           reporter,
         });
         let rollbackReady = rollbackWake.ok;

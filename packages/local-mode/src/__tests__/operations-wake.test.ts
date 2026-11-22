@@ -274,20 +274,6 @@ describe("the wake operation — a remote -> method router", () => {
     );
   });
 
-  test("the docker leg waits until the assistant is ready", async () => {
-    const entry: LockfileAssistant = {
-      assistantId: "asst-docker",
-      cloud: "docker",
-      port: 7831,
-    };
-    await wakeAssistant(entry);
-
-    expect(wakeDockerMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "asst-docker" }),
-      expect.objectContaining({ waitUntilReady: true }),
-    );
-  });
-
   test("a docker wake failure carries the docker error", async () => {
     wakeDockerMock.mockResolvedValue({
       ok: false,
