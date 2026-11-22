@@ -9,7 +9,44 @@ import { ToolDefinition } from "../tools/tool-types.js";
 // Mock Anthropic SDK — must be before importing the provider
 // ---------------------------------------------------------------------------
 
-let lastStreamParams: Record<string, unknown> | null = null;
+/**
+ * What the provider puts on the wire, as loosely as the tests read it —
+ * typed once so the read sites need no assertions.
+ */
+type CapturedBlock = {
+  type?: string;
+  text?: string;
+  thinking?: string;
+  cache_control?: { type?: string; ttl?: string };
+  [key: string]: unknown;
+};
+interface CapturedMessage {
+  role?: string;
+  content: CapturedBlock[];
+  [key: string]: unknown;
+}
+interface CapturedTool {
+  name?: string;
+  cache_control?: { type?: string; ttl?: string };
+  [key: string]: unknown;
+}
+interface CapturedStreamParams {
+  model?: string;
+  system: CapturedBlock[];
+  messages: CapturedMessage[];
+  tools: CapturedTool[];
+  betas?: string[];
+  max_tokens?: number;
+  temperature?: number;
+  top_p?: number;
+  top_k?: number;
+  thinking?: unknown;
+  reasoning?: unknown;
+  output_config?: unknown;
+  [key: string]: unknown;
+}
+
+let lastStreamParams: CapturedStreamParams | null = null;
 let _lastStreamOptions: Record<string, unknown> | null = null;
 let lastConstructorArgs: Record<string, unknown> | null = null;
 
@@ -211,11 +248,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       systemPrompt: "You are helpful.",
     });
 
-    const system = lastStreamParams!.system as Array<{
-      type: string;
-      text: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const system = lastStreamParams!.system;
     expect(system).toHaveLength(1);
     expect(system[0].cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
   });
@@ -250,10 +283,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       userMsg("Continue"),
     ]);
 
-    const messages = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string; thinking?: string }>;
-    }>;
+    const messages = lastStreamParams!.messages;
     const assistant = messages.find((message) => message.role === "assistant");
 
     expect(assistant?.content).toEqual([{ type: "text", text: "I can help." }]);
@@ -264,11 +294,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
 
     await provider.sendMessage([userMsg("Hi")], { systemPrompt: prompt });
 
-    const system = lastStreamParams!.system as Array<{
-      type: string;
-      text: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const system = lastStreamParams!.system;
     expect(system).toHaveLength(1);
     expect(system[0].text).toBe(prompt);
     expect(system[0].cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
@@ -288,29 +314,17 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       systemPrompt: prompt,
     });
 
-    const system = lastStreamParams!.system as Array<{
-      type: string;
-      text: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const system = lastStreamParams!.system;
     expect(system).toHaveLength(1);
     expect(system[0].cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
 
-    const tools = lastStreamParams!.tools as Array<{
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = lastStreamParams!.tools;
     expect(tools[tools.length - 1].cache_control).toEqual({
       type: "ephemeral",
       ttl: "1h",
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const turnStart = sent[0];
     expect(
       turnStart.content[turnStart.content.length - 1].cache_control,
@@ -346,11 +360,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     });
 
     // THEN the system prompt is split into two blocks, each 1h-cached
-    const system = lastStreamParams!.system as Array<{
-      type: string;
-      text: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const system = lastStreamParams!.system;
     expect(system).toHaveLength(2);
     expect(system[0].text).toBe("stable sections");
     expect(system[1].text).toBe("volatile sections");
@@ -358,22 +368,14 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     expect(system[1].cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
 
     // AND no tool carries a breakpoint (system block 1 covers them)
-    const tools = lastStreamParams!.tools as Array<{
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = lastStreamParams!.tools;
     for (const tool of tools) {
       expect(tool.cache_control).toBeUndefined();
     }
 
     // AND the turn-start and tail message breakpoints are unchanged,
     // keeping the total at the 4-breakpoint cap
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const turnStart = sent[0];
     expect(
       turnStart.content[turnStart.content.length - 1].cache_control,
@@ -398,9 +400,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     });
 
     // THEN the last tool keeps its breakpoint
-    const tools = lastStreamParams!.tools as Array<{
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = lastStreamParams!.tools;
     expect(tools[tools.length - 1].cache_control).toEqual({
       type: "ephemeral",
       ttl: "1h",
@@ -413,10 +413,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
   test("only last tool definition includes cache_control", async () => {
     await provider.sendMessage([userMsg("Hi")], { tools: sampleTools });
 
-    const tools = lastStreamParams!.tools as Array<{
-      name: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = lastStreamParams!.tools;
     expect(tools).toHaveLength(3);
 
     // First two tools: no cache_control
@@ -430,10 +427,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
   test("single tool gets cache_control", async () => {
     await provider.sendMessage([userMsg("Hi")], { tools: [sampleTools[0]] });
 
-    const tools = lastStreamParams!.tools as Array<{
-      name: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = lastStreamParams!.tools;
     expect(tools).toHaveLength(1);
     expect(tools[0].cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
   });
@@ -451,9 +445,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       },
     ]);
 
-    const messages = lastStreamParams!.messages as Array<{
-      content: Array<{ cache_control?: { type: string; ttl?: string } }>;
-    }>;
+    const messages = lastStreamParams!.messages;
     expect(messages[0].content[0].cache_control).toEqual({
       type: "ephemeral",
       ttl: "1h",
@@ -478,14 +470,12 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       },
     ]);
 
-    const messages = lastStreamParams!.messages as Array<{
-      content: Array<{ cache_control?: { type: string; ttl?: string } }>;
-    }>;
+    const messages = lastStreamParams!.messages;
     expect(messages[0].content[0].cache_control).toEqual({ type: "ephemeral" });
     expect(messages[0].content[0].cache_control).not.toHaveProperty("ttl");
-    expect(
-      (lastStreamParams!.betas as string[] | undefined) ?? [],
-    ).not.toContain("extended-cache-ttl-2025-04-11");
+    expect(lastStreamParams!.betas ?? []).not.toContain(
+      "extended-cache-ttl-2025-04-11",
+    );
   });
 
   test("disableCache sends no cache_control anywhere and strips caller-stamped block markers", async () => {
@@ -509,21 +499,15 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { disableCache: true },
     });
 
-    const system = lastStreamParams!.system as Array<{
-      cache_control?: unknown;
-    }>;
+    const system = lastStreamParams!.system;
     expect(system[0].cache_control).toBeUndefined();
 
-    const tools = lastStreamParams!.tools as Array<{
-      cache_control?: unknown;
-    }>;
+    const tools = lastStreamParams!.tools;
     for (const tool of tools) {
       expect(tool.cache_control).toBeUndefined();
     }
 
-    const sent = lastStreamParams!.messages as Array<{
-      content: Array<{ cache_control?: unknown }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     for (const message of sent) {
       for (const block of message.content) {
         expect(block.cache_control).toBeUndefined();
@@ -567,9 +551,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
         breakpoints++;
       }
     }
-    const messages = lastStreamParams!.messages as Array<{
-      content: Array<{ cache_control?: { type: string; ttl?: string } }>;
-    }>;
+    const messages = lastStreamParams!.messages;
     for (const m of messages) {
       for (const b of m.content) {
         if (b.cache_control) {
@@ -612,13 +594,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Turn-starting user message (first) keeps 1h
     const turnStart = sent[0];
@@ -644,14 +620,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const userMessages = sent.filter((m) => m.role === "user");
     // Oldest user message (Turn 1) has no cache_control
@@ -681,13 +650,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { disableTurnStartCache: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const lastBlock = sent[0].content[sent[0].content.length - 1];
     expect(lastBlock.cache_control).toBeUndefined();
   });
@@ -706,13 +669,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     // Turn 1 user message must have no cache_control (would be the
     // prev-turn-anchor if we applied it, which we shouldn't here)
     const turn1 = sent[0];
@@ -739,14 +696,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const userMessages = sent.filter((m) => m.role === "user");
 
     // Latest (turn-start) user message gets the cheap 5m tail bridge, never the
@@ -769,13 +719,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const userMessages = sent.filter((m) => m.role === "user");
 
     // Current-turn (latest) anchor keeps 1h.
@@ -804,13 +748,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const turn2 = sent[2];
     const turn2Last = turn2.content[turn2.content.length - 1];
@@ -822,13 +760,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     // The only user message is volatile, so it gets no 1h anchor: those bytes
     // do not recur next turn. It does get the 5m tail; the message is fixed
     // within its own turn, so the tool-loop calls that follow read the system
@@ -844,13 +776,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true, disableTurnStartCache: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const lastBlock = sent[0].content[sent[0].content.length - 1];
     expect(lastBlock.cache_control).toBeUndefined();
   });
@@ -883,14 +809,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text?: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const findUser = (text: string) =>
       sent.find(
         (m) => m.role === "user" && m.content.some((b) => b.text === text),
@@ -926,14 +845,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     const messages: Message[] = [userMsg("Turn 1"), ...tail, userMsg("Turn 2")];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text?: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const findUser = (text: string) =>
       sent.find(
         (m) => m.role === "user" && m.content.some((b) => b.text === text),
@@ -963,14 +875,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true, disableTurnStartCache: true },
     });
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const userMessages = sent.filter((m) => m.role === "user");
 
     // Latest (turn-start) user message gets NO breakpoint — disableTurnStartCache
@@ -1017,14 +922,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const assistantMsgs = sent.filter((m) => m.role === "assistant");
     for (const a of assistantMsgs) {
       if (Array.isArray(a.content)) {
@@ -1048,14 +946,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     };
     await provider.sendMessage([multiBlockUser]);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const user = sent[0];
     expect(user.content[0].cache_control).toBeUndefined();
     expect(user.content[1].cache_control).toEqual({
@@ -1092,14 +983,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     };
     await provider.sendMessage([workspaceInjectedUser]);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const user = sent[0];
     expect(user.content).toHaveLength(2);
     // Workspace block (first): no cache_control
@@ -1129,14 +1013,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     };
     await provider.sendMessage([injectedUser]);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const user = sent[0];
     expect(user.content).toHaveLength(3);
     // Only last block gets cache_control
@@ -1160,14 +1037,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        is_error?: boolean;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // The second user message (after assistant) should now contain a synthetic tool_result
     const userAfterAssistant = sent[2];
@@ -1189,10 +1059,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // A synthetic user message should have been appended
     expect(sent).toHaveLength(3);
@@ -1210,10 +1077,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // No synthetic messages or blocks added
     expect(sent).toHaveLength(3);
@@ -1259,10 +1123,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Input had 3 messages, but the collapsed history shape should be expanded:
     // user, assistant(tool_use...), user(tool_results), assistant(carryover text), user(remaining text)
@@ -1309,14 +1170,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        is_error?: boolean;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const userAfterAssistant = sent[2];
     const toolResults = userAfterAssistant.content.filter(
@@ -1362,10 +1216,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Should be: user, assistant(tu_1), synthetic_user(tu_1), assistant(tu_2), user_with_synthetic(tu_2)
     expect(sent).toHaveLength(5);
@@ -1412,14 +1263,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        content?: unknown;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // server_tool_use stays in the assistant message with synthetic result appended
     expect(sent).toHaveLength(3);
@@ -1456,10 +1300,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Original 2 messages, assistant tail verbatim: no synthetic result
     expect(sent).toHaveLength(2);
@@ -1502,10 +1343,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // No synthetic messages or blocks added
     expect(sent).toHaveLength(3);
@@ -1556,14 +1394,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        id?: string;
-        tool_use_id?: string;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // The server_tool_use pair (server_tool_use + web_search_tool_result) should
     // be in the leading portion of the assistant message, before tool_use.
@@ -1618,14 +1449,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        id?: string;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // assistant(tool_use, server_tool_use) → user(tool_result), verbatim
     expect(sent).toHaveLength(3);
@@ -1684,10 +1508,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // The repaired pair leaves the mixed message: ensureToolPairing keeps the
     // client tool_result adjacent to its tool_use and moves the now-answered
@@ -1731,10 +1552,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; id?: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(3);
     expect(sent[1].content.map((b) => b.type)).toEqual([
@@ -1793,10 +1611,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; id?: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(5);
     expect(sent[1].content.map((b) => b.type)).toEqual([
@@ -1863,15 +1678,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        id?: string;
-        tool_use_id?: string;
-        content?: unknown;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // The orphaned server_tool_use should have a synthetic web_search_tool_result
     // injected in the assistant message, preventing the 400 error.
@@ -1921,10 +1728,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Only 1 web_search_tool_result — the original, no synthetic one added
     const allBlocks = sent.flatMap((m) => m.content);
@@ -1966,10 +1770,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // No web_search_tool_result block survives anywhere in the dispatched
     // request — the orphan must be downgraded so Anthropic doesn't 400.
@@ -2009,10 +1810,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const allBlocks = sent.flatMap((m) => m.content);
     expect(allBlocks.every((b) => b.type !== "web_search_tool_result")).toBe(
@@ -2039,10 +1837,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Should preserve alternation: user, assistant (with placeholder), user
     expect(sent).toHaveLength(3);
@@ -2089,10 +1884,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // No ui_surface block (or any of its payload) reaches the wire; the
     // assistant turn carries the fallback text (stripped of the internal
@@ -2137,10 +1929,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(3);
     expect(sent[1].role).toBe("assistant");
@@ -2167,10 +1956,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(3);
     expect(sent[1].role).toBe("assistant");
@@ -2193,10 +1979,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Whitespace-only assistant messages between user messages must be preserved
     // with a placeholder to maintain Anthropic's strict role alternation
@@ -2230,10 +2013,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Verify strict role alternation: no two adjacent messages share the same role
     for (let i = 1; i < sent.length; i++) {
@@ -2260,10 +2040,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Verify strict role alternation: no two adjacent messages share the same role
     for (let i = 1; i < sent.length; i++) {
@@ -2285,10 +2062,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Should be merged into 2 messages: user + single merged assistant
     expect(sent).toHaveLength(2);
@@ -2309,10 +2083,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(2);
     expect(sent[0].role).toBe("user");
@@ -2334,10 +2105,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(2);
     expect(sent[0].role).toBe("user");
@@ -2588,10 +2356,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Expected structure:
     // 1. user(Read file)
@@ -2647,10 +2412,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; text?: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // Expected structure:
     // 1. user(Read file)
@@ -2707,14 +2469,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
     const userMsgs = sent.filter((m) => m.role === "user");
     expect(userMsgs).toHaveLength(3);
 
@@ -2756,14 +2511,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        text?: string;
-        cache_control?: { type: string; ttl?: string };
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     // First message is the turn-starting user text — gets 1h cache
     expect(sent[0].role).toBe("user");
@@ -2827,15 +2575,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        is_error?: boolean;
-        content?: unknown;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const toolResult = sent[2].content.find(
       (b) => b.type === "tool_result" && b.tool_use_id === "tu_img",
@@ -2878,15 +2618,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        is_error?: boolean;
-        content?: unknown;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const toolResult = sent[2].content.find(
       (b) => b.type === "tool_result" && b.tool_use_id === "tu_img2",
@@ -2925,15 +2657,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{
-        type: string;
-        tool_use_id?: string;
-        is_error?: boolean;
-        content?: unknown;
-      }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     const toolResult = sent[2].content.find(
       (b) => b.type === "tool_result" && b.tool_use_id === "tu_img3",
@@ -2990,10 +2714,7 @@ describe("AnthropicProvider — Cloud Proxy Fallback", () => {
     ];
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string }>;
-    }>;
+    const sent = lastStreamParams!.messages;
 
     expect(sent).toHaveLength(3);
     const toolResults = sent[2].content.filter((b) => b.type === "tool_result");
@@ -3012,15 +2733,11 @@ describe("AnthropicProvider — Cloud Proxy Fallback", () => {
     });
 
     // System prompt cache control
-    const system = lastStreamParams!.system as Array<{
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const system = lastStreamParams!.system;
     expect(system[0].cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
 
     // Last tool cache control
-    const tools = lastStreamParams!.tools as Array<{
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = lastStreamParams!.tools;
     expect(tools[tools.length - 1].cache_control).toEqual({
       type: "ephemeral",
       ttl: "1h",
@@ -3145,9 +2862,7 @@ describe("AnthropicProvider — Haiku Model Gating", () => {
       systemPrompt: "You are helpful.",
     });
 
-    const system = lastStreamParams!.system as Array<{
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const system = lastStreamParams!.system;
     expect(system[0].cache_control).toEqual({ type: "ephemeral" });
     expect(system[0].cache_control).not.toHaveProperty("ttl");
   });

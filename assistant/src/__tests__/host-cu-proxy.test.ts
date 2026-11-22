@@ -5,7 +5,7 @@ import {
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
 
-const sentMessages: unknown[] = [];
+const sentMessages: Record<string, unknown>[] = [];
 const sentOptions: unknown[] = [];
 let mockHasClient = false;
 type MockClient = {
@@ -16,13 +16,17 @@ type MockClient = {
 let mockClients: MockClient[] = [];
 
 setBroadcastOverrideForTesting(
-  (msg: unknown, _conversationId: unknown, options: unknown) => {
+  (
+    msg: Record<string, unknown> | null,
+    _conversationId: unknown,
+    options: unknown,
+  ) => {
     // Skip `interaction_resolved` envelopes — pending-interactions emits one
     // on every resolve and these tests assert on host-proxy wire messages.
-    if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+    if (msg?.type === "interaction_resolved") {
       return;
     }
-    sentMessages.push(msg);
+    sentMessages.push(msg ?? {});
     sentOptions.push(options);
   },
 );
@@ -102,7 +106,7 @@ describe("HostCuProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.conversationId).toBe("session-1");
       expect(sent.toolName).toBe("computer_use_click");
@@ -137,7 +141,7 @@ describe("HostCuProxy", () => {
         1,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       proxy.processObservation(requestId, {
@@ -161,7 +165,7 @@ describe("HostCuProxy", () => {
         1,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       proxy.processObservation(requestId, {
@@ -207,7 +211,7 @@ describe("HostCuProxy", () => {
         "session-1",
         1,
       );
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
 
       proxy.processObservation(sent.requestId as string, {
         axTree: "Button [1]",
@@ -251,8 +255,8 @@ describe("HostCuProxy", () => {
         proxy.stepCount,
       );
 
-      const first = sentMessages[0] as Record<string, unknown>;
-      const second = sentMessages[1] as Record<string, unknown>;
+      const first = sentMessages[0];
+      const second = sentMessages[1];
 
       proxy.processObservation(second.requestId as string, {
         axTree: "Field [2]",
@@ -291,7 +295,7 @@ describe("HostCuProxy", () => {
         "session-1",
         1,
       );
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
 
       proxy.processObservation(sent.requestId as string, {
         axTree: "Button [1]",
@@ -327,7 +331,7 @@ describe("HostCuProxy", () => {
         1,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
@@ -355,7 +359,7 @@ describe("HostCuProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
@@ -380,7 +384,7 @@ describe("HostCuProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       controller.abort();
@@ -388,7 +392,7 @@ describe("HostCuProxy", () => {
 
       // Second message should be the cancel
       expect(sentMessages).toHaveLength(2);
-      const cancelMsg = sentMessages[1] as Record<string, unknown>;
+      const cancelMsg = sentMessages[1];
       expect(cancelMsg.type).toBe("host_cu_cancel");
       expect(cancelMsg.requestId).toBe(requestId);
     });
@@ -459,7 +463,7 @@ describe("HostCuProxy", () => {
 
       expect(sentMessages).toHaveLength(1); // Message was sent
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       proxy.processObservation(sent.requestId as string, { axTree: "screen" });
 
       const result = await resultPromise;
@@ -570,7 +574,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "Button [1]",
       });
@@ -584,7 +588,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "Button [1]",
         // No axDiff — screen unchanged
@@ -602,7 +606,7 @@ describe("HostCuProxy", () => {
         3,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent3 = sentMessages[2] as Record<string, unknown>;
+      const sent3 = sentMessages[2];
       proxy.processObservation(sent3.requestId as string, {
         axTree: "Button [1]",
       });
@@ -624,7 +628,7 @@ describe("HostCuProxy", () => {
         "session-1",
         1,
       );
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "Button [1]",
         // No axDiff on first observation — this is normal, not unchanged
@@ -685,8 +689,8 @@ describe("HostCuProxy", () => {
         3,
       );
       proxy.recordAction("computer_use_observe", {});
-      const click = sentMessages[1] as Record<string, unknown>;
-      const observe = sentMessages[2] as Record<string, unknown>;
+      const click = sentMessages[1];
+      const observe = sentMessages[2];
 
       proxy.processObservation(observe.requestId as string, {
         axTree: "Button [1]",
@@ -730,7 +734,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "Button [1]",
       });
@@ -744,7 +748,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_wait", { duration_ms: 2000 });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "Button [1]",
         // No axDiff — screen unchanged, but that's expected after wait
@@ -764,7 +768,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "TextField [1]",
       });
@@ -779,7 +783,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_key", { key: "cmd+a" });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "TextField [1]",
         // No axDiff — selection change is invisible in the AX tree
@@ -812,7 +816,7 @@ describe("HostCuProxy", () => {
           1,
         );
         proxy.recordAction("computer_use_click", { element_id: 1 });
-        const sent1 = sentMessages[0] as Record<string, unknown>;
+        const sent1 = sentMessages[0];
         proxy.processObservation(sent1.requestId as string, {
           axTree: "TextField [1]",
         });
@@ -825,7 +829,7 @@ describe("HostCuProxy", () => {
           2,
         );
         proxy.recordAction("computer_use_key", { key: variant });
-        const sent2 = sentMessages[1] as Record<string, unknown>;
+        const sent2 = sentMessages[1];
         proxy.processObservation(sent2.requestId as string, {
           axTree: "TextField [1]",
           // No axDiff — invisible-by-design change
@@ -847,7 +851,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "TextField [1]",
       });
@@ -861,7 +865,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "TextField [1]",
       });
@@ -876,7 +880,7 @@ describe("HostCuProxy", () => {
         3,
       );
       proxy.recordAction("computer_use_key", { key: "cmd+a" });
-      const sent3 = sentMessages[2] as Record<string, unknown>;
+      const sent3 = sentMessages[2];
       proxy.processObservation(sent3.requestId as string, {
         axTree: "TextField [1]",
       });
@@ -892,7 +896,7 @@ describe("HostCuProxy", () => {
         4,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent4 = sentMessages[3] as Record<string, unknown>;
+      const sent4 = sentMessages[3];
       proxy.processObservation(sent4.requestId as string, {
         axTree: "TextField [1]",
       });
@@ -912,7 +916,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "Button [1]",
       });
@@ -926,7 +930,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_key", { key: "enter" });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "Button [1]",
       });
@@ -946,7 +950,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "Button [1]",
       });
@@ -959,7 +963,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "Button [1]",
       });
@@ -1069,7 +1073,7 @@ describe("HostCuProxy", () => {
         1,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
+      const sent1 = sentMessages[0];
       proxy.processObservation(sent1.requestId as string, {
         axTree: "Button [1]",
       });
@@ -1083,7 +1087,7 @@ describe("HostCuProxy", () => {
         2,
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
+      const sent2 = sentMessages[1];
       proxy.processObservation(sent2.requestId as string, {
         axTree: "Button [1]",
       });
@@ -1098,7 +1102,7 @@ describe("HostCuProxy", () => {
         3,
       );
       proxy.recordAction("computer_use_click", { element_id: 2 });
-      const sent3 = sentMessages[2] as Record<string, unknown>;
+      const sent3 = sentMessages[2];
       proxy.processObservation(sent3.requestId as string, {
         axTree: "TextField [1]",
         axDiff: "+ TextField [1]\n- Button [1]",
@@ -1388,7 +1392,7 @@ describe("HostCuProxy", () => {
         1,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
@@ -1445,8 +1449,7 @@ describe("HostCuProxy", () => {
         "session-1",
         1,
       );
-      const requestId = (sentMessages[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = sentMessages[0].requestId as string;
       proxy.processObservation(requestId, { axTree: "Button [1]" });
       await resultPromise;
 
@@ -1488,7 +1491,7 @@ describe("HostCuProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       controller.abort();
@@ -1549,8 +1552,7 @@ describe("HostCuProxy", () => {
       expect(spy.addCalls).toEqual(["abort"]);
       expect(spy.removeCalls).toEqual([]);
 
-      const requestId = (sentMessages[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = sentMessages[0].requestId as string;
       proxy.processObservation(requestId, { axTree: "Button [1]" });
       await resultPromise;
 
@@ -1583,8 +1585,7 @@ describe("HostCuProxy", () => {
         expect(spy.addCalls).toEqual(["abort"]);
         expect(spy.removeCalls).toEqual([]);
 
-        const requestId = (sentMessages[0] as Record<string, unknown>)
-          .requestId as string;
+        const requestId = sentMessages[0].requestId as string;
         expect(pendingInteractions.get(requestId)).toBeDefined();
 
         // Advance past the 60s internal timeout.
@@ -1625,7 +1626,7 @@ describe("HostCuProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       controller.abort();
@@ -1644,7 +1645,7 @@ describe("HostCuProxy", () => {
         1,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       proxy.dispose();
@@ -1665,7 +1666,7 @@ describe("HostCuProxy", () => {
         1,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       const requestId = sent.requestId as string;
 
       proxy.processObservation(requestId, { axTree: "Button [1]" });
@@ -1779,7 +1780,7 @@ describe("HostCuProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.targetClientId).toBe("cu-client");
 
@@ -1879,7 +1880,7 @@ describe("HostCuProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.targetClientId).toBeUndefined();
 
