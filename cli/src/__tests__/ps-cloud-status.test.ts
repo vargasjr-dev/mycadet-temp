@@ -70,6 +70,10 @@ const checkHealthMock = spyOn(localMode, "checkHealth").mockResolvedValue({
   status: "healthy",
   authenticated: true,
 });
+const probeGatewayReadinessMock = spyOn(
+  localMode,
+  "probeGatewayReadiness",
+).mockResolvedValue("ready");
 // The focused `ps <id>` arm resolves through findAssistant.
 const findAssistantMock = spyOn(localMode, "findAssistant").mockReturnValue(
   null,
@@ -126,6 +130,7 @@ afterEach(() => {
     status: "healthy",
     authenticated: true,
   });
+  probeGatewayReadinessMock.mockResolvedValue("ready");
   readRootProcessesMock.mockReturnValue({});
   findAssistantMock.mockReturnValue(null);
 });
@@ -138,6 +143,7 @@ afterAll(() => {
   fetchCurrentUserMock.mockRestore();
   fetchCloudAssistantsMock.mockRestore();
   checkHealthMock.mockRestore();
+  probeGatewayReadinessMock.mockRestore();
   findAssistantMock.mockRestore();
   rmSync(testDir, { recursive: true, force: true });
 });
@@ -317,6 +323,19 @@ describe("cadet ps — platform status line", () => {
 
     expect(stdout.join("\n")).toContain("sleeping");
     expect(checkHealthMock).not.toHaveBeenCalled();
+  });
+
+  test("an answering gateway with its assistant down lists as assistant down", async () => {
+    loadAllAssistantsMock.mockReturnValue([
+      { assistantId: "assistant-123", cloud: "docker", port: 7832 },
+    ]);
+    probeGatewayReadinessMock.mockResolvedValue("unreachable");
+
+    await listAllAssistants(false);
+
+    const output = stdout.join("\n");
+    expect(output).toContain("🔴 assistant down");
+    expect(output).not.toContain("healthy");
   });
 
   test("assistant list renders one stable final row per assistant", async () => {

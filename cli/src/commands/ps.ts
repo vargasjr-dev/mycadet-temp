@@ -16,6 +16,7 @@ import {
   isProcessAlive,
   loadAllAssistants,
   loadGuardianToken,
+  probeGatewayReadiness,
   readCloudToken,
   resolveEnvironmentName,
   resolveLogDir,
@@ -444,15 +445,28 @@ function formatAssistantListRow(
   };
 }
 
-/** A local assistant whose gateway process is gone is asleep, not down. */
-function assistantListHealth(entry: LockfileAssistant): Promise<GatewayHealth> {
+/**
+ * No gateway process means the local assistant is asleep. If the gateway
+ * does answer, the assistant behind it can still be dead, so ask `/readyz`.
+ */
+async function assistantListHealth(
+  entry: LockfileAssistant,
+): Promise<GatewayHealth> {
   if (
     entry.cloud === "local" &&
     !isProcessAlive(getGatewayPidPath(entry)).alive
   ) {
-    return Promise.resolve({ status: "sleeping", authenticated: true });
+    return { status: "sleeping", authenticated: true };
   }
-  return checkHealth(entry);
+  const health = await checkHealth(entry);
+  if (
+    (entry.cloud === "local" || entry.cloud === "docker") &&
+    health.version !== undefined &&
+    (await probeGatewayReadiness(getGatewayUrl(entry))) === "unreachable"
+  ) {
+    return { ...health, status: "assistant down" };
+  }
+  return health;
 }
 
 export async function listAllAssistants(verbose: boolean): Promise<void> {

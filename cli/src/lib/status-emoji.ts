@@ -3,7 +3,12 @@ export function statusEmoji(status: string): string {
   if (s === "running" || s === "healthy" || s === "ok" || s.startsWith("up ")) {
     return "🟢";
   }
-  if (s.startsWith("error") || s === "unreachable" || s.startsWith("exited")) {
+  if (
+    s.startsWith("error") ||
+    s === "unreachable" ||
+    s === "assistant down" ||
+    s.startsWith("exited")
+  ) {
     return "🔴";
   }
   if (s === "sleeping") {
