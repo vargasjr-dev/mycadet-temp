@@ -24,6 +24,7 @@ import { ROUTES as workspaceCommitRoutes } from "./workspace-commit-proxy.js";
 import { ROUTES as migrationRollbackRoutes } from "./migration-rollback-proxy.js";
 import { ROUTES as cloudPushRoutes } from "./cloud-push-proxy.js";
 import { ROUTES as channelReadinessRoutes } from "./channel-readiness-proxy.js";
+import { ROUTES as diskPressureRoutes } from "./disk-pressure-proxy.js";
 import { ROUTES as integrationsStatusRoutes } from "./integrations-status.js";
 import { ROUTES as autoApproveThresholdRoutes } from "./auto-approve-thresholds.js";
 import { ROUTES as logExportRoutes } from "./log-export.js";
@@ -71,6 +72,7 @@ export const ROUTES: readonly RouteDefinition[] = [
   ...migrationRollbackRoutes,
   ...cloudPushRoutes,
   ...channelReadinessRoutes,
+  ...diskPressureRoutes,
   ...integrationsStatusRoutes,
   ...autoApproveThresholdRoutes,
   ...logExportRoutes,
