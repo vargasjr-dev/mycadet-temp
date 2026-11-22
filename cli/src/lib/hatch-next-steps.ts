@@ -7,7 +7,7 @@ export function logHatchNextSteps(log: (message: string) => void): void {
     `  - Run \`${command} client\` to interact with your cadet via the terminal`,
   );
   log(
-    `  - Run \`${command} tunnel\` to make your cadet publicly accessible and interact with it via the browser`,
+    `  - Run \`${command} tunnel start\` to make your cadet publicly accessible and interact with it via the browser`,
   );
   log("");
 }

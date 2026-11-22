@@ -15,7 +15,7 @@ describe("logHatchNextSteps", () => {
       process.env.CADET_ENVIRONMENT = "production";
       const lines = captureNextSteps();
       expect(lines.join("\n")).toContain("`cadet client`");
-      expect(lines.join("\n")).toContain("`cadet tunnel`");
+      expect(lines.join("\n")).toContain("`cadet tunnel start`");
       expect(lines.join("\n")).not.toContain("cadet-dev");
     } finally {
       if (prev === undefined) delete process.env.CADET_ENVIRONMENT;
@@ -29,7 +29,7 @@ describe("logHatchNextSteps", () => {
       process.env.CADET_ENVIRONMENT = "dev";
       const lines = captureNextSteps();
       expect(lines.join("\n")).toContain("`cadet-dev client`");
-      expect(lines.join("\n")).toContain("`cadet-dev tunnel`");
+      expect(lines.join("\n")).toContain("`cadet-dev tunnel start`");
     } finally {
       if (prev === undefined) delete process.env.CADET_ENVIRONMENT;
       else process.env.CADET_ENVIRONMENT = prev;
