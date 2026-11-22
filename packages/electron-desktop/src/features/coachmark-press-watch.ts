@@ -1,23 +1,3 @@
-/**
- * The moment the user presses the control the assistant is pointing at.
- *
- * A mark says go and press that, and the press is the step being done. The
- * watch frame the marks are drawn on is click-through while they stand, so
- * the press goes to the app underneath and the frame never sees it. The
- * desktop does, and the mac helper reads it: this module is where the two
- * meet, the way `frame-scroll-watch.ts` is for a scroll.
- *
- * A module of its own for the reason that one is: the companion window owns
- * the marks, the helper bridge owns the input stream, and neither imports
- * the other. The window says what is being pointed at and what to do when
- * one of them is pressed; the bridge says how to ask the helper, and reports
- * the press when the helper does.
- *
- * One press per set of marks. The helper takes its monitor down on the first
- * hit and the waiter here is forgotten with it, so a second press on the same
- * control cannot report the step done twice. Pointing again arms it again.
- */
-
 /** Where a pointed-at control is, in screen points with a top-left origin. */
 export interface CoachmarkPressRect {
   x: number;

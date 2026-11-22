@@ -15,17 +15,6 @@ import { installDock } from "./dock";
 import { createHostCuExecutor } from "./executors/host-cu-executor";
 import { shutdownSharedCuHelper } from "./sidecar/shared-cu-helper";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
-import {
-  coachmarkPressed,
-  provideCoachmarkPressWatch,
-  watchedCoachmarkPress,
-} from "./coachmark-press-watch";
-import { isPointerOnCompanion } from "./companion-pointer";
-import {
-  frameScrollEnded,
-  isFrameScrollWatched,
-  provideFrameScrollWatch,
-} from "./frame-scroll-watch";
 import { showCompanionCoachmarks } from "./companion-window";
 import {
   replayCompanionIntro,
@@ -106,19 +95,6 @@ startApp({
   share: { present: shareMenuPresenter() },
   permissions: permissionsShell,
   permissionGuide,
-  hotkeys: {
-    // The watch state lives where the frames and marks put it; the hotkey
-    // feature carries the sends over the shared helper client.
-    watches: {
-      provideFrameScrollWatch,
-      frameScrollEnded,
-      isFrameScrollWatched,
-      provideCoachmarkPressWatch,
-      coachmarkPressed,
-      watchedCoachmarkPress,
-    },
-    isPointerOnCompanion,
-  },
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();
