@@ -824,3 +824,42 @@ export const inboundSeenEvents = sqliteTable(
     index("idx_inbound_seen_events_expires_at").on(table.expiresAt),
   ],
 );
+
+export const emailMessages = sqliteTable(
+  "email_messages",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** The assistant this mail belongs to (the routing resolution). */
+    assistantId: text("assistant_id").notNull(),
+    /** "in" = received from the provider webhook, "out" = sent as a reply. */
+    direction: text("direction").$type<"in" | "out">().notNull(),
+    /** "resend" | "mailgun" — which BYO provider owns the mail. */
+    provider: text("provider").notNull(),
+    /** RFC 5322 Message-ID, e.g. "<abc@domain>". Unique per provider send. */
+    messageId: text("message_id"),
+    /** The parent's Message-ID, when this mail is itself a reply. */
+    inReplyTo: text("in_reply_to"),
+    /** The ancestor chain verbatim, space-separated. */
+    referencesChain: text("references_chain"),
+    fromAddr: text("from_addr").notNull(),
+    toAddr: text("to_addr").notNull(),
+    subject: text("subject"),
+    bodyText: text("body_text"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_email_messages_message_id").on(table.messageId),
+    index("idx_email_messages_created_at").on(table.createdAt),
+  ],
+);
+
+/**
+ * One-row table holding the capability token embedded in the email reply
+ * callback URL. Persisted (not per-process) so callback URLs the runtime
+ * stored on inbound events survive gateway restarts.
+ */
+export const emailReplyTokens = sqliteTable("email_reply_tokens", {
+  id: integer("id").primaryKey(),
+  token: text("token").notNull(),
+});
+

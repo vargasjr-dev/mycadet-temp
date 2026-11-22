@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+
+import { initGatewayDb, resetGatewayDb } from "../../db/connection.js";
 import type { GatewayConfig } from "../../config.js";
 import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
@@ -71,6 +73,11 @@ function makeContent(authResults: string | null): {
       authResults === null ? {} : { "authentication-results": authResults },
   };
 }
+
+beforeAll(async () => {
+  resetGatewayDb();
+  await initGatewayDb();
+});
 
 describe("normalizeResendToCadetPayload sender authentication", () => {
   it("sets senderAuthenticated=true for a DMARC-authenticated sender", () => {

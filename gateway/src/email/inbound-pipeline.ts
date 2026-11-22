@@ -6,6 +6,8 @@ import { resolveCredentialWithRefresh } from "../credential-refresh.js";
 import { recordDenialReplyIfAllowed } from "../db/denial-reply-rate-limiter.js";
 import type { StringDedupCache } from "../dedup-cache.js";
 import { handleInbound } from "../handlers/handle-inbound.js";
+import { buildEmailReplyCallbackUrl } from "../http/routes/email-reply.js";
+import { recordInboundEmail } from "../db/email-message-store.js";
 import { resolveAssistant, isRejection } from "../routing/resolve-assistant.js";
 import {
   handleCircuitBreakerError,
@@ -192,7 +194,10 @@ export async function runEmailInboundPipeline(
         subject: cadetPayload.subject,
         inReplyTo: cadetPayload.inReplyTo,
       }),
-      replyCallbackUrl: undefined,
+      // The plugin email surface: the runtime's email tool lists the
+      // gateway's history and threads replies through the SAME provider
+      // account the mail arrived on. The URL carries the capability token.
+      replyCallbackUrl: buildEmailReplyCallbackUrl(config.port),
       traceId,
       routingOverride: routing,
       // Provider SPF/DKIM/DMARC verdict (from the normalizer). `false` collapses
@@ -270,6 +275,26 @@ export async function runEmailInboundPipeline(
         { status: "forwarded", eventId, ...logFields },
         `${label} email message forwarded to runtime`,
       );
+      // The plugin lane's history: idempotent on Message-ID, so provider
+      // webhook retries do not grow a copy. Denied mail is not recorded —
+      // the model never saw it.
+      const recorded = recordInboundEmail({
+        assistantId: routing.assistantId,
+        provider: source,
+        messageId: cadetPayload.messageId,
+        inReplyTo: cadetPayload.inReplyTo ?? null,
+        referencesChain: cadetPayload.references ?? null,
+        fromAddr: senderAddress,
+        toAddr: recipientAddress,
+        subject: cadetPayload.subject ?? null,
+        bodyText: cadetPayload.strippedText ?? cadetPayload.bodyText ?? null,
+      });
+      if (!recorded.inserted) {
+        log.debug(
+          { messageId: cadetPayload.messageId },
+          `${label} email redelivery — history row already present`,
+        );
+      }
     }
 
     // When the runtime denies the message (ACL rejection) and provides

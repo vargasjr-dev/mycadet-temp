@@ -1,5 +1,6 @@
 import type { RouteDefinition } from "./types.js";
 import { ROUTES as webhookRoutes } from "./webhook-routes.js";
+import { ROUTES as emailReplyRoutes } from "./email-reply.js";
 import { ROUTES as audioRoutes } from "./audio-proxy.js";
 import { ROUTES as runtimeHealthRoutes } from "./runtime-health-proxy.js";
 import { ROUTES as psRoutes } from "./ps.js";
@@ -85,4 +86,5 @@ export const ROUTES: readonly RouteDefinition[] = [
   ...channelPermissionOverrideRoutes,
   ...desktopSetupRoutes,
   ...runtimeProxyRoutes,
+  ...emailReplyRoutes,
 ];

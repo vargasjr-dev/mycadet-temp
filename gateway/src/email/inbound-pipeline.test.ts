@@ -8,7 +8,9 @@
  * Collaborators are module-mocked so the assertion is purely on the options
  * `handleInbound` receives.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { beforeAll, describe, it, expect, mock, beforeEach } from "bun:test";
+
+import { initGatewayDb, resetGatewayDb } from "../db/connection.js";
 import type { Logger } from "pino";
 import type { GatewayConfig } from "../config.js";
 import type { HandleInboundOptions } from "../handlers/handle-inbound.js";
@@ -90,6 +92,11 @@ async function run(payload: CadetEmailPayload): Promise<void> {
     sendReply: undefined,
   });
 }
+
+beforeAll(async () => {
+  resetGatewayDb();
+  await initGatewayDb();
+});
 
 describe("runEmailInboundPipeline sender-authentication threading", () => {
   beforeEach(() => {
