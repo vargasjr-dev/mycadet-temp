@@ -1114,7 +1114,32 @@ async function handleShareCloud({ pathParams }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
-export const ROUTES = [
+export const appImportBundleResponseSchema = z.object({
+  success: z.boolean(),
+  appId: z.string(),
+  name: z.string(),
+  scanResult: z.object({
+    passed: z.boolean(),
+    blocked: z.array(z.string()),
+    warnings: z.array(z.string()),
+  }),
+  signatureResult: z.object({
+    trustTier: z.string(),
+    signerKeyId: z.string().optional(),
+    signerDisplayName: z.string().optional(),
+    signerAccount: z.string().optional(),
+  }),
+});
+
+export const appOpenResponseSchema = z.object({
+  appId: z.string(),
+  dirName: z.string(),
+  name: z.string(),
+  html: z.string(),
+  origin: z.string(),
+});
+
+export const ROUTES: RouteDefinition[] = [
   // Literal path routes MUST come before parameterized `apps/:id/*` routes
   // to prevent the `:id` param from capturing "shared", "fork", etc.
 
@@ -1241,22 +1266,7 @@ export const ROUTES = [
       contentType: "application/octet-stream",
       schema: { type: "string", format: "binary" },
     },
-    responseBody: z.object({
-      success: z.boolean(),
-      appId: z.string(),
-      name: z.string(),
-      scanResult: z.object({
-        passed: z.boolean(),
-        blocked: z.array(z.string()),
-        warnings: z.array(z.string()),
-      }),
-      signatureResult: z.object({
-        trustTier: z.string(),
-        signerKeyId: z.string().optional(),
-        signerDisplayName: z.string().optional(),
-        signerAccount: z.string().optional(),
-      }),
-    }),
+    responseBody: appImportBundleResponseSchema,
   },
   {
     operationId: "apps_sign_bundle",
@@ -1360,13 +1370,7 @@ export const ROUTES = [
     summary: "Open an app",
     description: "Compile (if needed) and return the app's HTML for rendering.",
     tags: ["apps"],
-    responseBody: z.object({
-      appId: z.string(),
-      dirName: z.string(),
-      name: z.string(),
-      html: z.string(),
-      origin: z.string(),
-    }),
+    responseBody: appOpenResponseSchema,
   },
   {
     operationId: "apps_refresh",
@@ -1502,4 +1506,4 @@ export const ROUTES = [
       shareUrl: z.string(),
     }),
   },
-] as const satisfies RouteDefinition[];
+];

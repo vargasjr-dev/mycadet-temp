@@ -511,7 +511,52 @@ function handleWorkspaceDelete({ body, headers }: RouteHandlerArgs) {
 // Transport-agnostic route definitions
 // ---------------------------------------------------------------------------
 
-export const ROUTES = [
+export const workspaceTreeResponseSchema = z.object({
+  path: z.string(),
+  entries: z.array(workspaceEntrySchema).describe("Directory entry objects"),
+  truncated: z
+    .boolean()
+    .optional()
+    .describe(
+      "A recursive walk stopped at its entry cap or deadline, so deeper entries are missing. Absent from assistants that predate recursive listings.",
+    ),
+  skipped: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "Directories a recursive walk listed but did not enter, whether because a workspace gitignore rule excludes them, they are symlinks, or they could not be read. Each can still be listed on its own. Absent from assistants that predate recursive listings.",
+    ),
+});
+
+export const workspaceFileResponseSchema = z.object({
+  path: z.string(),
+  name: z.string(),
+  size: z.number(),
+  mimeType: z.string(),
+  modifiedAt: z.string(),
+  content: z.string().describe("Inline text content or null"),
+  isBinary: z.boolean(),
+});
+
+export const workspaceWriteResponseSchema = z.object({
+  path: z.string(),
+  size: z.number(),
+});
+
+export const workspaceMkdirResponseSchema = z.object({
+  path: z.string(),
+});
+
+export const workspaceRenameResponseSchema = z.object({
+  oldPath: z.string(),
+  newPath: z.string(),
+});
+
+export const workspaceDeleteResponseSchema = z.object({
+  success: z.boolean(),
+});
+
+export const ROUTES: RouteDefinition[] = [
   {
     operationId: "workspace_tree",
     endpoint: "workspace/tree",
@@ -543,24 +588,7 @@ export const ROUTES = [
           "List the whole subtree in one response (true/false). Depth-first, each directory's entries in listing order, so grouping by parent path recovers per-directory listings. Bounded: sets truncated when the entry cap or deadline stops the walk, and does not enter directories the workspace gitignore rules exclude, which are named in skipped.",
       },
     ],
-    responseBody: z.object({
-      path: z.string(),
-      entries: z
-        .array(workspaceEntrySchema)
-        .describe("Directory entry objects"),
-      truncated: z
-        .boolean()
-        .optional()
-        .describe(
-          "A recursive walk stopped at its entry cap or deadline, so deeper entries are missing. Absent from assistants that predate recursive listings.",
-        ),
-      skipped: z
-        .array(z.string())
-        .optional()
-        .describe(
-          "Directories a recursive walk listed but did not enter, whether because a workspace gitignore rule excludes them, they are symlinks, or they could not be read. Each can still be listed on its own. Absent from assistants that predate recursive listings.",
-        ),
-    }),
+    responseBody: workspaceTreeResponseSchema,
     handler: handleWorkspaceTree,
   },
   {
@@ -585,15 +613,7 @@ export const ROUTES = [
         description: "Allow hidden files (true/false)",
       },
     ],
-    responseBody: z.object({
-      path: z.string(),
-      name: z.string(),
-      size: z.number(),
-      mimeType: z.string(),
-      modifiedAt: z.string(),
-      content: z.string().describe("Inline text content or null"),
-      isBinary: z.boolean(),
-    }),
+    responseBody: workspaceFileResponseSchema,
     handler: handleWorkspaceFile,
   },
   {
@@ -615,10 +635,7 @@ export const ROUTES = [
         .describe("Content encoding (base64 or utf-8)")
         .optional(),
     }),
-    responseBody: z.object({
-      path: z.string(),
-      size: z.number(),
-    }),
+    responseBody: workspaceWriteResponseSchema,
     handler: handleWorkspaceWrite,
   },
   {
@@ -635,9 +652,7 @@ export const ROUTES = [
     requestBody: z.object({
       path: z.string().describe("Relative directory path"),
     }),
-    responseBody: z.object({
-      path: z.string(),
-    }),
+    responseBody: workspaceMkdirResponseSchema,
     handler: handleWorkspaceMkdir,
   },
   {
@@ -655,10 +670,7 @@ export const ROUTES = [
       oldPath: z.string().describe("Current relative path"),
       newPath: z.string().describe("New relative path"),
     }),
-    responseBody: z.object({
-      oldPath: z.string(),
-      newPath: z.string(),
-    }),
+    responseBody: workspaceRenameResponseSchema,
     handler: handleWorkspaceRename,
   },
   {
@@ -675,9 +687,7 @@ export const ROUTES = [
     requestBody: z.object({
       path: z.string().describe("Relative path to delete"),
     }),
-    responseBody: z.object({
-      success: z.boolean(),
-    }),
+    responseBody: workspaceDeleteResponseSchema,
     handler: handleWorkspaceDelete,
   },
   {
@@ -714,4 +724,4 @@ export const ROUTES = [
     },
     handler: handleWorkspaceFileContent,
   },
-] as const satisfies RouteDefinition[];
+];
