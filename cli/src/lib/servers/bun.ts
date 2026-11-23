@@ -207,7 +207,9 @@ async function serveStatic(
 
   // The web SPA's iframe mount: exact rewrites to the injected document,
   // the inline config, then the dist's own files with the document as the
-  // SPA fallback.
+  // SPA fallback. The config endpoint is gone — the base URL is the
+  // window's own origin and the device id is the client's own, so the
+  // document's stamp is the config's whole cargo.
   if (pathname === "/web") return redirect("/web/assistant/");
   if (
     pathname === "/web/assistant" ||
@@ -219,13 +221,6 @@ async function serveStatic(
       { file: spec.indexHtmlPath },
       "no-cache",
       injectConfig,
-    );
-  }
-  if (pathname === "/web/assistant/__config") {
-    return staticResponse(
-      request,
-      { text: servedConfigJson(), type: "application/json" },
-      "no-store",
     );
   }
   if (pathname.startsWith("/web/assistant/")) {

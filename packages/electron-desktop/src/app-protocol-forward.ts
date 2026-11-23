@@ -4,7 +4,6 @@ import path from "node:path";
 
 import log from "./app-logger";
 import { type AllowedOrigin } from "./app-origin";
-import { getDeviceId } from "./device-id";
 import {
   forwardOperatorRequest,
   readLockfile,
@@ -15,7 +14,7 @@ import { planAppProtocolAssetRequest } from "./app-protocol";
 
 /**
  * The `app://` protocol handler all three desktop clients share: one
- * ordered pass — host check, `/__config`, operator routes (whose
+ * ordered pass — host check, operator routes (whose
  * fallthrough arm forwards the cloud's own account paths — `/_allauth`
  * and `/accounts`), then renderer assets (the app shell everywhere,
  * the web bundle on the `/web` mount plus the `/assistant/assets`
@@ -103,25 +102,22 @@ export function registerAppProtocol(): void {
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const appDistRoot = resolveAppDistRoot();
   const appIndexHtml = path.join(appDistRoot, "index.html");
-  // Read only when serving config or an assistant document. A hatch or
+  // Read only when injecting an assistant document. A hatch or
   // selection can change the served assistant after protocol registration.
+  // The assistant identity is the config's whole cargo: the base URL is
+  // the window's own origin (single origin) and the device id is the
+  // client's own, so the host stamps neither.
   const configJson = () =>
-    JSON.stringify({
-      baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
-      deviceId: getDeviceId() ?? undefined,
-      ...servedConfigFromLockfile(readLockfile()),
-    }).replace(/</g, "\\u003c");
+    JSON.stringify(servedConfigFromLockfile(readLockfile())).replace(
+      /</g,
+      "\\u003c",
+    );
 
   const respond = async (request: Request): Promise<Response> => {
     if (new URL(request.url).host !== APP_HOST) {
       return new Response("Forbidden", { status: 403 });
     }
     const pathname = new URL(request.url).pathname;
-    if (pathname === "/assistant/__config" || pathname === "/__config") {
-      return new Response(configJson(), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
 
     // The operator routes ride ahead of the gateway proxy. The session
     // jar is the rows' cookie source and sink: the pair the hatch jars

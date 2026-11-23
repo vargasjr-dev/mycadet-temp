@@ -299,26 +299,24 @@ function stubGatewayFetch(): {
     headers: Record<string, string>;
     body: Uint8Array<ArrayBuffer> | undefined;
   }> = [];
-  globalThis.fetch = mock(
-    async (input: unknown, init?: unknown) => {
-      const request =
-        input instanceof Request
-          ? input
-          : new Request(input as string, init as RequestInit | undefined);
-      const headers: Record<string, string> = {};
-      request.headers.forEach((value, key) => {
-        headers[key.toLowerCase()] = value;
-      });
-      const buffer = await request.arrayBuffer();
-      calls.push({
-        url: request.url,
-        method: request.method,
-        headers,
-        body: buffer.byteLength > 0 ? new Uint8Array(buffer) : undefined,
-      });
-      return new Response("gateway says hi");
-    },
-  ) as unknown as typeof fetch;
+  globalThis.fetch = mock(async (input: unknown, init?: unknown) => {
+    const request =
+      input instanceof Request
+        ? input
+        : new Request(input as string, init as RequestInit | undefined);
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      headers[key.toLowerCase()] = value;
+    });
+    const buffer = await request.arrayBuffer();
+    calls.push({
+      url: request.url,
+      method: request.method,
+      headers,
+      body: buffer.byteLength > 0 ? new Uint8Array(buffer) : undefined,
+    });
+    return new Response("gateway says hi");
+  }) as unknown as typeof fetch;
   return { calls };
 }
 
@@ -453,8 +451,12 @@ describe("the app server's routes", () => {
     );
     expect(denied.status).toBe(200);
     expect(gateway.calls).toHaveLength(1);
-    expect(gateway.calls[0]!.url).toBe("http://127.0.0.1:7830/webhooks/telegram");
-    const search = new URL("http://127.0.0.1:7840/webhooks/oauth/callback?code=abc&state=xyz").search;
+    expect(gateway.calls[0]!.url).toBe(
+      "http://127.0.0.1:7830/webhooks/telegram",
+    );
+    const search = new URL(
+      "http://127.0.0.1:7840/webhooks/oauth/callback?code=abc&state=xyz",
+    ).search;
     await handler(
       new Request(`http://127.0.0.1:7840/webhooks/oauth/callback${search}`),
     );
@@ -619,34 +621,31 @@ describe("the app server's routes", () => {
     expect(await readBody(byName)).toContain("__CADET_CONFIG__");
   });
 
-  test("serves remote web config inline with no-store, read from the LIVE lockfile", async () => {
+  test("the remote web config endpoint is gone — a stray hit rides the SPA fallback", async () => {
     makeWorkspace();
     seedAssistant();
     const fixture = makeHandlerFixture();
     const handler = handlerFor(fixture);
 
+    // The base URL is the window's own origin and the device id is the
+    // client's own, so the endpoint has no cargo left: nuked. The mount's
+    // deep-route fallback answers instead — the stamped document, with the
+    // config read from the LIVE lockfile per request (renaming or
+    // re-pointing the assistant reaches it with no restart).
+    seedAssistant();
     const response = await handler(
       new Request("http://127.0.0.1:7840/web/assistant/__config"),
     );
     expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(JSON.parse(await readBody(response))).toMatchObject({
-      assistantId: "assistant-1",
-      assistantName: "Homelab",
-      remote: "local",
-    });
-
-    // The config is read from the lockfile per request — renaming or
-    // re-pointing the assistant reaches the served document with no
-    // restart.
+    expect(response.headers.get("content-type")).toContain("text/html");
+    const body = await readBody(response);
+    expect(body).toContain("__CADET_CONFIG__");
+    expect(body).toContain("Homelab");
     seedAssistant("Renamed");
     const reread = await handler(
       new Request("http://127.0.0.1:7840/web/assistant/__config"),
     );
-    expect(JSON.parse(await readBody(reread))).toMatchObject({
-      assistantId: "assistant-1",
-      assistantName: "Renamed",
-    });
+    expect(await readBody(reread)).toContain("Renamed");
   });
 
   test("the iframe mount's config injection rides the served document", async () => {

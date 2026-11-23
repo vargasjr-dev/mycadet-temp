@@ -6,9 +6,10 @@ import z from "zod";
  * through it instead of re-declaring per-file object types.
  *
  * Deliberately remote-agnostic: the config carries the identity a served
- * surface needs (which assistant, its name, the
- * Electron device id) and nothing about which kind of host serves it — the
- * bundle's transport is same-origin regardless.
+ * surface needs (which assistant, its name) and nothing about which kind of
+ * host serves it — the bundle's transport is same-origin regardless, and the
+ * device id is the client's own (generated and persisted client side, like
+ * every other client), never a host stamp.
  *
  * The URL fields are distinct origins in the topology, not synonyms:
  * `cloudUrl` is the cloud API base and `hubUrl` the cloud hub SPA the
@@ -18,8 +19,6 @@ import z from "zod";
  * origins a served bundle can't infer.
  */
 export const InjectedConfigSchema = z.object({
-  /** Device id stamped by the Electron host (device management). */
-  deviceId: z.string().optional(),
   /** Serving assistant's id, stamped by every host that fronts one assistant. */
   assistantId: z.string().optional(),
   /** Serving assistant's display name, stamped by every host that fronts one assistant. */

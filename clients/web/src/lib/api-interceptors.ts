@@ -6,8 +6,9 @@
  *     originating tab/interface to the daemon. Required by self-echo
  *     suppression: the daemon echoes the client id back on the resulting
  *     `sync_changed` so the originator's SSE subscriber can be skipped.
- *   - `Cadet-Device-Id` on mutating requests — the daemon's platform-path
- *     identity.
+ *   - `Cadet-Device-Id` — the daemon's platform-path identity: the
+ *     client's own device id, generated and persisted client side like
+ *     every other client's.
  *
  * Import this module for its side effects in the app entrypoint
  * (`boot.tsx`) so interceptors are installed before any API call fires.

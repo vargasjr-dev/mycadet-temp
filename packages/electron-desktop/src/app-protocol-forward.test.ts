@@ -42,7 +42,6 @@ mock.module("@mycadet/local-mode", () => ({
   ...realLocalMode,
   forwardOperatorRequest: forwardOperator,
 }));
-mock.module("./device-id", () => ({ getDeviceId: () => "device-7" }));
 mock.module("./about", () => ({
   getVersionInfo: () => ({ version: "9.9.9" }),
 }));
@@ -184,31 +183,26 @@ describe("registerAppProtocol", () => {
     expect(forwardOperator).not.toHaveBeenCalled();
   });
 
-  test("the handler serves /__config with the escaped config json", async () => {
+  test("config endpoints are gone — no host serves the config json", async () => {
     await setupDev();
     await register();
+    // The base URL is the window's own origin and the device id is the
+    // client's own, so the config endpoint has no cargo left: nuked on
+    // every host. A stray hit rides the pass (the mocked forward passes,
+    // the asset chain's SPA fallback answers) — never the config json.
+    forwardOperator.mockResolvedValueOnce(null);
     const response = await handler!(
       new Request("app://mycadet.ai/assistant/__config"),
     );
-    const body = await response.text();
-    expect(JSON.parse(body)).toEqual({
-      baseUrl: "app://mycadet.ai",
-      deviceId: "device-7",
-      assistantName: "A<ria",
-    });
-    expect(body).toContain("\\u003c");
-    const shell = await handler!(new Request("app://mycadet.ai/__config"));
-    expect(shell.status).toBe(200);
+    expect(response.headers.get("content-type")).not.toBe("application/json");
   });
 
-  test("serves the current identity after hatch and assistant switching", async () => {
+  test("the injected identity stays current after hatch and assistant switching", async () => {
     await setupDev();
     servedConfig = {};
     await register();
     for (const assistantId of ["hatched", "switched"]) {
       servedConfig = { assistantId, assistantName: assistantId };
-      const config = await handler!(new Request("app://mycadet.ai/__config"));
-      expect(await config.json()).toMatchObject({ assistantId });
       const document = await handler!(
         new Request("app://mycadet.ai/web/assistant/conversations/new"),
       );

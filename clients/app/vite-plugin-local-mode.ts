@@ -6,17 +6,12 @@ import { Readable } from "node:stream";
 import type { Plugin, Connect, ViteDevServer } from "vite";
 
 import {
-  resolveLocalConfigFromEnv,
   isLoopbackAddr,
   headerHostIsLoopback,
   originIsAllowed,
   hasSameOriginCredentialProof,
-  readLockfile,
-  servedConfigFromLockfile,
   forwardOperatorRequest,
 } from "@mycadet/local-mode";
-import { stampedVersion } from "@mycadet/shared/version";
-import cliPkg from "../../cli/package.json";
 
 // The local host's own routes live at the conductor's /v1 shapes: pairing
 // under the gateway's remote-web namespace, device management at the
@@ -56,20 +51,11 @@ export function isSameOriginProxyRequest(req: http.IncomingMessage): boolean {
 }
 
 export function localModePlugin(): Plugin {
-  const config = resolveLocalConfigFromEnv();
-
-  const configJson = JSON.stringify({
-    cloudUrl: config.cloudUrl,
-    version: stampedVersion(cliPkg.version),
-    ...servedConfigFromLockfile(readLockfile()),
-  }).replace(/</g, "\\u003c");
-
   return {
     name: "cadet-local-mode",
     configureServer(server) {
       server.middlewares.use(loopbackCallbackMiddleware());
       server.middlewares.use(cloudSessionMiddleware());
-      server.middlewares.use(configMiddleware(configJson));
       server.middlewares.use(operatorMiddleware());
       server.middlewares.use(accountSpaFallback(server));
     },
@@ -174,16 +160,6 @@ function cloudSessionMiddleware(): Connect.NextHandleFunction {
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ ok: true }));
     });
-  };
-}
-
-function configMiddleware(configJson: string): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    if (req.url !== "/assistant/__config" && req.url !== "/__config") {
-      return next();
-    }
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(configJson);
   };
 }
 
