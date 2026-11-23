@@ -252,7 +252,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
       persistedDecisionId: "dec-1",
     };
 
-    const enforcedDecision = {
+    const enforcedDecision: ReturnType<EnforceRoutingIntent> = {
       ...preDecision,
       selectedChannels: ["cadet", "telegram"],
       reasoningSummary: `${preDecision.reasoningSummary} [routing_intent=all_channels enforced: cadet, telegram]`,
