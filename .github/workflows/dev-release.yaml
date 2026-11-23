@@ -1193,6 +1193,7 @@ jobs:
         env:
           CSC_NAME: Developer ID Application
           VITE_ENVIRONMENT: dev
+          CADET_ENABLE_CHROME_DEVTOOLS: "true"
           # Environment-scoped secret (pk_test_ on dev); requires the job's
           # `environment: dev` above, else it resolves empty and the
           # payment-method modal can't mount Stripe Elements. Publishable keys
@@ -1329,6 +1330,7 @@ jobs:
       - name: Build and package Electron app
         env:
           VITE_ENVIRONMENT: dev
+          CADET_ENABLE_CHROME_DEVTOOLS: "true"
           # Environment-scoped secret (pk_test_ on dev); requires the job's
           # `environment: dev` above.
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}

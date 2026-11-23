@@ -143,6 +143,7 @@ jobs:
       - name: Build packaged runtime
         env:
           VITE_ENVIRONMENT: ${{ inputs.environment }}
+          CADET_ENABLE_CHROME_DEVTOOLS: ${{ inputs.environment == 'dev' && 'true' || 'false' }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           VITE_APP_VERSION: ${{ inputs.version }}
         run: bun run build:runtime
