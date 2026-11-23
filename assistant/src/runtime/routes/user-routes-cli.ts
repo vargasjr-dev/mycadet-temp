@@ -25,6 +25,7 @@ import {
   listPluginRouteRoots,
   resolveHandlerFile,
   resolveRouteLocation,
+  userRouteUrlPath,
 } from "./user-route-resolution.js";
 
 // ── Constants ───────────────────────────────────────────────────────
@@ -182,7 +183,7 @@ async function handleUserRoutesList() {
     methods: r.methods,
     description: r.description ?? null,
     filePath: relative(workspaceDir, r.filePath),
-    publicUrl: publicBase ? `${publicBase}/x/${xPath}` : null,
+    publicUrl: publicBase ? publicBase + userRouteUrlPath(xPath) : null,
   });
 
   const routes: ReturnType<typeof toEntry>[] = [];
@@ -232,7 +233,9 @@ async function handleUserRoutesInspect({ body = {} }: RouteHandlerArgs) {
   const stat = statSync(filePath);
   const { methods, description } = await inspectModule(filePath);
   const publicBase = tryGetPublicBaseUrl();
-  const publicUrl = publicBase ? `${publicBase}/x/${routePath}` : null;
+  const publicUrl = publicBase
+    ? publicBase + userRouteUrlPath(routePath)
+    : null;
 
   return {
     ok: true,

@@ -25,6 +25,7 @@ import { UserRouteDispatcher } from "./user-route-dispatcher.js";
 import {
   isPluginNoticeRoutePath,
   PLUGIN_ROUTE_SEGMENT,
+  userRouteUrlPath,
 } from "./user-route-resolution.js";
 
 const dispatcher = new UserRouteDispatcher();
@@ -57,7 +58,7 @@ const USER_HANDLER_ORIGIN = "http://localhost";
  */
 function reconstructUrl(args: RouteHandlerArgs): URL {
   const path = args.pathParams?.path ?? "";
-  const url = new URL(`${USER_HANDLER_ORIGIN}/v1/x/${path}`);
+  const url = new URL(USER_HANDLER_ORIGIN + userRouteUrlPath(path));
   for (const [k, v] of Object.entries(args.queryParams ?? {})) {
     url.searchParams.set(k, v);
   }
