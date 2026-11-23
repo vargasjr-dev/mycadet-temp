@@ -1,12 +1,5 @@
-import { cloudAuthHeaders, readCloudToken } from "../cloud-auth";
 import { checkHealth } from "../daemon-readiness";
-import {
-  getGatewayUrl,
-  isCloudEntry,
-  type CloudAssistant,
-} from "../lockfile-contract";
-import { loopbackSafeFetch } from "../loopback-fetch";
-import { listAssistants } from "./list";
+import { runListRoute } from "./list";
 import type { OperatorRequest } from "./routes";
 
 function resolutionResponse(body: unknown, status = 200): Response {
@@ -14,51 +7,6 @@ function resolutionResponse(body: unknown, status = 200): Response {
     status,
     headers: { "content-type": "application/json" },
   });
-}
-
-async function isCloudAssistantUnavailable(
-  entry: CloudAssistant,
-  callerHeaders: Headers,
-): Promise<boolean> {
-  try {
-    const headers = new Headers({ Accept: "application/json" });
-    for (const name of [
-      "authorization",
-      "cookie",
-      "x-session-token",
-      "cadet-organization-id",
-    ]) {
-      const value = callerHeaders.get(name);
-      if (value) headers.set(name, value);
-    }
-    if (
-      !headers.has("authorization") &&
-      !headers.has("cookie") &&
-      !headers.has("x-session-token")
-    ) {
-      const token = readCloudToken();
-      if (token) {
-        const tokenHeaders = await cloudAuthHeaders(token);
-        for (const [name, value] of Object.entries(tokenHeaders)) {
-          if (!headers.has(name)) headers.set(name, value);
-        }
-      }
-    }
-    const response = await loopbackSafeFetch(
-      `${getGatewayUrl(entry)}/v1/assistants/${encodeURIComponent(entry.assistantId)}/`,
-      { headers, redirect: "error", signal: AbortSignal.timeout(5000) },
-    );
-    if (response.status !== 410) return false;
-    const body: unknown = await response.json();
-    return (
-      typeof body === "object" &&
-      body !== null &&
-      "status" in body &&
-      body.status === "unavailable"
-    );
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -80,23 +28,13 @@ export async function runResolveRoute(
     // Nothing resolves: the resolution's unscoped arm IS the list
     // contract — nothing hatched is empty, anything else hands the
     // choice rows to the account chooser.
-    return listAssistants();
+    return runListRoute();
   }
   const health = await checkHealth(entry, { headers });
   if (!health.authenticated) {
     return resolutionResponse({ status: "unauthenticated" }, 401);
   }
   if (!health.version) {
-    // Health alone cannot distinguish a stopped assistant from one retired
-    // in the cloud while this machine still has its saved entry.
-    if (
-      isCloudEntry(entry) &&
-      (await isCloudAssistantUnavailable(entry, headers))
-    ) {
-      return /^\/(?:v1|api)\/assistants\//.test(request.path)
-        ? resolutionResponse({ status: "unavailable" }, 410)
-        : listAssistants(entry.assistantId);
-    }
     // The gateway answered nothing (unreachable, still booting, or
     // older than the identity payload) — the assistant is not ready to
     // mount. The 409 carries the verdict for clients that read codes;

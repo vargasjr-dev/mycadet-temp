@@ -17,23 +17,17 @@ function listResponse(body: unknown): Response {
  * consumers, and the resolution's own unscoped arm all read this one
  * contract.
  */
-export async function listAssistants(excludedId?: string): Promise<Response> {
-  const assistants = readLockfile().assistants.filter(
-    (entry) => entry.assistantId !== excludedId,
-  );
-  if (assistants.length === 0) {
+export async function runListRoute(): Promise<Response> {
+  const lockfile = readLockfile();
+  if (lockfile.assistants.length === 0) {
     return listResponse({ status: "empty" });
   }
   return listResponse({
     status: "selection",
-    assistants: assistants.map((entry) => ({
+    assistants: lockfile.assistants.map((entry) => ({
       id: entry.assistantId,
       name: entry.name,
       remote: entry.cloud,
     })),
   });
-}
-
-export function runListRoute(): Promise<Response> {
-  return listAssistants();
 }

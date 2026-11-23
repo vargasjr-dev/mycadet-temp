@@ -288,8 +288,11 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     }
   });
 
-  test("a host-executable entry's DELETE runs the retire operation", async () => {
-    writeLockfile({ assistants: [localEntry], activeAssistant: null });
+  test("retiring the last local assistant leaves startup empty without probing health", async () => {
+    writeLockfile({
+      assistants: [localEntry],
+      activeAssistant: localEntry.assistantId,
+    });
 
     const response = await dispatch(
       "/v1/assistants/asst-local/retire/",
@@ -301,6 +304,15 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     expect(retireLocalMock).toHaveBeenCalledWith(
       expect.objectContaining({ assistantId: "asst-local" }),
     );
+    expect(readLockfile()).toMatchObject({
+      assistants: [],
+      activeAssistant: null,
+    });
+
+    const startup = await dispatch("/v1/assistant");
+    expect(startup?.status).toBe(200);
+    expect(await startup?.json()).toEqual({ status: "empty" });
+    expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
   });
 
   test("a retire failure answers the cloud error shape the dialog renders", async () => {

@@ -379,57 +379,6 @@ describe("runResolveRoute — the lockfile arms", () => {
 });
 
 describe("runResolveRoute — the cloud leg", () => {
-  test("startup returns welcome when the only saved cloud assistant is unavailable", async () => {
-    writeLockfile({
-      assistants: [{ assistantId: "c1", cloud: "cloud" }],
-      activeAssistant: "c1",
-    });
-    loopbackSafeFetchMock.mockResolvedValue(
-      Response.json({ status: "unavailable" }, { status: 410 }),
-    );
-
-    const response = await runResolution({ cookie: "session=abc" });
-    expect(response.status).toBe(200);
-    expect(await resolutionBody(response)).toEqual({ status: "empty" });
-    const [url, init] = loopbackSafeFetchMock.mock.calls[0]!;
-    expect(new URL(url).pathname).toBe("/v1/assistants/c1/");
-    expect(new Headers(init?.headers).get("cookie")).toBe("session=abc");
-    expect(readLockfile().assistants).toHaveLength(1);
-  });
-
-  test("startup offers other assistants when the saved cloud assistant is unavailable", async () => {
-    writeLockfile({
-      assistants: [
-        { assistantId: "c1", cloud: "cloud" },
-        { assistantId: "a1", cloud: "local", port: 7830 },
-      ],
-      activeAssistant: "c1",
-    });
-    loopbackSafeFetchMock.mockImplementation(async () =>
-      Response.json({ status: "unavailable" }, { status: 410 }),
-    );
-
-    expect(await resolutionBody(await runResolution())).toEqual({
-      status: "selection",
-      assistants: [{ id: "a1", remote: "local" }],
-    });
-    const scoped = await runResolution({}, "/v1/assistants/c1/");
-    expect(scoped.status).toBe(410);
-    expect(await resolutionBody(scoped)).toEqual({ status: "unavailable" });
-  });
-
-  test.each([409, 503])("keeps the wake path when cloud lookup returns %i", async (status) => {
-    writeLockfile({
-      assistants: [{ assistantId: "c1", cloud: "cloud" }],
-      activeAssistant: null,
-    });
-    loopbackSafeFetchMock.mockResolvedValue(new Response(null, { status }));
-
-    const response = await runResolution();
-    expect(response.status).toBe(409);
-    expect(await resolutionBody(response)).toEqual({ status: "notReady" });
-  });
-
   test("a cloud entry resolves through the same remote-agnostic health read", async () => {
     writeLockfile({
       assistants: [{ assistantId: "c1", cloud: "cloud" }],
