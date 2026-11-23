@@ -8,6 +8,7 @@ import {
 } from "react-router";
 import { toast, Toaster } from "@mycadet/design-library/components/toast";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
+import { DoctorFeedbackModal } from "@app/components/doctor-feedback-modal";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { retireAssistant } from "@app/assistant/retire-assistant";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
@@ -28,6 +29,7 @@ import { routes } from "@app/utils/routes";
 
 export function DesktopChrome() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   // Id of the assistant a tray "Retire <assistant>…" command targets. The
   // retire lives here in the shell — the chooser's dialog is the cloud row's
   // path; the command carries the id so the retire runs without routing
@@ -73,6 +75,7 @@ export function DesktopChrome() {
 
   useCadetCommands({
     createAssistant: () => setCreateOpen(true),
+    shareFeedback: () => setFeedbackOpen(true),
     selectAssistant: (command) => {
       if (command.kind !== "selectAssistant") {
         return;
@@ -119,6 +122,11 @@ export function DesktopChrome() {
       <CreateAssistantDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
+      />
+      <DoctorFeedbackModal
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        client="electron"
       />
       <Toaster />
       <RetireConfirmDialog

@@ -71,6 +71,7 @@ describe("the shell's assistant commands", () => {
       configurable: true,
       value: {
         platform: "electron",
+        feedback: { logs: async () => "redacted test log" },
         menu: { setCloudSession: async () => {} },
         mainWindow: {
           ensureVisible: async () => {},
@@ -96,6 +97,9 @@ describe("the shell's assistant commands", () => {
           init?: RequestInit,
         ): Promise<Response> => {
           const path = String(input).split("?")[0] ?? "";
+          if (path === "/v1/feedback/") {
+            return Response.json({ id: "report-1" }, { status: 201 });
+          }
           if (path === "/v1/organizations/") {
             return new Response(
               JSON.stringify({ results: [{ id: "org-1" }], next: null }),
@@ -155,6 +159,39 @@ describe("the shell's assistant commands", () => {
     render(<RouterProvider router={router} />);
     return router;
   }
+
+  test("Share Feedback opens outside the assistant and submits optional desktop logs", async () => {
+    const sink = stubCadet({});
+    renderChrome(["/account/select-assistant"]);
+    await act(async () => {
+      sink.handler!({ kind: "shareFeedback" });
+    });
+    const dialog = await screen.findByRole("dialog", { name: "Share Feedback" });
+    fireEvent.change(within(dialog).getByRole("textbox"), {
+      target: { value: "The assistant did not start." },
+    });
+    const diagnostics = within(dialog).getByRole("checkbox");
+    expect(diagnostics).toHaveProperty("checked", false);
+    fireEvent.click(diagnostics);
+    expect(diagnostics).toHaveProperty("checked", true);
+    const submit = within(dialog).getByRole("button", { name: "Submit" });
+    expect(submit).toHaveProperty("disabled", false);
+    await act(async () => {
+      fireEvent.click(submit);
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const call = request.mock.calls.find(([url]) => url === "/v1/feedback/");
+    expect(call?.[1]?.method).toBe("POST");
+    expect(new Headers(call?.[1]?.headers).has("content-type")).toBe(false);
+    const form = call?.[1]?.body;
+    if (!(form instanceof FormData)) throw new Error("Expected feedback form");
+    expect(form.get("client")).toBe("electron");
+    const logs = form.get("logs_file");
+    if (!(logs instanceof Blob)) {
+      throw new Error("Expected desktop log attachment");
+    }
+    expect(await logs.text()).toBe("redacted test log");
+  });
 
   test("selectAssistant connects a healthy local entry by navigating with the selection state", async () => {
     const sink = stubCadet({

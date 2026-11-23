@@ -9,7 +9,12 @@ import type { OperatorRequest } from "./routes";
  * caller's own headers) — the hosts that re-origin those paths forward
  * them here.
  */
-const CLOUD_PREFIXES = ["/_allauth", "/accounts", "/v1/releases"] as const;
+const CLOUD_PREFIXES = [
+  "/_allauth",
+  "/accounts",
+  "/v1/releases",
+  "/v1/feedback",
+] as const;
 
 /**
  * The cloud arm's row pattern: the OR-union of the cloud's own prefixes —

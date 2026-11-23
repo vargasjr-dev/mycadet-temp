@@ -78,6 +78,7 @@ export async function postCloudForm(
     }
     await addCloudMutationHeaders(headers);
     // Leave Content-Type unset so the browser sets the multipart boundary.
+    headers.delete("Content-Type");
     const response = await fetch(path, {
       method: "POST",
       body: form,

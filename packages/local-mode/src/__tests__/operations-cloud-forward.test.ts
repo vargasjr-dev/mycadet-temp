@@ -113,6 +113,28 @@ describe("the operator's cloud arm", () => {
     expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/releases/");
   });
 
+  test("forwards multipart feedback without a selected assistant", async () => {
+    const form = new FormData();
+    form.set("message", "Startup failed");
+    const response = await dispatch(
+      new Request("app://mycadet.ai/v1/feedback/", {
+        method: "POST",
+        body: form,
+      }),
+    );
+
+    expect(response?.status).toBe(200);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe(`${CLOUD}/v1/feedback/`);
+    const init = calls[0]?.init;
+    expect(init?.method).toBe("POST");
+    expect(header(init, "content-type")).toMatch(/^multipart\/form-data; boundary=/);
+    const forwarded = await new Response(init?.body, {
+      headers: init?.headers,
+    }).formData();
+    expect(forwarded.get("message")).toBe("Startup failed");
+  });
+
   test("a scoped request for an unknown id answers 404 from the dispatcher", async () => {
     // The catch-all matches the stale id, but the dispatcher refuses to
     // pass an id it cannot resolve — no row run, no arm dial.

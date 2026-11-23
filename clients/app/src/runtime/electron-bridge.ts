@@ -16,6 +16,7 @@ export interface AppElectronBridge {
    * instead of throwing inside the effect.
    */
   status?: Pick<CadetBridge["status"], "setConnection">;
+  feedback?: Pick<CadetBridge["feedback"], "logs">;
   commands: {
     on(callback: (command: CadetCommand) => void): () => void;
   };
