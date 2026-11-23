@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
+import { GITHUB_REPO } from "@/lib/github-repo";
 
 const TOC_ITEMS = [
   { id: "where-routes-are-served", label: "Where routes are served", level: 2 },
@@ -31,7 +32,7 @@ const APPS_PAGE_URL = "/docs/extensibility/apps";
 const CHANNELS_PAGE_URL = "/docs/extensibility/channels";
 
 const PLUGIN_API_URL =
-  "https://github.com/vargasjr-dev/mycadet-temp/tree/main/assistant/src/plugin-api";
+  `${GITHUB_REPO}/tree/main/assistant/src/plugin-api`;
 
 type PathRow = { file: string; served: string };
 

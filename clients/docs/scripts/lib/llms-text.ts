@@ -1,5 +1,6 @@
 import { agentMarkdownPathForPage } from "../../src/lib/agent-markdown-paths";
 import { SITE_URL } from "../../src/lib/metadata";
+import { GITHUB_REPO } from "../../src/lib/github-repo";
 
 /** Title/description for a docs page, emitted to the sidecar metadata index
  *  so llms.txt lists exactly what the mirrors serve without parsing the .md
@@ -28,9 +29,9 @@ export function buildLlmsText(pages: DocsPageMeta[]): string {
     "",
     "Cadet runs in Cadet Cloud by default, can run locally or on your own infrastructure, and ships as open-source software. These docs cover setup, memory, channels, skills, tools, hosting, security, and developer workflows.",
     "",
-    "Install: `curl -fsSL https://github.com/vargasjr-dev/mycadet-temp/releases/latest/download/install.sh | bash && . ~/.config/cadet/env`",
+    "Install: `curl -fsSL https://www.mycadet.ai/install.sh | bash && . ~/.config/cadet/env`",
     "",
-    "Repo: https://github.com/vargasjr-dev/mycadet-temp",
+    `Repo: https://github.com/${GITHUB_REPO}`,
     "",
     `Docs: ${SITE_URL}/docs`,
     "",

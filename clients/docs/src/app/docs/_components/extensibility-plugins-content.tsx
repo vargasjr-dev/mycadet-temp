@@ -7,6 +7,7 @@ import { routes } from "@/lib/routes";
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
+import { GITHUB_REPO } from "@/lib/github-repo";
 
 const TOC_ITEMS = [
   { id: "directory-layout", label: "Directory layout", level: 2 },
@@ -30,7 +31,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const PLUGIN_API_URL =
-  "https://github.com/vargasjr-dev/mycadet-temp/tree/main/assistant/src/plugin-api";
+  `${GITHUB_REPO}/tree/main/assistant/src/plugin-api`;
 
 const HOOKS_PAGE_URL = "/docs/extensibility/hooks";
 const TOOLS_PAGE_URL = "/docs/extensibility/tools";

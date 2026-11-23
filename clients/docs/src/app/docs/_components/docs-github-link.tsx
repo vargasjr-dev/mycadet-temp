@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const GITHUB_REPO_URL = "https://github.com/vargasjr-dev/mycadet-temp";
+import { GITHUB_REPO_URL } from "@/lib/github-repo";
 
 /**
  * GitHub wordmark link rendered at the end of the docs header.
