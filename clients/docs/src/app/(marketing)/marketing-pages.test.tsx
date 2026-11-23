@@ -71,7 +71,7 @@ describe("downloads page", () => {
   test("marks all three desktop apps ready for download", () => {
     // His call on #929: mac, windows, and terminal hand out real
     // download actions; only the pocket/browser cards stay coming-soon.
-    expect(grid).toContain('Download for {id === "mac" ? "Mac" : "Windows"}');
+    expect(grid).toContain('linux: desktopDownloadUrls("linux")');
     expect(grid).toContain("DESKTOP_DOWNLOAD_URLS");
     expect(grid).not.toContain('windows: "🪟 Coming soon!"');
     expect(grid).not.toContain("Your PC cadet is still in boot camp");
