@@ -50,19 +50,16 @@ const COMING_SOON_NOTES: Record<
   linux: "The Linux desktop app is in development — check back soon.",
 };
 
-// The desktop builds live in the updates bucket the release handler
-// publishes to — this deployment's own channel serves the link (the prod
-// marketing site hands out the prod build, the dev deployment the dev one).
-// Mac's installer keeps a version-free name; windows' NSIS installer name
-// carries the version, so its card links the channel's feed root, where
-// latest.yml and the current installer live.
+// Mac installers are published by the signed build jobs to stable channel
+// release assets. Keep these URLs aligned with the workflows' upload names.
+// Windows still links its channel update-feed root.
 const DESKTOP_DOWNLOAD_URLS: Record<
   "mac" | "windows",
   Record<"dev" | "prod", string>
 > = {
   mac: {
-    dev: "https://storage.googleapis.com/mycadet-dev-releases/mac-electron/arm64/mycadet-electron-dev.dmg",
-    prod: "https://storage.googleapis.com/mycadet-prod-releases/mac-electron/arm64/mycadet-electron.dmg",
+    dev: "https://github.com/vargasjr-dev/mycadet-temp/releases/download/desktop-dev/mycadet-electron-dev.dmg",
+    prod: "https://github.com/vargasjr-dev/mycadet-temp/releases/download/desktop-prod/mycadet.dmg",
   },
   windows: {
     dev: "https://storage.googleapis.com/mycadet-dev-releases/win-electron/x64/",

@@ -1480,6 +1480,8 @@ jobs:
     continue-on-error: true
     # No publish dep: the bundled CLI floats to the `latest` dist-tag at runtime.
     needs: [extract-version]
+    permissions:
+      contents: write # publish the signed installer channel asset
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -1704,6 +1706,20 @@ jobs:
           path: clients/macos/dist/${{ matrix.dmg_name }}
           if-no-files-found: error
           retention-days: 7
+
+      - name: Publish Mac download
+        if: ${{ matrix.arch == 'arm64' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if ! gh release view desktop-prod >/dev/null 2>&1; then
+            gh release create desktop-prod --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Mac desktop download (prod)" \
+              --notes "Rolling signed prod installer. Updated after successful Mac builds."
+          fi
+          cp dist/mycadet-electron.dmg dist/mycadet.dmg
+          gh release upload desktop-prod "dist/mycadet.dmg" --clobber
 
       - name: Cleanup keychain and keys
         if: always()
