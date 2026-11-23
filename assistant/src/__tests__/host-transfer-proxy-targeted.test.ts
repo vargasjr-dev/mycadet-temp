@@ -16,13 +16,17 @@
  */
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
+  type BroadcastOverride,
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
 
-const sentMessages: unknown[] = [];
-const sentMessageOptions: unknown[] = [];
+const messageIdSchema = z.string();
+const sentMessages: Record<string, unknown>[] = [];
+const sentMessageOptions: Parameters<BroadcastOverride>[2][] = [];
 const resolvedInteractionIds: string[] = [];
 let mockHasClient = false;
 type MockClient = {
@@ -37,12 +41,10 @@ let mockClientRegistry: Map<string, MockClient> = new Map();
 // check added in the host_transfer fix is exercised separately below.
 const TEST_PRINCIPAL = "test-user";
 
-setBroadcastOverrideForTesting(
-  (msg: unknown, _conversationId?: string, options?: unknown) => {
-    sentMessages.push(msg);
-    sentMessageOptions.push(options);
-  },
-);
+setBroadcastOverrideForTesting((msg, _conversationId, options) => {
+  sentMessages.push(msg);
+  sentMessageOptions.push(options);
+});
 setHubClientsForTesting({
   getClientById: (clientId: string) => mockClientRegistry.get(clientId),
   getActorPrincipalIdForClient: (clientId: string) =>
@@ -107,7 +109,7 @@ describe("HostTransferProxy — targetClientId", () => {
     mockCapableClients = [];
     mockClientRegistry = new Map();
     HostTransferProxy.reset();
-    proxy = new (HostTransferProxy as any)();
+    proxy = new HostTransferProxy();
   }
 
   function setupSingleClient(clientId = "client-1") {
@@ -151,14 +153,14 @@ describe("HostTransferProxy — targetClientId", () => {
 
       await waitForMessages(sentMessages, 1);
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_transfer_request");
       expect(sent.targetClientId).toBe("client-mac");
 
-      const opts = sentMessageOptions[0] as Record<string, unknown> | undefined;
+      const opts = sentMessageOptions[0];
       expect(opts?.targetClientId).toBe("client-mac");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, {
         isError: false,
         bytesWritten: 5,
@@ -192,13 +194,13 @@ describe("HostTransferProxy — targetClientId", () => {
 
       await waitForMessages(sentMessages, 1);
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-solo");
 
-      const opts = sentMessageOptions[0] as Record<string, unknown> | undefined;
+      const opts = sentMessageOptions[0];
       expect(opts?.targetClientId).toBe("client-solo");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, { isError: false });
       const result = await resultPromise;
       expect(result.isError).toBe(false);
@@ -273,15 +275,15 @@ describe("HostTransferProxy — targetClientId", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_transfer_request");
       expect(sent.targetClientId).toBe("client-mac");
 
-      const opts = sentMessageOptions[0] as Record<string, unknown> | undefined;
+      const opts = sentMessageOptions[0];
       expect(opts?.targetClientId).toBe("client-mac");
 
       // Cancel to resolve the promise
-      proxy.cancel(sent.requestId as string);
+      proxy.cancel(messageIdSchema.parse(sent.requestId));
       await resultPromise;
     });
   });
@@ -304,10 +306,10 @@ describe("HostTransferProxy — targetClientId", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-solo");
 
-      proxy.cancel(sent.requestId as string);
+      proxy.cancel(messageIdSchema.parse(sent.requestId));
       await resultPromise;
     });
   });
@@ -379,7 +381,7 @@ describe("HostTransferProxy — targetClientId", () => {
 
       await waitForMessages(sentMessages, 1);
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-abc");
 
       controller.abort();
@@ -388,7 +390,7 @@ describe("HostTransferProxy — targetClientId", () => {
 
       // Second message is the cancel
       expect(sentMessages).toHaveLength(2);
-      const cancelMsg = sentMessages[1] as Record<string, unknown>;
+      const cancelMsg = sentMessages[1];
       expect(cancelMsg.type).toBe("host_transfer_cancel");
       expect(cancelMsg.targetClientId).toBe("client-abc");
 
@@ -417,8 +419,8 @@ describe("HostTransferProxy — targetClientId", () => {
         TEST_PRINCIPAL,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(sent.targetClientId).toBe("client-xyz");
 
       proxy.cancel(requestId);
@@ -428,7 +430,7 @@ describe("HostTransferProxy — targetClientId", () => {
 
       // Cancel message
       expect(sentMessages).toHaveLength(2);
-      const cancelMsg = sentMessages[1] as Record<string, unknown>;
+      const cancelMsg = sentMessages[1];
       expect(cancelMsg.type).toBe("host_transfer_cancel");
       expect(cancelMsg.targetClientId).toBe("client-xyz");
 
@@ -458,17 +460,15 @@ describe("HostTransferProxy — targetClientId", () => {
       );
       p.catch(() => {}); // expected rejection on dispose
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-dispose");
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.dispose();
 
       const cancelMessages = sentMessages
         .slice(1)
-        .filter(
-          (m) => (m as Record<string, unknown>).type === "host_transfer_cancel",
-        ) as Array<Record<string, unknown>>;
+        .filter((m) => m.type === "host_transfer_cancel");
       expect(cancelMessages).toHaveLength(1);
       expect(cancelMessages[0].requestId).toBe(requestId);
       expect(cancelMessages[0].targetClientId).toBe("client-dispose");
@@ -499,15 +499,15 @@ describe("HostTransferProxy — targetClientId", () => {
 
       await waitForMessages(sentMessages, 1);
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const transferId = sent.transferId as string;
+      const sent = sentMessages[0];
+      const transferId = messageIdSchema.parse(sent.transferId);
 
       expect(proxy.getTargetClientIdForTransfer(transferId)).toBe(
         "client-peek",
       );
 
       // Clean up
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, { isError: false });
       await resultPromise;
     });
@@ -528,12 +528,12 @@ describe("HostTransferProxy — targetClientId", () => {
 
       await waitForMessages(sentMessages, 1);
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const transferId = sent.transferId as string;
+      const sent = sentMessages[0];
+      const transferId = messageIdSchema.parse(sent.transferId);
 
       expect(proxy.getTargetClientIdForTransfer(transferId)).toBeNull();
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, { isError: false });
       await resultPromise;
     });
@@ -564,7 +564,7 @@ describe("HostTransferProxy — targetClientId", () => {
           TEST_PRINCIPAL,
         );
 
-        const sent = sentMessages[0] as Record<string, unknown>;
+        const sent = sentMessages[0];
         expect(sent.targetClientId).toBe("client-timeout");
 
         // Advance past the 120s default timeout
@@ -602,14 +602,14 @@ describe("HostTransferProxy — targetClientId", () => {
 
       await waitForMessages(sentMessages, 1);
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_transfer_request");
       expect(sent.targetClientId).toBeUndefined();
 
-      const opts = sentMessageOptions[0] as Record<string, unknown> | undefined;
+      const opts = sentMessageOptions[0];
       expect(opts?.targetClientId).toBeUndefined();
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, {
         isError: false,
         bytesWritten: 18,
@@ -637,11 +637,11 @@ describe("HostTransferProxy — targetClientId", () => {
       });
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_transfer_request");
       expect(sent.targetClientId).toBeUndefined();
 
-      proxy.cancel(sent.requestId as string);
+      proxy.cancel(messageIdSchema.parse(sent.requestId));
       const result = await resultPromise;
       expect(result.isError).toBe(true);
       expect(result.content).toBe("Transfer cancelled");
@@ -676,11 +676,11 @@ describe("HostTransferProxy — targetClientId", () => {
       );
 
       await waitForMessages(sentMessages, 1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_transfer_request");
       expect(sent.targetClientId).toBe("client-A");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, { isError: false });
       await resultPromise;
     });
@@ -805,10 +805,10 @@ describe("HostTransferProxy — targetClientId", () => {
       );
 
       await waitForMessages(sentMessages, 1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-A");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveTransferResult(requestId, { isError: false });
       await resultPromise;
     });
@@ -887,10 +887,10 @@ describe("HostTransferProxy — targetClientId", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-A");
 
-      proxy.cancel(sent.requestId as string);
+      proxy.cancel(messageIdSchema.parse(sent.requestId));
       await resultPromise;
     });
 
@@ -946,10 +946,10 @@ describe("HostTransferProxy — targetClientId", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-A");
 
-      proxy.cancel(sent.requestId as string);
+      proxy.cancel(messageIdSchema.parse(sent.requestId));
       await resultPromise;
     });
   });

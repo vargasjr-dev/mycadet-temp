@@ -8,6 +8,8 @@ import {
   test,
 } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 const _conversationMocks = new Map<string, unknown>();
 mock.module("../daemon/conversation-registry.js", () => ({
   findConversation: (id: string) => _conversationMocks.get(id),
@@ -64,7 +66,7 @@ mock.module("../daemon/approval-generators.js", () => ({
   createApprovalConversationGenerator: () => _testApprovalConversationGenerator,
 }));
 
-import { getDb } from "../persistence/db-connection.js";
+import { getDb, getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import * as deliveryChannels from "../persistence/delivery-channels.js";
 import { resetTestTables } from "../persistence/raw-query.js";
@@ -89,6 +91,15 @@ afterAll(() => {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function getInboundEvents() {
+  return getSqlite()
+    .query<
+      { conversation_id: string },
+      []
+    >("SELECT conversation_id FROM channel_inbound_events")
+    .all();
+}
 
 function ensureConversation(conversationId: string): void {
   const db = getDb();
@@ -244,7 +255,7 @@ describe("stale callback handling without matching pending approval", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     // Callback payloads without a matching pending approval are treated as
     // stale and ignored.
@@ -277,10 +288,7 @@ describe("inbound callback metadata triggers decision handling", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     expect(conversationId).toBeTruthy();
     ensureConversation(conversationId!);
@@ -299,7 +307,7 @@ describe("inbound callback metadata triggers decision handling", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -319,10 +327,7 @@ describe("inbound callback metadata triggers decision handling", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -338,7 +343,7 @@ describe("inbound callback metadata triggers decision handling", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -373,10 +378,7 @@ describe("inbound text matching approval phrases triggers decision handling", ()
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -388,7 +390,7 @@ describe("inbound text matching approval phrases triggers decision handling", ()
 
     const req = makeInboundRequest({ content: "approve" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -423,10 +425,7 @@ describe("non-decision messages during pending approval (no conversational engin
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -435,7 +434,7 @@ describe("non-decision messages during pending approval (no conversational engin
     // Send a message that is NOT a decision
     const req = makeInboundRequest({ content: "what is the weather?" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("assistant_turn");
@@ -464,7 +463,7 @@ describe("messages without pending approval proceed normally", () => {
   test("proceeds to normal processing when no pending approval exists", async () => {
     const req = makeInboundRequest({ content: "hello world" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBeUndefined();
@@ -473,7 +472,7 @@ describe("messages without pending approval proceed normally", () => {
   test('text "approve" is processed normally when no pending approval exists', async () => {
     const req = makeInboundRequest({ content: "approve" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     // Should NOT be treated as an approval decision since there's no pending approval
@@ -499,7 +498,7 @@ describe("empty content with callbackData bypasses validation", () => {
     const req = makeInboundRequest({ content: "" });
     const res = await handleChannelInbound(req, noopProcessMessage);
     expect(res.status).toBe(400);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect((body.error as Record<string, unknown>).message).toBe(
       "content or attachmentIds is required",
     );
@@ -510,10 +509,7 @@ describe("empty content with callbackData bypasses validation", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -535,7 +531,7 @@ describe("empty content with callbackData bypasses validation", () => {
 
     const res = await handleChannelInbound(req, noopProcessMessage);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
     expect(sessionMock).toHaveBeenCalledWith("req-empty-1", "allow", {
@@ -550,10 +546,7 @@ describe("empty content with callbackData bypasses validation", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -588,7 +581,7 @@ describe("empty content with callbackData bypasses validation", () => {
 
     const res = await handleChannelInbound(req, noopProcessMessage);
     expect(res.status).toBe(200);
-    const resBody = (await res.json()) as Record<string, unknown>;
+    const resBody = jsonObjectSchema.parse(await res.json());
     expect(resBody.accepted).toBe(true);
 
     deliverSpy.mockRestore();
@@ -618,10 +611,7 @@ describe("callback requestId validation", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -639,7 +629,7 @@ describe("callback requestId validation", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("stale_ignored");
@@ -658,10 +648,7 @@ describe("callback requestId validation", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -678,7 +665,7 @@ describe("callback requestId validation", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -698,10 +685,7 @@ describe("callback requestId validation", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -714,7 +698,7 @@ describe("callback requestId validation", () => {
     // Send plain text "yes" — no requestId in the parsed result
     const req = makeInboundRequest({ content: "yes" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -749,10 +733,7 @@ describe("no immediate reply after approval decision", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -768,7 +749,7 @@ describe("no immediate reply after approval decision", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.approval).toBe("decision_applied");
 
@@ -788,10 +769,7 @@ describe("no immediate reply after approval decision", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -802,7 +780,7 @@ describe("no immediate reply after approval decision", () => {
     // Send a plain-text approval
     const req = makeInboundRequest({ content: "approve" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.approval).toBe("decision_applied");
     expect(deliverSpy).not.toHaveBeenCalled();
@@ -824,7 +802,7 @@ describe("stale callback handling", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("stale_ignored");
@@ -839,7 +817,7 @@ describe("stale callback handling", () => {
     });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("stale_ignored");
@@ -850,7 +828,7 @@ describe("stale callback handling", () => {
     const req = makeInboundRequest({ content: "hello world" });
 
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     // No approval field — normal processing
@@ -904,10 +882,7 @@ describe("plain-text channel approval decisions", () => {
     const initReq = makePlainTextInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[events.length - 1]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -919,7 +894,7 @@ describe("plain-text channel approval decisions", () => {
 
     const req = makePlainTextInboundRequest({ content: "yes" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -939,10 +914,7 @@ describe("plain-text channel approval decisions", () => {
     const initReq = makePlainTextInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[events.length - 1]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -954,7 +926,7 @@ describe("plain-text channel approval decisions", () => {
 
     const req = makePlainTextInboundRequest({ content: "no" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -978,10 +950,7 @@ describe("plain-text channel approval decisions", () => {
     const initReq = makePlainTextInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[events.length - 1]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -989,7 +958,7 @@ describe("plain-text channel approval decisions", () => {
 
     const req = makePlainTextInboundRequest({ content: "what is happening?" });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("assistant_turn");
@@ -1087,10 +1056,7 @@ describe("conversational approval engine — standard path", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1116,7 +1082,7 @@ describe("conversational approval engine — standard path", () => {
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("assistant_turn");
@@ -1145,10 +1111,7 @@ describe("conversational approval engine — standard path", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1173,7 +1136,7 @@ describe("conversational approval engine — standard path", () => {
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -1195,10 +1158,7 @@ describe("conversational approval engine — standard path", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1223,7 +1183,7 @@ describe("conversational approval engine — standard path", () => {
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -1244,10 +1204,7 @@ describe("conversational approval engine — standard path", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1275,7 +1232,7 @@ describe("conversational approval engine — standard path", () => {
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("decision_applied");
@@ -1317,10 +1274,7 @@ describe("keep_pending remains conversational — standard path", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1343,7 +1297,7 @@ describe("keep_pending remains conversational — standard path", () => {
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("assistant_turn");
@@ -1385,10 +1339,7 @@ describe("engine decision race condition — standard path", () => {
     const initReq = makeInboundRequest({ content: "init" });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1414,7 +1365,7 @@ describe("engine decision race condition — standard path", () => {
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("stale_ignored");
@@ -1468,10 +1419,7 @@ describe("non-decision status reply for different channels", () => {
     });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1483,7 +1431,7 @@ describe("non-decision status reply for different channels", () => {
       sourceChannel: "slack",
     });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("assistant_turn");
@@ -1515,10 +1463,7 @@ describe("non-decision status reply for different channels", () => {
     });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1530,7 +1475,7 @@ describe("non-decision status reply for different channels", () => {
       sourceChannel: "telegram",
     });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBe("assistant_turn");
@@ -1597,7 +1542,7 @@ describe("background channel processing approval prompts", () => {
 
     setTestProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -1666,7 +1611,7 @@ describe("background channel processing approval prompts", () => {
 
     setTestProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -1712,7 +1657,7 @@ describe("background channel processing approval prompts", () => {
 
     setTestProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -1765,7 +1710,7 @@ describe("background channel processing approval prompts", () => {
 
     setTestProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -1837,7 +1782,7 @@ describe("NL approval routing via destination-scoped guardian requests", () => {
       externalMessageId: `msg-nl-approve-${Date.now()}`,
     });
     const res = await handleChannelInbound(req, noopProcessMessage as any);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.canonicalRouter).toBe("canonical_decision_stale");
@@ -1888,7 +1833,7 @@ describe("NL approval routing via destination-scoped guardian requests", () => {
       externalMessageId: `msg-nl-mismatch-${Date.now()}`,
     });
     const res = await handleChannelInbound(req, noopProcessMessage as any);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     // Should NOT have been consumed by canonical router since there are no
@@ -1939,10 +1884,7 @@ describe("trusted-contact self-approval blocked before guardian approval row exi
     });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -1978,7 +1920,7 @@ describe("trusted-contact self-approval blocked before guardian approval row exi
       "self",
       undefined,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     // Should be blocked with assistant_turn (pending guardian notice),
@@ -2007,10 +1949,7 @@ describe("trusted-contact self-approval blocked before guardian approval row exi
     });
     await handleChannelInbound(initReq, noopProcessMessage);
 
-    const db = getDb();
-    const events = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+    const events = getInboundEvents();
     const conversationId = events[0]?.conversation_id;
     ensureConversation(conversationId!);
 
@@ -2031,7 +1970,7 @@ describe("trusted-contact self-approval blocked before guardian approval row exi
       actorExternalId: "tc-selfapproval-user",
     });
     const res = await handleChannelInbound(req, noopProcessMessage);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     // Should be blocked, not decision_applied

@@ -131,7 +131,7 @@ describe("relationship-state-writer", () => {
 
   describe("computeRelationshipState", () => {
     test("fresh empty workspace -> tier 1, 0%, empty facts, 0 conversations", async () => {
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.version).toBe(1);
       expect(state.assistantId).toBe("default");
       expect(state.tier).toBe(1);
@@ -164,7 +164,7 @@ describe("relationship-state-writer", () => {
         ].join("\n"),
       );
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       // At least one priorities fact (Goals / Work role / Daily tools)
       // and at least one world fact (Preferred name / Pronouns).
       expect(state.facts.length).toBeGreaterThanOrEqual(5);
@@ -191,7 +191,7 @@ describe("relationship-state-writer", () => {
         ].join("\n"),
       );
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const voiceFacts = state.facts.filter((f) => f.category === "voice");
       expect(voiceFacts.length).toBeGreaterThanOrEqual(2);
       for (const f of voiceFacts) {
@@ -213,7 +213,7 @@ describe("relationship-state-writer", () => {
         ].join("\n"),
       );
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.userName).toBe("Casey");
     });
 
@@ -226,7 +226,7 @@ describe("relationship-state-writer", () => {
         ["- Preferred name: Jamie", "- Work role: PM"].join("\n"),
       );
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.userName).toBe("Jamie");
       expect(state.facts.length).toBeGreaterThan(0);
     });
@@ -243,14 +243,14 @@ describe("relationship-state-writer", () => {
         ["- Preferred name: Riley", "- Work role: Designer"].join("\n"),
       );
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.userName).toBe("Riley");
       expect(state.facts.length).toBeGreaterThan(0);
     });
 
     test("uses DB-authoritative countConversations for conversationCount", async () => {
       seedConversations(7);
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.conversationCount).toBe(7);
     });
 
@@ -266,7 +266,7 @@ describe("relationship-state-writer", () => {
       // DB says 0 conversations, despite 3 filesystem entries.
       fakeConversationCount = 0;
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.conversationCount).toBe(0);
     });
 
@@ -276,13 +276,13 @@ describe("relationship-state-writer", () => {
       // snapshot with conversationCount = 0 rather than throwing.
       fakeConversationCountThrows = true;
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.conversationCount).toBe(0);
     });
 
     test("slack connection flips slack capability to unlocked", async () => {
       fakeConnections.push({ provider: "slack", status: "active" });
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const slack = state.capabilities.find((c) => c.id === "slack");
       expect(slack?.tier).toBe("unlocked");
       const email = state.capabilities.find((c) => c.id === "email");
@@ -291,7 +291,7 @@ describe("relationship-state-writer", () => {
 
     test("google connection unlocks both email and calendar", async () => {
       fakeConnections.push({ provider: "google", status: "active" });
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const email = state.capabilities.find((c) => c.id === "email");
       const calendar = state.capabilities.find((c) => c.id === "calendar");
       expect(email?.tier).toBe("unlocked");
@@ -304,7 +304,7 @@ describe("relationship-state-writer", () => {
       // not advertise email or calendar as unlocked just because an outlook
       // OAuth row exists.
       fakeConnections.push({ provider: "outlook", status: "active" });
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const email = state.capabilities.find((c) => c.id === "email");
       const calendar = state.capabilities.find((c) => c.id === "calendar");
       expect(email?.tier).toBe("next-up");
@@ -313,20 +313,20 @@ describe("relationship-state-writer", () => {
 
     test("revoked connections do not count as unlocked", async () => {
       fakeConnections.push({ provider: "slack", status: "revoked" });
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const slack = state.capabilities.find((c) => c.id === "slack");
       expect(slack?.tier).toBe("next-up");
     });
 
     test("voice-writing unlocks once conversationCount >= 10", async () => {
       seedConversations(10);
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const voice = state.capabilities.find((c) => c.id === "voice-writing");
       expect(voice?.tier).toBe("unlocked");
     });
 
     test("updatedAt is a valid ISO-8601 string", async () => {
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(Number.isNaN(Date.parse(state.updatedAt))).toBe(false);
     });
   });
@@ -421,12 +421,11 @@ describe("relationship-state-writer", () => {
         "- **Name:** Sage\n- **Role:** Assistant\n- **Personality:** Curious\n",
       );
 
-      const first = (await computeRelationshipState()) as RelationshipStateLike;
+      const first = await computeRelationshipState();
       // Wait long enough that any `Date.now()`-based regression would
       // produce a visibly different value on the second call.
       await new Promise((resolve) => setTimeout(resolve, 25));
-      const second =
-        (await computeRelationshipState()) as RelationshipStateLike;
+      const second = await computeRelationshipState();
 
       expect(second.hatchedDate).toBe(first.hatchedDate);
       // Also sanity: it must be a real, recent date (not the epoch
@@ -445,7 +444,7 @@ describe("relationship-state-writer", () => {
         "IDENTITY.md",
         "- **Name:** Sage\n- **Hatched:** 2025-01-15T00:00:00.000Z\n",
       );
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.hatchedDate).toBe("2025-01-15T00:00:00.000Z");
     });
 
@@ -453,7 +452,7 @@ describe("relationship-state-writer", () => {
       // When no IDENTITY.md exists, the writer persists a real `now`
       // timestamp to `data/hatched.json` on first use and returns it.
       // The wire contract never carries a zero/epoch sentinel.
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const parsed = Date.parse(state.hatchedDate);
       expect(parsed).toBeGreaterThan(0);
       expect(state.hatchedDate).not.toBe(new Date(0).toISOString());
@@ -470,10 +469,9 @@ describe("relationship-state-writer", () => {
     test("sidecar fallback: second call with no IDENTITY.md returns the SAME timestamp", async () => {
       // Regression guard for Gap E: the sidecar must make the
       // fallback timestamp monotonic across writes.
-      const first = (await computeRelationshipState()) as RelationshipStateLike;
+      const first = await computeRelationshipState();
       await new Promise((resolve) => setTimeout(resolve, 25));
-      const second =
-        (await computeRelationshipState()) as RelationshipStateLike;
+      const second = await computeRelationshipState();
       expect(second.hatchedDate).toBe(first.hatchedDate);
     });
 
@@ -490,7 +488,7 @@ describe("relationship-state-writer", () => {
         "IDENTITY.md",
         "- **Name:** Sage\n- **Hatched:** 2025-01-15T00:00:00.000Z\n",
       );
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.hatchedDate).toBe("2025-01-15T00:00:00.000Z");
     });
 
@@ -506,7 +504,7 @@ describe("relationship-state-writer", () => {
       );
       writeFile("IDENTITY.md", "- **Name:** Sage\n- **Role:** Assistant\n");
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.hatchedDate).toBe("2020-06-01T00:00:00.000Z");
     });
   });
@@ -514,7 +512,7 @@ describe("relationship-state-writer", () => {
   describe("parseIdentity assistant name variants (Gap D)", () => {
     test("extracts assistantName from **Name:** label", async () => {
       writeFile("IDENTITY.md", "- **Name:** Astra\n- **Role:** Assistant\n");
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.assistantName).toBe("Astra");
     });
 
@@ -523,7 +521,7 @@ describe("relationship-state-writer", () => {
         "IDENTITY.md",
         "- **Assistant Name:** Nebula\n- **Role:** Assistant\n",
       );
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.assistantName).toBe("Nebula");
     });
 
@@ -532,7 +530,7 @@ describe("relationship-state-writer", () => {
         "IDENTITY.md",
         "- **Preferred Name:** Orion\n- **Role:** Assistant\n",
       );
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.assistantName).toBe("Orion");
     });
   });
@@ -562,7 +560,7 @@ describe("relationship-state-writer", () => {
       // The file must exist and parse cleanly.
       expect(existsSync(path)).toBe(true);
       const decoded = JSON.parse(
-        origRead(path, "utf-8") as string,
+        origRead(path, "utf-8"),
       ) as RelationshipStateLike;
       expect(decoded.version).toBe(1);
       expect(decoded.userName).toBe("Concurrent");
@@ -624,7 +622,7 @@ describe("relationship-state-writer", () => {
         assistantName: "Nova",
       });
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
 
       const onboardingFacts = state.facts.filter(
         (f) => f.source === "onboarding",
@@ -661,7 +659,7 @@ describe("relationship-state-writer", () => {
         assistantName: "Nova",
       });
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.userName).toBe("Alex");
       expect(state.assistantName).toBe("Nova");
     });
@@ -677,7 +675,7 @@ describe("relationship-state-writer", () => {
         assistantName: "StaleOnboardingAssistant",
       });
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       expect(state.userName).toBe("RealUser");
       expect(state.assistantName).toBe("RealAssistant");
     });
@@ -695,7 +693,7 @@ describe("relationship-state-writer", () => {
         userName: "Alex",
       });
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const bySource = new Map<string, number>();
       for (const f of state.facts) {
         bySource.set(f.source, (bySource.get(f.source) ?? 0) + 1);
@@ -713,7 +711,7 @@ describe("relationship-state-writer", () => {
         tone: "warm",
       });
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const voiceFacts = state.facts.filter(
         (f) => f.category === "voice" && f.source === "onboarding",
       );
@@ -728,7 +726,7 @@ describe("relationship-state-writer", () => {
         tone: "balanced",
       });
 
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const voiceFacts = state.facts.filter(
         (f) => f.category === "voice" && f.source === "onboarding",
       );
@@ -738,7 +736,7 @@ describe("relationship-state-writer", () => {
 
     test("missing sidecar produces no onboarding-sourced facts", async () => {
       writeFile("USER.md", "- Preferred name: Alex");
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       for (const f of state.facts) {
         expect(f.source).toBe("inferred");
       }
@@ -750,7 +748,7 @@ describe("relationship-state-writer", () => {
         tasks: ["  ", "Email"],
         tone: "   ",
       });
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       const onboardingFacts = state.facts.filter(
         (f) => f.source === "onboarding",
       );
@@ -763,7 +761,7 @@ describe("relationship-state-writer", () => {
     test("corrupt sidecar JSON degrades to zero onboarding facts", async () => {
       mkdirSync(join(workspaceDir, "data"), { recursive: true });
       writeFileSync(getOnboardingSidecarPath(), "{not valid json", "utf-8");
-      const state = (await computeRelationshipState()) as RelationshipStateLike;
+      const state = await computeRelationshipState();
       for (const f of state.facts) {
         expect(f.source).not.toBe("onboarding");
       }

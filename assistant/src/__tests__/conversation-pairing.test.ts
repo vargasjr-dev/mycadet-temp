@@ -175,11 +175,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy({ conversationTitle: "Alert Thread" });
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.messageId).toBe("msg-001");
@@ -199,11 +195,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy({ conversationTitle: "Custom Thread Title" });
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    await pairDeliveryWithConversation(signal, "cadet", copy);
 
     // Verify createConversation was called with the thread title
     const callArgs = createConversationMock.mock.calls[0]![0] as Record<
@@ -217,11 +209,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy({ title: "Notification Title" });
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    await pairDeliveryWithConversation(signal, "cadet", copy);
 
     const callArgs = createConversationMock.mock.calls[0]![0] as Record<
       string,
@@ -236,11 +224,7 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: "Custom seed message with enough length",
     });
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    await pairDeliveryWithConversation(signal, "cadet", copy);
 
     // addMessage second arg is role, third is content
     const contentArg = addMessageMock.mock.calls[0]![2];
@@ -258,11 +242,7 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: '{"raw": "json dump payload"}',
     });
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    await pairDeliveryWithConversation(signal, "cadet", copy);
 
     const contentArg = addMessageMock.mock.calls[0]![2] as string;
     // Should NOT be the JSON dump
@@ -282,11 +262,7 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: "Hi",
     });
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    await pairDeliveryWithConversation(signal, "cadet", copy);
 
     const contentArg = addMessageMock.mock.calls[0]![2] as string;
     expect(contentArg).not.toBe("Hi");
@@ -298,11 +274,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    await pairDeliveryWithConversation(signal, "cadet", copy);
 
     const optionsArg = addMessageMock.mock.calls[0]![3] as Record<
       string,
@@ -317,11 +289,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "telegram" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "telegram", copy);
 
     expect(result.conversationId).toBe("conv-001");
     // A channel delivery writes no row before the send; the broadcaster
@@ -357,13 +325,13 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: "Second notification to same chat",
     });
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "telegram" as NotificationChannel,
+      sourceChannel: "telegram",
       externalChatId: "chat-123",
     };
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "telegram" as NotificationChannel,
+      "telegram",
       copy,
       { bindingContext },
     );
@@ -401,13 +369,13 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: "Delivery to legacy binding",
     });
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "telegram" as NotificationChannel,
+      sourceChannel: "telegram",
       externalChatId: "chat-legacy",
     };
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "telegram" as NotificationChannel,
+      "telegram",
       copy,
       { bindingContext },
     );
@@ -436,16 +404,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "C0123ABCDEF",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      bindingContext,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -472,13 +437,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "telegram" as NotificationChannel,
+      sourceChannel: "telegram",
       externalChatId: "chat-456",
     };
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "telegram" as NotificationChannel,
+      "telegram",
       copy,
       { bindingContext },
     );
@@ -523,16 +488,13 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: "New tweet from @alice - draft reply attached",
     });
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "D0ASABGUTQR",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      bindingContext,
+    });
 
     // Should use the inbound conversation, not the notification one
     expect(result.conversationId).toBe("conv-inbound");
@@ -566,16 +528,13 @@ describe("pairDeliveryWithConversation", () => {
       conversationSeedMessage: "Your daily briefing is ready",
     });
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "D0CHATID123",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      bindingContext,
+    });
 
     expect(result.conversationId).toBe("conv-inbound-null-source");
     expect(result.createdNewConversation).toBe(false);
@@ -607,16 +566,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "D0STALE",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      bindingContext,
+    });
 
     // Inbound conversation is gone — should fall back to notification conversation
     expect(result.conversationId).toBe("conv-notification-fallback");
@@ -630,16 +586,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "D0BRANDNEW",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      bindingContext,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -657,16 +610,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "C0123ABCDEF",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      bindingContext,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -698,13 +648,13 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-explicit",
     };
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "telegram" as NotificationChannel,
+      sourceChannel: "telegram",
       externalChatId: "chat-rebind",
     };
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "telegram" as NotificationChannel,
+      "telegram",
       copy,
       { conversationAction, bindingContext },
     );
@@ -731,16 +681,14 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-gone",
     };
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "slack" as NotificationChannel,
+      sourceChannel: "slack",
       externalChatId: "C9876ZYXWVU",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "slack" as NotificationChannel,
-      copy,
-      { conversationAction, bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "slack", copy, {
+      conversationAction,
+      bindingContext,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -783,13 +731,13 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-explicit",
     };
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "telegram" as NotificationChannel,
+      sourceChannel: "telegram",
       externalChatId: "chat-789",
     };
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "telegram" as NotificationChannel,
+      "telegram",
       copy,
       { conversationAction, bindingContext },
     );
@@ -818,16 +766,13 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
     const bindingContext: DestinationBindingContext = {
-      sourceChannel: "cadet" as NotificationChannel,
+      sourceChannel: "cadet",
       externalChatId: "device-1",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-      { bindingContext },
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy, {
+      bindingContext,
+    });
 
     // Should still create a new conversation — cadet is start_new_conversation
     expect(result.conversationId).toBe("conv-001");
@@ -843,11 +788,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal({ requiresConversation: undefined });
     const copy = makeCopy();
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBeNull();
     expect(result.messageId).toBeNull();
@@ -871,12 +812,9 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-explicit-passive",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-      { conversationAction },
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy, {
+      conversationAction,
+    });
 
     expect(result.conversationId).toBeNull();
     expect(result.messageId).toBeNull();
@@ -905,7 +843,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "cadet" as NotificationChannel,
+      "cadet",
       makeCopy({ body: "A short push preview…" }),
     );
 
@@ -988,11 +926,7 @@ describe("pairDeliveryWithConversation", () => {
     });
     const copy = makeCopy({ body: "Daily Briefing for Tuesday." });
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBe("conv-producer");
     expect(result.messageId).toBe("msg-001");
@@ -1035,11 +969,7 @@ describe("pairDeliveryWithConversation", () => {
     });
     const copy = makeCopy({ body: "Something you asked to watch changed." });
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBe("conv-foreground");
     expect(createConversationMock).not.toHaveBeenCalled();
@@ -1058,11 +988,7 @@ describe("pairDeliveryWithConversation", () => {
       sourceContextId: "conv-producer",
     });
 
-    await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      makeCopy(),
-    );
+    await pairDeliveryWithConversation(signal, "cadet", makeCopy());
 
     const options = addMessageMock.mock.calls[0]![3] as {
       skipIndexing?: boolean;
@@ -1087,7 +1013,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "cadet" as NotificationChannel,
+      "cadet",
       makeCopy(),
     );
 
@@ -1105,7 +1031,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "cadet" as NotificationChannel,
+      "cadet",
       makeCopy(),
     );
 
@@ -1137,7 +1063,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "cadet" as NotificationChannel,
+      "cadet",
       makeCopy(),
       { conversationAction },
     );
@@ -1159,11 +1085,7 @@ describe("pairDeliveryWithConversation", () => {
     });
     const copy = makeCopy({ conversationTitle: "Heartbeat Alert" });
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.strategy).toBe("start_new_conversation");
@@ -1185,11 +1107,7 @@ describe("pairDeliveryWithConversation", () => {
     });
     const copy = makeCopy();
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBe("conv-001");
     expect(createConversationMock).toHaveBeenCalledTimes(1);
@@ -1242,12 +1160,9 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-existing",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-      { conversationAction },
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy, {
+      conversationAction,
+    });
 
     expect(result.conversationId).toBe("conv-existing");
     expect(result.messageId).toBe("msg-001");
@@ -1269,12 +1184,9 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-nonexistent",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-      { conversationAction },
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy, {
+      conversationAction,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.messageId).toBe("msg-001");
@@ -1298,12 +1210,9 @@ describe("pairDeliveryWithConversation", () => {
       conversationId: "conv-user",
     };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-      { conversationAction },
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy, {
+      conversationAction,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -1315,12 +1224,9 @@ describe("pairDeliveryWithConversation", () => {
     const copy = makeCopy();
     const conversationAction: ConversationAction = { action: "start_new" };
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-      { conversationAction },
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy, {
+      conversationAction,
+    });
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -1332,11 +1238,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBe("conv-001");
     expect(result.createdNewConversation).toBe(true);
@@ -1351,11 +1253,7 @@ describe("pairDeliveryWithConversation", () => {
     const copy = makeCopy();
 
     // Should not throw
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBeNull();
     expect(result.messageId).toBeNull();
@@ -1369,11 +1267,7 @@ describe("pairDeliveryWithConversation", () => {
     const signal = makeSignal();
     const copy = makeCopy();
 
-    const result = await pairDeliveryWithConversation(
-      signal,
-      "cadet" as NotificationChannel,
-      copy,
-    );
+    const result = await pairDeliveryWithConversation(signal, "cadet", copy);
 
     expect(result.conversationId).toBeNull();
     expect(result.messageId).toBeNull();
@@ -1387,7 +1281,7 @@ describe("pairDeliveryWithConversation", () => {
     for (let i = 0; i < 3; i++) {
       const result = await pairDeliveryWithConversation(
         makeSignal({ signalId: `sig-${i}` }),
-        "cadet" as NotificationChannel,
+        "cadet",
         makeCopy(),
       );
       expect(result.conversationId).toBeNull();
@@ -1424,7 +1318,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "telegram" as NotificationChannel,
+      "telegram",
       makeCopy(),
     );
 
@@ -1440,7 +1334,7 @@ describe("pairDeliveryWithConversation", () => {
 
     const result = await pairDeliveryWithConversation(
       signal,
-      "cadet" as NotificationChannel,
+      "cadet",
       makeCopy(),
     );
 

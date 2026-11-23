@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { removeCallsVoiceTranscriptionProviderMigration } from "../workspace/migrations/034-remove-calls-voice-transcription-provider.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,7 +34,9 @@ function writeConfig(data: Record<string, unknown>): void {
 }
 
 function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
+  return jsonObjectSchema.parse(
+    JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -78,17 +81,15 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     expect(stt.provider).toBe("google-gemini");
 
     // Legacy key removed
-    const voice = (config.calls as Record<string, unknown>).voice as Record<
-      string,
-      unknown
-    >;
+    const voice = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.calls).voice,
+    );
     expect(voice.transcriptionProvider).toBeUndefined();
     // Other voice fields preserved
     expect(voice.language).toBe("en-US");
@@ -113,10 +114,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     // Extra keys mean intentional customization — provider left as-is
     expect(stt.provider).toBe("deepgram");
     expect(stt.model).toBe("nova-3");
@@ -139,10 +139,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     expect(stt.provider).toBe("deepgram");
   });
 
@@ -161,10 +160,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     expect(stt.provider).toBe("deepgram");
   });
 
@@ -183,10 +181,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     // User had explicitly set openai-whisper — should not be clobbered
     expect(stt.provider).toBe("openai-whisper");
   });
@@ -206,10 +203,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     expect(stt.provider).toBe("google-gemini");
   });
 
@@ -230,17 +226,15 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     expect(stt.provider).toBe("deepgram");
 
     // Legacy key removed
-    const voice = (config.calls as Record<string, unknown>).voice as Record<
-      string,
-      unknown
-    >;
+    const voice = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.calls).voice,
+    );
     expect(voice.transcriptionProvider).toBeUndefined();
   });
 
@@ -261,10 +255,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const stt = (config.services as Record<string, unknown>).stt as Record<
-      string,
-      unknown
-    >;
+    const stt = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.services).stt,
+    );
     expect(stt.provider).toBe("deepgram");
   });
 
@@ -287,10 +280,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const voice = (config.calls as Record<string, unknown>).voice as Record<
-      string,
-      unknown
-    >;
+    const voice = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.calls).voice,
+    );
     expect(voice.transcriptionProvider).toBeUndefined();
     expect(voice.speechModel).toBeUndefined();
     expect(voice.language).toBe("en-US");
@@ -340,7 +332,7 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const calls = config.calls as Record<string, unknown>;
+    const calls = jsonObjectSchema.parse(config.calls);
     expect(calls.enabled).toBe(true);
     expect(calls.voice).toBeUndefined();
   });
@@ -360,7 +352,7 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const calls = config.calls as Record<string, unknown>;
+    const calls = jsonObjectSchema.parse(config.calls);
     expect(calls.voice).toBe(42);
   });
 
@@ -373,10 +365,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
 
     const config = readConfig();
     // Legacy key still removed even without services.stt
-    const voice = (config.calls as Record<string, unknown>).voice as Record<
-      string,
-      unknown
-    >;
+    const voice = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.calls).voice,
+    );
     expect(voice.transcriptionProvider).toBeUndefined();
     // services was never created since there was no stt to update
     expect(config.services).toBeUndefined();
@@ -392,10 +383,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
 
     const config = readConfig();
     // Legacy key removed
-    const voice = (config.calls as Record<string, unknown>).voice as Record<
-      string,
-      unknown
-    >;
+    const voice = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.calls).voice,
+    );
     expect(voice.transcriptionProvider).toBeUndefined();
     // services not modified (can't read stt from a string)
     expect(config.services).toBe("invalid");
@@ -410,13 +400,12 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
     removeCallsVoiceTranscriptionProviderMigration.run(workspaceDir);
 
     const config = readConfig();
-    const voice = (config.calls as Record<string, unknown>).voice as Record<
-      string,
-      unknown
-    >;
+    const voice = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(config.calls).voice,
+    );
     expect(voice.transcriptionProvider).toBeUndefined();
     // services.stt left as-is since it's not an object
-    const services = config.services as Record<string, unknown>;
+    const services = jsonObjectSchema.parse(config.services);
     expect(services.stt).toBe("invalid");
   });
 
@@ -487,10 +476,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
       removeCallsVoiceTranscriptionProviderMigration.down(workspaceDir);
 
       const config = readConfig();
-      const voice = (config.calls as Record<string, unknown>).voice as Record<
-        string,
-        unknown
-      >;
+      const voice = jsonObjectSchema.parse(
+        jsonObjectSchema.parse(config.calls).voice,
+      );
       expect(voice.transcriptionProvider).toBe("Deepgram");
     });
 
@@ -505,10 +493,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
       removeCallsVoiceTranscriptionProviderMigration.down(workspaceDir);
 
       const config = readConfig();
-      const voice = (config.calls as Record<string, unknown>).voice as Record<
-        string,
-        unknown
-      >;
+      const voice = jsonObjectSchema.parse(
+        jsonObjectSchema.parse(config.calls).voice,
+      );
       expect(voice.transcriptionProvider).toBe("Google");
     });
 
@@ -523,10 +510,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
       removeCallsVoiceTranscriptionProviderMigration.down(workspaceDir);
 
       const config = readConfig();
-      const voice = (config.calls as Record<string, unknown>).voice as Record<
-        string,
-        unknown
-      >;
+      const voice = jsonObjectSchema.parse(
+        jsonObjectSchema.parse(config.calls).voice,
+      );
       // Existing value preserved, not overwritten
       expect(voice.transcriptionProvider).toBe("Deepgram");
     });
@@ -556,10 +542,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
       removeCallsVoiceTranscriptionProviderMigration.down(workspaceDir);
 
       const config = readConfig();
-      const voice = (config.calls as Record<string, unknown>).voice as Record<
-        string,
-        unknown
-      >;
+      const voice = jsonObjectSchema.parse(
+        jsonObjectSchema.parse(config.calls).voice,
+      );
       // No legacy equivalent for openai-whisper — field not added
       expect(voice.transcriptionProvider).toBeUndefined();
     });
@@ -576,10 +561,9 @@ describe("034-remove-calls-voice-transcription-provider migration", () => {
       removeCallsVoiceTranscriptionProviderMigration.down(workspaceDir);
 
       const config = readConfig();
-      const voice = (config.calls as Record<string, unknown>).voice as Record<
-        string,
-        unknown
-      >;
+      const voice = jsonObjectSchema.parse(
+        jsonObjectSchema.parse(config.calls).voice,
+      );
       expect(voice.transcriptionProvider).toBe("Deepgram");
     });
 

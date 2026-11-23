@@ -1,4 +1,13 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import type {
+  Content,
+  GenerateContentConfig,
+  Part,
+  ThinkingConfig,
+  ThinkingLevel,
+} from "@google/genai";
 
 import { MALFORMED_TOOL_CALL_MESSAGE } from "../providers/malformed-tool-call.js";
 import type {
@@ -44,7 +53,17 @@ interface FakeChunk {
 }
 
 let fakeChunks: FakeChunk[] = [];
-let lastStreamParams: Record<string, unknown> | null = null;
+interface CapturedStreamParams {
+  model: string;
+  contents: Array<Content & { parts: Part[] }>;
+  config: Omit<GenerateContentConfig, "thinkingConfig"> & {
+    thinkingConfig?: Omit<ThinkingConfig, "thinkingLevel"> & {
+      thinkingLevel?: `${ThinkingLevel}`;
+    };
+  };
+}
+
+let lastStreamParams: CapturedStreamParams | null = null;
 let lastConstructorOpts: Record<string, unknown> | null = null;
 let shouldThrow: Error | null = null;
 let listShouldThrow: Error | null = null;
@@ -64,7 +83,7 @@ mock.module("@google/genai", () => ({
       lastConstructorOpts = opts;
     }
     models = {
-      generateContentStream: async (params: Record<string, unknown>) => {
+      generateContentStream: async (params: CapturedStreamParams) => {
         lastStreamParams = params;
         if (shouldThrow) {
           throw shouldThrow;
@@ -272,7 +291,7 @@ describe("GeminiProvider", () => {
       { systemPrompt: "You are a helpful assistant." },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.systemInstruction).toBe("You are a helpful assistant.");
   });
 
@@ -286,7 +305,7 @@ describe("GeminiProvider", () => {
       { role: "user", content: [{ type: "text", text: "Hi" }] },
     ]);
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toBeUndefined();
   });
 
@@ -306,7 +325,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "HIGH",
       includeThoughts: false,
@@ -321,7 +340,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "disabled" } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "MINIMAL",
       includeThoughts: false,
@@ -348,7 +367,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toBeUndefined();
   });
 
@@ -360,7 +379,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "adaptive" } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     // No level/streamThinking → omit so Google's per-model default applies
     // (Gemini 3.x defaults to "medium" with dynamic thinking).
     expect(config.thinkingConfig).toBeUndefined();
@@ -381,7 +400,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "adaptive", streamThinking: true } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "HIGH",
       includeThoughts: true,
@@ -400,7 +419,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "disabled" } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "LOW",
       includeThoughts: false,
@@ -427,7 +446,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "LOW",
       includeThoughts: false,
@@ -446,7 +465,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "disabled" } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "LOW",
       includeThoughts: false,
@@ -473,7 +492,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "LOW",
       includeThoughts: false,
@@ -492,7 +511,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "adaptive", streamThinking: true } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       includeThoughts: true,
     });
@@ -510,7 +529,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "disabled" } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "LOW",
       includeThoughts: false,
@@ -537,7 +556,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "LOW",
       includeThoughts: false,
@@ -560,7 +579,7 @@ describe("GeminiProvider", () => {
       },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({
       thinkingLevel: "MEDIUM",
       includeThoughts: true,
@@ -578,7 +597,7 @@ describe("GeminiProvider", () => {
       { config: { thinking: { type: "adaptive", streamThinking: true } } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.thinkingConfig).toEqual({ includeThoughts: true });
   });
 
@@ -605,11 +624,14 @@ describe("GeminiProvider", () => {
       { tools: tools },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
-    const sentTools = config.tools as Array<Record<string, unknown>>;
+    const config = lastStreamParams!.config;
+    const sentTools = config.tools;
+    assert(sentTools, "Expected tools in the Gemini request");
     expect(sentTools).toHaveLength(1);
-    const decls = (sentTools[0] as { functionDeclarations: unknown[] })
-      .functionDeclarations;
+    const [tool] = sentTools;
+    assert(tool && "functionDeclarations" in tool, "Expected a function tool");
+    const decls = tool.functionDeclarations;
+    assert(decls, "Expected function declarations");
     expect(decls).toHaveLength(1);
     expect(decls[0]).toEqual({
       name: "file_read",
@@ -845,10 +867,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents).toHaveLength(3);
     expect(contents[0].role).toBe("user");
     expect(contents[1].role).toBe("model");
@@ -892,10 +911,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     // assistant → model with functionCall, user → user with functionResponse
     expect(contents).toHaveLength(3);
     expect(contents[1].role).toBe("model");
@@ -950,10 +966,7 @@ describe("GeminiProvider", () => {
     await provider.sendMessage(messages);
 
     // THEN the function response is isolated in its own user Content
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: Array<Record<string, unknown>>;
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents).toHaveLength(4);
 
     // AND the function response Content appears before the text Content
@@ -1021,10 +1034,7 @@ describe("GeminiProvider", () => {
     // WHEN the provider sends the message
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: Array<Record<string, unknown>>;
-    }>;
+    const contents = lastStreamParams!.contents;
 
     // THEN the tool result Contents are ordered by function response, media, and text
     expect(contents.slice(2)).toEqual([
@@ -1096,10 +1106,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(toolResultWithAudio("audio/mpeg", "QUJDREVG"));
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: Array<Record<string, unknown>>;
-    }>;
+    const contents = lastStreamParams!.contents;
     // user, model(functionCall), user(functionResponse), user(audio inlineData)
     expect(contents).toHaveLength(4);
     expect(contents[2].parts[0]).toMatchObject({
@@ -1118,7 +1125,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(toolResultWithAudio("audio/x-m4a", "QUJDREVG"));
 
-    const contents = lastStreamParams!.contents as Array<{ parts: unknown[] }>;
+    const contents = lastStreamParams!.contents;
     expect(contents).toHaveLength(3); // no separate media Content
   });
 
@@ -1166,13 +1173,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: Array<{
-        functionCall?: unknown;
-        thoughtSignature?: string;
-      }>;
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents[1].parts).toEqual([
       {
         functionCall: {
@@ -1221,13 +1222,7 @@ describe("GeminiProvider", () => {
       { config: { model: "models/gemini-3.1-pro-preview" } },
     );
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: Array<{
-        functionCall?: unknown;
-        thoughtSignature?: string;
-      }>;
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents[1].parts).toEqual([
       {
         functionCall: {
@@ -1267,10 +1262,7 @@ describe("GeminiProvider", () => {
       },
     ]);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents[1].parts).toEqual([
       {
         functionCall: {
@@ -1302,10 +1294,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents[0].parts[0]).toEqual({
       functionResponse: {
         name: "unknown_id",
@@ -1339,10 +1328,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents).toHaveLength(1);
     expect(contents[0].parts).toHaveLength(2);
     expect(contents[0].parts[0]).toEqual({ text: "What is this?" });
@@ -1380,10 +1366,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents[0].parts).toHaveLength(2);
     expect(contents[0].parts[1]).toEqual({
       inlineData: { mimeType: "audio/mp3", data: "QUJDREVG" },
@@ -1409,9 +1392,7 @@ describe("GeminiProvider", () => {
           ],
         },
       ]);
-      const contents = lastStreamParams!.contents as Array<{
-        parts: unknown[];
-      }>;
+      const contents = lastStreamParams!.contents;
       expect(contents[0].parts[0]).toEqual({
         inlineData: { mimeType: mime, data: "QUJDREVG" },
       });
@@ -1437,12 +1418,10 @@ describe("GeminiProvider", () => {
           ],
         },
       ]);
-      const parts = (
-        lastStreamParams!.contents as Array<{ parts: unknown[] }>
-      )[0].parts;
+      const parts = lastStreamParams!.contents[0].parts;
       expect(parts[0]).toHaveProperty("text");
       expect(parts[0]).not.toHaveProperty("inlineData");
-      expect((parts[0] as { text: string }).text).toContain("memo.m4a");
+      expect(parts[0].text).toContain("memo.m4a");
     }
   });
 
@@ -1468,11 +1447,10 @@ describe("GeminiProvider", () => {
       },
     ]);
 
-    const parts = (lastStreamParams!.contents as Array<{ parts: unknown[] }>)[0]
-      .parts;
+    const parts = lastStreamParams!.contents[0].parts;
     expect(parts[0]).not.toHaveProperty("inlineData");
-    expect((parts[0] as { text: string }).text).toContain("too large");
-    expect((parts[0] as { text: string }).text).toContain("long.mp3");
+    expect(parts[0].text).toContain("too large");
+    expect(parts[0].text).toContain("long.mp3");
   });
 
   // -----------------------------------------------------------------------
@@ -1486,7 +1464,7 @@ describe("GeminiProvider", () => {
       { config: { max_tokens: 64000 } },
     );
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.maxOutputTokens).toBe(64000);
   });
 
@@ -1504,8 +1482,9 @@ describe("GeminiProvider", () => {
 
     // The provider wraps the signal via createStreamTimeout, so the API
     // receives a different AbortSignal linked to the external one.
-    const config = lastStreamParams!.config as Record<string, unknown>;
-    const apiSignal = config.abortSignal as AbortSignal;
+    const config = lastStreamParams!.config;
+    const apiSignal = config.abortSignal;
+    assert(apiSignal, "Expected an API abort signal");
     expect(apiSignal).toBeInstanceOf(AbortSignal);
     // When the caller hasn't aborted, the API signal should also be non-aborted.
     expect(apiSignal.aborted).toBe(false);
@@ -1523,8 +1502,9 @@ describe("GeminiProvider", () => {
 
     // When the caller's signal is already aborted, createStreamTimeout
     // immediately aborts the internal signal — proving the linkage.
-    const config = lastStreamParams!.config as Record<string, unknown>;
-    const apiSignal = config.abortSignal as AbortSignal;
+    const config = lastStreamParams!.config;
+    const apiSignal = config.abortSignal;
+    assert(apiSignal, "Expected an API abort signal");
     expect(apiSignal.aborted).toBe(true);
   });
 
@@ -1550,10 +1530,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents).toHaveLength(1);
     // Only the text part, no thinking part
     expect(contents[0].parts).toHaveLength(1);
@@ -1582,10 +1559,7 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     // The assistant message with only thinking should be filtered out
     expect(contents).toHaveLength(1);
     expect(contents[0].role).toBe("user");
@@ -1890,10 +1864,7 @@ describe("GeminiProvider", () => {
     ]);
 
     expect(lastStreamParams!.model).toBe("gemini-3-flash-preview");
-    const contents = lastStreamParams!.contents as Array<{
-      role: string;
-      parts: unknown[];
-    }>;
+    const contents = lastStreamParams!.contents;
     expect(contents).toHaveLength(1);
     expect(contents[0]).toEqual({
       role: "user",
@@ -1928,7 +1899,7 @@ describe("GeminiProvider", () => {
       { role: "user", content: [{ type: "text", text: "Hi" }] },
     ]);
 
-    const config = lastStreamParams!.config as Record<string, unknown>;
+    const config = lastStreamParams!.config;
     expect(config.tools).toBeUndefined();
   });
 

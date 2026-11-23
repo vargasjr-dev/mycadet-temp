@@ -33,7 +33,7 @@ function makeSignal(
   };
 }
 
-const CHANNELS: NotificationChannel[] = ["cadet" as NotificationChannel];
+const CHANNELS: NotificationChannel[] = ["cadet"];
 
 // ── activity.failed rendering ─────────────────────────────────────────
 
@@ -187,10 +187,7 @@ describe("composeFallbackCopy honors requestedMessage / requestedTitle", () => {
   });
 
   test("populates copy for all requested channels", () => {
-    const channels = [
-      "cadet" as NotificationChannel,
-      "telegram" as NotificationChannel,
-    ];
+    const channels: NotificationChannel[] = ["cadet", "telegram"];
     const signal = makeSignal({
       contextPayload: {
         requestedMessage: "Multi-channel test",

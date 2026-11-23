@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 useMemorySecureKeys();
@@ -185,7 +186,7 @@ describe("invite redeem relay routes", () => {
     });
 
     const res = await handleRedeemInvite(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body.ok).toBe(true);
@@ -226,7 +227,7 @@ describe("invite redeem relay routes", () => {
     });
 
     const res = await handleRedeemInvite(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body).toEqual({
@@ -421,7 +422,7 @@ describe("POST /v1/contacts/invites/:id/call", () => {
       friendName: "Alice",
       guardianName: "Guardian Label",
     });
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body.ok).toBe(true);
@@ -437,7 +438,7 @@ describe("POST /v1/contacts/invites/:id/call", () => {
     // The gateway row is the lifecycle authority and supplies the call fields;
     // the daemon has no invite store to fall back on.
     const res = await handleTriggerInviteCall({});
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(400);
     expect(body.ok).toBe(false);
@@ -476,7 +477,7 @@ describe("POST /v1/contacts/invites/:id/call", () => {
     };
 
     const res = await handleTriggerInviteCall({ phoneNumber: "+15551234567" });
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(400);
     expect(body.error).toBe("phone_number must be in E.164 format");

@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 const _conversationMocks = new Map<string, unknown>();
@@ -125,7 +127,7 @@ describe("Telegram inbound message seen signals", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.duplicate).toBe(false);
@@ -174,7 +176,7 @@ describe("Telegram inbound message seen signals", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.duplicate).toBe(false);
@@ -199,7 +201,7 @@ describe("Telegram inbound message seen signals", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.duplicate).toBe(false);
@@ -285,7 +287,7 @@ describe("Telegram callback seen signals", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
     expect(body.approval).toBeDefined();
@@ -365,7 +367,7 @@ describe("non-Telegram channel filtering", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
 

@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
 
+const messageIdSchema = z.string();
 const sentMessages: Record<string, unknown>[] = [];
 const sentOptions: unknown[] = [];
 let mockHasClient = false;
@@ -115,7 +118,7 @@ describe("HostCuProxy", () => {
       expect(sent.reasoning).toBe("Clicking the button");
       expect(typeof sent.requestId).toBe("string");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.processObservation(requestId, {
@@ -142,7 +145,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.processObservation(requestId, {
         executionError: "Element not found",
@@ -166,7 +169,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.processObservation(requestId, {
         axTree: "Button [1]",
@@ -213,7 +216,7 @@ describe("HostCuProxy", () => {
       );
       const sent = sentMessages[0];
 
-      proxy.processObservation(sent.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         axTree: "Button [1]",
         executionResult: "Clicked element 42",
         timings: { total: 420, axWalk: 120, capture: 240 },
@@ -258,11 +261,11 @@ describe("HostCuProxy", () => {
       const first = sentMessages[0];
       const second = sentMessages[1];
 
-      proxy.processObservation(second.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(second.requestId), {
         axTree: "Field [2]",
         timings: { total: 200 },
       });
-      proxy.processObservation(first.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(first.requestId), {
         axTree: "Button [1]",
         timings: { total: 400 },
       });
@@ -297,7 +300,7 @@ describe("HostCuProxy", () => {
       );
       const sent = sentMessages[0];
 
-      proxy.processObservation(sent.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         axTree: "Button [1]",
         executionResult: "Clicked element 7",
       });
@@ -332,7 +335,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       // Resolve to avoid test hanging
@@ -360,7 +363,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       controller.abort();
@@ -385,7 +388,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
       await resultPromise;
@@ -464,7 +467,9 @@ describe("HostCuProxy", () => {
       expect(sentMessages).toHaveLength(1); // Message was sent
 
       const sent = sentMessages[0];
-      proxy.processObservation(sent.requestId as string, { axTree: "screen" });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "screen",
+      });
 
       const result = await resultPromise;
       expect(result.isError).toBe(false);
@@ -575,7 +580,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "Button [1]",
       });
       await p1;
@@ -589,7 +594,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "Button [1]",
         // No axDiff — screen unchanged
       });
@@ -607,7 +612,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent3 = sentMessages[2];
-      proxy.processObservation(sent3.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent3.requestId), {
         axTree: "Button [1]",
       });
       const result3 = await p3;
@@ -629,7 +634,7 @@ describe("HostCuProxy", () => {
         1,
       );
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "Button [1]",
         // No axDiff on first observation — this is normal, not unchanged
       });
@@ -644,8 +649,8 @@ describe("HostCuProxy", () => {
     ) {
       const pending = proxy.request(toolName, input, "session-1", step);
       proxy.recordAction(toolName, input);
-      const sent = sentMessages[step - 1] as Record<string, unknown>;
-      proxy.processObservation(sent.requestId as string, {
+      const sent = sentMessages[step - 1];
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         axTree: "Button [1]",
       });
       return pending;
@@ -692,10 +697,10 @@ describe("HostCuProxy", () => {
       const click = sentMessages[1];
       const observe = sentMessages[2];
 
-      proxy.processObservation(observe.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(observe.requestId), {
         axTree: "Button [1]",
       });
-      proxy.processObservation(click.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(click.requestId), {
         axTree: "Button [1]",
       });
 
@@ -735,7 +740,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "Button [1]",
       });
       await p1;
@@ -749,7 +754,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_wait", { duration_ms: 2000 });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "Button [1]",
         // No axDiff — screen unchanged, but that's expected after wait
       });
@@ -769,7 +774,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "TextField [1]",
       });
       await p1;
@@ -784,7 +789,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_key", { key: "cmd+a" });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "TextField [1]",
         // No axDiff — selection change is invisible in the AX tree
       });
@@ -817,7 +822,7 @@ describe("HostCuProxy", () => {
         );
         proxy.recordAction("computer_use_click", { element_id: 1 });
         const sent1 = sentMessages[0];
-        proxy.processObservation(sent1.requestId as string, {
+        proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
           axTree: "TextField [1]",
         });
         await p1;
@@ -830,7 +835,7 @@ describe("HostCuProxy", () => {
         );
         proxy.recordAction("computer_use_key", { key: variant });
         const sent2 = sentMessages[1];
-        proxy.processObservation(sent2.requestId as string, {
+        proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
           axTree: "TextField [1]",
           // No axDiff — invisible-by-design change
         });
@@ -852,7 +857,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "TextField [1]",
       });
       await p1;
@@ -866,7 +871,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "TextField [1]",
       });
       await p2;
@@ -881,7 +886,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_key", { key: "cmd+a" });
       const sent3 = sentMessages[2];
-      proxy.processObservation(sent3.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent3.requestId), {
         axTree: "TextField [1]",
       });
       await p3;
@@ -897,7 +902,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent4 = sentMessages[3];
-      proxy.processObservation(sent4.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent4.requestId), {
         axTree: "TextField [1]",
       });
       const result4 = await p4;
@@ -917,7 +922,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "Button [1]",
       });
       await p1;
@@ -931,7 +936,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_key", { key: "enter" });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "Button [1]",
       });
       const result2 = await p2;
@@ -951,7 +956,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "Button [1]",
       });
       await p1;
@@ -964,7 +969,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "Button [1]",
       });
       const result2 = await p2;
@@ -1074,7 +1079,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent1 = sentMessages[0];
-      proxy.processObservation(sent1.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "Button [1]",
       });
       await p1;
@@ -1088,7 +1093,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 1 });
       const sent2 = sentMessages[1];
-      proxy.processObservation(sent2.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "Button [1]",
       });
       await p2;
@@ -1103,7 +1108,7 @@ describe("HostCuProxy", () => {
       );
       proxy.recordAction("computer_use_click", { element_id: 2 });
       const sent3 = sentMessages[2];
-      proxy.processObservation(sent3.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent3.requestId), {
         axTree: "TextField [1]",
         axDiff: "+ TextField [1]\n- Button [1]",
       });
@@ -1393,7 +1398,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.dispose();
@@ -1421,7 +1426,7 @@ describe("HostCuProxy", () => {
       p2.catch(() => {}); // Expected rejection on dispose
 
       const requestIds = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => m.requestId as string,
+        (m) => messageIdSchema.parse(m.requestId),
       );
       expect(requestIds).toHaveLength(2);
 
@@ -1430,9 +1435,7 @@ describe("HostCuProxy", () => {
       // After the 2 request messages, dispose should have sent 2 cancel messages
       const cancelMessages = sentMessages
         .slice(2)
-        .filter(
-          (m) => (m as Record<string, unknown>).type === "host_cu_cancel",
-        ) as Array<Record<string, unknown>>;
+        .filter((m) => m.type === "host_cu_cancel");
       expect(cancelMessages).toHaveLength(2);
       expect(cancelMessages.map((m) => m.requestId)).toContain(requestIds[0]);
       expect(cancelMessages.map((m) => m.requestId)).toContain(requestIds[1]);
@@ -1449,7 +1452,7 @@ describe("HostCuProxy", () => {
         "session-1",
         1,
       );
-      const requestId = sentMessages[0].requestId as string;
+      const requestId = messageIdSchema.parse(sentMessages[0].requestId);
       proxy.processObservation(requestId, { axTree: "Button [1]" });
       await resultPromise;
 
@@ -1460,9 +1463,7 @@ describe("HostCuProxy", () => {
       expect(proxy.endTask("session-1")).toBe(0);
       expect(proxy.sourceId).toBe(sourceId);
       expect(proxy.resetGeneration).toBe(1);
-      const cancels = sentMessages.filter(
-        (m) => (m as Record<string, unknown>).type === "host_cu_cancel",
-      ) as Array<Record<string, unknown>>;
+      const cancels = sentMessages.filter((m) => m.type === "host_cu_cancel");
       expect(cancels).toHaveLength(1);
       expect(cancels[0].conversationId).toBe("session-1");
       expect(cancels[0].requestId).not.toBe(requestId);
@@ -1470,9 +1471,7 @@ describe("HostCuProxy", () => {
       expect(proxy.endTask("session-1")).toBe(1);
       expect(proxy.resetGeneration).toBe(2);
       expect(
-        sentMessages.filter(
-          (m) => (m as Record<string, unknown>).type === "host_cu_cancel",
-        ),
+        sentMessages.filter((m) => m.type === "host_cu_cancel"),
       ).toHaveLength(1);
     });
   });
@@ -1492,7 +1491,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
       const result = await resultPromise;
@@ -1552,7 +1551,7 @@ describe("HostCuProxy", () => {
       expect(spy.addCalls).toEqual(["abort"]);
       expect(spy.removeCalls).toEqual([]);
 
-      const requestId = sentMessages[0].requestId as string;
+      const requestId = messageIdSchema.parse(sentMessages[0].requestId);
       proxy.processObservation(requestId, { axTree: "Button [1]" });
       await resultPromise;
 
@@ -1585,7 +1584,7 @@ describe("HostCuProxy", () => {
         expect(spy.addCalls).toEqual(["abort"]);
         expect(spy.removeCalls).toEqual([]);
 
-        const requestId = sentMessages[0].requestId as string;
+        const requestId = messageIdSchema.parse(sentMessages[0].requestId);
         expect(pendingInteractions.get(requestId)).toBeDefined();
 
         // Advance past the 60s internal timeout.
@@ -1627,7 +1626,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
 
@@ -1646,7 +1645,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.dispose();
 
@@ -1667,7 +1666,7 @@ describe("HostCuProxy", () => {
       );
 
       const sent = sentMessages[0];
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.processObservation(requestId, { axTree: "Button [1]" });
 
@@ -1784,7 +1783,9 @@ describe("HostCuProxy", () => {
       expect(sent.type).toBe("host_cu_request");
       expect(sent.targetClientId).toBe("cu-client");
 
-      proxy.processObservation(sent.requestId as string, { axTree: "ok" });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "ok",
+      });
       const result = await resultPromise;
       expect(result.isError).toBe(false);
     });
@@ -1884,7 +1885,9 @@ describe("HostCuProxy", () => {
       expect(sent.type).toBe("host_cu_request");
       expect(sent.targetClientId).toBeUndefined();
 
-      proxy.processObservation(sent.requestId as string, { axTree: "ok" });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "ok",
+      });
       const result = await resultPromise;
       expect(result.isError).toBe(false);
     });

@@ -6,6 +6,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // Real flag cache seeded to mirror the former module mock: every flag off
 // (the admission floor is unconditional now).
 
@@ -133,7 +135,7 @@ describe("inbound trust verdict → TrustContext", () => {
         admissionPolicy: "trusted_contacts",
       }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.denied).toBeUndefined();
 
@@ -154,7 +156,7 @@ describe("inbound trust verdict → TrustContext", () => {
         admissionPolicy: "trusted_contacts",
       }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.denied).toBeUndefined();
 
@@ -169,7 +171,7 @@ describe("inbound trust verdict → TrustContext", () => {
         admissionPolicy: "guardian_only",
       }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.denied).toBe(true);
     expect(body.reason).toBe("admission_policy_guardian_only");
@@ -187,7 +189,7 @@ describe("inbound trust verdict → TrustContext", () => {
         admissionPolicy: "strangers",
       }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.denied).toBeUndefined();
 
@@ -205,7 +207,7 @@ describe("inbound trust verdict → TrustContext", () => {
         admissionPolicy: "trusted_contacts",
       }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.denied).toBe(true);
     expect(body.reason).toBe("not_a_member");
@@ -234,7 +236,7 @@ describe("inbound trust verdict → TrustContext", () => {
         },
       ),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 300));

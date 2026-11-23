@@ -210,11 +210,14 @@ describe("crash-between-migrations: consistent state on re-run", () => {
     // Since the checkpoint exists (even as 'started'), the migration was skipped.
     // The job's deferrals column should still be 0 (migration didn't run).
     const job = raw
-      .query(`SELECT * FROM memory_jobs WHERE id = 'job-1'`)
-      .get() as {
-      attempts: number;
-      deferrals: number;
-    } | null;
+      .query<
+        {
+          attempts: number;
+          deferrals: number;
+        },
+        []
+      >(`SELECT * FROM memory_jobs WHERE id = 'job-1'`)
+      .get();
     expect(job).toBeTruthy();
     // Migration was skipped because the checkpoint key exists.
     expect(job!.deferrals).toBe(0);
@@ -248,12 +251,15 @@ describe("crash-between-migrations: consistent state on re-run", () => {
 
     // Legacy embed_segment job should have deferrals = 3, attempts = 0.
     const legacyJob = raw
-      .query(`SELECT * FROM memory_jobs WHERE id = 'job-legacy'`)
-      .get() as {
-      attempts: number;
-      deferrals: number;
-      last_error: string | null;
-    } | null;
+      .query<
+        {
+          attempts: number;
+          deferrals: number;
+          last_error: string | null;
+        },
+        []
+      >(`SELECT * FROM memory_jobs WHERE id = 'job-legacy'`)
+      .get();
     expect(legacyJob).toBeTruthy();
     expect(legacyJob!.deferrals).toBe(3);
     expect(legacyJob!.attempts).toBe(0);
@@ -266,10 +272,11 @@ describe("crash-between-migrations: consistent state on re-run", () => {
     // The last_error check: the migration doesn't filter by last_error, so embed_item also moves.
     // Verify completion checkpoint is written.
     const checkpoint = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_job_deferrals'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_job_deferrals'`)
+      .get();
     expect(checkpoint).toBeTruthy();
     expect(checkpoint!.value).toBe("1");
   });
@@ -292,25 +299,27 @@ describe("crash-between-migrations: consistent state on re-run", () => {
 
     // Snapshot state after first run.
     const after1 = raw
-      .query(
-        `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem'`,
-      )
-      .get() as {
-      attempts: number;
-      deferrals: number;
-    };
+      .query<
+        {
+          attempts: number;
+          deferrals: number;
+        },
+        []
+      >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem'`)
+      .get()!;
 
     // Second run — should be a no-op (checkpoint already written).
     migrateJobDeferrals(db);
 
     const after2 = raw
-      .query(
-        `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem'`,
-      )
-      .get() as {
-      attempts: number;
-      deferrals: number;
-    };
+      .query<
+        {
+          attempts: number;
+          deferrals: number;
+        },
+        []
+      >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem'`)
+      .get()!;
 
     expect(after1.deferrals).toBe(4);
     expect(after1.attempts).toBe(0);
@@ -369,16 +378,19 @@ describe("crash-between-migrations: consistent state on re-run", () => {
 
     // Duplicates should have been merged into a single row.
     const relations = raw
-      .query(`SELECT * FROM memory_entity_relations ORDER BY id`)
-      .all() as Array<{
-      id: string;
-      source_entity_id: string;
-      target_entity_id: string;
-      relation: string;
-      first_seen_at: number;
-      last_seen_at: number;
-      evidence: string | null;
-    }>;
+      .query<
+        {
+          id: string;
+          source_entity_id: string;
+          target_entity_id: string;
+          relation: string;
+          first_seen_at: number;
+          last_seen_at: number;
+          evidence: string | null;
+        },
+        []
+      >(`SELECT * FROM memory_entity_relations ORDER BY id`)
+      .all();
     expect(relations).toHaveLength(1);
     expect(relations[0].source_entity_id).toBe("e1");
     expect(relations[0].target_entity_id).toBe("e2");
@@ -391,10 +403,11 @@ describe("crash-between-migrations: consistent state on re-run", () => {
 
     // Completion checkpoint must be written.
     const cp = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_entity_relations_dedup_v1'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_entity_relations_dedup_v1'`)
+      .get();
     expect(cp).toBeTruthy();
     expect(cp!.value).toBe("1");
   });
@@ -421,11 +434,14 @@ describe("crash-between-migrations: consistent state on re-run", () => {
       `INSERT INTO memory_entity_relations VALUES ('r2', 'e1', 'e2', 'knows', 'evidence', ${now - 1000}, ${now})`,
     );
 
-    const countBefore = (
-      raw.query(`SELECT COUNT(*) AS c FROM memory_entity_relations`).get() as {
-        c: number;
-      }
-    ).c;
+    const countBefore = raw
+      .query<
+        {
+          c: number;
+        },
+        []
+      >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+      .get()!.c;
     expect(countBefore).toBe(2);
 
     // Install a trigger that raises an error on the first INSERT, causing the
@@ -450,11 +466,14 @@ describe("crash-between-migrations: consistent state on re-run", () => {
     raw.exec(`DROP TRIGGER IF EXISTS fail_on_insert`);
 
     // After rollback: row count must be unchanged (DELETE was rolled back).
-    const countAfter = (
-      raw.query(`SELECT COUNT(*) AS c FROM memory_entity_relations`).get() as {
-        c: number;
-      }
-    ).c;
+    const countAfter = raw
+      .query<
+        {
+          c: number;
+        },
+        []
+      >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+      .get()!.c;
     expect(countAfter).toBe(2);
 
     // No checkpoint should have been written (COMMIT never executed).
@@ -497,21 +516,26 @@ describe("crash-between-migrations: consistent state on re-run", () => {
 
     // Second migration should have run and deduplicated.
     const relations = raw
-      .query(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
-      .all() as Array<{ c: number }>;
+      .query<
+        { c: number },
+        []
+      >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+      .all();
     expect(relations[0].c).toBe(1);
 
     // Both checkpoints should now exist.
     const cp1 = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_job_deferrals'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_job_deferrals'`)
+      .get();
     const cp2 = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_entity_relations_dedup_v1'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_entity_relations_dedup_v1'`)
+      .get();
 
     expect(cp1!.value).toBe("1");
     expect(cp2!.value).toBe("1");
@@ -638,13 +662,12 @@ describe("schema-drift recovery: migration handles unexpected schema state", () 
 
     // Verify old schema has column-level UNIQUE.
     const ddlBefore =
-      (
-        raw
-          .query(
-            `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`,
-          )
-          .get() as { sql: string } | null
-      )?.sql ?? "";
+      raw
+        .query<
+          { sql: string },
+          []
+        >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`)
+        .get()?.sql ?? "";
     expect(ddlBefore).toMatch(/fingerprint\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i);
 
     // Run migration.
@@ -652,32 +675,35 @@ describe("schema-drift recovery: migration handles unexpected schema state", () 
 
     // Checkpoint should be written.
     const cp = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`)
+      .get();
     expect(cp).toBeTruthy();
     expect(cp!.value).toBe("1");
 
     // The new DDL should NOT have column-level UNIQUE on fingerprint.
     const ddlAfter =
-      (
-        raw
-          .query(
-            `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`,
-          )
-          .get() as { sql: string } | null
-      )?.sql ?? "";
+      raw
+        .query<
+          { sql: string },
+          []
+        >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`)
+        .get()?.sql ?? "";
     expect(ddlAfter).not.toMatch(/fingerprint\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i);
 
     // Existing rows should still be present and readable.
     const items = raw
-      .query(`SELECT id, fingerprint, scope_id FROM memory_items ORDER BY id`)
-      .all() as Array<{
-      id: string;
-      fingerprint: string;
-      scope_id: string;
-    }>;
+      .query<
+        {
+          id: string;
+          fingerprint: string;
+          scope_id: string;
+        },
+        []
+      >(`SELECT id, fingerprint, scope_id FROM memory_items ORDER BY id`)
+      .all();
     expect(items).toHaveLength(2);
     expect(items[0].id).toBe("item-1");
     expect(items[1].id).toBe("item-2");
@@ -720,10 +746,11 @@ describe("schema-drift recovery: migration handles unexpected schema state", () 
 
     // Checkpoint should be written (short-circuit path).
     const cp = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`)
+      .get();
     expect(cp).toBeTruthy();
     expect(cp!.value).toBe("1");
 
@@ -766,15 +793,15 @@ describe("schema-drift recovery: migration handles unexpected schema state", () 
 
     // First run.
     migrateMemoryItemsFingerprintScopeUnique(db);
-    const countAfter1 = (
-      raw.query(`SELECT COUNT(*) AS c FROM memory_items`).get() as { c: number }
-    ).c;
+    const countAfter1 = raw
+      .query<{ c: number }, []>(`SELECT COUNT(*) AS c FROM memory_items`)
+      .get()!.c;
 
     // Second run — must be idempotent.
     migrateMemoryItemsFingerprintScopeUnique(db);
-    const countAfter2 = (
-      raw.query(`SELECT COUNT(*) AS c FROM memory_items`).get() as { c: number }
-    ).c;
+    const countAfter2 = raw
+      .query<{ c: number }, []>(`SELECT COUNT(*) AS c FROM memory_items`)
+      .get()!.c;
 
     expect(countAfter1).toBe(1);
     expect(countAfter2).toBe(1);
@@ -849,20 +876,22 @@ describe("schema-drift recovery: migration handles unexpected schema state", () 
 
       // After recovery: checkpoint should be written and original table migrated.
       const cpAfterRecovery = raw
-        .query(
-          `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`,
-        )
-        .get() as { value: string } | null;
+        .query<
+          { value: string },
+          []
+        >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`)
+        .get();
       expect(cpAfterRecovery).toBeTruthy();
       expect(cpAfterRecovery!.value).toBe("1");
     } else {
       // If the migration succeeded despite the stale table (e.g., CREATE TABLE IF NOT EXISTS
       // silently skipped), the checkpoint should be written.
       const cp = raw
-        .query(
-          `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`,
-        )
-        .get() as { value: string } | null;
+        .query<
+          { value: string },
+          []
+        >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_items_fingerprint_scope_unique_v1'`)
+        .get();
       expect(cp).toBeTruthy();
     }
   });
@@ -962,28 +991,35 @@ describe("schema-drift recovery: migration handles unexpected schema state", () 
 
     migrateMemoryEntityRelationDedup(db);
 
-    const count = (
-      raw.query(`SELECT COUNT(*) AS c FROM memory_entity_relations`).get() as {
-        c: number;
-      }
-    ).c;
+    const count = raw
+      .query<
+        {
+          c: number;
+        },
+        []
+      >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+      .get()!.c;
     // All 3 rows are distinct and should survive the dedup.
     expect(count).toBe(3);
 
     const cp = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_entity_relations_dedup_v1'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'migration_memory_entity_relations_dedup_v1'`)
+      .get();
     expect(cp!.value).toBe("1");
 
     // Second run — must be a no-op (checkpoint exists).
     migrateMemoryEntityRelationDedup(db);
-    const countAfter2 = (
-      raw.query(`SELECT COUNT(*) AS c FROM memory_entity_relations`).get() as {
-        c: number;
-      }
-    ).c;
+    const countAfter2 = raw
+      .query<
+        {
+          c: number;
+        },
+        []
+      >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+      .get()!.c;
     expect(countAfter2).toBe(3);
   });
 });
@@ -1082,10 +1118,11 @@ describe("rollbackMemoryMigration", () => {
 
     // Checkpoint for the migration at target version should still exist.
     const cp1000 = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'step:test_rollback_v1000'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'step:test_rollback_v1000'`)
+      .get();
     expect(cp1000).toBeTruthy();
     expect(cp1000!.value).toBe("1");
   });
@@ -1229,17 +1266,21 @@ describe("rollbackMemoryMigration", () => {
     // the DELETE FROM memory_checkpoints line. The 'rolling_back' marker was
     // written before down() was called and is preserved.
     const cp = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'step:test_fail_down_v3000'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'step:test_fail_down_v3000'`)
+      .get();
     expect(cp).toBeTruthy();
     expect(cp!.value).toBe("rolling_back");
 
     // The data should be unchanged — the RAISE(ABORT) trigger aborted the statement.
     const row = raw
-      .query(`SELECT value FROM test_rollback_data WHERE id = 'row-1'`)
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM test_rollback_data WHERE id = 'row-1'`)
+      .get();
     expect(row).toBeTruthy();
     expect(row!.value).toBe("original");
   });
@@ -1299,8 +1340,11 @@ describe("rollbackMemoryMigration", () => {
 
     // Verify the down() function's changes were applied.
     const row = raw
-      .query(`SELECT value FROM test_self_txn_data WHERE id = 'row-1'`)
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM test_self_txn_data WHERE id = 'row-1'`)
+      .get();
     expect(row).toBeTruthy();
     expect(row!.value).toBe("original");
 
@@ -1368,15 +1412,17 @@ describe("rollbackMemoryMigration", () => {
 
     // Both checkpoints should remain.
     const cp4000 = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'step:test_noop_v4000'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'step:test_noop_v4000'`)
+      .get();
     const cp4001 = raw
-      .query(
-        `SELECT value FROM memory_checkpoints WHERE key = 'step:test_noop_v4001'`,
-      )
-      .get() as { value: string } | null;
+      .query<
+        { value: string },
+        []
+      >(`SELECT value FROM memory_checkpoints WHERE key = 'step:test_noop_v4001'`)
+      .get();
     expect(cp4000!.value).toBe("1");
     expect(cp4001!.value).toBe("1");
 
@@ -1483,10 +1529,11 @@ describe("memory migration down() functions", () => {
 
       // Snapshot pre-migration state.
       const before = raw
-        .query(
-          `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-rt'`,
-        )
-        .get() as { attempts: number; deferrals: number };
+        .query<
+          { attempts: number; deferrals: number },
+          []
+        >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-rt'`)
+        .get()!;
       expect(before.attempts).toBe(3);
       expect(before.deferrals).toBe(0);
 
@@ -1494,10 +1541,11 @@ describe("memory migration down() functions", () => {
       migrateJobDeferrals(db);
 
       const afterForward = raw
-        .query(
-          `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-rt'`,
-        )
-        .get() as { attempts: number; deferrals: number };
+        .query<
+          { attempts: number; deferrals: number },
+          []
+        >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-rt'`)
+        .get()!;
       expect(afterForward.attempts).toBe(0);
       expect(afterForward.deferrals).toBe(3);
 
@@ -1505,10 +1553,11 @@ describe("memory migration down() functions", () => {
       downJobDeferrals(db);
 
       const afterDown = raw
-        .query(
-          `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-rt'`,
-        )
-        .get() as { attempts: number; deferrals: number };
+        .query<
+          { attempts: number; deferrals: number },
+          []
+        >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-rt'`)
+        .get()!;
       expect(afterDown.attempts).toBe(3);
       expect(afterDown.deferrals).toBe(0);
     });
@@ -1527,18 +1576,20 @@ describe("memory migration down() functions", () => {
 
       downJobDeferrals(db);
       const after1 = raw
-        .query(
-          `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem2'`,
-        )
-        .get() as { attempts: number; deferrals: number };
+        .query<
+          { attempts: number; deferrals: number },
+          []
+        >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem2'`)
+        .get()!;
 
       // Second call — should be a no-op (deferrals already 0).
       downJobDeferrals(db);
       const after2 = raw
-        .query(
-          `SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem2'`,
-        )
-        .get() as { attempts: number; deferrals: number };
+        .query<
+          { attempts: number; deferrals: number },
+          []
+        >(`SELECT attempts, deferrals FROM memory_jobs WHERE id = 'job-idem2'`)
+        .get()!;
 
       expect(after1.attempts).toBe(5);
       expect(after1.deferrals).toBe(0);
@@ -1560,19 +1611,21 @@ describe("memory migration down() functions", () => {
         `INSERT INTO memory_entity_relations VALUES ('r1', 'e1', 'e2', 'knows', 'ev', ${now}, ${now})`,
       );
 
-      const countBefore = (
-        raw
-          .query(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
-          .get() as { c: number }
-      ).c;
+      const countBefore = raw
+        .query<
+          { c: number },
+          []
+        >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+        .get()!.c;
 
       downMemoryEntityRelationDedup(db);
 
-      const countAfter = (
-        raw
-          .query(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
-          .get() as { c: number }
-      ).c;
+      const countAfter = raw
+        .query<
+          { c: number },
+          []
+        >(`SELECT COUNT(*) AS c FROM memory_entity_relations`)
+        .get()!.c;
       expect(countAfter).toBe(countBefore);
     });
 
@@ -1601,26 +1654,24 @@ describe("memory migration down() functions", () => {
 
       // Old schema has UNIQUE on fingerprint.
       const ddlBefore =
-        (
-          raw
-            .query(
-              `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`,
-            )
-            .get() as { sql: string }
-        )?.sql ?? "";
+        raw
+          .query<
+            { sql: string },
+            []
+          >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`)
+          .get()?.sql ?? "";
       expect(ddlBefore).toMatch(/fingerprint\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i);
 
       // Forward migration: remove column-level UNIQUE.
       migrateMemoryItemsFingerprintScopeUnique(db);
 
       const ddlAfterForward =
-        (
-          raw
-            .query(
-              `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`,
-            )
-            .get() as { sql: string }
-        )?.sql ?? "";
+        raw
+          .query<
+            { sql: string },
+            []
+          >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`)
+          .get()?.sql ?? "";
       expect(ddlAfterForward).not.toMatch(
         /fingerprint\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i,
       );
@@ -1629,13 +1680,12 @@ describe("memory migration down() functions", () => {
       downMemoryItemsFingerprintScopeUnique(db);
 
       const ddlAfterDown =
-        (
-          raw
-            .query(
-              `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`,
-            )
-            .get() as { sql: string }
-        )?.sql ?? "";
+        raw
+          .query<
+            { sql: string },
+            []
+          >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`)
+          .get()?.sql ?? "";
       expect(ddlAfterDown).toMatch(/fingerprint\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i);
 
       // Data preserved.
@@ -1657,13 +1707,12 @@ describe("memory migration down() functions", () => {
       downMemoryItemsFingerprintScopeUnique(db);
 
       const ddl =
-        (
-          raw
-            .query(
-              `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`,
-            )
-            .get() as { sql: string }
-        )?.sql ?? "";
+        raw
+          .query<
+            { sql: string },
+            []
+          >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_items'`)
+          .get()?.sql ?? "";
       expect(ddl).toMatch(/fingerprint\s+TEXT\s+NOT\s+NULL\s+UNIQUE/i);
     });
   });
@@ -1718,16 +1767,22 @@ describe("memory migration down() functions", () => {
       migrateMemoryItemsScopeSaltedFingerprints(db);
 
       const afterForward = raw
-        .query(`SELECT fingerprint FROM memory_items WHERE id = 'item-salt'`)
-        .get() as { fingerprint: string };
+        .query<
+          { fingerprint: string },
+          []
+        >(`SELECT fingerprint FROM memory_items WHERE id = 'item-salt'`)
+        .get()!;
       expect(afterForward.fingerprint).not.toBe(oldFingerprint);
 
       // Down: recompute WITHOUT scope_id prefix (old format).
       downMemoryItemsScopeSaltedFingerprints(db);
 
       const afterDown = raw
-        .query(`SELECT fingerprint FROM memory_items WHERE id = 'item-salt'`)
-        .get() as { fingerprint: string };
+        .query<
+          { fingerprint: string },
+          []
+        >(`SELECT fingerprint FROM memory_items WHERE id = 'item-salt'`)
+        .get()!;
       expect(afterDown.fingerprint).toBe(oldFingerprint);
     });
 
@@ -1758,18 +1813,20 @@ describe("memory migration down() functions", () => {
       `);
 
       downMemoryItemsScopeSaltedFingerprints(db);
-      const fp1 = (
-        raw
-          .query(`SELECT fingerprint FROM memory_items WHERE id = 'item-idem'`)
-          .get() as { fingerprint: string }
-      ).fingerprint;
+      const fp1 = raw
+        .query<
+          { fingerprint: string },
+          []
+        >(`SELECT fingerprint FROM memory_items WHERE id = 'item-idem'`)
+        .get()!.fingerprint;
 
       downMemoryItemsScopeSaltedFingerprints(db);
-      const fp2 = (
-        raw
-          .query(`SELECT fingerprint FROM memory_items WHERE id = 'item-idem'`)
-          .get() as { fingerprint: string }
-      ).fingerprint;
+      const fp2 = raw
+        .query<
+          { fingerprint: string },
+          []
+        >(`SELECT fingerprint FROM memory_items WHERE id = 'item-idem'`)
+        .get()!.fingerprint;
 
       expect(fp1).toBe(fp2);
     });
@@ -1981,18 +2038,21 @@ describe("memory migration down() functions", () => {
       migrateLlmUsageAttribution(db);
 
       const row = raw
-        .query(
+        .query<
+          {
+            call_site: string | null;
+            inference_profile: string | null;
+            inference_profile_source: string | null;
+          },
+          []
+        >(
           /*sql*/ `
           SELECT call_site, inference_profile, inference_profile_source
           FROM llm_usage_events
           WHERE id = 'usage-1'
         `,
         )
-        .get() as {
-        call_site: string | null;
-        inference_profile: string | null;
-        inference_profile_source: string | null;
-      };
+        .get()!;
       expect(row.call_site).toBeNull();
       expect(row.inference_profile).toBeNull();
       expect(row.inference_profile_source).toBeNull();
@@ -2077,18 +2137,20 @@ describe("memory migration down() functions", () => {
       downRenameChannelToCadet(db);
 
       const row = raw
-        .query(
-          `SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd1'`,
-        )
-        .get() as { destination_channel: string };
+        .query<
+          { destination_channel: string },
+          []
+        >(`SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd1'`)
+        .get()!;
       expect(row.destination_channel).toBe("macos");
 
       // Non-cadet values are unchanged.
       const row2 = raw
-        .query(
-          `SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd2'`,
-        )
-        .get() as { destination_channel: string };
+        .query<
+          { destination_channel: string },
+          []
+        >(`SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd2'`)
+        .get()!;
       expect(row2.destination_channel).toBe("sms");
     });
 
@@ -2104,10 +2166,11 @@ describe("memory migration down() functions", () => {
       downRenameChannelToCadet(db);
 
       const row = raw
-        .query(
-          `SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd1'`,
-        )
-        .get() as { destination_channel: string };
+        .query<
+          { destination_channel: string },
+          []
+        >(`SELECT destination_channel FROM guardian_action_deliveries WHERE id = 'd1'`)
+        .get()!;
       expect(row.destination_channel).toBe("macos");
     });
   });
@@ -2233,8 +2296,8 @@ describe("memory migration down() functions", () => {
       downRenameVerificationSessionIdColumn(db);
 
       const columns = raw
-        .query(`PRAGMA table_info(call_sessions)`)
-        .all() as Array<{ name: string }>;
+        .query<{ name: string }, []>(`PRAGMA table_info(call_sessions)`)
+        .all();
       const hasOld = columns.some(
         (c) => c.name === "guardian_verification_session_id",
       );
@@ -2273,18 +2336,27 @@ describe("memory migration down() functions", () => {
       downRenameGuardianVerificationValues(db);
 
       const session = raw
-        .query(`SELECT call_mode FROM call_sessions WHERE id = 's1'`)
-        .get() as { call_mode: string };
+        .query<
+          { call_mode: string },
+          []
+        >(`SELECT call_mode FROM call_sessions WHERE id = 's1'`)
+        .get()!;
       expect(session.call_mode).toBe("guardian_verification");
 
       const event1 = raw
-        .query(`SELECT event_type FROM call_events WHERE id = 'e1'`)
-        .get() as { event_type: string };
+        .query<
+          { event_type: string },
+          []
+        >(`SELECT event_type FROM call_events WHERE id = 'e1'`)
+        .get()!;
       expect(event1.event_type).toBe("guardian_voice_verification_started");
 
       const event2 = raw
-        .query(`SELECT event_type FROM call_events WHERE id = 'e2'`)
-        .get() as { event_type: string };
+        .query<
+          { event_type: string },
+          []
+        >(`SELECT event_type FROM call_events WHERE id = 'e2'`)
+        .get()!;
       expect(event2.event_type).toBe(
         "outbound_guardian_voice_verification_succeeded",
       );
@@ -2343,15 +2415,19 @@ describe("memory migration down() functions", () => {
       downRenameVoiceToPhone(db);
 
       const cc = raw
-        .query(`SELECT type FROM contact_channels WHERE id = 'cc1'`)
-        .get() as { type: string };
+        .query<
+          { type: string },
+          []
+        >(`SELECT type FROM contact_channels WHERE id = 'cc1'`)
+        .get()!;
       expect(cc.type).toBe("voice");
 
       const conv = raw
-        .query(
-          `SELECT origin_channel, origin_interface FROM conversations WHERE id = 'c1'`,
-        )
-        .get() as { origin_channel: string; origin_interface: string };
+        .query<
+          { origin_channel: string; origin_interface: string },
+          []
+        >(`SELECT origin_channel, origin_interface FROM conversations WHERE id = 'c1'`)
+        .get()!;
       expect(conv.origin_channel).toBe("voice");
       expect(conv.origin_interface).toBe("voice");
     });
@@ -2486,9 +2562,14 @@ describe("memory migration down() functions", () => {
       expect(idx).toBeTruthy();
 
       // Verify columns include routing_intent and routing_hints_json.
-      const cols = raw.query(`PRAGMA table_info(reminders)`).all() as Array<{
-        name: string;
-      }>;
+      const cols = raw
+        .query<
+          {
+            name: string;
+          },
+          []
+        >(`PRAGMA table_info(reminders)`)
+        .all();
       const colNames = cols.map((c) => c.name);
       expect(colNames).toContain("routing_intent");
       expect(colNames).toContain("routing_hints_json");
@@ -2571,8 +2652,11 @@ describe("memory migration down() functions", () => {
       expect(provider).toBeTruthy();
 
       const app = raw
-        .query(`SELECT provider_key FROM oauth_apps WHERE id = 'app1'`)
-        .get() as { provider_key: string };
+        .query<
+          { provider_key: string },
+          []
+        >(`SELECT provider_key FROM oauth_apps WHERE id = 'app1'`)
+        .get()!;
       expect(app.provider_key).toBe("integration:gmail");
     });
 
@@ -2671,22 +2755,20 @@ describe("memory migration down() functions", () => {
 
       migrateRenameThreadStartersCheckpointsDown(db);
 
-      const newPrefixCount = (
-        raw
-          .query(
-            `SELECT COUNT(*) AS c FROM memory_checkpoints WHERE key LIKE 'conversation_starters:%'`,
-          )
-          .get() as { c: number }
-      ).c;
+      const newPrefixCount = raw
+        .query<
+          { c: number },
+          []
+        >(`SELECT COUNT(*) AS c FROM memory_checkpoints WHERE key LIKE 'conversation_starters:%'`)
+        .get()!.c;
       expect(newPrefixCount).toBe(0);
 
-      const oldPrefixCount = (
-        raw
-          .query(
-            `SELECT COUNT(*) AS c FROM memory_checkpoints WHERE key LIKE 'thread_starters:%'`,
-          )
-          .get() as { c: number }
-      ).c;
+      const oldPrefixCount = raw
+        .query<
+          { c: number },
+          []
+        >(`SELECT COUNT(*) AS c FROM memory_checkpoints WHERE key LIKE 'thread_starters:%'`)
+        .get()!.c;
       expect(oldPrefixCount).toBe(2);
     });
 
@@ -2727,8 +2809,11 @@ describe("memory migration down() functions", () => {
       downBackfillContactInteractionStats(db);
 
       const contact = raw
-        .query(`SELECT last_interaction FROM contacts WHERE id = 'c1'`)
-        .get() as { last_interaction: number | null };
+        .query<
+          { last_interaction: number | null },
+          []
+        >(`SELECT last_interaction FROM contacts WHERE id = 'c1'`)
+        .get()!;
       expect(contact.last_interaction).toBeNull();
     });
 
@@ -2847,13 +2932,12 @@ describe("memory migration down() functions", () => {
 
       // Check that vector_json is now NOT NULL.
       const ddl =
-        (
-          raw
-            .query(
-              `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_embeddings'`,
-            )
-            .get() as { sql: string }
-        )?.sql ?? "";
+        raw
+          .query<
+            { sql: string },
+            []
+          >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'memory_embeddings'`)
+          .get()?.sql ?? "";
       expect(ddl).toMatch(/vector_json\s+TEXT\s+NOT\s+NULL/i);
 
       // Data with non-null vector_json should be preserved.
@@ -2913,10 +2997,11 @@ describe("memory migration down() functions", () => {
       downBackfillGuardianPrincipalId(db);
 
       const row = raw
-        .query(
-          `SELECT guardian_principal_id FROM channel_guardian_bindings WHERE id = 'b1'`,
-        )
-        .get() as { guardian_principal_id: string | null };
+        .query<
+          { guardian_principal_id: string | null },
+          []
+        >(`SELECT guardian_principal_id FROM channel_guardian_bindings WHERE id = 'b1'`)
+        .get()!;
       expect(row.guardian_principal_id).toBeNull();
     });
 
@@ -2958,20 +3043,22 @@ describe("memory migration down() functions", () => {
 
       // Confirm NOT NULL before down.
       const colBefore = raw
-        .query(
-          `SELECT "notnull" FROM pragma_table_info('channel_guardian_bindings') WHERE name = 'guardian_principal_id'`,
-        )
-        .get() as { notnull: number };
+        .query<
+          { notnull: number },
+          []
+        >(`SELECT "notnull" FROM pragma_table_info('channel_guardian_bindings') WHERE name = 'guardian_principal_id'`)
+        .get()!;
       expect(colBefore.notnull).toBe(1);
 
       downGuardianPrincipalIdNotNull(db);
 
       // After down, should be nullable.
       const colAfter = raw
-        .query(
-          `SELECT "notnull" FROM pragma_table_info('channel_guardian_bindings') WHERE name = 'guardian_principal_id'`,
-        )
-        .get() as { notnull: number };
+        .query<
+          { notnull: number },
+          []
+        >(`SELECT "notnull" FROM pragma_table_info('channel_guardian_bindings') WHERE name = 'guardian_principal_id'`)
+        .get()!;
       expect(colAfter.notnull).toBe(0);
     });
 
@@ -3033,10 +3120,11 @@ describe("memory migration down() functions", () => {
 
       // Verify created_at is now a text ISO 8601 string.
       const req = raw
-        .query(
-          `SELECT created_at, typeof(created_at) AS t FROM canonical_guardian_requests WHERE id = 'r1'`,
-        )
-        .get() as { created_at: string; t: string };
+        .query<
+          { created_at: string; t: string },
+          []
+        >(`SELECT created_at, typeof(created_at) AS t FROM canonical_guardian_requests WHERE id = 'r1'`)
+        .get()!;
       expect(req.t).toBe("text");
       expect(req.created_at).toContain("2023-11-14");
     });
@@ -3108,10 +3196,11 @@ describe("memory migration down() functions", () => {
 
       // Verify TEXT affinity on created_at.
       const colType = raw
-        .query(
-          `SELECT type FROM pragma_table_info('canonical_guardian_requests') WHERE name = 'created_at'`,
-        )
-        .get() as { type: string };
+        .query<
+          { type: string },
+          []
+        >(`SELECT type FROM pragma_table_info('canonical_guardian_requests') WHERE name = 'created_at'`)
+        .get()!;
       expect(colType.type.toUpperCase()).toBe("TEXT");
     });
 

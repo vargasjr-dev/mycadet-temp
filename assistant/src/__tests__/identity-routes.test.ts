@@ -36,6 +36,7 @@ import {
   resolveHatchedAtReadOnly,
   selectHatchedAtFromStats,
 } from "../workspace/hatched-date.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // The real in-process CES socket server: the readiness tests exercise the
 // production client against it.
@@ -163,7 +164,7 @@ describe("identity routes — health endpoint", () => {
       const res = await handleDetailedHealth();
       expect(res.status).toBe(200);
 
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
       expect(body.status).toBe("healthy");
       expect(body.timestamp).toBeDefined();
       expect(body.version).toBeDefined();
@@ -181,7 +182,7 @@ describe("identity routes — health endpoint", () => {
 
       // Profiler should either be absent or show enabled: false
       if ("profiler" in body) {
-        const profiler = body.profiler as Record<string, unknown>;
+        const profiler = jsonObjectSchema.parse(body.profiler);
         expect(profiler.enabled).toBe(false);
         expect(profiler.mode).toBeNull();
         expect(profiler.runId).toBeNull();
@@ -192,7 +193,7 @@ describe("identity routes — health endpoint", () => {
     test("/v1/healthz returns the same shape as /v1/health", async () => {
       // Both endpoints call handleDetailedHealth, so the shape must match
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
 
       expect(body.status).toBe("healthy");
       expect(body.timestamp).toBeDefined();
@@ -201,7 +202,7 @@ describe("identity routes — health endpoint", () => {
 
     test("includes ces.connected=false when no CES client is registered", async () => {
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
 
       expect(body.ces).toBeDefined();
       expect((body.ces as Record<string, unknown>).connected).toBe(false);
@@ -212,12 +213,10 @@ describe("identity routes — health endpoint", () => {
       const res = await handleDetailedHealth();
       expect(res.status).toBe(200);
 
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
       expect(body.status).toBe("MIGRATING");
       expect(body.reason).toBe("db_migrations_running");
-      expect((body.dbMigrations as Record<string, unknown>).state).toBe(
-        "running",
-      );
+      expect(jsonObjectSchema.parse(body.dbMigrations).state).toBe("running");
     });
 
     test("simple healthz remains ok while DB migrations are running", async () => {
@@ -225,7 +224,7 @@ describe("identity routes — health endpoint", () => {
       const res = handleHealth();
       expect(res.status).toBe(200);
 
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
       expect(body).toEqual({ status: "ok", version: APP_VERSION });
     });
   });
@@ -237,7 +236,7 @@ describe("identity routes — health endpoint", () => {
       }
       await cesRecordBackend.ensureClient();
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
 
       expect(body.ces).toBeDefined();
       expect((body.ces as Record<string, unknown>).connected).toBe(true);
@@ -246,7 +245,7 @@ describe("identity routes — health endpoint", () => {
     test("/v1/health reports ces.connected=false when CES is not ready", async () => {
       await cesRecordBackend.close();
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
 
       expect(body.ces).toBeDefined();
       expect((body.ces as Record<string, unknown>).connected).toBe(false);
@@ -262,10 +261,10 @@ describe("identity routes — health endpoint", () => {
       ensureProfilerRunDir("run-health-test-1");
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
 
       expect(body.profiler).toBeDefined();
-      const profiler = body.profiler as Record<string, unknown>;
+      const profiler = jsonObjectSchema.parse(body.profiler);
       expect(profiler.enabled).toBe(true);
       expect(profiler.mode).toBe("cpu");
       expect(profiler.runId).toBe("run-health-test-1");
@@ -282,8 +281,8 @@ describe("identity routes — health endpoint", () => {
       ensureProfilerRunDir("run-budget-test");
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
-      const profiler = body.profiler as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
+      const profiler = jsonObjectSchema.parse(body.profiler);
       const budget = profiler.budget as Record<string, unknown>;
 
       expect(budget).toBeDefined();
@@ -305,8 +304,8 @@ describe("identity routes — health endpoint", () => {
       writeArtifactFile("run-artifact-count", "log.txt", 512);
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
-      const profiler = body.profiler as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
+      const profiler = jsonObjectSchema.parse(body.profiler);
 
       expect(profiler.artifactCount).toBe(2);
     });
@@ -320,8 +319,8 @@ describe("identity routes — health endpoint", () => {
       writeArtifactFile("run-over-budget", "big.cpuprofile", 5000);
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
-      const profiler = body.profiler as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
+      const profiler = jsonObjectSchema.parse(body.profiler);
       const budget = profiler.budget as Record<string, unknown>;
 
       expect(budget.overBudget).toBe(true);
@@ -338,8 +337,8 @@ describe("identity routes — health endpoint", () => {
       ensureProfilerRunDir("run-no-completed");
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
-      const profiler = body.profiler as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
+      const profiler = jsonObjectSchema.parse(body.profiler);
 
       expect(profiler.lastCompletedRun).toBeNull();
     });
@@ -365,8 +364,8 @@ describe("identity routes — health endpoint", () => {
       writeArtifactFile(completedId, "summary.md", 256);
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
-      const profiler = body.profiler as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
+      const profiler = jsonObjectSchema.parse(body.profiler);
       const last = profiler.lastCompletedRun as Record<string, unknown>;
 
       expect(last).toBeDefined();
@@ -402,8 +401,8 @@ describe("identity routes — health endpoint", () => {
       writeArtifactFile("newer-completed", "new.heapsnapshot", 1024);
 
       const res = await handleDetailedHealth();
-      const body = (await res.json()) as Record<string, unknown>;
-      const profiler = body.profiler as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(await res.json());
+      const profiler = jsonObjectSchema.parse(body.profiler);
       const last = profiler.lastCompletedRun as Record<string, unknown>;
 
       expect(last).toBeDefined();
@@ -417,7 +416,7 @@ describe("identity routes — trivial /healthz liveness probe", () => {
     const res = handleHealth();
     expect(res.status).toBe(200);
 
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.status).toBe("ok");
     expect(typeof body.version).toBe("string");
     expect(body.version).not.toBe("");
@@ -430,7 +429,7 @@ describe("identity routes — trivial /healthz liveness probe", () => {
 
     const res = handleHealth();
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body).toEqual({ status: "ok", version: APP_VERSION });
   });
 
@@ -438,7 +437,7 @@ describe("identity routes — trivial /healthz liveness probe", () => {
     await cesRecordBackend.close();
     const res = handleHealth();
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body).toEqual({ status: "ok", version: APP_VERSION });
   });
 });
@@ -454,12 +453,10 @@ describe("identity routes — /readyz readiness gate", () => {
     setDbReady(false);
     const res = handleReadyz();
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.status).toBe("migrating");
     expect(body.ready).toBe(false);
-    expect((body.dbMigrations as Record<string, unknown>).state).toBe(
-      "not_started",
-    );
+    expect(jsonObjectSchema.parse(body.dbMigrations).state).toBe("not_started");
   });
 
   test("returns 200 with the migrating body while DB migrations are running", async () => {
@@ -468,12 +465,10 @@ describe("identity routes — /readyz readiness gate", () => {
     // Status code stays 200 so k8s keeps the pod in service mid-migration;
     // the body carries the real state for programmatic callers (CLI).
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.status).toBe("migrating");
     expect(body.ready).toBe(false);
-    expect((body.dbMigrations as Record<string, unknown>).state).toBe(
-      "running",
-    );
+    expect(jsonObjectSchema.parse(body.dbMigrations).state).toBe("running");
   });
 
   test("returns 503 when DB migrations fail", async () => {
@@ -482,13 +477,13 @@ describe("identity routes — /readyz readiness gate", () => {
     });
     const res = handleReadyz();
     expect(res.status).toBe(503);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.ready).toBe(false);
     expect(body.reason).toBe("db_migrations_failed");
-    expect((body.dbMigrations as Record<string, unknown>).state).toBe("failed");
-    expect(
-      (body.dbMigrations as Record<string, unknown>).failedMigrations,
-    ).toEqual([{ name: "flakyStep", error: "transient failure" }]);
+    expect(jsonObjectSchema.parse(body.dbMigrations).state).toBe("failed");
+    expect(jsonObjectSchema.parse(body.dbMigrations).failedMigrations).toEqual([
+      { name: "flakyStep", error: "transient failure" },
+    ]);
   });
 
   test("stays not-ready with a ces-connecting body while CES is down", async () => {
@@ -500,7 +495,7 @@ describe("identity routes — /readyz readiness gate", () => {
     // Status stays 200 (the k8s keep-the-pod contract); the body tells the
     // CLI's readiness wait the truth: credential setting needs CES.
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body).toEqual({
       status: "ces-connecting",
       ready: false,
@@ -518,7 +513,7 @@ describe("identity routes — /readyz readiness gate", () => {
 
     const res = handleReadyz();
     expect(res.status).toBe(200);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body).toEqual({
       status: "ok",
       ready: true,

@@ -1,4 +1,4 @@
-import type { IncomingHttpHeaders } from "node:http";
+import assert from "node:assert/strict";
 import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
@@ -7,6 +7,18 @@ import {
   executeWebFetch,
   getUpstreamStatus,
 } from "../tools/network/web-fetch.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
+
+function installFetchMock(
+  implementation: (url: string, init?: RequestInit) => Promise<Response>,
+): void {
+  globalThis.fetch = fetchMock(
+    (url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      assert(typeof url === "string", "Expected the fetch URL to be a string");
+      return implementation(url, init);
+    },
+  );
+}
 
 describe("web_fetch tool", () => {
   let originalFetch: typeof globalThis.fetch;
@@ -43,18 +55,15 @@ describe("web_fetch tool", () => {
             redirect: "manual",
             signal: requestOptions.signal,
             headers: requestOptions.headers,
-          }) as Promise<Response>),
+          })),
     });
 
   test("buildFetchResponseFromNodeResponse handles null-body statuses without throwing", async () => {
-    const stream = new PassThrough() as PassThrough & {
-      statusCode?: number;
-      statusMessage?: string;
-      headers: IncomingHttpHeaders;
-    };
-    stream.statusCode = 204;
-    stream.statusMessage = "No Content";
-    stream.headers = { "content-type": "text/plain; charset=utf-8" };
+    const stream = Object.assign(new PassThrough(), {
+      statusCode: 204,
+      statusMessage: "No Content",
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
     stream.end("ignored body");
 
     const response = buildFetchResponseFromNodeResponse(stream);
@@ -64,14 +73,11 @@ describe("web_fetch tool", () => {
   });
 
   test("buildFetchResponseFromNodeResponse does not throw on non-standard status codes", async () => {
-    const stream = new PassThrough() as PassThrough & {
-      statusCode?: number;
-      statusMessage?: string;
-      headers: IncomingHttpHeaders;
-    };
-    stream.statusCode = 999;
-    stream.statusMessage = "Request Denied";
-    stream.headers = { "content-type": "text/html; charset=utf-8" };
+    const stream = Object.assign(new PassThrough(), {
+      statusCode: 999,
+      statusMessage: "Request Denied",
+      headers: { "content-type": "text/html; charset=utf-8" },
+    });
     stream.end("blocked by anti-bot gateway");
 
     const response = buildFetchResponseFromNodeResponse(stream);
@@ -88,14 +94,11 @@ describe("web_fetch tool", () => {
       { url: "https://www.linkedin.com/jobs/view/123" },
       {
         requestExecutor: async () => {
-          const stream = new PassThrough() as PassThrough & {
-            statusCode?: number;
-            statusMessage?: string;
-            headers: IncomingHttpHeaders;
-          };
-          stream.statusCode = 999;
-          stream.statusMessage = "Request Denied";
-          stream.headers = { "content-type": "text/html; charset=utf-8" };
+          const stream = Object.assign(new PassThrough(), {
+            statusCode: 999,
+            statusMessage: "Request Denied",
+            headers: { "content-type": "text/html; charset=utf-8" },
+          });
           stream.end("<html><body>blocked</body></html>");
           return buildFetchResponseFromNodeResponse(stream);
         },
@@ -129,13 +132,13 @@ describe("web_fetch tool", () => {
 
   test("adds https:// for bare hostnames", async () => {
     let requestedUrl = "";
-    globalThis.fetch = (async (url: string) => {
+    installFetchMock(async (url: string) => {
       requestedUrl = url;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "example.com/docs" });
     expect(result.isError).toBe(false);
@@ -144,13 +147,13 @@ describe("web_fetch tool", () => {
 
   test("adds https:// for scheme-less host:port inputs", async () => {
     let requestedUrl = "";
-    globalThis.fetch = (async (url: string) => {
+    installFetchMock(async (url: string) => {
       requestedUrl = url;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "example.com:8443/docs" });
     expect(result.isError).toBe(false);
@@ -161,13 +164,13 @@ describe("web_fetch tool", () => {
 
   test("blocks localhost targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://localhost:3000/health",
@@ -181,13 +184,13 @@ describe("web_fetch tool", () => {
 
   test("blocks 127.0.0.1 loopback targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://127.0.0.1:8080/admin",
@@ -201,13 +204,13 @@ describe("web_fetch tool", () => {
 
   test("blocks 10.x.x.x private network targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://10.0.0.1/internal",
@@ -221,13 +224,13 @@ describe("web_fetch tool", () => {
 
   test("blocks 192.168.x.x private network targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "http://192.168.1.1/" });
     expect(result.isError).toBe(true);
@@ -239,13 +242,13 @@ describe("web_fetch tool", () => {
 
   test("blocks 172.16-31.x.x private network targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "http://172.16.0.1/" });
     expect(result.isError).toBe(true);
@@ -257,13 +260,13 @@ describe("web_fetch tool", () => {
 
   test("blocks 169.254.x.x link-local targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://169.254.169.254/latest/meta-data/",
@@ -277,13 +280,13 @@ describe("web_fetch tool", () => {
 
   test("blocks 0.0.0.0 targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "http://0.0.0.0/" });
     expect(result.isError).toBe(true);
@@ -295,13 +298,13 @@ describe("web_fetch tool", () => {
 
   test("blocks cloud metadata endpoint (metadata.google.internal)", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://metadata.google.internal/computeMetadata/v1/",
@@ -315,13 +318,13 @@ describe("web_fetch tool", () => {
 
   test("blocks .local mDNS suffix targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://my-nas.local/admin",
@@ -335,13 +338,13 @@ describe("web_fetch tool", () => {
 
   test("blocks CGNAT range 100.64-127.x.x targets", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://100.100.100.100/",
@@ -355,13 +358,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv4 limited broadcast targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://255.255.255.255/",
@@ -375,13 +378,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv4 multicast targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "http://224.0.0.1/" });
     expect(result.isError).toBe(true);
@@ -393,13 +396,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv4 benchmarking targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({ url: "http://198.18.0.10/" });
     expect(result.isError).toBe(true);
@@ -445,13 +448,13 @@ describe("web_fetch tool", () => {
 
   test("blocks hostnames that resolve to private addresses unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://evil.example.com/health" },
@@ -468,13 +471,13 @@ describe("web_fetch tool", () => {
 
   test("blocks hostnames that resolve to loopback via DNS rebinding", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://rebind.example.com/steal" },
@@ -491,13 +494,13 @@ describe("web_fetch tool", () => {
 
   test("blocks hostnames that resolve to IPv6 loopback via DNS", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://evil.example.com/steal" },
@@ -514,13 +517,13 @@ describe("web_fetch tool", () => {
 
   test("blocks hostnames resolving to link-local 169.254.x.x (AWS metadata)", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://evil.example.com/metadata" },
@@ -537,13 +540,13 @@ describe("web_fetch tool", () => {
 
   test("blocks when any resolved address is private (mixed public/private DNS)", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://dual.example.com/" },
@@ -562,7 +565,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to 10.x.x.x private targets", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -574,7 +577,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -588,7 +591,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to 192.168.x.x private targets", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -600,7 +603,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -614,7 +617,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to 169.254.169.254 (cloud metadata via redirect)", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -626,7 +629,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -678,7 +681,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirect to non-http protocol", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -690,7 +693,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -704,13 +707,13 @@ describe("web_fetch tool", () => {
 
   test("blocks excessive redirects", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       return new Response("", {
         status: 302,
         headers: { location: `https://example.com/hop${callCount}` },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -721,13 +724,13 @@ describe("web_fetch tool", () => {
 
   test("blocks hostnames that resolve to private addresses unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://example.com/health" },
@@ -745,13 +748,13 @@ describe("web_fetch tool", () => {
 
   test("times out while resolving initial host before any request is sent", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://example.com/health", timeout_seconds: 1 },
@@ -857,7 +860,7 @@ describe("web_fetch tool", () => {
   test("strips URL userinfo before default fetch execution while preserving authorization header", async () => {
     let requestedUrl = "";
     let authorizationHeader = "";
-    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    installFetchMock(async (url: string, init?: RequestInit) => {
       requestedUrl = url;
       authorizationHeader =
         new Headers(init?.headers).get("authorization") ?? "";
@@ -865,7 +868,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWebFetch({
       url: "https://user%20name:p%40ss@example.com/protected",
@@ -931,13 +934,13 @@ describe("web_fetch tool", () => {
 
   test("allows hostnames that resolve to private addresses when allow_private_network=true", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://example.com/health", allow_private_network: true },
@@ -951,13 +954,13 @@ describe("web_fetch tool", () => {
 
   test("blocks subdomain localhost targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://foo.localhost:3000/health",
@@ -971,13 +974,13 @@ describe("web_fetch tool", () => {
 
   test("blocks bracketed IPv6 localhost targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://[::1]:3000/health",
@@ -991,13 +994,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv4-mapped IPv6 localhost targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://[::ffff:127.0.0.1]:3000/health",
@@ -1011,13 +1014,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv4-compatible IPv6 localhost targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://[::7f00:1]:3000/health",
@@ -1031,13 +1034,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv6 multicast localhost targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://[ff02::1]:3000/health",
@@ -1051,13 +1054,13 @@ describe("web_fetch tool", () => {
 
   test("blocks IPv6 site-local targets unless explicitly enabled", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://[fec0::1]:3000/health",
@@ -1071,13 +1074,13 @@ describe("web_fetch tool", () => {
 
   test("allows localhost when allow_private_network=true", async () => {
     let called = false;
-    globalThis.fetch = (async () => {
+    installFetchMock(async () => {
       called = true;
       return new Response("local ok", {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "http://localhost:3000/health",
@@ -1089,22 +1092,24 @@ describe("web_fetch tool", () => {
   });
 
   test("extracts readable text and metadata from HTML", async () => {
-    globalThis.fetch = (async () =>
-      new Response(
-        [
-          "<html><head>",
-          "<title>Example Title</title>",
-          '<meta name="description" content="Example Description">',
-          "</head><body>",
-          '<script>window.evil = "ignore me";</script>',
-          "<h1>Hello</h1><p>World</p>",
-          "</body></html>",
-        ].join(""),
-        {
-          status: 200,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        },
-      )) as any;
+    installFetchMock(
+      async () =>
+        new Response(
+          [
+            "<html><head>",
+            "<title>Example Title</title>",
+            '<meta name="description" content="Example Description">',
+            "</head><body>",
+            '<script>window.evil = "ignore me";</script>',
+            "<h1>Hello</h1><p>World</p>",
+            "</body></html>",
+          ].join(""),
+          {
+            status: 200,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          },
+        ),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com" });
     expect(result.isError).toBe(false);
@@ -1116,18 +1121,20 @@ describe("web_fetch tool", () => {
   });
 
   test("extracts full meta descriptions that contain apostrophes", async () => {
-    globalThis.fetch = (async () =>
-      new Response(
-        [
-          "<html><head>",
-          `<meta name="description" content="We've updated our privacy policy">`,
-          "</head><body>Body</body></html>",
-        ].join(""),
-        {
-          status: 200,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        },
-      )) as any;
+    installFetchMock(
+      async () =>
+        new Response(
+          [
+            "<html><head>",
+            `<meta name="description" content="We've updated our privacy policy">`,
+            "</head><body>Body</body></html>",
+          ].join(""),
+          {
+            status: 200,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          },
+        ),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com" });
     expect(result.isError).toBe(false);
@@ -1137,18 +1144,20 @@ describe("web_fetch tool", () => {
   });
 
   test("extracts full og:description when quoted value contains double quotes", async () => {
-    globalThis.fetch = (async () =>
-      new Response(
-        [
-          "<html><head>",
-          `<meta content='She said "hello" today' property='og:description'>`,
-          "</head><body>Body</body></html>",
-        ].join(""),
-        {
-          status: 200,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        },
-      )) as any;
+    installFetchMock(
+      async () =>
+        new Response(
+          [
+            "<html><head>",
+            `<meta content='She said "hello" today' property='og:description'>`,
+            "</head><body>Body</body></html>",
+          ].join(""),
+          {
+            status: 200,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          },
+        ),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com" });
     expect(result.isError).toBe(false);
@@ -1156,11 +1165,13 @@ describe("web_fetch tool", () => {
   });
 
   test("keeps malformed decimal entities unchanged", async () => {
-    globalThis.fetch = (async () =>
-      new Response("<html><body><p>Value: &#1a;</p></body></html>", {
-        status: 200,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      })) as any;
+    installFetchMock(
+      async () =>
+        new Response("<html><body><p>Value: &#1a;</p></body></html>", {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({
       url: "https://example.com/entities",
@@ -1170,11 +1181,13 @@ describe("web_fetch tool", () => {
   });
 
   test("supports character windowing with start_index and max_chars", async () => {
-    globalThis.fetch = (async () =>
-      new Response("ABCDEFGHIJKLMNOPQRSTUVWXYZ", {
-        status: 200,
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      })) as any;
+    installFetchMock(
+      async () =>
+        new Response("ABCDEFGHIJKLMNOPQRSTUVWXYZ", {
+          status: 200,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+        }),
+    );
 
     const result = await executeWithMockFetch({
       url: "https://example.com/letters",
@@ -1188,11 +1201,13 @@ describe("web_fetch tool", () => {
   });
 
   test("rejects binary-like content types", async () => {
-    globalThis.fetch = (async () =>
-      new Response("PNGDATA", {
-        status: 200,
-        headers: { "content-type": "image/png" },
-      })) as any;
+    installFetchMock(
+      async () =>
+        new Response("PNGDATA", {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
+    );
 
     const result = await executeWithMockFetch({
       url: "https://example.com/image.png",
@@ -1202,13 +1217,15 @@ describe("web_fetch tool", () => {
   });
 
   test("rejects binary mime types even when parameters look text-like", async () => {
-    globalThis.fetch = (async () =>
-      new Response("BINARYDATA", {
-        status: 200,
-        headers: {
-          "content-type": "application/octet-stream; profile=text/plain",
-        },
-      })) as any;
+    installFetchMock(
+      async () =>
+        new Response("BINARYDATA", {
+          status: 200,
+          headers: {
+            "content-type": "application/octet-stream; profile=text/plain",
+          },
+        }),
+    );
 
     const result = await executeWithMockFetch({
       url: "https://example.com/download",
@@ -1218,12 +1235,14 @@ describe("web_fetch tool", () => {
   });
 
   test("returns error results for non-2xx responses", async () => {
-    globalThis.fetch = (async () =>
-      new Response("missing page", {
-        status: 404,
-        headers: { "content-type": "text/plain; charset=utf-8" },
-        statusText: "Not Found",
-      })) as any;
+    installFetchMock(
+      async () =>
+        new Response("missing page", {
+          status: 404,
+          headers: { "content-type": "text/plain; charset=utf-8" },
+          statusText: "Not Found",
+        }),
+    );
 
     const result = await executeWithMockFetch({
       url: "https://example.com/missing",
@@ -1235,7 +1254,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to localhost/private targets when allow_private_network is false", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1247,7 +1266,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -1261,7 +1280,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to IPv4 benchmarking targets when allow_private_network is false", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1273,7 +1292,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -1324,7 +1343,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to subdomain localhost targets when allow_private_network is false", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1336,7 +1355,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -1350,7 +1369,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects when target host resolves to private addresses and allow_private_network is false", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1362,7 +1381,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch(
       { url: "https://example.com/start" },
@@ -1413,7 +1432,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to IPv4-mapped IPv6 private targets when allow_private_network is false", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1425,7 +1444,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -1439,7 +1458,7 @@ describe("web_fetch tool", () => {
 
   test("blocks redirects to IPv4-compatible IPv6 private targets when allow_private_network is false", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1451,7 +1470,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -1465,7 +1484,7 @@ describe("web_fetch tool", () => {
 
   test("allows redirects to localhost/private targets when allow_private_network is true", async () => {
     let callCount = 0;
-    globalThis.fetch = (async (_url: string) => {
+    installFetchMock(async (_url: string) => {
       callCount++;
       if (callCount === 1) {
         return new Response("", {
@@ -1477,7 +1496,7 @@ describe("web_fetch tool", () => {
         status: 200,
         headers: { "content-type": "text/plain; charset=utf-8" },
       });
-    }) as any;
+    });
 
     const result = await executeWithMockFetch({
       url: "https://example.com/start",
@@ -1607,21 +1626,23 @@ describe("web_fetch tool", () => {
   });
 
   test("non-markdown responses still get HTML extraction as before", async () => {
-    globalThis.fetch = (async () =>
-      new Response(
-        [
-          "<html><head>",
-          "<title>HTML Page</title>",
-          "</head><body>",
-          '<script>window.evil = "ignore me";</script>',
-          "<h1>Hello</h1><p>World</p>",
-          "</body></html>",
-        ].join(""),
-        {
-          status: 200,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        },
-      )) as any;
+    installFetchMock(
+      async () =>
+        new Response(
+          [
+            "<html><head>",
+            "<title>HTML Page</title>",
+            "</head><body>",
+            '<script>window.evil = "ignore me";</script>',
+            "<h1>Hello</h1><p>World</p>",
+            "</body></html>",
+          ].join(""),
+          {
+            status: 200,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          },
+        ),
+    );
 
     const result = await executeWithMockFetch({ url: "https://example.com" });
     expect(result.isError).toBe(false);

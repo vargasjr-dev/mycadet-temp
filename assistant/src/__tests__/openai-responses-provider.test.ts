@@ -15,7 +15,12 @@ interface FakeStreamEvent {
 }
 
 let fakeStreamEvents: FakeStreamEvent[] = [];
-let lastStreamParams: Record<string, unknown> | null = null;
+interface CapturedStreamParams extends Record<string, unknown> {
+  input: Record<string, unknown>[];
+  tools?: Record<string, unknown>[];
+}
+
+let lastStreamParams: CapturedStreamParams | null = null;
 let lastStreamOptions: Record<string, unknown> | null = null;
 let lastConstructorOptions: Record<string, unknown> | null = null;
 let shouldThrow: Error | null = null;
@@ -73,7 +78,7 @@ mock.module("openai", () => ({
     }
     responses = {
       create: async (
-        params: Record<string, unknown>,
+        params: CapturedStreamParams,
         options?: Record<string, unknown>,
       ) => {
         lastStreamParams = params;
@@ -353,9 +358,9 @@ describe("OpenAIResponsesProvider", () => {
 
     expect(lastStreamParams!.instructions).toBe("You are a helpful assistant.");
     // System prompt should NOT appear in the input array
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     for (const item of input) {
-      const role = (item as Record<string, unknown>).role;
+      const role = item.role;
       expect(role).not.toBe("system");
     }
   });
@@ -383,7 +388,7 @@ describe("OpenAIResponsesProvider", () => {
       { tools: tools },
     );
 
-    const sentTools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const sentTools = lastStreamParams!.tools!;
     expect(sentTools).toHaveLength(1);
     expect(sentTools[0]).toEqual({
       type: "function",
@@ -939,7 +944,7 @@ describe("OpenAIResponsesProvider", () => {
       { role: "user", content: [{ type: "text", text: "Hello" }] },
     ]);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     expect(input).toHaveLength(1);
     expect(input[0]).toEqual({
       type: "message",
@@ -973,7 +978,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     expect(input).toHaveLength(1);
     const userMsg = input[0] as { content: unknown[] };
     expect(userMsg.content).toHaveLength(2);
@@ -1001,7 +1006,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     expect(input).toHaveLength(3);
     expect(input[1]).toEqual({
       type: "message",
@@ -1043,7 +1048,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     // user → function_call → function_call_output
     expect(input).toHaveLength(3);
     expect(input[1]).toEqual({
@@ -1093,8 +1098,8 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
-    const callOutput = input[2] as Record<string, unknown>;
+    const input = lastStreamParams!.input;
+    const callOutput = input[2];
     expect(callOutput).toEqual({
       type: "function_call_output",
       call_id: "call_err",
@@ -1127,7 +1132,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     // user → assistant message → function_call → function_call_output
     expect(input).toHaveLength(4);
     expect(input[1]).toEqual({
@@ -1348,7 +1353,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     expect(input).toHaveLength(1);
     expect(input[0]).toEqual({
       type: "message",
@@ -1383,7 +1388,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     const userMsg = input[0] as { content: Array<Record<string, unknown>> };
     expect(userMsg.content[0]).toEqual({
       type: "input_text",
@@ -1414,7 +1419,7 @@ describe("OpenAIResponsesProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const input = lastStreamParams!.input as unknown[];
+    const input = lastStreamParams!.input;
     // user → function_call → function_call_output → user (text)
     expect(input).toHaveLength(4);
     expect(input[2]).toEqual({
@@ -1521,7 +1526,7 @@ describe("OpenAIResponsesProvider — Native Web Search", () => {
       { tools: [webSearchTool] },
     );
 
-    const sentTools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const sentTools = lastStreamParams!.tools!;
     expect(sentTools).toHaveLength(1);
     expect(sentTools[0]).toEqual({ type: "web_search_preview" });
   });
@@ -1535,7 +1540,7 @@ describe("OpenAIResponsesProvider — Native Web Search", () => {
       { tools: [webSearchTool] },
     );
 
-    const sentTools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const sentTools = lastStreamParams!.tools!;
     expect(sentTools).toHaveLength(1);
     expect(sentTools[0]).toEqual({
       type: "function",
@@ -1560,7 +1565,7 @@ describe("OpenAIResponsesProvider — Native Web Search", () => {
       { tools: [fileReadTool, webSearchTool] },
     );
 
-    const sentTools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const sentTools = lastStreamParams!.tools!;
     expect(sentTools).toHaveLength(2);
     // Non-web-search tools remain as function tools
     expect(sentTools[0]).toEqual({
@@ -1589,7 +1594,7 @@ describe("OpenAIResponsesProvider — Native Web Search", () => {
       { tools: [fileReadTool] },
     );
 
-    const sentTools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const sentTools = lastStreamParams!.tools!;
     expect(sentTools).toHaveLength(1);
     expect(sentTools[0]).toEqual({
       type: "function",

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
@@ -68,7 +69,7 @@ function makeProvider(
     name,
     async sendMessage(_messages: Message[], options?: SendMessageOptions) {
       onCall(options);
-      const config = options?.config as Record<string, unknown> | undefined;
+      const config = options?.config;
       return makeResponse(
         (config?.model as string | undefined) ?? "default-model",
       );
@@ -112,7 +113,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("claude-haiku-4-5-20251001");
     expect(config.max_tokens).toBe(4096);
     // Both opt-in routing keys are stripped before delegating downstream.
@@ -141,8 +143,10 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval", conversationId: "conv-xyz" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
-    const headers = config.requestHeaders as Record<string, string>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
+    const headers = config.requestHeaders;
+    assert(headers, "Expected request headers");
     expect(config.conversationId).toBeUndefined();
     expect(headers["x-opencode-session"]).toBe("conv-xyz");
     expect(headers["x-opencode-request"]).toBeDefined();
@@ -174,16 +178,15 @@ describe("RetryProvider — callSite resolution", () => {
     });
 
     const sessions = seen.map(
-      (options) =>
-        (options.config?.requestHeaders as Record<string, string>)[
-          "x-opencode-session"
-        ],
+      (options) => options.config?.requestHeaders?.["x-opencode-session"],
     );
     expect(sessions[0]).toMatch(/\S/);
     expect(sessions[1]).toBe(sessions[0]!);
     for (const options of seen) {
-      const config = options.config as Record<string, unknown>;
-      const headers = config.requestHeaders as Record<string, string>;
+      const config = options.config;
+      assert(config, "Expected provider configuration");
+      const headers = config.requestHeaders;
+      assert(headers, "Expected request headers");
       expect(headers["x-opencode-request"]).toMatch(/\S/);
       expect(headers).not.toHaveProperty("session_id");
       expect(config.conversationId).toBeUndefined();
@@ -211,7 +214,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval", conversationId: "conv-xyz" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.requestHeaders).toBeUndefined();
     expect(config.conversationId).toBeUndefined();
   });
@@ -237,7 +241,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval", conversationId: "conv-123" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.conversationId).toBeUndefined();
   });
 
@@ -272,7 +277,8 @@ describe("RetryProvider — callSite resolution", () => {
       },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.usageAttributionHeaders).toEqual({
       "X-Cadet-LLM-Call-Site": "memoryRetrieval",
       "X-Cadet-Inference-Profile": "conversation-profile",
@@ -281,9 +287,7 @@ describe("RetryProvider — callSite resolution", () => {
       "X-Cadet-Resolved-Model": "claude-profile",
     });
     expect(
-      (config.usageAttributionHeaders as Record<string, string>)[
-        "X-Cadet-LLM-Call-Site-Label"
-      ],
+      config.usageAttributionHeaders?.["X-Cadet-LLM-Call-Site-Label"],
     ).toBeUndefined();
   });
 
@@ -316,8 +320,8 @@ describe("RetryProvider — callSite resolution", () => {
       },
     });
 
-    const headers = (seen?.config as Record<string, unknown>)
-      .usageAttributionHeaders as Record<string, string>;
+    const headers = seen?.config?.usageAttributionHeaders;
+    assert(headers, "Expected usage attribution headers");
     expect(headers["X-Cadet-Subagent-Role"]).toBe("advisor");
     expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBe("advisor_consult");
   });
@@ -345,8 +349,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "subagentSpawn", conversationId: "conv-retry-plain" },
     });
 
-    const headers = (seen?.config as Record<string, unknown>)
-      .usageAttributionHeaders as Record<string, string>;
+    const headers = seen?.config?.usageAttributionHeaders;
+    assert(headers, "Expected usage attribution headers");
     expect(headers["X-Cadet-Subagent-Role"]).toBeUndefined();
     expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBeUndefined();
   });
@@ -372,7 +376,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.usageAttributionHeaders).toBeUndefined();
     expect(config.callSite).toBeUndefined();
   });
@@ -402,7 +407,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "vision" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.usageAttributionHeaders).toEqual({
       "X-Cadet-LLM-Call-Site": "vision",
       "X-Cadet-Resolved-Provider": "openai",
@@ -428,7 +434,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe(expected.model as string);
     expect(config.max_tokens).toBe(expected.maxTokens as number);
   });
@@ -460,7 +467,8 @@ describe("RetryProvider — callSite resolution", () => {
 
       await wrapped.sendMessage(DUMMY_MESSAGES, { config: { callSite } });
 
-      const config = seen?.config as Record<string, unknown>;
+      const config = seen?.config;
+      assert(config, "Expected provider configuration");
       expect(config.model).toBe(expected.model as string);
       expect(config.effort).toBe("none");
     }
@@ -480,7 +488,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryV3SelectL2" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("low");
     expect(config.thinking).toEqual({ type: "disabled" });
     expect(config.temperature).toBe(0);
@@ -511,7 +520,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "heartbeatAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("high");
     expect(config.speed).toBe("fast");
     expect(config.temperature).toBe(0.7);
@@ -548,7 +558,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     // Must be the Anthropic SDK's `ThinkingConfigAdaptive` shape, NOT the
     // schema-shape `{ enabled, streamThinking }`. The Anthropic client spreads
     // `restConfig` directly into `Anthropic.MessageStreamParams` and the SDK
@@ -578,7 +589,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "disabled" });
   });
 
@@ -605,7 +617,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     // Must NOT be set — null would either trigger a wire error or override
     // sensible provider defaults. Mirrors the legacy non-callSite path which
     // never sets `temperature` on `providerConfig`.
@@ -639,7 +652,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.temperature).toBe(0.5);
   });
 
@@ -668,7 +682,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.top_p).toBe(0.95);
   });
 
@@ -695,7 +710,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     // Must NOT be set — `top_p: null` would either be a wire error or override
     // sensible provider defaults, mirroring the `temperature` handling.
     expect(config.top_p).toBeUndefined();
@@ -728,7 +744,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "memoryRetrieval" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.speed).toBeUndefined();
     expect(config.thinking).toBeUndefined();
     // Model still comes through.
@@ -758,7 +775,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toBeUndefined();
     expect(config.effort).toBe("none");
   });
@@ -786,7 +804,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("none");
     // OpenRouter is thinking-aware: the wire-shape config still flows down so
     // the client can decide its nested `reasoning` emission.
@@ -816,7 +835,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("none");
     expect(config.thinking).toEqual({ type: "disabled" });
   });
@@ -847,7 +867,8 @@ describe("RetryProvider — callSite resolution", () => {
     // The Anthropic Messages delegate honors a disabled `thinking` natively;
     // `effort` keeps its Anthropic meaning and must match the direct
     // `anthropic` provider's behavior.
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("high");
     expect(config.thinking).toEqual({ type: "disabled" });
   });
@@ -874,7 +895,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({
       type: "adaptive",
       level: "high",
@@ -904,7 +926,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "disabled" });
   });
 
@@ -930,7 +953,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     // Anthropic's SDK rejects unknown keys inside the `thinking` object with
     // "Extra inputs are not permitted" — must be exactly `{ type }`.
     expect(config.thinking).toEqual({ type: "adaptive" });
@@ -954,7 +978,8 @@ describe("RetryProvider — callSite resolution", () => {
       config: { callSite: "mainAgent", model: "explicit-override" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("explicit-override");
   });
 });
@@ -995,7 +1020,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 0.7 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "adaptive" });
     expect(config.temperature).toBeUndefined();
     expect("temperature" in config).toBe(false);
@@ -1025,7 +1051,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "recall", temperature: 0 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "adaptive" });
     expect(config.temperature).toBeUndefined();
   });
@@ -1052,7 +1079,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 1 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "adaptive" });
     expect(config.temperature).toBe(1);
   });
@@ -1082,7 +1110,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 0.7 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "disabled" });
     expect(config.temperature).toBe(0.7);
   });
@@ -1109,7 +1138,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 0.7 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("anthropic/claude-opus-4-7");
     expect(config.temperature).toBeUndefined();
   });
@@ -1140,7 +1170,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 0.7 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("x-ai/grok-4");
     expect(config.temperature).toBe(0.7);
   });
@@ -1167,7 +1198,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 0.7 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("anthropic/claude-opus-4.6");
     expect(config.temperature).toBeUndefined();
   });
@@ -1194,7 +1226,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       config: { callSite: "mainAgent", temperature: 0.7 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("xai/grok-4.3");
     expect(config.temperature).toBe(0.7);
   });
@@ -1228,7 +1261,8 @@ describe("RetryProvider — thinking/temperature conflict guard", () => {
       },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toBeUndefined();
     expect(config.temperature).toBe(0.7);
   });
@@ -1265,7 +1299,8 @@ describe("RetryProvider — thinking/top_p conflict guard", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "adaptive" });
     expect(config.top_p).toBeUndefined();
     expect("top_p" in config).toBe(false);
@@ -1294,7 +1329,8 @@ describe("RetryProvider — thinking/top_p conflict guard", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("anthropic/claude-opus-4-7");
     expect(config.top_p).toBeUndefined();
   });
@@ -1322,7 +1358,8 @@ describe("RetryProvider — thinking/top_p conflict guard", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("anthropic/claude-opus-4.6");
     expect(config.top_p).toBeUndefined();
   });
@@ -1350,7 +1387,8 @@ describe("RetryProvider — thinking/top_p conflict guard", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("xai/grok-4.3");
     expect(config.top_p).toBe(0.9);
   });
@@ -1381,7 +1419,8 @@ describe("RetryProvider — thinking/top_p conflict guard", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.top_p).toBe(0.95);
   });
 
@@ -1408,7 +1447,8 @@ describe("RetryProvider — thinking/top_p conflict guard", () => {
       config: { callSite: "mainAgent" },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "disabled" });
     expect(config.top_p).toBe(0.95);
   });
@@ -1446,7 +1486,8 @@ describe("RetryProvider — no callSite (pre-resolved config passes through)", (
       config: { model: "explicit-model", max_tokens: 1234 },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("explicit-model");
     expect(config.max_tokens).toBe(1234);
     expect(config.model).not.toBe("MUST-NOT-LEAK");
@@ -1481,7 +1522,8 @@ describe("RetryProvider — no callSite (pre-resolved config passes through)", (
       },
     });
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = seen?.config;
+    assert(config, "Expected provider configuration");
     expect(config.model).toBe("explicit-model");
     expect(config.usageAttributionHeaders).toBeUndefined();
   });

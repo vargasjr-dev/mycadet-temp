@@ -37,7 +37,7 @@ import { conversations } from "../persistence/schema/index.js";
 await initializeDb();
 
 const TEST_PRINCIPAL = "test-principal-id";
-const CHANNEL = "cadet" as NotificationChannel;
+const CHANNEL = "cadet";
 
 function resetTables(): void {
   const db = getDb();
@@ -170,7 +170,7 @@ describe("buildConversationCandidates guardian enrichment", () => {
   });
 
   test("counts a Slack channel card recorded through the real recorder", async () => {
-    const SLACK = "slack" as NotificationChannel;
+    const SLACK = "slack";
     const convId = "conv-slack-card";
     seedCandidateConversation(convId, SLACK);
 

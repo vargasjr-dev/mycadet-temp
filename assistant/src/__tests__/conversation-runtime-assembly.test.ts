@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
@@ -173,7 +174,7 @@ import type {
   Injector,
   TurnContext,
 } from "../plugins/types.js";
-import type { Message } from "../providers/types.js";
+import type { ContentBlock, Message } from "../providers/types.js";
 import { wrapUntrustedContent } from "../security/untrusted-content.js";
 import { getSubagentManager } from "../subagent/index.js";
 import type { SubagentState } from "../subagent/types.js";
@@ -187,6 +188,11 @@ import { asConversation } from "./helpers/mock-conversation.js";
 // reading the live conversation's persisted message rows, so the schema must
 // exist before any Slack-channel assembly test runs.
 await initializeDb();
+
+function textOf(block: ContentBlock | undefined): string {
+  assert(block?.type === "text", "Expected a text content block");
+  return block.text;
+}
 
 // Populate the injector registry with the default plugins' injectors the way
 // bootstrap does in production, so the `applyRuntimeInjections` suites below
@@ -508,7 +514,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("GROUP CHAT ETIQUETTE");
     expect(text).toContain("chat_type: group");
     expect(text).toContain("Stay silent when");
@@ -524,7 +530,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("GROUP CHAT ETIQUETTE");
   });
 
@@ -538,7 +544,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).not.toContain("GROUP CHAT ETIQUETTE");
     expect(text).not.toContain("Stay silent when");
   });
@@ -552,7 +558,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).not.toContain("GROUP CHAT ETIQUETTE");
   });
 
@@ -566,7 +572,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("GROUP CHAT ETIQUETTE");
     expect(text).toContain("emoji reactions");
   });
@@ -580,7 +586,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain(
       'Only use ui_show/ui_update for card surfaces with template: "task_progress"',
     );
@@ -625,7 +631,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("Do NOT use ui_show, ui_update, or app_create");
     expect(text).not.toContain("Only use ui_show/ui_update");
   });
@@ -642,7 +648,7 @@ describe("injectChannelCapabilityContext", () => {
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
     // Not the happy path because chatType is a group type
     expect(result).not.toBe(baseUserMessage);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("GROUP CHAT ETIQUETTE");
   });
 
@@ -655,7 +661,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("Do NOT use markdown tables");
     expect(text).toContain("bullet lists");
     expect(text).toContain("CAPS for emphasis");
@@ -670,7 +676,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).not.toContain("Do NOT use markdown tables");
   });
 
@@ -683,7 +689,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("Conversation text is not emailed");
     expect(text).toContain("assistant email send");
     expect(text).toContain("--reply-to");
@@ -698,7 +704,7 @@ describe("injectChannelCapabilityContext", () => {
     };
 
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).not.toContain("Conversation text is not emailed");
     expect(text).not.toContain("assistant email send");
   });
@@ -804,9 +810,7 @@ describe("stripChannelCapabilityContext", () => {
 
     expect(result.length).toBe(2);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
     // Assistant message untouched
     expect(result[1].content.length).toBe(1);
   });
@@ -931,7 +935,7 @@ describe("trust-gating via channel capabilities", () => {
 
     // macOS clients get app-scripting guidance injected
     expect(result).not.toBe(message);
-    const injected = (result.content[0] as { type: "text"; text: string }).text;
+    const injected = textOf(result.content[0]);
     expect(injected).toContain("client_os: macos");
     expect(injected).toContain("drive apps with the computer-use skill");
     expect(injected).toContain("`host_bash` is for shell commands");
@@ -955,7 +959,7 @@ describe("trust-gating via channel capabilities", () => {
     const result = injectChannelCapabilityContext(message, caps, "windows");
 
     expect(result).not.toBe(message);
-    const injected = (result.content[0] as { type: "text"; text: string }).text;
+    const injected = textOf(result.content[0]);
     expect(injected).toContain("client_os: windows");
     expect(injected).toContain("`host_bash` runs PowerShell");
     expect(injected).toContain("Windows paths");
@@ -978,7 +982,7 @@ describe("trust-gating via channel capabilities", () => {
     const result = injectChannelCapabilityContext(message, caps, "linux");
 
     expect(result).not.toBe(message);
-    const injected = (result.content[0] as { type: "text"; text: string }).text;
+    const injected = textOf(result.content[0]);
     expect(injected).toContain("client_os: linux");
     expect(injected).toContain("On Linux, prefer CLI via `host_bash`");
     expect(injected).not.toContain("CHANNEL CONSTRAINTS");
@@ -992,7 +996,7 @@ describe("trust-gating via channel capabilities", () => {
     };
 
     const result = injectChannelCapabilityContext(message, caps);
-    const injected = (result.content[0] as { type: "text"; text: string }).text;
+    const injected = textOf(result.content[0]);
 
     expect(injected).toContain("CHANNEL CONSTRAINTS");
     expect(injected).toContain("Do NOT reference the dashboard UI");
@@ -1010,7 +1014,7 @@ describe("trust-gating via channel capabilities", () => {
     };
 
     const result = injectChannelCapabilityContext(message, caps);
-    const injected = (result.content[0] as { type: "text"; text: string }).text;
+    const injected = textOf(result.content[0]);
 
     expect(injected).toContain("CHANNEL CONSTRAINTS");
     expect(injected).toContain("Do NOT reference the dashboard UI");
@@ -1037,7 +1041,7 @@ describe("injectChannelCommandContext", () => {
     const result = injectChannelCommandContext(baseUserMessage, {
       type: "start",
     });
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("command_type: start");
     expect(text).toContain("warm, brief greeting");
     expect(text).toContain("Treat /start as a hello");
@@ -1050,7 +1054,7 @@ describe("injectChannelCommandContext", () => {
       payload: "ref123",
       languageCode: "es",
     });
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("payload: ref123");
     expect(text).toContain("language_code: es");
     expect(text).toContain("warm, brief greeting");
@@ -1060,7 +1064,7 @@ describe("injectChannelCommandContext", () => {
     const result = injectChannelCommandContext(baseUserMessage, {
       type: "help",
     });
-    const text = (result.content[0] as { type: "text"; text: string }).text;
+    const text = textOf(result.content[0]);
     expect(text).toContain("command_type: help");
     expect(text).not.toContain("warm, brief greeting");
     expect(text).not.toContain("Treat /start as a hello");
@@ -1368,9 +1372,7 @@ describe("stripNowScratchpad", () => {
 
     expect(result.length).toBe(2);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
     // Assistant message untouched
     expect(result[1].content.length).toBe(1);
   });
@@ -1432,9 +1434,7 @@ describe("stripInjectionsForCompaction with NOW.md", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 
   test("strips <background_turn> blocks", () => {
@@ -1454,9 +1454,7 @@ describe("stripInjectionsForCompaction with NOW.md", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 });
 
@@ -1482,9 +1480,7 @@ describe("stripInjectionsForCompaction preserves persistent blocks", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(2);
-    expect(
-      (result[0].content[0] as { type: "text"; text: string }).text,
-    ).toContain("<turn_context>");
+    expect(textOf(result[0].content[0])).toContain("<turn_context>");
   });
 
   test("<workspace> blocks ARE stripped so the injector re-sources them post-compaction", () => {
@@ -1504,9 +1500,7 @@ describe("stripInjectionsForCompaction preserves persistent blocks", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 
   test("legacy <workspace_top_level> blocks ARE stripped for backward compat", () => {
@@ -1526,9 +1520,7 @@ describe("stripInjectionsForCompaction preserves persistent blocks", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 
   test("legacy <channel_turn_context> blocks ARE stripped for backward compat", () => {
@@ -1548,9 +1540,7 @@ describe("stripInjectionsForCompaction preserves persistent blocks", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 
   test("legacy <inbound_actor_context> blocks ARE stripped for backward compat", () => {
@@ -1570,9 +1560,7 @@ describe("stripInjectionsForCompaction preserves persistent blocks", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 });
 
@@ -1595,9 +1583,7 @@ describe("stripInjectionsForCompaction memory/info wrapper matching", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 
   test("injected <memory>…</memory> activation block IS stripped", () => {
@@ -1614,9 +1600,7 @@ describe("stripInjectionsForCompaction memory/info wrapper matching", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      "Hello",
-    );
+    expect(textOf(result[0].content[0])).toBe("Hello");
   });
 
   test("user text merely starting with <info>\\n (no closing tag) is NOT stripped", () => {
@@ -1631,9 +1615,7 @@ describe("stripInjectionsForCompaction memory/info wrapper matching", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      userText,
-    );
+    expect(textOf(result[0].content[0])).toBe(userText);
   });
 
   test("user text merely starting with <memory>\\n (no closing tag) is NOT stripped", () => {
@@ -1648,9 +1630,7 @@ describe("stripInjectionsForCompaction memory/info wrapper matching", () => {
     const result = stripInjectionsForCompaction(messages);
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(1);
-    expect((result[0].content[0] as { type: "text"; text: string }).text).toBe(
-      userText,
-    );
+    expect(textOf(result[0].content[0])).toBe(userText);
   });
 });
 
@@ -1705,9 +1685,7 @@ describe("applyRuntimeInjections with nowScratchpad", () => {
     });
 
     // Scratchpad comes first (before user content)
-    expect(
-      (result[0].content[0] as { type: "text"; text: string }).text,
-    ).toContain("<NOW.md");
+    expect(textOf(result[0].content[0])).toContain("<NOW.md");
     // Original text is last
     expect((result[0].content[1] as { type: "text"; text: string }).text).toBe(
       "What should I do?",
@@ -6084,7 +6062,7 @@ describe("assembleSlackChronologicalMessages", () => {
     ]);
     // Sanity: no thread-tag arrow ever appears in DM output.
     for (const msg of result!) {
-      const text = (msg.content[0] as { type: "text"; text: string }).text;
+      const text = textOf(msg.content[0]);
       expect(text).not.toMatch(/→ M[0-9a-f]{6}/);
     }
   });
@@ -6316,7 +6294,7 @@ describe("assembleSlackChronologicalMessages", () => {
     ).toBe(true);
     // No empty-body render like `[... @alice]: ` should ever appear.
     for (const msg of result!) {
-      const head = (msg.content[0] as { type: "text"; text: string }).text;
+      const head = textOf(msg.content[0]);
       expect(head).not.toMatch(/]:\s*$/);
     }
   });

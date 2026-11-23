@@ -28,7 +28,7 @@ function makeCandidate(
     title: "Test Thread",
     updatedAt: Date.now(),
     latestSourceEventName: "test.event",
-    channel: "cadet" as NotificationChannel,
+    channel: "cadet",
     ...overrides,
   };
 }
@@ -170,13 +170,13 @@ describe("conversation candidate validation", () => {
       const cadetCandidates = [
         makeCandidate({
           conversationId: "conv-v1",
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
         }),
       ];
       const telegramCandidates = [
         makeCandidate({
           conversationId: "conv-t1",
-          channel: "telegram" as NotificationChannel,
+          channel: "telegram",
         }),
       ];
 

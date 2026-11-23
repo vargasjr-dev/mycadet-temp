@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { setConfig } from "./helpers/set-config.js";
 
 // ---------------------------------------------------------------------------
@@ -214,7 +215,7 @@ describe("secret ingress — HTTP route", () => {
     );
     expect(res.status).toBe(422);
 
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.error).toBe("secret_blocked");
     expect(body.accepted).toBe(false);
     expect(body.detectedTypes).toContain("GitHub Token");

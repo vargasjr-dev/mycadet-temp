@@ -12,7 +12,6 @@ import type {
   ConversationCandidateSet,
 } from "../notifications/conversation-candidates.js";
 import { serializeCandidatesForPrompt } from "../notifications/conversation-candidates.js";
-import type { NotificationChannel } from "../notifications/types.js";
 
 // -- serializeCandidatesForPrompt tests ---------------------------------------
 
@@ -34,7 +33,7 @@ describe("serializeCandidatesForPrompt", () => {
           title: "Reminder thread",
           updatedAt: 1700000000000,
           latestSourceEventName: "schedule.notify",
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
         },
       ],
     };
@@ -55,7 +54,7 @@ describe("serializeCandidatesForPrompt", () => {
           title: null,
           updatedAt: 1700000000000,
           latestSourceEventName: null,
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
         },
       ],
     };
@@ -73,7 +72,7 @@ describe("serializeCandidatesForPrompt", () => {
           title: "Guardian thread",
           updatedAt: 1700000000000,
           latestSourceEventName: "guardian.question",
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
           guardianContext: { pendingUnresolvedRequestCount: 3 },
         },
       ],
@@ -91,7 +90,7 @@ describe("serializeCandidatesForPrompt", () => {
           title: "Cadet thread",
           updatedAt: 1700000000000,
           latestSourceEventName: "schedule.notify",
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
         },
       ],
       telegram: [
@@ -100,7 +99,7 @@ describe("serializeCandidatesForPrompt", () => {
           title: "Telegram thread",
           updatedAt: 1700000000000,
           latestSourceEventName: "guardian.question",
-          channel: "telegram" as NotificationChannel,
+          channel: "telegram",
         },
       ],
     };
@@ -120,14 +119,14 @@ describe("serializeCandidatesForPrompt", () => {
           title: "First thread",
           updatedAt: 1700000000000,
           latestSourceEventName: "schedule.notify",
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
         },
         {
           conversationId: "conv-002",
           title: "Second thread",
           updatedAt: 1699999000000,
           latestSourceEventName: "guardian.question",
-          channel: "cadet" as NotificationChannel,
+          channel: "cadet",
           guardianContext: { pendingUnresolvedRequestCount: 1 },
         },
       ],
@@ -149,7 +148,7 @@ describe("ConversationCandidate type", () => {
       title: "Test",
       updatedAt: Date.now(),
       latestSourceEventName: "test.event",
-      channel: "cadet" as NotificationChannel,
+      channel: "cadet",
     };
     expect(candidate.conversationId).toBe("conv-test");
     expect(candidate.guardianContext).toBeUndefined();
@@ -161,7 +160,7 @@ describe("ConversationCandidate type", () => {
       title: "Test",
       updatedAt: Date.now(),
       latestSourceEventName: "guardian.question",
-      channel: "cadet" as NotificationChannel,
+      channel: "cadet",
       guardianContext: { pendingUnresolvedRequestCount: 5 },
     };
     expect(candidate.guardianContext?.pendingUnresolvedRequestCount).toBe(5);

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 import { eq } from "drizzle-orm";
@@ -222,7 +224,7 @@ describe("inbound-message-handler trusted-contact interactivity", () => {
 
     setAdapterProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     // Wait for background processing
@@ -265,7 +267,7 @@ describe("inbound-message-handler trusted-contact interactivity", () => {
 
     setAdapterProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -314,7 +316,7 @@ describe("inbound-message-handler trusted-contact interactivity", () => {
 
     setAdapterProcessMessage(processMessage);
     const res = await handleChannelInbound(req);
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
 
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -332,7 +334,7 @@ describe("inbound-message-handler trusted-contact interactivity", () => {
     });
 
     const res = await handleChannelInbound(req, undefined, "test-token");
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
     // Unknown actors are ACL-denied: accepted but denied with reason
     expect(body.accepted).toBe(true);
     expect(body.denied).toBe(true);

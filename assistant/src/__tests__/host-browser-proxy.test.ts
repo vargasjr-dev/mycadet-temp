@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
@@ -9,7 +11,8 @@ import {
 // ── Module mocks ─────────────────────────────────────────────────────
 
 /** Events published through the mock event hub. */
-let publishedEvents: unknown[] = [];
+let publishedEvents: Record<string, unknown>[] = [];
+const messageIdSchema = z.string();
 
 /**
  * Per-test client roster. Drives `listClientsByCapability` and
@@ -27,8 +30,8 @@ type MockClient = {
 };
 let mockClients: MockClient[] = [];
 
-setBroadcastOverrideForTesting((msg: unknown) => {
-  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+setBroadcastOverrideForTesting((msg) => {
+  if (msg.type === "interaction_resolved") {
     return;
   }
   publishedEvents.push(msg);
@@ -45,15 +48,15 @@ setHubClientsForTesting({
   listClientsByInterface: (interfaceId: string) =>
     mockClients.filter((c) => c.interfaceId === interfaceId),
 });
-setHubPublishOverrideForTesting(async (event: unknown, _options?: unknown) => {
+setHubPublishOverrideForTesting(async (event) => {
   // `interaction_resolved` envelopes are emitted by the
   // pending-interactions tracker for every resolution. They are
   // orthogonal to the host-browser wire messages these tests assert
   // on, so swallow them here.
-  if ((event as { type?: string } | null)?.type === "interaction_resolved") {
+  if (event.message.type === "interaction_resolved") {
     return;
   }
-  publishedEvents.push(event);
+  publishedEvents.push(event.message);
 });
 
 // ── Real imports (after mocks) ───────────────────────────────────────
@@ -62,7 +65,7 @@ const pendingInteractions = await import("../runtime/pending-interactions.js");
 const { HostBrowserProxy } = await import("../daemon/host-browser-proxy.js");
 
 /** Extract the AssistantEvent payloads from published events. */
-function getPublishedMessages(): unknown[] {
+function getPublishedMessages(): Record<string, unknown>[] {
   return publishedEvents;
 }
 
@@ -203,14 +206,14 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
+      const sent = getPublishedMessages()[0];
       expect(sent.type).toBe("host_browser_request");
       expect(sent.conversationId).toBe("session-1");
       expect(sent.cdpMethod).toBe("Page.navigate");
       expect(sent.cdpParams).toEqual({ url: "https://example.com" });
       expect(typeof sent.requestId).toBe("string");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       resolveResult(requestId, { content: "ok", isError: false });
@@ -232,7 +235,7 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
+      const sent = getPublishedMessages()[0];
       expect(sent.type).toBe("host_browser_request");
       expect(sent.cdpMethod).toBe("Runtime.evaluate");
       expect(sent.cdpParams).toEqual({
@@ -241,7 +244,7 @@ describe("HostBrowserProxy", () => {
       });
       expect(sent.cdpSessionId).toBe("session-abc");
 
-      resolveResult(sent.requestId as string, {
+      resolveResult(messageIdSchema.parse(sent.requestId), {
         content: "Example Domain",
         isError: false,
       });
@@ -255,8 +258,8 @@ describe("HostBrowserProxy", () => {
         "session-1",
       );
 
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      resolveResult(sent.requestId as string, {
+      const sent = getPublishedMessages()[0];
+      resolveResult(messageIdSchema.parse(sent.requestId), {
         content: "Navigation failed",
         isError: true,
       });
@@ -274,8 +277,8 @@ describe("HostBrowserProxy", () => {
         "session-1",
       );
 
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = getPublishedMessages()[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       resolveResult(requestId, { content: "ok", isError: false });
@@ -296,8 +299,8 @@ describe("HostBrowserProxy", () => {
         "session-1",
       );
 
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = getPublishedMessages()[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       await new Promise((r) => setTimeout(r, 50));
@@ -333,8 +336,8 @@ describe("HostBrowserProxy", () => {
         controller.signal,
       );
 
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = getPublishedMessages()[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       controller.abort();
@@ -346,7 +349,7 @@ describe("HostBrowserProxy", () => {
 
       // Cancel envelope should have been sent.
       expect(getPublishedMessages()).toHaveLength(2);
-      const cancelMsg = getPublishedMessages()[1] as Record<string, unknown>;
+      const cancelMsg = getPublishedMessages()[1];
       expect(cancelMsg.type).toBe("host_browser_cancel");
       expect(cancelMsg.requestId).toBe(requestId);
     });
@@ -424,9 +427,9 @@ describe("HostBrowserProxy", () => {
       const p1Swallowed = p1.catch(() => {});
       const p2Swallowed = p2.catch(() => {});
 
-      const requestIds = (
-        getPublishedMessages() as Array<Record<string, unknown>>
-      ).map((m) => m.requestId as string);
+      const requestIds = getPublishedMessages().map((m) =>
+        messageIdSchema.parse(m.requestId),
+      );
       expect(requestIds).toHaveLength(2);
 
       proxy.dispose();
@@ -441,9 +444,7 @@ describe("HostBrowserProxy", () => {
 
       const cancelMessages = getPublishedMessages()
         .slice(2)
-        .filter(
-          (m) => (m as Record<string, unknown>).type === "host_browser_cancel",
-        ) as Array<Record<string, unknown>>;
+        .filter((m) => m.type === "host_browser_cancel");
       expect(cancelMessages).toHaveLength(2);
     });
   });
@@ -520,8 +521,9 @@ describe("HostBrowserProxy", () => {
       expect(spy.addCalls).toEqual(["abort"]);
       expect(spy.removeCalls).toEqual([]);
 
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
       resolveResult(requestId, { content: "ok", isError: false });
       await resultPromise;
 
@@ -587,8 +589,8 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = getPublishedMessages()[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       const pending = pendingInteractions.get(requestId);
       expect(pending).toBeDefined();
@@ -650,8 +652,8 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = getPublishedMessages()[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       const pending = pendingInteractions.get(requestId);
       expect(pending?.targetClientId).toBe("ext-client");
@@ -678,8 +680,9 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
 
       const pending = pendingInteractions.get(requestId);
       expect(pending?.targetClientId).toBe("macos-client");
@@ -705,8 +708,9 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
 
       const pending = pendingInteractions.get(requestId);
       expect(pending?.targetClientId).toBe("test-client");
@@ -776,8 +780,8 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const sent = getPublishedMessages()[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = getPublishedMessages()[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       const pending = pendingInteractions.get(requestId);
       expect(pending?.targetClientId).toBe("macos-client");
@@ -889,8 +893,9 @@ describe("HostBrowserProxy", () => {
         // targetClientId omitted
       );
 
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
       const pending = pendingInteractions.get(requestId);
       expect(pending?.targetClientId).toBe("ext-client");
 
@@ -948,8 +953,9 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
       expect(pendingInteractions.get(requestId)?.targetClientId).toBe(
         "ext-client",
       );
@@ -1013,8 +1019,9 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
       expect(pendingInteractions.get(requestId)?.targetClientId).toBe(
         "ext-client",
       );
@@ -1083,8 +1090,9 @@ describe("HostBrowserProxy", () => {
       );
 
       expect(getPublishedMessages()).toHaveLength(1);
-      const requestId = (getPublishedMessages()[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(
+        getPublishedMessages()[0].requestId,
+      );
       expect(pendingInteractions.get(requestId)?.targetClientId).toBe(
         "macos-client",
       );

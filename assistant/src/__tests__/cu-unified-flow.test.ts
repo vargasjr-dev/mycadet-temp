@@ -7,6 +7,8 @@
 
 import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ComputerUseModeSessionProducer } from "../daemon/computer-use-mode-session.js";
 import {
   setBroadcastOverrideForTesting,
@@ -14,7 +16,8 @@ import {
 } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
-const sentMessages: unknown[] = [];
+const messageIdSchema = z.string();
+const sentMessages: Record<string, unknown>[] = [];
 let mockHasClient = true; // Default to true for CU unified flow tests
 // Default principal id used for both ctx.trustContext and clients in the
 // existing single-user tests. Tests that exercise cross-user behaviour
@@ -32,12 +35,12 @@ let mockCuClients: Array<{
   },
 ];
 
-setBroadcastOverrideForTesting((msg: unknown) => {
+setBroadcastOverrideForTesting((msg) => {
   // `interaction_resolved` envelopes are emitted by the
   // pending-interactions tracker for every resolution. They are
   // orthogonal to the surface-proxy wire messages these tests assert
   // on, so swallow them here.
-  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+  if (msg.type === "interaction_resolved") {
     return;
   }
   sentMessages.push(msg);
@@ -426,7 +429,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
 
       // Verify the proxy sent a request to the client
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.toolName).toBe("computer_use_click");
       expect(sent.input).toEqual({
@@ -441,7 +444,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       expect(proxy.actionHistory[0].toolName).toBe("computer_use_click");
 
       // Simulate client resolving with observation
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.processObservation(requestId, {
         axTree: "SubmitButton [1]\nTextField [2]",
         executionResult: "Clicked element 42",
@@ -464,11 +467,11 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.toolName).toBe("computer_use_screenshot");
 
-      proxy.processObservation(sent.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         axTree: "Window [1]",
         screenshot: "base64screenshot",
         screenshotWidthPx: 1920,
@@ -498,14 +501,14 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         { text: "Hello world", reasoning: "Type into search box" },
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.toolName).toBe("computer_use_type_text");
       expect(sent.input).toEqual({
         text: "Hello world",
         reasoning: "Type into search box",
       });
 
-      proxy.processObservation(sent.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         axTree: "SearchBox [1] value='Hello world'",
         executionResult: "Typed text",
       });
@@ -528,8 +531,8 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       const p1 = surfaceProxyResolver(ctx, "computer_use_screenshot", {
         reasoning: "Check what's on screen",
       });
-      const sent1 = sentMessages[0] as Record<string, unknown>;
-      proxy.processObservation(sent1.requestId as string, {
+      const sent1 = sentMessages[0];
+      proxy.processObservation(messageIdSchema.parse(sent1.requestId), {
         axTree: "LoginButton [1]\nUsernameField [2]",
       });
       const r1 = await p1;
@@ -542,8 +545,8 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         element_id: 1,
         reasoning: "Click login button",
       });
-      const sent2 = sentMessages[1] as Record<string, unknown>;
-      proxy.processObservation(sent2.requestId as string, {
+      const sent2 = sentMessages[1];
+      proxy.processObservation(messageIdSchema.parse(sent2.requestId), {
         axTree: "PasswordField [1]\nSubmitButton [2]",
         axDiff: "+ PasswordField [1]\n+ SubmitButton [2]\n- LoginButton [1]",
         executionResult: "Clicked element 1",
@@ -567,9 +570,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       // screenshot + click, then done tells the client the task ended so the
       // helper returns the pointer; done itself never reaches the client
       expect(sentMessages).toHaveLength(3);
-      expect((sentMessages[2] as Record<string, unknown>).type).toBe(
-        "host_cu_cancel",
-      );
+      expect(sentMessages[2].type).toBe("host_cu_cancel");
     });
   });
 
@@ -632,11 +633,13 @@ describe("surfaceProxyResolver — CU tool routing", () => {
 
       // Should have dispatched the request
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.targetClientId).toBe("client-a");
 
-      proxy.processObservation(sent.requestId as string, { axTree: "ok" });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "ok",
+      });
       const result = await resultPromise;
       expect(result.isError).toBe(false);
     });
@@ -651,10 +654,12 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       });
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
 
-      proxy.processObservation(sent.requestId as string, { axTree: "ok" });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "ok",
+      });
       const result = await resultPromise;
       expect(result.isError).toBe(false);
     });
@@ -752,14 +757,16 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       });
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
       expect(sent.targetClientId).toBe("cu-client");
       // recordAction did fire on the success path.
       expect(proxy.stepCount).toBe(1);
       expect(proxy.actionHistory).toHaveLength(1);
 
-      proxy.processObservation(sent.requestId as string, { axTree: "ok" });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "ok",
+      });
       const result = await resultPromise;
       expect(result.isError).toBe(false);
     });
@@ -882,11 +889,11 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       // Broadcast happens, but with the same-user clientId set so only
       // that client receives it.
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("cu-mine");
 
       // Manually resolve to clean up the pending promise.
-      proxy.processObservation(sent.requestId as string, {
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         executionResult: "ok",
       });
       await resultPromise;
@@ -970,8 +977,8 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         reasoning: "click missing element",
       });
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      proxy.processObservation(sent.requestId as string, {
+      const sent = sentMessages[0];
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
         executionError: "Element 999 not found in AX tree",
         axTree: "Window [1]",
       });
@@ -996,11 +1003,13 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         reasoning: "Submit the form",
       });
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.reasoning).toBe("Submit the form");
 
       // Resolve to avoid unhandled rejection on dispose
-      proxy.processObservation(sent.requestId as string, { axTree: "..." });
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "...",
+      });
       await resultPromise;
     });
 
@@ -1016,8 +1025,10 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       expect(proxy.actionHistory[0].reasoning).toBe("Scroll to see more");
 
       // Resolve to avoid hanging
-      const sent = sentMessages[0] as Record<string, unknown>;
-      proxy.processObservation(sent.requestId as string, { axTree: "..." });
+      const sent = sentMessages[0];
+      proxy.processObservation(messageIdSchema.parse(sent.requestId), {
+        axTree: "...",
+      });
     });
   });
 
@@ -1062,8 +1073,10 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         element_id: 1,
         reasoning: "first",
       });
-      const s1 = sentMessages[0] as Record<string, unknown>;
-      proxy.processObservation(s1.requestId as string, { axTree: "A" });
+      const s1 = sentMessages[0];
+      proxy.processObservation(messageIdSchema.parse(s1.requestId), {
+        axTree: "A",
+      });
       await p1;
       expect(proxy.stepCount).toBe(1);
 
@@ -1072,8 +1085,10 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         text: "hello",
         reasoning: "second",
       });
-      const s2 = sentMessages[1] as Record<string, unknown>;
-      proxy.processObservation(s2.requestId as string, { axTree: "B" });
+      const s2 = sentMessages[1];
+      proxy.processObservation(messageIdSchema.parse(s2.requestId), {
+        axTree: "B",
+      });
       await p2;
       expect(proxy.stepCount).toBe(2);
 
@@ -1083,8 +1098,10 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         amount: 1,
         reasoning: "third",
       });
-      const s3 = sentMessages[2] as Record<string, unknown>;
-      proxy.processObservation(s3.requestId as string, { axTree: "C" });
+      const s3 = sentMessages[2];
+      proxy.processObservation(messageIdSchema.parse(s3.requestId), {
+        axTree: "C",
+      });
       await p3;
       expect(proxy.stepCount).toBe(3);
 

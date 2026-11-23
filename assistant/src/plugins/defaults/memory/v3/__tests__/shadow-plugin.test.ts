@@ -39,7 +39,7 @@ import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migra
 import * as schema from "../../../../../persistence/schema/index.js";
 import { stripOrphanedSurrogates } from "../../../../../util/unicode.js";
 import type { HotSetEntry, HotSetOptions } from "../hot-set.js";
-import type { OrchestrateResult } from "../orchestrate.js";
+import type { orchestrate, OrchestrateResult } from "../orchestrate.js";
 import {
   ensureMemoryV3InjectedSectionsSchema,
   ensureMemoryV3PoolInputsSchema,
@@ -48,7 +48,6 @@ import {
 import { MEMORY_V3_FULL_PROFILE_MIN_PAGES } from "../tuning-profile.js";
 import {
   MEMORY_V3_COMMIT_META_KEY,
-  type MemoryRoutingTurn,
   type Section,
   type SectionIndex,
   type SelectionSource,
@@ -180,7 +179,9 @@ const DEFAULT_FINDER = [
   { slug: "page-5", descriptor: "", lane: "learned" as const },
 ];
 const orchestrateSpy = mock(
-  async (): Promise<OrchestrateResult> => ({
+  async (
+    ..._args: Parameters<typeof orchestrate>
+  ): Promise<OrchestrateResult> => ({
     selections: [
       { slug: "page-core", sections: [] },
       { slug: "page-hot", sections: [] },
@@ -548,7 +549,7 @@ mock.module("../orchestrate.js", () => ({
   ...realOrchestrate,
   orchestrate: (...args: Parameters<typeof realOrchestrate.orchestrate>) =>
     shadowMockActive
-      ? orchestrateSpy(...(args as unknown as []))
+      ? orchestrateSpy(...args)
       : realOrchestrate.orchestrate(...args),
 }));
 
@@ -1144,9 +1145,7 @@ describe("memory-v3 engine", () => {
     ];
     await observeTurn("conv-1", 1);
 
-    const turn = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![0] as MemoryRoutingTurn;
+    const turn = orchestrateSpy.mock.calls[0]![0];
     expect(turn.currentMessage).toBe("and now this");
     expect(turn.previousAssistantMessage).toBe(
       "the thread continues from my last reply",
@@ -1156,9 +1155,7 @@ describe("memory-v3 engine", () => {
   test("a conversation-opening turn has no previous assistant message", async () => {
     await observeTurn("conv-1", 0);
 
-    const turn = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![0] as MemoryRoutingTurn;
+    const turn = orchestrateSpy.mock.calls[0]![0];
     expect(turn.previousAssistantMessage).toBeUndefined();
   });
 
@@ -1182,9 +1179,7 @@ describe("memory-v3 engine", () => {
     ];
     await observeTurn("conv-1", 1);
 
-    const turn = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![0] as MemoryRoutingTurn;
+    const turn = orchestrateSpy.mock.calls[0]![0];
     const tail = turn.previousAssistantMessage!;
     expect(stripOrphanedSurrogates(tail)).toBe(tail);
     expect(tail.length).toBeLessThanOrEqual(2500);
@@ -1402,13 +1397,7 @@ describe("memory-v3 engine", () => {
 
   test("the turn passed to orchestrate carries the latest user message", async () => {
     await observeTurn("conv-1", 0);
-    const turn = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![0] as {
-      conversationId: string;
-      turnNumber: number;
-      currentMessage: string;
-    };
+    const turn = orchestrateSpy.mock.calls[0]![0];
     expect(turn.conversationId).toBe("conv-1");
     expect(turn.turnNumber).toBe(0);
     expect(turn.currentMessage).toBe("hello world");
@@ -1442,9 +1431,7 @@ describe("memory-v3 engine", () => {
 
     await observeTurn("conv-1", 1);
 
-    const turn = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![0] as MemoryRoutingTurn;
+    const turn = orchestrateSpy.mock.calls[0]![0];
     expect(turn.currentMessage).toBe("what did I say my favorite color was?");
   });
 
@@ -1467,23 +1454,13 @@ describe("memory-v3 engine", () => {
 
     await observeTurn("conv-1", 1);
 
-    const turn = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![0] as MemoryRoutingTurn;
+    const turn = orchestrateSpy.mock.calls[0]![0];
     expect(turn.currentMessage).toBe("generic hidden prompt");
   });
 
   test("orchestrate receives the lane deps", async () => {
     await observeTurn("conv-1", 0);
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as {
-      sectionIndex?: unknown;
-      needle?: unknown;
-      edgeGraph?: unknown;
-      coreSlugs?: unknown;
-      hotSlugs?: unknown;
-    };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     expect(deps.sectionIndex).toBeDefined();
     expect(deps.needle).toBeDefined();
     expect(deps.edgeGraph).toBeDefined();
@@ -1494,12 +1471,7 @@ describe("memory-v3 engine", () => {
   test("learned-edge graph init is skipped when the configured cap is zero", async () => {
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as {
-      learnedGraph?: unknown;
-      learnedCap?: number;
-    };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     expect(learnedGraphBuilds).toBe(0);
     expect(deps.learnedGraph).toBeUndefined();
     expect(deps.learnedCap).toBe(0);
@@ -1513,12 +1485,7 @@ describe("memory-v3 engine", () => {
 
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as {
-      learnedGraph?: unknown;
-      learnedCap?: number;
-    };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     expect(learnedGraphBuilds).toBe(1);
     expect(deps.learnedGraph).toBeDefined();
     expect(deps.learnedCap).toBe(6);
@@ -1529,26 +1496,20 @@ describe("memory-v3 engine", () => {
     extraRealConceptPages = MEMORY_V3_FULL_PROFILE_MIN_PAGES;
     selectorEnabledCfg = false;
     await observeTurn("conv-1", 0);
-    const firstDeps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { selectorEnabled?: boolean };
+    const firstDeps = orchestrateSpy.mock.calls[0]![1];
     expect(firstDeps.selectorEnabled).toBe(false);
 
     // Edit config mid-conversation; the lanes are NOT invalidated.
     selectorEnabledCfg = true;
     await observeTurn("conv-1", 1);
-    const secondDeps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[1]![1] as { selectorEnabled?: boolean };
+    const secondDeps = orchestrateSpy.mock.calls[1]![1];
     expect(secondDeps.selectorEnabled).toBe(true);
   });
 
   test("gate enabled (default) → threads the gate tuning plus enabled:true into orchestrate", async () => {
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { gateConfig?: unknown };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     // The live gate config is the `memory.v3.gate` tuning, including the
     // default-on `enabled` kill-switch.
     expect(deps.gateConfig).toEqual({ ...GATE_DEFAULTS, enabled: true });
@@ -1558,9 +1519,7 @@ describe("memory-v3 engine", () => {
     gateEnabledCfg = false;
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { gateConfig?: unknown };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     // The kill-switch makes the effective `enabled` false, so selection
     // always runs.
     expect(deps.gateConfig).toEqual({ ...GATE_DEFAULTS, enabled: false });
@@ -1571,10 +1530,8 @@ describe("memory-v3 engine", () => {
     selectorEnabledCfg = true;
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { rareTerm?: unknown };
-    expect(deps.rareTerm).toEqual({
+    const deps = orchestrateSpy.mock.calls[0]![1];
+    expect<unknown>(deps.rareTerm).toEqual({
       enabled: true,
       maxDf: 12,
       maxDfFraction: 0.002,
@@ -1589,9 +1546,7 @@ describe("memory-v3 engine", () => {
     rareTermEnabledCfg = false;
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { rareTerm?: unknown };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     expect(deps.rareTerm).toBeUndefined();
   });
 
@@ -1601,9 +1556,7 @@ describe("memory-v3 engine", () => {
     // evidence) stay out of the pool.
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { selectorEnabled?: boolean; rareTerm?: unknown };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     expect(deps.selectorEnabled).toBe(false);
     expect(deps.rareTerm).toBeUndefined();
   });
@@ -1612,18 +1565,14 @@ describe("memory-v3 engine", () => {
     extraRealConceptPages = MEMORY_V3_FULL_PROFILE_MIN_PAGES;
     selectorEnabledCfg = false;
     await observeTurn("conv-1", 0);
-    const offDeps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { rareTerm?: unknown };
+    const offDeps = orchestrateSpy.mock.calls[0]![1];
     expect(offDeps.rareTerm).toBeUndefined();
 
     // A live config edit turning the selector on brings the lane with it on
     // the next turn, with no lane rebuild.
     selectorEnabledCfg = true;
     await observeTurn("conv-1", 1);
-    const onDeps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[1]![1] as { rareTerm?: unknown };
+    const onDeps = orchestrateSpy.mock.calls[1]![1];
     expect(onDeps.rareTerm).toBeDefined();
   });
 
@@ -1637,9 +1586,7 @@ describe("memory-v3 engine", () => {
     ];
     await observeTurn("conv-1", 0);
 
-    const deps = (
-      orchestrateSpy.mock.calls as unknown as unknown[][]
-    )[0]![1] as { coreSlugs: string[]; hotSlugs: string[] };
+    const deps = orchestrateSpy.mock.calls[0]![1];
     // Dangling core entries and deleted hot pages never reach the pool.
     expect(deps.coreSlugs).toEqual(["page-1"]);
     expect(deps.hotSlugs).toEqual(["page-2"]);

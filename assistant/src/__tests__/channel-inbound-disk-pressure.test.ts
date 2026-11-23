@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { eq } from "drizzle-orm";
 
 import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const deliverChannelReplyMock = mock(
   async (_callbackUrl: string, _payload: Record<string, unknown>) => {},
@@ -135,7 +136,7 @@ describe("channel inbound disk pressure gate", () => {
     setAdapterProcessMessage(processMessage);
 
     const res = await handleChannelInbound(makeInboundRequest());
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body).toMatchObject({
@@ -199,7 +200,7 @@ describe("channel inbound disk pressure gate", () => {
     const res = await handleChannelInbound(
       makeInboundRequest({ externalMessageId: "msg-duplicate-blocked" }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body).toMatchObject({
       accepted: true,
@@ -247,7 +248,7 @@ describe("channel inbound disk pressure gate", () => {
         replyCallbackUrl: "https://gateway.test/deliver/slack",
       }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body).toMatchObject({
       accepted: true,
@@ -292,7 +293,7 @@ describe("channel inbound disk pressure gate", () => {
     const res = await handleChannelInbound(
       makeInboundRequest({ externalMessageId: "msg-guardian-bound-blocked" }),
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(body).toMatchObject({
       accepted: true,

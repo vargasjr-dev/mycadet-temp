@@ -8,6 +8,8 @@ import {
   test,
 } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 // The inbound handler imports processMessage directly — stub it so it doesn't
@@ -328,7 +330,7 @@ describe("WhatsApp channel ingress attachment resolution", () => {
         ),
       },
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body.accepted).toBe(true);
@@ -375,7 +377,7 @@ describe("WhatsApp channel ingress attachment resolution", () => {
         ),
       },
     );
-    const body = (await res.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body.accepted).toBe(true);
