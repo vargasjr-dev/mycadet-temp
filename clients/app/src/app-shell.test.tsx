@@ -73,6 +73,26 @@ async function mounted() {
   return view;
 }
 
+test("only the mounted same-origin assistant frame can request feedback", async () => {
+  const onShareFeedback = mock(() => {});
+  respond(async () => json(resolution()));
+  render(<AppShell {...props()} onShareFeedback={onShareFeedback} />);
+  await screen.findByTitle("Assistant");
+  await act(async () => {});
+  const frame = iframe();
+  const data = { source: "mycadet-web-share-feedback" };
+  const send = (source: Window | null, senderOrigin: string) =>
+    window.dispatchEvent(
+      new MessageEvent("message", { source, origin: senderOrigin, data }),
+    );
+
+  send(window, origin);
+  send(frame.contentWindow, "https://example.org");
+  expect(onShareFeedback).not.toHaveBeenCalled();
+  send(frame.contentWindow, origin);
+  expect(onShareFeedback).toHaveBeenCalledTimes(1);
+});
+
 test("server rendering never fetches or mounts a browser router", () => {
   expect(renderToString(<AppShell {...props()} />)).toContain(
     "Loading assistant",
@@ -83,15 +103,19 @@ test("server rendering never fetches or mounts a browser router", () => {
 test("the frame loads the bundle mount and its echoes reach the host router", async () => {
   await mounted();
   const frame = iframe();
-  const route = (path: string) =>
-    new URL(path, window.location.origin).href;
+  const route = (path: string) => new URL(path, window.location.origin).href;
   expect(frame.src).toBe(
-    route(`/web${window.location.pathname}${window.location.search}${window.location.hash}`),
+    route(
+      `/web${window.location.pathname}${window.location.search}${window.location.hash}`,
+    ),
   );
   message(frame, "/web/assistant/settings?tab=profile#name");
-  expect(navigate).toHaveBeenCalledWith("/assistant/settings?tab=profile#name", {
-    replace: false,
-  });
+  expect(navigate).toHaveBeenCalledWith(
+    "/assistant/settings?tab=profile#name",
+    {
+      replace: false,
+    },
+  );
   message(frame, "/web/admin/assistant/files", { nav: "replace" });
   expect(navigate).toHaveBeenLastCalledWith("/admin/assistant/files", {
     replace: true,

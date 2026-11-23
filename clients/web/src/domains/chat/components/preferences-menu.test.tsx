@@ -15,7 +15,7 @@ import {
   expect,
   test,
 } from "bun:test";
-import { createElement, Fragment } from "react";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   act,
@@ -60,23 +60,6 @@ stubModule("react-router", await import("react-router"), {
   },
 });
 
-// The menu owns when the chunk is warmed and when the dialog is mounted; the
-// dialog's own lazy wiring is covered by `share-feedback-modal-lazy.test.tsx`.
-const feedbackRef = { prefetches: 0 };
-stubModule(
-  "@/components/share-feedback-modal-lazy",
-  await import("@/components/share-feedback-modal-lazy"),
-  {
-    ShareFeedbackModalLazy: ({ open }: { open: boolean }) =>
-      open
-        ? createElement("div", { "data-testid": "share-feedback-modal" })
-        : createElement(Fragment),
-    prefetchShareFeedbackModal: () => {
-      feedbackRef.prefetches += 1;
-    },
-  },
-);
-
 // Records the paths the menu warms. Which chunks a path pulls in is
 // `prefetch-route.test.ts`'s business; this suite owns only when the menu asks.
 const prefetchedPaths: string[] = [];
@@ -112,7 +95,6 @@ beforeEach(() => {
   useAssistantIdentityStore.getState().clearIdentity();
   useResolvedAssistantStore.getState().resetAssistant();
   isTouchMobileRef.value = false;
-  feedbackRef.prefetches = 0;
   prefetchedPaths.length = 0;
 });
 
@@ -211,16 +193,31 @@ describe("PreferencesMenu", () => {
     expect(screen.queryByText(/credits/i)).toBeNull();
   });
 
-  test("opening the menu warms the feedback chunk, once", async () => {
-    expect(feedbackRef.prefetches).toBe(0);
-
-    await openMenu();
-    expect(feedbackRef.prefetches).toBe(1);
-
-    // The menu closes here, which re-renders the component. The chunk is
-    // cached after the first fetch, so a second warm buys nothing.
-    await closeMenuViaSettings();
-    expect(feedbackRef.prefetches).toBe(1);
+  test("Share Feedback asks the app frame to open the dialog", async () => {
+    const originalParent = Object.getOwnPropertyDescriptor(window, "parent");
+    const messages: unknown[][] = [];
+    Object.defineProperty(window, "parent", {
+      configurable: true,
+      value: { postMessage: (...args: unknown[]) => messages.push(args) },
+    });
+    try {
+      await openMenu();
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: /Share feedback/i }),
+        );
+      });
+      expect(messages).toEqual([
+        [{ source: "mycadet-web-share-feedback" }, window.location.origin],
+      ]);
+      expect(
+        screen.queryByRole("dialog", { name: "Share Feedback" }),
+      ).toBeNull();
+    } finally {
+      if (originalParent)
+        Object.defineProperty(window, "parent", originalParent);
+      else Reflect.deleteProperty(window, "parent");
+    }
   });
 
   test("opening the menu warms the Settings route, once", async () => {

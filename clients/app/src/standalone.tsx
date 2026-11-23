@@ -30,6 +30,7 @@ import { routes } from "@app/utils/routes";
 export function DesktopChrome() {
   const [createOpen, setCreateOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const openFeedback = () => setFeedbackOpen(true);
   // Id of the assistant a tray "Retire <assistant>…" command targets. The
   // retire lives here in the shell — the chooser's dialog is the cloud row's
   // path; the command carries the id so the retire runs without routing
@@ -75,7 +76,7 @@ export function DesktopChrome() {
 
   useCadetCommands({
     createAssistant: () => setCreateOpen(true),
-    shareFeedback: () => setFeedbackOpen(true),
+    shareFeedback: openFeedback,
     selectAssistant: (command) => {
       if (command.kind !== "selectAssistant") {
         return;
@@ -140,7 +141,7 @@ export function DesktopChrome() {
           }
         }}
       />
-      <Outlet />
+      <Outlet context={openFeedback} />
     </>
   );
 }

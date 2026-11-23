@@ -14,6 +14,7 @@ export interface AppShellProps {
   assistantId?: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title?: string;
+  onShareFeedback?: () => void;
 }
 
 /** Portable React entry. Resolves assistants through the host API; the host owns browser navigation. */
@@ -63,6 +64,7 @@ function AssistantShell({
   apiBaseUrl = "/",
   assistantId,
   onNavigate,
+  onShareFeedback,
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
@@ -165,6 +167,7 @@ function AssistantShell({
   const assistant = state.assistant;
   return (
     <AssistantFrame
+      onShareFeedback={onShareFeedback}
       key={`${assistant.id}:${assistant.version}`}
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}

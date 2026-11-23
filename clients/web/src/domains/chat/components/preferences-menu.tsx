@@ -17,10 +17,7 @@ import {
   useSideMenuCollapsed,
 } from "@mycadet/design-library";
 
-import {
-  prefetchShareFeedbackModal,
-  ShareFeedbackModalLazy,
-} from "@/components/share-feedback-modal-lazy";
+import { requestShareFeedback } from "@/lib/auth/request-share-feedback";
 import { useTouchMobile } from "@/hooks/use-touch-mobile";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { routes } from "@/utils/routes";
@@ -35,9 +32,6 @@ import { useTranslation } from "@/i18n";
  */
 
 export interface PreferencesMenuProps {
-  assistantId?: string | null;
-  assistantVersion?: string | null;
-  activeConversationId?: string | null;
   /**
    * Trigger presentation. `item` is the labeled side-menu footer row (rail);
    * `pill` is a floating rounded button for the mobile overlay's action row.
@@ -46,9 +40,6 @@ export interface PreferencesMenuProps {
 }
 
 export function PreferencesMenu({
-  assistantId,
-  assistantVersion,
-  activeConversationId,
   triggerVariant = "item",
 }: PreferencesMenuProps) {
   const { t } = useTranslation("chat");
@@ -60,7 +51,6 @@ export function PreferencesMenu({
   const collapsed = useSideMenuCollapsed();
   const isTouchMobile = useTouchMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   /* Warm the chunks this menu leads to as it opens rather than on the click
      that needs them, so they are usually already there by the time they are
@@ -74,7 +64,6 @@ export function PreferencesMenu({
       return;
     }
     hasPrefetchedMenuTargets.current = true;
-    prefetchShareFeedbackModal();
     prefetchRoute(routes.settings.root);
   }, [isOpen]);
 
@@ -151,12 +140,7 @@ export function PreferencesMenu({
       />
     );
 
-  const content = (
-    <PreferencesMenuContent
-      onClose={closeMenu}
-      onShareFeedback={() => setIsFeedbackOpen(true)}
-    />
-  );
+  const content = <PreferencesMenuContent onClose={closeMenu} />;
 
   return (
     <>
@@ -191,41 +175,29 @@ export function PreferencesMenu({
           </Popover.Content>
         </Popover.Root>
       )}
-
-      {isFeedbackOpen ? (
-        <ShareFeedbackModalLazy
-          open={isFeedbackOpen}
-          onClose={() => setIsFeedbackOpen(false)}
-          assistantId={assistantId}
-          assistantVersion={assistantVersion}
-          activeConversationId={activeConversationId}
-        />
-      ) : null}
     </>
   );
 }
 
 interface PreferencesMenuContentProps {
   onClose: () => void;
-  onShareFeedback: () => void;
 }
 
-function PreferencesMenuContent({
-  onClose,
-  onShareFeedback,
-}: PreferencesMenuContentProps) {
+function PreferencesMenuContent({ onClose }: PreferencesMenuContentProps) {
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
   return (
     <>
-      <PanelItem
-        icon={MessageSquareText}
-        label={t("preferencesMenu.shareFeedback")}
-        onSelect={() => {
-          onClose();
-          onShareFeedback();
-        }}
-      />
+      {typeof window !== "undefined" && window.parent !== window && (
+        <PanelItem
+          icon={MessageSquareText}
+          label={t("preferencesMenu.shareFeedback")}
+          onSelect={() => {
+            onClose();
+            requestShareFeedback();
+          }}
+        />
+      )}
 
       <PanelItem
         icon={SettingsIcon}

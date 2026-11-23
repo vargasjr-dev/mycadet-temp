@@ -116,3 +116,7 @@ export const HostNavigationSchema = z.object({
   source: z.literal("mycadet-web-host-nav"),
   path: z.string(),
 });
+
+export const ShareFeedbackRequestSchema = z.object({
+  source: z.literal("mycadet-web-share-feedback"),
+});

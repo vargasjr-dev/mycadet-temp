@@ -4,11 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AssistantNavigationSchema,
   HostNavigationSchema,
+  ShareFeedbackRequestSchema,
 } from "../assistant/resolution-contract";
 
 export interface AssistantFrameProps {
   onNavigate(path: string, options: { replace: boolean }): void;
   title: string;
+  onShareFeedback?: () => void;
 }
 
 const mount = "/web";
@@ -20,7 +22,11 @@ function frameUrl(): string {
   ).href;
 }
 
-export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
+export function AssistantFrame({
+  onNavigate,
+  onShareFeedback,
+  title,
+}: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [src] = useState(frameUrl);
   const currentPath = useRef(src);
@@ -31,6 +37,10 @@ export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
         event.source !== ref.current?.contentWindow ||
         event.origin !== frameOrigin
       ) {
+        return;
+      }
+      if (ShareFeedbackRequestSchema.safeParse(event.data).success) {
+        onShareFeedback?.();
         return;
       }
       const message = AssistantNavigationSchema.safeParse(event.data);
@@ -61,7 +71,7 @@ export function AssistantFrame({ onNavigate, title }: AssistantFrameProps) {
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
-  }, [frameOrigin, onNavigate]);
+  }, [frameOrigin, onNavigate, onShareFeedback]);
 
   // The frame's HOST-navigation requests: surfaces that live outside the
   // frame's url space (the account area — e.g. the Doctor page) but that

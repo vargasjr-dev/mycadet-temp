@@ -1,4 +1,9 @@
-import { Navigate, useLocation, useNavigate } from "react-router";
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+} from "react-router";
 import { AppShell } from "@app/app-shell";
 import { useTranslation } from "@app/i18n";
 import { selectedAssistantState } from "@app/assistant/assistant-selection";
@@ -9,6 +14,7 @@ export function AssistantPage() {
   useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const onShareFeedback = useOutletContext<(() => void) | undefined>();
   const selection = selectedAssistantState(location.state);
 
   const consent = useConsentGate();
@@ -29,6 +35,7 @@ export function AssistantPage() {
 
   return (
     <AppShell
+      onShareFeedback={onShareFeedback}
       assistantId={selection?.id}
       apiBaseUrl={selection?.apiBase}
       onNavigate={(path, options) => {

@@ -95,8 +95,6 @@ export function DesktopShareFeedback({
     <ShareFeedbackModal
       open={open}
       onClose={onClose}
-      desktop
-      diagnosticsOptIn
       t={t}
       bugTip={
         <Trans

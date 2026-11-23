@@ -128,7 +128,7 @@ const shellDecorator: Decorator<InboxStoryArgs> = function ChatShell(
           onSelectConversation={() => {}}
           onOpenIntelligence={() => {}}
           onStartNewConversation={() => {}}
-          footerAction={<PreferencesMenu assistantId={ASSISTANT_ID} />}
+          footerAction={<PreferencesMenu />}
         />
       </aside>
       <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

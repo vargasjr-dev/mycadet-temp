@@ -311,7 +311,7 @@ const SHARED_ARGS = {
   /* The real `PreferencesMenu`, not a stand-in: it is the sidebar's bottom
      entry, and without it these stories show every part of the rail except
      the one at its foot. `chat-layout` passes it the same way. */
-  footerAction: <PreferencesMenu assistantId="asst-story" />,
+  footerAction: <PreferencesMenu />,
 } satisfies Partial<Parameters<typeof AssistantSideMenu>[0]>;
 
 const meta: Meta<typeof AssistantSideMenu> = {
@@ -394,7 +394,7 @@ export const CollapsedRail: Story = {
   args: {
     ...SHARED_ARGS,
     collapsed: true,
-    footerAction: <PreferencesMenu assistantId="asst-story" />,
+    footerAction: <PreferencesMenu />,
   },
 };
 
@@ -408,7 +408,7 @@ export const CollapsedRailAllView: Story = {
   args: {
     ...SHARED_ARGS,
     collapsed: true,
-    footerAction: <PreferencesMenu assistantId="asst-story" />,
+    footerAction: <PreferencesMenu />,
   },
 };
 
@@ -453,7 +453,7 @@ export const UploadedImageAvatarCollapsed: Story = {
     ...SHARED_ARGS,
     assistantName: "Haze II",
     collapsed: true,
-    footerAction: <PreferencesMenu assistantId="asst-story" />,
+    footerAction: <PreferencesMenu />,
   },
 };
 
@@ -520,9 +520,7 @@ export const OverlayDrawer: Story = {
     onClose: () => {},
     /* `chat-layout` switches the trigger for the overlay; the story does the
        same so the pill it shows is the one the drawer actually mounts. */
-    footerAction: (
-      <PreferencesMenu assistantId="asst-overlay" triggerVariant="pill" />
-    ),
+    footerAction: <PreferencesMenu triggerVariant="pill" />,
     notificationsAction: (
       <Button variant="ghost" iconOnly={<Bell />} aria-label="Notifications" />
     ),
@@ -553,11 +551,6 @@ export const OverlayDrawerCharacterAvatar: Story = {
   args: {
     ...OverlayDrawer.args,
     assistantName: "Haze II",
-    footerAction: (
-      <PreferencesMenu
-        assistantId="asst-overlay-character"
-        triggerVariant="pill"
-      />
-    ),
+    footerAction: <PreferencesMenu triggerVariant="pill" />,
   },
 };

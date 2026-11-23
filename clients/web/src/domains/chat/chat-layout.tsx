@@ -222,7 +222,6 @@ export function ChatLayout({
   const electron = isElectron();
 
   const assistantName = useAssistantIdentityStore.use.name();
-  const assistantVersion = useAssistantIdentityStore.use.version();
 
   const [historyIndex, setHistoryIndex] = useState(0);
   const [maxHistoryIndex, setMaxHistoryIndex] = useState(0);
@@ -662,9 +661,6 @@ export function ChatLayout({
       }
       footerAction={
         <PreferencesMenu
-          assistantId={assistantId}
-          assistantVersion={assistantVersion}
-          activeConversationId={activeConversationId}
           triggerVariant={args.variant === "overlay" ? "pill" : "item"}
         />
       }

@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
-import { ShareFeedbackModalLazy } from "@/components/share-feedback-modal-lazy";
 import { AssistantWakingGate } from "@/components/assistant-waking-gate";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useDownloadFeedback } from "@/hooks/use-download-feedback";
@@ -51,10 +50,7 @@ import { useOnboardingWindowSize } from "@/hooks/use-onboarding-window-size";
 import { useConversationSync } from "@/hooks/use-conversation-sync";
 import { useLegacyPinMigration } from "@/hooks/use-legacy-pin-migration";
 import { useWorkspaceTheme } from "@/hooks/use-workspace-theme";
-import {
-  getActiveAssistantId,
-} from "@/stores/resolved-assistant-store";
-import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
+import { getActiveAssistantId } from "@/stores/resolved-assistant-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
 import { useViewerStore } from "@/stores/viewer-store";
@@ -137,11 +133,9 @@ export function RootLayout() {
   useCallChords();
 
   const assistantId = useActiveAssistantId();
-  const assistantVersion = useAssistantIdentityStore.use.version();
   // The scope is keyed on the resolved assistant — a resolved assistant is
   // the whole fact; there is no separate session question to ask first.
   const notificationScopeId = resolveNotificationIdentityScope();
-  const activeConversationId = useConversationStore.use.activeConversationId();
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
   // and the Electron window title / tray / About panel (published below by
@@ -283,7 +277,6 @@ export function RootLayout() {
   // The microphones and voices the call bar's chevrons open in the popover.
   useCompanionPickers();
 
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   useCadetCommands({
     openSettings: () => {
       void navigate(routes.settings.root);
@@ -294,7 +287,6 @@ export function RootLayout() {
     logout: () => {
       hardNavigate(routes.account.logout);
     },
-    shareFeedback: () => setFeedbackOpen(true),
     quickInputSubmit: (command) => {
       if (command.kind !== "quickInputSubmit") {
         return;
@@ -533,16 +525,6 @@ export function RootLayout() {
       {/* The app dimmed while the companion introduces itself over this
           window. Inert off Electron and on the shells with no surface. */}
       <CompanionIntroScrim />
-
-      {feedbackOpen ? (
-        <ShareFeedbackModalLazy
-          open={feedbackOpen}
-          onClose={() => setFeedbackOpen(false)}
-          assistantId={assistantId}
-          assistantVersion={assistantVersion}
-          activeConversationId={activeConversationId}
-        />
-      ) : null}
     </div>
   );
 }

@@ -38,12 +38,8 @@ import type common from "../i18n/locales/en/common.json";
 
 export type FeedbackReason = "bug_report" | "feature_request" | "other";
 export type FeedbackTimeRange = "past_hour" | "past_24_hours" | "all_time";
-type FeedbackStringKey = Exclude<
-  keyof typeof common.shareFeedbackModal,
-  "adminOnlyHint" | "email"
->;
 type TranslateFeedback = (
-  key: `shareFeedbackModal.${FeedbackStringKey}`,
+  key: `shareFeedbackModal.${keyof typeof common.shareFeedbackModal}`,
   options?: { name: string },
 ) => string;
 
@@ -60,16 +56,10 @@ interface ShareFeedbackModalProps {
   initialReason?: FeedbackReason;
   initialMessage?: string;
   onSubmitted?: () => void;
-  activeConversationId?: string | null;
-  desktop?: boolean;
-  diagnosticsOptIn?: boolean;
   t: TranslateFeedback;
   bugTip: React.ReactNode;
   featureTip: React.ReactNode;
-  collectDiagnostics(
-    range: FeedbackTimeRange,
-    conversationId: string | null,
-  ): Promise<File | null>;
+  collectDiagnostics(range: FeedbackTimeRange): Promise<File | null>;
   submit(report: FeedbackReport): Promise<void>;
   saveDiagnostics(file: File): Promise<void>;
 }
@@ -89,24 +79,20 @@ const PANEL_STYLE: CSSProperties = {
 interface ReasonOption {
   value: FeedbackReason;
   icon: LucideIcon;
-  includesLogsByDefault: boolean;
 }
 
 const REASON_OPTIONS: ReasonOption[] = [
   {
     value: "bug_report",
     icon: Bug,
-    includesLogsByDefault: true,
   },
   {
     value: "feature_request",
     icon: Lightbulb,
-    includesLogsByDefault: false,
   },
   {
     value: "other",
     icon: MessageCircle,
-    includesLogsByDefault: false,
   },
 ];
 
@@ -153,15 +139,12 @@ export function ShareFeedbackModal({
   initialReason,
   initialMessage,
   onSubmitted,
-  activeConversationId,
   collectDiagnostics,
   submit,
   saveDiagnostics,
   t,
   bugTip,
   featureTip,
-  desktop = false,
-  diagnosticsOptIn = false,
 }: ShareFeedbackModalProps) {
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -190,27 +173,18 @@ export function ShareFeedbackModal({
     initialReason ?? "bug_report",
   );
   const [message, setMessage] = useState("");
-  const [includeLogs, setIncludeLogs] = useState<boolean>(
-    !diagnosticsOptIn &&
-      (REASON_OPTIONS.find((r) => r.value === (initialReason ?? "bug_report"))
-        ?.includesLogsByDefault ??
-        true),
-  );
-  const [hasManuallyToggledLogs, setHasManuallyToggledLogs] = useState(false);
+  const [includeLogs, setIncludeLogs] = useState(false);
   const [logTimeRange, setLogTimeRange] =
     useState<FeedbackTimeRange>("past_hour");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [includeConversation, setIncludeConversation] = useState(false);
   // Optional: build the diagnostics archive locally and download it
   // instead of submitting feedback (which notifies Slack).
   const [downloadMode, setDownloadMode] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const diagnosticsConversation =
-    !desktop || includeConversation ? (activeConversationId ?? null) : null;
   const canSend = message.trim().length > 0;
 
   useEffect(() => {
@@ -220,16 +194,9 @@ export function ShareFeedbackModal({
     const reason = initialReason ?? "bug_report";
     setSelectedReason(reason);
     setMessage(initialMessage ?? "");
-    setIncludeLogs(
-      !diagnosticsOptIn &&
-        (REASON_OPTIONS.find((r) => r.value === reason)
-          ?.includesLogsByDefault ??
-          true),
-    );
-    setHasManuallyToggledLogs(false);
+    setIncludeLogs(false);
     setLogTimeRange("past_hour");
     setAttachments([]);
-    setIncludeConversation(false);
     setDownloadMode(false);
     setSubmitError(null);
     setIsSubmitting(false);
@@ -240,23 +207,6 @@ export function ShareFeedbackModal({
   }, [open]);
 
   useBodyScrollLock(open);
-
-  const handleSelectReason = (reason: FeedbackReason) => {
-    setSelectedReason(reason);
-    if (!hasManuallyToggledLogs) {
-      setIncludeLogs(
-        !diagnosticsOptIn &&
-          (REASON_OPTIONS.find((r) => r.value === reason)
-            ?.includesLogsByDefault ??
-            false),
-      );
-    }
-  };
-
-  const handleToggleLogs = () => {
-    setIncludeLogs((v) => !v);
-    setHasManuallyToggledLogs(true);
-  };
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -342,7 +292,7 @@ export function ShareFeedbackModal({
     try {
       const logsFile =
         includeLogs && selectedReason !== "feature_request"
-          ? await collectDiagnostics(logTimeRange, diagnosticsConversation)
+          ? await collectDiagnostics(logTimeRange)
           : null;
       await submit({
         message: message.trim(),
@@ -372,10 +322,7 @@ export function ShareFeedbackModal({
     setSubmitError(null);
     setIsSubmitting(true);
     try {
-      const logsFile = await collectDiagnostics(
-        logTimeRange,
-        diagnosticsConversation,
-      );
+      const logsFile = await collectDiagnostics(logTimeRange);
       if (!logsFile) {
         setSubmitError("Diagnostics export isn't supported in this browser.");
         return;
@@ -472,7 +419,7 @@ export function ShareFeedbackModal({
                       t={t}
                       option={option}
                       isSelected={selectedReason === option.value}
-                      onSelect={() => handleSelectReason(option.value)}
+                      onSelect={() => setSelectedReason(option.value)}
                     />
                   ))}
                 </div>
@@ -517,7 +464,7 @@ export function ShareFeedbackModal({
                     <label className="flex cursor-pointer items-center gap-2.5">
                       <Toggle
                         checked={includeLogs}
-                        onChange={handleToggleLogs}
+                        onChange={() => setIncludeLogs((value) => !value)}
                         aria-label={t(
                           "shareFeedbackModal.includeDiagnosticsAria",
                         )}
@@ -545,23 +492,6 @@ export function ShareFeedbackModal({
                   )}
                 </div>
               )}
-
-              {desktop &&
-                activeConversationId &&
-                selectedReason !== "feature_request" && (
-                  <label className="flex cursor-pointer items-center gap-2.5">
-                    <Toggle
-                      checked={includeConversation}
-                      onChange={() => setIncludeConversation((v) => !v)}
-                      aria-label={t(
-                        "shareFeedbackModal.includeConversationAria",
-                      )}
-                    />
-                    <span className="text-body-medium-lighter leading-6 text-[var(--content-default)]">
-                      {t("shareFeedbackModal.includeConversation")}
-                    </span>
-                  </label>
-                )}
 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">

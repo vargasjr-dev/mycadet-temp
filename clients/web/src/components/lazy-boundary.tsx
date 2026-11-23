@@ -22,7 +22,7 @@ interface LazyBoundaryProps {
    *
    * An in-place retry is possible, but only by minting a fresh lazy
    * component and remounting this boundary with a new `key`; see
-   * `share-feedback-modal-lazy.tsx`.
+   * their lazy entry components.
    */
   errorFallback?: ReactElement;
 }
