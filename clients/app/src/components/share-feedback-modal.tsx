@@ -38,8 +38,12 @@ import type common from "../i18n/locales/en/common.json";
 
 export type FeedbackReason = "bug_report" | "feature_request" | "other";
 export type FeedbackTimeRange = "past_hour" | "past_24_hours" | "all_time";
+type FeedbackStringKey = Exclude<
+  keyof typeof common.shareFeedbackModal,
+  "adminOnlyHint" | "email"
+>;
 type TranslateFeedback = (
-  key: `shareFeedbackModal.${keyof typeof common.shareFeedbackModal}`,
+  key: `shareFeedbackModal.${FeedbackStringKey}`,
   options?: { name: string },
 ) => string;
 
