@@ -65,7 +65,7 @@ export function DeveloperGuideContributingContent() {
           </ul>
           <p className="mb-4 text-zinc-600">
             For Windows desktop development, start with the{" "}
-            <a href="https://github.com/vargasjr-dev/mycadet/blob/main/clients/windows/README.md">
+            <a href="https://github.com/vargasjr-dev/mycadet-temp/blob/main/clients/windows/README.md">
               Windows client README
             </a>
             . It covers Git Bash or WSL for POSIX scripts, a PowerShell
@@ -85,7 +85,7 @@ export function DeveloperGuideContributingContent() {
             Local Development Setup
           </SectionHeading>
           <pre className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100">
-            {`git clone https://github.com/vargasjr-dev/mycadet.git
+            {`git clone https://github.com/vargasjr-dev/mycadet-temp.git
 cd mycadet
 ./setup.sh`}
           </pre>
@@ -308,7 +308,7 @@ cd assistant && bunx tsc --noEmit`}
               Bypass with <code className="text-sm">--no-verify</code> in
               exceptional cases, but this is strongly discouraged. See{" "}
               <a
-                href="https://github.com/vargasjr-dev/mycadet/blob/main/.githooks/README.md"
+                href="https://github.com/vargasjr-dev/mycadet-temp/blob/main/.githooks/README.md"
                 className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400"
               >
                 .githooks/README.md

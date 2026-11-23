@@ -8,7 +8,8 @@ import {
 } from "@/lib/detect-platform";
 import CopyButton from "./copy-button";
 
-const INSTALL_COMMAND = "curl -fsSL https://mycadet.ai/install.sh | bash";
+const INSTALL_COMMAND =
+  "curl -fsSL https://github.com/vargasjr-dev/mycadet-temp/releases/latest/download/install.sh | bash";
 
 const CARD_TITLES: Record<DownloadsCardId, string> = {
   iphone: "Cadet for iPhone",

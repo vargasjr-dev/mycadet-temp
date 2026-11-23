@@ -232,7 +232,7 @@ symlink_cadet() {
 
 # Append PATH setup to ~/.config/cadet/env so callers can pick up PATH
 # changes without restarting their shell:
-#   curl -fsSL https://mycadet.ai/install.sh | bash && . ~/.config/cadet/env
+#   curl -fsSL https://github.com/vargasjr-dev/mycadet-temp/releases/latest/download/install.sh | bash && . ~/.config/cadet/env
 write_env_file() {
     local env_dir="${XDG_CONFIG_HOME:-$HOME/.config}/cadet"
     local env_file="$env_dir/env"
