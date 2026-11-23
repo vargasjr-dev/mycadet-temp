@@ -546,3 +546,47 @@
 .marketing .pricing-cta:hover {
   background: var(--green-dark);
 }
+
+.marketing .nav-mobile {
+  display: none;
+  position: relative;
+  margin-left: auto;
+}
+.marketing .nav-mobile summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 8px;
+}
+.marketing .nav-mobile summary::-webkit-details-marker {
+  display: none;
+}
+.marketing .nav-mobile summary:focus-visible {
+  outline: 2px solid var(--green);
+}
+.marketing .nav-mobile-links {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 200px;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #0002;
+}
+.marketing .nav-mobile-links .nav-link {
+  padding: 10px 12px;
+}
+@media (max-width: 860px) {
+  .marketing .nav-mobile {
+    display: block;
+  }
+}

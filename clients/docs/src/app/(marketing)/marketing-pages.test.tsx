@@ -79,9 +79,10 @@ describe("downloads page", () => {
 
   test("pipes over emdashes in the metadata title, real description", () => {
     expect(page).toContain('title: "Downloads | Cadet"');
-    expect(page).toContain("Download Cadet for Mac, Windows, and Terminal");
-    // The in-training language stays on the page content, not metadata.
-    expect(page).toContain("in training");
+    expect(page).toContain(
+      "Download Cadet for Mac, Windows, Linux, and Terminal",
+    );
+    expect(page).not.toContain("Every cadet app is still in training");
   });
 
   test("references assets under the /docs ingress prefix", () => {

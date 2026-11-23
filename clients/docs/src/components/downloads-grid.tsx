@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Image from "next/image";
 import {
   downloadsCardOrder,
@@ -14,6 +14,7 @@ const CARD_TITLES: Record<DownloadsCardId, string> = {
   iphone: "Cadet for iPhone",
   android: "Cadet for Android",
   mac: "Cadet for Mac",
+  linux: "Cadet for Linux",
   chrome: "Cadet for Chrome",
   windows: "Cadet for Windows",
   terminal: "Cadet for Terminal",
@@ -23,6 +24,7 @@ const CARD_TAGLINES: Record<DownloadsCardId, string> = {
   iphone: "Your assistant in your pocket.",
   android: "Your assistant in your pocket.",
   mac: "Your assistant on your desk.",
+  linux: "Your assistant on your Linux desktop.",
   chrome: "Your assistant in your browser.",
   windows: "Your assistant on your PC.",
   terminal: "Your assistant, on your own hardware.",
@@ -35,6 +37,7 @@ const COMING_SOON: Record<
   iphone: "📱 Coming soon!",
   android: "🤖 Coming soon!",
   chrome: "🌐 Coming soon!",
+  linux: "🐧 Coming soon!",
 };
 
 const COMING_SOON_NOTES: Record<
@@ -44,6 +47,7 @@ const COMING_SOON_NOTES: Record<
   iphone: "Your pocket cadet is still in training — check back soon.",
   android: "This pocket cadet is still in training too — check back soon.",
   chrome: "Your browser cadet is still drilling — check back soon.",
+  linux: "The Linux desktop app is in development — check back soon.",
 };
 
 // The desktop builds live in the updates bucket the release handler
@@ -70,6 +74,8 @@ function comingSoonFor(
   id: DownloadsCardId,
 ): { note: string; label: string } | null {
   switch (id) {
+    case "linux":
+      return { note: COMING_SOON_NOTES.linux, label: COMING_SOON.linux };
     case "iphone":
       return { note: COMING_SOON_NOTES.iphone, label: COMING_SOON.iphone };
     case "android":
@@ -89,6 +95,7 @@ const downloadsEnvironment = (): "dev" | "prod" =>
 function Glyph({ id }: { id: DownloadsCardId }) {
   switch (id) {
     case "mac":
+    case "linux":
       return (
         <svg
           width="64"
@@ -252,25 +259,17 @@ function Card({
   );
 }
 
-/** The downloads page's card grid, as a client component so the page
- * itself can render STATIC. The one per-visitor behavior moved in here
- * from the old per-request server render: the user-agent card ordering
- * (canonical order on the server + first paint — downloadsCardOrder(null)
- * is the canonical order, so SSR/hydration match — reordered via
- * useLayoutEffect before paint once the real UA is known). */
-export default function DownloadsGrid() {
-  const [order, setOrder] = useState<DownloadsCardId[]>(() =>
-    downloadsCardOrder(null),
-  );
-  // SSR renders the prod link (the canonical page), a dev deployment's
-  // client repaints onto its own channel before paint — the same
-  // before-paint swap the UA ordering uses.
-  const [environment, setEnvironment] = useState<"dev" | "prod">("prod");
+// Keep server rendering and hydration in canonical order before reading the UA.
+const subscribe = () => () => {};
 
-  useLayoutEffect(() => {
-    setOrder(downloadsCardOrder(navigator.userAgent));
-    setEnvironment(downloadsEnvironment());
-  }, []);
+export default function DownloadsGrid() {
+  const isClient = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+  const order = downloadsCardOrder(isClient ? navigator.userAgent : null);
+  const environment = isClient ? downloadsEnvironment() : "prod";
 
   return (
     <div className="dl-grid">

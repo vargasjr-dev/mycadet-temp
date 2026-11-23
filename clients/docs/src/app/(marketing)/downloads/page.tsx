@@ -7,7 +7,7 @@ import "./downloads.css";
 export const metadata: Metadata = {
   title: "Downloads | Cadet",
   description:
-    "Download Cadet for Mac, Windows, and Terminal — every desktop app in one place, ready to run on your own machine.",
+    "Download Cadet for Mac, Windows, Linux, and Terminal — every desktop app in one place, ready to run on your own machine.",
 };
 
 // Ported from mycadet-cloud's app/(marketing)/downloads/page.tsx so the
@@ -18,14 +18,7 @@ export default function Downloads() {
   return (
     <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
       <section className="dl-section">
-        <h1 style={{ fontSize: 48, letterSpacing: -1.5, textAlign: "center" }}>
-          Your assistant, everywhere
-        </h1>
-        <p className="dl-sub">
-          Every cadet app is still in training — for now, run the whole stack
-          locally from your terminal.
-        </p>
-
+        <h1 className="dl-title">Your assistant, everywhere</h1>
         <DownloadsGrid />
 
         <p className="dl-footnote">

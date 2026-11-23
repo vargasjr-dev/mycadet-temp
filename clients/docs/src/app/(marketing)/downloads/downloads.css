@@ -9,10 +9,14 @@
   align-items: center;
 }
 
-.dl-sub {
-  color: var(--muted);
-  font-size: 17px;
-  max-width: 560px;
+.dl-section,
+.dl-section * {
+  box-sizing: border-box;
+}
+
+.dl-title {
+  font-size: 48px;
+  letter-spacing: -1.5px;
   text-align: center;
 }
 
@@ -31,8 +35,29 @@
 }
 
 @media (max-width: 600px) {
+  .dl-section {
+    padding: 32px 16px 48px;
+  }
+  .dl-title {
+    font-size: 36px;
+    line-height: 1.15;
+  }
   .dl-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-top: 24px;
+  }
+  .dl-section .dl-card {
+    min-width: 0;
+    padding: 20px 16px;
+    gap: 8px;
+  }
+  .dl-section .dl-visual {
+    min-height: 104px;
+  }
+  .dl-qr img {
+    width: 96px;
+    height: 96px;
   }
 }
 
