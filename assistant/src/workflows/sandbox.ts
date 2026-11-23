@@ -268,7 +268,7 @@ export function createWorkflowSandbox(
       const QuickJS = await newQuickJSAsyncWASMModuleFromVariant(
         singlefileAsyncVariant,
       );
-      const vm = QuickJS.newContext() as QuickJSAsyncContext;
+      const vm: QuickJSAsyncContext = QuickJS.newContext();
       const runtime = vm.runtime;
       runtime.setMemoryLimit(memoryLimitBytes);
 

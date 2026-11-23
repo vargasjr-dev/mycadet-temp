@@ -28,10 +28,11 @@ export function migrateOAuthAppsClientSecretPath(database: DrizzleDb): void {
 
   // Guard: check if column already exists with NOT NULL
   const colInfo = raw
-    .query(
-      `SELECT "notnull" FROM pragma_table_info('oauth_apps') WHERE name = 'client_secret_credential_path'`,
-    )
-    .get() as { notnull: number } | null;
+    .query<
+      { notnull: number },
+      []
+    >(`SELECT "notnull" FROM pragma_table_info('oauth_apps') WHERE name = 'client_secret_credential_path'`)
+    .get();
   if (colInfo && colInfo.notnull === 1) {
     return;
   }

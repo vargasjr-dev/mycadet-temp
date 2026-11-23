@@ -161,7 +161,7 @@ function assistantToolCalls(
   if (msg === null || typeof msg !== "object") {
     return undefined;
   }
-  const record = msg as { role?: unknown; tool_calls?: unknown };
+  const record: { role?: unknown; tool_calls?: unknown } = msg;
   if (record.role !== "assistant" || !Array.isArray(record.tool_calls)) {
     return undefined;
   }

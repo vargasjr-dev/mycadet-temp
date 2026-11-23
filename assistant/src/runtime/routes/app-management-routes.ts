@@ -1114,7 +1114,7 @@ async function handleShareCloud({ pathParams }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
-export const ROUTES: RouteDefinition[] = [
+export const ROUTES = [
   // Literal path routes MUST come before parameterized `apps/:id/*` routes
   // to prevent the `:id` param from capturing "shared", "fork", etc.
 
@@ -1502,4 +1502,4 @@ export const ROUTES: RouteDefinition[] = [
       shareUrl: z.string(),
     }),
   },
-];
+] as const satisfies RouteDefinition[];

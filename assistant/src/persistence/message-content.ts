@@ -12,7 +12,7 @@ export function extractTextFromStoredMessageContent(
     if (!Array.isArray(parsed)) {
       return raw as string;
     }
-    const blocks = parsed as ContentBlock[];
+    const blocks: ContentBlock[] = parsed;
     const lines: string[] = [];
     for (const block of blocks) {
       switch (block.type) {

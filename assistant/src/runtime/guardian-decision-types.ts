@@ -79,10 +79,8 @@ export function buildOneTimeDecisionActions(): GuardianDecisionAction[] {
 export function buildActionLegend(
   actionIds: readonly (string | { action?: string; id?: string })[],
 ): string {
-  const lookup = GUARDIAN_DECISION_ACTIONS as Record<
-    string,
-    GuardianDecisionAction | undefined
-  >;
+  const lookup: Record<string, GuardianDecisionAction | undefined> =
+    GUARDIAN_DECISION_ACTIONS;
   const lines = actionIds
     .map((a) => {
       const id = typeof a === "string" ? a : (a.action ?? a.id ?? "");

@@ -94,7 +94,7 @@ export function extractElevenLabsErrorMessage(
     try {
       const parsed = JSON.parse(trimmed) as unknown;
       if (parsed && typeof parsed === "object") {
-        const root = parsed as { detail?: unknown; message?: unknown };
+        const root: { detail?: unknown; message?: unknown } = parsed;
 
         // Standard ElevenLabs shape: { detail: { message } }
         if (root.detail && typeof root.detail === "object") {

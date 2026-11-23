@@ -23,12 +23,16 @@ export function migrateInviteContactId(database: DrizzleDb): void {
 
   const raw = getSqliteFrom(database);
 
-  const cols = (
-    raw.query(`PRAGMA table_info(assistant_ingress_invites)`).all() as Array<{
-      name: string;
-      notnull: number;
-    }>
-  ).map((c) => ({ name: c.name, notnull: c.notnull }));
+  const cols = raw
+    .query<
+      {
+        name: string;
+        notnull: number;
+      },
+      []
+    >(`PRAGMA table_info(assistant_ingress_invites)`)
+    .all()
+    .map((c) => ({ name: c.name, notnull: c.notnull }));
   const colNames = new Set(cols.map((c) => c.name));
 
   const col = cols.find((c) => c.name === "contact_id");

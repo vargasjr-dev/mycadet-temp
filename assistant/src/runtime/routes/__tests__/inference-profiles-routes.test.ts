@@ -73,6 +73,12 @@ import { providerConnections } from "../../../persistence/schema/inference.js";
 import { BadRequestError, ConflictError, NotFoundError } from "../errors.js";
 import {
   collectProfileReferences,
+  profileDeleteResultSchema,
+  profileDetailSchema,
+  profileListSchema,
+  profileSetActiveResultSchema,
+  profileValidationResultSchema,
+  profileWriteResultSchema,
   ROUTES,
 } from "../inference-profiles-routes.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
@@ -94,7 +100,7 @@ function call(operationId: string, args: RouteHandlerArgs): Promise<unknown> {
 function seedConnection(
   name: string,
   provider: string,
-  auth: object = { type: "none" },
+  auth: { type: string; credential?: string } = { type: "none" },
 ): void {
   const now = Date.now();
   getDb()
@@ -110,7 +116,7 @@ function seedConnection(
   // The old blanket mock reported a stored key for EVERY account, so a
   // seeded connection always counted as credentialed; seeding the declared
   // credential path preserves that for each connection.
-  const credential = (auth as { credential?: string }).credential;
+  const credential = auth.credential;
   if (typeof credential === "string") {
     secureKeyResults.set(credential, "test-key");
   }
@@ -166,13 +172,15 @@ describe("POST inference/profiles (create) validation", () => {
       type: "api_key",
       credential: "credential/anthropic-work/api_key",
     });
-    const result = (await call("inference_profiles_create", {
-      body: {
-        name: "work-profile",
-        provider: "anthropic-work",
-        model: "claude-opus-4-8",
-      },
-    })) as { entry: Record<string, unknown> };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: {
+          name: "work-profile",
+          provider: "anthropic-work",
+          model: "claude-opus-4-8",
+        },
+      }),
+    );
     expect(result.entry.provider).toBe("anthropic-work");
     expect(result.entry.model).toBe("claude-opus-4-8");
   });
@@ -207,13 +215,15 @@ describe("POST inference/profiles (create) validation", () => {
 
   test("creates a cadet profile for a cloud-routable model", async () => {
     seedCadetConnection();
-    const result = (await call("inference_profiles_create", {
-      body: {
-        name: "my-managed",
-        provider: "cadet",
-        model: "claude-opus-4-8",
-      },
-    })) as { entry: Record<string, unknown>; verify: string };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: {
+          name: "my-managed",
+          provider: "cadet",
+          model: "claude-opus-4-8",
+        },
+      }),
+    );
     expect(result.entry.provider).toBe("cadet");
     expect(result.entry.model).toBe("claude-opus-4-8");
     expect(result.verify).toBe(
@@ -269,13 +279,15 @@ describe("POST inference/profiles (create) validation", () => {
       type: "oauth_subscription",
       credential: "credential/chatgpt/access_token",
     });
-    const result = (await call("inference_profiles_create", {
-      body: {
-        name: "my-subscription",
-        provider: "chatgpt",
-        model: "gpt-5.5",
-      },
-    })) as { entry: Record<string, unknown> };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: {
+          name: "my-subscription",
+          provider: "chatgpt",
+          model: "gpt-5.5",
+        },
+      }),
+    );
     expect(result.entry.provider).toBe("chatgpt");
   });
 
@@ -293,26 +305,30 @@ describe("POST inference/profiles (create) validation", () => {
 
   test("defaults the label to the catalog display name when omitted", async () => {
     seedKeyedConnection("gemini");
-    const result = (await call("inference_profiles_create", {
-      body: {
-        name: "gemini-latest",
-        provider: "gemini",
-        model: "gemini-3.6-flash",
-      },
-    })) as { ok: true; entry: Record<string, unknown> };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: {
+          name: "gemini-latest",
+          provider: "gemini",
+          model: "gemini-3.6-flash",
+        },
+      }),
+    );
     expect(result.entry.label).toBe("Gemini 3.6 Flash");
   });
 
   test("keeps an explicit label over the catalog display name", async () => {
     seedKeyedConnection("gemini");
-    const result = (await call("inference_profiles_create", {
-      body: {
-        name: "my-fast-gemini",
-        provider: "gemini",
-        model: "gemini-3.6-flash",
-        label: "My Fast Model",
-      },
-    })) as { ok: true; entry: Record<string, unknown> };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: {
+          name: "my-fast-gemini",
+          provider: "gemini",
+          model: "gemini-3.6-flash",
+          label: "My Fast Model",
+        },
+      }),
+    );
     expect(result.entry.label).toBe("My Fast Model");
   });
 
@@ -330,14 +346,16 @@ describe("POST inference/profiles (create) validation", () => {
       })
       .onConflictDoNothing()
       .run();
-    const result = (await call("inference_profiles_create", {
-      body: {
-        name: "stub-fast",
-        provider: "openai-compatible",
-        model: "stub-model",
-        connection: "stub-local",
-      },
-    })) as { ok: true; warnings: string[] };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: {
+          name: "stub-fast",
+          provider: "openai-compatible",
+          model: "stub-model",
+          connection: "stub-local",
+        },
+      }),
+    );
     expect(result.ok).toBe(true);
     expect(result.warnings).toEqual([]);
   });
@@ -449,9 +467,11 @@ describe("inference-profile writes are availability-aware", () => {
   });
 
   test("allowUnavailable writes the profile and warns instead", async () => {
-    const result = (await call("inference_profiles_create", {
-      body: { ...geminiBody, allowUnavailable: true },
-    })) as { warnings: string[]; verify: string };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: { ...geminiBody, allowUnavailable: true },
+      }),
+    );
     expect(result.warnings.join(" ")).toMatch(
       /cannot serve requests yet \(missing_connection\)/,
     );
@@ -466,18 +486,22 @@ describe("inference-profile writes are availability-aware", () => {
     // absent — blocking here would punish a CES outage.
     seedKeyedConnection("gemini");
     setAllUnreachable(true);
-    const result = (await call("inference_profiles_create", {
-      body: geminiBody,
-    })) as { warnings: string[] };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: geminiBody,
+      }),
+    );
     expect(result.warnings).toEqual([]);
     expect(persistedProfiles()).toHaveProperty("gemini-latest");
   });
 
   test("accepts a BYO provider once a credentialed connection exists", async () => {
     seedKeyedConnection("gemini");
-    const result = (await call("inference_profiles_create", {
-      body: geminiBody,
-    })) as { warnings: string[]; verify: string };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_create", {
+        body: geminiBody,
+      }),
+    );
     expect(result.warnings).toEqual([]);
     expect(result.verify).toBe(
       'assistant inference send --profile gemini-latest "Reply with OK"',
@@ -518,10 +542,12 @@ describe("inference-profile writes are availability-aware", () => {
         },
       },
     });
-    const result = (await call("inference_profiles_update", {
-      pathParams: { name: "my-gemini" },
-      body: { label: "Pre-staged Gemini" },
-    })) as { ok: true; warnings: string[] };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_update", {
+        pathParams: { name: "my-gemini" },
+        body: { label: "Pre-staged Gemini" },
+      }),
+    );
     expect(result.ok).toBe(true);
     expect(persistedProfiles()).toMatchObject({
       "my-gemini": { label: "Pre-staged Gemini", provider: "gemini" },
@@ -539,10 +565,12 @@ describe("inference-profile writes are availability-aware", () => {
         },
       },
     });
-    const result = (await call("inference_profiles_update", {
-      pathParams: { name: "my-fast" },
-      body: { effort: "low" },
-    })) as { verify: string };
+    const result = profileWriteResultSchema.parse(
+      await call("inference_profiles_update", {
+        pathParams: { name: "my-fast" },
+        body: { effort: "low" },
+      }),
+    );
     expect(result.verify).toBe(
       'assistant inference send --profile my-fast "Reply with OK"',
     );
@@ -716,9 +744,11 @@ describe("DELETE inference/profiles/:name reference guard", () => {
       activeProfile: "balanced",
       profiles: { "my-fast": { source: "user", provider: "anthropic" } },
     });
-    const result = (await call("inference_profiles_delete", {
-      pathParams: { name: "my-fast" },
-    })) as { ok: true; name: string };
+    const result = profileDeleteResultSchema.parse(
+      await call("inference_profiles_delete", {
+        pathParams: { name: "my-fast" },
+      }),
+    );
     expect(result).toEqual({ ok: true, name: "my-fast" });
     expect(loadRawConfig().llm).toBeDefined();
     expect(
@@ -734,9 +764,9 @@ describe("GET inference/profiles honors the llm.default blob", () => {
   test("omits managed backup routes from the user-facing catalog", async () => {
     setConfig("llm", { profiles: {} });
 
-    const listed = (await call("inference_profiles_list", {})) as {
-      profiles: Array<{ name: string }>;
-    };
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const names = new Set(listed.profiles.map((profile) => profile.name));
 
     for (const key of BACKUP_PROFILE_KEYS) {
@@ -754,9 +784,9 @@ describe("GET inference/profiles honors the llm.default blob", () => {
       },
       profileOrder: ["auto", "balanced", "zed-custom"],
     });
-    const listed = (await call("inference_profiles_list", {})) as {
-      profiles: Array<{ name: string }>;
-    };
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const names = listed.profiles.map((profile) => profile.name);
     expect(names.slice(0, 3)).toEqual(["auto", "balanced", "zed-custom"]);
     const tail = names.slice(3);
@@ -769,18 +799,20 @@ describe("GET inference/profiles honors the llm.default blob", () => {
       default: { provider: "anthropic" },
       profiles: {},
     });
-    const listed = (await call("inference_profiles_list", {})) as {
-      profiles: Array<{ name: string; provider: string | null }>;
-    };
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const balanced = listed.profiles.find((p) => p.name === "balanced");
     expect(balanced).toBeDefined();
     // The cadet column implements `balanced` on fireworks; with a BYOK
     // anthropic default provider the CLI must report anthropic instead.
     expect(balanced!.provider).toBe("anthropic");
 
-    const got = (await call("inference_profiles_get", {
-      pathParams: { name: "balanced" },
-    })) as { entry: { provider?: string } };
+    const got = profileDetailSchema.parse(
+      await call("inference_profiles_get", {
+        pathParams: { name: "balanced" },
+      }),
+    );
     expect(got.entry.provider).toBe("anthropic");
   });
 });
@@ -788,8 +820,6 @@ describe("GET inference/profiles honors the llm.default blob", () => {
 // ── resolved vision capability on the list ────────────────────────────────────
 
 describe("GET inference/profiles resolves supportsVision per entry", () => {
-  type Listed = { profiles: Array<{ name: string; supportsVision?: boolean }> };
-
   test("a vision-capable (provider, model) carries supportsVision: true", async () => {
     setConfig("llm", {
       profiles: {
@@ -801,7 +831,9 @@ describe("GET inference/profiles resolves supportsVision per entry", () => {
       },
     });
 
-    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const entry = listed.profiles.find((p) => p.name === "vision");
     expect(entry?.supportsVision).toBe(true);
   });
@@ -818,7 +850,9 @@ describe("GET inference/profiles resolves supportsVision per entry", () => {
       },
     });
 
-    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const entry = listed.profiles.find((p) => p.name === "gated");
     expect(entry?.supportsVision).toBe(false);
   });
@@ -835,7 +869,9 @@ describe("GET inference/profiles resolves supportsVision per entry", () => {
       },
     });
 
-    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const entry = listed.profiles.find((p) => p.name === "forced");
     expect(entry?.supportsVision).toBe(true);
   });
@@ -847,7 +883,9 @@ describe("GET inference/profiles resolves supportsVision per entry", () => {
       },
     });
 
-    const listed = (await call("inference_profiles_list", {})) as Listed;
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const entry = listed.profiles.find((p) => p.name === "sparse");
     expect(entry).toBeDefined();
     expect(entry).not.toHaveProperty("supportsVision");
@@ -872,12 +910,9 @@ describe("GET inference/profiles resolves supportsVision per entry", () => {
       },
     });
 
-    const listed = (await call("inference_profiles_list", {})) as {
-      profiles: Array<{
-        name: string;
-        mix?: Array<{ profile: string; weight: number }>;
-      }>;
-    };
+    const listed = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const entry = listed.profiles.find((p) => p.name === "blend");
     expect(entry?.mix).toEqual([
       { profile: "arm-a", weight: 1 },
@@ -902,9 +937,11 @@ describe("POST inference/profiles/:name/validate billing guards", () => {
         },
       },
     });
-    const result = (await call("inference_profiles_validate", {
-      pathParams: { name: "my-mix" },
-    })) as { check: unknown };
+    const result = profileValidationResultSchema.parse(
+      await call("inference_profiles_validate", {
+        pathParams: { name: "my-mix" },
+      }),
+    );
     expect(result.check).toBeNull();
   });
 
@@ -918,9 +955,11 @@ describe("POST inference/profiles/:name/validate billing guards", () => {
         inference: { provider: "cadet", model: "claude-opus-4-8" },
       },
     });
-    const result = (await call("inference_profiles_validate", {
-      pathParams: { name: "my-byok" },
-    })) as { check: unknown };
+    const result = profileValidationResultSchema.parse(
+      await call("inference_profiles_validate", {
+        pathParams: { name: "my-byok" },
+      }),
+    );
     expect(result.check).toBeNull();
   });
 });
@@ -937,12 +976,9 @@ describe("GET inference/profiles config_issue verdict", () => {
         fine: { provider: "anthropic", model: "claude-opus-4-8" },
       },
     });
-    const result = (await call("inference_profiles_list", {})) as {
-      profiles: Array<{
-        name: string;
-        config_issue?: { code: string; message: string };
-      }>;
-    };
+    const result = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const busted = result.profiles.find((p) => p.name === "busted");
     expect(busted?.config_issue?.code).toBe("model_unknown");
     expect(busted?.config_issue?.message).toContain("bub bub");
@@ -960,9 +996,11 @@ describe("GET inference/profiles config_issue verdict", () => {
         },
       },
     });
-    const detail = (await call("inference_profiles_get", {
-      pathParams: { name: "overweight" },
-    })) as { config_issue?: { code: string } };
+    const detail = profileDetailSchema.parse(
+      await call("inference_profiles_get", {
+        pathParams: { name: "overweight" },
+      }),
+    );
     expect(detail.config_issue?.code).toBe("over_output_cap");
   });
 
@@ -981,12 +1019,9 @@ describe("GET inference/profiles config_issue verdict", () => {
         allowUnavailable: true,
       },
     });
-    const result = (await call("inference_profiles_list", {})) as {
-      profiles: Array<{
-        name: string;
-        config_issue?: { code: string };
-      }>;
-    };
+    const result = profileListSchema.parse(
+      await call("inference_profiles_list", {}),
+    );
     const row = result.profiles.find((p) => p.name === "early-adopter");
     expect(row?.config_issue).toBeUndefined();
   });
@@ -1006,9 +1041,11 @@ describe("PUT inference/active-profile validation", () => {
       },
     });
     const publishesBefore = configChangedPublishes;
-    const result = (await call("inference_profiles_set_active", {
-      body: { name: "my-fast" },
-    })) as { ok: true; activeProfile: string };
+    const result = profileSetActiveResultSchema.parse(
+      await call("inference_profiles_set_active", {
+        body: { name: "my-fast" },
+      }),
+    );
     expect(result).toEqual({ ok: true, activeProfile: "my-fast" });
     expect(
       (loadRawConfig().llm as { activeProfile?: string }).activeProfile,
@@ -1110,9 +1147,11 @@ describe("PUT inference/active-profile validation", () => {
         },
       },
     });
-    const result = (await call("inference_profiles_set_active", {
-      body: { name: "my-gemini" },
-    })) as { ok: true; activeProfile: string };
+    const result = profileSetActiveResultSchema.parse(
+      await call("inference_profiles_set_active", {
+        body: { name: "my-gemini" },
+      }),
+    );
     expect(result).toEqual({ ok: true, activeProfile: "my-gemini" });
   });
 });

@@ -110,8 +110,8 @@ function ensureColumn(
   type: string,
 ): void {
   const columns = memoryRaw
-    .query(/*sql*/ `PRAGMA table_info(${table})`)
-    .all() as Array<{ name: string }>;
+    .query<{ name: string }, []>(/*sql*/ `PRAGMA table_info(${table})`)
+    .all();
   if (columns.some((existing) => existing.name === column)) {
     return;
   }

@@ -7,8 +7,8 @@ import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 export function migrateMessagesFtsBackfill(database: DrizzleDb): void {
   const raw = getSqliteFrom(database);
   const ftsCountRow = raw
-    .query(`SELECT COUNT(*) AS c FROM messages_fts`)
-    .get() as { c: number } | null;
+    .query<{ c: number }, []>(`SELECT COUNT(*) AS c FROM messages_fts`)
+    .get();
   const ftsCount = ftsCountRow?.c ?? 0;
   if (ftsCount > 0) {
     return;

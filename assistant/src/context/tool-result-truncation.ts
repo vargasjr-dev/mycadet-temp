@@ -24,7 +24,7 @@ export function truncateToolResultsAcrossHistory(
       if (block.type !== "tool_result") {
         return block;
       }
-      const tr = block as ToolResultContent;
+      const tr: ToolResultContent = block;
       if (tr.content.length <= maxChars) {
         return block;
       }

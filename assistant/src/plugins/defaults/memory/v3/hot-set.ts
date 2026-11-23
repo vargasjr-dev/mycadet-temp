@@ -61,12 +61,12 @@ export function computeHotSet(opts: HotSetOptions): HotSetEntry[] {
   }
 
   const rows = raw
-    .query(
+    .query<SelectionAgeRow, []>(
       /*sql*/ `
       SELECT slug, created_at FROM memory_v3_selections
     `,
     )
-    .all() as SelectionAgeRow[];
+    .all();
 
   const scores = new Map<Slug, number>();
   for (const row of rows) {

@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { unifyLlmCallSiteConfigsMigration } from "../workspace/migrations/038-unify-llm-callsite-configs.js";
 
 // ---------------------------------------------------------------------------
@@ -30,6 +32,15 @@ function writeConfig(data: Record<string, unknown>): void {
     join(workspaceDir, "config.json"),
     JSON.stringify(data, null, 2) + "\n",
   );
+}
+
+const migratedLlmSchema = z.looseObject({
+  default: z.looseObject({}).optional(),
+  callSites: z.looseObject({}).optional(),
+});
+
+function readMigratedLlm() {
+  return migratedLlmSchema.parse(readConfig().llm);
 }
 
 function readConfig(): Record<string, unknown> {
@@ -167,9 +178,9 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, Record<string, unknown>>;
-    expect(llm.default.provider).toBe("openrouter");
-    expect(llm.default.model).toBe("anthropic/claude-opus-4.7");
+    const llm = readMigratedLlm();
+    expect(llm.default?.provider).toBe("openrouter");
+    expect(llm.default?.model).toBe("anthropic/claude-opus-4.7");
   });
 
   test("user-set llm.default fields survive when no legacy source exists for that field", () => {
@@ -196,13 +207,13 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, Record<string, unknown>>;
+    const llm = readMigratedLlm();
     // Legacy services.inference wins over existing llm.default
-    expect(llm.default.provider).toBe("openai");
-    expect(llm.default.model).toBe("gpt-5.4");
+    expect(llm.default?.provider).toBe("openai");
+    expect(llm.default?.model).toBe("gpt-5.4");
     // Existing llm.default values for fields with no legacy source are kept
-    expect(llm.default.effort).toBe("low");
-    expect(llm.default.maxTokens).toBe(8000);
+    expect(llm.default?.effort).toBe("low");
+    expect(llm.default?.maxTokens).toBe(8000);
   });
 
   test("xhigh effort (added in main PR #26117 after this migration was authored) is preserved", () => {
@@ -216,8 +227,8 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, Record<string, unknown>>;
-    expect(llm.default.effort).toBe("xhigh");
+    const llm = readMigratedLlm();
+    expect(llm.default?.effort).toBe("xhigh");
   });
 
   // ─── Defaults from schema (no scattered keys) ──────────────────────────
@@ -251,9 +262,9 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { default: Record<string, unknown> };
-    expect(llm.default.provider).toBe("openai");
-    expect(llm.default.model).toBe("gpt-5.4");
+    const llm = readMigratedLlm();
+    expect(llm.default?.provider).toBe("openai");
+    expect(llm.default?.model).toBe("gpt-5.4");
   });
 
   test("llm.default falls back to top-level provider/model when services.inference absent", () => {
@@ -264,9 +275,9 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { default: Record<string, unknown> };
-    expect(llm.default.provider).toBe("openai");
-    expect(llm.default.model).toBe("gpt-5.4");
+    const llm = readMigratedLlm();
+    expect(llm.default?.provider).toBe("openai");
+    expect(llm.default?.model).toBe("gpt-5.4");
   });
 
   test("llm.default reads top-level maxTokens/effort/speed/thinking/contextWindow", () => {
@@ -280,15 +291,15 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { default: Record<string, unknown> };
-    expect(llm.default.maxTokens).toBe(16000);
-    expect(llm.default.effort).toBe("low");
-    expect(llm.default.speed).toBe("fast");
-    expect(llm.default.thinking).toEqual({
+    const llm = readMigratedLlm();
+    expect(llm.default?.maxTokens).toBe(16000);
+    expect(llm.default?.effort).toBe("low");
+    expect(llm.default?.speed).toBe("fast");
+    expect(llm.default?.thinking).toEqual({
       enabled: false,
       streamThinking: false,
     });
-    expect(llm.default.contextWindow).toEqual({
+    expect(llm.default?.contextWindow).toEqual({
       enabled: true,
       maxInputTokens: 100000,
     });
@@ -299,8 +310,8 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { default: Record<string, unknown> };
-    expect(llm.default.temperature).toBeNull();
+    const llm = readMigratedLlm();
+    expect(llm.default?.temperature).toBeNull();
   });
 
   // ─── Full mapping (every scattered key) ────────────────────────────────
@@ -337,11 +348,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      default: Record<string, unknown>;
-      callSites: Record<string, Record<string, unknown>>;
-      pricingOverrides: unknown;
-    };
+    const llm = readMigratedLlm();
 
     expect(llm.default).toEqual({
       provider: "openai",
@@ -355,31 +362,31 @@ describe("038-unify-llm-callsite-configs migration", () => {
     });
 
     // heartbeat/filing speeds differ from default ("standard") so they appear
-    expect(llm.callSites.heartbeatAgent).toEqual({ speed: "fast" });
-    expect(llm.callSites.filingAgent).toEqual({ speed: "fast" });
+    expect(llm.callSites?.heartbeatAgent).toEqual({ speed: "fast" });
+    expect(llm.callSites?.filingAgent).toEqual({ speed: "fast" });
     // analysis.modelOverride parses as provider/model pair
-    expect(llm.callSites.analyzeConversation).toEqual({
+    expect(llm.callSites?.analyzeConversation).toEqual({
       provider: "anthropic",
       model: "claude-opus-4-6",
     });
     // memory.summarization.modelIntent ("latency-optimized") for openai → gpt-5.4-nano
-    expect(llm.callSites.conversationSummarization).toEqual({
+    expect(llm.callSites?.conversationSummarization).toEqual({
       model: "gpt-5.4-nano",
     });
     // commit message overrides forward
-    expect(llm.callSites.commitMessage).toEqual({
+    expect(llm.callSites?.commitMessage).toEqual({
       maxTokens: 200,
       temperature: 0.4,
     });
     // ui.greetingModelIntent ("quality-optimized") for openai → gpt-5.4
-    expect(llm.callSites.emptyStateGreeting).toEqual({ model: "gpt-5.4" });
+    expect(llm.callSites?.emptyStateGreeting).toEqual({ model: "gpt-5.4" });
     // notifications.decisionModelIntent ("vision-optimized") for openai → gpt-5.4
     // The same intent drives BOTH notificationDecision and
     // preferenceExtraction (both legacy readers consult the same key).
-    expect(llm.callSites.notificationDecision).toEqual({ model: "gpt-5.4" });
-    expect(llm.callSites.preferenceExtraction).toEqual({ model: "gpt-5.4" });
+    expect(llm.callSites?.notificationDecision).toEqual({ model: "gpt-5.4" });
+    expect(llm.callSites?.preferenceExtraction).toEqual({ model: "gpt-5.4" });
     // calls.model copied verbatim
-    expect(llm.callSites.callAgent).toEqual({ model: "gpt-5.4-nano" });
+    expect(llm.callSites?.callAgent).toEqual({ model: "gpt-5.4-nano" });
 
     expect(llm.pricingOverrides).toEqual([
       {
@@ -400,9 +407,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.heartbeatAgent).toEqual({ speed: "fast" });
     expect(llm.callSites?.filingAgent).toBeUndefined();
     expect(llm.callSites?.analyzeConversation).toBeUndefined();
@@ -417,11 +422,8 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      default: Record<string, unknown>;
-      callSites?: Record<string, Record<string, unknown>>;
-    };
-    expect(llm.default.speed).toBe("fast");
+    const llm = readMigratedLlm();
+    expect(llm.default?.speed).toBe("fast");
     expect(llm.callSites?.heartbeatAgent).toBeUndefined();
     expect(llm.callSites?.filingAgent).toEqual({ speed: "standard" });
   });
@@ -433,9 +435,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.analyzeConversation).toEqual({
       provider: "anthropic",
       model: "claude-opus-4-7",
@@ -450,9 +450,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.analyzeConversation).toEqual({
       provider: "anthropic",
       model: "claude-opus-4-6",
@@ -466,9 +464,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.analyzeConversation).toEqual({
       model: "claude-opus-4-6",
     });
@@ -484,9 +480,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.analyzeConversation).toEqual({
       provider: "fireworks",
       model: "accounts/fireworks/models/kimi-k2p5",
@@ -503,9 +497,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     // anthropic + latency-optimized → claude-haiku-4-5-20251001
     expect(llm.callSites?.analyzeConversation).toEqual({
       model: "claude-haiku-4-5-20251001",
@@ -521,9 +513,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.commitMessage).toEqual({ maxTokens: 150 });
   });
 
@@ -534,9 +524,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     expect(llm.callSites?.callAgent).toEqual({ model: "gpt-5.4-nano" });
   });
 
@@ -557,9 +545,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites?: Record<string, Record<string, unknown>>;
-    };
+    const llm = readMigratedLlm();
     // anthropic + latency-optimized → claude-haiku-4-5-20251001
     expect(llm.callSites?.notificationDecision).toEqual({
       model: "claude-haiku-4-5-20251001",
@@ -595,23 +581,19 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      default: Record<string, unknown>;
-      callSites: Record<string, Record<string, unknown>>;
-      profiles: Record<string, unknown>;
-    };
+    const llm = readMigratedLlm();
 
     // Default block was synthesized from legacy keys.
-    expect(llm.default.provider).toBe("anthropic");
-    expect(llm.default.model).toBe("claude-opus-4-6");
+    expect(llm.default?.provider).toBe("anthropic");
+    expect(llm.default?.model).toBe("claude-opus-4-6");
 
     // Pre-existing call-site survives.
-    expect(llm.callSites.memoryRetrieval).toEqual({
+    expect(llm.callSites?.memoryRetrieval).toEqual({
       provider: "openai",
       model: "gpt-4o-mini",
     });
     // Migration-derived call-site is added.
-    expect(llm.callSites.analyzeConversation).toEqual({
+    expect(llm.callSites?.analyzeConversation).toEqual({
       provider: "anthropic",
       model: "claude-opus-4-7",
     });
@@ -638,10 +620,8 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as {
-      callSites: Record<string, Record<string, unknown>>;
-    };
-    expect(llm.callSites.analyzeConversation).toEqual({
+    const llm = readMigratedLlm();
+    expect(llm.callSites?.analyzeConversation).toEqual({
       provider: "anthropic",
       model: "claude-opus-4-6",
     });
@@ -664,7 +644,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { pricingOverrides?: unknown };
+    const llm = readMigratedLlm();
     expect(llm.pricingOverrides).toEqual(overrides);
   });
 
@@ -695,7 +675,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { pricingOverrides?: unknown };
+    const llm = readMigratedLlm();
     expect(llm.pricingOverrides).toEqual(legacy);
   });
 
@@ -786,7 +766,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as { pricingOverrides?: unknown };
+    const llm = readMigratedLlm();
     expect(llm.pricingOverrides).toEqual(overrides);
   });
 
@@ -795,7 +775,7 @@ describe("038-unify-llm-callsite-configs migration", () => {
 
     unifyLlmCallSiteConfigsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, unknown>;
+    const llm = readMigratedLlm();
     expect("pricingOverrides" in llm).toBe(false);
   });
 

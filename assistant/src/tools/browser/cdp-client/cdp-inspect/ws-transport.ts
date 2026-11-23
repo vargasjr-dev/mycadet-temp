@@ -364,14 +364,14 @@ function createTransport(ws: WsLike): CdpWsTransport {
     if (!frame || typeof frame !== "object") {
       return;
     }
-    const obj = frame as {
+    const obj: {
       id?: unknown;
       result?: unknown;
       error?: { code?: unknown; message?: unknown; data?: unknown };
       method?: unknown;
       params?: unknown;
       sessionId?: unknown;
-    };
+    } = frame;
 
     if (typeof obj.id === "number") {
       const entry = pending.get(obj.id);

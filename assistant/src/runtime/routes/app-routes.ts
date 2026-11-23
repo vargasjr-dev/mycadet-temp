@@ -348,7 +348,7 @@ function handleDeleteSharedApp({ pathParams }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
-export const ROUTES: RouteDefinition[] = [
+export const ROUTES = [
   {
     operationId: "pages_serve",
     endpoint: "pages/:appId",
@@ -472,4 +472,4 @@ export const ROUTES: RouteDefinition[] = [
     }),
     handler: handleDeleteSharedApp,
   },
-];
+] as const satisfies RouteDefinition[];

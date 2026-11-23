@@ -203,7 +203,7 @@ export function createConnection(
     };
   }
   // Safe cast: VALID_CONNECTION_PROVIDERS.includes() guards above.
-  const provider = input.provider as ConnectionProvider;
+  const provider: ConnectionProvider = input.provider;
 
   const auth = parseAuth(input.auth);
   if (!auth) {

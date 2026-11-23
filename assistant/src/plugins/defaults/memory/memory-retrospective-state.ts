@@ -169,9 +169,14 @@ export function ensureRetrospectiveCursorColumn(context: string): boolean {
     return false;
   }
   try {
-    const columns = raw.query(`PRAGMA table_info(${TABLE})`).all() as Array<{
-      name: string;
-    }>;
+    const columns = raw
+      .query<
+        {
+          name: string;
+        },
+        []
+      >(`PRAGMA table_info(${TABLE})`)
+      .all();
     if (columns.length === 0) {
       return false;
     }

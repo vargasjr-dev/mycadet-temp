@@ -37,10 +37,9 @@ export function toToolInputSchema(
   schema: z.ZodType,
   opts?: { advertiseRequired?: readonly string[] },
 ): Record<string, unknown> {
-  const json = z.toJSONSchema(schema, { unrepresentable: "any" }) as Record<
-    string,
-    unknown
-  >;
+  const json: Record<string, unknown> = z.toJSONSchema(schema, {
+    unrepresentable: "any",
+  });
   delete json.$schema;
   stripPermissiveAdditionalProperties(json);
 

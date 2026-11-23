@@ -23,9 +23,14 @@ export function migrateDropLegacyMemberGuardianTables(
   // drop the legacy tables, so this step completes instead of failing every
   // boot. Reaching here with the tables still present means the sync never
   // succeeded, so nothing synced is lost.
-  const cols = raw.prepare(`PRAGMA table_info(contact_channels)`).all() as {
-    name: string;
-  }[];
+  const cols = raw
+    .prepare<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(contact_channels)`)
+    .all();
   const hasExternalUserId = cols.some((c) => c.name === "external_user_id");
 
   // ── Safety sync: guardian bindings → contacts ─────────────────────

@@ -78,7 +78,7 @@ export async function requestShortLabel(args: {
       },
     );
     const toolBlock = extractToolUse(response);
-    const input = toolBlock?.input as Record<string, unknown> | undefined;
+    const input: Record<string, unknown> | undefined = toolBlock?.input;
     const value = input?.[args.tool.argument];
     if (toolBlock?.name === args.tool.name && typeof value === "string") {
       return normalizeTitle(value);

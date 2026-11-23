@@ -10,9 +10,14 @@ export function tableHasColumn(
   columnName: string,
 ): boolean {
   const raw = getSqliteFrom(database);
-  const columns = raw.query(`PRAGMA table_info(${tableName})`).all() as Array<{
-    name: string;
-  }>;
+  const columns = raw
+    .query<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(${tableName})`)
+    .all();
 
   return columns.some((column) => column.name === columnName);
 }

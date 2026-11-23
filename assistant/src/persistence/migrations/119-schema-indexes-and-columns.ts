@@ -32,10 +32,11 @@ export function migrateSchemaIndexesAndColumns(database: DrizzleDb): void {
   // here if it is missing, then proceed unconditionally.
   const raw = getSqliteFrom(database);
   const notifDdl = raw
-    .query(
-      `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notification_deliveries'`,
-    )
-    .get() as { sql: string } | null;
+    .query<
+      { sql: string },
+      []
+    >(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'notification_deliveries'`)
+    .get();
 
   if (notifDdl && !notifDdl.sql.includes("notification_decision_id")) {
     // ADD COLUMN cannot carry NOT NULL without a default in SQLite, so we add

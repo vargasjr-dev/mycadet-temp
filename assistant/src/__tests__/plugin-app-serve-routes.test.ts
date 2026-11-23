@@ -7,17 +7,19 @@ import { UNSUPPORTED_LEGACY_APP_HTML } from "../apps/app-store.js";
 import { ROUTES as APP_MGMT_ROUTES } from "../runtime/routes/app-management-routes.js";
 import { ROUTES as APP_ROUTES } from "../runtime/routes/app-routes.js";
 import { BadRequestError, NotFoundError } from "../runtime/routes/errors.js";
-import type {
-  ResponseHeaderArgs,
-  RouteDefinition,
-  RouteHandlerArgs,
-} from "../runtime/routes/types.js";
+import type { RouteDefinition } from "../runtime/routes/types.js";
 import { getWorkspacePluginsDir } from "../util/layout.js";
 
 let workspaceDir: string;
 
-function findRoute(routes: RouteDefinition[], operationId: string) {
-  const route = routes.find((r) => r.operationId === operationId);
+function findRoute<
+  Route extends RouteDefinition,
+  OperationId extends Route["operationId"],
+>(routes: readonly Route[], operationId: OperationId) {
+  const route = routes.find(
+    (candidate): candidate is Extract<Route, { operationId: OperationId }> =>
+      candidate.operationId === operationId,
+  );
   if (!route) {
     throw new Error(`Route not found: ${operationId}`);
   }
@@ -64,7 +66,7 @@ describe("plugin app serve routes", () => {
     const handler = findRoute(APP_ROUTES, "pages_serve").handler;
     const html = handler({
       pathParams: { appId: "plugins~acme~dash" },
-    } as RouteHandlerArgs) as string;
+    });
 
     expect(html).toContain("Plugin Home");
     expect(html).toContain("<!DOCTYPE html>");
@@ -77,7 +79,7 @@ describe("plugin app serve routes", () => {
     const handler = findRoute(APP_ROUTES, "pages_serve").handler;
     const html = handler({
       pathParams: { appId: "plugins~acme~old" },
-    } as RouteHandlerArgs) as string;
+    });
 
     expect(html).toContain(UNSUPPORTED_LEGACY_APP_HTML);
     expect(html).not.toContain("Old App");
@@ -88,7 +90,7 @@ describe("plugin app serve routes", () => {
     expect(() =>
       handler({
         pathParams: { appId: "plugins~acme~missing" },
-      } as RouteHandlerArgs),
+      }),
     ).toThrow(NotFoundError);
   });
 
@@ -97,9 +99,7 @@ describe("plugin app serve routes", () => {
       "dist/index.html": "<script src='main.js'></script>",
     });
     const route = findRoute(APP_ROUTES, "pages_serve");
-    const headersFn = route.responseHeaders as (
-      args: ResponseHeaderArgs,
-    ) => Record<string, string>;
+    const headersFn = route.responseHeaders;
 
     const headers = headersFn({ pathParams: { appId: "plugins~acme~multi" } });
 
@@ -117,7 +117,7 @@ describe("plugin app serve routes", () => {
     const handler = findRoute(APP_ROUTES, "apps_asset").handler;
     const bytes = handler({
       pathParams: { appId: "plugins~acme~dash", path: "logo.svg" },
-    } as RouteHandlerArgs) as Uint8Array;
+    });
 
     expect(Buffer.from(bytes).toString("utf-8")).toBe("<svg>logo</svg>");
   });
@@ -128,7 +128,7 @@ describe("plugin app serve routes", () => {
     expect(() =>
       handler({
         pathParams: { appId: "plugins~acme~dash", path: "../../package.json" },
-      } as RouteHandlerArgs),
+      }),
     ).toThrow(BadRequestError);
   });
 
@@ -140,7 +140,7 @@ describe("plugin app serve routes", () => {
     const handler = findRoute(APP_ROUTES, "apps_dist_file").handler;
     const bytes = handler({
       pathParams: { appId: "plugins~acme~multi", filename: "main.js" },
-    } as RouteHandlerArgs) as Uint8Array;
+    });
 
     expect(Buffer.from(bytes).toString("utf-8")).toBe("console.log(1)");
   });
@@ -152,9 +152,9 @@ describe("apps_open reports app origin", () => {
       "dist/index.html": "<div id='root'>Plugin Home</div>",
     });
     const handler = findRoute(APP_MGMT_ROUTES, "apps_open").handler;
-    const result = (await handler({
+    const result = await handler({
       pathParams: { id: "plugins~acme~dash" },
-    } as RouteHandlerArgs)) as { origin: string; html: string };
+    });
 
     expect(result.origin).toBe("plugin:acme");
     expect(result.html).toContain("Plugin Home");
@@ -165,9 +165,9 @@ describe("apps_open reports app origin", () => {
       "index.html": "<div id='root'>Old App</div>",
     });
     const handler = findRoute(APP_MGMT_ROUTES, "apps_open").handler;
-    const result = (await handler({
+    const result = await handler({
       pathParams: { id: "plugins~acme~old" },
-    } as RouteHandlerArgs)) as { origin: string; html: string };
+    });
 
     expect(result.origin).toBe("plugin:acme");
     expect(result.html).toContain(UNSUPPORTED_LEGACY_APP_HTML);
@@ -189,9 +189,9 @@ describe("apps_open reports app origin", () => {
       "<div id='root'>Workspace Home</div>",
     );
     const handler = findRoute(APP_MGMT_ROUTES, "apps_open").handler;
-    const result = (await handler({
+    const result = await handler({
       pathParams: { id: app.id },
-    } as RouteHandlerArgs)) as { origin: string; html: string };
+    });
 
     expect(result.origin).toBe("workspace");
     expect(result.html).toContain("Workspace Home");
@@ -226,7 +226,7 @@ describe("bundle import format gate", () => {
       handler({
         rawBody,
         headers: { "content-type": "application/octet-stream" },
-      } as RouteHandlerArgs),
+      }),
     ).rejects.toThrow(/format_version 1 is not supported/);
   });
 
@@ -234,10 +234,10 @@ describe("bundle import format gate", () => {
     const rawBody = await buildBundle(2);
     const handler = findRoute(APP_MGMT_ROUTES, "apps_import_bundle").handler;
 
-    const result = (await handler({
+    const result = await handler({
       rawBody,
       headers: { "content-type": "application/octet-stream" },
-    } as RouteHandlerArgs)) as { success: boolean; appId: string };
+    });
 
     expect(result.success).toBe(true);
     const { getAppDirPath } = await import("../apps/app-store.js");
@@ -263,9 +263,9 @@ describe("multi-file plugin apps compile on open", () => {
     expect(existsSync(join(appDir, "dist"))).toBe(false);
 
     const handler = findRoute(APP_MGMT_ROUTES, "apps_open").handler;
-    const result = (await handler({
+    const result = await handler({
       pathParams: { id: "plugins~acme~board" },
-    } as RouteHandlerArgs)) as { html: string; origin: string };
+    });
 
     // Rendered the compiled output, not the "not compiled yet" fallback.
     expect(result.html).toContain("Compiled Board");
@@ -281,9 +281,9 @@ describe("multi-file plugin apps compile on open", () => {
     // classified as multi-file; the on-open compile must not throw.
     installPluginApp("acme", "broken", {});
     const handler = findRoute(APP_MGMT_ROUTES, "apps_open").handler;
-    const result = (await handler({
+    const result = await handler({
       pathParams: { id: "plugins~acme~broken" },
-    } as RouteHandlerArgs)) as { html: string; origin: string };
+    });
 
     expect(result.origin).toBe("plugin:acme");
     expect(result.html).toContain("App compilation failed");
@@ -298,7 +298,7 @@ describe("plugin apps are read-only over the management surface", () => {
       handler({
         pathParams: { id: "plugins~acme~dash" },
         headers: {},
-      } as RouteHandlerArgs),
+      }),
     ).toThrow(BadRequestError);
   });
 
@@ -309,7 +309,7 @@ describe("plugin apps are read-only over the management surface", () => {
       handler({
         pathParams: { id: "plugins~acme~dash" },
         body: { method: "create", data: {} },
-      } as RouteHandlerArgs),
+      }),
     ).toThrow(BadRequestError);
   });
 });

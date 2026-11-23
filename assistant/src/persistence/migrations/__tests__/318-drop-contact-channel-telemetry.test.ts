@@ -33,9 +33,14 @@ function bootstrapLegacyTable(raw: Database): void {
 }
 
 function columnNames(raw: Database, table: string): Set<string> {
-  const cols = raw.prepare(`PRAGMA table_info(${table})`).all() as {
-    name: string;
-  }[];
+  const cols = raw
+    .prepare<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(${table})`)
+    .all();
   return new Set(cols.map((c) => c.name));
 }
 
@@ -80,12 +85,12 @@ describe("migration 318 — drop contact_channels telemetry columns", () => {
     }
 
     const row = raw
-      .prepare(
+      .prepare<Record<string, unknown>, []>(
         `SELECT id, contact_id, type, address, is_primary, external_chat_id,
                 updated_at, created_at
            FROM contact_channels WHERE id = 'ch-1'`,
       )
-      .get() as Record<string, unknown>;
+      .get()!;
     expect(row).toEqual({
       id: "ch-1",
       contact_id: "ct-1",

@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
 /**
@@ -21,8 +23,11 @@ function hasCascade(
   tableName: string,
 ): boolean {
   const row = raw
-    .query(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
-    .get(tableName) as { sql: string } | null;
+    .query<
+      { sql: string },
+      SQLQueryBindings[]
+    >(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
+    .get(tableName);
   if (!row) {
     return true;
   } // table doesn't exist yet — will be created with correct DDL

@@ -785,6 +785,51 @@ function handleDeleteMemoryItem(id: string) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
+export const memoryStatsResponseSchema = z.object({
+  concepts: z.number().describe("Number of concept pages in memory"),
+  graph_supported: z
+    .boolean()
+    .describe(
+      "Whether the memory-concept graph is available (memory enabled and v3 live)",
+    ),
+  tier: z
+    .enum(["off", "v1", "v2", "v3"])
+    .describe(
+      "Coarse memory tier for this assistant; graph_supported is exactly tier === 'v3'",
+    ),
+});
+
+export const memoryNodesListResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  nodes: z.array(
+    z.object({
+      id: z.string(),
+      content: z.string(),
+      type: z.string(),
+      fidelity: z.string(),
+      created: z.number(),
+    }),
+  ),
+  total: z.number(),
+});
+
+export const memoryNodeMutationResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export const rememberMemoryResponseSchema = z.object({
+  message: z.string(),
+  success: z.boolean(),
+  pendingNodeId: z
+    .string()
+    .optional()
+    .describe(
+      "Graph node id (`buffer:<hash>`) of the pending entry this create appended, for fly-to-node navigation. Absent when the buffer can't be re-read.",
+    ),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "listMemoryItems",
@@ -881,19 +926,7 @@ export const ROUTES: RouteDefinition[] = [
       "memory tier explaining why the graph is unavailable (off = the user's " +
       "Memory opt-out, v1/v2 = a legacy engine that has not migrated to v3).",
     tags: ["memory"],
-    responseBody: z.object({
-      concepts: z.number().describe("Number of concept pages in memory"),
-      graph_supported: z
-        .boolean()
-        .describe(
-          "Whether the memory-concept graph is available (memory enabled and v3 live)",
-        ),
-      tier: z
-        .enum(["off", "v1", "v2", "v3"])
-        .describe(
-          "Coarse memory tier for this assistant; graph_supported is exactly tier === 'v3'",
-        ),
-    }),
+    responseBody: memoryStatsResponseSchema,
     handler: () => handleGetMemoryStats(getConfig()),
   },
 
@@ -1016,20 +1049,7 @@ export const ROUTES: RouteDefinition[] = [
           "Restrict to auto-seeded capability nodes: 'skill' or 'cli'",
       },
     ],
-    responseBody: z.object({
-      success: z.boolean(),
-      message: z.string(),
-      nodes: z.array(
-        z.object({
-          id: z.string(),
-          content: z.string(),
-          type: z.string(),
-          fidelity: z.string(),
-          created: z.number(),
-        }),
-      ),
-      total: z.number(),
-    }),
+    responseBody: memoryNodesListResponseSchema,
     handler: ({ queryParams }) => {
       const limitRaw = queryParams?.limit;
       let limit: number | undefined;
@@ -1069,10 +1089,7 @@ export const ROUTES: RouteDefinition[] = [
     requestBody: z.object({
       content: z.string(),
     }),
-    responseBody: z.object({
-      success: z.boolean(),
-      message: z.string(),
-    }),
+    responseBody: memoryNodeMutationResponseSchema,
     handler: ({ body }) => {
       const parsed = z.object({ content: z.string() }).safeParse(body ?? {});
       if (!parsed.success) {
@@ -1098,10 +1115,7 @@ export const ROUTES: RouteDefinition[] = [
       oldContent: z.string(),
       newContent: z.string(),
     }),
-    responseBody: z.object({
-      success: z.boolean(),
-      message: z.string(),
-    }),
+    responseBody: memoryNodeMutationResponseSchema,
     handler: ({ body }) => {
       const parsed = z
         .object({ oldContent: z.string(), newContent: z.string() })
@@ -1135,16 +1149,7 @@ export const ROUTES: RouteDefinition[] = [
       "Append a user-authored fact to the memory buffer via handleRemember. The fact surfaces in the memory graph immediately as a pending node (its id is returned so clients can navigate to it), and a consolidation run is nudged (deduped, backoff-respecting) so it files into concept pages promptly.",
     tags: ["memory"],
     requestBody: z.object({ content: z.string() }),
-    responseBody: z.object({
-      message: z.string(),
-      success: z.boolean(),
-      pendingNodeId: z
-        .string()
-        .optional()
-        .describe(
-          "Graph node id (`buffer:<hash>`) of the pending entry this create appended, for fly-to-node navigation. Absent when the buffer can't be re-read.",
-        ),
-    }),
+    responseBody: rememberMemoryResponseSchema,
     handler: async ({ body }) => {
       const parsed = z.object({ content: z.string() }).safeParse(body ?? {});
       if (!parsed.success) {

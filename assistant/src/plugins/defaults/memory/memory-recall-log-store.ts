@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 import { v4 as uuid } from "uuid";
 
 import { getLogger } from "./logging.js";
@@ -198,7 +200,7 @@ export function getMemoryRecallLogByMessageIds(
   }
   const placeholders = messageIds.map(() => "?").join(",");
   const row = raw
-    .query(
+    .query<MemoryRecallLogRow, SQLQueryBindings[]>(
       `SELECT enabled, degraded, provider, model, degradation_json,
               semantic_hits, merged_count, selected_count, tier1_count,
               tier2_count, hybrid_search_latency_ms, sparse_vector_used,
@@ -208,7 +210,7 @@ export function getMemoryRecallLogByMessageIds(
         WHERE message_id IN (${placeholders})
         LIMIT 1`,
     )
-    .get(...messageIds) as MemoryRecallLogRow | null;
+    .get(...messageIds);
   if (!row) {
     return null;
   }

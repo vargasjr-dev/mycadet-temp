@@ -149,14 +149,14 @@ export function readTurnFailure(userMessageId: string): TurnFailure | null {
   if (typeof parsed !== "object" || parsed === null) {
     return null;
   }
-  const meta = parsed as {
+  const meta: {
     turnOutcome?: unknown;
     turnFailureCode?: unknown;
     turnFailureMessage?: unknown;
     turnFailureCategory?: unknown;
     turnFailureConnection?: unknown;
     turnFailureProfile?: unknown;
-  };
+  } = parsed;
   if (meta.turnOutcome !== "failed") {
     return null;
   }

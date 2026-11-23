@@ -73,6 +73,7 @@ mock.module("../substrate/skill-store.js", () => ({
 }));
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { setConfig } from "../../../../__tests__/helpers/set-config.js";
 import {
@@ -94,11 +95,24 @@ import { readPendingBufferEntries } from "../graph-topology/pending-buffer.js";
 import { invalidatePageIndex } from "../substrate/page-index.js";
 import { writePage } from "../substrate/page-store.js";
 import type { ConceptPage } from "../substrate/types.js";
-import { ROUTES } from "./memory-item-routes.js";
+import {
+  memoryNodeMutationResponseSchema,
+  memoryNodesListResponseSchema,
+  memoryStatsResponseSchema,
+  rememberMemoryResponseSchema,
+  ROUTES,
+} from "./memory-item-routes.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const memoryItemsResponseSchema = z.object({
+  items: z.array(z.looseObject({ id: z.string() })),
+  total: z.number(),
+});
+
+const memoryItemResponseSchema = z.object({ item: z.looseObject({}) });
 
 function getRoute(endpoint: string, method: string): RouteDefinition {
   const route = ROUTES.find(
@@ -119,14 +133,14 @@ async function callHandler(
   opts: {
     queryParams?: Record<string, string>;
     pathParams?: Record<string, string>;
-    body?: unknown;
+    body?: Record<string, unknown>;
   } = {},
 ): Promise<{ status: number; json: () => Promise<unknown> }> {
   try {
     const result = await route.handler({
       pathParams: opts.pathParams ?? {},
       queryParams: opts.queryParams ?? {},
-      body: opts.body as Record<string, unknown>,
+      body: opts.body,
       headers: {},
     });
     const statusCode =
@@ -226,7 +240,7 @@ describe("Memory Item Routes", () => {
     test("returns empty list when no items", async () => {
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { items: unknown[]; total: number };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.items).toEqual([]);
       expect(body.total).toBe(0);
     });
@@ -246,10 +260,7 @@ describe("Memory Item Routes", () => {
 
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.total).toBe(1);
       expect(body.items.length).toBe(1);
       expect(body.items[0].id).toBe("i1");
@@ -271,10 +282,7 @@ describe("Memory Item Routes", () => {
 
       const res = await callHandler(route, { queryParams: { status: "all" } });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.total).toBe(2);
       expect(body.items.length).toBe(2);
       const ids = body.items.map((i) => i.id).sort();
@@ -296,10 +304,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(route, {
         queryParams: { kind: "semantic" },
       });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.total).toBe(1);
       expect(body.items[0].id).toBe("i1");
     });
@@ -317,10 +322,7 @@ describe("Memory Item Routes", () => {
       });
 
       const res = await callHandler(route, { queryParams: { search: "dark" } });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.total).toBe(1);
       expect(body.items[0].id).toBe("i1");
     });
@@ -348,10 +350,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(route, {
         queryParams: { limit: "1", offset: "1" },
       });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.total).toBe(3);
       expect(body.items.length).toBe(1);
       // Default sort is lastSeenAt desc, so offset 1 should be i2
@@ -375,9 +374,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(route, {
         queryParams: { sort: "firstSeenAt", order: "asc" },
       });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.items[0].id).toBe("i2");
       expect(body.items[1].id).toBe("i1");
     });
@@ -399,9 +396,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(route, {
         queryParams: { sort: "importance", order: "desc" },
       });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
       expect(body.items[0].id).toBe("i2");
       expect(body.items[1].id).toBe("i1");
     });
@@ -453,10 +448,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(route, {
         queryParams: { search: "alice" },
       });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
 
       // Results in Qdrant relevance order (i2 first)
       expect(body.items.length).toBe(2);
@@ -486,10 +478,7 @@ describe("Memory Item Routes", () => {
       mockHybridSearchResults = [];
 
       const res = await callHandler(route, { queryParams: { search: "dark" } });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
 
       // SQL LIKE fallback finds "dark" in subject/statement
       expect(body.total).toBe(1);
@@ -540,10 +529,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(route, {
         queryParams: { search: "item", limit: "1", offset: "1" },
       });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
 
       expect(body.items.length).toBe(1);
       expect(body.items[0].id).toBe("i2"); // second by relevance
@@ -570,10 +556,7 @@ describe("Memory Item Routes", () => {
       mockHybridSearchResults = [];
 
       const res = await callHandler(route, { queryParams: { search: "dark" } });
-      const body = (await res.json()) as {
-        items: Array<{ id: string }>;
-        total: number;
-      };
+      const body = memoryItemsResponseSchema.parse(await res.json());
 
       // Falls through to SQL LIKE
       expect(body.total).toBe(1);
@@ -604,9 +587,7 @@ describe("Memory Item Routes", () => {
         pathParams: { id: "i1" },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        item: { id: string; subject: string };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.id).toBe("i1");
       expect(body.item.subject).toBe("dark mode");
     });
@@ -630,9 +611,7 @@ describe("Memory Item Routes", () => {
         queryParams: {},
         pathParams: { id: "i1" },
       });
-      const body = (await res.json()) as {
-        item: { supersedes: unknown; supersededBy: unknown };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.supersedes).toBeNull();
       expect(body.item.supersededBy).toBeNull();
     });
@@ -654,9 +633,7 @@ describe("Memory Item Routes", () => {
         },
       });
       expect(res.status).toBe(201);
-      const body = (await res.json()) as {
-        item: { id: string; kind: string; subject: string; statement: string };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.kind).toBe("semantic");
       expect(body.item.subject).toBe("dark mode");
       expect(body.item.statement).toBe("User prefers dark mode");
@@ -672,9 +649,7 @@ describe("Memory Item Routes", () => {
         },
       });
       expect(res.status).toBe(201);
-      const body = (await res.json()) as {
-        item: { importance: number };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.importance).toBe(0.5);
     });
 
@@ -710,9 +685,7 @@ describe("Memory Item Routes", () => {
         },
       });
       expect(res.status).toBe(201);
-      const body = (await res.json()) as {
-        item: { subject: string; statement: string };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       // When no subject, content has no newline, so subject and statement are the same
       expect(body.item.subject).toBe("test content without subject");
       expect(body.item.statement).toBe("test content without subject");
@@ -739,9 +712,7 @@ describe("Memory Item Routes", () => {
         },
       });
       expect(res.status).toBe(201);
-      const body = (await res.json()) as {
-        item: { subject: string; statement: string };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.subject).toBe(longSubject);
       expect(body.item.statement).toBe(longStatement);
     });
@@ -783,9 +754,7 @@ describe("Memory Item Routes", () => {
         body: { subject: "new subject", statement: "new statement" },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        item: { subject: string; statement: string };
-      };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.subject).toBe("new subject");
       expect(body.item.statement).toBe("new statement");
     });
@@ -835,7 +804,7 @@ describe("Memory Item Routes", () => {
         body: { kind: "episodic" },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { item: { kind: string } };
+      const body = memoryItemResponseSchema.parse(await res.json());
       expect(body.item.kind).toBe("episodic");
     });
 
@@ -944,18 +913,6 @@ describe("Memory Item Routes", () => {
       setConfig("memory", { v2: { enabled: false } });
     });
 
-    interface NodesListBody {
-      success: boolean;
-      message: string;
-      nodes: Array<{ id: string; content: string }>;
-      total: number;
-    }
-
-    interface NodesMutationBody {
-      success: boolean;
-      message: string;
-    }
-
     test("listMemoryNodes lists seeded nodes and filters by search", async () => {
       insertItem({
         id: "n1",
@@ -971,17 +928,19 @@ describe("Memory Item Routes", () => {
       });
 
       const route = getRoute("memory-nodes", "GET");
-      const all = (await (
-        await callHandler(route, { queryParams: {} })
-      ).json()) as NodesListBody;
+      const all = memoryNodesListResponseSchema.parse(
+        await (await callHandler(route, { queryParams: {} })).json(),
+      );
       expect(all.success).toBe(true);
       expect(all.total).toBe(2);
 
-      const filtered = (await (
-        await callHandler(route, {
-          queryParams: { search: "TypeScript", limit: "10" },
-        })
-      ).json()) as NodesListBody;
+      const filtered = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(route, {
+            queryParams: { search: "TypeScript", limit: "10" },
+          })
+        ).json(),
+      );
       expect(filtered.success).toBe(true);
       expect(filtered.nodes.map((n) => n.id)).toEqual(["n1"]);
     });
@@ -1012,9 +971,11 @@ describe("Memory Item Routes", () => {
       });
 
       const route = getRoute("memory-nodes", "GET");
-      const body = (await (
-        await callHandler(route, { queryParams: { kind: "skill" } })
-      ).json()) as NodesListBody;
+      const body = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(route, { queryParams: { kind: "skill" } })
+        ).json(),
+      );
 
       expect(body.success).toBe(true);
       expect(body.nodes.map((n) => n.id)).toEqual(["skill-pdf"]);
@@ -1029,9 +990,11 @@ describe("Memory Item Routes", () => {
       });
 
       const route = getRoute("memory-nodes", "GET");
-      const body = (await (
-        await callHandler(route, { queryParams: { kind: "skill" } })
-      ).json()) as NodesListBody;
+      const body = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(route, { queryParams: { kind: "skill" } })
+        ).json(),
+      );
 
       expect(body.nodes.map((n) => n.id)).toEqual(["skill-legacy"]);
     });
@@ -1051,11 +1014,13 @@ describe("Memory Item Routes", () => {
       });
 
       const route = getRoute("memory-nodes", "GET");
-      const body = (await (
-        await callHandler(route, {
-          queryParams: { kind: "skill", search: "PDF" },
-        })
-      ).json()) as NodesListBody;
+      const body = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(route, {
+            queryParams: { kind: "skill", search: "PDF" },
+          })
+        ).json(),
+      );
 
       expect(body.nodes.map((n) => n.id)).toEqual(["skill-pdf"]);
     });
@@ -1069,9 +1034,13 @@ describe("Memory Item Routes", () => {
 
     test("listMemoryNodes reports memory v2 disabled as a business failure", async () => {
       setConfig("memory", { v2: { enabled: false } });
-      const body = (await (
-        await callHandler(getRoute("memory-nodes", "GET"), { queryParams: {} })
-      ).json()) as NodesListBody;
+      const body = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory-nodes", "GET"), {
+            queryParams: {},
+          })
+        ).json(),
+      );
       expect(body.success).toBe(false);
       expect(body.message.length).toBeGreaterThan(0);
     });
@@ -1083,16 +1052,22 @@ describe("Memory Item Routes", () => {
         content: "User prefers TypeScript",
       });
 
-      const body = (await (
-        await callHandler(getRoute("memory-nodes/delete", "POST"), {
-          body: { content: "User prefers TypeScript" },
-        })
-      ).json()) as NodesMutationBody;
+      const body = memoryNodeMutationResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory-nodes/delete", "POST"), {
+            body: { content: "User prefers TypeScript" },
+          })
+        ).json(),
+      );
       expect(body.success).toBe(true);
 
-      const after = (await (
-        await callHandler(getRoute("memory-nodes", "GET"), { queryParams: {} })
-      ).json()) as NodesListBody;
+      const after = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory-nodes", "GET"), {
+            queryParams: {},
+          })
+        ).json(),
+      );
       expect(after.nodes.map((n) => n.id)).not.toContain("n1");
     });
 
@@ -1118,11 +1093,13 @@ describe("Memory Item Routes", () => {
     });
 
     test("deleteMemoryNode fails as data when nothing matches", async () => {
-      const body = (await (
-        await callHandler(getRoute("memory-nodes/delete", "POST"), {
-          body: { content: "does not exist anywhere" },
-        })
-      ).json()) as NodesMutationBody;
+      const body = memoryNodeMutationResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory-nodes/delete", "POST"), {
+            body: { content: "does not exist anywhere" },
+          })
+        ).json(),
+      );
       expect(body.success).toBe(false);
       expect(body.message.length).toBeGreaterThan(0);
     });
@@ -1134,19 +1111,25 @@ describe("Memory Item Routes", () => {
         content: "User prefers TypeScript",
       });
 
-      const body = (await (
-        await callHandler(getRoute("memory-nodes/update", "POST"), {
-          body: {
-            oldContent: "User prefers TypeScript",
-            newContent: "User prefers TypeScript and Bun",
-          },
-        })
-      ).json()) as NodesMutationBody;
+      const body = memoryNodeMutationResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory-nodes/update", "POST"), {
+            body: {
+              oldContent: "User prefers TypeScript",
+              newContent: "User prefers TypeScript and Bun",
+            },
+          })
+        ).json(),
+      );
       expect(body.success).toBe(true);
 
-      const after = (await (
-        await callHandler(getRoute("memory-nodes", "GET"), { queryParams: {} })
-      ).json()) as NodesListBody;
+      const after = memoryNodesListResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory-nodes", "GET"), {
+            queryParams: {},
+          })
+        ).json(),
+      );
       expect(after.nodes.map((n) => n.content)).toContain(
         "User prefers TypeScript and Bun",
       );
@@ -1185,18 +1168,12 @@ describe("Memory Item Routes", () => {
       setConfig("memory", { v2: { enabled: false } });
     });
 
-    interface RememberBody {
-      success: boolean;
-      message: string;
-      pendingNodeId?: string;
-    }
-
     test("appends a valid fact and returns { success, message }", async () => {
       const res = await callHandler(getRoute("memory/remember", "POST"), {
         body: { content: "User prefers dark mode" },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as RememberBody;
+      const body = rememberMemoryResponseSchema.parse(await res.json());
       expect(body.success).toBe(true);
       expect(body.message.length).toBeGreaterThan(0);
       // Exactly the declared response fields: the handler's saved-facts list
@@ -1210,7 +1187,7 @@ describe("Memory Item Routes", () => {
       const res = await callHandler(getRoute("memory/remember", "POST"), {
         body: { content: "Prefers window seats on morning flights" },
       });
-      const body = (await res.json()) as RememberBody;
+      const body = rememberMemoryResponseSchema.parse(await res.json());
       expect(body.success).toBe(true);
       expect(body.pendingNodeId).toStartWith("buffer:");
 
@@ -1224,16 +1201,20 @@ describe("Memory Item Routes", () => {
     });
 
     test("duplicate content gets the deduped (suffixed) pending id", async () => {
-      const first = (await (
-        await callHandler(getRoute("memory/remember", "POST"), {
-          body: { content: "same fact twice" },
-        })
-      ).json()) as RememberBody;
-      const second = (await (
-        await callHandler(getRoute("memory/remember", "POST"), {
-          body: { content: "same fact twice" },
-        })
-      ).json()) as RememberBody;
+      const first = rememberMemoryResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory/remember", "POST"), {
+            body: { content: "same fact twice" },
+          })
+        ).json(),
+      );
+      const second = rememberMemoryResponseSchema.parse(
+        await (
+          await callHandler(getRoute("memory/remember", "POST"), {
+            body: { content: "same fact twice" },
+          })
+        ).json(),
+      );
 
       expect(first.pendingNodeId).toStartWith("buffer:");
       expect(second.pendingNodeId).toBe(`${first.pendingNodeId!}-2`);
@@ -1349,14 +1330,14 @@ describe("Memory Item Routes", () => {
 
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { concepts: number };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       expect(body.concepts).toBe(3);
     });
 
     test("returns zero for an empty workspace", async () => {
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { concepts: number };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       expect(body.concepts).toBe(0);
     });
 
@@ -1372,7 +1353,7 @@ describe("Memory Item Routes", () => {
 
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as { concepts: number };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       // Two real concept pages; the two synthetic skill rows are excluded.
       expect(body.concepts).toBe(2);
     });
@@ -1381,10 +1362,7 @@ describe("Memory Item Routes", () => {
       setConfig("memory", { v3: { live: false } });
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        concepts: number;
-        graph_supported: boolean;
-      };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       expect(body.graph_supported).toBe(false);
     });
 
@@ -1392,10 +1370,7 @@ describe("Memory Item Routes", () => {
       setConfig("memory", { enabled: true, v3: { live: true } });
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        concepts: number;
-        graph_supported: boolean;
-      };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       expect(body.graph_supported).toBe(true);
     });
 
@@ -1405,10 +1380,7 @@ describe("Memory Item Routes", () => {
       setConfig("memory", { enabled: false, v3: { live: true } });
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        concepts: number;
-        graph_supported: boolean;
-      };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       expect(body.graph_supported).toBe(false);
     });
 
@@ -1424,10 +1396,7 @@ describe("Memory Item Routes", () => {
       setConfig("memory", memory);
       const res = await callHandler(route);
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        tier: string;
-        graph_supported: boolean;
-      };
+      const body = memoryStatsResponseSchema.parse(await res.json());
       expect(body.tier).toBe(tier);
       // The capability bit and its explanation are derived from the same gate,
       // so they can never disagree.

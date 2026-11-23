@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 import { v4 as uuid } from "uuid";
 
 import { getLogger } from "../logging.js";
@@ -226,20 +228,23 @@ export function getMemoryV2ActivationLogByMessageIds(
   }
   const placeholders = messageIds.map(() => "?").join(",");
   const row = raw
-    .query(
+    .query<
+      {
+        conversation_id: string;
+        turn: number;
+        mode: string;
+        concepts_json: string;
+        config_json: string;
+      },
+      SQLQueryBindings[]
+    >(
       `SELECT conversation_id, turn, mode, concepts_json, config_json
          FROM memory_v2_activation_logs
         WHERE message_id IN (${placeholders})
         ORDER BY created_at DESC
         LIMIT 1`,
     )
-    .get(...messageIds) as {
-    conversation_id: string;
-    turn: number;
-    mode: string;
-    concepts_json: string;
-    config_json: string;
-  } | null;
+    .get(...messageIds);
   if (!row) {
     return null;
   }

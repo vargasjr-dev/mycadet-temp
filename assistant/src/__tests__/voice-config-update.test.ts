@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 // ---------------------------------------------------------------------------
 // Mocks — declared before imports that depend on platform/logger
 // ---------------------------------------------------------------------------
@@ -41,8 +43,30 @@ function writeConfig(obj: unknown): void {
   writeFileSync(CONFIG_PATH, JSON.stringify(obj));
 }
 
-function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
+const rawVoiceConfigSchema = z.looseObject({
+  services: z
+    .looseObject({
+      tts: z
+        .looseObject({
+          providers: z.record(z.string(), z.looseObject({})).optional(),
+        })
+        .optional(),
+      stt: z
+        .looseObject({
+          providers: z.record(z.string(), z.looseObject({})).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  calls: z.looseObject({ voice: z.looseObject({}).optional() }).optional(),
+  elevenlabs: z.looseObject({}).optional(),
+  fishAudio: z.looseObject({}).optional(),
+});
+
+function readConfig() {
+  return rawVoiceConfigSchema.parse(
+    JSON.parse(readFileSync(CONFIG_PATH, "utf8")),
+  );
 }
 
 function makeContext(overrides?: Partial<ToolContext>): ToolContext {
@@ -89,7 +113,7 @@ describe("voice_config_update — tts_provider", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect((config.services as any)?.tts?.provider).toBe("fish-audio");
+    expect(config.services?.tts?.provider).toBe("fish-audio");
   });
 
   test("does not write to legacy calls.voice.ttsProvider", async () => {
@@ -103,7 +127,7 @@ describe("voice_config_update — tts_provider", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect((config.calls as any)?.voice?.ttsProvider).toBeUndefined();
+    expect(config.calls?.voice?.ttsProvider).toBeUndefined();
   });
 
   test("rejects invalid tts_provider", async () => {
@@ -129,8 +153,8 @@ describe("voice_config_update — tts_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    const tts = (readConfig().services as any).tts;
-    expect(tts.provider).toBe("elevenlabs");
+    const tts = readConfig().services?.tts;
+    expect(tts?.provider).toBe("elevenlabs");
     expect(tts).not.toHaveProperty("mode");
   });
 
@@ -164,9 +188,7 @@ describe("voice_config_update — tts_voice_id", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect((config.services as any)?.tts?.providers?.elevenlabs?.voiceId).toBe(
-      "abc123",
-    );
+    expect(config.services?.tts?.providers?.elevenlabs?.voiceId).toBe("abc123");
   });
 
   test("does not write to legacy elevenlabs.voiceId", async () => {
@@ -180,7 +202,7 @@ describe("voice_config_update — tts_voice_id", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect((config.elevenlabs as any)?.voiceId).toBeUndefined();
+    expect(config.elevenlabs?.voiceId).toBeUndefined();
   });
 
   test("rejects non-alphanumeric voice ID when provider is elevenlabs", async () => {
@@ -226,7 +248,7 @@ describe("voice_config_update — tts_voice_id", () => {
 
     expect(result.isError).toBe(true);
     expect(
-      (readConfig().services as any)?.tts?.providers?.elevenlabs?.voiceId,
+      readConfig().services?.tts?.providers?.elevenlabs?.voiceId,
     ).toBeUndefined();
   });
 });
@@ -247,9 +269,9 @@ describe("voice_config_update — fish_audio_reference_id", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect(
-      (config.services as any)?.tts?.providers?.["fish-audio"]?.referenceId,
-    ).toBe("voice-ref-123");
+    expect(config.services?.tts?.providers?.["fish-audio"]?.referenceId).toBe(
+      "voice-ref-123",
+    );
   });
 
   test("does not write to legacy fishAudio.referenceId", async () => {
@@ -263,7 +285,7 @@ describe("voice_config_update — fish_audio_reference_id", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect((config.fishAudio as any)?.referenceId).toBeUndefined();
+    expect(config.fishAudio?.referenceId).toBeUndefined();
   });
 
   test("rejects empty reference ID", async () => {
@@ -294,8 +316,7 @@ describe("voice_config_update — conversation_timeout", () => {
     expect(result.isError).toBe(false);
     const config = readConfig();
     expect(
-      (config.services as any)?.tts?.providers?.elevenlabs
-        ?.conversationTimeoutSeconds,
+      config.services?.tts?.providers?.elevenlabs?.conversationTimeoutSeconds,
     ).toBe(15);
   });
 
@@ -310,9 +331,7 @@ describe("voice_config_update — conversation_timeout", () => {
 
     expect(result.isError).toBe(false);
     const config = readConfig();
-    expect(
-      (config.elevenlabs as any)?.conversationTimeoutSeconds,
-    ).toBeUndefined();
+    expect(config.elevenlabs?.conversationTimeoutSeconds).toBeUndefined();
   });
 
   test("rejects invalid timeout", async () => {
@@ -339,8 +358,9 @@ describe("voice_config_update — manifest parity", () => {
     const manifest = settingsSkillTools.tools.find(
       (t) => t.name === "voice_config_update",
     );
-    const enumValues = manifest?.input_schema.properties.setting
-      ?.enum as readonly string[];
+    const enumValues = z
+      .array(z.string())
+      .parse(manifest?.input_schema.properties.setting?.enum);
     expect([...enumValues].sort()).toEqual([...VALID_SETTINGS].sort());
   });
 });
@@ -385,7 +405,7 @@ describe("voice_config_update — deepgram", () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain("updated to");
     const config = readConfig();
-    expect((config.services as any)?.tts?.provider).toBe("deepgram");
+    expect(config.services?.tts?.provider).toBe("deepgram");
   });
 
   test("broadcasts deepgram ttsProvider to client", async () => {
@@ -415,9 +435,7 @@ describe("voice_config_update — stt_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.provider).toBe(
-      "openai-whisper",
-    );
+    expect(readConfig().services?.stt?.provider).toBe("openai-whisper");
   });
 
   test("stt_model persists under the active provider", async () => {
@@ -432,9 +450,7 @@ describe("voice_config_update — stt_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect(
-      (readConfig().services as any)?.stt?.providers?.deepgram?.model,
-    ).toBe("flux");
+    expect(readConfig().services?.stt?.providers?.deepgram?.model).toBe("flux");
   });
 
   test("stt_model rejects a family the active provider cannot serve", async () => {
@@ -473,7 +489,7 @@ describe("voice_config_update — stt_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.provider).toBe("deepgram");
+    expect(readConfig().services?.stt?.provider).toBe("deepgram");
   });
 
   test("a provider switch scrubs a legacy mode key from the raw config", async () => {
@@ -486,8 +502,8 @@ describe("voice_config_update — stt_provider", () => {
     );
 
     expect(result.isError).toBe(false);
-    const stt = (readConfig().services as any).stt;
-    expect(stt.provider).toBe("deepgram");
+    const stt = readConfig().services?.stt;
+    expect(stt?.provider).toBe("deepgram");
     expect(stt).not.toHaveProperty("mode");
   });
 
@@ -529,7 +545,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("hi");
+    expect(readConfig().services?.stt?.language).toBe("hi");
   });
 
   test("a sparse config write seeds the provider so the block survives validation", async () => {
@@ -554,7 +570,7 @@ describe("voice_config_update - stt_language", () => {
     // Unrelated TTS settings survive (no services-section reset).
     expect(getConfig().services.tts.provider).toBe("elevenlabs");
     // The raw block is self-consistent on disk too.
-    const stt = (readConfig().services as any)?.stt;
+    const stt = readConfig().services?.stt;
     expect(stt).toEqual({ provider: "deepgram", language: "hi" });
   });
 
@@ -569,7 +585,7 @@ describe("voice_config_update - stt_language", () => {
 
     expect(result.isError).toBe(false);
     // The configured provider is untouched, not re-seeded from defaults.
-    expect((readConfig().services as any)?.stt).toEqual({
+    expect(readConfig().services?.stt).toEqual({
       provider: "xai",
       language: "fr",
     });
@@ -584,7 +600,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("hi");
+    expect(readConfig().services?.stt?.language).toBe("hi");
   });
 
   test("normalizes multilingual to multi", async () => {
@@ -594,7 +610,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("multi");
+    expect(readConfig().services?.stt?.language).toBe("multi");
   });
 
   test("normalizes extended-roster language names (tamil, korean, mandarin)", async () => {
@@ -610,7 +626,7 @@ describe("voice_config_update - stt_language", () => {
         makeContext(),
       );
       expect(result.isError).toBe(false);
-      expect((readConfig().services as any)?.stt?.language).toBe(code);
+      expect(readConfig().services?.stt?.language).toBe(code);
     }
   });
 
@@ -621,7 +637,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("vi");
+    expect(readConfig().services?.stt?.language).toBe("vi");
   });
 
   test("accepts multi directly", async () => {
@@ -631,7 +647,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("multi");
+    expect(readConfig().services?.stt?.language).toBe("multi");
   });
 
   test("deepgram accepts an extended-roster code", async () => {
@@ -644,7 +660,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("ta");
+    expect(readConfig().services?.stt?.language).toBe("ta");
   });
 
   test("xai rejects an extended-roster code, naming the provider and its set, and writes nothing", async () => {
@@ -663,7 +679,7 @@ describe("voice_config_update - stt_language", () => {
     expect(result.content).toContain("xai");
     expect(result.content).toContain("en, es, fr, de, hi, ru, pt, ja, it, nl");
     expect(result.content).toContain("Deepgram/managed");
-    expect((readConfig().services as any)?.stt?.language).toBeUndefined();
+    expect(readConfig().services?.stt?.language).toBeUndefined();
   });
 
   test("xai rejects multi with the provider-naming error and writes nothing", async () => {
@@ -680,7 +696,7 @@ describe("voice_config_update - stt_language", () => {
     expect(result.isError).toBe(true);
     expect(result.content).toContain("xai");
     expect(result.content).toContain("Deepgram/managed");
-    expect((readConfig().services as any)?.stt?.language).toBeUndefined();
+    expect(readConfig().services?.stt?.language).toBeUndefined();
   });
 
   test("the alias path normalizes before the provider check", async () => {
@@ -695,7 +711,7 @@ describe("voice_config_update - stt_language", () => {
     );
     expect(rejected.isError).toBe(true);
     expect(rejected.content).toContain("xai");
-    expect((readConfig().services as any)?.stt?.language).toBeUndefined();
+    expect(readConfig().services?.stt?.language).toBeUndefined();
 
     // "French" normalizes to fr, which is inside xai's verified set.
     const accepted = await run(
@@ -703,7 +719,7 @@ describe("voice_config_update - stt_language", () => {
       makeContext(),
     );
     expect(accepted.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("fr");
+    expect(readConfig().services?.stt?.language).toBe("fr");
   });
 
   test("an auto-detect provider keeps the unconditional write and notes the setting is ignored", async () => {
@@ -716,7 +732,7 @@ describe("voice_config_update - stt_language", () => {
     );
 
     expect(result.isError).toBe(false);
-    expect((readConfig().services as any)?.stt?.language).toBe("ta");
+    expect(readConfig().services?.stt?.language).toBe("ta");
     expect(result.content).toContain("google-gemini");
     expect(result.content).toContain("auto-detects");
   });
@@ -743,7 +759,7 @@ describe("voice_config_update - stt_language", () => {
     expect(result.isError).toBe(true);
     expect(result.content).toContain("stt_language must be one of");
     expect(result.content).toContain("multi");
-    expect((readConfig().services as any)?.stt?.language).toBeUndefined();
+    expect(readConfig().services?.stt?.language).toBeUndefined();
   });
 
   test("rejects a non-string value and writes nothing", async () => {
@@ -754,7 +770,7 @@ describe("voice_config_update - stt_language", () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain("stt_language must be one of");
-    expect((readConfig().services as any)?.stt?.language).toBeUndefined();
+    expect(readConfig().services?.stt?.language).toBeUndefined();
   });
 
   test("does not broadcast stt_language changes to the desktop client", async () => {

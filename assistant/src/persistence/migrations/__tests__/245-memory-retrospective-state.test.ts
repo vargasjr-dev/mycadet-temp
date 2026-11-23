@@ -61,8 +61,8 @@ describe("migration 245 — memory_retrospective_state", () => {
     migrateMemoryRetrospectiveState(db);
 
     const cols = raw
-      .query(`PRAGMA table_info(memory_retrospective_state)`)
-      .all() as ColumnRow[];
+      .query<ColumnRow, []>(`PRAGMA table_info(memory_retrospective_state)`)
+      .all();
     const colMap = Object.fromEntries(cols.map((c) => [c.name, c]));
 
     expect(colMap["conversation_id"]).toBeDefined();
@@ -82,8 +82,11 @@ describe("migration 245 — memory_retrospective_state", () => {
     migrateMemoryRetrospectiveState(db);
 
     const fks = raw
-      .query(`PRAGMA foreign_key_list(memory_retrospective_state)`)
-      .all() as ForeignKeyRow[];
+      .query<
+        ForeignKeyRow,
+        []
+      >(`PRAGMA foreign_key_list(memory_retrospective_state)`)
+      .all();
 
     expect(fks).toHaveLength(1);
     expect(fks[0]!.from).toBe("conversation_id");

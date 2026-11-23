@@ -52,15 +52,15 @@ describe("migration 267 — llm_usage_events add assistant_version", () => {
     bootstrap(db);
 
     const before = raw
-      .query(`PRAGMA table_info(llm_usage_events)`)
-      .all() as ColumnRow[];
+      .query<ColumnRow, []>(`PRAGMA table_info(llm_usage_events)`)
+      .all();
     expect(before.map((c) => c.name)).not.toContain("assistant_version");
 
     migrateLlmUsageEventsAddAssistantVersion(db);
 
     const after = raw
-      .query(`PRAGMA table_info(llm_usage_events)`)
-      .all() as ColumnRow[];
+      .query<ColumnRow, []>(`PRAGMA table_info(llm_usage_events)`)
+      .all();
     const col = after.find((c) => c.name === "assistant_version");
     expect(col).toBeDefined();
     expect(col!.type).toBe("TEXT");

@@ -35,7 +35,7 @@ export function migrateCallSessionsProviderSidDedup(database: DrizzleDb): void {
 
   // Count duplicates before doing any work.
   const dupCount = raw
-    .query(
+    .query<{ c: number }, []>(
       /*sql*/ `
     SELECT COUNT(*) AS c FROM (
       SELECT provider, provider_call_sid
@@ -46,7 +46,7 @@ export function migrateCallSessionsProviderSidDedup(database: DrizzleDb): void {
     )
   `,
     )
-    .get() as { c: number } | null;
+    .get();
 
   if (!dupCount || dupCount.c === 0) {
     return;

@@ -13,9 +13,14 @@ export function migrateContactChannelsAccessFields(database: DrizzleDb): void {
   // if it's absent but other 129-era columns already exist, 294 has run and
   // we must not re-add it (avoids a table-rewrite cycle on every startup).
   const raw = getSqliteFrom(database);
-  const cols = raw.prepare("PRAGMA table_info(contact_channels)").all() as {
-    name: string;
-  }[];
+  const cols = raw
+    .prepare<
+      {
+        name: string;
+      },
+      []
+    >("PRAGMA table_info(contact_channels)")
+    .all();
   const colNames = new Set(cols.map((c) => c.name));
   const needsExternalUserId =
     !colNames.has("external_user_id") && !colNames.has("status");

@@ -48,10 +48,11 @@ interface LogRow {
 
 function allRows(): LogRow[] {
   return memorySqlite
-    .query(
-      `SELECT message_id, turn, mode FROM memory_v2_activation_logs ORDER BY turn`,
-    )
-    .all() as LogRow[];
+    .query<
+      LogRow,
+      []
+    >(`SELECT message_id, turn, mode FROM memory_v2_activation_logs ORDER BY turn`)
+    .all();
 }
 
 describe("memory-v2-activation-log-store", () => {
@@ -160,8 +161,11 @@ describe("memory-v2-activation-log-store", () => {
       config: sampleConfig,
     });
     const { n } = memorySqlite
-      .query(`SELECT COUNT(*) AS n FROM memory_v2_activation_logs`)
-      .get() as { n: number };
+      .query<
+        { n: number },
+        []
+      >(`SELECT COUNT(*) AS n FROM memory_v2_activation_logs`)
+      .get()!;
     expect(n).toBe(1);
   });
 

@@ -277,9 +277,8 @@ export function normalizeOpenAIAPIError(
   // classifying it as a transient network error would make the retry loop
   // re-run 30-minute deadline failures. Guarded because test doubles of the
   // openai module may not define the class.
-  const connectionErrorClass = OpenAI.APIConnectionError as
-    | typeof OpenAI.APIConnectionError
-    | undefined;
+  const connectionErrorClass: typeof OpenAI.APIConnectionError | undefined =
+    OpenAI.APIConnectionError;
   out.reason =
     typeof connectionErrorClass === "function" &&
     error instanceof connectionErrorClass

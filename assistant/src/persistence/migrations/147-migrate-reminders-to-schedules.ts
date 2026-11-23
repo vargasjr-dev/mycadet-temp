@@ -45,19 +45,24 @@ export function migrateRemindersToSchedules(database: DrizzleDb): void {
   // Read all reminders into memory. We use the reminder's original ID as
   // the cron_jobs primary key so that INSERT OR IGNORE deduplicates
   // correctly if the migration re-runs after a crash.
-  const reminders = raw.query("SELECT * FROM reminders").all() as Array<{
-    id: string;
-    label: string;
-    message: string;
-    fire_at: number;
-    mode: string;
-    status: string;
-    fired_at: number | null;
-    routing_intent: string;
-    routing_hints_json: string;
-    created_at: number;
-    updated_at: number;
-  }>;
+  const reminders = raw
+    .query<
+      {
+        id: string;
+        label: string;
+        message: string;
+        fire_at: number;
+        mode: string;
+        status: string;
+        fired_at: number | null;
+        routing_intent: string;
+        routing_hints_json: string;
+        created_at: number;
+        updated_at: number;
+      },
+      []
+    >("SELECT * FROM reminders")
+    .all();
 
   if (reminders.length === 0) {
     return;

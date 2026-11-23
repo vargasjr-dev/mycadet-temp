@@ -756,7 +756,7 @@ export function buildSlackMetaForPersistence(params: {
   ) {
     return null;
   }
-  const candidate = inbound as Partial<SlackInboundMessageMetadata>;
+  const candidate: Partial<SlackInboundMessageMetadata> = inbound;
   if (
     typeof candidate.channelId !== "string" ||
     !candidate.channelId ||

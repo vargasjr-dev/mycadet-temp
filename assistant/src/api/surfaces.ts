@@ -809,9 +809,8 @@ export function safeParseSurfaceData<K extends SurfaceType>(
   // `undefined` and `.safeParse` would throw. Return `undefined` (the same
   // "couldn't produce a typed payload" signal a parse miss gives) so this stays
   // total, as its name promises.
-  const schema = SURFACE_DATA_SCHEMAS[surfaceType] as
-    | z.ZodType<SurfaceDataByType[K]>
-    | undefined;
+  const schema: z.ZodType<SurfaceDataByType[K]> | undefined =
+    SURFACE_DATA_SCHEMAS[surfaceType];
   if (!schema) {
     return undefined;
   }

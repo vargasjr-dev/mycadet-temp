@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 /**
  * Oracle extraction — the current router's logged selections as silver-standard
  * ground truth.
@@ -14,7 +16,6 @@
  * (neither retriever can find a nonexistent page). page_missing / corrupt are
  * always excluded.
  */
-
 import { eq } from "drizzle-orm";
 
 import type { DrizzleDb } from "../../../../../persistence/db-connection.js";
@@ -88,7 +89,17 @@ export function extractOracleTurns(
   params.push(limit);
 
   const rows = memoryRaw
-    .query(
+    .query<
+      {
+        conversation_id: string;
+        message_id: string | null;
+        turn: number;
+        concepts_json: string;
+        config_json: string;
+        created_at: number;
+      },
+      SQLQueryBindings[]
+    >(
       `SELECT conversation_id, message_id, turn, concepts_json, config_json,
               created_at
          FROM memory_v2_activation_logs
@@ -96,14 +107,7 @@ export function extractOracleTurns(
         ORDER BY ${orderBy}
         LIMIT ?`,
     )
-    .all(...params) as Array<{
-    conversation_id: string;
-    message_id: string | null;
-    turn: number;
-    concepts_json: string;
-    config_json: string;
-    created_at: number;
-  }>;
+    .all(...params);
 
   const turns: OracleTurn[] = [];
   for (const row of rows) {

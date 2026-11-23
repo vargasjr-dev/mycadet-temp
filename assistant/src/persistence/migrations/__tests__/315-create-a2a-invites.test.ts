@@ -84,8 +84,8 @@ interface A2aInviteRow {
 
 function listA2aInvites(raw: Database): A2aInviteRow[] {
   return raw
-    .prepare(`SELECT * FROM a2a_invites ORDER BY id`)
-    .all() as A2aInviteRow[];
+    .prepare<A2aInviteRow, []>(`SELECT * FROM a2a_invites ORDER BY id`)
+    .all();
 }
 
 describe("migration 315 — create a2a_invites", () => {
@@ -127,8 +127,11 @@ describe("migration 315 — create a2a_invites", () => {
 
     // Source rows are left untouched — the table drops wholesale later.
     const sourceCount = raw
-      .prepare(`SELECT COUNT(*) AS n FROM assistant_ingress_invites`)
-      .get() as { n: number };
+      .prepare<
+        { n: number },
+        []
+      >(`SELECT COUNT(*) AS n FROM assistant_ingress_invites`)
+      .get()!;
     expect(sourceCount.n).toBe(4);
   });
 

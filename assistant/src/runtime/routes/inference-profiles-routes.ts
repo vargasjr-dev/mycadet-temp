@@ -134,7 +134,7 @@ const profileSummarySchema = z
   })
   .meta({ id: "InferenceProfileSummary" });
 
-const profileDetailSchema = z
+export const profileDetailSchema = z
   .object({
     name: z.string(),
     /** The full effective body, resolved through the catalog like the list. */
@@ -144,7 +144,7 @@ const profileDetailSchema = z
   })
   .meta({ id: "InferenceProfileDetail" });
 
-const profileWriteResultSchema = z
+export const profileWriteResultSchema = z
   .object({
     ok: z.literal(true),
     name: z.string(),
@@ -949,6 +949,24 @@ async function handleSetActiveProfile({ body = {} }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
+export const profileListSchema = z.object({
+  profiles: z.array(profileSummarySchema),
+});
+
+export const profileDeleteResultSchema = z.object({
+  ok: z.literal(true),
+  name: z.string(),
+});
+
+export const profileSetActiveResultSchema = z.object({
+  ok: z.literal(true),
+  activeProfile: z.string(),
+});
+
+export const profileValidationResultSchema = z.object({
+  check: profileCheckSchema.nullable(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "inference_profiles_list",
@@ -962,7 +980,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Return the effective profile catalog: code-defined managed defaults merged with user profiles, each annotated with source and (when it has a connection) availability.",
     tags: ["inference"],
-    responseBody: z.object({ profiles: z.array(profileSummarySchema) }),
+    responseBody: profileListSchema,
     handler: handleListProfiles,
   },
   {
@@ -1043,7 +1061,7 @@ export const ROUTES: RouteDefinition[] = [
       "Delete a custom profile. Managed default profiles cannot be deleted (they are re-seeded on boot).",
     tags: ["inference"],
     pathParams: [{ name: "name", description: "Profile name" }],
-    responseBody: z.object({ ok: z.literal(true), name: z.string() }),
+    responseBody: profileDeleteResultSchema,
     additionalResponses: {
       "400": { description: "Attempt to delete a cloud profile" },
       "404": { description: "Profile not found" },
@@ -1067,10 +1085,7 @@ export const ROUTES: RouteDefinition[] = [
       "Set llm.activeProfile after validating the name against the effective profile catalog (provider-aware default expansion included). Unknown or disabled profiles are rejected so the chat-model selection cannot be silently stripped on the next config load. A profile that provably cannot dispatch is also rejected — there is no escape hatch, because an unusable active profile locks the user out of chat.",
     tags: ["inference"],
     requestBody: setActiveRequestSchema,
-    responseBody: z.object({
-      ok: z.literal(true),
-      activeProfile: z.string(),
-    }),
+    responseBody: profileSetActiveResultSchema,
     additionalResponses: {
       "400": {
         description:
@@ -1092,9 +1107,7 @@ export const ROUTES: RouteDefinition[] = [
       "Dispatch one minimal test request through the named profile's resolved model and connection, and classify any failure by which object the user should fix (the profile vs its provider connection). Advisory: the probe never mutates the profile. Returns a null check when there is no verdict to give (missing, disabled, managed, or routing-identity profiles, or a probe timeout). The probe spends one tiny request on the profile's own key.",
     tags: ["inference"],
     pathParams: [{ name: "name", description: "Profile name" }],
-    responseBody: z.object({
-      check: profileCheckSchema.nullable(),
-    }),
+    responseBody: profileValidationResultSchema,
     handler: handleValidateProfile,
   },
 ];

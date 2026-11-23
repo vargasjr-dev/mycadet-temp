@@ -435,7 +435,7 @@ export class GeminiProvider implements Provider {
     options?: SendMessageOptions,
   ): Promise<ProviderResponse> {
     const { tools, systemPrompt, config, onEvent, signal } = options ?? {};
-    const configObj = config as Record<string, unknown> | undefined;
+    const configObj: Record<string, unknown> | undefined = config;
     const maxTokens = configObj?.max_tokens as number | undefined;
     const modelOverride = configObj?.model as string | undefined;
     const usageAttributionHeaders = configObj?.usageAttributionHeaders as

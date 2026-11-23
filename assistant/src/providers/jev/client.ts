@@ -497,7 +497,7 @@ export class JevProvider implements Provider {
     options?: SendMessageOptions,
   ): Promise<ProviderResponse> {
     const { systemPrompt, config, onEvent, signal } = options ?? {};
-    const configObj = config as Record<string, unknown> | undefined;
+    const configObj: Record<string, unknown> | undefined = config;
     const modelOverride = configObj?.model as string | undefined;
     const usageAttributionHeaders = configObj?.usageAttributionHeaders as
       | Record<string, string>

@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 /**
  * In-flight conversation turns, read from the daemon's SQLite database.
  *
@@ -12,7 +13,6 @@
  * daemon being frozen mid-turn does not block it). Best-effort: any failure —
  * database or table not created yet, lock contention — yields null.
  */
-
 import { Database } from "bun:sqlite";
 
 import { getDbPath } from "../util/layout.js";
@@ -57,7 +57,16 @@ export function readActiveConversations(): ActiveConversation[] | null {
   }
   try {
     const rows = handle
-      .query(
+      .query<
+        {
+          id: string;
+          title: string | null;
+          originChannel: string | null;
+          originInterface: string | null;
+          processingStartedAt: number;
+        },
+        SQLQueryBindings[]
+      >(
         `SELECT id, title, origin_channel AS originChannel,
                 origin_interface AS originInterface,
                 processing_started_at AS processingStartedAt
@@ -66,13 +75,7 @@ export function readActiveConversations(): ActiveConversation[] | null {
          ORDER BY processing_started_at ASC
          LIMIT ?`,
       )
-      .all(MAX_ENTRIES) as Array<{
-      id: string;
-      title: string | null;
-      originChannel: string | null;
-      originInterface: string | null;
-      processingStartedAt: number;
-    }>;
+      .all(MAX_ENTRIES);
     if (rows.length === 0) {
       return null;
     }

@@ -28,7 +28,6 @@ import { assistantEventHub } from "../assistant-event-hub.js";
 const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 
 import { BadRequestError, ConflictError, NotFoundError } from "./errors.js";
-import type { RouteDefinition } from "./types.js";
 import { RouteResponse } from "./types.js";
 import { ROUTES } from "./workspace-routes.js";
 import { isTextMimeType, resolveWorkspacePath } from "./workspace-utils.js";
@@ -64,8 +63,17 @@ beforeAll(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getRoute(operationId: string): RouteDefinition {
-  const route = ROUTES.find((r) => r.operationId === operationId);
+type WorkspaceRoute = (typeof ROUTES)[number];
+
+function getRoute<OperationId extends WorkspaceRoute["operationId"]>(
+  operationId: OperationId,
+) {
+  const route = ROUTES.find(
+    (
+      candidate,
+    ): candidate is Extract<WorkspaceRoute, { operationId: OperationId }> =>
+      candidate.operationId === operationId,
+  );
   if (!route) {
     throw new Error(`No shared route found for operationId: ${operationId}`);
   }
@@ -212,10 +220,7 @@ describe("GET /v1/workspace/tree", () => {
   const { handler } = getRoute("workspace_tree");
 
   test("root listing returns entries", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      path: string;
-      entries: Array<{ name: string; type: string }>;
-    };
+    const result = await handler({ queryParams: {} });
     expect(result.entries.length).toBeGreaterThan(0);
     const names = result.entries.map((e) => e.name);
     expect(names).toContain("hello.txt");
@@ -223,10 +228,7 @@ describe("GET /v1/workspace/tree", () => {
   });
 
   test("subdirectory listing returns child entries", async () => {
-    const result = (await handler({ queryParams: { path: "subdir" } })) as {
-      path: string;
-      entries: Array<{ name: string; type: string }>;
-    };
+    const result = await handler({ queryParams: { path: "subdir" } });
     expect(result.entries.length).toBe(1);
     expect(result.entries[0].name).toBe("nested.txt");
     expect(result.entries[0].type).toBe("file");
@@ -245,9 +247,7 @@ describe("GET /v1/workspace/tree", () => {
   });
 
   test("entries have correct type field", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      entries: Array<{ name: string; type: "file" | "directory" }>;
-    };
+    const result = await handler({ queryParams: {} });
     const subdirEntry = result.entries.find((e) => e.name === "subdir");
     const fileEntry = result.entries.find((e) => e.name === "hello.txt");
     expect(subdirEntry?.type).toBe("directory");
@@ -255,23 +255,14 @@ describe("GET /v1/workspace/tree", () => {
   });
 
   test("dotfiles and dot-directories are excluded", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      entries: Array<{ name: string }>;
-    };
+    const result = await handler({ queryParams: {} });
     const names = result.entries.map((e) => e.name);
     expect(names).not.toContain(".env");
     expect(names).not.toContain(".hidden");
   });
 
   test("directory entries have null size and mimeType", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      entries: Array<{
-        name: string;
-        type: string;
-        size: number | null;
-        mimeType: string | null;
-      }>;
-    };
+    const result = await handler({ queryParams: {} });
     const dirEntry = result.entries.find((e) => e.type === "directory");
     expect(dirEntry).toBeDefined();
     expect(dirEntry!.size).toBeNull();
@@ -279,9 +270,7 @@ describe("GET /v1/workspace/tree", () => {
   });
 
   test("directories sorted before files", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      entries: Array<{ type: string }>;
-    };
+    const result = await handler({ queryParams: {} });
     const firstFileIdx = result.entries.findIndex((e) => e.type === "file");
     let lastDirIdx = -1;
     for (let i = result.entries.length - 1; i >= 0; i--) {
@@ -296,11 +285,9 @@ describe("GET /v1/workspace/tree", () => {
   });
 
   test("includeDirSizes=true returns recursive byte size for directories", async () => {
-    const result = (await handler({
+    const result = await handler({
       queryParams: { includeDirSizes: "true" },
-    })) as {
-      entries: Array<{ name: string; type: string; size: number | null }>;
-    };
+    });
     const subdirEntry = result.entries.find((e) => e.name === "subdir");
     expect(subdirEntry).toBeDefined();
     expect(subdirEntry!.type).toBe("directory");
@@ -310,42 +297,30 @@ describe("GET /v1/workspace/tree", () => {
   });
 
   test("includeDirSizes=true preserves accurate file sizes", async () => {
-    const result = (await handler({
+    const result = await handler({
       queryParams: { includeDirSizes: "true" },
-    })) as {
-      entries: Array<{ name: string; type: string; size: number | null }>;
-    };
+    });
     const fileEntry = result.entries.find((e) => e.name === "hello.txt");
     expect(fileEntry).toBeDefined();
     expect(fileEntry!.size).toBe("Hello, world!".length);
   });
 
   test("includeDirSizes omitted preserves null size for directories", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      entries: Array<{ type: string; size: number | null }>;
-    };
+    const result = await handler({ queryParams: {} });
     const dirEntry = result.entries.find((e) => e.type === "directory");
     expect(dirEntry).toBeDefined();
     expect(dirEntry!.size).toBeNull();
   });
 
   test("recursive=true lists nested entries and the bound fields", async () => {
-    const result = (await handler({ queryParams: { recursive: "true" } })) as {
-      entries: Array<{ path: string }>;
-      truncated: boolean;
-      skipped: string[];
-    };
+    const result = await handler({ queryParams: { recursive: "true" } });
     expect(result.entries.map((e) => e.path)).toContain("subdir/nested.txt");
     expect(result.truncated).toBe(false);
     expect(Array.isArray(result.skipped)).toBe(true);
   });
 
   test("a non-recursive listing carries the same fields, unset", async () => {
-    const result = (await handler({ queryParams: {} })) as {
-      entries: Array<{ path: string }>;
-      truncated: boolean;
-      skipped: string[];
-    };
+    const result = await handler({ queryParams: {} });
     expect(result.entries.map((e) => e.path)).not.toContain(
       "subdir/nested.txt",
     );
@@ -356,11 +331,9 @@ describe("GET /v1/workspace/tree", () => {
     const emptyDir = join(testWorkspaceDir, "empty-for-size");
     mkdirSync(emptyDir, { recursive: true });
 
-    const result = (await handler({
+    const result = await handler({
       queryParams: { includeDirSizes: "true" },
-    })) as {
-      entries: Array<{ name: string; size: number | null }>;
-    };
+    });
     const emptyEntry = result.entries.find((e) => e.name === "empty-for-size");
     expect(emptyEntry).toBeDefined();
     expect(emptyEntry!.size).toBe(0);
@@ -375,13 +348,7 @@ describe("GET /v1/workspace/file", () => {
   const { handler } = getRoute("workspace_file");
 
   test("text file returns content inline", () => {
-    const result = handler({ queryParams: { path: "hello.txt" } }) as {
-      path: string;
-      name: string;
-      content: string | null;
-      isBinary: boolean;
-      size: number;
-    };
+    const result = handler({ queryParams: { path: "hello.txt" } });
     expect(result.path).toBe("hello.txt");
     expect(result.name).toBe("hello.txt");
     expect(result.content).toBe("Hello, world!");
@@ -400,10 +367,7 @@ describe("GET /v1/workspace/file", () => {
   });
 
   test("binary file returns isBinary true and content null", () => {
-    const result = handler({ queryParams: { path: "image.png" } }) as {
-      isBinary: boolean;
-      content: string | null;
-    };
+    const result = handler({ queryParams: { path: "image.png" } });
     expect(result.isBinary).toBe(true);
     expect(result.content).toBeNull();
   });
@@ -415,11 +379,7 @@ describe("GET /v1/workspace/file", () => {
   });
 
   test("json file returns content inline", () => {
-    const result = handler({ queryParams: { path: "data.json" } }) as {
-      content: string | null;
-      isBinary: boolean;
-      mimeType: string;
-    };
+    const result = handler({ queryParams: { path: "data.json" } });
     expect(result.content).toBe('{"key":"value"}');
     expect(result.isBinary).toBe(false);
   });
@@ -441,7 +401,7 @@ describe("GET /v1/workspace/file/content", () => {
   test("returns raw bytes with correct Content-Type", async () => {
     const result = handler({
       queryParams: { path: "hello.txt" },
-    }) as RouteResponse;
+    });
     expect(result).toBeInstanceOf(RouteResponse);
     expect(result.headers["Content-Type"]).toContain("text/plain");
     const text = await new Response(result.body).text();
@@ -452,7 +412,7 @@ describe("GET /v1/workspace/file/content", () => {
     const result = handler({
       queryParams: { path: "hello.txt" },
       headers: { range: "bytes=0-4" },
-    }) as RouteResponse;
+    });
     expect(result).toBeInstanceOf(RouteResponse);
     expect(result.headers["Content-Range"]).toBe("bytes 0-4/13");
     const text = await new Response(result.body).text();
@@ -479,7 +439,7 @@ describe("GET /v1/workspace/file/content", () => {
     const result = handler({
       queryParams: { path: "hello.txt" },
       headers: { range: "bytes=-5" },
-    }) as RouteResponse;
+    });
     expect(result).toBeInstanceOf(RouteResponse);
     const text = await new Response(result.body).text();
     expect(text).toBe("orld!");
@@ -494,7 +454,7 @@ describe("GET /v1/workspace/file/content", () => {
   test("Accept-Ranges header is present", () => {
     const result = handler({
       queryParams: { path: "hello.txt" },
-    }) as RouteResponse;
+    });
     expect(result.headers["Accept-Ranges"]).toBe("bytes");
   });
 });
@@ -509,7 +469,7 @@ describe("POST /v1/workspace/write", () => {
   test("creates a new text file with UTF-8 content", () => {
     const result = handler({
       body: { path: "new-file.txt", content: "hello world" },
-    }) as { path: string; size: number };
+    });
     expect(result.path).toBe("new-file.txt");
     expect(result.size).toBe(11);
     const written = readFileSync(
@@ -523,7 +483,7 @@ describe("POST /v1/workspace/write", () => {
     writeFileSync(join(testWorkspaceDir, "overwrite-me.txt"), "old content");
     const result = handler({
       body: { path: "overwrite-me.txt", content: "new content" },
-    }) as { path: string; size: number };
+    });
     expect(result.path).toBe("overwrite-me.txt");
     const written = readFileSync(
       join(testWorkspaceDir, "overwrite-me.txt"),
@@ -577,7 +537,7 @@ describe("POST /v1/workspace/write", () => {
   test("returns path and size in response", () => {
     const result = handler({
       body: { path: "response-check.txt", content: "abc" },
-    }) as { path: string; size: number };
+    });
     expect(result.path).toBe("response-check.txt");
     expect(result.size).toBe(3);
   });
@@ -627,25 +587,19 @@ describe("POST /v1/workspace/mkdir", () => {
   const { handler } = getRoute("workspace_mkdir");
 
   test("creates directory", () => {
-    const result = handler({ body: { path: "new-dir" } }) as {
-      path: string;
-    };
+    const result = handler({ body: { path: "new-dir" } });
     expect(result.path).toBe("new-dir");
     expect(existsSync(join(testWorkspaceDir, "new-dir"))).toBe(true);
   });
 
   test("nested directory creation works", () => {
-    const result = handler({ body: { path: "deep/nested/dir" } }) as {
-      path: string;
-    };
+    const result = handler({ body: { path: "deep/nested/dir" } });
     expect(result.path).toBe("deep/nested/dir");
     expect(existsSync(join(testWorkspaceDir, "deep/nested/dir"))).toBe(true);
   });
 
   test("idempotent on existing directory", () => {
-    const result = handler({ body: { path: "subdir" } }) as {
-      path: string;
-    };
+    const result = handler({ body: { path: "subdir" } });
     expect(result.path).toBe("subdir");
   });
 
@@ -679,7 +633,7 @@ describe("POST /v1/workspace/rename", () => {
 
     const result = handler({
       body: { oldPath: "rename-me.txt", newPath: "renamed.txt" },
-    }) as { oldPath: string; newPath: string };
+    });
     expect(result.oldPath).toBe("rename-me.txt");
     expect(result.newPath).toBe("renamed.txt");
     expect(existsSync(srcPath)).toBe(false);
@@ -761,7 +715,7 @@ describe("POST /v1/workspace/rename", () => {
 
     const result = handler({
       body: { oldPath: "CaseFile.txt", newPath: "casefile.txt" },
-    }) as { oldPath: string; newPath: string };
+    });
     expect(result.newPath).toBe("casefile.txt");
     const names = readdirSync(testWorkspaceDir);
     expect(names).toContain("casefile.txt");
@@ -806,9 +760,7 @@ describe("POST /v1/workspace/delete", () => {
     const filePath = join(testWorkspaceDir, "delete-me.txt");
     writeFileSync(filePath, "delete me");
 
-    const result = handler({ body: { path: "delete-me.txt" } }) as {
-      success: boolean;
-    };
+    const result = handler({ body: { path: "delete-me.txt" } });
     expect(result.success).toBe(true);
     expect(existsSync(filePath)).toBe(false);
   });
@@ -818,9 +770,7 @@ describe("POST /v1/workspace/delete", () => {
     mkdirSync(dirPath, { recursive: true });
     writeFileSync(join(dirPath, "child.txt"), "child");
 
-    const result = handler({ body: { path: "delete-dir" } }) as {
-      success: boolean;
-    };
+    const result = handler({ body: { path: "delete-dir" } });
     expect(result.success).toBe(true);
     expect(existsSync(dirPath)).toBe(false);
   });

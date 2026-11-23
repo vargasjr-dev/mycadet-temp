@@ -13,7 +13,7 @@ export function parseJsonSafe<T = unknown>(text: string): T | null {
 export function datesToISO<T extends Record<string, unknown>>(
   obj: T,
 ): { [K in keyof T]: T[K] extends Date ? string : T[K] } {
-  const result = { ...obj } as Record<string, unknown>;
+  const result: Record<string, unknown> = { ...obj };
   for (const [key, value] of Object.entries(result)) {
     if (value instanceof Date) {
       result[key] = value.toISOString();

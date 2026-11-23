@@ -347,9 +347,9 @@ async function runInProcessBlocking(
     // exec (same synchronous slice — no other code can run between
     // these two lines), so the count is accurate for the SQL we just
     // ran. Harmless for callers that don't read stdout.
-    const changes = (
-      sqlite.query("SELECT changes() AS c").get() as { c: number }
-    ).c;
+    const changes = sqlite
+      .query<{ c: number }, []>("SELECT changes() AS c")
+      .get()!.c;
     return {
       ok: true,
       backend: "in-process-blocking",

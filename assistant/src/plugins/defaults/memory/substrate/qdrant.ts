@@ -498,7 +498,7 @@ function wrongSizeNamedVectors(
   if (!dense || typeof dense !== "object" || "size" in dense) {
     return [];
   }
-  const map = dense as Record<string, unknown>;
+  const map: Record<string, unknown> = dense;
   const wrong: string[] = [];
   for (const name of REQUIRED_DENSE_VECTORS) {
     const entry = map[name];

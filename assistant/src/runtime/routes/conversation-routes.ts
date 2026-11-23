@@ -903,10 +903,51 @@ function parseRequestedModeSessionIds(raw: unknown): string[] {
   return ids;
 }
 
+const listMessagesResponseSchema = z.object({
+  messages: z
+    .array(ConversationMessageSchema)
+    .describe("Array of message objects"),
+  hasMore: z
+    .boolean()
+    .optional()
+    .describe("Whether older messages exist beyond this page"),
+  oldestTimestamp: z
+    .number()
+    .nullable()
+    .optional()
+    .describe(
+      "Timestamp of the oldest message in this page (ms since epoch). Null when page=latest is used on an empty conversation.",
+    ),
+  oldestMessageId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe("ID of the oldest message in this page"),
+  seq: z
+    .number()
+    .nullable()
+    .optional()
+    .describe(
+      "Global SSE `seq` of the last event whose content is durably persisted for this conversation in the current daemon process. A client can align this snapshot with the `/events` stream by applying only events with `seq` greater than this value. Null when no events have been persisted in this process (cold conversation, after a daemon restart, or when the conversation has aged out of the in-memory map) — clients should cold-start in that case. Absent on older daemons that predate this field.",
+    ),
+  processing: z
+    .boolean()
+    .optional()
+    .describe(
+      "Whether the agent is currently mid-turn for this conversation, sourced authoritatively from the persisted `processing_started_at` column. `true` means a turn is in flight; `false` means the conversation is idle. Clients use this to recover from a dropped SSE stream: if a turn appears to be running locally but the server reports `processing: false`, the turn has ended (or died) and the UI should stop waiting rather than spin indefinitely. Absent on older daemons that predate this field.",
+    ),
+  modeSessions: z
+    .array(ModeSessionDescriptorSchema)
+    .optional()
+    .describe(
+      "Conversation-owned mode-session summaries referenced by this page or explicitly requested by ID.",
+    ),
+});
+
 export async function handleListMessages({
   queryParams,
   headers,
-}: RouteHandlerArgs): Promise<Record<string, unknown>> {
+}: RouteHandlerArgs): Promise<z.infer<typeof listMessagesResponseSchema>> {
   const locale = localeFromAcceptLanguage(headers?.["accept-language"]);
   const conversationId = queryParams?.conversationId;
   const conversationKey = queryParams?.conversationKey;
@@ -3719,46 +3760,7 @@ export const ROUTES: RouteDefinition[] = [
           "Comma-separated mode-session IDs to include with summaries for loaded active groups outside this page.",
       },
     ],
-    responseBody: z.object({
-      messages: z
-        .array(ConversationMessageSchema)
-        .describe("Array of message objects"),
-      hasMore: z
-        .boolean()
-        .optional()
-        .describe("Whether older messages exist beyond this page"),
-      oldestTimestamp: z
-        .number()
-        .nullable()
-        .optional()
-        .describe(
-          "Timestamp of the oldest message in this page (ms since epoch). Null when page=latest is used on an empty conversation.",
-        ),
-      oldestMessageId: z
-        .string()
-        .nullable()
-        .optional()
-        .describe("ID of the oldest message in this page"),
-      seq: z
-        .number()
-        .nullable()
-        .optional()
-        .describe(
-          "Global SSE `seq` of the last event whose content is durably persisted for this conversation in the current daemon process. A client can align this snapshot with the `/events` stream by applying only events with `seq` greater than this value. Null when no events have been persisted in this process (cold conversation, after a daemon restart, or when the conversation has aged out of the in-memory map) — clients should cold-start in that case. Absent on older daemons that predate this field.",
-        ),
-      processing: z
-        .boolean()
-        .optional()
-        .describe(
-          "Whether the agent is currently mid-turn for this conversation, sourced authoritatively from the persisted `processing_started_at` column. `true` means a turn is in flight; `false` means the conversation is idle. Clients use this to recover from a dropped SSE stream: if a turn appears to be running locally but the server reports `processing: false`, the turn has ended (or died) and the UI should stop waiting rather than spin indefinitely. Absent on older daemons that predate this field.",
-        ),
-      modeSessions: z
-        .array(ModeSessionDescriptorSchema)
-        .optional()
-        .describe(
-          "Conversation-owned mode-session summaries referenced by this page or explicitly requested by ID.",
-        ),
-    }),
+    responseBody: listMessagesResponseSchema,
     handler: (args) => handleListMessages(args),
   },
   {

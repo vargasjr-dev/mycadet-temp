@@ -511,7 +511,7 @@ function handleWorkspaceDelete({ body, headers }: RouteHandlerArgs) {
 // Transport-agnostic route definitions
 // ---------------------------------------------------------------------------
 
-export const ROUTES: RouteDefinition[] = [
+export const ROUTES = [
   {
     operationId: "workspace_tree",
     endpoint: "workspace/tree",
@@ -714,4 +714,4 @@ export const ROUTES: RouteDefinition[] = [
     },
     handler: handleWorkspaceFileContent,
   },
-];
+] as const satisfies RouteDefinition[];

@@ -104,9 +104,8 @@ function deepFreeze<T>(value: T, seen: WeakSet<object> = new WeakSet()): T {
  * plugin loads and could monkey-patch the prototype — so the host-prefix check
  * cannot be neutralized by a patched method.
  */
-const startsWith = Function.prototype.call.bind(
-  String.prototype.startsWith,
-) as (str: string, search: string) => boolean;
+const startsWith: (str: string, search: string) => boolean =
+  Function.prototype.call.bind(String.prototype.startsWith);
 
 /** The blocked event type if `event` is a host-proxy control event, else `undefined`. */
 function hostControlEventType(

@@ -557,7 +557,7 @@ const VALID_TRUST_CLASSES: ReadonlySet<TrustContext["trustClass"]> = new Set([
  */
 function reconstructResumeTrustContext(persisted: unknown): TrustContext {
   if (persisted && typeof persisted === "object") {
-    const candidate = persisted as Partial<TrustContext>;
+    const candidate: Partial<TrustContext> = persisted;
     if (
       typeof candidate.trustClass === "string" &&
       VALID_TRUST_CLASSES.has(candidate.trustClass)

@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 /**
  * Learned-edge lane: a co-selection association graph over
  * `memory_v3_selections`, scored by NPMI (normalized pointwise mutual
@@ -37,7 +39,6 @@
  * on lane invalidation (the consolidation cadence). The selections table is
  * the persistence; nothing else is stored.
  */
-
 import { memorySqliteOrNull } from "../memory-db.js";
 import type { EdgeGraph } from "./edge.js";
 import type { Slug } from "./types.js";
@@ -100,13 +101,13 @@ export function computeLearnedEdgeGraph(opts: LearnedEdgesOptions): EdgeGraph {
   }
 
   const rows = raw
-    .query(
+    .query<SelectionRow, SQLQueryBindings[]>(
       /*sql*/ `
       SELECT conversation_id, slug, created_at FROM memory_v3_selections
       WHERE created_at >= ?
     `,
     )
-    .all(now - windowMs) as SelectionRow[];
+    .all(now - windowMs);
   if (rows.length === 0) {
     return empty;
   }

@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 /**
  * Input reconstruction — rebuild a retriever's per-turn inputs from telemetry.
  *
@@ -19,7 +21,6 @@
  * those strictly before it, so we fetch a bounded recent window up to the
  * anchor's timestamp and cut at the anchor row.
  */
-
 import type { ContentBlock } from "@mycadet/plugin-api";
 import { and, desc, eq, lte } from "drizzle-orm";
 
@@ -210,16 +211,19 @@ function reconstructPriorEverInjected(
     return [];
   }
   const rows = raw
-    .query(
+    .query<
+      {
+        turn: number;
+        concepts_json: string;
+      },
+      SQLQueryBindings[]
+    >(
       `SELECT turn, concepts_json
          FROM memory_v2_activation_logs
         WHERE conversation_id = ? AND mode = 'router' AND turn < ?
         ORDER BY turn ASC`,
     )
-    .all(conversationId, currentTurn) as Array<{
-    turn: number;
-    concepts_json: string;
-  }>;
+    .all(conversationId, currentTurn);
 
   const firstTurnBySlug = new Map<string, number>();
   for (const row of rows) {

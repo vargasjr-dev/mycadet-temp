@@ -8,7 +8,7 @@ export async function createUserMessage(
   text: string,
   attachments: MessageAttachmentInput[] = [],
 ): Promise<Message> {
-  const content = [] as Message["content"];
+  const content: Message["content"] = [];
   if (text.trim().length > 0) {
     content.push({ type: "text", text });
   }

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { waitFor } from "../../../__tests__/helpers/wait-for.js";
+import { LlmContextResponseSchema } from "../../../api/responses/llm-context-response.js";
 import {
   sampleConcepts as sharedSampleConcepts,
   sampleConfig,
@@ -77,7 +78,6 @@ import {
 import {
   backfillMemoryV2ActivationMessageId,
   type MemoryV2ConceptRowRecord,
-  type MemoryV2ConfigSnapshot,
   recordMemoryV2ActivationLog,
 } from "../../../plugins/defaults/memory/v2/activation-log-store.js";
 import {
@@ -294,17 +294,11 @@ describe("GET /v1/conversations/llm-context", () => {
       })
       .run();
 
-    const body = (await dispatchConversationLlmContext({
-      conversationKey: "conv-key",
-    })) as {
-      conversationId: string;
-      conversationKey: string;
-      conversationKind: string;
-      conversationTotalEstimatedCostUsd: number | null;
-      logs: Array<{ id: string }>;
-      memoryRecall: null;
-      memoryV2Activation: null;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchConversationLlmContext({
+        conversationKey: "conv-key",
+      }),
+    );
 
     expect(body.conversationId).toBe("conv-1");
     expect(body.conversationKey).toBe("conv-key");
@@ -316,13 +310,11 @@ describe("GET /v1/conversations/llm-context", () => {
   });
 
   test("returns an empty inspector response for an unresolved conversation key", async () => {
-    const body = (await dispatchConversationLlmContext({
-      conversationKey: "missing-key",
-    })) as {
-      conversationId: string | null;
-      conversationKey: string;
-      logs: unknown[];
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchConversationLlmContext({
+        conversationKey: "missing-key",
+      }),
+    );
 
     expect(body.conversationId).toBeNull();
     expect(body.conversationKey).toBe("missing-key");
@@ -392,9 +384,11 @@ describe("inspector reads when llmRequestLogs.enabled is false", () => {
     seedRawConfig();
     // An unresolved conversation key returns an empty inspector response
     // (no throw), proving the disabled guard no longer short-circuits.
-    const body = (await dispatchConversationLlmContext({
-      conversationKey: "missing-key",
-    })) as { logs: unknown[] };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchConversationLlmContext({
+        conversationKey: "missing-key",
+      }),
+    );
     expect(body.logs).toEqual([]);
   });
 });
@@ -418,12 +412,12 @@ describe("llm-context view=summary", () => {
   test("conversation endpoint omits sections in summary view but keeps summary fields", async () => {
     seedConversationWithLog();
 
-    const body = (await dispatchConversationLlmContext({
-      conversationKey: "conv-key",
-      view: "summary",
-    })) as {
-      logs: Array<Record<string, unknown>>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchConversationLlmContext({
+        conversationKey: "conv-key",
+        view: "summary",
+      }),
+    );
 
     expect(body.logs).toHaveLength(1);
     const log = body.logs[0]!;
@@ -436,11 +430,11 @@ describe("llm-context view=summary", () => {
   test("conversation endpoint includes sections by default", async () => {
     seedConversationWithLog();
 
-    const body = (await dispatchConversationLlmContext({
-      conversationKey: "conv-key",
-    })) as {
-      logs: Array<Record<string, unknown>>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchConversationLlmContext({
+        conversationKey: "conv-key",
+      }),
+    );
 
     expect(Array.isArray(body.logs[0]!.requestSections)).toBe(true);
     expect(Array.isArray(body.logs[0]!.responseSections)).toBe(true);
@@ -449,12 +443,12 @@ describe("llm-context view=summary", () => {
   test("message endpoint omits sections in summary view", async () => {
     seedConversationWithLog();
 
-    const body = (await llmContextRoute.handler({
-      pathParams: { id: "msg-1" },
-      queryParams: { view: "summary" },
-    })) as {
-      logs: Array<Record<string, unknown>>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await llmContextRoute.handler({
+        pathParams: { id: "msg-1" },
+        queryParams: { view: "summary" },
+      }),
+    );
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]!.requestSections).toBeUndefined();
@@ -522,10 +516,9 @@ describe("GET /v1/messages/:id/llm-context — memoryV2Activation", () => {
     const messageId = "msg-no-v2";
     seedRequestLog(messageId, "log-no-v2");
 
-    const body = (await dispatchLlmContext(messageId)) as {
-      memoryV2Activation: unknown;
-      memoryRecall: unknown;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext(messageId),
+    );
 
     expect(body.memoryV2Activation).toBeNull();
     // Backwards-compat: memoryRecall remains.
@@ -546,15 +539,9 @@ describe("GET /v1/messages/:id/llm-context — memoryV2Activation", () => {
     });
     backfillMemoryV2ActivationMessageId(conversationId, messageId);
 
-    const body = (await dispatchLlmContext(messageId)) as {
-      memoryV2Activation: {
-        turn: number;
-        mode: "context-load" | "per-turn";
-        concepts: MemoryV2ConceptRowRecord[];
-        config: MemoryV2ConfigSnapshot;
-      } | null;
-      memoryRecall: unknown;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext(messageId),
+    );
 
     expect(body.memoryV2Activation).not.toBeNull();
     expect(body.memoryV2Activation!.turn).toBe(4);
@@ -579,10 +566,9 @@ describe("GET /v1/messages/:id/llm-context — conversationKind", () => {
       conversationType: "background",
     });
 
-    const body = (await dispatchLlmContext("msg-mem-consol")) as {
-      conversationKind: string;
-      logs: unknown[];
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-mem-consol"),
+    );
 
     expect(body.conversationKind).toBe("background_memory_consolidation");
     expect(body.logs).toEqual([]);
@@ -596,9 +582,9 @@ describe("GET /v1/messages/:id/llm-context — conversationKind", () => {
       conversationType: "background",
     });
 
-    const body = (await dispatchLlmContext("msg-bg")) as {
-      conversationKind: string;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-bg"),
+    );
 
     expect(body.conversationKind).toBe("background");
   });
@@ -611,17 +597,17 @@ describe("GET /v1/messages/:id/llm-context — conversationKind", () => {
       conversationType: "standard",
     });
 
-    const body = (await dispatchLlmContext("msg-user")) as {
-      conversationKind: string;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-user"),
+    );
 
     expect(body.conversationKind).toBe("user");
   });
 
   test("falls back to 'user' when the message can't be resolved", async () => {
-    const body = (await dispatchLlmContext("msg-missing")) as {
-      conversationKind: string;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-missing"),
+    );
 
     expect(body.conversationKind).toBe("user");
   });
@@ -641,9 +627,9 @@ describe("GET /v1/messages/:id/llm-context — conversationTotalEstimatedCostUsd
       totalEstimatedCost: 1.234,
     });
 
-    const body = (await dispatchLlmContext("msg-with-cost")) as {
-      conversationTotalEstimatedCostUsd: number | null;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-with-cost"),
+    );
 
     expect(body.conversationTotalEstimatedCostUsd).toBeCloseTo(1.234, 5);
   });
@@ -656,17 +642,17 @@ describe("GET /v1/messages/:id/llm-context — conversationTotalEstimatedCostUsd
       conversationType: "standard",
     });
 
-    const body = (await dispatchLlmContext("msg-no-cost")) as {
-      conversationTotalEstimatedCostUsd: number | null;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-no-cost"),
+    );
 
     expect(body.conversationTotalEstimatedCostUsd).toBe(0);
   });
 
   test("returns null when the message can't be resolved to a conversation", async () => {
-    const body = (await dispatchLlmContext("msg-missing-cost")) as {
-      conversationTotalEstimatedCostUsd: number | null;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext("msg-missing-cost"),
+    );
 
     expect(body.conversationTotalEstimatedCostUsd).toBeNull();
   });
@@ -691,9 +677,9 @@ describe("GET /v1/messages/:id/llm-context — agentLoopExitReason", () => {
       agentLoopExitReason: "no_tool_calls",
     });
 
-    const body = (await dispatchLlmContext(messageId)) as {
-      logs: Array<{ id: string; agentLoopExitReason: string | null }>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext(messageId),
+    );
 
     const byId = new Map(body.logs.map((l) => [l.id, l.agentLoopExitReason]));
     expect(byId.get("log-non-terminal")).toBeNull();
@@ -710,9 +696,9 @@ describe("GET /v1/messages/:id/llm-context — agentLoopExitReason", () => {
     });
     seedRequestLog(messageId, "log-unstamped");
 
-    const body = (await dispatchLlmContext(messageId)) as {
-      logs: Array<{ id: string; agentLoopExitReason: string | null }>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext(messageId),
+    );
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]!.agentLoopExitReason).toBeNull();
@@ -763,13 +749,9 @@ describe("GET /v1/messages/:id/llm-context — synthetic call_site projection", 
       })
       .run();
 
-    const body = (await dispatchLlmContext(messageId)) as {
-      logs: Array<{
-        id: string;
-        callSite: string | null;
-        agentLoopExitReason: string | null;
-      }>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext(messageId),
+    );
 
     expect(body.logs).toHaveLength(1);
     const row = body.logs[0]!;
@@ -804,12 +786,9 @@ describe("GET /v1/messages/:id/llm-context — synthetic call_site projection", 
       })
       .run();
 
-    const body = (await dispatchLlmContext(messageId)) as {
-      logs: Array<{
-        id: string;
-        callSite: string | null;
-      }>;
-    };
+    const body = LlmContextResponseSchema.parse(
+      await dispatchLlmContext(messageId),
+    );
 
     expect(body.logs[0]!.callSite).toBe("mainAgent");
     // No leftover syntheticEvent projection field on regular rows either.

@@ -8,10 +8,11 @@ import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 export function migrateToolInvocationsFk(database: DrizzleDb): void {
   const raw = getSqliteFrom(database);
   const row = raw
-    .query(
-      `SELECT sql FROM sqlite_master WHERE type='table' AND name='tool_invocations'`,
-    )
-    .get() as { sql: string } | null;
+    .query<
+      { sql: string },
+      []
+    >(`SELECT sql FROM sqlite_master WHERE type='table' AND name='tool_invocations'`)
+    .get();
   if (!row) {
     return;
   } // table doesn't exist yet (will be created above)
