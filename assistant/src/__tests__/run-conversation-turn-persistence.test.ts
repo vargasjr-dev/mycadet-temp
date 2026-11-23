@@ -166,11 +166,14 @@ function watchTurnPresence(seen: boolean[], conversationId?: string): void {
   onProviderSend = () => {
     const id =
       conversationId ??
-      (
-        getSqlite().query("SELECT id FROM conversations LIMIT 1").get() as {
-          id: string;
-        } | null
-      )?.id;
+      getSqlite()
+        .query<
+          {
+            id: string;
+          },
+          []
+        >("SELECT id FROM conversations LIMIT 1")
+        .get()?.id;
     const conversation = findConversation(id);
     if (conversation) {
       seen.push(conversation.hasNoClient);

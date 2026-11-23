@@ -736,10 +736,11 @@ describe("provider operations", () => {
 
       // Verify the row was backfilled
       const row = raw
-        .prepare(
-          `SELECT token_endpoint_auth_method FROM oauth_providers WHERE provider_key = 'legacy-null-provider'`,
-        )
-        .get() as { token_endpoint_auth_method: string };
+        .prepare<
+          { token_endpoint_auth_method: string },
+          []
+        >(`SELECT token_endpoint_auth_method FROM oauth_providers WHERE provider_key = 'legacy-null-provider'`)
+        .get()!;
       expect(row.token_endpoint_auth_method).toBe("client_secret_post");
     });
 

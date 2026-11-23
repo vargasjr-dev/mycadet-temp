@@ -66,14 +66,14 @@ function insertConversation(
 
 function getEvents(raw: Database): EventRow[] {
   return raw
-    .query(
+    .query<EventRow, []>(
       /*sql*/ `
         SELECT conversation_id, compacted_at, summary, compacted_message_count
         FROM conversation_compaction_events
         ORDER BY conversation_id
       `,
     )
-    .all() as EventRow[];
+    .all();
 }
 
 describe("migrateCreateCompactionEvents", () => {

@@ -37,8 +37,11 @@ describe("migration 380: conversation mode sessions", () => {
 
     expect(tableExists(sqlite)).toBe(true);
     const indexes = sqlite
-      .query("PRAGMA index_list(conversation_mode_sessions)")
-      .all() as Array<{ name: string }>;
+      .query<
+        { name: string },
+        []
+      >("PRAGMA index_list(conversation_mode_sessions)")
+      .all();
     expect(indexes.map((index) => index.name)).toContain(
       "idx_conversation_mode_sessions_conversation_status",
     );

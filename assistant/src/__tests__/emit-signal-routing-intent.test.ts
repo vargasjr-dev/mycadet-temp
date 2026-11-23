@@ -4,12 +4,16 @@ import { saveRawConfig } from "../config/loader.js";
 import type { NotificationChannel } from "../notifications/types.js";
 
 const evaluateSignalMock = mock();
-const enforceRoutingIntentMock = mock();
+type EnforceRoutingIntent =
+  typeof import("../notifications/decision-engine.js").enforceRoutingIntent;
+const enforceRoutingIntentMock = mock<EnforceRoutingIntent>();
 const updateDecisionMock = mock();
 const runDeterministicChecksMock = mock();
 const createEventMock = mock();
 const setEventDedupeKeyMock = mock();
-const dispatchDecisionMock = mock();
+type DispatchDecision =
+  typeof import("../notifications/runtime-dispatch.js").dispatchDecision;
+const dispatchDecisionMock = mock<DispatchDecision>();
 const isCloudClientConfiguredMock = mock();
 const writeHomeFeedItemForSignalMock = mock(
   async (..._args: unknown[]) => null,
@@ -58,7 +62,7 @@ const { enforceRoutingIntent: realEnforceRoutingIntent } =
 
 mock.module("../notifications/decision-engine.js", () => ({
   evaluateSignal: (...args: unknown[]) => evaluateSignalMock(...args),
-  enforceRoutingIntent: (...args: unknown[]) =>
+  enforceRoutingIntent: (...args: Parameters<EnforceRoutingIntent>) =>
     enforceRoutingIntentMock(...args),
 }));
 
@@ -92,7 +96,8 @@ mock.module("../notifications/events-store.js", () => ({
 }));
 
 mock.module("../notifications/runtime-dispatch.js", () => ({
-  dispatchDecision: (...args: unknown[]) => dispatchDecisionMock(...args),
+  dispatchDecision: (...args: Parameters<DispatchDecision>) =>
+    dispatchDecisionMock(...args),
 }));
 
 mock.module("../cloud/client.js", () => ({
@@ -131,7 +136,7 @@ beforeEach(() => {
     deliveryResults: [],
   });
   isCloudClientConfiguredMock.mockResolvedValue(true);
-  enforceRoutingIntentMock.mockImplementation((decision: unknown) => decision);
+  enforceRoutingIntentMock.mockImplementation((decision) => decision);
 });
 
 describe("emitNotificationSignal chat reply preference", () => {
@@ -299,7 +304,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
 
     evaluateSignalMock.mockResolvedValue(decision);
     enforceRoutingIntentMock.mockImplementation(
-      (inputDecision: unknown) => inputDecision,
+      (inputDecision) => inputDecision,
     );
 
     await emitNotificationSignal({
@@ -335,7 +340,7 @@ describe("emitNotificationSignal routing intent re-persistence", () => {
 
     evaluateSignalMock.mockResolvedValue(decision);
     enforceRoutingIntentMock.mockImplementation(
-      (inputDecision: unknown) => inputDecision,
+      (inputDecision) => inputDecision,
     );
 
     await emitNotificationSignal({
@@ -424,9 +429,7 @@ describe("access-request cadet floor", () => {
       fallbackUsed: false,
       persistedDecisionId: "dec-ar-1",
     });
-    enforceRoutingIntentMock.mockImplementation(
-      (decision: unknown) => decision,
-    );
+    enforceRoutingIntentMock.mockImplementation((decision) => decision);
 
     const result = await emitNotificationSignal({
       sourceEventName: "ingress.access_request",
@@ -458,11 +461,7 @@ describe("access-request cadet floor", () => {
 
     expect(result.dispatched).toBe(true);
     expect(dispatchDecisionMock).toHaveBeenCalledTimes(1);
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      shouldNotify: boolean;
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.reasoningSummary).toContain(
@@ -484,11 +483,7 @@ describe("access-request cadet floor", () => {
     // The real enforcement leaves a suppressed decision alone and replaces
     // the selection with every connected channel otherwise.
     enforceRoutingIntentMock.mockImplementation(
-      (
-        decision: { shouldNotify: boolean; selectedChannels: string[] },
-        intent: string | undefined,
-        connected: string[],
-      ) =>
+      (decision, intent, connected) =>
         intent === "all_channels" && decision.shouldNotify
           ? { ...decision, selectedChannels: [...connected] }
           : decision,
@@ -522,13 +517,9 @@ describe("access-request cadet floor", () => {
       },
     });
 
-    const enforced = enforceRoutingIntentMock.mock.calls[0][0] as {
-      shouldNotify: boolean;
-    };
+    const enforced = enforceRoutingIntentMock.mock.calls[0][0];
     expect(enforced.shouldNotify).toBe(true);
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toContain("cadet");
   });
 
@@ -544,12 +535,10 @@ describe("access-request cadet floor", () => {
       persistedDecisionId: "dec-ar-2",
     });
     // single_channel enforcement caps the selection to the source channel.
-    enforceRoutingIntentMock.mockImplementation(
-      (decision: { selectedChannels: string[] }) => ({
-        ...decision,
-        selectedChannels: ["telegram"],
-      }),
-    );
+    enforceRoutingIntentMock.mockImplementation((decision) => ({
+      ...decision,
+      selectedChannels: ["telegram"],
+    }));
 
     await emitNotificationSignal({
       sourceEventName: "ingress.access_request",
@@ -579,9 +568,7 @@ describe("access-request cadet floor", () => {
       },
     });
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.selectedChannels).toContain("telegram");
     // The floor's change is re-persisted alongside enforcement's.
@@ -604,9 +591,7 @@ describe("access-request cadet floor", () => {
       fallbackUsed: false,
       persistedDecisionId: "dec-bg-1",
     });
-    enforceRoutingIntentMock.mockImplementation(
-      (decision: unknown) => decision,
-    );
+    enforceRoutingIntentMock.mockImplementation((decision) => decision);
 
     await emitNotificationSignal({
       sourceEventName: "schedule.notify",
@@ -623,10 +608,7 @@ describe("access-request cadet floor", () => {
 
     // Suppression handling stays inside dispatchDecision — the floor must
     // not have rewritten the decision for a non-access-request signal.
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      shouldNotify: boolean;
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.shouldNotify).toBe(false);
     expect(dispatched.reasoningSummary).not.toContain("cadet forced");
   });
@@ -668,10 +650,7 @@ describe("high/critical urgency channel force", () => {
     const result = await emitWithUrgency("high");
 
     expect(result.dispatched).toBe(true);
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.selectedChannels).toContain("platform");
     expect(dispatched.selectedChannels).toContain("telegram");
@@ -708,10 +687,7 @@ describe("high/critical urgency channel force", () => {
 
     await emitWithUrgency("critical");
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toEqual(["cadet", "platform"]);
     expect(dispatched.reasoningSummary).toContain(
       "(platform forced: critical urgency)",
@@ -725,10 +701,7 @@ describe("high/critical urgency channel force", () => {
 
     await emitWithUrgency("high");
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toEqual(["cadet", "platform"]);
     expect(dispatched.reasoningSummary).not.toContain("forced");
     expect(updateDecisionMock).not.toHaveBeenCalled();
@@ -741,10 +714,7 @@ describe("high/critical urgency channel force", () => {
 
       await emitWithUrgency(urgency);
 
-      const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-        selectedChannels: string[];
-        reasoningSummary: string;
-      };
+      const dispatched = dispatchDecisionMock.mock.calls[0][1];
       expect(dispatched.selectedChannels).toEqual(["telegram"]);
       expect(dispatched.reasoningSummary).not.toContain("forced");
     }
@@ -757,11 +727,7 @@ describe("high/critical urgency channel force", () => {
 
     await emitWithUrgency("high");
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      shouldNotify: boolean;
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.shouldNotify).toBe(false);
     expect(dispatched.selectedChannels).toEqual([]);
     expect(dispatched.reasoningSummary).not.toContain("forced");
@@ -770,12 +736,10 @@ describe("high/critical urgency channel force", () => {
   test("routing-intent enforcement runs after the force-add and can cap channels", async () => {
     evaluateSignalMock.mockResolvedValue(makeDecision({}));
     // single_channel enforcement caps the selection to the source channel.
-    enforceRoutingIntentMock.mockImplementation(
-      (decision: { selectedChannels: string[] }) => ({
-        ...decision,
-        selectedChannels: ["telegram"],
-      }),
-    );
+    enforceRoutingIntentMock.mockImplementation((decision) => ({
+      ...decision,
+      selectedChannels: ["telegram"],
+    }));
 
     await emitNotificationSignal({
       sourceEventName: "schedule.notify",
@@ -792,18 +756,14 @@ describe("high/critical urgency channel force", () => {
     });
 
     // Enforcement sees the force-added channels...
-    const enforcedInput = enforceRoutingIntentMock.mock.calls[0][0] as {
-      selectedChannels: string[];
-    };
+    const enforcedInput = enforceRoutingIntentMock.mock.calls[0][0];
     expect(enforcedInput.selectedChannels).toEqual([
       "cadet",
       "telegram",
       "platform",
     ]);
     // ...and its cap wins over the force-add.
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toEqual(["telegram"]);
   });
 
@@ -813,10 +773,7 @@ describe("high/critical urgency channel force", () => {
 
     await emitWithUrgency("high");
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toEqual(["cadet", "telegram"]);
     expect(dispatched.reasoningSummary).toContain(
       "(cadet forced: high urgency)",
@@ -829,9 +786,7 @@ describe("high/critical urgency channel force", () => {
   // run the genuine enforcement to pin the interplay.
   describe("interplay with real single_channel enforcement", () => {
     beforeEach(() => {
-      enforceRoutingIntentMock.mockImplementation(
-        realEnforceRoutingIntent as (...args: unknown[]) => unknown,
-      );
+      enforceRoutingIntentMock.mockImplementation(realEnforceRoutingIntent);
     });
 
     function emitHighUrgencySingleChannel(
@@ -861,9 +816,7 @@ describe("high/critical urgency channel force", () => {
 
       // Force-add appends platform: ["cadet", "platform"]. The source
       // channel is not connected, so the cap falls back to index 0.
-      const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-        selectedChannels: string[];
-      };
+      const dispatched = dispatchDecisionMock.mock.calls[0][1];
       expect(dispatched.selectedChannels).toEqual(["cadet"]);
     });
 
@@ -876,9 +829,7 @@ describe("high/critical urgency channel force", () => {
 
       // Force-add yields ["cadet", "telegram", "platform"]; the
       // non-connected source channel makes the cap take index 0.
-      const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-        selectedChannels: string[];
-      };
+      const dispatched = dispatchDecisionMock.mock.calls[0][1];
       expect(dispatched.selectedChannels).toEqual(["cadet"]);
     });
   });
@@ -921,10 +872,7 @@ describe("exclusive channelAllowlist policy", () => {
     });
 
     expect(enforceRoutingIntentMock).not.toHaveBeenCalled();
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toEqual(["cadet"]);
     expect(dispatched.reasoningSummary).not.toContain("forced");
     expect(result.selectedChannels).toEqual(["cadet"]);
@@ -949,11 +897,7 @@ describe("exclusive channelAllowlist policy", () => {
       contextPayload: { channelAllowlist: ["cadet"] },
     });
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      selectedChannels: string[];
-      shouldNotify: boolean;
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.selectedChannels).toEqual(["cadet"]);
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.reasoningSummary).toContain("channelAllowlist: cadet");
@@ -981,11 +925,7 @@ describe("exclusive channelAllowlist policy", () => {
       },
     });
 
-    const dispatched = dispatchDecisionMock.mock.calls[0][1] as {
-      shouldNotify: boolean;
-      selectedChannels: string[];
-      reasoningSummary: string;
-    };
+    const dispatched = dispatchDecisionMock.mock.calls[0][1];
     expect(dispatched.shouldNotify).toBe(true);
     expect(dispatched.selectedChannels).toContain("cadet");
     expect(dispatched.reasoningSummary).toContain(

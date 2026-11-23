@@ -177,7 +177,7 @@ describe("reveal stdout redaction on the live tool_result", () => {
       toolUseId: "toolu_reveal",
       content: `value: ${SYNTHETIC_OPAQUE_CREDENTIAL}`,
       isError: false,
-    } as Extract<AgentEvent, { type: "tool_result" }>);
+    });
 
     const results = toolResults(events);
     expect(results.length).toBe(1);
@@ -208,7 +208,7 @@ describe("reveal stdout redaction on the live tool_result", () => {
       toolUseId: "toolu_reveal",
       content: `value: ${SYNTHETIC_OPAQUE_CREDENTIAL}`,
       isError: false,
-    } as Extract<AgentEvent, { type: "tool_result" }>);
+    });
 
     expect(toolResults(events)[0]).not.toContain(SYNTHETIC_OPAQUE_CREDENTIAL);
     expect(state.pendingToolResults.get("toolu_reveal")?.content).toBe(
@@ -227,13 +227,13 @@ describe("reveal stdout redaction on the live tool_result", () => {
       id: "toolu_ls",
       name: "bash",
       input: { command: "ls -la" },
-    } as Extract<AgentEvent, { type: "tool_use" }>);
+    });
     await dispatchAgentEvent(state, deps, {
       type: "tool_result",
       toolUseId: "toolu_ls",
       content: "total 0\ndrwxr-xr-x  2 user  staff",
       isError: false,
-    } as Extract<AgentEvent, { type: "tool_result" }>);
+    });
 
     const results = toolResults(events);
     expect(results[0]).toBe("total 0\ndrwxr-xr-x  2 user  staff");
@@ -270,7 +270,7 @@ describe("live tool output chunk redaction", () => {
       type: "tool_output_chunk",
       toolUseId: "toolu_reveal",
       chunk: `value: ${SYNTHETIC_OPAQUE_CREDENTIAL}\n`,
-    } as Extract<AgentEvent, { type: "tool_output_chunk" }>);
+    });
 
     const streamedChunks = outputChunks(events).join("");
     expect(streamedChunks).not.toContain(SYNTHETIC_OPAQUE_CREDENTIAL);
@@ -297,14 +297,14 @@ describe("live tool output chunk redaction", () => {
       type: "tool_output_chunk",
       toolUseId: "toolu_reveal",
       chunk: `out: ${head}`,
-    } as Extract<AgentEvent, { type: "tool_output_chunk" }>);
+    });
     // The partial prefix is held — nothing containing it is emitted yet.
     expect(outputChunks(events).join("")).toBe("out: ");
     await dispatchAgentEvent(state, deps, {
       type: "tool_output_chunk",
       toolUseId: "toolu_reveal",
       chunk: `${tail} done`,
-    } as Extract<AgentEvent, { type: "tool_output_chunk" }>);
+    });
 
     const streamedChunks = outputChunks(events).join("");
     expect(streamedChunks).toBe('out: <redacted type="Credential" /> done');
@@ -329,13 +329,13 @@ describe("live tool output chunk redaction", () => {
       type: "tool_output_chunk",
       toolUseId: "toolu_reveal",
       chunk: `out: ${head}`,
-    } as Extract<AgentEvent, { type: "tool_output_chunk" }>);
+    });
     await dispatchAgentEvent(state, deps, {
       type: "tool_result",
       toolUseId: "toolu_reveal",
       content: `out: ${SYNTHETIC_OPAQUE_CREDENTIAL}`,
       isError: false,
-    } as Extract<AgentEvent, { type: "tool_result" }>);
+    });
 
     // The held bytes are a raw credential prefix that complete-value
     // redaction cannot mask — they must never reach the wire. The redacted
@@ -359,12 +359,12 @@ describe("live tool output chunk redaction", () => {
       id: "toolu_ls",
       name: "bash",
       input: { command: "ls -la" },
-    } as Extract<AgentEvent, { type: "tool_use" }>);
+    });
     await dispatchAgentEvent(state, deps, {
       type: "tool_output_chunk",
       toolUseId: "toolu_ls",
       chunk: "total 0\n",
-    } as Extract<AgentEvent, { type: "tool_output_chunk" }>);
+    });
 
     expect(outputChunks(events)).toEqual(["total 0\n"]);
     expect(pendingStoreReads.length).toBe(0);
@@ -391,12 +391,12 @@ describe("live tool output chunk redaction", () => {
       id: "toolu_echo",
       name: "bash",
       input: { command: "echo it back" },
-    } as Extract<AgentEvent, { type: "tool_use" }>);
+    });
     await dispatchAgentEvent(state, deps, {
       type: "tool_output_chunk",
       toolUseId: "toolu_echo",
       chunk: `${SYNTHETIC_OPAQUE_CREDENTIAL}\n`,
-    } as Extract<AgentEvent, { type: "tool_output_chunk" }>);
+    });
 
     const streamedChunks = outputChunks(events).join("");
     expect(streamedChunks).not.toContain(SYNTHETIC_OPAQUE_CREDENTIAL);

@@ -45,11 +45,10 @@ function seedSegment(
 }
 
 function memoryRows(table: string): string[] {
-  return (
-    getMemorySqlite()!
-      .query(`SELECT id FROM ${table} ORDER BY id`)
-      .all() as Array<{ id: string }>
-  ).map((r) => r.id);
+  return getMemorySqlite()!
+    .query<{ id: string }, []>(`SELECT id FROM ${table} ORDER BY id`)
+    .all()
+    .map((r) => r.id);
 }
 
 beforeEach(() => {

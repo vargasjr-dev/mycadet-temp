@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for `assistant/src/memory/v2/injection.ts`.
  *
@@ -58,16 +59,19 @@ mock.module("../../../../../persistence/embeddings/qdrant-client.js", () => ({
 
 // Programmable embedding + Qdrant state — drives `selectCandidates`,
 // `simBatch`, and friends without a live backend.
-const state = {
-  embedReturn: [[0.1, 0.2, 0.3]] as number[][],
+type QueryResponse = {
+  points: Array<{ score?: number; payload: Record<string, unknown> }>;
+};
+const state: {
+  embedReturn: number[][];
+  sparseReturn: { indices: number[]; values: number[] };
+  queryResponses: { dense: QueryResponse[]; sparse: QueryResponse[] };
+} = {
+  embedReturn: [[0.1, 0.2, 0.3]],
   sparseReturn: { indices: [1, 2, 3], values: [0.5, 0.5, 0.5] },
   queryResponses: {
-    dense: [] as Array<{
-      points: Array<{ score?: number; payload: Record<string, unknown> }>;
-    }>,
-    sparse: [] as Array<{
-      points: Array<{ score?: number; payload: Record<string, unknown> }>;
-    }>,
+    dense: [],
+    sparse: [],
   },
 };
 
@@ -191,13 +195,20 @@ mock.module("../../substrate/cli-command-store.js", () => ({
 // array; `recordShouldThrow` makes the next call throw to verify the caller
 // swallows the failure.
 
-const telemetryState = {
-  recordCalls: [] as Array<Record<string, unknown>>,
+type ActivationLogParams = Parameters<
+  typeof import("../activation-log-store.js").recordMemoryV2ActivationLog
+>[0];
+
+const telemetryState: {
+  recordCalls: ActivationLogParams[];
+  recordShouldThrow: boolean;
+} = {
+  recordCalls: [],
   recordShouldThrow: false,
 };
 
 mock.module("../activation-log-store.js", () => ({
-  recordMemoryV2ActivationLog: (params: Record<string, unknown>) => {
+  recordMemoryV2ActivationLog: (params: ActivationLogParams) => {
     if (telemetryState.recordShouldThrow) {
       throw new Error("simulated telemetry write failure");
     }
@@ -254,10 +265,11 @@ interface RouterResultStub {
   sourceBySlug?: Map<string, string>;
 }
 
-const routerState = {
-  nextResult: null as RouterResultStub | null,
-  callCount: 0,
-};
+const routerState: { nextResult: RouterResultStub | null; callCount: number } =
+  {
+    nextResult: null,
+    callCount: 0,
+  };
 
 mock.module("../router.js", () => ({
   runRouter: async () => {
@@ -938,9 +950,7 @@ describe("injectMemoryV2Block", () => {
     // stale Qdrant / edge-index entry pointing at a vanished page is
     // visible in telemetry instead of masquerading as a successful inject.
     expect(telemetryState.recordCalls.length).toBe(1);
-    const row = telemetryState.recordCalls[0] as {
-      concepts: Array<{ slug: string; status: string }>;
-    };
+    const row = telemetryState.recordCalls[0];
     const phantom = row.concepts.find((c) => c.slug === "phantom-slug");
     expect(phantom).toBeDefined();
     expect(phantom!.status).toBe("page_missing");
@@ -1503,18 +1513,7 @@ describe("injectMemoryV2Block", () => {
     });
 
     expect(telemetryState.recordCalls.length).toBe(2);
-    const row = telemetryState.recordCalls[1] as {
-      conversationId: string;
-      turn: number;
-      mode: string;
-      concepts: Array<{
-        slug: string;
-        finalActivation: number;
-        status: string;
-        source: string;
-      }>;
-      config: { top_k: number };
-    };
+    const row = telemetryState.recordCalls[1];
     expect(row.conversationId).toBe("conv-1");
     expect(row.turn).toBe(2);
     expect(row.mode).toBe("per-turn");
@@ -1566,9 +1565,7 @@ describe("injectMemoryV2Block", () => {
     });
 
     expect(telemetryState.recordCalls.length).toBe(1);
-    const row = telemetryState.recordCalls[0] as {
-      concepts: Array<{ slug: string; status: string }>;
-    };
+    const row = telemetryState.recordCalls[0];
     const slugs = row.concepts.map((c) => c.slug);
     expect(new Set(slugs)).toEqual(
       new Set(["alice-vscode", "skills/example-skill-a"]),
@@ -1616,10 +1613,7 @@ describe("injectMemoryV2Block", () => {
     });
 
     expect(telemetryState.recordCalls.length).toBe(2);
-    const row = telemetryState.recordCalls[1] as {
-      mode: string;
-      concepts: Array<{ slug: string; status: string }>;
-    };
+    const row = telemetryState.recordCalls[1];
     expect(row.mode).toBe("context-load");
 
     const byslug = new Map(row.concepts.map((c) => [c.slug, c]));
@@ -1677,10 +1671,7 @@ describe("injectMemoryV2Block", () => {
     });
 
     expect(telemetryState.recordCalls.length).toBe(2);
-    const row = telemetryState.recordCalls[1] as {
-      mode: string;
-      concepts: Array<{ slug: string; status: string }>;
-    };
+    const row = telemetryState.recordCalls[1];
     expect(row.mode).toBe("context-load");
 
     const byslug = new Map(row.concepts.map((c) => [c.slug, c]));
@@ -1758,10 +1749,7 @@ describe("injectMemoryV2Block", () => {
     // `corrupt`. Status `corrupt` is reserved for read-time throws and is
     // distinct from `page_missing` (which is null-return / file vanished).
     expect(telemetryState.recordCalls.length).toBe(1);
-    const row = telemetryState.recordCalls[0] as {
-      mode: string;
-      concepts: Array<{ slug: string; status: string }>;
-    };
+    const row = telemetryState.recordCalls[0];
     expect(row.mode).toBe("per-turn");
     const byslug = new Map(row.concepts.map((c) => [c.slug, c]));
     expect(byslug.get("alice-vscode")!.status).toBe("corrupt");
@@ -1809,20 +1797,14 @@ describe("injectMemoryV2Block", () => {
 
     // The original error propagates to the caller.
     expect(threw).toBeInstanceOf(Error);
-    expect((threw as Error).message).toContain(
-      "simulated activation-store save failure",
-    );
+    assert(threw instanceof Error);
+    expect(threw.message).toContain("simulated activation-store save failure");
 
     // A telemetry row was still written, tagged `errored`. `concepts` is
     // empty because the throw fired before the row-builder ran — that's
     // expected and documented as part of the contract.
     expect(telemetryState.recordCalls.length).toBe(1);
-    const row = telemetryState.recordCalls[0] as {
-      mode: string;
-      conversationId: string;
-      turn: number;
-      concepts: unknown[];
-    };
+    const row = telemetryState.recordCalls[0];
     expect(row.mode).toBe("errored");
     expect(row.conversationId).toBe("conv-1");
     expect(row.turn).toBe(1);
@@ -1855,26 +1837,7 @@ describe("injectMemoryV2Block", () => {
     expect(result.toInject).toEqual(["alice-vscode"]);
 
     expect(telemetryState.recordCalls.length).toBe(1);
-    const row = telemetryState.recordCalls[0] as {
-      conversationId: string;
-      turn: number;
-      mode: string;
-      concepts: Array<{
-        slug: string;
-        status: string;
-        finalActivation: number;
-      }>;
-      config: {
-        d: number;
-        c_user: number;
-        c_assistant: number;
-        c_now: number;
-        k: number;
-        hops: number;
-        top_k: number;
-        epsilon: number;
-      };
-    };
+    const row = telemetryState.recordCalls[0];
     expect(row.conversationId).toBe("conv-finalize");
     expect(row.turn).toBe(7);
     expect(row.mode).toBe("per-turn");
@@ -1939,16 +1902,7 @@ describe("injectMemoryV2Block", () => {
       // Telemetry: success rows get `mode: "router"` and `source: "router"`,
       // with all activation fields zeroed.
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as {
-        mode: string;
-        concepts: Array<{
-          slug: string;
-          source: string;
-          status: string;
-          finalActivation: number;
-          ownActivation: number;
-        }>;
-      };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("router");
       const aliceRow = row.concepts.find((c) => c.slug === "alice-vscode");
       expect(aliceRow).toBeDefined();
@@ -2014,10 +1968,7 @@ describe("injectMemoryV2Block", () => {
       expect(persisted!.everInjected.length).toBe(index.entries.length);
 
       // Telemetry row stays in router mode with every slug carried over.
-      const row = telemetryState.recordCalls.at(-1) as {
-        mode: string;
-        concepts: Array<{ source: string; status: string }>;
-      };
+      const row = telemetryState.recordCalls.at(-1)!;
       expect(row.mode).toBe("router");
       expect(row.concepts.length).toBe(index.entries.length);
       for (const concept of row.concepts) {
@@ -2056,12 +2007,7 @@ describe("injectMemoryV2Block", () => {
 
       // Single telemetry row with `mode: "errored"` (not `"router"`).
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as {
-        mode: string;
-        conversationId: string;
-        turn: number;
-        concepts: unknown[];
-      };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("errored");
       expect(row.conversationId).toBe("conv-router-fail");
       expect(row.turn).toBe(3);
@@ -2110,10 +2056,7 @@ describe("injectMemoryV2Block", () => {
       // Telemetry still flushes with `mode: "errored"` so the failure stays
       // observable — the same row the inline pre-refactor path emitted.
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as {
-        mode: string;
-        concepts: unknown[];
-      };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("errored");
       expect(row.concepts).toEqual([]);
     });
@@ -2144,10 +2087,7 @@ describe("injectMemoryV2Block", () => {
 
       // Telemetry: `mode: "router"` row with zero injected pages.
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as {
-        mode: string;
-        concepts: Array<{ slug: string; status: string }>;
-      };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("router");
       const injectedCount = row.concepts.filter(
         (c) => c.status === "injected",
@@ -2188,10 +2128,7 @@ describe("injectMemoryV2Block", () => {
 
       // Telemetry: `status: "page_missing"` for the phantom slug.
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as {
-        mode: string;
-        concepts: Array<{ slug: string; status: string; source: string }>;
-      };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("router");
       const phantom = row.concepts.find(
         (c) => c.slug === "phantom-router-slug",
@@ -2288,10 +2225,7 @@ describe("injectMemoryV2Block", () => {
       });
 
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as {
-        mode: string;
-        concepts: Array<{ slug: string; source: string; status: string }>;
-      };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("router");
       const aliceRow = row.concepts.find((c) => c.slug === "alice-vscode");
       const bobRow = row.concepts.find((c) => c.slug === "bob-coffee");
@@ -2332,7 +2266,7 @@ describe("injectMemoryV2Block", () => {
 
       // Telemetry row carries the activation mode, not router.
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as { mode: string };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("per-turn");
     });
 
@@ -2370,7 +2304,7 @@ describe("injectMemoryV2Block", () => {
 
       // Telemetry row reflects the router mode, not the activation mode.
       expect(telemetryState.recordCalls.length).toBe(1);
-      const row = telemetryState.recordCalls[0] as { mode: string };
+      const row = telemetryState.recordCalls[0];
       expect(row.mode).toBe("router");
     });
   });

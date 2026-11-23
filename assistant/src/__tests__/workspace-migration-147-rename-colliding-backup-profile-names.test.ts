@@ -78,11 +78,12 @@ function seedProfilePinTables(rows: {
 function readPins(table: string): string[] {
   const db = new Database(join(workspaceDir, "data", "db", "assistant.db"));
   try {
-    return (
-      db
-        .query(`SELECT inference_profile AS p FROM ${table} ORDER BY id`)
-        .all() as Array<{ p: string }>
-    ).map((row) => row.p);
+    return db
+      .query<{ p: string }, []>(
+        `SELECT inference_profile AS p FROM ${table} ORDER BY id`,
+      )
+      .all()
+      .map((row) => row.p);
   } finally {
     db.close();
   }

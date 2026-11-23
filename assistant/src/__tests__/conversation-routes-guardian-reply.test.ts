@@ -1,18 +1,27 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 process.env.DISABLE_HTTP_AUTH = "true";
 
-const routeGuardianReplyMock = mock(async () => ({
+type ApprovalConversationGenerator =
+  import("../runtime/http-types.js").ApprovalConversationGenerator;
+
+type RouteGuardianReply =
+  typeof import("../runtime/guardian-reply-router.js").routeGuardianReply;
+
+const routeGuardianReplyMock = mock<RouteGuardianReply>(async () => ({
   consumed: false,
   decisionApplied: false,
-  type: "not_consumed" as const,
-})) as any;
+  type: "not_consumed",
+}));
 const listPendingByDestinationMock = mock(
-  (_conversationId: string, _sourceChannel?: string) =>
-    [] as Array<{ id: string; kind?: string }>,
+  (
+    _conversationId: string,
+    _sourceChannel?: string,
+  ): Array<{ id: string; kind?: string }> => [],
 );
 const listCanonicalMock = mock(
-  (_filters?: Record<string, unknown>) => [] as Array<{ id: string }>,
+  (_filters?: Record<string, unknown>): Array<{ id: string }> => [],
 );
 const addMessageMock = mock(
   async (
@@ -92,8 +101,11 @@ mock.module("../runtime/trust-context-resolver.js", () => ({
     trustClass: "guardian",
     sourceChannel: "cadet",
   }),
-  withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
-    ...(ctx as Record<string, unknown>),
+  withSourceChannel: (
+    sourceChannel: unknown,
+    ctx: Record<string, unknown>,
+  ) => ({
+    ...ctx,
     sourceChannel,
   }),
 }));
@@ -111,7 +123,10 @@ mock.module("../contacts/guardian-delivery-reader.js", () => ({
 }));
 
 import type { AuthContext } from "../runtime/auth/types.js";
-import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
+import {
+  handleSendMessage,
+  sendMessageResponseSchema,
+} from "../runtime/routes/conversation-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 
@@ -155,10 +170,12 @@ describe("handleSendMessage guardian reply interception", () => {
       replyText: "Access approved. Verification code: 123456.",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "should-not-be-called",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "should-not-be-called",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -216,16 +233,12 @@ describe("handleSendMessage guardian reply interception", () => {
     );
 
     expect(res.status).toBe(202);
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.messageId).toBe("persisted-user-id");
 
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
-    const routerCall = (routeGuardianReplyMock as any).mock
-      .calls[0][0] as Record<string, unknown>;
+    const routerCall = routeGuardianReplyMock.mock.calls[0][0];
     expect(routerCall.messageText).toBe("05BECB approve");
     expect(routerCall.pendingScope).toEqual({
       mode: "scoped",
@@ -245,10 +258,12 @@ describe("handleSendMessage guardian reply interception", () => {
       type: "not_consumed",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "persisted-user-id",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "persisted-user-id",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -307,8 +322,7 @@ describe("handleSendMessage guardian reply interception", () => {
 
     expect(res.status).toBe(202);
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
-    const routerCall = (routeGuardianReplyMock as any).mock
-      .calls[0][0] as Record<string, unknown>;
+    const routerCall = routeGuardianReplyMock.mock.calls[0][0];
     expect(routerCall.pendingScope).toEqual({ mode: "blocked" });
     expect(persistUserMessage).toHaveBeenCalledTimes(1);
     expect(runAgentLoop).toHaveBeenCalledTimes(1);
@@ -323,10 +337,12 @@ describe("handleSendMessage guardian reply interception", () => {
       type: "not_consumed",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "persisted-user-id",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "persisted-user-id",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -389,10 +405,8 @@ describe("handleSendMessage guardian reply interception", () => {
     // filter suppresses it from the UI transcript while keeping it in LLM-side
     // history (see list-messages-hidden-metadata.test.ts for the filter).
     expect(persistUserMessage).toHaveBeenCalledTimes(1);
-    const persistArgs = (persistUserMessage as any).mock.calls[0][0] as {
-      metadata?: { hidden?: boolean };
-    };
-    expect(persistArgs.metadata?.hidden).toBe(true);
+    const persistArgs = persistUserMessage.mock.calls[0][0];
+    expect(persistArgs?.metadata?.hidden).toBe(true);
     // The turn still runs — the assistant's reply streams normally, so the chat
     // reads as a proactive greeting.
     expect(runAgentLoop).toHaveBeenCalledTimes(1);
@@ -411,10 +425,12 @@ describe("handleSendMessage guardian reply interception", () => {
       type: "not_consumed",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "persisted-user-id",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "persisted-user-id",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -474,12 +490,9 @@ describe("handleSendMessage guardian reply interception", () => {
 
     expect(res.status).toBe(202);
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
-    const routerCall = (routeGuardianReplyMock as any).mock
-      .calls[0][0] as Record<string, unknown>;
-    const scope = routerCall.pendingScope as {
-      mode: string;
-      requestIds: string[];
-    };
+    const routerCall = routeGuardianReplyMock.mock.calls[0][0];
+    const scope = routerCall.pendingScope;
+    assert(scope?.mode === "scoped");
     expect(scope).toEqual({
       mode: "scoped",
       requestIds: ["tool-approval-live", "access-req-1"],
@@ -499,10 +512,12 @@ describe("handleSendMessage guardian reply interception", () => {
       requestId: "tool-req-code-1",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "should-not-be-called",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "should-not-be-called",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -561,8 +576,7 @@ describe("handleSendMessage guardian reply interception", () => {
 
     expect(res.status).toBe(202);
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
-    const routerCall = (routeGuardianReplyMock as any).mock
-      .calls[0][0] as Record<string, unknown>;
+    const routerCall = routeGuardianReplyMock.mock.calls[0][0];
     // The message text should be the full request-code + decision text
     expect(routerCall.messageText).toBe("A1B2C3 approve");
     // Router consumed the message, so the agent loop should NOT run
@@ -582,10 +596,12 @@ describe("handleSendMessage guardian reply interception", () => {
       requestId: "pending-reject-1",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "should-not-be-called",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "should-not-be-called",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -659,10 +675,12 @@ describe("handleSendMessage guardian reply interception", () => {
       type: "not_consumed",
     });
 
-    const persistUserMessage = mock(async () => ({
-      id: "persisted-user-id",
-      deduplicated: false,
-    }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "persisted-user-id",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -737,11 +755,16 @@ describe("handleSendMessage guardian reply interception", () => {
       type: "not_consumed",
     });
 
-    const mockGenerator = mock(async () => ({}));
-    const persistUserMessage = mock(async () => ({
-      id: "persisted-user-id",
-      deduplicated: false,
+    const mockGenerator = mock<ApprovalConversationGenerator>(async () => ({
+      disposition: "keep_pending",
+      replyText: "Still pending",
     }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "persisted-user-id",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -792,7 +815,7 @@ describe("handleSendMessage guardian reply interception", () => {
             assistantEventHub: { publish: async () => {} } as any,
             resolveAttachments: () => [],
           },
-          approvalConversationGenerator: mockGenerator as any,
+          approvalConversationGenerator: mockGenerator,
         }),
       req,
       undefined,
@@ -800,8 +823,7 @@ describe("handleSendMessage guardian reply interception", () => {
     );
 
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
-    const routerCall = (routeGuardianReplyMock as any).mock
-      .calls[0][0] as Record<string, unknown>;
+    const routerCall = routeGuardianReplyMock.mock.calls[0][0];
     // Desktop (cadet) should suppress the NL engine
     expect(routerCall.approvalConversationGenerator).toBeUndefined();
   });
@@ -817,11 +839,16 @@ describe("handleSendMessage guardian reply interception", () => {
       type: "not_consumed",
     });
 
-    const mockGenerator = mock(async () => ({}));
-    const persistUserMessage = mock(async () => ({
-      id: "persisted-user-id",
-      deduplicated: false,
+    const mockGenerator = mock<ApprovalConversationGenerator>(async () => ({
+      disposition: "keep_pending",
+      replyText: "Still pending",
     }));
+    const persistUserMessage = mock(
+      async (_options?: { metadata?: { hidden?: boolean } }) => ({
+        id: "persisted-user-id",
+        deduplicated: false,
+      }),
+    );
     const runAgentLoop = mock(async () => undefined);
     const session = {
       setTrustContext: () => {},
@@ -872,7 +899,7 @@ describe("handleSendMessage guardian reply interception", () => {
             assistantEventHub: { publish: async () => {} } as any,
             resolveAttachments: () => [],
           },
-          approvalConversationGenerator: mockGenerator as any,
+          approvalConversationGenerator: mockGenerator,
         }),
       req,
       undefined,
@@ -880,8 +907,7 @@ describe("handleSendMessage guardian reply interception", () => {
     );
 
     expect(routeGuardianReplyMock).toHaveBeenCalledTimes(1);
-    const routerCall = (routeGuardianReplyMock as any).mock
-      .calls[0][0] as Record<string, unknown>;
+    const routerCall = routeGuardianReplyMock.mock.calls[0][0];
     // Channel sessions should receive the NL engine
     expect(routerCall.approvalConversationGenerator).toBe(mockGenerator);
   });

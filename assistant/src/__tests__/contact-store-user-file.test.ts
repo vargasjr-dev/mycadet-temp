@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
@@ -203,10 +204,11 @@ describe("migrateNormalizeUserFileByPrincipal", () => {
     principalId: string,
   ): Array<{ id: string; user_file: string | null }> {
     return raw
-      .query(
-        "SELECT id, user_file FROM contacts WHERE principal_id = ? ORDER BY id",
-      )
-      .all(principalId) as Array<{ id: string; user_file: string | null }>;
+      .query<
+        { id: string; user_file: string | null },
+        SQLQueryBindings[]
+      >("SELECT id, user_file FROM contacts WHERE principal_id = ? ORDER BY id")
+      .all(principalId);
   }
 
   test("normalizes split user_file values across sibling contacts", () => {

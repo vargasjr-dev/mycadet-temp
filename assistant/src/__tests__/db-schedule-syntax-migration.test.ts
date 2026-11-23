@@ -305,8 +305,11 @@ describe("schedule_syntax column migration", () => {
     migrateScheduleDescription(db);
 
     const rows = raw
-      .query("SELECT id, description FROM cron_jobs ORDER BY id")
-      .all() as Array<{ id: string; description: string }>;
+      .query<
+        { id: string; description: string },
+        []
+      >("SELECT id, description FROM cron_jobs ORDER BY id")
+      .all();
     expect(rows).toEqual([
       { id: "legacy-defer", description: "" },
       { id: "legacy-schedule", description: "Legacy report" },

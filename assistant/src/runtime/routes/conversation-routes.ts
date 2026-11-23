@@ -3711,6 +3711,14 @@ const suggestionInFlight = new Map<string, Promise<string | null>>();
 // Route definitions
 // ---------------------------------------------------------------------------
 
+export const sendMessageResponseSchema = z.object({
+  accepted: z.boolean(),
+  conversationId: z.string().optional(),
+  messageId: z.string().optional(),
+  queued: z.boolean().optional(),
+  requestId: z.string().optional(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "messages_get",
@@ -3886,13 +3894,7 @@ export const ROUTES: RouteDefinition[] = [
         .describe("PreChat onboarding context, sent on the first message only")
         .optional(),
     }),
-    responseBody: z.object({
-      accepted: z.boolean(),
-      conversationId: z.string().optional(),
-      messageId: z.string().optional(),
-      queued: z.boolean().optional(),
-      requestId: z.string().optional(),
-    }),
+    responseBody: sendMessageResponseSchema,
     handler: async (args) =>
       handleSendMessage(args, {
         sendMessageDeps: {

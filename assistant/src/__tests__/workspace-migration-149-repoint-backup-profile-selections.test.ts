@@ -53,11 +53,12 @@ function seedProfilePinTables(): void {
 function readPins(table: "conversations" | "cron_jobs"): string[] {
   const db = new Database(dbPath());
   try {
-    return (
-      db
-        .query(`SELECT inference_profile AS profile FROM ${table} ORDER BY id`)
-        .all() as Array<{ profile: string }>
-    ).map((row) => row.profile);
+    return db
+      .query<{ profile: string }, []>(
+        `SELECT inference_profile AS profile FROM ${table} ORDER BY id`,
+      )
+      .all()
+      .map((row) => row.profile);
   } finally {
     db.close();
   }

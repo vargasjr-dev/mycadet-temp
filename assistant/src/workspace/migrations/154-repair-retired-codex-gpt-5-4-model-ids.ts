@@ -222,8 +222,11 @@ function readConnectionRows(workspaceDir: string): Map<string, boolean> | null {
   }
   try {
     const rows = db
-      .query(`SELECT name, provider, auth FROM provider_connections`)
-      .all() as Array<{ name: string; provider: string; auth: string }>;
+      .query<
+        { name: string; provider: string; auth: string },
+        []
+      >(`SELECT name, provider, auth FROM provider_connections`)
+      .all();
     return new Map(
       rows.map((row) => [
         row.name,

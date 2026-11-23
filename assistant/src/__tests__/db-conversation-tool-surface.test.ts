@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 /**
  * Tests for the per-conversation wire surface record
  * (`persistence/conversation-tool-surface.ts`): the send-boundary recorder
@@ -5,7 +6,6 @@
  * its prompt rendered, fork wakes read both back verbatim, and an unchanged
  * surface is never rewritten.
  */
-
 import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
@@ -60,10 +60,11 @@ const SURFACE: ConversationToolSurface = {
 
 function storedRow(): { tools_hash: string; updated_at: number } | null {
   return sqlite
-    .query(
-      `SELECT tools_hash, updated_at FROM conversation_tool_surfaces WHERE conversation_id = ?`,
-    )
-    .get("conv-1") as { tools_hash: string; updated_at: number } | null;
+    .query<
+      { tools_hash: string; updated_at: number },
+      SQLQueryBindings[]
+    >(`SELECT tools_hash, updated_at FROM conversation_tool_surfaces WHERE conversation_id = ?`)
+    .get("conv-1");
 }
 
 describe("recordConversationToolSurface", () => {

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for `pool-select.ts` — the single forced-tool selector over the
  * two-segment candidate pool (stable-prefix cards + dynamic finder tail).
@@ -37,6 +38,7 @@ import type {
   ProviderResponse,
   SendMessageOptions,
 } from "@mycadet/plugin-api";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
 import {
@@ -227,15 +229,19 @@ function makeTurn(currentMessage: string): MemoryRoutingTurn {
   };
 }
 
-interface RenderedBlock {
-  type: string;
-  text: string;
-  cache_control?: { type: string; ttl?: string };
-}
+const renderedBlockSchema = z.looseObject({
+  type: z.string(),
+  text: z.string(),
+  cache_control: z
+    .object({ type: z.string(), ttl: z.string().optional() })
+    .optional(),
+});
+const renderedBlocksSchema = z.array(renderedBlockSchema);
 
-function sentBlocks(callIndex = 0): RenderedBlock[] {
-  return providerCalls[callIndex]!.messages[0]!
-    .content as unknown as RenderedBlock[];
+function sentBlocks(callIndex = 0) {
+  return renderedBlocksSchema.parse(
+    providerCalls[callIndex]!.messages[0]!.content,
+  );
 }
 
 function warnPayloads(): Array<Record<string, unknown>> {
@@ -481,23 +487,20 @@ describe("selectPool — infrastructure failures throw", () => {
       caught = error;
     }
 
-    expect(caught).toBeInstanceOf(MemoryV3RetrievalUnavailableError);
-    const failure = caught as InstanceType<
-      typeof MemoryV3RetrievalUnavailableError
-    >;
-    expect(failure.pool?.stable[0]?.slug).toBe("stable-0");
+    assert(caught instanceof MemoryV3RetrievalUnavailableError);
+    expect(caught.pool?.stable[0]?.slug).toBe("stable-0");
     expect(
-      (failure.pool?.stable.length ?? 0) + (failure.pool?.finder.length ?? 0),
+      (caught.pool?.stable.length ?? 0) + (caught.pool?.finder.length ?? 0),
     ).toBeLessThan(pool.stable.length + pool.finder.length);
     expect(
-      failure.pool?.finder.map((candidate) => candidate.slug),
+      caught.pool?.finder.map((candidate) => candidate.slug),
     ).not.toContain("finder-learned");
-    expect(failure.turn?.currentMessage).toBe("preserve this current message");
-    expect(failure.turn?.recentContext).toEndWith("RECENT-END");
-    expect(failure.turn?.recentContext.length).toBeLessThan(
+    expect(caught.turn?.currentMessage).toBe("preserve this current message");
+    expect(caught.turn?.recentContext).toEndWith("RECENT-END");
+    expect(caught.turn?.recentContext.length).toBeLessThan(
       turn.recentContext.length,
     );
-    expect(failure.turn?.situationalContext).toBeUndefined();
+    expect(caught.turn?.situationalContext).toBeUndefined();
   });
 
   test("throws without sending when no candidate can fit the context budget", async () => {
@@ -521,17 +524,14 @@ describe("selectPool — infrastructure failures throw", () => {
       caught = error;
     }
 
-    expect(caught).toBeInstanceOf(MemoryV3RetrievalUnavailableError);
-    expect((caught as Error).message).toBe(
+    assert(caught instanceof MemoryV3RetrievalUnavailableError);
+    expect(caught.message).toBe(
       "memory-v3 pool selector has no candidate that fits the context budget",
     );
     expect(providerCalls).toHaveLength(0);
-    const failure = caught as InstanceType<
-      typeof MemoryV3RetrievalUnavailableError
-    >;
-    expect(failure.pool).toEqual({ stable: [], finder: [] });
-    expect(failure.turn?.currentMessage).toBe("anything");
-    expect(failure.turn?.recentContext).toBe("");
+    expect(caught.pool).toEqual({ stable: [], finder: [] });
+    expect(caught.turn?.currentMessage).toBe("anything");
+    expect(caught.turn?.recentContext).toBe("");
   });
 
   test("cloud provider 402 attaches a non-terminal credits notice", async () => {
@@ -553,10 +553,8 @@ describe("selectPool — infrastructure failures throw", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(MemoryV3RetrievalUnavailableError);
-    const notice = (
-      caught as InstanceType<typeof MemoryV3RetrievalUnavailableError>
-    ).conversationNotice;
+    assert(caught instanceof MemoryV3RetrievalUnavailableError);
+    const notice = caught.conversationNotice;
     expect(notice).toEqual({
       source: "memory_v3",
       code: "PROVIDER_BILLING",
@@ -579,8 +577,9 @@ describe("selectPool — infrastructure failures throw", () => {
     }
 
     expect(thrown).toBeInstanceOf(MemoryV3RetrievalUnavailableError);
-    expect((thrown as Error).message).not.toContain(providerSecret);
-    expect((thrown as Error).message).toContain("[REDACTED]");
+    assert(thrown instanceof Error);
+    expect(thrown.message).not.toContain(providerSecret);
+    expect(thrown.message).toContain("[REDACTED]");
 
     const providerErrors = warnPayloads().filter(
       (payload) => payload.reason === "provider_error",
@@ -1303,7 +1302,7 @@ describe("selectPool: TypeSafe System One", () => {
       sendMessage: async (messages, options) => {
         providerCalls.push({ messages, options });
         const payload = JSON.parse(
-          (messages[0]!.content[0] as { text: string }).text,
+          renderedBlockSchema.parse(messages[0]!.content[0]).text,
         ) as {
           state: {
             candidates: Record<string, { slug: string; text: string }>;
@@ -1330,9 +1329,7 @@ describe("selectPool: TypeSafe System One", () => {
     const result = await selectPool(oversizedPool, makeTurn(currentMessage));
 
     expect(providerCalls).toHaveLength(1);
-    const payloadText = (
-      providerCalls[0]!.messages[0]!.content[0] as { text: string }
-    ).text;
+    const payloadText = sentBlocks()[0].text;
     const payload = JSON.parse(payloadText) as {
       state: {
         candidates: Record<string, { slug: string; text: string }>;
@@ -1382,7 +1379,7 @@ describe("selectPool: TypeSafe System One", () => {
       sendMessage: async (messages, options) => {
         providerCalls.push({ messages, options });
         payload = JSON.parse(
-          (messages[0]!.content[0] as { text: string }).text,
+          renderedBlockSchema.parse(messages[0]!.content[0]).text,
         ) as typeof payload;
         return typesafeResponse({
           "1": noulAnswer(1),
@@ -1430,7 +1427,7 @@ describe("selectPool: TypeSafe System One", () => {
       sendMessage: async (messages, options) => {
         providerCalls.push({ messages, options });
         payload = JSON.parse(
-          (messages[0]!.content[0] as { text: string }).text,
+          renderedBlockSchema.parse(messages[0]!.content[0]).text,
         ) as typeof payload;
         const ids = Object.keys(payload!.state.candidates);
         return typesafeResponse(
@@ -1480,20 +1477,12 @@ describe("selectPool: TypeSafe System One", () => {
     expect(providerCalls).toHaveLength(1);
     const [call] = providerCalls;
     expect(call.options?.tools).toBeUndefined();
-    expect(
-      (call.options?.config as Record<string, unknown> | undefined)
-        ?.tool_choice,
-    ).toBeUndefined();
-    expect(
-      (call.options?.config as Record<string, unknown> | undefined)?.callSite,
-    ).toBe("memoryV3SelectL2");
-    expect(
-      (call.options?.config as Record<string, unknown> | undefined)
-        ?.selectionSeed,
-    ).toBe("conv-xyz");
+    expect(call.options?.config?.tool_choice).toBeUndefined();
+    expect(call.options?.config?.callSite).toBe("memoryV3SelectL2");
+    expect(call.options?.config?.selectionSeed).toBe("conv-xyz");
 
     const payload = JSON.parse(
-      (call.messages[0]!.content[0] as { text: string }).text,
+      renderedBlockSchema.parse(call.messages[0]!.content[0]).text,
     ) as {
       state: {
         candidates: Record<string, { slug: string; text: string }>;

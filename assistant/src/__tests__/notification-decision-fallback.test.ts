@@ -43,7 +43,6 @@ mock.module("../providers/provider-send-message.js", () => ({
 
 import { evaluateSignal } from "../notifications/decision-engine.js";
 import type { NotificationSignal } from "../notifications/signal.js";
-import type { NotificationChannel } from "../notifications/types.js";
 
 function makeSignal(
   overrides?: Partial<NotificationSignal>,
@@ -75,9 +74,7 @@ describe("notification decision fallback copy", () => {
 
   test("uses human-friendly template copy for guardian.question", async () => {
     const signal = makeSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(true);
     expect(decision.renderedCopy.cadet?.title).toBe("Guardian Question");
@@ -99,10 +96,7 @@ describe("notification decision fallback copy", () => {
         activeGuardianRequestCount: 1,
       },
     });
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet", "telegram"]);
 
     expect(decision.fallbackUsed).toBe(true);
     // The typed-reply instruction rides in the card's plainTextFallback and
@@ -149,9 +143,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["telegram"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.telegram?.body).toBe("What is the gate code?");
@@ -188,9 +180,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["telegram"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.telegram?.body).toBe(
@@ -229,9 +219,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.cadet?.body).toBe("Allow running host_bash?");
@@ -268,9 +256,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(false);
     // The banner shows the title, so the code cannot survive there either.
@@ -309,9 +295,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["telegram"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.telegram?.body).toBe(
@@ -334,7 +318,7 @@ describe("notification decision fallback copy", () => {
       "cadet",
       "telegram",
       "slack",
-    ] as NotificationChannel[]);
+    ]);
 
     expect(decision.fallbackUsed).toBe(true);
     for (const channel of ["cadet", "telegram", "slack"] as const) {
@@ -377,9 +361,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "slack",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["slack"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.slack?.deliveryText).toBe(
@@ -402,9 +384,7 @@ describe("notification decision fallback copy", () => {
       },
     });
 
-    const decision = await evaluateSignal(signal, [
-      "slack",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["slack"]);
 
     expect(decision.fallbackUsed).toBe(true);
     expect(decision.renderedCopy.slack?.body).toBe("What is the gate code?");
@@ -441,10 +421,7 @@ describe("guardian copy carries no reply mechanics", () => {
         ],
       },
     });
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet", "telegram"]);
 
     const expectedQuestion =
       "When you say it feels too harsh, what is the feeling exactly?\n\n1. Lines too heavy\n2. Feels showy\n3. Both, honestly";
@@ -496,10 +473,7 @@ describe("guardian copy carries no reply mechanics", () => {
         toolName: "bash",
       },
     });
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-      "platform",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet", "platform"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.cadet?.body).toBe(
@@ -548,10 +522,7 @@ describe("access-request instruction enforcement", () => {
 
   test("fallback copy carries the requester context and no reply mechanics", async () => {
     const signal = makeAccessRequestSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet", "telegram"]);
 
     expect(decision.fallbackUsed).toBe(true);
     for (const channel of ["cadet", "telegram"] as const) {
@@ -585,9 +556,7 @@ describe("access-request instruction enforcement", () => {
     };
 
     const signal = makeAccessRequestSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.cadet?.body).toBe(
@@ -617,9 +586,7 @@ describe("access-request instruction enforcement", () => {
     };
 
     const signal = makeAccessRequestSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.cadet?.body).toBe(
@@ -651,9 +618,7 @@ describe("access-request instruction enforcement", () => {
     };
 
     const signal = makeAccessRequestSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.cadet?.body).toBe(
@@ -687,9 +652,7 @@ describe("access-request instruction enforcement", () => {
     };
 
     const signal = makeAccessRequestSignal();
-    const decision = await evaluateSignal(signal, [
-      "telegram",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["telegram"]);
 
     const expected =
       'Someone wants access.\nReply "open invite flow" to start Trusted Contacts invite flow.';
@@ -724,7 +687,7 @@ describe("access-request instruction enforcement", () => {
 
     const decision = await evaluateSignal(makeAccessRequestSignal(), [
       "telegram",
-    ] as NotificationChannel[]);
+    ]);
 
     expect(decision.fallbackUsed).toBe(false);
     const expected =
@@ -762,9 +725,7 @@ describe("access-request instruction enforcement", () => {
         // No requestCode
       },
     });
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.cadet?.body).toBe(
@@ -831,9 +792,7 @@ describe("ask_question copy is pinned to the question", () => {
   });
 
   test("the composed paraphrase does not replace the question", async () => {
-    const decision = await evaluateSignal(askQuestionSignal(), [
-      "slack",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(askQuestionSignal(), ["slack"]);
 
     // Guards the fixture itself: a shape the validator rejects would fall
     // back, and the assertions below would then be testing the fallback copy
@@ -848,9 +807,7 @@ describe("ask_question copy is pinned to the question", () => {
   });
 
   test("the options ride along, numbered as the resolver orders them", async () => {
-    const decision = await evaluateSignal(askQuestionSignal(), [
-      "slack",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(askQuestionSignal(), ["slack"]);
 
     expect(decision.fallbackUsed).toBe(false);
     const delivered = decision.renderedCopy.slack?.deliveryText ?? "";
@@ -869,9 +826,7 @@ describe("ask_question copy is pinned to the question", () => {
       toolName: "bash",
       options: undefined,
     };
-    const decision = await evaluateSignal(signal, [
-      "slack",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["slack"]);
 
     expect(decision.fallbackUsed).toBe(false);
     expect(decision.renderedCopy.slack?.deliveryText).toBe(

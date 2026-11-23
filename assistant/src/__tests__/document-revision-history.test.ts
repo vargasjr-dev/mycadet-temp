@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 /**
  * Document revision history: which writes snapshot the state they replace,
  * retention, the history routes, restore, and cascade on delete.
@@ -381,10 +382,11 @@ describe("cascade", () => {
     deleteDocument(surfaceId);
 
     const remaining = getSqlite()
-      .query(
-        "SELECT COUNT(*) AS n FROM document_revisions WHERE surface_id = ?",
-      )
-      .get(surfaceId) as { n: number };
+      .query<
+        { n: number },
+        SQLQueryBindings[]
+      >("SELECT COUNT(*) AS n FROM document_revisions WHERE surface_id = ?")
+      .get(surfaceId)!;
     expect(remaining.n).toBe(0);
   });
 });

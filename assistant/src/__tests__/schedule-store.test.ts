@@ -1604,8 +1604,11 @@ describe("declared schedules", () => {
 
   function rawJob(id: string): Record<string, unknown> {
     return getRawDb()
-      .query("SELECT * FROM cron_jobs WHERE id = ?")
-      .get(id) as Record<string, unknown>;
+      .query<
+        Record<string, unknown>,
+        SQLQueryBindings[]
+      >("SELECT * FROM cron_jobs WHERE id = ?")
+      .get(id)!;
   }
 
   test("upsert inserts a sourced row with declared enabled state", async () => {

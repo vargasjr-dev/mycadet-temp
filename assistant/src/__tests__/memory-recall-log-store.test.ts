@@ -128,8 +128,8 @@ describe("memory-recall-log-store", () => {
       topCandidatesJson: [],
     });
     const { n } = memorySqlite
-      .query(`SELECT COUNT(*) AS n FROM memory_recall_logs`)
-      .get() as { n: number };
+      .query<{ n: number }, []>(`SELECT COUNT(*) AS n FROM memory_recall_logs`)
+      .get()!;
     expect(n).toBe(1);
   });
 

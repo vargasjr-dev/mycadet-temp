@@ -29,6 +29,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { _inspectHookCacheForTests } from "../hooks/hook-loader.js";
 import { getUserHooksFor } from "../hooks/registry.js";
 import {
@@ -47,6 +49,9 @@ import {
   getToolOwner,
   loadPluginTools,
 } from "../tools/registry.js";
+
+const taggedHookResultSchema = z.object({ tag: z.string() });
+const sourcedHookResultSchema = z.object({ from: z.string() });
 
 // ─── Test fixtures ───────────────────────────────────────────────────────────
 
@@ -199,7 +204,7 @@ describe("plugin mtime cache (per-surface)", () => {
 
     const again = (await getUserHooksFor("user-prompt-submit"))[0];
     expect(again).toBe(first!);
-    expect((again as unknown as () => string)()).toBe("v1");
+    expect(await again(undefined)).toBe("v1");
   });
 
   test("an edited hook takes effect once imperatively reconciled", async () => {
@@ -210,11 +215,7 @@ describe("plugin mtime cache (per-surface)", () => {
 
     await populateCacheAtBoot();
     expect(
-      (
-        (
-          await getUserHooksFor("user-prompt-submit")
-        )[0] as unknown as () => string
-      )(),
+      await (await getUserHooksFor("user-prompt-submit"))[0](undefined),
     ).toBe("v1");
 
     writeFileSync(hookFile, `export default () => "v2";`);
@@ -222,11 +223,7 @@ describe("plugin mtime cache (per-surface)", () => {
     await applySourceChangesNow();
 
     expect(
-      (
-        (
-          await getUserHooksFor("user-prompt-submit")
-        )[0] as unknown as () => string
-      )(),
+      await (await getUserHooksFor("user-prompt-submit"))[0](undefined),
     ).toBe("v2");
   });
 
@@ -407,7 +404,7 @@ describe("plugin mtime cache (per-surface)", () => {
 
     // beta was installed earlier (Jan 1) so it should come first.
     const results = hooks.map((fn) =>
-      (fn as unknown as () => { tag: string })(),
+      taggedHookResultSchema.parse(fn(undefined)),
     );
     expect(results[0]!.tag).toBe("beta");
     expect(results[1]!.tag).toBe("alpha");
@@ -439,7 +436,7 @@ describe("plugin mtime cache (per-surface)", () => {
     expect(hooks).toHaveLength(2);
 
     const results = hooks.map((fn) =>
-      (fn as unknown as () => { tag: string })(),
+      taggedHookResultSchema.parse(fn(undefined)),
     );
     expect(results[0]!.tag).toBe("dated");
     expect(results[1]!.tag).toBe("undated");
@@ -495,7 +492,7 @@ describe("workspace hooks (<workspace>/hooks/)", () => {
     const hooks = await getUserHooksFor("pre-model-call");
     expect(hooks).toHaveLength(2);
     const froms = hooks.map(
-      (fn) => (fn as unknown as () => { from: string })().from,
+      (fn) => sourcedHookResultSchema.parse(fn(undefined)).from,
     );
     // Plugin runs first (install-date order), workspace last.
     expect(froms).toEqual(["plugin", "workspace"]);
@@ -523,7 +520,7 @@ describe("workspace hooks (<workspace>/hooks/)", () => {
     const hooks = await getUserHooksFor("conversation-deleted");
     expect(hooks).toHaveLength(2);
     const results = hooks.map((fn) =>
-      (fn as unknown as () => { tag: string })(),
+      taggedHookResultSchema.parse(fn(undefined)),
     );
     expect(results[0]!.tag).toBe("plugin");
     expect(results[1]!.tag).toBe("workspace");
@@ -534,21 +531,17 @@ describe("workspace hooks (<workspace>/hooks/)", () => {
     writeWorkspaceHook("post-model-call", `export default () => "ws-v1";`);
 
     await populateCacheAtBoot();
-    expect(
-      (
-        (await getUserHooksFor("post-model-call"))[0] as unknown as () => string
-      )(),
-    ).toBe("ws-v1");
+    expect(await (await getUserHooksFor("post-model-call"))[0](undefined)).toBe(
+      "ws-v1",
+    );
 
     writeFileSync(hookFile, `export default () => "ws-v2";`);
     touchFile(hookFile);
     await applySourceChangesNow();
 
-    expect(
-      (
-        (await getUserHooksFor("post-model-call"))[0] as unknown as () => string
-      )(),
-    ).toBe("ws-v2");
+    expect(await (await getUserHooksFor("post-model-call"))[0](undefined)).toBe(
+      "ws-v2",
+    );
   });
 
   test("deleting a workspace hook file evicts it once reconciled", async () => {
@@ -844,7 +837,7 @@ function writeLibFile(dir: string, relPath: string, body: string): string {
 async function dispatchFirst(hookName: string): Promise<unknown> {
   const hooks = await getUserHooksFor(hookName);
   expect(hooks).toHaveLength(1);
-  return (hooks[0] as unknown as () => unknown)();
+  return hooks[0](undefined);
 }
 
 describe("live reload (reconcile-driven redeploy)", () => {
@@ -1039,7 +1032,7 @@ describe("plugin root validation (ATL-983)", () => {
 
     expect(
       (await getUserHooksFor("user-prompt-submit")).map(
-        (fn) => (fn as unknown as () => { tag: string })().tag,
+        (fn) => taggedHookResultSchema.parse(fn(undefined)).tag,
       ),
     ).toEqual(["keeper"]);
     expect(existsSync(escapeeMarker)).toBe(false);
@@ -1064,7 +1057,7 @@ describe("plugin root validation (ATL-983)", () => {
 
     expect(
       (await getUserHooksFor("user-prompt-submit")).map(
-        (fn) => (fn as unknown as () => { tag: string })().tag,
+        (fn) => taggedHookResultSchema.parse(fn(undefined)).tag,
       ),
     ).toEqual(["alias"]);
   });

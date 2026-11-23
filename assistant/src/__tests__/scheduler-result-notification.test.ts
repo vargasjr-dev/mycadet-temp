@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 /**
  * Wiring tests for the schedule-result notification: which schedule runs reach
  * the producer, and with what.
@@ -11,7 +12,6 @@
  * captured before the run rather than after. The start bound keeps a reused
  * conversation's earlier notifications from silencing later runs.
  */
-
 import {
   afterAll,
   beforeAll,
@@ -136,12 +136,12 @@ function getRawDb(): import("bun:sqlite").Database {
 
 function latestAssistantText(conversationId: string): string | undefined {
   const rows = getRawDb()
-    .query(
+    .query<{ content: string }, SQLQueryBindings[]>(
       `SELECT content FROM messages
          WHERE conversation_id = ? AND role = 'assistant'
          ORDER BY created_at DESC, rowid DESC LIMIT 1`,
     )
-    .all(conversationId) as { content: string }[];
+    .all(conversationId);
   return rows[0]?.content;
 }
 

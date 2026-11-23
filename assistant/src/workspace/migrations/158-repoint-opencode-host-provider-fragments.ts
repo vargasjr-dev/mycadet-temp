@@ -131,10 +131,11 @@ function readOpenCodeRowNames(workspaceDir: string): Set<string> | null {
   }
   try {
     const rows = db
-      .query(
-        `SELECT name, base_url FROM provider_connections WHERE base_url IS NOT NULL`,
-      )
-      .all() as Array<{ name: string; base_url: string }>;
+      .query<
+        { name: string; base_url: string },
+        []
+      >(`SELECT name, base_url FROM provider_connections WHERE base_url IS NOT NULL`)
+      .all();
     return new Set(
       rows.filter((row) => isOpenCodeHost(row.base_url)).map((row) => row.name),
     );

@@ -177,8 +177,11 @@ function readConnectionRows(workspaceDir: string): Map<string, string> | null {
   }
   try {
     const rows = db
-      .query(`SELECT name, provider FROM provider_connections`)
-      .all() as Array<{ name: string; provider: string }>;
+      .query<
+        { name: string; provider: string },
+        []
+      >(`SELECT name, provider FROM provider_connections`)
+      .all();
     return new Map(rows.map((r) => [r.name, r.provider]));
   } catch {
     return null;

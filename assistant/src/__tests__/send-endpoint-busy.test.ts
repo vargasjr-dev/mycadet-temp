@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for POST /v1/messages queue-if-busy behavior and hub publishing.
  *
@@ -110,6 +111,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import { RuntimeHttpServer } from "../runtime/http-server.js";
 import type { ApprovalConversationGenerator } from "../runtime/http-types.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
+import { sendMessageResponseSchema } from "../runtime/routes/conversation-routes.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
@@ -473,12 +475,10 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
           }),
         });
       const first = await send();
-      const firstBody = (await first.json()) as {
-        accepted: boolean;
-        messageId: string;
-      };
+      const firstBody = sendMessageResponseSchema.parse(await first.json());
       expect(first.status).toBe(202);
       expect(firstBody.accepted).toBe(true);
+      assert(firstBody.messageId);
       expect(runAgentLoop).toHaveBeenCalledTimes(1);
       await runAgentLoop.mock.results[0]!.value;
       expect(trackingFailure).toHaveBeenCalledTimes(1);
@@ -521,17 +521,13 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId: string;
-      conversationId: string;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(202);
     expect(body.accepted).toBe(true);
     expect(body.messageId).toBeDefined();
     expect(typeof body.conversationId).toBe("string");
-    expect(body.conversationId.length).toBeGreaterThan(0);
+    expect(body.conversationId?.length).toBeGreaterThan(0);
 
     await stopServer();
   });
@@ -615,11 +611,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(202);
     expect(body.accepted).toBe(true);
@@ -682,11 +674,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "slack",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(202);
     expect(body.accepted).toBe(true);
@@ -741,11 +729,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(202);
     expect(body.accepted).toBe(true);
@@ -800,11 +784,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(202);
     expect(body.accepted).toBe(true);
@@ -859,11 +839,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(202);
     expect(body.accepted).toBe(true);
@@ -916,11 +892,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body = (await res.json()) as {
-      accepted: boolean;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
 
     // Ambiguous text should NOT be consumed — falls through to normal send path
     expect(res.status).toBe(202);
@@ -950,10 +922,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       }),
     });
     expect(res1.status).toBe(202);
-    const body1 = (await res1.json()) as {
-      accepted: boolean;
-      messageId: string;
-    };
+    const body1 = sendMessageResponseSchema.parse(await res1.json());
     expect(body1.accepted).toBe(true);
     expect(body1.messageId).toBeDefined();
 
@@ -971,17 +940,13 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         interface: "macos",
       }),
     });
-    const body2 = (await res2.json()) as {
-      accepted: boolean;
-      queued: boolean;
-      conversationId: string;
-    };
+    const body2 = sendMessageResponseSchema.parse(await res2.json());
 
     expect(res2.status).toBe(202);
     expect(body2.accepted).toBe(true);
     expect(body2.queued).toBe(true);
     expect(typeof body2.conversationId).toBe("string");
-    expect(body2.conversationId.length).toBeGreaterThan(0);
+    expect(body2.conversationId?.length).toBeGreaterThan(0);
 
     await stopServer();
   });
@@ -1032,10 +997,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       }),
     });
     expect(res.status).toBe(202);
-    const body = (await res.json()) as {
-      accepted: boolean;
-      conversationId: string;
-    };
+    const body = sendMessageResponseSchema.parse(await res.json());
     expect(body.accepted).toBe(true);
     expect(body.conversationId).toBeTruthy();
 
@@ -1060,7 +1022,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       }),
     });
     expect(res1.status).toBe(202);
-    const body1 = (await res1.json()) as { conversationId: string };
+    const body1 = sendMessageResponseSchema.parse(await res1.json());
 
     const res2 = await fetch(messagesUrl(), {
       method: "POST",
@@ -1072,7 +1034,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       }),
     });
     expect(res2.status).toBe(202);
-    const body2 = (await res2.json()) as { conversationId: string };
+    const body2 = sendMessageResponseSchema.parse(await res2.json());
 
     expect(body1.conversationId).toBeTruthy();
     expect(body2.conversationId).toBeTruthy();
@@ -1094,7 +1056,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       }),
     });
     expect(res1.status).toBe(202);
-    const body1 = (await res1.json()) as { conversationId: string };
+    const body1 = sendMessageResponseSchema.parse(await res1.json());
 
     const res2 = await fetch(messagesUrl(), {
       method: "POST",
@@ -1106,7 +1068,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       }),
     });
     expect(res2.status).toBe(202);
-    const body2 = (await res2.json()) as { conversationId: string };
+    const body2 = sendMessageResponseSchema.parse(await res2.json());
 
     // Non-cadet channels keep the legacy `default:<channel>:<interface>`
     // co-location so repeated inbound messages from the same external
@@ -1114,6 +1076,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
     expect(body1.conversationId).toBe(body2.conversationId);
     const mapping = getConversationByKey("default:phone:phone");
     expect(mapping).not.toBeNull();
+    assert(body1.conversationId);
     expect(mapping!.conversationId).toBe(body1.conversationId);
 
     await stopServer();

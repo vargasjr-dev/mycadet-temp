@@ -80,7 +80,6 @@ mock.module("../plugins/defaults/memory/v2/activation-log-store.js", () => ({
 }));
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
-import type { AgentEvent } from "../agent/loop.js";
 import type { AssistantEvent, AssistantEventEnvelope } from "../api/index.js";
 import type {
   EventHandlerDeps,
@@ -595,7 +594,7 @@ describe("tool preview lifecycle", () => {
       await dispatchAgentEvent(state, deps, {
         type: "thinking_delta",
         thinking: "Let me reason about this.",
-      } as Extract<AgentEvent, { type: "thinking_delta" }>);
+      });
 
       // THEN it is mirrored into the running view and the streamed seq field
       // tracks the emitted delta
@@ -630,16 +629,20 @@ describe("tool preview lifecycle", () => {
       await dispatchAgentEvent(state, deps, {
         type: "thinking_delta",
         thinking: "Let me reason about this.",
-      } as Extract<AgentEvent, { type: "thinking_delta" }>);
+      });
       await handleMessageComplete(state, deps, {
         type: "message_complete",
         message: {
           role: "assistant",
           content: [
-            { type: "thinking", thinking: "Let me reason about this." },
+            {
+              type: "thinking",
+              thinking: "Let me reason about this.",
+              signature: "",
+            },
           ],
         },
-      } as Extract<AgentEvent, { type: "message_complete" }>);
+      });
 
       // THEN the persisted seq equals the streamed thinking delta's seq
       const thinkingDelta = events.find(
@@ -697,14 +700,20 @@ describe("tool preview lifecycle", () => {
       await dispatchAgentEvent(state, deps, {
         type: "thinking_delta",
         thinking: "Internal reasoning.",
-      } as Extract<AgentEvent, { type: "thinking_delta" }>);
+      });
       await handleMessageComplete(state, deps, {
         type: "message_complete",
         message: {
           role: "assistant",
-          content: [{ type: "thinking", thinking: "Internal reasoning." }],
+          content: [
+            {
+              type: "thinking",
+              thinking: "Internal reasoning.",
+              signature: "",
+            },
+          ],
         },
-      } as Extract<AgentEvent, { type: "message_complete" }>);
+      });
 
       // THEN no thinking_delta was emitted and the streamed seq stays unset
       expect(
@@ -903,7 +912,7 @@ describe("tool preview lifecycle", () => {
       await handleMessageComplete(state, deps, {
         type: "message_complete",
         message: { role: "assistant", content: [{ type: "text", text: "ok" }] },
-      } as Extract<AgentEvent, { type: "message_complete" }>);
+      });
 
       // THEN no additional user row was reserved and the batch state is cleared
       const reservesAfterDrain = reserveMessageMock.mock.calls.filter(

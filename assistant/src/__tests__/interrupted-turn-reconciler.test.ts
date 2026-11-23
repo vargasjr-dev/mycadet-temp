@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
@@ -27,14 +28,17 @@ function readRow(id: string): {
   processing_resume_attempts: number;
 } {
   const row = getSqliteFrom(getDb())
-    .query(
+    .query<
+      {
+        processing_started_at: number | null;
+        processing_resume_attempts: number;
+      },
+      SQLQueryBindings[]
+    >(
       `SELECT processing_started_at, processing_resume_attempts
        FROM conversations WHERE id = ?`,
     )
-    .get(id) as {
-    processing_started_at: number | null;
-    processing_resume_attempts: number;
-  } | null;
+    .get(id);
   if (!row) {
     throw new Error(`conversation row missing: ${id}`);
   }

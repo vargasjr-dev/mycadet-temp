@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Route handler tests for the OAuth CLI command endpoints exposed by
  * `assistant/src/runtime/routes/oauth-commands-routes.ts`.
@@ -11,8 +12,9 @@
  * lives in `oauth-store.test.ts`, `credential-vault.test.ts`, and the other
  * oauth-*-routes test files.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Mock state — flipped per-test in beforeEach hooks
@@ -45,9 +47,43 @@ const baseProvider: MockProviderRow = {
   responseOkField: null,
 };
 
+const disconnectResponseSchema = z.object({
+  ok: z.boolean(),
+  connectionId: z.string(),
+});
+const tokenResponseSchema = z.object({ ok: z.boolean(), token: z.string() });
+const statusResponseSchema = z.object({
+  connections: z.array(
+    z.object({
+      id: z.string(),
+      grantedScopes: z.array(z.string()),
+      account: z.string().nullable(),
+    }),
+  ),
+});
+const requestResponseSchema = z.object({
+  ok: z.boolean(),
+  status: z.number().optional(),
+  provider: z.string().optional(),
+  hint: z.string().optional(),
+  error: z.string().optional(),
+  body: z.unknown().optional(),
+  bodyEncoding: z.string().optional(),
+});
+
+interface MockConnectionRow extends Record<string, unknown> {
+  id: string;
+  clientId?: string;
+  accountInfo?: string | null;
+}
+
+type CapturedRequest = Parameters<
+  import("../oauth/user-oauth-connection.js").UserOAuthConnection["request"]
+>[0];
+
 let mockProviders: Record<string, MockProviderRow> = {};
-let mockActiveConnectionsByProvider: Record<string, unknown[]> = {};
-let mockAllConnections: Record<string, unknown[]> = {};
+let mockActiveConnectionsByProvider: Record<string, MockConnectionRow[]> = {};
+let mockAllConnections: Record<string, MockConnectionRow[]> = {};
 let mockApps: Record<string, unknown> = {};
 let mockTokenValue = "tok-fake";
 let platformAvailable = true;
@@ -71,7 +107,7 @@ let mockResolveResponse: {
   headers: Record<string, string>;
   body: unknown;
 } = { status: 200, headers: {}, body: { ok: true } };
-let mockResolveRequests: unknown[] = [];
+let mockResolveRequests: CapturedRequest[] = [];
 let mockSyncManualTokenCalls: string[] = [];
 
 const mockDisconnectOAuthProvider = mock(() => Promise.resolve());
@@ -82,11 +118,7 @@ mock.module("../oauth/oauth-store.js", () => ({
     provider: string,
     opts?: { clientId?: string; account?: string },
   ) => {
-    const list = (mockActiveConnectionsByProvider[provider] ?? []) as Array<{
-      id: string;
-      clientId?: string;
-      accountInfo?: string | null;
-    }>;
+    const list = mockActiveConnectionsByProvider[provider] ?? [];
     if (opts?.account) {
       return list.find((c) => c.accountInfo === opts.account);
     }
@@ -100,7 +132,7 @@ mock.module("../oauth/oauth-store.js", () => ({
   },
   getConnection: (id: string) => {
     for (const list of Object.values(mockAllConnections)) {
-      const row = (list as Array<{ id: string }>).find((r) => r.id === id);
+      const row = list.find((r) => r.id === id);
       if (row) {
         return row;
       }
@@ -121,7 +153,7 @@ mock.module("../oauth/connection-resolver.js", () => {
   const makeConnection = () => ({
     id: "conn-1",
     accountInfo: "user@example.com",
-    request: async (req: unknown) => {
+    request: async (req: CapturedRequest) => {
       mockResolveRequests.push(req);
       return mockResolveResponse;
     },
@@ -284,9 +316,11 @@ describe("POST oauth/disconnect", () => {
     mockActiveConnectionsByProvider.google = [
       { id: "conn-1", accountInfo: "alice@example.com" },
     ];
-    const result = (await getRoute("POST", "oauth/disconnect").handler(
-      makeArgs({ body: { provider: "google" } }),
-    )) as { ok: boolean; connectionId: string };
+    const result = disconnectResponseSchema.parse(
+      await getRoute("POST", "oauth/disconnect").handler(
+        makeArgs({ body: { provider: "google" } }),
+      ),
+    );
     expect(result.ok).toBe(true);
     expect(result.connectionId).toBe("conn-1");
     expect(mockDisconnectOAuthProvider).toHaveBeenCalledTimes(1);
@@ -347,11 +381,11 @@ describe("GET oauth/status", () => {
         expiresAt: null,
       },
     ];
-    const result = (await getRoute("GET", "oauth/status").handler(
-      makeArgs({ queryParams: { provider: "google" } }),
-    )) as {
-      connections: Array<{ id: string; grantedScopes: string[] }>;
-    };
+    const result = statusResponseSchema.parse(
+      await getRoute("GET", "oauth/status").handler(
+        makeArgs({ queryParams: { provider: "google" } }),
+      ),
+    );
     expect(result.connections).toHaveLength(1);
     expect(result.connections[0]!.id).toBe("conn-1");
     expect(result.connections[0]!.grantedScopes).toEqual(["email", "profile"]);
@@ -368,9 +402,11 @@ describe("GET oauth/status", () => {
         expiresAt: null,
       },
     ];
-    const result = (await getRoute("GET", "oauth/status").handler(
-      makeArgs({ queryParams: { provider: "google" } }),
-    )) as { connections: Array<{ grantedScopes: string[] }> };
+    const result = statusResponseSchema.parse(
+      await getRoute("GET", "oauth/status").handler(
+        makeArgs({ queryParams: { provider: "google" } }),
+      ),
+    );
     expect(result.connections[0]!.grantedScopes).toEqual([]);
   });
 
@@ -392,9 +428,11 @@ describe("GET oauth/status", () => {
       },
     ];
 
-    const result = (await getRoute("GET", "oauth/status").handler(
-      makeArgs({ queryParams: { provider: "telegram" } }),
-    )) as { connections: Array<{ account: string | null }> };
+    const result = statusResponseSchema.parse(
+      await getRoute("GET", "oauth/status").handler(
+        makeArgs({ queryParams: { provider: "telegram" } }),
+      ),
+    );
 
     expect(mockSyncManualTokenCalls).toEqual(["telegram"]);
     expect(result.connections[0]!.account).toBe("@example_bot");
@@ -420,9 +458,11 @@ describe("POST oauth/ping", () => {
       pingUrl: "https://api.google.com/v1/me",
     };
     mockResolveResponse = { status: 200, headers: {}, body: { ok: true } };
-    const result = (await getRoute("POST", "oauth/ping").handler(
-      makeArgs({ body: { provider: "google" } }),
-    )) as { ok: boolean; provider: string; status: number };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/ping").handler(
+        makeArgs({ body: { provider: "google" } }),
+      ),
+    );
     expect(result).toEqual({ ok: true, provider: "google", status: 200 });
   });
 
@@ -436,9 +476,11 @@ describe("POST oauth/ping", () => {
       headers: {},
       body: { error: "unauthorized" },
     };
-    const result = (await getRoute("POST", "oauth/ping").handler(
-      makeArgs({ body: { provider: "google" } }),
-    )) as { ok: boolean; status: number; hint?: string };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/ping").handler(
+        makeArgs({ body: { provider: "google" } }),
+      ),
+    );
     expect(result.ok).toBe(false);
     expect(result.status).toBe(401);
     expect(result.hint).toContain("oauth connect");
@@ -459,15 +501,11 @@ describe("POST oauth/ping", () => {
       headers: { "content-type": "application/json" },
       body: { ok: false, error: "invalid_auth" },
     };
-    const result = (await getRoute("POST", "oauth/ping").handler(
-      makeArgs({ body: { provider: "slack_channel" } }),
-    )) as {
-      ok: boolean;
-      status: number;
-      error: string;
-      body?: unknown;
-      hint?: string;
-    };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/ping").handler(
+        makeArgs({ body: { provider: "slack_channel" } }),
+      ),
+    );
     expect(result.ok).toBe(false);
     expect(result.status).toBe(200);
     expect(result.error).toContain("ok: false");
@@ -483,9 +521,11 @@ describe("POST oauth/ping", () => {
 describe("POST oauth/token", () => {
   test("returns token from withValidToken in BYO mode", async () => {
     mockTokenValue = "tok-real";
-    const result = (await getRoute("POST", "oauth/token").handler(
-      makeArgs({ body: { provider: "google" } }),
-    )) as { ok: boolean; token: string };
+    const result = tokenResponseSchema.parse(
+      await getRoute("POST", "oauth/token").handler(
+        makeArgs({ body: { provider: "google" } }),
+      ),
+    );
     expect(result).toEqual({ ok: true, token: "tok-real" });
   });
 
@@ -534,11 +574,13 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "application/json" },
       body: { hello: "world" },
     };
-    const result = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: { provider: "google", url: "https://api.google.com/v1/me" },
-      }),
-    )) as { ok: boolean; status: number; body: unknown };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: { provider: "google", url: "https://api.google.com/v1/me" },
+        }),
+      ),
+    );
     expect(result.ok).toBe(true);
     expect(result.status).toBe(200);
     expect(result.body).toEqual({ hello: "world" });
@@ -555,14 +597,16 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "text/html; charset=utf-8" },
       body: "<html><title>Slack</title></html>",
     };
-    const asBot = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: {
-          provider: "slack_channel",
-          url: "https://files.slack.com/files-pri/T0123-F0456/download/shot.png",
-        },
-      }),
-    )) as { ok: boolean; status: number; hint?: string };
+    const asBot = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: {
+            provider: "slack_channel",
+            url: "https://files.slack.com/files-pri/T0123-F0456/download/shot.png",
+          },
+        }),
+      ),
+    );
     expect(asBot.ok).toBe(false);
     expect(asBot.status).toBe(403);
     // An absolute URL's own origin is the resolved base.
@@ -575,14 +619,16 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "text/html; charset=UTF-8" },
       body: "<html><title>Error 404 (Not Found)</title></html>",
     };
-    const relative = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: {
-          provider: "google",
-          url: "/calendar/v3/calendars/primary/events",
-        },
-      }),
-    )) as { ok: boolean; hint?: string };
+    const relative = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: {
+            provider: "google",
+            url: "/calendar/v3/calendars/primary/events",
+          },
+        }),
+      ),
+    );
     expect(relative.ok).toBe(false);
     expect(relative.hint).toContain('base URL "https://api.google.com"');
   });
@@ -604,12 +650,9 @@ describe("POST oauth/request", () => {
     );
 
     expect(mockResolveRequests).toHaveLength(1);
-    const req = mockResolveRequests[0] as {
-      body: unknown;
-      headers: Record<string, string>;
-    };
+    const req = mockResolveRequests[0];
     expect(req.body).toBe(multipart);
-    expect(req.headers["Content-Type"]).toBe(
+    expect(req.headers?.["Content-Type"]).toBe(
       "multipart/related; boundary=boundary",
     );
   });
@@ -627,7 +670,7 @@ describe("POST oauth/request", () => {
       }),
     );
 
-    const req = mockResolveRequests[0] as { body: unknown };
+    const req = mockResolveRequests[0];
     expect(req.body).toBe('{"looks":"like json"}');
   });
 
@@ -644,7 +687,7 @@ describe("POST oauth/request", () => {
       }),
     );
 
-    const req = mockResolveRequests[0] as { body: unknown };
+    const req = mockResolveRequests[0];
     expect(req.body).toEqual({ title: "Sheet" });
   });
 
@@ -664,9 +707,10 @@ describe("POST oauth/request", () => {
       }),
     );
 
-    const req = mockResolveRequests[0] as { body: unknown };
+    const req = mockResolveRequests[0];
     expect(Buffer.isBuffer(req.body)).toBe(true);
-    expect(Buffer.from(req.body as Uint8Array).equals(binary)).toBe(true);
+    assert(req.body instanceof Uint8Array);
+    expect(Buffer.from(req.body).equals(binary)).toBe(true);
   });
 
   test("base64-encodes binary response bodies for the JSON envelope", async () => {
@@ -676,19 +720,16 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "application/octet-stream" },
       body: binary,
     };
-    const result = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: {
-          provider: "google",
-          url: "https://api.google.com/drive/v3/files/file-123?alt=media",
-        },
-      }),
-    )) as {
-      ok: boolean;
-      status: number;
-      body: unknown;
-      bodyEncoding?: string;
-    };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: {
+            provider: "google",
+            url: "https://api.google.com/drive/v3/files/file-123?alt=media",
+          },
+        }),
+      ),
+    );
     expect(result.ok).toBe(true);
     expect(result.body).toBe(binary.toString("base64"));
     expect(result.bodyEncoding).toBe("base64");
@@ -862,9 +903,13 @@ describe("POST oauth/request", () => {
       },
     ];
 
-    const stale = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({ body: { provider: "slack", url: "/conversations.history" } }),
-    )) as { ok: boolean; hint?: string };
+    const stale = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: { provider: "slack", url: "/conversations.history" },
+        }),
+      ),
+    );
 
     expect(stale.ok).toBe(true);
     expect(stale.hint).toContain("files:read");
@@ -879,9 +924,13 @@ describe("POST oauth/request", () => {
         ),
       },
     ];
-    const current = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({ body: { provider: "slack", url: "/conversations.history" } }),
-    )) as { hint?: string };
+    const current = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: { provider: "slack", url: "/conversations.history" },
+        }),
+      ),
+    );
     expect(current.hint).toBeUndefined();
   });
 
@@ -949,15 +998,17 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "application/json" },
       body: { ok: false, error: "not_in_channel" },
     };
-    const result = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: {
-          provider: "slack_channel",
-          url: "/chat.postMessage",
-          parsed_data: { channel: "C1", text: "digest" },
-        },
-      }),
-    )) as { ok: boolean; status: number; body: unknown; hint?: string };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: {
+            provider: "slack_channel",
+            url: "/chat.postMessage",
+            parsed_data: { channel: "C1", text: "digest" },
+          },
+        }),
+      ),
+    );
     expect(result.ok).toBe(false);
     expect(result.status).toBe(200);
     expect(result.body).toEqual({ ok: false, error: "not_in_channel" });
@@ -973,14 +1024,16 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "image/png" },
       body: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
     };
-    const result = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: {
-          provider: "slack_channel",
-          url: "https://files.slack.com/files-pri/T0123-F0456/download/shot.png",
-        },
-      }),
-    )) as { ok: boolean; hint?: string };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: {
+            provider: "slack_channel",
+            url: "https://files.slack.com/files-pri/T0123-F0456/download/shot.png",
+          },
+        }),
+      ),
+    );
     expect(result.ok).toBe(true);
     expect(result.hint).toBeUndefined();
   });
@@ -991,11 +1044,13 @@ describe("POST oauth/request", () => {
       headers: { "content-type": "application/json" },
       body: { ok: false, error: "not_an_envelope" },
     };
-    const result = (await getRoute("POST", "oauth/request").handler(
-      makeArgs({
-        body: { provider: "google", url: "https://api.google.com/v1/me" },
-      }),
-    )) as { ok: boolean };
+    const result = requestResponseSchema.parse(
+      await getRoute("POST", "oauth/request").handler(
+        makeArgs({
+          body: { provider: "google", url: "https://api.google.com/v1/me" },
+        }),
+      ),
+    );
     expect(result.ok).toBe(true);
   });
 });
