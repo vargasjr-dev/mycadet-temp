@@ -1,7 +1,14 @@
 /**
- * Feedback for the standalone shell and Doctor panel. The cloud endpoint
- * accepts either the Doctor transcript or opt-in redacted desktop logs
- * as the multipart `logs_file` attachment.
+ * The Doctor panel's feedback modal — the app bundle's focused counterpart
+ * of the web bundle's ShareFeedbackModal. The web modal is a full
+ * diagnostics-reporting machine (daemon log exports, chat-state snapshots,
+ * native shell identity) wired to web-only sdks; the doctor surface needs
+ * none of that: the doctor session's own transcript is the diagnostic, and
+ * it rides along as an attached log file.
+ *
+ * The submission is the cloud's feedback endpoint in its multipart shape —
+ * the session log goes over as `logs_file`, the same field the web modal
+ * fills with its compressed daemon-log archive.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -10,7 +17,6 @@ import { createPortal } from "react-dom";
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@app/i18n";
 import { postCloudForm } from "@app/lib/cloud/request";
-import { getElectronBridge } from "@app/runtime/electron-bridge";
 
 import type { FeedbackReason } from "./doctor-feedback-types";
 
@@ -51,7 +57,6 @@ export interface DoctorFeedbackModalProps {
   initialReason?: FeedbackReason;
   initialMessage?: string;
   onSubmitted?: () => void;
-  client?: "web" | "electron";
   /** The doctor session the report is about, if one is active. */
   doctorSessionId?: string | null;
   /** The session transcript, attached to the report when present. */
@@ -64,7 +69,6 @@ export function DoctorFeedbackModal({
   initialReason,
   initialMessage,
   onSubmitted,
-  client = "web",
   doctorSessionId,
   doctorSessionLog,
 }: DoctorFeedbackModalProps) {
@@ -76,10 +80,7 @@ export function DoctorFeedbackModal({
   const [message, setMessage] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [includeDesktopLogs, setIncludeDesktopLogs] = useState(false);
   const includeSessionLog = !!doctorSessionLog?.trim();
-  const desktopFeedback =
-    client === "electron" ? getElectronBridge()?.feedback : undefined;
 
   useEffect(() => {
     if (!open) {
@@ -89,7 +90,6 @@ export function DoctorFeedbackModal({
     setMessage(initialMessage ?? "");
     setSubmitError(null);
     setIsSubmitting(false);
-    setIncludeDesktopLogs(false);
     const focus = setTimeout(() => messageRef.current?.focus(), 50);
     return () => clearTimeout(focus);
   }, [open, initialReason, initialMessage]);
@@ -110,7 +110,7 @@ export function DoctorFeedbackModal({
       const form = new FormData();
       form.append("message", message.trim());
       form.append("classification", selectedReason);
-      form.append("client", client);
+      form.append("client", "web");
       if (doctorSessionId) {
         form.append("doctor_session_id", doctorSessionId);
       }
@@ -119,12 +119,6 @@ export function DoctorFeedbackModal({
           type: "text/plain",
         });
         form.append("logs_file", log, "doctor-session.txt");
-      } else if (includeDesktopLogs && desktopFeedback) {
-        const logs = await desktopFeedback.logs();
-        if (logs) {
-          const log = new Blob([logs.slice(-2_000_000)], { type: "text/plain" });
-          form.append("logs_file", log, "cadet.log");
-        }
       }
       const result = await postCloudForm("/v1/feedback/", form);
       if (!result.ok) {
@@ -133,13 +127,6 @@ export function DoctorFeedbackModal({
       }
       onSubmitted?.();
       onClose();
-    } catch {
-      setSubmitError(
-        t("shareFeedbackModal.desktopLogsFailed", {
-          defaultValue:
-            "Couldn’t collect desktop logs. Try again or submit without diagnostics.",
-        }),
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -202,16 +189,6 @@ export function DoctorFeedbackModal({
           <p className="text-body-small-lighter text-[var(--content-tertiary)]">
             {t("shareFeedbackModal.doctorSessionAttached")}
           </p>
-        )}
-        {desktopFeedback && !includeSessionLog && (
-          <label className="flex items-center gap-2 text-body-medium">
-            <input
-              type="checkbox"
-              checked={includeDesktopLogs}
-              onChange={(event) => setIncludeDesktopLogs(event.target.checked)}
-            />
-            {t("shareFeedbackModal.includeDiagnostics")}
-          </label>
         )}
 
         {submitError && (

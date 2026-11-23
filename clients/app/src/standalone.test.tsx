@@ -71,7 +71,10 @@ describe("the shell's assistant commands", () => {
       configurable: true,
       value: {
         platform: "electron",
-        feedback: { logs: async () => "redacted test log" },
+        feedback: {
+          logs: async () => "[9999-01-01 00:00:00.000] redacted test log",
+          diagnostics: async () => ({ app: { version: "1.2.3" } }),
+        },
         menu: { setCloudSession: async () => {} },
         mainWindow: {
           ensureVisible: async () => {},
@@ -166,14 +169,18 @@ describe("the shell's assistant commands", () => {
     await act(async () => {
       sink.handler!({ kind: "shareFeedback" });
     });
-    const dialog = await screen.findByRole("dialog", { name: "Share Feedback" });
+    const dialog = await screen.findByRole("dialog", {
+      name: "Share Feedback",
+    });
     fireEvent.change(within(dialog).getByRole("textbox"), {
       target: { value: "The assistant did not start." },
     });
-    const diagnostics = within(dialog).getByRole("checkbox");
-    expect(diagnostics).toHaveProperty("checked", false);
+    const diagnostics = within(dialog).getByRole("switch", {
+      name: "Include browser diagnostics",
+    });
+    expect(diagnostics.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(diagnostics);
-    expect(diagnostics).toHaveProperty("checked", true);
+    expect(diagnostics.getAttribute("aria-checked")).toBe("true");
     const submit = within(dialog).getByRole("button", { name: "Submit" });
     expect(submit).toHaveProperty("disabled", false);
     await act(async () => {
@@ -190,7 +197,7 @@ describe("the shell's assistant commands", () => {
     if (!(logs instanceof Blob)) {
       throw new Error("Expected desktop log attachment");
     }
-    expect(await logs.text()).toBe("redacted test log");
+    expect(await logs.text()).toContain("redacted test log");
   });
 
   test("selectAssistant connects a healthy local entry by navigating with the selection state", async () => {

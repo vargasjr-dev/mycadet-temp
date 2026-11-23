@@ -8,7 +8,7 @@ import {
 } from "react-router";
 import { toast, Toaster } from "@mycadet/design-library/components/toast";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
-import { DoctorFeedbackModal } from "@app/components/doctor-feedback-modal";
+import { DesktopShareFeedback } from "@app/components/desktop-share-feedback";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { retireAssistant } from "@app/assistant/retire-assistant";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
@@ -123,10 +123,9 @@ export function DesktopChrome() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
       />
-      <DoctorFeedbackModal
+      <DesktopShareFeedback
         open={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
-        client="electron"
       />
       <Toaster />
       <RetireConfirmDialog
