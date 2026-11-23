@@ -214,9 +214,11 @@ describe("PreferencesMenu", () => {
         screen.queryByRole("dialog", { name: "Share Feedback" }),
       ).toBeNull();
     } finally {
-      if (originalParent)
+      if (originalParent) {
         Object.defineProperty(window, "parent", originalParent);
-      else Reflect.deleteProperty(window, "parent");
+      } else {
+        Reflect.deleteProperty(window, "parent");
+      }
     }
   });
 
