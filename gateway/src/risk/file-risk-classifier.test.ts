@@ -30,6 +30,10 @@ function makeContext(): FileClassificationContext {
     routesDir: MOCK_ROUTES_DIR,
     workflowsDir: MOCK_WORKFLOWS_DIR,
     monitoringDir: MOCK_MONITORING_DIR,
+    configFiles: [
+      join(MOCK_WORKSPACE_DIR, "mcp.json"),
+      join(MOCK_WORKSPACE_DIR, "config.json"),
+    ],
     skillSourceDirs: testSkillSourceDirs,
   };
 }
@@ -253,6 +257,21 @@ describe("FileRiskClassifier", () => {
       });
       expect(result.riskLevel).toBe("high");
       expect(result.reason).toBe("Writes to tools directory");
+    });
+
+    test("mcp.json and config.json are high", async () => {
+      // The daemon reloads both as soon as they change, and mcp.json can
+      // start any command, so a write there runs code.
+      testSkillSourceDirs = [];
+      for (const name of ["mcp.json", "config.json"]) {
+        const result = await classifyInput({
+          toolName: "file_write",
+          filePath: join(MOCK_WORKSPACE_DIR, name),
+          workingDir: MOCK_WORKSPACE_DIR,
+        });
+        expect(result.riskLevel).toBe("high");
+        expect(result.reason).toBe(`Writes to ${name}`);
+      }
     });
 
     test("path containing 'tools' substring outside tools dir is low", async () => {

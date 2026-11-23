@@ -1049,6 +1049,23 @@ describe("Permission Checker", () => {
     });
   });
 
+  describe("file context sent to the gateway", () => {
+    test("lists the hot-reloaded files that decide what the daemon runs", async () => {
+      // The gateway rates writes to these files high. A write to mcp.json is
+      // picked up within seconds and can start any command.
+      await classifyRisk("file_write", {
+        path: join(checkerTestDir, "mcp.json"),
+      });
+
+      expect(lastIpcParams("classify_risk")?.fileContext).toMatchObject({
+        configFiles: [
+          expect.stringMatching(/\/config\.json$/),
+          expect.stringMatching(/\/mcp\.json$/),
+        ],
+      });
+    });
+  });
+
   // ── strict mode: skill_load behavior ──
 
   describe("strict mode — skill_load behavior (PR 34)", () => {

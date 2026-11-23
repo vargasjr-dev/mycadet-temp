@@ -32,6 +32,7 @@ import {
   getWorkspaceToolsDir,
   getWorkspaceWorkflowsDir,
 } from "../util/layout.js";
+import { getProtectedWorkspaceFiles } from "../workspace/watched-files.js";
 import {
   type ApprovalContext,
   DefaultApprovalPolicy,
@@ -262,6 +263,8 @@ function buildFileContext(): ClassifyRiskFileContext {
     routesDir: resolveRealPath(getWorkspaceRoutesDir()),
     workflowsDir: resolveRealPath(getWorkspaceWorkflowsDir()),
     monitoringDir: resolveRealPath(getMonitoringDataDir()),
+    configFiles:
+      getProtectedWorkspaceFiles(getWorkspaceDir()).map(resolveRealPath),
     skillSourceDirs: getSkillRoots(config.skills.load.extraDirs).map(
       resolveRealPath,
     ),

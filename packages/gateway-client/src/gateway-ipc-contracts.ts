@@ -510,6 +510,8 @@ export const ClassifyRiskFileContextSchema = z.object({
   workflowsDir: z.string().optional(),
   /** Monitoring data dir: the sentinel lives here, writes are code-injection risk. */
   monitoringDir: z.string().optional(),
+  /** Config files the daemon reloads on change (`mcp.json`, `config.json`). */
+  configFiles: z.array(z.string()).optional(),
   skillSourceDirs: z.array(z.string()),
 });
 export type ClassifyRiskFileContext = z.infer<

@@ -45,6 +45,7 @@ import {
   WORKSPACE_MCP_FILENAME,
 } from "../util/layout.js";
 import { applyModuleLogLevels, getLogger } from "../util/logger.js";
+import type { WatchedWorkspaceFile } from "../workspace/watched-files.js";
 import { evictConversationsForReload } from "./conversation-store.js";
 import { parseIdentityFields } from "./handlers/identity.js";
 import { reloadMcpServers } from "./mcp-reload-service.js";
@@ -184,7 +185,9 @@ export class ConfigWatcher {
     this.stopped = false;
     const workspaceDir = getWorkspaceDir();
 
-    const workspaceHandlers: Record<string, () => void> = {
+    // Typed on the watched-file list so a new reloaded file must be declared
+    // there, which is where its write risk is decided.
+    const workspaceHandlers: Record<WatchedWorkspaceFile, () => void> = {
       "config.json": async () => {
         if (this.suppressReload) {
           return;

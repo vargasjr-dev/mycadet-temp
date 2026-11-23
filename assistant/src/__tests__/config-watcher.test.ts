@@ -1,5 +1,5 @@
 import { mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import {
   afterEach,
   beforeAll,
@@ -159,6 +159,8 @@ mock.module("../cloud/sync-identity.js", () => ({
 
 // Import after mocks are set up
 const { ConfigWatcher } = await import("../daemon/config-watcher.js");
+const { WATCHED_WORKSPACE_FILES } =
+  await import("../workspace/watched-files.js");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -272,6 +274,16 @@ describe("ConfigWatcher workspace file handlers", () => {
     // be watched either: that was the ENXIO-on-Unix-sockets bug.
     expect(findFileWatch(join(WORKSPACE_DIR, "OTHER.md"))).toBeUndefined();
     expect(findWatcher(WORKSPACE_DIR)).toBeUndefined();
+  });
+
+  test("every workspace file it reloads is declared in WATCHED_WORKSPACE_FILES", () => {
+    // The risk classifier reads that list to decide which files are
+    // protected, so a reloaded file missing from it would go unrated.
+    watcher.start();
+    const reloaded = capturedFileWatches
+      .map((w) => relative(WORKSPACE_DIR, w.filePath))
+      .sort();
+    expect(reloaded).toEqual(Object.keys(WATCHED_WORKSPACE_FILES).sort());
   });
 
   test("ui/theme.json change publishes the workspace-theme invalidation", async () => {

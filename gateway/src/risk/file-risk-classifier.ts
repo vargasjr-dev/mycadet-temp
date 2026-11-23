@@ -57,7 +57,7 @@
  */
 
 import { homedir } from "node:os";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 
 import type {
   AllowlistOption,
@@ -93,6 +93,12 @@ export interface FileClassificationContext {
    * code-injection risk and must clear the High-risk approval gate.
    */
   monitoringDir: string;
+  /**
+   * Config files the daemon reloads as soon as they change (`mcp.json`,
+   * `config.json`). `mcp.json` can start any command, so a write to either is
+   * as risky as writing a tool.
+   */
+  configFiles?: string[];
   /**
    * Absolute paths of all skill source root directories (managed, bundled,
    * and any extra dirs from config). The classifier checks whether a file
@@ -490,6 +496,9 @@ function classifyCodeInjectionSink(
   }
   if (isMonitoringPath(resolvedPath, context)) {
     return sink("monitoring directory");
+  }
+  if (context.configFiles?.includes(resolvedPath)) {
+    return sink(basename(resolvedPath));
   }
   return null;
 }
