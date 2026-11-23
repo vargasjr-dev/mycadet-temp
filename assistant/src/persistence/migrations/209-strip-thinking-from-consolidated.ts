@@ -141,11 +141,14 @@ export async function migrateStripThinkingFromConsolidated(
   const raw = getSqliteFrom(database);
   const dbPath = getDbPath();
 
-  const maxRow = (
-    raw.query(`SELECT MAX(rowid) AS m FROM messages`).get() as {
-      m: number | null;
-    }
-  ).m;
+  const maxRow = raw
+    .query<
+      {
+        m: number | null;
+      },
+      []
+    >(`SELECT MAX(rowid) AS m FROM messages`)
+    .get()!.m;
   if (maxRow == null) {
     return;
   } // empty table — nothing to sweep

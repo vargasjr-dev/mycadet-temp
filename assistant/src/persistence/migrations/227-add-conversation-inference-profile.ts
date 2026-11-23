@@ -5,9 +5,14 @@ export function migrateAddConversationInferenceProfile(
   database: DrizzleDb,
 ): void {
   const raw = getSqliteFrom(database);
-  const columns = raw.query(`PRAGMA table_info(conversations)`).all() as Array<{
-    name: string;
-  }>;
+  const columns = raw
+    .query<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(conversations)`)
+    .all();
   // Skip if either the original camelCase column or the renamed snake_case
   // column from migration 228 is already present. Without the snake_case
   // check, this migration would re-add the camelCase column on every boot

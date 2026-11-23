@@ -14,9 +14,14 @@ import { getSqliteFrom } from "../db-connection.js";
 export function migrateScheduleCapabilities(database: DrizzleDb): void {
   const raw = getSqliteFrom(database);
 
-  const columns = raw.query(`PRAGMA table_info(cron_jobs)`).all() as Array<{
-    name: string;
-  }>;
+  const columns = raw
+    .query<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(cron_jobs)`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   if (!columnNames.has("capabilities_json")) {

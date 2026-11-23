@@ -21,9 +21,14 @@ export function migrateContactChannelsUniqueExtUser(database: DrizzleDb): void {
   // A later migration drops external_user_id; once it has run this historical
   // dedup is obsolete (Steps 2–3 below reference the column). This step re-runs
   // on every startup, so skip when the column is absent rather than failing.
-  const cols = raw.prepare("PRAGMA table_info(contact_channels)").all() as {
-    name: string;
-  }[];
+  const cols = raw
+    .prepare<
+      {
+        name: string;
+      },
+      []
+    >("PRAGMA table_info(contact_channels)")
+    .all();
   if (!cols.some((c) => c.name === "external_user_id")) {
     return;
   }

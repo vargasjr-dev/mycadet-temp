@@ -20,8 +20,8 @@ export function migrateLlmRequestLogAgentLoopExitReason(
   const raw = getSqliteFrom(database);
 
   const columns = raw
-    .query(`PRAGMA table_info(llm_request_logs)`)
-    .all() as Array<{ name: string }>;
+    .query<{ name: string }, []>(`PRAGMA table_info(llm_request_logs)`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   if (!columnNames.has("agent_loop_exit_reason")) {

@@ -8,7 +8,13 @@ import {
   recordUsageEvent,
 } from "../persistence/llm-usage-store.js";
 import { BadRequestError } from "../runtime/routes/errors.js";
-import { ROUTES } from "../runtime/routes/usage-routes.js";
+import {
+  ROUTES,
+  usageBreakdownResponseSchema,
+  usageDailyResponseSchema,
+  usageSeriesResponseSchema,
+  usageTotalsSchema,
+} from "../runtime/routes/usage-routes.js";
 import { getScheduleUsageSummaries } from "../schedule/schedule-usage-store.js";
 
 await initializeDb();
@@ -401,10 +407,9 @@ describe("usage routes", () => {
 
   describe("GET /v1/usage/totals", () => {
     test("returns zeros for empty range", () => {
-      const body = dispatch(
-        "GET",
-        "usage/totals?from=0&to=999999999999",
-      ) as Record<string, number>;
+      const body = usageTotalsSchema.parse(
+        dispatch("GET", "usage/totals?from=0&to=999999999999"),
+      );
       expect(body.totalInputTokens).toBe(0);
       expect(body.totalOutputTokens).toBe(0);
       expect(body.totalEstimatedCostUsd).toBe(0);
@@ -416,10 +421,9 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/totals?from=${from}&to=${to}`,
-      ) as Record<string, number>;
+      const body = usageTotalsSchema.parse(
+        dispatch("GET", `usage/totals?from=${from}&to=${to}`),
+      );
       expect(body.totalInputTokens).toBe(3350);
       expect(body.totalOutputTokens).toBe(700);
       expect(body.totalCacheCreationTokens).toBe(50);
@@ -435,10 +439,9 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day1 + 86400_000 - 1;
 
-      const body = dispatch(
-        "GET",
-        `usage/totals?from=${from}&to=${to}`,
-      ) as Record<string, number>;
+      const body = usageTotalsSchema.parse(
+        dispatch("GET", `usage/totals?from=${from}&to=${to}`),
+      );
       expect(body.eventCount).toBe(2);
       expect(body.totalInputTokens).toBe(1350);
       expect(body.totalCacheCreationTokens).toBe(50);
@@ -448,10 +451,12 @@ describe("usage routes", () => {
     test("filters by trimmed scheduleId using schedule run windows", () => {
       seedScheduleRouteEvents();
 
-      const body = dispatch(
-        "GET",
-        "usage/totals?from=0&to=4000&scheduleId=%20schedule-a%20",
-      ) as Record<string, number>;
+      const body = usageTotalsSchema.parse(
+        dispatch(
+          "GET",
+          "usage/totals?from=0&to=4000&scheduleId=%20schedule-a%20",
+        ),
+      );
 
       expect(body.eventCount).toBe(3);
       expect(body.totalInputTokens).toBe(300);
@@ -465,15 +470,9 @@ describe("usage routes", () => {
     test("returns zero-filled buckets when no events in range", () => {
       const from = new Date("2025-01-15T00:00:00Z").getTime();
       const to = new Date("2025-01-17T23:59:59Z").getTime();
-      const body = dispatch("GET", `usage/daily?from=${from}&to=${to}`) as {
-        buckets: Array<{
-          date: string;
-          eventCount: number;
-          totalInputTokens: number;
-          totalOutputTokens: number;
-          totalEstimatedCostUsd: number;
-        }>;
-      };
+      const body = usageDailyResponseSchema.parse(
+        dispatch("GET", `usage/daily?from=${from}&to=${to}`),
+      );
       expect(body.buckets).toHaveLength(3);
       expect(body.buckets.map((b) => b.date)).toEqual([
         "2025-01-15",
@@ -493,13 +492,9 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch("GET", `usage/daily?from=${from}&to=${to}`) as {
-        buckets: Array<{
-          date: string;
-          totalInputTokens: number;
-          eventCount: number;
-        }>;
-      };
+      const body = usageDailyResponseSchema.parse(
+        dispatch("GET", `usage/daily?from=${from}&to=${to}`),
+      );
       expect(body.buckets).toHaveLength(2);
       expect(body.buckets[0].date).toBe("2025-01-15");
       expect(body.buckets[0].totalInputTokens).toBe(1350);
@@ -512,12 +507,9 @@ describe("usage routes", () => {
     test("filters daily buckets by scheduleId", () => {
       seedScheduleRouteEvents();
 
-      const body = dispatch(
-        "GET",
-        "usage/daily?from=0&to=4000&scheduleId=schedule-a",
-      ) as {
-        buckets: Array<{ totalEstimatedCostUsd: number; eventCount: number }>;
-      };
+      const body = usageDailyResponseSchema.parse(
+        dispatch("GET", "usage/daily?from=0&to=4000&scheduleId=schedule-a"),
+      );
 
       expect(body.buckets).toHaveLength(1);
       expect(body.buckets[0].eventCount).toBe(3);
@@ -548,19 +540,12 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/breakdown?from=${from}&to=${to}&groupBy=provider`,
-      ) as {
-        breakdown: Array<{
-          group: string;
-          totalInputTokens: number;
-          totalCacheCreationTokens: number;
-          totalCacheReadTokens: number;
-          totalEstimatedCostUsd: number;
-          eventCount: number;
-        }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch(
+          "GET",
+          `usage/breakdown?from=${from}&to=${to}&groupBy=provider`,
+        ),
+      );
       expect(body.breakdown).toHaveLength(2);
       expect(body.breakdown[0].group).toBe("anthropic");
       expect(body.breakdown[0].totalInputTokens).toBe(1350);
@@ -582,12 +567,9 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/breakdown?from=${from}&to=${to}&groupBy=actor`,
-      ) as {
-        breakdown: Array<{ group: string; eventCount: number }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch("GET", `usage/breakdown?from=${from}&to=${to}&groupBy=actor`),
+      );
       expect(body.breakdown).toHaveLength(2);
       const assistantGroup = body.breakdown.find(
         (b) => b.group === "main_agent",
@@ -600,12 +582,9 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/breakdown?from=${from}&to=${to}&groupBy=model`,
-      ) as {
-        breakdown: Array<{ group: string; eventCount: number }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch("GET", `usage/breakdown?from=${from}&to=${to}&groupBy=model`),
+      );
       expect(body.breakdown).toHaveLength(3);
     });
 
@@ -614,17 +593,12 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/breakdown?from=${from}&to=${to}&groupBy=call_site`,
-      ) as {
-        breakdown: Array<{
-          group: string;
-          groupKey: string | null;
-          totalInputTokens: number;
-          eventCount: number;
-        }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch(
+          "GET",
+          `usage/breakdown?from=${from}&to=${to}&groupBy=call_site`,
+        ),
+      );
 
       expect(body.breakdown.map((row) => row.group)).toEqual([
         "Main Agent",
@@ -646,12 +620,12 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/breakdown?from=${from}&to=${to}&groupBy=inference_profile`,
-      ) as {
-        breakdown: Array<{ group: string; groupKey: string | null }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch(
+          "GET",
+          `usage/breakdown?from=${from}&to=${to}&groupBy=inference_profile`,
+        ),
+      );
 
       expect(body.breakdown.map((row) => row.group)).toEqual([
         "balanced",
@@ -668,18 +642,9 @@ describe("usage routes", () => {
     test("accepts groupBy=schedule and labels groups with schedule names", () => {
       seedScheduleRouteEvents();
 
-      const body = dispatch(
-        "GET",
-        "usage/breakdown?from=0&to=4000&groupBy=schedule",
-      ) as {
-        breakdown: Array<{
-          group: string;
-          groupId: string | null;
-          groupKey: string | null;
-          totalEstimatedCostUsd: number;
-          eventCount: number;
-        }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch("GET", "usage/breakdown?from=0&to=4000&groupBy=schedule"),
+      );
 
       expect(
         body.breakdown.find((row) => row.groupKey === "schedule-a"),
@@ -710,16 +675,12 @@ describe("usage routes", () => {
     test("filters breakdown by scheduleId", () => {
       seedScheduleRouteEvents();
 
-      const body = dispatch(
-        "GET",
-        "usage/breakdown?from=0&to=4000&groupBy=provider&scheduleId=schedule-a",
-      ) as {
-        breakdown: Array<{
-          group: string;
-          totalEstimatedCostUsd: number;
-          eventCount: number;
-        }>;
-      };
+      const body = usageBreakdownResponseSchema.parse(
+        dispatch(
+          "GET",
+          "usage/breakdown?from=0&to=4000&groupBy=provider&scheduleId=schedule-a",
+        ),
+      );
 
       expect(body.breakdown).toHaveLength(1);
       expect(body.breakdown[0]).toMatchObject({
@@ -751,19 +712,12 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/series?from=${from}&to=${to}&groupBy=call_site&granularity=daily`,
-      ) as {
-        buckets: Array<{
-          date: string;
-          totalInputTokens: number;
-          groups: Record<
-            string,
-            { group: string; groupKey: string | null; totalInputTokens: number }
-          >;
-        }>;
-      };
+      const body = usageSeriesResponseSchema.parse(
+        dispatch(
+          "GET",
+          `usage/series?from=${from}&to=${to}&groupBy=call_site&granularity=daily`,
+        ),
+      );
 
       expect(body.buckets).toHaveLength(2);
       expect(body.buckets[0].groups["value:mainAgent"]).toMatchObject({
@@ -788,17 +742,12 @@ describe("usage routes", () => {
       const from = day1 - 1000;
       const to = day2 + 1000;
 
-      const body = dispatch(
-        "GET",
-        `usage/series?from=${from}&to=${to}&groupBy=inference_profile&granularity=daily`,
-      ) as {
-        buckets: Array<{
-          groups: Record<
-            string,
-            { group: string; groupKey: string | null; totalInputTokens: number }
-          >;
-        }>;
-      };
+      const body = usageSeriesResponseSchema.parse(
+        dispatch(
+          "GET",
+          `usage/series?from=${from}&to=${to}&groupBy=inference_profile&granularity=daily`,
+        ),
+      );
 
       expect(body.buckets[0].groups["value:balanced"]).toMatchObject({
         group: "balanced",
@@ -820,21 +769,12 @@ describe("usage routes", () => {
     test("accepts groupBy=schedule and labels schedule series groups", () => {
       seedScheduleRouteEvents();
 
-      const body = dispatch(
-        "GET",
-        "usage/series?from=0&to=4000&groupBy=schedule&granularity=daily",
-      ) as {
-        buckets: Array<{
-          groups: Record<
-            string,
-            {
-              group: string;
-              groupKey: string | null;
-              totalEstimatedCostUsd: number;
-            }
-          >;
-        }>;
-      };
+      const body = usageSeriesResponseSchema.parse(
+        dispatch(
+          "GET",
+          "usage/series?from=0&to=4000&groupBy=schedule&granularity=daily",
+        ),
+      );
 
       expect(body.buckets).toHaveLength(1);
       expect(body.buckets[0].groups["value:schedule-a"]).toMatchObject({
@@ -863,15 +803,12 @@ describe("usage routes", () => {
     test("filters grouped series by scheduleId", () => {
       seedScheduleRouteEvents();
 
-      const body = dispatch(
-        "GET",
-        "usage/series?from=0&to=4000&groupBy=call_site&granularity=daily&scheduleId=schedule-a",
-      ) as {
-        buckets: Array<{
-          totalEstimatedCostUsd: number;
-          groups: Record<string, { totalEstimatedCostUsd: number }>;
-        }>;
-      };
+      const body = usageSeriesResponseSchema.parse(
+        dispatch(
+          "GET",
+          "usage/series?from=0&to=4000&groupBy=call_site&granularity=daily&scheduleId=schedule-a",
+        ),
+      );
 
       expect(body.buckets).toHaveLength(1);
       expect(body.buckets[0].totalEstimatedCostUsd).toBeCloseTo(0.6);

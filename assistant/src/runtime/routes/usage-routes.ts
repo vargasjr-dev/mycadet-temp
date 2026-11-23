@@ -36,7 +36,7 @@ const SERIES_GROUP_BY_DESCRIPTION = USAGE_SERIES_GROUP_BY_DIMENSIONS.join(", ");
 const SCHEDULE_ID_FILTER_DESCRIPTION =
   "Optional schedule id. When set, usage is attributed by cron run windows for that schedule.";
 
-const usageTotalsSchema = z.object({
+export const usageTotalsSchema = z.object({
   totalInputTokens: z.number(),
   totalOutputTokens: z.number(),
   totalCacheCreationTokens: z.number(),
@@ -187,6 +187,22 @@ function handleUsageSeries({ queryParams }: RouteHandlerArgs) {
   return { buckets };
 }
 
+export const usageDailyResponseSchema = z.object({
+  buckets: z.array(usageDayBucketSchema).describe("Usage bucket objects"),
+});
+
+export const usageBreakdownResponseSchema = z.object({
+  breakdown: z
+    .array(usageGroupBreakdownSchema)
+    .describe("Grouped usage entries"),
+});
+
+export const usageSeriesResponseSchema = z.object({
+  buckets: z
+    .array(usageSeriesBucketSchema)
+    .describe("Grouped usage bucket objects"),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "usage_totals",
@@ -255,9 +271,7 @@ export const ROUTES: RouteDefinition[] = [
         description: SCHEDULE_ID_FILTER_DESCRIPTION,
       },
     ],
-    responseBody: z.object({
-      buckets: z.array(usageDayBucketSchema).describe("Usage bucket objects"),
-    }),
+    responseBody: usageDailyResponseSchema,
     handler: handleUsageDaily,
   },
   {
@@ -292,11 +306,7 @@ export const ROUTES: RouteDefinition[] = [
         description: SCHEDULE_ID_FILTER_DESCRIPTION,
       },
     ],
-    responseBody: z.object({
-      breakdown: z
-        .array(usageGroupBreakdownSchema)
-        .describe("Grouped usage entries"),
-    }),
+    responseBody: usageBreakdownResponseSchema,
     handler: handleUsageBreakdown,
   },
   {
@@ -341,11 +351,7 @@ export const ROUTES: RouteDefinition[] = [
         description: SCHEDULE_ID_FILTER_DESCRIPTION,
       },
     ],
-    responseBody: z.object({
-      buckets: z
-        .array(usageSeriesBucketSchema)
-        .describe("Grouped usage bucket objects"),
-    }),
+    responseBody: usageSeriesResponseSchema,
     handler: handleUsageSeries,
   },
 ];

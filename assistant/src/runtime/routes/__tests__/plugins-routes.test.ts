@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for the plugins route handlers in `plugins-routes.ts`.
  *
@@ -55,7 +56,6 @@
  * `.../search-plugins.test.ts`, and `.../uninstall-plugin.test.ts`;
  * here we mock them to isolate the route's wiring logic.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
@@ -365,6 +365,13 @@ const {
   loadCategoryMapBounded,
   normalizeMarketplaceCategory,
   ROUTES: PLUGINS_ROUTES,
+  pluginsListResponseSchema,
+  pluginsSearchResponseSchema,
+  pluginDetailsResponseSchema,
+  pluginInstallResponseSchema,
+  pluginUninstallResponseSchema,
+  pluginInspectResponseSchema,
+  pluginUpgradeResponseSchema,
 }: typeof import("../plugins-routes.js") = await import("../plugins-routes.js");
 import { setBroadcastOverrideForTesting } from "../../assistant-event-hub.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
@@ -390,29 +397,13 @@ const enableHandler = findHandler("plugins_enable");
 const disableHandler = findHandler("plugins_disable");
 const iconHandler = findHandler("plugins_icon");
 
-async function invoke(args: RouteHandlerArgs = {}): Promise<{
-  plugins: Array<Record<string, unknown>>;
-  categoryCounts: Record<string, number>;
-  totalCount: number;
-}> {
-  return (await listHandler(args)) as {
-    plugins: Array<Record<string, unknown>>;
-    categoryCounts: Record<string, number>;
-    totalCount: number;
-  };
+async function invoke(args: RouteHandlerArgs = {}) {
+  return pluginsListResponseSchema.parse(await listHandler(args));
 }
 
 // The route wire shape mirrors the lib match — including `category`.
-async function invokeSearch(args: RouteHandlerArgs = {}): Promise<{
-  query: string;
-  ref: string;
-  matches: PluginSearchMatch[];
-}> {
-  return (await searchHandler(args)) as {
-    query: string;
-    ref: string;
-    matches: PluginSearchMatch[];
-  };
+async function invokeSearch(args: RouteHandlerArgs = {}) {
+  return pluginsSearchResponseSchema.parse(await searchHandler(args));
 }
 
 function pluginEntry(
@@ -1263,14 +1254,8 @@ describe("GET /v1/plugins/search", () => {
 // DELETE /v1/plugins/:name (uninstall)
 // ---------------------------------------------------------------------------
 
-async function invokeUninstall(
-  args: RouteHandlerArgs = {},
-): Promise<{ name: string; target: string; warnings?: string[] }> {
-  return (await uninstallHandler(args)) as {
-    name: string;
-    target: string;
-    warnings?: string[];
-  };
+async function invokeUninstall(args: RouteHandlerArgs = {}) {
+  return pluginUninstallResponseSchema.parse(await uninstallHandler(args));
 }
 
 describe("DELETE /v1/plugins/:name", () => {
@@ -1406,7 +1391,8 @@ describe("DELETE /v1/plugins/:name", () => {
       caught = err;
     }
     expect(caught).toBeInstanceOf(InternalError);
-    expect((caught as Error).message).toBe("plugin uninstall failed");
+    assert(caught instanceof Error);
+    expect(caught.message).toBe("plugin uninstall failed");
   });
 });
 
@@ -1432,8 +1418,8 @@ function pluginDetails(overrides: Partial<PluginDetails> = {}): PluginDetails {
   };
 }
 
-async function invokeGet(args: RouteHandlerArgs = {}): Promise<PluginDetails> {
-  return (await getHandler(args)) as PluginDetails;
+async function invokeGet(args: RouteHandlerArgs = {}) {
+  return pluginDetailsResponseSchema.parse(await getHandler(args));
 }
 
 describe("GET /v1/plugins/:name", () => {
@@ -1530,24 +1516,13 @@ describe("GET /v1/plugins/:name", () => {
       caught = err;
     }
     expect(caught).toBeInstanceOf(InternalError);
-    expect((caught as Error).message).toContain("ENOTFOUND");
+    assert(caught instanceof Error);
+    expect(caught.message).toContain("ENOTFOUND");
   });
 });
 
-async function invokeInstall(args: RouteHandlerArgs = {}): Promise<{
-  ok: true;
-  name: string;
-  target: string;
-  fileCount: number;
-  ref: string;
-}> {
-  return (await installHandler(args)) as {
-    ok: true;
-    name: string;
-    target: string;
-    fileCount: number;
-    ref: string;
-  };
+async function invokeInstall(args: RouteHandlerArgs = {}) {
+  return pluginInstallResponseSchema.parse(await installHandler(args));
 }
 
 // A gated-catalog match for `caveman` pinned to an immutable full commit SHA —
@@ -1780,7 +1755,8 @@ describe("POST /v1/plugins/install", () => {
       caught = err;
     }
     expect(caught).toBeInstanceOf(InternalError);
-    expect((caught as Error).message).toContain("ECONNRESET");
+    assert(caught instanceof Error);
+    expect(caught.message).toContain("ECONNRESET");
   });
 
   test("a pin matching the catalog's current ref installs via trustedSource", async () => {
@@ -1880,10 +1856,8 @@ function inspection(
   };
 }
 
-async function invokeInspect(
-  args: RouteHandlerArgs = {},
-): Promise<PluginInspection> {
-  return (await inspectHandler(args)) as PluginInspection;
+async function invokeInspect(args: RouteHandlerArgs = {}) {
+  return pluginInspectResponseSchema.parse(await inspectHandler(args));
 }
 
 describe("GET /v1/plugins/:name/inspect", () => {
@@ -1897,7 +1871,7 @@ describe("GET /v1/plugins/:name/inspect", () => {
     inspectSpy.mockImplementation(async () => view);
 
     // WHEN the route handler is invoked with the path name
-    const result = await invokeInspect({ pathParams: { name: "level-up" } });
+    const result = await inspectHandler({ pathParams: { name: "level-up" } });
 
     // THEN the inspection is returned unchanged
     expect(result).toEqual(view);
@@ -1908,16 +1882,15 @@ describe("GET /v1/plugins/:name/inspect", () => {
   test("the inspect wire schema carries the schedules surface", async () => {
     // GIVEN an inspection whose surfaces declare a schedule
     inspectSpy.mockImplementation(async () => inspection());
-    const result = await invokeInspect({ pathParams: { name: "level-up" } });
+    const result = await inspectHandler({ pathParams: { name: "level-up" } });
 
     // WHEN the handler result is parsed through the route's response schema
     // (zod strips undeclared keys, so an omission would drop the field)
     const route = PLUGINS_ROUTES.find(
       (r) => r.operationId === "plugins_inspect",
     )!;
-    const parsed = (
-      route.responseBody as { parse: (v: unknown) => PluginInspection }
-    ).parse(result);
+    expect(route.responseBody).toBe(pluginInspectResponseSchema);
+    const parsed = pluginInspectResponseSchema.parse(result);
 
     // THEN the declared schedules survive the wire contract
     expect(parsed.surfaces?.schedules).toEqual([
@@ -1975,7 +1948,8 @@ describe("GET /v1/plugins/:name/inspect", () => {
       caught = err;
     }
     expect(caught).toBeInstanceOf(InternalError);
-    expect((caught as Error).message).toContain("EUNEXPECTED");
+    assert(caught instanceof Error);
+    expect(caught.message).toContain("EUNEXPECTED");
   });
 });
 
@@ -2008,36 +1982,8 @@ function upgradeResult(
   };
 }
 
-async function invokeUpgrade(args: RouteHandlerArgs = {}): Promise<{
-  name: string;
-  outcome: string;
-  fromCommit: string | null;
-  fromTimestamp: string | null;
-  toCommit: string;
-  toTimestamp: string | null;
-  target: string;
-  fileCount: number | null;
-  dryRun: boolean;
-  strategy: string;
-  conflicts: readonly string[];
-  binaryConflicts: readonly string[];
-  provenanceWasUnknown: boolean;
-}> {
-  return (await upgradeHandler(args)) as {
-    name: string;
-    outcome: string;
-    fromCommit: string | null;
-    fromTimestamp: string | null;
-    toCommit: string;
-    toTimestamp: string | null;
-    target: string;
-    fileCount: number | null;
-    dryRun: boolean;
-    strategy: string;
-    conflicts: readonly string[];
-    binaryConflicts: readonly string[];
-    provenanceWasUnknown: boolean;
-  };
+async function invokeUpgrade(args: RouteHandlerArgs = {}) {
+  return pluginUpgradeResponseSchema.parse(await upgradeHandler(args));
 }
 
 describe("POST /v1/plugins/:name/upgrade", () => {
@@ -2399,7 +2345,8 @@ describe("POST /v1/plugins/:name/upgrade", () => {
       caught = err;
     }
     expect(caught).toBeInstanceOf(InternalError);
-    expect((caught as Error).message).toContain("ECONNRESET");
+    assert(caught instanceof Error);
+    expect(caught.message).toContain("ECONNRESET");
   });
 });
 
@@ -2424,12 +2371,6 @@ function diffResult(
   };
 }
 
-async function invokeDiff(
-  args: RouteHandlerArgs = {},
-): Promise<PluginDiffResult> {
-  return (await diffHandler(args)) as PluginDiffResult;
-}
-
 describe("POST /v1/plugins/:name/diff", () => {
   beforeEach(() => {
     diffSpy.mockReset();
@@ -2441,7 +2382,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     diffSpy.mockImplementation(async () => view);
 
     // WHEN the route handler is invoked with the path name
-    const result = await invokeDiff({ pathParams: { name: "level-up" } });
+    const result = await diffHandler({ pathParams: { name: "level-up" } });
 
     // THEN the diff is returned unchanged
     expect(result).toEqual(view);
@@ -2455,7 +2396,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     });
 
     await expect(
-      invokeDiff({ pathParams: { name: "../escape" } }),
+      diffHandler({ pathParams: { name: "../escape" } }),
     ).rejects.toBeInstanceOf(BadRequestError);
   });
 
@@ -2468,7 +2409,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     });
 
     await expect(
-      invokeDiff({ pathParams: { name: "ghost" } }),
+      diffHandler({ pathParams: { name: "ghost" } }),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 
@@ -2483,7 +2424,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     });
 
     await expect(
-      invokeDiff({ pathParams: { name: "level-up" } }),
+      diffHandler({ pathParams: { name: "level-up" } }),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 
@@ -2498,7 +2439,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     });
 
     await expect(
-      invokeDiff({ pathParams: { name: "level-up" } }),
+      diffHandler({ pathParams: { name: "level-up" } }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
@@ -2513,7 +2454,7 @@ describe("POST /v1/plugins/:name/diff", () => {
     });
 
     await expect(
-      invokeDiff({ pathParams: { name: "level-up" } }),
+      diffHandler({ pathParams: { name: "level-up" } }),
     ).rejects.toBeInstanceOf(ServiceUnavailableError);
   });
 
@@ -2524,12 +2465,13 @@ describe("POST /v1/plugins/:name/diff", () => {
 
     let caught: unknown;
     try {
-      await invokeDiff({ pathParams: { name: "level-up" } });
+      await diffHandler({ pathParams: { name: "level-up" } });
     } catch (err) {
       caught = err;
     }
     expect(caught).toBeInstanceOf(InternalError);
-    expect((caught as Error).message).toContain("ECONNRESET");
+    assert(caught instanceof Error);
+    expect(caught.message).toContain("ECONNRESET");
   });
 });
 

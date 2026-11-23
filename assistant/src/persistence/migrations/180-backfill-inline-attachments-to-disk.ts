@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 import { writeAttachmentToDisk } from "../attachments-store.js";
 import type { DrizzleDb } from "../db-connection.js";
 import { getSqliteFrom } from "../db-connection.js";
@@ -21,18 +23,21 @@ export function migrateBackfillInlineAttachmentsToDisk(
 
   for (;;) {
     const rows = raw
-      .query(
+      .query<
+        {
+          id: string;
+          original_filename: string;
+          data_base64: string;
+        },
+        SQLQueryBindings[]
+      >(
         `SELECT id, original_filename, data_base64 FROM attachments
          WHERE (file_path IS NULL OR file_path = '')
            AND data_base64 != ''
            AND length(data_base64) > 0
          LIMIT ?`,
       )
-      .all(BATCH_SIZE) as Array<{
-      id: string;
-      original_filename: string;
-      data_base64: string;
-    }>;
+      .all(BATCH_SIZE);
 
     if (rows.length === 0) {
       break;

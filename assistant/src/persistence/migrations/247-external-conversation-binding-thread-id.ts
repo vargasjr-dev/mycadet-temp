@@ -23,8 +23,11 @@ export function migrateExternalConversationBindingThreadId(
   }
 
   const columns = raw
-    .query(`PRAGMA table_info(external_conversation_bindings)`)
-    .all() as Array<{ name: string }>;
+    .query<
+      { name: string },
+      []
+    >(`PRAGMA table_info(external_conversation_bindings)`)
+    .all();
   if (!columns.some((column) => column.name === "external_thread_id")) {
     raw.exec(
       `ALTER TABLE external_conversation_bindings ADD COLUMN external_thread_id TEXT`,

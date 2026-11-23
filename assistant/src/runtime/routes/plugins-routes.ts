@@ -171,7 +171,7 @@ const pluginInfoSchema = z.object({
     ),
 });
 
-const pluginsListResponseSchema = z.object({
+export const pluginsListResponseSchema = z.object({
   plugins: z.array(pluginInfoSchema),
   categoryCounts: z
     .record(z.string(), z.number())
@@ -253,7 +253,7 @@ const pluginSearchMatchSchema = z.object({
   source: pluginMatchSourceSchema,
 });
 
-const pluginsSearchResponseSchema = z.object({
+export const pluginsSearchResponseSchema = z.object({
   query: z
     .string()
     .describe("Echo of the requested query (ECMAScript regex source)."),
@@ -263,7 +263,7 @@ const pluginsSearchResponseSchema = z.object({
     .describe("Directory matches, sorted alphabetically by name."),
 });
 
-const pluginUninstallResponseSchema = z.object({
+export const pluginUninstallResponseSchema = z.object({
   name: z
     .string()
     .describe(
@@ -284,7 +284,7 @@ const pluginUninstallResponseSchema = z.object({
     ),
 });
 
-const pluginDetailsResponseSchema = z.object({
+export const pluginDetailsResponseSchema = z.object({
   name: z
     .string()
     .describe("Install name. Matches `assistant plugins install <name>`."),
@@ -378,7 +378,7 @@ const pluginInstallRequestSchema = z.object({
     ),
 });
 
-const pluginInstallResponseSchema = z.object({
+export const pluginInstallResponseSchema = z.object({
   ok: z.literal(true),
   name: z.string().describe("Install name that was materialized."),
   target: z
@@ -553,7 +553,7 @@ const pluginSurfacesSchema = z
     "Surfaces the installed copy contributes, read from its on-disk tree.",
   );
 
-const pluginInspectResponseSchema = z.object({
+export const pluginInspectResponseSchema = z.object({
   name: z
     .string()
     .describe("Install name. Matches `assistant plugins install <name>`."),
@@ -616,7 +616,7 @@ const pluginUpgradeRequestSchema = z.object({
     ),
 });
 
-const pluginUpgradeResponseSchema = z.object({
+export const pluginUpgradeResponseSchema = z.object({
   name: z.string().describe("Install name that was (or would be) upgraded."),
   outcome: z
     .enum(["upgraded", "already-up-to-date", "would-upgrade"])

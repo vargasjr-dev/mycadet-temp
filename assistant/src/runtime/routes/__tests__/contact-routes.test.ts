@@ -12,7 +12,6 @@
  * guardian name override derive from the gateway guardian id set, and that a
  * relay failure fails closed (surfaces an error) instead of reading local ACL.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
@@ -20,6 +19,8 @@ import {
   IpcConnectError,
 } from "@mycadet/gateway-client/ipc-client";
 import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 let ipcCalls: { method: string; params?: Record<string, unknown> }[] = [];
 let ipcResult: unknown = {};
@@ -178,7 +179,7 @@ describe("contacts read API relays from the gateway", () => {
     expect(getGuardianContactIdsMock).not.toHaveBeenCalled();
     expect(contact.interactionCount).toBe(7);
     expect(contact.lastInteraction).toBe(1900);
-    const channel = contact.channels[0] as Record<string, unknown>;
+    const channel = jsonObjectSchema.parse(contact.channels[0]);
     expect(channel.status).toBe("active");
     expect(channel.policy).toBe("allow");
     expect(channel.verifiedAt).toBe(1700);
@@ -268,7 +269,7 @@ describe("contacts read API relays from the gateway", () => {
     expect(result.contact.role).toBe("guardian");
     expect(result.contact.displayName).toBe("guardian:Alice");
     expect(result.contact.interactionCount).toBe(7);
-    const channel = result.contact.channels[0] as Record<string, unknown>;
+    const channel = jsonObjectSchema.parse(result.contact.channels[0]);
     expect(channel.status).toBe("active");
     expect(channel.externalUserId).toBe("+15550100");
     expect(contactStoreReadGuard).not.toHaveBeenCalled();
@@ -394,7 +395,7 @@ describe("filtered/native contact reads: daemon filters, gateway hydrates teleme
       (contact as { autoApproveThreshold?: string | null })
         .autoApproveThreshold,
     ).toBe("high");
-    const channel = contact.channels[0] as Record<string, unknown>;
+    const channel = jsonObjectSchema.parse(contact.channels[0]);
     expect(channel.interactionCount).toBe(11);
     expect(channel.lastSeenAt).toBe(9100);
     expect(channel.lastInteraction).toBe(9200);
@@ -426,7 +427,7 @@ describe("filtered/native contact reads: daemon filters, gateway hydrates teleme
       (contact as { autoApproveThreshold?: string | null })
         .autoApproveThreshold,
     ).toBeNull();
-    const channel = contact.channels[0] as Record<string, unknown>;
+    const channel = jsonObjectSchema.parse(contact.channels[0]);
     expect(channel.interactionCount).toBe(0);
     expect(channel.lastSeenAt).toBeNull();
     expect(contact.displayName).toBe("Bob");

@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 import type { DrizzleDb } from "../db-connection.js";
 import { getSqliteFrom } from "../db-connection.js";
 
@@ -84,7 +86,7 @@ export function migrate231RepairMemoryGraphEventDates(
 ): void {
   const raw = getSqliteFrom(database);
   const rows = raw
-    .query(
+    .query<GraphNodeEventDateRow, SQLQueryBindings[]>(
       /*sql*/ `
         SELECT id, created, event_date, content
         FROM memory_graph_nodes
@@ -93,10 +95,7 @@ export function migrate231RepairMemoryGraphEventDates(
           AND CAST(strftime('%Y', event_date / 1000, 'unixepoch') AS INTEGER) IN (?, ?)
       `,
     )
-    .all(
-      REPAIR_CREATED_YEAR,
-      ...CORRUPT_EVENT_YEARS,
-    ) as GraphNodeEventDateRow[];
+    .all(REPAIR_CREATED_YEAR, ...CORRUPT_EVENT_YEARS);
 
   const repairs: EventDateRepair[] = [];
   for (const row of rows) {

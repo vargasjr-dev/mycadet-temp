@@ -117,7 +117,7 @@ export function migrateNormalizeUserFileByPrincipal(database: DrizzleDb): void {
     raw.exec("BEGIN");
 
     const principals = raw
-      .query(
+      .query<{ principal_id: string }, []>(
         /*sql*/ `
         SELECT principal_id
         FROM contacts
@@ -126,7 +126,7 @@ export function migrateNormalizeUserFileByPrincipal(database: DrizzleDb): void {
         HAVING COUNT(DISTINCT COALESCE(user_file, '')) > 1
       `,
       )
-      .all() as Array<{ principal_id: string }>;
+      .all();
 
     // Fetch all non-null candidates and rank in JS. The auto-increment
     // classification is a regex that SQLite's GLOB can't express cleanly

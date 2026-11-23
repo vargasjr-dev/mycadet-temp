@@ -3500,13 +3500,20 @@ async function generateLlmSuggestion(
   return firstLine;
 }
 
+const suggestionResponseSchema = z.object({
+  suggestion: z.string().nullable(),
+  messageId: z.string().nullable(),
+  source: z.string(),
+  stale: z.boolean().optional(),
+});
+
 export async function handleGetSuggestion(
   { queryParams }: RouteHandlerArgs,
   deps: {
     suggestionCache: Map<string, string>;
     suggestionInFlight: Map<string, Promise<string | null>>;
   },
-): Promise<Record<string, unknown>> {
+): Promise<z.infer<typeof suggestionResponseSchema>> {
   const noSuggestion = {
     suggestion: null,
     messageId: null,
@@ -3945,12 +3952,7 @@ export const ROUTES: RouteDefinition[] = [
           "Optional. Latest assistant message ID the client has seen — used to detect staleness.",
       },
     ],
-    responseBody: z.object({
-      suggestion: z.string().nullable(),
-      messageId: z.string().nullable(),
-      source: z.string(),
-      stale: z.boolean().optional(),
-    }),
+    responseBody: suggestionResponseSchema,
     handler: async (args) =>
       handleGetSuggestion(args, {
         suggestionCache,

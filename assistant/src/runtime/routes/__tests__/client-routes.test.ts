@@ -13,8 +13,9 @@
  * clientId (a report racing an SSE reconnect) and a connected-but-unowned one
  * are distinct paths that both answer `{ recorded: false }`.
  */
-
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // ── Module mocks (must be set up before importing the route) ──────────────
 
@@ -50,17 +51,13 @@ function findHandler(operationId: string): RouteDefinition["handler"] {
   return route.handler;
 }
 
-type ListClientsResponse = {
-  clients: Array<{
-    clientId: string;
-    interfaceId: string;
-    capabilities: string[];
-    machineName?: string;
-    connectedAt: string;
-    lastActiveAt: string;
-    degraded?: boolean;
-  }>;
-};
+const listClientsResponseSchema = z.object({
+  clients: z.array(
+    z.object({ clientId: z.string(), degraded: z.boolean().optional() }),
+  ),
+});
+
+const presenceResponseSchema = z.object({ recorded: z.boolean() });
 
 function registerClient(args: {
   clientId: string;
@@ -88,9 +85,11 @@ describe("list_clients route — same-user filter", () => {
     registerClient({ clientId: "client-B1", actorPrincipalId: "user-B" });
 
     const handler = findHandler("list_clients");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-A" },
-    }) as ListClientsResponse;
+    const result = listClientsResponseSchema.parse(
+      handler({
+        headers: { "x-cadet-actor-principal-id": "user-A" },
+      }),
+    );
 
     const ids = result.clients.map((c) => c.clientId).sort();
     expect(ids).toEqual(["client-A1", "client-A2"]);
@@ -101,9 +100,11 @@ describe("list_clients route — same-user filter", () => {
     registerClient({ clientId: "client-B1", actorPrincipalId: "user-B" });
 
     const handler = findHandler("list_clients");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-B" },
-    }) as ListClientsResponse;
+    const result = listClientsResponseSchema.parse(
+      handler({
+        headers: { "x-cadet-actor-principal-id": "user-B" },
+      }),
+    );
 
     const ids = result.clients.map((c) => c.clientId);
     expect(ids).toEqual(["client-B1"]);
@@ -117,9 +118,11 @@ describe("list_clients route — same-user filter", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("list_clients");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-A" },
-    }) as ListClientsResponse;
+    const result = listClientsResponseSchema.parse(
+      handler({
+        headers: { "x-cadet-actor-principal-id": "user-A" },
+      }),
+    );
 
     const ids = result.clients.map((c) => c.clientId);
     expect(ids).toEqual(["client-A1"]);
@@ -129,7 +132,7 @@ describe("list_clients route — same-user filter", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("list_clients");
-    const result = handler({}) as ListClientsResponse;
+    const result = listClientsResponseSchema.parse(handler({}));
 
     expect(result.clients).toEqual([]);
   });
@@ -144,9 +147,11 @@ describe("list_clients route — same-user filter", () => {
     });
 
     const handler = findHandler("list_clients");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-A" },
-    }) as ListClientsResponse;
+    const result = listClientsResponseSchema.parse(
+      handler({
+        headers: { "x-cadet-actor-principal-id": "user-A" },
+      }),
+    );
 
     const ids = result.clients.map((c) => c.clientId).sort();
     expect(ids).toEqual(["client-A1", "client-B1", "client-noprincipal"]);
@@ -156,9 +161,11 @@ describe("list_clients route — same-user filter", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("list_clients");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-A" },
-    }) as ListClientsResponse;
+    const result = listClientsResponseSchema.parse(
+      handler({
+        headers: { "x-cadet-actor-principal-id": "user-A" },
+      }),
+    );
 
     expect(result.clients).toHaveLength(1);
     expect(result.clients[0].degraded).toBe(false);
@@ -175,13 +182,15 @@ describe("report_client_presence route", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_client_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { state: "active" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { state: "active" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: true });
     expect(assistantEventHub.getClientById("client-A1")?.presence?.state).toBe(
@@ -193,13 +202,15 @@ describe("report_client_presence route", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_client_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-gone",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { state: "idle" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-gone",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { state: "idle" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
     expect(
@@ -219,13 +230,15 @@ describe("report_client_presence route", () => {
       body: { state: "active" },
     });
 
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-B",
-      },
-      body: { state: "away" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-B",
+        },
+        body: { state: "away" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
     expect(assistantEventHub.getClientById("client-A1")?.presence?.state).toBe(
@@ -237,10 +250,12 @@ describe("report_client_presence route", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_client_presence");
-    const result = handler({
-      headers: { "x-cadet-client-id": "client-A1" },
-      body: { state: "active" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: { "x-cadet-client-id": "client-A1" },
+        body: { state: "active" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
     expect(
@@ -255,13 +270,15 @@ describe("report_client_presence route", () => {
     });
 
     const handler = findHandler("report_client_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-noprincipal",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { state: "active" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-noprincipal",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { state: "active" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
     expect(
@@ -274,13 +291,15 @@ describe("report_client_presence route", () => {
     registerClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_client_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-B",
-      },
-      body: { state: "idle" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-B",
+        },
+        body: { state: "idle" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: true });
     expect(assistantEventHub.getClientById("client-A1")?.presence?.state).toBe(
@@ -292,13 +311,15 @@ describe("report_client_presence route", () => {
     fakeHttpAuthDisabled = true;
 
     const handler = findHandler("report_client_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-gone",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { state: "idle" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-gone",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { state: "idle" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
   });
@@ -356,13 +377,15 @@ describe("report_web_presence route", () => {
     registerWebClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_web_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { visible: true, focusedConversationId: "conv-1" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { visible: true, focusedConversationId: "conv-1" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: true });
     expect(
@@ -377,13 +400,15 @@ describe("report_web_presence route", () => {
     registerWebClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_web_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { visible: false, focusedConversationId: null },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { visible: false, focusedConversationId: null },
+      }),
+    );
 
     expect(result).toEqual({ recorded: true });
     expect(
@@ -396,13 +421,15 @@ describe("report_web_presence route", () => {
 
   test("returns recorded false when the reported client is not connected", () => {
     const handler = findHandler("report_web_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-gone",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { visible: true, focusedConversationId: "conv-1" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-gone",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { visible: true, focusedConversationId: "conv-1" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
   });
@@ -411,13 +438,15 @@ describe("report_web_presence route", () => {
     registerWebClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_web_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-B",
-      },
-      body: { visible: true, focusedConversationId: "conv-1" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-B",
+        },
+        body: { visible: true, focusedConversationId: "conv-1" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
     expect(
@@ -429,13 +458,15 @@ describe("report_web_presence route", () => {
     registerWebClient({ clientId: "client-noprincipal" });
 
     const handler = findHandler("report_web_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-noprincipal",
-        "x-cadet-actor-principal-id": "user-A",
-      },
-      body: { visible: true, focusedConversationId: "conv-1" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-noprincipal",
+          "x-cadet-actor-principal-id": "user-A",
+        },
+        body: { visible: true, focusedConversationId: "conv-1" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: false });
     expect(
@@ -448,13 +479,15 @@ describe("report_web_presence route", () => {
     registerWebClient({ clientId: "client-A1", actorPrincipalId: "user-A" });
 
     const handler = findHandler("report_web_presence");
-    const result = handler({
-      headers: {
-        "x-cadet-client-id": "client-A1",
-        "x-cadet-actor-principal-id": "user-B",
-      },
-      body: { visible: true, focusedConversationId: "conv-1" },
-    }) as { recorded: boolean };
+    const result = presenceResponseSchema.parse(
+      handler({
+        headers: {
+          "x-cadet-client-id": "client-A1",
+          "x-cadet-actor-principal-id": "user-B",
+        },
+        body: { visible: true, focusedConversationId: "conv-1" },
+      }),
+    );
 
     expect(result).toEqual({ recorded: true });
   });

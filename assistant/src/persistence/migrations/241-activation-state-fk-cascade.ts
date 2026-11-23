@@ -11,10 +11,11 @@ import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 export function migrateActivationStateFkCascade(database: DrizzleDb): void {
   const raw = getSqliteFrom(database);
   const row = raw
-    .query(
-      `SELECT sql FROM sqlite_master WHERE type='table' AND name='activation_state'`,
-    )
-    .get() as { sql: string } | null;
+    .query<
+      { sql: string },
+      []
+    >(`SELECT sql FROM sqlite_master WHERE type='table' AND name='activation_state'`)
+    .get();
   if (!row) {
     return;
   }

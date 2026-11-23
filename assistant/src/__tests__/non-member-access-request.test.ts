@@ -256,10 +256,7 @@ describe("non-member access request notification", () => {
     expect(emitSignalCalls.length).toBe(1);
     expect(emitSignalCalls[0].sourceEventName).toBe("ingress.access_request");
     expect(emitSignalCalls[0].sourceChannel).toBe("telegram");
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.actorExternalId).toBe("user-unknown-456");
     expect(payload.actorDisplayName).toBe("Alice Unknown");
 
@@ -465,10 +462,7 @@ describe("non-member access request notification", () => {
 
     // Notification signal emitted
     expect(emitSignalCalls.length).toBe(1);
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     // Falls back to cadet anchor, not the phone binding
     expect(payload.guardianBindingChannel).toBe("cadet");
 
@@ -590,10 +584,7 @@ describe("access-request-helper unit tests", () => {
     expect(pending[0].guardianPrincipalId).toBeDefined();
 
     // Signal payload includes anchored fallback channel
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.guardianBindingChannel).toBe("cadet");
   });
 
@@ -691,10 +682,7 @@ describe("access-request-helper unit tests", () => {
     // Should use the Telegram binding, not the cadet anchor
     expect(pending[0].guardianExternalUserId).toBe("guardian-tg");
 
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.guardianBindingChannel).toBe("telegram");
   });
 
@@ -732,10 +720,7 @@ describe("access-request-helper unit tests", () => {
     expect(pending[0].guardianPrincipalId).toBe(anchorPrincipalId);
     expect(pending[0].guardianExternalUserId).toBe("guardian-tg");
 
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.guardianBindingChannel).toBe("telegram");
   });
 
@@ -758,10 +743,7 @@ describe("access-request-helper unit tests", () => {
     // Decidable via the gateway-served cadet anchor principal.
     expect(pending[0].guardianPrincipalId).toBe(anchorPrincipalId);
 
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.guardianBindingChannel).toBe("cadet");
   });
 
@@ -800,10 +782,7 @@ describe("access-request-helper unit tests", () => {
     expect(result.notified).toBe(true);
     expect(emitSignalCalls.length).toBe(1);
 
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.sourceChannel).toBe("phone");
     expect(payload.actorDisplayName).toBe("Alice Caller");
     expect(payload.actorExternalId).toBe("+15559998888");
@@ -830,10 +809,7 @@ describe("access-request-helper unit tests", () => {
     expect(result.notified).toBe(true);
     expect(emitSignalCalls.length).toBe(1);
 
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.requestCode).toBeDefined();
     expect(typeof payload.requestCode).toBe("string");
     expect((payload.requestCode as string).length).toBe(6);
@@ -854,10 +830,7 @@ describe("access-request-helper unit tests", () => {
     expect(result.notified).toBe(true);
     expect(emitSignalCalls.length).toBe(1);
 
-    const payload = emitSignalCalls[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.previousMemberStatus).toBe("pending");
   });
 
@@ -1204,10 +1177,10 @@ describe("maybeNotifyGuardianOfAdmittedContact", () => {
 
     expect(emitSignalCalls.length).toBe(1);
     const signal = emitSignalCalls[0];
-    expect((signal.contextPayload as Record<string, unknown>).trigger).toBe(
+    expect(jsonObjectSchema.parse(signal.contextPayload).trigger).toBe(
       "admitted",
     );
-    expect((signal.attentionHints as Record<string, unknown>).urgency).toBe(
+    expect(jsonObjectSchema.parse(signal.attentionHints).urgency).toBe(
       "medium",
     );
   });
@@ -1303,12 +1276,10 @@ describe("maybeNotifyGuardianOfAdmittedContact", () => {
     await notifyGuardianOfAccessRequest(baseParams);
     expect(emitSignalCalls.length).toBe(1);
     const signal = emitSignalCalls[0];
-    expect(
-      "trigger" in (signal.contextPayload as Record<string, unknown>),
-    ).toBe(false);
-    expect((signal.attentionHints as Record<string, unknown>).urgency).toBe(
-      "high",
+    expect("trigger" in jsonObjectSchema.parse(signal.contextPayload)).toBe(
+      false,
     );
+    expect(jsonObjectSchema.parse(signal.attentionHints).urgency).toBe("high");
     const requests = listRequests({
       kind: "access_request",
       requesterExternalUserId: baseParams.actorExternalId,

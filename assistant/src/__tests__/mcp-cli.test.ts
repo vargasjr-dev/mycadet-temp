@@ -14,6 +14,7 @@ import {
 import { Command } from "commander";
 
 import { installFastTimers } from "./fast-timers.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Accelerated clocks: poll timers fire as microtasks.
 let restoreTimers: () => void;
@@ -336,10 +337,9 @@ describe("assistant mcp add", () => {
       (c) => c[0] === "internal_mcp_add",
     );
     expect(addCall).toBeDefined();
-    const body = (addCall![1] as Record<string, unknown>).body as Record<
-      string,
-      unknown
-    >;
+    const body = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(addCall![1]).body,
+    );
     expect(body.name).toBe("test-http");
     expect(body.transportType).toBe("streamable-http");
     expect(body.url).toBe("https://example.com/mcp");
@@ -363,10 +363,9 @@ describe("assistant mcp add", () => {
       (c) => c[0] === "internal_mcp_add",
     );
     expect(addCall).toBeDefined();
-    const body = (addCall![1] as Record<string, unknown>).body as Record<
-      string,
-      unknown
-    >;
+    const body = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(addCall![1]).body,
+    );
     expect(body.transportType).toBe("stdio");
     expect(body.command).toBe("npx");
     expect(body.args).toEqual(["-y", "some-server"]);
@@ -463,10 +462,9 @@ describe("assistant mcp remove", () => {
       (c) => c[0] === "internal_mcp_remove",
     );
     expect(removeCall).toBeDefined();
-    const body = (removeCall![1] as Record<string, unknown>).body as Record<
-      string,
-      unknown
-    >;
+    const body = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(removeCall![1]).body,
+    );
     expect(body.name).toBe("my-server");
   });
 

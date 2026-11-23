@@ -25,15 +25,15 @@ const routeFor = (operationId: string) => {
 
 describe("sequence route body validation", () => {
   test("sequence_get rejects a missing id", () => {
-    expect(() =>
-      routeFor("sequence_get").handler({ body: {} as Record<string, unknown> }),
-    ).toThrow(BadRequestError);
+    expect(() => routeFor("sequence_get").handler({ body: {} })).toThrow(
+      BadRequestError,
+    );
   });
 
   test("sequence_list rejects a status outside the enum", () => {
     expect(() =>
       routeFor("sequence_list").handler({
-        body: { status: "bogus" } as Record<string, unknown>,
+        body: { status: "bogus" },
       }),
     ).toThrow(BadRequestError);
   });
@@ -41,7 +41,7 @@ describe("sequence route body validation", () => {
   test("sequence_guardrails_set rejects a body missing value", () => {
     expect(() =>
       routeFor("sequence_guardrails_set").handler({
-        body: { key: "dailySendCap" } as Record<string, unknown>,
+        body: { key: "dailySendCap" },
       }),
     ).toThrow(BadRequestError);
   });
@@ -49,7 +49,7 @@ describe("sequence route body validation", () => {
   test("the strict schema rejects unknown keys", () => {
     expect(() =>
       routeFor("sequence_get").handler({
-        body: { id: "seq_1", extra: "nope" } as Record<string, unknown>,
+        body: { id: "seq_1", extra: "nope" },
       }),
     ).toThrow(BadRequestError);
   });

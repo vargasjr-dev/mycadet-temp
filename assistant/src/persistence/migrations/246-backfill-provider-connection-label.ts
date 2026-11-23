@@ -56,8 +56,8 @@ export function migrateBackfillProviderConnectionLabel(
   // 244 hasn't run). Treat as no-op + don't checkpoint, so the backfill
   // runs the next time it gets a chance against a populated schema.
   const columns = raw
-    .query(`PRAGMA table_info(provider_connections)`)
-    .all() as Array<{ name: string }>;
+    .query<{ name: string }, []>(`PRAGMA table_info(provider_connections)`)
+    .all();
   if (!columns.some((c) => c.name === "label")) {
     return;
   }

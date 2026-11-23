@@ -15,9 +15,14 @@ const log = getLogger("migration-294");
 export function migrateDropExternalUserId(database: DrizzleDb): void {
   const raw = getSqliteFrom(database);
 
-  const cols = raw.prepare("PRAGMA table_info(contact_channels)").all() as {
-    name: string;
-  }[];
+  const cols = raw
+    .prepare<
+      {
+        name: string;
+      },
+      []
+    >("PRAGMA table_info(contact_channels)")
+    .all();
   const hasColumn = cols.some((c) => c.name === "external_user_id");
 
   if (!hasColumn) {

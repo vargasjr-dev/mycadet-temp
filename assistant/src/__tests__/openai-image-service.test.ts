@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Mock openai + openai/uploads — must be before importing the service
 // ---------------------------------------------------------------------------
@@ -245,11 +247,11 @@ describe("generateImageOpenAI", () => {
     );
 
     expect(lastConstructorOptions).not.toBeNull();
-    expect((lastConstructorOptions as Record<string, unknown>).apiKey).toBe(
+    expect(jsonObjectSchema.parse(lastConstructorOptions).apiKey).toBe(
       "my-direct-key",
     );
     expect(
-      (lastConstructorOptions as Record<string, unknown>).baseURL,
+      jsonObjectSchema.parse(lastConstructorOptions).baseURL,
     ).toBeUndefined();
   });
 
@@ -266,10 +268,10 @@ describe("generateImageOpenAI", () => {
     );
 
     expect(lastConstructorOptions).not.toBeNull();
-    expect((lastConstructorOptions as Record<string, unknown>).apiKey).toBe(
+    expect(jsonObjectSchema.parse(lastConstructorOptions).apiKey).toBe(
       "proxy-key",
     );
-    expect((lastConstructorOptions as Record<string, unknown>).baseURL).toBe(
+    expect(jsonObjectSchema.parse(lastConstructorOptions).baseURL).toBe(
       "https://proxy.example.com/v1",
     );
   });

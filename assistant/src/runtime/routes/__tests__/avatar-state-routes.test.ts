@@ -11,6 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import * as realSyncEvents from "../../sync/resource-sync-events.js";
 
 /** The origin id handed to the fan-out, one entry per announced change. */
@@ -25,7 +27,7 @@ mock.module("../../sync/resource-sync-events.js", () => ({
 import { AvatarState } from "@mycadet/avatar-manifest";
 
 import { writeManifest } from "../../../avatar/avatar-manifest.js";
-import { ROUTES } from "../avatar-routes.js";
+import { avatarStateSchema, ROUTES } from "../avatar-routes.js";
 import type { RouteHandlerArgs } from "../types.js";
 
 const VALID_TRAITS = { bodyShape: "round", eyeStyle: "happy", color: "blue" };
@@ -35,6 +37,16 @@ const RED_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVQImWM4ISf3HxkzkC4AAEG4IDHG8wOiAAAAAElFTkSuQmCC",
   "base64",
 );
+
+const okResponseSchema = z.object({ ok: z.boolean() });
+const removeResponseSchema = okResponseSchema.extend({
+  hadAvatar: z.boolean(),
+});
+const avatarResponseSchema = z.object({
+  exists: z.boolean(),
+  path: z.string().optional(),
+  base64: z.string().optional(),
+});
 
 const IMAGE_FILENAME = "avatar-image.png";
 const TRAITS_FILENAME = "character-traits.json";
@@ -47,9 +59,7 @@ function getHandler(operationId: string) {
   if (!route) {
     throw new Error(`${operationId} route not registered`);
   }
-  return route.handler as (
-    args: RouteHandlerArgs,
-  ) => unknown | Promise<unknown>;
+  return route.handler;
 }
 
 /** Resolve the GET /avatar/state handler from the route registry. */
@@ -60,9 +70,8 @@ function getStateHandler() {
   }
   expect(route.endpoint).toBe("avatar/state");
   expect(route.method).toBe("GET");
-  return route.handler as (
-    args: RouteHandlerArgs,
-  ) => AvatarState | Promise<AvatarState>;
+  return async (args: RouteHandlerArgs) =>
+    avatarStateSchema.parse(await route.handler(args));
 }
 
 describe("GET /avatar/state", () => {
@@ -115,9 +124,9 @@ describe("GET /avatar/state", () => {
 
     // Self-heal: the derived state is now persisted so subsequent reads hit
     // the manifest directly rather than re-inferring from legacy files.
-    const persisted = JSON.parse(
-      readFileSync(join(avatarDir, MANIFEST_FILENAME), "utf-8"),
-    ) as AvatarState;
+    const persisted = avatarStateSchema.parse(
+      JSON.parse(readFileSync(join(avatarDir, MANIFEST_FILENAME), "utf-8")),
+    );
     expect(persisted).toEqual(result);
   });
 
@@ -131,9 +140,9 @@ describe("GET /avatar/state", () => {
     expect(result.image).not.toBeNull();
     expect(result.image?.etag).toMatch(/^[0-9a-f]{16}$/);
 
-    const persisted = JSON.parse(
-      readFileSync(join(avatarDir, MANIFEST_FILENAME), "utf-8"),
-    ) as AvatarState;
+    const persisted = avatarStateSchema.parse(
+      JSON.parse(readFileSync(join(avatarDir, MANIFEST_FILENAME), "utf-8")),
+    );
     expect(persisted).toEqual(result);
   });
 
@@ -188,9 +197,9 @@ describe("GET /avatar/state", () => {
 
     const result = await getStateHandler()({});
     expect(result.accent).toEqual({ hex: "#c81e1e", source: "derived" });
-    const persisted = JSON.parse(
-      readFileSync(join(avatarDir, MANIFEST_FILENAME), "utf-8"),
-    ) as AvatarState;
+    const persisted = avatarStateSchema.parse(
+      JSON.parse(readFileSync(join(avatarDir, MANIFEST_FILENAME), "utf-8")),
+    );
     expect(persisted).toEqual(result);
   });
 
@@ -258,20 +267,14 @@ describe("avatar write/remove handlers", () => {
 
   const path = (name: string) => join(avatarDir, name);
 
-  interface ManifestShape {
-    kind: string;
-    traits: Record<string, unknown> | null;
-    source: string | null;
-    image: { updatedAt: string; etag: string } | null;
-    accent: { hex: string; source: string } | null;
-  }
-
-  const readManifestFile = (): ManifestShape | null => {
+  const readManifestFile = () => {
     const manifestPath = path(MANIFEST_FILENAME);
     if (!existsSync(manifestPath)) {
       return null;
     }
-    return JSON.parse(readFileSync(manifestPath, "utf-8")) as ManifestShape;
+    return avatarStateSchema.parse(
+      JSON.parse(readFileSync(manifestPath, "utf-8")),
+    );
   };
 
   const uploadRed = (headers?: Record<string, string>) =>
@@ -367,9 +370,11 @@ describe("avatar write/remove handlers", () => {
       writeFileSync(path(ASCII_FILENAME), "ascii art");
 
       const handler = getHandler("avatar_upload_image");
-      const result = (await handler({
-        body: { content: PNG_BYTES.toString("base64"), encoding: "base64" },
-      })) as { ok: boolean };
+      const result = okResponseSchema.parse(
+        await handler({
+          body: { content: PNG_BYTES.toString("base64"), encoding: "base64" },
+        }),
+      );
       expect(result.ok).toBe(true);
 
       expect(existsSync(path(IMAGE_FILENAME))).toBe(true);
@@ -397,9 +402,11 @@ describe("avatar write/remove handlers", () => {
 
     test("accepts a base64 payload without an explicit encoding field", async () => {
       const handler = getHandler("avatar_upload_image");
-      const result = (await handler({
-        body: { content: PNG_BYTES.toString("base64") },
-      })) as { ok: boolean };
+      const result = okResponseSchema.parse(
+        await handler({
+          body: { content: PNG_BYTES.toString("base64") },
+        }),
+      );
       expect(result.ok).toBe(true);
       expect(readManifestFile()!.kind).toBe("image");
     });
@@ -470,9 +477,11 @@ describe("avatar write/remove handlers", () => {
   describe("POST /avatar/accent", () => {
     test("sets a custom accent over an image and returns the state as written", async () => {
       await uploadRed();
-      const result = (await getHandler("avatar_set_accent")({
-        body: { hex: " #12AB34 " },
-      })) as AvatarState;
+      const result = avatarStateSchema.parse(
+        await getHandler("avatar_set_accent")({
+          body: { hex: " #12AB34 " },
+        }),
+      );
       expect(result.kind).toBe("image");
       expect(result.accent).toEqual({ hex: "#12ab34", source: "custom" });
       expect(readManifestFile()!.accent).toEqual({
@@ -486,9 +495,11 @@ describe("avatar write/remove handlers", () => {
     test("null hands the accent back to the colour read out of the image", async () => {
       await uploadRed();
       await getHandler("avatar_set_accent")({ body: { hex: "#12ab34" } });
-      const result = (await getHandler("avatar_set_accent")({
-        body: { hex: null },
-      })) as AvatarState;
+      const result = avatarStateSchema.parse(
+        await getHandler("avatar_set_accent")({
+          body: { hex: null },
+        }),
+      );
       expect(result.accent).toEqual({ hex: "#c81e1e", source: "derived" });
     });
 
@@ -519,10 +530,7 @@ describe("avatar write/remove handlers", () => {
       writeFileSync(path(ASCII_FILENAME), "ascii art");
 
       const handler = getHandler("avatar_remove");
-      const result = (await handler({ body: {} })) as {
-        ok: boolean;
-        hadAvatar: boolean;
-      };
+      const result = removeResponseSchema.parse(await handler({ body: {} }));
       expect(result.ok).toBe(true);
       expect(result.hadAvatar).toBe(true);
 
@@ -552,10 +560,7 @@ describe("avatar write/remove handlers", () => {
       expect(existsSync(path(IMAGE_FILENAME))).toBe(false);
 
       const handler = getHandler("avatar_remove");
-      const result = (await handler({ body: {} })) as {
-        ok: boolean;
-        hadAvatar: boolean;
-      };
+      const result = removeResponseSchema.parse(await handler({ body: {} }));
       expect(result.ok).toBe(true);
       expect(result.hadAvatar).toBe(true);
       expect(existsSync(path(TRAITS_FILENAME))).toBe(false);
@@ -566,10 +571,7 @@ describe("avatar write/remove handlers", () => {
 
     test("reports hadAvatar:false and leaves no manifest when nothing exists", async () => {
       const handler = getHandler("avatar_remove");
-      const result = (await handler({ body: {} })) as {
-        ok: boolean;
-        hadAvatar: boolean;
-      };
+      const result = removeResponseSchema.parse(await handler({ body: {} }));
       expect(result.ok).toBe(true);
       expect(result.hadAvatar).toBe(false);
       expect(readManifestFile()).toBeNull();
@@ -613,12 +615,6 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
 
   const path = (name: string) => join(avatarDir, name);
 
-  interface GetResult {
-    exists: boolean;
-    path?: string;
-    base64?: string;
-  }
-
   test("returns the PNG for an image manifest", async () => {
     writeFileSync(path(IMAGE_FILENAME), Buffer.from("png bytes"));
     const state: AvatarState = {
@@ -630,7 +626,9 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
     };
     writeManifest(state, avatarDir);
 
-    const result = (await getHandler("avatar_get")({})) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({}),
+    );
     expect(result.exists).toBe(true);
     expect(result.path).toBe(path(IMAGE_FILENAME));
   });
@@ -646,9 +644,11 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
     };
     writeManifest(state, avatarDir);
 
-    const result = (await getHandler("avatar_get")({
-      queryParams: { format: "base64" },
-    })) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({
+        queryParams: { format: "base64" },
+      }),
+    );
     expect(result.exists).toBe(true);
     expect(result.base64).toBe(Buffer.from("png bytes").toString("base64"));
     expect(result.path).toBeUndefined();
@@ -667,7 +667,9 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
     };
     writeManifest(state, avatarDir);
 
-    const result = (await getHandler("avatar_get")({})) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({}),
+    );
     expect(result.exists).toBe(true);
     expect(result.path).toBe(path(IMAGE_FILENAME));
   });
@@ -686,7 +688,9 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
     };
     writeManifest(state, avatarDir);
 
-    const result = (await getHandler("avatar_get")({})) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({}),
+    );
     expect(result.exists).toBe(true);
     expect(result.path).toBe(path(IMAGE_FILENAME));
   });
@@ -697,7 +701,9 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
       avatarDir,
     );
 
-    const result = (await getHandler("avatar_get")({})) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({}),
+    );
     expect(result.exists).toBe(false);
     expect(result.path).toBeUndefined();
   });
@@ -706,19 +712,23 @@ describe("GET /avatar/get (manifest-driven precedence)", () => {
     writeFileSync(path(IMAGE_FILENAME), Buffer.from("png bytes"));
     expect(existsSync(path(MANIFEST_FILENAME))).toBe(false);
 
-    const result = (await getHandler("avatar_get")({})) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({}),
+    );
     expect(result.exists).toBe(true);
     expect(result.path).toBe(path(IMAGE_FILENAME));
 
     // Self-heal: the manifest is now written so the next read is manifest-only.
-    const persisted = JSON.parse(
-      readFileSync(path(MANIFEST_FILENAME), "utf-8"),
-    ) as AvatarState;
+    const persisted = avatarStateSchema.parse(
+      JSON.parse(readFileSync(path(MANIFEST_FILENAME), "utf-8")),
+    );
     expect(persisted.kind).toBe("image");
   });
 
   test("returns exists:false for an empty workspace (no manifest, no files)", async () => {
-    const result = (await getHandler("avatar_get")({})) as GetResult;
+    const result = avatarResponseSchema.parse(
+      await getHandler("avatar_get")({}),
+    );
     expect(result.exists).toBe(false);
   });
 

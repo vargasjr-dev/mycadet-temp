@@ -337,7 +337,7 @@ function handleCharacterAscii({ queryParams, body }: RouteHandlerArgs) {
 }
 
 /** The wire shape of `avatar.json`, shared by every route that answers with it. */
-const avatarStateSchema = z.object({
+export const avatarStateSchema = z.object({
   kind: z.enum(["character", "image", "none"]),
   traits: z
     .object({

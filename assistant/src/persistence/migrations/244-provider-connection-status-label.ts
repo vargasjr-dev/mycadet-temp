@@ -13,8 +13,8 @@ export function migrateProviderConnectionStatusLabel(
   const raw = getSqliteFrom(database);
 
   const columns = raw
-    .query(`PRAGMA table_info(provider_connections)`)
-    .all() as Array<{ name: string }>;
+    .query<{ name: string }, []>(`PRAGMA table_info(provider_connections)`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   if (!columnNames.has("status")) {

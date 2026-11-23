@@ -163,11 +163,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as {
-      suggestion: string;
-      source: string;
-    };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBe("Let's do round two!");
     expect(body.source).toBe("llm");
@@ -178,8 +174,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "nonexistent-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBeNull();
   });
@@ -192,8 +187,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBeNull();
   });
@@ -221,8 +215,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBeNull();
   });
@@ -251,10 +244,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-
-    // Should return null gracefully, not a 500
-    const body = res as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
     expect(body.suggestion).toBeNull();
   });
 
@@ -277,8 +267,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as { suggestion: string };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBe("Sure, let's go!");
   });
@@ -302,8 +291,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBeNull();
   });
@@ -329,13 +317,11 @@ describe("GET /v1/suggestion", () => {
     const deps = makeDeps();
 
     // First call — should hit the LLM
-    const res1 = await handleGetSuggestion(args, deps);
-    const body1 = res1 as { suggestion: string };
+    const body1 = await handleGetSuggestion(args, deps);
     expect(body1.suggestion).toBe("Fresh suggestion");
 
     // Second call — should return from cache
-    const res2 = await handleGetSuggestion(args, deps);
-    const body2 = res2 as { suggestion: string };
+    const body2 = await handleGetSuggestion(args, deps);
     expect(body2.suggestion).toBe("Fresh suggestion");
 
     // Provider sendMessage should have been called only once
@@ -362,11 +348,7 @@ describe("GET /v1/suggestion", () => {
       messageId: "msg-asst-old",
     });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as {
-      suggestion: string | null;
-      stale: boolean;
-    };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.stale).toBe(true);
     expect(body.suggestion).toBeNull();
@@ -393,8 +375,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const res = await handleGetSuggestion(args, deps);
-    const body = res as { suggestion: string };
+    const body = await handleGetSuggestion(args, deps);
 
     expect(body.suggestion).toBe("sounds good");
   });
@@ -661,9 +642,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const response = await handleGetSuggestion(args, deps);
-
-    const body = response as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
     expect(body.suggestion).toBe("Sounds good to me");
   });
 
@@ -691,9 +670,7 @@ describe("GET /v1/suggestion", () => {
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
-    const response = await handleGetSuggestion(args, deps);
-
-    const body = response as { suggestion: string | null };
+    const body = await handleGetSuggestion(args, deps);
     expect(body.suggestion).toBe("Let's do it");
   });
 });

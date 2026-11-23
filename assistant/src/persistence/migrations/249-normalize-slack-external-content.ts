@@ -1,3 +1,5 @@
+import type { SQLQueryBindings } from "bun:sqlite";
+
 import {
   readSlackMetadata,
   type SlackMessageMetadata,
@@ -41,7 +43,7 @@ export function migrateNormalizeSlackExternalContent(
 
   for (;;) {
     const rows = raw
-      .query(
+      .query<CandidateMessageRow, SQLQueryBindings[]>(
         /*sql*/ `
           SELECT rowid, id, role, content, metadata
           FROM messages
@@ -55,7 +57,7 @@ export function migrateNormalizeSlackExternalContent(
           LIMIT ?
         `,
       )
-      .all(lastRowid, BATCH_SIZE) as CandidateMessageRow[];
+      .all(lastRowid, BATCH_SIZE);
 
     if (rows.length === 0) {
       break;

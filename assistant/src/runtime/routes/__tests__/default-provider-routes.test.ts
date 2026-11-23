@@ -9,6 +9,8 @@ import assert from "node:assert/strict";
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+
 // ── Module mocks (must come before imports) ──────────────────────────────────
 
 let managedProxyEnabled = false;
@@ -59,10 +61,9 @@ function findRoute(operationId: string): RouteDefinition {
 }
 
 async function get(): Promise<Record<string, unknown>> {
-  return (await findRoute("llm_default_provider_get").handler({})) as Record<
-    string,
-    unknown
-  >;
+  return jsonObjectSchema.parse(
+    await findRoute("llm_default_provider_get").handler({}),
+  );
 }
 
 async function put(body: RouteHandlerArgs["body"]): Promise<unknown> {
@@ -393,10 +394,7 @@ describe("PUT config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/openai/api_key", "sk-oai");
 
-    const result = (await put({ provider: "openai" })) as Record<
-      string,
-      unknown
-    >;
+    const result = jsonObjectSchema.parse(await put({ provider: "openai" }));
 
     expect(persistedDefaultProvider()).toEqual({ provider: "openai" });
     expect(result.provider).toBe("openai");
@@ -414,10 +412,7 @@ describe("PUT config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/chatgpt/access_token", "token");
 
-    const result = (await put({ provider: "chatgpt" })) as Record<
-      string,
-      unknown
-    >;
+    const result = jsonObjectSchema.parse(await put({ provider: "chatgpt" }));
 
     expect(persistedDefaultProvider()).toEqual({ provider: "chatgpt" });
     expect(result.provider).toBe("chatgpt");
@@ -434,10 +429,7 @@ describe("PUT config/llm/default-provider", () => {
   });
 
   test("dangling connection is accepted and reported via availability", async () => {
-    const result = (await put({ provider: "gemini" })) as Record<
-      string,
-      unknown
-    >;
+    const result = jsonObjectSchema.parse(await put({ provider: "gemini" }));
     expect(persistedDefaultProvider()).toEqual({ provider: "gemini" });
     expect(availability(result).status).toBe("missing_connection");
   });
@@ -466,10 +458,12 @@ describe("PUT config/llm/default-provider", () => {
     });
     secureKeyResults.set("credential/chatgpt/access_token", "token");
 
-    const result = (await put({
-      provider: "chatgpt",
-      connectionName: "chatgpt-subscription",
-    })) as Record<string, unknown>;
+    const result = jsonObjectSchema.parse(
+      await put({
+        provider: "chatgpt",
+        connectionName: "chatgpt-subscription",
+      }),
+    );
 
     expect(result.resolvedConnectionName).toBe("chatgpt-subscription");
     expect(availability(result)).toEqual({ status: "ok" });

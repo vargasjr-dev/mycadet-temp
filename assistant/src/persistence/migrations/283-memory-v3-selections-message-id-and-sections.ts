@@ -31,8 +31,8 @@ export function migrateMemoryV3SelectionsMessageIdAndSections(
   const raw = getSqliteFrom(database);
 
   const columns = raw
-    .query(`PRAGMA table_info(memory_v3_selections)`)
-    .all() as Array<{ name: string }>;
+    .query<{ name: string }, []>(`PRAGMA table_info(memory_v3_selections)`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   if (!columnNames.has("message_id")) {

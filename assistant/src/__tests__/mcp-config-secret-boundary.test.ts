@@ -8,6 +8,8 @@ import {
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 let seededRawText = "";
 let mtimeSeq = 0;
 
@@ -37,7 +39,7 @@ function committedRaw(): Record<string, unknown> | null {
   if (text === seededRawText) {
     return null;
   }
-  return JSON.parse(text) as Record<string, unknown>;
+  return jsonObjectSchema.parse(JSON.parse(text));
 }
 
 mock.module("../daemon/config-watcher.js", () => ({
@@ -121,7 +123,7 @@ describe("MCP config secret boundary", () => {
       },
     });
 
-    const result = configGetRoute.handler({}) as Record<string, unknown>;
+    const result = jsonObjectSchema.parse(configGetRoute.handler({}));
 
     expect(JSON.stringify(result)).not.toContain("mcp-secret");
     expect(JSON.stringify(result)).not.toContain("mcp-api-secret");
@@ -143,7 +145,7 @@ describe("MCP config secret boundary", () => {
       },
     });
 
-    const result = configGetRoute.handler({}) as Record<string, unknown>;
+    const result = jsonObjectSchema.parse(configGetRoute.handler({}));
 
     expect(JSON.stringify(result)).not.toContain("leftover-secret");
     expect(result.mcp).toBeUndefined();
@@ -159,7 +161,7 @@ describe("MCP config secret boundary", () => {
       },
     });
 
-    const result = configGetRoute.handler({}) as Record<string, unknown>;
+    const result = jsonObjectSchema.parse(configGetRoute.handler({}));
 
     expect(result.mcp).toBeUndefined();
   });
@@ -177,7 +179,7 @@ describe("MCP config secret boundary", () => {
       },
     });
 
-    const result = configGetRoute.handler({}) as Record<string, unknown>;
+    const result = jsonObjectSchema.parse(configGetRoute.handler({}));
 
     expect(result.mcp).toBeUndefined();
   });

@@ -4,6 +4,7 @@ import type { Anthropic } from "@anthropic-ai/sdk";
 
 import type { ContentBlock, Message } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock Anthropic SDK — must be before importing the provider
@@ -580,7 +581,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
 
     // No top-level cache_control — would conflict with the 1h block breakpoint
     expect(
-      (lastStreamParams as Record<string, unknown>).cache_control,
+      jsonObjectSchema.parse(lastStreamParams).cache_control,
     ).toBeUndefined();
   });
 
@@ -894,7 +895,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { mutableLatestUserMessage: true },
     });
     expect(
-      (lastStreamParams as Record<string, unknown>).mutableLatestUserMessage,
+      jsonObjectSchema.parse(lastStreamParams).mutableLatestUserMessage,
     ).toBeUndefined();
   });
 
@@ -905,7 +906,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       config: { promptCacheKey: "conv-1" },
     });
     expect(
-      (lastStreamParams as Record<string, unknown>).promptCacheKey,
+      jsonObjectSchema.parse(lastStreamParams).promptCacheKey,
     ).toBeUndefined();
   });
 
@@ -2495,7 +2496,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
 
     // No top-level cache_control — breakpoints are set directly on blocks
     expect(
-      (lastStreamParams as Record<string, unknown>).cache_control,
+      jsonObjectSchema.parse(lastStreamParams).cache_control,
     ).toBeUndefined();
   });
 
