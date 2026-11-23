@@ -221,6 +221,14 @@ describe("the dispatcher — the four prefixes", () => {
         );
         continue;
       }
+      if (derived.startsWith("^(?:\\/assistant)?")) {
+        // The config row is the renderer's fixed root URL — the served
+        // identity the webview fetches before any API surface exists.
+        // Pinned exactly so no other row sneaks past the derivation
+        // unversioned.
+        expect(derived).toBe("^(?:\\/assistant)?\\/__config$");
+        continue;
+      }
       if (derived.includes("(?<id>")) {
         // An assistant row: helper 2's id capture plus helper 1's required
         // version arm. Rows declare relative patterns, so the scoping arm

@@ -822,3 +822,75 @@ describe("the webhook row — /webhooks/* bridges to the fronted gateway", () =>
     expect(await dispatch("/webhookss/telegram", "POST")).toBeNull();
   });
 });
+
+describe("the config row — GET /__config is the served identity", () => {
+  test("both spellings answer the lockfile's served assistant", async () => {
+    writeLockfile({
+      assistants: [
+        {
+          assistantId: "asst-1",
+          name: "Workbench",
+          cloud: "local",
+          port: 7830,
+        },
+      ],
+      activeAssistant: "asst-1",
+    });
+
+    for (const pathname of ["/__config", "/assistant/__config"]) {
+      const response = await dispatchAnswered(pathname, "GET");
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("application/json");
+      expect(await response.json()).toEqual({
+        assistantId: "asst-1",
+        assistantName: "Workbench",
+      });
+    }
+  });
+
+  test("the host's fields ride under the lockfile's — the machine's pointer wins", async () => {
+    writeLockfile({
+      assistants: [
+        {
+          assistantId: "asst-1",
+          name: "Workbench",
+          cloud: "local",
+          port: 7830,
+        },
+      ],
+      activeAssistant: "asst-1",
+    });
+    const request = new Request("http://host.test/__config");
+    const response = await forwardOperatorRequest(request, {
+      config: {
+        baseUrl: "app://mycadet.ai",
+        deviceId: "device-7",
+        assistantId: "stale",
+      },
+    });
+    expect(response?.status).toBe(200);
+    expect(await response!.json()).toEqual({
+      baseUrl: "app://mycadet.ai",
+      deviceId: "device-7",
+      assistantId: "asst-1",
+      assistantName: "Workbench",
+    });
+  });
+
+  test("an empty roster answers the bare host fields, `<` escapes for the script tag", async () => {
+    const response = await dispatchAnswered("/__config", "GET");
+    expect(await response.text()).toBe("{}");
+    writeLockfile({
+      assistants: [{ assistantId: "a<1", name: "A<ria" }],
+      activeAssistant: null,
+    });
+    const escaped = await dispatchAnswered("/__config", "GET");
+    expect(await escaped.text()).toContain("\\u003c");
+  });
+
+  test("near-miss spellings match no row", async () => {
+    expect(await dispatch("/__configx", "GET")).toBeNull();
+    expect(await dispatch("/assistant/__configs", "GET")).toBeNull();
+    expect(await dispatch("/web/assistant/__config", "GET")).toBeNull();
+  });
+});

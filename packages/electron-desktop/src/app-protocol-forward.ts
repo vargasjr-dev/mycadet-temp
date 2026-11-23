@@ -15,8 +15,9 @@ import { planAppProtocolAssetRequest } from "./app-protocol";
 
 /**
  * The `app://` protocol handler all three desktop clients share: one
- * ordered pass — host check, `/__config`, operator routes (whose
- * fallthrough arm forwards the cloud's own account paths — `/_allauth`
+ * ordered pass — host check, operator routes (the served-identity row
+ * answering `/__config` first among them; the fallthrough arm forwards
+ * the cloud's own account paths — `/_allauth`
  * and `/accounts`), then renderer assets (the app shell everywhere,
  * the web bundle on the `/web` mount plus the `/assistant/assets`
  * prefix its vite base requires) with an index.html
@@ -64,6 +65,16 @@ const sessionCookieJar: CookieJar = {
   },
 };
 
+/**
+ * The host's own identity fields for the config row: the origin the
+ * renderer should call is THIS host's `app://` spelling, and the device
+ * stamp is the desktop install's.
+ */
+const hostConfig = (): Record<string, unknown> => ({
+  baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
+  deviceId: getDeviceId() ?? undefined,
+});
+
 const appOrigin = (): AllowedOrigin => ({
   protocol: `${APP_PROTOCOL}:`,
   host: APP_HOST,
@@ -103,7 +114,8 @@ export function registerAppProtocol(): void {
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const appDistRoot = resolveAppDistRoot();
   const appIndexHtml = path.join(appDistRoot, "index.html");
-  // Read only when serving config or an assistant document. A hatch or
+  // Read only when injecting an assistant document — the /__config
+  // endpoint is the operator table's config row now. A hatch or
   // selection can change the served assistant after protocol registration.
   const configJson = () =>
     JSON.stringify({
@@ -117,17 +129,14 @@ export function registerAppProtocol(): void {
       return new Response("Forbidden", { status: 403 });
     }
     const pathname = new URL(request.url).pathname;
-    if (pathname === "/assistant/__config" || pathname === "/__config") {
-      return new Response(configJson(), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
 
-    // The operator routes ride ahead of the gateway proxy. The session
-    // jar is the rows' cookie source and sink: the pair the hatch jars
-    // (and every rotation since) attaches on each gateway dial.
+    // The operator routes ride ahead of the gateway proxy — config among
+    // them, the table's first row. The session jar is the rows' cookie
+    // source and sink: the pair the hatch jars (and every rotation since)
+    // attaches on each gateway dial.
     const operated = await forwardOperatorRequest(request, {
       cookieJar: sessionCookieJar,
+      config: hostConfig(),
     });
     if (operated) {
       return operated;

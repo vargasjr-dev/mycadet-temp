@@ -7,7 +7,10 @@ import { upgradeAssistant } from "./upgrade";
 import { consoleLifecycleReporter } from "../lifecycle-reporter";
 import { ownVersion } from "../environment";
 import { unpairAssistant } from "../unpair";
-import { servedAssistantFromLockfile } from "../served-config";
+import {
+  servedAssistantFromLockfile,
+  servedConfigFromLockfile,
+} from "../served-config";
 import { runListRoute } from "./list";
 import { findAssistant } from "./lookup";
 import { retireAssistant } from "./retire";
@@ -93,6 +96,13 @@ export interface OperatorRequest {
    * down. Absent reads as no signal.
    */
   signal?: AbortSignal | null;
+  /**
+   * The serving host's own identity fields — the origin the renderer
+   * should call, its device stamp — merged UNDER the lockfile's served
+   * config by the config row, so the host names only what it alone knows
+   * and the table owns the endpoint. Absent reads as no host fields.
+   */
+  config?: Record<string, unknown>;
 }
 
 export interface OperatorRoute {
@@ -671,6 +681,17 @@ async function runProxyRoute(
  * The operator route table, in match order.
  */
 export const OPERATOR_ROUTES: readonly OperatorRoute[] = [
+  // The renderer's served identity: `/__config` and `/assistant/__config`
+  // answer the host's own fields (the dispatch's `config` option) with the
+  // lockfile's served assistant read over them — ahead of every other row,
+  // so the endpoint is the table's, not any host's, and the mounts cannot
+  // drift.
+  {
+    method: "GET",
+    pattern: /^(?:\/assistant)?\/__config$/,
+    run: runConfigRoute,
+    resolvesAssistant: false,
+  },
   // The shell's resolution: the assistant reference's bare tail answers the
   // whole union (scoped to an explicit id, or the active one unscoped).
   {
@@ -842,6 +863,26 @@ export interface OperatorMatch {
 }
 
 /**
+ * The config row's runner: the served identity as one JSON answer. The
+ * host's fields merge UNDER the lockfile's served assistant — a host that
+ * names `assistantId` itself is overruled by the machine's own pointer —
+ * and the lockfile is read PER REQUEST, so a hatch or a selection re-serves
+ * without re-registering anything. `<` escapes to `\\u003c` so the payload
+ * can ride an inline script tag untouched.
+ */
+async function runConfigRoute(
+  request: OperatorRequest,
+): Promise<Response | null> {
+  return new Response(
+    JSON.stringify({
+      ...(request.config ?? {}),
+      ...servedConfigFromLockfile(readLockfile()),
+    }).replace(/</g, "\\u003c"),
+    { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
+
+/**
  * Match a request against the route table: the first row whose DERIVED
  * pattern and method agree — one exec per row, no prefix walk, no surface
  * bookkeeping — and resolve the assistant the request rides, so neither
@@ -898,8 +939,9 @@ function matchOperatorRequest(
  * headers come out normalized (host and hop-by-hop stripped, the
  * client-ip stamp derived from `options.peer`) and cookied (the host
  * jar's cookies for the matched entry's gateway origin, when the caller
- * brought none and the host supplies a jar) — so operations only handle
- * `Headers`. The cloud's own surfaces are just the table's last row (an
+ * brought none and the host supplies a jar), and the host's own identity
+ * fields ride `options.config` to the config row — so operations only
+ * handle `Headers`. The cloud's own surfaces are just the table's last row (an
  * OR-union of its prefixes); a CORS preflight is answered 204 before any
  * row runs, and whatever the rows don't claim (no match at all, a row's
  * pass — a stale id, an entry this host can't retire) comes back `null`
@@ -913,6 +955,8 @@ export async function forwardOperatorRequest(
   options?: {
     peer?: string | null;
     cookieJar?: CookieJar;
+    /** The serving host's identity fields, for the config row. */
+    config?: Record<string, unknown>;
   },
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
@@ -963,6 +1007,7 @@ export async function forwardOperatorRequest(
     headers,
     body: request.body,
     signal: request.signal,
+    config: options?.config,
   });
   if (response) {
     // The jar's writes are the dispatcher's, one route-agnostic layer

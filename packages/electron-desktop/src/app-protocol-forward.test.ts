@@ -130,7 +130,7 @@ const setupPackaged = async (): Promise<void> => {
 };
 
 describe("registerAppProtocol", () => {
-  test("the operator pass carries the session jar", async () => {
+  test("the operator pass carries the session jar and the host identity", async () => {
     await setupDev();
     await register();
     forwardOperator.mockResolvedValueOnce(new Response("retired"));
@@ -142,11 +142,13 @@ describe("registerAppProtocol", () => {
     // The cloud surfaces (`/_allauth`, `/accounts`, the `/v1` user paths)
     // ride the forward's own arm row — tested in local-mode. Here the
     // contract is the OPTIONS: the session jar is the rows' cookie source
-    // and sink; the dialing itself is local-mode's (the ambient fetch).
+    // and sink, and the config row's host fields name this host's origin
+    // and device; the dialing itself is local-mode's (the ambient fetch).
     expect(forwardOperator).toHaveBeenCalledWith(
       request,
       expect.objectContaining({
         cookieJar: expect.anything(),
+        config: { baseUrl: "app://mycadet.ai", deviceId: "device-7" },
       }),
     );
   });
@@ -184,31 +186,46 @@ describe("registerAppProtocol", () => {
     expect(forwardOperator).not.toHaveBeenCalled();
   });
 
-  test("the handler serves /__config with the escaped config json", async () => {
+  test("config requests dispatch to the operator routes — both spellings", async () => {
     await setupDev();
     await register();
-    const response = await handler!(
-      new Request("app://mycadet.ai/assistant/__config"),
+    // The config row is local-mode's now (tested there); the handler's
+    // contract is the DISPATCH: `/__config` and `/assistant/__config` reach
+    // the forward and its answer rides verbatim — never the asset chain.
+    const request = new Request("app://mycadet.ai/assistant/__config");
+    forwardOperator.mockResolvedValueOnce(
+      new Response(JSON.stringify({ assistantName: "A<ria" }), {
+        headers: { "content-type": "application/json" },
+      }),
     );
-    const body = await response.text();
-    expect(JSON.parse(body)).toEqual({
-      baseUrl: "app://mycadet.ai",
-      deviceId: "device-7",
-      assistantName: "A<ria",
-    });
-    expect(body).toContain("\\u003c");
-    const shell = await handler!(new Request("app://mycadet.ai/__config"));
+    const response = await handler!(request);
+    expect(await response.text()).toBe(
+      JSON.stringify({ assistantName: "A<ria" }),
+    );
+    expect(forwardOperator).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ config: expect.anything() }),
+    );
+    const shellRequest = new Request("app://mycadet.ai/__config");
+    forwardOperator.mockResolvedValueOnce(
+      new Response("{}", {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const shell = await handler!(shellRequest);
     expect(shell.status).toBe(200);
+    expect(forwardOperator).toHaveBeenCalledWith(
+      shellRequest,
+      expect.anything(),
+    );
   });
 
-  test("serves the current identity after hatch and assistant switching", async () => {
+  test("the injected identity stays current after hatch and assistant switching", async () => {
     await setupDev();
     servedConfig = {};
     await register();
     for (const assistantId of ["hatched", "switched"]) {
       servedConfig = { assistantId, assistantName: assistantId };
-      const config = await handler!(new Request("app://mycadet.ai/__config"));
-      expect(await config.json()).toMatchObject({ assistantId });
       const document = await handler!(
         new Request("app://mycadet.ai/web/assistant/conversations/new"),
       );
