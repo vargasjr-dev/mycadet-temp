@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "./helpers/fetch-mock.js";
+
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -17,39 +19,41 @@ let fetchResponses: Array<
 let fetchCallCount = 0;
 
 const originalFetch = globalThis.fetch;
-globalThis.fetch = (async (input: RequestInfo | URL, _init?: RequestInit) => {
-  const url =
-    typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.toString()
-        : input.url;
-  if (url.includes("token")) {
-    fetchCallCount++;
-    const next = fetchResponses.shift();
-    if (!next) {
-      return new Response(
-        JSON.stringify({
-          access_token: "ok",
-          refresh_token: "rt",
-          expires_in: 3600,
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+globalThis.fetch = fetchMock(
+  async (input: RequestInfo | URL, _init?: RequestInit) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    if (url.includes("token")) {
+      fetchCallCount++;
+      const next = fetchResponses.shift();
+      if (!next) {
+        return new Response(
+          JSON.stringify({
+            access_token: "ok",
+            refresh_token: "rt",
+            expires_in: 3600,
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      if (next.type === "error") {
+        throw next.error;
+      }
+      return new Response(JSON.stringify(next.body), {
+        status: next.status,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-    if (next.type === "error") {
-      throw next.error;
-    }
-    return new Response(JSON.stringify(next.body), {
-      status: next.status,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  return originalFetch(input, _init);
-}) as unknown as typeof fetch;
+    return originalFetch(input, _init);
+  },
+);
 
 // Suppress real timers for speed — override setTimeout to fire immediately.
 const origSetTimeout = globalThis.setTimeout;

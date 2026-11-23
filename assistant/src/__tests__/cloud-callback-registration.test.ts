@@ -5,6 +5,7 @@ import type { RegisterWebhookRouteIpcParams } from "@mycadet/gateway-client";
 import { setIngressPublicBaseUrl } from "../config/env.js";
 import type { IpcRegisterWebhookRouteResult } from "../ipc/gateway-client.js";
 import { credentialKey } from "../security/credential-key.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 let mockIsPlatform = true;
@@ -195,8 +196,8 @@ describe("platform callback registration", () => {
       "ast-managed-key",
     );
 
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         expect(String(input)).toBe(
           "https://platform.example.com/v1/internal/gateway/callback-routes/register/",
         );
@@ -223,8 +224,8 @@ describe("platform callback registration", () => {
             headers: { "content-type": "application/json" },
           },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
 
     await expect(
       registerCallbackRoute("webhooks/telegram", "telegram"),
@@ -243,8 +244,8 @@ describe("platform callback registration", () => {
       "ast-self-hosted-key",
     );
 
-    globalThis.fetch = mock(
-      async (_input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
         expect(JSON.parse(String(init?.body))).toEqual({
           assistant_id: "22222222-3333-4444-8555-666666666666",
           callback_path: "webhooks/telegram",
@@ -266,8 +267,8 @@ describe("platform callback registration", () => {
             headers: { "content-type": "application/json" },
           },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
 
     await expect(
       registerCallbackRoute("webhooks/telegram", "telegram"),
@@ -285,8 +286,8 @@ describe("platform callback registration", () => {
       "ast-self-hosted-key",
     );
 
-    globalThis.fetch = mock(
-      async (_input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
         expect(JSON.parse(String(init?.body))).toEqual({
           assistant_id: "22222222-3333-4444-8555-666666666666",
           callback_path: "webhooks/telegram",
@@ -308,8 +309,8 @@ describe("platform callback registration", () => {
             headers: { "content-type": "application/json" },
           },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
 
     await expect(
       registerCallbackRoute("webhooks/telegram", "telegram"),
@@ -326,8 +327,8 @@ describe("platform callback registration", () => {
       "ast-self-hosted-key",
     );
 
-    globalThis.fetch = mock(
-      async (_input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
         const body = JSON.parse(String(init?.body)) as Record<string, string>;
         expect(body).toEqual({
           assistant_id: "22222222-3333-4444-8555-666666666666",
@@ -350,8 +351,8 @@ describe("platform callback registration", () => {
             headers: { "content-type": "application/json" },
           },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
 
     await expect(
       registerCallbackRoute("webhooks/telegram", "telegram"),
@@ -368,8 +369,8 @@ describe("platform callback registration", () => {
       "ast-managed-key",
     );
 
-    globalThis.fetch = mock(
-      async (_input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
         const body = JSON.parse(String(init?.body)) as Record<string, string>;
         expect(body).not.toHaveProperty("callback_base_url");
         expect(body).toEqual({
@@ -392,8 +393,8 @@ describe("platform callback registration", () => {
             headers: { "content-type": "application/json" },
           },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
 
     await expect(
       registerCallbackRoute("webhooks/telegram", "telegram"),
@@ -449,18 +450,20 @@ describe("resolveCallbackUrl resolution order", () => {
       disabled: false,
       route: REGISTERED_ROUTE,
     };
-    globalThis.fetch = mock(async () => {
-      registerCalls++;
-      return new Response(
-        JSON.stringify({
-          callback_url: PLATFORM_URL,
-          callback_path: "webhooks/twilio/voice",
-          type: "twilio_voice",
-          assistant_id: "11111111-2222-4333-8444-555555555555",
-        }),
-        { status: 201, headers: { "content-type": "application/json" } },
-      );
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        registerCalls++;
+        return new Response(
+          JSON.stringify({
+            callback_url: PLATFORM_URL,
+            callback_path: "webhooks/twilio/voice",
+            type: "twilio_voice",
+            assistant_id: "11111111-2222-4333-8444-555555555555",
+          }),
+          { status: 201, headers: { "content-type": "application/json" } },
+        );
+      }),
+    );
   });
 
   afterEach(() => {

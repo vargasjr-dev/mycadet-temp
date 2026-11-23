@@ -228,9 +228,9 @@ export function isRefusedInReadOnlyPass(
  * etc.) at invocation time.
  */
 export function createToolExecutor(
-  executor: ToolExecutor,
-  prompter: PermissionPrompter,
-  secretPrompter: SecretPrompter,
+  executor: Pick<ToolExecutor, "execute">,
+  prompter: Pick<PermissionPrompter, "prompt">,
+  secretPrompter: Pick<SecretPrompter, "prompt">,
   ctx: Conversation,
 ): (
   name: string,
@@ -598,7 +598,7 @@ export function createToolExecutor(
  * user confirmation before proceeding.
  */
 export function createProxyApprovalCallback(
-  _prompter: PermissionPrompter,
+  _prompter: Pick<PermissionPrompter, "prompt">,
   _ctx: Conversation,
 ): ProxyApprovalCallback {
   return async (_request: ProxyApprovalRequest): Promise<boolean> => {

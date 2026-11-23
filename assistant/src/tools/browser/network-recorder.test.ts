@@ -7,6 +7,8 @@ import {
   it,
 } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
+
 const { NetworkRecorder } = await import("./network-recorder.js");
 
 describe("NetworkRecorder", () => {
@@ -17,7 +19,7 @@ describe("NetworkRecorder", () => {
     beforeEach(() => {
       fetchCalls = [];
       // Mock fetch to capture the URL and return a valid CDP version response.
-      globalThis.fetch = (async (url: string | URL | Request) => {
+      globalThis.fetch = fetchMock(async (url: string | URL | Request) => {
         fetchCalls.push(String(url));
         return new Response(
           JSON.stringify({
@@ -25,7 +27,7 @@ describe("NetworkRecorder", () => {
           }),
           { status: 200 },
         );
-      }) as unknown as typeof fetch;
+      });
     });
 
     afterEach(() => {

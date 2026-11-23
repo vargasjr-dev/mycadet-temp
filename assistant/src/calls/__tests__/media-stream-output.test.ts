@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
+
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -1587,7 +1589,7 @@ describe("MediaStreamOutput", () => {
 
     /** Mock global fetch to resolve with the given response for any URL. */
     function mockFetch(response: Response): void {
-      globalThis.fetch = (async () => response) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(async () => response);
     }
 
     /**

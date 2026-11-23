@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "./helpers/fetch-mock.js";
+
 // A browser falls back between loopback address families; bun's fetch does
 // not. Connect to the IPv6 form when the IPv4 form is refused.
 async function browserFetch(
@@ -94,39 +96,41 @@ let mockTokenResponse: {
 };
 
 const originalFetch = globalThis.fetch;
-globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url =
-    typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.toString()
-        : input.url;
-  if (url.includes("token")) {
-    // Capture request body and headers for assertions
-    if (init?.body) {
-      lastTokenRequestRawBody = String(init.body);
-      try {
-        lastTokenRequestBody = new URLSearchParams(init.body as string);
-      } catch {
-        lastTokenRequestBody = null;
+globalThis.fetch = fetchMock(
+  async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    if (url.includes("token")) {
+      // Capture request body and headers for assertions
+      if (init?.body) {
+        lastTokenRequestRawBody = String(init.body);
+        try {
+          lastTokenRequestBody = new URLSearchParams(init.body as string);
+        } catch {
+          lastTokenRequestBody = null;
+        }
       }
-    }
-    if (init?.headers) {
-      lastTokenRequestHeaders = init.headers as Record<string, string>;
-    }
-    if (!mockTokenResponse.ok) {
-      return new Response(JSON.stringify({ error: "invalid_grant" }), {
+      if (init?.headers) {
+        lastTokenRequestHeaders = init.headers as Record<string, string>;
+      }
+      if (!mockTokenResponse.ok) {
+        return new Response(JSON.stringify({ error: "invalid_grant" }), {
+          status: mockTokenResponse.status,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify(mockTokenResponse.body), {
         status: mockTokenResponse.status,
         headers: { "Content-Type": "application/json" },
       });
     }
-    return new Response(JSON.stringify(mockTokenResponse.body), {
-      status: mockTokenResponse.status,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  return originalFetch(input, init);
-}) as unknown as typeof fetch;
+    return originalFetch(input, init);
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Import module under test AFTER mocks are in place

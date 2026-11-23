@@ -7,8 +7,9 @@
  * 2. Call session mode metadata is persisted correctly for guardian verification calls.
  * 3. Channel verification reply templates are non-empty and deterministic.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
@@ -227,29 +228,28 @@ describe("Verification control messages are deterministic (guard)", () => {
     // Track channel replies (the handler delivers the verification code via fetch)
     const deliveredReplies: Array<{ chatId: string; text: string }> = [];
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (
-      input: string | URL | Request,
-      init?: RequestInit,
-    ) => {
-      const _url =
-        typeof input === "string"
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : input.url;
-      if (init?.method === "POST" && init.body) {
-        try {
-          const body = JSON.parse(init.body as string);
-          if (body.chatId && body.text) {
-            deliveredReplies.push({ chatId: body.chatId, text: body.text });
+    globalThis.fetch = fetchMock(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const _url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        if (init?.method === "POST" && init.body) {
+          try {
+            const body = JSON.parse(init.body as string);
+            if (body.chatId && body.text) {
+              deliveredReplies.push({ chatId: body.chatId, text: body.text });
+            }
+          } catch {
+            /* not JSON */
           }
-        } catch {
-          /* not JSON */
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
         }
-        return new Response(JSON.stringify({ ok: true }), { status: 200 });
-      }
-      return originalFetch(input, init as never);
-    }) as unknown as typeof fetch;
+        return originalFetch(input, init as never);
+      },
+    );
 
     try {
       const req = new Request("http://localhost/channels/inbound", {

@@ -13,6 +13,7 @@ import {
   searchSkillsRegistry,
   validateSkillSlug,
 } from "../skills/skillssh-registry.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ─── Fetch mock helpers ──────────────────────────────────────────────────────
 
@@ -23,9 +24,11 @@ let mockFetchImpl: (url: string | URL | Request) => Promise<Response>;
 beforeEach(() => {
   mockFetchImpl = () =>
     Promise.resolve(new Response("not mocked", { status: 500 }));
-  globalThis.fetch = mock((input: string | URL | Request) =>
-    mockFetchImpl(typeof input === "string" ? input : input.toString()),
-  ) as unknown as typeof fetch;
+  globalThis.fetch = fetchMock(
+    mock((input: string | URL | Request) =>
+      mockFetchImpl(typeof input === "string" ? input : input.toString()),
+    ),
+  );
 });
 
 afterEach(() => {

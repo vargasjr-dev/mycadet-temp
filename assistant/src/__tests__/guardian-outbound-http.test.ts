@@ -11,8 +11,9 @@
  * - Rate limiting, missing/invalid destination, already_bound, and
  *   no_active_session error paths all produce the expected error codes.
  */
-
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
@@ -52,27 +53,26 @@ const telegramDeliverCalls: Array<{
   assistantId?: string;
 }> = [];
 const originalFetch = globalThis.fetch;
-globalThis.fetch = (async (
-  input: string | URL | Request,
-  init?: RequestInit,
-) => {
-  const url =
-    typeof input === "string"
-      ? input
-      : input instanceof URL
-        ? input.toString()
-        : input.url;
-  if (url.includes("/deliver/telegram") && init?.method === "POST") {
-    const body = JSON.parse(init.body as string) as {
-      chatId: string;
-      text: string;
-      assistantId?: string;
-    };
-    telegramDeliverCalls.push(body);
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
-  }
-  return originalFetch(input, init as never);
-}) as unknown as typeof fetch;
+globalThis.fetch = fetchMock(
+  async (input: string | URL | Request, init?: RequestInit) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+    if (url.includes("/deliver/telegram") && init?.method === "POST") {
+      const body = JSON.parse(init.body as string) as {
+        chatId: string;
+        text: string;
+        assistantId?: string;
+      };
+      telegramDeliverCalls.push(body);
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+    return originalFetch(input, init as never);
+  },
+);
 
 // Gateway IPC mock — session lifecycle now goes through the gateway session
 // client; delegate verification_sessions_* methods to the local-service sim

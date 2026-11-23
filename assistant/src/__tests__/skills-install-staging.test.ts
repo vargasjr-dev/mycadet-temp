@@ -11,6 +11,8 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "./helpers/fetch-mock.js";
+
 // Emits `error` on the returned child so the dependency install's spawn
 // promise rejects with the injected failure.
 const spawnArgv: string[][] = [];
@@ -93,9 +95,7 @@ describe("staged skill installs", () => {
         },
       ]),
     );
-    globalThis.fetch = mock(
-      async () => new Response(archive),
-    ) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(mock(async () => new Response(archive)));
 
     await expect(
       installSkillLocally(
@@ -123,42 +123,44 @@ describe("staged skill installs", () => {
   test("skills.sh overwrite dependency failure preserves the previous skill", async () => {
     writeInstalledSkill("demo-skill", "Old Demo Skill");
 
-    globalThis.fetch = mock(async (input: string | URL | Request) => {
-      const url = String(input);
-      if (url.includes("/contents/skills/demo-skill")) {
-        return new Response(
-          JSON.stringify([
-            {
-              name: "SKILL.md",
-              type: "file",
-              download_url: "https://example.com/SKILL.md",
-            },
-            {
-              name: "package.json",
-              type: "file",
-              download_url: "https://example.com/package.json",
-            },
-            {
-              name: "new.txt",
-              type: "file",
-              download_url: "https://example.com/new.txt",
-            },
-          ]),
-        );
-      }
-      if (url.endsWith("/SKILL.md")) {
-        return new Response(skillMarkdown("New Demo Skill", "New body."));
-      }
-      if (url.endsWith("/package.json")) {
-        return new Response(
-          JSON.stringify({ dependencies: { example: "1.0.0" } }),
-        );
-      }
-      if (url.endsWith("/new.txt")) {
-        return new Response("new file\n");
-      }
-      return new Response("not found", { status: 404 });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.includes("/contents/skills/demo-skill")) {
+          return new Response(
+            JSON.stringify([
+              {
+                name: "SKILL.md",
+                type: "file",
+                download_url: "https://example.com/SKILL.md",
+              },
+              {
+                name: "package.json",
+                type: "file",
+                download_url: "https://example.com/package.json",
+              },
+              {
+                name: "new.txt",
+                type: "file",
+                download_url: "https://example.com/new.txt",
+              },
+            ]),
+          );
+        }
+        if (url.endsWith("/SKILL.md")) {
+          return new Response(skillMarkdown("New Demo Skill", "New body."));
+        }
+        if (url.endsWith("/package.json")) {
+          return new Response(
+            JSON.stringify({ dependencies: { example: "1.0.0" } }),
+          );
+        }
+        if (url.endsWith("/new.txt")) {
+          return new Response("new file\n");
+        }
+        return new Response("not found", { status: 404 });
+      }),
+    );
 
     await expect(
       installExternalSkill("owner", "repo", "demo-skill", true),

@@ -11,8 +11,9 @@
  * loudly. It either 404s or, worse, addresses whatever channel happens to
  * carry that id.
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 
 const BOT_TOKEN = "discord-bot-token";
 
@@ -125,11 +126,13 @@ describe("openDiscordDmChannel", () => {
   });
 
   test("a channel-less answer throws, and is not pinned for later callers", async () => {
-    globalThis.fetch = (async () =>
-      new Response(JSON.stringify({}), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(JSON.stringify({}), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
     await expect(openDiscordDmChannel(RECIPIENT)).rejects.toThrow(
       /no channel id/i,
     );

@@ -7,8 +7,9 @@
  * unit test can hold, and the parts whose breakage is silent (a wrong route
  * 404s into a failed delivery, a missing `allowed_mentions` pings a server).
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 
 const BOT_TOKEN = "discord-bot-token";
 
@@ -46,21 +47,23 @@ interface Captured {
 let calls: Captured[] = [];
 
 function stubFetch(status = 200, payload: unknown = { id: "msg-1" }): void {
-  globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
-    const headers = Object.fromEntries(
-      new Headers(init?.headers ?? {}).entries(),
-    );
-    calls.push({
-      url: String(url),
-      method: init?.method ?? "GET",
-      headers,
-      body: init?.body,
-    });
-    return new Response(status === 204 ? null : JSON.stringify(payload), {
-      status,
-      headers: { "content-type": "application/json" },
-    });
-  }) as unknown as typeof fetch;
+  globalThis.fetch = fetchMock(
+    async (url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      const headers = Object.fromEntries(
+        new Headers(init?.headers ?? {}).entries(),
+      );
+      calls.push({
+        url: String(url),
+        method: init?.method ?? "GET",
+        headers,
+        body: init?.body,
+      });
+      return new Response(status === 204 ? null : JSON.stringify(payload), {
+        status,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  );
 }
 
 beforeEach(() => {
@@ -173,19 +176,24 @@ describe("sendDiscordReply", () => {
     // withdrawal addresses; an earlier chunk's id must never stand in for it.
     const long = Array.from({ length: 400 }, (_, i) => `line ${i}`).join("\n");
     let posts = 0;
-    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
-      posts += 1;
-      calls.push({
-        url: String(url),
-        method: init?.method ?? "GET",
-        headers: {},
-        body: init?.body,
-      });
-      return new Response(JSON.stringify(posts === 1 ? { id: "msg-1" } : {}), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async (url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+        posts += 1;
+        calls.push({
+          url: String(url),
+          method: init?.method ?? "GET",
+          headers: {},
+          body: init?.body,
+        });
+        return new Response(
+          JSON.stringify(posts === 1 ? { id: "msg-1" } : {}),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      },
+    );
 
     const result = await sendDiscordReply({ channelId: "C1" }, long);
 
@@ -266,25 +274,27 @@ describe("sendDiscordReply", () => {
   test("a failure after the first chunk names the undelivered remainder", async () => {
     const long = Array.from({ length: 400 }, (_, i) => `line ${i}`).join("\n");
     let posts = 0;
-    globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
-      posts += 1;
-      calls.push({
-        url: String(url),
-        method: init?.method ?? "GET",
-        headers: {},
-        body: init?.body,
-      });
-      if (posts > 1) {
-        return new Response(JSON.stringify({ message: "rejected" }), {
-          status: 400,
+    globalThis.fetch = fetchMock(
+      async (url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+        posts += 1;
+        calls.push({
+          url: String(url),
+          method: init?.method ?? "GET",
+          headers: {},
+          body: init?.body,
+        });
+        if (posts > 1) {
+          return new Response(JSON.stringify({ message: "rejected" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ id: "msg-1" }), {
+          status: 200,
           headers: { "content-type": "application/json" },
         });
-      }
-      return new Response(JSON.stringify({ id: "msg-1" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as unknown as typeof fetch;
+      },
+    );
 
     let thrown: unknown;
     try {

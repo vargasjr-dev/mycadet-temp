@@ -4,6 +4,7 @@ import {
   clearDirPathCache,
   createSkillsShProvider,
 } from "../skills/skillssh-files.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ─── Fetch mock helpers ──────────────────────────────────────────────────────
 
@@ -15,9 +16,11 @@ beforeEach(() => {
   clearDirPathCache();
   mockFetchImpl = () =>
     Promise.resolve(new Response("not mocked", { status: 500 }));
-  globalThis.fetch = mock((input: string | URL | Request) =>
-    mockFetchImpl(typeof input === "string" ? input : input.toString()),
-  ) as unknown as typeof fetch;
+  globalThis.fetch = fetchMock(
+    mock((input: string | URL | Request) =>
+      mockFetchImpl(typeof input === "string" ? input : input.toString()),
+    ),
+  );
 });
 
 afterEach(() => {

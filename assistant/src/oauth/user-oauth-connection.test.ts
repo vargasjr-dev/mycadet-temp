@@ -13,6 +13,7 @@ import {
   test,
 } from "bun:test";
 
+import { fetchMock } from "../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeys } from "../__tests__/helpers/secure-keys.js";
 // ---------------------------------------------------------------------------
 // Mock logger
@@ -194,7 +195,7 @@ beforeEach(() => {
       }),
     ),
   );
-  globalThis.fetch = mockFetch as unknown as typeof fetch;
+  globalThis.fetch = fetchMock(mockFetch);
 });
 
 afterEach(() => {
@@ -576,15 +577,19 @@ describe("UserOAuthConnection", () => {
 
       // First call returns 401, second returns 200
       let callCount = 0;
-      globalThis.fetch = mock(() => {
-        callCount++;
-        if (callCount === 1) {
-          return Promise.resolve(new Response("Unauthorized", { status: 401 }));
-        }
-        return Promise.resolve(
-          new Response(JSON.stringify({ ok: true }), { status: 200 }),
-        );
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        mock(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(
+              new Response("Unauthorized", { status: 401 }),
+            );
+          }
+          return Promise.resolve(
+            new Response(JSON.stringify({ ok: true }), { status: 200 }),
+          );
+        }),
+      );
 
       const result = await conn.request({
         method: "GET",
@@ -602,9 +607,9 @@ describe("UserOAuthConnection", () => {
       await setupCredential("google");
       const conn = createConnection();
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(new Response("", { status: 204 })),
-      ) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        mock(() => Promise.resolve(new Response("", { status: 204 }))),
+      );
 
       const result = await conn.request({
         method: "DELETE",
@@ -619,9 +624,11 @@ describe("UserOAuthConnection", () => {
       await setupCredential("google");
       const conn = createConnection();
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(new Response("plain text response", { status: 200 })),
-      ) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        mock(() =>
+          Promise.resolve(new Response("plain text response", { status: 200 })),
+        ),
+      );
 
       const result = await conn.request({
         method: "GET",
@@ -639,14 +646,16 @@ describe("UserOAuthConnection", () => {
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0xfe, 0x00,
       ]);
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(
-          new Response(binary, {
-            status: 200,
-            headers: { "content-type": "application/octet-stream" },
-          }),
+      globalThis.fetch = fetchMock(
+        mock(() =>
+          Promise.resolve(
+            new Response(binary, {
+              status: 200,
+              headers: { "content-type": "application/octet-stream" },
+            }),
+          ),
         ),
-      ) as unknown as typeof fetch;
+      );
 
       const result = await conn.request({
         method: "GET",
@@ -666,14 +675,16 @@ describe("UserOAuthConnection", () => {
         "utf8",
       );
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(
-          new Response(raw, {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
+      globalThis.fetch = fetchMock(
+        mock(() =>
+          Promise.resolve(
+            new Response(raw, {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }),
+          ),
         ),
-      ) as unknown as typeof fetch;
+      );
 
       const result = await conn.request({
         method: "GET",
@@ -693,14 +704,16 @@ describe("UserOAuthConnection", () => {
         "utf8",
       );
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(
-          new Response(raw, {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
+      globalThis.fetch = fetchMock(
+        mock(() =>
+          Promise.resolve(
+            new Response(raw, {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            }),
+          ),
         ),
-      ) as unknown as typeof fetch;
+      );
 
       const result = await conn.request({
         method: "GET",
@@ -716,7 +729,7 @@ describe("UserOAuthConnection", () => {
       await setupCredential("google");
       const conn = createConnection();
 
-      const redirectFetch = mock((_url: string, _init: RequestInit) =>
+      const redirectFetch = mock((..._args: Parameters<typeof fetch>) =>
         Promise.resolve(
           new Response("moved", {
             status: 302,
@@ -727,7 +740,7 @@ describe("UserOAuthConnection", () => {
           }),
         ),
       );
-      globalThis.fetch = redirectFetch as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(redirectFetch);
 
       const result = await conn.request({
         method: "POST",
@@ -736,7 +749,7 @@ describe("UserOAuthConnection", () => {
         manualRedirect: true,
       });
 
-      expect(redirectFetch.mock.calls[0][1].redirect).toBe("manual");
+      expect(redirectFetch.mock.calls[0][1]?.redirect).toBe("manual");
       expect(result.status).toBe(302);
       expect(result.headers["location"]).toBe(
         "https://files.example.com/blob/abc",
@@ -761,17 +774,19 @@ describe("UserOAuthConnection", () => {
       await setupCredential("google");
       const conn = createConnection();
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(
-          new Response(JSON.stringify({}), {
-            status: 200,
-            headers: {
-              "x-ratelimit-remaining": "99",
-              "content-type": "application/json",
-            },
-          }),
+      globalThis.fetch = fetchMock(
+        mock(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({}), {
+              status: 200,
+              headers: {
+                "x-ratelimit-remaining": "99",
+                "content-type": "application/json",
+              },
+            }),
+          ),
         ),
-      ) as unknown as typeof fetch;
+      );
 
       const result = await conn.request({
         method: "GET",
@@ -880,9 +895,11 @@ describe("UserOAuthConnection", () => {
       const conn = createConnection("telegram");
       const refreshCallsBefore = mockRefreshOAuth2Token.mock.calls.length;
 
-      globalThis.fetch = mock(() =>
-        Promise.resolve(new Response("Unauthorized", { status: 401 })),
-      ) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        mock(() =>
+          Promise.resolve(new Response("Unauthorized", { status: 401 })),
+        ),
+      );
 
       const result = await conn.request({
         method: "GET",

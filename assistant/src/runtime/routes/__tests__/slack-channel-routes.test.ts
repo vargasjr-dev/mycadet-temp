@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
+
 type MockSlackInfo = {
   id: string;
   name?: string;
@@ -103,30 +105,32 @@ async function resolve(conversationId: string): Promise<ResolveResponse> {
 }
 
 function mockSlackFetch(): void {
-  globalThis.fetch = mock(async (input) => {
-    const url = new URL(String(input));
-    if (url.pathname !== "/api/conversations.info") {
-      throw new Error(`Unexpected Slack API request: ${url.pathname}`);
-    }
+  globalThis.fetch = fetchMock(
+    mock(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname !== "/api/conversations.info") {
+        throw new Error(`Unexpected Slack API request: ${url.pathname}`);
+      }
 
-    const channelId = url.searchParams.get("channel") ?? "";
-    slackInfoCalls.push(channelId);
-    const result = await slackInfoImpl(channelId);
-    if (result && "slackError" in result) {
-      return Response.json({ ok: false, error: result.slackError });
-    }
+      const channelId = url.searchParams.get("channel") ?? "";
+      slackInfoCalls.push(channelId);
+      const result = await slackInfoImpl(channelId);
+      if (result && "slackError" in result) {
+        return Response.json({ ok: false, error: result.slackError });
+      }
 
-    return Response.json({
-      ok: true,
-      channel: result
-        ? {
-            id: result.id,
-            name: result.name,
-            name_normalized: result.nameNormalized,
-          }
-        : undefined,
-    });
-  }) as unknown as typeof fetch;
+      return Response.json({
+        ok: true,
+        channel: result
+          ? {
+              id: result.id,
+              name: result.name,
+              name_normalized: result.nameNormalized,
+            }
+          : undefined,
+      });
+    }),
+  );
 }
 
 beforeEach(() => {

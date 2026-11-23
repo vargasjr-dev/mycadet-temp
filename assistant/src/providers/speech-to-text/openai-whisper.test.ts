@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import { OpenAIWhisperProvider } from "./openai-whisper.js";
 
 const TEST_API_KEY = "sk-test-key-for-unit-tests";
@@ -98,12 +99,12 @@ describe("OpenAIWhisperProvider", () => {
   });
 
   test("returns empty text when API returns empty text field", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({ text: "" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new OpenAIWhisperProvider(TEST_API_KEY);
     const result = await provider.transcribe(
@@ -115,12 +116,12 @@ describe("OpenAIWhisperProvider", () => {
   });
 
   test("returns empty text when API response has no text property", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({}), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new OpenAIWhisperProvider(TEST_API_KEY);
     const result = await provider.transcribe(
@@ -134,9 +135,9 @@ describe("OpenAIWhisperProvider", () => {
   test("error body is truncated to 300 characters", async () => {
     const longBody = "x".repeat(500);
 
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(longBody, { status: 500 });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new OpenAIWhisperProvider(TEST_API_KEY);
 

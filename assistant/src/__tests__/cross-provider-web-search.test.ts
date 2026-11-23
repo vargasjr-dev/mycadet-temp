@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ContentBlock, Message } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -680,8 +681,9 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
 
   test("503 from provider yields friendly recoverable copy in content + errorMessage, logs raw 503, no body leak", async () => {
     const rawBody = '{"error":"upstream exploded","trace":"do-not-leak"}';
-    globalThis.fetch = (async () =>
-      new Response(rawBody, { status: 503 })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async () => new Response(rawBody, { status: 503 }),
+    );
 
     const result = await executeWebSearch({ query: "needle in a haystack" });
 
@@ -711,9 +713,9 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
   });
 
   test("thrown network error yields the same friendly backend result", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       throw new TypeError("fetch failed");
-    }) as unknown as typeof fetch;
+    });
 
     const result = await executeWebSearch({ query: "offline" });
 
@@ -729,8 +731,9 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
   });
 
   test("401 invalid-key preserves the specific message, not the backend copy", async () => {
-    globalThis.fetch = (async () =>
-      new Response("Unauthorized", { status: 401 })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async () => new Response("Unauthorized", { status: 401 }),
+    );
 
     const result = await executeWebSearch({ query: "bad key" });
 
@@ -744,11 +747,13 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
   });
 
   test("HTTP 200 with zero results stays a success (unchanged)", async () => {
-    globalThis.fetch = (async () =>
-      new Response(JSON.stringify({ web: { results: [] } }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(JSON.stringify({ web: { results: [] } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
 
     const result = await executeWebSearch({ query: "no hits" });
 
@@ -760,11 +765,13 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
 
   test("post-retry 429 yields the friendly recoverable copy and preserves body in rawDetail", async () => {
     const rawBody = '{"error":"quota burned","retryHint":"do-not-leak-429"}';
-    globalThis.fetch = (async () =>
-      new Response(rawBody, {
-        status: 429,
-        headers: { "retry-after": "0" },
-      })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async () =>
+        new Response(rawBody, {
+          status: 429,
+          headers: { "retry-after": "0" },
+        }),
+    );
 
     const result = await executeWebSearch({ query: "rate limited" });
 
@@ -792,11 +799,11 @@ describe("Cross-Provider Web Search — app-side backend failure normalization",
     controller.abort();
 
     // A caller-aborted request surfaces an AbortError from fetch.
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       const abortError = new Error("The operation was aborted");
       abortError.name = "AbortError";
       throw abortError;
-    }) as unknown as typeof fetch;
+    });
 
     // The cancellation must re-throw so the executor's abort handling takes
     // over — NOT resolve to the friendly backend-failure result.

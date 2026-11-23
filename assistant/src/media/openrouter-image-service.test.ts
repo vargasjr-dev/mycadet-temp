@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../__tests__/helpers/fetch-mock.js";
 import {
   generateImageOpenRouter,
   mapOpenRouterError,
@@ -14,15 +15,17 @@ afterEach(() => {
 describe("generateImageOpenRouter", () => {
   test("generates images through the dedicated OpenRouter Images API", async () => {
     let request: Request | undefined;
-    globalThis.fetch = mock(async (input, init) => {
-      request = new Request(input, init);
-      return Response.json({
-        data: [
-          { b64_json: "png-data", media_type: "image/png" },
-          { b64_json: "svg-data", media_type: "image/svg+xml" },
-        ],
-      });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (input, init) => {
+        request = new Request(input, init);
+        return Response.json({
+          data: [
+            { b64_json: "png-data", media_type: "image/png" },
+            { b64_json: "svg-data", media_type: "image/svg+xml" },
+          ],
+        });
+      }),
+    );
 
     const result = await generateImageOpenRouter(
       { type: "direct", apiKey: "or-key" },
@@ -53,10 +56,12 @@ describe("generateImageOpenRouter", () => {
 
   test("sends source images as data URL references for edits", async () => {
     let body: Record<string, unknown> | undefined;
-    globalThis.fetch = mock(async (_input, init) => {
-      body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      return Response.json({ data: [] });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return Response.json({ data: [] });
+      }),
+    );
 
     await generateImageOpenRouter(
       { type: "direct", apiKey: "or-key" },
@@ -77,10 +82,12 @@ describe("generateImageOpenRouter", () => {
 
   test("qualifies a bare built-in model ID at the backend boundary", async () => {
     let body: Record<string, unknown> | undefined;
-    globalThis.fetch = mock(async (_input, init) => {
-      body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      return Response.json({ data: [] });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return Response.json({ data: [] });
+      }),
+    );
 
     const result = await generateImageOpenRouter(
       { type: "direct", apiKey: "or-key" },
@@ -97,10 +104,12 @@ describe("generateImageOpenRouter", () => {
 
   test("defaults an empty model to the OpenRouter Gemini Flash slug", async () => {
     let body: Record<string, unknown> | undefined;
-    globalThis.fetch = mock(async (_input, init) => {
-      body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      return Response.json({ data: [] });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return Response.json({ data: [] });
+      }),
+    );
 
     await generateImageOpenRouter(
       { type: "direct", apiKey: "or-key" },
@@ -111,12 +120,14 @@ describe("generateImageOpenRouter", () => {
   });
 
   test("surfaces the provider's invalid-request message", async () => {
-    globalThis.fetch = mock(async () =>
-      Response.json(
-        { error: { message: "Model does not support image output" } },
-        { status: 400 },
+    globalThis.fetch = fetchMock(
+      mock(async () =>
+        Response.json(
+          { error: { message: "Model does not support image output" } },
+          { status: 400 },
+        ),
       ),
-    ) as unknown as typeof fetch;
+    );
 
     try {
       await generateImageOpenRouter(

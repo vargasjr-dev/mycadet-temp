@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock as withFetchPreconnect } from "../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 import { AssistantConfig } from "../../config/schema.js";
 import { credentialKey } from "../../security/credential-key.js";
@@ -299,7 +300,7 @@ describe("cloud-proxy Gemini fallback to direct key", () => {
       }
       return jsonResponse({ embedding: { values: [0.1, 0.2, 0.3] } }, 200);
     });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = withFetchPreconnect(fetchMock);
   });
 
   afterEach(() => {

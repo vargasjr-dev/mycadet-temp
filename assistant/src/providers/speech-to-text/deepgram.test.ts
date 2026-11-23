@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import { DeepgramProvider } from "./deepgram.js";
 
 const TEST_API_KEY = "dg-test-key-for-unit-tests";
@@ -53,12 +54,12 @@ describe("DeepgramProvider", () => {
   // -----------------------------------------------------------------------
 
   test("returns empty text when transcript is empty string", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(deepgramResponse(""), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new DeepgramProvider(TEST_API_KEY);
     const result = await provider.transcribe(
@@ -74,12 +75,12 @@ describe("DeepgramProvider", () => {
   // -----------------------------------------------------------------------
 
   test("returns empty text when response has no results property", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({}), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new DeepgramProvider(TEST_API_KEY);
     const result = await provider.transcribe(Buffer.from("audio"), "audio/wav");
@@ -88,12 +89,12 @@ describe("DeepgramProvider", () => {
   });
 
   test("returns empty text when channels array is empty", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(JSON.stringify({ results: { channels: [] } }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new DeepgramProvider(TEST_API_KEY);
     const result = await provider.transcribe(Buffer.from("audio"), "audio/wav");
@@ -102,7 +103,7 @@ describe("DeepgramProvider", () => {
   });
 
   test("returns empty text when alternatives array is empty", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({ results: { channels: [{ alternatives: [] }] } }),
         {
@@ -110,7 +111,7 @@ describe("DeepgramProvider", () => {
           headers: { "Content-Type": "application/json" },
         },
       );
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new DeepgramProvider(TEST_API_KEY);
     const result = await provider.transcribe(Buffer.from("audio"), "audio/wav");
@@ -119,7 +120,7 @@ describe("DeepgramProvider", () => {
   });
 
   test("returns empty text when transcript field is missing", async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(
         JSON.stringify({
           results: { channels: [{ alternatives: [{ confidence: 0.95 }] }] },
@@ -129,7 +130,7 @@ describe("DeepgramProvider", () => {
           headers: { "Content-Type": "application/json" },
         },
       );
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new DeepgramProvider(TEST_API_KEY);
     const result = await provider.transcribe(Buffer.from("audio"), "audio/wav");
@@ -167,9 +168,9 @@ describe("DeepgramProvider", () => {
   test("error body is truncated to 300 characters", async () => {
     const longBody = "x".repeat(500);
 
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       return new Response(longBody, { status: 500 });
-    }) as unknown as typeof fetch;
+    });
 
     const provider = new DeepgramProvider(TEST_API_KEY);
 

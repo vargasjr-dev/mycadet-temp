@@ -22,6 +22,7 @@ import {
   test,
 } from "bun:test";
 
+import { fetchMock } from "./helpers/fetch-mock.js";
 import {
   reseedMemorySecureKeys,
   useMemorySecureKeys,
@@ -443,25 +444,24 @@ describe("twilio webhook routes", () => {
       },
     };
 
-    globalThis.fetch = (async (
-      url: string | URL | Request,
-      init?: RequestInit,
-    ) => {
-      const urlStr =
-        typeof url === "string"
-          ? url
-          : url instanceof URL
-            ? url.toString()
-            : url.url;
+    globalThis.fetch = fetchMock(
+      async (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr =
+          typeof url === "string"
+            ? url
+            : url instanceof URL
+              ? url.toString()
+              : url.url;
 
-      if (urlStr.startsWith("https://api.twilio.com/")) {
-        return new Response(mockTwilioApiValidationBody, {
-          status: mockTwilioApiValidationStatus,
-        });
-      }
+        if (urlStr.startsWith("https://api.twilio.com/")) {
+          return new Response(mockTwilioApiValidationBody, {
+            status: mockTwilioApiValidationStatus,
+          });
+        }
 
-      return originalFetch(url, init);
-    }) as unknown as typeof fetch;
+        return originalFetch(url, init);
+      },
+    );
   });
 
   afterAll(() => {

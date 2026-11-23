@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { TwilioVoiceProvider } from "../calls/twilio-provider.js";
 import { credentialKey } from "../security/credential-key.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
 // The REAL secure-keys module pinned to a live memory backend, seeded under
@@ -129,15 +130,17 @@ describe("TwilioVoiceProvider", () => {
       const originalFetch = globalThis.fetch;
       let capturedBody = "";
 
-      globalThis.fetch = (async (
-        _url: RequestInfo | URL,
-        init?: RequestInit,
-      ): Promise<Response> => {
-        capturedBody = String(init?.body ?? "");
-        return new Response(JSON.stringify({ sid: "CA_test_123" }), {
-          status: 200,
-        });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (
+          _url: RequestInfo | URL,
+          init?: RequestInit,
+        ): Promise<Response> => {
+          capturedBody = String(init?.body ?? "");
+          return new Response(JSON.stringify({ sid: "CA_test_123" }), {
+            status: 200,
+          });
+        },
+      );
 
       try {
         const result = await provider.initiateCall({
@@ -176,23 +179,25 @@ describe("TwilioVoiceProvider", () => {
     test("returns eligible when number is found in IncomingPhoneNumbers", async () => {
       const provider = new TwilioVoiceProvider();
 
-      globalThis.fetch = (async (url: RequestInfo | URL): Promise<Response> => {
-        const urlStr = String(url);
-        if (urlStr.includes("/IncomingPhoneNumbers.json")) {
-          return new Response(
-            JSON.stringify({
-              incoming_phone_numbers: [
-                { sid: "PN_test", phone_number: "+15550001111" },
-              ],
-            }),
-            { status: 200 },
-          );
-        }
-        // Should not reach OutgoingCallerIds since IncomingPhoneNumbers matched
-        return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
-          status: 200,
-        });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (url: RequestInfo | URL): Promise<Response> => {
+          const urlStr = String(url);
+          if (urlStr.includes("/IncomingPhoneNumbers.json")) {
+            return new Response(
+              JSON.stringify({
+                incoming_phone_numbers: [
+                  { sid: "PN_test", phone_number: "+15550001111" },
+                ],
+              }),
+              { status: 200 },
+            );
+          }
+          // Should not reach OutgoingCallerIds since IncomingPhoneNumbers matched
+          return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
+            status: 200,
+          });
+        },
+      );
 
       const result = await provider.checkCallerIdEligibility("+15550001111");
       expect(result.eligible).toBe(true);
@@ -202,25 +207,30 @@ describe("TwilioVoiceProvider", () => {
     test("returns eligible when number is found in OutgoingCallerIds", async () => {
       const provider = new TwilioVoiceProvider();
 
-      globalThis.fetch = (async (url: RequestInfo | URL): Promise<Response> => {
-        const urlStr = String(url);
-        if (urlStr.includes("/IncomingPhoneNumbers.json")) {
-          return new Response(JSON.stringify({ incoming_phone_numbers: [] }), {
-            status: 200,
-          });
-        }
-        if (urlStr.includes("/OutgoingCallerIds.json")) {
-          return new Response(
-            JSON.stringify({
-              outgoing_caller_ids: [
-                { sid: "PNverified", phone_number: "+15550001111" },
-              ],
-            }),
-            { status: 200 },
-          );
-        }
-        return new Response("Not found", { status: 404 });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (url: RequestInfo | URL): Promise<Response> => {
+          const urlStr = String(url);
+          if (urlStr.includes("/IncomingPhoneNumbers.json")) {
+            return new Response(
+              JSON.stringify({ incoming_phone_numbers: [] }),
+              {
+                status: 200,
+              },
+            );
+          }
+          if (urlStr.includes("/OutgoingCallerIds.json")) {
+            return new Response(
+              JSON.stringify({
+                outgoing_caller_ids: [
+                  { sid: "PNverified", phone_number: "+15550001111" },
+                ],
+              }),
+              { status: 200 },
+            );
+          }
+          return new Response("Not found", { status: 404 });
+        },
+      );
 
       const result = await provider.checkCallerIdEligibility("+15550001111");
       expect(result.eligible).toBe(true);
@@ -230,20 +240,25 @@ describe("TwilioVoiceProvider", () => {
     test("returns ineligible when number is not found in either endpoint", async () => {
       const provider = new TwilioVoiceProvider();
 
-      globalThis.fetch = (async (url: RequestInfo | URL): Promise<Response> => {
-        const urlStr = String(url);
-        if (urlStr.includes("/IncomingPhoneNumbers.json")) {
-          return new Response(JSON.stringify({ incoming_phone_numbers: [] }), {
-            status: 200,
-          });
-        }
-        if (urlStr.includes("/OutgoingCallerIds.json")) {
-          return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
-            status: 200,
-          });
-        }
-        return new Response("Not found", { status: 404 });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (url: RequestInfo | URL): Promise<Response> => {
+          const urlStr = String(url);
+          if (urlStr.includes("/IncomingPhoneNumbers.json")) {
+            return new Response(
+              JSON.stringify({ incoming_phone_numbers: [] }),
+              {
+                status: 200,
+              },
+            );
+          }
+          if (urlStr.includes("/OutgoingCallerIds.json")) {
+            return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
+              status: 200,
+            });
+          }
+          return new Response("Not found", { status: 404 });
+        },
+      );
 
       const result = await provider.checkCallerIdEligibility("+15559999999");
       expect(result.eligible).toBe(false);
@@ -254,16 +269,18 @@ describe("TwilioVoiceProvider", () => {
     test("throws when both API calls return non-ok responses", async () => {
       const provider = new TwilioVoiceProvider();
 
-      globalThis.fetch = (async (url: RequestInfo | URL): Promise<Response> => {
-        const urlStr = String(url);
-        if (urlStr.includes("/IncomingPhoneNumbers.json")) {
-          return new Response("Internal Server Error", { status: 500 });
-        }
-        if (urlStr.includes("/OutgoingCallerIds.json")) {
-          return new Response("Internal Server Error", { status: 500 });
-        }
-        return new Response("Not found", { status: 404 });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (url: RequestInfo | URL): Promise<Response> => {
+          const urlStr = String(url);
+          if (urlStr.includes("/IncomingPhoneNumbers.json")) {
+            return new Response("Internal Server Error", { status: 500 });
+          }
+          if (urlStr.includes("/OutgoingCallerIds.json")) {
+            return new Response("Internal Server Error", { status: 500 });
+          }
+          return new Response("Not found", { status: 404 });
+        },
+      );
 
       await expect(
         provider.checkCallerIdEligibility("+15550001111"),
@@ -273,18 +290,20 @@ describe("TwilioVoiceProvider", () => {
     test("throws when only one API call fails but the other succeeds with no match", async () => {
       const provider = new TwilioVoiceProvider();
 
-      globalThis.fetch = (async (url: RequestInfo | URL): Promise<Response> => {
-        const urlStr = String(url);
-        if (urlStr.includes("/IncomingPhoneNumbers.json")) {
-          return new Response("Internal Server Error", { status: 500 });
-        }
-        if (urlStr.includes("/OutgoingCallerIds.json")) {
-          return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
-            status: 200,
-          });
-        }
-        return new Response("Not found", { status: 404 });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (url: RequestInfo | URL): Promise<Response> => {
+          const urlStr = String(url);
+          if (urlStr.includes("/IncomingPhoneNumbers.json")) {
+            return new Response("Internal Server Error", { status: 500 });
+          }
+          if (urlStr.includes("/OutgoingCallerIds.json")) {
+            return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
+              status: 200,
+            });
+          }
+          return new Response("Not found", { status: 404 });
+        },
+      );
 
       await expect(
         provider.checkCallerIdEligibility("+15550001111"),
@@ -295,19 +314,21 @@ describe("TwilioVoiceProvider", () => {
       const provider = new TwilioVoiceProvider();
       const capturedUrls: string[] = [];
 
-      globalThis.fetch = (async (url: RequestInfo | URL): Promise<Response> => {
-        capturedUrls.push(String(url));
-        const urlStr = String(url);
-        if (urlStr.includes("/IncomingPhoneNumbers.json")) {
-          return new Response(
-            JSON.stringify({ incoming_phone_numbers: [{ sid: "PN1" }] }),
-            { status: 200 },
-          );
-        }
-        return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
-          status: 200,
-        });
-      }) as unknown as typeof fetch;
+      globalThis.fetch = fetchMock(
+        async (url: RequestInfo | URL): Promise<Response> => {
+          capturedUrls.push(String(url));
+          const urlStr = String(url);
+          if (urlStr.includes("/IncomingPhoneNumbers.json")) {
+            return new Response(
+              JSON.stringify({ incoming_phone_numbers: [{ sid: "PN1" }] }),
+              { status: 200 },
+            );
+          }
+          return new Response(JSON.stringify({ outgoing_caller_ids: [] }), {
+            status: 200,
+          });
+        },
+      );
 
       await provider.checkCallerIdEligibility("+15550001111");
 

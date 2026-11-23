@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import {
   checkSlackEnvelope,
   classifySlackError,
@@ -86,16 +87,18 @@ describe("checkSlackEnvelope", () => {
 describe("rawSlackRequest", () => {
   test("retries HTTP 429 honoring Retry-After, then succeeds", async () => {
     let calls = 0;
-    globalThis.fetch = mock(async () => {
-      calls++;
-      if (calls === 1) {
-        return new Response("", {
-          status: 429,
-          headers: { "Retry-After": "0" },
-        });
-      }
-      return jsonResponse({ ok: true });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        calls++;
+        if (calls === 1) {
+          return new Response("", {
+            status: 429,
+            headers: { "Retry-After": "0" },
+          });
+        }
+        return jsonResponse({ ok: true });
+      }),
+    );
 
     const data = await rawSlackRequest("xoxb-t", "conversations.info", {
       query: { channel: "C1" },
@@ -106,10 +109,12 @@ describe("rawSlackRequest", () => {
 
   test("retries 5xx and reports SlackApiError after exhausting retries", async () => {
     let calls = 0;
-    globalThis.fetch = mock(async () => {
-      calls++;
-      return new Response("", { status: 503 });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        calls++;
+        return new Response("", { status: 503 });
+      }),
+    );
 
     // The fixed 1s backoff between 5xx retries is real time, so this test
     // runs ~3s (3 retries); the timeout below gives it headroom.
@@ -123,9 +128,9 @@ describe("rawSlackRequest", () => {
   }, 10_000);
 
   test("throws classified SlackApiError for non-retryable envelope errors", async () => {
-    globalThis.fetch = mock(async () =>
-      jsonResponse({ ok: false, error: "channel_not_found" }),
-    ) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => jsonResponse({ ok: false, error: "channel_not_found" })),
+    );
 
     const promise = rawSlackRequest("xoxb-t", "conversations.info", {
       query: { channel: "C_MISSING" },
@@ -135,9 +140,9 @@ describe("rawSlackRequest", () => {
   });
 
   test("throws http_<status> SlackApiError for non-JSON 4xx responses", async () => {
-    globalThis.fetch = mock(
-      async () => new Response("forbidden", { status: 403 }),
-    ) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => new Response("forbidden", { status: 403 })),
+    );
 
     const promise = rawSlackRequest("xoxb-t", "conversations.info", {});
     const err = await captureSlackApiError(promise);
@@ -165,10 +170,12 @@ describe("rawSlackRequest", () => {
 
   test("sends form bodies as x-www-form-urlencoded POSTs", async () => {
     let capturedInit: RequestInit | undefined;
-    globalThis.fetch = mock(async (_input, init) => {
-      capturedInit = init;
-      return jsonResponse({ ok: true });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        capturedInit = init;
+        return jsonResponse({ ok: true });
+      }),
+    );
 
     await rawSlackRequest("xoxb-t", "files.getUploadURLExternal", {
       form: new URLSearchParams({ filename: "a.png", length: "10" }),

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import {
   providerReportsFailure,
   verifyIdentity,
@@ -15,7 +16,7 @@ let mockFetch: ReturnType<typeof mock<any>>;
 
 beforeEach(() => {
   mockFetch = mock(() => Promise.resolve(new Response("{}", { status: 200 })));
-  globalThis.fetch = mockFetch as unknown as typeof fetch;
+  globalThis.fetch = fetchMock(mockFetch);
 });
 
 afterEach(() => {

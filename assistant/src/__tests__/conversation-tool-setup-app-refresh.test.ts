@@ -17,6 +17,7 @@ import type { Conversation } from "../daemon/conversation.js";
 import { SYNC_TAGS } from "../daemon/message-types/sync.js";
 import type { PermissionPrompter } from "../permissions/prompter.js";
 import type { SecretPrompter } from "../permissions/secret-prompter.js";
+import type { updatePublishedAppDeployment } from "../services/published-app-updater.js";
 import type { ToolExecutor } from "../tools/executor.js";
 import type { ToolExecutionResult } from "../tools/types.js";
 
@@ -24,9 +25,14 @@ import type { ToolExecutionResult } from "../tools/types.js";
 // Spies for side-effect verification
 // ---------------------------------------------------------------------------
 
-const refreshSpy = mock(() => {});
-const updatePublishedSpy = mock(() => Promise.resolve());
-const broadcastSpy = mock(() => {});
+const refreshSpy = mock(
+  (..._args: Parameters<typeof refreshSurfacesForApp>) => {},
+);
+const updatePublishedSpy = mock(
+  (..._args: Parameters<typeof updatePublishedAppDeployment>) =>
+    Promise.resolve(),
+);
+const broadcastSpy = mock((..._args: Parameters<BroadcastOverride>) => {});
 
 setBroadcastOverrideForTesting(broadcastSpy);
 
@@ -54,9 +60,15 @@ mock.module("../tools/browser/browser-screencast.js", () => ({
 // Import createToolExecutor after mocks are in place
 // ---------------------------------------------------------------------------
 
-import { createSurfaceMutex } from "../daemon/conversation-surfaces.js";
+import {
+  createSurfaceMutex,
+  type refreshSurfacesForApp,
+} from "../daemon/conversation-surfaces.js";
 import { createToolExecutor } from "../daemon/conversation-tool-setup.js";
-import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
+import {
+  type BroadcastOverride,
+  setBroadcastOverrideForTesting,
+} from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
@@ -64,7 +76,7 @@ import { asConversation } from "./helpers/mock-conversation.js";
 // ---------------------------------------------------------------------------
 
 function broadcastPayloads(): unknown[] {
-  return (broadcastSpy.mock.calls as unknown[][]).map(([payload]) => payload);
+  return broadcastSpy.mock.calls.map(([payload]) => payload);
 }
 
 function expectAppChangeBroadcast(appId: string): void {
@@ -72,7 +84,7 @@ function expectAppChangeBroadcast(appId: string): void {
     expect.arrayContaining([
       { type: "app_files_changed", appId },
       { type: "sync_changed", tags: [SYNC_TAGS.appsList] },
-    ]) as never,
+    ]),
   );
 }
 
@@ -106,17 +118,19 @@ function makeFakeExecutor(
   result: ToolExecutionResult = { content: "{}", isError: false },
 ) {
   return {
-    execute: mock(async () => result),
+    execute: mock(
+      async (..._args: Parameters<ToolExecutor["execute"]>) => result,
+    ),
   };
 }
 
 /** No-op prompter stubs. */
-const noopPrompter = {
-  prompt: mock(async () => ({ decision: "allow" as const })),
-} as unknown as PermissionPrompter;
-const noopSecretPrompter = {
-  prompt: mock(async () => ({ cancelled: true })),
-} as unknown as SecretPrompter;
+const noopPrompter: Pick<PermissionPrompter, "prompt"> = {
+  prompt: async () => ({ decision: "allow" }),
+};
+const noopSecretPrompter: Pick<SecretPrompter, "prompt"> = {
+  prompt: async () => ({ value: null, delivery: "store", reason: "cancelled" }),
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -140,7 +154,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -149,8 +163,8 @@ describe("session-tool-setup app refresh side effects", () => {
       await toolFn("app_refresh", { app_id: "app-1" });
 
       expect(refreshSpy).toHaveBeenCalledTimes(1);
-      expect((refreshSpy.mock.calls as unknown[][])[0][0]).toBe(ctx);
-      expect((refreshSpy.mock.calls as unknown[][])[0][1]).toBe("app-1");
+      expect(refreshSpy.mock.calls[0][0]).toBe(ctx);
+      expect(refreshSpy.mock.calls[0][1]).toBe("app-1");
     });
 
     test("broadcasts app_files_changed with correct appId", async () => {
@@ -158,7 +172,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -175,7 +189,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -186,9 +200,7 @@ describe("session-tool-setup app refresh side effects", () => {
       // updatePublishedAppDeployment is called with void (fire-and-forget),
       // so just verify it was invoked.
       expect(updatePublishedSpy).toHaveBeenCalledTimes(1);
-      expect((updatePublishedSpy.mock.calls as unknown[][])[0][0]).toBe(
-        "app-publish",
-      );
+      expect(updatePublishedSpy.mock.calls[0][0]).toBe("app-publish");
     });
 
     test("skips side effects when result is an error", async () => {
@@ -199,7 +211,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -225,7 +237,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -234,12 +246,10 @@ describe("session-tool-setup app refresh side effects", () => {
       await toolFn("app_refresh", {});
 
       expect(refreshSpy).toHaveBeenCalledTimes(1);
-      expect((refreshSpy.mock.calls as unknown[][])[0][1]).toBe("app-resolved");
+      expect(refreshSpy.mock.calls[0][1]).toBe("app-resolved");
       expectAppChangeBroadcast("app-resolved");
       expect(updatePublishedSpy).toHaveBeenCalledTimes(1);
-      expect((updatePublishedSpy.mock.calls as unknown[][])[0][0]).toBe(
-        "app-resolved",
-      );
+      expect(updatePublishedSpy.mock.calls[0][0]).toBe("app-resolved");
     });
 
     test("skips side effects when app_id is absent from input and result", async () => {
@@ -247,7 +257,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -271,7 +281,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -280,12 +290,10 @@ describe("session-tool-setup app refresh side effects", () => {
       await toolFn("app_update", { app_id: "app-7" });
 
       expect(refreshSpy).toHaveBeenCalledTimes(1);
-      expect((refreshSpy.mock.calls as unknown[][])[0][1]).toBe("app-7");
+      expect(refreshSpy.mock.calls[0][1]).toBe("app-7");
       expectAppChangeBroadcast("app-7");
       expect(updatePublishedSpy).toHaveBeenCalledTimes(1);
-      expect((updatePublishedSpy.mock.calls as unknown[][])[0][0]).toBe(
-        "app-7",
-      );
+      expect(updatePublishedSpy.mock.calls[0][0]).toBe("app-7");
     });
 
     test("skips side effects when result is an error", async () => {
@@ -296,7 +304,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -318,7 +326,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -327,14 +335,10 @@ describe("session-tool-setup app refresh side effects", () => {
       await toolFn("app_update", {});
 
       expect(refreshSpy).toHaveBeenCalledTimes(1);
-      expect((refreshSpy.mock.calls as unknown[][])[0][1]).toBe(
-        "app-resolved-u",
-      );
+      expect(refreshSpy.mock.calls[0][1]).toBe("app-resolved-u");
       expectAppChangeBroadcast("app-resolved-u");
       expect(updatePublishedSpy).toHaveBeenCalledTimes(1);
-      expect((updatePublishedSpy.mock.calls as unknown[][])[0][0]).toBe(
-        "app-resolved-u",
-      );
+      expect(updatePublishedSpy.mock.calls[0][0]).toBe("app-resolved-u");
     });
 
     test("skips side effects when app_id is absent from input and result", async () => {
@@ -342,7 +346,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -367,7 +371,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -376,7 +380,7 @@ describe("session-tool-setup app refresh side effects", () => {
       await toolFn("app_create", { name: "My App", html: "<h1>hi</h1>" });
 
       expect(broadcastSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
-      expect((broadcastSpy.mock.calls as unknown[][])[0][0]).toEqual({
+      expect(broadcastSpy.mock.calls[0][0]).toEqual({
         type: "app_files_changed",
         appId: "new-app-1",
       });
@@ -392,7 +396,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -404,11 +408,11 @@ describe("session-tool-setup app refresh side effects", () => {
         activity: "Building app",
       });
 
-      const calls = executor.execute.mock.calls as unknown[][];
+      const calls = executor.execute.mock.calls;
       expect(calls[0][0]).toBe("app_create");
       expect(calls[0][1]).toEqual({ name: "Alias App" });
       expect(broadcastSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
-      expect((broadcastSpy.mock.calls as unknown[][])[0][0]).toEqual({
+      expect(broadcastSpy.mock.calls[0][0]).toEqual({
         type: "app_files_changed",
         appId: "alias-app-1",
       });
@@ -420,7 +424,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "ok", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -436,7 +440,7 @@ describe("session-tool-setup app refresh side effects", () => {
         activity: "Opening Spotlight",
       });
 
-      const calls = executor.execute.mock.calls as unknown[][];
+      const calls = executor.execute.mock.calls;
       expect(calls[0][0]).toBe("computer_use_key");
       expect(calls[0][1]).toEqual({
         key: "cmd+space",
@@ -454,7 +458,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -466,7 +470,7 @@ describe("session-tool-setup app refresh side effects", () => {
         activity: "Running custom app tool",
       });
 
-      const calls = executor.execute.mock.calls as unknown[][];
+      const calls = executor.execute.mock.calls;
       expect(calls[0][0]).toBe("create_app");
       expect(broadcastSpy).not.toHaveBeenCalled();
     });
@@ -476,7 +480,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "Error", isError: true });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -506,7 +510,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -516,7 +520,7 @@ describe("session-tool-setup app refresh side effects", () => {
 
       expect(refreshSpy).toHaveBeenCalledTimes(1);
       expect(broadcastSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
-      expect((broadcastSpy.mock.calls as unknown[][])[0][0]).toEqual({
+      expect(broadcastSpy.mock.calls[0][0]).toEqual({
         type: "app_files_changed",
         appId: "new-app-err",
       });
@@ -533,7 +537,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -550,7 +554,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "Error", isError: true });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -573,7 +577,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -598,7 +602,7 @@ describe("session-tool-setup app refresh side effects", () => {
       });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -615,7 +619,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -639,7 +643,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,
@@ -672,7 +676,7 @@ describe("session-tool-setup app refresh side effects", () => {
       const executor = makeFakeExecutor({ content: "{}", isError: false });
 
       const toolFn = createToolExecutor(
-        executor as unknown as ToolExecutor,
+        executor,
         noopPrompter,
         noopSecretPrompter,
         ctx,

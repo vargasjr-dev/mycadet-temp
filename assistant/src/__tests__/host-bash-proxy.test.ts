@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, jest, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
+  type BroadcastOverride,
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
 
-const sentMessages: unknown[] = [];
-const sentMessageOptions: unknown[] = [];
+const messageIdSchema = z.string();
+const sentMessages: Record<string, unknown>[] = [];
+const sentMessageOptions: Parameters<BroadcastOverride>[2][] = [];
 let mockHasClient = false;
 type MockClient = {
   clientId: string;
@@ -16,18 +20,16 @@ type MockClient = {
 let mockCapableClients: Array<MockClient> = [];
 let mockClientRegistry: Map<string, MockClient> = new Map();
 
-setBroadcastOverrideForTesting(
-  (msg: unknown, _conversationId?: string, options?: unknown) => {
-    // `interaction_resolved` envelopes are emitted by the pending-interactions
-    // tracker for every resolution. They are orthogonal to the host-proxy
-    // wire messages these tests assert on, so swallow them here.
-    if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
-      return;
-    }
-    sentMessages.push(msg);
-    sentMessageOptions.push(options);
-  },
-);
+setBroadcastOverrideForTesting((msg, _conversationId, options) => {
+  // `interaction_resolved` envelopes are emitted by the pending-interactions
+  // tracker for every resolution. They are orthogonal to the host-proxy
+  // wire messages these tests assert on, so swallow them here.
+  if (msg.type === "interaction_resolved") {
+    return;
+  }
+  sentMessages.push(msg);
+  sentMessageOptions.push(options);
+});
 setHubClientsForTesting({
   getClientById: (clientId: string) => mockClientRegistry.get(clientId),
   getActorPrincipalIdForClient: (clientId: string) =>
@@ -51,7 +53,7 @@ describe("HostBashProxy", () => {
     mockCapableClients = [];
     mockClientRegistry = new Map();
     pendingInteractions.clear();
-    proxy = new (HostBashProxy as any)();
+    proxy = new HostBashProxy();
   }
 
   function setupSingleClient(
@@ -95,14 +97,14 @@ describe("HostBashProxy", () => {
 
       // Verify the request was sent via broadcastMessage
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_bash_request");
       expect(sent.conversationId).toBe("session-1");
       expect(sent.command).toBe("echo hello");
       expect(sent.working_dir).toBe("/tmp");
       expect(typeof sent.requestId).toBe("string");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       // Simulate client response
@@ -131,11 +133,11 @@ describe("HostBashProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_bash_request");
       expect(sent.env).toEqual({ __CONVERSATION_ID: "conv-1" });
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveResult(requestId, {
         stdout: "locked\n",
         stderr: "",
@@ -154,10 +156,10 @@ describe("HostBashProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.env).toBeUndefined();
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveResult(requestId, {
         stdout: "normal\n",
         stderr: "",
@@ -173,8 +175,8 @@ describe("HostBashProxy", () => {
 
       const resultPromise = proxy.request({ command: "false" }, "session-1");
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.resolveResult(requestId, {
         stdout: "",
@@ -196,8 +198,8 @@ describe("HostBashProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.resolveResult(requestId, {
         stdout: "partial",
@@ -223,8 +225,8 @@ describe("HostBashProxy", () => {
           "session-1",
         );
 
-        const sent = sentMessages[0] as Record<string, unknown>;
-        const requestId = sent.requestId as string;
+        const sent = sentMessages[0];
+        const requestId = messageIdSchema.parse(sent.requestId);
         expect(pendingInteractions.get(requestId)).toBeDefined();
 
         // The proxy timeout is shellMaxTimeoutSec (600s default) + 3s.
@@ -251,8 +253,8 @@ describe("HostBashProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       controller.abort();
@@ -272,15 +274,15 @@ describe("HostBashProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
       await resultPromise;
 
       // Second message should be the cancel
       expect(sentMessages).toHaveLength(2);
-      const cancelMsg = sentMessages[1] as Record<string, unknown>;
+      const cancelMsg = sentMessages[1];
       expect(cancelMsg.type).toBe("host_bash_cancel");
       expect(cancelMsg.requestId).toBe(requestId);
     });
@@ -325,8 +327,8 @@ describe("HostBashProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.dispose();
@@ -343,8 +345,8 @@ describe("HostBashProxy", () => {
       p1.catch(() => {}); // Expected rejection on dispose
       p2.catch(() => {}); // Expected rejection on dispose
 
-      const requestIds = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => m.requestId as string,
+      const requestIds = sentMessages.map((m) =>
+        messageIdSchema.parse(m.requestId),
       );
       expect(requestIds).toHaveLength(2);
 
@@ -353,9 +355,7 @@ describe("HostBashProxy", () => {
       // After the 2 request messages, dispose should have sent 2 cancel messages
       const cancelMessages = sentMessages
         .slice(2)
-        .filter(
-          (m) => (m as Record<string, unknown>).type === "host_bash_cancel",
-        ) as Array<Record<string, unknown>>;
+        .filter((m) => m.type === "host_bash_cancel");
       expect(cancelMessages).toHaveLength(2);
       expect(cancelMessages.map((m) => m.requestId)).toContain(requestIds[0]);
       expect(cancelMessages.map((m) => m.requestId)).toContain(requestIds[1]);
@@ -373,8 +373,8 @@ describe("HostBashProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
       const result = await resultPromise;
@@ -442,8 +442,7 @@ describe("HostBashProxy", () => {
       expect(spy.addCalls).toEqual(["abort"]);
       expect(spy.removeCalls).toEqual([]);
 
-      const requestId = (sentMessages[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(sentMessages[0].requestId);
       proxy.resolveResult(requestId, {
         stdout: "hello\n",
         stderr: "",
@@ -503,8 +502,8 @@ describe("HostBashProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       controller.abort();
@@ -521,9 +520,7 @@ describe("HostBashProxy", () => {
       p1.catch(() => {}); // Expected rejection on dispose
       p2.catch(() => {}); // Expected rejection on dispose
 
-      const ids = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => m.requestId as string,
-      );
+      const ids = sentMessages.map((m) => messageIdSchema.parse(m.requestId));
       expect(ids).toHaveLength(2);
       expect(pendingInteractions.get(ids[0])).toBeDefined();
       expect(pendingInteractions.get(ids[1])).toBeDefined();
@@ -542,8 +539,8 @@ describe("HostBashProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.resolveResult(requestId, {
@@ -571,14 +568,14 @@ describe("HostBashProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-abc");
 
       // Options passed to broadcastMessage should also have targetClientId
-      const opts = sentMessageOptions[0] as Record<string, unknown> | undefined;
+      const opts = sentMessageOptions[0];
       expect(opts?.targetClientId).toBe("client-abc");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveResult(requestId, {
         stdout: "hello\n",
         stderr: "",
@@ -610,13 +607,13 @@ describe("HostBashProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-abc");
 
-      const opts = sentMessageOptions[0] as Record<string, unknown> | undefined;
+      const opts = sentMessageOptions[0];
       expect(opts?.targetClientId).toBe("client-abc");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveResult(requestId, {
         stdout: "ok\n",
         stderr: "",
@@ -681,14 +678,14 @@ describe("HostBashProxy", () => {
         "user-A",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-1");
       const options = sentMessageOptions[0] as
         | Record<string, unknown>
         | undefined;
       expect(options?.targetClientId).toBe("client-1");
 
-      proxy.resolveResult(sent.requestId as string, {
+      proxy.resolveResult(messageIdSchema.parse(sent.requestId), {
         stdout: "hello\n",
         stderr: "",
         exitCode: 0,
@@ -708,13 +705,13 @@ describe("HostBashProxy", () => {
 
       // Should still broadcast (no early return)
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_bash_request");
       // targetClientId is undefined when no clients present
       expect(sent.targetClientId).toBeUndefined();
 
       // Manually resolve to clean up
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveResult(requestId, {
         stdout: "",
         stderr: "",
@@ -769,10 +766,10 @@ describe("HostBashProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_bash_request");
       expect(sent.targetClientId).toBe("client-abc");
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.resolveResult(requestId, {
@@ -868,10 +865,10 @@ describe("HostBashProxy", () => {
       );
 
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-abc");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolveResult(requestId, {
         stdout: "hello\n",
         stderr: "",

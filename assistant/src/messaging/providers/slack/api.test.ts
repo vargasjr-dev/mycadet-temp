@@ -1,5 +1,6 @@
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 import { credentialKey } from "../../../security/credential-key.js";
 
@@ -39,20 +40,22 @@ describe("getSlackConversationInfo", () => {
     let capturedUrl: string | undefined;
     let capturedInit: RequestInit | undefined;
 
-    globalThis.fetch = mock(async (input, init) => {
-      capturedUrl = String(input);
-      capturedInit = init;
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          channel: {
-            id: "C123",
-            name: "engineering",
-          },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (input, init) => {
+        capturedUrl = String(input);
+        capturedInit = init;
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            channel: {
+              id: "C123",
+              name: "engineering",
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }),
+    );
 
     const info = await getSlackConversationInfo("C123");
 
@@ -71,20 +74,22 @@ describe("getSlackConversationInfo", () => {
   test("retries as the user when the bot cannot see the channel", async () => {
     secureKeys[credentialKey("slack_channel", "user_token")] = USER_TOKEN;
     const authHeaders: string[] = [];
-    globalThis.fetch = mock(async (_input, init) => {
-      const auth = (init?.headers as Record<string, string>).Authorization;
-      authHeaders.push(auth);
-      if (auth === `Bearer ${BOT_TOKEN}`) {
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        const auth = (init?.headers as Record<string, string>).Authorization;
+        authHeaders.push(auth);
+        if (auth === `Bearer ${BOT_TOKEN}`) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "channel_not_found" }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
         return new Response(
-          JSON.stringify({ ok: false, error: "channel_not_found" }),
+          JSON.stringify({ ok: true, channel: { id: "C9", name: "private" } }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
-      }
-      return new Response(
-        JSON.stringify({ ok: true, channel: { id: "C9", name: "private" } }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as unknown as typeof fetch;
+      }),
+    );
 
     const info = await getSlackConversationInfo("C9");
 
@@ -98,13 +103,15 @@ describe("getSlackConversationInfo", () => {
   test("does not retry as the user for non-visibility errors", async () => {
     secureKeys[credentialKey("slack_channel", "user_token")] = USER_TOKEN;
     let calls = 0;
-    globalThis.fetch = mock(async () => {
-      calls++;
-      return new Response(
-        JSON.stringify({ ok: false, error: "invalid_auth" }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        calls++;
+        return new Response(
+          JSON.stringify({ ok: false, error: "invalid_auth" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }),
+    );
 
     await expect(getSlackConversationInfo("C9")).rejects.toThrow(
       "Slack API error: invalid_auth",
@@ -115,13 +122,15 @@ describe("getSlackConversationInfo", () => {
   test("does not retry when no distinct user token is stored", async () => {
     delete secureKeys[credentialKey("slack_channel", "user_token")];
     let calls = 0;
-    globalThis.fetch = mock(async () => {
-      calls++;
-      return new Response(
-        JSON.stringify({ ok: false, error: "channel_not_found" }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        calls++;
+        return new Response(
+          JSON.stringify({ ok: false, error: "channel_not_found" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }),
+    );
 
     await expect(getSlackConversationInfo("C9")).rejects.toThrow(
       "Slack API error: channel_not_found",
@@ -134,13 +143,18 @@ describe("getSlackConversationInfo", () => {
 describe("startSlackStream", () => {
   function mockStartStream(): () => Record<string, unknown> {
     let capturedBody: Record<string, unknown> = {};
-    globalThis.fetch = mock(async (_input, init) => {
-      capturedBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      return new Response(JSON.stringify({ ok: true, ts: "1700.1" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        capturedBody = JSON.parse(String(init?.body)) as Record<
+          string,
+          unknown
+        >;
+        return new Response(JSON.stringify({ ok: true, ts: "1700.1" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
     return () => capturedBody;
   }
 
@@ -247,13 +261,18 @@ describe("startSlackStream", () => {
 describe("appendSlackStream", () => {
   test("sends a chunks-only append when no markdown text is given", async () => {
     let capturedBody: Record<string, unknown> = {};
-    globalThis.fetch = mock(async (_input, init) => {
-      capturedBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      mock(async (_input, init) => {
+        capturedBody = JSON.parse(String(init?.body)) as Record<
+          string,
+          unknown
+        >;
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
 
     await appendSlackStream({
       channel: "D123",

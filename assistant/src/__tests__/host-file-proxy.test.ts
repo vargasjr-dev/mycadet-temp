@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, jest, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
 
-const sentMessages: unknown[] = [];
+const messageIdSchema = z.string();
+const sentMessages: Record<string, unknown>[] = [];
 let mockHasClient = false;
 
 interface MockClient {
@@ -16,10 +19,10 @@ interface MockClient {
 
 let mockClients: MockClient[] = [];
 
-setBroadcastOverrideForTesting((msg: unknown) => {
+setBroadcastOverrideForTesting((msg) => {
   // Skip `interaction_resolved` envelopes — pending-interactions emits one
   // on every resolve and these tests assert on host-proxy wire messages.
-  if ((msg as { type?: string } | null)?.type === "interaction_resolved") {
+  if (msg.type === "interaction_resolved") {
     return;
   }
   sentMessages.push(msg);
@@ -62,7 +65,7 @@ describe("HostFileProxy", () => {
     mockHasClient = false;
     mockClients = [];
     pendingInteractions.clear();
-    proxy = new (HostFileProxy as any)();
+    proxy = new HostFileProxy();
   }
 
   afterEach(() => {
@@ -85,14 +88,14 @@ describe("HostFileProxy", () => {
 
       // Verify the request was sent to the client
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.type).toBe("host_file_request");
       expect(sent.conversationId).toBe("session-1");
       expect(sent.operation).toBe("read");
       expect(sent.path).toBe("/tmp/test.txt");
       expect(typeof sent.requestId).toBe("string");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       // Simulate client response
@@ -118,8 +121,8 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.resolve(requestId, {
         content: "ENOENT: no such file or directory",
@@ -142,8 +145,8 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.resolve(requestId, {
         content: "Image loaded on host",
@@ -172,8 +175,8 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.resolve(requestId, {
         content: "Audio loaded on host",
@@ -207,11 +210,11 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.operation).toBe("write");
       expect(sent.content).toBe("new content");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolve(requestId, {
         content: "File written successfully",
         isError: false,
@@ -234,12 +237,12 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.operation).toBe("edit");
       expect(sent.old_string).toBe("foo");
       expect(sent.new_string).toBe("bar");
 
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
       proxy.resolve(requestId, {
         content: "Edit applied successfully",
         isError: false,
@@ -262,8 +265,8 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       // Resolve to avoid test hanging (actual 30s timeout too long for test)
@@ -290,8 +293,8 @@ describe("HostFileProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       controller.abort();
@@ -315,15 +318,15 @@ describe("HostFileProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
       await resultPromise;
 
       // Second message should be the cancel
       expect(sentMessages).toHaveLength(2);
-      const cancelMsg = sentMessages[1] as Record<string, unknown>;
+      const cancelMsg = sentMessages[1];
       expect(cancelMsg.type).toBe("host_file_cancel");
       expect(cancelMsg.requestId).toBe(requestId);
     });
@@ -375,8 +378,8 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.dispose();
@@ -399,8 +402,8 @@ describe("HostFileProxy", () => {
       p1.catch(() => {}); // Expected rejection on dispose
       p2.catch(() => {}); // Expected rejection on dispose
 
-      const requestIds = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => m.requestId as string,
+      const requestIds = sentMessages.map((m) =>
+        messageIdSchema.parse(m.requestId),
       );
       expect(requestIds).toHaveLength(2);
 
@@ -409,9 +412,7 @@ describe("HostFileProxy", () => {
       // After the 2 request messages, dispose should have sent 2 cancel messages
       const cancelMessages = sentMessages
         .slice(2)
-        .filter(
-          (m) => (m as Record<string, unknown>).type === "host_file_cancel",
-        ) as Array<Record<string, unknown>>;
+        .filter((m) => m.type === "host_file_cancel");
       expect(cancelMessages).toHaveLength(2);
       expect(cancelMessages.map((m) => m.requestId)).toContain(requestIds[0]);
       expect(cancelMessages.map((m) => m.requestId)).toContain(requestIds[1]);
@@ -432,8 +433,8 @@ describe("HostFileProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       controller.abort();
       const result = await resultPromise;
@@ -511,8 +512,7 @@ describe("HostFileProxy", () => {
       expect(spy.addCalls).toEqual(["abort"]);
       expect(spy.removeCalls).toEqual([]);
 
-      const requestId = (sentMessages[0] as Record<string, unknown>)
-        .requestId as string;
+      const requestId = messageIdSchema.parse(sentMessages[0].requestId);
       proxy.resolve(requestId, {
         content: "file contents",
         isError: false,
@@ -545,8 +545,7 @@ describe("HostFileProxy", () => {
         expect(spy.addCalls).toEqual(["abort"]);
         expect(spy.removeCalls).toEqual([]);
 
-        const requestId = (sentMessages[0] as Record<string, unknown>)
-          .requestId as string;
+        const requestId = messageIdSchema.parse(sentMessages[0].requestId);
         expect(pendingInteractions.get(requestId)).toBeDefined();
 
         // Advance past the 30s internal timeout.
@@ -583,8 +582,8 @@ describe("HostFileProxy", () => {
         controller.signal,
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       controller.abort();
@@ -607,9 +606,7 @@ describe("HostFileProxy", () => {
       p1.catch(() => {}); // Expected rejection on dispose
       p2.catch(() => {}); // Expected rejection on dispose
 
-      const ids = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => m.requestId as string,
-      );
+      const ids = sentMessages.map((m) => messageIdSchema.parse(m.requestId));
       expect(ids).toHaveLength(2);
       expect(pendingInteractions.get(ids[0])).toBeDefined();
       expect(pendingInteractions.get(ids[1])).toBeDefined();
@@ -631,8 +628,8 @@ describe("HostFileProxy", () => {
         "session-1",
       );
 
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       proxy.resolve(requestId, {
@@ -666,8 +663,8 @@ describe("HostFileProxy", () => {
 
       // Request was registered (made it past the same-user gate).
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
-      const requestId = sent.requestId as string;
+      const sent = sentMessages[0];
+      const requestId = messageIdSchema.parse(sent.requestId);
       expect(pendingInteractions.get(requestId)).toBeDefined();
 
       // Drain to avoid leaks.
@@ -794,9 +791,9 @@ describe("HostFileProxy", () => {
 
       // Auto-resolved to client-A and broadcast targeted at it.
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as Record<string, unknown>;
+      const sent = sentMessages[0];
       expect(sent.targetClientId).toBe("client-A");
-      const requestId = sent.requestId as string;
+      const requestId = messageIdSchema.parse(sent.requestId);
 
       proxy.resolve(requestId, { content: "ok", isError: false });
       await resultPromise;
@@ -847,8 +844,7 @@ describe("HostFileProxy", () => {
         "user-A",
       );
       expect(sentMessages).toHaveLength(1);
-      const okRequestId = (sentMessages[0] as Record<string, unknown>)
-        .requestId as string;
+      const okRequestId = messageIdSchema.parse(sentMessages[0].requestId);
       proxy.resolve(okRequestId, { content: "ok", isError: false });
       await okPromise;
 

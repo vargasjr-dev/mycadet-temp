@@ -5,9 +5,9 @@
  * form-encoded, state-less exchange with HTTP 400, so these pin the wire shape
  * without hitting the network (global `fetch` is stubbed).
  */
-
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import { exchangeCodeForTokens, type OAuth2Config } from "../oauth2.js";
 
 const BASE_CONFIG: OAuth2Config = {
@@ -34,27 +34,26 @@ let captured: CapturedRequest | undefined;
 const realFetch = globalThis.fetch;
 
 function stubFetchOk(): void {
-  globalThis.fetch = (async (url: string, init: RequestInit) => {
-    const headers = (init.headers ?? {}) as Record<string, string>;
-    const body = init.body;
-    captured = {
-      url: String(url),
-      contentType: headers["Content-Type"],
-      rawBody:
-        body instanceof URLSearchParams ? body.toString() : String(body ?? ""),
-    };
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({
+  globalThis.fetch = fetchMock(
+    async (url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      const body = init?.body;
+      captured = {
+        url: String(url),
+        contentType: headers.get("Content-Type") ?? undefined,
+        rawBody:
+          body instanceof URLSearchParams
+            ? body.toString()
+            : String(body ?? ""),
+      };
+      return Response.json({
         access_token: "sk-ant-oat-xyz",
         token_type: "Bearer",
         expires_in: 3600,
         scope: "user:inference",
-      }),
-      text: async () => "",
-    } as unknown as Response;
-  }) as unknown as typeof fetch;
+      });
+    },
+  );
 }
 
 beforeEach(() => {

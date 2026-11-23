@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 
 // ── Mutable mock state ────────────────────────────────────────────────
@@ -113,7 +114,7 @@ mock.module("../../notifications/emit-signal.js", () => ({
 }));
 
 const originalFetch = globalThis.fetch;
-globalThis.fetch = (async (input: string) => {
+globalThis.fetch = fetchMock(async (input: Parameters<typeof fetch>[0]) => {
   fetchCallCount++;
   fetchedUrls.push(String(input));
   const outcome = fetchOutcome;
@@ -121,12 +122,8 @@ globalThis.fetch = (async (input: string) => {
     throw new Error(outcome.message);
   }
   const status = outcome.status ?? 200;
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => outcome.body,
-  } as Response;
-}) as unknown as typeof fetch;
+  return Response.json(outcome.body, { status });
+});
 
 const {
   _resetTelegramWebhookHealthState,

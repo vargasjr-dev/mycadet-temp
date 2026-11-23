@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import { useFaultableSecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 import { credentialKey } from "../../security/credential-key.js";
 import {
@@ -36,14 +37,13 @@ describe("fetchCloudIdentityIds", () => {
   beforeEach(() => {
     fetchCalls.length = 0;
     fetchImpl = async () => new Response("not found", { status: 404 });
-    globalThis.fetch = (async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ) => {
-      const url = typeof input === "string" ? input : input.toString();
-      fetchCalls.push({ url, init });
-      return fetchImpl(input, init);
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        fetchCalls.push({ url, init });
+        return fetchImpl(input, init);
+      },
+    );
   });
 
   afterEach(() => {
@@ -125,14 +125,13 @@ describe("resolveCloudAssistantId", () => {
   beforeEach(() => {
     fetchCalls.length = 0;
     fetchImpl = async () => new Response("not found", { status: 404 });
-    globalThis.fetch = (async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ) => {
-      const url = typeof input === "string" ? input : input.toString();
-      fetchCalls.push({ url, init });
-      return fetchImpl(input, init);
-    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        fetchCalls.push({ url, init });
+        return fetchImpl(input, init);
+      },
+    );
     delete process.env.ASSISTANT_API_KEY;
     delete process.env.CADET_CLOUD_URL;
     setCloudAssistantId(undefined);

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "./helpers/fetch-mock.js";
+
 // ── Mutable state for injected vault ────────────────────────────────────────
 
 const vaultStore = new Map<string, string>();
@@ -166,13 +168,13 @@ describe("service-account-token", () => {
 
     let fetchCallCount = 0;
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       fetchCallCount += 1;
       return {
         ok: true,
         json: async () => ({ access_token: "new-token", expires_in: 3600 }),
       } as Response;
-    }) as unknown as typeof fetch;
+    });
 
     try {
       const [r1, r2] = await Promise.all([
@@ -194,7 +196,7 @@ describe("service-account-token", () => {
 
     let fetchCallCount = 0;
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       fetchCallCount += 1;
       return {
         ok: true,
@@ -203,7 +205,7 @@ describe("service-account-token", () => {
           expires_in: 3600,
         }),
       } as Response;
-    }) as unknown as typeof fetch;
+    });
 
     try {
       const [r1, r2] = await Promise.all([
@@ -224,10 +226,9 @@ describe("service-account-token", () => {
     vaultStore.set("credential/vertex-ai", TEST_SERVICE_ACCOUNT);
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () => ({
-      ok: true,
-      json: async () => ({ access_token: "fresh-token", expires_in: 3600 }),
-    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock(async () =>
+      Response.json({ access_token: "fresh-token", expires_in: 3600 }),
+    );
 
     try {
       await getValidServiceAccountToken("credential/vertex-ai");
