@@ -28,10 +28,13 @@ beforeAll(() => {
 
 import { ROUTES } from "../runtime/routes/app-routes.js";
 import { BadRequestError, NotFoundError } from "../runtime/routes/errors.js";
-import type { ResponseHeaderArgs } from "../runtime/routes/types.js";
+import type {
+  ResponseHeaderArgs,
+  RouteDefinition,
+} from "../runtime/routes/types.js";
 
 /** Find a route by operationId. */
-function getRoute(operationId: string) {
+function getRoute(operationId: string): RouteDefinition {
   const route = ROUTES.find((r) => r.operationId === operationId);
   if (!route) {
     throw new Error(`Route not found: ${operationId}`);

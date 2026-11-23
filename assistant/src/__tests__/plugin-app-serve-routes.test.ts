@@ -99,9 +99,7 @@ describe("plugin app serve routes", () => {
       "dist/index.html": "<script src='main.js'></script>",
     });
     const route = findRoute(APP_ROUTES, "pages_serve");
-    const headersFn = route.responseHeaders;
-
-    const headers = headersFn({ pathParams: { appId: "plugins~acme~multi" } });
+    const headers = route.responseHeaders();
 
     expect(headers["Content-Security-Policy"]).toContain("script-src 'self';");
     expect(headers["Content-Security-Policy"]).not.toContain(
