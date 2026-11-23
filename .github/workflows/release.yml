@@ -1480,8 +1480,6 @@ jobs:
     continue-on-error: true
     # No publish dep: the bundled CLI floats to the `latest` dist-tag at runtime.
     needs: [extract-version]
-    permissions:
-      contents: write # publish the signed installer channel asset
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -1707,20 +1705,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Publish Mac download
-        if: ${{ matrix.arch == 'arm64' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          if ! gh release view desktop-prod >/dev/null 2>&1; then
-            gh release create desktop-prod --target "$GITHUB_SHA" --prerelease --latest=false \
-              --title "Mac desktop download (prod)" \
-              --notes "Rolling signed prod installer. Updated after successful Mac builds."
-          fi
-          cp dist/mycadet-electron.dmg dist/mycadet.dmg
-          gh release upload desktop-prod "dist/mycadet.dmg" --clobber
-
       - name: Cleanup keychain and keys
         if: always()
         run: |
@@ -1878,6 +1862,20 @@ jobs:
           name: macos-build-electron-x64
           path: electron-artifacts-x64
 
+      - name: Download Linux installer
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: linux-build-electron
+          path: linux-artifacts
+
+      - name: Download Windows installer
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: windows-release
+          path: windows-artifacts
+
       - name: Create GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1893,25 +1891,6 @@ jobs:
           fi
 
           ASSETS=()
-
-          # The desktop builds are canaries, so the DMGs are optional here —
-          # a red leg (or missing artifact) warns and the release ships
-          # without them instead of blocking the train.
-          # The arm64 build is published under the canonical mycadet.dmg
-          # name — the production desktop download URL and scripts/production-release.sh
-          # both resolve the release asset by that exact name.
-          ELECTRON_DMG=$(find electron-artifacts -name "mycadet-electron.dmg" -type f 2>/dev/null | grep -m1 . || true)
-          if [ -n "$ELECTRON_DMG" ]; then
-            ASSETS+=("$ELECTRON_DMG#mycadet.dmg")
-          else
-            echo "::warning::Electron arm64 DMG missing (electron offline) — releasing without it"
-          fi
-          ELECTRON_X64_DMG=$(find electron-artifacts-x64 -name "mycadet-electron-x64.dmg" -type f 2>/dev/null | grep -m1 . || true)
-          if [ -n "$ELECTRON_X64_DMG" ]; then
-            ASSETS+=("$ELECTRON_X64_DMG#mycadet-electron-x64.dmg")
-          else
-            echo "::warning::Electron x64 DMG missing (electron offline) — releasing without it"
-          fi
 
           INSTALL_SH="cli/src/adapters/install.sh"
           [ -f "$INSTALL_SH" ] && ASSETS+=("$INSTALL_SH#install.sh")
@@ -1939,6 +1918,7 @@ jobs:
             echo "Release $VERSION_TAG already exists on ${{ github.repository }}, skipping"
           fi
 
+          bash scripts/attach-desktop-installers.sh "$VERSION_TAG"
           rm -f "$NOTES_FILE"
 
   merge-release-branch:

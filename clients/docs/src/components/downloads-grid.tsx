@@ -31,48 +31,38 @@ const CARD_TAGLINES: Record<DownloadsCardId, string> = {
 };
 
 const COMING_SOON: Record<
-  Exclude<DownloadsCardId, "mac" | "terminal" | "windows">,
+  Exclude<DownloadsCardId, "mac" | "terminal" | "windows" | "linux">,
   string
 > = {
   iphone: "📱 Coming soon!",
   android: "🤖 Coming soon!",
   chrome: "🌐 Coming soon!",
-  linux: "🐧 Coming soon!",
 };
 
 const COMING_SOON_NOTES: Record<
-  Exclude<DownloadsCardId, "mac" | "terminal" | "windows">,
+  Exclude<DownloadsCardId, "mac" | "terminal" | "windows" | "linux">,
   string
 > = {
   iphone: "Your pocket cadet is still in training — check back soon.",
   android: "This pocket cadet is still in training too — check back soon.",
   chrome: "Your browser cadet is still drilling — check back soon.",
-  linux: "The Linux desktop app is in development — check back soon.",
 };
 
-// Mac installers are published by the signed build jobs to stable channel
-// release assets. Keep these URLs aligned with the workflows' upload names.
-// Windows still links its channel update-feed root.
-const DESKTOP_DOWNLOAD_URLS: Record<
-  "mac" | "windows",
-  Record<"dev" | "prod", string>
-> = {
-  mac: {
-    dev: "https://github.com/vargasjr-dev/mycadet-temp/releases/download/desktop-dev/mycadet-electron-dev.dmg",
-    prod: "https://github.com/vargasjr-dev/mycadet-temp/releases/download/desktop-prod/mycadet.dmg",
-  },
-  windows: {
-    dev: "https://storage.googleapis.com/mycadet-dev-releases/win-electron/x64/",
-    prod: "https://storage.googleapis.com/mycadet-prod-releases/win-electron/x64/",
-  },
+// Resolve the newest versioned release that actually contains the installer.
+const desktopDownloadUrls = (platform: string) => ({
+  dev: `/downloads/desktop/${platform}?channel=dev`,
+  prod: `/downloads/desktop/${platform}?channel=prod`,
+});
+const DESKTOP_DOWNLOAD_URLS = {
+  mac: desktopDownloadUrls("mac"),
+  windows: desktopDownloadUrls("windows"),
+  linux: desktopDownloadUrls("linux"),
 };
 
 function comingSoonFor(
   id: DownloadsCardId,
 ): { note: string; label: string } | null {
   switch (id) {
-    case "linux":
-      return { note: COMING_SOON_NOTES.linux, label: COMING_SOON.linux };
     case "iphone":
       return { note: COMING_SOON_NOTES.iphone, label: COMING_SOON.iphone };
     case "android":
@@ -210,7 +200,7 @@ function Card({
         </div>
       ) : (
         <div className="dl-visual">
-          {id === "terminal" || id === "windows" ? (
+          {id === "terminal" || id === "windows" || id === "linux" ? (
             <Glyph id={id} />
           ) : (
             <div className="dl-visual-soon">
@@ -230,7 +220,7 @@ function Card({
             Read the local hosting guide
           </a>
         </>
-      ) : id === "mac" || id === "windows" ? (
+      ) : id === "mac" || id === "windows" || id === "linux" ? (
         <>
           <p className="dl-note">
             {environment === "dev"
@@ -241,7 +231,8 @@ function Card({
             className="btn dl-cta"
             href={DESKTOP_DOWNLOAD_URLS[id][environment]}
           >
-            Download for {id === "mac" ? "Mac" : "Windows"}
+            Download for{" "}
+            {id === "mac" ? "Mac" : id === "linux" ? "Linux" : "Windows"}
           </a>
         </>
       ) : comingSoonFor(id) ? (

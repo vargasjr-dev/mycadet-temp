@@ -1060,8 +1060,6 @@ jobs:
     # of the train. The dev environment has no Apple signing secrets seeded
     # yet, so expect a red job here until they land.
     continue-on-error: true
-    permissions:
-      contents: write # publish the signed installer channel asset
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -1278,19 +1276,6 @@ jobs:
             clients/macos/dist/*.zip.blockmap
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Publish Mac download
-        if: ${{ github.ref == 'refs/heads/main' && inputs.dry_run != true }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          if ! gh release view desktop-dev >/dev/null 2>&1; then
-            gh release create desktop-dev --target "$GITHUB_SHA" --prerelease --latest=false \
-              --title "Mac desktop download (dev)" \
-              --notes "Rolling signed dev installer. Updated after successful Mac builds."
-          fi
-          gh release upload desktop-dev "dist/mycadet-electron-dev.dmg" --clobber
 
       - name: Cleanup keychain and keys
         if: always()
@@ -1840,5 +1825,48 @@ jobs:
       version: ${{ needs.compute-version.outputs.version }}
       tolerate_failure: true
     secrets: inherit
+
+  release:
+    needs: [compute-version, build-macos, build-linux, build-windows, publish-meta-dev]
+    if: ${{ always() && !cancelled() && github.ref == 'refs/heads/main' && inputs.dry_run != true && needs.publish-meta-dev.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Download Mac installer
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dev-electron-dmg
+          path: electron-artifacts
+
+      - name: Download Linux installer
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dev-electron-linux-appimage
+          path: linux-artifacts
+
+      - name: Download Windows installer
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: windows-release
+          path: windows-artifacts
+
+      - name: Create dev release and attach desktop installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.compute-version.outputs.version }}
+        run: |
+          VERSION_TAG="v${VERSION}"
+          if ! gh release view "$VERSION_TAG" >/dev/null 2>&1; then
+            gh release create "$VERSION_TAG" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Cadet $VERSION" --generate-notes
+          fi
+          bash scripts/attach-desktop-installers.sh "$VERSION_TAG"
 
   # ── Slack notification (first failure only) ──────────────────────────
