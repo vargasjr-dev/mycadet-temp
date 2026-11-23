@@ -7,8 +7,9 @@ import {
   type DownloadsCardId,
 } from "@/lib/detect-platform";
 import CopyButton from "./copy-button";
+import { APEX_DOMAIN, APEX_ORIGIN } from "@/lib/domains";
 
-const INSTALL_COMMAND = "curl -fsSL https://www.mycadet.ai/install.sh | bash";
+const INSTALL_COMMAND = `curl -fsSL ${APEX_ORIGIN}/install.sh | bash`;
 
 const CARD_TITLES: Record<DownloadsCardId, string> = {
   iphone: "Cadet for iPhone",
@@ -75,7 +76,7 @@ function comingSoonFor(
 }
 
 const downloadsEnvironment = (): "dev" | "prod" =>
-  typeof window === "undefined" || window.location.hostname === "mycadet.ai"
+  typeof window === "undefined" || window.location.hostname === APEX_DOMAIN
     ? "prod"
     : "dev";
 

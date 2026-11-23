@@ -1,3 +1,4 @@
+import { APEX_ORIGIN } from "@/lib/domains";
 // Ported from mycadet-cloud's lib/plugins-catalog — the OSS marketing
 // pages fetch the same public catalog the cloud app renders from, so the
 // marketplace has one source of truth on the cloud side. The base is the
@@ -34,7 +35,7 @@ export function catalogRowsFromResponse(data: unknown): CatalogRow[] {
   return rows.filter(isCatalogRow);
 }
 
-export const PUBLIC_API_BASE = "https://mycadet.ai/api";
+export const PUBLIC_API_BASE = `${APEX_ORIGIN}/api`;
 
 // The loader lives here so the grid and every detail page fetch the SAME
 // catalog through the SAME code path — they can't drift. The failure paths

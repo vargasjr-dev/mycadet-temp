@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { WWW_ORIGIN } from "@/lib/domains";
 
 export interface ApiRelease {
   version: string;
@@ -17,7 +18,7 @@ function getReleasesBaseUrl(): string {
   return (
     process.env.RELEASES_API_URL ||
     process.env.CLOUD_INTERNAL_URL ||
-    "https://www.mycadet.ai"
+    WWW_ORIGIN
   );
 }
 

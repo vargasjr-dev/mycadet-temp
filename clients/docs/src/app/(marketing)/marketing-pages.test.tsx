@@ -55,7 +55,7 @@ describe("downloads page", () => {
   });
 
   test("hands out the install command and every platform card", () => {
-    expect(grid).toContain("curl -fsSL https://www.mycadet.ai/install.sh | bash");
+    expect(grid).toContain("curl -fsSL ${APEX_ORIGIN}/install.sh | bash");
     for (const id of [
       "iphone",
       "android",
