@@ -1,5 +1,5 @@
 import { ReleaseMarkdown } from "@/app/docs/_components/release-markdown";
-import { WWW_DOMAIN } from "@/lib/domains";
+import { APEX_ORIGIN } from "@/lib/domains";
 import type { ApiRelease } from "@/lib/releases-server";
 import {
   groupApiReleasesByMonth,
@@ -68,7 +68,7 @@ export function ReleasesContent({ releases }: ReleasesContentProps) {
       </div>
 
       <a
-        href={`https://${WWW_DOMAIN}/roadmap`}
+        href={`${APEX_ORIGIN}/roadmap`}
         className="group mb-10 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-5 no-underline transition-colors hover:border-zinc-300 hover:bg-zinc-50"
       >
         <div className="flex flex-col gap-1">

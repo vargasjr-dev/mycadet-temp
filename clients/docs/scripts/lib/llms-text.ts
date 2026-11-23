@@ -1,6 +1,6 @@
 import { agentMarkdownPathForPage } from "../../src/lib/agent-markdown-paths";
 import { SITE_URL } from "../../src/lib/metadata";
-import { GITHUB_REPO_URL } from "../../src/lib/github-repo";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
 import { APEX_ORIGIN } from "../../src/lib/domains";
 
 /** Title/description for a docs page, emitted to the sidecar metadata index
@@ -32,7 +32,7 @@ export function buildLlmsText(pages: DocsPageMeta[]): string {
     "",
     `Install: \`curl -fsSL ${APEX_ORIGIN}/install.sh | bash && . ~/.config/cadet/env\``,
     "",
-    `Repo: ${GITHUB_REPO_URL}`,
+    `Repo: ${CADET_GITHUB_REPOSITORY_URL}`,
     "",
     `Docs: ${SITE_URL}/docs`,
     "",

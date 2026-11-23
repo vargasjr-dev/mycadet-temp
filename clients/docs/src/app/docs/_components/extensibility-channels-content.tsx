@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
-import { GITHUB_REPO } from "@/lib/github-repo";
+import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 
 const TOC_ITEMS = [
   { id: "the-declaration", label: "The declaration", level: 2 },
@@ -27,7 +27,7 @@ const linkClass =
 
 const ROUTES_PAGE_URL = "/docs/extensibility/routes";
 const PLUGIN_API_URL =
-  `${GITHUB_REPO}/tree/main/assistant/src/plugin-api`;
+  `${CADET_GITHUB_REPOSITORY}/tree/main/assistant/src/plugin-api`;
 
 type FieldRow = {
   field: string;

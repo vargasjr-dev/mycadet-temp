@@ -1,4 +1,4 @@
-import { GITHUB_REPO } from "@/lib/github-repo";
+import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 
 const X_ICON = (
   <svg
@@ -93,7 +93,7 @@ export function SiteFooter() {
               {X_ICON}
             </a>
             <a
-              href={`https://github.com/${GITHUB_REPO}`}
+              href={`https://github.com/${CADET_GITHUB_REPOSITORY}`}
               aria-label="Cadet on GitHub"
               target="_blank"
               rel="noopener noreferrer"

@@ -4,7 +4,7 @@
  * app destinations are cross-app absolute URLs.
  */
 
-import { WWW_DOMAIN } from "@/lib/domains";
+import { APEX_ORIGIN } from "@/lib/domains";
 
 export const routes = {
   docs: {
@@ -17,11 +17,11 @@ export const routes = {
   },
 
   // Cross-app destinations served by other Cadet apps.
-  signup: `https://${WWW_DOMAIN}/account/signup`,
-  login: `https://${WWW_DOMAIN}/account/login`,
-  assistant: `https://${WWW_DOMAIN}/assistant`,
-  plugins: `https://${WWW_DOMAIN}/plugins`,
-  downloads: `https://${WWW_DOMAIN}/downloads`,
+  signup: `https://${APEX_ORIGIN}/account/signup`,
+  login: `https://${APEX_ORIGIN}/account/login`,
+  assistant: `https://${APEX_ORIGIN}/assistant`,
+  plugins: `https://${APEX_ORIGIN}/plugins`,
+  downloads: `https://${APEX_ORIGIN}/downloads`,
   iosAppStore: "https://apps.apple.com/us/app/mycadet/id6759934423",
   androidPlayStore:
     "https://play.google.com/store/apps/details?id=ai.mycadet.android",

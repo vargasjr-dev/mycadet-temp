@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { GITHUB_REPO_URL } from "@/lib/github-repo";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
 
 /**
  * GitHub wordmark link rendered at the end of the docs header.
@@ -9,7 +9,7 @@ import { GITHUB_REPO_URL } from "@/lib/github-repo";
 export function DocsGithubLink() {
   return (
     <a
-      href={GITHUB_REPO_URL}
+      href={CADET_GITHUB_REPOSITORY_URL}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Cadet on GitHub"

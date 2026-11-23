@@ -12,7 +12,7 @@ describe("createMetadata", () => {
     });
 
     expect(metadata.alternates?.canonical).toBe(
-      "https://www.mycadet.ai/docs/releases",
+      "https://mycadet.ai/docs/releases",
     );
   });
 
@@ -24,7 +24,7 @@ describe("createMetadata", () => {
     });
 
     expect(metadata.alternates?.types).toEqual({
-      "text/markdown": "https://www.mycadet.ai/docs/releases.md",
+      "text/markdown": "https://mycadet.ai/docs/releases.md",
     });
   });
 
@@ -37,7 +37,7 @@ describe("createMetadata", () => {
 
     expect(metadata.alternates?.types).toEqual({
       "text/markdown":
-        "https://www.mycadet.ai/docs/trust-security/privacy-and-data.md",
+        "https://mycadet.ai/docs/trust-security/privacy-and-data.md",
     });
   });
 
@@ -50,7 +50,7 @@ describe("createMetadata", () => {
 
     expect(metadata.openGraph?.images).toEqual([
       {
-        url: "https://www.mycadet.ai/docs/og.png",
+        url: "https://mycadet.ai/docs/og.png",
         width: 1200,
         height: 630,
         alt: "Releases",
@@ -58,7 +58,7 @@ describe("createMetadata", () => {
     ]);
     expect(metadata.twitter?.images).toEqual([
       {
-        url: "https://www.mycadet.ai/docs/og.png",
+        url: "https://mycadet.ai/docs/og.png",
         alt: "Releases",
       },
     ]);
@@ -71,9 +71,9 @@ describe("createMetadata", () => {
       path: "/docs",
     });
 
-    expect(metadata.alternates?.canonical).toBe("https://www.mycadet.ai/docs");
+    expect(metadata.alternates?.canonical).toBe("https://mycadet.ai/docs");
     expect(metadata.alternates?.types).toEqual({
-      "text/markdown": "https://www.mycadet.ai/docs/index.md",
+      "text/markdown": "https://mycadet.ai/docs/index.md",
     });
   });
 });

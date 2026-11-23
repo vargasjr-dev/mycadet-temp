@@ -138,7 +138,7 @@ describe("docs sitemap", () => {
       (route) => !REDIRECT_STUB_ROUTES.has(route),
     );
     expect(entries.map((entry) => entry.url)).toEqual(
-      expected.map((route) => `https://www.mycadet.ai${route}`),
+      expected.map((route) => `https://mycadet.ai${route}`),
     );
   });
 
@@ -147,7 +147,7 @@ describe("docs sitemap", () => {
       "/docs/getting-started/key-concepts",
     );
     expect(entries.map((entry) => entry.url)).not.toContain(
-      "https://www.mycadet.ai/docs/getting-started/key-concepts",
+      "https://mycadet.ai/docs/getting-started/key-concepts",
     );
   });
 

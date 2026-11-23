@@ -19,8 +19,8 @@ describe("buildLlmsText", () => {
 
     const bullets = text.split("\n").filter((line) => line.startsWith("- "));
     expect(bullets).toEqual([
-      "- [Getting Started](https://www.mycadet.ai/docs/getting-started.md): Install Cadet",
-      "- [Releases](https://www.mycadet.ai/docs/releases.md): Cadet releases",
+      "- [Getting Started](https://mycadet.ai/docs/getting-started.md): Install Cadet",
+      "- [Releases](https://mycadet.ai/docs/releases.md): Cadet releases",
     ]);
   });
 
@@ -30,7 +30,7 @@ describe("buildLlmsText", () => {
     ]);
 
     expect(text).toContain(
-      "- [Cadet Docs](https://www.mycadet.ai/docs/index.md)",
+      "- [Cadet Docs](https://mycadet.ai/docs/index.md)",
     );
     expect(text).not.toContain("index.md):");
   });

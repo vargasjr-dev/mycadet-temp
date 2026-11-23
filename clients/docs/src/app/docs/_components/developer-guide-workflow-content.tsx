@@ -3,7 +3,7 @@
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
-import { GITHUB_REPO } from "@/lib/github-repo";
+import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 
 const TOC_ITEMS = [
   { id: "single-task-commands", label: "Single-task Commands", level: 2 },
@@ -229,7 +229,7 @@ export function DeveloperGuideWorkflowContent() {
           <p className="mb-4 text-zinc-600">
             Existing macOS installations auto-update via Sparkle&apos;s <code className="text-sm">appcast.xml</code> feed.
             New users download the latest DMG from the{" "}
-            <a href={`${GITHUB_REPO}/releases/latest`} className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
+            <a href={`${CADET_GITHUB_REPOSITORY}/releases/latest`} className="text-emerald-600 hover:text-emerald-500 dark:text-emerald-400">
               public updates repo
             </a>.
           </p>

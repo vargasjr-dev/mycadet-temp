@@ -9,7 +9,7 @@ import { DocsNavCta } from "@/app/docs/_components/docs-nav-cta";
 import { DocsSearch } from "@/app/docs/_components/docs-search";
 import { DocsThemePicker } from "@/app/docs/_components/docs-theme-picker";
 import { DocsMobileMenuButton } from "@/app/docs/_components/docs-mobile-menu-button";
-import { WWW_DOMAIN } from "@/lib/domains";
+import { APEX_ORIGIN } from "@/lib/domains";
 import { fetchReleases } from "@/lib/releases-server";
 
 import { CodeBlockCopy } from "@/app/docs/_components/code-block-copy";
@@ -43,7 +43,7 @@ export default async function ReleasesLayout({
                 <DocsMobileMenuButton />
                 {/* Desktop: logo */}
                 <a
-                  href={`https://${WWW_DOMAIN}`}
+                  href={APEX_ORIGIN}
                   className="hidden md:flex items-center gap-2 no-underline"
                 >
                   <Image

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 import { agentMarkdownPathForPage } from "@/lib/agent-markdown-paths";
-import { WWW_DOMAIN } from "@/lib/domains";
+import { APEX_ORIGIN } from "@/lib/domains";
 
-export const SITE_URL = `https://${WWW_DOMAIN}`;
+export const SITE_URL = APEX_ORIGIN;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/docs/og.png`;
 
 // The OG image is a static 1200x630 PNG served from public/. Declaring
