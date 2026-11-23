@@ -62,22 +62,11 @@ const startGatewayMock = mock<typeof realCommon.startGateway>(
 );
 const startCesMock = mock<typeof realCommon.startCes>(async () => {});
 
-// The wake's runtime-provisioning probe: by default a source resolves (the
-// no-install fast path), and tests flip it to a miss to exercise the install.
-const hasLocalServiceSourcesMock = mock<
-  typeof realCommon.hasLocalServiceSources
->(() => true);
-const ensureLocalRuntimeMock = mock<typeof realCommon.ensureLocalRuntime>(
-  () => ({ version: "v0.0.0", installDir: "/tmp/fake-runtime" }),
-);
-
 mock.module("../remotes/local/common", () => ({
   ...realCommon,
   startLocalDaemon: startLocalDaemonMock,
   startGateway: startGatewayMock,
   startCes: startCesMock,
-  hasLocalServiceSources: hasLocalServiceSourcesMock,
-  ensureLocalRuntime: ensureLocalRuntimeMock,
 }));
 
 afterAll(() => {
@@ -127,14 +116,6 @@ beforeEach(() => {
   startGatewayMock.mockResolvedValue("http://127.0.0.1:7830");
   startCesMock.mockReset();
   startCesMock.mockResolvedValue(undefined);
-  hasLocalServiceSourcesMock.mockReset();
-  hasLocalServiceSourcesMock.mockReturnValue(true);
-  ensureLocalRuntimeMock.mockReset();
-  ensureLocalRuntimeMock.mockImplementation(() => ({
-    version: "v0.0.0",
-    installDir: "/tmp/fake-runtime",
-  }));
-  delete process.env.APP_VERSION;
   isProcessAliveMock.mockReset();
   isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
   gatewayHealth = { status: "ok" };
@@ -207,60 +188,5 @@ describe("wakeLocal — the in-process local wake leg", () => {
 
     // THEN it reports success
     expect(result).toEqual({ ok: true });
-  });
-
-  test("installs the self-managed runtime when no source resolves", async () => {
-    /**
-     * A fresh hatch on a released or bundled CLI has no source tree and no
-     * runtime install — the exact state that died in the service starts
-     * with "credential-executor not found". The wake must provision the
-     * runtime the resolvers consume before starting anything.
-     */
-
-    // GIVEN nothing on this machine resolves a service source
-    hasLocalServiceSourcesMock.mockReturnValue(false);
-
-    // WHEN the leg runs
-    const result = await wakeLocal(localEntry);
-
-    // THEN the runtime installed at the caller's release version (no
-    // APP_VERSION stamped — the "latest" fallback) and the wake completed
-    expect(ensureLocalRuntimeMock).toHaveBeenCalledTimes(1);
-    expect(ensureLocalRuntimeMock).toHaveBeenCalledWith(localEntry, "latest");
-    expect(result).toEqual({ ok: true });
-  });
-
-  test("installs the runtime at the stamped APP_VERSION", async () => {
-    /**
-     * The released CLI stamps its own release version into the environment;
-     * the runtime must pin THAT, not a moving "latest".
-     */
-
-    // GIVEN nothing resolves and the caller stamped its version
-    hasLocalServiceSourcesMock.mockReturnValue(false);
-    process.env.APP_VERSION = "0.13.0-dev.test";
-
-    // WHEN the leg runs
-    await wakeLocal(localEntry);
-
-    // THEN the install pinned the stamped version
-    expect(ensureLocalRuntimeMock).toHaveBeenCalledWith(
-      localEntry,
-      "0.13.0-dev.test",
-    );
-  });
-
-  test("skips the install when a source resolves", async () => {
-    /**
-     * Dev source trees and prior runtime installs already resolve — the
-     * provisioning must stay the no-network fast path for them.
-     */
-
-    // GIVEN a source resolves (the beforeEach default)
-    // WHEN the leg runs
-    await wakeLocal(localEntry);
-
-    // THEN no install ran
-    expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
   });
 });

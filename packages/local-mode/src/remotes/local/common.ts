@@ -44,7 +44,7 @@ import {
 
 const _require = createRequire(import.meta.url);
 
-const LOCAL_RUNTIME_PACKAGE = "mycadet";
+const LOCAL_RUNTIME_PACKAGE = "cadet";
 const PATH_DELIMITER = pathListDelimiter(platform());
 const DEFAULT_EXECUTABLE_PATH =
   platform() === "win32"
@@ -942,16 +942,6 @@ function resolveCesDir(entry?: LocalAssistant): string {
     );
   }
   return cesDir;
-}
-
-/**
- * Whether a start would resolve service sources without an install: a
- * self-managed runtime, the reported source tree, or the process's own
- * dependency tree. Probed with the credential-executor resolver — the
- * strictest of the three starts' resolvers.
- */
-export function hasLocalServiceSources(entry: LocalAssistant): boolean {
-  return findCesDir(entry) !== undefined;
 }
 
 /**

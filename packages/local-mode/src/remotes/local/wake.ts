@@ -8,13 +8,7 @@ import { isLocalEntry, GATEWAY_PORT } from "../../lockfile-contract";
 import { checkHealth } from "../../daemon-readiness";
 import { saveLockfileAssistant } from "../../lockfile";
 import { healConflictedLocalPorts } from "./port-heal";
-import {
-  ensureLocalRuntime,
-  hasLocalServiceSources,
-  startCes,
-  startGateway,
-  startLocalDaemon,
-} from "./common";
+import { startCes, startGateway, startLocalDaemon } from "./common";
 
 import type { WakeResult } from "../../operations/wake";
 
@@ -65,20 +59,6 @@ async function wakeLocalSteps(
   opts: { watch: boolean },
 ): Promise<WakeResult> {
   const { watch } = opts;
-
-  // A fresh hatch starts no self-managed runtime: `ensureLocalRuntime` only
-  // ran in the upgrade leg, so a released or bundled CLI — with no source
-  // tree to resolve from — died in the service starts with
-  // "credential-executor not found". Install the runtime the resolvers
-  // consume, but only when they would miss: dev source trees and prior
-  // runtime installs resolve without a network round-trip.
-  if (!hasLocalServiceSources(entry)) {
-    console.log(
-      "⬇️  Downloading local runtime packages (assistant, gateway, credential-executor)...",
-    );
-    ensureLocalRuntime(entry, process.env.APP_VERSION ?? "latest");
-    console.log("✅ Local runtime installed\n");
-  }
 
   const daemonPort =
     entry.daemonPort ?? Number(process.env.RUNTIME_HTTP_PORT || "7821");
