@@ -11,6 +11,17 @@ import {
   readConfigFileOrEmpty,
 } from "./config-file-utils.js";
 import { getLogger } from "./logger.js";
+import { getConfigFileCache } from "./config-file-cache.js";
+import { getCredentials } from "./credential-cache.js";
+import { registerEmailCallbackRoute } from "./email/register-callback.js";
+import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
+import { getTunnelClient } from "./tunnel/client.js";
+import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
+import {
+  isOnlyTunnelPublicBaseUrlChange,
+  shouldSyncTwilioPhoneWebhooksAfterConfigChange,
+} from "./twilio/webhook-sync-trigger.js";
+import { syncConfiguredTwilioPhoneNumberWebhooks } from "./twilio/webhook-sync.js";
 
 const log = getLogger("config-file-watcher");
 
@@ -239,4 +250,97 @@ function diffObjectFields(oldValue: unknown, newValue: unknown): Set<string> {
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Starts the config.json watcher and returns the stop thunk, per the
+ * gateway's `const stopX = startX()` lifecycle pattern.
+ *
+ * The invalidation side effects live here with the watcher instead of in
+ * the entrypoint: the caches resolve through their singletons at call time,
+ * and each downstream manager owns its own readiness — the Telegram webhook
+ * reconcile and the email callback registration skip themselves when their
+ * credentials are missing, so no readiness flags cross the boundary.
+ */
+export function startConfigFileWatcher(): () => void {
+  const configFileCache = getConfigFileCache();
+  const credentials = getCredentials();
+
+  const watcher = new ConfigFileWatcher((event) => {
+    // Invalidate the config file cache so subsequent reads pick up fresh
+    // values.
+    configFileCache.invalidate();
+
+    // Reconcile the Telegram webhook when the ingress URL changes. A
+    // Tunnel-only publicBaseUrl change is the tunnel registering — that URL
+    // is what Telegram must be pointed at, so a reconcile on that event is
+    // exactly what lifts the suppression that keeps a tunnel address out of
+    // provider config.
+    if (
+      event.changedKeys.has("ingress") &&
+      !isOnlyTunnelPublicBaseUrlChange(event)
+    ) {
+      reconcileTelegramWebhook({
+        credentials,
+        configFile: configFileCache,
+      }).catch((err) => {
+        log.error(
+          { err },
+          "Failed to reconcile Telegram webhook after ingress URL change",
+        );
+      });
+    }
+
+    if (shouldSyncTwilioPhoneWebhooksAfterConfigChange(event)) {
+      syncConfiguredTwilioPhoneNumberWebhooks({
+        credentials,
+        configFile: configFileCache,
+      }).catch((err) => {
+        log.warn({ err }, "Twilio webhook sync failed after config change");
+      });
+    }
+
+    if (event.changedKeys.has("twilio")) {
+      maybeStartTunnelForTwilioConfig("twilio config changed");
+    }
+
+    // Re-register the email callback route when the ingress URL changes so
+    // the cloud callback route points at the new self-hosted URL. A
+    // Tunnel-only publicBaseUrl change is the tunnel registering, which
+    // doesn't move the email callback's host.
+    if (
+      event.changedKeys.has("ingress") &&
+      !isOnlyTunnelPublicBaseUrlChange(event)
+    ) {
+      registerEmailCallbackRoute({
+        credentials,
+        configFile: configFileCache,
+      }).catch((err) => {
+        log.error(
+          { err },
+          "Failed to re-register email callback route after ingress URL change",
+        );
+      });
+    }
+  });
+  watcher.start();
+  return () => watcher.stop();
+}
+
+/**
+ * The config-change path into the Tunnel: Twilio setup started via its
+ * config field is the request for public ingress. The credential-change
+ * and startup paths keep their own entrypoint-owned variant with the
+ * credentials in hand.
+ */
+function maybeStartTunnelForTwilioConfig(reason: string): void {
+  const tunnelClient = getTunnelClient();
+  if (!tunnelClient || tunnelClient.isRunning()) {
+    return;
+  }
+  if (!hasTwilioSetupStarted(getConfigFileCache())) {
+    return;
+  }
+  log.info({ reason }, "Starting Tunnel after Twilio setup detected");
+  tunnelClient.start();
 }

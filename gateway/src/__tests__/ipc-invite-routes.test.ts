@@ -55,7 +55,9 @@ const { initGatewayDb, getGatewayDb, resetGatewayDb } =
 const { contacts, contactChannels, ingressInvites } =
   await import("../db/schema.js");
 const { GatewayIpcServer } = await import("../ipc/server.js");
-const { inviteRoutes } = await import("../ipc/invite-handlers.js");
+// The invite-handlers load after the mocks above — keep the import for
+// the mock-ordering guarantee.
+await import("../ipc/invite-handlers.js");
 const { inviteRow, seedInvite, seedVoiceInvite } =
   await import("./helpers/contact-fixtures.js");
 
@@ -114,7 +116,7 @@ describe("invites_redeem IPC route", () => {
 
   beforeEach(async () => {
     if (existsSync(socketPath)) rmSync(socketPath);
-    server = new GatewayIpcServer([...inviteRoutes]);
+    server = new GatewayIpcServer();
     (server as unknown as { socketPath: string }).socketPath = socketPath;
     server.start();
     await new Promise((resolve) => setTimeout(resolve, 50));

@@ -4,7 +4,7 @@ import { getAuthRateLimiter } from "./auth-rate-limiter.js";
 import { initSigningKey } from "./auth/token-service.js";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import { getConfigFileCache } from "./config-file-cache.js";
-import { ConfigFileWatcher } from "./config-file-watcher.js";
+import { startConfigFileWatcher } from "./config-file-watcher.js";
 import { loadConfig } from "./config.js";
 import { CircuitBreakerOpenError } from "./runtime/client.js";
 import { getCredentials } from "./credential-cache.js";
@@ -108,10 +108,6 @@ import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { registerEmailCallbackRoute } from "./email/register-callback.js";
 import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
 import { syncConfiguredTwilioPhoneNumberWebhooks } from "./twilio/webhook-sync.js";
-import {
-  isOnlyTunnelPublicBaseUrlChange,
-  shouldSyncTwilioPhoneWebhooksAfterConfigChange,
-} from "./twilio/webhook-sync-trigger.js";
 import { startIpcServer } from "./ipc/server.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
@@ -307,13 +303,12 @@ async function main() {
    * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
    * tunnel serves both — and `tunnelClient.start()` is idempotent.
    */
-  function startTunnelForLiveVoice(reason: string) {
+  function startTunnelForLiveVoice(reason: string): void {
     if (!tunnelClient || tunnelClient.isRunning()) {
       return;
     }
     log.info({ reason }, "Starting Tunnel for live voice");
     tunnelClient.start();
-    return true;
   }
 
   async function readTwilioCredentialsForTunnelStartup(): Promise<Record<
@@ -337,8 +332,6 @@ async function main() {
       return null;
     }
   }
-
-  const isTelegramConfigured = () => telegramReady;
 
   // Assistant-scoped mirrors of the browser stream sockets: the scoped data
   // plane emits /v1/assistants/<id>/<route> — the same verbatim shape every
@@ -1002,69 +995,8 @@ async function main() {
   // effects during the initial poll.
   await credentialWatcher.start();
 
-  const configFileWatcher = new ConfigFileWatcher((event) => {
-    // Invalidate the config file cache so subsequent reads pick up fresh values
-    configFileCache.invalidate();
-
-    // Side effect: reconcile Telegram webhook when ingress URL changes
-    // A Tunnel-only publicBaseUrl change is the tunnel registering. That URL
-    // is what Telegram must be pointed at, so a reconcile on that event is
-    // exactly what lifts the suppression that keeps a tunnel address out of
-    // provider config.
-    const telegramSuppressed = isOnlyTunnelPublicBaseUrlChange(event);
-
-    if (
-      event.changedKeys.has("ingress") &&
-      !telegramSuppressed &&
-      isTelegramConfigured()
-    ) {
-      reconcileTelegramWebhook(telegramCaches).catch((err) => {
-        log.error(
-          { err },
-          "Failed to reconcile Telegram webhook after ingress URL change",
-        );
-      });
-    }
-
-    if (shouldSyncTwilioPhoneWebhooksAfterConfigChange(event)) {
-      syncConfiguredTwilioPhoneNumberWebhooks({
-        credentials: credentialCache,
-        configFile: configFileCache,
-      }).catch((err) => {
-        log.warn({ err }, "Twilio webhook sync failed after config change");
-      });
-    }
-
-    if (event.changedKeys.has("twilio")) {
-      maybeStartTunnelForTwilio("twilio config changed");
-    }
-
-    // Side effect: re-register email callback when ingress URL changes so
-    // the cloud callback route points at the new self-hosted URL. A
-    // Tunnel-only publicBaseUrl change is the tunnel registering, which
-    // doesn't move the email callback's host.
-    if (
-      event.changedKeys.has("ingress") &&
-      !isOnlyTunnelPublicBaseUrlChange(event) &&
-      cadetReady
-    ) {
-      registerEmailCallbackRoute({
-        credentials: credentialCache,
-        configFile: configFileCache,
-      }).catch((err) => {
-        log.error(
-          { err },
-          "Failed to re-register email callback route after ingress URL change",
-        );
-      });
-    }
-  });
-
-  configFileWatcher.start();
-
   const tasks: (() => StopTask)[] = [
     startIpcServer,
-    // TODO now move config file watcher into its own file and conform to the pattern
     startConfigFileWatcher,
     startSleepWakeDetector,
     startInboundEventExpirationCleanup,
@@ -1076,7 +1008,6 @@ async function main() {
     draining = true;
     const allShutdownTasks: StopTask[] = [
       () => credentialWatcher.stop(),
-      () => configFileWatcher.stop(),
       () => tunnelClient.stop(),
       stopDiscordClient,
       stopSlackClient,

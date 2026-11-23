@@ -42,7 +42,14 @@ describe("GatewayIpcServer multi-client behavior", () => {
   beforeEach(async () => {
     if (existsSync(socketPath)) rmSync(socketPath);
     releaseSlow = undefined;
-    server = new GatewayIpcServer([slowRoute, fastRoute]);
+    server = new GatewayIpcServer();
+    // The server registers the production ROUTES; these two synthetic
+    // routes land in the same map the dispatcher reads.
+    const methods = (
+      server as unknown as { methods: Map<string, IpcRoute["handler"]> }
+    ).methods;
+    methods.set(slowRoute.method, slowRoute.handler);
+    methods.set(fastRoute.method, fastRoute.handler);
     (server as unknown as { socketPath: string }).socketPath = socketPath;
     server.start();
     await new Promise((resolve) => setTimeout(resolve, 50));

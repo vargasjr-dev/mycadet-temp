@@ -14,7 +14,6 @@ import { type Socket } from "node:net";
 import { eq } from "drizzle-orm";
 
 import { GatewayIpcServer } from "../ipc/server.js";
-import { contactRoutes } from "../ipc/contact-handlers.js";
 import { ContactStore } from "../db/contact-store.js";
 import { contacts, contactChannels } from "../db/schema.js";
 import { connectClient, sendRequest } from "./helpers/ipc-newline-client.js";
@@ -254,7 +253,7 @@ describe("IPC contact routes", () => {
   });
 
   async function startServerAndConnect(): Promise<void> {
-    server = new GatewayIpcServer([...contactRoutes]);
+    server = new GatewayIpcServer();
     (server as unknown as { socketPath: string }).socketPath = socketPath;
     server.start();
     await new Promise((resolve) => setTimeout(resolve, 50));

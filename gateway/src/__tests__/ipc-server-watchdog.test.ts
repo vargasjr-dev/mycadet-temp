@@ -55,15 +55,25 @@ const echoRoute: IpcRoute = {
  * which we also need to monkeypatch. See {@link buildServer}.
  */
 function buildServer(opts: { watchdogIntervalMs: number }): GatewayIpcServer {
-  const server = new GatewayIpcServer([echoRoute], {
-    watchdogIntervalMs: opts.watchdogIntervalMs,
-  });
+  const server = new GatewayIpcServer();
   // The watchdog captures socketPath in its constructor, so override both
-  // the public field (for start()/stop()) and the watchdog's private copy.
+  // the public field (for start()/stop()) and the watchdog's private copy —
+  // and set the interval directly (the constructor takes no options): the
+  // poll reads it live, so 0 disables the timer-driven path and small values
+  // fast-tick it.
   (server as unknown as { socketPath: string }).socketPath = socketPath;
-  const watchdog = (server as unknown as { watchdog: { socketPath: string } })
-    .watchdog;
+  const watchdog = (
+    server as unknown as {
+      watchdog: { socketPath: string; intervalMs: number };
+    }
+  ).watchdog;
   watchdog.socketPath = socketPath;
+  watchdog.intervalMs = opts.watchdogIntervalMs;
+  // The server registers the production ROUTES; echo is a test-only method,
+  // so it lands in the same map the dispatcher reads.
+  (
+    server as unknown as { methods: Map<string, IpcRoute["handler"]> }
+  ).methods.set("echo", echoRoute.handler);
   return server;
 }
 

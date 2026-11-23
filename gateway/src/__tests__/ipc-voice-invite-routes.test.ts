@@ -54,7 +54,6 @@ const { initGatewayDb, getGatewayDb, resetGatewayDb } =
 const { contacts, contactChannels, ingressInvites } =
   await import("../db/schema.js");
 const { GatewayIpcServer } = await import("../ipc/server.js");
-const { inviteRoutes } = await import("../ipc/invite-handlers.js");
 const { inviteRow, seedVoiceInvite } =
   await import("./helpers/contact-fixtures.js");
 
@@ -109,7 +108,7 @@ describe("voice invite IPC routes", () => {
 
   beforeEach(async () => {
     if (existsSync(socketPath)) rmSync(socketPath);
-    server = new GatewayIpcServer([...inviteRoutes]);
+    server = new GatewayIpcServer();
     (server as unknown as { socketPath: string }).socketPath = socketPath;
     server.start();
     await new Promise((resolve) => setTimeout(resolve, 50));

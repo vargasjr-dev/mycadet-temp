@@ -96,9 +96,11 @@ beforeEach(async () => {
   prevEnv = process.env.GATEWAY_IPC_SOCKET_DIR;
   process.env.GATEWAY_IPC_SOCKET_DIR = socketDir;
   // Disable the watchdog so the test has a single deterministic listener.
-  server = new GatewayIpcServer(verificationSessionRoutes, {
-    watchdogIntervalMs: 0,
-  });
+  server = new GatewayIpcServer();
+  // Watchdog disabled before start — see guardian-request-routes.test.ts.
+  (
+    server as unknown as { watchdog: { intervalMs: number } }
+  ).watchdog.intervalMs = 0;
   server.start();
   // Wait for the listener to bind.
   const { existsSync } = await import("node:fs");

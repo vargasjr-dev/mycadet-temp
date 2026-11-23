@@ -11,8 +11,10 @@
 import {
   type ListWebhookRoutesIpcResponse,
   RegisterWebhookRouteIpcParamsSchema,
+  type RegisterWebhookRouteIpcParams,
   type RegisterWebhookRouteIpcResponse,
   UnregisterWebhookRouteIpcParamsSchema,
+  type UnregisterWebhookRouteIpcParams,
   type UnregisterWebhookRouteIpcResponse,
 } from "@mycadet/gateway-client/gateway-ipc-contracts";
 
@@ -24,7 +26,6 @@ import {
 } from "../db/webhook-ingress-route-store.js";
 import { markPluginWebhookRoutesDirty } from "../channels/plugin-webhook-route-sync.js";
 import { PLUGIN_WEBHOOK_PATH_PREFIX } from "../tunnel/path-utils.js";
-import { ipcRoute } from "./route.js";
 import type { IpcRoute } from "./server.js";
 
 /**
@@ -47,28 +48,30 @@ function assertUnreservedRouteType(type: string): void {
 }
 
 export const webhookRouteRoutes: IpcRoute[] = [
-  ipcRoute({
+  {
     method: "register_webhook_route",
     schema: RegisterWebhookRouteIpcParamsSchema,
     handler: (params): RegisterWebhookRouteIpcResponse => {
-      assertUnreservedRouteType(params.type);
-      return { disabled: false, route: registerWebhookIngressRoute(params) };
+      const parsed = params as RegisterWebhookRouteIpcParams;
+      assertUnreservedRouteType(parsed.type);
+      return { disabled: false, route: registerWebhookIngressRoute(parsed) };
     },
-  }),
-  ipcRoute({
+  },
+  {
     method: "unregister_webhook_route",
     schema: UnregisterWebhookRouteIpcParamsSchema,
     handler: (params): UnregisterWebhookRouteIpcResponse => {
-      const removed = unregisterWebhookIngressRoute(params.path);
+      const parsed = params as UnregisterWebhookRouteIpcParams;
+      const removed = unregisterWebhookIngressRoute(parsed.path);
       // A removed row inside the plugin namespace may have been the only
       // entry admitting a still-servable plugin route, so the reconcile
       // poll is asked to settle the namespace again.
-      if (removed && params.path.startsWith(PLUGIN_WEBHOOK_PATH_PREFIX)) {
+      if (removed && parsed.path.startsWith(PLUGIN_WEBHOOK_PATH_PREFIX)) {
         markPluginWebhookRoutesDirty();
       }
       return { removed };
     },
-  }),
+  },
   {
     method: "list_webhook_routes",
     handler: (): ListWebhookRoutesIpcResponse => ({

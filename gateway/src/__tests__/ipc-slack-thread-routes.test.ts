@@ -17,7 +17,6 @@ import {
 import { SlackStore } from "../db/slack-store.js";
 import { slackActiveThreads } from "../db/schema.js";
 import { GatewayIpcServer } from "../ipc/server.js";
-import { slackThreadRoutes } from "../ipc/slack-thread-handlers.js";
 import { connectClient, sendRequest } from "./helpers/ipc-newline-client.js";
 
 const CHANNEL_ID = "CFAKE00001";
@@ -84,7 +83,7 @@ describe("IPC Slack thread routes", () => {
   });
 
   async function startServerAndConnect(): Promise<void> {
-    server = new GatewayIpcServer([...slackThreadRoutes]);
+    server = new GatewayIpcServer();
     server.start();
     await new Promise((resolve) => setTimeout(resolve, 50));
     client = await connectClient(server.getSocketPath());
