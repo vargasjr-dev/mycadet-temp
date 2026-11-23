@@ -114,6 +114,7 @@ function AssistantShell({
 
   if (state.status !== "ready") {
     const alert = state.status === "notReady" || state.status === "error";
+    const canRetry = state.status === "error" || state.status === "unavailable";
     return (
       <div
         role={alert ? "alert" : "status"}
@@ -139,11 +140,13 @@ function AssistantShell({
         ) : (
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
-        {(state.status === "error" || state.status === "unavailable") && (
+        {(canRetry || state.status === "notReady") && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={reload} style={quietButton}>
-              {t("appShell.retry")}
-            </button>
+            {canRetry && (
+              <button type="button" onClick={reload} style={quietButton}>
+                {t("appShell.retry")}
+              </button>
+            )}
             <button
               type="button"
               onClick={() =>

@@ -182,6 +182,21 @@ test("a failed wake shows the node's own punchline and offers the wake again", a
   await screen.findByText("Firecracker exited with error");
   expect(request).toHaveBeenCalledTimes(2);
   expect(screen.queryByTitle("Assistant")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Switch assistant" }));
+  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+    replace: false,
+  });
+});
+
+test("a not-ready assistant can be switched without waking it", async () => {
+  respond(async () => new Response(null, { status: 409 }));
+  render(<AppShell {...props()} />);
+  await screen.findByText("Your assistant isn't ready.");
+  fireEvent.click(screen.getByRole("button", { name: "Switch assistant" }));
+  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+    replace: false,
+  });
+  expect(request).toHaveBeenCalledTimes(1);
 });
 
 test("retries an API failure without account session probes", async () => {
