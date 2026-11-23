@@ -13,6 +13,7 @@ import { DocsMobileMenuButton } from "@/app/docs/_components/docs-mobile-menu-bu
 import { CodeBlockCopy } from "@/app/docs/_components/code-block-copy";
 
 import "@/app/docs/docs-theme.css";
+import { APEX_ORIGIN } from "@/lib/domains";
 
 export const metadata: Metadata = {
   description: "Cadet: Your personal digital assistant",
@@ -36,7 +37,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                 <DocsMobileMenuButton />
                 {/* Desktop: logo */}
                 <a
-                  href="https://www.mycadet.ai"
+                  href={APEX_ORIGIN}
                   className="hidden md:flex items-center gap-2 no-underline"
                 >
                   <Image

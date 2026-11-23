@@ -23,7 +23,7 @@ The following integrations ship with every Cadet workspace and connect via OAuth
 | Outlook / Microsoft| OAuth2    | Email and calendar                                         | Microsoft 365 OAuth. Covers Outlook email and calendar events.                 |
 | Todoist            | OAuth2    | Tasks and projects                                         | Project-scoped. Access follows your Todoist project permissions.               |
 
-New integrations are added regularly. If a service you need isn't listed, you can often connect it via a custom skill using its API key, or request it through the [roadmap](https://www.mycadet.ai/roadmap).
+New integrations are added regularly. If a service you need isn't listed, you can often connect it via a custom skill using its API key, or request it through the [roadmap](https://mycadet.ai/roadmap).
 
 ## Connecting an integration
 

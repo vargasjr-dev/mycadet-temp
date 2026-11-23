@@ -6,6 +6,7 @@ import Link from "next/link";
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
+import { APEX_ORIGIN } from "@/lib/domains";
 
 const TOC_ITEMS = [
   { id: "ask-your-assistant-first", label: "Ask your assistant first", level: 2 },
@@ -103,7 +104,7 @@ export function HelpGettingHelpContent() {
           </SectionHeading>
           <p className="mb-0 text-zinc-600">
             Check out our{" "}
-            <Link href="https://www.mycadet.ai/community" className="font-semibold text-emerald-700 underline hover:text-emerald-800">
+            <Link href={`${APEX_ORIGIN}/community`} className="font-semibold text-emerald-700 underline hover:text-emerald-800">
               Community page
             </Link>{" "}
             for links to Discord, forums, and other channels.

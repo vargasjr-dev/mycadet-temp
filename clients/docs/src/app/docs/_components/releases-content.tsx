@@ -7,6 +7,7 @@ import {
   releaseAnchor,
 } from "@/lib/releases-server";
 import { routes } from "@/lib/routes";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
 
 function monthAnchor(releasedAt: string) {
   const d = new Date(releasedAt);
@@ -121,7 +122,7 @@ export function ReleasesContent({ releases }: ReleasesContentProps) {
                           {formatFullDate(release.released_at)}
                         </time>
                         <a
-                          href={`https://github.com/vargasjr-dev/mycadet/releases/tag/v${release.version}`}
+                          href={`${CADET_GITHUB_REPOSITORY_URL}/releases/tag/v${release.version}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`View v${release.version} on GitHub`}

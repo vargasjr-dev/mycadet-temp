@@ -1,6 +1,6 @@
 ## Setup
 
-[Sign up](https://www.mycadet.ai/account/signup) for **Cadet Cloud** and we can hatch and start managing your assistant for you in seconds.
+[Sign up](https://mycadet.ai/account/signup) for **Cadet Cloud** and we can hatch and start managing your assistant for you in seconds.
 
 Check out our **[Downloads](/downloads)** page for installing Cadet across desktop, mobile and more!
 

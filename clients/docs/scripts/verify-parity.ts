@@ -10,7 +10,7 @@
  *
  * Asserts, against the running instance:
  * - the app's filesystem route tree matches the snapshot
- * - every route serves HTML with the canonical https://www.mycadet.ai<path>
+ * - every route serves HTML with the canonical https://mycadet.ai<path>
  *   (redirect stubs must redirect to another docs route instead)
  * - every route's `.md` mirror and its Accept: text/markdown negotiation
  *   variant return markdown with identical bodies
