@@ -1,17 +1,15 @@
-import { app, net, protocol, session, safeStorage } from "electron";
+import { app, net, protocol } from "electron";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
-import log from "./app-logger";
 import { type AllowedOrigin } from "./app-origin";
 import { getDeviceId } from "./device-id";
 import {
   forwardOperatorRequest,
   readLockfile,
   servedConfigFromLockfile,
-  getGatewayUrl,
 } from "@mycadet/local-mode";
-import { createAuthorityCookieJar } from "./authority-cookie-jar";
+import { authorityCookieJar } from "./authority-cookie-jar";
 import { planAppProtocolAssetRequest } from "./app-protocol";
 
 /**
@@ -35,40 +33,6 @@ const APP_HOST = "mycadet.ai";
  */
 const WEB_MOUNT = "/web";
 const WEB_ASSET_PREFIX = "/assistant/assets/";
-
-// Keep the operator seam, but isolate credentials by full origin rather than
-// Chromium's port-insensitive domain matching. The path is read after app ready.
-const authorityCookieJar = createAuthorityCookieJar({
-  filePath: () => path.join(app.getPath("userData"), "authority-cookies.enc"),
-  encryption: {
-    isEncryptionAvailable: () => safeStorage.isEncryptionAvailable(),
-    encryptString: (value) => safeStorage.encryptString(value),
-    decryptString: (value) => safeStorage.decryptString(value),
-    getSelectedStorageBackend: () =>
-      process.platform === "linux"
-        ? safeStorage.getSelectedStorageBackend()
-        : "os_crypt",
-  },
-  warn: (message) => log.warn(`[protocol-cookies] ${message}`),
-  async legacyCookies(origin) {
-    const hostname = new URL(origin).hostname;
-    const candidates = new Set<string>();
-    for (const entry of readLockfile().assistants) {
-      try {
-        const url = new URL(getGatewayUrl(entry));
-        if (url.hostname === hostname) candidates.add(url.origin);
-      } catch {
-        /* An unresolved entry has no legacy cookie authority. */
-      }
-    }
-    // Shared-host cookies cannot identify their port. Migrate only an
-    // unambiguous host; otherwise pairing establishes the correct authority.
-    if (candidates.size !== 1 || !candidates.has(origin)) return [];
-    return (await session.defaultSession.cookies.get({ url: origin })).filter(
-      (cookie) => cookie.hostOnly !== false,
-    );
-  },
-});
 
 const appOrigin = (): AllowedOrigin => ({
   protocol: `${APP_PROTOCOL}:`,

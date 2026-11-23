@@ -1,3 +1,5 @@
+import { app, safeStorage } from "electron";
+import log from "./app-logger";
 import {
   existsSync,
   readFileSync,
@@ -46,7 +48,6 @@ export function createAuthorityCookieJar(options: {
   filePath(): string;
   encryption: Encryption;
   warn(message: string): void;
-  legacyCookies?(origin: string): Promise<Cookie[]>;
 }): CookieJar {
   const origins = new Map<string, Cookie[]>();
   let loaded = false;
@@ -88,8 +89,7 @@ export function createAuthorityCookieJar(options: {
     const temporary = `${file}.${randomUUID()}.tmp`;
     try {
       mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-      // Session-only cookies stay in memory. Empty authorities are retained to
-      // prevent a deletion from resurrecting legacy cookies on next startup.
+      // Session-only cookies stay in memory.
       const data = {
         version: 1,
         origins: Object.fromEntries(
@@ -126,17 +126,6 @@ export function createAuthorityCookieJar(options: {
       } catch {
         return [];
       }
-      if (!origins.has(origin) && options.legacyCookies) {
-        const legacy = await options.legacyCookies(origin).catch(() => []);
-        // A concurrent set must win over a late migration read.
-        if (!origins.has(origin) && legacy.length) {
-          origins.set(
-            origin,
-            legacy.map((c) => cookieSchema.parse(c)).filter(live),
-          );
-          persist();
-        }
-      }
       return (origins.get(origin) ?? []).filter(live).map((c) => ({ ...c }));
     },
     async set(url, cookie) {
@@ -164,3 +153,19 @@ export function createAuthorityCookieJar(options: {
     },
   };
 }
+
+// Keep the operator seam, but isolate credentials by full origin rather than
+// Chromium's port-insensitive domain matching. The path is read after app ready.
+export const authorityCookieJar = createAuthorityCookieJar({
+  filePath: () => path.join(app.getPath("userData"), "authority-cookies.enc"),
+  encryption: {
+    isEncryptionAvailable: () => safeStorage.isEncryptionAvailable(),
+    encryptString: (value) => safeStorage.encryptString(value),
+    decryptString: (value) => safeStorage.decryptString(value),
+    getSelectedStorageBackend: () =>
+      process.platform === "linux"
+        ? safeStorage.getSelectedStorageBackend()
+        : "os_crypt",
+  },
+  warn: (message) => log.warn(`[protocol-cookies] ${message}`),
+});

@@ -1,43 +1,25 @@
+import { z } from "zod";
+
 const repository = "vargasjr-dev/mycadet-temp";
 const assets: Record<string, string> = {
   mac: "mycadet.dmg",
   windows: "mycadet-windows-x64.exe",
   linux: "mycadet-linux-x64.AppImage",
 };
-interface Release {
-  tag_name: string;
-  draft: boolean;
-  prerelease: boolean;
-  published_at: string | null;
-  assets: { name: string; browser_download_url: string }[];
-}
-
-function isRelease(value: unknown): value is Release {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  return (
-    "tag_name" in value &&
-    typeof value.tag_name === "string" &&
-    "draft" in value &&
-    typeof value.draft === "boolean" &&
-    "prerelease" in value &&
-    typeof value.prerelease === "boolean" &&
-    "published_at" in value &&
-    (value.published_at === null || typeof value.published_at === "string") &&
-    "assets" in value &&
-    Array.isArray(value.assets) &&
-    value.assets.every(
-      (asset: unknown) =>
-        asset !== null &&
-        typeof asset === "object" &&
-        "name" in asset &&
-        typeof asset.name === "string" &&
-        "browser_download_url" in asset &&
-        typeof asset.browser_download_url === "string",
-    )
-  );
-}
+const releasesSchema = z.array(
+  z.object({
+    tag_name: z.string(),
+    draft: z.boolean(),
+    prerelease: z.boolean(),
+    published_at: z.string().nullable(),
+    assets: z.array(
+      z.object({
+        name: z.string(),
+        browser_download_url: z.string().url(),
+      }),
+    ),
+  }),
+);
 
 export async function GET(
   request: Request,
@@ -60,11 +42,7 @@ export async function GET(
     if (!response.ok) {
       throw new Error("Release lookup failed");
     }
-    const data: unknown = await response.json();
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid releases response");
-    }
-    const releases = data.filter(isRelease);
+    const releases = releasesSchema.parse(await response.json());
     const release = releases
       .filter(
         (r) =>

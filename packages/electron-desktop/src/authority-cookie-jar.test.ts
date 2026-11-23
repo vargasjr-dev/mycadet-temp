@@ -78,7 +78,7 @@ test("persists separate authority cookies across restarts without plaintext toke
   if (process.platform !== "win32")
     expect(statSync(file).mode & 0o777).toBe(0o600);
 });
-test("honors expiry and deletion, without resurrecting migrated credentials", async () => {
+test("honors expiry, deletion, and session-cookie lifetimes", async () => {
   const { jar, options } = fixture();
   await jar.set("http://localhost:1", { name: "a", value: "session" });
   await jar.set("http://localhost:1", {
@@ -94,10 +94,7 @@ test("honors expiry and deletion, without resurrecting migrated credentials", as
   expect((await jar.get("http://localhost:1")).map((c) => c.name)).toEqual([
     "a",
   ]);
-  const restarted = createAuthorityCookieJar({
-    ...options,
-    legacyCookies: async () => [{ name: "b", value: "old" }],
-  });
+  const restarted = createAuthorityCookieJar(options);
   expect(await restarted.get("http://localhost:1")).toEqual([]);
 });
 test("uses memory only without OS encryption, including Linux basic_text", async () => {
@@ -126,45 +123,4 @@ test("fails closed on a corrupt encrypted file", async () => {
   expect(
     await createAuthorityCookieJar(options).get("http://localhost:1"),
   ).toEqual([]);
-});
-
-test("imports legacy cookies once and persists the origin-specific copy", async () => {
-  const { options } = fixture();
-  let reads = 0;
-  const jar = createAuthorityCookieJar({
-    ...options,
-    legacyCookies: async () => {
-      reads++;
-      return [
-        {
-          name: "cadet_web_access",
-          value: "migrated",
-          expirationDate: expires(),
-        },
-      ];
-    },
-  });
-  expect((await jar.get("http://localhost:1"))[0]?.value).toBe("migrated");
-  expect((await jar.get("http://localhost:1"))[0]?.value).toBe("migrated");
-  expect(reads).toBe(1);
-  expect(
-    (await createAuthorityCookieJar(options).get("http://localhost:1"))[0]
-      ?.value,
-  ).toBe("migrated");
-});
-
-test("a write during migration wins over the old cookie", async () => {
-  const { options } = fixture();
-  let finish: (cookies: { name: string; value: string }[]) => void = () => {};
-  const jar = createAuthorityCookieJar({
-    ...options,
-    legacyCookies: () =>
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-  });
-  const reading = jar.get("http://localhost:1");
-  await jar.set("http://localhost:1", { name: "a", value: "new" });
-  finish([{ name: "a", value: "old" }]);
-  expect((await reading)[0]?.value).toBe("new");
 });
