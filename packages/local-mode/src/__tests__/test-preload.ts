@@ -25,12 +25,13 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach } from "bun:test";
 
 const testRoot = realpathSync(
   mkdtempSync(join(tmpdir(), "cadet-local-mode-test-")),
 );
 const savedEnv: Record<string, string | undefined> = {};
+const sandboxEnv: Record<string, string> = {};
 for (const [key, dirName] of [
   ["XDG_CONFIG_HOME", "config"],
   ["XDG_DATA_HOME", "data"],
@@ -39,7 +40,17 @@ for (const [key, dirName] of [
   const dir = join(testRoot, dirName);
   mkdirSync(dir, { recursive: true });
   process.env[key] = dir;
+  sandboxEnv[key] = dir;
 }
+
+// Many files delete these in their afterEach instead of restoring them. With
+// several files in one `bun test` process, the next file would then write to
+// the real ~/.config/cadet. Point any unset one back at the sandbox.
+beforeEach(() => {
+  for (const [key, dir] of Object.entries(sandboxEnv)) {
+    process.env[key] ??= dir;
+  }
+});
 
 afterAll(() => {
   for (const [key, value] of Object.entries(savedEnv)) {
