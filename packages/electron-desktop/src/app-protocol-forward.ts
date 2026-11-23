@@ -1,4 +1,4 @@
-import { app, net, protocol, session } from "electron";
+import { app, net, protocol, session, safeStorage } from "electron";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -9,8 +9,9 @@ import {
   forwardOperatorRequest,
   readLockfile,
   servedConfigFromLockfile,
-  type CookieJar,
+  getGatewayUrl,
 } from "@mycadet/local-mode";
+import { createAuthorityCookieJar } from "./authority-cookie-jar";
 import { planAppProtocolAssetRequest } from "./app-protocol";
 
 /**
@@ -35,34 +36,39 @@ const APP_HOST = "mycadet.ai";
 const WEB_MOUNT = "/web";
 const WEB_ASSET_PREFIX = "/assistant/assets/";
 
-/**
- * The session jar, as the `CookieJar` the operator route table speaks.
- * The pair the hatch mints (and every gateway rotation since) must live
- * in Chromium's store for the entry's gateway origin — the renderer's
- * `app://` origin can hold no cookies (the store refuses non-`http(s)`
- * schemes) and `protocol.handle` jars nothing on its own — while the
- * proxy row's dial, made host-side, can no more see that store than the
- * renderer can: this adapter is the bridge in both directions. Best-effort
- * both ways, per the jar's contract: a refused write degrades to a
- * warning (the next dial just reads unauthenticated), a failed read to an
- * empty jar.
- */
-const sessionCookieJar: CookieJar = {
-  get: async (url) => {
-    try {
-      return await session.defaultSession.cookies.get({ url });
-    } catch {
-      return [];
-    }
+// Keep the operator seam, but isolate credentials by full origin rather than
+// Chromium's port-insensitive domain matching. The path is read after app ready.
+const authorityCookieJar = createAuthorityCookieJar({
+  filePath: () => path.join(app.getPath("userData"), "authority-cookies.enc"),
+  encryption: {
+    isEncryptionAvailable: () => safeStorage.isEncryptionAvailable(),
+    encryptString: (value) => safeStorage.encryptString(value),
+    decryptString: (value) => safeStorage.decryptString(value),
+    getSelectedStorageBackend: () =>
+      process.platform === "linux"
+        ? safeStorage.getSelectedStorageBackend()
+        : "os_crypt",
   },
-  set: async (url, cookie) => {
-    try {
-      await session.defaultSession.cookies.set({ ...cookie, url });
-    } catch (err) {
-      log.warn("[protocol-cookies] set failed:", err);
+  warn: (message) => log.warn(`[protocol-cookies] ${message}`),
+  async legacyCookies(origin) {
+    const hostname = new URL(origin).hostname;
+    const candidates = new Set<string>();
+    for (const entry of readLockfile().assistants) {
+      try {
+        const url = new URL(getGatewayUrl(entry));
+        if (url.hostname === hostname) candidates.add(url.origin);
+      } catch {
+        /* An unresolved entry has no legacy cookie authority. */
+      }
     }
+    // Shared-host cookies cannot identify their port. Migrate only an
+    // unambiguous host; otherwise pairing establishes the correct authority.
+    if (candidates.size !== 1 || !candidates.has(origin)) return [];
+    return (await session.defaultSession.cookies.get({ url: origin })).filter(
+      (cookie) => cookie.hostOnly !== false,
+    );
   },
-};
+});
 
 const appOrigin = (): AllowedOrigin => ({
   protocol: `${APP_PROTOCOL}:`,
@@ -127,7 +133,7 @@ export function registerAppProtocol(): void {
     // jar is the rows' cookie source and sink: the pair the hatch jars
     // (and every rotation since) attaches on each gateway dial.
     const operated = await forwardOperatorRequest(request, {
-      cookieJar: sessionCookieJar,
+      cookieJar: authorityCookieJar,
     });
     if (operated) {
       return operated;

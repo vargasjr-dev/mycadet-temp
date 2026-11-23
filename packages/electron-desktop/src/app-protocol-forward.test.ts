@@ -54,7 +54,7 @@ let servedConfig: { assistantId?: string; assistantName?: string } = {
 };
 
 mock.module("@mycadet/local-mode", () => ({
-  readLockfile: () => ({}),
+  readLockfile: () => ({ assistants: [] }),
   servedConfigFromLockfile: () => servedConfig,
 }));
 
@@ -281,26 +281,28 @@ describe("registerAppProtocol", () => {
   test("the operator forward carries the session jar as its cookie source and sink", async () => {
     await setupDev();
     await register();
-    cookieGet.mockResolvedValue([
-      { name: "cadet_web_access", value: "edge-token-1" },
-      { name: "cadet_web_refresh", value: "edge-token-2" },
-    ] as never);
     forwardOperator.mockResolvedValueOnce(new Response("ok"));
     await handler!(new Request("app://mycadet.ai/v1/conversations"));
     const [, options] = (forwardOperator.mock.calls.at(-1) ??
       []) as unknown as [
       Request,
-      { cookieJar: { get: (url: string) => Promise<unknown[]>; set: unknown } },
+      {
+        cookieJar: {
+          get: (url: string) => Promise<unknown[]>;
+          set: (url: string, cookie: unknown) => Promise<void>;
+        };
+      },
     ];
     expect(typeof options.cookieJar.get).toBe("function");
     expect(typeof options.cookieJar.set).toBe("function");
-    // `get` reads the Chromium store for the dial's own origin — the pair
-    // comes back in the store's grain, exactly as the store held it.
+    await options.cookieJar.set("http://127.0.0.1:7830", {
+      name: "cadet_web_access",
+      value: "edge-token-1",
+    });
     expect(await options.cookieJar.get("http://127.0.0.1:7830")).toEqual([
       { name: "cadet_web_access", value: "edge-token-1" },
-      { name: "cadet_web_refresh", value: "edge-token-2" },
     ]);
-    expect(cookieGet).toHaveBeenCalledWith({ url: "http://127.0.0.1:7830" });
+    expect(await options.cookieJar.get("http://127.0.0.1:7831")).toEqual([]);
   });
 
   test("the jar adapter writes through to the cookie store, best-effort", async () => {
@@ -320,19 +322,8 @@ describe("registerAppProtocol", () => {
       path: "/",
       sameSite: "strict",
     });
-    expect(cookieSet).toHaveBeenCalledWith({
-      url: "http://127.0.0.1:7833",
-      name: "cadet_web_access",
-      value: "edge-token-1",
-      httpOnly: true,
-      path: "/",
-      sameSite: "strict",
-    });
-    // A refusing store (here: the `app://` scheme Chromium rejects) never
-    // fails the row — the jar's contract is best-effort custody.
-    cookieSet.mockRejectedValueOnce(
-      new Error("Failed to set cookie - EXCLUDE_NONCOOKIEABLE_SCHEME"),
-    );
+    // The new adapter never writes credentials into Chromium's shared host jar.
+    expect(cookieSet).not.toHaveBeenCalled();
     await expect(
       options.cookieJar.set("app://mycadet.ai", { name: "x", value: "y" }),
     ).resolves.toBeUndefined();
