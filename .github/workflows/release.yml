@@ -1769,9 +1769,8 @@ jobs:
           retention-days: 7
 
   release:
-    # The electron desktop jobs and the windows reusable ride as canaries
-    # (continue-on-error): they always report success to needs, so the
-    # release publishes whatever artifacts exist and warns about the rest.
+    # Desktop builds are optional: wait for them, but gate creation only on
+    # required publishing jobs. Missing installers do not prevent a release.
     needs:
       [
         extract-version,
@@ -1879,16 +1878,11 @@ jobs:
       - name: Create GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
           VERSION_TAG="v${VERSION}"
           NOTES_FILE="/tmp/release-notes.md"
-
-          if [ -f "$NOTES_FILE" ]; then
-            NOTES_ARGS=(--notes-file "$NOTES_FILE")
-          else
-            NOTES_ARGS=(--generate-notes)
-          fi
 
           ASSETS=()
 
@@ -1907,11 +1901,12 @@ jobs:
 
           # Create release on mycadet (this repo)
           if ! gh release view "$VERSION_TAG" --repo "${{ github.repository }}" &>/dev/null; then
+            bash scripts/prepare-github-release-notes.sh "$VERSION_TAG" "$NOTES_FILE"
             gh release create "$VERSION_TAG" \
               "${ASSETS[@]}" \
               --repo "${{ github.repository }}" \
               --title "Cadet $VERSION" \
-              "${NOTES_ARGS[@]}" \
+              --notes-file "$NOTES_FILE" \
               --latest
             echo "Release created at https://github.com/${{ github.repository }}/releases/tag/$VERSION_TAG"
           else

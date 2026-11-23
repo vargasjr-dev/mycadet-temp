@@ -1863,9 +1863,12 @@ jobs:
           VERSION: ${{ needs.compute-version.outputs.version }}
         run: |
           VERSION_TAG="v${VERSION}"
+          NOTES_FILE=$(mktemp)
+          trap 'rm -f "$NOTES_FILE"' EXIT
           if ! gh release view "$VERSION_TAG" >/dev/null 2>&1; then
+            bash scripts/prepare-github-release-notes.sh "$VERSION_TAG" "$NOTES_FILE"
             gh release create "$VERSION_TAG" --target "$GITHUB_SHA" --prerelease --latest=false \
-              --title "Cadet $VERSION" --generate-notes
+              --title "Cadet $VERSION" --notes-file "$NOTES_FILE"
           fi
           bash scripts/attach-desktop-installers.sh "$VERSION_TAG"
 
