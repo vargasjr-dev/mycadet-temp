@@ -6,10 +6,9 @@ sources `scripts/generate-icon.sh` renders into the packaged app.
 ```
 icons/
   README.md
+  mark.png             # shared C-with-eyes foreground, rendered from the iOS mark
   production/
     icon.json          # manifest: `fill.solid` ground plus the layer geometry
-    Assets/
-      white-V.svg      # foreground layer
   staging/
   dev/
   local/
@@ -32,8 +31,8 @@ environments share one palette with the iOS bundles under
 `local` keeps a blue ground of its own and sits outside that palette, because it
 never leaves a developer machine.
 
-`clients/linux/build-resources/icons/` mirrors these manifests for the Linux
-build, and the guard test fails if the two mirrors drift apart.
+`clients/linux/build-resources/icons/` mirrors the palette for the Linux
+build, and the guard test fails if the colors drift apart.
 
 ## How it works
 
@@ -43,27 +42,28 @@ script:
 1. Resolves `build-resources/icons/$CADET_ENVIRONMENT/`, falling back to
    `production/` when no directory matches.
 2. Renders a 1024x1024 master PNG with an inline Swift program. It reads
-   `fill.solid` into a `CGColor` in the Display P3 color space, pulls the `d`
-   and `viewBox` attributes out of `Assets/white-V.svg`, and draws the path at
-   the manifest's `position.scale` and `translation-in-points`. The ground is
+   `fill.solid` into a `CGColor` in the Display P3 color space and draws
+   the shared PNG at the manifest's `position.scale` and
+   `translation-in-points`. The ground is
    full bleed with no rounding: macOS Tahoe reads edge pixel alpha and applies
    its own squircle clip, and transparent corners would trip its gray border
    instead.
 3. Downsamples the master with `sips` into an iconset at 16, 32, 128, 256, and
    512 points at 1x and 2x, then writes `build/icon.icns` with `iconutil`.
-4. Compiles a temporary `AppIcon.icon` bundle into `build/Assets.car` with
+4. Stages the same PNG in a temporary `AppIcon.icon` bundle and compiles
+   `build/Assets.car` with
    `actool` when full Xcode is selected. `actool` ships with Xcode rather than
    the Command Line Tools, so the step is skipped when it is missing and the
    `.icns` serves as the `CFBundleIconFile` fallback. `scripts/afterPack.js`
    copies `Assets.car` into the app bundle only when the step produced one.
 
-There is no working copy of these sources anywhere else in the tree. The
-directories here are the source of truth.
+The foreground is a transparent 1024 × 1024 raster of
+`clients/ios/App/App/AppIcon.icon/Assets/mark.svg` at the iOS icon's scale.
 
 ## Adding an environment
 
 1. Create a directory named for the environment.
-2. Copy `production/icon.json` and `production/Assets/white-V.svg` into it.
+2. Copy `production/icon.json` into it.
 3. Set `fill.solid` to the environment's ground.
 4. Mirror the same directory under `clients/linux/build-resources/icons/`.
 5. Build with `CADET_ENVIRONMENT=<name> bash scripts/pack.sh` and check the

@@ -32,14 +32,15 @@ mkdir -p "$ICONSET_DIR"
 
 trap 'rm -rf "$MASTER_PNG" "$(dirname "$ICONSET_DIR")"' EXIT
 
-swift - "$ICON_SOURCE_DIR" "$MASTER_PNG" <<'SWIFT_SCRIPT'
+swift - "$ICON_SOURCE_DIR" "$ICONS_DIR" "$MASTER_PNG" <<'SWIFT_SCRIPT'
 import CoreGraphics
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
 let iconDir = CommandLine.arguments[1]
-let outputPath = CommandLine.arguments[2]
+let assetsDir = CommandLine.arguments[2]
+let outputPath = CommandLine.arguments[3]
 
 let jsonPath = iconDir + "/icon.json"
 let jsonData = try! Data(contentsOf: URL(fileURLWithPath: jsonPath))
@@ -63,126 +64,10 @@ let txPoints = CGFloat(translationPts[0])
 let tyPoints = CGFloat(translationPts[1])
 
 let imageName = layer["image-name"] as! String
-let svgPath = iconDir + "/Assets/" + imageName
-
-let svgString = try! String(contentsOfFile: svgPath, encoding: .utf8)
-let dRange = svgString.range(of: "d=\"")!
-let afterD = svgString[dRange.upperBound...]
-let closingQuote = afterD.firstIndex(of: "\"")!
-let pathData = String(afterD[..<closingQuote])
-
-let vbRange = svgString.range(of: "viewBox=\"")!
-let afterVB = svgString[vbRange.upperBound...]
-let vbClose = afterVB.firstIndex(of: "\"")!
-let vbParts = String(afterVB[..<vbClose]).split(separator: " ").map { CGFloat(Double($0)!) }
-let svgWidth = vbParts[2]
-let svgHeight = vbParts[3]
-
-func parseSVGPath(_ d: String) -> CGPath {
-    let path = CGMutablePath()
-    let chars = Array(d)
-    var i = 0
-    var currentX: CGFloat = 0
-    var currentY: CGFloat = 0
-
-    func skipWhitespaceAndCommas() {
-        while i < chars.count && (chars[i] == " " || chars[i] == "," || chars[i] == "\n" || chars[i] == "\r" || chars[i] == "\t") {
-            i += 1
-        }
-    }
-
-    func parseNumber() -> CGFloat {
-        skipWhitespaceAndCommas()
-        var numStr = ""
-        if i < chars.count && (chars[i] == "-" || chars[i] == "+") {
-            numStr.append(chars[i]); i += 1
-        }
-        while i < chars.count && (chars[i] >= "0" && chars[i] <= "9" || chars[i] == ".") {
-            numStr.append(chars[i]); i += 1
-        }
-        return CGFloat(Double(numStr) ?? 0)
-    }
-
-    var lastCmd: Character = " "
-
-    while i < chars.count {
-        skipWhitespaceAndCommas()
-        if i >= chars.count { break }
-
-        var cmd: Character
-        if chars[i].isLetter {
-            cmd = chars[i]; i += 1
-        } else {
-            cmd = lastCmd
-            if cmd == "M" { cmd = "L" }
-            if cmd == "m" { cmd = "l" }
-        }
-        lastCmd = cmd
-
-        switch cmd {
-        case "M":
-            let x = parseNumber(); let y = parseNumber()
-            path.move(to: CGPoint(x: x, y: y))
-            currentX = x; currentY = y
-        case "m":
-            let dx = parseNumber(); let dy = parseNumber()
-            currentX += dx; currentY += dy
-            path.move(to: CGPoint(x: currentX, y: currentY))
-        case "L":
-            let x = parseNumber(); let y = parseNumber()
-            path.addLine(to: CGPoint(x: x, y: y))
-            currentX = x; currentY = y
-        case "l":
-            let dx = parseNumber(); let dy = parseNumber()
-            currentX += dx; currentY += dy
-            path.addLine(to: CGPoint(x: currentX, y: currentY))
-        case "H":
-            currentX = parseNumber()
-            path.addLine(to: CGPoint(x: currentX, y: currentY))
-        case "h":
-            currentX += parseNumber()
-            path.addLine(to: CGPoint(x: currentX, y: currentY))
-        case "V":
-            currentY = parseNumber()
-            path.addLine(to: CGPoint(x: currentX, y: currentY))
-        case "v":
-            currentY += parseNumber()
-            path.addLine(to: CGPoint(x: currentX, y: currentY))
-        case "C":
-            let x1 = parseNumber(); let y1 = parseNumber()
-            let x2 = parseNumber(); let y2 = parseNumber()
-            let x = parseNumber(); let y = parseNumber()
-            path.addCurve(to: CGPoint(x: x, y: y),
-                          control1: CGPoint(x: x1, y: y1),
-                          control2: CGPoint(x: x2, y: y2))
-            currentX = x; currentY = y
-        case "c":
-            let dx1 = parseNumber(); let dy1 = parseNumber()
-            let dx2 = parseNumber(); let dy2 = parseNumber()
-            let dx = parseNumber(); let dy = parseNumber()
-            path.addCurve(to: CGPoint(x: currentX + dx, y: currentY + dy),
-                          control1: CGPoint(x: currentX + dx1, y: currentY + dy1),
-                          control2: CGPoint(x: currentX + dx2, y: currentY + dy2))
-            currentX += dx; currentY += dy
-        case "Q":
-            let x1 = parseNumber(); let y1 = parseNumber()
-            let x = parseNumber(); let y = parseNumber()
-            path.addQuadCurve(to: CGPoint(x: x, y: y),
-                              control: CGPoint(x: x1, y: y1))
-            currentX = x; currentY = y
-        case "q":
-            let dx1 = parseNumber(); let dy1 = parseNumber()
-            let dx = parseNumber(); let dy = parseNumber()
-            path.addQuadCurve(to: CGPoint(x: currentX + dx, y: currentY + dy),
-                              control: CGPoint(x: currentX + dx1, y: currentY + dy1))
-            currentX += dx; currentY += dy
-        case "Z", "z":
-            path.closeSubpath()
-        default:
-            while i < chars.count && !chars[i].isLetter { i += 1 }
-        }
-    }
-    return path
+let layerURL = URL(fileURLWithPath: assetsDir).appendingPathComponent(imageName)
+guard let source = CGImageSourceCreateWithURL(layerURL as CFURL, nil),
+      let mark = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+    fatalError("Failed to read foreground image: \(layerURL.path)")
 }
 
 let size = 1024
@@ -204,22 +89,15 @@ let s = CGFloat(size)
 ctx.setFillColor(fillColor)
 ctx.fill(CGRect(x: 0, y: 0, width: s, height: s))
 
-let svgPixelWidth = svgWidth * scale
-let svgPixelHeight = svgHeight * scale
-
-let offsetX = (s - svgPixelWidth) / 2.0 + txPoints
-let offsetY = (s - svgPixelHeight) / 2.0 - tyPoints
-
-ctx.saveGState()
-ctx.translateBy(x: 0, y: s)
-ctx.scaleBy(x: 1, y: -1)
-ctx.translateBy(x: offsetX, y: offsetY)
-ctx.scaleBy(x: scale, y: scale)
-let vPath = parseSVGPath(pathData)
-ctx.addPath(vPath)
-ctx.setFillColor(.white)
-ctx.fillPath()
-ctx.restoreGState()
+let markWidth = CGFloat(mark.width) * scale
+let markHeight = CGFloat(mark.height) * scale
+ctx.interpolationQuality = .high
+ctx.draw(mark, in: CGRect(
+    x: (s - markWidth) / 2.0 + txPoints,
+    y: (s - markHeight) / 2.0 + tyPoints,
+    width: markWidth,
+    height: markHeight
+))
 
 guard let image = ctx.makeImage() else { fatalError("Failed to create CGImage") }
 let url = URL(fileURLWithPath: outputPath)
@@ -249,6 +127,7 @@ echo "generate-icon: wrote $OUTPUT_DIR/icon.icns ($CADET_ENVIRONMENT)"
 # no Assets.car, so Finder falls back to the icon.icns written above via
 # CFBundleIconFile. afterPack.js copies Assets.car only when it exists.
 if ! xcrun -f actool >/dev/null 2>&1; then
+    rm -f "$OUTPUT_DIR/Assets.car"
     echo "generate-icon: actool unavailable (requires full Xcode); skipping Assets.car, using icon.icns fallback." >&2
     exit 0
 fi
@@ -261,7 +140,8 @@ fi
 ICON_BUNDLE_DIR=$(mktemp -d)/AppIcon.icon
 mkdir -p "$ICON_BUNDLE_DIR"
 cp "$ICON_SOURCE_DIR/icon.json" "$ICON_BUNDLE_DIR/icon.json"
-cp -R "$ICON_SOURCE_DIR/Assets" "$ICON_BUNDLE_DIR/Assets"
+mkdir -p "$ICON_BUNDLE_DIR/Assets"
+cp "$ICONS_DIR/mark.png" "$ICON_BUNDLE_DIR/Assets/mark.png"
 
 ACTOOL_MAX_ATTEMPTS=3
 ACTOOL_SUCCESS=0

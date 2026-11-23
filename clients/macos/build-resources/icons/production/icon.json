@@ -14,11 +14,11 @@
             }
           ],
           "glass": false,
-          "image-name": "white-V.svg",
-          "name": "white-V",
+          "image-name": "mark.png",
+          "name": "mark",
           "position": {
-            "scale": 6,
-            "translation-in-points": [0, 25]
+            "scale": 1.0,
+            "translation-in-points": [0, 0]
           }
         }
       ],
