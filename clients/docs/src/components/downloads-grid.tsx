@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, type MouseEvent } from "react";
 import Image from "next/image";
 import {
   downloadsCardOrder,
@@ -170,6 +170,56 @@ function Glyph({ id }: { id: DownloadsCardId }) {
   }
 }
 
+function DesktopDownloadLink({ href, label }: { href: string; label: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+
+  async function download(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+    event.preventDefault();
+    if (state === "loading") return;
+
+    setState("loading");
+    try {
+      const response = await fetch(href, {
+        headers: { Accept: "application/json" },
+        redirect: "manual",
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (response.type === "opaqueredirect") {
+        // Older cloud deployments still answer with a direct redirect.
+        window.location.assign(href);
+      } else {
+        if (!response.ok) throw new Error("Installer unavailable");
+        const { url } = await response.json();
+        if (typeof url !== "string" || !url.startsWith("https://github.com/")) {
+          throw new Error("Invalid installer URL");
+        }
+        window.location.assign(url);
+      }
+      setState("idle");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <>
+      <a
+        className="btn dl-cta"
+        href={href}
+        onClick={download}
+        aria-disabled={state === "loading" || undefined}
+        aria-busy={state === "loading" || undefined}
+      >
+        {state === "loading" ? "Preparing download…" : label}
+      </a>
+      <span className="dl-download-status" role="status">
+        {state === "error" ? "Couldn’t start the download. Try again." : ""}
+      </span>
+    </>
+  );
+}
+
 function Card({
   id,
   environment,
@@ -228,13 +278,10 @@ function Card({
               ? "The dev channel's latest build, straight from the release train."
               : "The latest release, straight from the release train."}
           </p>
-          <a
-            className="btn dl-cta"
+          <DesktopDownloadLink
             href={DESKTOP_DOWNLOAD_URLS[id][environment]}
-          >
-            Download for{" "}
-            {id === "mac" ? "Mac" : id === "linux" ? "Linux" : "Windows"}
-          </a>
+            label={`Download for ${id === "mac" ? "Mac" : id === "linux" ? "Linux" : "Windows"}`}
+          />
         </>
       ) : comingSoonFor(id) ? (
         <>

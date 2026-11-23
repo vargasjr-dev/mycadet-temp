@@ -152,6 +152,15 @@
   margin-top: auto;
 }
 
+.dl-card .dl-cta[aria-busy="true"] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.dl-download-status:empty {
+  position: absolute;
+}
+
 .dl-code-row {
   display: flex;
   align-items: stretch;
