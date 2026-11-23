@@ -3,14 +3,19 @@
  */
 
 import {
+  assistantAsleepMessage,
   cloudAuthHeaders,
   invalidateOrgIdCache,
+  isAssistantAsleep,
   loadFreshGuardianToken,
   loadGuardianToken,
   loopbackSafeFetch,
   readCloudToken,
 } from "@mycadet/local-mode";
-import { isCloudEntry } from "@mycadet/local-mode/contract";
+import {
+  isCloudEntry,
+  type LockfileAssistant,
+} from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { findAssistant } from "@mycadet/local-mode";
 
@@ -50,6 +55,7 @@ export interface RequestOpts {
 export class AssistantClient {
   readonly runtimeUrl: string;
 
+  private readonly entry: LockfileAssistant;
   private readonly _assistantId: string;
   /**
    * The credential for the current mode. Mutable: a 401 on the guardian path
@@ -80,6 +86,7 @@ export class AssistantClient {
       );
     }
 
+    this.entry = entry;
     this._assistantId = entry.assistantId;
     const cloudManaged = !opts?.sessionToken && isCloudEntry(entry);
     this.runtimeUrl = getGatewayUrl(entry);
@@ -283,7 +290,13 @@ export class AssistantClient {
       }).finally(() => clearTimeout(timeoutId));
     };
 
-    const response = await doFetch();
+    // Nothing answered: say so plainly if the assistant is asleep.
+    const response = await doFetch().catch(async (err: unknown) => {
+      if (await isAssistantAsleep(this.entry)) {
+        throw new Error(assistantAsleepMessage(this.entry));
+      }
+      throw err;
+    });
 
     // A stale cached Cadet-Organization-Id is the usual cause of a 401 on the
     // platform path (e.g. the user switched orgs elsewhere). Drop it and retry
