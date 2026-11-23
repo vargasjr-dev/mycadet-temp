@@ -39,7 +39,7 @@ async function getEphemeralPort(): Promise<number> {
 describe("findOpenPort", () => {
   test("returns the preferred port when it is free", async () => {
     const port = await getEphemeralPort();
-    const result = await findOpenPort(port, { host: HOST });
+    const result = await findOpenPort(port);
     expect(result).toBe(port);
   });
 
@@ -47,9 +47,21 @@ describe("findOpenPort", () => {
     const blocked = await getEphemeralPort();
     const blocker = await bindBlocker(blocked);
     try {
-      const result = await findOpenPort(blocked, { host: HOST });
+      const result = await findOpenPort(blocked);
       expect(result).toBeGreaterThan(blocked);
       expect(result).toBeLessThanOrEqual(blocked + 50);
+    } finally {
+      await closeServer(blocker);
+    }
+  });
+
+  test("skips a port held only on 127.0.0.1", async () => {
+    // macOS lets 0.0.0.0 bind on top of this, but Docker publishes on
+    // 127.0.0.1 and would fail.
+    const blocked = await getEphemeralPort();
+    const blocker = await bindBlocker(blocked, "127.0.0.1");
+    try {
+      expect(await findOpenPort(blocked)).not.toBe(blocked);
     } finally {
       await closeServer(blocker);
     }
@@ -68,7 +80,7 @@ describe("findOpenPort", () => {
       } catch {
         blockerB = null;
       }
-      const result = await findOpenPort(first, { host: HOST });
+      const result = await findOpenPort(first);
       expect(result).toBeGreaterThan(first + (blockerB ? 1 : 0));
     } finally {
       await closeServer(blockerA);
@@ -80,35 +92,29 @@ describe("findOpenPort", () => {
     const blocked = await getEphemeralPort();
     const blocker = await bindBlocker(blocked);
     try {
-      await expect(
-        findOpenPort(blocked, { host: HOST, maxAttempts: 1 }),
-      ).rejects.toThrow(/no open port/i);
+      await expect(findOpenPort(blocked, { maxAttempts: 1 })).rejects.toThrow(
+        /no open port/i,
+      );
     } finally {
       await closeServer(blocker);
     }
   });
 
   test("rejects non-integer or out-of-range preferred port", async () => {
-    await expect(findOpenPort(0, { host: HOST })).rejects.toThrow(
-      /not a valid TCP port/i,
-    );
-    await expect(findOpenPort(65536, { host: HOST })).rejects.toThrow(
-      /not a valid TCP port/i,
-    );
-    await expect(findOpenPort(1.5, { host: HOST })).rejects.toThrow(
-      /not a valid TCP port/i,
-    );
+    await expect(findOpenPort(0)).rejects.toThrow(/not a valid TCP port/i);
+    await expect(findOpenPort(65536)).rejects.toThrow(/not a valid TCP port/i);
+    await expect(findOpenPort(1.5)).rejects.toThrow(/not a valid TCP port/i);
   });
 
   test("rejects non-positive maxAttempts", async () => {
-    await expect(
-      findOpenPort(20100, { host: HOST, maxAttempts: 0 }),
-    ).rejects.toThrow(/maxAttempts/i);
+    await expect(findOpenPort(20100, { maxAttempts: 0 })).rejects.toThrow(
+      /maxAttempts/i,
+    );
   });
 
   test("does not leak the probe port — port is rebindable after resolution", async () => {
     const port = await getEphemeralPort();
-    const found = await findOpenPort(port, { host: HOST });
+    const found = await findOpenPort(port);
     expect(found).toBe(port);
     // If the probe leaked a listener on `port`, this would throw EADDRINUSE.
     const reuse = await bindBlocker(found);

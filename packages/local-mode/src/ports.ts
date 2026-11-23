@@ -52,10 +52,9 @@ export const GATEWAY_INTERNAL_PORT = DEFAULT_PORTS.gateway;
  */
 export async function findOpenPort(
   preferred: number,
-  options: { maxAttempts?: number; host?: string; exclude?: number[] } = {},
+  options: { maxAttempts?: number; exclude?: number[] } = {},
 ): Promise<number> {
   const maxAttempts = options.maxAttempts ?? 50;
-  const host = options.host ?? "0.0.0.0";
   const exclude = new Set(options.exclude ?? []);
 
   if (!Number.isInteger(preferred) || preferred < 1 || preferred > 65535) {
@@ -75,7 +74,10 @@ export async function findOpenPort(
     if (port > 65535) break;
     if (exclude.has(port)) continue;
     try {
-      await probeBindPort(port, host);
+      // Check both. On macOS 0.0.0.0 binds even when another program holds
+      // 127.0.0.1, and that's where Docker publishes.
+      await probeBindPort(port, "0.0.0.0");
+      await probeBindPort(port, "127.0.0.1");
       return port;
     } catch (err) {
       lastError = err as Error;
