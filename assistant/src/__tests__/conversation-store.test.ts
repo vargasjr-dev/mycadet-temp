@@ -295,8 +295,8 @@ describe("attachment orphan cleanup", () => {
       }
     ).$client;
     const remaining = raw
-      .query("SELECT COUNT(*) AS c FROM attachments")
-      .get() as { c: number };
+      .query<{ c: number }, []>("SELECT COUNT(*) AS c FROM attachments")
+      .get()!;
     expect(remaining.c).toBe(0);
   });
 
@@ -320,8 +320,8 @@ describe("attachment orphan cleanup", () => {
       }
     ).$client;
     const remaining = raw
-      .query("SELECT COUNT(*) AS c FROM attachments")
-      .get() as { c: number };
+      .query<{ c: number }, []>("SELECT COUNT(*) AS c FROM attachments")
+      .get()!;
     expect(remaining.c).toBe(1);
   });
 
@@ -343,11 +343,11 @@ describe("attachment orphan cleanup", () => {
       }
     ).$client;
     const attachmentCount = raw
-      .query("SELECT COUNT(*) AS c FROM attachments")
-      .get() as { c: number };
+      .query<{ c: number }, []>("SELECT COUNT(*) AS c FROM attachments")
+      .get()!;
     const linkCount = raw
-      .query("SELECT COUNT(*) AS c FROM message_attachments")
-      .get() as { c: number };
+      .query<{ c: number }, []>("SELECT COUNT(*) AS c FROM message_attachments")
+      .get()!;
     expect(attachmentCount.c).toBe(0);
     expect(linkCount.c).toBe(0);
   });
@@ -376,8 +376,8 @@ describe("attachment orphan cleanup", () => {
       }
     ).$client;
     const remaining = raw
-      .query("SELECT COUNT(*) AS c FROM attachments")
-      .get() as { c: number };
+      .query<{ c: number }, []>("SELECT COUNT(*) AS c FROM attachments")
+      .get()!;
     expect(remaining.c).toBe(1); // only the unlinked upload survives
   });
 });

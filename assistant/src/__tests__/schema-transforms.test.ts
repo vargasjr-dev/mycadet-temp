@@ -8,6 +8,7 @@ import {
   stripActivityField,
 } from "../tools/schema-transforms.js";
 import { ToolDefinition } from "../tools/tool-types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 function makeDef(
   name: string,
@@ -26,8 +27,8 @@ describe("injectActivityField", () => {
   test("injects activity on a tool without it", () => {
     const defs = [makeDef("my_tool")];
     const result = injectActivityField(defs);
-    const schema = result[0].input_schema as Record<string, unknown>;
-    const props = schema.properties as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
+    const props = jsonObjectSchema.parse(schema.properties);
     expect(props.activity).toEqual({
       type: "string",
       description:
@@ -44,7 +45,7 @@ describe("injectActivityField", () => {
       }),
     ];
     const result = injectActivityField(defs);
-    const schema = result[0].input_schema as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
     expect(schema.required).toEqual(["foo", "activity"]);
   });
 
@@ -56,7 +57,7 @@ describe("injectActivityField", () => {
       }),
     ];
     const result = injectActivityField(defs);
-    const schema = result[0].input_schema as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
     expect(schema.required).toEqual(["activity"]);
   });
 
@@ -67,8 +68,8 @@ describe("injectActivityField", () => {
     expect(Object.is(result[0], defs[0])).toBe(true);
     expect(Object.is(result[1], defs[1])).toBe(true);
     // No activity injected
-    const schema0 = result[0].input_schema as Record<string, unknown>;
-    const props0 = schema0.properties as Record<string, unknown>;
+    const schema0 = jsonObjectSchema.parse(result[0].input_schema);
+    const props0 = jsonObjectSchema.parse(schema0.properties);
     expect("activity" in props0).toBe(false);
   });
 
@@ -83,8 +84,8 @@ describe("injectActivityField", () => {
     const result = injectActivityField(defs);
     // Should be the exact same object reference (no modification)
     expect(Object.is(result[0], defs[0])).toBe(true);
-    const schema = result[0].input_schema as Record<string, unknown>;
-    const props = schema.properties as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
+    const props = jsonObjectSchema.parse(schema.properties);
     // Original activity type preserved
     expect(props.activity).toEqual({ type: "number" });
     // required NOT modified — don't promote server-defined optional activity
@@ -100,8 +101,8 @@ describe("injectActivityField", () => {
       }),
     ];
     const result = injectActivityField(defs);
-    const schema = result[0].input_schema as Record<string, unknown>;
-    const props = schema.properties as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
+    const props = jsonObjectSchema.parse(schema.properties);
     // Original activity type preserved
     expect(props.activity).toEqual({ type: "string" });
     // activity must be in required even though it was already in properties
@@ -141,7 +142,7 @@ describe("injectActivityField", () => {
     expect(Object.is(originalSchema.properties, originalProps)).toBe(true);
 
     // Result has different object refs
-    const resultSchema = result[0].input_schema as Record<string, unknown>;
+    const resultSchema = jsonObjectSchema.parse(result[0].input_schema);
     expect(Object.is(resultSchema, originalSchema)).toBe(false);
     expect(Object.is(resultSchema.properties, originalProps)).toBe(false);
     expect(Object.is(resultSchema.required, originalRequired)).toBe(false);
@@ -201,11 +202,11 @@ describe("injectActivityField", () => {
     const result = injectActivityField(defs);
     // Should be the exact same object reference (no modification)
     expect(Object.is(result[0], defs[0])).toBe(true);
-    const schema = result[0].input_schema as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
     // Top-level required should NOT include activity
     expect(schema.required).toEqual(["shared"]);
     // Top-level properties should NOT have activity injected
-    const props = schema.properties as Record<string, unknown>;
+    const props = jsonObjectSchema.parse(schema.properties);
     expect("activity" in props).toBe(false);
   });
 
@@ -226,10 +227,10 @@ describe("injectActivityField", () => {
     const result = injectActivityField(defs);
     // Should be the exact same object reference (no modification)
     expect(Object.is(result[0], defs[0])).toBe(true);
-    const schema = result[0].input_schema as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
     // Top-level required should NOT include activity
     expect(schema.required).toEqual(["foo"]);
-    const props = schema.properties as Record<string, unknown>;
+    const props = jsonObjectSchema.parse(schema.properties);
     expect("activity" in props).toBe(false);
   });
 
@@ -249,8 +250,8 @@ describe("injectActivityField", () => {
     const result = injectActivityField(defs);
     // Should be the exact same object reference (no modification)
     expect(Object.is(result[0], defs[0])).toBe(true);
-    const schema = result[0].input_schema as Record<string, unknown>;
-    const props = schema.properties as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
+    const props = jsonObjectSchema.parse(schema.properties);
     // Top-level properties should NOT have activity injected (it's in allOf)
     expect("activity" in props).toBe(false);
     // Top-level required should NOT include activity (it's only in composite sub-schemas)
@@ -315,15 +316,13 @@ describe("injectActivityField", () => {
     const result = injectActivityField(defs);
 
     // tool_a: activity injected and required
-    const schemaA = result[0].input_schema as Record<string, unknown>;
-    expect(
-      (schemaA.properties as Record<string, unknown>).activity,
-    ).toBeDefined();
+    const schemaA = jsonObjectSchema.parse(result[0].input_schema);
+    expect(jsonObjectSchema.parse(schemaA.properties).activity).toBeDefined();
     expect(schemaA.required).toEqual(["foo", "activity"]);
 
     // tool_b: unchanged (activity optional, not promoted)
     expect(Object.is(result[1], defs[1])).toBe(true);
-    const schemaB = result[1].input_schema as Record<string, unknown>;
+    const schemaB = jsonObjectSchema.parse(result[1].input_schema);
     expect(schemaB.required).toEqual(["bar"]);
 
     // tool_c: unchanged (activity already present and required)
@@ -477,8 +476,8 @@ describe("stripActivityField", () => {
       }),
     ]);
     const result = stripActivityField(injected);
-    const schema = result[0].input_schema as Record<string, unknown>;
-    const props = schema.properties as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
+    const props = jsonObjectSchema.parse(schema.properties);
     expect("activity" in props).toBe(false);
     expect(schema.required).toEqual(["foo"]);
   });
@@ -499,7 +498,7 @@ describe("stripActivityField", () => {
     ];
 
     const result = stripActivityField(defs);
-    const schema = result[0].input_schema as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
     expect(schema.properties).toEqual({ path: { type: "string" } });
     expect(schema.required).toEqual(["path"]);
   });
@@ -517,7 +516,7 @@ describe("stripActivityField", () => {
     ];
 
     const result = stripActivityField(defs);
-    const schema = result[0].input_schema as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
     expect(schema.properties).toEqual({});
     expect("required" in schema).toBe(false);
   });
@@ -537,8 +536,8 @@ describe("stripActivityField", () => {
 
     const result = stripActivityField(defs);
     expect(Object.is(result[0], defs[0])).toBe(true);
-    const schema = result[0].input_schema as Record<string, unknown>;
-    const props = schema.properties as Record<string, unknown>;
+    const schema = jsonObjectSchema.parse(result[0].input_schema);
+    const props = jsonObjectSchema.parse(schema.properties);
     expect(props.activity).toEqual({
       type: "string",
       description: "server semantics",
@@ -602,7 +601,7 @@ describe("stripActivityField", () => {
     expect(originalRequired).toEqual(["foo", "activity"]);
     expect(Object.is(originalSchema.properties, originalProps)).toBe(true);
 
-    const resultSchema = result[0].input_schema as Record<string, unknown>;
+    const resultSchema = jsonObjectSchema.parse(result[0].input_schema);
     expect(Object.is(resultSchema, originalSchema)).toBe(false);
     expect(Object.is(resultSchema.properties, originalProps)).toBe(false);
     expect(Object.is(resultSchema.required, originalRequired)).toBe(false);
@@ -643,8 +642,8 @@ describe("daemon-declared activity fields", () => {
       { advertiseRequired: ["activity"] },
     );
     const result = stripActivityField([makeDef("file_read", schema)]);
-    const stripped = result[0].input_schema as Record<string, unknown>;
-    expect("activity" in (stripped.properties as Record<string, unknown>)).toBe(
+    const stripped = jsonObjectSchema.parse(result[0].input_schema);
+    expect("activity" in jsonObjectSchema.parse(stripped.properties)).toBe(
       false,
     );
     expect(stripped.required).toEqual(["path"]);

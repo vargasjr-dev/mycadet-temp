@@ -19,11 +19,15 @@ function createTestDb() {
 }
 
 function getColumnNames(raw: Database): string[] {
-  return (
-    raw.query(`PRAGMA table_info(conversations)`).all() as Array<{
-      name: string;
-    }>
-  ).map((column) => column.name);
+  return raw
+    .query<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(conversations)`)
+    .all()
+    .map((column) => column.name);
 }
 
 function bootstrapPreInferenceProfileConversations(raw: Database): void {
@@ -87,12 +91,16 @@ describe("conversation inference profile migration", () => {
     expect(columns).toContain("inference_profile");
     expect(columns).not.toContain("inferenceProfile");
 
-    const inferenceProfileColumn = (
-      raw.query(`PRAGMA table_info(conversations)`).all() as Array<{
-        name: string;
-        notnull: number;
-      }>
-    ).find((column) => column.name === "inference_profile");
+    const inferenceProfileColumn = raw
+      .query<
+        {
+          name: string;
+          notnull: number;
+        },
+        []
+      >(`PRAGMA table_info(conversations)`)
+      .all()
+      .find((column) => column.name === "inference_profile");
 
     expect(inferenceProfileColumn).toBeDefined();
     expect(inferenceProfileColumn?.notnull).toBe(0);
@@ -131,14 +139,17 @@ describe("conversation inference profile migration", () => {
     expect(getColumnNames(raw)).toContain("inferenceProfile");
 
     const row = raw
-      .query(
+      .query<
+        {
+          id: string;
+          title: string | null;
+          inferenceProfile: string | null;
+        },
+        []
+      >(
         `SELECT id, title, inferenceProfile FROM conversations WHERE id = 'conv-existing'`,
       )
-      .get() as {
-      id: string;
-      title: string | null;
-      inferenceProfile: string | null;
-    } | null;
+      .get();
 
     expect(row).toEqual({
       id: "conv-existing",
@@ -185,12 +196,13 @@ describe("conversation inference profile migration", () => {
     expect(() => migrateAddConversationInferenceProfile(db)).not.toThrow();
 
     const row = raw
-      .query(
-        `SELECT inferenceProfile FROM conversations WHERE id = 'conv-rerun'`,
-      )
-      .get() as {
-      inferenceProfile: string | null;
-    } | null;
+      .query<
+        {
+          inferenceProfile: string | null;
+        },
+        []
+      >(`SELECT inferenceProfile FROM conversations WHERE id = 'conv-rerun'`)
+      .get();
 
     expect(row).toEqual({ inferenceProfile: "quality-optimized" });
   });
@@ -261,10 +273,13 @@ describe("conversation inference profile migration", () => {
     `);
 
     const row = raw
-      .query(`SELECT inferenceProfile FROM conversations WHERE id = 'conv-new'`)
-      .get() as {
-      inferenceProfile: string | null;
-    } | null;
+      .query<
+        {
+          inferenceProfile: string | null;
+        },
+        []
+      >(`SELECT inferenceProfile FROM conversations WHERE id = 'conv-new'`)
+      .get();
 
     expect(row).toEqual({ inferenceProfile: null });
   });

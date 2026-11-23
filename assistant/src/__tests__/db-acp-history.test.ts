@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
@@ -162,7 +163,21 @@ describe("acp_session_history migration", () => {
       );
 
     const row = raw
-      .query(
+      .query<
+        {
+          id: string;
+          agent_id: string;
+          acp_session_id: string;
+          parent_conversation_id: string;
+          started_at: number;
+          completed_at: number | null;
+          status: string;
+          stop_reason: string | null;
+          error: string | null;
+          event_log_json: string;
+        },
+        SQLQueryBindings[]
+      >(
         /*sql*/ `
         SELECT
           id,
@@ -179,18 +194,7 @@ describe("acp_session_history migration", () => {
         WHERE id = ?
       `,
       )
-      .get("history-1") as {
-      id: string;
-      agent_id: string;
-      acp_session_id: string;
-      parent_conversation_id: string;
-      started_at: number;
-      completed_at: number | null;
-      status: string;
-      stop_reason: string | null;
-      error: string | null;
-      event_log_json: string;
-    } | null;
+      .get("history-1");
 
     expect(row).toEqual({
       id: "history-1",
@@ -236,15 +240,18 @@ describe("acp_session_history migration", () => {
       );
 
     const row = raw
-      .query(
+      .query<
+        {
+          event_log_json: string;
+          completed_at: number | null;
+          stop_reason: string | null;
+          error: string | null;
+        },
+        []
+      >(
         `SELECT event_log_json, completed_at, stop_reason, error FROM acp_session_history WHERE id = 'history-2'`,
       )
-      .get() as {
-      event_log_json: string;
-      completed_at: number | null;
-      stop_reason: string | null;
-      error: string | null;
-    } | null;
+      .get();
 
     expect(row).toEqual({
       event_log_json: "[]",
@@ -278,8 +285,11 @@ describe("acp_session_history migration", () => {
     expect(() => migrate230AcpSessionHistory(db)).not.toThrow();
 
     const row = raw
-      .query(`SELECT id FROM acp_session_history WHERE id = 'history-rerun'`)
-      .get() as { id: string } | null;
+      .query<
+        { id: string },
+        []
+      >(`SELECT id FROM acp_session_history WHERE id = 'history-rerun'`)
+      .get();
     expect(row?.id).toBe("history-rerun");
   });
 });
@@ -354,8 +364,11 @@ describe("acp_session_history cwd migration (272)", () => {
     migrateAcpSessionHistoryCwd(db);
 
     const legacy = raw
-      .query(`SELECT cwd FROM acp_session_history WHERE id = 'legacy-1'`)
-      .get() as { cwd: string | null } | null;
+      .query<
+        { cwd: string | null },
+        []
+      >(`SELECT cwd FROM acp_session_history WHERE id = 'legacy-1'`)
+      .get();
     expect(legacy?.cwd).toBeNull();
 
     raw
@@ -378,8 +391,11 @@ describe("acp_session_history cwd migration (272)", () => {
       );
 
     const fresh = raw
-      .query(`SELECT cwd FROM acp_session_history WHERE id = 'new-1'`)
-      .get() as { cwd: string | null } | null;
+      .query<
+        { cwd: string | null },
+        []
+      >(`SELECT cwd FROM acp_session_history WHERE id = 'new-1'`)
+      .get();
     expect(fresh?.cwd).toBe("/Users/me/project");
   });
 });

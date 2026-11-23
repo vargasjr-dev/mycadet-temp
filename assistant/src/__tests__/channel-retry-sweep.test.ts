@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { asc, eq } from "drizzle-orm";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 const deliveryCalls: Array<{
   conversationId: string;
   externalChatId: string;
@@ -1112,7 +1114,7 @@ describe("channel-retry-sweep", () => {
       .where(eq(channelInboundEvents.id, inbound.eventId))
       .get();
     const rawPayload = row?.rawPayload
-      ? (JSON.parse(row.rawPayload) as Record<string, unknown>)
+      ? jsonObjectSchema.parse(JSON.parse(row.rawPayload))
       : {};
 
     // A retry never streams; durable delivery edits the prior streamed message
@@ -1194,7 +1196,7 @@ describe("channel-retry-sweep", () => {
       .where(eq(channelInboundEvents.id, inbound.eventId))
       .get();
     const rawPayload = row?.rawPayload
-      ? (JSON.parse(row.rawPayload) as Record<string, unknown>)
+      ? jsonObjectSchema.parse(JSON.parse(row.rawPayload))
       : {};
 
     expect(liveDeliveryCalls).toEqual([]);
@@ -1277,7 +1279,7 @@ describe("channel-retry-sweep", () => {
       .where(eq(channelInboundEvents.id, inbound.eventId))
       .get();
     const rawPayload = row?.rawPayload
-      ? (JSON.parse(row.rawPayload) as Record<string, unknown>)
+      ? jsonObjectSchema.parse(JSON.parse(row.rawPayload))
       : {};
 
     expect(liveDeliveryCalls).toEqual([]);

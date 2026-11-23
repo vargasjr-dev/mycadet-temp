@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Regression tests for Cadet notification deep-link metadata.
  *
@@ -8,7 +9,6 @@
  * (APNs) channel, whose deepLinkTarget must be enriched with the
  * conversationId so remote-push taps can navigate.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { PairingOptions } from "../notifications/conversation-pairing.js";
@@ -113,6 +113,14 @@ import type {
 
 // -- Helpers -----------------------------------------------------------------
 
+function notificationIntent(event: AssistantEvent | undefined) {
+  assert(
+    event?.type === "notification_intent",
+    "Expected a notification intent",
+  );
+  return event;
+}
+
 function makeSignal(
   overrides?: Partial<NotificationSignal>,
 ): NotificationSignal {
@@ -196,7 +204,7 @@ describe("notification deep-link metadata", () => {
       );
 
       expect(messages).toHaveLength(1);
-      const msg = messages[0] as unknown as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
       expect(msg.type).toBe("notification_intent");
       expect(msg.title).toBe("Alert");
       expect(msg.body).toBe("Something happened");
@@ -220,7 +228,7 @@ describe("notification deep-link metadata", () => {
       );
 
       expect(messages).toHaveLength(1);
-      const msg = messages[0] as unknown as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
       expect(msg.type).toBe("notification_intent");
       expect(msg.deepLinkMetadata).toBeUndefined();
     });
@@ -240,8 +248,8 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const msg = messages[0] as unknown as Record<string, unknown>;
-      const metadata = msg.deepLinkMetadata as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
+      const metadata = msg.deepLinkMetadata!;
       expect(metadata.conversationId).toBe(conversationId);
     });
 
@@ -291,7 +299,7 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const msg = messages[0] as unknown as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
       expect(msg.sourceEventName).toBe("guardian.question");
     });
 
@@ -313,8 +321,8 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const msg = messages[0] as unknown as Record<string, unknown>;
-      const metadata = msg.deepLinkMetadata as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
+      const metadata = msg.deepLinkMetadata!;
       expect(metadata.conversationId).toBe("conv-task-run-42");
       expect(metadata.workItemId).toBe("work-item-7");
     });
@@ -333,8 +341,8 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const msg = messages[0] as unknown as Record<string, unknown>;
-      const metadata = msg.deepLinkMetadata as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
+      const metadata = msg.deepLinkMetadata!;
       expect(metadata.messageId).toBe("msg-1");
     });
 
@@ -356,8 +364,8 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const msg = messages[0] as unknown as Record<string, unknown>;
-      const metadata = msg.deepLinkMetadata as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
+      const metadata = msg.deepLinkMetadata!;
       expect(metadata.conversationId).toBe("conv-new-convo-001");
     });
 
@@ -380,8 +388,8 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const msg = messages[0] as unknown as Record<string, unknown>;
-      const metadata = msg.deepLinkMetadata as Record<string, unknown>;
+      const msg = notificationIntent(messages[0]);
+      const metadata = msg.deepLinkMetadata!;
       expect(metadata.conversationId).toBe("conv-reused-convo-042");
     });
 
@@ -423,10 +431,8 @@ describe("notification deep-link metadata", () => {
 
       expect(messages).toHaveLength(2);
 
-      const meta1 = (messages[0] as unknown as Record<string, unknown>)
-        .deepLinkMetadata as Record<string, unknown>;
-      const meta2 = (messages[1] as unknown as Record<string, unknown>)
-        .deepLinkMetadata as Record<string, unknown>;
+      const meta1 = notificationIntent(messages[0]).deepLinkMetadata!;
+      const meta2 = notificationIntent(messages[1]).deepLinkMetadata!;
 
       // Both deep links point to the same conversation
       expect(meta1.conversationId).toBe(stableConversationId);
@@ -463,10 +469,8 @@ describe("notification deep-link metadata", () => {
         { channel: "cadet" },
       );
 
-      const meta1 = (messages[0] as unknown as Record<string, unknown>)
-        .deepLinkMetadata as Record<string, unknown>;
-      const meta2 = (messages[1] as unknown as Record<string, unknown>)
-        .deepLinkMetadata as Record<string, unknown>;
+      const meta1 = notificationIntent(messages[0]).deepLinkMetadata!;
+      const meta2 = notificationIntent(messages[1]).deepLinkMetadata!;
 
       // Same conversation but different message targets
       expect(meta1.conversationId).toBe(conversationId);
@@ -500,8 +504,7 @@ describe("notification deep-link metadata", () => {
 
       // All three notifications deep-link to the same bound conversation
       for (const msg of messages) {
-        const metadata = (msg as unknown as Record<string, unknown>)
-          .deepLinkMetadata as Record<string, unknown>;
+        const metadata = notificationIntent(msg).deepLinkMetadata!;
         expect(metadata.conversationId).toBe(boundConvId);
       }
     });

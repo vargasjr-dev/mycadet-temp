@@ -4,9 +4,9 @@
  * worker process; the daemon's own scheduler tick runs only watchers and
  * sequences.
  */
-
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 mock.module("../daemon/disk-pressure-background-gate.js", () => ({
@@ -98,8 +98,11 @@ async function createDueScriptAndNotifyJobs() {
 
 function runsFor(jobId: string): Array<{ status: string }> {
   return rawDb()
-    .query("SELECT status FROM cron_runs WHERE job_id = ?")
-    .all(jobId) as Array<{ status: string }>;
+    .query<
+      { status: string },
+      SQLQueryBindings[]
+    >("SELECT status FROM cron_runs WHERE job_id = ?")
+    .all(jobId);
 }
 
 describe("runDueSchedulesOnce (the schedule worker's tick)", () => {
@@ -131,8 +134,11 @@ describe("runDueSchedulesOnce (the schedule worker's tick)", () => {
 
     expect(result.completed).toBe(1);
     const row = rawDb()
-      .query("SELECT status, enabled FROM cron_jobs WHERE id = ?")
-      .get(oneShot.id) as { status: string; enabled: number };
+      .query<
+        { status: string; enabled: number },
+        SQLQueryBindings[]
+      >("SELECT status, enabled FROM cron_jobs WHERE id = ?")
+      .get(oneShot.id)!;
     expect(row.status).toBe("fired");
     expect(row.enabled).toBe(0);
   });
@@ -158,8 +164,11 @@ describe("runDueSchedulesOnce (the schedule worker's tick)", () => {
     // one-shot is back in the queue with a near-future retry time.
     expect(mockEmitNotificationSignal).not.toHaveBeenCalled();
     const row = rawDb()
-      .query("SELECT status, next_run_at FROM cron_jobs WHERE id = ?")
-      .get(oneShot.id) as { status: string; next_run_at: number };
+      .query<
+        { status: string; next_run_at: number },
+        SQLQueryBindings[]
+      >("SELECT status, next_run_at FROM cron_jobs WHERE id = ?")
+      .get(oneShot.id)!;
     expect(row.status).toBe("active");
     expect(row.next_run_at).toBeGreaterThan(Date.now());
   });
@@ -181,12 +190,15 @@ describe("runDueSchedulesOnce (the schedule worker's tick)", () => {
     await deferClaimedSchedule(recurring.id, Date.now() + 30_000);
 
     const row = rawDb()
-      .query("SELECT enabled, next_run_at, status FROM cron_jobs WHERE id = ?")
-      .get(recurring.id) as {
-      enabled: number;
-      next_run_at: number;
-      status: string;
-    };
+      .query<
+        {
+          enabled: number;
+          next_run_at: number;
+          status: string;
+        },
+        SQLQueryBindings[]
+      >("SELECT enabled, next_run_at, status FROM cron_jobs WHERE id = ?")
+      .get(recurring.id)!;
     expect(row.enabled).toBe(1);
     expect(row.next_run_at).toBeGreaterThan(Date.now());
     expect(row.status).toBe("active");
@@ -206,14 +218,20 @@ describe("runDueSchedulesOnce (the schedule worker's tick)", () => {
 
     expect(result.failed).toBe(1);
     const runs = rawDb()
-      .query("SELECT status, error FROM cron_runs WHERE job_id = ?")
-      .all(failing.id) as Array<{ status: string; error: string | null }>;
+      .query<
+        { status: string; error: string | null },
+        SQLQueryBindings[]
+      >("SELECT status, error FROM cron_runs WHERE job_id = ?")
+      .all(failing.id);
     expect(runs).toHaveLength(1);
     expect(runs[0].status).toBe("error");
     expect(runs[0].error).toContain("boom");
     const row = rawDb()
-      .query("SELECT retry_count, next_run_at FROM cron_jobs WHERE id = ?")
-      .get(failing.id) as { retry_count: number; next_run_at: number };
+      .query<
+        { retry_count: number; next_run_at: number },
+        SQLQueryBindings[]
+      >("SELECT retry_count, next_run_at FROM cron_jobs WHERE id = ?")
+      .get(failing.id)!;
     expect(row.retry_count).toBe(1);
     expect(row.next_run_at).toBeGreaterThan(Date.now());
   });
@@ -254,8 +272,11 @@ describe("fire-time source-availability gate", () => {
     error: string | null;
   }> {
     return rawDb()
-      .query("SELECT status, error FROM cron_runs WHERE job_id = ?")
-      .all(jobId) as Array<{ status: string; error: string | null }>;
+      .query<
+        { status: string; error: string | null },
+        SQLQueryBindings[]
+      >("SELECT status, error FROM cron_runs WHERE job_id = ?")
+      .all(jobId);
   }
 
   /** A due plugin-sourced script row whose script leaves a marker when it runs. */
@@ -350,8 +371,11 @@ describe("fire-time source-availability gate", () => {
     expect(result.skipped).toBe(0);
     expect(existsSync(marker)).toBe(true);
     const runs = rawDb()
-      .query("SELECT status FROM cron_runs WHERE job_id = ?")
-      .all(job.id) as Array<{ status: string }>;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM cron_runs WHERE job_id = ?")
+      .all(job.id);
     expect(runs).toHaveLength(1);
     expect(runs[0].status).toBe("ok");
   });
@@ -366,8 +390,11 @@ describe("fire-time source-availability gate", () => {
     await runDueSchedulesOnce();
 
     const row = rawDb()
-      .query("SELECT retry_count, next_run_at FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { retry_count: number; next_run_at: number };
+      .query<
+        { retry_count: number; next_run_at: number },
+        SQLQueryBindings[]
+      >("SELECT retry_count, next_run_at FROM cron_jobs WHERE id = ?")
+      .get(job.id)!;
     expect(row.retry_count).toBe(2);
     // The next occurrence of `* * * * *` is at most a minute out. A retry at
     // this budget would have pushed it minutes further on backoff.
@@ -383,8 +410,11 @@ describe("fire-time source-availability gate", () => {
     expect(result.completed).toBe(1);
     expect(existsSync(marker)).toBe(true);
     const runs = rawDb()
-      .query("SELECT status FROM cron_runs WHERE job_id = ?")
-      .all(job.id) as Array<{ status: string }>;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM cron_runs WHERE job_id = ?")
+      .all(job.id);
     expect(runs).toHaveLength(1);
     expect(runs[0].status).toBe("ok");
   });

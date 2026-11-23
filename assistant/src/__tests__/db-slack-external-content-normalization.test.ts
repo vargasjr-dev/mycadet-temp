@@ -9,6 +9,7 @@ import { createMessagesFts } from "../persistence/migrations/116-messages-fts.js
 import { migrateNormalizeSlackExternalContent } from "../persistence/migrations/249-normalize-slack-external-content.js";
 import * as schema from "../persistence/schema/index.js";
 import { wrapUntrustedContent } from "../security/untrusted-content.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 interface MessageRow {
   id: string;
@@ -233,9 +234,9 @@ describe("migrateNormalizeSlackExternalContent", () => {
     expect(afterSecondRun).toEqual(afterFirstRun);
 
     expect(afterFirstRun["slack-plain"]?.content).toBe("plain Slack text");
-    const plainMetadata = JSON.parse(
-      afterFirstRun["slack-plain"]!.metadata!,
-    ) as Record<string, unknown>;
+    const plainMetadata = jsonObjectSchema.parse(
+      JSON.parse(afterFirstRun["slack-plain"]!.metadata!),
+    );
     expect(plainMetadata.provenanceTrustClass).toBe("unknown");
     expect(typeof plainMetadata.slackMeta).toBe("string");
 
@@ -248,9 +249,9 @@ describe("migrateNormalizeSlackExternalContent", () => {
       },
       { type: "file", source: { type: "file_id", file_id: "file_1" } },
     ]);
-    const jsonMetadata = JSON.parse(
-      afterFirstRun["slack-json"]!.metadata!,
-    ) as Record<string, unknown>;
+    const jsonMetadata = jsonObjectSchema.parse(
+      JSON.parse(afterFirstRun["slack-json"]!.metadata!),
+    );
     expect(jsonMetadata.provenanceTrustClass).toBe("unknown");
 
     expect(afterFirstRun["non-slack"]?.content).toBe(nonSlackWrapped);
@@ -271,18 +272,18 @@ describe("migrateNormalizeSlackExternalContent", () => {
     expect(afterFirstRun["legacy-guardian-raw"]?.content).toBe(
       "legacy guardian Slack text",
     );
-    const legacyGuardianMetadataAfter = JSON.parse(
-      afterFirstRun["legacy-guardian-raw"]!.metadata!,
-    ) as Record<string, unknown>;
+    const legacyGuardianMetadataAfter = jsonObjectSchema.parse(
+      JSON.parse(afterFirstRun["legacy-guardian-raw"]!.metadata!),
+    );
     expect(legacyGuardianMetadataAfter.provenanceTrustClass).toBe("guardian");
     expect(legacyGuardianMetadataAfter.provenanceSourceChannel).toBe("slack");
 
     expect(afterFirstRun["legacy-guardian-json"]?.content).toBe(
       legacyGuardianJsonContent,
     );
-    const legacyGuardianJsonMetadataAfter = JSON.parse(
-      afterFirstRun["legacy-guardian-json"]!.metadata!,
-    ) as Record<string, unknown>;
+    const legacyGuardianJsonMetadataAfter = jsonObjectSchema.parse(
+      JSON.parse(afterFirstRun["legacy-guardian-json"]!.metadata!),
+    );
     expect(legacyGuardianJsonMetadataAfter.provenanceTrustClass).toBe(
       "guardian",
     );

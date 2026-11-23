@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { Message } from "../providers/types.js";
@@ -100,10 +101,10 @@ describe("AnthropicProvider — error message formatting (JARVIS-390)", () => {
       await provider.sendMessage([userMsg("hi")]);
       throw new Error("expected sendMessage to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
+      assert(err instanceof ProviderError, "Expected ProviderError");
       const message = (err as Error).message;
       expect(message).toContain("Anthropic API error (402):");
-      expect((err as ProviderError).statusCode).toBe(402);
+      expect(err.statusCode).toBe(402);
     }
   });
 });
@@ -281,8 +282,11 @@ describe("AnthropicProvider — semantic reason stamping", () => {
       await provider.sendMessage([userMsg("hi")]);
       throw new Error("expected sendMessage to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(ContextOverflowError);
-      const overflow = err as ContextOverflowError;
+      assert(
+        err instanceof ContextOverflowError,
+        "Expected ContextOverflowError",
+      );
+      const overflow = err;
       expect(overflow.reason).toBe("context_overflow");
       expect(overflow.actualTokens).toBe(250000);
       expect(overflow.maxTokens).toBe(200000);
@@ -301,9 +305,9 @@ describe("AnthropicProvider — semantic reason stamping", () => {
       });
       throw new Error("expected sendMessage to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
-      expect((err as ProviderError).reason).toBeUndefined();
-      expect((err as ProviderError).abortReason).toBe(abortReason);
+      assert(err instanceof ProviderError, "Expected ProviderError");
+      expect(err.reason).toBeUndefined();
+      expect(err.abortReason).toBe(abortReason);
     }
   });
 });

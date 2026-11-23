@@ -46,10 +46,10 @@
  * implementation unless this file's tests are running (`carryMockActive`) —
  * mirrors the sibling test files. Slugs/terms are generic placeholders.
  */
-
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
@@ -61,6 +61,7 @@ import type {
 } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
@@ -843,11 +844,12 @@ async function reinjectTurn(
 /** Message metadata as stored, parsed. */
 function readMetadata(rowId: string): Record<string, unknown> {
   const row = testSqlite
-    .query(/*sql*/ `SELECT metadata FROM messages WHERE id = ?`)
-    .get(rowId) as { metadata: string | null } | null;
-  return row?.metadata
-    ? (JSON.parse(row.metadata) as Record<string, unknown>)
-    : {};
+    .query<
+      { metadata: string | null },
+      SQLQueryBindings[]
+    >(/*sql*/ `SELECT metadata FROM messages WHERE id = ?`)
+    .get(rowId);
+  return row?.metadata ? jsonObjectSchema.parse(JSON.parse(row.metadata)) : {};
 }
 
 /** The `(slug, key)` refs a v3 block text carries. */
@@ -973,8 +975,11 @@ async function retryTurn(
     false,
   )!;
   const existing = testSqlite
-    .query(/*sql*/ `SELECT metadata FROM messages WHERE id = ?`)
-    .get(anchorRowId) as { metadata: string | null } | null;
+    .query<
+      { metadata: string | null },
+      SQLQueryBindings[]
+    >(/*sql*/ `SELECT metadata FROM messages WHERE id = ?`)
+    .get(anchorRowId);
   testSqlite
     .query(/*sql*/ `UPDATE messages SET metadata = ? WHERE id = ?`)
     .run(mergeMessageMetadata(existing?.metadata, updates), anchorRowId);
@@ -999,18 +1004,21 @@ function rehydrateFromDb(
   historyStrippedAt: number | null = null,
 ): Message[] {
   const rows = testSqlite
-    .query(
+    .query<
+      {
+        role: "user" | "assistant";
+        content: string;
+        metadata: string | null;
+        created_at: number;
+      },
+      SQLQueryBindings[]
+    >(
       /*sql*/ `
       SELECT role, content, metadata, created_at FROM messages
       WHERE conversation_id = ? ORDER BY created_at ASC, rowid ASC
     `,
     )
-    .all(convId) as Array<{
-    role: "user" | "assistant";
-    content: string;
-    metadata: string | null;
-    created_at: number;
-  }>;
+    .all(convId);
   const pruned = getPrunedSections(convId);
   const preStripped = (row: (typeof rows)[number]): boolean =>
     historyStrippedAt !== null && row.created_at < historyStrippedAt;
@@ -1022,7 +1030,7 @@ function rehydrateFromDb(
   return rows.map((row, index) => {
     let content = JSON.parse(row.content) as ContentBlock[];
     if (row.role === "user" && row.metadata && !preStripped(row)) {
-      const meta = JSON.parse(row.metadata) as Record<string, unknown>;
+      const meta = jsonObjectSchema.parse(JSON.parse(row.metadata));
       const pointer = meta[MEMORY_V3_POINTER_BLOCK_METADATA_KEY];
       if (typeof pointer === "string") {
         const resident = filterResidentPointerEntries(
@@ -1402,19 +1410,21 @@ describe("memory-v3 carry integration: pointer contract", () => {
     }
     // Turns 5 and 10 pointed at resident sections; their rows carry the
     // wrapped block under the pointer metadata key.
-    const pointerRows = (
-      testSqlite
-        .query(
-          /*sql*/ `
+    const pointerRows = testSqlite
+      .query<
+        {
+          id: string;
+        },
+        SQLQueryBindings[]
+      >(
+        /*sql*/ `
           SELECT id FROM messages
           WHERE conversation_id = ? AND metadata LIKE '%' || ? || '%'
           ORDER BY created_at ASC
         `,
-        )
-        .all(CONV, MEMORY_V3_POINTER_BLOCK_METADATA_KEY) as Array<{
-        id: string;
-      }>
-    ).map((row) => row.id);
+      )
+      .all(CONV, MEMORY_V3_POINTER_BLOCK_METADATA_KEY)
+      .map((row) => row.id);
     expect(pointerRows).toEqual([`${CONV}-m5-user`, `${CONV}-m10-user`]);
     // The live history keeps both: turn 5's pointer rode the restart via its
     // metadata (message index 2 * (turn - 1)), and turn 10's is on the tail
@@ -1495,13 +1505,13 @@ describe("memory-v3 carry integration — restart contract", () => {
       .join("\n");
     expect(turn1).not.toContain("# memory/concepts/core-beta.md");
     const turn1Metadata = testSqlite
-      .query(
+      .query<{ metadata: string }, SQLQueryBindings[]>(
         /*sql*/ `
         SELECT metadata FROM messages
         WHERE conversation_id = ? AND id = ?
       `,
       )
-      .get(CONV, `${CONV}-m1-user`) as { metadata: string };
+      .get(CONV, `${CONV}-m1-user`)!;
     expect(turn1Metadata.metadata).toContain("# memory/concepts/core-beta.md");
   });
 
@@ -1524,13 +1534,13 @@ describe("memory-v3 carry integration — restart contract", () => {
     // …and the persisted metadata still carries the pruned leads (the filter
     // is rehydration-time, never a metadata rewrite).
     const metadata = testSqlite
-      .query(
+      .query<{ metadata: string }, SQLQueryBindings[]>(
         /*sql*/ `
         SELECT metadata FROM messages
         WHERE conversation_id = ? AND id = ?
       `,
       )
-      .get(CONV, `${CONV}-m1-user`) as { metadata: string };
+      .get(CONV, `${CONV}-m1-user`)!;
     expect(metadata.metadata).toContain("# memory/concepts/core-beta.md");
   });
 });
@@ -1538,15 +1548,15 @@ describe("memory-v3 carry integration — restart contract", () => {
 describe("memory-v3 carry integration — fork contract", () => {
   test("fork copies carry each block's format stamp with the metadata", () => {
     const rows = testSqlite
-      .query(
+      .query<{ metadata: string }, SQLQueryBindings[]>(
         /*sql*/ `
         SELECT metadata FROM messages
         WHERE conversation_id = ? AND metadata IS NOT NULL
       `,
       )
-      .all(FORK_CONV) as Array<{ metadata: string }>;
+      .all(FORK_CONV);
     const stamped = rows
-      .map((row) => JSON.parse(row.metadata) as Record<string, unknown>)
+      .map((row) => jsonObjectSchema.parse(JSON.parse(row.metadata)))
       .filter(
         (meta) =>
           typeof meta[MEMORY_V3_INJECTED_BLOCK_METADATA_KEY] === "string",

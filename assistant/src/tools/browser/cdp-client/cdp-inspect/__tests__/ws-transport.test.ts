@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for the raw CDP JSON-RPC WebSocket transport.
  *
@@ -11,7 +12,6 @@
  * `try/finally` (or via `afterEach`) to avoid port leaks across the
  * suite.
  */
-
 import { describe, expect, test } from "bun:test";
 
 import type { ServerWebSocket } from "bun";
@@ -415,8 +415,11 @@ describe("connectCdpWsTransport", () => {
         } catch (err) {
           caught = err;
         }
-        expect(caught).toBeInstanceOf(CdpWsTransportError);
-        expect((caught as CdpWsTransportError).code).toBe("closed");
+        assert(
+          caught instanceof CdpWsTransportError,
+          "Expected CdpWsTransportError",
+        );
+        expect(caught.code).toBe("closed");
         expect(transport.closed).toBe(true);
 
         // After close, subsequent sends also reject with closed.
@@ -426,8 +429,11 @@ describe("connectCdpWsTransport", () => {
         } catch (err) {
           caught2 = err;
         }
-        expect(caught2).toBeInstanceOf(CdpWsTransportError);
-        expect((caught2 as CdpWsTransportError).code).toBe("closed");
+        assert(
+          caught2 instanceof CdpWsTransportError,
+          "Expected CdpWsTransportError",
+        );
+        expect(caught2.code).toBe("closed");
       } finally {
         transport.dispose();
       }
@@ -450,8 +456,11 @@ describe("connectCdpWsTransport", () => {
       try {
         await connectCdpWsTransport(server.url, { connectTimeoutMs: 200 });
       } catch (err) {
-        expect(err).toBeInstanceOf(CdpWsTransportError);
-        const code = (err as CdpWsTransportError).code;
+        assert(
+          err instanceof CdpWsTransportError,
+          "Expected CdpWsTransportError",
+        );
+        const code = err.code;
         expect(["timeout", "transport_error"]).toContain(code);
       }
     } finally {
@@ -473,8 +482,8 @@ describe("connectCdpWsTransport", () => {
     } catch (caught) {
       err = caught;
     }
-    expect(err).toBeInstanceOf(CdpWsTransportError);
-    const code = (err as CdpWsTransportError).code;
+    assert(err instanceof CdpWsTransportError, "Expected CdpWsTransportError");
+    const code = err.code;
     expect(["timeout", "transport_error"]).toContain(code);
   });
 

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Satellite-path gate test for `CallSiteRoutingProvider`.
  *
@@ -21,7 +22,6 @@
  *     (alternate-provider routing requires a connection).
  *   - No callSite → straight to default (no resolution work).
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
@@ -293,10 +293,11 @@ describe("CallSiteRoutingProvider honors provider_connection (satellite gate)", 
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(ConnectionResolutionError);
-    expect((caught as ConnectionResolutionError).reason).toBe(
-      "missing_connection",
+    assert(
+      caught instanceof ConnectionResolutionError,
+      "Expected ConnectionResolutionError",
     );
+    expect(caught.reason).toBe("missing_connection");
     // Connection-resolution hook MUST NOT have fired — threw before.
     expect(resolveProviderCalls.length).toBe(0);
     // Default's transport was never invoked either.
@@ -334,11 +335,12 @@ describe("CallSiteRoutingProvider honors provider_connection (satellite gate)", 
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(ConnectionResolutionError);
-    expect((caught as ConnectionResolutionError).reason).toBe("not_found");
-    expect((caught as ConnectionResolutionError).connectionName).toBe(
-      "does-not-exist",
+    assert(
+      caught instanceof ConnectionResolutionError,
+      "Expected ConnectionResolutionError",
     );
+    expect(caught.reason).toBe("not_found");
+    expect(caught.connectionName).toBe("does-not-exist");
     // Resolver was never reached (connection lookup returned null).
     expect(resolveProviderCalls.length).toBe(0);
     expect(sendMessageCalls.length).toBe(0);
@@ -392,13 +394,12 @@ describe("CallSiteRoutingProvider honors provider_connection (satellite gate)", 
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(ConnectionResolutionError);
-    expect((caught as ConnectionResolutionError).reason).toBe(
-      "provider_mismatch",
+    assert(
+      caught instanceof ConnectionResolutionError,
+      "Expected ConnectionResolutionError",
     );
-    expect((caught as ConnectionResolutionError).connectionName).toBe(
-      "anthropic-managed",
-    );
+    expect(caught.reason).toBe("provider_mismatch");
+    expect(caught.connectionName).toBe("anthropic-managed");
     // Resolver was never reached (mismatch check fires first).
     expect(resolveProviderCalls.length).toBe(0);
     expect(sendMessageCalls.length).toBe(0);

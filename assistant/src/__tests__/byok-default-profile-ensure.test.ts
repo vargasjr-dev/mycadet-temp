@@ -13,6 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   materializeProfile,
   resolveDefaultProfileForProvider,
@@ -22,6 +24,7 @@ import type { DefaultProfileProvider } from "../config/default-profile-names.js"
 import type { ProfileEntry } from "../config/schemas/llm.js";
 import { ensureByokDefaultProfiles } from "../workspace/byok-default-profile-ensure.js";
 import { ensureCompleteCustomProfiles } from "../workspace/custom-profile-ensure.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 let originalIsPlatform: string | undefined;
@@ -43,15 +46,19 @@ function writeConfig(data: Record<string, unknown>): void {
 }
 
 function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(configPath(), "utf-8"));
+  return jsonObjectSchema.parse(
+    JSON.parse(readFileSync(configPath(), "utf-8")),
+  );
 }
 
 function llm(): Record<string, unknown> {
-  return readConfig().llm as Record<string, unknown>;
+  return jsonObjectSchema.parse(readConfig().llm);
 }
 
+const profileMapSchema = z.record(z.string(), jsonObjectSchema);
+
 function profiles(): Record<string, Record<string, unknown>> {
-  return llm().profiles as Record<string, Record<string, unknown>>;
+  return profileMapSchema.parse(llm().profiles);
 }
 
 function hatchBody(
@@ -75,10 +82,7 @@ function eraHatchBody(
   provider: DefaultProfileProvider,
   model: string,
 ): Record<string, unknown> {
-  const { provider_connection: _pc, ...body } = hatchBody(
-    key,
-    provider,
-  ) as Record<string, unknown>;
+  const { provider_connection: _pc, ...body } = hatchBody(key, provider);
   return {
     ...body,
     label: `${body.label} (Custom Provider)`,
@@ -87,7 +91,11 @@ function eraHatchBody(
 }
 
 /** An unedited anthropic BYOK install as the hatch seeder laid it out. */
-function uneditedByokConfig(): Record<string, unknown> {
+function uneditedByokConfig(): {
+  llm: Record<string, unknown> & {
+    profiles: Record<string, Record<string, unknown>>;
+  };
+} {
   return {
     llm: {
       default: { provider: "anthropic" },
@@ -214,11 +222,8 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a user-edited custom copy survives untouched with its references", () => {
     const config = uneditedByokConfig();
-    const llmConfig = config.llm as Record<string, unknown>;
-    const profileMap = llmConfig.profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const llmConfig = config.llm;
+    const profileMap = llmConfig.profiles;
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       model: "claude-opus-4-6",
@@ -398,7 +403,7 @@ describe("ensureByokDefaultProfiles", () => {
     const { provider_connection: _pc, ...body } = hatchBody(
       "balanced",
       "anthropic",
-    ) as Record<string, unknown>;
+    );
     writeConfig({
       llm: {
         default: { provider: "anthropic" },
@@ -416,10 +421,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("stubs carrying the repair thinking stamp are deleted (real-world shape)", () => {
     const config = uneditedByokConfig();
-    const profs = (config.llm as Record<string, unknown>).profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profs = config.llm.profiles;
     // Migration 097 / repairAdaptiveThinkingOnCloudProfiles stamp thinking
     // onto the anthropic-backed managed entries; live BYOK stubs carry it on
     // balanced and quality-optimized (confirmed on a real workspace).
@@ -452,10 +454,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a stub with a non-repair thinking value survives and the advisor still lands on the dispatchable class", () => {
     const config = uneditedByokConfig();
-    const profs = (config.llm as Record<string, unknown>).profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profs = config.llm.profiles;
     profs["quality-optimized"].thinking = {
       enabled: false,
       streamThinking: false,
@@ -477,8 +476,7 @@ describe("ensureByokDefaultProfiles", () => {
     // claude-opus-4-7 was only ever the quality intent; on custom-balanced it
     // is a user edit.
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       model: "claude-opus-4-7",
@@ -493,8 +491,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a renamed copy converts and carries the label onto a thin stub", () => {
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       label: "My Balanced",
@@ -521,8 +518,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a copy renamed exactly to the hatch-stub label converts with the label dropped", () => {
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       label: "Balanced (Managed)",
@@ -542,8 +538,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a copy renamed and disabled into the exact hatch-stub shape keeps the disable, drops the label", () => {
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       label: "Balanced (Managed)",
@@ -605,8 +600,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a user disable on the retired copy lands on the bare key past a label-only stub", () => {
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap.balanced = { provider: "cadet", label: "Balanced (Managed)" };
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
@@ -626,8 +620,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a disabled copy converts and carries the status onto a thin stub", () => {
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap["custom-quality-optimized"] = {
       ...profileMap["custom-quality-optimized"],
       status: "disabled",
@@ -659,7 +652,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("an absent advisor profile is filled in the conversion write", () => {
     const config = uneditedByokConfig();
-    delete (config.llm as Record<string, unknown>).advisorProfile;
+    delete config.llm.advisorProfile;
     writeConfig(config);
 
     ensureByokDefaultProfiles(workspaceDir);
@@ -670,7 +663,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("an active profile naming a nonexistent profile is repointed at balanced", () => {
     const config = uneditedByokConfig();
-    (config.llm as Record<string, unknown>).activeProfile = "ghost-profile";
+    config.llm.activeProfile = "ghost-profile";
     writeConfig(config);
 
     ensureByokDefaultProfiles(workspaceDir);
@@ -740,7 +733,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a cadet-default install (hatched BYOK, later platform-connected) converts fully", () => {
     const config = uneditedByokConfig();
-    (config.llm as Record<string, unknown>).default = {
+    config.llm.default = {
       provider: "cadet",
     };
     writeConfig(config);
@@ -771,12 +764,9 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a cadet-default install keeps a user-edited copy untouched", () => {
     const config = uneditedByokConfig();
-    const llmConfig = config.llm as Record<string, unknown>;
+    const llmConfig = config.llm;
     llmConfig.default = { provider: "cadet" };
-    const profileMap = llmConfig.profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profileMap = llmConfig.profiles;
     profileMap["custom-balanced"] = {
       ...profileMap["custom-balanced"],
       model: "claude-opus-4-6",
@@ -797,7 +787,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("no-op when the blob provider is absent or unclamped", () => {
     const config = uneditedByokConfig();
-    delete (config.llm as Record<string, unknown>).default;
+    delete config.llm.default;
     writeConfig(config);
     const before = readFileSync(configPath(), "utf-8");
     ensureByokDefaultProfiles(workspaceDir);
@@ -805,7 +795,7 @@ describe("ensureByokDefaultProfiles", () => {
 
     // A provider with no matrix column clamps to null at the read — the
     // pass cannot know which column to convert for and no-ops.
-    (config.llm as Record<string, unknown>).default = {
+    config.llm.default = {
       provider: "not-a-provider",
     };
     writeConfig(config);
@@ -985,12 +975,9 @@ describe("ensureByokDefaultProfiles", () => {
     // A lone surviving copy is trivially uniform; the complete-set
     // requirement keeps it.
     const config = uneditedByokConfig();
-    const llmConfig = config.llm as Record<string, unknown>;
+    const llmConfig = config.llm;
     llmConfig.default = { provider: "cadet" };
-    const profileMap = llmConfig.profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profileMap = llmConfig.profiles;
     delete profileMap["custom-quality-optimized"];
     delete profileMap["custom-cost-optimized"];
     writeConfig(config);
@@ -1008,12 +995,9 @@ describe("ensureByokDefaultProfiles", () => {
     // A re-provisioned copy breaks provider uniformity and keeps the whole
     // set; the stubs still delete.
     const config = uneditedByokConfig();
-    const llmConfig = config.llm as Record<string, unknown>;
+    const llmConfig = config.llm;
     llmConfig.default = { provider: "cadet" };
-    const profileMap = llmConfig.profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profileMap = llmConfig.profiles;
     profileMap["custom-balanced"] = hatchBody("balanced", "openai");
     writeConfig(config);
 
@@ -1053,7 +1037,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a copy for an endpoint-supplied provider is kept even when body-identical to the template", () => {
     // Its connection can carry a base URL the bare key cannot recover.
-    const body = hatchBody("balanced", "anthropic") as Record<string, unknown>;
+    const body = hatchBody("balanced", "anthropic");
     writeConfig({
       llm: {
         default: { provider: "anthropic" },
@@ -1075,8 +1059,7 @@ describe("ensureByokDefaultProfiles", () => {
 
   test("a copy disable wins over a re-enabled hatch stub on the same key", () => {
     const config = uneditedByokConfig();
-    const profileMap = (config.llm as Record<string, unknown>)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profileMap = config.llm.profiles;
     profileMap["quality-optimized"] = {
       provider: "cadet",
       status: "active",
@@ -1138,10 +1121,7 @@ describe("ensureByokDefaultProfiles", () => {
           activeProfile: "custom-cost-optimized",
           profiles: {
             "custom-cost-optimized": {
-              ...(hatchBody("cost-optimized", provider) as Record<
-                string,
-                unknown
-              >),
+              ...hatchBody("cost-optimized", provider),
               model: hatchModel,
             },
             "custom-balanced": hatchBody("balanced", provider),

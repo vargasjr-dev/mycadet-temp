@@ -102,20 +102,29 @@ describe("migrateDropCapabilityCardState", () => {
     migrateDropCapabilityCardState(db);
 
     const starterRows = raw
-      .query(`SELECT id, card_type FROM conversation_starters ORDER BY id`)
-      .all() as Array<{ id: string; card_type: string }>;
+      .query<
+        { id: string; card_type: string },
+        []
+      >(`SELECT id, card_type FROM conversation_starters ORDER BY id`)
+      .all();
     expect(starterRows).toEqual([{ id: "chip-1", card_type: "chip" }]);
 
     const jobTypes = raw
-      .query(`SELECT type FROM memory_jobs ORDER BY id`)
-      .all() as Array<{
-      type: string;
-    }>;
+      .query<
+        {
+          type: string;
+        },
+        []
+      >(`SELECT type FROM memory_jobs ORDER BY id`)
+      .all();
     expect(jobTypes).toEqual([{ type: "generate_conversation_starters" }]);
 
     const checkpointKeys = raw
-      .query(`SELECT key FROM memory_checkpoints ORDER BY key`)
-      .all() as Array<{ key: string }>;
+      .query<
+        { key: string },
+        []
+      >(`SELECT key FROM memory_checkpoints ORDER BY key`)
+      .all();
     expect(checkpointKeys.map((row) => row.key)).toEqual(["other_checkpoint"]);
 
     const legacyTable = raw
@@ -145,15 +154,19 @@ describe("migrateDropCapabilityCardState", () => {
     migrateDropCapabilityCardState(db);
 
     const starterCount = raw
-      .query(`SELECT COUNT(*) AS count FROM conversation_starters`)
-      .get() as { count: number };
+      .query<
+        { count: number },
+        []
+      >(`SELECT COUNT(*) AS count FROM conversation_starters`)
+      .get()!;
     expect(starterCount.count).toBe(0);
 
     const jobCount = raw
-      .query(
-        `SELECT COUNT(*) AS count FROM memory_jobs WHERE type = 'generate_capability_cards'`,
-      )
-      .get() as { count: number };
+      .query<
+        { count: number },
+        []
+      >(`SELECT COUNT(*) AS count FROM memory_jobs WHERE type = 'generate_capability_cards'`)
+      .get()!;
     expect(jobCount.count).toBe(0);
   });
 });

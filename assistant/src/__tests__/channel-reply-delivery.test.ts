@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { REACTION_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import { resolveMessageContentBlocks } from "../persistence/message-content-file.js";
 import type { RuntimeAttachmentMetadata } from "../runtime/http-types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 type DeliveryCall = {
   callbackUrl: string;
@@ -159,7 +160,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
       return undefined;
     }
     try {
-      return JSON.parse(metadataJson) as Record<string, unknown>;
+      return jsonObjectSchema.parse(JSON.parse(metadataJson));
     } catch {
       return undefined;
     }
@@ -183,7 +184,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
     }
     const existing =
       row.metadata && typeof row.metadata === "string"
-        ? (JSON.parse(row.metadata) as Record<string, unknown>)
+        ? jsonObjectSchema.parse(JSON.parse(row.metadata))
         : {};
     row.metadata = JSON.stringify({ ...existing, ...updates });
   },
@@ -1426,7 +1427,7 @@ describe("channel-reply-delivery", () => {
     function envelopeOf(messageId: string): Record<string, unknown> {
       const row = conversationMessages.find((m) => m.id === messageId);
       const outer = JSON.parse(row?.metadata ?? "{}") as Record<string, string>;
-      return JSON.parse(outer.providerMeta) as Record<string, unknown>;
+      return jsonObjectSchema.parse(JSON.parse(outer.providerMeta));
     }
 
     it("writes the gateway-returned ts as the row's messageId (top-level reply)", async () => {
@@ -1821,7 +1822,7 @@ describe("channel-reply-delivery", () => {
         row.metadata = JSON.stringify({
           ...outer,
           providerMeta: JSON.stringify({
-            ...(JSON.parse(outer.providerMeta) as Record<string, unknown>),
+            ...jsonObjectSchema.parse(JSON.parse(outer.providerMeta)),
             deletedMessageIds: ["1700001100.000777"],
             deletedAt: 1700001101000,
           }),

@@ -242,8 +242,8 @@ describe("GeminiProvider", () => {
         (e: unknown) => e,
       );
 
-    expect(error).toBeInstanceOf(ProviderError);
-    const providerError = error as ProviderError;
+    assert(error instanceof ProviderError, "Expected ProviderError");
+    const providerError = error;
     expect(providerError.statusCode).toBeUndefined();
     expect(providerError.message).toContain(MALFORMED_TOOL_CALL_MESSAGE);
     expect(providerError.message).toContain("MALFORMED_FUNCTION_CALL");
@@ -1615,8 +1615,8 @@ describe("GeminiProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBe(reason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBe(reason);
     }
   });
 
@@ -1633,8 +1633,8 @@ describe("GeminiProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBe(reason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBe(reason);
     }
   });
 
@@ -1650,8 +1650,8 @@ describe("GeminiProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBeUndefined();
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBeUndefined();
     }
   });
 
@@ -1799,9 +1799,9 @@ describe("GeminiProvider", () => {
       ]);
       throw new Error("expected sendMessage to throw");
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
+      assert(error instanceof ProviderError, "Expected ProviderError");
       expect(error).not.toBeInstanceOf(ContextOverflowError);
-      expect((error as ProviderError).reason).toBe("rate_limited");
+      expect(error.reason).toBe("rate_limited");
     }
   });
 

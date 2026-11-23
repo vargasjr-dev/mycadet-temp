@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 const mockWakeAgentForOpportunity = mock(
@@ -147,8 +148,11 @@ describe("scheduler wake mode", () => {
 
     // AND the one-shot is completed (not failed) — check status is 'fired' not 'cancelled'
     const row = getRawDb()
-      .query("SELECT status FROM cron_jobs WHERE id = ?")
-      .get(schedule.id) as { status: string } | null;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM cron_jobs WHERE id = ?")
+      .get(schedule.id);
     expect(row?.status).toBe("fired");
   });
 
@@ -173,8 +177,11 @@ describe("scheduler wake mode", () => {
 
     // THEN the one-shot is marked as completed (status = 'fired')
     const row = getRawDb()
-      .query("SELECT status FROM cron_jobs WHERE id = ?")
-      .get(schedule.id) as { status: string } | null;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM cron_jobs WHERE id = ?")
+      .get(schedule.id);
     expect(row?.status).toBe("fired");
   });
 
@@ -196,8 +203,11 @@ describe("scheduler wake mode", () => {
 
     // THEN the one-shot is reverted to 'active' for retry (failOneShot behavior)
     const row = getRawDb()
-      .query("SELECT status FROM cron_jobs WHERE id = ?")
-      .get(schedule.id) as { status: string } | null;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM cron_jobs WHERE id = ?")
+      .get(schedule.id);
     expect(row?.status).toBe("active");
   });
 
@@ -228,8 +238,11 @@ describe("scheduler wake mode", () => {
 
     // THEN the job is NOT completed — it's reverted to 'active' for retry
     const rowAfterFirst = getRawDb()
-      .query("SELECT status, retry_count FROM cron_jobs WHERE id = ?")
-      .get(schedule.id) as { status: string; retry_count: number } | null;
+      .query<
+        { status: string; retry_count: number },
+        SQLQueryBindings[]
+      >("SELECT status, retry_count FROM cron_jobs WHERE id = ?")
+      .get(schedule.id);
     expect(rowAfterFirst?.status).toBe("active");
     expect(rowAfterFirst?.retry_count).toBe(1);
 
@@ -238,8 +251,11 @@ describe("scheduler wake mode", () => {
 
     // THEN the job IS completed (status = 'fired')
     const rowAfterSecond = getRawDb()
-      .query("SELECT status FROM cron_jobs WHERE id = ?")
-      .get(schedule.id) as { status: string } | null;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM cron_jobs WHERE id = ?")
+      .get(schedule.id);
     expect(rowAfterSecond?.status).toBe("fired");
 
     // AND wakeAgentForOpportunity was called twice total
@@ -273,8 +289,11 @@ describe("scheduler wake mode", () => {
 
     // THEN the job is permanently failed (status = 'cancelled', enabled = false)
     const row = getRawDb()
-      .query("SELECT status, enabled FROM cron_jobs WHERE id = ?")
-      .get(schedule.id) as { status: string; enabled: number } | null;
+      .query<
+        { status: string; enabled: number },
+        SQLQueryBindings[]
+      >("SELECT status, enabled FROM cron_jobs WHERE id = ?")
+      .get(schedule.id);
     expect(row?.status).toBe("cancelled");
     expect(row?.enabled).toBe(0);
   });

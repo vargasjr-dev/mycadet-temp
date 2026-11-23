@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import {
   chmodSync,
   existsSync,
@@ -415,8 +416,8 @@ describe("QdrantManager", () => {
         caught = err;
       });
 
-      expect(caught).toBeInstanceOf(QdrantStartError);
-      const err = caught as QdrantStartError;
+      assert(caught instanceof QdrantStartError, "Expected QdrantStartError");
+      const err = caught;
       expect(err.kind).toBe("exited");
       expect(err.exitCode).toBe(101);
       expect(err.stdout).toContain("no such shard");
@@ -435,9 +436,9 @@ describe("QdrantManager", () => {
         caught = err;
       });
 
-      expect(caught).toBeInstanceOf(QdrantStartError);
-      expect((caught as QdrantStartError).kind).toBe("not_ready");
-      expect((caught as QdrantStartError).exitCode).toBeNull();
+      assert(caught instanceof QdrantStartError, "Expected QdrantStartError");
+      expect(caught.kind).toBe("not_ready");
+      expect(caught.exitCode).toBeNull();
     }, 10_000);
   });
 

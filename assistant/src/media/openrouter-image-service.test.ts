@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { fetchMock } from "../__tests__/helpers/fetch-mock.js";
+import { jsonObjectSchema } from "../__tests__/helpers/json-object-schema.js";
 import {
   generateImageOpenRouter,
   mapOpenRouterError,
@@ -58,7 +59,7 @@ describe("generateImageOpenRouter", () => {
     let body: Record<string, unknown> | undefined;
     globalThis.fetch = fetchMock(
       mock(async (_input, init) => {
-        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        body = jsonObjectSchema.parse(JSON.parse(String(init?.body)));
         return Response.json({ data: [] });
       }),
     );
@@ -84,7 +85,7 @@ describe("generateImageOpenRouter", () => {
     let body: Record<string, unknown> | undefined;
     globalThis.fetch = fetchMock(
       mock(async (_input, init) => {
-        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        body = jsonObjectSchema.parse(JSON.parse(String(init?.body)));
         return Response.json({ data: [] });
       }),
     );
@@ -106,7 +107,7 @@ describe("generateImageOpenRouter", () => {
     let body: Record<string, unknown> | undefined;
     globalThis.fetch = fetchMock(
       mock(async (_input, init) => {
-        body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        body = jsonObjectSchema.parse(JSON.parse(String(init?.body)));
         return Response.json({ data: [] });
       }),
     );

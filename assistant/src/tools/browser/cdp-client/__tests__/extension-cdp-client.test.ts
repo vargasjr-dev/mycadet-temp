@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, mock, test } from "bun:test";
 
 import type { HostBrowserProxy } from "../../../../daemon/host-browser-proxy.js";
@@ -130,8 +131,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toBe("Cannot find context with specified id");
     expect(err.cdpMethod).toBe("Runtime.evaluate");
@@ -154,8 +155,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toBe("CDP error for Target.attachToTarget");
     expect(err.underlying).toEqual({ code: -32000 });
@@ -176,8 +177,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.cdpMethod).toBe("Browser.getVersion");
     expect(err.underlying).toBeDefined();
@@ -201,8 +202,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toContain(
       "Host browser proxy timed out waiting for extension response",
@@ -229,8 +230,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("aborted");
     expect(err.cdpMethod).toBe("Page.navigate");
     expect(err.cdpParams).toEqual({ url: "https://slow.example.com/" });
@@ -252,8 +253,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.message).toBe("socket closed");
     expect(err.cdpMethod).toBe("Runtime.evaluate");
@@ -275,8 +276,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.message).toBe("string error");
     expect(err.underlying).toBe("string error");
@@ -300,8 +301,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("disposed");
     expect(err.cdpMethod).toBe("Browser.getVersion");
     expect(request).not.toHaveBeenCalled();
@@ -324,8 +325,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("aborted");
     expect(err.message).toBe("Aborted before send");
     expect(err.cdpMethod).toBe("Browser.getVersion");
@@ -350,8 +351,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("aborted");
     expect(err.message).toBe("CDP call aborted");
     expect(err.cdpMethod).toBe("Browser.getVersion");
@@ -378,8 +379,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.message).toBe("Extension WebSocket disconnected");
     expect(err.cdpMethod).toBe("Page.navigate");
@@ -406,8 +407,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.message).toBe("Host browser not reachable");
     expect(err.underlying).toEqual(errorBody);
@@ -432,8 +433,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.message).toBe("CDP call timed out");
     expect(err.underlying).toEqual(errorBody);
@@ -458,8 +459,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("transport_error");
     expect(err.message).toBe("Only loopback addresses are allowed");
     expect(err.underlying).toEqual(errorBody);
@@ -486,8 +487,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toBe("Cannot find context with specified id");
   });
@@ -511,8 +512,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toBe("Unrecognized error");
   });
@@ -535,8 +536,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toBe("Something went wrong");
   });
@@ -560,8 +561,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
   });
 
@@ -580,8 +581,8 @@ describe("ExtensionCdpClient", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const err = caught as CdpError;
+    assert(caught instanceof CdpError, "Expected CdpError");
+    const err = caught;
     expect(err.code).toBe("cdp_error");
     expect(err.message).toBe("Connection lost unexpectedly");
     expect(err.underlying).toBe("Connection lost unexpectedly");

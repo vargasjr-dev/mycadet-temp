@@ -135,8 +135,11 @@ describe("Telegram inbound message seen signals", () => {
     // Find the conversation ID from inbound events
     const db = getDb();
     const inboundEvents = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+      .prepare<
+        { conversation_id: string },
+        []
+      >("SELECT conversation_id FROM channel_inbound_events")
+      .all();
     expect(inboundEvents.length).toBeGreaterThan(0);
 
     const conversationId = inboundEvents[0].conversation_id;
@@ -182,8 +185,11 @@ describe("Telegram inbound message seen signals", () => {
     expect(body.duplicate).toBe(false);
 
     const inboundEvents2 = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+      .prepare<
+        { conversation_id: string },
+        []
+      >("SELECT conversation_id FROM channel_inbound_events")
+      .all();
     const conversationId = inboundEvents2[0].conversation_id;
     const events = getAttentionEvents(conversationId);
 
@@ -208,8 +214,11 @@ describe("Telegram inbound message seen signals", () => {
 
     const db = getDb();
     const inboundEvents = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+      .prepare<
+        { conversation_id: string },
+        []
+      >("SELECT conversation_id FROM channel_inbound_events")
+      .all();
     const conversationId = inboundEvents[0].conversation_id;
     const events = getAttentionEvents(conversationId);
 
@@ -234,8 +243,11 @@ describe("Telegram callback seen signals", () => {
 
     const db = getDb();
     const inboundEvents = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+      .prepare<
+        { conversation_id: string },
+        []
+      >("SELECT conversation_id FROM channel_inbound_events")
+      .all();
     const conversationId = inboundEvents[0].conversation_id;
 
     // Register a pending interaction so the approval interception handles it
@@ -341,8 +353,11 @@ describe("duplicate event deduplication", () => {
     // Only one attention event should exist
     const db = getDb();
     const inboundEvents = db.$client
-      .prepare("SELECT conversation_id FROM channel_inbound_events")
-      .all() as Array<{ conversation_id: string }>;
+      .prepare<
+        { conversation_id: string },
+        []
+      >("SELECT conversation_id FROM channel_inbound_events")
+      .all();
     const conversationId = inboundEvents[0].conversation_id;
     const events = getAttentionEvents(conversationId);
 

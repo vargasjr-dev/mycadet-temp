@@ -10,6 +10,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
 // ---------------------------------------------------------------------------
@@ -183,7 +185,7 @@ describe("Slack inbound trusted contact verification", () => {
   test("unknown Slack user receives verification challenge via DM", async () => {
     const req = buildSlackInboundRequest();
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.denied).toBe(true);
     expect(json.reason).toBe("verification_challenge_sent");
@@ -216,7 +218,7 @@ describe("Slack inbound trusted contact verification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // Kept out at the door, with no re-engagement side effects.
     expect(json.denied).toBe(true);
@@ -246,7 +248,7 @@ describe("Slack inbound trusted contact verification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // Re-fired: fresh challenge minted + guardian re-notified.
     expect(json.denied).toBe(true);
@@ -303,7 +305,7 @@ describe("Slack inbound trusted contact verification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json1 = (await resp1.json()) as Record<string, unknown>;
+    const json1 = jsonObjectSchema.parse(await resp1.json());
     expect(json1.reason).toBe("verification_challenge_sent");
 
     // Second message from the same user — session already exists, so
@@ -316,7 +318,7 @@ describe("Slack inbound trusted contact verification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json2 = (await resp2.json()) as Record<string, unknown>;
+    const json2 = jsonObjectSchema.parse(await resp2.json());
     expect(json2.denied).toBe(true);
     expect(json2.reason).toBe("not_a_member");
 
@@ -334,7 +336,7 @@ describe("Slack inbound trusted contact verification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json1 = (await resp1.json()) as Record<string, unknown>;
+    const json1 = jsonObjectSchema.parse(await resp1.json());
     expect(json1.reason).toBe("verification_challenge_sent");
 
     // Second message from user B — should get their own challenge
@@ -348,7 +350,7 @@ describe("Slack inbound trusted contact verification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json2 = (await resp2.json()) as Record<string, unknown>;
+    const json2 = jsonObjectSchema.parse(await resp2.json());
     expect(json2.reason).toBe("verification_challenge_sent");
     expect(json2.verificationSessionId).toBeDefined();
 
@@ -362,7 +364,7 @@ describe("Slack inbound trusted contact verification", () => {
       replyCallbackUrl: "http://localhost:7830/deliver/telegram",
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // Standard deny path — no verification challenge
     expect(json.denied).toBe(true);

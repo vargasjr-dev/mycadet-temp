@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
 import {
@@ -150,11 +151,12 @@ describe("resolveCapabilities", () => {
     try {
       resolveCapabilities(manifest);
     } catch (err) {
-      expect(err).toBeInstanceOf(CapabilityResolutionError);
-      expect((err as CapabilityResolutionError).reason).toBe("unknown_tool");
-      expect((err as CapabilityResolutionError).toolName).toBe(
-        "does_not_exist",
+      assert(
+        err instanceof CapabilityResolutionError,
+        "Expected CapabilityResolutionError",
       );
+      expect(err.reason).toBe("unknown_tool");
+      expect(err.toolName).toBe("does_not_exist");
     }
   });
 
@@ -167,9 +169,12 @@ describe("resolveCapabilities", () => {
       resolveCapabilities(manifest);
       throw new Error("expected resolveCapabilities to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(CapabilityResolutionError);
-      expect((err as CapabilityResolutionError).reason).toBe("forbidden_tool");
-      expect((err as CapabilityResolutionError).toolName).toBe(forbidden);
+      assert(
+        err instanceof CapabilityResolutionError,
+        "Expected CapabilityResolutionError",
+      );
+      expect(err.reason).toBe("forbidden_tool");
+      expect(err.toolName).toBe(forbidden);
     }
   });
 
@@ -189,9 +194,12 @@ describe("resolveCapabilities", () => {
       resolveCapabilities(manifest);
       throw new Error("expected resolveCapabilities to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(CapabilityResolutionError);
-      expect((err as CapabilityResolutionError).reason).toBe("host_tool");
-      expect((err as CapabilityResolutionError).toolName).toBe("send_to_host");
+      assert(
+        err instanceof CapabilityResolutionError,
+        "Expected CapabilityResolutionError",
+      );
+      expect(err.reason).toBe("host_tool");
+      expect(err.toolName).toBe("send_to_host");
     }
   });
 

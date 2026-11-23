@@ -9,6 +9,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../../__tests__/helpers/json-object-schema.js";
 import {
   ClickHouseCompactionLogStore,
   type CompactionEndEvent,
@@ -98,7 +99,7 @@ describe("ClickHouseCompactionLogStore", () => {
     expect(insert.url.searchParams.get("query")).toBe(
       "INSERT INTO `compaction_logs` FORMAT JSONEachRow",
     );
-    const row = JSON.parse(insert.body) as Record<string, unknown>;
+    const row = jsonObjectSchema.parse(JSON.parse(insert.body));
     expect(row.assistant_id).toBe("assistant-123");
     expect(row.conversation_id).toBe("conv-1");
     expect(row.compaction_id).toBe("comp-1");
@@ -130,7 +131,7 @@ describe("ClickHouseCompactionLogStore", () => {
 
     await writer.writeEnd("conv-1", endEvent);
 
-    const row = JSON.parse(requests[1]!.body) as Record<string, unknown>;
+    const row = jsonObjectSchema.parse(JSON.parse(requests[1]!.body));
     expect(row.phase).toBe("end");
     expect(row.finished_at).toBe(1500);
     expect(row.duration_ms).toBe(500);
@@ -165,7 +166,7 @@ describe("ClickHouseCompactionLogStore", () => {
       exhausted: true,
     });
 
-    const row = JSON.parse(requests[1]!.body) as Record<string, unknown>;
+    const row = jsonObjectSchema.parse(JSON.parse(requests[1]!.body));
     expect(row.compacted).toBe(0);
     expect(row.summary_failed).toBe(1);
     expect(row.preserved_tail_messages).toBe(-1);
@@ -221,7 +222,7 @@ describe("ClickHouseCompactionLogStore", () => {
       summaryText: "x".repeat(10_000),
     });
 
-    const row = JSON.parse(requests[1]!.body) as Record<string, unknown>;
+    const row = jsonObjectSchema.parse(JSON.parse(requests[1]!.body));
     expect((row.summary_text as string).length).toBe(4000);
   });
 });

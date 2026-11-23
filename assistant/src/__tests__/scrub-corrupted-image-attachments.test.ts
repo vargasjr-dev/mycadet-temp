@@ -96,13 +96,16 @@ describe("migrateScrubCorruptedImageAttachments", () => {
     migrateScrubCorruptedImageAttachments(db);
 
     const attachmentCount = raw
-      .query(`SELECT COUNT(*) AS count FROM attachments`)
-      .get() as { count: number };
+      .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM attachments`)
+      .get()!;
     expect(attachmentCount.count).toBe(0);
 
     const linkCount = raw
-      .query(`SELECT COUNT(*) AS count FROM message_attachments`)
-      .get() as { count: number };
+      .query<
+        { count: number },
+        []
+      >(`SELECT COUNT(*) AS count FROM message_attachments`)
+      .get()!;
     expect(linkCount.count).toBe(0);
   });
 
@@ -127,13 +130,16 @@ describe("migrateScrubCorruptedImageAttachments", () => {
     migrateScrubCorruptedImageAttachments(db);
 
     const attachmentCount = raw
-      .query(`SELECT COUNT(*) AS count FROM attachments`)
-      .get() as { count: number };
+      .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM attachments`)
+      .get()!;
     expect(attachmentCount.count).toBe(1);
 
     const linkCount = raw
-      .query(`SELECT COUNT(*) AS count FROM message_attachments`)
-      .get() as { count: number };
+      .query<
+        { count: number },
+        []
+      >(`SELECT COUNT(*) AS count FROM message_attachments`)
+      .get()!;
     expect(linkCount.count).toBe(1);
   });
 
@@ -166,14 +172,22 @@ describe("migrateScrubCorruptedImageAttachments", () => {
 
     migrateScrubCorruptedImageAttachments(db);
 
-    const remaining = raw.query(`SELECT id FROM attachments`).all() as Array<{
-      id: string;
-    }>;
+    const remaining = raw
+      .query<
+        {
+          id: string;
+        },
+        []
+      >(`SELECT id FROM attachments`)
+      .all();
     expect(remaining).toEqual([{ id: "valid-1" }]);
 
     const links = raw
-      .query(`SELECT attachment_id FROM message_attachments`)
-      .all() as Array<{ attachment_id: string }>;
+      .query<
+        { attachment_id: string },
+        []
+      >(`SELECT attachment_id FROM message_attachments`)
+      .all();
     expect(links).toEqual([{ attachment_id: "valid-1" }]);
   });
 
@@ -192,8 +206,8 @@ describe("migrateScrubCorruptedImageAttachments", () => {
     migrateScrubCorruptedImageAttachments(db);
 
     const count = raw
-      .query(`SELECT COUNT(*) AS count FROM attachments`)
-      .get() as { count: number };
+      .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM attachments`)
+      .get()!;
     expect(count.count).toBe(0);
   });
 
@@ -212,8 +226,8 @@ describe("migrateScrubCorruptedImageAttachments", () => {
     migrateScrubCorruptedImageAttachments(db);
 
     const count = raw
-      .query(`SELECT COUNT(*) AS count FROM attachments`)
-      .get() as { count: number };
+      .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM attachments`)
+      .get()!;
     expect(count.count).toBe(0);
   });
 
@@ -237,13 +251,16 @@ describe("migrateScrubCorruptedImageAttachments", () => {
     migrateScrubCorruptedImageAttachments(db);
 
     const attachmentCount = raw
-      .query(`SELECT COUNT(*) AS count FROM attachments`)
-      .get() as { count: number };
+      .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM attachments`)
+      .get()!;
     expect(attachmentCount.count).toBe(0);
 
     const linkCount = raw
-      .query(`SELECT COUNT(*) AS count FROM message_attachments`)
-      .get() as { count: number };
+      .query<
+        { count: number },
+        []
+      >(`SELECT COUNT(*) AS count FROM message_attachments`)
+      .get()!;
     expect(linkCount.count).toBe(0);
   });
 
@@ -263,8 +280,8 @@ describe("migrateScrubCorruptedImageAttachments", () => {
     migrateScrubCorruptedImageAttachments(db);
 
     const count = raw
-      .query(`SELECT COUNT(*) AS count FROM attachments`)
-      .get() as { count: number };
+      .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM attachments`)
+      .get()!;
     expect(count.count).toBe(1);
   });
 });

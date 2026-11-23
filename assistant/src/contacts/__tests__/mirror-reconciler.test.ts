@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 /**
  * Tests for the pull-based contact-mirror reconciler.
  *
@@ -12,7 +13,6 @@
  * The daemon DB is real; the gateway snapshot arrives through a mocked
  * `ipcCallPersistent`.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ContactsIdentitySnapshotIpcResponse } from "@mycadet/gateway-client/gateway-ipc-contracts";
@@ -45,10 +45,11 @@ function contactRow(
   id: string,
 ): { displayName: string; notes: string | null } | null {
   return getSqlite()
-    .query(
-      "SELECT display_name AS displayName, notes FROM contacts WHERE id = ?",
-    )
-    .get(id) as { displayName: string; notes: string | null } | null;
+    .query<
+      { displayName: string; notes: string | null },
+      SQLQueryBindings[]
+    >("SELECT display_name AS displayName, notes FROM contacts WHERE id = ?")
+    .get(id);
 }
 
 function channelRow(
@@ -56,14 +57,17 @@ function channelRow(
   address: string,
 ): { id: string; contactId: string; externalChatId: string | null } | null {
   return getSqlite()
-    .query(
+    .query<
+      {
+        id: string;
+        contactId: string;
+        externalChatId: string | null;
+      },
+      SQLQueryBindings[]
+    >(
       "SELECT id, contact_id AS contactId, external_chat_id AS externalChatId FROM contact_channels WHERE type = ? AND address = ? COLLATE NOCASE",
     )
-    .get(type, address) as {
-    id: string;
-    contactId: string;
-    externalChatId: string | null;
-  } | null;
+    .get(type, address);
 }
 
 function gatewayContact(opts: {
@@ -184,12 +188,18 @@ describe("healing toward the gateway snapshot", () => {
 
     // Converged: a follow-up pass writes nothing.
     const before = getSqlite()
-      .query("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-gw'")
-      .get() as { u: number };
+      .query<
+        { u: number },
+        []
+      >("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-gw'")
+      .get()!;
     await runMirrorReconcile();
     const after = getSqlite()
-      .query("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-gw'")
-      .get() as { u: number };
+      .query<
+        { u: number },
+        []
+      >("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-gw'")
+      .get()!;
     expect(after.u).toBe(before.u);
   });
 
@@ -284,14 +294,20 @@ describe("what a pull must never touch", () => {
       ],
     };
     const before = getSqlite()
-      .query("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-1'")
-      .get() as { u: number };
+      .query<
+        { u: number },
+        []
+      >("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-1'")
+      .get()!;
 
     await runMirrorReconcile();
 
     const after = getSqlite()
-      .query("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-1'")
-      .get() as { u: number };
+      .query<
+        { u: number },
+        []
+      >("SELECT updated_at AS u FROM contact_channels WHERE id = 'ch-1'")
+      .get()!;
     expect(after.u).toBe(before.u);
     // Display name still the mirror's own (a no-op pass rewrites nothing).
     expect(contactRow("co-1")?.displayName).toBe("Alice Example");

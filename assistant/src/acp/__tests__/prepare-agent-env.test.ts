@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for `prepareAgentEnv`, the shared helper that injects required env
  * vars onto an `AcpAgentConfig` and preflights that they're set.
@@ -16,7 +17,6 @@
  * mock is installed: that makes `prepare-agent-env.js` the only module holding
  * the spy logger, so every warn the spy records came from `prepareAgentEnv`.
  */
-
 import { randomBytes } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -283,9 +283,12 @@ describe("prepareAgentEnv — claude-agent-acp gating", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(FailedDependencyError);
+    assert(
+      caught instanceof FailedDependencyError,
+      "Expected FailedDependencyError",
+    );
     // Structured marker survives as `details` for the client to branch on.
-    expect((caught as FailedDependencyError).details).toEqual({
+    expect(caught.details).toEqual({
       code: ACP_CLAUDE_OAUTH_MISSING_CODE,
     });
     const message = (caught as Error).message;
@@ -340,9 +343,12 @@ describe("prepareAgentEnv — claude-agent-acp gating", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(FailedDependencyError);
+    assert(
+      caught instanceof FailedDependencyError,
+      "Expected FailedDependencyError",
+    );
     // Same wire contract: old clients keep rendering the same Connect card.
-    expect((caught as FailedDependencyError).details).toEqual({
+    expect(caught.details).toEqual({
       code: ACP_CLAUDE_OAUTH_MISSING_CODE,
     });
     const message = (caught as Error).message;
@@ -397,8 +403,11 @@ describe("prepareAgentEnv — claude-agent-acp gating", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(FailedDependencyError);
-    expect((caught as FailedDependencyError).details).toEqual({
+    assert(
+      caught instanceof FailedDependencyError,
+      "Expected FailedDependencyError",
+    );
+    expect(caught.details).toEqual({
       code: ACP_CLAUDE_OAUTH_MISSING_CODE,
     });
     // Connect genuinely repairs this by storing a fresh OAuth token, so the
@@ -431,8 +440,11 @@ describe("prepareAgentEnv — claude-agent-acp gating", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(FailedDependencyError);
-    expect((caught as FailedDependencyError).details).toEqual({
+    assert(
+      caught instanceof FailedDependencyError,
+      "Expected FailedDependencyError",
+    );
+    expect(caught.details).toEqual({
       code: ACP_CLAUDE_OAUTH_MISSING_CODE,
     });
   });

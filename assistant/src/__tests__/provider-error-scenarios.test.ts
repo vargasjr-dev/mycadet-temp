@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, mock, test } from "bun:test";
 
 // Only mock sleep so retries complete instantly; keep real retry logic.
@@ -225,8 +226,8 @@ describe("RetryProvider — rate limit backoff", () => {
       await provider.sendMessage(MESSAGES);
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
-      const pe = err as ProviderError;
+      assert(err instanceof ProviderError, "Expected ProviderError");
+      const pe = err;
       expect(pe.provider).toBe("anthropic");
       expect(pe.statusCode).toBe(429);
       expect(pe.message).toBe("quota exceeded");
@@ -246,8 +247,8 @@ describe("RetryProvider — rate limit backoff", () => {
       await provider.sendMessage(MESSAGES);
       expect(true).toBe(false);
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
-      const providerError = err as ProviderError;
+      assert(err instanceof ProviderError, "Expected ProviderError");
+      const providerError = err;
       expect(providerError.routeAttribution).toMatchObject({
         credentialSource: "byok",
         connectionName: "anthropic-personal",
@@ -319,8 +320,8 @@ describe("RetryProvider — rate limit backoff", () => {
       await provider.sendMessage(MESSAGES);
       expect(true).toBe(false);
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
-      const pe = err as ProviderError;
+      assert(err instanceof ProviderError, "Expected ProviderError");
+      const pe = err;
       expect(pe.retryAfterMs).toBe(60_000);
       expect(pe.statusCode).toBe(429);
     }
@@ -416,8 +417,8 @@ describe("RetryProvider cloud credential refresh", () => {
       await provider.sendMessage(MESSAGES);
       expect.unreachable();
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      const providerError = error as ProviderError;
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      const providerError = error;
       expect(providerError.message).toBe("new key rejected");
       expect(providerError.routeAttribution).toMatchObject({
         credentialSource: "cadet-cloud",

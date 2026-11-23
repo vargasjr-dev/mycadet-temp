@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests that listTabs, selectTab, and closeTab are properly forwarded through
  * the real buildChainedClient wrapper.
@@ -6,7 +7,6 @@
  * function with a mock candidate — NOT a flat fake that has the methods defined
  * directly on the scoped client.
  */
-
 import { describe, expect, mock, test } from "bun:test";
 
 import type {
@@ -290,8 +290,8 @@ describe("buildChainedClient — tab management methods", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    expect((caught as CdpError).code).toBe("transport_error");
+    assert(caught instanceof CdpError, "Expected CdpError");
+    expect(caught.code).toBe("transport_error");
 
     scoped.dispose();
   });
@@ -324,8 +324,8 @@ describe("buildChainedClient — tab management methods", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    expect((caught as CdpError).code).toBe("transport_error");
+    assert(caught instanceof CdpError, "Expected CdpError");
+    expect(caught.code).toBe("transport_error");
 
     scoped.dispose();
   });
@@ -358,8 +358,8 @@ describe("buildChainedClient — tab management methods", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    expect((caught as CdpError).code).toBe("transport_error");
+    assert(caught instanceof CdpError, "Expected CdpError");
+    expect(caught.code).toBe("transport_error");
 
     scoped.dispose();
   });
@@ -442,8 +442,8 @@ describe("buildChainedClient — fresh-client tab calls (no prior send)", () => 
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    expect((caught as CdpError).code).toBe("transport_error");
+    assert(caught instanceof CdpError, "Expected CdpError");
+    expect(caught.code).toBe("transport_error");
 
     scoped.dispose();
   });

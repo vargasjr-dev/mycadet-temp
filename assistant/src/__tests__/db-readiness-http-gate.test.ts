@@ -1,6 +1,8 @@
 import { createServer } from "node:net";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 import {
@@ -32,7 +34,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(url("/conversations"));
     expect(response.status).toBe(503);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.ready).toBe(false);
     expect(body.reason).toBe("db_migrations_running");
   });
@@ -44,7 +46,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(url("/health"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.status).toBe("MIGRATING");
     expect(body.reason).toBe("db_migrations_running");
     expect((body.dbMigrations as Record<string, unknown>).state).toBe(
@@ -59,7 +61,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(`http://127.0.0.1:${port}/healthz`);
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body).toEqual({ status: "ok", version: APP_VERSION });
   });
 
@@ -71,7 +73,7 @@ describe("DB migration readiness HTTP gate", () => {
     // 200 keeps the k8s pod in service; the body reports the real state.
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.status).toBe("migrating");
     expect(body.ready).toBe(false);
     expect((body.dbMigrations as Record<string, unknown>).state).toBe(
@@ -88,7 +90,7 @@ describe("DB migration readiness HTTP gate", () => {
       method: "POST",
     });
     expect(response.status).toBe(503);
-    let body = (await response.json()) as Record<string, unknown>;
+    let body = jsonObjectSchema.parse(await response.json());
     expect(body.reason).toBe("db_migrations_running");
 
     // In the terminal FAILED state the repair surface passes the migration
@@ -103,7 +105,7 @@ describe("DB migration readiness HTTP gate", () => {
     // Non-repair routes stay gated in the failed state.
     response = await fetch(url("/conversations"));
     expect(response.status).toBe(503);
-    body = (await response.json()) as Record<string, unknown>;
+    body = jsonObjectSchema.parse(await response.json());
     expect(body.reason).toBe("db_migrations_failed");
   });
 
@@ -114,7 +116,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(url("/debug/database"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.ready).toBe(false);
     expect(body.state).toBe("running");
     expect(body.reason).toBe("db_migrations_running");
@@ -133,7 +135,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(url("/debug/database"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.ready).toBe(false);
     expect(body.state).toBe("failed");
     expect(body.reason).toBe("db_migrations_failed");
@@ -157,7 +159,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(url("/config/schema"));
     expect(response.status).toBe(503);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.ready).toBe(false);
     expect(body.reason).toBe("db_migrations_running");
   });
@@ -171,7 +173,7 @@ describe("DB migration readiness HTTP gate", () => {
     });
     expect(response.status).toBe(503);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.ready).toBe(false);
     expect(body.reason).toBe("db_migrations_running");
   });
@@ -183,7 +185,7 @@ describe("DB migration readiness HTTP gate", () => {
     const response = await fetch(`http://127.0.0.1:${port}/pages/app-123`);
     expect(response.status).toBe(503);
 
-    const body = (await response.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await response.json());
     expect(body.ready).toBe(false);
     expect(body.reason).toBe("db_migrations_running");
   });

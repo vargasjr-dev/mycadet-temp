@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -183,9 +184,12 @@ describe("computeTransitiveSkillVersionHash", () => {
     try {
       computeTransitiveSkillVersionHash("root", index);
     } catch (err) {
-      expect(err).toBeInstanceOf(TransitiveHashError);
-      expect((err as TransitiveHashError).code).toBe("missing");
-      expect((err as TransitiveHashError).message).toContain("missing-child");
+      assert(
+        err instanceof TransitiveHashError,
+        "Expected TransitiveHashError",
+      );
+      expect(err.code).toBe("missing");
+      expect(err.message).toContain("missing-child");
     }
   });
 
@@ -206,8 +210,11 @@ describe("computeTransitiveSkillVersionHash", () => {
     try {
       computeTransitiveSkillVersionHash("a", index);
     } catch (err) {
-      expect(err).toBeInstanceOf(TransitiveHashError);
-      expect((err as TransitiveHashError).code).toBe("cycle");
+      assert(
+        err instanceof TransitiveHashError,
+        "Expected TransitiveHashError",
+      );
+      expect(err.code).toBe("cycle");
     }
   });
 

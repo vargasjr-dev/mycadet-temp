@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Unit tests for the DevTools HTTP discovery helpers.
  *
@@ -231,8 +232,11 @@ describe("probeDevToolsJsonVersion — parsing", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("non_chrome");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("non_chrome");
   });
 
   test("rejects missing required fields with invalid_response", async () => {
@@ -249,8 +253,11 @@ describe("probeDevToolsJsonVersion — parsing", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("invalid_response");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("invalid_response");
   });
 
   test("rejects malformed JSON body with invalid_response", async () => {
@@ -268,8 +275,11 @@ describe("probeDevToolsJsonVersion — parsing", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("invalid_response");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("invalid_response");
   });
 
   test("rejects non-object JSON body with invalid_response", async () => {
@@ -281,8 +291,11 @@ describe("probeDevToolsJsonVersion — parsing", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("invalid_response");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("invalid_response");
   });
 
   test("rejects non-200 status with invalid_response", async () => {
@@ -294,8 +307,11 @@ describe("probeDevToolsJsonVersion — parsing", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("invalid_response");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("invalid_response");
   });
 });
 
@@ -327,9 +343,12 @@ describe("probeDevToolsJsonVersion — webSocketDebuggerUrl loopback", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("non_loopback");
-    expect((error as DevToolsDiscoveryError).message).toContain("evil.com");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("non_loopback");
+    expect(error.message).toContain("evil.com");
   });
 
   test("accepts loopback webSocketDebuggerUrl", async () => {
@@ -369,8 +388,11 @@ describe("probeDevToolsJsonVersion — network errors", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("unreachable");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("unreachable");
   });
 
   test("stalled server triggers timeout", async () => {
@@ -389,8 +411,11 @@ describe("probeDevToolsJsonVersion — network errors", () => {
         timeoutMs: 50,
       }).catch((e: unknown) => e);
 
-      expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-      expect((error as DevToolsDiscoveryError).code).toBe("timeout");
+      assert(
+        error instanceof DevToolsDiscoveryError,
+        "Expected DevToolsDiscoveryError",
+      );
+      expect(error.code).toBe("timeout");
     } finally {
       fake.stop();
     }
@@ -437,8 +462,11 @@ describe("probeDevToolsJsonVersion — network errors", () => {
       }).catch((e: unknown) => e);
       const elapsed = Date.now() - startedAt;
 
-      expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-      expect((error as DevToolsDiscoveryError).code).toBe("timeout");
+      assert(
+        error instanceof DevToolsDiscoveryError,
+        "Expected DevToolsDiscoveryError",
+      );
+      expect(error.code).toBe("timeout");
       // Should resolve roughly at `timeoutMs`, not hang indefinitely.
       // Generous upper bound to keep the test stable under load.
       expect(elapsed).toBeLessThan(2000);
@@ -487,8 +515,11 @@ describe("probeDevToolsJsonVersion — network errors", () => {
       }).catch((e: unknown) => e);
       const elapsed = Date.now() - startedAt;
 
-      expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-      expect((error as DevToolsDiscoveryError).code).toBe("timeout");
+      assert(
+        error instanceof DevToolsDiscoveryError,
+        "Expected DevToolsDiscoveryError",
+      );
+      expect(error.code).toBe("timeout");
       expect(elapsed).toBeLessThan(2000);
     } finally {
       for (const controller of stalledStreams) {
@@ -614,8 +645,11 @@ describe("listDevToolsTargets", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("no_targets");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("no_targets");
   });
 
   test("throws invalid_response when body is not a JSON array", async () => {
@@ -627,8 +661,11 @@ describe("listDevToolsTargets", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("invalid_response");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("invalid_response");
   });
 
   test("filters out targets with non-loopback webSocketDebuggerUrl", async () => {
@@ -680,8 +717,11 @@ describe("listDevToolsTargets", () => {
       timeoutMs: 2000,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("no_targets");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("no_targets");
   });
 });
 
@@ -906,8 +946,11 @@ describe("discoverTargetsViaWs", () => {
       port: 9222,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("no_targets");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("no_targets");
   });
 
   test("throws no_targets when targetInfos is empty", async () => {
@@ -919,8 +962,11 @@ describe("discoverTargetsViaWs", () => {
       port: 9222,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("no_targets");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("no_targets");
   });
 
   test("throws ws_fallback_failed when targetInfos is missing", async () => {
@@ -936,8 +982,11 @@ describe("discoverTargetsViaWs", () => {
       port: 9222,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("ws_fallback_failed");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("ws_fallback_failed");
   });
 
   test("rejects non-loopback host before calling transport", async () => {
@@ -957,8 +1006,11 @@ describe("discoverTargetsViaWs", () => {
       port: 9222,
     }).catch((e: unknown) => e);
 
-    expect(error).toBeInstanceOf(DevToolsDiscoveryError);
-    expect((error as DevToolsDiscoveryError).code).toBe("non_loopback");
+    assert(
+      error instanceof DevToolsDiscoveryError,
+      "Expected DevToolsDiscoveryError",
+    );
+    expect(error.code).toBe("non_loopback");
     expect(transportCalled).toBe(false);
   });
 

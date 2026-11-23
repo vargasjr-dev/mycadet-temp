@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import OpenAI from "openai";
@@ -47,26 +48,39 @@ function makeStream(chunks: MockChunk[]): AsyncIterable<MockChunk> {
   };
 }
 
+type CapturedRequest = Omit<
+  OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming,
+  "messages"
+> & {
+  reasoning?: unknown;
+  messages: Array<
+    OpenAI.Chat.Completions.ChatCompletionMessageParam & {
+      reasoning?: string;
+      reasoning_content?: string;
+    }
+  >;
+};
+
 function stubProvider(
   chunks: MockChunk[],
   options?: OpenAIChatCompletionsProviderOptions,
 ): {
   provider: OpenAIChatCompletionsProvider;
   events: Array<{ type: string; thinking?: string; text?: string }>;
-  requests: unknown[];
+  requests: CapturedRequest[];
 } {
   const provider = new OpenAIChatCompletionsProvider(
     "test-key",
     "test-model",
     options,
   );
-  const requests: unknown[] = [];
+  const requests: CapturedRequest[] = [];
   // Swap the SDK client for a stub whose chat.completions.create returns our
   // canned async iterable.
   (provider as unknown as { client: unknown }).client = {
     chat: {
       completions: {
-        create: async (params: unknown) => {
+        create: async (params: CapturedRequest) => {
           requests.push(params);
           return makeStream(chunks);
         },
@@ -74,7 +88,6 @@ function stubProvider(
     },
   };
   const events: Array<{ type: string; thinking?: string; text?: string }> = [];
-  (provider as unknown as { __events: typeof events }).__events = events;
   return { provider, events, requests };
 }
 
@@ -92,9 +105,7 @@ async function runStream(
       },
     },
   );
-  const thinkingBlock = response.content.find((b) => b.type === "thinking") as
-    | { type: "thinking"; thinking: string }
-    | undefined;
+  const thinkingBlock = response.content.find((b) => b.type === "thinking");
   return { thinking: thinkingBlock?.thinking ?? "" };
 }
 
@@ -281,13 +292,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       { role: "user", content: [{ type: "text", text: "follow up" }] },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages.find((m) => m.role === "assistant");
     expect(assistantMsg).toEqual({
       role: "assistant",
@@ -321,14 +326,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning_content?: string;
-        tool_calls?: unknown;
-      }>;
-    };
+    const params = requests[0];
     expect(params.messages[0]).toEqual({
       role: "assistant",
       content: null,
@@ -364,13 +362,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        reasoning?: string;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     expect(params.messages[0].reasoning).toBe("visible summary");
     expect(params.messages[0].reasoning_content).toBeUndefined();
   });
@@ -393,14 +385,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning?: string;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages[0];
     expect(assistantMsg.content).toBe("visible");
     expect(assistantMsg.reasoning).toBeUndefined();
@@ -432,14 +417,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning?: string;
-        tool_calls?: unknown;
-      }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     // content or tool_calls must be set; reasoning alone does not satisfy it.
     expect(assistantMsg.content).toBe(EMPTY_ASSISTANT_TURN_PLACEHOLDER);
@@ -467,9 +445,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       { role: "assistant", content: [{ type: "text", text: "  \n" }] },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{ role: string; content: string | null }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     // Validators that trim before checking presence treat whitespace-only
     // content as absent, so it needs the same placeholder as empty content.
@@ -501,15 +477,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning?: string;
-        reasoning_content?: string;
-        tool_calls?: unknown;
-      }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     expect(assistantMsg.content).toBe(EMPTY_ASSISTANT_TURN_PLACEHOLDER);
     expect(assistantMsg.tool_calls).toBeUndefined();
@@ -530,9 +498,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       { role: "assistant", content: [] },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{ role: string; content: string | null }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     expect(assistantMsg.content).toBe(EMPTY_ASSISTANT_TURN_PLACEHOLDER);
   });
@@ -554,13 +520,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     // Tool-call-only assistant messages keep null content (preferred by
     // Anthropic-proxy/Bedrock backends); the placeholder is only for the
     // neither-content-nor-tool_calls case. The reasoning field stays omitted
@@ -582,7 +542,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       { config: { top_p: 0.95 } },
     );
 
-    const params = requests[0] as { top_p?: number };
+    const params = requests[0];
     expect(params.top_p).toBe(0.95);
   });
 
@@ -598,7 +558,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       { role: "user", content: [{ type: "text", text: "hi" }] },
     ]);
 
-    const params = requests[0] as { top_p?: number };
+    const params = requests[0];
     expect(params.top_p).toBeUndefined();
   });
 
@@ -628,12 +588,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     expect(params.messages[0].reasoning_content).toBe("deepseek thinking");
   });
 
@@ -657,15 +612,9 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        tool_calls?: unknown;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     const assistantMsg = params.messages[0];
+    assert(assistantMsg.role === "assistant", "Expected an assistant message");
     expect(assistantMsg.tool_calls).toEqual([
       {
         id: "call_1",
@@ -696,13 +645,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        reasoning?: string;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     expect(params.messages[0].reasoning).toBeUndefined();
     expect(params.messages[0].reasoning_content).toBeUndefined();
   });
@@ -725,13 +668,7 @@ describe("OpenAIChatCompletionsProvider reasoning parsing", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        reasoning_content?: string;
-      }>;
-    };
+    const params = requests[0];
     expect(params.messages[0].content).toBe("plain reply");
     expect(params.messages[0].reasoning_content).toBeUndefined();
   });
@@ -741,20 +678,20 @@ function stubProviderWithErrors(
   errors: unknown[],
   chunks: MockChunk[],
   options?: OpenAIChatCompletionsProviderOptions,
-): { provider: OpenAIChatCompletionsProvider; requests: unknown[] } {
+): { provider: OpenAIChatCompletionsProvider; requests: CapturedRequest[] } {
   const provider = new OpenAIChatCompletionsProvider(
     "test-key",
     "test-model",
     options,
   );
-  const requests: unknown[] = [];
+  const requests: CapturedRequest[] = [];
   const pending = [...errors];
   (provider as unknown as { client: unknown }).client = {
     chat: {
       completions: {
-        create: async (params: unknown) => {
+        create: async (params: CapturedRequest) => {
           // Snapshot: the fallback mutates `params` between attempts.
-          requests.push(JSON.parse(JSON.stringify(params)));
+          requests.push(structuredClone(params));
           const error = pending.shift();
           if (error !== undefined) {
             throw error;
@@ -798,9 +735,7 @@ describe("reasoning opt-out rejection fallback", () => {
     await send();
 
     expect(requests).toHaveLength(3);
-    expect(
-      (requests[2] as { reasoning_effort?: string }).reasoning_effort,
-    ).toBeUndefined();
+    expect(requests[2].reasoning_effort).toBeUndefined();
   });
 
   test("does not remember when success needed a further compat retry", async () => {
@@ -833,9 +768,7 @@ describe("reasoning opt-out rejection fallback", () => {
     await provider.sendMessage(messages, { config: { effort: "none" } });
 
     expect(requests).toHaveLength(4);
-    expect(
-      (requests[3] as { reasoning_effort?: string }).reasoning_effort,
-    ).toBe("none");
+    expect(requests[3].reasoning_effort).toBe("none");
   });
 
   test("retries once without reasoning params when a model rejects the explicit opt-out", async () => {
@@ -850,17 +783,12 @@ describe("reasoning opt-out rejection fallback", () => {
     );
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as { reasoning_effort?: string };
-    const second = requests[1] as {
-      reasoning_effort?: string;
-      reasoning?: unknown;
-    };
+    const first = requests[0];
+    const second = requests[1];
     expect(first.reasoning_effort).toBe("none");
     expect(second.reasoning_effort).toBeUndefined();
     expect(second.reasoning).toBeUndefined();
-    const text = response.content.find((b) => b.type === "text") as
-      | { type: "text"; text: string }
-      | undefined;
+    const text = response.content.find((b) => b.type === "text");
     expect(text?.text).toBe("ok");
   });
 
@@ -895,17 +823,12 @@ describe("reasoning opt-out rejection fallback", () => {
     );
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as { reasoning_effort?: string };
-    const second = requests[1] as {
-      reasoning_effort?: string;
-      reasoning?: unknown;
-    };
+    const first = requests[0];
+    const second = requests[1];
     expect(first.reasoning_effort).toBe("none");
     expect(second.reasoning_effort).toBeUndefined();
     expect(second.reasoning).toBeUndefined();
-    const text = response.content.find((b) => b.type === "text") as
-      | { type: "text"; text: string }
-      | undefined;
+    const text = response.content.find((b) => b.type === "text");
     expect(text?.text).toBe("ok");
   });
 
@@ -977,14 +900,8 @@ describe("thinking-mode tool_choice rejection fallback", () => {
     );
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      tool_choice?: string;
-      reasoning_effort?: string;
-    };
-    const second = requests[1] as {
-      tool_choice?: string;
-      reasoning_effort?: string;
-    };
+    const first = requests[0];
+    const second = requests[1];
     expect(first.tool_choice).toBe("none");
     expect(first.reasoning_effort).toBe("high");
     expect(second.tool_choice).toBeUndefined();
@@ -992,9 +909,7 @@ describe("thinking-mode tool_choice rejection fallback", () => {
     expect(
       (response.rawRequest as { tool_choice?: unknown }).tool_choice,
     ).toBeUndefined();
-    const text = response.content.find((b) => b.type === "text") as
-      | { type: "text"; text: string }
-      | undefined;
+    const text = response.content.find((b) => b.type === "text");
     expect(text?.text).toBe("ok");
   });
 
@@ -1067,14 +982,8 @@ describe("thinking-mode tool_choice rejection fallback", () => {
     );
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      tool_choice?: { type: string; function: { name: string } };
-      reasoning_effort?: string;
-    };
-    const second = requests[1] as {
-      tool_choice?: unknown;
-      reasoning_effort?: string;
-    };
+    const first = requests[0];
+    const second = requests[1];
     expect(first.tool_choice).toEqual({
       type: "function",
       function: { name: "select_pages" },
@@ -1082,9 +991,7 @@ describe("thinking-mode tool_choice rejection fallback", () => {
     expect(first.reasoning_effort).toBe("high");
     expect(second.tool_choice).toBeUndefined();
     expect(second.reasoning_effort).toBe("high");
-    const text = response.content.find((b) => b.type === "text") as
-      | { type: "text"; text: string }
-      | undefined;
+    const text = response.content.find((b) => b.type === "text");
     expect(text?.text).toBe("ok");
   });
 
@@ -1121,10 +1028,8 @@ describe("thinking-mode tool_choice rejection fallback", () => {
     );
 
     expect(requests).toHaveLength(2);
-    expect((requests[0] as { tool_choice?: string }).tool_choice).toBe("none");
-    expect(
-      (requests[1] as { tool_choice?: string }).tool_choice,
-    ).toBeUndefined();
+    expect(requests[0].tool_choice).toBe("none");
+    expect(requests[1].tool_choice).toBeUndefined();
   });
 
   test("does not retry a 4xx that does not name tool_choice", async () => {
@@ -1205,17 +1110,11 @@ describe("missing reasoning_content rejection fallback", () => {
     const response = await provider.sendMessage(toolCallHistory);
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      messages: Array<{ reasoning_content?: string }>;
-    };
-    const second = requests[1] as {
-      messages: Array<{ reasoning_content?: string }>;
-    };
+    const first = requests[0];
+    const second = requests[1];
     expect(first.messages[0].reasoning_content).toBeUndefined();
     expect(second.messages[0].reasoning_content).toBe("");
-    const text = response.content.find((b) => b.type === "text") as
-      | { type: "text"; text: string }
-      | undefined;
+    const text = response.content.find((b) => b.type === "text");
     expect(text?.text).toBe("ok");
   });
 
@@ -1246,14 +1145,8 @@ describe("missing reasoning_content rejection fallback", () => {
     await provider.sendMessage(toolCallHistory);
 
     expect(requests).toHaveLength(2);
-    expect(
-      (requests[0] as { messages: Array<{ reasoning_content?: string }> })
-        .messages[0].reasoning_content,
-    ).toBeUndefined();
-    expect(
-      (requests[1] as { messages: Array<{ reasoning_content?: string }> })
-        .messages[0].reasoning_content,
-    ).toBe("");
+    expect(requests[0].messages[0].reasoning_content).toBeUndefined();
+    expect(requests[1].messages[0].reasoning_content).toBe("");
   });
 
   test("does not retry a 4xx that does not require reasoning_content round-trip", async () => {
@@ -1313,18 +1206,12 @@ describe("unknown assistant reasoning field rejection fallback", () => {
       const response = await provider.sendMessage(thinkingHistory);
 
       expect(requests).toHaveLength(2);
-      const first = requests[0] as {
-        messages: Array<{ reasoning_content?: string; content: string | null }>;
-      };
-      const second = requests[1] as {
-        messages: Array<{ reasoning_content?: string; content: string | null }>;
-      };
+      const first = requests[0];
+      const second = requests[1];
       expect(first.messages[0].reasoning_content).toBe("hidden chain");
       expect(second.messages[0].reasoning_content).toBeUndefined();
       expect(second.messages[0].content).toBe("answer");
-      const text = response.content.find((b) => b.type === "text") as
-        | { type: "text"; text: string }
-        | undefined;
+      const text = response.content.find((b) => b.type === "text");
       expect(text?.text).toBe("ok");
     },
   );
@@ -1358,17 +1245,13 @@ describe("unknown assistant reasoning field rejection fallback", () => {
     ]);
 
     expect(requests).toHaveLength(2);
-    const second = requests[1] as {
-      messages: Array<{
-        role: string;
-        reasoning_content?: string;
-        tool_calls?: Array<{ id: string; function: { name: string } }>;
-      }>;
-    };
+    const second = requests[1];
     const assistant = second.messages.find((m) => m.role === "assistant");
     expect(assistant?.reasoning_content).toBeUndefined();
     expect(assistant?.tool_calls?.[0]?.id).toBe("call_1");
-    expect(assistant?.tool_calls?.[0]?.function.name).toBe("lookup");
+    const toolCall = assistant?.tool_calls?.[0];
+    assert(toolCall?.type === "function", "Expected a function tool call");
+    expect(toolCall.function.name).toBe("lookup");
   });
 
   test("does not strip reasoning_content on a must-be-passed-back error", async () => {
@@ -1384,10 +1267,7 @@ describe("unknown assistant reasoning field rejection fallback", () => {
 
     await expect(provider.sendMessage(thinkingHistory)).rejects.toThrow();
     expect(requests).toHaveLength(1);
-    expect(
-      (requests[0] as { messages: Array<{ reasoning_content?: string }> })
-        .messages[0].reasoning_content,
-    ).toBe("hidden chain");
+    expect(requests[0].messages[0].reasoning_content).toBe("hidden chain");
   });
 
   test("does not strip reasoning_content on a 429 output-token limit", async () => {

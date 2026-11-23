@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for the inference provider connection route handlers.
  *
@@ -9,8 +10,9 @@
  *   DELETE /v1/inference/provider-connections/:name    — happy path, 409 with profile ref, llm.default pin guard
  *   Auth   — 401 (missing key) and 403 (insufficient scope) via route-policy assertions
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 // ── Real imports ──────────────────────────────────────────────────────────────
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
@@ -18,6 +20,8 @@ import { LLMSchema } from "../../../config/schemas/llm.js";
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
 import { providerConnections } from "../../../persistence/schema/inference.js";
+import { ProviderConnectionSchema } from "../../../providers/inference/auth.js";
+import { EndpointCheckSchema } from "../../../providers/inference/endpoint-probe.js";
 // Route policies are read directly off `route.policy` now (ATL-315
 // followup) — no registry lookup.
 import { BadRequestError, ConflictError, NotFoundError } from "../errors.js";
@@ -29,6 +33,18 @@ import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
 await initializeDb();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Keep every auth field visible to the exact comparisons below.
+const connectionSchema = ProviderConnectionSchema.extend({
+  auth: z.looseObject({ type: z.string() }),
+}).loose();
+const connectionListSchema = z.object({
+  connections: z.array(connectionSchema),
+});
+const savedConnectionSchema = connectionSchema.extend({
+  endpoint_check: EndpointCheckSchema.optional(),
+});
+const deletedConnectionSchema = z.strictObject({ ok: z.literal(true) });
 
 function findHandler(operationId: string): RouteDefinition["handler"] {
   const route = ROUTES.find((r) => r.operationId === operationId);
@@ -86,10 +102,9 @@ beforeEach(() => {
 
 describe("GET inference/provider-connections (list)", () => {
   test("returns empty list when no connections exist", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_list"),
-      {},
-    )) as { connections: unknown[] };
+    const result = connectionListSchema.parse(
+      await call(findHandler("inference_provider_connections_list"), {}),
+    );
     expect(result.connections).toEqual([]);
   });
 
@@ -105,10 +120,9 @@ describe("GET inference/provider-connections (list)", () => {
       auth: { type: "none" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_list"),
-      {},
-    )) as { connections: Array<{ name: string }> };
+    const result = connectionListSchema.parse(
+      await call(findHandler("inference_provider_connections_list"), {}),
+    );
     const names = result.connections.map((c) => c.name).sort();
     expect(names).toEqual(["conn-a", "conn-b"]);
   });
@@ -125,10 +139,11 @@ describe("GET inference/provider-connections (list)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_list"),
-      { queryParams: { provider: "openai" } },
-    )) as { connections: Array<{ name: string; provider: string }> };
+    const result = connectionListSchema.parse(
+      await call(findHandler("inference_provider_connections_list"), {
+        queryParams: { provider: "openai" },
+      }),
+    );
     expect(result.connections).toHaveLength(1);
     expect(result.connections[0].name).toBe("oai-1");
     expect(result.connections[0].provider).toBe("openai");
@@ -141,10 +156,11 @@ describe("GET inference/provider-connections (list)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_list"),
-      { queryParams: { provider: "gemini" } },
-    )) as { connections: unknown[] };
+    const result = connectionListSchema.parse(
+      await call(findHandler("inference_provider_connections_list"), {
+        queryParams: { provider: "gemini" },
+      }),
+    );
     expect(result.connections).toEqual([]);
   });
 });
@@ -159,10 +175,11 @@ describe("GET inference/provider-connections/:name (single)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_get"),
-      { pathParams: { name: "my-conn" } },
-    )) as { name: string; provider: string; auth: object };
+    const result = connectionSchema.parse(
+      await call(findHandler("inference_provider_connections_get"), {
+        pathParams: { name: "my-conn" },
+      }),
+    );
     expect(result.name).toBe("my-conn");
     expect(result.provider).toBe("anthropic");
     expect(result.auth).toEqual({ type: "platform" });
@@ -181,16 +198,15 @@ describe("GET inference/provider-connections/:name (single)", () => {
 
 describe("POST inference/provider-connections (create)", () => {
   test("creates connection with api_key auth", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "my-anthropic",
           provider: "anthropic",
           auth: { type: "api_key", credential: "vault/anthropic/key" },
         },
-      },
-    )) as { name: string; provider: string; auth: object; createdAt: number };
+      }),
+    );
 
     expect(result.name).toBe("my-anthropic");
     expect(result.provider).toBe("anthropic");
@@ -202,16 +218,15 @@ describe("POST inference/provider-connections (create)", () => {
   });
 
   test("creates connection with platform auth", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "managed-openai",
           provider: "cadet",
           auth: { type: "platform" },
         },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({ type: "platform" });
   });
 
@@ -227,9 +242,9 @@ describe("POST inference/provider-connections (create)", () => {
       },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("Cadet Cloud");
-    expect((err as BadRequestError).message).toContain("cadet");
+    assert(err instanceof BadRequestError, "Expected BadRequestError");
+    expect(err.message).toContain("Cadet Cloud");
+    expect(err.message).toContain("cadet");
   });
 
   test("rejects a chatgpt identity row under a non-canonical name", async () => {
@@ -244,8 +259,8 @@ describe("POST inference/provider-connections (create)", () => {
       },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("chatgpt-subscription");
+    assert(err instanceof BadRequestError, "Expected BadRequestError");
+    expect(err.message).toContain("chatgpt-subscription");
   });
 
   test("rejects key auth on the chatgpt provider, derived or explicit", async () => {
@@ -266,8 +281,8 @@ describe("POST inference/provider-connections (create)", () => {
         findHandler("inference_provider_connections_create"),
         { body },
       ).catch((e: unknown) => e);
-      expect(err).toBeInstanceOf(BadRequestError);
-      expect((err as BadRequestError).message).toContain("sign-in");
+      assert(err instanceof BadRequestError, "Expected BadRequestError");
+      expect(err.message).toContain("sign-in");
     }
   });
 
@@ -283,8 +298,8 @@ describe("POST inference/provider-connections (create)", () => {
       },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("chatgpt");
+    assert(err instanceof BadRequestError, "Expected BadRequestError");
+    expect(err.message).toContain("chatgpt");
   });
 
   test("rejects key auth on the cadet provider", async () => {
@@ -299,37 +314,35 @@ describe("POST inference/provider-connections (create)", () => {
       },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("cadet");
+    assert(err instanceof BadRequestError, "Expected BadRequestError");
+    expect(err.message).toContain("cadet");
   });
 
   test("creates connection with none auth (e.g. ollama)", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "ollama-local",
           provider: "ollama",
           auth: { type: "none" },
         },
-      },
-    )) as { auth: object; baseUrl: string | null };
+      }),
+    );
     expect(result.auth).toEqual({ type: "none" });
     expect(result.baseUrl).toBeNull();
   });
 
   test("creates an ollama connection with an optional base_url", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "ollama-remote",
           provider: "ollama",
           auth: { type: "none" },
           base_url: "http://192.168.1.50:11434/v1",
         },
-      },
-    )) as { auth: object; baseUrl: string | null };
+      }),
+    );
     expect(result.auth).toEqual({ type: "none" });
     expect(result.baseUrl).toBe("http://192.168.1.50:11434/v1");
   });
@@ -343,42 +356,39 @@ describe("POST inference/provider-connections (create)", () => {
       },
     });
 
-    const updated = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const updated = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "ollama-editable" },
         body: {
           auth: { type: "none" },
           base_url: "http://127.0.0.1:11434/v1",
         },
-      },
-    )) as { baseUrl: string | null };
+      }),
+    );
     expect(updated.baseUrl).toBe("http://127.0.0.1:11434/v1");
 
-    const cleared = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const cleared = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "ollama-editable" },
         body: {
           auth: { type: "none" },
           base_url: null,
         },
-      },
-    )) as { baseUrl: string | null };
+      }),
+    );
     expect(cleared.baseUrl).toBeNull();
   });
 
   test("derives api_key auth from provider + credential when auth is omitted", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "derived-anthropic",
           provider: "anthropic",
           credential: "vault/anthropic/key",
         },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({
       type: "api_key",
       credential: "vault/anthropic/key",
@@ -386,29 +396,26 @@ describe("POST inference/provider-connections (create)", () => {
   });
 
   test("derives none auth for keyless providers when auth is omitted", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: { name: "derived-ollama", provider: "ollama" },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({ type: "none" });
   });
 
   test("derives platform auth for the cadet provider when auth is omitted", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: { name: "derived-cadet", provider: "cadet" },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({ type: "platform" });
   });
 
   test("stores an openai-compatible row pointed at opencode.ai as provider opencode", async () => {
-    const created = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const created = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "opencode-go",
           provider: "openai-compatible",
@@ -416,22 +423,21 @@ describe("POST inference/provider-connections (create)", () => {
           base_url: "https://opencode.ai/zen/go/v1",
           models: [{ id: "mimo-v2.6-flash" }],
         },
-      },
-    )) as { provider: string; baseUrl: string | null };
+      }),
+    );
     expect(created.provider).toBe("opencode");
     expect(created.baseUrl).toBe("https://opencode.ai/zen/go/v1");
 
-    const lookalike = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const lookalike = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "lookalike",
           provider: "openai-compatible",
           base_url: "https://opencode.ai.evil.example/v1",
           models: [{ id: "m" }],
         },
-      },
-    )) as { provider: string };
+      }),
+    );
     expect(lookalike.provider).toBe("openai-compatible");
   });
 
@@ -538,17 +544,16 @@ describe("POST inference/provider-connections (create)", () => {
   });
 
   test("catalog providers may reuse their own display name as a label", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "anthropic-personal",
           provider: "anthropic",
           label: "Anthropic",
           credential: "credential/anthropic/api_key",
         },
-      },
-    )) as { label: string | null };
+      }),
+    );
     expect(result.label).toBe("Anthropic");
   });
 
@@ -601,13 +606,12 @@ describe("POST inference/provider-connections (create)", () => {
       })
       .run();
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "legacy-endpoint" },
         body: { models: [{ id: "another-model" }] },
-      },
-    )) as { label: string | null };
+      }),
+    );
     expect(result.label).toBe(" Anthropic ");
 
     // Labels compare trimmed: resending the stored label without its
@@ -627,9 +631,8 @@ describe("POST inference/provider-connections (create)", () => {
 
   test("attaches a failed endpoint_check when the custom base URL is unreachable", async () => {
     // Port 1 is never listening, so the probe fails fast with a network error.
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "probe-dead-endpoint",
           provider: "openai-compatible",
@@ -637,8 +640,8 @@ describe("POST inference/provider-connections (create)", () => {
           base_url: "http://127.0.0.1:1",
           models: [{ id: "my-model" }],
         },
-      },
-    )) as { endpoint_check?: { ok: boolean; resolved_url: string } };
+      }),
+    );
     expect(result.endpoint_check).toMatchObject({
       ok: false,
       resolved_url: "http://127.0.0.1:1/chat/completions",
@@ -646,24 +649,22 @@ describe("POST inference/provider-connections (create)", () => {
   });
 
   test("derives none auth for openai-compatible without a credential", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "derived-local-llm",
           provider: "openai-compatible",
           base_url: "http://localhost:1234/v1",
           models: [{ id: "my-model" }],
         },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({ type: "none" });
   });
 
   test("derives api_key auth for openai-compatible with a credential", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "derived-hosted-llm",
           provider: "openai-compatible",
@@ -671,8 +672,8 @@ describe("POST inference/provider-connections (create)", () => {
           base_url: "https://api.example.com/v1",
           models: [{ id: "my-model" }],
         },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({
       type: "api_key",
       credential: "credential/hosted/key",
@@ -784,13 +785,12 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "upd-conn" },
         body: { auth: { type: "api_key", credential: "vault/key" } },
-      },
-    )) as { auth: object; provider: string };
+      }),
+    );
     expect(result.auth).toEqual({ type: "api_key", credential: "vault/key" });
     expect(result.provider).toBe("anthropic");
   });
@@ -819,8 +819,8 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(BadRequestError);
-    expect((err as BadRequestError).message).toContain("Cadet Cloud");
+    assert(err instanceof BadRequestError, "Expected BadRequestError");
+    expect(err.message).toContain("Cadet Cloud");
   });
 
   // A persisted row whose provider and auth disagree stays editable: both the
@@ -833,13 +833,12 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "legacy-managed-openai" },
         body: { auth: { type: "platform" }, label: "Legacy" },
-      },
-    )) as { label: string | null; auth: object };
+      }),
+    );
     expect(result.label).toBe("Legacy");
     expect(result.auth).toEqual({ type: "platform" });
   });
@@ -851,13 +850,12 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "legacy-managed-gemini" },
         body: { label: "Legacy" },
-      },
-    )) as { label: string | null };
+      }),
+    );
     expect(result.label).toBe("Legacy");
   });
 
@@ -874,9 +872,8 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "api_key", credential: "vault/openai/key" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "chatgpt-subscription" },
         body: {
           auth: {
@@ -884,8 +881,8 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
             credential: "credential/chatgpt/access_token",
           },
         },
-      },
-    )) as { provider: string; auth: { type: string } };
+      }),
+    );
     expect(result.provider).toBe("chatgpt");
     expect(result.auth.type).toBe("oauth_subscription");
   });
@@ -897,15 +894,14 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "api_key", credential: "vault/openai/key" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "chatgpt-subscription" },
         body: {
           auth: { type: "api_key", credential: "vault/openai/other-key" },
         },
-      },
-    )) as { provider: string };
+      }),
+    );
     expect(result.provider).toBe("openai");
   });
 
@@ -916,13 +912,12 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "legacy-managed-anthropic" },
         body: { auth: { type: "api_key", credential: "vault/anthropic/key" } },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({
       type: "api_key",
       credential: "vault/anthropic/key",
@@ -951,13 +946,12 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "oauth_subscription", credential: "vault/chatgpt/token" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "label-only" },
         body: { label: "Renamed" },
-      },
-    )) as { auth: object; label: string | null };
+      }),
+    );
     expect(result.auth).toEqual({
       type: "oauth_subscription",
       credential: "vault/chatgpt/token",
@@ -987,13 +981,12 @@ describe("PATCH inference/provider-connections/:name (update)", () => {
       auth: { type: "api_key", credential: "vault/old" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "rotate-cred" },
         body: { credential: "vault/new" },
-      },
-    )) as { auth: object };
+      }),
+    );
     expect(result.auth).toEqual({ type: "api_key", credential: "vault/new" });
   });
 });
@@ -1008,10 +1001,11 @@ describe("DELETE inference/provider-connections/:name (delete)", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "del-me" } },
-    )) as { ok: boolean };
+    const result = deletedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_delete"), {
+        pathParams: { name: "del-me" },
+      }),
+    );
     expect(result.ok).toBe(true);
 
     // Verify it's gone
@@ -1049,9 +1043,9 @@ describe("DELETE inference/provider-connections/:name (delete)", () => {
       findHandler("inference_provider_connections_delete"),
       { pathParams: { name: "ref-conn" } },
     ).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(ConflictError);
-    expect((err as ConflictError).message).toContain("ref-conn");
-    expect((err as ConflictError).message).toContain("my-profile");
+    assert(err instanceof ConflictError, "Expected ConflictError");
+    expect(err.message).toContain("ref-conn");
+    expect(err.message).toContain("my-profile");
   });
 
   test("throws 404 (not 409) when a profile references a missing connection", async () => {
@@ -1086,9 +1080,9 @@ describe("DELETE inference/provider-connections/:name (delete)", () => {
       findHandler("inference_provider_connections_delete"),
       { pathParams: { name: "shared-conn" } },
     ).catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(ConflictError);
-    expect((err as ConflictError).message).toContain("prof-a");
-    expect((err as ConflictError).message).toContain("prof-b");
+    assert(err instanceof ConflictError, "Expected ConflictError");
+    expect(err.message).toContain("prof-a");
+    expect(err.message).toContain("prof-b");
   });
 });
 
@@ -1108,9 +1102,9 @@ describe("DELETE guards the llm.default pin reference", () => {
       { pathParams: { name: "anthropic-personal" } },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(ConflictError);
-    expect((err as ConflictError).message).toContain("llm.default");
-    expect((err as ConflictError).details).toEqual({
+    assert(err instanceof ConflictError, "Expected ConflictError");
+    expect(err.message).toContain("llm.default");
+    expect(err.details).toEqual({
       referencedBy: ["llm.default"],
     });
   });
@@ -1148,8 +1142,8 @@ describe("DELETE guards the llm.default pin reference", () => {
       { pathParams: { name: "anthropic-work" } },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(ConflictError);
-    expect((err as ConflictError).details).toEqual({
+    assert(err instanceof ConflictError, "Expected ConflictError");
+    expect(err.details).toEqual({
       referencedBy: ["llm.default"],
     });
   });
@@ -1196,8 +1190,8 @@ describe("DELETE guards the llm.default pin reference", () => {
       { pathParams: { name: "anthropic-work" } },
     ).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(ConflictError);
-    expect((err as ConflictError).details).toEqual({
+    assert(err instanceof ConflictError, "Expected ConflictError");
+    expect(err.details).toEqual({
       referencedBy: ["llm.default"],
     });
   });
@@ -1215,10 +1209,11 @@ describe("DELETE guards the llm.default pin reference", () => {
     });
     setConfig("llm", { default: { provider: "anthropic" } });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "anthropic-other" } },
-    )) as { ok: boolean };
+    const result = deletedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_delete"), {
+        pathParams: { name: "anthropic-other" },
+      }),
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -1230,10 +1225,11 @@ describe("DELETE guards the llm.default pin reference", () => {
     });
     setConfig("llm", { default: { provider: "anthropic" } });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "openai-conn" } },
-    )) as { ok: boolean };
+    const result = deletedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_delete"), {
+        pathParams: { name: "openai-conn" },
+      }),
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -1247,10 +1243,11 @@ describe("DELETE guards the llm.default pin reference", () => {
     // legal state; the guard must no-op rather than crash on an empty list.
     setConfig("llm", { default: { provider: "anthropic" } });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "openai-conn" } },
-    )) as { ok: boolean };
+    const result = deletedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_delete"), {
+        pathParams: { name: "openai-conn" },
+      }),
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -1262,10 +1259,11 @@ describe("DELETE guards the llm.default pin reference", () => {
     });
     setConfig("llm", {});
 
-    const result = (await call(
-      findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "some-conn" } },
-    )) as { ok: boolean };
+    const result = deletedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_delete"), {
+        pathParams: { name: "some-conn" },
+      }),
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -1284,10 +1282,11 @@ describe("DELETE guards the llm.default pin reference", () => {
     });
     setConfig("llm", parsed);
 
-    const result = (await call(
-      findHandler("inference_provider_connections_delete"),
-      { pathParams: { name: "some-conn" } },
-    )) as { ok: boolean };
+    const result = deletedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_delete"), {
+        pathParams: { name: "some-conn" },
+      }),
+    );
     expect(result.ok).toBe(true);
   });
 
@@ -1312,32 +1311,30 @@ describe("DELETE guards the llm.default pin reference", () => {
 
 describe("POST with label", () => {
   test("creates connection with label, echoed in response", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "labeled-conn",
           provider: "anthropic",
           auth: { type: "api_key", credential: "vault/anthropic/key" },
           label: "My Anthropic",
         },
-      },
-    )) as { name: string; label: string | null };
+      }),
+    );
     expect(result.name).toBe("labeled-conn");
     expect(result.label).toBe("My Anthropic");
   });
 
   test("creates connection without label — label is null in response", async () => {
-    const result = (await call(
-      findHandler("inference_provider_connections_create"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_create"), {
         body: {
           name: "no-label-conn",
           provider: "openai",
           auth: { type: "api_key", credential: "vault/openai/key" },
         },
-      },
-    )) as { label: string | null };
+      }),
+    );
     expect(result.label).toBeNull();
   });
 });
@@ -1350,13 +1347,12 @@ describe("PATCH with label", () => {
       auth: { type: "platform" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "set-label" },
         body: { auth: { type: "platform" }, label: "My OpenAI" },
-      },
-    )) as { label: string | null };
+      }),
+    );
     expect(result.label).toBe("My OpenAI");
   });
 
@@ -1372,13 +1368,12 @@ describe("PATCH with label", () => {
       body: { auth: { type: "platform" }, label: "Old Label" },
     });
 
-    const result = (await call(
-      findHandler("inference_provider_connections_update"),
-      {
+    const result = savedConnectionSchema.parse(
+      await call(findHandler("inference_provider_connections_update"), {
         pathParams: { name: "clear-label" },
         body: { auth: { type: "platform" }, label: null },
-      },
-    )) as { label: string | null };
+      }),
+    );
     expect(result.label).toBeNull();
   });
 
@@ -1417,9 +1412,9 @@ describe("Cloud connection write protection", () => {
           { pathParams: { name } },
         ).catch((e: unknown) => e);
 
-        expect(err).toBeInstanceOf(BadRequestError);
-        expect((err as BadRequestError).message).toContain(name);
-        expect((err as BadRequestError).message).toContain("Cadet Cloud");
+        assert(err instanceof BadRequestError, "Expected BadRequestError");
+        expect(err.message).toContain(name);
+        expect(err.message).toContain("Cadet Cloud");
       });
     }
 
@@ -1442,8 +1437,8 @@ describe("Cloud connection write protection", () => {
         { pathParams: { name: "cadet" } },
       ).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(BadRequestError);
-      expect((err as BadRequestError).message).toContain("Cadet Cloud");
+      assert(err instanceof BadRequestError, "Expected BadRequestError");
+      expect(err.message).toContain("Cadet Cloud");
     });
 
     test("a user-owned row claiming the cloud name stays deletable", async () => {
@@ -1462,10 +1457,9 @@ describe("Cloud connection write protection", () => {
         pathParams: { name: "cadet" },
       });
 
-      const remaining = (await call(
-        findHandler("inference_provider_connections_list"),
-        {},
-      )) as { connections: unknown[] };
+      const remaining = connectionListSchema.parse(
+        await call(findHandler("inference_provider_connections_list"), {}),
+      );
       expect(remaining.connections).toHaveLength(0);
     });
   });
@@ -1487,11 +1481,9 @@ describe("Cloud connection write protection", () => {
           },
         ).catch((e: unknown) => e);
 
-        expect(err).toBeInstanceOf(BadRequestError);
-        expect((err as BadRequestError).message).toContain(name);
-        expect((err as BadRequestError).message).toContain(
-          "cloud-authenticated",
-        );
+        assert(err instanceof BadRequestError, "Expected BadRequestError");
+        expect(err.message).toContain(name);
+        expect(err.message).toContain("cloud-authenticated");
       });
 
       test(`rejects auth change on ${name} from platform to none with 400`, async () => {
@@ -1509,8 +1501,8 @@ describe("Cloud connection write protection", () => {
           },
         ).catch((e: unknown) => e);
 
-        expect(err).toBeInstanceOf(BadRequestError);
-        expect((err as BadRequestError).message).toContain(name);
+        assert(err instanceof BadRequestError, "Expected BadRequestError");
+        expect(err.message).toContain(name);
       });
     }
 
@@ -1521,16 +1513,15 @@ describe("Cloud connection write protection", () => {
         auth: { type: "platform" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_update"),
-        {
+      const result = savedConnectionSchema.parse(
+        await call(findHandler("inference_provider_connections_update"), {
           pathParams: { name: "cadet" },
           body: {
             auth: { type: "platform" },
             label: "Cadet Cloud Anthropic",
           },
-        },
-      )) as { label: string | null };
+        }),
+      );
       expect(result.label).toBe("Cadet Cloud Anthropic");
     });
   });
@@ -1543,13 +1534,12 @@ describe("Cloud connection write protection", () => {
         auth: { type: "platform" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_update"),
-        {
+      const result = savedConnectionSchema.parse(
+        await call(findHandler("inference_provider_connections_update"), {
           pathParams: { name: "cadet" },
           body: { auth: { type: "platform" }, label: "Custom Label" },
-        },
-      )) as { label: string | null };
+        }),
+      );
       expect(result.label).toBe("Custom Label");
     });
   });
@@ -1575,10 +1565,9 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "api_key", credential: "ref/k" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_list"),
-        {},
-      )) as { connections: Array<{ name: string; isManaged: boolean }> };
+      const result = connectionListSchema.parse(
+        await call(findHandler("inference_provider_connections_list"), {}),
+      );
 
       const byName = Object.fromEntries(
         result.connections.map((c) => [c.name, c.isManaged]),
@@ -1615,10 +1604,9 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "api_key", credential: "ref/k" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_list"),
-        {},
-      )) as { connections: Array<{ name: string }> };
+      const result = connectionListSchema.parse(
+        await call(findHandler("inference_provider_connections_list"), {}),
+      );
       const names = result.connections.map((c) => c.name);
 
       expect(names).toContain("cadet");
@@ -1643,10 +1631,11 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "platform" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_get"),
-        { pathParams: { name: "cadet" } },
-      )) as { name: string; isManaged: boolean };
+      const result = connectionSchema.parse(
+        await call(findHandler("inference_provider_connections_get"), {
+          pathParams: { name: "cadet" },
+        }),
+      );
 
       expect(result.isManaged).toBe(true);
     });
@@ -1661,10 +1650,11 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "api_key", credential: "credential/openai/api_key" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_get"),
-        { pathParams: { name: "cadet" } },
-      )) as { name: string; isManaged: boolean };
+      const result = connectionSchema.parse(
+        await call(findHandler("inference_provider_connections_get"), {
+          pathParams: { name: "cadet" },
+        }),
+      );
 
       expect(result.isManaged).toBe(false);
     });
@@ -1676,10 +1666,11 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "api_key", credential: "ref/k" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_get"),
-        { pathParams: { name: "my-openai" } },
-      )) as { name: string; isManaged: boolean };
+      const result = connectionSchema.parse(
+        await call(findHandler("inference_provider_connections_get"), {
+          pathParams: { name: "my-openai" },
+        }),
+      );
 
       expect(result.isManaged).toBe(false);
     });
@@ -1687,16 +1678,15 @@ describe("isManaged flag on connection responses", () => {
 
   describe("POST create", () => {
     test("returns isManaged: false on a freshly-created user connection", async () => {
-      const result = (await call(
-        findHandler("inference_provider_connections_create"),
-        {
+      const result = savedConnectionSchema.parse(
+        await call(findHandler("inference_provider_connections_create"), {
           body: {
             name: "my-new-anthropic",
             provider: "anthropic",
             auth: { type: "api_key", credential: "ref/k" },
           },
-        },
-      )) as { name: string; isManaged: boolean };
+        }),
+      );
 
       expect(result.isManaged).toBe(false);
     });
@@ -1710,13 +1700,12 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "platform" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_update"),
-        {
+      const result = savedConnectionSchema.parse(
+        await call(findHandler("inference_provider_connections_update"), {
           pathParams: { name: "cadet" },
           body: { auth: { type: "platform" }, label: "Cadet Anthropic" },
-        },
-      )) as { name: string; isManaged: boolean };
+        }),
+      );
 
       expect(result.isManaged).toBe(true);
     });
@@ -1728,13 +1717,12 @@ describe("isManaged flag on connection responses", () => {
         auth: { type: "api_key", credential: "ref/k" },
       });
 
-      const result = (await call(
-        findHandler("inference_provider_connections_update"),
-        {
+      const result = savedConnectionSchema.parse(
+        await call(findHandler("inference_provider_connections_update"), {
           pathParams: { name: "my-openai" },
           body: { auth: { type: "api_key", credential: "ref/k2" } },
-        },
-      )) as { name: string; isManaged: boolean };
+        }),
+      );
 
       expect(result.isManaged).toBe(false);
     });

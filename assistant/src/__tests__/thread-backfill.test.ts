@@ -22,6 +22,8 @@ import {
   test,
 } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Mocks (must precede module imports under test). Note: backfillThreadWindow is
 // stubbed via spyOn (below) rather than mock.module so the stub does not leak
@@ -2274,7 +2276,7 @@ describe("handleChannelInbound — Slack thread backfill wiring", () => {
       processMessage,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.duplicate).toBe(false);
@@ -2299,7 +2301,7 @@ describe("handleChannelInbound — Slack thread backfill wiring", () => {
         continue;
       }
       try {
-        const envelope = JSON.parse(row.metadata) as Record<string, unknown>;
+        const envelope = jsonObjectSchema.parse(JSON.parse(row.metadata));
         if (typeof envelope.slackMeta === "string") {
           const slackMeta = readSlackMetadata(envelope.slackMeta);
           if (slackMeta) {
@@ -2685,7 +2687,7 @@ describe("handleChannelInbound — Slack thread backfill wiring", () => {
     );
 
     expect(resp.status).toBe(200);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     expect(json.accepted).toBe(true);
   });
 
@@ -2742,7 +2744,7 @@ describe("handleChannelInbound — Slack thread backfill wiring", () => {
           return undefined;
         }
         try {
-          const env = JSON.parse(row.metadata) as Record<string, unknown>;
+          const env = jsonObjectSchema.parse(JSON.parse(row.metadata));
           if (typeof env.slackMeta !== "string") {
             return undefined;
           }
@@ -2770,7 +2772,7 @@ describe("handleChannelInbound — Slack thread backfill wiring", () => {
           return undefined;
         }
         try {
-          const env = JSON.parse(row.metadata) as Record<string, unknown>;
+          const env = jsonObjectSchema.parse(JSON.parse(row.metadata));
           if (typeof env.slackMeta !== "string") {
             return undefined;
           }

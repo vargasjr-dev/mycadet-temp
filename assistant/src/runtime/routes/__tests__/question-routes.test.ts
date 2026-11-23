@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for the `/v1/question-response` route in `question-routes.ts`.
  *
@@ -13,7 +14,6 @@
  *     400s against a multi-element batch.
  *   - The pending interaction is removed after a successful resolve.
  */
-
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import type { QuestionPromptResult } from "../../../permissions/question-prompter.js";
@@ -206,8 +206,8 @@ describe("POST /v1/question-response", () => {
     } catch (err) {
       thrown = err;
     }
-    expect(thrown).toBeInstanceOf(NotFoundError);
-    expect((thrown as NotFoundError).statusCode).toBe(404);
+    assert(thrown instanceof NotFoundError, "Expected NotFoundError");
+    expect(thrown.statusCode).toBe(404);
   });
 
   test("returns 400 when the request body fails schema validation", async () => {
@@ -219,8 +219,8 @@ describe("POST /v1/question-response", () => {
     } catch (err) {
       thrown = err;
     }
-    expect(thrown).toBeInstanceOf(BadRequestError);
-    expect((thrown as BadRequestError).statusCode).toBe(400);
+    assert(thrown instanceof BadRequestError, "Expected BadRequestError");
+    expect(thrown.statusCode).toBe(400);
   });
 
   test("returns 400 when kind is unknown", async () => {
@@ -387,10 +387,8 @@ describe("POST /v1/question-response", () => {
     } catch (err) {
       thrown = err;
     }
-    expect(thrown).toBeInstanceOf(BadRequestError);
-    expect((thrown as BadRequestError).message.toLowerCase()).toContain(
-      "multi-question",
-    );
+    assert(thrown instanceof BadRequestError, "Expected BadRequestError");
+    expect(thrown.message.toLowerCase()).toContain("multi-question");
     // Pending interaction left in place.
     expect(pendingInteractions.get("req-legacy-multi")).toBeDefined();
   });

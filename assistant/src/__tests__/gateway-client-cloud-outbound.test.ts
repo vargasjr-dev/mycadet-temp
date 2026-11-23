@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { ChannelDeliveryError } from "@mycadet/gateway-client/http-delivery";
@@ -184,8 +185,11 @@ describe("gateway-client managed outbound lane", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(ChannelDeliveryError);
-    const deliveryError = caught as ChannelDeliveryError;
+    assert(
+      caught instanceof ChannelDeliveryError,
+      "Expected ChannelDeliveryError",
+    );
+    const deliveryError = caught;
     expect(deliveryError.statusCode).toBe(403);
     expect(deliveryError.userMessage).toBe(
       "The bot is not a member of this channel. Please invite it first.",
@@ -210,8 +214,11 @@ describe("gateway-client managed outbound lane", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(ChannelDeliveryError);
-    const deliveryError = caught as ChannelDeliveryError;
+    assert(
+      caught instanceof ChannelDeliveryError,
+      "Expected ChannelDeliveryError",
+    );
+    const deliveryError = caught;
     expect(deliveryError.statusCode).toBe(502);
     expect(deliveryError.userMessage).toBeUndefined();
   });
@@ -231,8 +238,11 @@ describe("gateway-client managed outbound lane", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(ChannelDeliveryError);
-    const deliveryError = caught as ChannelDeliveryError;
+    assert(
+      caught instanceof ChannelDeliveryError,
+      "Expected ChannelDeliveryError",
+    );
+    const deliveryError = caught;
     expect(deliveryError.statusCode).toBe(500);
     expect(deliveryError.userMessage).toBeUndefined();
   });

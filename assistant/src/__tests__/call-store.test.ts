@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import {
@@ -405,12 +406,15 @@ describe("call-store", () => {
     const raw = (db as unknown as { $client: import("bun:sqlite").Database })
       .$client;
     const updated = raw
-      .query("SELECT * FROM call_pending_questions WHERE id = ?")
-      .get(question.id) as {
-      status: string;
-      answer_text: string;
-      answered_at: number;
-    };
+      .query<
+        {
+          status: string;
+          answer_text: string;
+          answered_at: number;
+        },
+        SQLQueryBindings[]
+      >("SELECT * FROM call_pending_questions WHERE id = ?")
+      .get(question.id)!;
     expect(updated.status).toBe("answered");
     expect(updated.answer_text).toBe("Blue");
     expect(typeof updated.answered_at).toBe("number");
@@ -440,10 +444,11 @@ describe("call-store", () => {
       }
     ).$client;
     const rows = raw
-      .query(
-        "SELECT status FROM call_pending_questions WHERE call_session_id = ?",
-      )
-      .all(session.id) as Array<{ status: string }>;
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM call_pending_questions WHERE call_session_id = ?")
+      .all(session.id);
     expect(rows).toHaveLength(2);
     for (const row of rows) {
       expect(row.status).toBe("expired");
@@ -474,8 +479,11 @@ describe("call-store", () => {
       }
     ).$client;
     const q1Row = raw
-      .query("SELECT status FROM call_pending_questions WHERE id = ?")
-      .get(q1.id) as { status: string };
+      .query<
+        { status: string },
+        SQLQueryBindings[]
+      >("SELECT status FROM call_pending_questions WHERE id = ?")
+      .get(q1.id)!;
     expect(q1Row.status).toBe("answered");
   });
 
@@ -568,10 +576,11 @@ describe("call-store", () => {
       }
     ).$client;
     const rows = raw
-      .query(
-        "SELECT COUNT(*) as cnt FROM processed_callbacks WHERE dedupe_key = ?",
-      )
-      .get("test-dedupe-key-4") as { cnt: number };
+      .query<
+        { cnt: number },
+        SQLQueryBindings[]
+      >("SELECT COUNT(*) as cnt FROM processed_callbacks WHERE dedupe_key = ?")
+      .get("test-dedupe-key-4")!;
     expect(rows.cnt).toBe(1);
   });
 
@@ -646,8 +655,11 @@ describe("call-store", () => {
       }
     ).$client;
     const row = raw
-      .query("SELECT created_at FROM processed_callbacks WHERE dedupe_key = ?")
-      .get("test-dedupe-key-permanent") as { created_at: number };
+      .query<
+        { created_at: number },
+        SQLQueryBindings[]
+      >("SELECT created_at FROM processed_callbacks WHERE dedupe_key = ?")
+      .get("test-dedupe-key-permanent")!;
     // Should be at least 50 years in the future from now
     const fiftyYearsMs = 50 * 365 * 24 * 60 * 60 * 1000;
     expect(row.created_at).toBeGreaterThan(Date.now() + fiftyYearsMs);
@@ -675,8 +687,11 @@ describe("call-store", () => {
       }
     ).$client;
     const row = raw
-      .query("SELECT created_at FROM processed_callbacks WHERE dedupe_key = ?")
-      .get("test-dedupe-key-permanent-b") as { created_at: number };
+      .query<
+        { created_at: number },
+        SQLQueryBindings[]
+      >("SELECT created_at FROM processed_callbacks WHERE dedupe_key = ?")
+      .get("test-dedupe-key-permanent-b")!;
     const oneMinuteMs = 60 * 1000;
     expect(row.created_at).toBeLessThan(Date.now() + oneMinuteMs);
   });
@@ -719,13 +734,16 @@ describe("call-store", () => {
 
     // Verify B's finalized claim is still intact
     const row = raw
-      .query(
+      .query<
+        {
+          created_at: number;
+          claim_id: string;
+        },
+        SQLQueryBindings[]
+      >(
         "SELECT created_at, claim_id FROM processed_callbacks WHERE dedupe_key = ?",
       )
-      .get("test-dedupe-key-ownership") as {
-      created_at: number;
-      claim_id: string;
-    };
+      .get("test-dedupe-key-ownership")!;
     expect(row).not.toBeNull();
     expect(row.claim_id).toBe(claimB);
     const fiftyYearsMs = 50 * 365 * 24 * 60 * 60 * 1000;

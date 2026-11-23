@@ -1,5 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEventEnvelope } from "../api/index.js";
@@ -198,8 +199,11 @@ describe("createSchedule (cron)", () => {
     expect(job.description).toBe("Daily executive summary");
 
     const raw = getRawDb()
-      .query("SELECT description FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { description: string };
+      .query<
+        { description: string },
+        SQLQueryBindings[]
+      >("SELECT description FROM cron_jobs WHERE id = ?")
+      .get(job.id)!;
     expect(raw.description).toBe("Daily executive summary");
 
     const updated = await updateSchedule(job.id, {
@@ -223,8 +227,11 @@ describe("createSchedule (cron)", () => {
     expect(getSchedule(job.id)!.createdFromConversationId).toBeNull();
 
     const raw = getRawDb()
-      .query("SELECT created_from_conversation_id FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { created_from_conversation_id: string | null };
+      .query<
+        { created_from_conversation_id: string | null },
+        SQLQueryBindings[]
+      >("SELECT created_from_conversation_id FROM cron_jobs WHERE id = ?")
+      .get(job.id)!;
     expect(raw.created_from_conversation_id).toBeNull();
   });
 
@@ -254,8 +261,11 @@ describe("createSchedule (cron)", () => {
     });
 
     const raw = getRawDb()
-      .query("SELECT schedule_syntax FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { schedule_syntax: string } | null;
+      .query<
+        { schedule_syntax: string },
+        SQLQueryBindings[]
+      >("SELECT schedule_syntax FROM cron_jobs WHERE id = ?")
+      .get(job.id);
     expect(raw).not.toBeNull();
     expect(raw!.schedule_syntax).toBe("cron");
   });
@@ -308,13 +318,14 @@ describe("createSchedule (RRULE)", () => {
     });
 
     const raw = getRawDb()
-      .query(
-        "SELECT schedule_syntax, cron_expression FROM cron_jobs WHERE id = ?",
-      )
-      .get(job.id) as {
-      schedule_syntax: string;
-      cron_expression: string;
-    } | null;
+      .query<
+        {
+          schedule_syntax: string;
+          cron_expression: string;
+        },
+        SQLQueryBindings[]
+      >("SELECT schedule_syntax, cron_expression FROM cron_jobs WHERE id = ?")
+      .get(job.id);
     expect(raw).not.toBeNull();
     expect(raw!.schedule_syntax).toBe("rrule");
     expect(raw!.cron_expression).toBe(rrule);
@@ -398,8 +409,11 @@ describe("createSchedule (RRULE set)", () => {
     });
 
     const raw = getRawDb()
-      .query("SELECT cron_expression FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { cron_expression: string };
+      .query<
+        { cron_expression: string },
+        SQLQueryBindings[]
+      >("SELECT cron_expression FROM cron_jobs WHERE id = ?")
+      .get(job.id)!;
     // The full expression including all EXDATE lines should be stored
     expect(raw.cron_expression).toContain("EXDATE:20250102T090000Z");
     expect(raw.cron_expression).toContain("EXDATE:20250103T090000Z");
@@ -533,8 +547,11 @@ describe("updateSchedule", () => {
 
     // Confirm DB has the right syntax
     const raw = getRawDb()
-      .query("SELECT schedule_syntax FROM cron_jobs WHERE id = ?")
-      .get(job.id) as { schedule_syntax: string } | null;
+      .query<
+        { schedule_syntax: string },
+        SQLQueryBindings[]
+      >("SELECT schedule_syntax FROM cron_jobs WHERE id = ?")
+      .get(job.id);
     expect(raw!.schedule_syntax).toBe("rrule");
   });
 
@@ -1065,15 +1082,18 @@ describe("routing and mode fields", () => {
     });
 
     const raw = getRawDb()
-      .query(
+      .query<
+        {
+          mode: string;
+          routing_intent: string;
+          routing_hints_json: string;
+          status: string;
+        },
+        SQLQueryBindings[]
+      >(
         "SELECT mode, routing_intent, routing_hints_json, status FROM cron_jobs WHERE id = ?",
       )
-      .get(job.id) as {
-      mode: string;
-      routing_intent: string;
-      routing_hints_json: string;
-      status: string;
-    } | null;
+      .get(job.id);
     expect(raw).not.toBeNull();
     expect(raw!.mode).toBe("execute");
     expect(raw!.routing_intent).toBe("single_channel");
@@ -1702,8 +1722,11 @@ describe("declared schedules", () => {
     const disarmed = getSchedule(created.id);
     expect(disarmed!.enabled).toBe(false);
     const runs = getRawDb()
-      .query("SELECT COUNT(*) AS n FROM cron_runs WHERE job_id = ?")
-      .get(created.id) as { n: number };
+      .query<
+        { n: number },
+        SQLQueryBindings[]
+      >("SELECT COUNT(*) AS n FROM cron_runs WHERE job_id = ?")
+      .get(created.id)!;
     expect(runs.n).toBe(1);
 
     // Same declaration back in the desired set (e.g. plugin re-enabled):
@@ -1899,8 +1922,11 @@ describe("declared schedules", () => {
 
     expect(getSchedule(created.id)).not.toBeNull();
     const runs = getRawDb()
-      .query("SELECT COUNT(*) AS n FROM cron_runs WHERE job_id = ?")
-      .get(created.id) as { n: number };
+      .query<
+        { n: number },
+        SQLQueryBindings[]
+      >("SELECT COUNT(*) AS n FROM cron_runs WHERE job_id = ?")
+      .get(created.id)!;
     expect(runs.n).toBe(1);
   });
 

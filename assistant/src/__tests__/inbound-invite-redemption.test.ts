@@ -10,6 +10,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
 // ---------------------------------------------------------------------------
@@ -145,7 +147,7 @@ describe("inbound invite messages — no daemon-side interception", () => {
   test("non-member /start iv_<valid token> is denied as a normal non-member, no redemption", async () => {
     const req = buildInviteRequest("some-live-gateway-token");
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // Standard non-member deny — no invite redemption surface in the response.
     expect(json.accepted).toBe(true);
@@ -173,7 +175,7 @@ describe("inbound invite messages — no daemon-side interception", () => {
   test("non-member bare 6-digit message is denied as a normal message", async () => {
     const req = buildInboundRequest({ content: "123456" });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // The gateway already judged this message a non-invite; the daemon
     // treats it as any other non-member message.
@@ -201,7 +203,7 @@ describe("inbound invite messages — no daemon-side interception", () => {
       },
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.denied).toBe(true);
     expect(json.reason).toBe("not_a_member");
@@ -222,7 +224,7 @@ describe("inbound invite messages — no daemon-side interception", () => {
       conversationExternalId: "chat-active",
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.denied).toBeUndefined();
@@ -244,7 +246,7 @@ describe("inbound invite messages — no daemon-side interception", () => {
       conversationExternalId: "chat-active",
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.denied).toBeUndefined();

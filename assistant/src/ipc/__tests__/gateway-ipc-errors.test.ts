@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, test } from "bun:test";
 
 import {
@@ -19,11 +20,12 @@ describe("mapGatewayIpcConnectError", () => {
     const mapped = mapGatewayIpcConnectError(
       new IpcConnectError("connect ENOENT", "ENOENT"),
     );
-    expect(mapped).toBeInstanceOf(ServiceUnavailableError);
-    expect((mapped as ServiceUnavailableError).statusCode).toBe(503);
-    expect((mapped as ServiceUnavailableError).message).toContain(
-      "Gateway is not reachable over IPC",
+    assert(
+      mapped instanceof ServiceUnavailableError,
+      "Expected ServiceUnavailableError",
     );
+    expect(mapped.statusCode).toBe(503);
+    expect(mapped.message).toContain("Gateway is not reachable over IPC");
   });
 
   test("leaves other errors unchanged", () => {
@@ -43,9 +45,9 @@ describe("rethrowGatewayIpcFailure", () => {
       );
       throw new Error("expected throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(RouteError);
-      expect((err as RouteError).statusCode).toBe(404);
-      expect((err as RouteError).code).toBe("NOT_FOUND");
+      assert(err instanceof RouteError, "Expected RouteError");
+      expect(err.statusCode).toBe(404);
+      expect(err.code).toBe("NOT_FOUND");
     }
   });
 });

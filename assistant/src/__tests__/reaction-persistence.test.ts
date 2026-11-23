@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 /**
  * Tests for Slack reaction event persistence.
  *
@@ -9,6 +10,8 @@
  * they don't trigger a response.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
@@ -253,7 +256,7 @@ describe("Slack reaction event persistence", () => {
       processMessage,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.duplicate).toBe(false);
@@ -269,7 +272,7 @@ describe("Slack reaction event persistence", () => {
     expect(row.role).toBe("user");
     expect(row.content).toBe("[reaction]");
 
-    const envelope = JSON.parse(row.metadata!) as Record<string, unknown>;
+    const envelope = jsonObjectSchema.parse(JSON.parse(row.metadata!));
     // Provenance keeps the row visible to actor-scoped history loads:
     // filterMessagesForUntrustedActor drops rows with no trust class.
     expect(envelope.provenanceTrustClass).toBe("trusted_contact");
@@ -312,7 +315,7 @@ describe("Slack reaction event persistence", () => {
     );
     expect(rows.length).toBe(1);
 
-    const envelope = JSON.parse(rows[0].metadata!) as Record<string, unknown>;
+    const envelope = jsonObjectSchema.parse(JSON.parse(rows[0].metadata!));
     const slackMeta = readSlackMetadata(envelope.slackMeta as string);
     expect(slackMeta).not.toBeNull();
     expect(slackMeta!.eventKind).toBe("reaction");
@@ -328,7 +331,7 @@ describe("Slack reaction event persistence", () => {
     expect(resp.status).toBe(200);
     // The payload resolver requires a target message id, so the dispatch
     // drops the event before the intercept and it never reads as a message.
-    expect(((await resp.json()) as Record<string, unknown>).reaction).toBe(
+    expect(jsonObjectSchema.parse(await resp.json()).reaction).toBe(
       "dropped_unresolvable_payload",
     );
 
@@ -349,8 +352,7 @@ describe("Slack reaction event persistence", () => {
       (r) => r.content === "[reaction]",
     );
     const meta = readSlackMetadata(
-      (JSON.parse(rows[0].metadata!) as Record<string, unknown>)
-        .slackMeta as string,
+      jsonObjectSchema.parse(JSON.parse(rows[0].metadata!)).slackMeta as string,
     );
     expect(meta?.threadTs).toBeUndefined();
   });
@@ -371,7 +373,7 @@ describe("Slack reaction event persistence", () => {
     );
     expect(rows.length).toBe(1);
 
-    const envelope = JSON.parse(rows[0].metadata!) as Record<string, unknown>;
+    const envelope = jsonObjectSchema.parse(JSON.parse(rows[0].metadata!));
     const slackMeta = readSlackMetadata(envelope.slackMeta as string);
     expect(slackMeta).not.toBeNull();
     expect(slackMeta!.threadTs).toBeUndefined();
@@ -414,7 +416,7 @@ describe("Slack reaction event persistence", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const j1 = (await r1.json()) as Record<string, unknown>;
+    const j1 = jsonObjectSchema.parse(await r1.json());
     expect(j1.duplicate).toBe(false);
 
     const r2 = await handleChannelInbound(
@@ -422,7 +424,7 @@ describe("Slack reaction event persistence", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const j2 = (await r2.json()) as Record<string, unknown>;
+    const j2 = jsonObjectSchema.parse(await r2.json());
     expect(j2.duplicate).toBe(true);
 
     const rows = readPersistedMessages().filter(
@@ -505,7 +507,7 @@ describe("Slack reaction event persistence", () => {
       TEST_BEARER_TOKEN,
     );
     expect(resp.status).toBe(200);
-    const body = (await resp.json()) as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(await resp.json());
 
     // An admitted actor adding a reaction to the assistant's own post wakes
     // a discretion turn instead of writing the passive row here: the turn's
@@ -515,10 +517,11 @@ describe("Slack reaction event persistence", () => {
     expect(dispatchedWakes[0].conversationId).toBe(conversationId);
     expect(typeof dispatchedWakes[0].slackReactionRowMeta).toBe("string");
     const reactionRow = db.$client
-      .prepare(
-        "SELECT conversation_id AS conversationId FROM messages WHERE content = '[reaction]'",
-      )
-      .get() as { conversationId: string } | null;
+      .prepare<
+        { conversationId: string },
+        []
+      >("SELECT conversation_id AS conversationId FROM messages WHERE content = '[reaction]'")
+      .get();
     expect(reactionRow).toBeNull();
   });
 
@@ -534,14 +537,12 @@ describe("Slack reaction event persistence", () => {
     );
 
     const db = getDb();
-    const claimants = (
-      db.$client
-        .prepare(
-          `SELECT COUNT(*) AS n FROM channel_inbound_events
+    const claimants = db.$client
+      .prepare<{ n: number }, SQLQueryBindings[]>(
+        `SELECT COUNT(*) AS n FROM channel_inbound_events
            WHERE source_message_id = ? AND message_id IS NOT NULL`,
-        )
-        .get(reactedTs) as { n: number }
-    ).n;
+      )
+      .get(reactedTs)!.n;
     expect(claimants).toBe(1);
   });
 
@@ -552,18 +553,21 @@ describe("Slack reaction event persistence", () => {
     // "Generating title..." placeholder.
     const db = getDb();
     const countRows = (table: string): number =>
-      (
-        db.$client.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as {
-          n: number;
-        }
-      ).n;
+      db.$client
+        .prepare<
+          {
+            n: number;
+          },
+          []
+        >(`SELECT COUNT(*) AS n FROM ${table}`)
+        .get()!.n;
 
     const resp = await handleChannelInbound(
       buildReactionRequest("reaction:thumbsup"),
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.reaction).toBe("dropped_unknown_target");
@@ -575,11 +579,14 @@ describe("Slack reaction event persistence", () => {
   test("reaction lands in the conversation of the reacted message, not a new one", async () => {
     const targetConversationId = seedStoredMessage("1700000000.111111");
     const db = getDb();
-    const conversationsBefore = (
-      db.$client.prepare("SELECT COUNT(*) AS n FROM conversations").get() as {
-        n: number;
-      }
-    ).n;
+    const conversationsBefore = db.$client
+      .prepare<
+        {
+          n: number;
+        },
+        []
+      >("SELECT COUNT(*) AS n FROM conversations")
+      .get()!.n;
 
     const resp = await handleChannelInbound(
       buildReactionRequest("reaction:thumbsup"),
@@ -588,18 +595,22 @@ describe("Slack reaction event persistence", () => {
     );
     expect(resp.status).toBe(200);
 
-    const conversationsAfter = (
-      db.$client.prepare("SELECT COUNT(*) AS n FROM conversations").get() as {
-        n: number;
-      }
-    ).n;
+    const conversationsAfter = db.$client
+      .prepare<
+        {
+          n: number;
+        },
+        []
+      >("SELECT COUNT(*) AS n FROM conversations")
+      .get()!.n;
     expect(conversationsAfter).toBe(conversationsBefore);
 
     const reactionRow = db.$client
-      .prepare(
-        "SELECT conversation_id AS conversationId FROM messages WHERE content = '[reaction]'",
-      )
-      .get() as { conversationId: string } | null;
+      .prepare<
+        { conversationId: string },
+        []
+      >("SELECT conversation_id AS conversationId FROM messages WHERE content = '[reaction]'")
+      .get();
     expect(reactionRow?.conversationId).toBe(targetConversationId);
   });
 
@@ -607,7 +618,7 @@ describe("Slack reaction event persistence", () => {
     seedStoredMessage("1700000000.111111");
     const req = buildReactionRequest("reaction:thumbsup");
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     const eventId = json.eventId as string;
 
     const db = getDb();
@@ -650,11 +661,14 @@ describe("reaction access control (no verification handshake)", () => {
   const GUARDIAN_DM_CHAT = "D_GUARDIAN_DM";
 
   function tableCount(table: string): number {
-    return (
-      getDb().$client.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as {
-        n: number;
-      }
-    ).n;
+    return getDb()
+      .$client.prepare<
+        {
+          n: number;
+        },
+        []
+      >(`SELECT COUNT(*) AS n FROM ${table}`)
+      .get()!.n;
   }
 
   beforeEach(() => {
@@ -693,7 +707,7 @@ describe("reaction access control (no verification handshake)", () => {
       processMessage,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // Accepted as a passive signal — never denied or turned into a challenge.
     expect(json.accepted).toBe(true);
@@ -730,7 +744,7 @@ describe("reaction access control (no verification handshake)", () => {
       actorUsername: "pending_contact",
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.denied).not.toBe(true);
     expect(json.reason).not.toBe("verification_challenge_sent");
@@ -739,7 +753,7 @@ describe("reaction access control (no verification handshake)", () => {
       (r) => r.content === "[reaction]",
     );
     expect(rows.length).toBe(1);
-    const envelope = JSON.parse(rows[0].metadata!) as Record<string, unknown>;
+    const envelope = jsonObjectSchema.parse(JSON.parse(rows[0].metadata!));
     const slackMeta = readSlackMetadata(envelope.slackMeta as string);
     expect(slackMeta?.eventKind).toBe("reaction");
     expect(slackMeta?.reaction?.emoji).toBe("tada");

@@ -9,6 +9,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
 // ---------------------------------------------------------------------------
@@ -210,7 +212,7 @@ describe("non-member access request notification", () => {
   test("non-member message is denied with rejection reply", async () => {
     const req = buildInboundRequest();
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.denied).toBe(true);
     expect(json.reason).toBe("not_a_member");
@@ -241,7 +243,7 @@ describe("non-member access request notification", () => {
 
     const req = buildInboundRequest();
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // Message is still denied
     expect(json.denied).toBe(true);
@@ -386,7 +388,7 @@ describe("non-member access request notification", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json2 = (await resp2.json()) as Record<string, unknown>;
+    const json2 = jsonObjectSchema.parse(await resp2.json());
     // Still not a member, so the message itself is denied at the door...
     expect(json2.denied).toBe(true);
 
@@ -408,7 +410,7 @@ describe("non-member access request notification", () => {
     // so the access_request (now decisionable) has a guardianPrincipalId.
     const req = buildInboundRequest();
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.denied).toBe(true);
     expect(json.reason).toBe("not_a_member");
@@ -456,7 +458,7 @@ describe("non-member access request notification", () => {
 
     const req = buildInboundRequest();
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.denied).toBe(true);
     expect(json.reason).toBe("not_a_member");

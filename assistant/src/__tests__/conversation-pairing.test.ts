@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Regression tests for notification conversation pairing.
  *
@@ -6,7 +7,6 @@
  * conversation reuse decisions, binding-key reuse for continue_existing channels,
  * and that errors in pairing never break the notification pipeline.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 // ── Mocks — declared before imports that depend on them ─────────────
@@ -27,26 +27,21 @@ let mockExistingConversations: Record<
   }
 > = {};
 
-const createConversationMock = mock((_opts?: unknown) => {
-  if (createConversationShouldThrow) {
-    throw new Error("DB write failed");
-  }
-  return { id: mockConversationId };
-});
-
-const addMessageMock = mock(
-  (
-    _conversationId: string,
-    _role: string,
-    _content: string,
-    _options?: unknown,
-  ) => {
-    if (addMessageShouldThrow) {
+const createConversationMock = mock(
+  (..._args: Parameters<typeof createConversation>) => {
+    if (createConversationShouldThrow) {
       throw new Error("DB write failed");
     }
-    return { id: mockMessageId };
+    return { id: mockConversationId };
   },
 );
+
+const addMessageMock = mock((..._args: Parameters<typeof addMessage>) => {
+  if (addMessageShouldThrow) {
+    throw new Error("DB write failed");
+  }
+  return { id: mockMessageId };
+});
 
 const getConversationMock = mock((id: string) => {
   return mockExistingConversations[id] ?? null;
@@ -95,11 +90,7 @@ const getBindingByChannelChatMock = mock(
 );
 
 const upsertOutboundBindingMock = mock(
-  (_input: {
-    conversationId: string;
-    sourceChannel: string;
-    externalChatId: string;
-  }) => {},
+  (..._args: Parameters<typeof upsertOutboundBinding>) => {},
 );
 
 mock.module("../persistence/external-conversation-store.js", () => ({
@@ -115,8 +106,22 @@ import type {
   NotificationChannel,
   RenderedChannelCopy,
 } from "../notifications/types.js";
+import type {
+  addMessage,
+  createConversation,
+} from "../persistence/conversation-crud.js";
+import type { upsertOutboundBinding } from "../persistence/external-conversation-store.js";
 
 // ── Test helpers ────────────────────────────────────────────────────────
+
+function capturedCreationOptions() {
+  const options = createConversationMock.mock.calls[0]?.[0];
+  assert(
+    options && typeof options === "object",
+    "Expected conversation creation options",
+  );
+  return options;
+}
 
 function makeSignal(
   overrides?: Partial<NotificationSignal>,
@@ -184,10 +189,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(result.conversationFallbackUsed).toBe(false);
     expect(createConversationMock).toHaveBeenCalledTimes(1);
     expect(addMessageMock).toHaveBeenCalledTimes(1);
-    const callArgs = createConversationMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const callArgs = capturedCreationOptions();
     expect(callArgs.conversationType).toBe("standard");
   });
 
@@ -198,10 +200,7 @@ describe("pairDeliveryWithConversation", () => {
     await pairDeliveryWithConversation(signal, "cadet", copy);
 
     // Verify createConversation was called with the thread title
-    const callArgs = createConversationMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const callArgs = capturedCreationOptions();
     expect(callArgs.title).toBe("Custom Thread Title");
   });
 
@@ -211,10 +210,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(signal, "cadet", copy);
 
-    const callArgs = createConversationMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const callArgs = capturedCreationOptions();
     expect(callArgs.title).toBe("Notification Title");
   });
 
@@ -244,7 +240,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(signal, "cadet", copy);
 
-    const contentArg = addMessageMock.mock.calls[0]![2] as string;
+    const contentArg = addMessageMock.mock.calls[0]![2];
     // Should NOT be the JSON dump
     expect(contentArg).not.toContain('"raw"');
     // Should be the runtime-composed seed from copy.title/body
@@ -264,7 +260,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(signal, "cadet", copy);
 
-    const contentArg = addMessageMock.mock.calls[0]![2] as string;
+    const contentArg = addMessageMock.mock.calls[0]![2];
     expect(contentArg).not.toBe("Hi");
     // Runtime composer builds from copy.title/body
     expect(contentArg).toContain("Test reminder");
@@ -276,10 +272,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(signal, "cadet", copy);
 
-    const optionsArg = addMessageMock.mock.calls[0]![3] as Record<
-      string,
-      unknown
-    >;
+    const optionsArg = addMessageMock.mock.calls[0]![3]!;
     expect(optionsArg.skipIndexing).toBe(true);
   });
 
@@ -299,10 +292,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(result.strategy).toBe("continue_existing_conversation");
     expect(result.createdNewConversation).toBe(true);
     expect(createConversationMock).toHaveBeenCalledTimes(1);
-    const callArgs = createConversationMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const callArgs = capturedCreationOptions();
     expect(callArgs.conversationType).toBe("background");
   });
 
@@ -418,10 +408,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(createConversationMock).toHaveBeenCalledTimes(1);
     // Should upsert the binding for the new conversation
     expect(upsertOutboundBindingMock).toHaveBeenCalledTimes(1);
-    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0];
     expect(upsertArgs.conversationId).toBe("conv-001");
     expect(upsertArgs.sourceChannel).toBe("notification:slack");
   });
@@ -598,10 +585,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(result.createdNewConversation).toBe(true);
     expect(createConversationMock).toHaveBeenCalledTimes(1);
     expect(upsertOutboundBindingMock).toHaveBeenCalledTimes(1);
-    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0];
     expect(upsertArgs.sourceChannel).toBe("notification:slack");
     expect(upsertArgs.externalChatId).toBe("D0BRANDNEW");
   });
@@ -623,10 +607,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(createConversationMock).toHaveBeenCalledTimes(1);
     // Should upsert so future deliveries reuse this conversation
     expect(upsertOutboundBindingMock).toHaveBeenCalledTimes(1);
-    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0];
     expect(upsertArgs.conversationId).toBe("conv-001");
     expect(upsertArgs.sourceChannel).toBe("notification:slack");
     expect(upsertArgs.externalChatId).toBe("C0123ABCDEF");
@@ -663,10 +644,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(result.createdNewConversation).toBe(false);
     // Should rebind the destination to the reused conversation
     expect(upsertOutboundBindingMock).toHaveBeenCalledTimes(1);
-    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0];
     expect(upsertArgs.conversationId).toBe("conv-explicit");
     expect(upsertArgs.sourceChannel).toBe("notification:telegram");
     expect(upsertArgs.externalChatId).toBe("chat-rebind");
@@ -695,10 +673,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(result.conversationFallbackUsed).toBe(true);
     // Should bind the new conversation to the destination
     expect(upsertOutboundBindingMock).toHaveBeenCalledTimes(1);
-    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const upsertArgs = upsertOutboundBindingMock.mock.calls[0]![0];
     expect(upsertArgs.conversationId).toBe("conv-001");
     expect(upsertArgs.sourceChannel).toBe("notification:slack");
     expect(upsertArgs.externalChatId).toBe("C9876ZYXWVU");
@@ -990,9 +965,7 @@ describe("pairDeliveryWithConversation", () => {
 
     await pairDeliveryWithConversation(signal, "cadet", makeCopy());
 
-    const options = addMessageMock.mock.calls[0]![3] as {
-      skipIndexing?: boolean;
-    };
+    const options = addMessageMock.mock.calls[0]![3]!;
     expect(options.skipIndexing).toBe(true);
   });
 
@@ -1090,10 +1063,7 @@ describe("pairDeliveryWithConversation", () => {
     expect(result.conversationId).toBe("conv-001");
     expect(result.strategy).toBe("start_new_conversation");
     expect(createConversationMock).toHaveBeenCalledTimes(1);
-    const callArgs = createConversationMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const callArgs = capturedCreationOptions();
     // cadet channel normally yields "standard", but the metadata override wins
     expect(callArgs.conversationType).toBe("background");
   });
@@ -1111,10 +1081,7 @@ describe("pairDeliveryWithConversation", () => {
 
     expect(result.conversationId).toBe("conv-001");
     expect(createConversationMock).toHaveBeenCalledTimes(1);
-    const callArgs = createConversationMock.mock.calls[0]![0] as Record<
-      string,
-      unknown
-    >;
+    const callArgs = capturedCreationOptions();
     // No override — cadet (start_new_conversation) defaults to "standard"
     expect(callArgs.conversationType).toBe("standard");
   });

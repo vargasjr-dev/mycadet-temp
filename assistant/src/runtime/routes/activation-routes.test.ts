@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for the activation route handlers in `activation-routes.ts`.
  *
@@ -5,7 +6,6 @@
  * and the route-definition metadata clients and the OpenAPI generator
  * depend on.
  */
-
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -164,8 +164,8 @@ describe("activation routes", () => {
       body: { conversationId: "conv-1" },
     }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(400);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(400);
   });
 
   test("POST start rejects a missing conversation id with a 400", async () => {
@@ -174,8 +174,8 @@ describe("activation routes", () => {
       body: {},
     }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(400);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(400);
   });
 
   test("POST start rejects an oversized conversation id with a 400", async () => {
@@ -184,8 +184,8 @@ describe("activation routes", () => {
       body: { conversationId: "c".repeat(129) },
     }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(400);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(400);
   });
 
   test("a write carries the client that made it, so it can suppress its own echo", async () => {
@@ -217,8 +217,8 @@ describe("activation routes", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(400);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(400);
   });
 
   test("POST start rejects when the write cannot be persisted", async () => {
@@ -231,8 +231,8 @@ describe("activation routes", () => {
       body: { conversationId: "conv-1" },
     }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(500);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(500);
   });
 
   test("POST dismiss rejects when the write cannot be persisted", async () => {
@@ -242,8 +242,8 @@ describe("activation routes", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(500);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(500);
   });
 
   describe("a progress document from a newer build", () => {
@@ -276,8 +276,8 @@ describe("activation routes", () => {
         body: { conversationId: "conv-1" },
       }).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(RouteError);
-      expect((err as RouteError).statusCode).toBe(409);
+      assert(err instanceof RouteError, "Expected RouteError");
+      expect(err.statusCode).toBe(409);
     });
 
     test("POST dismiss answers 409 rather than a write that never landed", async () => {
@@ -287,8 +287,8 @@ describe("activation routes", () => {
         (e: unknown) => e,
       );
 
-      expect(err).toBeInstanceOf(RouteError);
-      expect((err as RouteError).statusCode).toBe(409);
+      assert(err instanceof RouteError, "Expected RouteError");
+      expect(err.statusCode).toBe(409);
     });
   });
 
@@ -312,8 +312,8 @@ describe("activation routes", () => {
       body: { conversationId: "conv-deleted" },
     }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(404);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(404);
     // Nothing was recorded, so the row stays launchable.
     expect((await call(getProgressRoute)).tasks).toEqual({});
   });
@@ -342,8 +342,8 @@ describe("activation routes", () => {
     rmSync(lockPath);
 
     const err = await pending;
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(404);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(404);
     // No link was written, so nothing is left pointing at a deleted row.
     expect((await call(getProgressRoute)).tasks).toEqual({});
   });
@@ -362,8 +362,8 @@ describe("activation routes", () => {
       body: { conversationId: "conv-1" },
     }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(503);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(503);
     expect((await call(getProgressRoute)).tasks).toEqual({});
   });
 
@@ -380,8 +380,8 @@ describe("activation routes", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(RouteError);
-    expect((err as RouteError).statusCode).toBe(503);
+    assert(err instanceof RouteError, "Expected RouteError");
+    expect(err.statusCode).toBe(503);
   });
 
   test("the start route declares the answers it can give", () => {

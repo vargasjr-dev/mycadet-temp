@@ -10,6 +10,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { readProviderMetadata } from "../messaging/read-provider-metadata.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 process.env.DISABLE_HTTP_AUTH = "true";
 
@@ -215,7 +216,7 @@ describe("Discord delete propagation (unattributed)", () => {
       }),
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(true);
@@ -282,7 +283,7 @@ describe("Discord delete propagation (unattributed)", () => {
       }),
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(true);
@@ -352,9 +353,7 @@ describe("Discord delete propagation (unattributed)", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    expect(((await first.json()) as Record<string, unknown>).deleted).toBe(
-      true,
-    );
+    expect(jsonObjectSchema.parse(await first.json()).deleted).toBe(true);
     const afterFirst = readProviderMetadata(
       getDb()
         .select()
@@ -372,9 +371,7 @@ describe("Discord delete propagation (unattributed)", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    expect(((await second.json()) as Record<string, unknown>).deleted).toBe(
-      true,
-    );
+    expect(jsonObjectSchema.parse(await second.json()).deleted).toBe(true);
     const afterSecond = readProviderMetadata(
       getDb()
         .select()
@@ -452,7 +449,7 @@ describe("Discord delete propagation (unattributed)", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    expect(((await resp.json()) as Record<string, unknown>).deleted).toBe(true);
+    expect(jsonObjectSchema.parse(await resp.json()).deleted).toBe(true);
     const meta = readProviderMetadata(
       getDb()
         .select()
@@ -528,7 +525,7 @@ describe("Discord delete propagation (unattributed)", () => {
       undefined,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     expect(json.deleted).toBe(true);
     expect(json.messageId).toBe("assistant-old-post");
   });
@@ -555,7 +552,7 @@ describe("Discord delete propagation (unattributed)", () => {
       }),
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(false);
@@ -587,7 +584,7 @@ describe("Slack delete propagation", () => {
       deletedTs: seeded.originalTs,
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     const after = Date.now();
 
     expect(resp.status).toBe(200);
@@ -607,7 +604,7 @@ describe("Slack delete propagation", () => {
     expect(row!.content).toBe("Original audited text");
 
     // Parent metadata still has its sibling keys intact.
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     expect(parsed.userMessageChannel).toBe("slack");
     expect(parsed.userMessageInterface).toBe("slack");
     expect(typeof parsed.slackMeta).toBe("string");
@@ -680,7 +677,7 @@ describe("Slack delete propagation", () => {
       }),
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(true);
@@ -696,7 +693,7 @@ describe("Slack delete propagation", () => {
     expect(row!.content).toBe(
       "The reply that was later deleted from the thread",
     );
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     const slackMeta = readSlackMetadata(parsed.slackMeta as string);
     expect(slackMeta!.deletedAt).toBeDefined();
     expect(slackMeta!.channelTs).toBe(postTs);
@@ -757,7 +754,7 @@ describe("Slack delete propagation", () => {
       }),
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(true);
     expect(json.messageId).toBe(messageId);
@@ -793,7 +790,7 @@ describe("Slack delete propagation", () => {
       deletedTs: "9999.9999", // not seeded
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(resp.status).toBe(200);
     expect(json.accepted).toBe(true);
@@ -808,7 +805,7 @@ describe("Slack delete propagation", () => {
       .get();
 
     expect(row!.content).toBe("Should remain untouched");
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     const slackMeta = readSlackMetadata(parsed.slackMeta as string);
     expect(slackMeta!.deletedAt).toBeUndefined();
   });
@@ -825,7 +822,7 @@ describe("Slack delete propagation", () => {
       deletedTs: "0000.0000",
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(false);
@@ -850,7 +847,7 @@ describe("Slack delete propagation", () => {
       deletedTs: seeded.originalTs,
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(true);
@@ -863,7 +860,7 @@ describe("Slack delete propagation", () => {
       .get();
 
     expect(row!.content).toBe("Legacy pre-upgrade text");
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     expect(parsed.slackMeta).toBeUndefined();
     const neutral = readProviderMetadata(row!.metadata);
     expect(neutral).not.toBeNull();
@@ -904,7 +901,7 @@ describe("Slack delete propagation", () => {
       deletedTs: seeded.originalTs,
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     expect(json.deleted).toBe(true);
 
     const row = db
@@ -937,7 +934,7 @@ describe("Slack delete propagation", () => {
       deletedTs: seeded.originalTs,
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(true);
 
@@ -977,7 +974,7 @@ describe("Slack delete propagation", () => {
       }),
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(json.deleted).toBe(false);
@@ -988,7 +985,7 @@ describe("Slack delete propagation", () => {
       .from(messages)
       .where(eq(messages.id, seeded.messageId))
       .get();
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     const slackMeta = readSlackMetadata(parsed.slackMeta as string);
     expect(slackMeta!.deletedAt).toBeUndefined();
   });
@@ -1045,7 +1042,7 @@ describe("Slack delete propagation", () => {
       deletedTs: originalTs,
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(resp.status).toBe(200);
     expect(json.accepted).toBe(true);
@@ -1057,7 +1054,7 @@ describe("Slack delete propagation", () => {
       .from(messages)
       .where(eq(messages.id, messageId))
       .get();
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     const parsedSlackMeta = readSlackMetadata(parsed.slackMeta as string);
     expect(parsedSlackMeta!.deletedAt).toBeDefined();
   });
@@ -1084,7 +1081,7 @@ describe("Slack delete propagation", () => {
       actorExternalId: "U_NON_MEMBER",
     });
     const resp = await handleChannelInbound(req, undefined, TEST_BEARER_TOKEN);
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     // ACL denies the inbound — the response must not carry `deleted: true`.
     expect(json.deleted).not.toBe(true);
@@ -1098,7 +1095,7 @@ describe("Slack delete propagation", () => {
       .where(eq(messages.id, seeded.messageId))
       .get();
     expect(row!.content).toBe("Original audited text");
-    const parsed = JSON.parse(row!.metadata!) as Record<string, unknown>;
+    const parsed = jsonObjectSchema.parse(JSON.parse(row!.metadata!));
     const slackMeta = readSlackMetadata(parsed.slackMeta as string);
     expect(slackMeta!.deletedAt).toBeUndefined();
   });

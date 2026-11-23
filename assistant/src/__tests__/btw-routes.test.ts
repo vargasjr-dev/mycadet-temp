@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Unit tests for the POST /v1/btw SSE-streaming side-chain endpoint.
  *
@@ -5,7 +6,6 @@
  * successful SSE streaming, provider argument passing, no persistence,
  * and no session.processing mutation.
  */
-
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
@@ -229,14 +229,14 @@ describe("POST /v1/btw", () => {
 
   test("throws BadRequestError for missing conversationKey", async () => {
     const { error } = await callHandler({ content: "hello" });
-    expect(error).toBeInstanceOf(BadRequestError);
-    expect((error as BadRequestError).message).toContain("conversationKey");
+    assert(error instanceof BadRequestError, "Expected BadRequestError");
+    expect(error.message).toContain("conversationKey");
   });
 
   test("throws BadRequestError for missing content", async () => {
     const { error } = await callHandler({ conversationKey: "key" });
-    expect(error).toBeInstanceOf(BadRequestError);
-    expect((error as BadRequestError).message).toContain("content");
+    assert(error instanceof BadRequestError, "Expected BadRequestError");
+    expect(error.message).toContain("content");
   });
 
   test("throws BadRequestError for empty content", async () => {
@@ -244,8 +244,8 @@ describe("POST /v1/btw", () => {
       conversationKey: "key",
       content: "",
     });
-    expect(error).toBeInstanceOf(BadRequestError);
-    expect((error as BadRequestError).message).toContain("content");
+    assert(error instanceof BadRequestError, "Expected BadRequestError");
+    expect(error.message).toContain("content");
   });
 
   // -- Service unavailability (503) --

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../../../__tests__/helpers/set-config.js";
@@ -1976,8 +1977,8 @@ describe("pinned-mode selection", () => {
     try {
       getCdpClient(ctx, { mode: "extension" });
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      const cdpErr = err as CdpError;
+      assert(err instanceof CdpError, "Expected CdpError");
+      const cdpErr = err;
       expect(cdpErr.code).toBe("transport_error");
       expect(cdpErr.message).toContain('Pinned mode "extension" unavailable');
       expect(cdpErr.message).toContain("no Chrome Extension connected");
@@ -2202,8 +2203,8 @@ describe("buildPinnedCandidateList", () => {
       buildPinnedCandidateList(ctx, "extension");
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      const cdpErr = err as CdpError;
+      assert(err instanceof CdpError, "Expected CdpError");
+      const cdpErr = err;
       expect(cdpErr.code).toBe("transport_error");
       expect(cdpErr.attemptDiagnostics).toHaveLength(1);
       expect(cdpErr.attemptDiagnostics![0]).toMatchObject({
@@ -2227,8 +2228,8 @@ describe("buildPinnedCandidateList", () => {
       buildPinnedCandidateList(ctx, "extension");
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      const cdpErr = err as CdpError;
+      assert(err instanceof CdpError, "Expected CdpError");
+      const cdpErr = err;
       expect(cdpErr.code).toBe("transport_error");
       expect(cdpErr.message).toContain("no Chrome Extension connected");
     }
@@ -2253,8 +2254,8 @@ describe("buildPinnedCandidateList", () => {
       buildPinnedCandidateList(ctx, "host-bridge");
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      const cdpErr = err as CdpError;
+      assert(err instanceof CdpError, "Expected CdpError");
+      const cdpErr = err;
       expect(cdpErr.code).toBe("transport_error");
       expect(cdpErr.attemptDiagnostics![0]).toMatchObject({
         candidateKind: "host-bridge",
@@ -2275,10 +2276,8 @@ describe("buildPinnedCandidateList", () => {
       buildPinnedCandidateList(ctx, "host-bridge");
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      expect((err as CdpError).message).toContain(
-        "a Chrome Extension is now connected",
-      );
+      assert(err instanceof CdpError, "Expected CdpError");
+      expect(err.message).toContain("a Chrome Extension is now connected");
     }
   });
 });
@@ -2354,8 +2353,8 @@ describe("attempt diagnostics", () => {
       await client.send("Page.navigate");
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      const cdpErr = err as CdpError;
+      assert(err instanceof CdpError, "Expected CdpError");
+      const cdpErr = err;
       expect(cdpErr.code).toBe("transport_error");
       expect(cdpErr.attemptDiagnostics).toBeDefined();
       expect(cdpErr.attemptDiagnostics).toHaveLength(3);
@@ -2499,8 +2498,8 @@ describe("attempt diagnostics", () => {
       await client.send("Page.navigate");
       expect(true).toBe(false); // should not reach
     } catch (err) {
-      expect(err).toBeInstanceOf(CdpError);
-      const cdpErr = err as CdpError;
+      assert(err instanceof CdpError, "Expected CdpError");
+      const cdpErr = err;
       expect(cdpErr.attemptDiagnostics).toBeDefined();
       expect(cdpErr.attemptDiagnostics).toHaveLength(1);
       expect(cdpErr.attemptDiagnostics![0]).toMatchObject({

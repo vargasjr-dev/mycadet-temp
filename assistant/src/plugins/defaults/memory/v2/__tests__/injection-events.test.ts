@@ -124,13 +124,12 @@ describe("migrateMemoryV2InjectionEvents", () => {
     expect(table).toBeTruthy();
 
     const indexNames = new Set(
-      (
-        raw
-          .query(
-            `SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='memory_v2_injection_events'`,
-          )
-          .all() as Array<{ name: string }>
-      ).map((r) => r.name),
+      raw
+        .query<{ name: string }, []>(
+          `SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='memory_v2_injection_events'`,
+        )
+        .all()
+        .map((r) => r.name),
     );
     expect(indexNames.has("idx_memory_v2_injection_events_slug_time")).toBe(
       true,
@@ -159,10 +158,11 @@ describe("migrateMemoryV2InjectionEvents", () => {
     migrateMemoryV2InjectionEvents(database);
 
     const rows = raw
-      .query(
-        `SELECT slug, injected_at FROM memory_v2_injection_events ORDER BY injected_at, slug`,
-      )
-      .all() as Array<{ slug: string; injected_at: number }>;
+      .query<
+        { slug: string; injected_at: number },
+        []
+      >(`SELECT slug, injected_at FROM memory_v2_injection_events ORDER BY injected_at, slug`)
+      .all();
     expect(rows).toEqual([
       { slug: "alice", injected_at: 1_000_000 },
       { slug: "bob", injected_at: 1_000_000 },
@@ -174,8 +174,11 @@ describe("migrateMemoryV2InjectionEvents", () => {
     // No activation-logs migration applied first.
     expect(() => migrateMemoryV2InjectionEvents(database)).not.toThrow();
     const { n } = getSqliteFrom(database)
-      .query(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
-      .get() as { n: number };
+      .query<
+        { n: number },
+        []
+      >(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
+      .get()!;
     expect(n).toBe(0);
   });
 
@@ -199,8 +202,11 @@ describe("migrateMemoryV2InjectionEvents", () => {
     migrateMemoryV2InjectionEvents(database);
 
     const { n } = raw
-      .query(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
-      .get() as { n: number };
+      .query<
+        { n: number },
+        []
+      >(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
+      .get()!;
     expect(n).toBe(1);
   });
 
@@ -241,16 +247,22 @@ describe("recordInjectionEvents", () => {
       .get();
     expect(inMain).toBeFalsy();
     const { n } = memorySqlite
-      .query(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
-      .get() as { n: number };
+      .query<
+        { n: number },
+        []
+      >(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
+      .get()!;
     expect(n).toBe(1);
   });
 
   test("empty list is a no-op", () => {
     recordInjectionEvents([], 1_000_000);
     const { n } = memorySqlite
-      .query(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
-      .get() as { n: number };
+      .query<
+        { n: number },
+        []
+      >(`SELECT COUNT(*) as n FROM memory_v2_injection_events`)
+      .get()!;
     expect(n).toBe(0);
   });
 });

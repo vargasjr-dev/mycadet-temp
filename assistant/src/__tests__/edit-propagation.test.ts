@@ -24,6 +24,7 @@ import { handleEditIntercept } from "../runtime/routes/inbound-stages/edit-inter
 // the current await yields, keeping the same attempt sequence and outcomes
 // without the wall-clock burn.
 import { installFastTimers } from "./fast-timers.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 installFastTimers();
 
 await initializeDb();
@@ -223,11 +224,14 @@ describe("Slack edit propagation", () => {
     // unseen message mint one, permanently titled with the loading placeholder.
     const db = getDb();
     const countRows = (table: string): number =>
-      (
-        db.$client.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as {
-          n: number;
-        }
-      ).n;
+      db.$client
+        .prepare<
+          {
+            n: number;
+          },
+          []
+        >(`SELECT COUNT(*) AS n FROM ${table}`)
+        .get()!.n;
 
     const resp = (await handleEditIntercept({
       sourceChannel: "slack",
@@ -252,11 +256,14 @@ describe("Slack edit propagation", () => {
       initialContent: "original text",
     });
     const db = getDb();
-    const conversationsBefore = (
-      db.$client.prepare("SELECT COUNT(*) AS n FROM conversations").get() as {
-        n: number;
-      }
-    ).n;
+    const conversationsBefore = db.$client
+      .prepare<
+        {
+          n: number;
+        },
+        []
+      >("SELECT COUNT(*) AS n FROM conversations")
+      .get()!.n;
 
     await handleEditIntercept({
       sourceChannel: "slack",
@@ -267,19 +274,22 @@ describe("Slack edit propagation", () => {
       content: "new text",
     });
 
-    const conversationsAfter = (
-      db.$client.prepare("SELECT COUNT(*) AS n FROM conversations").get() as {
-        n: number;
-      }
-    ).n;
+    const conversationsAfter = db.$client
+      .prepare<
+        {
+          n: number;
+        },
+        []
+      >("SELECT COUNT(*) AS n FROM conversations")
+      .get()!.n;
     expect(conversationsAfter).toBe(conversationsBefore);
 
     const editEvents = db.$client
-      .prepare(
+      .prepare<{ conversationId: string }, []>(
         `SELECT conversation_id AS conversationId FROM channel_inbound_events
          WHERE external_message_id LIKE 'edit-event-%'`,
       )
-      .all() as Array<{ conversationId: string }>;
+      .all();
     expect(editEvents).toHaveLength(1);
     expect(editEvents[0].conversationId).toBe(seeded.conversationId);
   });
@@ -319,11 +329,14 @@ describe("Slack edit propagation", () => {
     });
     const db = getDb();
     const conversationCount = (): number =>
-      (
-        db.$client.prepare("SELECT COUNT(*) AS n FROM conversations").get() as {
-          n: number;
-        }
-      ).n;
+      db.$client
+        .prepare<
+          {
+            n: number;
+          },
+          []
+        >("SELECT COUNT(*) AS n FROM conversations")
+        .get()!.n;
     const before = conversationCount();
 
     const resp = await handleEditIntercept({
@@ -345,7 +358,7 @@ describe("Slack edit propagation", () => {
     expect(conversationCount()).toBe(before);
 
     const after = readMessageRow(seeded.messageId);
-    const outer = JSON.parse(after.metadata!) as Record<string, unknown>;
+    const outer = jsonObjectSchema.parse(JSON.parse(after.metadata!));
     const slackMeta = readSlackMetadata(outer.slackMeta as string);
     expect(slackMeta?.threadTs).toBe(threadTs);
   });
@@ -369,8 +382,9 @@ describe("Slack edit propagation", () => {
     const afterFirst = readMessageRow(seeded.messageId);
     expect(afterFirst.content).toBe("first edit");
     const firstSlackMeta = readSlackMetadata(
-      (JSON.parse(afterFirst.metadata!) as Record<string, unknown>)
-        .slackMeta as string | null,
+      jsonObjectSchema.parse(JSON.parse(afterFirst.metadata!)).slackMeta as
+        | string
+        | null,
     );
     expect(firstSlackMeta).not.toBeNull();
     const firstEditedAt = firstSlackMeta!.editedAt!;
@@ -391,8 +405,9 @@ describe("Slack edit propagation", () => {
     const afterSecond = readMessageRow(seeded.messageId);
     expect(afterSecond.content).toBe("second edit");
     const secondSlackMeta = readSlackMetadata(
-      (JSON.parse(afterSecond.metadata!) as Record<string, unknown>)
-        .slackMeta as string | null,
+      jsonObjectSchema.parse(JSON.parse(afterSecond.metadata!)).slackMeta as
+        | string
+        | null,
     );
     expect(secondSlackMeta).not.toBeNull();
     expect(secondSlackMeta!.editedAt!).toBeGreaterThan(firstEditedAt);

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { Message, ProviderEvent } from "../providers/types.js";
@@ -1208,8 +1209,8 @@ describe("OpenAIResponsesProvider", () => {
       ]);
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).retryAfterMs).toBe(30000);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.retryAfterMs).toBe(30000);
     }
   });
 
@@ -1247,8 +1248,8 @@ describe("OpenAIResponsesProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBe(reason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBe(reason);
     }
   });
 
@@ -1268,8 +1269,8 @@ describe("OpenAIResponsesProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBe(reason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBe(reason);
     }
   });
 
@@ -1285,8 +1286,8 @@ describe("OpenAIResponsesProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBeUndefined();
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBeUndefined();
     }
   });
 

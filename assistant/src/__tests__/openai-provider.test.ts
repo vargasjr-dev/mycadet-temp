@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { RetryProvider } from "../providers/retry.js";
@@ -12,6 +13,7 @@ import type {
 import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { ProviderError } from "../util/errors.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock openai module — must be before importing the provider
@@ -52,7 +54,12 @@ interface FakeChunk {
 }
 
 let fakeChunks: FakeChunk[] = [];
-let lastCreateParams: Record<string, unknown> | null = null;
+interface CapturedCreateParams extends Record<string, unknown> {
+  messages: Record<string, unknown>[];
+  tools?: Record<string, unknown>[];
+}
+
+let lastCreateParams: CapturedCreateParams | null = null;
 let lastCreateOptions: Record<string, unknown> | null = null;
 let lastConstructorOptions: Record<string, unknown> | null = null;
 let shouldThrow: Error | null = null;
@@ -109,7 +116,7 @@ mock.module("openai", () => ({
     chat = {
       completions: {
         create: async (
-          params: Record<string, unknown>,
+          params: CapturedCreateParams,
           options?: Record<string, unknown>,
         ) => {
           lastCreateParams = params;
@@ -623,9 +630,7 @@ describe("OpenAIProvider", () => {
       { systemPrompt: "You are a helpful assistant." },
     );
 
-    const messages = lastCreateParams!.messages as Array<
-      Record<string, unknown>
-    >;
+    const messages = lastCreateParams!.messages;
     expect(messages[0]).toEqual({
       role: "system",
       content: "You are a helpful assistant.",
@@ -656,7 +661,7 @@ describe("OpenAIProvider", () => {
       { tools: tools },
     );
 
-    const sentTools = lastCreateParams!.tools as Array<Record<string, unknown>>;
+    const sentTools = lastCreateParams!.tools!;
     expect(sentTools).toHaveLength(1);
     expect(sentTools[0]).toEqual({
       type: "function",
@@ -791,7 +796,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     // user → assistant → tool → (no extra user since no text blocks)
     expect(sent).toHaveLength(3);
     expect(sent[0]).toEqual({ role: "user", content: "Read /tmp/test" });
@@ -847,7 +852,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     expect(sent[2]).toEqual({
       role: "tool",
       tool_call_id: "call_err",
@@ -886,7 +891,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     expect(sent[2]).toEqual({
       role: "tool",
       tool_call_id: "call_ok",
@@ -917,7 +922,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     expect(sent).toHaveLength(4);
     // tool result first, then text as user message
     expect(sent[2]).toEqual({
@@ -956,7 +961,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     expect(sent).toHaveLength(1);
     const userMsg = sent[0] as {
       role: string;
@@ -1020,7 +1025,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     expect(sent).toHaveLength(1);
     expect(sent[0]).toEqual({ role: "user", content: "Hello" });
   });
@@ -1111,8 +1116,8 @@ describe("OpenAIProvider", () => {
       );
       expect(true).toBe(false); // should not reach
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBe(reason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBe(reason);
     }
   });
 
@@ -1129,8 +1134,8 @@ describe("OpenAIProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBe(reason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBe(reason);
     }
   });
 
@@ -1146,8 +1151,8 @@ describe("OpenAIProvider", () => {
       );
       expect(true).toBe(false);
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).abortReason).toBeUndefined();
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.abortReason).toBeUndefined();
     }
   });
 
@@ -1271,7 +1276,9 @@ describe("OpenAIProvider", () => {
     });
 
     // Also check rawResponse diagnostics include reasoning tokens
-    const rawUsage = (result.rawResponse as any).usage;
+    const rawUsage = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(result.rawResponse).usage,
+    );
     expect(rawUsage.completion_tokens_details).toEqual({
       reasoning_tokens: 80,
     });
@@ -1288,7 +1295,9 @@ describe("OpenAIProvider", () => {
     expect(result.usage).not.toHaveProperty("reasoningTokens");
 
     // rawResponse should not include completion_tokens_details
-    const rawUsage = (result.rawResponse as any).usage;
+    const rawUsage = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(result.rawResponse).usage,
+    );
     expect(rawUsage).not.toHaveProperty("completion_tokens_details");
   });
 
@@ -1314,7 +1323,9 @@ describe("OpenAIProvider", () => {
       cacheReadInputTokens: 49_536,
     });
 
-    const rawUsage = (result.rawResponse as any).usage;
+    const rawUsage = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(result.rawResponse).usage,
+    );
     expect(rawUsage.prompt_tokens_details).toEqual({ cached_tokens: 49_536 });
   });
 
@@ -1327,7 +1338,9 @@ describe("OpenAIProvider", () => {
 
     expect(result.usage).not.toHaveProperty("cacheReadInputTokens");
 
-    const rawUsage = (result.rawResponse as any).usage;
+    const rawUsage = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(result.rawResponse).usage,
+    );
     expect(rawUsage).not.toHaveProperty("prompt_tokens_details");
   });
 
@@ -1356,7 +1369,7 @@ describe("OpenAIProvider", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     expect(sent[1]).toEqual({
       role: "assistant",
       content: "Let me check.",
@@ -1516,7 +1529,7 @@ describe("custom baseURL initialization", () => {
       userMsg("follow-up"),
     ]);
 
-    const sent = lastCreateParams!.messages as Array<Record<string, unknown>>;
+    const sent = lastCreateParams!.messages;
     const assistantTurn = sent.find((m) => m.role === "assistant");
     expect(assistantTurn).toEqual({
       role: "assistant",
@@ -1568,7 +1581,8 @@ describe("effort config passthrough", () => {
       config: { effort: "high" },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("high");
   });
 
@@ -1583,7 +1597,8 @@ describe("effort config passthrough", () => {
       config: { effort: "medium" },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBeUndefined();
   });
 
@@ -1598,7 +1613,8 @@ describe("effort config passthrough", () => {
       config: { effort: "low" },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("low");
   });
 
@@ -1613,7 +1629,8 @@ describe("effort config passthrough", () => {
       config: { effort: "high" },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("high");
   });
 
@@ -1628,7 +1645,8 @@ describe("effort config passthrough", () => {
       config: { effort: "high" },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.effort).toBe("high");
   });
 
@@ -1646,7 +1664,8 @@ describe("effort config passthrough", () => {
       },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toBeUndefined();
     expect(config.effort).toBe("high");
   });
@@ -1664,7 +1683,8 @@ describe("effort config passthrough", () => {
       },
     });
 
-    const config = capturedOptions?.config as Record<string, unknown>;
+    const config = capturedOptions?.config;
+    assert(config, "Expected provider configuration");
     expect(config.thinking).toEqual({ type: "adaptive" });
   });
 });
@@ -1770,12 +1790,7 @@ describe("OpenRouterProvider reasoning", () => {
       },
     ]);
 
-    const sent = lastCreateParams!.messages as Array<{
-      role: string;
-      content: string | null;
-      reasoning?: string;
-      tool_calls?: unknown;
-    }>;
+    const sent = lastCreateParams!.messages;
     const assistantMsg = sent.find((m) => m.role === "assistant")!;
     // DeepSeek via OpenRouter rejects an assistant message with neither content
     // nor tool_calls, so the reasoning-only turn is backfilled with the sentinel
@@ -1858,11 +1873,11 @@ describe("OpenRouterProvider Anthropic-compatible errors", () => {
       await provider.sendMessage([userMsg("hi")]);
       throw new Error("expected sendMessage to throw");
     } catch (error) {
-      expect(error).toBeInstanceOf(ProviderError);
-      expect((error as ProviderError).provider).toBe("openrouter");
-      expect((error as ProviderError).statusCode).toBe(402);
-      expect((error as ProviderError).retryAfterMs).toBe(1250);
-      expect((error as ProviderError).abortReason).toBe(abortReason);
+      assert(error instanceof ProviderError, "Expected ProviderError");
+      expect(error.provider).toBe("openrouter");
+      expect(error.statusCode).toBe(402);
+      expect(error.retryAfterMs).toBe(1250);
+      expect(error.abortReason).toBe(abortReason);
       expect((error as Error).cause).toBe(cause);
     }
   });
