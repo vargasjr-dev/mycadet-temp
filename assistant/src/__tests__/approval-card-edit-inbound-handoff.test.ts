@@ -94,8 +94,11 @@ function makeInboundRequest(overrides: Record<string, unknown> = {}): Request {
 
 function conversationIdFromInboundEvents(): string {
   const rows = getDb()
-    .$client.prepare("SELECT conversation_id FROM channel_inbound_events")
-    .all() as Array<{ conversation_id: string }>;
+    .$client.prepare<
+      { conversation_id: string },
+      []
+    >("SELECT conversation_id FROM channel_inbound_events")
+    .all();
   expect(rows.length).toBeGreaterThan(0);
   return rows[0].conversation_id;
 }

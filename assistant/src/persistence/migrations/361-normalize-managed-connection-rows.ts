@@ -43,8 +43,11 @@ export function migrateNormalizeManagedConnectionRows(
   }
 
   const rows = raw
-    .query(`SELECT name, provider, auth FROM provider_connections`)
-    .all() as Array<{ name: string; provider: string; auth: string }>;
+    .query<
+      { name: string; provider: string; auth: string },
+      []
+    >(`SELECT name, provider, auth FROM provider_connections`)
+    .all();
 
   const now = Date.now();
   for (const row of rows) {

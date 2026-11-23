@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 
 import { getLogger } from "../../util/logger.js";
@@ -181,8 +182,11 @@ function isSubscriptionOnlyWorkspace(workspaceDir: string): boolean {
     }
 
     const subscription = db
-      .query(`SELECT auth FROM provider_connections WHERE name = ?`)
-      .get(SUBSCRIPTION_CONNECTION_NAME) as { auth: string } | null;
+      .query<
+        { auth: string },
+        SQLQueryBindings[]
+      >(`SELECT auth FROM provider_connections WHERE name = ?`)
+      .get(SUBSCRIPTION_CONNECTION_NAME);
     if (!subscription) {
       return false;
     }

@@ -6,10 +6,13 @@
  * the channel is going) and the parked form's meta, which is what a client too
  * old to echo it reads back through `contact_prompt_flags`.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { setBroadcastOverrideForTesting } from "../../assistant-event-hub.js";
+
+const capturedStringSchema = z.string();
 
 type Broadcast = Record<string, unknown>;
 
@@ -83,7 +86,7 @@ describe("contacts_prompt binding target", () => {
     expect(message.displayName).toBeUndefined();
     expect(message.notes).toBeUndefined();
 
-    await settle(pending, message.requestId as string);
+    await settle(pending, capturedStringSchema.parse(message.requestId));
   });
 
   test("broadcasts a proposed name and notes for a contact to create", async () => {
@@ -96,7 +99,7 @@ describe("contacts_prompt binding target", () => {
     expect(message.notes).toBe("Plumber");
     expect(message.contactId).toBeUndefined();
 
-    await settle(pending, message.requestId as string);
+    await settle(pending, capturedStringSchema.parse(message.requestId));
   });
 
   test("a plain prompt carries no target at all", async () => {
@@ -120,14 +123,14 @@ describe("contacts_prompt binding target", () => {
       promptFlags.handler({ body: { requestId: message.requestId } }),
     ).toEqual({ known: true, verify: false });
 
-    await settle(pending, message.requestId as string);
+    await settle(pending, capturedStringSchema.parse(message.requestId));
   });
 
   test("the gateway reads the target back off the parked form", async () => {
     const pending = addressPrompt.handler({
       body: { channel: "email", contactId: "ct_1", verify: true },
     }) as Promise<Record<string, unknown>>;
-    const requestId = parkedRequest().requestId as string;
+    const requestId = capturedStringSchema.parse(parkedRequest().requestId);
 
     // Read from the daemon rather than the submission, so a client that
     // predates the field still binds where the command said.
@@ -144,7 +147,7 @@ describe("contacts_prompt binding target", () => {
     const pending = addressPrompt.handler({
       body: { channel: "email", displayName: "Bob", notes: "Plumber" },
     }) as Promise<Record<string, unknown>>;
-    const requestId = parkedRequest().requestId as string;
+    const requestId = capturedStringSchema.parse(parkedRequest().requestId);
 
     expect(promptFlags.handler({ body: { requestId } })).toEqual({
       known: true,

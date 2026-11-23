@@ -39,11 +39,12 @@ export const backfillGoogleGmailSettingsScopeMigration: WorkspaceMigration = {
       let row: { defaultScopes: string } | null;
       try {
         row =
-          (db
-            .query(
-              `SELECT defaultScopes FROM oauth_providers WHERE provider = 'google'`,
-            )
-            .get() as { defaultScopes: string }) ?? null;
+          db
+            .query<
+              { defaultScopes: string },
+              []
+            >(`SELECT defaultScopes FROM oauth_providers WHERE provider = 'google'`)
+            .get() ?? null;
       } catch {
         // DB not initialized yet — nothing to backfill.
         return;

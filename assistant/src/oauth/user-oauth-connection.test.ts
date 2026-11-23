@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -159,7 +160,11 @@ import { UserOAuthConnection } from "./user-oauth-connection.js";
 // ---------------------------------------------------------------------------
 
 const originalFetch = globalThis.fetch;
-let mockFetch: ReturnType<typeof mock<any>>;
+type FetchRequest = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+let mockFetch: ReturnType<typeof mock<FetchRequest>>;
 
 // ---------------------------------------------------------------------------
 // Setup / teardown
@@ -187,7 +192,7 @@ beforeEach(() => {
   mockProviders.clear();
 
   // Default mock fetch returning 200 JSON
-  mockFetch = mock(() =>
+  mockFetch = mock<FetchRequest>(() =>
     Promise.resolve(
       new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -303,11 +308,11 @@ describe("UserOAuthConnection", () => {
       expect(url).toBe(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages",
       );
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer test-access-token");
       // GET requests have no body, so Content-Type should not be set
       expect(headers.has("Content-Type")).toBe(false);
-      expect((init as RequestInit).method).toBe("GET");
+      expect(init?.method).toBe("GET");
     });
 
     test("follows a cross-origin redirect without the credential and returns the target's bytes", async () => {
@@ -362,8 +367,8 @@ describe("UserOAuthConnection", () => {
         expect(seen.origin).toBe("Bearer test-access-token");
         expect(seen.target).toBeNull();
         expect(result.status).toBe(200);
-        expect(Buffer.isBuffer(result.body)).toBe(true);
-        expect(Buffer.from(result.body as Buffer).equals(bytes)).toBe(true);
+        assert(Buffer.isBuffer(result.body));
+        expect(result.body.equals(bytes)).toBe(true);
       } finally {
         origin.stop(true);
         target.stop(true);
@@ -381,7 +386,8 @@ describe("UserOAuthConnection", () => {
       });
 
       const [url] = mockFetch.mock.calls[0];
-      const parsed = new URL(url as string);
+      assert(typeof url === "string" || url instanceof URL);
+      const parsed = new URL(url);
       expect(parsed.searchParams.get("maxResults")).toBe("10");
       expect(parsed.searchParams.get("labelIds")).toBe("INBOX");
     });
@@ -475,12 +481,10 @@ describe("UserOAuthConnection", () => {
       });
 
       const [, init] = mockFetch.mock.calls[0];
-      expect((init as RequestInit).body).toBe(
-        JSON.stringify({ raw: "base64-encoded-email" }),
-      );
-      expect((init as RequestInit).method).toBe("POST");
+      expect(init?.body).toBe(JSON.stringify({ raw: "base64-encoded-email" }));
+      expect(init?.method).toBe("POST");
       // POST requests with a body should include Content-Type
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.get("Content-Type")).toBe("application/json");
     });
 
@@ -499,10 +503,11 @@ describe("UserOAuthConnection", () => {
       });
 
       const [, init] = mockFetch.mock.calls[0];
-      const sent = (init as RequestInit).body;
+      const sent = init?.body;
       expect(Buffer.isBuffer(sent)).toBe(true);
-      expect(Buffer.from(sent as Buffer).equals(binary)).toBe(true);
-      const headers = (init as RequestInit).headers as Headers;
+      assert(sent instanceof Uint8Array);
+      expect(Buffer.from(sent).equals(binary)).toBe(true);
+      const headers = new Headers(init?.headers);
       expect(headers.get("Content-Type")).toBe("application/pdf");
     });
 
@@ -529,8 +534,8 @@ describe("UserOAuthConnection", () => {
         "https://www.googleapis.com/upload/gmail/v1/users/me/drafts?uploadType=media",
       );
       const [, init] = mockFetch.mock.calls[0];
-      expect((init as RequestInit).body).toBe(rfc822);
-      const headers = (init as RequestInit).headers as Headers;
+      expect(init?.body).toBe(rfc822);
+      const headers = new Headers(init?.headers);
       expect(headers.get("Content-Type")).toBe("message/rfc822");
     });
 
@@ -548,8 +553,8 @@ describe("UserOAuthConnection", () => {
       });
 
       const [, init] = mockFetch.mock.calls[0];
-      expect((init as RequestInit).body).toBe(multipart);
-      const headers = (init as RequestInit).headers as Headers;
+      expect(init?.body).toBe(multipart);
+      const headers = new Headers(init?.headers);
       expect(headers.get("Content-Type")).toBe(
         "multipart/related; boundary=boundary",
       );
@@ -566,8 +571,8 @@ describe("UserOAuthConnection", () => {
       });
 
       const [, init] = mockFetch.mock.calls[0];
-      expect((init as RequestInit).body).toBe("name=sheet&kind=grid");
-      const headers = (init as RequestInit).headers as Headers;
+      expect(init?.body).toBe("name=sheet&kind=grid");
+      const headers = new Headers(init?.headers);
       expect(headers.has("Content-Type")).toBe(false);
     });
 
@@ -664,7 +669,8 @@ describe("UserOAuthConnection", () => {
 
       expect(result.status).toBe(200);
       expect(Buffer.isBuffer(result.body)).toBe(true);
-      expect(Buffer.from(result.body as Uint8Array).equals(binary)).toBe(true);
+      assert(result.body instanceof Uint8Array);
+      expect(Buffer.from(result.body).equals(binary)).toBe(true);
     });
 
     test("returns the provider's exact bytes when rawResponseBody is set", async () => {
@@ -693,7 +699,8 @@ describe("UserOAuthConnection", () => {
       });
 
       expect(Buffer.isBuffer(result.body)).toBe(true);
-      expect((result.body as Buffer).equals(raw)).toBe(true);
+      assert(Buffer.isBuffer(result.body));
+      expect(result.body.equals(raw)).toBe(true);
     });
 
     test("parses JSON when rawResponseBody is unset", async () => {
@@ -765,9 +772,7 @@ describe("UserOAuthConnection", () => {
 
       await conn.request({ method: "GET", path: "/messages" });
 
-      expect((mockFetch.mock.calls[0][1] as RequestInit).redirect).toBe(
-        "follow",
-      );
+      expect(mockFetch.mock.calls[0][1]?.redirect).toBe("follow");
     });
 
     test("returns response headers", async () => {
@@ -807,7 +812,7 @@ describe("UserOAuthConnection", () => {
       });
 
       const [, init] = mockFetch.mock.calls[0];
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.get("X-Custom-Header")).toBe("custom-value");
       expect(headers.get("Authorization")).toBe("Bearer test-access-token");
     });
@@ -835,7 +840,7 @@ describe("UserOAuthConnection", () => {
       expect(url).toBe(
         "https://example-store.myshopify.com/admin/api/2026-07/shop.json",
       );
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.get("X-Shopify-Access-Token")).toBe("test-access-token");
       expect(headers.has("Authorization")).toBe(false);
     });
@@ -853,7 +858,7 @@ describe("UserOAuthConnection", () => {
       await conn.request({ method: "GET", path: "/users/@me" });
 
       const [, init] = mockFetch.mock.calls[0];
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bot test-access-token");
     });
 
@@ -871,7 +876,7 @@ describe("UserOAuthConnection", () => {
 
       const [url, init] = mockFetch.mock.calls[0];
       expect(url).toBe("https://api.telegram.org/bottelegram-test-token/getMe");
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.has("Authorization")).toBe(false);
     });
 
@@ -886,7 +891,7 @@ describe("UserOAuthConnection", () => {
 
       const [url, init] = mockFetch.mock.calls[0];
       expect(url).toBe("https://api.telegram.org/bottelegram-test-token/getMe");
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.has("Authorization")).toBe(false);
     });
 
@@ -930,7 +935,7 @@ describe("UserOAuthConnection", () => {
 
       // The request should use the refreshed token
       const [, init] = mockFetch.mock.calls[0];
-      const headers = (init as RequestInit).headers as Headers;
+      const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe(
         "Bearer refreshed-access-token",
       );
@@ -957,9 +962,7 @@ describe("UserOAuthConnection", () => {
       const result = await conn.withToken(async (token) => {
         callCount++;
         if (callCount === 1) {
-          const err = new Error("Unauthorized");
-          (err as Error & { status: number }).status = 401;
-          throw err;
+          throw Object.assign(new Error("Unauthorized"), { status: 401 });
         }
         return `got-${token}`;
       });

@@ -168,9 +168,14 @@ function tableHasColumn(
   table: (typeof PROFILE_PIN_TABLES)[number],
   column: string,
 ): boolean {
-  const rows = db.query(`PRAGMA table_info(${table})`).all() as Array<{
-    name?: unknown;
-  }>;
+  const rows = db
+    .query<
+      {
+        name?: unknown;
+      },
+      []
+    >(`PRAGMA table_info(${table})`)
+    .all();
   return rows.some((row) => row.name === column);
 }
 

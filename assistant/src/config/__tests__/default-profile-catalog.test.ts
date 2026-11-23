@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { resolveModelIntent } from "../../providers/model-intents.js";
 import { resolveRoutingIdentity } from "../../providers/routing-identity.js";
 import { CALL_SITE_DEFAULTS } from "../call-site-defaults.js";
@@ -32,6 +34,8 @@ import {
 
 /** Thin managed stubs: a workspace that carries only the cadet-provider
  * marker for the defaults, no profile content. */
+const capturedStringSchema = z.string();
+
 function managedStubs(): Record<string, ProfileEntry> {
   return Object.fromEntries(
     DEFAULT_PROFILE_KEYS.map((key) => [key, { provider: "cadet" as const }]),
@@ -113,7 +117,7 @@ describe("getEffectiveProfiles", () => {
       [...DEFAULT_PROFILE_KEYS, ...BACKUP_PROFILE_KEYS, "jev-managed"].sort(),
     );
     expect(getEffectiveProfile({}, "balanced")?.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
   });
 
@@ -162,7 +166,7 @@ describe("getEffectiveProfiles", () => {
     const effective = getEffectiveProfiles(workspace);
     expect(effective["my-custom"]).toBe(workspace["my-custom"]);
     expect(effective.balanced.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
   });
 
@@ -178,7 +182,7 @@ describe("getEffectiveProfiles", () => {
     const before = getEffectiveProfiles(workspace);
     const after = getEffectiveProfiles(workspace, stubCatalog);
     expect(before.balanced.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
     expect(after.balanced.model).toBe("claude-sonnet-4-6");
   });
@@ -219,7 +223,7 @@ describe("resolver integration", () => {
     });
     const resolved = resolveCallSiteConfig("mainAgent", llm);
     expect(resolved.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
     expect(String(resolved.provider)).toBe("cadet");
     expect(resolved.provider_connection).toBeUndefined();
@@ -234,7 +238,9 @@ describe("resolver integration", () => {
       const expected = CODE_DEFAULT_PROFILE_ENTRIES[dflt.profile];
       const resolved = resolveCallSiteConfig(callSite as LLMCallSite, llm);
       // A site-level model pin legitimately overrides the profile's model.
-      expect(resolved.model).toBe((dflt.model ?? expected.model) as string);
+      expect(resolved.model).toBe(
+        capturedStringSchema.parse(dflt.model ?? expected.model),
+      );
     }
   });
 
@@ -272,7 +278,7 @@ describe("resolver integration", () => {
     expect(resolveDefaultProfileKey("mainAgent", llm)).toBe("balanced");
     const resolved = resolveCallSiteConfig("mainAgent", llm);
     expect(resolved.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
     expect(resolved.model).not.toBe("claude-sonnet-4-6");
   });
@@ -298,7 +304,7 @@ describe("resolver integration", () => {
       "voiceProgressNarration",
     ] as const) {
       const resolved = resolveCallSiteConfig(callSite, llm);
-      expect(resolved.model).toBe(body.model as string);
+      expect(resolved.model).toBe(capturedStringSchema.parse(body.model));
       expect(resolved.model).not.toBe("claude-opus-4-6");
       expect(String(resolved.provider)).toBe("cadet");
     }
@@ -528,7 +534,7 @@ describe("resolveDefaultProfileForProvider", () => {
       CODE_DEFAULT_PROFILE_ENTRIES.balanced.provider_connection,
     );
     expect(entry?.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
   });
 

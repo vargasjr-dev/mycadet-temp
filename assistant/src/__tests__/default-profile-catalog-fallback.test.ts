@@ -17,8 +17,9 @@
  *   `fallbackProfile` superRefine against the real entries), and backups
  *   are delete-protected like the other managed defaults.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   CODE_DEFAULT_PROFILE_ENTRIES,
@@ -39,6 +40,8 @@ import {
 import { LLMSchema, type ProfileEntry } from "../config/schemas/llm.js";
 import { getCloudUpstream } from "../providers/cadet-model-routing.js";
 import { isModelInCatalog } from "../providers/model-catalog.js";
+
+const capturedStringSchema = z.string();
 
 const cadet = { provider: "cadet" as const };
 
@@ -78,8 +81,12 @@ describe("cross-provider rule", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       const primary = CODE_DEFAULT_PROFILE_ENTRIES[key];
       const backup = CODE_DEFAULT_PROFILE_ENTRIES[FALLBACK_PROFILE_BY_KEY[key]];
-      const primaryUpstream = getCloudUpstream(primary.model as string);
-      const backupUpstream = getCloudUpstream(backup.model as string);
+      const primaryUpstream = getCloudUpstream(
+        capturedStringSchema.parse(primary.model),
+      );
+      const backupUpstream = getCloudUpstream(
+        capturedStringSchema.parse(backup.model),
+      );
       expect(primaryUpstream).not.toBeNull();
       expect(backupUpstream).not.toBeNull();
       expect(backupUpstream).not.toBe(primaryUpstream);
@@ -88,10 +95,14 @@ describe("cross-provider rule", () => {
 
   test("every backup model is a catalog member of its upstream (liveness-probe coverage)", () => {
     for (const key of BACKUP_PROFILE_KEYS) {
-      const model = CODE_DEFAULT_PROFILE_ENTRIES[key].model as string;
+      const model = capturedStringSchema.parse(
+        CODE_DEFAULT_PROFILE_ENTRIES[key].model,
+      );
       const upstream = getCloudUpstream(model);
       expect(upstream).not.toBeNull();
-      expect(isModelInCatalog(upstream as string, model)).toBe(true);
+      expect(
+        isModelInCatalog(capturedStringSchema.parse(upstream), model),
+      ).toBe(true);
     }
   });
 });

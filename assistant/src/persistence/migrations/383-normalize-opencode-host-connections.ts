@@ -16,11 +16,11 @@ export function migrateNormalizeOpencodeHostConnections(
   const raw = getSqliteFrom(database);
 
   const rows = raw
-    .query(
+    .query<{ name: string; base_url: string }, []>(
       `SELECT name, base_url FROM provider_connections
         WHERE provider = 'openai-compatible' AND base_url IS NOT NULL`,
     )
-    .all() as Array<{ name: string; base_url: string }>;
+    .all();
 
   const restamp = raw.prepare(
     `UPDATE provider_connections SET provider = 'opencode', updated_at = ? WHERE name = ?`,

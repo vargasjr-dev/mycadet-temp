@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+const capturedStringSchema = z.string();
+
 let webFocused = false;
 const webPresenceArgs: unknown[][] = [];
 const realWebPresence = await import("../../runtime/web-presence.js");
@@ -53,7 +57,7 @@ describe("emitBackgroundFailureSignal", () => {
     expect(emitCalls).toHaveLength(1);
     const emitted = emitCalls[0];
     expect(emitted.sourceEventName).toBe("activity.failed");
-    expect(emitted.dedupeKey as string).toMatch(
+    expect(capturedStringSchema.parse(emitted.dedupeKey)).toMatch(
       /^activity-failed:cause:PROVIDER_BILLING:conn-a:\d{4}-\d{2}-\d{2}$/,
     );
     expect(emitted.contextPayload).toMatchObject({
@@ -78,7 +82,7 @@ describe("emitBackgroundFailureSignal", () => {
       fallbackProviderScope: "cost-optimized",
     });
 
-    expect(emitCalls[0].dedupeKey as string).toMatch(
+    expect(capturedStringSchema.parse(emitCalls[0].dedupeKey)).toMatch(
       /^activity-failed:cause:PROVIDER_RATE_LIMIT:balanced:\d{4}-\d{2}-\d{2}$/,
     );
   });
@@ -93,7 +97,7 @@ describe("emitBackgroundFailureSignal", () => {
       fallbackProviderScope: "cost-optimized",
     });
 
-    expect(emitCalls[0].dedupeKey as string).toMatch(
+    expect(capturedStringSchema.parse(emitCalls[0].dedupeKey)).toMatch(
       /^activity-failed:cause:model_provider:cost-optimized:\d{4}-\d{2}-\d{2}$/,
     );
   });
@@ -107,7 +111,7 @@ describe("emitBackgroundFailureSignal", () => {
       errorMessage: "boom",
     });
 
-    expect(emitCalls[0].dedupeKey as string).toMatch(
+    expect(capturedStringSchema.parse(emitCalls[0].dedupeKey)).toMatch(
       /^activity-failed:memory\.v2\.sweep:\d{4}-\d{2}-\d{2}$/,
     );
     expect(emitCalls[0].contextPayload).toMatchObject({

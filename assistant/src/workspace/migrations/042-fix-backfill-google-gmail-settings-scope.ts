@@ -39,10 +39,11 @@ export const fixBackfillGoogleGmailSettingsScopeMigration: WorkspaceMigration =
 
       try {
         const row = db
-          .query(
-            `SELECT default_scopes FROM oauth_providers WHERE provider_key = 'google'`,
-          )
-          .get() as { default_scopes: string } | null;
+          .query<
+            { default_scopes: string },
+            []
+          >(`SELECT default_scopes FROM oauth_providers WHERE provider_key = 'google'`)
+          .get();
 
         if (!row) {
           return;

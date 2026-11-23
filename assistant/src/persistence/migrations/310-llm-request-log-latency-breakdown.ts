@@ -27,8 +27,8 @@ export function migrateLlmRequestLogLatencyBreakdown(): void {
   }
 
   const columns = raw
-    .query(`PRAGMA table_info(llm_request_logs)`)
-    .all() as Array<{ name: string }>;
+    .query<{ name: string }, []>(`PRAGMA table_info(llm_request_logs)`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   if (!columnNames.has("latency_breakdown")) {

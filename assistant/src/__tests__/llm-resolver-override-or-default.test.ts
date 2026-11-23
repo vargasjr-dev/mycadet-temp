@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { CODE_DEFAULT_PROFILE_ENTRIES } from "../config/default-profile-catalog.js";
 import {
   composeCallSiteTweak,
@@ -9,6 +11,8 @@ import {
   selectWinningProfile,
 } from "../config/llm-resolver.js";
 import { LLMConfigBase, LLMSchema } from "../config/schemas/llm.js";
+
+const capturedStringSchema = z.string();
 
 const schemaBase = LLMConfigBase.parse({});
 
@@ -111,7 +115,7 @@ describe("selection chain", () => {
     const llm = LLMSchema.parse({});
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
-    expect(resolved.model).toBe(cadetBody.model as string);
+    expect(resolved.model).toBe(capturedStringSchema.parse(cadetBody.model));
     expect(resolved.provider_connection).toBe(cadetBody.provider_connection);
   });
 });
@@ -526,7 +530,9 @@ describe("mix profiles", () => {
     });
     expect(selection.profileName).toBe("ab");
     expect(selection.source).toBe("override");
-    expect(["gpt-5.5", "gpt-5.4"]).toContain(selection.entry?.model as string);
+    expect(["gpt-5.5", "gpt-5.4"]).toContain(
+      capturedStringSchema.parse(selection.entry?.model),
+    );
   });
 });
 
@@ -574,7 +580,9 @@ describe("explicit default-profile references resolve through the default provid
     expect(pinned.model).toBe(viaIntent.model);
     expect(pinned.provider_connection).toBe(viaIntent.provider_connection);
     expect(pinned.model).not.toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"].model as string,
+      capturedStringSchema.parse(
+        CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"].model,
+      ),
     );
   });
 
@@ -588,7 +596,7 @@ describe("explicit default-profile references resolve through the default provid
     expect(resolved.provider).toBe("anthropic");
     expect(resolved.provider_connection).toBe("anthropic-personal");
     expect(resolved.model).not.toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
   });
 
@@ -603,7 +611,7 @@ describe("explicit default-profile references resolve through the default provid
       overrideProfile: "cost-optimized",
     });
     const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
-    expect(pinned.model).toBe(cadetBody.model as string);
+    expect(pinned.model).toBe(capturedStringSchema.parse(cadetBody.model));
     expect(pinned.provider_connection).toBe(cadetBody.provider_connection);
   });
 
@@ -626,7 +634,9 @@ describe("explicit default-profile references resolve through the default provid
     });
     expect(resolved.provider).toBe("anthropic");
     expect(resolved.model).not.toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"].model as string,
+      capturedStringSchema.parse(
+        CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"].model,
+      ),
     );
   });
 });

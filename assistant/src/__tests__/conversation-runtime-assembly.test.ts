@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { PostCompactContext } from "@mycadet/plugin-api";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { setConfig } from "./helpers/set-config.js";
 
@@ -183,6 +184,8 @@ import {
   getWorkspacePromptPath,
 } from "../util/layout.js";
 import { asConversation } from "./helpers/mock-conversation.js";
+
+const textBlockSchema = z.object({ type: z.literal("text"), text: z.string() });
 
 // `applyRuntimeInjections` self-resolves the Slack active-thread focus block by
 // reading the live conversation's persisted message rows, so the schema must
@@ -481,7 +484,7 @@ describe("injectChannelCapabilityContext", () => {
     const result = injectChannelCapabilityContext(baseUserMessage, caps);
 
     const injected = result.content[0];
-    const text = (injected as { type: "text"; text: string }).text;
+    const text = textBlockSchema.parse(injected).text;
     expect(text).toContain("CHANNEL CONSTRAINTS");
     expect(text).toContain("Do NOT reference the dashboard UI");
     expect(text).toContain("Do NOT use ui_show");
@@ -501,7 +504,7 @@ describe("injectChannelCapabilityContext", () => {
 
     // Original content should be at the end
     const lastBlock = result.content[result.content.length - 1];
-    expect((lastBlock as { type: "text"; text: string }).text).toBe("Hello");
+    expect(textBlockSchema.parse(lastBlock).text).toBe("Hello");
   });
 
   test("injects group chat etiquette when chatType is group", () => {
@@ -876,7 +879,7 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(2);
     const injected = result[0].content[0];
-    expect((injected as { type: "text"; text: string }).text).toContain(
+    expect(textBlockSchema.parse(injected).text).toContain(
       "<channel_capabilities>",
     );
   });
@@ -1186,7 +1189,7 @@ describe("applyRuntimeInjections — injection mode", () => {
       fullOptions,
     );
     const tailTexts = result[0].content.map(
-      (b) => (b as { type: "text"; text: string }).text,
+      (b) => textBlockSchema.parse(b).text,
     );
 
     const envelope = readInjectionEnvelope(
@@ -1672,7 +1675,7 @@ describe("applyRuntimeInjections with nowScratchpad", () => {
     expect(result.length).toBe(1);
     expect(result[0].content.length).toBe(2);
     const injected = result[0].content[0];
-    const text = (injected as { type: "text"; text: string }).text;
+    const text = textBlockSchema.parse(injected).text;
     expect(text).toContain("<NOW.md");
     expect(text).toContain("Current focus: fix the bug");
   });
@@ -1687,7 +1690,7 @@ describe("applyRuntimeInjections with nowScratchpad", () => {
     // Scratchpad comes first (before user content)
     expect(textOf(result[0].content[0])).toContain("<NOW.md");
     // Original text is last
-    expect((result[0].content[1] as { type: "text"; text: string }).text).toBe(
+    expect(textBlockSchema.parse(result[0].content[1]).text).toBe(
       "What should I do?",
     );
   });
@@ -2423,11 +2426,10 @@ describe("applyRuntimeInjections with unifiedTurnContext", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].content).toHaveLength(2);
-    const injected = (result[0].content[0] as { type: "text"; text: string })
-      .text;
+    const injected = textBlockSchema.parse(result[0].content[0]).text;
     expect(injected).toBe(sampleBlock);
     // Original content preserved
-    expect((result[0].content[1] as { type: "text"; text: string }).text).toBe(
+    expect(textBlockSchema.parse(result[0].content[1]).text).toBe(
       "Hello there",
     );
   });
@@ -4107,7 +4109,10 @@ describe("Slack channel chronological rendering — multi-thread", () => {
   }
 
   test("fresh memory policy reaches injectors on initial assembly and re-entry", async () => {
-    const seen = { ctx: null as TurnContext | null, commits: 0 };
+    const seen: { ctx: TurnContext | null; commits: number } = {
+      ctx: null,
+      commits: 0,
+    };
     registerPluginInjectors(V3_PROBE_PLUGIN, [probeMemoryV3Injector(seen)]);
     try {
       setConversation(
@@ -4134,7 +4139,10 @@ describe("Slack channel chronological rendering — multi-thread", () => {
   });
 
   test("slack replacement is stated on the turn context and attaches the memory-v3 block in memory only: uncaptured, uncommitted", async () => {
-    const seen = { ctx: null as TurnContext | null, commits: 0 };
+    const seen: { ctx: TurnContext | null; commits: number } = {
+      ctx: null,
+      commits: 0,
+    };
     registerPluginInjectors(V3_PROBE_PLUGIN, [probeMemoryV3Injector(seen)]);
     try {
       seedSlackImConversation();
@@ -4159,7 +4167,10 @@ describe("Slack channel chronological rendering — multi-thread", () => {
   });
 
   test("without a replacement the same memory-v3 block is captured and committed", async () => {
-    const seen = { ctx: null as TurnContext | null, commits: 0 };
+    const seen: { ctx: TurnContext | null; commits: number } = {
+      ctx: null,
+      commits: 0,
+    };
     registerPluginInjectors(V3_PROBE_PLUGIN, [probeMemoryV3Injector(seen)]);
     try {
       seedChannelCapabilitiesConversation({
@@ -4262,7 +4273,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
 
   test("with the channel plugin disabled a Slack conversation is not replaced: the block is captured and claimed once, and the next turn points at it", async () => {
     const claimed = new Set<string>();
-    const seen = { replaced: [] as boolean[] };
+    const seen: { replaced: boolean[] } = { replaced: [] };
     registerPluginInjectors(
       V3_MIRROR_PLUGIN,
       mirrorMemoryV3Injectors(claimed, seen),
@@ -4314,7 +4325,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
 
   test("with the channel plugin enabled the same conversation is replaced every turn: rendered afresh, nothing captured or claimed", async () => {
     const claimed = new Set<string>();
-    const seen = { replaced: [] as boolean[] };
+    const seen: { replaced: boolean[] } = { replaced: [] };
     registerPluginInjectors(
       V3_MIRROR_PLUGIN,
       mirrorMemoryV3Injectors(claimed, seen),
@@ -6087,14 +6098,14 @@ describe("assembleSlackChronologicalMessages", () => {
 
     const result = assembleSlackChronologicalMessages(rows, DM_CAPS);
     expect(result).not.toBeNull();
-    expect(result!.map((m) => (m.content[0] as { text: string }).text)).toEqual(
-      [
-        `[nov 14 2023 9:25 AM ET @alice (ET)] ${slackExternal(
-          "timezone-aware hello",
-          "@alice",
-        )}`,
-      ],
-    );
+    expect(
+      result!.map((m) => textBlockSchema.parse(m.content[0]).text),
+    ).toEqual([
+      `[nov 14 2023 9:25 AM ET @alice (ET)] ${slackExternal(
+        "timezone-aware hello",
+        "@alice",
+      )}`,
+    ]);
   });
 
   test("Slack context skips configured assistant new-thread placeholder rows", () => {
@@ -6178,14 +6189,14 @@ describe("assembleSlackChronologicalMessages", () => {
 
     const result = assembleSlackChronologicalMessages(rows, DM_CAPS);
     expect(result).not.toBeNull();
-    expect(result!.map((m) => (m.content[0] as { text: string }).text)).toEqual(
-      [
-        `[11/14/23 14:25]: ${slackExternal("old hi")}`,
-        "old reply",
-        `[11/14/23 14:28 @alice]: ${slackExternal("fresh hi", "@alice")}`,
-        "fresh reply",
-      ],
-    );
+    expect(
+      result!.map((m) => textBlockSchema.parse(m.content[0]).text),
+    ).toEqual([
+      `[11/14/23 14:25]: ${slackExternal("old hi")}`,
+      "old reply",
+      `[11/14/23 14:28 @alice]: ${slackExternal("fresh hi", "@alice")}`,
+      "fresh reply",
+    ]);
     expect(result!.map((m) => m.role)).toEqual([
       "user",
       "assistant",
@@ -6276,10 +6287,8 @@ describe("assembleSlackChronologicalMessages", () => {
     const result = assembleSlackChronologicalMessages(rows, DM_CAPS);
     expect(result).not.toBeNull();
     expect(result!.length).toBe(2);
-    const firstTag = (result![0]!.content[0] as { type: "text"; text: string })
-      .text;
-    const secondTag = (result![1]!.content[0] as { type: "text"; text: string })
-      .text;
+    const firstTag = textBlockSchema.parse(result![0]!.content[0]).text;
+    const secondTag = textBlockSchema.parse(result![1]!.content[0]).text;
     expect(firstTag).toBe(
       `[11/14/23 14:25 @alice]: ${slackExternal("[image]", "@alice")}`,
     );
@@ -6415,7 +6424,7 @@ describe("assembleSlackChronologicalMessages", () => {
 
     // The user follow-up keeps timestamp/sender attribution without carrying
     // the old parent-alias arrow.
-    const replyText = (result![1].content[0] as { text: string }).text;
+    const replyText = textBlockSchema.parse(result![1].content[0]).text;
     expect(replyText).toBe(
       `[11/14/23 22:30 @alice]: ${slackExternal("Following up", "@alice")}`,
     );
@@ -6471,9 +6480,9 @@ describe("assembleSlackChronologicalMessages", () => {
     const result = assembleSlackChronologicalMessages(rows, SLACK_CAPS_CHANNEL);
     expect(result).not.toBeNull();
     expect(result!.length).toBe(2);
-    const assistantText = (result![0].content[0] as { text: string }).text;
+    const assistantText = textBlockSchema.parse(result![0].content[0]).text;
     expect(assistantText).toContain("Earlier reply");
-    const replyText = (result![1].content[0] as { text: string }).text;
+    const replyText = textBlockSchema.parse(result![1].content[0]).text;
     expect(replyText).toBe(
       `[11/14/23 22:30 @alice]: ${slackExternal("Following up", "@alice")}`,
     );
@@ -6684,34 +6693,21 @@ describe("assembleSlackChronologicalMessages", () => {
     const allBlocks = result!.flatMap((m) => m.content);
     const toolUses = allBlocks.filter((b) => b.type === "tool_use");
     const toolResults = allBlocks.filter((b) => b.type === "tool_result");
-    expect(toolUses.map((b) => (b as { id: string }).id)).toEqual([
-      "tu_abc",
-      "tu_def",
-    ]);
-    expect(
-      toolResults.map((b) => (b as { tool_use_id: string }).tool_use_id),
-    ).toEqual(["tu_abc", "tu_def"]);
+    expect(toolUses.map((b) => b.id)).toEqual(["tu_abc", "tu_def"]);
+    expect(toolResults.map((b) => b.tool_use_id)).toEqual(["tu_abc", "tu_def"]);
 
     // tool_use(abc) must come before tool_result(abc), and likewise for def.
     // Since they sit on adjacent rows, enforcing this via the flat index of
     // each block is sufficient.
     const findIdx = (pred: (b: (typeof allBlocks)[number]) => boolean) =>
       allBlocks.findIndex(pred);
-    const idxTuAbc = findIdx(
-      (b) => b.type === "tool_use" && (b as { id: string }).id === "tu_abc",
-    );
+    const idxTuAbc = findIdx((b) => b.type === "tool_use" && b.id === "tu_abc");
     const idxTrAbc = findIdx(
-      (b) =>
-        b.type === "tool_result" &&
-        (b as { tool_use_id: string }).tool_use_id === "tu_abc",
+      (b) => b.type === "tool_result" && b.tool_use_id === "tu_abc",
     );
-    const idxTuDef = findIdx(
-      (b) => b.type === "tool_use" && (b as { id: string }).id === "tu_def",
-    );
+    const idxTuDef = findIdx((b) => b.type === "tool_use" && b.id === "tu_def");
     const idxTrDef = findIdx(
-      (b) =>
-        b.type === "tool_result" &&
-        (b as { tool_use_id: string }).tool_use_id === "tu_def",
+      (b) => b.type === "tool_result" && b.tool_use_id === "tu_def",
     );
     expect(idxTuAbc).toBeLessThan(idxTrAbc);
     expect(idxTrAbc).toBeLessThan(idxTuDef);

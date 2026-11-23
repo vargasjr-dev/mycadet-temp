@@ -1,8 +1,12 @@
+import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { fetchMock as withFetchPreconnect } from "../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
-import { AssistantConfig } from "../../config/schema.js";
+import {
+  type AssistantConfig,
+  AssistantConfigSchema,
+} from "../../config/schema.js";
 import { credentialKey } from "../../security/credential-key.js";
 import {
   clearEmbeddingBackendCache,
@@ -43,14 +47,14 @@ mock.module("../../providers/cloud-proxy/context.js", () => ({
   managedFallbackEnabledFor: mock(async () => false),
 }));
 
-const LOCAL_CONFIG = {
+const LOCAL_CONFIG = AssistantConfigSchema.parse({
   memory: {
     embeddings: {
       provider: "local",
       localModel: "BAAI/bge-small-en-v1.5",
     },
   },
-} as unknown as AssistantConfig;
+});
 
 describe("embedding backend cache invalidation", () => {
   afterEach(() => {
@@ -59,10 +63,10 @@ describe("embedding backend cache invalidation", () => {
 
   test("clearEmbeddingBackendCache disposes cached backends before clearing", async () => {
     const firstSelection = await selectEmbeddingBackend(LOCAL_CONFIG);
-    expect(firstSelection.backend).not.toBeNull();
+    assert(firstSelection.backend);
 
     const dispose = mock();
-    (firstSelection.backend as { dispose?: () => void }).dispose = dispose;
+    firstSelection.backend.dispose = dispose;
 
     clearEmbeddingBackendCache();
 
@@ -74,10 +78,10 @@ describe("embedding backend cache invalidation", () => {
 
   test("resetLocalEmbeddingFailureState preserves live cached backends", async () => {
     const firstSelection = await selectEmbeddingBackend(LOCAL_CONFIG);
-    expect(firstSelection.backend).not.toBeNull();
+    assert(firstSelection.backend);
 
     const dispose = mock();
-    (firstSelection.backend as { dispose?: () => void }).dispose = dispose;
+    firstSelection.backend.dispose = dispose;
 
     resetLocalEmbeddingFailureState();
 
@@ -118,7 +122,7 @@ describe("isEmbeddingDimensionAvailable", () => {
   });
 
   function localConfigWithVectorSize(vectorSize: number): AssistantConfig {
-    return {
+    return AssistantConfigSchema.parse({
       memory: {
         enabled: true,
         embeddings: {
@@ -128,7 +132,7 @@ describe("isEmbeddingDimensionAvailable", () => {
         },
         qdrant: { vectorSize },
       },
-    } as unknown as AssistantConfig;
+    });
   }
 
   /** Stub the selected backend's `embed` so the dimension probe is deterministic. */
@@ -141,7 +145,7 @@ describe("isEmbeddingDimensionAvailable", () => {
       throw new Error("expected a backend to be selected");
     }
     const embedMock = mock(async () => [new Array(dim).fill(0)]);
-    (backend as { embed: typeof backend.embed }).embed = embedMock;
+    backend.embed = embedMock;
     return embedMock;
   }
 
@@ -166,7 +170,7 @@ describe("isEmbeddingDimensionAvailable", () => {
     if (!backend) {
       throw new Error("expected a backend to be selected");
     }
-    (backend as { embed: typeof backend.embed }).embed = async () => {
+    backend.embed = async () => {
       throw new Error("backend unreachable");
     };
 
@@ -184,13 +188,13 @@ describe("isEmbeddingDimensionAvailable", () => {
   });
 
   test("returns false when memory is disabled", async () => {
-    const config = {
+    const config = AssistantConfigSchema.parse({
       memory: {
         enabled: false,
         embeddings: { provider: "local", localModel: "m", required: false },
         qdrant: { vectorSize: 384 },
       },
-    } as unknown as AssistantConfig;
+    });
 
     expect(await isEmbeddingDimensionAvailable(config)).toBe(false);
   });
@@ -201,7 +205,7 @@ describe("isEmbeddingDimensionAvailable", () => {
     // through to the fallback, so dense recall must stay available rather than
     // being disabled because only the primary mismatches.
     setKey("openai", "sk-test");
-    const config = {
+    const config = AssistantConfigSchema.parse({
       // `selectFallbackBackends` probes ollama via `resolveCallSiteConfig`, which
       // reads `llm.default`; provide a minimal one so the fallback chain builds.
       llm: { default: {} },
@@ -215,34 +219,32 @@ describe("isEmbeddingDimensionAvailable", () => {
         },
         qdrant: { vectorSize: 3072 },
       },
-    } as unknown as AssistantConfig;
+    });
 
     // Stub the primary (local) → 384.
     const { backend: primary } = await selectEmbeddingBackend(config);
     if (!primary) {
       throw new Error("expected a primary backend");
     }
-    (primary as { embed: typeof primary.embed }).embed = mock(async () => [
-      new Array(384).fill(0),
-    ]);
+    primary.embed = mock(async () => [new Array(384).fill(0)]);
 
     // Warm + stub the OpenAI fallback instance (cached by provider:model, so the
     // chain probe inside isEmbeddingDimensionAvailable reuses this stub) → 3072.
-    const { backend: openai } = await selectEmbeddingBackend({
-      memory: {
-        embeddings: {
-          provider: "openai",
-          openaiModel: "text-embedding-3-small",
+    const { backend: openai } = await selectEmbeddingBackend(
+      AssistantConfigSchema.parse({
+        memory: {
+          embeddings: {
+            provider: "openai",
+            openaiModel: "text-embedding-3-small",
+          },
+          qdrant: { vectorSize: 3072 },
         },
-        qdrant: { vectorSize: 3072 },
-      },
-    } as unknown as AssistantConfig);
+      }),
+    );
     if (!openai) {
       throw new Error("expected an openai fallback backend");
     }
-    (openai as { embed: typeof openai.embed }).embed = mock(async () => [
-      new Array(3072).fill(0),
-    ]);
+    openai.embed = mock(async () => [new Array(3072).fill(0)]);
 
     expect(await isEmbeddingDimensionAvailable(config)).toBe(true);
   });
@@ -260,7 +262,7 @@ describe("isEmbeddingDimensionAvailable", () => {
   });
 });
 
-const GEMINI_CONFIG = {
+const GEMINI_CONFIG = AssistantConfigSchema.parse({
   memory: {
     embeddings: {
       provider: "gemini",
@@ -270,7 +272,7 @@ const GEMINI_CONFIG = {
       vectorSize: 3,
     },
   },
-} as unknown as AssistantConfig;
+});
 
 const ENABLED_PROXY_CONTEXT = {
   enabled: true,
@@ -287,13 +289,17 @@ function jsonResponse(body: unknown, status: number): Response {
 
 describe("cloud-proxy Gemini fallback to direct key", () => {
   const originalFetch = globalThis.fetch;
-  let fetchMock: ReturnType<typeof mock>;
+  let fetchMock: ReturnType<
+    typeof mock<
+      (url: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+    >
+  >;
 
   beforeEach(() => {
     clearEmbeddingBackendCache();
     // Managed-proxy requests (proxy.example.com) are rejected like a cloud
     // proxy with a bad credential; direct Google API requests succeed.
-    fetchMock = mock(async (url: string | URL) => {
+    fetchMock = mock(async (url: RequestInfo | URL, _init?: RequestInit) => {
       if (String(url).startsWith("https://proxy.example.com/")) {
         return jsonResponse({ detail: "Invalid or revoked API key." }, 403);
       }
@@ -324,17 +330,14 @@ describe("cloud-proxy Gemini fallback to direct key", () => {
     expect(result.vectors).toEqual([[0.1, 0.2, 0.3]]);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    const [managedUrl, managedInit] = fetchMock.mock.calls[0] as [
-      string,
-      RequestInit,
-    ];
+    const [managedUrl, managedInit] = fetchMock.mock.calls[0];
     expect(managedUrl).toBe(
       "https://proxy.example.com/v1/runtime-proxy/gemini/v1beta/models/test-model:embedContent",
     );
-    expect(
-      (managedInit.headers as Record<string, string>)["Authorization"],
-    ).toBe("Bearer stale-platform-key");
-    const [directUrl] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(new Headers(managedInit?.headers).get("Authorization")).toBe(
+      "Bearer stale-platform-key",
+    );
+    const [directUrl] = fetchMock.mock.calls[1];
     expect(directUrl).toContain("generativelanguage.googleapis.com");
     expect(directUrl).toContain("key=direct-key");
   });
@@ -357,7 +360,7 @@ describe("cloud-proxy Gemini fallback to direct key", () => {
 
     expect(result.vectors).toEqual([[0.1, 0.2, 0.3]]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [directUrl] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [directUrl] = fetchMock.mock.calls[0];
     expect(directUrl).toContain("generativelanguage.googleapis.com");
     expect(directUrl).toContain("key=direct-key");
   });
@@ -368,7 +371,7 @@ function customConfig(overrides: {
   customModel?: string;
   customDimensions?: number;
 }): AssistantConfig {
-  return {
+  return AssistantConfigSchema.parse({
     memory: {
       embeddings: {
         provider: "custom",
@@ -377,7 +380,7 @@ function customConfig(overrides: {
         customDimensions: overrides.customDimensions,
       },
     },
-  } as unknown as AssistantConfig;
+  });
 }
 
 describe("custom OpenAI-compatible embedding backend selection", () => {
@@ -399,10 +402,9 @@ describe("custom OpenAI-compatible embedding backend selection", () => {
     expect(backend).toBeInstanceOf(OpenAIEmbeddingBackend);
     expect(backend?.provider).toBe("custom");
     expect(backend?.model).toBe("embed-mistral");
-    expect((backend as OpenAIEmbeddingBackend).baseURL).toBe(
-      "http://127.0.0.1:4000/v1",
-    );
-    expect((backend as OpenAIEmbeddingBackend).dimensions).toBe(1024);
+    assert(backend instanceof OpenAIEmbeddingBackend);
+    expect(backend.baseURL).toBe("http://127.0.0.1:4000/v1");
+    expect(backend.dimensions).toBe(1024);
   });
 
   test("selects a custom backend without an API key", async () => {
@@ -428,16 +430,18 @@ describe("custom OpenAI-compatible embedding backend selection", () => {
   });
 
   test("is not selected by auto even when baseUrl is set", async () => {
-    const { backend } = await selectEmbeddingBackend({
-      memory: {
-        embeddings: {
-          provider: "auto",
-          localModel: "BAAI/bge-small-en-v1.5",
-          baseUrl: "http://127.0.0.1:4000/v1",
-          customModel: "embed-mistral",
+    const { backend } = await selectEmbeddingBackend(
+      AssistantConfigSchema.parse({
+        memory: {
+          embeddings: {
+            provider: "auto",
+            localModel: "BAAI/bge-small-en-v1.5",
+            baseUrl: "http://127.0.0.1:4000/v1",
+            customModel: "embed-mistral",
+          },
         },
-      },
-    } as unknown as AssistantConfig);
+      }),
+    );
     expect(backend?.provider).toBe("local");
   });
 
@@ -481,12 +485,8 @@ describe("custom OpenAI-compatible embedding backend selection", () => {
     if (!first || !second) {
       throw new Error("expected custom backends");
     }
-    (first as { embed: typeof first.embed }).embed = mock(async () => [
-      new Array(1536).fill(0),
-    ]);
-    (second as { embed: typeof second.embed }).embed = mock(async () => [
-      new Array(1024).fill(0),
-    ]);
+    first.embed = mock(async () => [new Array(1536).fill(0)]);
+    second.embed = mock(async () => [new Array(1024).fill(0)]);
 
     expect(await resolveBackendDimension(first)).toBe(1536);
     expect(await resolveBackendDimension(second)).toBe(1024);
@@ -506,15 +506,17 @@ describe("custom OpenAI-compatible embedding backend selection", () => {
 
   test("customEmbeddingSpaceIdentity is null when the provider is not custom", () => {
     expect(
-      customEmbeddingSpaceIdentity({
-        memory: {
-          embeddings: {
-            provider: "openai",
-            openaiModel: "text-embedding-3-small",
-            baseUrl: "http://127.0.0.1:4000/v1",
+      customEmbeddingSpaceIdentity(
+        AssistantConfigSchema.parse({
+          memory: {
+            embeddings: {
+              provider: "openai",
+              openaiModel: "text-embedding-3-small",
+              baseUrl: "http://127.0.0.1:4000/v1",
+            },
           },
-        },
-      } as unknown as AssistantConfig),
+        }),
+      ),
     ).toBeNull();
   });
 });

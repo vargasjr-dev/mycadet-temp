@@ -4,6 +4,7 @@ import type {
   ApprovalUIMetadata,
   ChannelReplyPayload,
 } from "@mycadet/gateway-client";
+import { z } from "zod";
 
 import type { RuntimeAttachmentMetadata } from "../../../runtime/http-types.js";
 import type { CallbackContext } from "../channel-transport.js";
@@ -16,12 +17,16 @@ type CallTelegramBotApiMultipart =
 type GetAttachmentContent =
   typeof import("../../../persistence/attachments-store.js").getAttachmentContent;
 
-const callTelegramBotApiMock = mock<CallTelegramBotApi>(
-  async () => ({}) as never,
-);
-const callTelegramBotApiMultipartMock = mock<CallTelegramBotApiMultipart>(
-  async () => ({}) as never,
-);
+type TelegramTestResult = { message_id?: number };
+
+const callTelegramBotApiMock = mock<
+  (...args: Parameters<CallTelegramBotApi>) => Promise<TelegramTestResult>
+>(async () => ({}));
+const callTelegramBotApiMultipartMock = mock<
+  (
+    ...args: Parameters<CallTelegramBotApiMultipart>
+  ) => Promise<TelegramTestResult>
+>(async () => ({}));
 const getAttachmentContentMock = mock<GetAttachmentContent>(() => null);
 
 mock.module("./api.js", () => ({
@@ -71,14 +76,18 @@ const expectedKeyboard = {
   ],
 };
 
+const messageTextSchema = z.string();
+const richMessageSchema = z.object({ html: z.string() });
+const uploadFileSchema = z.instanceof(File);
+
 const callsTo = (method: string) =>
   callTelegramBotApiMock.mock.calls.filter((call) => call[0] === method);
 
 beforeEach(() => {
   callTelegramBotApiMock.mockReset();
-  callTelegramBotApiMock.mockImplementation(async () => ({}) as never);
+  callTelegramBotApiMock.mockImplementation(async () => ({}));
   callTelegramBotApiMultipartMock.mockReset();
-  callTelegramBotApiMultipartMock.mockImplementation(async () => ({}) as never);
+  callTelegramBotApiMultipartMock.mockImplementation(async () => ({}));
   getAttachmentContentMock.mockReset();
   getAttachmentContentMock.mockImplementation(() => null);
 });
@@ -104,7 +113,7 @@ describe("sendTelegramRichReply", () => {
     await sendTelegramRichReply("123", "$100 to $200 ==x== ||y|| <b>");
 
     const [, body] = callsTo("sendRichMessage")[0] ?? [];
-    const html = (body?.rich_message as { html: string }).html;
+    const html = richMessageSchema.parse(body?.rich_message).html;
     // The Rich-Markdown extensions survive verbatim, and the angle brackets are
     // escaped rather than emitted as a live <b> tag. (render.test.ts pins the
     // exact character-reference form.)
@@ -176,9 +185,7 @@ describe("sendTelegramRichReply", () => {
 
 describe("sendTelegramReply message id capture", () => {
   test("returns the sent message id so approval cards can be addressed later", async () => {
-    callTelegramBotApiMock.mockImplementation(
-      async () => ({ message_id: 42 }) as never,
-    );
+    callTelegramBotApiMock.mockImplementation(async () => ({ message_id: 42 }));
 
     const result = await sendTelegramReply("123", "Please approve", approval);
 
@@ -187,9 +194,9 @@ describe("sendTelegramReply message id capture", () => {
 
   test("returns the id of the last chunk for a split message", async () => {
     let nextId = 1;
-    callTelegramBotApiMock.mockImplementation(
-      async () => ({ message_id: nextId++ }) as never,
-    );
+    callTelegramBotApiMock.mockImplementation(async () => ({
+      message_id: nextId++,
+    }));
 
     const result = await sendTelegramReply("123", "x".repeat(4500));
 
@@ -211,8 +218,8 @@ describe("sendTelegramReply message id capture", () => {
     // edit or withdrawal addresses; an earlier chunk's id must never stand in
     // for it. Every acknowledged id is still reported for recording.
     let call = 0;
-    callTelegramBotApiMock.mockImplementation(
-      async () => (call++ === 0 ? { message_id: 1 } : {}) as never,
+    callTelegramBotApiMock.mockImplementation(async () =>
+      call++ === 0 ? { message_id: 1 } : {},
     );
 
     const result = await sendTelegramReply("123", "x".repeat(4500), approval);
@@ -222,9 +229,7 @@ describe("sendTelegramReply message id capture", () => {
   });
 
   test("a rich send acknowledges the message Telegram returned", async () => {
-    callTelegramBotApiMock.mockImplementation(
-      async () => ({ message_id: 7 }) as never,
-    );
+    callTelegramBotApiMock.mockImplementation(async () => ({ message_id: 7 }));
 
     const result = await sendTelegramRichReply("123", "**hello**");
 
@@ -238,7 +243,7 @@ describe("sendTelegramReply message id capture", () => {
       if (method === "sendRichMessage") {
         throw new TelegramNonRetryableError("rejected", "rejected");
       }
-      return { message_id: nextId++ } as never;
+      return { message_id: nextId++ };
     });
 
     const result = await sendTelegramRichReply("123", "**hello**");
@@ -258,7 +263,7 @@ describe("telegramTransport.deliver routing", () => {
       chatId: "123",
       text: "hello",
       ...overrides,
-    } as ChannelReplyPayload;
+    };
   }
 
   test("routes to the rich send when a rich render is asked for", async () => {
@@ -277,9 +282,9 @@ describe("telegramTransport.deliver routing", () => {
 
   test("deliver acknowledges every chunk the text became", async () => {
     let nextId = 1;
-    callTelegramBotApiMock.mockImplementation(
-      async () => ({ message_id: nextId++ }) as never,
-    );
+    callTelegramBotApiMock.mockImplementation(async () => ({
+      message_id: nextId++,
+    }));
 
     const result = await telegramTransport.deliver(
       ctx,
@@ -301,7 +306,7 @@ describe("telegramTransport.deliver routing", () => {
   test("forwards approval metadata through the rich path", async () => {
     await telegramTransport.deliver(
       ctx,
-      payload({ renderRichly: true, approval } as Partial<ChannelReplyPayload>),
+      payload({ renderRichly: true, approval }),
     );
 
     expect(callTelegramBotApiMock).toHaveBeenCalledWith("sendRichMessage", {
@@ -327,7 +332,7 @@ describe("telegramTransport topic targeting", () => {
       chatId: "123",
       text: "hello",
       ...overrides,
-    } as ChannelReplyPayload;
+    };
   }
 
   test("plain replies target the topic from the callback threadId param", async () => {
@@ -459,7 +464,10 @@ describe("sendTelegramReaction", () => {
 });
 
 describe("editTelegramMessage", () => {
-  const ctx = { callbackUrl: "http://gw/deliver/telegram", params: {} };
+  const ctx: CallbackContext = {
+    callbackUrl: "http://gw/deliver/telegram",
+    params: {},
+  };
 
   const sendMessageCalls = () =>
     callTelegramBotApiMock.mock.calls.filter(
@@ -467,7 +475,7 @@ describe("editTelegramMessage", () => {
     );
 
   test("edits in place and never posts a new message", async () => {
-    await telegramTransport.edit!(ctx as CallbackContext, {
+    await telegramTransport.edit!(ctx, {
       chatId: "123",
       messageId: "456",
       text: "revised",
@@ -487,7 +495,7 @@ describe("editTelegramMessage", () => {
   });
 
   test("clears the inline keyboard, so a settled message keeps no buttons", async () => {
-    await telegramTransport.edit!(ctx as CallbackContext, {
+    await telegramTransport.edit!(ctx, {
       chatId: "123",
       messageId: "456",
       text: "\u2713 Approved",
@@ -497,7 +505,7 @@ describe("editTelegramMessage", () => {
     // Omitting reply_markup leaves an existing keyboard in place, which would
     // leave live Approve and Reject buttons under text saying the request is
     // already decided. The field has to be sent, and sent empty.
-    expect((body as Record<string, unknown>).reply_markup).toEqual({
+    expect(body.reply_markup).toEqual({
       inline_keyboard: [],
     });
   });
@@ -592,7 +600,7 @@ describe("telegramTransport.streamReply", () => {
       },
     });
 
-    const body = callsTo("sendMessageDraft")[0]![1] as { text: string };
+    const body = callsTo("sendMessageDraft")[0]![1];
     expect(body.text).toBe(
       "Working.\n\nAnswering\n✓ Search docs\n▸ Summarize\n· Reply",
     );
@@ -619,7 +627,7 @@ describe("telegramTransport.streamReply", () => {
       appended: "Hi",
     });
 
-    const body = callsTo("sendMessageDraft")[0]![1] as { chat_id: unknown };
+    const body = callsTo("sendMessageDraft")[0]![1];
     expect(body.chat_id).toBe(123);
   });
 
@@ -647,7 +655,9 @@ describe("telegramTransport.streamReply", () => {
       plan: { steps: [{ label: "Summarize", status: "in_progress" }] },
     });
 
-    const sent = (callsTo("sendMessageDraft")[0]![1] as { text: string }).text;
+    const sent = messageTextSchema.parse(
+      callsTo("sendMessageDraft")[0]![1].text,
+    );
     expect(sent.length).toBe(TELEGRAM_DRAFT_TEXT_LIMIT);
     // The newest text and the plan beneath it survive; the stale head is what
     // gets dropped, which is the opposite of a frozen prefix.
@@ -668,7 +678,9 @@ describe("telegramTransport.streamReply", () => {
       appended: emoji,
     });
 
-    const sent = (callsTo("sendMessageDraft")[0]![1] as { text: string }).text;
+    const sent = messageTextSchema.parse(
+      callsTo("sendMessageDraft")[0]![1].text,
+    );
     const first = sent.charCodeAt(0);
     expect(first >= 0xdc00 && first <= 0xdfff).toBe(false);
     expect(sent.length).toBeLessThanOrEqual(TELEGRAM_DRAFT_TEXT_LIMIT);
@@ -718,7 +730,9 @@ describe("sendTelegramAttachments", () => {
     }));
 
   const noticeTexts = () =>
-    callsTo("sendMessage").map(([, body]) => body.text as string);
+    callsTo("sendMessage").map(([, body]) =>
+      messageTextSchema.parse(body.text),
+    );
 
   test("sends an image from the store with sendPhoto", async () => {
     storeHolds({ "att-1": Buffer.from("png") });
@@ -732,7 +746,7 @@ describe("sendTelegramAttachments", () => {
     expect(call?.method).toBe("sendPhoto");
     expect(call?.form.get("chat_id")).toBe("123");
     expect(call?.form.get("document")).toBeNull();
-    const photo = call?.form.get("photo") as File;
+    const photo = uploadFileSchema.parse(call?.form.get("photo"));
     expect(photo.name).toBe("chart.png");
     expect(photo.type).toBe("image/png");
     expect(await photo.text()).toBe("png");
@@ -755,7 +769,7 @@ describe("sendTelegramAttachments", () => {
     expect(multipartCalls()).toHaveLength(1);
     expect(call?.method).toBe("sendDocument");
     expect(call?.form.get("photo")).toBeNull();
-    const document = call?.form.get("document") as File;
+    const document = uploadFileSchema.parse(call?.form.get("document"));
     expect(document.name).toBe("report.pdf");
     expect(document.type).toBe("application/pdf");
     expect(await document.text()).toBe("pdf");
@@ -776,7 +790,9 @@ describe("sendTelegramAttachments", () => {
       "sendPhoto",
       "sendDocument",
     ]);
-    const document = multipartCalls()[1]?.form.get("document") as File;
+    const document = uploadFileSchema.parse(
+      multipartCalls()[1]?.form.get("document"),
+    );
     expect(document.name).toBe("scan.png");
     expect(document.type).toBe("image/png");
     expect(document.size).toBe(MAX_PHOTO_BYTES + 1);
@@ -866,10 +882,13 @@ describe("sendTelegramAttachments", () => {
     });
     callTelegramBotApiMultipartMock.mockImplementation(
       async (_method, form) => {
-        if ((form.get("document") as File | null)?.name === "b.txt") {
+        if (
+          uploadFileSchema.nullable().parse(form.get("document"))?.name ===
+          "b.txt"
+        ) {
           throw new Error("Bad Request: file is empty");
         }
-        return {} as never;
+        return {};
       },
     );
 
@@ -880,7 +899,9 @@ describe("sendTelegramAttachments", () => {
     ]);
 
     expect(
-      multipartCalls().map((c) => (c.form.get("document") as File).name),
+      multipartCalls().map(
+        (c) => uploadFileSchema.parse(c.form.get("document")).name,
+      ),
     ).toEqual(["a.txt", "b.txt", "c.txt"]);
     expect(noticeTexts()).toEqual([
       "\u26a0\ufe0f 1 attachment(s) could not be delivered: b.txt",

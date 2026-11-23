@@ -8,7 +8,10 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "../api/index.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 setBroadcastOverrideForTesting(() => {});
 
@@ -43,11 +46,11 @@ async function seedRows(
 ): Promise<void> {
   ensureConversationExists(conversationId, "cadet");
   for (const r of rows) {
-    const blocks = (
+    const blocks = objectListSchema.parse(
       typeof r.content === "string"
         ? [{ type: "text", text: r.content }]
-        : r.content
-    ) as Array<Record<string, unknown>>;
+        : r.content,
+    );
     // Production rows always pair cards with a model-readable sibling (the
     // persistence layer's visibility guard throws otherwise) — declare the
     // same assumption for card-only fixtures.
@@ -80,11 +83,12 @@ const {
 } = await import("../daemon/conversation-surfaces.js");
 
 import { CardSurfaceData } from "../api/surfaces.js";
-import { SurfaceData } from "../api/surfaces.js";
 import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { asConversation } from "./helpers/mock-conversation.js";
+
+const objectListSchema = z.array(jsonObjectSchema);
 
 function makeContext(sent: AssistantEvent[] = []): Conversation {
   return asConversation({
@@ -164,13 +168,13 @@ describe("ui_surface_update persistence", () => {
     await new Promise((r) => setTimeout(r, 600));
     expect(writes).toHaveLength(1);
     expect(writes[0].id).toBe("msg-1");
-    const persistedBlocks = writes[0].content as Array<Record<string, unknown>>;
+    const persistedBlocks = objectListSchema.parse(writes[0].content);
     const persistedSurface = persistedBlocks.find(
       (b) => b.type === "ui_surface",
     );
     expect(persistedSurface).toBeDefined();
-    const persistedData = persistedSurface!.data as CardSurfaceData;
-    expect((persistedData.templateData as Record<string, unknown>).status).toBe(
+    const persistedData = jsonObjectSchema.parse(persistedSurface!.data);
+    expect(jsonObjectSchema.parse(persistedData.templateData).status).toBe(
       "completed",
     );
   });
@@ -214,13 +218,11 @@ describe("ui_surface_update persistence", () => {
     await new Promise((r) => setTimeout(r, 600));
 
     expect(writes).toHaveLength(1);
-    const persistedSurface = (
-      writes[0].content as Array<Record<string, unknown>>
-    ).find((b) => b.type === "ui_surface");
-    const persistedData = persistedSurface!.data as CardSurfaceData;
-    expect((persistedData.templateData as Record<string, unknown>).status).toBe(
-      "d",
-    );
+    const persistedSurface = objectListSchema
+      .parse(writes[0].content)
+      .find((b) => b.type === "ui_surface");
+    const persistedData = jsonObjectSchema.parse(persistedSurface!.data);
+    expect(jsonObjectSchema.parse(persistedData.templateData).status).toBe("d");
   });
 
   test("markSurfaceCompleted force-flushes any pending debounced write", async () => {
@@ -249,7 +251,7 @@ describe("ui_surface_update persistence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       ...initial,
       templateData: { status: "completed" },
-    } as SurfaceData);
+    });
 
     expect(writes).toHaveLength(0);
 
@@ -259,9 +261,9 @@ describe("ui_surface_update persistence", () => {
     markSurfaceCompleted({ conversationId: "conv-persist-1" }, surfaceId, "ok");
 
     expect(writes.length).toBeGreaterThanOrEqual(2);
-    const finalBlocks = writes[writes.length - 1].content as Array<
-      Record<string, unknown>
-    >;
+    const finalBlocks = objectListSchema.parse(
+      writes[writes.length - 1].content,
+    );
     const finalSurface = finalBlocks.find((b) => b.type === "ui_surface")!;
     expect(finalSurface.completed).toBe(true);
     expect(finalSurface.completionSummary).toBe("ok");
@@ -285,15 +287,15 @@ describe("ui_surface_update persistence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       title: "x",
       body: "later",
-    } as SurfaceData);
+    });
 
     expect(writes).toHaveLength(0);
     flushSurfaceDataPersist(surfaceId);
     expect(writes).toHaveLength(1);
-    const block = (writes[0].content as Array<Record<string, unknown>>).find(
-      (b) => b.type === "ui_surface",
-    );
-    expect((block!.data as Record<string, unknown>).body).toBe("later");
+    const block = objectListSchema
+      .parse(writes[0].content)
+      .find((b) => b.type === "ui_surface");
+    expect(jsonObjectSchema.parse(block!.data).body).toBe("later");
   });
 
   test("update arriving before the message is persisted is safely skipped", async () => {
@@ -304,7 +306,7 @@ describe("ui_surface_update persistence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       title: "x",
       body: "",
-    } as SurfaceData);
+    });
 
     await new Promise((r) => setTimeout(r, 600));
 
@@ -331,7 +333,7 @@ describe("ui_surface_update persistence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       title: "x",
       body: "queued",
-    } as SurfaceData);
+    });
 
     cancelPendingSurfaceDataPersists("conv-persist-1");
     await new Promise((r) => setTimeout(r, 600));
@@ -358,7 +360,7 @@ describe("ui_surface_update persistence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       title: "x",
       body: "shutdown-flush",
-    } as SurfaceData);
+    });
 
     // Write should not have fired yet (debounce hasn't elapsed).
     expect(writes).toHaveLength(0);
@@ -368,10 +370,10 @@ describe("ui_surface_update persistence", () => {
     // Synchronous flush — write lands immediately with the latest data.
     expect(writes).toHaveLength(1);
     expect(writes[0].id).toBe("msg-flush-pending");
-    const block = (writes[0].content as Array<Record<string, unknown>>).find(
-      (b) => b.type === "ui_surface",
-    )!;
-    expect((block.data as Record<string, unknown>).body).toBe("shutdown-flush");
+    const block = objectListSchema
+      .parse(writes[0].content)
+      .find((b) => b.type === "ui_surface")!;
+    expect(jsonObjectSchema.parse(block.data).body).toBe("shutdown-flush");
 
     // Timer is cleared — waiting past the debounce window doesn't fire again.
     await new Promise((r) => setTimeout(r, 600));
@@ -414,11 +416,11 @@ describe("ui_surface_update persistence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceA, {
       title: "x",
       body: "a",
-    } as SurfaceData);
+    });
     scheduleSurfaceDataPersist("conv-other", surfaceB, {
       title: "x",
       body: "b",
-    } as SurfaceData);
+    });
 
     flushPendingSurfaceDataPersists("conv-persist-1");
 
@@ -480,7 +482,7 @@ describe("ui_dismiss persisted-state convergence", () => {
 
     // The already-persisted block is stripped; the sibling text block survives.
     expect(writes).toHaveLength(1);
-    const blocks = writes[0].content as Array<Record<string, unknown>>;
+    const blocks = objectListSchema.parse(writes[0].content);
     expect(blocks.find((b) => b.type === "ui_surface")).toBeUndefined();
     expect(blocks.find((b) => b.type === "text")).toBeDefined();
 
@@ -511,7 +513,7 @@ describe("ui_dismiss persisted-state convergence", () => {
     scheduleSurfaceDataPersist("conv-persist-1", surfaceId, {
       ...data,
       templateData: { status: "completed" },
-    } as SurfaceData);
+    });
 
     await surfaceProxyResolver(ctx, "ui_dismiss", { surface_id: surfaceId });
     const writeCountAfterDismiss = writes.length;
@@ -567,9 +569,9 @@ describe("standalone surface DB persistence", () => {
     expect(result.status).toBe("submitted");
 
     expect(writes.length).toBeGreaterThanOrEqual(1);
-    const finalBlocks = writes[writes.length - 1].content as Array<
-      Record<string, unknown>
-    >;
+    const finalBlocks = objectListSchema.parse(
+      writes[writes.length - 1].content,
+    );
     const surfaceBlock = finalBlocks.find((b) => b.type === "ui_surface")!;
     expect(surfaceBlock.completed).toBe(true);
     expect(surfaceBlock.completionSummary).toBe("Confirmed");

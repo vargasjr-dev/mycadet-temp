@@ -16,10 +16,12 @@
  *   - UiSurfaceCompleteMessage (MessageTypes.swift)
  * and dispatches them in ChatActionHandler → ChatViewModel+SurfaceHandling.
  */
-
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "../api/index.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let broadcastImpl: (msg: AssistantEvent) => void = () => {};
 setBroadcastOverrideForTesting((msg: AssistantEvent) => broadcastImpl(msg));
@@ -36,6 +38,8 @@ import {
   asConversation,
   mockChannelCapabilities,
 } from "./helpers/mock-conversation.js";
+
+const objectListSchema = z.array(jsonObjectSchema);
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -98,11 +102,11 @@ function findByType(
   messages: AssistantEvent[],
   type: string,
 ): AnyRecord | undefined {
-  return messages.find((m) => (m as unknown as AnyRecord).type === type);
+  return messages.find((m) => m.type === type);
 }
 
 function findAllByType(messages: AssistantEvent[], type: string): AnyRecord[] {
-  return messages.filter((m) => (m as unknown as AnyRecord).type === type);
+  return messages.filter((m) => m.type === type);
 }
 
 // ── Confirmation surface payload shapes ──────────────────────────────
@@ -147,7 +151,7 @@ describe("standalone confirmation surface payload shapes", () => {
     expect(showMsg!.display).toBe("inline");
 
     // ── data field: ConfirmationSurfaceData ──
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
     expect(data.message).toBe(
       "This will permanently delete the project and all data.",
     );
@@ -157,7 +161,7 @@ describe("standalone confirmation surface payload shapes", () => {
     expect(data.destructive).toBe(true);
 
     // ── actions array: SurfaceAction[] ──
-    const actions = showMsg!.actions as Array<AnyRecord>;
+    const actions = objectListSchema.parse(showMsg!.actions);
     expect(actions).toHaveLength(2);
     expect(actions[0].id).toBe("confirm");
     expect(actions[0].label).toBe("Delete");
@@ -330,11 +334,11 @@ describe("standalone form surface payload shapes", () => {
     expect(showMsg!.display).toBe("inline");
 
     // ── data field: FormSurfaceData ──
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
     expect(data.description).toBe("Adjust your preferences below.");
     expect(data.submitLabel).toBe("Save");
 
-    const fields = data.fields as Array<AnyRecord>;
+    const fields = objectListSchema.parse(data.fields);
     expect(fields).toHaveLength(3);
 
     // Text field
@@ -627,7 +631,7 @@ describe("standalone surface contract invariants", () => {
     );
 
     const showMsg = findByType(ctx.sentMessages, "ui_surface_show");
-    const actions = showMsg!.actions as Array<AnyRecord>;
+    const actions = objectListSchema.parse(showMsg!.actions);
 
     // Verify the mapping matches what Swift SurfaceActionButton expects:
     //   "primary" → "primary"
@@ -782,24 +786,24 @@ describe("standalone multi-page form payload shapes", () => {
     expect(showMsg!.title).toBe("Setup Wizard");
 
     // data field: FormSurfaceData with pages
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
     expect(data.description).toBe("Complete the setup steps.");
     expect(data.submitLabel).toBe("Finish Setup");
 
     // pages should be preserved exactly
-    const pages = data.pages as Array<AnyRecord>;
+    const pages = objectListSchema.parse(data.pages);
     expect(pages).toBeDefined();
     expect(pages).toHaveLength(2);
     expect(pages[0].id).toBe("page-1");
     expect(pages[0].title).toBe("Personal Info");
     expect(pages[0].description).toBe("Enter your personal details.");
-    expect(pages[0].fields as Array<AnyRecord>).toHaveLength(2);
+    expect(objectListSchema.parse(pages[0].fields)).toHaveLength(2);
     expect(pages[1].id).toBe("page-2");
     expect(pages[1].title).toBe("Preferences");
-    expect(pages[1].fields as Array<AnyRecord>).toHaveLength(2);
+    expect(objectListSchema.parse(pages[1].fields)).toHaveLength(2);
 
     // pageLabels should be preserved exactly
-    const pageLabels = data.pageLabels as AnyRecord;
+    const pageLabels = jsonObjectSchema.parse(data.pageLabels);
     expect(pageLabels).toBeDefined();
     expect(pageLabels.next).toBe("Continue");
     expect(pageLabels.back).toBe("Go Back");
@@ -843,11 +847,11 @@ describe("standalone multi-page form payload shapes", () => {
     );
 
     const showMsg = findByType(ctx.sentMessages, "ui_surface_show");
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
 
     // pages should be preserved
     expect(data.pages).toBeDefined();
-    expect(data.pages as Array<AnyRecord>).toHaveLength(1);
+    expect(objectListSchema.parse(data.pages)).toHaveLength(1);
 
     // pageLabels should be preserved
     expect(data.pageLabels).toEqual({ next: "Next", submit: "Done" });
@@ -944,12 +948,12 @@ describe("standalone form forward-compatible payload preservation", () => {
     );
 
     const showMsg = findByType(ctx.sentMessages, "ui_surface_show");
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
 
     // Known FormSurfaceData fields should be present
     expect(data.description).toBe("A form with future keys.");
     expect(data.submitLabel).toBe("Go");
-    expect(data.fields as Array<AnyRecord>).toHaveLength(1);
+    expect(objectListSchema.parse(data.fields)).toHaveLength(1);
 
     // Future additive keys must NOT be dropped
     expect(data.futureStringField).toBe("hello");
@@ -988,14 +992,14 @@ describe("standalone form forward-compatible payload preservation", () => {
     );
 
     const showMsg = findByType(ctx.sentMessages, "ui_surface_show");
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
 
     expect(data.description).toBe("A basic form.");
     expect(data.submitLabel).toBe("Submit");
-    expect(data.fields as Array<AnyRecord>).toHaveLength(2);
-    expect((data.fields as Array<AnyRecord>)[0].id).toBe("name");
-    expect((data.fields as Array<AnyRecord>)[0].required).toBe(true);
-    expect((data.fields as Array<AnyRecord>)[1].id).toBe("age");
+    expect(objectListSchema.parse(data.fields)).toHaveLength(2);
+    expect(objectListSchema.parse(data.fields)[0].id).toBe("name");
+    expect(objectListSchema.parse(data.fields)[0].required).toBe(true);
+    expect(objectListSchema.parse(data.fields)[1].id).toBe("age");
 
     // pages/pageLabels should not be present for single-page forms
     expect(data.pages).toBeUndefined();
@@ -1030,7 +1034,7 @@ describe("standalone form forward-compatible payload preservation", () => {
     );
 
     const showMsg = findByType(ctx.sentMessages, "ui_surface_show");
-    const data = showMsg!.data as AnyRecord;
+    const data = jsonObjectSchema.parse(showMsg!.data);
 
     expect(data.description).toBe("No fields at all.");
     // fields must always be a valid array — never undefined

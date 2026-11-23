@@ -37,9 +37,14 @@ function dropColumnIfPresent(
   table: string,
   column: string,
 ): void {
-  const cols = raw.prepare(`PRAGMA table_info(${table})`).all() as {
-    name: string;
-  }[];
+  const cols = raw
+    .prepare<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(${table})`)
+    .all();
   if (!cols.some((c) => c.name === column)) {
     log.info(`${table}.${column} already absent — skipping`);
     return;

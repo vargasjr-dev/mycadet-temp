@@ -40,9 +40,14 @@ export function migrateRewriteFrontierProfilePins(database: DrizzleDb): void {
   const raw = getSqliteFrom(database);
 
   for (const table of PIN_TABLES) {
-    const cols = raw.prepare(`PRAGMA table_info(${table})`).all() as {
-      name: string;
-    }[];
+    const cols = raw
+      .prepare<
+        {
+          name: string;
+        },
+        []
+      >(`PRAGMA table_info(${table})`)
+      .all();
     if (!cols.some((c) => c.name === "inference_profile")) {
       continue;
     }

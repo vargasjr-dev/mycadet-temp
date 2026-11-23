@@ -23,9 +23,14 @@ export function migrateDropScheduleSkillScriptHandoff(
 ): void {
   const raw = getSqliteFrom(database);
 
-  const columns = raw.query(`PRAGMA table_info(cron_jobs)`).all() as Array<{
-    name: string;
-  }>;
+  const columns = raw
+    .query<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(cron_jobs)`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   for (const column of ["then_execute", "skill_id", "skill_version_hash"]) {

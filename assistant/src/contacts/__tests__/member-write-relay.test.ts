@@ -7,10 +7,13 @@
  * mirror failure is swallowed so the gateway-owned outcome stands; a gateway
  * refusal (verified:false) skips the local mirror entirely.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { ContactWriteResult } from "../types.js";
+
+const optionalStringSchema = z.string().nullish();
 
 type IpcCall = { method: string; params?: Record<string, unknown> };
 
@@ -34,12 +37,12 @@ const ipcCallPersistentMock = mock(
         ok: revokeOk,
         didWrite: true,
         channel: {
-          id: (params?.contactChannelId as string) ?? "gw-ch1",
+          id: optionalStringSchema.parse(params?.contactChannelId) ?? "gw-ch1",
           contactId: "gw-c1",
           type: "slack",
           address: "addr",
           status: "revoked",
-          revokedReason: (params?.reason as string) ?? null,
+          revokedReason: optionalStringSchema.parse(params?.reason) ?? null,
         },
       };
     }
@@ -49,12 +52,13 @@ const ipcCallPersistentMock = mock(
       channel: ipcVerified
         ? {
             id: "gw-ch1",
-            contactId: (params?.contactId as string) ?? "gw-c1",
-            type: (params?.type as string) ?? "telegram",
-            address: (params?.address as string) ?? "addr",
+            contactId: optionalStringSchema.parse(params?.contactId) ?? "gw-c1",
+            type: optionalStringSchema.parse(params?.type) ?? "telegram",
+            address: optionalStringSchema.parse(params?.address) ?? "addr",
             status: "active",
             verifiedAt: 1,
-            verifiedVia: (params?.verifiedVia as string) ?? "invite",
+            verifiedVia:
+              optionalStringSchema.parse(params?.verifiedVia) ?? "invite",
           }
         : undefined,
     };

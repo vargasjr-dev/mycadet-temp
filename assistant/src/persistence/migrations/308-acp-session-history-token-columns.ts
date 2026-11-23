@@ -19,9 +19,14 @@ export function migrateAcpSessionHistoryTokenColumns(
 ): void {
   const raw = getSqliteFrom(database);
 
-  const columns = raw.query(`PRAGMA table_info(${TABLE})`).all() as Array<{
-    name: string;
-  }>;
+  const columns = raw
+    .query<
+      {
+        name: string;
+      },
+      []
+    >(`PRAGMA table_info(${TABLE})`)
+    .all();
   const columnNames = new Set(columns.map((c) => c.name));
 
   for (const { name, type } of COLUMNS) {

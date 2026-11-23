@@ -32,10 +32,11 @@ export function migrateChatgptSubscriptionRowIdentity(
   }
 
   const row = raw
-    .query(
-      `SELECT provider, auth FROM provider_connections WHERE name = 'chatgpt-subscription'`,
-    )
-    .get() as { provider: string; auth: string } | null;
+    .query<
+      { provider: string; auth: string },
+      []
+    >(`SELECT provider, auth FROM provider_connections WHERE name = 'chatgpt-subscription'`)
+    .get();
   if (!row || row.provider !== "openai") {
     return;
   }

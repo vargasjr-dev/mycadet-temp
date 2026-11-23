@@ -8,7 +8,9 @@ import {
   test,
 } from "bun:test";
 
-import { AssistantConfig } from "../../../../../config/schema.js";
+import { z } from "zod";
+
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import type { Section } from "../types.js";
 
 mock.module("../../../../../persistence/embeddings/qdrant-client.js", () => ({
@@ -20,21 +22,32 @@ mock.module("../../../../../persistence/embeddings/qdrant-client.js", () => ({
 // `statusProvider/Model` is what `getMemoryBackendStatus` reports (the cache-read
 // identity); `embedProvider/Model` is what `embedWithBackend` returns — kept
 // separate so a test can simulate a provider rotation between the two.
-const embedState = {
-  calls: [] as string[][],
+const embedState: {
+  calls: string[][];
+  dim: number;
+  statusProvider: string | null;
+  statusModel: string | null;
+  embedProvider: string;
+  embedModel: string;
+  geminiTaskType?: string;
+  geminiDimensions?: number;
+  customBaseUrl?: string;
+  customDimensions?: number;
+} = {
+  calls: [],
   dim: 4,
-  statusProvider: "local" as string | null,
-  statusModel: "test-model" as string | null,
+  statusProvider: "local",
+  statusModel: "test-model",
   embedProvider: "local",
   embedModel: "test-model",
   // Gemini embedding options that change the vector for identical text. The
   // mocked `geminiCacheExtras` renders these into cache-key fragments exactly
   // as the production helper does, so a test can flip the task type and assert
   // the section cache treats it as a miss.
-  geminiTaskType: undefined as string | undefined,
-  geminiDimensions: undefined as number | undefined,
-  customBaseUrl: undefined as string | undefined,
-  customDimensions: undefined as number | undefined,
+  geminiTaskType: undefined,
+  geminiDimensions: undefined,
+  customBaseUrl: undefined,
+  customDimensions: undefined,
 };
 mock.module(
   "../../../../../persistence/embeddings/embedding-backend.js",
@@ -109,12 +122,15 @@ mock.module(
 // program hits/misses without a real DB; keyed exactly as the production helper
 // (`targetType|targetId|provider|model`) with a stored dimension for the
 // dim-match gate. `getDb` is stubbed to a sentinel since the mock ignores it.
-const cacheState = {
-  store: new Map<
+const cacheState: {
+  store: Map<
     string,
     { dense: number[]; contentHash: string; dimensions: number }
-  >(),
-  reads: [] as string[],
+  >;
+  reads: string[];
+} = {
+  store: new Map(),
+  reads: [],
 };
 function cacheKey(k: {
   targetType: string;
@@ -185,27 +201,51 @@ type ScrollPage = {
 
 // A getCollection() response for an existing collection whose single dense
 // vector matches the configured dimension (CONFIG.vectorSize === 4).
+const collectionParamsSchema = z.object({
+  vectors: z.object({
+    size: z.number(),
+    distance: z.string(),
+    on_disk: z.boolean(),
+  }),
+});
+
 const MATCHING_SECTION_SCHEMA = {
   config: { params: { vectors: { size: 4, distance: "Cosine" } } },
 };
 
-const state = {
+const state: {
+  collectionExists: boolean;
+  collectionExistsCalls: number;
+  createCollectionCalls: number;
+  createCollectionParams: unknown;
+  createIndexCalls: Array<{ field_name: string; field_schema: string }>;
+  upsertCalls: Array<{ wait: boolean; points: MockPoint[] }>;
+  deleteCalls: Array<{ wait: boolean; filter: unknown }>;
+  createCollectionThrows: Error | null;
+  getCollectionCalls: number;
+  getCollectionInfo: unknown;
+  getCollectionThrows: Error | null;
+  deleteCollectionCalls: string[];
+  scrollPages: ScrollPage[];
+  scrollCalls: Array<{ limit: number; offset: unknown }>;
+  scrollThrows: Error | null;
+} = {
   collectionExists: false,
   collectionExistsCalls: 0,
   createCollectionCalls: 0,
-  createCollectionParams: null as unknown,
-  createIndexCalls: [] as Array<{ field_name: string; field_schema: string }>,
-  upsertCalls: [] as Array<{ wait: boolean; points: MockPoint[] }>,
-  deleteCalls: [] as Array<{ wait: boolean; filter: unknown }>,
-  createCollectionThrows: null as Error | null,
+  createCollectionParams: null,
+  createIndexCalls: [],
+  upsertCalls: [],
+  deleteCalls: [],
+  createCollectionThrows: null,
   getCollectionCalls: 0,
-  getCollectionInfo: MATCHING_SECTION_SCHEMA as unknown,
-  getCollectionThrows: null as Error | null,
-  deleteCollectionCalls: [] as string[],
+  getCollectionInfo: MATCHING_SECTION_SCHEMA,
+  getCollectionThrows: null,
+  deleteCollectionCalls: [],
   // Programmed `scroll` pages, consumed in order; each `scroll` call shifts one.
-  scrollPages: [] as ScrollPage[],
-  scrollCalls: [] as Array<{ limit: number; offset: unknown }>,
-  scrollThrows: null as Error | null,
+  scrollPages: [],
+  scrollCalls: [],
+  scrollThrows: null,
 };
 
 class MockQdrantClient {
@@ -271,14 +311,20 @@ mock.module("@qdrant/js-client-rest", () => ({
 // reset (which sends the next maintain pass down its full-corpus re-embed path).
 // `ops` is the write log in order (`set:<key>` / `delete:<key>`), so the
 // chunker-version tests can assert which write lands first.
-const checkpointState = {
-  deletes: [] as string[],
-  ops: [] as string[],
+const checkpointState: {
+  deletes: string[];
+  ops: string[];
+  values: Map<string, string>;
+  throwOnGet: string | null;
+  throwOnSet: string | null;
+} = {
+  deletes: [],
+  ops: [],
   values: new Map<string, string>(),
   // Keys whose read or write throws, so the chunker-version tests can fail a
   // transition part-way through and assert what the hold does with it.
-  throwOnGet: null as string | null,
-  throwOnSet: null as string | null,
+  throwOnGet: null,
+  throwOnSet: null,
 };
 mock.module("../../../../../persistence/checkpoints.js", () => ({
   getMemoryCheckpoint: (key: string) => {
@@ -321,9 +367,9 @@ const {
   _resetSectionDenseStoreForTests,
 } = await import("../section-dense-store.js");
 
-const CONFIG = {
+const CONFIG = AssistantConfigSchema.parse({
   memory: { qdrant: { vectorSize: 4, onDisk: true } },
-} as unknown as AssistantConfig;
+});
 
 function section(
   article: string,
@@ -386,9 +432,7 @@ describe("memory v3 section-dense-store — collection lifecycle", () => {
     await ensureSectionCollection(CONFIG);
 
     expect(state.createCollectionCalls).toBe(1);
-    const params = state.createCollectionParams as {
-      vectors: { size: number; distance: string; on_disk: boolean };
-    };
+    const params = collectionParamsSchema.parse(state.createCollectionParams);
     // Dimension comes from config.memory.qdrant.vectorSize, never hard-coded.
     expect(params.vectors).toEqual({
       size: 4,
@@ -402,15 +446,13 @@ describe("memory v3 section-dense-store — collection lifecycle", () => {
   });
 
   test("creates at whatever dimension the backend is configured for", async () => {
-    const config = {
+    const config = AssistantConfigSchema.parse({
       memory: { qdrant: { vectorSize: 1536, onDisk: false } },
-    } as unknown as AssistantConfig;
+    });
 
     await ensureSectionCollection(config);
 
-    const params = state.createCollectionParams as {
-      vectors: { size: number };
-    };
+    const params = collectionParamsSchema.parse(state.createCollectionParams);
     expect(params.vectors.size).toBe(1536);
   });
 

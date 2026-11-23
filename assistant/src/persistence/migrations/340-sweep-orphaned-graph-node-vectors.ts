@@ -45,13 +45,12 @@ export function migrateSweepOrphanedGraphNodeVectors(
 
   let orphanIds: string[];
   try {
-    orphanIds = (
-      raw
-        .query(
-          /*sql*/ `SELECT DISTINCT target_id FROM memory_embeddings WHERE ${ORPHAN_PREDICATE}`,
-        )
-        .all() as Array<{ target_id: string }>
-    ).map((row) => row.target_id);
+    orphanIds = raw
+      .query<{ target_id: string }, []>(
+        /*sql*/ `SELECT DISTINCT target_id FROM memory_embeddings WHERE ${ORPHAN_PREDICATE}`,
+      )
+      .all()
+      .map((row) => row.target_id);
   } catch {
     // memory_embeddings or memory_graph_nodes absent — nothing to sweep.
     return;

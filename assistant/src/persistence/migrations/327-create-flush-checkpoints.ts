@@ -1,3 +1,4 @@
+import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 
 import { getTelemetryDbPath } from "../../util/telemetry-db-path.js";
@@ -65,10 +66,11 @@ export function createFlushCheckpointsTable(mainDb: DrizzleDb): void {
   const main = getSqliteFrom(mainDb);
   const placeholders = LEGACY_WATERMARK_KEYS.map(() => "?").join(", ");
   const rows = main
-    .query(
-      /*sql*/ `SELECT key, value FROM memory_checkpoints WHERE key IN (${placeholders})`,
-    )
-    .all(...LEGACY_WATERMARK_KEYS) as Array<{ key: string; value: string }>;
+    .query<
+      { key: string; value: string },
+      SQLQueryBindings[]
+    >(/*sql*/ `SELECT key, value FROM memory_checkpoints WHERE key IN (${placeholders})`)
+    .all(...LEGACY_WATERMARK_KEYS);
 
   const now = Date.now();
   const insert = telemetry.prepare(

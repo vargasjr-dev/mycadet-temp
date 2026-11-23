@@ -158,11 +158,12 @@ export async function drainStagedTable(
   // per-column transform, copy a present column verbatim, NULL-fill an absent
   // (legacy) one so an older row still copies cleanly.
   const present = new Set(
-    (
-      raw
-        .query(`SELECT name FROM pragma_table_info('${staging}', 'main')`)
-        .all() as Array<{ name: string }>
-    ).map((r) => r.name),
+    raw
+      .query<{ name: string }, []>(
+        `SELECT name FROM pragma_table_info('${staging}', 'main')`,
+      )
+      .all()
+      .map((r) => r.name),
   );
   const colList = spec.columns.map((c) => `"${c}"`).join(", ");
   const selectList = spec.columns

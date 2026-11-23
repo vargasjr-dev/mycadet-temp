@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 
 // ── Module mocks ────────────────────────────────────────────────────────────
@@ -11,6 +13,8 @@ import { setConfig } from "../../__tests__/helpers/set-config.js";
 // need to remock the module.
 // Provider registry mock. Tests populate `mockProviders` via `beforeEach` /
 // per-test `set` so `getProvider(name)` can return the right stub.
+const capturedStringSchema = z.string();
+
 const mockProviders = new Map<string, { name: string }>();
 
 mock.module("../registry.js", () => ({
@@ -425,7 +429,7 @@ describe("RetryProvider — callSite resolution", () => {
     const expected = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
     let seen: SendMessageOptions | undefined;
     const wrapped = new RetryProvider(
-      makeProvider(expected.provider as string, (options) => {
+      makeProvider(capturedStringSchema.parse(expected.provider), (options) => {
         seen = options;
       }),
     );
@@ -436,7 +440,7 @@ describe("RetryProvider — callSite resolution", () => {
 
     const config = seen?.config;
     assert(config, "Expected provider configuration");
-    expect(config.model).toBe(expected.model as string);
+    expect(config.model).toBe(capturedStringSchema.parse(expected.model));
     expect(config.max_tokens).toBe(expected.maxTokens as number);
   });
 
@@ -469,7 +473,7 @@ describe("RetryProvider — callSite resolution", () => {
 
       const config = seen?.config;
       assert(config, "Expected provider configuration");
-      expect(config.model).toBe(expected.model as string);
+      expect(config.model).toBe(capturedStringSchema.parse(expected.model));
       expect(config.effort).toBe("none");
     }
   });
