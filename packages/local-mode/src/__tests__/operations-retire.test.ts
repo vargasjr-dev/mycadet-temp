@@ -315,6 +315,32 @@ describe("the operator route table — the scoped surface's retire arm", () => {
     expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
   });
 
+  test("dev startup ignores the cadet-local lockfile", async () => {
+    const previousEnvironment = process.env.CADET_ENVIRONMENT;
+    const localLockfile = path.join(tmpDir, "cadet-local", "lockfile.json");
+    fs.mkdirSync(path.dirname(localLockfile), { recursive: true });
+    const localState = JSON.stringify({
+      assistants: [localEntry],
+      activeAssistant: localEntry.assistantId,
+    });
+    fs.writeFileSync(localLockfile, localState);
+
+    process.env.CADET_ENVIRONMENT = "dev";
+    try {
+      const startup = await dispatch("/v1/assistant");
+      expect(startup?.status).toBe(200);
+      expect(await startup?.json()).toEqual({ status: "empty" });
+      expect(loopbackSafeFetchMock).not.toHaveBeenCalled();
+      expect(fs.readFileSync(localLockfile, "utf8")).toBe(localState);
+    } finally {
+      if (previousEnvironment === undefined) {
+        delete process.env.CADET_ENVIRONMENT;
+      } else {
+        process.env.CADET_ENVIRONMENT = previousEnvironment;
+      }
+    }
+  });
+
   test("a retire failure answers the cloud error shape the dialog renders", async () => {
     writeLockfile({ assistants: [dockerEntry], activeAssistant: null });
     retireDockerMock.mockRejectedValueOnce(new Error("no such assistant"));
