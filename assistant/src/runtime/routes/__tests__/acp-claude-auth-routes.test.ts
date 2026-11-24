@@ -19,6 +19,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { z } from "zod";
 
+import type { OAuth2FlowResult } from "../../../security/oauth2.js";
 import type { RouteHandlerArgs } from "../types.js";
 
 // ---------------------------------------------------------------------------
