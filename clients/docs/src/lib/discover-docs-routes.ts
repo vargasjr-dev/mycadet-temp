@@ -95,6 +95,10 @@ export function fetchGlossaryContent(): string {
   return fs.readFileSync("../../GLOSSARY.md").toString();
 }
 
+export function fetchVisionContent(): string {
+  return fs.readFileSync("../../VISION.md").toString();
+}
+
 // The legal pages render from markdown under src/content/legal — the
 // hand-maintained JSX bodies became prose files so the copy is editable
 // without touching a component. The allowlist keeps a stray path segment
@@ -109,6 +113,8 @@ export function fetchLegalPageContent(name: string): string {
     throw new Error(`Unknown legal page: ${name}`);
   }
   return fs
-    .readFileSync(path.join(process.cwd(), "src", "content", "legal", `${name}.md`))
+    .readFileSync(
+      path.join(process.cwd(), "src", "content", "legal", `${name}.md`),
+    )
     .toString();
 }

@@ -833,11 +833,6 @@ async function main() {
   // up at startup for every assistant (not just for Twilio).
   startTunnelForLiveVoice("startup");
 
-  // The lifecycle starts. Each one returns its stop thunk, so this list is
-  // the shutdown order as a side effect of starting. The credential
-  // watcher's start is awaited: its initial poll carries the
-  // credential-backed startup side effects, so each start completes before
-  // the next begins.
   const tasks: (() => StopTask | Promise<StopTask>)[] = [
     startCredentialWatcher,
     startIpcServer,
@@ -845,10 +840,9 @@ async function main() {
     startSleepWakeDetector,
     startInboundEventExpirationCleanup,
   ];
-  const shutdownTasks: StopTask[] = [];
-  for (const task of tasks) {
-    shutdownTasks.push(await task());
-  }
+  const shutdownTasks: StopTask[] = await Promise.all(
+    tasks.map((task) => task()),
+  );
 
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
