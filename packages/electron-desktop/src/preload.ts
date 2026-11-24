@@ -165,7 +165,11 @@ export const createUpdateBridge = (
 export const createNotificationsBridge = (
   ipc: RendererIpc,
 ): CadetBridge["notifications"] => {
-  const publisherSessionId = globalThis.crypto.randomUUID();
+  // Sandboxed Electron preload can omit randomUUID. This ID only separates
+  // publisher sessions on the same sender and is never a credential.
+  const publisherSessionId =
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   const publisherRegistration = Promise.resolve(
     ipc.invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
       publisherSessionId,

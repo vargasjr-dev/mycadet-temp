@@ -56,26 +56,19 @@ const resolveAppDistRoot = (): string => {
   return path.join(repoRoot(), "clients", "app", "dist", "standalone");
 };
 
-const resolveWebDistRoot = (): string => {
-  if (app.isPackaged) {
-    // Windows ships the web bundle once, inside the CLI runtime (the
-    // installed copy under userData is a clone of that directory);
-    // the other platforms stage it at the resources root. Packaged
-    // macOS builds ship no web-dist at all (the web bundle is iframed
-    // from the assistant's version), so that root stays empty.
-    return process.platform === "win32"
-      ? path.join(process.resourcesPath, "cli-runtime", "web-dist")
-      : path.join(process.resourcesPath, "web-dist");
+async function resolveWebDistRoot(): Promise<string> {
+  if (!app.isPackaged) {
+    return path.join(repoRoot(), "clients", "web", "dist");
   }
-  // Dev source tree: clients/web/dist. Requires `bun run build` in
-  // clients/web/.
-  return path.join(repoRoot(), "clients", "web", "dist");
-};
-
-async function resolvePackagedMacWebRoot(): Promise<string> {
   const entry = servedAssistantFromLockfile(readLockfile());
   const instanceDist = entry?.cloud === "local" && localRuntimeWebDist(entry);
   if (instanceDist) return instanceDist;
+
+  const staged = [
+    path.join(process.resourcesPath, "web-dist"),
+    path.join(process.resourcesPath, "cli-runtime", "web-dist"),
+  ].find((dist) => existsSync(path.join(dist, "index.html")));
+  if (staged) return staged;
 
   const cliWebDist = () =>
     path.join(getCliInstallDir(), "node_modules", "@mycadet", "web", "dist");
@@ -128,10 +121,10 @@ export function registerAppProtocol(): void {
         : pathname.startsWith(WEB_ASSET_PREFIX)
           ? "/assistant"
           : undefined;
-    let webDistRoot = resolveWebDistRoot();
-    if (webPrefix && app.isPackaged && process.platform === "darwin") {
+    let webDistRoot = appDistRoot;
+    if (webPrefix) {
       try {
-        webDistRoot = await resolvePackagedMacWebRoot();
+        webDistRoot = await resolveWebDistRoot();
       } catch (error) {
         log.error("[app-protocol] Could not prepare the web bundle:", error);
         return new Response(

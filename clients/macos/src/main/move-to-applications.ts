@@ -1,4 +1,7 @@
 import { app, BrowserWindow, dialog, shell } from "electron";
+import { execFile } from "node:child_process";
+import { join } from "node:path";
+import { promisify } from "node:util";
 
 import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
@@ -151,22 +154,18 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
 
   try {
     let conflictedWithRunningCopy = false;
-    const moved = app.moveToApplicationsFolder({
-      conflictHandler: (conflictType) => {
-        if (conflictType === "existsAndRunning") {
-          // Another copy is already installed and running. Leave it be and
-          // keep running from the current location for this session rather
-          // than nagging — the user clearly already has Cadet installed.
-          conflictedWithRunningCopy = true;
-          log.info(
-            "[move-to-applications] /Applications copy already running; skipping move",
-          );
-          return false;
-        }
-        // "exists" — a stale copy is present but not running; overwrite it.
-        return true;
-      },
-    });
+    const move = () =>
+      app.moveToApplicationsFolder({
+        conflictHandler: (conflictType) => {
+          conflictedWithRunningCopy = conflictType === "existsAndRunning";
+          return !conflictedWithRunningCopy;
+        },
+      });
+    let moved = move();
+    if (conflictedWithRunningCopy && (await confirmReplacement())) {
+      conflictedWithRunningCopy = false;
+      moved = move();
+    }
     // A `false` return is the user's own doing (the conflict handler above, or
     // a cancelled authorization prompt); anything else throws.
     recordInstallLocation(
@@ -179,11 +178,7 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
     // On success the process is already quitting/relaunching, so the splash
     // is torn down with it; only close it if we're staying put.
     if (!moved) closeSplash();
-    if (conflictedWithRunningCopy) {
-      await explainRunningInstallConflict();
-      return true;
-    }
-    return moved;
+    return moved || conflictedWithRunningCopy;
   } catch (err) {
     recordInstallLocation("failed");
     log.error("[move-to-applications] moveToApplicationsFolder failed:", err);
@@ -192,18 +187,60 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
   }
 }
 
-export async function explainRunningInstallConflict(): Promise<void> {
-  if (!app.isPackaged || app.isInApplicationsFolder()) {
-    return;
-  }
-  await app.whenReady();
+const runScript = promisify(execFile);
+
+async function quitInstalledCopy(name: string): Promise<void> {
+  // AppKit requests a graceful quit of the installed bundle by exact path.
+  // The installer has the same bundle ID, so targeting by ID can quit itself.
+  await runScript(
+    "/usr/bin/osascript",
+    [
+      "-l",
+      "JavaScript",
+      "-e",
+      `function run(paths) {
+      ObjC.import("AppKit");
+      const apps = ObjC.unwrap($.NSWorkspace.sharedWorkspace.runningApplications);
+      for (const candidate of apps) {
+        let bundlePath;
+        try { bundlePath = ObjC.unwrap(candidate.bundleURL.path); } catch { continue; }
+        if (!paths.includes(bundlePath)) continue;
+        candidate.terminate;
+        for (let attempt = 0; attempt < 50 && !candidate.isTerminated; attempt++) {
+          $.NSThread.sleepForTimeInterval(0.1);
+        }
+        if (!candidate.isTerminated) throw new Error("Installed app is still running");
+      }
+    }`,
+      join("/Applications", `${name}.app`),
+      join(app.getPath("home"), "Applications", `${name}.app`),
+    ],
+    { timeout: 7000 },
+  );
+}
+
+async function confirmReplacement(): Promise<boolean> {
   const name = productDisplayName();
-  await dialog.showMessageBox({
+  const { response } = await dialog.showMessageBox({
     type: "info",
     title: `Install ${name}`,
     message: `Quit the installed copy of ${name} to replace it.`,
-    detail: `Choose ${name} → Quit ${name}, then open the new copy again. You can leave the old app in Applications.`,
+    detail: `Choose ${name} → Quit ${name}, then open the new copy again.`,
+    buttons: ["Quit and Replace", "Cancel"],
+    defaultId: 0,
+    cancelId: 1,
   });
+  if (response !== 0) return false;
+  try {
+    await quitInstalledCopy(name);
+    return true;
+  } catch (error) {
+    log.warn(
+      "[move-to-applications] Could not quit the installed copy:",
+      error,
+    );
+    return false;
+  }
 }
 
 /**

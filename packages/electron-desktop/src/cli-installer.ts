@@ -1,4 +1,6 @@
 import { app } from "electron";
+import { cliCommand } from "@mycadet/local-mode/environment";
+import { resolveEnvironmentName } from "@mycadet/shared/seeds";
 import { spawn } from "node:child_process";
 import {
   chmodSync,
@@ -28,26 +30,12 @@ const LATEST_INSTALL_DIR = "latest";
 // clearStaleInstallForAppUpdate.
 const INSTALL_APP_VERSION_MARKER = ".app-version";
 
-// Injected by `electron.vite.config.ts` at build time.
-declare const __CADET_ENVIRONMENT__: string;
-const CADET_ENVIRONMENT =
-  typeof __CADET_ENVIRONMENT__ === "string"
-    ? __CADET_ENVIRONMENT__
-    : "production";
-
-/**
- * npm dist-tag the unpinned CLI install floats to. Dev and staging builds run
- * their own published CLI (`--tag dev` / `--tag staging`); everything else
- * tracks production `latest`. Keep in sync with generate-cli-lockfile.sh.
- */
+/** The published CLI tracks the host’s release channel. */
 function getCliDistTag(): string {
-  if (CADET_ENVIRONMENT === "dev") {
-    return "dev";
-  }
-  if (CADET_ENVIRONMENT === "staging") {
-    return "staging";
-  }
-  return "latest";
+  const environment = resolveEnvironmentName();
+  return environment === "dev" || environment === "staging"
+    ? environment
+    : "latest";
 }
 
 // Baked by electron.vite.config.ts: the repo CLI entry for local builds,
@@ -88,10 +76,8 @@ export function getCliRootDir(): string {
 /** The `cadet` bin path within an install directory. */
 function binPathIn(dir: string): string {
   const bins = path.join(dir, "node_modules", ".bin");
-  const devBin = path.join(bins, "cadet-dev");
-  return CADET_ENVIRONMENT === "dev" && existsSync(devBin)
-    ? devBin
-    : path.join(bins, "cadet");
+  const channelBin = path.join(bins, cliCommand());
+  return existsSync(channelBin) ? channelBin : path.join(bins, "cadet");
 }
 
 /** Compare two version-like dir names numerically (so 0.10.0 > 0.9.0). */

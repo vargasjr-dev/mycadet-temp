@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./contract": "./src/lockfile-contract.ts",
+    "./environment": "./src/environment.ts",
     "./teleport-backup-policy": "./src/teleport-backup-policy.ts",
     "./guardian-contract": "./src/guardian-contract.ts"
   },

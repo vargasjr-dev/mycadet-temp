@@ -4,7 +4,10 @@ import { electronMock } from "@mycadet/electron-desktop/test-setup";
 // The barrel's graph probes the notifier addon by path; this run is
 // packaged (appState.isPackaged), so give the probe a resources root whose
 // addon is simply absent — the probe reports unsupported and moves on.
-process.resourcesPath = "/mock/resources";
+Object.defineProperty(process, "resourcesPath", {
+  value: "/mock/resources",
+  configurable: true,
+});
 
 type ConflictType = "exists" | "existsAndRunning";
 type ConflictHandler = (conflictType: ConflictType) => boolean;
@@ -30,8 +33,27 @@ const appState: {
 /** Queued `showMessageBox` answers, consumed in order. */
 let dialogAnswers: { response: number; checkboxChecked?: boolean }[] = [];
 const dialogCalls: { message?: string }[] = [];
+const quitCalls: string[][] = [];
 let revealedInFinder = 0;
 let settingsStore: Record<string, unknown> = {};
+const childProcess = { ...(await import("node:child_process")) };
+mock.module("node:child_process", () => ({
+  ...childProcess,
+  execFile: (
+    file: string,
+    args: string[],
+    _options: unknown,
+    callback: (error: Error | null) => void,
+  ) => {
+    if (file !== "/usr/bin/osascript") {
+      callback(new Error("Unexpected executable"));
+      return;
+    }
+    quitCalls.push(args);
+    appState.conflict = null;
+    callback(null);
+  },
+}));
 
 mock.module("@mycadet/electron-desktop/settings", () => ({
   createAppSettingsStore: () => undefined,
@@ -158,6 +180,14 @@ describe("relocateToApplicationsFolder", () => {
     expect(await relocateToApplicationsFolder()).toBe(true);
     expect(getInstallLocation()).toBe("conflict-exists-and-running");
     expect(dialogCalls.at(-1)?.message).toContain("Quit the installed copy");
+  });
+
+  test("quits only the installed bundle and retries after confirmation", async () => {
+    appState.conflict = "existsAndRunning";
+    dialogAnswers = [{ response: 0 }];
+    expect(await relocateToApplicationsFolder()).toBe(true);
+    expect(getInstallLocation()).toBe("relocating");
+    expect(quitCalls.at(-1)).toContain("/Applications/Cadet.app");
   });
 
   test("overwrites a stale copy rather than refusing", async () => {

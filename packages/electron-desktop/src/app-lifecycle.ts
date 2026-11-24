@@ -103,8 +103,6 @@ export interface DesktopAppInputs {
    * move-to-Applications relaunch).
    */
   precheck?: () => boolean | Promise<boolean>;
-  /** Allows an installer launch to explain why the running copy won the lock. */
-  onSecondaryInstance?: () => Promise<void>;
   /**
    * The shell's toast-helper identity: the supervised sidecar's executable
    * name, its dev-override env var, and the sidecar client name it registers
@@ -204,64 +202,11 @@ const provisionPackagedCli = (): void => {
   });
 };
 
-/**
- * The app-lifecycle seam every desktop client shares. Owns the wiring that
- * is identical across the three shells:
- *
- * - before `whenReady`: the single-instance lock (the losing instance quits
- *   and skips its own setup — a queued `ready` still fires after
- *   `app.quit()`), the privileged scheme registration, the side-by-side
- *   userData suffix, and the deep-link / file-open launch capture (the
- *   `will-finish-launching` subscription must exist before `whenReady` or
- *   the launch URL the OS delivered is missed);
- * - on ready: the universal installs (hotkey settings provider, auto-update),
- *   the protocol stack (app protocol + gateway guard, the cadet bundle
- *   protocol, the permission handler, the CSP), the presence/identity slice
- *   (avatar, identity, power, status, connectivity — registered before any
- *   window or tray exists so their initial render reflects what the renderer
- *   publishes during bootstrap), and the notification runtime — these run for
- *   the lock loser too, whose process is already quitting;
- * - then, behind the lock gate: the universal app surface (the bundle flow,
- *   the command surface — hotkey catalog, About, the desktop menu, global
- *   shortcuts, the context menus — diagnostics, downloads, window attention,
- *   and the floating windows), the classic-desktop composition (Windows,
- *   Linux), the packaged CLI provisioning, and the client's own setup.
- */
 export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
-  // The app EventEmitter fans out to a dozen legit before-quit tear-downs
-  // (taskbar, dictation, main-window close-through, power events, the
-  // notifier delegate, bundles, the permission guide, the host proxy, the
-  // companion, the tray), which trips Electron's default 10-listener
-  // warning on every boot. None of them accumulate per event - each module
-  // registers once - so the ceiling is a false positive, not a leak.
   app.setMaxListeners(20);
 
-  // Single-instance lock: relaunches focus the existing window instead of
-  // spawning a parallel main process. The second-instance handler fires on
-  // the instance that holds the lock (the primary).
-  // https://www.electronjs.org/docs/latest/api/app#apprequestsingleinstancelockadditionaldata
   applyUserDataSuffix(resolveEnvironmentName());
-  const hasInstanceLock = app.requestSingleInstanceLock();
-  if (!hasInstanceLock) {
-    if (inputs.onSecondaryInstance) {
-      try {
-        await inputs.onSecondaryInstance();
-      } finally {
-        app.quit();
-      }
-      return;
-    }
-    app.quit();
-  }
-
-  const ensureMainWindow = (): Promise<void> => ensureVisible();
-
-  // Re-launches focus the existing window instead of spawning a parallel
-  // main process. A second-instance launch recreates the main window when it
-  // was destroyed, so the user always sees a window in response.
-  app.on("second-instance", () => {
-    void ensureMainWindow();
-  });
+  const ensureMainWindow = () => ensureVisible();
 
   registerPrivilegedSchemes();
   configureMainWindow({ titleBarMode: inputs.titleBarMode });
@@ -285,10 +230,14 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
   // The client's precheck — the macOS move-to-Applications relaunch — runs
   // before anything is wired: it may quit this process, and a relaunch that
   // lands after windows and menus exist would tear them down mid-flight.
-  if (hasInstanceLock && inputs.precheck && (await inputs.precheck())) {
+  if (inputs.precheck && (await inputs.precheck())) {
     app.quit();
     return;
   }
+
+  const hasInstanceLock = app.requestSingleInstanceLock();
+  if (!hasInstanceLock) app.quit();
+  app.on("second-instance", () => void ensureMainWindow());
 
   // Feature modules each attach cleanup listeners; lift the default cap of
   // 10 so they don't trip MaxListenersExceededWarning. The security wiring

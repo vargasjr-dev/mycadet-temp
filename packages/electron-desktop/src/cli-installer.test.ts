@@ -213,6 +213,19 @@ describe("getCliBinPath", () => {
     readdirSyncReturn = [];
     expect(getCliBinPath()).toBe(cliBinPath);
   });
+
+  test("prefers the executable for the resolved release channel", () => {
+    const previous = process.env.CADET_ENVIRONMENT;
+    process.env.CADET_ENVIRONMENT = "staging";
+    try {
+      const channelBin = `${cliBinPath}-staging`;
+      existsSyncByPath[channelBin] = true;
+      expect(getCliBinPath()).toBe(channelBin);
+    } finally {
+      if (previous === undefined) delete process.env.CADET_ENVIRONMENT;
+      else process.env.CADET_ENVIRONMENT = previous;
+    }
+  });
 });
 
 describe("getBundledBunPath", () => {

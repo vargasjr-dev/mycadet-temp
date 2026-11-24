@@ -307,6 +307,9 @@ describe("registerAppProtocol", () => {
   test("packaged Mac serves the CLI's web package when there is no instance web bundle", async () => {
     await setupPackaged();
     Object.defineProperty(process, "platform", { value: "darwin" });
+    await fs.rm(path.join(process.resourcesPath, "cli-runtime"), {
+      recursive: true,
+    });
     cliInstallDir = path.join(process.resourcesPath, "cli");
     const dist = path.join(
       cliInstallDir,

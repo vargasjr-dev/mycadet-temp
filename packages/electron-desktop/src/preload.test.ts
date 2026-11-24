@@ -23,6 +23,31 @@ import {
   createWindowAttentionSubscriber,
 } from "./preload";
 
+test("notification preload works without crypto.randomUUID", async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    value: {},
+  });
+  try {
+    const invoke = mock((_channel: string, _payload?: unknown) =>
+      Promise.resolve(true),
+    );
+    const ipc = { invoke, on: () => {} } as unknown as IpcRenderer;
+    const bridge = createNotificationsBridge(ipc);
+    expect(await bridge.registerIdentityPublisher?.()).toBe(true);
+    expect(invoke).toHaveBeenCalledWith(
+      NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER,
+      {
+        publisherSessionId: expect.any(String),
+      },
+    );
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, "crypto", descriptor);
+    else Reflect.deleteProperty(globalThis, "crypto");
+  }
+});
+
 test("sends recovery offers and clears over the companion IPC channel", () => {
   const send = mock((_channel: string, _offer: unknown) => undefined);
   const ipc = { send } as unknown as IpcRenderer;
