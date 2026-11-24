@@ -11,7 +11,6 @@
 // tests exercise only the lexical enqueue seam, not the embedding/extraction
 // machinery. Memory config is real (default-enabled), flipped on disk for the
 // disabled case.
-
 import {
   afterAll,
   afterEach,
@@ -24,12 +23,20 @@ import {
 } from "bun:test";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 // Stub the segment indexer so the persist path's memory indexing runs cheaply.
 // The lexical enqueue is a separate call on the persist path and still fires.
 // Other exports are provided so any transitive importer of this module
 // resolves. `throwFromIndex` lets a test simulate a transient segment-indexing
 // failure to prove the lexical enqueue survives it.
+const metadataConversationSchema = z.looseObject({
+  conversationId: z.string().optional(),
+});
+const metadataMessageSchema = z.looseObject({
+  messageId: z.string().optional(),
+});
+
 let throwFromIndex = false;
 mock.module("../plugins/defaults/memory/indexer.js", () => ({
   MIN_SEGMENT_CHARS: 50,
@@ -108,7 +115,7 @@ function countJobs(type: MemoryJobType, conversationId?: string): number {
   return rows.filter((r) => {
     try {
       return (
-        (JSON.parse(r.payload) as { conversationId?: string })
+        metadataConversationSchema.parse(JSON.parse(r.payload))
           .conversationId === conversationId
       );
     } catch {
@@ -126,7 +133,7 @@ function lexicalJobMessageIds(): string[] {
     .map((r) => {
       try {
         return (
-          (JSON.parse(r.payload) as { messageId?: string }).messageId ?? ""
+          metadataMessageSchema.parse(JSON.parse(r.payload)).messageId ?? ""
         );
       } catch {
         return "";
@@ -260,7 +267,7 @@ describe("messages lexical-index dual-write", () => {
         .find((r) => {
           try {
             return (
-              (JSON.parse(r.payload) as { conversationId?: string })
+              metadataConversationSchema.parse(JSON.parse(r.payload))
                 .conversationId === conv.id
             );
           } catch {
@@ -303,7 +310,7 @@ describe("messages lexical-index dual-write", () => {
       .from(memoryJobs)
       .where(eq(memoryJobs.type, "delete_message_lexical"))
       .all()
-      .map((r) => (JSON.parse(r.payload) as { messageId?: string }).messageId);
+      .map((r) => metadataMessageSchema.parse(JSON.parse(r.payload)).messageId);
     expect(ids).toEqual([message.id]);
   });
 
@@ -336,7 +343,7 @@ describe("messages lexical-index dual-write", () => {
       .from(memoryJobs)
       .where(eq(memoryJobs.type, "delete_message_lexical"))
       .all()
-      .map((r) => (JSON.parse(r.payload) as { messageId?: string }).messageId);
+      .map((r) => metadataMessageSchema.parse(JSON.parse(r.payload)).messageId);
     expect(new Set(deletedIds)).toEqual(
       new Set([lastUser.id, lastAssistant.id]),
     );
@@ -384,7 +391,7 @@ describe("messages lexical-index dual-write", () => {
       .from(memoryJobs)
       .where(eq(memoryJobs.type, "delete_message_lexical"))
       .all()
-      .map((r) => (JSON.parse(r.payload) as { messageId?: string }).messageId);
+      .map((r) => metadataMessageSchema.parse(JSON.parse(r.payload)).messageId);
     expect(deletedIds).toContain(mergedAway.id);
     // The retained row is not itself scheduled for deletion.
     expect(deletedIds).not.toContain(retained.id);

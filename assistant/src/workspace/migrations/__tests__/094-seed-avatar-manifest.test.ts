@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { seedAvatarManifestMigration } from "../094-seed-avatar-manifest.js";
 
 const VALID_TRAITS = {
@@ -23,10 +24,9 @@ let avatarDir: string;
 let manifestPath: string;
 
 function readManifest(): Record<string, unknown> {
-  return JSON.parse(readFileSync(manifestPath, "utf-8")) as Record<
-    string,
-    unknown
-  >;
+  return jsonObjectSchema.parse(
+    JSON.parse(readFileSync(manifestPath, "utf-8")),
+  );
 }
 
 beforeEach(() => {
@@ -110,7 +110,7 @@ describe("094-seed-avatar-manifest", () => {
     seedAvatarManifestMigration.run(workspaceDir);
 
     expect(readFileSync(manifestPath, "utf-8")).toBe(first);
-    expect((JSON.parse(first) as Record<string, unknown>).kind).toBe("image");
+    expect(jsonObjectSchema.parse(JSON.parse(first)).kind).toBe("image");
   });
 
   test("down() removes only avatar.json (legacy files remain)", () => {

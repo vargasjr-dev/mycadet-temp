@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { collectImageManifest } from "../context/compactor.js";
 import { resolveAssistantAttachments } from "../daemon/conversation-attachments.js";
 import { settleTurnContent } from "../daemon/conversation-turn-finalize.js";
@@ -153,7 +155,11 @@ describe("computer-use screenshot reply placement", () => {
     const diskRows = readFileSync(`${diskDir}/messages.jsonl`, "utf8")
       .trim()
       .split("\n")
-      .map((line) => JSON.parse(line) as { attachments?: string[] });
+      .map((line) =>
+        z
+          .looseObject({ attachments: z.array(z.string()).optional() })
+          .parse(JSON.parse(line)),
+      );
     expect(diskRows.map((row) => row.attachments?.length ?? 0)).toEqual([
       1, 1, 1,
     ]);
@@ -380,9 +386,13 @@ describe("computer-use screenshot reply placement", () => {
       const diskRows = readFileSync(`${diskDir}/messages.jsonl`, "utf8")
         .trim()
         .split("\n")
-        .map(
-          (line) =>
-            JSON.parse(line) as { content?: string; attachments?: string[] },
+        .map((line) =>
+          z
+            .looseObject({
+              content: z.string().optional(),
+              attachments: z.array(z.string()).optional(),
+            })
+            .parse(JSON.parse(line)),
         );
       expect(diskRows.map((row) => row.content)).toEqual([
         "Here is the result.",

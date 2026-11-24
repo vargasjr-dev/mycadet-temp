@@ -1,6 +1,7 @@
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
 import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 import { credentialKey } from "../../../security/credential-key.js";
 
@@ -145,10 +146,7 @@ describe("startSlackStream", () => {
     let capturedBody: Record<string, unknown> = {};
     globalThis.fetch = fetchMock(
       mock(async (_input, init) => {
-        capturedBody = JSON.parse(String(init?.body)) as Record<
-          string,
-          unknown
-        >;
+        capturedBody = jsonObjectSchema.parse(JSON.parse(String(init?.body)));
         return new Response(JSON.stringify({ ok: true, ts: "1700.1" }), {
           status: 200,
           headers: { "content-type": "application/json" },
@@ -263,10 +261,7 @@ describe("appendSlackStream", () => {
     let capturedBody: Record<string, unknown> = {};
     globalThis.fetch = fetchMock(
       mock(async (_input, init) => {
-        capturedBody = JSON.parse(String(init?.body)) as Record<
-          string,
-          unknown
-        >;
+        capturedBody = jsonObjectSchema.parse(JSON.parse(String(init?.body)));
         return new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { "content-type": "application/json" },

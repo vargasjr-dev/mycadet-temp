@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { WORKSPACE_MIGRATIONS } from "../registry.js";
 
 const extractWorkspaceMcpJsonMigration = WORKSPACE_MIGRATIONS.find(
@@ -19,10 +20,9 @@ function workspaceWith(config: unknown): string {
 }
 
 function readJson(dir: string, name: string): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(dir, name), "utf8")) as Record<
-    string,
-    unknown
-  >;
+  return jsonObjectSchema.parse(
+    JSON.parse(readFileSync(join(dir, name), "utf8")),
+  );
 }
 
 describe("156-extract-workspace-mcp-json", () => {

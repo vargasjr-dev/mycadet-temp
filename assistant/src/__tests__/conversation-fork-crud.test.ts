@@ -41,6 +41,7 @@ import { stringifyMessageContent } from "../persistence/message-content.js";
 import { rawGet, rawRun } from "../persistence/raw-query.js";
 import {
   activationState,
+  attachments,
   channelInboundEvents,
   conversationAssistantAttentionState,
   conversationCompactionEvents,
@@ -50,6 +51,8 @@ import {
   llmRequestLogs,
   memoryJobs,
   memoryRetrospectiveState,
+  messageAttachments,
+  messages,
   toolInvocations,
 } from "../persistence/schema/index.js";
 import {
@@ -72,6 +75,7 @@ import {
 } from "../plugins/defaults/memory/v3/ever-injected-store.js";
 import { ensureMemoryV3InjectedSectionsSchema } from "../plugins/defaults/memory/v3/plugin-schema.js";
 import { handleListMessages } from "../runtime/routes/conversation-routes.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 await initializeDb();
 
@@ -93,14 +97,16 @@ function resetTables(): void {
   // the reset runs before either, so stand it up here.
   ensureMemoryV3InjectedSectionsSchema(getMemorySqlite()!);
   getMemorySqlite()!.exec("DELETE FROM memory_v3_injected_sections");
-  db.run("DELETE FROM message_attachments");
-  db.run("DELETE FROM attachments");
-  db.run("DELETE FROM messages");
-  db.run("DELETE FROM conversations");
+  db.delete(messageAttachments).run();
+  db.delete(attachments).run();
+  db.delete(messages).run();
+  db.delete(conversations).run();
 }
 
-function parseMetadata(metadata: string | null): unknown {
-  return metadata == null ? null : JSON.parse(metadata);
+function parseMetadata(
+  metadata: string | null,
+): Record<string, unknown> | null {
+  return metadata == null ? null : jsonObjectSchema.parse(JSON.parse(metadata));
 }
 
 describe("forkConversation", () => {
@@ -150,9 +156,9 @@ describe("forkConversation", () => {
     ).toEqual(
       sourceMessages.map((message) => {
         const metadata = parseMetadata(message.metadata);
-        return metadata && typeof metadata === "object"
+        return metadata
           ? {
-              ...(metadata as Record<string, unknown>),
+              ...metadata,
               forkSourceMessageId: message.id,
             }
           : { forkSourceMessageId: message.id };
@@ -686,10 +692,7 @@ describe("forkConversation", () => {
 
     const forkedMessages = getMessages(fork.id);
     expect(forkedMessages).toHaveLength(1);
-    const meta = parseMetadata(forkedMessages[0].metadata) as Record<
-      string,
-      unknown
-    >;
+    const meta = parseMetadata(forkedMessages[0].metadata)!;
     expect(meta.pkbContextBlock).toBe(
       "<knowledge_base>\nstale\n</knowledge_base>",
     );
@@ -735,7 +738,7 @@ describe("forkConversation", () => {
     )
       .trim()
       .split("\n")
-      .map((line) => JSON.parse(line) as Record<string, unknown>);
+      .map((line) => jsonObjectSchema.parse(JSON.parse(line)));
 
     expect(forkAssistant).toBeDefined();
     const forkAttachments = getAttachmentsForMessage(forkAssistant!.id);
@@ -881,22 +884,14 @@ describe("forkConversation", () => {
     );
 
     const forkMarkerIds = computerUseScreenshotAttachmentIdsFromMetadata(
-      parseMetadata(forkReply!.metadata) as Record<string, unknown>,
+      parseMetadata(forkReply!.metadata)!,
     );
     expect(forkMarkerIds).toEqual([screenshot.id, clonedScreenshot!.id]);
     expect(forkMarkerIds).not.toContain(clonedExplicit!.id);
 
-    const history = (await handleListMessages({
+    const history = await handleListMessages({
       queryParams: { conversationId: fork.id },
-    })) as {
-      messages: Array<{
-        toolCalls?: Array<{ imageAttachmentIds?: string[] }>;
-        attachments: Array<{
-          id: string;
-          computerUseScreenshot?: boolean;
-        }>;
-      }>;
-    };
+    });
     expect(
       history.messages.flatMap((message) =>
         (message.toolCalls ?? []).flatMap(
@@ -1052,11 +1047,9 @@ describe("forkConversation", () => {
     const forkAssistant = getMessages(fork.id).find(
       (message) => message.role === "assistant",
     );
-    const forkAssistantMetadata = forkAssistant?.metadata
-      ? (JSON.parse(forkAssistant.metadata) as {
-          forkSourceMessageId?: string;
-        })
-      : null;
+    const forkAssistantMetadata = parseMetadata(
+      forkAssistant?.metadata ?? null,
+    );
     const forkRequestLogs = forkAssistant
       ? getRequestLogsByMessageId(forkAssistant.id)
       : [];
@@ -1717,11 +1710,12 @@ describe("forkConversation", () => {
     // forkSourceMessageId stamped into each copy's metadata.
     const sourceToFork = new Map<string, string>();
     for (const forked of forkMessages) {
-      const md = parseMetadata(forked.metadata) as {
-        forkSourceMessageId?: string;
-      } | null;
+      const md = parseMetadata(forked.metadata);
       expect(md?.forkSourceMessageId).toBeDefined();
-      sourceToFork.set(md!.forkSourceMessageId!, forked.id);
+      if (typeof md?.forkSourceMessageId !== "string") {
+        throw new Error("Expected the source message id");
+      }
+      sourceToFork.set(md.forkSourceMessageId, forked.id);
     }
     expect(sourceToFork.size).toBe(sourceMessages.length);
     for (const sourceMessage of sourceMessages) {
@@ -1788,9 +1782,7 @@ describe("forkConversation + memory_retrospective_state", () => {
     const forkState = getRetrospectiveState(fork.id);
     const forkMessages = getMessages(fork.id);
     const mappedProcessedId = forkMessages.find((m) => {
-      const md = parseMetadata(m.metadata) as {
-        forkSourceMessageId?: string;
-      } | null;
+      const md = parseMetadata(m.metadata);
       return md?.forkSourceMessageId === processedMessage.id;
     })?.id;
 
@@ -2093,11 +2085,11 @@ describe("forkConversation with unfinalized rows", () => {
       "partial reply still being written",
       { skipIndexing: true },
     );
-    rawRun(
-      "test:markUnfinalized",
-      "UPDATE messages SET finalized = 0 WHERE id = ?",
-      streaming.id,
-    );
+    getDb()
+      .update(messages)
+      .set({ finalized: 0 })
+      .where(eq(messages.id, streaming.id))
+      .run();
 
     const fork = forkConversation({ conversationId: source.id });
     const forkMessages = getMessages(fork.id);
@@ -2109,9 +2101,7 @@ describe("forkConversation with unfinalized rows", () => {
     expect(forkMessages).toHaveLength(2);
     expect(forkMessages.every((row) => row.finalized === 1)).toBe(true);
     const forkedFromIds = forkMessages.map(
-      (row) =>
-        (parseMetadata(row.metadata) as { forkSourceMessageId?: string })
-          ?.forkSourceMessageId,
+      (row) => parseMetadata(row.metadata)?.forkSourceMessageId,
     );
     expect(forkedFromIds).not.toContain(streaming.id);
     expect(fork.forkParentMessageId).toBe(lastFinalized.id);
@@ -2128,11 +2118,11 @@ describe("forkConversation with unfinalized rows", () => {
     const tail = await addMessage(source.id, "user", "latest", {
       skipIndexing: true,
     });
-    rawRun(
-      "test:markUnfinalized",
-      "UPDATE messages SET finalized = 0 WHERE id = ?",
-      stale.id,
-    );
+    getDb()
+      .update(messages)
+      .set({ finalized: 0 })
+      .where(eq(messages.id, stale.id))
+      .run();
 
     const fork = forkConversation({ conversationId: source.id });
     const forkMessages = getMessages(fork.id);

@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import { IpcConnectError } from "@mycadet/gateway-client/ipc-client";
+import { z } from "zod";
 
 import { withErrorHandling } from "../runtime/middleware/error-handler.js";
 import { ConfigError, ProviderNotConfiguredError } from "../util/errors.js";
+
+const errorResponseSchema = z.looseObject({
+  error: z.looseObject({ code: z.string(), message: z.string() }),
+});
 
 describe("withErrorHandling – friendly error messages", () => {
   test("ProviderNotConfiguredError returns actionable message for anthropic", async () => {
@@ -12,9 +17,7 @@ describe("withErrorHandling – friendly error messages", () => {
     });
 
     expect(response.status).toBe(422);
-    const body = (await response.json()) as {
-      error: { code: string; message: string };
-    };
+    const body = errorResponseSchema.parse(await response.json());
     expect(body.error.code).toBe("UNPROCESSABLE_ENTITY");
     expect(body.error.message).toContain("No API key configured");
     expect(body.error.message).toContain("keys set anthropic");
@@ -26,9 +29,7 @@ describe("withErrorHandling – friendly error messages", () => {
     });
 
     expect(response.status).toBe(422);
-    const body = (await response.json()) as {
-      error: { code: string; message: string };
-    };
+    const body = errorResponseSchema.parse(await response.json());
     expect(body.error.message).toContain("keys set openai");
     expect(body.error.message).not.toContain("keys set anthropic");
   });
@@ -39,9 +40,7 @@ describe("withErrorHandling – friendly error messages", () => {
     });
 
     expect(response.status).toBe(422);
-    const body = (await response.json()) as {
-      error: { code: string; message: string };
-    };
+    const body = errorResponseSchema.parse(await response.json());
     expect(body.error.message).toBe("Twilio phone number not configured.");
   });
 
@@ -51,9 +50,7 @@ describe("withErrorHandling – friendly error messages", () => {
     });
 
     expect(response.status).toBe(503);
-    const body = (await response.json()) as {
-      error: { code: string; message: string };
-    };
+    const body = errorResponseSchema.parse(await response.json());
     expect(body.error.code).toBe("SERVICE_UNAVAILABLE");
     expect(body.error.message).toContain("Gateway is not reachable over IPC");
   });

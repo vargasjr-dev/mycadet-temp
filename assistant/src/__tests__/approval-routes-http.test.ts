@@ -6,10 +6,18 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "../api/index.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type { SecretPromptResult } from "../permissions/secret-prompt-types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+
+const acceptedResponseSchema = z.looseObject({ accepted: z.boolean() });
+const optionalErrorResponseSchema = z.looseObject({
+  error: z.looseObject({ message: z.string().optional() }).optional(),
+});
 
 process.env.DISABLE_HTTP_AUTH = "true";
 
@@ -282,7 +290,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
         headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
         body: JSON.stringify({ requestId: "req-abc", decision: "allow" }),
       });
-      const body = (await res.json()) as { accepted: boolean };
+      const body = acceptedResponseSchema.parse(await res.json());
 
       expect(res.status).toBe(200);
       expect(body.accepted).toBe(true);
@@ -409,7 +417,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
           decision: "allow_10m",
         }),
       });
-      const body = (await res.json()) as { error?: { message?: string } };
+      const body = optionalErrorResponseSchema.parse(await res.json());
 
       // In PR3, temporal decisions (allow_10m) are no longer valid — only allow/deny
       // are accepted. The canonicalizeConfirmDecision function returns null for temporal
@@ -446,7 +454,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
           decision: "allow_10m",
         }),
       });
-      const body = (await res.json()) as { error?: { message?: string } };
+      const body = optionalErrorResponseSchema.parse(await res.json());
 
       expect(res.status).toBe(400);
       expect(body.error?.message).toContain("resolve to allow or deny");
@@ -488,7 +496,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
           delivery: "store",
         }),
       });
-      const body = (await res.json()) as { accepted: boolean };
+      const body = acceptedResponseSchema.parse(await res.json());
 
       expect(res.status).toBe(200);
       expect(body.accepted).toBe(true);
@@ -532,7 +540,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
           delivery: "store",
         }),
       });
-      const body = (await res.json()) as { accepted: boolean };
+      const body = acceptedResponseSchema.parse(await res.json());
 
       // THEN the request is accepted
       expect(res.status).toBe(200);
@@ -619,7 +627,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
         headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
         body: JSON.stringify({ requestId: "secret-cancel-1" }),
       });
-      const body = (await res.json()) as { accepted: boolean };
+      const body = acceptedResponseSchema.parse(await res.json());
 
       expect(res.status).toBe(200);
       expect(body.accepted).toBe(true);
@@ -659,7 +667,7 @@ describe("standalone approval endpoints — HTTP layer", () => {
           delivery: "none",
         }),
       });
-      const body = (await res.json()) as { accepted: boolean };
+      const body = acceptedResponseSchema.parse(await res.json());
 
       expect(res.status).toBe(200);
       expect(body.accepted).toBe(true);
@@ -803,9 +811,9 @@ describe("standalone approval endpoints — HTTP layer", () => {
           headers: { ...AUTH_HEADERS },
         },
       );
-      const body = (await res.json()) as {
-        pendingSecret: Record<string, unknown> | null;
-      };
+      const body = z
+        .looseObject({ pendingSecret: z.union([jsonObjectSchema, z.null()]) })
+        .parse(await res.json());
 
       expect(res.status).toBe(200);
       expect(body.pendingSecret).toEqual({

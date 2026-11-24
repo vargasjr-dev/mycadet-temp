@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { getMemoryDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
@@ -45,10 +46,12 @@ describe("upsertDebouncedJob payload refresh", () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]!.id).toBe(legacyId);
-    const payload = JSON.parse(rows[0]!.payload) as {
-      conversationId: string;
-      scopeId?: string;
-    };
+    const payload = z
+      .looseObject({
+        conversationId: z.string(),
+        scopeId: z.string().optional(),
+      })
+      .parse(JSON.parse(rows[0]!.payload));
     expect(payload.conversationId).toBe("conv-1");
     expect(payload.scopeId).toBe("private-scope");
   });
@@ -74,7 +77,9 @@ describe("upsertDebouncedJob payload refresh", () => {
       .all();
 
     expect(rows).toHaveLength(1);
-    const payload = JSON.parse(rows[0]!.payload) as { scopeId?: string };
+    const payload = z
+      .looseObject({ scopeId: z.string().optional() })
+      .parse(JSON.parse(rows[0]!.payload));
     expect(payload.scopeId).toBe("newer-scope");
   });
 
@@ -119,10 +124,12 @@ describe("upsertDebouncedJob payload refresh", () => {
       .all();
 
     expect(rows).toHaveLength(1);
-    const payload = JSON.parse(rows[0]!.payload) as {
-      conversationId: string;
-      scopeId?: string;
-    };
+    const payload = z
+      .looseObject({
+        conversationId: z.string(),
+        scopeId: z.string().optional(),
+      })
+      .parse(JSON.parse(rows[0]!.payload));
     expect(payload.conversationId).toBe("conv-4");
     expect(payload.scopeId).toBe("default");
   });

@@ -10,6 +10,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // Stub the OAuth connection store so the writer runs without a
 // database. Tests push provider rows into `fakeConnections` before
 // invoking the writer.
@@ -433,9 +435,9 @@ describe("relationship-state-writer", () => {
       expect(Date.parse(first.hatchedDate)).toBeGreaterThan(0);
       const sidecarPath = join(workspaceDir, "data", "hatched.json");
       expect(existsSync(sidecarPath)).toBe(true);
-      const sidecar = JSON.parse(readFileSync(sidecarPath, "utf-8")) as {
-        hatchedAt: string;
-      };
+      const sidecar = z
+        .looseObject({ hatchedAt: z.string() })
+        .parse(JSON.parse(readFileSync(sidecarPath, "utf-8")));
       expect(sidecar.hatchedAt).toBe(first.hatchedDate);
     });
 
@@ -460,9 +462,9 @@ describe("relationship-state-writer", () => {
       // The sidecar must exist on disk after the first call.
       const sidecarPath = join(workspaceDir, "data", "hatched.json");
       expect(existsSync(sidecarPath)).toBe(true);
-      const sidecar = JSON.parse(readFileSync(sidecarPath, "utf-8")) as {
-        hatchedAt: string;
-      };
+      const sidecar = z
+        .looseObject({ hatchedAt: z.string() })
+        .parse(JSON.parse(readFileSync(sidecarPath, "utf-8")));
       expect(sidecar.hatchedAt).toBe(state.hatchedDate);
     });
 
@@ -599,13 +601,15 @@ describe("relationship-state-writer", () => {
 
       const path = getOnboardingSidecarPath();
       expect(existsSync(path)).toBe(true);
-      const decoded = JSON.parse(readFileSync(path, "utf-8")) as {
-        tools: string[];
-        tasks: string[];
-        tone: string;
-        userName?: string;
-        assistantName?: string;
-      };
+      const decoded = z
+        .looseObject({
+          tools: z.array(z.string()),
+          tasks: z.array(z.string()),
+          tone: z.string(),
+          userName: z.string().optional(),
+          assistantName: z.string().optional(),
+        })
+        .parse(JSON.parse(readFileSync(path, "utf-8")));
       expect(decoded.tools).toEqual(["Slack", "Gmail"]);
       expect(decoded.tasks).toEqual(["Inbox triage"]);
       expect(decoded.tone).toBe("Dry and precise");

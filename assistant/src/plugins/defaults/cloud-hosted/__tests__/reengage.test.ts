@@ -18,7 +18,6 @@
  * - Model writes nothing → 502
  * - Model writes JSON missing a field → 502
  */
-
 import { existsSync, mkdtempSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -26,6 +25,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { RunConversationTurnOptions } from "@mycadet/plugin-api";
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Mock — supplies every named export reengage.ts imports from the plugin API:
@@ -33,6 +33,10 @@ import type { RunConversationTurnOptions } from "@mycadet/plugin-api";
 // assistant (writes `fileContents`, if non-null, to the path injected into the
 // prompt).
 // ---------------------------------------------------------------------------
+
+const reengageConversationSchema = z.looseObject({
+  conversation: z.union([z.string(), z.null()]),
+});
 
 interface ConversationRowStub {
   id: string;
@@ -113,11 +117,13 @@ describe("cloud-hosted /reengage POST", () => {
   test("returns the structured subject/body the model wrote, and cleans up", async () => {
     const response = await POST(postRequest());
     expect(response.status).toBe(200);
-    const json = (await response.json()) as {
-      subject: string;
-      body: string;
-      conversation: string | null;
-    };
+    const json = z
+      .looseObject({
+        subject: z.string(),
+        body: z.string(),
+        conversation: z.union([z.string(), z.null()]),
+      })
+      .parse(await response.json());
     expect(json.subject).toBe("Ready when you are");
     expect(json.body).toBe("Just picking up where we left off.");
 
@@ -148,7 +154,7 @@ describe("cloud-hosted /reengage POST", () => {
     ];
     fileContents = draftJson("conv-42");
     const response = await POST(postRequest());
-    const json = (await response.json()) as { conversation: string | null };
+    const json = reengageConversationSchema.parse(await response.json());
 
     expect(json.conversation).toBe("conv-42");
     // The candidates are offered to the model in the prompt (id + title).
@@ -162,14 +168,14 @@ describe("cloud-hosted /reengage POST", () => {
     // A hallucinated / stale id the assistant made up is never trusted.
     fileContents = draftJson("made-up-id");
     const response = await POST(postRequest());
-    const json = (await response.json()) as { conversation: string | null };
+    const json = reengageConversationSchema.parse(await response.json());
     expect(json.conversation).toBeNull();
   });
 
   test("null conversation is returned when the assistant declines to pick", async () => {
     fileContents = draftJson(null);
     const response = await POST(postRequest());
-    const json = (await response.json()) as { conversation: string | null };
+    const json = reengageConversationSchema.parse(await response.json());
     expect(json.conversation).toBeNull();
   });
 
@@ -187,7 +193,7 @@ describe("cloud-hosted /reengage POST", () => {
     ];
     fileContents = draftJson("surfaced-bg");
     const response = await POST(postRequest());
-    const json = (await response.json()) as { conversation: string | null };
+    const json = reengageConversationSchema.parse(await response.json());
 
     expect(json.conversation).toBeNull();
     expect(promptText()).not.toContain("surfaced-bg");
@@ -198,7 +204,9 @@ describe("cloud-hosted /reengage POST", () => {
     fileContents =
       '```json\n{"subject": "A quick nudge", "body": "Let me know."}\n```';
     const response = await POST(postRequest());
-    const json = (await response.json()) as { subject: string; body: string };
+    const json = z
+      .looseObject({ subject: z.string(), body: z.string() })
+      .parse(await response.json());
     expect(json.subject).toBe("A quick nudge");
     expect(json.body).toBe("Let me know.");
   });

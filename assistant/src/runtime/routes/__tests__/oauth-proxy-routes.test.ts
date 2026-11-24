@@ -11,6 +11,8 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type {
   OAuthConnection,
   OAuthConnectionRequest,
@@ -197,29 +199,34 @@ async function callProxy(params: {
   });
 }
 
-interface ErrorEnvelope {
-  error: { code: string; message: string; details?: Record<string, unknown> };
+const errorEnvelopeSchema = z.looseObject({
+  error: z.looseObject({
+    code: z.string(),
+    message: z.string(),
+    details: z.record(z.string(), z.unknown()).optional(),
+  }),
+});
+
+async function envelope(response: Response) {
+  return errorEnvelopeSchema.parse(await response.json());
 }
 
-async function envelope(response: Response): Promise<ErrorEnvelope> {
-  return (await response.json()) as ErrorEnvelope;
-}
-
-/**
- * WHATWG URL parsing resolves `.` and `..` before a handler ever sees them, so
- * dot-segment coverage drives the handler with a URL-shaped stub. Only
- * `pathname` and `search` are read.
- */
-// A real URL normalizes dot segments away, so these cases need a hand-built
-// pathname. The URL prototype keeps the handler's `instanceof URL` transport
-// guard satisfied; JSON over IPC can only ever produce a plain object.
+// Shadow the URL accessors so the handler can see dot segments that the
+// WHATWG constructor would normally resolve.
 function rawUrlStub(pathname: string, search = ""): URL {
-  // Own data properties shadow the prototype accessors, which refuse to run
-  // without a real URL's internal slots.
-  return Object.create(URL.prototype, {
+  const url = new URL("http://daemon.local");
+  Object.defineProperties(url, {
     pathname: { value: pathname, enumerable: true },
     search: { value: search, enumerable: true },
-  }) as URL;
+  });
+  return url;
+}
+
+function requireBuffer(body: OAuthConnectionRequest["body"]): Buffer {
+  if (!Buffer.isBuffer(body)) {
+    throw new Error("Expected the connection to receive a Buffer body");
+  }
+  return body;
 }
 
 function requireCaptured(): OAuthConnectionRequest {
@@ -356,8 +363,7 @@ describe("body passthrough", () => {
     });
 
     const req = requireCaptured();
-    expect(Buffer.isBuffer(req.body)).toBe(true);
-    expect((req.body as Buffer).toString("utf8")).toBe(raw);
+    expect(requireBuffer(req.body).toString("utf8")).toBe(raw);
     expect(req.headers?.["content-type"]).toBe("application/json");
   });
 
@@ -369,7 +375,7 @@ describe("body passthrough", () => {
     });
 
     const req = requireCaptured();
-    expect((req.body as Buffer).toString("utf8")).toBe("a=1&b=two");
+    expect(requireBuffer(req.body).toString("utf8")).toBe("a=1&b=two");
     expect(req.headers?.["content-type"]).toBe(
       "application/x-www-form-urlencoded",
     );
@@ -385,7 +391,7 @@ describe("body passthrough", () => {
     });
 
     const req = requireCaptured();
-    expect(Array.from(req.body as Buffer)).toEqual(Array.from(bytes));
+    expect(Array.from(requireBuffer(req.body))).toEqual(Array.from(bytes));
   });
 
   test("sends no body for an empty POST", async () => {
@@ -414,7 +420,7 @@ describe("body passthrough", () => {
     expect(req.rawQuery).toBe("?uploadType=media");
     expect(req.baseUrl).toBeUndefined();
     expect(req.headers?.["content-type"]).toBe("message/rfc822");
-    expect((req.body as Buffer).toString("utf8")).toBe(rfc822);
+    expect(requireBuffer(req.body).toString("utf8")).toBe(rfc822);
     expect(providerLookups).toContain("google");
   });
 
@@ -444,7 +450,7 @@ describe("body passthrough", () => {
     expect(req.path).toBe("/upload/gmail/v1/users/me/drafts");
     expect(req.query).toEqual({ uploadType: "multipart" });
     expect(req.headers?.["content-type"]).toBe(contentType);
-    expect((req.body as Buffer).toString("utf8")).toBe(body);
+    expect(requireBuffer(req.body).toString("utf8")).toBe(body);
   });
 });
 

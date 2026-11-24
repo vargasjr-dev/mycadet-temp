@@ -11,6 +11,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 useMemorySecureKeys();
@@ -67,18 +70,22 @@ describe("POST /v1/export - connected clients", () => {
 
       const dir = await extractArchive(result as Uint8Array);
       try {
-        const clientsList = JSON.parse(
-          readFileSync(join(dir, "clients-list.json"), "utf-8"),
-        ) as {
-          clients: Array<{
-            clientId: string;
-            interfaceId: string;
-            capabilities: string[];
-            machineName?: string;
-            connectedAt: string;
-            lastActiveAt: string;
-          }>;
-        };
+        const clientsList = z
+          .looseObject({
+            clients: z.array(
+              z.looseObject({
+                clientId: z.string(),
+                interfaceId: z.string(),
+                capabilities: z.array(z.string()),
+                machineName: z.string().optional(),
+                connectedAt: z.string(),
+                lastActiveAt: z.string(),
+              }),
+            ),
+          })
+          .parse(
+            JSON.parse(readFileSync(join(dir, "clients-list.json"), "utf-8")),
+          );
 
         expect(clientsList.clients).toHaveLength(1);
         expect(clientsList.clients[0]).toMatchObject({
@@ -114,9 +121,13 @@ describe("POST /v1/export - connected clients", () => {
       const dir = await extractArchive(result as Uint8Array);
       try {
         expect(existsSync(join(dir, "clients-list.json"))).toBe(false);
-        const errorArtifact = JSON.parse(
-          readFileSync(join(dir, "clients-list-error.json"), "utf-8"),
-        ) as { error: string; collectedAt: string };
+        const errorArtifact = z
+          .looseObject({ error: z.string(), collectedAt: z.string() })
+          .parse(
+            JSON.parse(
+              readFileSync(join(dir, "clients-list-error.json"), "utf-8"),
+            ),
+          );
         expect(errorArtifact.error).toBe("client list unavailable");
         expect(new Date(errorArtifact.collectedAt).toISOString()).toBe(
           errorArtifact.collectedAt,
@@ -221,9 +232,11 @@ describe("POST /v1/export - LLM usage events", () => {
 
     const dir = await extractArchive(result as Uint8Array);
     try {
-      const rows = JSON.parse(
-        readFileSync(join(dir, "llm-usage-events.json"), "utf-8"),
-      ) as Array<Record<string, unknown>>;
+      const rows = z
+        .array(jsonObjectSchema)
+        .parse(
+          JSON.parse(readFileSync(join(dir, "llm-usage-events.json"), "utf-8")),
+        );
       const row = rows.find((candidate) => candidate.id === eventId);
       expect(row).toMatchObject({
         callSite: "conversationTitle",

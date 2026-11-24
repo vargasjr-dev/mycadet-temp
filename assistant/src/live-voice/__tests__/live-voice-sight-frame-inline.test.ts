@@ -11,11 +11,11 @@
  * replacing an attachment-store export for the whole file, and the sibling
  * suite's clone case depends on that same export behaving for real.
  */
-
 import { describe, expect, mock, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
 
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import {
   createMockProvider,
   textResponse,
@@ -261,7 +261,7 @@ async function uploadUnstorableFrame(name: string): Promise<string> {
 }
 
 function metadataOf(row: MessageRow): Record<string, unknown> {
-  return JSON.parse(row.metadata ?? "{}") as Record<string, unknown>;
+  return jsonObjectSchema.parse(JSON.parse(row.metadata ?? "{}"));
 }
 
 /** True when the row kept its bytes rather than referencing an attachment. */

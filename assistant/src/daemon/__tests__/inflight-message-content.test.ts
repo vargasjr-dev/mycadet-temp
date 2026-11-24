@@ -9,7 +9,9 @@ import type { SQLQueryBindings } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import pino from "pino";
+import { z } from "zod";
 
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import {
   createConversation,
   getMessageById,
@@ -52,9 +54,7 @@ function rawMetadata(messageId: string): Record<string, unknown> {
       SQLQueryBindings[]
     >("SELECT metadata FROM messages WHERE id = ?")
     .get(messageId)!;
-  return row?.metadata
-    ? (JSON.parse(row.metadata) as Record<string, unknown>)
-    : {};
+  return row?.metadata ? jsonObjectSchema.parse(JSON.parse(row.metadata)) : {};
 }
 
 /** Mirror the reserve seam: writer first, row born with its ref. */
@@ -128,7 +128,9 @@ describe("appendInflightSnapshot", () => {
     const lines = readFileSync(writer.absPath, "utf8")
       .trim()
       .split("\n")
-      .map((l) => JSON.parse(l) as { i: number; seq: number });
+      .map((l) =>
+        z.looseObject({ i: z.number(), seq: z.number() }).parse(JSON.parse(l)),
+      );
     // First flush wrote both blocks at seq 41; the second wrote only the
     // changed index at seq 55.
     expect(lines.map((l) => [l.i, l.seq])).toEqual([
@@ -145,7 +147,7 @@ describe("appendInflightSnapshot", () => {
     const lines = readFileSync(writer.absPath, "utf8")
       .trim()
       .split("\n")
-      .map((l) => JSON.parse(l) as { seq: number });
+      .map((l) => z.looseObject({ seq: z.number() }).parse(JSON.parse(l)));
     expect(lines.map((l) => l.seq)).toEqual([10, 11]);
   });
 });

@@ -21,6 +21,8 @@ import {
   test,
 } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Mocks (must precede module imports under test)
 // ---------------------------------------------------------------------------
@@ -212,14 +214,7 @@ function readPersistedSlackRows(): Array<{
       let envelope: Record<string, unknown> = {};
       if (row.metadata) {
         try {
-          const parsed = JSON.parse(row.metadata) as unknown;
-          if (
-            parsed !== null &&
-            typeof parsed === "object" &&
-            !Array.isArray(parsed)
-          ) {
-            envelope = parsed as Record<string, unknown>;
-          }
+          envelope = jsonObjectSchema.parse(JSON.parse(row.metadata));
         } catch {
           envelope = {};
         }
@@ -332,7 +327,7 @@ describe("PR 23 — Slack DM cold-start backfill", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(json.accepted).toBe(true);
     expect(backfillDmMock).toHaveBeenCalledTimes(1);
@@ -446,7 +441,7 @@ describe("PR 23 — Slack DM cold-start backfill", () => {
       noopProcessMessage,
       TEST_BEARER_TOKEN,
     );
-    const json = (await resp.json()) as Record<string, unknown>;
+    const json = jsonObjectSchema.parse(await resp.json());
 
     expect(resp.status).toBe(200);
     expect(json.accepted).toBe(true);

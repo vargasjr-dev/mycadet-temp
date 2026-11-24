@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
+
+const inviteErrorResponseSchema = z.looseObject({
+  ok: z.boolean(),
+  error: z.string(),
+});
 
 useMemorySecureKeys();
 // Mock getTelegramBotUsername — the env var fallback was removed so we
@@ -257,7 +264,7 @@ describe("invite redeem relay routes", () => {
     });
 
     const res = await handleRedeemInvite(req);
-    const body = (await res.json()) as { ok: boolean; error: string };
+    const body = inviteErrorResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(400);
     expect(body.ok).toBe(false);
@@ -290,7 +297,7 @@ describe("invite redeem relay routes", () => {
     });
 
     const res = await handleRedeemInvite(req);
-    const body = (await res.json()) as { ok: boolean; error: string };
+    const body = inviteErrorResponseSchema.parse(await res.json());
 
     // No `code` and no `token` → token path; the shared contract schema
     // rejects daemon-side before any gateway round-trip.
@@ -308,7 +315,7 @@ describe("invite redeem relay routes", () => {
     });
 
     const res = await handleRedeemInvite(req);
-    const body = (await res.json()) as { ok: boolean; error: string };
+    const body = inviteErrorResponseSchema.parse(await res.json());
 
     expect(res.status).toBe(400);
     expect(body.ok).toBe(false);

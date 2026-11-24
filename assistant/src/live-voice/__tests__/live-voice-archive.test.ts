@@ -2,17 +2,27 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { count, eq } from "drizzle-orm";
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import {
   getAttachmentContent,
   getAttachmentsForMessage,
 } from "../../persistence/attachments-store.js";
+import { resolveAttachmentsForPersist } from "../../persistence/attachments-store.js";
 import {
   addMessage,
   createConversation,
 } from "../../persistence/conversation-crud.js";
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
-import { rawAll, rawGet, rawRun } from "../../persistence/raw-query.js";
+import {
+  attachments,
+  conversations,
+  messageAttachments,
+  messages,
+} from "../../persistence/schema/conversations.js";
 import { getWorkspaceDir } from "../../util/layout.js";
 import type { LiveVoiceAudioArtifactMetadata } from "../live-voice-archive.js";
 import {
@@ -28,10 +38,10 @@ await initializeDb();
 
 function resetTables() {
   const db = getDb();
-  db.run("DELETE FROM message_attachments");
-  db.run("DELETE FROM attachments");
-  db.run("DELETE FROM messages");
-  db.run("DELETE FROM conversations");
+  db.delete(messageAttachments).run();
+  db.delete(attachments).run();
+  db.delete(messages).run();
+  db.delete(conversations).run();
 }
 
 async function createMessage(role: "user" | "assistant" = "user") {
@@ -55,13 +65,13 @@ async function createMessage(role: "user" | "assistant" = "user") {
 }
 
 function getMessageMetadata(messageId: string): Record<string, unknown> {
-  const row = rawGet<{ metadata: string | null }>(
-    "test:getMessageMetadata",
-    `SELECT metadata FROM messages WHERE id = ?`,
-    messageId,
-  );
+  const row = getDb()
+    .select({ metadata: messages.metadata })
+    .from(messages)
+    .where(eq(messages.id, messageId))
+    .get();
   expect(row).toBeDefined();
-  return row?.metadata ? JSON.parse(row.metadata) : {};
+  return row?.metadata ? jsonObjectSchema.parse(JSON.parse(row.metadata)) : {};
 }
 
 function getLiveVoiceArtifacts(
@@ -69,23 +79,34 @@ function getLiveVoiceArtifacts(
 ): LiveVoiceAudioArtifactMetadata[] {
   const metadata = getMessageMetadata(messageId);
   expect(Array.isArray(metadata.liveVoiceAudioArtifacts)).toBe(true);
-  return metadata.liveVoiceAudioArtifacts as LiveVoiceAudioArtifactMetadata[];
+  const artifactSchema = z.looseObject({
+    source: z.literal("live-voice"),
+    archiveKey: z.string(),
+    attachmentId: z.string(),
+    sessionId: z.string(),
+    turnId: z.string(),
+    role: z.enum(["assistant", "user"]),
+    mimeType: z.string(),
+    sampleRate: z.number().optional(),
+    durationMs: z.number().optional(),
+    sizeBytes: z.number(),
+    filename: z.string(),
+    archivedAt: z.number(),
+  });
+  return z.array(artifactSchema).parse(metadata.liveVoiceAudioArtifacts);
 }
 
 function countAttachmentsForMessage(messageId: string): number {
-  const row = rawGet<{ count: number }>(
-    "test:countMessageAttachments",
-    `SELECT COUNT(*) AS count FROM message_attachments WHERE message_id = ?`,
-    messageId,
-  );
+  const row = getDb()
+    .select({ count: count() })
+    .from(messageAttachments)
+    .where(eq(messageAttachments.messageId, messageId))
+    .get();
   return row?.count ?? 0;
 }
 
 function countAllAttachments(): number {
-  const row = rawGet<{ count: number }>(
-    "test:countAllAttachments",
-    `SELECT COUNT(*) AS count FROM attachments`,
-  );
+  const row = getDb().select({ count: count() }).from(attachments).get();
   return row?.count ?? 0;
 }
 
@@ -172,24 +193,20 @@ describe("live voice audio archive", () => {
       sizeBytes: audio.length,
     });
 
-    const row = rawGet<{
-      dataBase64: string;
-      filePath: string | null;
-      sourcePath: string | null;
-    }>(
-      "test:fetchAudioArtifact",
-      `SELECT
-         data_base64 AS dataBase64,
-         file_path AS filePath,
-         source_path AS sourcePath
-       FROM attachments
-       WHERE id = ?`,
-      result.artifact.attachmentId,
-    );
+    const row = getDb()
+      .select({
+        dataBase64: attachments.dataBase64,
+        filePath: attachments.filePath,
+      })
+      .from(attachments)
+      .where(eq(attachments.id, result.artifact.attachmentId))
+      .get();
     expect(row?.dataBase64).toBe("");
     expect(row?.filePath).toBeTruthy();
     expect(row?.filePath).not.toBe(sourcePath);
-    expect(row?.sourcePath).toBe(sourcePath);
+    expect(
+      resolveAttachmentsForPersist([result.artifact.attachmentId])[0]?.filePath,
+    ).toBe(sourcePath);
     expect(existsSync(row!.filePath!)).toBe(true);
     expect(readFileSync(row!.filePath!)).toEqual(audio);
 
@@ -354,11 +371,11 @@ describe("live voice audio archive", () => {
       throw new Error("expected archive result");
     }
 
-    rawRun(
-      "test:clearMessageMetadata",
-      `UPDATE messages SET metadata = NULL WHERE id = ?`,
-      message.id,
-    );
+    getDb()
+      .update(messages)
+      .set({ metadata: null })
+      .where(eq(messages.id, message.id))
+      .run();
 
     const second = await archiveLiveVoiceAssistantResponseAudio({
       messageId: message.id,
@@ -537,14 +554,13 @@ describe("live voice audio archive", () => {
       "turnId",
     ]);
 
-    const attachmentRows = rawAll<{
-      originalFilename: string;
-      mimeType: string;
-    }>(
-      "test:listAttachments",
-      `SELECT original_filename AS originalFilename, mime_type AS mimeType
-       FROM attachments`,
-    );
+    const attachmentRows = getDb()
+      .select({
+        originalFilename: attachments.originalFilename,
+        mimeType: attachments.mimeType,
+      })
+      .from(attachments)
+      .all();
     expect(attachmentRows).toEqual([
       {
         originalFilename:

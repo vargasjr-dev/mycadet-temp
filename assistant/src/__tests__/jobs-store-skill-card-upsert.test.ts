@@ -1,11 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { getMemoryDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { upsertSkillCardInsertJob } from "../persistence/jobs-store.js";
 import { memoryJobs } from "../persistence/schema/index.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 function skillEntry(skillId: string, name = `Skill ${skillId}`) {
   return { skillId, name, description: `Does ${skillId}` };
@@ -21,7 +23,9 @@ function pendingRows() {
 }
 
 function parsedSkills(payload: string): Array<{ skillId: string }> {
-  return (JSON.parse(payload) as { skills: Array<{ skillId: string }> }).skills;
+  return z
+    .looseObject({ skills: z.array(z.looseObject({ skillId: z.string() })) })
+    .parse(JSON.parse(payload)).skills;
 }
 
 describe("upsertSkillCardInsertJob payload merge", () => {
@@ -44,7 +48,7 @@ describe("upsertSkillCardInsertJob payload merge", () => {
     const rows = pendingRows();
     expect(rows).toHaveLength(1);
     expect(rows[0]!.status).toBe("pending");
-    const payload = JSON.parse(rows[0]!.payload) as Record<string, unknown>;
+    const payload = jsonObjectSchema.parse(JSON.parse(rows[0]!.payload));
     expect(payload.sourceConversationId).toBe("src-1");
     expect(payload.runConversationId).toBe("run-1");
     expect(parsedSkills(rows[0]!.payload).map((s) => s.skillId)).toEqual([
@@ -150,8 +154,9 @@ describe("upsertSkillCardInsertJob payload merge", () => {
     expect(rows).toHaveLength(2);
     const byRun = new Map(
       rows.map((r) => [
-        (JSON.parse(r.payload) as { runConversationId: string })
-          .runConversationId,
+        z
+          .looseObject({ runConversationId: z.string() })
+          .parse(JSON.parse(r.payload)).runConversationId,
         parsedSkills(r.payload).map((s) => s.skillId),
       ]),
     );

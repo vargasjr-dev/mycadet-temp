@@ -2,6 +2,7 @@ import { describe, expect, mock, spyOn, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
 
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import {
   createMockProvider,
   textResponse,
@@ -195,7 +196,7 @@ function liveConversation(title: string) {
 }
 
 function metadataOf(row: MessageRow): Record<string, unknown> {
-  return JSON.parse(row.metadata ?? "{}") as Record<string, unknown>;
+  return jsonObjectSchema.parse(JSON.parse(row.metadata ?? "{}"));
 }
 
 function sleep(ms: number): Promise<void> {

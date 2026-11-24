@@ -11,7 +11,6 @@
  * the CLI sees same-user clients via the IPC path because the IPC server
  * fills in the header from the local guardian principal.
  */
-
 import {
   afterAll,
   afterEach,
@@ -22,10 +21,16 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { runAssistantCommandFull } from "../../cli/__tests__/run-assistant-command.js";
 import { AssistantIpcServer } from "../assistant-server.js";
 
 // ── Module mocks (must be set up before importing the route) ──────────────
+
+const clientListSchema = z.looseObject({
+  clients: z.array(z.looseObject({ clientId: z.string() })),
+});
 
 let fakeHttpAuthDisabled = false;
 let fakeLocalPrincipalId: string | undefined = "guardian-local";
@@ -115,9 +120,7 @@ describe("assistant clients list over IPC — same-user filter", () => {
       "--json",
     );
 
-    const parsed = JSON.parse(stdout.trim()) as {
-      clients: Array<{ clientId: string }>;
-    };
+    const parsed = clientListSchema.parse(JSON.parse(stdout.trim()));
     const ids = parsed.clients.map((c) => c.clientId).sort();
     expect(ids).toEqual(["client-self-1", "client-self-2"]);
   });
@@ -136,9 +139,7 @@ describe("assistant clients list over IPC — same-user filter", () => {
       "list",
       "--json",
     );
-    const parsed = JSON.parse(stdout.trim()) as {
-      clients: Array<{ clientId: string }>;
-    };
+    const parsed = clientListSchema.parse(JSON.parse(stdout.trim()));
     expect(parsed.clients).toEqual([]);
   });
 
@@ -160,9 +161,7 @@ describe("assistant clients list over IPC — same-user filter", () => {
       "list",
       "--json",
     );
-    const parsed = JSON.parse(stdout.trim()) as {
-      clients: Array<{ clientId: string }>;
-    };
+    const parsed = clientListSchema.parse(JSON.parse(stdout.trim()));
     const ids = parsed.clients.map((c) => c.clientId).sort();
     expect(ids).toEqual(["client-other", "client-self"]);
   });
@@ -180,9 +179,16 @@ describe("assistant clients list over IPC — same-user filter", () => {
       "list",
       "--json",
     );
-    const parsed = JSON.parse(stdout.trim()) as {
-      clients: Array<{ clientId: string; degraded?: boolean }>;
-    };
+    const parsed = z
+      .looseObject({
+        clients: z.array(
+          z.looseObject({
+            clientId: z.string(),
+            degraded: z.boolean().optional(),
+          }),
+        ),
+      })
+      .parse(JSON.parse(stdout.trim()));
     expect(parsed.clients).toHaveLength(1);
     expect(parsed.clients[0].degraded).toBe(false);
   });

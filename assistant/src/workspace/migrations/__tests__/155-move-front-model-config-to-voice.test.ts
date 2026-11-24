@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { moveFrontModelConfigToVoiceMigration } from "../155-move-front-model-config-to-voice.js";
 
 function workspaceWith(config: unknown): string {
@@ -12,10 +13,9 @@ function workspaceWith(config: unknown): string {
 }
 
 function readConfig(dir: string): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(dir, "config.json"), "utf8")) as Record<
-    string,
-    unknown
-  >;
+  return jsonObjectSchema.parse(
+    JSON.parse(readFileSync(join(dir, "config.json"), "utf8")),
+  );
 }
 
 describe("155-move-front-model-config-to-voice", () => {

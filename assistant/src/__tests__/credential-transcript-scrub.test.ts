@@ -15,6 +15,10 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ── Shared mock plumbing (must precede module-under-test imports) ──────────
 //
 // `mock.module` is process-global in Bun and leaks into sibling files run in
@@ -210,9 +214,9 @@ describe("scrubStoredCredentialFromTranscripts", () => {
     const result = await scrubStoredCredentialFromTranscripts(VALUE);
 
     expect(result.dbMessagesScrubbed).toBe(1);
-    const blocks = JSON.parse(updatedContentFor("msg-1")) as Array<
-      Record<string, unknown>
-    >;
+    const blocks = z
+      .array(jsonObjectSchema)
+      .parse(JSON.parse(updatedContentFor("msg-1")));
     expect(blocks[0].text).toBe(`here is my key: ${MARKER}`);
     expect(blocks[0]._redactionVersion).toBe(2);
     expect(lexicalCalls).toEqual(["msg-1"]);
@@ -242,9 +246,9 @@ describe("scrubStoredCredentialFromTranscripts", () => {
     expect(result.dbMessagesScrubbed).toBe(1);
     const content = updatedContentFor("msg-2");
     expect(content).not.toContain("quoted");
-    const blocks = JSON.parse(content) as Array<{
-      input: { command: string };
-    }>;
+    const blocks = z
+      .array(z.looseObject({ input: z.looseObject({ command: z.string() }) }))
+      .parse(JSON.parse(content));
     expect(blocks[0].input.command).toBe(`curl -d '{"key":"${MARKER}"}'`);
   });
 
@@ -260,9 +264,9 @@ describe("scrubStoredCredentialFromTranscripts", () => {
     const result = await scrubStoredCredentialFromTranscripts(VALUE);
 
     expect(result.dbMessagesScrubbed).toBe(1);
-    const blocks = JSON.parse(updatedContentFor("msg-3")) as Array<{
-      content: string;
-    }>;
+    const blocks = z
+      .array(z.looseObject({ content: z.string() }))
+      .parse(JSON.parse(updatedContentFor("msg-3")));
     expect(blocks[0].content).toBe(`out: ${MARKER}`);
   });
 
@@ -299,9 +303,9 @@ describe("scrubStoredCredentialFromTranscripts", () => {
     const result = await scrubStoredCredentialFromTranscripts(VALUE);
 
     expect(result.dbMessagesScrubbed).toBe(1);
-    const blocks = JSON.parse(updatedContentFor("msg-forged")) as Array<
-      Record<string, unknown>
-    >;
+    const blocks = z
+      .array(jsonObjectSchema)
+      .parse(JSON.parse(updatedContentFor("msg-forged")));
     // Word joiner (U+2060) after the opening bracket defuses the forged
     // sentinel; the credential is scrubbed and the stamp applied.
     expect(blocks[0].text).toBe(
@@ -330,9 +334,9 @@ describe("scrubStoredCredentialFromTranscripts", () => {
     const result = await scrubStoredCredentialFromTranscripts(VALUE);
 
     expect(result.dbMessagesScrubbed).toBe(1);
-    const blocks = JSON.parse(updatedContentFor("msg-stamped")) as Array<
-      Record<string, unknown>
-    >;
+    const blocks = z
+      .array(jsonObjectSchema)
+      .parse(JSON.parse(updatedContentFor("msg-stamped")));
     expect(blocks[0].text).toBe(`${genuine} then ${MARKER}`);
     expect(blocks[0]._redactionVersion).toBe(2);
   });
@@ -349,9 +353,9 @@ describe("scrubStoredCredentialFromTranscripts", () => {
     const result = await scrubStoredCredentialFromTranscripts(VALUE);
 
     expect(result.dbMessagesScrubbed).toBe(1);
-    const blocks = JSON.parse(updatedContentFor("msg-think")) as Array<
-      Record<string, unknown>
-    >;
+    const blocks = z
+      .array(jsonObjectSchema)
+      .parse(JSON.parse(updatedContentFor("msg-think")));
     expect(blocks[0].thinking).toBe(`planning with ${MARKER}`);
   });
 

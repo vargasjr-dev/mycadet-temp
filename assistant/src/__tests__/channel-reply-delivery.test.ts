@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+import { z } from "zod";
+
 import { REACTION_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import { resolveMessageContentBlocks } from "../persistence/message-content-file.js";
 import type { RuntimeAttachmentMetadata } from "../runtime/http-types.js";
@@ -1426,7 +1428,9 @@ describe("channel-reply-delivery", () => {
 
     function envelopeOf(messageId: string): Record<string, unknown> {
       const row = conversationMessages.find((m) => m.id === messageId);
-      const outer = JSON.parse(row?.metadata ?? "{}") as Record<string, string>;
+      const outer = z
+        .record(z.string(), z.string())
+        .parse(JSON.parse(row?.metadata ?? "{}"));
       return jsonObjectSchema.parse(JSON.parse(outer.providerMeta));
     }
 
@@ -1603,10 +1607,7 @@ describe("channel-reply-delivery", () => {
       const row = conversationMessages.find(
         (m) => m.id === "msg-presend-slack",
       );
-      const outer = JSON.parse(row?.metadata ?? "{}") as Record<
-        string,
-        unknown
-      >;
+      const outer = jsonObjectSchema.parse(JSON.parse(row?.metadata ?? "{}"));
       // One envelope per row: the pre-send Slack one is gone, the turn's
       // other keys survive.
       expect(outer.slackMeta).toBeUndefined();
@@ -1818,7 +1819,9 @@ describe("channel-reply-delivery", () => {
       nextDeliveryTs = "1700001100.000777";
       onRecordOutboundPost = () => {
         const row = conversationMessages.find((m) => m.id === "msg-window")!;
-        const outer = JSON.parse(row.metadata!) as Record<string, string>;
+        const outer = z
+          .record(z.string(), z.string())
+          .parse(JSON.parse(row.metadata!));
         row.metadata = JSON.stringify({
           ...outer,
           providerMeta: JSON.stringify({

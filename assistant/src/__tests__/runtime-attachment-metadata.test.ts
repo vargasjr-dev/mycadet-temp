@@ -8,6 +8,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 process.env.DISABLE_HTTP_AUTH = "true";
@@ -106,19 +108,24 @@ describe("Runtime attachment metadata", () => {
       `http://127.0.0.1:${port}/v1/messages?conversationKey=${conversationKey}`,
       { headers: AUTH_HEADERS },
     );
-    const body = (await res.json()) as {
-      messages: Array<{
-        role: string;
-        content: string;
-        attachments: Array<{
-          id: string;
-          filename: string;
-          mimeType: string;
-          sizeBytes: number;
-          kind: string;
-        }>;
-      }>;
-    };
+    const body = z
+      .looseObject({
+        messages: z.array(
+          z.looseObject({
+            role: z.string(),
+            attachments: z.array(
+              z.looseObject({
+                id: z.string(),
+                filename: z.string(),
+                mimeType: z.string(),
+                sizeBytes: z.number(),
+                kind: z.string(),
+              }),
+            ),
+          }),
+        ),
+      })
+      .parse(await res.json());
 
     expect(res.status).toBe(200);
 
@@ -153,9 +160,16 @@ describe("Runtime attachment metadata", () => {
       `http://127.0.0.1:${port}/v1/messages?conversationKey=${conversationKey}`,
       { headers: AUTH_HEADERS },
     );
-    const body = (await res.json()) as {
-      messages: Array<{ role: string; attachments: unknown[] }>;
-    };
+    const body = z
+      .looseObject({
+        messages: z.array(
+          z.looseObject({
+            role: z.string(),
+            attachments: z.array(z.unknown()),
+          }),
+        ),
+      })
+      .parse(await res.json());
 
     expect(res.status).toBe(200);
     const aMsg = body.messages.find((m) => m.role === "assistant");
@@ -174,14 +188,16 @@ describe("Runtime attachment metadata", () => {
       `http://127.0.0.1:${port}/v1/attachments/${stored.id}`,
       { headers: AUTH_HEADERS },
     );
-    const body = (await res.json()) as {
-      id: string;
-      filename: string;
-      mimeType: string;
-      sizeBytes: number;
-      kind: string;
-      data: string;
-    };
+    const body = z
+      .looseObject({
+        id: z.string(),
+        filename: z.string(),
+        mimeType: z.string(),
+        sizeBytes: z.number(),
+        kind: z.string(),
+        data: z.string(),
+      })
+      .parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body.id).toBe(stored.id);
@@ -203,7 +219,9 @@ describe("Runtime attachment metadata", () => {
       `http://127.0.0.1:${port}/v1/attachments/${stored.id}`,
       { headers: AUTH_HEADERS },
     );
-    const body = (await res.json()) as { id: string; filename: string };
+    const body = z
+      .looseObject({ id: z.string(), filename: z.string() })
+      .parse(await res.json());
 
     expect(res.status).toBe(200);
     expect(body.id).toBe(stored.id);
@@ -215,9 +233,14 @@ describe("Runtime attachment metadata", () => {
       `http://127.0.0.1:${port}/v1/attachments/nonexistent-id`,
       { headers: AUTH_HEADERS },
     );
-    const body = (await res.json()) as {
-      error: { message: string; code?: string };
-    };
+    const body = z
+      .looseObject({
+        error: z.looseObject({
+          message: z.string(),
+          code: z.string().optional(),
+        }),
+      })
+      .parse(await res.json());
 
     expect(res.status).toBe(404);
     expect(body.error.message).toBe("Attachment not found");
@@ -353,9 +376,19 @@ describe("WhatsApp channel ingress attachment resolution", () => {
         ),
       },
     );
-    const body = (await res.json()) as {
-      error?: { code?: string; message?: string } | string;
-    };
+    const body = z
+      .looseObject({
+        error: z
+          .union([
+            z.looseObject({
+              code: z.string().optional(),
+              message: z.string().optional(),
+            }),
+            z.string(),
+          ])
+          .optional(),
+      })
+      .parse(await res.json());
 
     expect(res.status).toBe(400);
     const errorMsg =

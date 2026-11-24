@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
 // The REAL secure-keys module pinned to an empty memory backend: reads come
@@ -19,7 +21,9 @@ describe("oauth provider profiles (DB-seeded)", () => {
     const provider = getProvider("google");
 
     expect(provider).toBeDefined();
-    const scopes = JSON.parse(provider!.defaultScopes) as string[];
+    const scopes = z
+      .array(z.string())
+      .parse(JSON.parse(provider!.defaultScopes));
     expect(scopes).toContain("https://www.googleapis.com/auth/drive");
   });
 
@@ -31,9 +35,11 @@ describe("oauth provider profiles (DB-seeded)", () => {
 
     expect(provider).toBeDefined();
     const expected = expectedScopesForStoredToken(
-      JSON.parse(provider!.defaultScopes) as string[],
+      z.array(z.string()).parse(JSON.parse(provider!.defaultScopes)),
       provider!.authorizeParams
-        ? (JSON.parse(provider!.authorizeParams) as Record<string, string>)
+        ? z
+            .record(z.string(), z.string())
+            .parse(JSON.parse(provider!.authorizeParams))
         : undefined,
       provider!.scopeSeparator ?? undefined,
     );
@@ -46,12 +52,16 @@ describe("oauth provider profiles (DB-seeded)", () => {
     expect(provider).toBeDefined();
     expect(provider?.injectionTemplates).toBeDefined();
 
-    const templates = JSON.parse(provider!.injectionTemplates!) as Array<{
-      hostPattern: string;
-      injectionType: string;
-      headerName: string;
-      valuePrefix: string;
-    }>;
+    const templates = z
+      .array(
+        z.looseObject({
+          hostPattern: z.string(),
+          injectionType: z.string(),
+          headerName: z.string(),
+          valuePrefix: z.string(),
+        }),
+      )
+      .parse(JSON.parse(provider!.injectionTemplates!));
 
     expect(templates).toHaveLength(8);
 

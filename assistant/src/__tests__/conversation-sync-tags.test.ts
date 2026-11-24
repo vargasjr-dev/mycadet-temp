@@ -17,7 +17,10 @@ import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 import { ROUTES as CONVERSATION_LIST_ROUTES } from "../runtime/routes/conversation-list-routes.js";
-import { ROUTES as CONVERSATION_MANAGEMENT_ROUTES } from "../runtime/routes/conversation-management-routes.js";
+import {
+  createConversationResponseSchema,
+  ROUTES as CONVERSATION_MANAGEMENT_ROUTES,
+} from "../runtime/routes/conversation-management-routes.js";
 import type { RouteDefinition } from "../runtime/routes/types.js";
 import { publishConversationTitleChanged } from "../runtime/sync/resource-sync-events.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
@@ -69,6 +72,13 @@ async function captureEvents(
   }
 }
 
+function requireSyncTags(message: AssistantEventEnvelope["message"]): string[] {
+  if (message.type !== "sync_changed") {
+    throw new Error("Expected a sync_changed event");
+  }
+  return message.tags;
+}
+
 describe("conversation sync tags", () => {
   beforeEach(() => {
     clearTables();
@@ -110,7 +120,7 @@ describe("conversation sync tags", () => {
     // Defense-in-depth: the umbrella `conversationsList` tag would force
     // web to redrain the full paginated list — we deliberately omit it
     // for content-only reasons.
-    expect((received[1]!.message as { tags: string[] }).tags).not.toContain(
+    expect(requireSyncTags(received[1]!.message)).not.toContain(
       SYNC_TAGS.conversationsList,
     );
   });
@@ -139,7 +149,7 @@ describe("conversation sync tags", () => {
       type: "sync_changed",
       tags: [conversationMetadataSyncTag(conversation.id)],
     });
-    expect((received[1]!.message as { tags: string[] }).tags).not.toContain(
+    expect(requireSyncTags(received[1]!.message)).not.toContain(
       SYNC_TAGS.conversationsList,
     );
   });
@@ -158,9 +168,11 @@ describe("conversation sync tags", () => {
     let conversationId: string | undefined;
 
     const received = await captureEvents(async () => {
-      const result = (await route.handler({
-        body: { conversationKey: "sync-create-test" },
-      })) as { id: string };
+      const result = createConversationResponseSchema.parse(
+        await route.handler({
+          body: { conversationKey: "sync-create-test" },
+        }),
+      );
       conversationId = result.id;
     }, 1);
 
@@ -255,7 +267,7 @@ describe("conversation sync tags", () => {
     // Defense-in-depth: the umbrella `conversationsList` tag would
     // force the very paginated-list drain this redesign exists to
     // avoid. It must not appear here.
-    expect((received[0]!.message as { tags: string[] }).tags).not.toContain(
+    expect(requireSyncTags(received[0]!.message)).not.toContain(
       SYNC_TAGS.conversationsList,
     );
   });
@@ -294,7 +306,7 @@ describe("conversation sync tags", () => {
       type: "sync_changed",
       tags: [conversationMetadataSyncTag(conversation.id)],
     });
-    expect((received[0]!.message as { tags: string[] }).tags).not.toContain(
+    expect(requireSyncTags(received[0]!.message)).not.toContain(
       SYNC_TAGS.conversationsList,
     );
   });
@@ -354,9 +366,7 @@ describe("conversation sync tags", () => {
       const metadataEvents = received.filter(
         (event) =>
           event.message.type === "sync_changed" &&
-          (event.message as { tags: string[] }).tags.some((tag: string) =>
-            tag.includes(":metadata"),
-          ),
+          event.message.tags.some((tag: string) => tag.includes(":metadata")),
       );
       expect(metadataEvents).toHaveLength(0);
     } finally {
@@ -386,9 +396,7 @@ describe("conversation sync tags", () => {
       const metadataEvents = received.filter(
         (event) =>
           event.message.type === "sync_changed" &&
-          (event.message as { tags: string[] }).tags.some((tag: string) =>
-            tag.includes(":metadata"),
-          ),
+          event.message.tags.some((tag: string) => tag.includes(":metadata")),
       );
       expect(metadataEvents).toHaveLength(0);
     } finally {

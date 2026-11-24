@@ -13,9 +13,11 @@
  * it pins the edge of something this suite owns: the refusal's attachment
  * echo, which is the keep stream's alone.
  */
-
 import { describe, expect, mock, spyOn, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import {
   createMockProvider,
   textResponse,
@@ -396,9 +398,13 @@ describe("live-voice camera frames kept mid-call", () => {
         source: "live",
       });
       await waitFor(() => getMessages(harness.conversationId).length === 1);
-      const firstMetadata = JSON.parse(
-        getMessages(harness.conversationId)[0]!.metadata ?? "{}",
-      ) as { modeSession?: { id: string } };
+      const firstMetadata = z
+        .looseObject({
+          modeSession: z.looseObject({ id: z.string() }).optional(),
+        })
+        .parse(
+          JSON.parse(getMessages(harness.conversationId)[0]!.metadata ?? "{}"),
+        );
 
       evictConversationsForReload();
       await harness.session.handleClientFrame({
@@ -430,9 +436,15 @@ describe("live-voice camera frames kept mid-call", () => {
         source: "ambient",
       });
       await waitFor(() => getMessages(harness.conversationId).length === 2);
-      const secondMetadata = JSON.parse(
-        getMessages(harness.conversationId)[1]!.metadata ?? "{}",
-      ) as { modeSession?: { id: string; mode: string } };
+      const secondMetadata = z
+        .looseObject({
+          modeSession: z
+            .looseObject({ id: z.string(), mode: z.string() })
+            .optional(),
+        })
+        .parse(
+          JSON.parse(getMessages(harness.conversationId)[1]!.metadata ?? "{}"),
+        );
       expect(secondMetadata.modeSession).toMatchObject({ mode: "ambient" });
       expect(secondMetadata.modeSession?.id).not.toBe(
         firstMetadata.modeSession?.id,
@@ -617,9 +629,13 @@ describe("live-voice camera frames kept mid-call", () => {
       await waitFor(() => getMessages(harness.conversationId).length > 0);
 
       const row = getMessages(harness.conversationId)[0]!;
-      const metadata = JSON.parse(row.metadata ?? "{}") as {
-        modeSession?: { id: string; mode: string };
-      };
+      const metadata = z
+        .looseObject({
+          modeSession: z
+            .looseObject({ id: z.string(), mode: z.string() })
+            .optional(),
+        })
+        .parse(JSON.parse(row.metadata ?? "{}"));
       expect(metadata.modeSession?.mode).toBe("ambient");
       expect(
         harness.frames.filter((frame) => frame.type === "error"),
@@ -1042,9 +1058,13 @@ describe("live-voice camera frames kept mid-call", () => {
       });
 
       const row = getMessages(harness.conversationId)[0]!;
-      const metadata = JSON.parse(row.metadata ?? "{}") as {
-        modeSession?: { id: string; mode: string };
-      };
+      const metadata = z
+        .looseObject({
+          modeSession: z
+            .looseObject({ id: z.string(), mode: z.string() })
+            .optional(),
+        })
+        .parse(JSON.parse(row.metadata ?? "{}"));
       expect(metadata.modeSession?.mode).toBe("live_vision");
       await harness.session.handleClientFrame({
         type: "sight_end",
@@ -1274,9 +1294,11 @@ describe("live-voice camera frames kept mid-call", () => {
         type: "sight_end",
         cameraEpoch: 53,
       });
-      const metadata = JSON.parse(row.metadata ?? "{}") as {
-        modeSession?: { id: string };
-      };
+      const metadata = z
+        .looseObject({
+          modeSession: z.looseObject({ id: z.string() }).optional(),
+        })
+        .parse(JSON.parse(row.metadata ?? "{}"));
       await waitFor(
         () =>
           getConversationModeSession(
@@ -1326,10 +1348,7 @@ describe("live-voice camera frames kept mid-call", () => {
 
       // The tag names the attachment on the row that carries it, which is what
       // retention reads to decide what a later turn still sends in full.
-      const metadata = JSON.parse(row.metadata ?? "{}") as Record<
-        string,
-        unknown
-      >;
+      const metadata = jsonObjectSchema.parse(JSON.parse(row.metadata ?? "{}"));
       expect(sightFrameAttachmentIdsFromMetadata(metadata)).toEqual([
         attachmentId,
       ]);

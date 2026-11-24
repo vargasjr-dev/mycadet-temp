@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import {
   buildSlackTimezoneMetadata,
   formatSlackTimezoneLabel,
@@ -347,7 +348,7 @@ describe("mergeSlackMetadata", () => {
       channelTs: "1700000000.000100",
       eventKind: "message",
     });
-    const rawParsed = JSON.parse(merged) as Record<string, unknown>;
+    const rawParsed = jsonObjectSchema.parse(JSON.parse(merged));
     expect(rawParsed.userMessageChannel).toBe("channel:abc");
     expect(rawParsed.provenanceTrustClass).toBe("trusted_contact");
     expect(rawParsed.forkSourceMessageId).toBe("msg-parent-1");
@@ -367,7 +368,7 @@ describe("mergeSlackMetadata", () => {
       userMessageChannel: "channel:abc",
     });
     const merged = mergeSlackMetadata(existing, { editedAt: 1700000999 });
-    const rawParsed = JSON.parse(merged) as Record<string, unknown>;
+    const rawParsed = jsonObjectSchema.parse(JSON.parse(merged));
     expect(rawParsed.userMessageChannel).toBe("channel:abc");
     expect(readSlackMetadata(merged)).toEqual({
       ...baseMeta,

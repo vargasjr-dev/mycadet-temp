@@ -6,7 +6,6 @@
  * - daemon-logs/ with log file contents
  * - config-snapshot.json with sanitized config
  */
-
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -22,6 +21,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // Set up temp directories before mocking
@@ -511,9 +513,9 @@ describe("POST /v1/export — manifest truncatedSections", () => {
     const res = await callExport(body);
     const dir = await extractArchive(res);
     try {
-      return JSON.parse(
-        readFileSync(join(dir, "export-manifest.json"), "utf-8"),
-      ) as Record<string, unknown>;
+      return jsonObjectSchema.parse(
+        JSON.parse(readFileSync(join(dir, "export-manifest.json"), "utf-8")),
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -616,7 +618,9 @@ describe("POST /v1/export — staged-file secret sweep", () => {
       const lines = readFileSync(filePath, "utf-8").split("\n");
       expect(lines[0]).not.toContain(SYNTHETIC_OPENAI_PROJECT_KEY);
       // The valid line stays valid JSON, marker stored as a string value.
-      const parsed = JSON.parse(lines[0]) as { msg: string };
+      const parsed = z
+        .looseObject({ msg: z.string() })
+        .parse(JSON.parse(lines[0]));
       expect(parsed.msg).toContain(OPENAI_PROJECT_KEY_REDACTION_MARKER);
       // The unparseable line falls back to plain-text redaction.
       expect(lines[1]).toBe(
@@ -731,7 +735,9 @@ describe("POST /v1/export — staged-file secret sweep", () => {
       expect(content).not.toContain(SYNTHETIC_OPENAI_PROJECT_KEY);
       // Stripping the preserved BOM yields valid JSON with the marker stored
       // as a proper string value.
-      const parsed = JSON.parse(content.slice(1)) as { key: string };
+      const parsed = z
+        .looseObject({ key: z.string() })
+        .parse(JSON.parse(content.slice(1)));
       expect(parsed.key).toContain(OPENAI_PROJECT_KEY_REDACTION_MARKER);
     } finally {
       rmSync(staging, { recursive: true, force: true });
@@ -844,8 +850,10 @@ describe("POST /v1/export — staged-file secret sweep", () => {
       // (its quotes are escaped on serialization).
       const lines = content.split("\n").filter((line) => line.trim() !== "");
       expect(lines.length).toBeGreaterThan(0);
-      const parsedLines = lines.map(
-        (line) => JSON.parse(line) as { content?: string },
+      const parsedLines = lines.map((line) =>
+        z
+          .looseObject({ content: z.string().optional() })
+          .parse(JSON.parse(line)),
       );
       expect(
         parsedLines.some((record) =>
@@ -889,7 +897,9 @@ describe("POST /v1/export — staged-file secret sweep", () => {
       expect(content).not.toContain(SYNTHETIC_OPENAI_PROJECT_KEY);
       // The sweep must keep the file parseable — redaction goes through a
       // JSON-aware path rather than splicing quoted markers into raw JSON.
-      const rows = JSON.parse(content) as Array<{ id: string; input: string }>;
+      const rows = z
+        .array(z.looseObject({ id: z.string(), input: z.string() }))
+        .parse(JSON.parse(content));
       const row = rows.find((r) => r.id === "ti-legacy-audit");
       expect(row).toBeDefined();
       expect(row!.input).toContain(OPENAI_PROJECT_KEY_REDACTION_MARKER);

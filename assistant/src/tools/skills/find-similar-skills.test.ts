@@ -13,10 +13,11 @@
  * Managed-author resolution reads install-meta off the filesystem, so the
  * `readInstallMeta` seam is mocked to key off the skill id (its dir basename).
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { afterEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { SkillSource } from "../../config/skills.js";
 import type { StoredCloudSkill } from "../../skills/cloud-store.js";
@@ -157,10 +158,14 @@ describe("find_similar_skills — enrichment", () => {
       );
 
       expect(result.isError).toBe(false);
-      const skills = JSON.parse(result.content).skills as {
-        skill_id: string;
-        author?: string;
-      }[];
+      const skills = z
+        .array(
+          z.looseObject({
+            skill_id: z.string(),
+            author: z.string().optional(),
+          }),
+        )
+        .parse(JSON.parse(result.content).skills);
       const byId = Object.fromEntries(skills.map((s) => [s.skill_id, s]));
 
       // Managed `author:"assistant"` → overwritable by the retrospective.
@@ -461,9 +466,10 @@ describe("find_similar_skills — per-chat plugin scope", () => {
       },
     );
 
-    const ids = (
-      JSON.parse(result.content).skills as { skill_id: string }[]
-    ).map((s) => s.skill_id);
+    const ids = z
+      .array(z.looseObject({ skill_id: z.string() }))
+      .parse(JSON.parse(result.content).skills)
+      .map((s) => s.skill_id);
     expect(ids).toContain("core-skill");
     expect(ids).not.toContain("plug-skill");
   });
@@ -478,9 +484,10 @@ describe("find_similar_skills — per-chat plugin scope", () => {
       },
     );
 
-    const ids = (
-      JSON.parse(result.content).skills as { skill_id: string }[]
-    ).map((s) => s.skill_id);
+    const ids = z
+      .array(z.looseObject({ skill_id: z.string() }))
+      .parse(JSON.parse(result.content).skills)
+      .map((s) => s.skill_id);
     expect(ids).toContain("core-skill");
     expect(ids).toContain("plug-skill");
   });
@@ -495,9 +502,10 @@ describe("find_similar_skills — per-chat plugin scope", () => {
       },
     );
 
-    const ids = (
-      JSON.parse(result.content).skills as { skill_id: string }[]
-    ).map((s) => s.skill_id);
+    const ids = z
+      .array(z.looseObject({ skill_id: z.string() }))
+      .parse(JSON.parse(result.content).skills)
+      .map((s) => s.skill_id);
     expect(ids).toEqual(["core-skill", "plug-skill"]);
   });
 
@@ -572,9 +580,10 @@ describe("find_similar_skills — per-chat plugin scope", () => {
       },
     );
 
-    const ids = (
-      JSON.parse(result.content).skills as { skill_id: string }[]
-    ).map((s) => s.skill_id);
+    const ids = z
+      .array(z.looseObject({ skill_id: z.string() }))
+      .parse(JSON.parse(result.content).skills)
+      .map((s) => s.skill_id);
     // The limit is honored AND filled with in-scope skills, not starved to empty.
     expect(ids).toEqual(["core-lo-1", "core-lo-2"]);
   });

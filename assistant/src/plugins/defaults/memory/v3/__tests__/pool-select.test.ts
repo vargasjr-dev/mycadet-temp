@@ -1301,15 +1301,20 @@ describe("selectPool: TypeSafe System One", () => {
       defaultModel: "jev-latest",
       sendMessage: async (messages, options) => {
         providerCalls.push({ messages, options });
-        const payload = JSON.parse(
-          renderedBlockSchema.parse(messages[0]!.content[0]).text,
-        ) as {
-          state: {
-            candidates: Record<string, { slug: string; text: string }>;
-            current_message: string;
-          };
-          questions: Record<string, unknown>;
-        };
+        const payload = z
+          .looseObject({
+            state: z.looseObject({
+              candidates: z.record(
+                z.string(),
+                z.looseObject({ slug: z.string(), text: z.string() }),
+              ),
+              current_message: z.string(),
+            }),
+            questions: jsonObjectSchema,
+          })
+          .parse(
+            JSON.parse(renderedBlockSchema.parse(messages[0]!.content[0]).text),
+          );
         retainedSlugs = Object.values(payload.state.candidates).map(
           (candidate) => candidate.slug,
         );
@@ -1330,13 +1335,18 @@ describe("selectPool: TypeSafe System One", () => {
 
     expect(providerCalls).toHaveLength(1);
     const payloadText = sentBlocks()[0].text;
-    const payload = JSON.parse(payloadText) as {
-      state: {
-        candidates: Record<string, { slug: string; text: string }>;
-        current_message: string;
-      };
-      questions: Record<string, unknown>;
-    };
+    const payload = z
+      .looseObject({
+        state: z.looseObject({
+          candidates: z.record(
+            z.string(),
+            z.looseObject({ slug: z.string(), text: z.string() }),
+          ),
+          current_message: z.string(),
+        }),
+        questions: jsonObjectSchema,
+      })
+      .parse(JSON.parse(payloadText));
     const estimatedWireTokens = estimateTextTokens(
       JSON.stringify({
         state: payload.state,
@@ -1481,16 +1491,26 @@ describe("selectPool: TypeSafe System One", () => {
     expect(call.options?.config?.callSite).toBe("memoryV3SelectL2");
     expect(call.options?.config?.selectionSeed).toBe("conv-xyz");
 
-    const payload = JSON.parse(
-      renderedBlockSchema.parse(call.messages[0]!.content[0]).text,
-    ) as {
-      state: {
-        candidates: Record<string, { slug: string; text: string }>;
-        current_message: string;
-        selector_instructions: string;
-      };
-      questions: Record<string, { type: string; instructions: string }>;
-    };
+    const payload = z
+      .looseObject({
+        state: z.looseObject({
+          candidates: z.record(
+            z.string(),
+            z.looseObject({ slug: z.string(), text: z.string() }),
+          ),
+          current_message: z.string(),
+          selector_instructions: z.string(),
+        }),
+        questions: z.record(
+          z.string(),
+          z.looseObject({ type: z.string(), instructions: z.string() }),
+        ),
+      })
+      .parse(
+        JSON.parse(
+          renderedBlockSchema.parse(call.messages[0]!.content[0]).text,
+        ),
+      );
     expect(Object.keys(payload.questions)).toEqual(["1", "2", "3", "4"]);
     expect(payload.questions["1"]?.type).toBe("noul");
     expect(payload.questions["1"]?.instructions).toContain("`candidates.1`");

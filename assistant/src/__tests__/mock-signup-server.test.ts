@@ -7,6 +7,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import {
   createMockSignupServer,
   type MockSignupServer,
@@ -15,6 +17,8 @@ import {
 // ── Helpers ─────────────────────────────────────────────────────────
 
 /** Extract Set-Cookie value from a response and merge with existing cookies. */
+const signupCodeSchema = z.looseObject({ code: z.string() });
+
 function extractCookies(res: Response, existing: string): string {
   const setCookie = res.headers.get("set-cookie");
   if (!setCookie) {
@@ -164,7 +168,7 @@ describe("MockSignupServer", () => {
 
     // Get verification code via test-only endpoint
     const codeRes = await fetch(`${baseUrl}/signup/verify-code`);
-    const { code } = (await codeRes.json()) as { code: string };
+    const { code } = signupCodeSchema.parse(await codeRes.json());
     expect(code).toMatch(/^\d{6}$/);
     expect(server.getVerificationCode()).toBe(code);
 
@@ -482,7 +486,7 @@ describe("MockSignupServer", () => {
 
     // Get the verification code
     const codeRes = await fetch(`${baseUrl}/signup/verify-code`);
-    const { code } = (await codeRes.json()) as { code: string };
+    const { code } = signupCodeSchema.parse(await codeRes.json());
 
     const step3 = await postForm(`${baseUrl}/signup/step3`, { code }, cookies);
     cookies = extractCookies(step3, cookies);
@@ -592,7 +596,7 @@ describe("MockSignupServer", () => {
       cookies = extractCookies(s2, cookies);
 
       const codeRes = await fetch(`${baseUrl}/signup/verify-code`);
-      const { code } = (await codeRes.json()) as { code: string };
+      const { code } = signupCodeSchema.parse(await codeRes.json());
 
       const s3 = await postForm(`${baseUrl}/signup/step3`, { code }, cookies);
       cookies = extractCookies(s3, cookies);
@@ -636,7 +640,7 @@ describe("MockSignupServer", () => {
     cookies = extractCookies(s2, cookies);
 
     const codeRes = await fetch(`${baseUrl}/signup/verify-code`);
-    const { code } = (await codeRes.json()) as { code: string };
+    const { code } = signupCodeSchema.parse(await codeRes.json());
 
     const s3 = await postForm(`${baseUrl}/signup/step3`, { code }, cookies);
     cookies = extractCookies(s3, cookies);

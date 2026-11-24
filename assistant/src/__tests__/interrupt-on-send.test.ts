@@ -18,6 +18,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import type { Conversation } from "../daemon/conversation.js";
 import {
   deleteConversation,
@@ -420,10 +422,9 @@ describe("interruptRunningTurn", () => {
 
     await interruptRunningTurn(turn.conversation, { origin: "test" });
 
-    const results = JSON.parse(persisted[0].content) as Array<{
-      tool_use_id: string;
-      content: string;
-    }>;
+    const results = z
+      .array(z.looseObject({ tool_use_id: z.string(), content: z.string() }))
+      .parse(JSON.parse(persisted[0].content));
     expect(results.map((block) => block.tool_use_id)).toEqual([
       "tool-1",
       "tool-2",
