@@ -22,6 +22,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "./helpers/fetch-mock.js";
 import {
   reseedMemorySecureKeys,
@@ -45,11 +47,14 @@ let mockTwilioApiValidationStatus = 200;
 let mockTwilioApiValidationBody = JSON.stringify({ sid: "AC_test" });
 const originalFetch = globalThis.fetch;
 
+const twilioConfigSchema = z.object({
+  accountSid: z.string().optional(),
+  phoneNumber: z.string().optional(),
+});
+
 function readMockTwilioAccountSid(): string | undefined {
-  const raw = loadRawConfig();
-  const twilio = (raw.twilio ?? {}) as Record<string, unknown>;
   return (
-    (twilio.accountSid as string | undefined) ??
+    twilioConfigSchema.parse(loadRawConfig().twilio ?? {}).accountSid ??
     mockSecureKeyStore[credentialKey("twilio", "account_sid")]
   );
 }
@@ -59,17 +64,14 @@ function readMockTwilioAuthToken(): string | undefined {
 }
 
 function readMockTwilioPhoneNumber(): string | undefined {
-  const raw = loadRawConfig();
-  const twilio = (raw.twilio ?? {}) as Record<string, unknown>;
-  return twilio.phoneNumber as string | undefined;
+  return twilioConfigSchema.parse(loadRawConfig().twilio ?? {}).phoneNumber;
 }
 
 function resolveIngressBaseUrlFromConfig(ingressConfig: unknown): string {
-  const ingress = (ingressConfig ?? {}) as {
-    ingress?: Record<string, unknown>;
-  };
-  const ingressSection = ingress.ingress ?? {};
-  const fromConfig = ingressSection.publicBaseUrl;
+  const schema = z.object({
+    ingress: z.object({ publicBaseUrl: z.unknown() }).optional(),
+  });
+  const fromConfig = schema.parse(ingressConfig ?? {}).ingress?.publicBaseUrl;
   if (typeof fromConfig === "string" && fromConfig.length > 0) {
     return fromConfig.replace(/\/+$/, "");
   }
@@ -893,7 +895,7 @@ describe("twilio webhook routes", () => {
         await handleStatusCallback(directReq);
       } catch (err) {
         handlerThrew = true;
-        expect((err as Error).message).toBe("Simulated side-effect failure");
+        expect(err).toHaveProperty("message", "Simulated side-effect failure");
       }
       expect(handlerThrew).toBe(true);
 
@@ -1109,35 +1111,36 @@ describe("twilio webhook routes", () => {
   // branches on its outcome.
 
   describe("setup outcomes never affect TwiML", () => {
-    const outcomes: Array<Record<string, unknown>> = [
-      { action: "normal_call", isInbound: true },
-      {
-        action: "deny",
-        message: "This number is not authorized.",
-        logReason: "Inbound voice ACL: blocked caller",
-      },
-      {
-        action: "verification",
-        assistantId: "self",
-        fromNumber: "+14155550134",
-      },
-      {
-        action: "name_capture",
-        assistantId: "self",
-        fromNumber: "+14155550134",
-      },
-      {
-        action: "invite_redemption",
-        assistantId: "self",
-        fromNumber: "+14155550134",
-        inviteeName: "Alice",
-      },
-    ];
+    const outcomes: Array<NonNullable<typeof mockRouteSetupResult>["outcome"]> =
+      [
+        { action: "normal_call", isInbound: true },
+        {
+          action: "deny",
+          message: "This number is not authorized.",
+          logReason: "Inbound voice ACL: blocked caller",
+        },
+        {
+          action: "verification",
+          assistantId: "self",
+          fromNumber: "+14155550134",
+        },
+        {
+          action: "name_capture",
+          assistantId: "self",
+          fromNumber: "+14155550134",
+        },
+        {
+          action: "invite_redemption",
+          assistantId: "self",
+          fromNumber: "+14155550134",
+          inviteeName: "Alice",
+        },
+      ];
 
     for (const outcome of outcomes) {
-      test(`${outcome.action as string} setup outcome still yields Stream TwiML`, async () => {
+      test(`${outcome.action} setup outcome still yields Stream TwiML`, async () => {
         mockRouteSetupResult = {
-          outcome: outcome as { action: string },
+          outcome,
           resolved: {
             assistantId: "self",
             isInbound: true,
@@ -1147,11 +1150,11 @@ describe("twilio webhook routes", () => {
         };
 
         const session = createTestSession(
-          `conv-outcome-${outcome.action as string}`,
-          `CA_outcome_${outcome.action as string}`,
+          `conv-outcome-${outcome.action}`,
+          `CA_outcome_${outcome.action}`,
         );
         const req = makeVoiceRequest(session.id, {
-          CallSid: `CA_outcome_${outcome.action as string}`,
+          CallSid: `CA_outcome_${outcome.action}`,
         });
 
         const res = await handleVoiceWebhook(req);
@@ -1233,9 +1236,13 @@ describe("twilio webhook routes", () => {
         (e) => e.eventType === "telephony_credential_preflight_failed",
       );
       expect(preflightEvents.length).toBe(1);
-      const payload = JSON.parse(preflightEvents[0]!.payloadJson) as {
-        missing: Array<{ kind: string; providerId: string }>;
-      };
+      const payload = z
+        .object({
+          missing: z.array(
+            z.object({ kind: z.string(), providerId: z.string() }),
+          ),
+        })
+        .parse(JSON.parse(preflightEvents[0]!.payloadJson));
       expect(payload.missing).toHaveLength(1);
       expect(payload.missing[0]!.kind).toBe("stt");
       expect(payload.missing[0]!.providerId).toBe("deepgram");
@@ -1310,7 +1317,7 @@ describe("twilio webhook routes", () => {
         },
       });
 
-      const twiml = result.body as string;
+      const twiml = z.string().parse(result.body);
       expect(twiml).toContain("<Stream");
     });
 
@@ -1326,7 +1333,7 @@ describe("twilio webhook routes", () => {
         },
       });
 
-      const twiml = result.body as string;
+      const twiml = z.string().parse(result.body);
       expect(twiml).toContain("<Stream");
       expect(twiml).toContain(`/webhooks/twilio/media-stream/${session.id}`);
     });
@@ -1352,7 +1359,7 @@ describe("twilio webhook routes", () => {
         },
       });
 
-      const twiml = result.body as string;
+      const twiml = z.string().parse(result.body);
       expect(twiml).toContain("<Say>");
       expect(twiml).toContain("<Hangup/>");
       expect(twiml).not.toContain("<Stream");

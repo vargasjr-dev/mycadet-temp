@@ -25,6 +25,7 @@ import {
   modelOption,
   nonModelOption,
 } from "./helpers/acp-model-option.js";
+import { requireSessionStatus } from "./helpers/acp-session-status.js";
 
 // Records every `cancel(protocolSessionId)` the manager dispatches to a fake
 // process, so tests can assert which sessions were cancelled.
@@ -138,7 +139,7 @@ describe("AcpSessionManager — parentConversationId population", () => {
       noopSend,
     );
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.parentConversationId).toBe("conv-parent-abc");
   });
 
@@ -162,7 +163,7 @@ describe("AcpSessionManager — parentConversationId population", () => {
       noopSend,
     );
 
-    const states = manager.getStatus() as AcpSessionState[];
+    const states = manager.getStatus();
     const parents = states.map((s) => s.parentConversationId).sort();
     expect(parents).toEqual(["conv-parent-1", "conv-parent-2"]);
   });
@@ -210,13 +211,13 @@ describe("AcpSessionManager — cancelForParent", () => {
     // notification before flipping status).
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect((manager.getStatus(a1.acpSessionId) as AcpSessionState).status).toBe(
+    expect(requireSessionStatus(manager, a1.acpSessionId).status).toBe(
       "cancelled",
     );
-    expect((manager.getStatus(a2.acpSessionId) as AcpSessionState).status).toBe(
+    expect(requireSessionStatus(manager, a2.acpSessionId).status).toBe(
       "cancelled",
     );
-    expect((manager.getStatus(b1.acpSessionId) as AcpSessionState).status).toBe(
+    expect(requireSessionStatus(manager, b1.acpSessionId).status).toBe(
       "running",
     );
 
@@ -263,7 +264,7 @@ describe("AcpSessionManager: model selection at spawn", () => {
         opts.requestedModel ? { model: opts.requestedModel } : {},
       );
     return {
-      state: manager.getStatus(acpSessionId) as AcpSessionState,
+      state: requireSessionStatus(manager, acpSessionId),
       sent,
       requestedModel,
       effectiveModel,
@@ -445,7 +446,7 @@ describe("AcpSessionManager: model selection at spawn", () => {
       "Invalid value for config option model: nope",
     );
     expect(result.effectiveModel).toBe("opus");
-    const state = manager.getStatus(result.acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, result.acpSessionId);
     // The run is live on whatever the adapter chose for itself.
     expect(state.status).toBe("running");
     expect(state.model).toBe("opus");
@@ -514,7 +515,8 @@ describe("AcpSessionManager: model selection at spawn", () => {
     );
     expect(failure).toBeInstanceOf(AcpAuthRequiredError);
     expect(isAcpAuthRequired(failure)).toBe(true);
-    expect((failure as Error).message).toBe(
+    expect(failure).toHaveProperty(
+      "message",
       "Failed to authenticate. Please run /login",
     );
     // The refused credential is written down, so no later spawn resolves it.
@@ -545,7 +547,8 @@ describe("AcpSessionManager: model selection at spawn", () => {
       );
 
     expect(failure).toBeInstanceOf(AcpAuthRequiredError);
-    expect((failure as Error).message).toBe(
+    expect(failure).toHaveProperty(
+      "message",
       "Failed to authenticate. Please run /login",
     );
   });
@@ -625,7 +628,7 @@ describe("AcpSessionManager: model selection at spawn", () => {
       'Agent "agent-model" does not support model selection, so the ' +
         "session is running on the agent's own model.",
     );
-    const state = manager.getStatus(result.acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, result.acpSessionId);
     expect(state.model).toBeUndefined();
     expect(state.availableModels).toEqual([]);
     // The withdrawal goes out before the session is announced, which no
@@ -674,7 +677,7 @@ describe("AcpSessionManager: model selection at spawn", () => {
     release();
     await spawned;
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.model).toBeUndefined();
     expect(state.availableModels).toEqual([]);
     expect(sent.filter((e) => e.type === "acp_session_model_update")).toEqual([
@@ -780,7 +783,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
 
     await emitConfigOptions(manager, acpSessionId, [modelOption("opus")]);
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.model).toBe("opus");
     expect(state.modelRevision).toBe(2);
     expect(sent).toEqual([
@@ -803,7 +806,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
 
     await emitConfigOptions(manager, acpSessionId, [nonModelOption()]);
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.model).toBeUndefined();
     expect(state.availableModels).toEqual([]);
     expect(sent).toEqual([
@@ -842,7 +845,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
       },
     });
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.status).toBe("cancelled");
     expect(state.model).toBe("sonnet");
     expect(sent).toEqual([]);
@@ -865,7 +868,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
 
     await emitConfigOptions(manager, acpSessionId, [modelOption("opus")]);
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(sent).toEqual([
       {
         type: "acp_session_model_update",
@@ -897,7 +900,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
       "conv-open-race",
       (msg: AssistantEvent) => sent.push(msg),
     );
-    const acpSessionId = (manager.getStatus() as AcpSessionState[])[0].id;
+    const acpSessionId = manager.getStatus()[0].id;
 
     // The adapter announces its selector while session/new is still open.
     await emitConfigOptions(manager, acpSessionId, [modelOption("sonnet")]);
@@ -909,9 +912,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
     expect(setConfigOptionCalls).toEqual([
       { sessionId: "proto-agent-model", configId: "model", value: "opus" },
     ]);
-    expect((manager.getStatus(acpSessionId) as AcpSessionState).model).toBe(
-      "opus",
-    );
+    expect(requireSessionStatus(manager, acpSessionId).model).toBe("opus");
     expect(sent.map((e) => e.type)).toEqual([
       "acp_session_model_update",
       "acp_session_spawned",
@@ -940,7 +941,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
       "conv-open-response",
       (msg: AssistantEvent) => sent.push(msg),
     );
-    const acpSessionId = (manager.getStatus() as AcpSessionState[])[0].id;
+    const acpSessionId = manager.getStatus()[0].id;
 
     await emitConfigOptions(manager, acpSessionId, [modelOption("sonnet")]);
     release();
@@ -948,9 +949,7 @@ describe("AcpSessionManager: unsolicited model updates", () => {
 
     // Nothing was requested and the response says the session is on opus, so
     // the adapter is never asked to change.
-    expect((manager.getStatus(acpSessionId) as AcpSessionState).model).toBe(
-      "opus",
-    );
+    expect(requireSessionStatus(manager, acpSessionId).model).toBe("opus");
     expect(setConfigOptionCalls).toEqual([]);
     expect(sent[sent.length - 1]).toMatchObject({
       type: "acp_session_model_update",
@@ -1041,7 +1040,7 @@ describe("AcpSessionManager: a resumed id and the process it replaced", () => {
 
     // The replacement is on nothing the old process said, and its buffer and
     // its clients heard none of it.
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.parentConversationId).toBe("conv-resumed");
     expect(state.model).toBeUndefined();
     expect(state.availableModels).toBeUndefined();

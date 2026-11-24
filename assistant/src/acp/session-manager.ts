@@ -1393,6 +1393,8 @@ export class AcpSessionManager {
    * Returns session state(s). If acpSessionId is provided, returns that
    * session's state; otherwise returns all session states.
    */
+  getStatus(acpSessionId?: undefined): AcpSessionState[];
+  getStatus(acpSessionId?: string): AcpSessionState | AcpSessionState[];
   getStatus(acpSessionId?: string): AcpSessionState | AcpSessionState[] {
     if (acpSessionId) {
       const entry = this.sessions.get(acpSessionId);

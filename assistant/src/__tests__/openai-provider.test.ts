@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { RetryProvider } from "../providers/retry.js";
 import type {
-  ContentBlock,
   Message,
   Provider,
   ProviderEvent,
@@ -81,8 +80,8 @@ function userMsg(text: string): Message {
 
 // Simulate OpenAI.APIError
 class FakeAPIError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
+  status: number | undefined;
+  constructor(status: number | undefined, message: string) {
     super(message);
     this.status = status;
     this.name = "APIError";
@@ -94,13 +93,13 @@ class FakeAPIError extends Error {
 // for suites that share this process.
 class FakeAPIConnectionError extends FakeAPIError {
   constructor() {
-    super(undefined as unknown as number, "Connection error.");
+    super(undefined, "Connection error.");
     this.name = "APIConnectionError";
   }
 }
 class FakeAPIUserAbortError extends FakeAPIError {
   constructor() {
-    super(undefined as unknown as number, "Request was aborted.");
+    super(undefined, "Request was aborted.");
     this.name = "APIUserAbortError";
   }
 }
@@ -963,10 +962,10 @@ describe("OpenAIProvider", () => {
 
     const sent = lastCreateParams!.messages;
     expect(sent).toHaveLength(1);
-    const userMsg = sent[0] as {
-      role: string;
-      content: Array<Record<string, unknown>>;
-    };
+    const userMsg = sent[0];
+    if (!Array.isArray(userMsg.content)) {
+      throw new Error("Expected multipart user content");
+    }
     expect(userMsg.content).toHaveLength(2);
     expect(userMsg.content[0]).toEqual({ type: "text", text: "What is this?" });
     expect(userMsg.content[1]).toEqual({
@@ -1017,7 +1016,7 @@ describe("OpenAIProvider", () => {
             type: "thinking",
             thinking: "hmm...",
             signature: "sig",
-          } as ContentBlock,
+          },
           { type: "text", text: "Hello" },
         ],
       },
@@ -1044,7 +1043,8 @@ describe("OpenAIProvider", () => {
 
     // The provider wraps the signal via createStreamTimeout, so the API
     // receives a different AbortSignal linked to the external one.
-    const apiSignal = lastCreateOptions!.signal as AbortSignal;
+    const apiSignal = lastCreateOptions!.signal;
+    assert(apiSignal instanceof AbortSignal);
     expect(apiSignal).toBeInstanceOf(AbortSignal);
     // When the caller hasn't aborted, the API signal should also be non-aborted.
     expect(apiSignal.aborted).toBe(false);
@@ -1062,7 +1062,8 @@ describe("OpenAIProvider", () => {
 
     // When the caller's signal is already aborted, createStreamTimeout
     // immediately aborts the internal signal — proving the linkage.
-    const apiSignal = lastCreateOptions!.signal as AbortSignal;
+    const apiSignal = lastCreateOptions!.signal;
+    assert(apiSignal instanceof AbortSignal);
     expect(apiSignal.aborted).toBe(true);
   });
 
@@ -1078,8 +1079,9 @@ describe("OpenAIProvider", () => {
       ]);
       expect(true).toBe(false); // should not reach
     } catch (error) {
-      expect((error as Error).message).toContain("OpenAI API error (429)");
-      expect((error as Error).message).toContain("Rate limit exceeded");
+      assert(error instanceof Error);
+      expect(error.message).toContain("OpenAI API error (429)");
+      expect(error.message).toContain("Rate limit exceeded");
     }
   });
 
@@ -1095,8 +1097,9 @@ describe("OpenAIProvider", () => {
       ]);
       expect(true).toBe(false);
     } catch (error) {
-      expect((error as Error).message).toContain("OpenAI request failed");
-      expect((error as Error).message).toContain("Network failure");
+      assert(error instanceof Error);
+      expect(error.message).toContain("OpenAI request failed");
+      expect(error.message).toContain("Network failure");
     }
   });
 
@@ -1211,16 +1214,10 @@ describe("OpenAIProvider", () => {
       name: "test",
       input: { _raw: raw },
     });
-    const rawResponse = result.rawResponse as {
-      choices: Array<{
-        message: {
-          tool_calls: Array<{ function: { arguments: string } }>;
-        };
-      }>;
-    };
-    expect(
-      rawResponse.choices[0]!.message.tool_calls[0]!.function.arguments,
-    ).toBe(raw.slice(0, 200) + "…");
+    expect(result.rawResponse).toHaveProperty(
+      "choices.0.message.tool_calls.0.function.arguments",
+      raw.slice(0, 200) + "…",
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -1878,7 +1875,7 @@ describe("OpenRouterProvider Anthropic-compatible errors", () => {
       expect(error.statusCode).toBe(402);
       expect(error.retryAfterMs).toBe(1250);
       expect(error.abortReason).toBe(abortReason);
-      expect((error as Error).cause).toBe(cause);
+      expect(error.cause).toBe(cause);
     }
   });
 });

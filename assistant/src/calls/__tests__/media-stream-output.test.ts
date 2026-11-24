@@ -1,35 +1,43 @@
 import { afterEach, describe, expect, jest, mock, test } from "bun:test";
 
 import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
+import type {
+  TtsSynthesisRequest,
+  TtsSynthesisResult,
+} from "../../tts/types.js";
+import type { ResolvedCallTts } from "../resolve-call-tts-provider.js";
 
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
 
 // Mock TTS provider for synthesis tests
-const mockSynthesize = jest.fn();
+const mockSynthesize = mock(
+  async (_request: TtsSynthesisRequest): Promise<TtsSynthesisResult> => {
+    throw new Error("Synthesis mock needs a result");
+  },
+);
 const mockProvider = {
   id: "test-provider",
   capabilities: { supportsStreaming: false, supportedFormats: ["wav"] },
   synthesize: mockSynthesize,
 };
 
-mock.module("../resolve-call-tts-provider.js", () => ({
-  resolveCallTtsProvider: jest.fn(() => ({
+const mockResolveCallTtsProvider = jest.fn(
+  (): Omit<ResolvedCallTts, "provider"> & { provider: unknown } => ({
     provider: mockProvider,
     useSynthesizedPath: false,
-    audioFormat: "pcm" as const,
-  })),
+    audioFormat: "pcm",
+  }),
+);
+
+mock.module("../resolve-call-tts-provider.js", () => ({
+  resolveCallTtsProvider: mockResolveCallTtsProvider,
 }));
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 import { mulawToPcm16, pcm16ToMulaw } from "../media-stream-audio-transcode.js";
 import { MediaStreamOutput } from "../media-stream-output.js";
-import { resolveCallTtsProvider } from "../resolve-call-tts-provider.js";
-
-const mockResolveCallTtsProvider = resolveCallTtsProvider as ReturnType<
-  typeof jest.fn
->;
 
 // ---------------------------------------------------------------------------
 // Mock WebSocket
@@ -54,7 +62,7 @@ function createMockWs() {
         closeCode = code;
         closeReason = reason;
       },
-    } as unknown as import("bun").ServerWebSocket<unknown>,
+    },
     get sent() {
       return sent;
     },
@@ -178,7 +186,7 @@ const activeOutputs: MediaStreamOutput[] = [];
 
 /** Construct a MediaStreamOutput tracked for afterEach teardown. */
 function makeOutput(
-  ws: import("bun").ServerWebSocket<unknown>,
+  ws: ConstructorParameters<typeof MediaStreamOutput>[0],
   streamSid: string,
 ): MediaStreamOutput {
   const output = new MediaStreamOutput(ws, streamSid);
@@ -191,7 +199,7 @@ function useProvider(provider: unknown): void {
   mockResolveCallTtsProvider.mockImplementation(() => ({
     provider,
     useSynthesizedPath: false,
-    audioFormat: "pcm" as const,
+    audioFormat: "pcm",
   }));
 }
 
@@ -227,7 +235,7 @@ afterEach(() => {
   mockResolveCallTtsProvider.mockImplementation(() => ({
     provider: mockProvider,
     useSynthesizedPath: false,
-    audioFormat: "pcm" as const,
+    audioFormat: "pcm",
   }));
 });
 
@@ -604,9 +612,7 @@ describe("MediaStreamOutput", () => {
       // The aborted turn's queued segment never synthesized, its
       // in-flight segment produced no frames, and the next turn's
       // audio is the only audio sent.
-      const synthesizedTexts = mockSynthesize.mock.calls.map(
-        (c) => (c[0] as { text: string }).text,
-      );
+      const synthesizedTexts = mockSynthesize.mock.calls.map((c) => c[0].text);
       expect(synthesizedTexts).toEqual(["Sentence one.", "Next turn reply."]);
       expect(countEvents(sent, "media")).toBeGreaterThan(0);
       expect(totalMulawBytes(sent)).toBe(400);
@@ -796,7 +802,7 @@ describe("MediaStreamOutput", () => {
           throw new Error("send failed");
         },
         close() {},
-      } as unknown as import("bun").ServerWebSocket<unknown>;
+      };
 
       const output = makeOutput(ws, "stream-1");
       // Should not throw
@@ -809,7 +815,7 @@ describe("MediaStreamOutput", () => {
         close() {
           throw new Error("close failed");
         },
-      } as unknown as import("bun").ServerWebSocket<unknown>;
+      };
 
       const output = makeOutput(ws, "stream-1");
       // Should not throw
@@ -1260,7 +1266,7 @@ describe("MediaStreamOutput", () => {
       });
       output.sendTextToken("Hello caller.", true);
       await drain(() => mockSynthesize.mock.calls.length > 0);
-      return mockSynthesize.mock.calls[0][0] as { language?: string };
+      return mockSynthesize.mock.calls[0][0];
     }
 
     test("the resolver's language rides the provider request", async () => {
@@ -1286,9 +1292,7 @@ describe("MediaStreamOutput", () => {
       output.sendTextToken("Are you still there?", true, { systemCopy: true });
       await drain(() => mockSynthesize.mock.calls.length >= 2);
 
-      const requests = mockSynthesize.mock.calls.map(
-        (call) => call[0] as { text: string; language?: string },
-      );
+      const requests = mockSynthesize.mock.calls.map((call) => call[0]);
       expect(requests[0]?.text).toBe("Model reply.");
       expect(requests[0]?.language).toBe("ja");
       expect(requests[1]?.text).toBe("Are you still there?");
@@ -1376,10 +1380,7 @@ describe("MediaStreamOutput", () => {
       output.sendTextToken("Namaste.", true);
       await drain(() => mockSynthesize.mock.calls.length > 0);
 
-      const request = mockSynthesize.mock.calls[0][0] as {
-        voiceId?: string;
-        language?: string;
-      };
+      const request = mockSynthesize.mock.calls[0][0];
       expect(request.language).toBe("hi");
       expect(request.voiceId).toBe("aura-2-hindi-voice");
     });
@@ -1393,10 +1394,7 @@ describe("MediaStreamOutput", () => {
       output.sendTextToken("Hola.", true);
       await drain(() => mockSynthesize.mock.calls.length > 0);
 
-      const request = mockSynthesize.mock.calls[0][0] as {
-        voiceId?: string;
-        language?: string;
-      };
+      const request = mockSynthesize.mock.calls[0][0];
       expect(request.language).toBe("es");
       expect(request.voiceId).toBeUndefined();
     });
@@ -1410,10 +1408,7 @@ describe("MediaStreamOutput", () => {
       output.sendTextToken("Are you still there?", true, { systemCopy: true });
       await drain(() => mockSynthesize.mock.calls.length > 0);
 
-      const request = mockSynthesize.mock.calls[0][0] as {
-        voiceId?: string;
-        language?: string;
-      };
+      const request = mockSynthesize.mock.calls[0][0];
       expect(request.language).toBeUndefined();
       expect(request.voiceId).toBeUndefined();
     });
@@ -1614,18 +1609,17 @@ describe("MediaStreamOutput", () => {
           cancelled = true;
         },
       });
-      const response = {
-        ok: true,
-        headers: new Headers({ "content-type": contentType }),
-        body: stream,
-        arrayBuffer: () => {
+      class StreamingResponse extends Response {
+        override arrayBuffer(): Promise<ArrayBuffer> {
           throw new Error(
             "arrayBuffer must not be called on the streaming path",
           );
-        },
-      } as unknown as Response;
+        }
+      }
       return {
-        response,
+        response: new StreamingResponse(stream, {
+          headers: { "content-type": contentType },
+        }),
         push: (bytes) => {
           try {
             controller.enqueue(new Uint8Array(bytes));
@@ -1732,22 +1726,24 @@ describe("MediaStreamOutput", () => {
 
       let bodyAccessed = false;
       let arrayBufferCalled = false;
-      const response = {
-        ok: true,
-        headers: new Headers({ "content-type": "audio/mpeg" }),
-        get body(): ReadableStream<Uint8Array> {
+      class CompressedResponse extends Response {
+        override get body(): never {
           bodyAccessed = true;
           throw new Error("body must not be streamed for compressed formats");
-        },
-        arrayBuffer: async () => {
+        }
+        override async arrayBuffer(): Promise<ArrayBuffer> {
           arrayBufferCalled = true;
           return mp3Bytes.buffer.slice(
             mp3Bytes.byteOffset,
             mp3Bytes.byteOffset + mp3Bytes.byteLength,
           );
-        },
-      } as unknown as Response;
-      mockFetch(response);
+        }
+      }
+      mockFetch(
+        new CompressedResponse(null, {
+          headers: { "content-type": "audio/mpeg" },
+        }),
+      );
 
       const { ws, sent } = createMockWs();
       const output = makeOutput(ws, "stream-1");

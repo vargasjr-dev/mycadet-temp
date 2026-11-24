@@ -218,19 +218,14 @@ function applyConfig(overrides: {
       },
     },
   });
-  (getConfig().services.stt as { provider: string }).provider = provider;
+  Object.assign(getConfig().services.stt, { provider });
   // `language` is optional and absent from the seed above, so assign it only
   // when a test asks for one, leaving the unset path genuinely unset.
   if (overrides.language !== undefined) {
-    (getConfig().services.stt as { language?: string }).language =
-      overrides.language;
+    getConfig().services.stt.language = overrides.language;
   }
   if (overrides.roles !== undefined) {
-    (
-      getConfig().services.stt as {
-        roles?: Record<string, { provider: string; model?: string }>;
-      }
-    ).roles = overrides.roles;
+    Object.assign(getConfig().services.stt, { roles: overrides.roles });
   }
 }
 
@@ -267,7 +262,7 @@ describe("resolveBatchTranscriber", () => {
     // Force an unknown provider past the type system to simulate a future
     // provider that hasn't been wired into the daemon-batch boundary yet.
     secureKeys.set(credentialKey("some-provider", "api_key"), "key");
-    applyConfig({ provider: "unknown-provider" as string });
+    applyConfig({ provider: "unknown-provider" });
 
     const transcriber = await resolveBatchTranscriber();
 
@@ -413,7 +408,7 @@ describe("resolveTelephonySttCapability", () => {
       credentialKey("unknown-provider", "api_key"),
       "key-doesnt-matter",
     );
-    applyConfig({ provider: "unknown-provider" as string });
+    applyConfig({ provider: "unknown-provider" });
 
     const result = await resolveTelephonySttCapability();
 
@@ -451,7 +446,7 @@ describe("resolveTelephonySttCapability", () => {
   });
 
   test("returns 'unconfigured' for empty-string provider", async () => {
-    applyConfig({ provider: "" as string });
+    applyConfig({ provider: "" });
 
     const result = await resolveTelephonySttCapability();
 
@@ -781,7 +776,7 @@ describe("resolveConversationStreamingSttCapability", () => {
       credentialKey("unknown-provider", "api_key"),
       "key-doesnt-matter",
     );
-    applyConfig({ provider: "unknown-provider" as string });
+    applyConfig({ provider: "unknown-provider" });
 
     const result = await resolveConversationStreamingSttCapability();
 
@@ -793,7 +788,7 @@ describe("resolveConversationStreamingSttCapability", () => {
   });
 
   test("returns 'unconfigured' for empty-string provider", async () => {
-    applyConfig({ provider: "" as string });
+    applyConfig({ provider: "" });
 
     const result = await resolveConversationStreamingSttCapability();
 
@@ -905,9 +900,7 @@ describe("resolveStreamingTranscriber diarize preference", () => {
     expect(loggerWarnings).toHaveLength(1);
     const warning = loggerWarnings[0]!;
     expect(warning.message).toContain("diarization");
-    expect((warning.data as { providerId?: unknown }).providerId).toBe(
-      "google-gemini",
-    );
+    expect(warning.data).toHaveProperty("providerId", "google-gemini");
   });
 
   test("diarize: 'required' with Deepgram constructs the transcriber with diarize: true", async () => {
@@ -998,9 +991,7 @@ describe("resolveStreamingTranscriber diarize preference", () => {
     expect(xaiCtorCalls).toHaveLength(0);
     expect(loggerWarnings).toHaveLength(1);
     expect(loggerWarnings[0]!.message).toContain("falling back to batch");
-    expect(
-      (loggerWarnings[0]!.data as { providerId?: unknown }).providerId,
-    ).toBe("xai");
+    expect(loggerWarnings[0]!.data).toHaveProperty("providerId", "xai");
   });
 
   test("utteranceBoundaryFinals with Deepgram forwards the gating options", async () => {
@@ -1060,9 +1051,10 @@ describe("resolveStreamingTranscriber diarize preference", () => {
     expect(transcriber).toBeNull();
     expect(geminiCtorCalls).toHaveLength(0);
     expect(loggerWarnings).toHaveLength(1);
-    expect(
-      (loggerWarnings[0]!.data as { providerId?: unknown }).providerId,
-    ).toBe("google-gemini");
+    expect(loggerWarnings[0]!.data).toHaveProperty(
+      "providerId",
+      "google-gemini",
+    );
   });
 
   test("utteranceBoundaryFinals with openai-whisper returns null with a warning (finals fire only on stop — end-of-stream, not utterance boundary)", async () => {
@@ -1077,9 +1069,10 @@ describe("resolveStreamingTranscriber diarize preference", () => {
     expect(whisperCtorCalls).toHaveLength(0);
     expect(loggerWarnings).toHaveLength(1);
     expect(loggerWarnings[0]!.message).toContain("falling back to batch");
-    expect(
-      (loggerWarnings[0]!.data as { providerId?: unknown }).providerId,
-    ).toBe("openai-whisper");
+    expect(loggerWarnings[0]!.data).toHaveProperty(
+      "providerId",
+      "openai-whisper",
+    );
   });
 
   test("openai-whisper still resolves a streaming transcriber without utteranceBoundaryFinals", async () => {
@@ -1428,9 +1421,10 @@ describe("deepgram-flux streaming resolution", () => {
 
     expect(transcriber).toBeNull();
     expect(loggerWarnings).toHaveLength(1);
-    expect(
-      (loggerWarnings[0]!.data as { providerId?: unknown }).providerId,
-    ).toBe("deepgram-flux");
+    expect(loggerWarnings[0]!.data).toHaveProperty(
+      "providerId",
+      "deepgram-flux",
+    );
   });
 
   test("telephony capability reports Flux as unsupported", async () => {
@@ -1496,9 +1490,10 @@ describe("deepgram-flux batch resolution", () => {
     await resolveBatchTranscriber().catch(() => undefined);
 
     expect(loggerWarnings).toHaveLength(1);
-    expect(
-      (loggerWarnings[0]!.data as { providerId?: unknown }).providerId,
-    ).toBe("deepgram-flux");
+    expect(loggerWarnings[0]!.data).toHaveProperty(
+      "providerId",
+      "deepgram-flux",
+    );
   });
 
   test("a provider that is absent from the catalog still resolves null", async () => {

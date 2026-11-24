@@ -34,6 +34,13 @@ function makeToolResult(
   };
 }
 
+function requireTextToolResult(block: ContentBlock) {
+  if (block.type !== "tool_result" || typeof block.content !== "string") {
+    throw new Error("Expected a text tool result");
+  }
+  return { ...block, content: block.content };
+}
+
 function makeMessages(blocks: ContentBlock[]): Message[] {
   return [{ role: "user", content: blocks }];
 }
@@ -75,10 +82,7 @@ describe("postTurnTruncateToolResults", () => {
 
     expect(truncatedCount).toBe(1);
 
-    const block = result[0].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[0].content[0]);
     expect(block.content).toContain(TRUNCATION_MARKER);
     expect(block.content.length).toBeLessThan(longContent.length);
 
@@ -140,12 +144,12 @@ describe("postTurnTruncateToolResults", () => {
     expect(truncatedCount).toBe(2);
 
     // Short result unchanged.
-    const b0 = result[0].content[0] as { type: "tool_result"; content: string };
+    const b0 = requireTextToolResult(result[0].content[0]);
     expect(b0.content).toBe(short);
 
     // Both long results truncated.
-    const b1 = result[0].content[1] as { type: "tool_result"; content: string };
-    const b2 = result[0].content[2] as { type: "tool_result"; content: string };
+    const b1 = requireTextToolResult(result[0].content[1]);
+    const b2 = requireTextToolResult(result[0].content[2]);
     expect(b1.content).toContain(TRUNCATION_MARKER);
     expect(b2.content).toContain(TRUNCATION_MARKER);
   });
@@ -203,10 +207,7 @@ describe("postTurnTruncateToolResults", () => {
     expect(result).toBe(messages); // same reference — no copy
     expect(existsSync(join(convDir, TOOL_RESULT_DIR))).toBe(false);
 
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toBe(skillBody);
     expect(TRUNCATION_EXEMPT_TOOLS.has("skill_load")).toBe(true);
   });
@@ -237,10 +238,7 @@ describe("postTurnTruncateToolResults", () => {
     );
 
     expect(truncatedCount).toBe(1);
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toContain(TRUNCATION_MARKER);
   });
 
@@ -271,10 +269,7 @@ describe("postTurnTruncateToolResults", () => {
     );
 
     expect(truncatedCount).toBe(1);
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toContain(TRUNCATION_MARKER);
     expect(TRUNCATION_EXEMPT_TOOLS.has("web_fetch")).toBe(false);
   });
@@ -321,10 +316,7 @@ describe("derefToolResultReReads", () => {
       derefToolResultReReads(messages);
 
     expect(dereferencedCount).toBe(1);
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toBe(REREAD_STUB);
   });
 
@@ -349,10 +341,7 @@ describe("derefToolResultReReads", () => {
       derefToolResultReReads(messages);
 
     expect(dereferencedCount).toBe(1);
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toBe(REREAD_STUB);
   });
 
@@ -379,10 +368,7 @@ describe("derefToolResultReReads", () => {
 
     expect(dereferencedCount).toBe(0);
     expect(result).toBe(messages); // same reference — no copy
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toBe(originalContent);
   });
 
@@ -409,10 +395,7 @@ describe("derefToolResultReReads", () => {
 
     expect(dereferencedCount).toBe(0);
     expect(result).toBe(messages);
-    const block = result[1].content[0] as {
-      type: "tool_result";
-      content: string;
-    };
+    const block = requireTextToolResult(result[1].content[0]);
     expect(block.content).toBe(outputMentioningDir);
   });
 
@@ -450,9 +433,9 @@ describe("derefToolResultReReads", () => {
 
     expect(dereferencedCount).toBe(2);
 
-    const b0 = result[1].content[0] as { type: "tool_result"; content: string };
-    const b1 = result[1].content[1] as { type: "tool_result"; content: string };
-    const b2 = result[1].content[2] as { type: "tool_result"; content: string };
+    const b0 = requireTextToolResult(result[1].content[0]);
+    const b1 = requireTextToolResult(result[1].content[1]);
+    const b2 = requireTextToolResult(result[1].content[2]);
 
     expect(b0.content).toBe(REREAD_STUB);
     expect(b1.content).toBe(REREAD_STUB);

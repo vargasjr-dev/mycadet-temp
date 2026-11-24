@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { Anthropic } from "@anthropic-ai/sdk";
-
 import type { ContentBlock, Message } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
@@ -2582,7 +2580,10 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     expect(toolResult.is_error).toBe(true);
 
     // Content should be an array with only text blocks (no images)
-    const parts = toolResult.content as Array<{ type: string }>;
+    const parts = toolResult.content;
+    if (!Array.isArray(parts)) {
+      throw new Error("Expected tool result blocks");
+    }
     expect(Array.isArray(parts)).toBe(true);
     expect(parts.every((p) => p.type === "text")).toBe(true);
     // Original text + the extra text contentBlock
@@ -2664,7 +2665,10 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     expect(toolResult.is_error).toBe(false);
 
     // Non-error: images should be preserved in the content array
-    const parts = toolResult.content as Array<{ type: string }>;
+    const parts = toolResult.content;
+    if (!Array.isArray(parts)) {
+      throw new Error("Expected tool result blocks");
+    }
     expect(Array.isArray(parts)).toBe(true);
     expect(parts.some((p) => p.type === "image")).toBe(true);
   });
@@ -3159,11 +3163,11 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     });
     expect(lastStreamParams).toBeTruthy();
 
-    const sent = lastStreamParams!.messages as Anthropic.MessageParam[];
+    const sent = lastStreamParams!.messages;
     const assistantTurn = sent.find((m) => m.role === "assistant");
     expect(assistantTurn).toBeTruthy();
 
-    const blocks = assistantTurn!.content as Anthropic.ContentBlockParam[];
+    const blocks = assistantTurn!.content;
     const thinkingBlocks = blocks.filter(
       (b) => typeof b !== "string" && b.type === "thinking",
     );
@@ -3188,11 +3192,11 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     });
     expect(lastStreamParams).toBeTruthy();
 
-    const sent = lastStreamParams!.messages as Anthropic.MessageParam[];
+    const sent = lastStreamParams!.messages;
     const assistantTurn = sent.find((m) => m.role === "assistant");
     expect(assistantTurn).toBeTruthy();
 
-    const blocks = assistantTurn!.content as Anthropic.ContentBlockParam[];
+    const blocks = assistantTurn!.content;
     const redactedBlocks = blocks.filter(
       (b) => typeof b !== "string" && b.type === "redacted_thinking",
     );
@@ -3217,18 +3221,16 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     });
     expect(lastStreamParams).toBeTruthy();
 
-    const sent = lastStreamParams!.messages as Anthropic.MessageParam[];
+    const sent = lastStreamParams!.messages;
     const assistantTurn = sent.find((m) => m.role === "assistant");
     expect(assistantTurn).toBeTruthy();
 
-    const blocks = assistantTurn!.content as Anthropic.ContentBlockParam[];
+    const blocks = assistantTurn!.content;
     const thinkingBlocks = blocks.filter(
       (b) => typeof b !== "string" && b.type === "thinking",
     );
     expect(thinkingBlocks).toHaveLength(1);
-    expect((thinkingBlocks[0] as { signature: string }).signature).toBe(
-      "sig-valid-123",
-    );
+    expect(thinkingBlocks[0].signature).toBe("sig-valid-123");
   });
 
   test("strips historical thinking but preserves active continuation in same conversation", async () => {
@@ -3253,28 +3255,24 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     });
     expect(lastStreamParams).toBeTruthy();
 
-    const sent = lastStreamParams!.messages as Anthropic.MessageParam[];
+    const sent = lastStreamParams!.messages;
     const assistantTurns = sent.filter((m) => m.role === "assistant");
     expect(assistantTurns.length).toBeGreaterThanOrEqual(2);
 
     // Historical turn: thinking stripped
-    const historicalBlocks = assistantTurns[0]
-      .content as Anthropic.ContentBlockParam[];
+    const historicalBlocks = assistantTurns[0].content;
     const historicalThinking = historicalBlocks.filter(
       (b) => typeof b !== "string" && b.type === "thinking",
     );
     expect(historicalThinking).toHaveLength(0);
 
     // Active turn: thinking preserved
-    const activeBlocks = assistantTurns[1]
-      .content as Anthropic.ContentBlockParam[];
+    const activeBlocks = assistantTurns[1].content;
     const activeThinking = activeBlocks.filter(
       (b) => typeof b !== "string" && b.type === "thinking",
     );
     expect(activeThinking).toHaveLength(1);
-    expect((activeThinking[0] as { signature: string }).signature).toBe(
-      "sig-current-valid",
-    );
+    expect(activeThinking[0].signature).toBe("sig-current-valid");
   });
 
   test("uses placeholder when stripping thinking leaves assistant message empty", async () => {
@@ -3293,16 +3291,14 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     });
     expect(lastStreamParams).toBeTruthy();
 
-    const sent = lastStreamParams!.messages as Anthropic.MessageParam[];
+    const sent = lastStreamParams!.messages;
     const assistantTurn = sent.find((m) => m.role === "assistant");
     expect(assistantTurn).toBeTruthy();
 
-    const blocks = assistantTurn!.content as Anthropic.ContentBlockParam[];
+    const blocks = assistantTurn!.content;
     expect(blocks).toHaveLength(1);
-    expect((blocks[0] as { type: string; text: string }).type).toBe("text");
-    expect(
-      isPlaceholderSentinelText((blocks[0] as { text: string }).text),
-    ).toBe(true);
+    expect(blocks[0].type).toBe("text");
+    expect(isPlaceholderSentinelText(blocks[0].text ?? "")).toBe(true);
   });
 
   test("multi-step tool-use chain preserves all thinking in the active span", async () => {
@@ -3334,15 +3330,15 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     });
     expect(lastStreamParams).toBeTruthy();
 
-    const sent = lastStreamParams!.messages as Anthropic.MessageParam[];
+    const sent = lastStreamParams!.messages;
 
     // Collect all thinking blocks across all assistant messages
-    const allThinking: Anthropic.ContentBlockParam[] = [];
+    const allThinking: CapturedBlock[] = [];
     for (const m of sent) {
       if (m.role !== "assistant") {
         continue;
       }
-      const blocks = m.content as Anthropic.ContentBlockParam[];
+      const blocks = m.content;
       for (const b of blocks) {
         if (typeof b !== "string" && b.type === "thinking") {
           allThinking.push(b);
@@ -3351,9 +3347,7 @@ describe("AnthropicProvider — thinking block send-time filtering", () => {
     }
 
     // Only the active span's thinking blocks should remain
-    const signatures = allThinking.map(
-      (b) => (b as { signature: string }).signature,
-    );
+    const signatures = allThinking.map((b) => b.signature);
     expect(signatures).not.toContain("sig-old");
     expect(signatures).toContain("sig-step1");
     expect(signatures).toContain("sig-step2");

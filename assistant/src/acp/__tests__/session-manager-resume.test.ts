@@ -278,13 +278,13 @@ import type { AcpSessionUpdateEvent } from "../../api/events/acp-session-update.
 import type { AssistantEvent } from "../../api/index.js";
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
-import type { AcpSessionState } from "../types.js";
 import { AcpConfigOptionRefusedError } from "../types.js";
 import {
   clearHistory,
   insertHistoryRow,
   readHistoryRow,
 } from "./helpers/acp-history-db.js";
+import { requireSessionStatus } from "./helpers/acp-session-status.js";
 
 const { AcpResumeError, AcpSessionManager, AcpSessionNotFoundError } =
   await import("../session-manager.js");
@@ -386,7 +386,7 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     ]);
 
     // State reuses the row's identity and is running again.
-    const state = manager.getStatus("resume-1") as AcpSessionState;
+    const state = requireSessionStatus(manager, "resume-1");
     expect(state).toMatchObject({
       id: "resume-1",
       agentId: "claude",
@@ -454,7 +454,7 @@ describe("AcpSessionManager.resumeFromHistory", () => {
       { sessionId: "proto-old", cwd: "/tmp/proj" },
     ]);
     expect(fake.loadSessionCalls).toEqual([]);
-    const state = manager.getStatus("resume-2") as AcpSessionState;
+    const state = requireSessionStatus(manager, "resume-2");
     expect(state.status).toBe("running");
   });
 
@@ -597,9 +597,9 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     expect(fake.resumeSessionCalls).toEqual([
       { sessionId: "proto-old", cwd: "/tmp/proj" },
     ]);
-    expect(
-      (manager.getStatus("resume-install-1") as AcpSessionState).status,
-    ).toBe("running");
+    expect(requireSessionStatus(manager, "resume-install-1").status).toBe(
+      "running",
+    );
 
     // prepareAgentEnv ran AFTER resolution, on the resolved real binary, and
     // injected the token at spawn time — the sole point the token is in scope.
@@ -791,7 +791,7 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     await manager.resumeFromHistory("resume-model-1", () => {});
 
     expect(setConfigOptionCalls).toEqual([]);
-    expect((manager.getStatus("resume-model-1") as AcpSessionState).model).toBe(
+    expect(requireSessionStatus(manager, "resume-model-1").model).toBe(
       "default",
     );
   });
@@ -812,7 +812,7 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     await manager.resumeFromHistory("resume-model-2", (msg) => sent.push(msg));
 
     expect(setConfigOptionCalls).toEqual([]);
-    const state = manager.getStatus("resume-model-2") as AcpSessionState;
+    const state = requireSessionStatus(manager, "resume-model-2");
     expect(state.model).toBe("sonnet");
     expect(sent.map((m) => m.type)).toEqual([
       "acp_session_spawned",
@@ -851,9 +851,9 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     // The replay is the adapter reporting what the session came back on, so
     // the per-agent default has nothing to put right.
     expect(setConfigOptionCalls).toEqual([]);
-    expect(
-      (manager.getStatus("resume-replay-only") as AcpSessionState).model,
-    ).toBe("sonnet");
+    expect(requireSessionStatus(manager, "resume-replay-only").model).toBe(
+      "sonnet",
+    );
     const modelEvents = sent.filter(
       (m) => m.type === "acp_session_model_update",
     );
@@ -887,7 +887,7 @@ describe("AcpSessionManager.resumeFromHistory", () => {
       sent.push(msg),
     );
 
-    const state = manager.getStatus("resume-selector-gone") as AcpSessionState;
+    const state = requireSessionStatus(manager, "resume-selector-gone");
     expect(state.model).toBeUndefined();
     expect(state.availableModels).toEqual([]);
     expect(sent.filter((m) => m.type === "acp_session_model_update")).toEqual([
@@ -959,14 +959,15 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     // State and the published event name the model the run is really on, which
     // is whatever the adapter reported, never the one it refused.
     expect(
-      (manager.getStatus("resume-refused-model") as AcpSessionState).model,
+      requireSessionStatus(manager, "resume-refused-model").model,
     ).toBeUndefined();
     expect(sent.filter((m) => m.type === "acp_session_model_update")).toEqual([
       {
         type: "acp_session_model_update",
         acpSessionId: "resume-refused-model",
-        modelRevisionEpoch: (
-          manager.getStatus("resume-refused-model") as AcpSessionState
+        modelRevisionEpoch: requireSessionStatus(
+          manager,
+          "resume-refused-model",
         ).modelRevisionEpoch!,
         modelRevision: 1,
         availableModels: MODEL_OPTION_MODELS,
@@ -987,16 +988,17 @@ describe("AcpSessionManager.resumeFromHistory", () => {
 
     // Exactly one resume wins; the other fails the synchronous guard.
     expect([a.status, b.status].sort()).toEqual(["fulfilled", "rejected"]);
-    const rejected = (a.status === "rejected" ? a : b) as PromiseRejectedResult;
+    const rejected = [a, b].find((result) => result.status === "rejected");
+    if (!rejected) {
+      throw new Error("Expected one resume to reject");
+    }
     expect(String(rejected.reason)).toContain("is already active");
 
     // Only one child process was ever constructed and it is still alive
     // (the loser never got far enough to spawn-and-leak a second one).
     expect(fakeInstances).toHaveLength(1);
     expect(fakeInstances[0]!.killed).toBe(false);
-    expect((manager.getStatus("race-1") as AcpSessionState).status).toBe(
-      "running",
-    );
+    expect(requireSessionStatus(manager, "race-1").status).toBe("running");
     // Exactly one spawned event went out (single stream, not doubled).
     expect(sent.filter((m) => m.type === "acp_session_spawned")).toHaveLength(
       1,
@@ -1015,12 +1017,15 @@ describe("AcpSessionManager.resumeFromHistory", () => {
     ]);
 
     expect([a.status, b.status].sort()).toEqual(["fulfilled", "rejected"]);
-    const rejected = (a.status === "rejected" ? a : b) as PromiseRejectedResult;
+    const rejected = [a, b].find((result) => result.status === "rejected");
+    if (!rejected) {
+      throw new Error("Expected one resume to reject");
+    }
     expect(String(rejected.reason)).toMatch(
       /ACP concurrency limit reached \(max 1\)/,
     );
     expect(fakeInstances).toHaveLength(1);
-    expect(manager.getStatus() as AcpSessionState[]).toHaveLength(1);
+    expect(manager.getStatus()).toHaveLength(1);
   });
 
   test("getActiveAndPendingIds surfaces a resume still awaiting env prep", async () => {
@@ -1192,9 +1197,7 @@ describe("AcpSessionManager.steerOrResume", () => {
     expect(sent.filter((m) => m.type === "acp_session_spawned")).toHaveLength(
       1,
     );
-    expect((manager.getStatus("sor-race-1") as AcpSessionState).status).toBe(
-      "running",
-    );
+    expect(requireSessionStatus(manager, "sor-race-1").status).toBe("running");
   });
 
   test("steerOrResume arriving in the initializing window awaits the in-flight resume and steers", async () => {
@@ -1219,7 +1222,7 @@ describe("AcpSessionManager.steerOrResume", () => {
     while (!internals(manager).sessions.has("sor-init-1")) {
       await Promise.resolve();
     }
-    expect((manager.getStatus("sor-init-1") as AcpSessionState).status).toBe(
+    expect(requireSessionStatus(manager, "sor-init-1").status).toBe(
       "initializing",
     );
 
@@ -1253,9 +1256,7 @@ describe("AcpSessionManager.steerOrResume", () => {
     expect(sent.filter((m) => m.type === "acp_session_spawned")).toHaveLength(
       1,
     );
-    expect((manager.getStatus("sor-init-1") as AcpSessionState).status).toBe(
-      "running",
-    );
+    expect(requireSessionStatus(manager, "sor-init-1").status).toBe("running");
   });
 
   test("post-resume steer failure tears the resumed session down instead of leaving it idle", async () => {

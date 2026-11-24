@@ -2,6 +2,8 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { RequestError } from "@agentclientprotocol/sdk";
 
+import type { AssistantEvent } from "../api/index.js";
+import type { Conversation } from "../daemon/conversation.js";
 import {
   deleteConversation,
   setConversation,
@@ -44,6 +46,7 @@ import { createAbortReason } from "../util/abort-reasons.js";
 import { modelOption } from "./__tests__/helpers/acp-model-option.js";
 import { CadetAcpClientHandler } from "./client-handler.js";
 import { AcpSessionManager } from "./session-manager.js";
+import type { AcpSessionState } from "./types.js";
 
 // Parent conversations registered per test; torn down in afterEach so the
 // shared registry does not leak state between cases.
@@ -67,10 +70,12 @@ function mockConversation(opts?: { enqueueQueued?: boolean }) {
     requestId: "req-1",
     rejected: false,
   }));
-  const persistUserMessage = mock(async () => ({
-    id: "msg-1",
-    deduplicated: false,
-  }));
+  const persistUserMessage = mock<Conversation["persistUserMessage"]>(
+    async () => ({
+      id: "msg-1",
+      deduplicated: false,
+    }),
+  );
   let resolveLoop!: () => void;
   const loopRan = new Promise<void>((r) => {
     resolveLoop = r;
@@ -109,25 +114,37 @@ function injectSession(
   parentConversationId: string,
   process: ReturnType<typeof fakeProcess>,
 ) {
-  const sendToCadet = mock(() => {});
+  const sendToCadet = mock((_event: AssistantEvent) => {});
   const clientHandler = new CadetAcpClientHandler(
     acpSessionId,
     sendToCadet,
     parentConversationId,
   );
-  const entry = {
+  const state: AcpSessionState = {
+    id: acpSessionId,
+    agentId: "claude",
+    acpSessionId: "proto-1",
+    parentConversationId,
+    status: "running",
+    startedAt: Date.now(),
+  };
+  const entry: {
+    process: ReturnType<typeof fakeProcess>;
+    state: AcpSessionState;
+    clientHandler: CadetAcpClientHandler;
+    sendToCadet: typeof sendToCadet;
+    currentPrompt: Promise<unknown> | null;
+    parentConversationId: string;
+    cwd: string;
+    command: string;
+    parentToolUseId?: string;
+    credentialDigest?: string;
+  } = {
     process,
-    state: {
-      id: acpSessionId,
-      agentId: "claude",
-      acpSessionId: "proto-1",
-      parentConversationId,
-      status: "running" as string,
-      startedAt: Date.now(),
-    },
+    state,
     clientHandler,
     sendToCadet,
-    currentPrompt: null as unknown,
+    currentPrompt: null,
     parentConversationId,
     cwd: "/tmp",
     command: "noop",
@@ -175,18 +192,14 @@ describe("AcpSessionManager parent notification", () => {
     expect(persistUserMessage).toHaveBeenCalledTimes(1);
     expect(runAgentLoop).toHaveBeenCalledTimes(1);
 
-    const persistArg = (
-      persistUserMessage.mock.calls as unknown as Array<
-        [{ content: string; metadata: unknown }]
-      >
-    )[0][0];
+    const persistArg = persistUserMessage.mock.calls[0][0];
     expect(persistArg.content).toBe('[ACP agent "claude" failed]\n\nboom');
     expect(persistArg.metadata).toEqual({
       acpNotification: { acpSessionId: "proto-1", agent: "claude" },
     });
 
     // Session was torn down on failure.
-    expect((manager.getStatus() as unknown[]).length).toBe(0);
+    expect(manager.getStatus().length).toBe(0);
     expect(proc.kill).toHaveBeenCalled();
   });
 
@@ -212,11 +225,7 @@ describe("AcpSessionManager parent notification", () => {
     expect(persistUserMessage).toHaveBeenCalledTimes(1);
     expect(runAgentLoop).toHaveBeenCalledTimes(1);
 
-    const persistArg = (
-      persistUserMessage.mock.calls as unknown as Array<
-        [{ content: string; metadata: unknown }]
-      >
-    )[0][0];
+    const persistArg = persistUserMessage.mock.calls[0][0];
     expect(
       persistArg.content.startsWith('[ACP agent "claude" completed]'),
     ).toBe(true);
@@ -339,7 +348,7 @@ describe("AcpSessionManager parent notification", () => {
 
     expect(enqueueMessage).not.toHaveBeenCalled();
     // The stale catch left the session in place (no teardown).
-    expect((manager.getStatus() as unknown[]).length).toBe(1);
+    expect(manager.getStatus().length).toBe(1);
   });
 });
 
@@ -379,14 +388,12 @@ describe("AcpSessionManager auth-required recovery surface", () => {
       fakeProcess(opts.failure ?? authFailure, opts.stderr),
     );
     entry.command = opts.command;
-    (entry as { parentToolUseId?: string }).parentToolUseId =
-      opts.parentToolUseId;
+    entry.parentToolUseId = opts.parentToolUseId;
     if (opts.cancelled) {
       entry.state.status = "cancelled";
     }
     if (opts.credentialDigest !== undefined) {
-      (entry as { credentialDigest?: string }).credentialDigest =
-        opts.credentialDigest;
+      entry.credentialDigest = opts.credentialDigest;
     }
 
     await fire(manager, opts.id, entry).catch(() => {});
@@ -394,19 +401,13 @@ describe("AcpSessionManager auth-required recovery surface", () => {
       await loopRan;
     }
 
-    const events = (
-      entry.sendToCadet as ReturnType<typeof mock>
-    ).mock.calls.map((c) => c[0] as { type: string } & Record<string, unknown>);
-    const firstPersist = persistUserMessage.mock.calls[0] as unknown as
-      | [{ content: string }]
-      | undefined;
+    const events = entry.sendToCadet.mock.calls.map(([event]) => event);
+    const firstPersist = persistUserMessage.mock.calls.at(0);
     return {
       parentId,
       authEvent: events.find((e) => e.type === "acp_auth_required"),
       persistedContent: firstPersist?.[0].content,
-      persistedAuthErrorCredential: (
-        entry.state as { authErrorCredential?: string }
-      ).authErrorCredential,
+      persistedAuthErrorCredential: entry.state.authErrorCredential,
     };
   }
 
@@ -606,7 +607,7 @@ describe("AcpSessionManager: teardown during the credential read", () => {
       fakeProcess(revoked),
     );
     entry.command = "claude-agent-acp";
-    (entry as { parentToolUseId?: string }).parentToolUseId = "tool-torn";
+    entry.parentToolUseId = "tool-torn";
 
     let openGate = () => {};
     resolveGate = new Promise<void>((resolve) => {
@@ -624,9 +625,7 @@ describe("AcpSessionManager: teardown during the credential read", () => {
     await running;
     resolveGate = undefined;
 
-    const events = (
-      entry.sendToCadet as ReturnType<typeof mock>
-    ).mock.calls.map((c) => c[0] as { type: string });
+    const events = entry.sendToCadet.mock.calls.map(([event]) => event);
     expect(events.find((e) => e.type === "acp_auth_required")).toBeUndefined();
   });
 });
@@ -758,7 +757,7 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
     await expect(
       manager.spawn(
         "claude",
-        { command: "noop", args: [] } as never,
+        { command: "noop", args: [] },
         "do the task",
         "/tmp",
         "conv-1",
@@ -818,7 +817,7 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
     await expect(
       manager.spawn(
         "claude",
-        { command: "noop", args: [] } as never,
+        { command: "noop", args: [] },
         "do the task",
         "/tmp",
         "conv-1",
@@ -889,7 +888,7 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
     await expect(
       manager.spawn(
         "claude",
-        { command: "noop", args: [] } as never,
+        { command: "noop", args: [] },
         "do the task",
         "/tmp",
         "conv-1",

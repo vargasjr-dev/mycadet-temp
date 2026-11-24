@@ -35,8 +35,6 @@
  *   aborted turn's queued speech never plays over the next turn.
  */
 
-import type { ServerWebSocket } from "bun";
-
 import { extractSpeakableSegments } from "../tts/speakable-segments.js";
 import { synthesizeAndEmit } from "../tts/synthesis-stream.js";
 import { getLogger } from "../util/logger.js";
@@ -301,9 +299,14 @@ type PlaybackItem =
 // Output adapter
 // ---------------------------------------------------------------------------
 
+interface MediaStreamSocket {
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+}
+
 export class MediaStreamOutput implements CallTransport {
   private streamSid: string;
-  private ws: ServerWebSocket<unknown>;
+  private ws: MediaStreamSocket;
   private state: MediaStreamOutputState = "connected";
 
   /**
@@ -377,7 +380,7 @@ export class MediaStreamOutput implements CallTransport {
    */
   readonly requiresPcmAudio = true;
 
-  constructor(ws: ServerWebSocket<unknown>, streamSid: string) {
+  constructor(ws: MediaStreamSocket, streamSid: string) {
     this.ws = ws;
     this.streamSid = streamSid;
   }

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { PlanEntry } from "@agentclientprotocol/sdk";
+
 import { CadetAcpClientHandler } from "../acp/client-handler.js";
 import { AcpSessionManager } from "../acp/session-manager.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -32,7 +34,7 @@ describe("CadetAcpClientHandler", () => {
         update: {
           sessionUpdate: "agent_message_chunk",
           content: { type: "text", text: "hello" },
-        } as any,
+        },
       });
 
       expect(sent).toHaveLength(1);
@@ -50,7 +52,7 @@ describe("CadetAcpClientHandler", () => {
         update: {
           sessionUpdate: "user_message_chunk",
           content: { type: "text", text: "user text" },
-        } as any,
+        },
       });
 
       expect(sent).toHaveLength(1);
@@ -69,8 +71,8 @@ describe("CadetAcpClientHandler", () => {
           toolCallId: "tc-1",
           title: "Read file",
           kind: "read",
-          status: "running",
-        } as any,
+          status: "in_progress",
+        },
       });
 
       expect(sent).toHaveLength(1);
@@ -80,7 +82,7 @@ describe("CadetAcpClientHandler", () => {
         toolCallId: "tc-1",
         toolTitle: "Read file",
         toolKind: "read",
-        toolStatus: "running",
+        toolStatus: "in_progress",
       });
     });
 
@@ -91,8 +93,8 @@ describe("CadetAcpClientHandler", () => {
           sessionUpdate: "tool_call_update",
           toolCallId: "tc-2",
           status: "completed",
-          content: { result: "ok" },
-        } as any,
+          rawOutput: { result: "ok" },
+        },
       });
 
       expect(sent).toHaveLength(1);
@@ -105,13 +107,15 @@ describe("CadetAcpClientHandler", () => {
     });
 
     test("dispatches plan update", async () => {
-      const entries = [{ step: "Step 1" }];
+      const entries: PlanEntry[] = [
+        { content: "Step 1", priority: "medium", status: "pending" },
+      ];
       await handler.sessionUpdate({
         sessionId: "s1",
         update: {
           sessionUpdate: "plan",
           entries,
-        } as any,
+        },
       });
 
       expect(sent).toHaveLength(1);
@@ -128,7 +132,7 @@ describe("CadetAcpClientHandler", () => {
         update: {
           sessionUpdate: "current_mode_update",
           currentModeId: "ask",
-        } as any,
+        },
       });
 
       expect(sent).toHaveLength(0);
@@ -139,19 +143,21 @@ describe("CadetAcpClientHandler", () => {
         sessionId: "s1",
         update: {
           sessionUpdate: "agent_message_chunk",
-          content: { type: "image" },
-        } as any,
+          content: { type: "image", data: "AA==", mimeType: "image/png" },
+        },
       });
 
       expect(sent).toHaveLength(1);
-      expect((sent[0] as any).content).toBe("");
+      expect(sent[0]).toHaveProperty("content", "");
     });
   });
 
   describe("requestPermission", () => {
     test("suppresses ACP confirmation UI and chooses the allow option (auto-allow)", async () => {
       const result = await handler.requestPermission({
+        sessionId: "s1",
         toolCall: {
+          toolCallId: "tc-1",
           title: "Read file",
           kind: "read",
           rawInput: "/tmp/example.txt",
@@ -160,7 +166,7 @@ describe("CadetAcpClientHandler", () => {
           { optionId: "allow", name: "Allow", kind: "allow_once" },
           { optionId: "deny", name: "Deny", kind: "reject_once" },
         ],
-      } as any);
+      });
 
       expect(result).toEqual({
         outcome: { outcome: "selected", optionId: "allow" },
@@ -171,13 +177,15 @@ describe("CadetAcpClientHandler", () => {
 
     test("suppresses ACP confirmation UI and cancels when no allow option exists", async () => {
       const result = await handler.requestPermission({
+        sessionId: "s1",
         toolCall: {
+          toolCallId: "tc-1",
           title: "Read file",
           kind: "read",
           rawInput: "/tmp/example.txt",
         },
         options: [{ optionId: "deny", name: "Deny", kind: "reject_once" }],
-      } as any);
+      });
 
       expect(result).toEqual({
         outcome: { outcome: "cancelled" },
@@ -302,14 +310,14 @@ describe("AcpSessionManager", () => {
       entry.currentPrompt = bgPromise;
 
       // Session exists before completion
-      expect((manager.getStatus() as any[]).length).toBe(1);
+      expect(manager.getStatus().length).toBe(1);
 
       // Complete the prompt
       resolvePrompt!({ stopReason: "end_turn" });
       await bgPromise;
 
       // Session should be cleaned up
-      expect((manager.getStatus() as any[]).length).toBe(0);
+      expect(manager.getStatus().length).toBe(0);
       expect(fakeProcess.kill).toHaveBeenCalled();
     });
 
@@ -361,14 +369,14 @@ describe("AcpSessionManager", () => {
       );
       entry.currentPrompt = bgPromise;
 
-      expect((manager.getStatus() as any[]).length).toBe(1);
+      expect(manager.getStatus().length).toBe(1);
 
       // Fail the prompt
       rejectPrompt!(new Error("agent crashed"));
       await bgPromise;
 
       // Session should be cleaned up even on failure
-      expect((manager.getStatus() as any[]).length).toBe(0);
+      expect(manager.getStatus().length).toBe(0);
       expect(fakeProcess.kill).toHaveBeenCalled();
     });
   });

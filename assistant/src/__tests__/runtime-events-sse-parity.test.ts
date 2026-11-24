@@ -17,14 +17,27 @@
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import type { AssistantEvent, AssistantEventEnvelope } from "../api/index.js";
+import { z } from "zod";
+
+import {
+  type AssistantEvent,
+  AssistantEventEnvelopeSchema,
+} from "../api/index.js";
 import { getOrCreateConversation } from "../persistence/conversation-key-store.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
+import {
+  conversationKeys,
+  conversations,
+} from "../persistence/schema/conversations.js";
 import { buildAssistantEvent } from "../runtime/assistant-event.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 
 await initializeDb();
+
+const wireEnvelopeSchema = AssistantEventEnvelopeSchema.extend({
+  message: z.object({ type: z.string() }).passthrough(),
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,7 +53,7 @@ await initializeDb();
 async function publishAndReadFrame(
   conversationKey: string,
   message: AssistantEvent,
-): Promise<AssistantEventEnvelope> {
+) {
   const { conversationId } = getOrCreateConversation(conversationKey);
 
   const ac = new AbortController();
@@ -70,7 +83,7 @@ async function publishAndReadFrame(
   if (!dataLine) {
     throw new Error(`No data line in SSE frame:\n${frame}`);
   }
-  return JSON.parse(dataLine.slice("data: ".length)) as AssistantEventEnvelope;
+  return wireEnvelopeSchema.parse(JSON.parse(dataLine.slice("data: ".length)));
 }
 
 // ---------------------------------------------------------------------------
@@ -80,8 +93,8 @@ async function publishAndReadFrame(
 describe("SSE HTTP parity — streaming/delta message types", () => {
   beforeEach(() => {
     const db = getDb();
-    db.run("DELETE FROM conversation_keys");
-    db.run("DELETE FROM conversations");
+    db.delete(conversationKeys).run();
+    db.delete(conversations).run();
   });
 
   // ── assistant_text_delta ─────────────────────────────────────────────────
@@ -95,7 +108,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-text-delta", msg);
 
     expect(event.message.type).toBe("assistant_text_delta");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.text).toBe("Hello, world!");
     expect(m.conversationId).toBe("conv-text-delta");
   });
@@ -107,10 +120,10 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     };
     const event = await publishAndReadFrame("parity-text-delta-nosession", msg);
 
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.type).toBe("assistant_text_delta");
     expect(m.text).toBe("No session here");
-    expect((m as Record<string, unknown>).conversationId).toBeUndefined();
+    expect(m.conversationId).toBeUndefined();
   });
 
   // ── assistant_thinking_delta ─────────────────────────────────────────────
@@ -125,7 +138,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-thinking-delta", msg);
 
     expect(event.message.type).toBe("assistant_thinking_delta");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.thinking).toBe("Let me reason through this...");
     expect(m.conversationId).toBe("conv-thinking-test");
     expect(m.timestampMs).toBe(1_700_000_000_000);
@@ -143,7 +156,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-tool-input-delta", msg);
 
     expect(event.message.type).toBe("tool_input_delta");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.toolName).toBe("bash");
     expect(m.content).toBe('{"command": "ls -la"}');
     expect(m.conversationId).toBe("conv-tool-input");
@@ -165,7 +178,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-tool-output-chunk", msg);
 
     expect(event.message.type).toBe("tool_output_chunk");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.chunk).toBe(msg.chunk);
     expect(m.conversationId).toBe("conv-tool-output");
     expect(m.subType).toBe("tool_complete");
@@ -185,7 +198,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
       msg,
     );
 
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.type).toBe("tool_output_chunk");
     expect(m.chunk).toBe("stdout line 1\n");
   });
@@ -204,7 +217,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-tool-result", msg);
 
     expect(event.message.type).toBe("tool_result");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.toolName).toBe("read_file");
     expect(m.result).toBe("File contents here");
     expect(m.isError).toBe(false);
@@ -221,7 +234,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     };
     const event = await publishAndReadFrame("parity-tool-result-error", msg);
 
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.type).toBe("tool_result");
     expect(m.isError).toBe(true);
     expect(m.result).toBe("Command not found: foobar");
@@ -237,7 +250,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-message-complete", msg);
 
     expect(event.message.type).toBe("message_complete");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.conversationId).toBe("conv-msg-complete");
   });
 
@@ -266,7 +279,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     );
 
     expect(event.message.type).toBe("message_request_complete");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.conversationId).toBe("conv-msg-request-complete");
     expect(m.requestId).toBe("req-123");
     expect(m.runStillActive).toBe(true);
@@ -284,7 +297,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-generation-handoff", msg);
 
     expect(event.message.type).toBe("generation_handoff");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.conversationId).toBe("conv-handoff");
     expect(m.requestId).toBe("req-xyz-789");
     expect(m.queuedCount).toBe(2);
@@ -300,7 +313,7 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
     const event = await publishAndReadFrame("parity-generation-cancelled", msg);
 
     expect(event.message.type).toBe("generation_cancelled");
-    const m = event.message as typeof msg;
+    const m = event.message;
     expect(m.conversationId).toBe("conv-cancelled");
   });
 
@@ -336,9 +349,9 @@ describe("SSE HTTP parity — streaming/delta message types", () => {
 
     const frame = new TextDecoder().decode(value);
     const dataLine = frame.split("\n").find((l) => l.startsWith("data: "))!;
-    const received = JSON.parse(
-      dataLine.slice("data: ".length),
-    ) as AssistantEventEnvelope;
+    const received = wireEnvelopeSchema.parse(
+      JSON.parse(dataLine.slice("data: ".length)),
+    );
 
     // Envelope fields
     expect(received.id).toBe(published.id);

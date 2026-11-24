@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { z } from "zod";
-
 import type { WorkspaceMigration } from "../workspace/migrations/types.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
-
-const capturedStringSchema = z.string();
 
 let mockCheckpointContents: string | null = null;
 
@@ -17,7 +13,7 @@ const readTextFileSyncFn = mock((path: string): string | null => {
   return mockCheckpointContents;
 });
 const ensureDirFn = mock(() => {});
-const writeFileSyncFn = mock(() => {});
+const writeFileSyncFn = mock((_file: string, _data: string) => {});
 const renameSyncFn = mock(() => {});
 const logWarnFn = mock(() => {});
 const logInfoFn = mock(() => {});
@@ -68,12 +64,13 @@ import {
 
 const WORKSPACE_DIR = "/tmp/test-workspace";
 
-function makeMigration(id: string): WorkspaceMigration {
+function makeMigration(id: string, retryFailedCheckpoint = false) {
   return {
     id,
     description: `Migration ${id}`,
-    run: mock(() => {}),
-    down: mock(() => {}),
+    retryFailedCheckpoint,
+    run: mock<WorkspaceMigration["run"]>(() => {}),
+    down: mock<NonNullable<WorkspaceMigration["down"]>>(() => {}),
   };
 }
 
@@ -97,10 +94,10 @@ describe("runWorkspaceMigrations", () => {
     const m1 = makeMigration("001");
     const m2 = makeMigration("002");
     const callOrder: string[] = [];
-    (m1.run as ReturnType<typeof mock>).mockImplementation(() => {
+    m1.run.mockImplementation(() => {
       callOrder.push("001");
     });
-    (m2.run as ReturnType<typeof mock>).mockImplementation(() => {
+    m2.run.mockImplementation(() => {
       callOrder.push("002");
     });
 
@@ -158,7 +155,7 @@ describe("runWorkspaceMigrations", () => {
   test("counts a migration that throws as failed, not applied", async () => {
     const m1 = makeMigration("001");
     const m2 = makeMigration("002");
-    (m2.run as ReturnType<typeof mock>).mockImplementation(() => {
+    m2.run.mockImplementation(() => {
       throw new Error("boom");
     });
 
@@ -185,7 +182,7 @@ describe("runWorkspaceMigrations", () => {
   test("writes checkpoint after each migration", async () => {
     const m1 = makeMigration("001");
     const m2 = makeMigration("002");
-    (m2.run as ReturnType<typeof mock>).mockImplementation(() => {
+    m2.run.mockImplementation(() => {
       throw new Error("migration 002 failed");
     });
 
@@ -203,17 +200,13 @@ describe("runWorkspaceMigrations", () => {
 
     // Verify the completed checkpoint contains m1
     // The second write is the "completed" marker for m1
-    const completedWrite = capturedStringSchema.parse(
-      (writeFileSyncFn.mock.calls[1] as unknown[])[1],
-    );
+    const completedWrite = writeFileSyncFn.mock.calls[1]![1];
     const parsed = JSON.parse(completedWrite);
     expect(parsed.applied["001"]).toBeDefined();
     expect(parsed.applied["001"].status).toBe("completed");
 
     // Verify m2 is marked as failed
-    const failedWrite = capturedStringSchema.parse(
-      (writeFileSyncFn.mock.calls[3] as unknown[])[1],
-    );
+    const failedWrite = writeFileSyncFn.mock.calls[3]![1];
     const failedParsed = JSON.parse(failedWrite);
     expect(failedParsed.applied["002"]).toBeDefined();
     expect(failedParsed.applied["002"].status).toBe("failed");
@@ -230,12 +223,12 @@ describe("runWorkspaceMigrations", () => {
     expect(m2.run).toHaveBeenCalledTimes(1);
 
     // Capture the last checkpoint that was written
-    const lastWriteCall = writeFileSyncFn.mock.calls.at(-1) as unknown[];
-    const savedCheckpoint = capturedStringSchema.parse(lastWriteCall[1]);
+    const lastWriteCall = writeFileSyncFn.mock.calls.at(-1);
+    const savedCheckpoint = lastWriteCall![1];
 
     // Reset mocks for second run
-    (m1.run as ReturnType<typeof mock>).mockClear();
-    (m2.run as ReturnType<typeof mock>).mockClear();
+    m1.run.mockClear();
+    m2.run.mockClear();
 
     // Simulate reading back the saved checkpoint
     mockCheckpointContents = savedCheckpoint;
@@ -326,8 +319,7 @@ describe("runWorkspaceMigrations", () => {
       },
     });
 
-    const m1 = makeMigration("001");
-    m1.retryFailedCheckpoint = true;
+    const m1 = makeMigration("001", true);
     await runWorkspaceMigrations(WORKSPACE_DIR, [m1]);
 
     expect(m1.run).toHaveBeenCalledTimes(1);
@@ -341,7 +333,7 @@ describe("runWorkspaceMigrations", () => {
         // Simulate async work
         await Promise.resolve();
       }),
-      down: mock(() => {}),
+      down: mock<NonNullable<WorkspaceMigration["down"]>>(() => {}),
     };
 
     await runWorkspaceMigrations(WORKSPACE_DIR, [asyncMigration]);
@@ -369,7 +361,7 @@ describe("runWorkspaceMigrations", () => {
     // No checkpoint file → fresh workspace.
     const m1 = makeMigration("001");
     let observed: boolean | undefined;
-    (m1.run as ReturnType<typeof mock>).mockImplementation(
+    m1.run.mockImplementation(
       (_dir: string, ctx?: { isNewWorkspace: boolean }) => {
         observed = ctx?.isNewWorkspace;
       },
@@ -381,20 +373,12 @@ describe("runWorkspaceMigrations", () => {
     expect(observed).toBe(true);
 
     // The first persisted checkpoint (m1's "started" save) carries the flag.
-    const firstSave = JSON.parse(
-      capturedStringSchema.parse(
-        (writeFileSyncFn.mock.calls[0] as unknown[])[1],
-      ),
-    );
+    const firstSave = JSON.parse(writeFileSyncFn.mock.calls[0]![1]);
     expect(firstSave.isNewWorkspace).toBe(true);
 
     // The final persisted checkpoint clears the flag so subsequent boots
     // treat this workspace as an upgrade.
-    const finalSave = JSON.parse(
-      capturedStringSchema.parse(
-        (writeFileSyncFn.mock.calls.at(-1) as unknown[])[1],
-      ),
-    );
+    const finalSave = JSON.parse(writeFileSyncFn.mock.calls.at(-1)![1]);
     expect(finalSave.isNewWorkspace).toBe(false);
   });
 
@@ -413,7 +397,7 @@ describe("runWorkspaceMigrations", () => {
 
     const seedingMigration = makeMigration("seed");
     let observed: boolean | undefined;
-    (seedingMigration.run as ReturnType<typeof mock>).mockImplementation(
+    seedingMigration.run.mockImplementation(
       (_dir: string, ctx?: { isNewWorkspace: boolean }) => {
         observed = ctx?.isNewWorkspace;
       },
@@ -438,7 +422,7 @@ describe("runWorkspaceMigrations", () => {
 
     const seedingMigration = makeMigration("seed");
     let observed: boolean | undefined;
-    (seedingMigration.run as ReturnType<typeof mock>).mockImplementation(
+    seedingMigration.run.mockImplementation(
       (_dir: string, ctx?: { isNewWorkspace: boolean }) => {
         observed = ctx?.isNewWorkspace;
       },
@@ -501,10 +485,10 @@ describe("rollbackWorkspaceMigrations", () => {
     });
 
     const callOrder: string[] = [];
-    (m2.down as ReturnType<typeof mock>).mockImplementation(() => {
+    m2.down.mockImplementation(() => {
       callOrder.push("002");
     });
-    (m3.down as ReturnType<typeof mock>).mockImplementation(() => {
+    m3.down.mockImplementation(() => {
       callOrder.push("003");
     });
 
@@ -553,10 +537,8 @@ describe("rollbackWorkspaceMigrations", () => {
     await rollbackWorkspaceMigrations(WORKSPACE_DIR, [m1, m2, m3], "001");
 
     // The last checkpoint write should only contain m1 (002 and 003 were rolled back)
-    const lastWriteCall = writeFileSyncFn.mock.calls.at(-1) as unknown[];
-    const finalCheckpoint = JSON.parse(
-      capturedStringSchema.parse(lastWriteCall[1]),
-    );
+    const lastWriteCall = writeFileSyncFn.mock.calls.at(-1);
+    const finalCheckpoint = JSON.parse(lastWriteCall![1]);
     expect(finalCheckpoint.applied["001"]).toBeDefined();
     expect(finalCheckpoint.applied["002"]).toBeUndefined();
     expect(finalCheckpoint.applied["003"]).toBeUndefined();
