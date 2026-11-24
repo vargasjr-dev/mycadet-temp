@@ -217,7 +217,7 @@ describe("the dispatcher — the four prefixes", () => {
         // arm, no tail hygiene. Pinned exactly so no other row sneaks
         // past the derivation unversioned.
         expect(derived).toBe(
-          "^(?:\\/_allauth|\\/accounts|\\/v1\\/releases)(?:$|\\/)",
+          "^(?:\\/_allauth|\\/accounts|\\/v1\\/releases|\\/v1\\/feedback)(?:$|\\/)",
         );
         continue;
       }
