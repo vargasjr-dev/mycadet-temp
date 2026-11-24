@@ -10,10 +10,17 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import type { AcpSessionUpdateEvent } from "../../api/events/acp-session-update.js";
+import { count, eq } from "drizzle-orm";
+import { z } from "zod";
+
+import {
+  type AcpSessionUpdateEvent,
+  AcpSessionUpdateEventSchema,
+} from "../../api/events/acp-session-update.js";
 import type { AssistantEvent } from "../../api/index.js";
-import { getSqlite } from "../../persistence/db-connection.js";
+import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
+import { acpSessionHistory } from "../../persistence/schema/acp.js";
 import { CadetAcpClientHandler } from "../client-handler.js";
 import { AcpSessionManager } from "../session-manager.js";
 import type { AcpUsageSnapshot } from "../types.js";
@@ -22,6 +29,8 @@ import {
   insertHistoryRow,
   readHistoryRow,
 } from "./helpers/acp-history-db.js";
+const eventLogSchema = z.array(AcpSessionUpdateEventSchema);
+
 await initializeDb();
 
 /**
@@ -208,7 +217,7 @@ describe("AcpSessionManager — terminal persistence", () => {
     expect(row!.completed_at).not.toBeNull();
     expect(row!.error).toBeNull();
 
-    const log = JSON.parse(row!.event_log_json) as AcpSessionUpdateEvent[];
+    const log = eventLogSchema.parse(JSON.parse(row!.event_log_json));
     expect(log).toHaveLength(3);
     expect(log[0]).toMatchObject({
       type: "acp_session_update",
@@ -276,7 +285,7 @@ describe("AcpSessionManager — terminal persistence", () => {
 
     const row = readHistoryRow(id);
     expect(row).not.toBeNull();
-    const log = JSON.parse(row!.event_log_json) as AcpSessionUpdateEvent[];
+    const log = eventLogSchema.parse(JSON.parse(row!.event_log_json));
     expect(log).toHaveLength(2);
     expect(log[0]!.rawInput).toEqual(rawInput);
     expect(log[1]!.rawOutput).toBe(rawOutput);
@@ -308,7 +317,7 @@ describe("AcpSessionManager — terminal persistence", () => {
     expect(row!.error).toBe("agent died");
     expect(row!.stop_reason).toBeNull();
 
-    const log = JSON.parse(row!.event_log_json) as AcpSessionUpdateEvent[];
+    const log = eventLogSchema.parse(JSON.parse(row!.event_log_json));
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({
       updateType: "agent_message_chunk",
@@ -348,11 +357,11 @@ describe("AcpSessionManager — terminal persistence", () => {
 
     const row = readHistoryRow(id);
     expect(row).not.toBeNull();
-    const log = JSON.parse(row!.event_log_json) as AcpSessionUpdateEvent[];
+    const log = eventLogSchema.parse(JSON.parse(row!.event_log_json));
     expect(log).toHaveLength(200);
     // Oldest events were evicted — the persisted log contains the last 200.
-    expect((log[0] as { content?: string }).content).toBe("chunk-100");
-    expect((log[199] as { content?: string }).content).toBe("chunk-299");
+    expect(log[0].content).toBe("chunk-100");
+    expect(log[199].content).toBe("chunk-299");
   });
 
   test("buffer caps aggregate JSON size at 256 KB", async () => {
@@ -382,7 +391,7 @@ describe("AcpSessionManager — terminal persistence", () => {
 
     const row = readHistoryRow(id);
     expect(row).not.toBeNull();
-    const log = JSON.parse(row!.event_log_json) as AcpSessionUpdateEvent[];
+    const log = eventLogSchema.parse(JSON.parse(row!.event_log_json));
     expect(log.length).toBeLessThan(80);
     expect(log.length).toBeGreaterThan(0);
     // Persisted JSON must respect the 256 KB cap (allowing a small margin
@@ -604,17 +613,19 @@ describe("AcpSessionManager — terminal persistence", () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    const count = getSqlite()
-      .query(`SELECT COUNT(*) AS n FROM acp_session_history WHERE id = ?`)
-      .get(id) as { n: number };
-    expect(count.n).toBe(1);
+    const rowCount = getDb()
+      .select({ total: count() })
+      .from(acpSessionHistory)
+      .where(eq(acpSessionHistory.id, id))
+      .get();
+    expect(rowCount?.total).toBe(1);
 
     const row = readHistoryRow(id);
     expect(row).not.toBeNull();
     expect(row!.status).toBe("completed");
     expect(row!.stop_reason).toBe("end_turn");
     expect(row!.cwd).toBe("/new/cwd");
-    const log = JSON.parse(row!.event_log_json) as AcpSessionUpdateEvent[];
+    const log = eventLogSchema.parse(JSON.parse(row!.event_log_json));
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({ content: "from the resumed run" });
   });

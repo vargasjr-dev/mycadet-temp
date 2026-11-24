@@ -8,12 +8,13 @@
  * behavior are scripted per test; the client handler is the real
  * CadetAcpClientHandler so replay suppression is exercised end to end.
  */
-
 import { tmpdir } from "node:os";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { SessionConfigOption } from "@agentclientprotocol/sdk";
+import { count } from "drizzle-orm";
 
+import { acpSessionHistory } from "../../persistence/schema/acp.js";
 import {
   MODEL_OPTION_MODELS,
   modelOption,
@@ -275,7 +276,7 @@ const BUN_ADD_KEY = `${BUN_BIN} add`;
 
 import type { AcpSessionUpdateEvent } from "../../api/events/acp-session-update.js";
 import type { AssistantEvent } from "../../api/index.js";
-import { getSqlite } from "../../persistence/db-connection.js";
+import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import type { AcpSessionState } from "../types.js";
 import { AcpConfigOptionRefusedError } from "../types.js";
@@ -295,10 +296,8 @@ const { _resetAdapterInstallCacheForTests } =
 await initializeDb();
 
 function countHistoryRows(): number {
-  const row = getSqlite()
-    .query("SELECT COUNT(*) AS n FROM acp_session_history")
-    .get() as { n: number };
-  return row.n;
+  return getDb().select({ total: count() }).from(acpSessionHistory).get()!
+    .total;
 }
 
 // ---------------------------------------------------------------------------

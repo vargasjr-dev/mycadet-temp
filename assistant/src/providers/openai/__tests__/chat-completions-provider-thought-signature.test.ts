@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import OpenAI from "openai";
+import { z } from "zod";
 
 import { GEMINI_3_UNSIGNED_TOOL_CALL_THOUGHT_SIGNATURE } from "../../gemini-thought-signature.js";
 import {
@@ -39,6 +40,28 @@ function makeStream(chunks: MockChunk[]): AsyncIterable<MockChunk> {
     },
   };
 }
+
+const capturedRequestSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.string(),
+      tool_calls: z
+        .array(
+          z.looseObject({
+            id: z.string(),
+            extra_content: z
+              .looseObject({
+                google: z
+                  .looseObject({ thought_signature: z.string().optional() })
+                  .optional(),
+              })
+              .optional(),
+          }),
+        )
+        .optional(),
+    }),
+  ),
+});
 
 function stubProvider(
   chunks: MockChunk[],
@@ -312,17 +335,7 @@ describe("OpenAIChatCompletionsProvider Gemini thought signature replay", () => 
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        tool_calls?: Array<{
-          id: string;
-          type?: string;
-          function?: { name: string; arguments: string };
-          extra_content?: { google?: { thought_signature?: string } };
-        }>;
-      }>;
-    };
+    const params = capturedRequestSchema.parse(requests[0]);
     expect(params.messages[1].tool_calls).toEqual([
       {
         id: "call_signed",
@@ -353,13 +366,7 @@ describe("OpenAIChatCompletionsProvider Gemini thought signature replay", () => 
 
     await provider.sendMessage(unsignedToolHistory);
 
-    const params = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{
-          extra_content?: { google?: { thought_signature?: string } };
-        }>;
-      }>;
-    };
+    const params = capturedRequestSchema.parse(requests[0]);
     expect(params.messages[0].tool_calls?.[0].extra_content).toEqual({
       google: {
         thought_signature: GEMINI_3_UNSIGNED_TOOL_CALL_THOUGHT_SIGNATURE,
@@ -372,11 +379,7 @@ describe("OpenAIChatCompletionsProvider Gemini thought signature replay", () => 
 
     await provider.sendMessage(unsignedToolHistory);
 
-    const params = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
+    const params = capturedRequestSchema.parse(requests[0]);
     expect(params.messages[0].tool_calls?.[0].extra_content).toBeUndefined();
   });
 
@@ -387,11 +390,7 @@ describe("OpenAIChatCompletionsProvider Gemini thought signature replay", () => 
 
     await provider.sendMessage(signedToolHistory);
 
-    const params = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
+    const params = capturedRequestSchema.parse(requests[0]);
     expect(params.messages[0].tool_calls?.[0].extra_content).toBeUndefined();
   });
 });
@@ -406,18 +405,8 @@ describe("missing thought signature rejection fallback", () => {
     const response = await provider.sendMessage(unsignedToolHistory);
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
-    const second = requests[1] as {
-      messages: Array<{
-        tool_calls?: Array<{
-          extra_content?: { google?: { thought_signature?: string } };
-        }>;
-      }>;
-    };
+    const first = capturedRequestSchema.parse(requests[0]);
+    const second = capturedRequestSchema.parse(requests[1]);
     expect(first.messages[0].tool_calls?.[0].extra_content).toBeUndefined();
     expect(second.messages[0].tool_calls?.[0].extra_content).toEqual({
       google: {
@@ -452,15 +441,8 @@ describe("missing thought signature rejection fallback", () => {
 
     expect(requests).toHaveLength(2);
     expect(
-      (
-        requests[1] as {
-          messages: Array<{
-            tool_calls?: Array<{
-              extra_content?: { google?: { thought_signature?: string } };
-            }>;
-          }>;
-        }
-      ).messages[0].tool_calls?.[0].extra_content?.google?.thought_signature,
+      capturedRequestSchema.parse(requests[1]).messages[0].tool_calls?.[0]
+        .extra_content?.google?.thought_signature,
     ).toBe(GEMINI_3_UNSIGNED_TOOL_CALL_THOUGHT_SIGNATURE);
   });
 
@@ -474,18 +456,8 @@ describe("missing thought signature rejection fallback", () => {
     await provider.sendMessage(signedToolHistory);
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
-    const second = requests[1] as {
-      messages: Array<{
-        tool_calls?: Array<{
-          extra_content?: { google?: { thought_signature?: string } };
-        }>;
-      }>;
-    };
+    const first = capturedRequestSchema.parse(requests[0]);
+    const second = capturedRequestSchema.parse(requests[1]);
     expect(first.messages[0].tool_calls?.[0].extra_content).toBeUndefined();
     expect(second.messages[0].tool_calls?.[0].extra_content).toEqual({
       google: { thought_signature: "signed-thought-1" },
@@ -529,16 +501,8 @@ describe("unknown extra_content rejection fallback", () => {
     await provider.sendMessage(signedToolHistory);
 
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
-    const second = requests[1] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
+    const first = capturedRequestSchema.parse(requests[0]);
+    const second = capturedRequestSchema.parse(requests[1]);
     expect(first.messages[0].tool_calls?.[0].extra_content).toEqual({
       google: { thought_signature: "signed-thought-1" },
     });
@@ -555,13 +519,8 @@ describe("unknown extra_content rejection fallback", () => {
     await expect(provider.sendMessage(signedToolHistory)).rejects.toThrow();
     expect(requests).toHaveLength(1);
     expect(
-      (
-        requests[0] as {
-          messages: Array<{
-            tool_calls?: Array<{ extra_content?: unknown }>;
-          }>;
-        }
-      ).messages[0].tool_calls?.[0].extra_content,
+      capturedRequestSchema.parse(requests[0]).messages[0].tool_calls?.[0]
+        .extra_content,
     ).toEqual({
       google: { thought_signature: "signed-thought-1" },
     });
@@ -583,21 +542,9 @@ describe("stacked openai-compatible fallback retries", () => {
     const response = await provider.sendMessage(unsignedToolHistory);
 
     expect(requests).toHaveLength(3);
-    const first = requests[0] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
-    const second = requests[1] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
-    const third = requests[2] as {
-      messages: Array<{
-        tool_calls?: Array<{ extra_content?: unknown }>;
-      }>;
-    };
+    const first = capturedRequestSchema.parse(requests[0]);
+    const second = capturedRequestSchema.parse(requests[1]);
+    const third = capturedRequestSchema.parse(requests[2]);
     expect(first.messages[0].tool_calls?.[0].extra_content).toBeUndefined();
     expect(second.messages[0].tool_calls?.[0].extra_content).toEqual({
       google: {

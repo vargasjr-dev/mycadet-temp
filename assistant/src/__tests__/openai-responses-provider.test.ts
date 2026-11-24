@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { Message, ProviderEvent } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { ProviderError } from "../util/errors.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock openai module — must be before importing the provider
@@ -22,6 +25,8 @@ interface CapturedStreamParams extends Record<string, unknown> {
 }
 
 let lastStreamParams: CapturedStreamParams | null = null;
+const responseInputSchema = z.object({ content: z.array(jsonObjectSchema) });
+
 let lastStreamOptions: Record<string, unknown> | null = null;
 let lastConstructorOptions: Record<string, unknown> | null = null;
 let shouldThrow: Error | null = null;
@@ -981,7 +986,7 @@ describe("OpenAIResponsesProvider", () => {
 
     const input = lastStreamParams!.input;
     expect(input).toHaveLength(1);
-    const userMsg = input[0] as { content: unknown[] };
+    const userMsg = responseInputSchema.parse(input[0]);
     expect(userMsg.content).toHaveLength(2);
     expect(userMsg.content[0]).toEqual({
       type: "input_text",
@@ -1161,7 +1166,8 @@ describe("OpenAIResponsesProvider", () => {
       { signal: controller.signal },
     );
 
-    const apiSignal = lastStreamOptions!.signal as AbortSignal;
+    const apiSignal = lastStreamOptions!.signal;
+    assert(apiSignal instanceof AbortSignal);
     expect(apiSignal).toBeInstanceOf(AbortSignal);
     expect(apiSignal.aborted).toBe(false);
   });
@@ -1176,7 +1182,8 @@ describe("OpenAIResponsesProvider", () => {
       { signal: controller.signal },
     );
 
-    const apiSignal = lastStreamOptions!.signal as AbortSignal;
+    const apiSignal = lastStreamOptions!.signal;
+    assert(apiSignal instanceof AbortSignal);
     expect(apiSignal.aborted).toBe(true);
   });
 
@@ -1193,8 +1200,9 @@ describe("OpenAIResponsesProvider", () => {
       expect(true).toBe(false); // should not reach
     } catch (error) {
       expect(error).toBeInstanceOf(ProviderError);
-      expect((error as Error).message).toContain("OpenAI API error (429)");
-      expect((error as Error).message).toContain("Rate limit exceeded");
+      assert(error instanceof Error);
+      expect(error.message).toContain("OpenAI API error (429)");
+      expect(error.message).toContain("Rate limit exceeded");
     }
   });
 
@@ -1227,8 +1235,9 @@ describe("OpenAIResponsesProvider", () => {
       expect(true).toBe(false);
     } catch (error) {
       expect(error).toBeInstanceOf(ProviderError);
-      expect((error as Error).message).toContain("OpenAI request failed");
-      expect((error as Error).message).toContain("Network failure");
+      assert(error instanceof Error);
+      expect(error.message).toContain("OpenAI request failed");
+      expect(error.message).toContain("Network failure");
     }
   });
 
@@ -1317,19 +1326,20 @@ describe("OpenAIResponsesProvider", () => {
     );
 
     // rawRequest should contain the params sent to responses.create()
-    const rawReq = result.rawRequest as Record<string, unknown>;
+    const rawReq = jsonObjectSchema.parse(result.rawRequest);
     expect(rawReq.model).toBe("gpt-5.2");
     expect(rawReq.instructions).toBe("System prompt");
     expect(rawReq.store).toBeUndefined();
 
     // rawResponse should contain the final response object, including `output`
     // which downstream normalization relies on for Responses API detection.
-    const rawResp = result.rawResponse as Record<string, unknown>;
+    const rawResp = jsonObjectSchema.parse(result.rawResponse);
     expect(rawResp).toBeDefined();
-    expect((rawResp as any).model).toBe("gpt-5.2");
-    expect((rawResp as any).usage.input_tokens).toBe(10);
-    expect((rawResp as any).usage.output_tokens).toBe(5);
-    expect((rawResp as any).output).toEqual(sdkOutput);
+    expect(rawResp.model).toBe("gpt-5.2");
+    const usage = jsonObjectSchema.parse(rawResp.usage);
+    expect(usage.input_tokens).toBe(10);
+    expect(usage.output_tokens).toBe(5);
+    expect(rawResp.output).toEqual(sdkOutput);
   });
 
   // -----------------------------------------------------------------------
@@ -1390,7 +1400,7 @@ describe("OpenAIResponsesProvider", () => {
     await provider.sendMessage(messages);
 
     const input = lastStreamParams!.input;
-    const userMsg = input[0] as { content: Array<Record<string, unknown>> };
+    const userMsg = responseInputSchema.parse(input[0]);
     expect(userMsg.content[0]).toEqual({
       type: "input_text",
       text: '<attached_file name="doc.pdf" type="application/pdf" />\nHello world PDF content',

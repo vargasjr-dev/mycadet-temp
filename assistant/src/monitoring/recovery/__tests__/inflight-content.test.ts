@@ -7,6 +7,7 @@
 import { existsSync, utimesSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
 
+import { eq } from "drizzle-orm";
 import pino from "pino";
 
 import {
@@ -22,6 +23,7 @@ import {
 } from "../../../persistence/conversation-crud.js";
 import { getDb, getSqliteFrom } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
+import { messages } from "../../../persistence/schema/conversations.js";
 import type { ContentBlock } from "../../../providers/types.js";
 import { recoverInflightContent } from "../inflight-content.js";
 
@@ -51,9 +53,18 @@ function backdateDeltaFile(absPath: string): void {
 }
 
 function rawRow(messageId: string): { content: string; finalized: number } {
-  return db()
-    .query("SELECT content, finalized FROM messages WHERE id = ?")
-    .get(messageId) as { content: string; finalized: number };
+  const row = getDb()
+    .select({
+      content: messages.content,
+      finalized: messages.finalized,
+    })
+    .from(messages)
+    .where(eq(messages.id, messageId))
+    .get();
+  if (!row) {
+    throw new Error(`Missing messages row: ${messageId}`);
+  }
+  return row;
 }
 
 function setProcessing(conversationId: string): void {

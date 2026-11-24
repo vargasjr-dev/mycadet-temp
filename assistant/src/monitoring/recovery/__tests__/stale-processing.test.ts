@@ -1,13 +1,16 @@
 import { rmSync } from "node:fs";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { eq } from "drizzle-orm";
+
 import {
   createConversation,
   incrementProcessingResumeAttempts,
   setConversationProcessingStartedAt,
 } from "../../../persistence/conversation-crud.js";
-import { getDb, getSqliteFrom } from "../../../persistence/db-connection.js";
+import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
+import { conversations } from "../../../persistence/schema/conversations.js";
 import {
   getDaemonBootTimePath,
   recordDaemonBootTime,
@@ -16,21 +19,17 @@ import { clearStaleProcessing } from "../stale-processing.js";
 
 await initializeDb();
 
-function readRow(id: string): {
-  processing_started_at: number | null;
-  processing_resume_attempts: number;
-} {
-  const row = getSqliteFrom(getDb())
-    .query(
-      `SELECT processing_started_at, processing_resume_attempts
-       FROM conversations WHERE id = ?`,
-    )
-    .get(id) as {
-    processing_started_at: number | null;
-    processing_resume_attempts: number;
-  } | null;
+function readRow(id: string) {
+  const row = getDb()
+    .select({
+      processing_started_at: conversations.processingStartedAt,
+      processing_resume_attempts: conversations.processingResumeAttempts,
+    })
+    .from(conversations)
+    .where(eq(conversations.id, id))
+    .get();
   if (!row) {
-    throw new Error(`conversation row missing: ${id}`);
+    throw new Error(`Missing conversations row: ${id}`);
   }
   return row;
 }

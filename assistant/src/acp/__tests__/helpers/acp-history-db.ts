@@ -7,7 +7,10 @@
  * Tests must run `initializeDb()` themselves before calling these.
  */
 
-import { getSqlite } from "../../../persistence/db-connection.js";
+import { eq } from "drizzle-orm";
+
+import { getDb, getSqlite } from "../../../persistence/db-connection.js";
+import { acpSessionHistory } from "../../../persistence/schema/acp.js";
 
 /** Raw column snapshot of an `acp_session_history` row. */
 export interface HistoryRow {
@@ -103,15 +106,33 @@ export function insertHistoryRow(row: {
 }
 
 export function readHistoryRow(id: string): HistoryRow | null {
-  return getSqlite()
-    .query(
-      `SELECT id, agent_id, acp_session_id, parent_conversation_id,
-              started_at, completed_at, status, stop_reason, error,
-              event_log_json, cwd, task, parent_tool_use_id,
-              used_tokens, context_size, cost_amount, cost_currency,
-              input_tokens, output_tokens, auth_error_code,
-              auth_error_credential
-       FROM acp_session_history WHERE id = ?`,
-    )
-    .get(id) as HistoryRow | null;
+  return (
+    getDb()
+      .select({
+        id: acpSessionHistory.id,
+        agent_id: acpSessionHistory.agentId,
+        acp_session_id: acpSessionHistory.acpSessionId,
+        parent_conversation_id: acpSessionHistory.parentConversationId,
+        started_at: acpSessionHistory.startedAt,
+        completed_at: acpSessionHistory.completedAt,
+        status: acpSessionHistory.status,
+        stop_reason: acpSessionHistory.stopReason,
+        error: acpSessionHistory.error,
+        event_log_json: acpSessionHistory.eventLogJson,
+        cwd: acpSessionHistory.cwd,
+        task: acpSessionHistory.task,
+        parent_tool_use_id: acpSessionHistory.parentToolUseId,
+        used_tokens: acpSessionHistory.usedTokens,
+        context_size: acpSessionHistory.contextSize,
+        cost_amount: acpSessionHistory.costAmount,
+        cost_currency: acpSessionHistory.costCurrency,
+        input_tokens: acpSessionHistory.inputTokens,
+        output_tokens: acpSessionHistory.outputTokens,
+        auth_error_code: acpSessionHistory.authErrorCode,
+        auth_error_credential: acpSessionHistory.authErrorCredential,
+      })
+      .from(acpSessionHistory)
+      .where(eq(acpSessionHistory.id, id))
+      .get() ?? null
+  );
 }

@@ -29,19 +29,23 @@ const mockEvents: Array<{
   data: unknown;
 }> = [];
 
-mock.module("../call-store.js", () => ({
-  getCallSession: jest.fn((id: string) => mockSessions.get(id) ?? null),
-  updateCallSession: jest.fn((id: string, updates: Record<string, unknown>) => {
+const mockUpdateCallSession = jest.fn(
+  (id: string, updates: Record<string, unknown>) => {
     const session = mockSessions.get(id);
     if (session) {
       Object.assign(session, updates);
     }
-  }),
-  recordCallEvent: jest.fn(
-    (callSessionId: string, eventType: string, data: unknown) => {
-      mockEvents.push({ callSessionId, eventType, data });
-    },
-  ),
+  },
+);
+const mockRecordCallEvent = jest.fn(
+  (callSessionId: string, eventType: string, data: unknown) => {
+    mockEvents.push({ callSessionId, eventType, data });
+  },
+);
+mock.module("../call-store.js", () => ({
+  getCallSession: jest.fn((id: string) => mockSessions.get(id) ?? null),
+  updateCallSession: mockUpdateCallSession,
+  recordCallEvent: mockRecordCallEvent,
   createCallSession: jest.fn(),
   getCallSessionByCallSid: jest.fn(),
   getActiveCallSessionForConversation: jest.fn(),
@@ -61,19 +65,21 @@ mock.module("../call-state-machine.js", () => ({
 
 // Mock the call state (controller registry)
 const mockControllers = new Map<string, unknown>();
+const mockRegisterCallController = jest.fn(
+  (callSessionId: string, controller: unknown) => {
+    mockControllers.set(callSessionId, controller);
+  },
+);
+const mockFireCallTranscriptNotifier = jest.fn();
 mock.module("../call-state.js", () => ({
-  registerCallController: jest.fn(
-    (callSessionId: string, controller: unknown) => {
-      mockControllers.set(callSessionId, controller);
-    },
-  ),
+  registerCallController: mockRegisterCallController,
   unregisterCallController: jest.fn((callSessionId: string) => {
     mockControllers.delete(callSessionId);
   }),
   getCallController: jest.fn((callSessionId: string) =>
     mockControllers.get(callSessionId),
   ),
-  fireCallTranscriptNotifier: jest.fn(),
+  fireCallTranscriptNotifier: mockFireCallTranscriptNotifier,
   fireCallQuestionNotifier: jest.fn(),
   fireCallCompletionNotifier: jest.fn(),
   registerCallQuestionNotifier: jest.fn(),
@@ -85,13 +91,15 @@ mock.module("../call-state.js", () => ({
 }));
 
 // Mock the finalize-call module
+const mockFinalizeCall = jest.fn();
 mock.module("../finalize-call.js", () => ({
-  finalizeCall: jest.fn(),
+  finalizeCall: mockFinalizeCall,
 }));
 
 // Mock the call pointer messages
+const mockPostPointerMessageSafe = jest.fn();
 mock.module("../call-pointer-messages.js", () => ({
-  postPointerMessageSafe: jest.fn(),
+  postPointerMessageSafe: mockPostPointerMessageSafe,
   formatDuration: jest.fn((ms: number) => `${Math.round(ms / 1000)}s`),
 }));
 
@@ -111,22 +119,23 @@ const mockHandleBargeIn = jest.fn((_onAccepted?: () => void) => false);
 // session arms the barge-in guard only while a turn is in flight.
 let mockControllerState: "idle" | "processing" | "speaking" = "idle";
 
+const mockCallController = jest.fn().mockImplementation(() => ({
+  startInitialGreeting: mockStartInitialGreeting,
+  startPostVerificationGreeting: mockStartPostVerificationGreeting,
+  markNextCallerTurnAsOpeningAck: mockMarkNextCallerTurnAsOpeningAck,
+  handleCallerUtterance: mockHandleCallerUtterance,
+  handleCallerPartial: mockHandleCallerPartial,
+  handleInterrupt: mockHandleInterrupt,
+  handleBargeIn: mockHandleBargeIn,
+  destroy: mockDestroy,
+  getState: jest.fn(() => mockControllerState),
+  setTrustContext: jest.fn(),
+  getPendingConsultationQuestionId: jest.fn(),
+  handleUserAnswer: jest.fn(),
+  handleUserInstruction: jest.fn(),
+}));
 mock.module("../call-controller.js", () => ({
-  CallController: jest.fn().mockImplementation(() => ({
-    startInitialGreeting: mockStartInitialGreeting,
-    startPostVerificationGreeting: mockStartPostVerificationGreeting,
-    markNextCallerTurnAsOpeningAck: mockMarkNextCallerTurnAsOpeningAck,
-    handleCallerUtterance: mockHandleCallerUtterance,
-    handleCallerPartial: mockHandleCallerPartial,
-    handleInterrupt: mockHandleInterrupt,
-    handleBargeIn: mockHandleBargeIn,
-    destroy: mockDestroy,
-    getState: jest.fn(() => mockControllerState),
-    setTrustContext: jest.fn(),
-    getPendingConsultationQuestionId: jest.fn(),
-    handleUserAnswer: jest.fn(),
-    handleUserInstruction: jest.fn(),
-  })),
+  CallController: mockCallController,
 }));
 
 // Mock the assistant scope
@@ -162,13 +171,14 @@ let mockRouteSetupResult: {
 // teardown (e.g. the outbound unusable-verdict abort).
 let mockRouteSetupError: Error | null = null;
 
+const mockRouteSetup = jest.fn(() => {
+  if (mockRouteSetupError) {
+    throw mockRouteSetupError;
+  }
+  return mockRouteSetupResult;
+});
 mock.module("../call-setup-router.js", () => ({
-  routeSetup: jest.fn(() => {
-    if (mockRouteSetupError) {
-      throw mockRouteSetupError;
-    }
-    return mockRouteSetupResult;
-  }),
+  routeSetup: mockRouteSetup,
 }));
 
 // Mock the inbound trust reader. handleStart awaits the combined
@@ -248,13 +258,16 @@ mock.module("../../runtime/actor-trust-resolver.js", () => ({
 }));
 
 // Mock the call speech output (speakSystemPrompt used in deny/unsupported paths)
+const mockSpeakSystemPrompt = jest.fn(async () => {});
 mock.module("../call-speech-output.js", () => ({
-  speakSystemPrompt: jest.fn(async () => {}),
+  speakSystemPrompt: mockSpeakSystemPrompt,
 }));
 
 // Mock scoped approval grants (used in handleTransportClosed and early teardown)
+const mockRevokeScopedApprovalGrantsForContext = jest.fn();
 mock.module("../../approvals/scoped-approval-grants.js", () => ({
-  revokeScopedApprovalGrantsForContext: jest.fn(),
+  revokeScopedApprovalGrantsForContext:
+    mockRevokeScopedApprovalGrantsForContext,
 }));
 
 // Mock the TTS provider resolution so that the dynamic import inside
@@ -423,7 +436,6 @@ mock.module("../access-request-wait.js", () => ({
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
 import { revokeScopedApprovalGrantsForContext } from "../../approvals/scoped-approval-grants.js";
-import { CallController } from "../call-controller.js";
 import { postPointerMessageSafe } from "../call-pointer-messages.js";
 import { routeSetup } from "../call-setup-router.js";
 import { speakSystemPrompt } from "../call-speech-output.js";
@@ -568,16 +580,16 @@ beforeEach(() => {
   mockHandleBargeIn.mockReturnValue(false);
   mockControllerState = "idle";
   mockDestroy.mockClear();
-  (CallController as unknown as jest.Mock).mockClear();
-  (registerCallController as jest.Mock).mockClear();
-  (fireCallTranscriptNotifier as jest.Mock).mockClear();
-  (recordCallEvent as jest.Mock).mockClear();
-  (updateCallSession as jest.Mock).mockClear();
-  (finalizeCall as jest.Mock).mockClear();
-  (revokeScopedApprovalGrantsForContext as jest.Mock).mockClear();
-  (speakSystemPrompt as jest.Mock).mockClear();
-  (postPointerMessageSafe as jest.Mock).mockClear();
-  (routeSetup as jest.Mock).mockClear();
+  mockCallController.mockClear();
+  mockRegisterCallController.mockClear();
+  mockFireCallTranscriptNotifier.mockClear();
+  mockRecordCallEvent.mockClear();
+  mockUpdateCallSession.mockClear();
+  mockFinalizeCall.mockClear();
+  mockRevokeScopedApprovalGrantsForContext.mockClear();
+  mockSpeakSystemPrompt.mockClear();
+  mockPostPointerMessageSafe.mockClear();
+  mockRouteSetup.mockClear();
   mockRouteSetupError = null;
   mockReadPhoneCallerTrust.mockClear();
   mockAdmissionPolicy = null;
@@ -2242,9 +2254,9 @@ describe("setup flows over the media-stream transport", () => {
         "call-verif-ok",
         expect.anything(),
       );
-      expect(
-        (CallController as unknown as jest.Mock).mock.calls[0]?.[3],
-      ).toMatchObject({ assistantId: "self" });
+      expect(mockCallController.mock.calls[0]?.[3]).toMatchObject({
+        assistantId: "self",
+      });
       expect(mockStartInitialGreeting).toHaveBeenCalled();
       expect(session.getSetupFlow()).toBeNull();
       expect(session.getController()).not.toBeNull();
@@ -2570,7 +2582,7 @@ describe("setup flows over the media-stream transport", () => {
         "awaiting_guardian_decision",
       );
       expect(session.getController()).toBeNull();
-      expect(CallController as unknown as jest.Mock).not.toHaveBeenCalled();
+      expect(mockCallController).not.toHaveBeenCalled();
       expect(registerCallController).not.toHaveBeenCalled();
 
       // The guardian approves; the wait poll picks it up.
@@ -2735,7 +2747,7 @@ describe("setup flows over the media-stream transport", () => {
     /** Gate the next speakSystemPrompt call on a manually released promise. */
     function gateNextSpeech(): () => void {
       let release!: () => void;
-      (speakSystemPrompt as jest.Mock).mockImplementationOnce(
+      mockSpeakSystemPrompt.mockImplementationOnce(
         () =>
           new Promise<void>((resolve) => {
             release = resolve;

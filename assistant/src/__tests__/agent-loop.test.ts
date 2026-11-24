@@ -1,6 +1,8 @@
+import assert from "node:assert/strict";
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { REFUSAL_FALLBACK_TEXT } from "@mycadet/plugin-api";
+import { z } from "zod";
 
 import type {
   AgentEvent,
@@ -54,6 +56,9 @@ function collectEvents(events: AgentEvent[]): (event: AgentEvent) => void {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+const fileInputSchema = z.object({ path: z.string() });
+const toolResponseTextSchema = z.object({ content: z.string() });
 
 describe("AgentLoop", () => {
   // The agent loop fires the `post-tool-use` hook for tool-result
@@ -239,7 +244,7 @@ describe("AgentLoop", () => {
       input: Record<string, unknown>,
     ) => {
       return {
-        content: `contents of ${(input as { path: string }).path}`,
+        content: `contents of ${fileInputSchema.parse(input).path}`,
         isError: false,
       };
     };
@@ -322,9 +327,7 @@ describe("AgentLoop", () => {
     // Error event was emitted
     const errorEvents = events.filter((e) => e.type === "error");
     expect(errorEvents).toHaveLength(1);
-    expect(
-      (errorEvents[0] as { type: "error"; error: Error }).error.message,
-    ).toBe("API rate limit exceeded");
+    expect(errorEvents[0].error.message).toBe("API rate limit exceeded");
   });
 
   // 5b. Reactive context-overflow recovery
@@ -774,29 +777,12 @@ describe("AgentLoop", () => {
     const lastMsg = history[2];
     expect(lastMsg.role).toBe("user");
     expect(lastMsg.content).toHaveLength(1);
-    expect(lastMsg.content[0].type).toBe("tool_result");
+    const toolResult = lastMsg.content[0];
+    assert(toolResult.type === "tool_result");
     // The tool ignores the signal, so it is abandoned mid-flight and the
     // synthesized result says the work may still land.
-    expect(
-      (
-        lastMsg.content[0] as {
-          type: "tool_result";
-          tool_use_id: string;
-          content: string;
-          is_error: boolean;
-        }
-      ).content,
-    ).toBe(CANCELLED_UNSETTLED_TOOL_RESULT);
-    expect(
-      (
-        lastMsg.content[0] as {
-          type: "tool_result";
-          tool_use_id: string;
-          content: string;
-          is_error: boolean;
-        }
-      ).is_error,
-    ).toBe(true);
+    expect(toolResult.content).toBe(CANCELLED_UNSETTLED_TOOL_RESULT);
+    expect(toolResult.is_error).toBe(true);
   });
 
   // 6c. A tool that finishes inside the post-abort grace keeps its real result
@@ -863,12 +849,10 @@ describe("AgentLoop", () => {
 
     const lastMsg = history[history.length - 1];
     const block = lastMsg.content.find((b) => b.type === "tool_result");
-    expect(block).toBeDefined();
-    expect((block as { content: string }).content).toBe("wrote the file");
-    expect((block as { is_error: boolean }).is_error).toBe(false);
-    expect(
-      (block as { contentBlocks?: ContentBlock[] }).contentBlocks,
-    ).toHaveLength(1);
+    assert(block);
+    expect(block.content).toBe("wrote the file");
+    expect(block.is_error).toBe(false);
+    expect(block.contentBlocks).toHaveLength(1);
   });
 
   // 6c-ii. Grace-settled output is truncated like any other tool result
@@ -882,7 +866,7 @@ describe("AgentLoop", () => {
       manifest: { name: "grace-truncate", version: "0.0.1" },
       hooks: {
         "post-tool-use": async (ctx: PostToolUseContext) => {
-          const block = ctx.toolResponse as { content: string };
+          const block = toolResponseTextSchema.parse(ctx.toolResponse);
           seen.push(block.content.length);
           return {
             ...ctx,
@@ -931,7 +915,7 @@ describe("AgentLoop", () => {
 
     const lastMsg = history[history.length - 1];
     const block = lastMsg.content.find((b) => b.type === "tool_result");
-    expect((block as { content: string }).content).toBe("truncated");
+    expect(block?.content).toBe("truncated");
   });
 
   // 6d. A tool that ignores the signal is reported as possibly still running
@@ -993,9 +977,7 @@ describe("AgentLoop", () => {
 
     const textDeltas = events.filter((e) => e.type === "text_delta");
     expect(textDeltas).toHaveLength(1);
-    expect((textDeltas[0] as { type: "text_delta"; text: string }).text).toBe(
-      "Hello world",
-    );
+    expect(textDeltas[0].text).toBe("Hello world");
   });
 
   test("emits usage events", async () => {
@@ -1043,10 +1025,7 @@ describe("AgentLoop", () => {
 
     const completeEvents = events.filter((e) => e.type === "message_complete");
     expect(completeEvents).toHaveLength(1);
-    expect(
-      (completeEvents[0] as { type: "message_complete"; message: Message })
-        .message.role,
-    ).toBe("assistant");
+    expect(completeEvents[0].message.role).toBe("assistant");
   });
 
   test("emits tool_use and tool_result events during tool execution", async () => {
@@ -1244,9 +1223,13 @@ describe("AgentLoop", () => {
       // Simulate async work — all tools should overlap in time
       await new Promise((resolve) => setTimeout(resolve, 50));
       const end = Date.now();
-      executionLog.push({ path: (input as { path: string }).path, start, end });
+      executionLog.push({
+        path: fileInputSchema.parse(input).path,
+        start,
+        end,
+      });
       return {
-        content: `contents of ${(input as { path: string }).path}`,
+        content: `contents of ${fileInputSchema.parse(input).path}`,
         isError: false,
       };
     };
@@ -1352,7 +1335,7 @@ describe("AgentLoop", () => {
       _name: string,
       input: Record<string, unknown>,
     ) => {
-      toolCalls.push((input as { path: string }).path);
+      toolCalls.push(fileInputSchema.parse(input).path);
       return { content: "data", isError: false };
     };
 
@@ -1427,7 +1410,7 @@ describe("AgentLoop", () => {
       _name: string,
       input: Record<string, unknown>,
     ) => {
-      const path = (input as { path: string }).path;
+      const path = fileInputSchema.parse(input).path;
       const delays: Record<string, number> = {
         "/slow.txt": 80,
         "/fast.txt": 10,
@@ -2590,10 +2573,8 @@ describe("AgentLoop", () => {
     const followUp = followUpMessages[followUpMessages.length - 1];
     expect(followUp.role).toBe("user");
     expect(followUp.content.map((b) => b.type)).toEqual(["tool_result"]);
-    const erroredToolResult = followUp.content[0] as Extract<
-      ContentBlock,
-      { type: "tool_result" }
-    >;
+    const erroredToolResult = followUp.content[0];
+    assert(erroredToolResult.type === "tool_result");
     expect(erroredToolResult.is_error).toBe(true);
     expect(erroredToolResult.content).toContain("Error: HTTP 404");
     expect(erroredToolResult.content).toContain("looks recoverable");
@@ -2773,7 +2754,7 @@ describe("AgentLoop", () => {
         (b) =>
           b.type === "text" &&
           "text" in b &&
-          (b as { text: string }).text.includes("previous response was empty"),
+          b.text.includes("previous response was empty"),
       ),
     ).toBe(true);
 
@@ -2857,9 +2838,7 @@ describe("AgentLoop", () => {
           (b) =>
             b.type === "text" &&
             "text" in b &&
-            (b as { text: string }).text.includes(
-              "previous response was empty",
-            ),
+            b.text.includes("previous response was empty"),
         ),
     );
     expect(nudgeInHistory).toBe(false);
@@ -2932,13 +2911,9 @@ describe("AgentLoop", () => {
 
     // AND no fallback text is streamed for a non-refusal empty turn.
     const textDeltas = events.filter((e) => e.type === "text_delta");
-    expect(
-      textDeltas.some(
-        (e) =>
-          (e as { type: "text_delta"; text: string }).text ===
-          REFUSAL_FALLBACK_TEXT,
-      ),
-    ).toBe(false);
+    expect(textDeltas.some((e) => e.text === REFUSAL_FALLBACK_TEXT)).toBe(
+      false,
+    );
   });
 
   test("does not retry empty response on first turn (no prior tool use)", async () => {
@@ -3018,13 +2993,7 @@ describe("AgentLoop", () => {
 
     // AND the fallback is streamed so the client renders it.
     const textDeltas = events.filter((e) => e.type === "text_delta");
-    expect(
-      textDeltas.some(
-        (e) =>
-          (e as { type: "text_delta"; text: string }).text ===
-          REFUSAL_FALLBACK_TEXT,
-      ),
-    ).toBe(true);
+    expect(textDeltas.some((e) => e.text === REFUSAL_FALLBACK_TEXT)).toBe(true);
   });
 
   // The fallback must not pile a spurious apology beneath a real answer: when
@@ -3075,10 +3044,7 @@ describe("AgentLoop", () => {
     // THEN no fallback text is emitted or persisted — the real answer stands
     // alone and the trailing empty turn stays empty.
     const fallbackEmitted = events.some(
-      (e) =>
-        e.type === "text_delta" &&
-        (e as { type: "text_delta"; text: string }).text ===
-          REFUSAL_FALLBACK_TEXT,
+      (e) => e.type === "text_delta" && e.text === REFUSAL_FALLBACK_TEXT,
     );
     expect(fallbackEmitted).toBe(false);
     const fallbackInHistory = history.some(
@@ -3088,7 +3054,7 @@ describe("AgentLoop", () => {
           (b) =>
             b.type === "text" &&
             "text" in b &&
-            (b as { text: string }).text === REFUSAL_FALLBACK_TEXT,
+            b.text === REFUSAL_FALLBACK_TEXT,
         ),
     );
     expect(fallbackInHistory).toBe(false);
@@ -3146,10 +3112,7 @@ describe("AgentLoop", () => {
     expect(lastAssistant!.content).toEqual(serverToolBlocks);
 
     const fallbackEmitted = events.some(
-      (e) =>
-        e.type === "text_delta" &&
-        (e as { type: "text_delta"; text: string }).text ===
-          REFUSAL_FALLBACK_TEXT,
+      (e) => e.type === "text_delta" && e.text === REFUSAL_FALLBACK_TEXT,
     );
     expect(fallbackEmitted).toBe(false);
   });

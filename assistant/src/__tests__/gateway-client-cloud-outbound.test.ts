@@ -2,8 +2,26 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { ChannelDeliveryError } from "@mycadet/gateway-client/http-delivery";
+import { z } from "zod";
 
 import { deliverChannelReply } from "../runtime/gateway-client.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
+const managedOutboundSchema = z.object({
+  route_id: z.string(),
+  assistant_id: z.string(),
+  normalized_send: z.object({
+    sourceChannel: z.string(),
+    message: z.object({
+      to: z.string(),
+      content: z.string(),
+      externalMessageId: z.string(),
+    }),
+    source: z.object({ requestId: z.string() }),
+    raw: z.object({ sourceUpdateId: z.string() }),
+  }),
+});
 
 type FetchCall = {
   url: string;
@@ -16,8 +34,8 @@ describe("gateway-client managed outbound lane", () => {
 
   beforeEach(() => {
     calls.length = 0;
-    globalThis.fetch = mock(
-      async (input: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: string | URL | Request, init?: RequestInit) => {
         const url =
           typeof input === "string"
             ? input
@@ -28,8 +46,8 @@ describe("gateway-client managed outbound lane", () => {
         return new Response(JSON.stringify({ status: "accepted" }), {
           status: 202,
         });
-      },
-    ) as unknown as typeof globalThis.fetch;
+      }),
+    );
   });
 
   afterEach(() => {
@@ -51,30 +69,17 @@ describe("gateway-client managed outbound lane", () => {
       "https://test-cloud.mycadet.ai/v1/internal/managed-gateway/outbound-send/",
     );
 
-    const headers = call.init.headers as Record<string, string>;
-    expect(headers["Content-Type"]).toBe("application/json");
-    expect(headers["X-Managed-Gateway-Callback-Token"]).toBe("runtime-token");
-    expect(headers["X-Idempotency-Key"]).toStartWith("mgw-send-");
-    expect(headers.Authorization).toBeUndefined();
+    const headers = new Headers(call.init.headers);
+    expect(headers.get("Content-Type")).toBe("application/json");
+    expect(headers.get("X-Managed-Gateway-Callback-Token")).toBe(
+      "runtime-token",
+    );
+    expect(headers.get("X-Idempotency-Key")).toStartWith("mgw-send-");
+    expect(headers.has("Authorization")).toBe(false);
 
-    const body = JSON.parse(String(call.init.body)) as {
-      route_id: string;
-      assistant_id: string;
-      normalized_send: {
-        sourceChannel: string;
-        message: {
-          to: string;
-          content: string;
-          externalMessageId: string;
-        };
-        source: {
-          requestId: string;
-        };
-        raw: {
-          sourceUpdateId: string;
-        };
-      };
-    };
+    const body = managedOutboundSchema.parse(
+      JSON.parse(String(call.init.body)),
+    );
     expect(body.route_id).toBe("route-123");
     expect(body.assistant_id).toBe("assistant-123");
     expect(body.normalized_send.sourceChannel).toBe("phone");
@@ -92,8 +97,8 @@ describe("gateway-client managed outbound lane", () => {
   test("retries managed outbound send on retriable upstream responses with stable idempotency key", async () => {
     calls.length = 0;
     let attempt = 0;
-    globalThis.fetch = mock(
-      async (input: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: string | URL | Request, init?: RequestInit) => {
         const url =
           typeof input === "string"
             ? input
@@ -108,8 +113,8 @@ describe("gateway-client managed outbound lane", () => {
         return new Response(JSON.stringify({ status: "accepted" }), {
           status: 202,
         });
-      },
-    ) as unknown as typeof globalThis.fetch;
+      }),
+    );
 
     await deliverChannelReply(
       "https://test-cloud.mycadet.ai/v1/internal/managed-gateway/outbound-send/?route_id=route-retry&assistant_id=assistant-retry&source_channel=phone&source_update_id=CA-retry",
@@ -121,19 +126,19 @@ describe("gateway-client managed outbound lane", () => {
 
     expect(calls).toHaveLength(2);
 
-    const firstHeaders = calls[0].init.headers as Record<string, string>;
-    const secondHeaders = calls[1].init.headers as Record<string, string>;
-    expect(firstHeaders["X-Idempotency-Key"]).toBeDefined();
-    expect(secondHeaders["X-Idempotency-Key"]).toBe(
-      firstHeaders["X-Idempotency-Key"],
+    const firstHeaders = new Headers(calls[0].init.headers);
+    const secondHeaders = new Headers(calls[1].init.headers);
+    expect(firstHeaders.has("X-Idempotency-Key")).toBe(true);
+    expect(secondHeaders.get("X-Idempotency-Key")).toBe(
+      firstHeaders.get("X-Idempotency-Key"),
     );
 
-    const firstBody = JSON.parse(String(calls[0].init.body)) as {
-      normalized_send: { source: { requestId: string } };
-    };
-    const secondBody = JSON.parse(String(calls[1].init.body)) as {
-      normalized_send: { source: { requestId: string } };
-    };
+    const firstBody = managedOutboundSchema.parse(
+      JSON.parse(String(calls[0].init.body)),
+    );
+    const secondBody = managedOutboundSchema.parse(
+      JSON.parse(String(calls[1].init.body)),
+    );
     expect(secondBody.normalized_send.source.requestId).toBe(
       firstBody.normalized_send.source.requestId,
     );
@@ -149,14 +154,11 @@ describe("gateway-client managed outbound lane", () => {
     const call = calls[0];
     expect(call.url).toBe("https://gateway.test/deliver/voice");
 
-    const headers = call.init.headers as Record<string, string>;
-    expect(headers["Content-Type"]).toBe("application/json");
-    expect(headers.Authorization).toBeUndefined();
+    const headers = new Headers(call.init.headers);
+    expect(headers.get("Content-Type")).toBe("application/json");
+    expect(headers.has("Authorization")).toBe(false);
 
-    const body = JSON.parse(String(call.init.body)) as {
-      chatId: string;
-      text: string;
-    };
+    const body = jsonObjectSchema.parse(JSON.parse(String(call.init.body)));
     expect(body).toEqual({
       chatId: "+15550001111",
       text: "standard gateway callback",
@@ -164,16 +166,18 @@ describe("gateway-client managed outbound lane", () => {
   });
 
   test("throws ChannelDeliveryError with userMessage when gateway returns JSON error with userMessage", async () => {
-    globalThis.fetch = mock(async () => {
-      return new Response(
-        JSON.stringify({
-          error: "Permission denied",
-          userMessage:
-            "The bot is not a member of this channel. Please invite it first.",
-        }),
-        { status: 403 },
-      );
-    }) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        return new Response(
+          JSON.stringify({
+            error: "Permission denied",
+            userMessage:
+              "The bot is not a member of this channel. Please invite it first.",
+          }),
+          { status: 403 },
+        );
+      }),
+    );
 
     let caught: unknown;
     try {
@@ -198,11 +202,13 @@ describe("gateway-client managed outbound lane", () => {
   });
 
   test("throws ChannelDeliveryError without userMessage when gateway returns JSON error without userMessage", async () => {
-    globalThis.fetch = mock(async () => {
-      return new Response(JSON.stringify({ error: "Delivery failed" }), {
-        status: 502,
-      });
-    }) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        return new Response(JSON.stringify({ error: "Delivery failed" }), {
+          status: 502,
+        });
+      }),
+    );
 
     let caught: unknown;
     try {
@@ -224,9 +230,11 @@ describe("gateway-client managed outbound lane", () => {
   });
 
   test("throws ChannelDeliveryError without userMessage when gateway returns non-JSON error", async () => {
-    globalThis.fetch = mock(async () => {
-      return new Response("Internal Server Error", { status: 500 });
-    }) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = fetchMock(
+      mock(async () => {
+        return new Response("Internal Server Error", { status: 500 });
+      }),
+    );
 
     let caught: unknown;
     try {

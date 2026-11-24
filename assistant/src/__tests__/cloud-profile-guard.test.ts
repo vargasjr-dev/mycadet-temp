@@ -18,6 +18,8 @@ import { readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // The config routes under test read and write the workspace config.json via
@@ -27,7 +29,7 @@ import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 // commits by comparing the on-disk text against the seeded snapshot —
 // `saveRawConfig` pretty-prints, so any commit (even a content no-op) changes
 // the text.
-let rawConfig: Record<string, unknown>;
+let defaultRawConfig: ReturnType<typeof makeDefaultRawConfig>;
 let seededRawText = "";
 let mtimeSeq = 0;
 // Counter so tests can assert whether `commitConfigWrite` ran its post-write
@@ -41,10 +43,9 @@ function configJsonPath(): string {
 
 /**
  * Write `raw` to the workspace config.json as the seeded pre-test state.
- * Also called after in-place mutations of `rawConfig` to flush them to disk.
+ * Also called after in-place mutations of the default fixture to flush them to disk.
  */
 function seedRawConfig(raw: Record<string, unknown>): void {
-  rawConfig = raw;
   seededRawText = JSON.stringify(raw);
   writeFileSync(configJsonPath(), seededRawText);
   // Distinct mtime per write so the loader's file-signature cache can never
@@ -63,7 +64,9 @@ function committedRaw(): Record<string, unknown> | null {
   return jsonObjectSchema.parse(JSON.parse(text));
 }
 
-function makeDefaultRawConfig(): Record<string, unknown> {
+function makeDefaultRawConfig(): {
+  llm: { profiles: Record<string, Record<string, unknown>> };
+} {
   return {
     llm: {
       profiles: {
@@ -118,7 +121,8 @@ const patchRoute = ROUTES.find((r) => r.operationId === "config_patch")!;
 const setRoute = ROUTES.find((r) => r.operationId === "config_set")!;
 
 beforeEach(() => {
-  seedRawConfig(makeDefaultRawConfig());
+  defaultRawConfig = makeDefaultRawConfig();
+  seedRawConfig(defaultRawConfig);
   initializeProvidersCalls = 0;
 });
 
@@ -132,10 +136,12 @@ function expectOneCommitCycle(): void {
   expect(initializeProvidersCalls).toBe(1);
 }
 
+function savedLlm() {
+  return jsonObjectSchema.parse(jsonObjectSchema.parse(committedRaw()).llm);
+}
+
 function savedProfiles(): Record<string, unknown> {
-  const llm = jsonObjectSchema.parse(
-    jsonObjectSchema.parse(committedRaw()).llm,
-  );
+  const llm = savedLlm();
   return jsonObjectSchema.parse(llm.profiles);
 }
 
@@ -239,16 +245,11 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
       body: { provider: "cadet", model: "claude-opus-4-8" },
     });
     expect(result).toEqual({ ok: true });
-    const committed = committedRaw() as {
-      llm?: { profiles?: Record<string, Record<string, unknown>> };
-    } | null;
-    expect(committed?.llm?.profiles?.["my-custom"]).toMatchObject({
+    expect(savedProfile("my-custom")).toMatchObject({
       provider: "cadet",
       model: "claude-opus-4-8",
     });
-    expect(
-      committed?.llm?.profiles?.["my-custom"]?.provider_connection,
-    ).toBeUndefined();
+    expect(savedProfile("my-custom")?.provider_connection).toBeUndefined();
   });
 
   test("Zod rejects invalid fields in a replacement profile", async () => {
@@ -470,12 +471,14 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
     });
 
     expect(result).toHaveProperty("ingress");
-    const committed = committedRaw() as Record<string, any>;
-    expect(committed.ingress.publicBaseUrl).toBe("https://manual.example.test");
-    expect(committed.ingress.publicBaseUrlManagedBy).toBe("tunnel");
-    expect("lastTunnel" in committed.ingress).toBe(false);
-    expect("pairingTunnel" in committed.ingress).toBe(false);
-    expect("assistantId" in committed.ingress).toBe(false);
+    const ingress = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(committedRaw()).ingress,
+    );
+    expect(ingress.publicBaseUrl).toBe("https://manual.example.test");
+    expect(ingress.publicBaseUrlManagedBy).toBe("tunnel");
+    expect("lastTunnel" in ingress).toBe(false);
+    expect("pairingTunnel" in ingress).toBe(false);
+    expect("assistantId" in ingress).toBe(false);
   });
 
   test("allows patches that modify a cloud profile (non-null)", async () => {
@@ -573,9 +576,8 @@ describe("cloud-profile invariant guard — rejected writes", () => {
 
 describe("default-profile invariant guard — allowed writes", () => {
   test("PATCH re-enables a disabled cloud profile (BYOK re-enable)", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.status =
-      "disabled";
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.status = "disabled";
+    seedRawConfig(defaultRawConfig);
     const result = await patchRoute.handler({
       body: { llm: { profiles: { balanced: { status: "active" } } } },
     });
@@ -585,9 +587,8 @@ describe("default-profile invariant guard — allowed writes", () => {
   });
 
   test("PATCH { status: null } clears a disabled default back to active-by-absence", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.status =
-      "disabled";
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.status = "disabled";
+    seedRawConfig(defaultRawConfig);
     const result = await patchRoute.handler({
       body: { llm: { profiles: { balanced: { status: null } } } },
     });
@@ -597,9 +598,8 @@ describe("default-profile invariant guard — allowed writes", () => {
   });
 
   test("PUT { status: 'active' } re-enables a disabled cloud profile", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.status =
-      "disabled";
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.status = "disabled";
+    seedRawConfig(defaultRawConfig);
     const result = await replaceRoute.handler({
       pathParams: { name: "balanced" },
       body: { status: "active" },
@@ -610,9 +610,8 @@ describe("default-profile invariant guard — allowed writes", () => {
   });
 
   test("SET llm.profiles.balanced.status = 'active' re-enables a disabled cloud profile", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.status =
-      "disabled";
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.status = "disabled";
+    seedRawConfig(defaultRawConfig);
     const result = await setRoute.handler({
       body: { path: "llm.profiles.balanced.status", value: "active" },
     });
@@ -622,10 +621,10 @@ describe("default-profile invariant guard — allowed writes", () => {
   });
 
   test("SET llm passes when the value carries the invariant profiles unchanged (incl. frozen topP override)", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.topP = 0.7;
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.topP = 0.7;
+    seedRawConfig(defaultRawConfig);
     const nextLlm = jsonObjectSchema.parse(
-      structuredClone((rawConfig as Record<string, any>).llm),
+      structuredClone(defaultRawConfig.llm),
     );
     nextLlm.activeProfile = "my-custom";
     const result = await setRoute.handler({
@@ -635,17 +634,15 @@ describe("default-profile invariant guard — allowed writes", () => {
     expectOneCommitCycle();
     // The pre-existing topP override survives untouched.
     expect(savedProfile("balanced").topP).toBe(0.7);
-    expect((committedRaw() as Record<string, any>).llm.activeProfile).toBe(
-      "my-custom",
-    );
+    expect(savedLlm().activeProfile).toBe("my-custom");
   });
 
   test("PATCH deleting a user-sourced balanced entry is allowed (invariance is source-gated)", async () => {
     // A `source: "user"` entry passes the cloud-deletion guard AND the
     // invariant guard — both key on the on-disk entry's managed source, so
     // a user-owned profile sharing a cloud name stays deletable.
-    (rawConfig as Record<string, any>).llm.profiles.balanced.source = "user";
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.source = "user";
+    seedRawConfig(defaultRawConfig);
     const result = await patchRoute.handler({
       body: { llm: { profiles: { balanced: null } } },
     });
@@ -654,11 +651,11 @@ describe("default-profile invariant guard — allowed writes", () => {
   });
 
   test("PUT full edits on a user-sourced balanced entry are allowed (invariance is source-gated)", async () => {
-    (rawConfig as Record<string, any>).llm.profiles["balanced"] = {
+    defaultRawConfig.llm.profiles["balanced"] = {
       provider: "anthropic",
       model: "claude-sonnet-4-6",
     };
-    seedRawConfig(rawConfig);
+    seedRawConfig(defaultRawConfig);
     const result = await replaceRoute.handler({
       pathParams: { name: "balanced" },
       body: { provider: "openai", model: "gpt-4o", topP: 0.5 },
@@ -690,12 +687,10 @@ describe("default-profile invariant guard — allowed writes", () => {
     });
     expect(result).toHaveProperty("llm");
     expectOneCommitCycle();
-    expect((committedRaw() as Record<string, any>).llm.activeProfile).toBe(
-      "balanced",
-    );
+    expect(savedLlm().activeProfile).toBe("balanced");
     // The invariant profiles are untouched by an unrelated llm write.
     expect(savedProfile("balanced")).toEqual(
-      (makeDefaultRawConfig() as Record<string, any>).llm.profiles.balanced,
+      makeDefaultRawConfig().llm.profiles.balanced,
     );
   });
 });
@@ -709,9 +704,8 @@ describe("default-profile invariant guard — allowed writes", () => {
 
 describe("wire-only profile keys are stripped from writes", () => {
   test("PATCH re-enable carrying wire keys succeeds and persists neither key", async () => {
-    (rawConfig as Record<string, any>).llm.profiles.balanced.status =
-      "disabled";
-    seedRawConfig(rawConfig);
+    defaultRawConfig.llm.profiles.balanced.status = "disabled";
+    seedRawConfig(defaultRawConfig);
     const result = await patchRoute.handler({
       body: {
         llm: {
@@ -735,7 +729,7 @@ describe("wire-only profile keys are stripped from writes", () => {
 
   test("SET llm.profiles.balanced with a wire-shaped entry (GET round-trip) succeeds", async () => {
     const entry = jsonObjectSchema.parse(
-      structuredClone((rawConfig as Record<string, any>).llm.profiles.balanced),
+      structuredClone(defaultRawConfig.llm.profiles.balanced),
     );
     entry.invariant = true;
     entry.supportsVision = true;
@@ -769,10 +763,10 @@ describe("wire-only profile keys are stripped from writes", () => {
   // -------------------------------------------------------------------------
 
   test("SET round-trip re-enabling a cloud profile with stale on-disk supportsVision succeeds and drops the stale key", async () => {
-    const balanced = (rawConfig as Record<string, any>).llm.profiles.balanced;
+    const balanced = defaultRawConfig.llm.profiles.balanced;
     balanced.supportsVision = true; // stale pre-strip persistence
     balanced.status = "disabled";
-    seedRawConfig(rawConfig);
+    seedRawConfig(defaultRawConfig);
     const entry = jsonObjectSchema.parse(structuredClone(balanced));
     entry.invariant = true; // wire stamp from GET
     entry.status = "active"; // legal re-enable
@@ -790,9 +784,9 @@ describe("wire-only profile keys are stripped from writes", () => {
   });
 
   test("pure no-op SET round-trip with stale on-disk supportsVision succeeds", async () => {
-    const balanced = (rawConfig as Record<string, any>).llm.profiles.balanced;
+    const balanced = defaultRawConfig.llm.profiles.balanced;
     balanced.supportsVision = true; // stale pre-strip persistence
-    seedRawConfig(rawConfig);
+    seedRawConfig(defaultRawConfig);
     const entry = jsonObjectSchema.parse(structuredClone(balanced));
     entry.invariant = true; // wire stamp from GET
     const result = await setRoute.handler({
@@ -808,10 +802,10 @@ describe("wire-only profile keys are stripped from writes", () => {
   });
 
   test("PATCH re-enable carrying wire keys succeeds when the on-disk entry has stale supportsVision", async () => {
-    const balanced = (rawConfig as Record<string, any>).llm.profiles.balanced;
+    const balanced = defaultRawConfig.llm.profiles.balanced;
     balanced.supportsVision = true; // stale pre-strip persistence
     balanced.status = "disabled";
-    seedRawConfig(rawConfig);
+    seedRawConfig(defaultRawConfig);
     const result = await patchRoute.handler({
       body: {
         llm: {
@@ -855,6 +849,10 @@ describe("wire-only profile keys are stripped from writes", () => {
 // Code-owned default profiles: wire round-trip and shadowing guards
 // ---------------------------------------------------------------------------
 
+const rawProfilesResponseSchema = z.object({
+  llm: z.looseObject({ profiles: z.record(z.string(), jsonObjectSchema) }),
+});
+
 const getRoute = ROUTES.find((r) => r.operationId === "config_get")!;
 
 describe("code-owned default profiles — wire view and write normalization", () => {
@@ -864,7 +862,9 @@ describe("code-owned default profiles — wire view and write normalization", ()
         profiles: { balanced: { status: "disabled" } },
       },
     });
-    const response = (await getRoute.handler({})) as Record<string, any>;
+    const response = rawProfilesResponseSchema.parse(
+      await getRoute.handler({}),
+    );
     const wireBalanced = response.llm.profiles.balanced;
     expect(wireBalanced).toEqual({ status: "disabled" });
     // Catalog-only defaults (no on-disk stub) do not appear at all — the
@@ -910,7 +910,9 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     seedRawConfig({
       llm: { default: { provider: "anthropic" }, profiles: {} },
     });
-    const response = (await getRoute.handler({})) as Record<string, any>;
+    const response = rawProfilesResponseSchema.parse(
+      await getRoute.handler({}),
+    );
     expect(response.llm.profiles).toEqual({});
   });
 
@@ -921,7 +923,9 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
         profiles: { balanced: { status: "disabled" } },
       },
     });
-    const response = (await getRoute.handler({})) as Record<string, any>;
+    const response = rawProfilesResponseSchema.parse(
+      await getRoute.handler({}),
+    );
     const result = await patchRoute.handler({
       body: { llm: { profiles: response.llm.profiles } },
     });
@@ -938,7 +942,9 @@ describe("code-owned default profiles — BYO default provider wire view", () =>
     seedRawConfig({
       llm: { default: { provider: "anthropic" }, profiles: {} },
     });
-    const response = (await getRoute.handler({})) as Record<string, any>;
+    const response = rawProfilesResponseSchema.parse(
+      await getRoute.handler({}),
+    );
     const result = await setRoute.handler({
       body: { path: "llm", value: response.llm },
     });
@@ -965,17 +971,16 @@ describe("PATCH /v1/config — provider-only services scrub legacy mode", () => 
           "web-search": { provider: "brave", mode: "managed" },
         },
       },
-    } as never);
+    });
 
-    const raw = committedRaw() as Record<
-      string,
-      Record<string, Record<string, unknown>>
-    >;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(committedRaw()).services);
     // The section schemas are closed: the parse strips the legacy `mode`
     // key and materializes the section's defaults around the user's values.
-    expect("mode" in raw.services["image-generation"]!).toBe(false);
-    expect(raw.services["image-generation"]!.provider).toBe("cadet");
-    expect("mode" in raw.services["web-search"]!).toBe(false);
-    expect(raw.services["web-search"]!.provider).toBe("brave");
+    expect("mode" in services["image-generation"]!).toBe(false);
+    expect(services["image-generation"]!.provider).toBe("cadet");
+    expect("mode" in services["web-search"]!).toBe(false);
+    expect(services["web-search"]!.provider).toBe("brave");
   });
 });

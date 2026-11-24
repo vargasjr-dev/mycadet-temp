@@ -1,8 +1,11 @@
 import { rmSync } from "node:fs";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { eq } from "drizzle-orm";
+
 import { getDb, getSqliteFrom } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
+import { channelInboundEvents } from "../../../persistence/schema/conversations.js";
 import {
   getDaemonBootTimePath,
   recordDaemonBootTime,
@@ -44,16 +47,19 @@ function seedEvent(
   return id;
 }
 
-function statusOf(eventId: string): {
-  processing_status: string;
-  retry_after: number | null;
-} {
-  return getSqliteFrom(getDb())
-    .query(
-      `SELECT processing_status, retry_after
-         FROM channel_inbound_events WHERE id = ?`,
-    )
-    .get(eventId) as { processing_status: string; retry_after: number | null };
+function statusOf(eventId: string) {
+  const row = getDb()
+    .select({
+      processing_status: channelInboundEvents.processingStatus,
+      retry_after: channelInboundEvents.retryAfter,
+    })
+    .from(channelInboundEvents)
+    .where(eq(channelInboundEvents.id, eventId))
+    .get();
+  if (!row) {
+    throw new Error(`Missing channelInboundEvents row: ${eventId}`);
+  }
+  return row;
 }
 
 describe("recoverOrphanedChannelEvents", () => {

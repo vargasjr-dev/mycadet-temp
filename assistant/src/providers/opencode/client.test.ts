@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 let mockDeviceId: string | null = null;
 mock.module("../../util/device-id.js", () => ({
   getExistingDeviceId: () => mockDeviceId,
@@ -24,6 +26,14 @@ import {
   resolveOpenCodeBaseURL,
   resolveOpenCodeRequestHeaders,
 } from "./client.js";
+
+const requestOptionsSchema = z.object({
+  headers: z.record(z.string(), z.string()).optional(),
+});
+const responseRequestSchema = z.object({ model: z.string() });
+const chatRequestSchema = z.object({
+  messages: z.array(z.object({ role: z.string(), content: z.unknown() })),
+});
 
 const USER_TURN: Message[] = [
   { role: "user", content: [{ type: "text", text: "question" }] },
@@ -221,7 +231,7 @@ describe("OpenCodeProvider", () => {
       },
     );
 
-    const options = seen[0]!.options as { headers?: Record<string, string> };
+    const options = requestOptionsSchema.parse(seen[0]!.options);
     expect(options.headers?.[OPENCODE_SESSION_HEADER]).toBe("conv-xyz");
     expect(options.headers?.[OPENCODE_REQUEST_HEADER]).toBe("req-123");
     expect(options.headers).not.toHaveProperty("session_id");
@@ -254,7 +264,7 @@ describe("OpenCodeProvider", () => {
       { role: "user", content: [{ type: "text", text: "question" }] },
     ]);
 
-    const options = seen[0]!.options as { headers?: Record<string, string> };
+    const options = requestOptionsSchema.parse(seen[0]!.options);
     expect(options.headers?.[OPENCODE_SESSION_HEADER]).toMatch(/\S/);
     expect(options.headers?.[OPENCODE_REQUEST_HEADER]).toMatch(/\S/);
     expect(options.headers).not.toHaveProperty("session_id");
@@ -288,9 +298,7 @@ describe("OpenCodeProvider", () => {
       { role: "assistant", content: [] },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{ role: string; content: string | null }>;
-    };
+    const params = chatRequestSchema.parse(requests[0]);
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     expect(assistantMsg.content).toBe(EMPTY_ASSISTANT_TURN_PLACEHOLDER);
   });
@@ -354,12 +362,10 @@ describe("OpenCodeProvider transport selection", () => {
 
     expect(chat).toHaveLength(0);
     expect(responses).toHaveLength(1);
-    expect((responses[0]!.params as { model: string }).model).toBe(
+    expect(responseRequestSchema.parse(responses[0]!.params).model).toBe(
       "muse-spark-1.2-contributor-free",
     );
-    const options = responses[0]!.options as {
-      headers?: Record<string, string>;
-    };
+    const options = requestOptionsSchema.parse(responses[0]!.options);
     expect(options.headers?.[OPENCODE_SESSION_HEADER]).toBe("conv-xyz");
     expect(options.headers?.[OPENCODE_REQUEST_HEADER]).toBe("req-123");
     expect(options.headers).not.toHaveProperty("session_id");
@@ -376,9 +382,7 @@ describe("OpenCodeProvider transport selection", () => {
 
     await provider.sendMessage(USER_TURN);
 
-    const options = responses[0]!.options as {
-      headers?: Record<string, string>;
-    };
+    const options = requestOptionsSchema.parse(responses[0]!.options);
     expect(options.headers?.[OPENCODE_SESSION_HEADER]).toBe("device-abc");
     expect(options.headers?.[OPENCODE_REQUEST_HEADER]).toBeTruthy();
   });
@@ -403,7 +407,7 @@ describe("OpenCodeProvider transport selection", () => {
 
     expect(chat).toHaveLength(0);
     expect(responses).toHaveLength(1);
-    expect((responses[0]!.params as { model: string }).model).toBe(
+    expect(responseRequestSchema.parse(responses[0]!.params).model).toBe(
       "muse-spark-1.2-contributor-free",
     );
   });
