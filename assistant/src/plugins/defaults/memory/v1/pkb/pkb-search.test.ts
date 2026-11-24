@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+const filterClauseSchema = z.object({
+  key: z.string(),
+  match: z.object({ value: z.unknown() }),
+});
+const filterSchema = z
+  .object({
+    must: z.array(filterClauseSchema),
+    must_not: z.array(filterClauseSchema),
+  })
+  .partial();
+
 // This test exercises the v1 PKB search path. `config.memory.v2.enabled`
 // (default `true`) makes pkb-search short-circuit to keep traffic off the
 // legacy collection — force it off so the v1 path stays under test.
@@ -118,12 +131,8 @@ describe("searchPkbFiles", () => {
 
     expect(hybridSearchCalls).toHaveLength(1);
     expect(searchCalls).toHaveLength(1);
-    const filter = hybridSearchCalls[0]?.filter as {
-      must: Array<Record<string, unknown>>;
-    };
-    const targetTypeClause = filter.must.find(
-      (c) => c.key === "target_type",
-    ) as { match: { value: string } } | undefined;
+    const filter = filterSchema.parse(hybridSearchCalls[0]?.filter);
+    const targetTypeClause = filter.must!.find((c) => c.key === "target_type");
     expect(targetTypeClause?.match.value).toBe("pkb_file");
   });
 
@@ -148,12 +157,8 @@ describe("searchPkbFiles", () => {
     expect(results[0]?.denseScore).toBe(0.8);
     expect(results[0]?.hybridScore).toBeUndefined();
 
-    const filter = searchCalls[0]?.filter as {
-      must: Array<Record<string, unknown>>;
-    };
-    const targetTypeClause = filter.must.find(
-      (c) => c.key === "target_type",
-    ) as { match: { value: string } } | undefined;
+    const filter = filterSchema.parse(searchCalls[0]?.filter);
+    const targetTypeClause = filter.must!.find((c) => c.key === "target_type");
     expect(targetTypeClause?.match.value).toBe("pkb_file");
   });
 
@@ -162,20 +167,16 @@ describe("searchPkbFiles", () => {
     hybridResults = [];
     denseResults = [];
     await searchPkbFiles([0.1], { indices: [1], values: [1] }, 5);
-    const hybridFilter = hybridSearchCalls[0]?.filter as {
-      must_not: Array<Record<string, unknown>>;
-    };
-    const hybridMetaClause = hybridFilter.must_not.find(
+    const hybridFilter = filterSchema.parse(hybridSearchCalls[0]?.filter);
+    const hybridMetaClause = hybridFilter.must_not!.find(
       (c) => c.key === "_meta",
-    ) as { match: { value: boolean } } | undefined;
+    );
     expect(hybridMetaClause?.match.value).toBe(true);
 
-    const denseSideFilter = searchCalls[0]?.filter as {
-      must_not: Array<Record<string, unknown>>;
-    };
-    const denseSideMetaClause = denseSideFilter.must_not.find(
+    const denseSideFilter = filterSchema.parse(searchCalls[0]?.filter);
+    const denseSideMetaClause = denseSideFilter.must_not!.find(
       (c) => c.key === "_meta",
-    ) as { match: { value: boolean } } | undefined;
+    );
     expect(denseSideMetaClause?.match.value).toBe(true);
 
     // Dense-only path (no sparse vector)
@@ -183,12 +184,10 @@ describe("searchPkbFiles", () => {
     hybridSearchCalls.length = 0;
     denseResults = [];
     await searchPkbFiles([0.1], undefined, 5);
-    const denseFilter = searchCalls[0]?.filter as {
-      must_not: Array<Record<string, unknown>>;
-    };
-    const denseMetaClause = denseFilter.must_not.find(
+    const denseFilter = filterSchema.parse(searchCalls[0]?.filter);
+    const denseMetaClause = denseFilter.must_not!.find(
       (c) => c.key === "_meta",
-    ) as { match: { value: boolean } } | undefined;
+    );
     expect(denseMetaClause?.match.value).toBe(true);
   });
 
@@ -568,14 +567,10 @@ describe("searchPkbFiles", () => {
 
     await searchPkbFiles([0.1], { indices: [1], values: [1] }, 5);
 
-    const hybridFilter = hybridSearchCalls[0]?.filter as {
-      must: Array<Record<string, unknown>>;
-    };
-    const denseFilter = searchCalls[0]?.filter as {
-      must: Array<Record<string, unknown>>;
-    };
+    const hybridFilter = filterSchema.parse(hybridSearchCalls[0]?.filter);
+    const denseFilter = filterSchema.parse(searchCalls[0]?.filter);
     for (const filter of [hybridFilter, denseFilter]) {
-      expect(filter.must.map((c) => c.key)).toEqual(["target_type"]);
+      expect(filter.must!.map((c) => c.key)).toEqual(["target_type"]);
     }
   });
 });

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { setConfig } from "../../__tests__/helpers/set-config.js";
+import type { WorkflowRun } from "../../workflows/journal-store.js";
 
 // ── Mutable mock state ────────────────────────────────────────────────
 // The run-manager mock records the args of the last `start()` call for
@@ -23,9 +26,9 @@ const startMock = mock((opts: Record<string, unknown>) => {
   lastStartArgs = opts;
   return { runId: "run-123" };
 });
-const statusMock = mock(() => null as unknown);
+const statusMock = mock((): Partial<WorkflowRun> | null => null);
 const abortMock = mock(() => {});
-const listMock = mock(() => [] as unknown[]);
+const listMock = mock((): Partial<WorkflowRun>[] => []);
 let resumeThrows: Error | null = null;
 const resumeMock = mock((runId: string) => {
   if (resumeThrows) {
@@ -56,7 +59,7 @@ function makeContext(): Parameters<typeof executeRunWorkflow>[1] {
     conversationId: "conv-1",
     workingDir: "/tmp",
     trustClass: "guardian",
-  } as Parameters<typeof executeRunWorkflow>[1];
+  };
 }
 
 beforeEach(() => {
@@ -82,17 +85,22 @@ describe("workflow tools are served by the workflows skill", () => {
   test("the workflows skill TOOLS.json declares both host-executed tools", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const manifest = JSON.parse(
-      readFileSync(
-        join(
-          import.meta.dir,
-          "../../config/bundled-skills/workflows/TOOLS.json",
-        ),
-        "utf-8",
+    const manifestSchema = z.object({
+      tools: z.array(
+        z.object({ name: z.string(), execution_target: z.string() }),
       ),
-    ) as {
-      tools: Array<{ name: string; execution_target: string }>;
-    };
+    });
+    const manifest = manifestSchema.parse(
+      JSON.parse(
+        readFileSync(
+          join(
+            import.meta.dir,
+            "../../config/bundled-skills/workflows/TOOLS.json",
+          ),
+          "utf-8",
+        ),
+      ),
+    );
     const byName = new Map(manifest.tools.map((t) => [t.name, t]));
     expect(byName.get("run_workflow")?.execution_target).toBe("host");
     expect(byName.get("manage_workflows")?.execution_target).toBe("host");
@@ -162,11 +170,7 @@ describe("run_workflow launch", () => {
       manifest: { tools: ["file_write"], hostFunctions: [], persona: true },
     });
     // Trust context falls back to the tool context's trust class.
-    expect(
-      (lastStartArgs as Record<string, unknown>).trustContext,
-    ).toMatchObject({
-      trustClass: "guardian",
-    });
+    expect(lastStartArgs).toHaveProperty("trustContext.trustClass", "guardian");
   });
 
   test("starts a saved-name run and defaults the manifest to empties", async () => {
@@ -175,9 +179,7 @@ describe("run_workflow launch", () => {
       name: "saved-flow",
       manifest: { tools: [], hostFunctions: [], persona: false },
     });
-    expect(
-      (lastStartArgs as Record<string, unknown>).scriptSource,
-    ).toBeUndefined();
+    expect(lastStartArgs).not.toHaveProperty("scriptSource");
   });
 
   test("surfaces a run-manager start error as a tool error", async () => {
@@ -200,7 +202,7 @@ describe("manage_workflows", () => {
         status: "completed",
         agentsSpawned: 3,
       },
-    ] as unknown[]);
+    ]);
     const res = await executeManageWorkflows(
       { action: "list_runs" },
       makeContext(),
@@ -222,7 +224,7 @@ describe("manage_workflows", () => {
     statusMock.mockReturnValueOnce({
       id: "r9",
       conversationId: "conv-1",
-    } as unknown);
+    });
     const ok = await executeManageWorkflows(
       { action: "abort", run_id: "r9" },
       makeContext(),
@@ -268,7 +270,7 @@ describe("manage_workflows", () => {
       status: "completed",
       result: { scores: [1, 2, 3], note: "the full result lives here" },
       error: null,
-    } as unknown);
+    });
     const ok = await executeManageWorkflows(
       { action: "get_result", run_id: "r5" },
       makeContext(),
@@ -295,7 +297,7 @@ describe("manage_workflows", () => {
     statusMock.mockReturnValueOnce({
       id: "r9",
       conversationId: "conv-1",
-    } as unknown);
+    });
     const ok = await executeManageWorkflows(
       { action: "resume", run_id: "r9" },
       makeContext(),
@@ -309,7 +311,7 @@ describe("manage_workflows", () => {
     statusMock.mockReturnValueOnce({
       id: "r9",
       conversationId: "conv-1",
-    } as unknown);
+    });
     resumeThrows = new Error(
       "Workflow run r9 is not resumable (status: completed).",
     );
@@ -349,19 +351,18 @@ describe("manage_workflows", () => {
 
   // Non-guardian authorization scope: a contact conversation may only see and
   // control runs it originated, never another conversation's (or a guardian's).
-  const contactContext = () =>
-    ({
-      conversationId: "conv-1",
-      workingDir: "/tmp",
-      trustClass: "trusted_contact",
-    }) as Parameters<typeof executeManageWorkflows>[1];
+  const contactContext = (): Parameters<typeof executeManageWorkflows>[1] => ({
+    conversationId: "conv-1",
+    workingDir: "/tmp",
+    trustClass: "trusted_contact",
+  });
 
   test("list_runs is scoped to the caller's conversation for a non-guardian", async () => {
     listMock.mockReturnValueOnce([
       { id: "mine", name: "a", status: "running", conversationId: "conv-1" },
       { id: "theirs", name: "b", status: "running", conversationId: "conv-2" },
       { id: "nullconv", name: "c", status: "running", conversationId: null },
-    ] as unknown[]);
+    ]);
     const res = await executeManageWorkflows(
       { action: "list_runs" },
       contactContext(),
@@ -373,12 +374,12 @@ describe("manage_workflows", () => {
   });
 
   test("a non-guardian cannot status/abort/resume another conversation's run", async () => {
-    const foreign = {
+    const foreign: Partial<WorkflowRun> = {
       id: "theirs",
       name: "b",
       status: "interrupted",
       conversationId: "conv-2",
-    } as unknown;
+    };
 
     statusMock.mockReturnValueOnce(foreign);
     const status = await executeManageWorkflows(
@@ -409,7 +410,7 @@ describe("manage_workflows", () => {
     statusMock.mockReturnValueOnce({
       id: "mine",
       conversationId: "conv-1",
-    } as unknown);
+    });
     await executeManageWorkflows(
       { action: "abort", run_id: "mine" },
       contactContext(),

@@ -54,55 +54,85 @@ const FULL_SCHEMA_INFO: MockCollectionInfo = {
   },
 };
 
-const state = {
-  collectionExistsBeforeCreate: false,
-  collectionExistsCalls: 0,
-  createCollectionCalls: 0,
-  createCollectionParams: null as unknown,
-  createIndexCalls: [] as Array<{ field_name: string; field_schema: string }>,
-  upsertCalls: [] as Array<{ wait: boolean; points: MockPoint[] }>,
-  deleteCalls: [] as Array<{ wait: boolean; points: string[] }>,
-  // Tracks `client.deleteCollection(name)` calls (distinct from `delete()`,
-  // which targets points). The schema-drift recreate path drops the
-  // collection entirely and we want to assert it ran exactly once.
-  deleteCollectionCalls: [] as string[],
-  queryCalls: [] as Array<{
+type CapturedCollectionParams = {
+  vectors: Record<string, { size: number; distance: string; on_disk: boolean }>;
+  sparse_vectors: Record<string, Record<string, unknown>>;
+  hnsw_config: { on_disk: boolean; m: number; ef_construct: number };
+  on_disk_payload: boolean;
+};
+
+const state: {
+  collectionExistsBeforeCreate: boolean;
+  collectionExistsCalls: number;
+  createCollectionCalls: number;
+  createCollectionParams: CapturedCollectionParams | null;
+  createIndexCalls: Array<{ field_name: string; field_schema: string }>;
+  upsertCalls: Array<{ wait: boolean; points: MockPoint[] }>;
+  deleteCalls: Array<{ wait: boolean; points: string[] }>;
+  deleteCollectionCalls: string[];
+  queryCalls: Array<{
     using: string;
     query: unknown;
     limit: number;
     with_payload: boolean;
-  }>,
+  }>;
+  queryResponses: Record<
+    "dense" | "sparse",
+    Array<{
+      points: Array<{ score?: number; payload: Record<string, unknown> }>;
+    }>
+  >;
+  createCollectionThrows: Error | null;
+  updateCollectionCalls: Array<{ name: string; params: unknown }>;
+  updateCollectionThrows: Error | null;
+  getCollectionInfo: typeof FULL_SCHEMA_INFO;
+  getCollectionThrows: Error | null;
+  getCollectionCalls: number;
+  countResult: number;
+  countThrows: Error | null;
+  countCalls: number;
+  upsertThrowQueue: Array<Error | null>;
+  createIndexThrowQueue: Array<Error | null>;
+} = {
+  collectionExistsBeforeCreate: false,
+  collectionExistsCalls: 0,
+  createCollectionCalls: 0,
+  createCollectionParams: null,
+  createIndexCalls: [],
+  upsertCalls: [],
+  deleteCalls: [],
+  // Tracks `client.deleteCollection(name)` calls (distinct from `delete()`,
+  // which targets points). The schema-drift recreate path drops the
+  // collection entirely and we want to assert it ran exactly once.
+  deleteCollectionCalls: [],
+  queryCalls: [],
   // Per-using → response queue. Each entry is consumed in order.
   queryResponses: {
-    dense: [] as Array<{
-      points: Array<{ score?: number; payload: Record<string, unknown> }>;
-    }>,
-    sparse: [] as Array<{
-      points: Array<{ score?: number; payload: Record<string, unknown> }>;
-    }>,
+    dense: [],
+    sparse: [],
   },
-  createCollectionThrows: null as Error | null,
+  createCollectionThrows: null,
   // Tracks `client.updateCollection(name, params)` calls — the in-place
   // sparse-index placement reconcile issues these on the compatible path.
-  updateCollectionCalls: [] as Array<{ name: string; params: unknown }>,
-  updateCollectionThrows: null as Error | null,
+  updateCollectionCalls: [],
+  updateCollectionThrows: null,
   // Schema returned by `client.getCollection`. Tests that exercise the
   // drift path point this at a partial schema; the default mirrors a fully
   // migrated collection so the no-drift path is the silent default.
   getCollectionInfo: FULL_SCHEMA_INFO,
-  getCollectionThrows: null as Error | null,
+  getCollectionThrows: null,
   getCollectionCalls: 0,
   // Point count returned by `client.count`. Used by `countConceptPagePoints`
   // which the lifecycle hook reads for the empty-after-create recovery path.
   countResult: 0,
-  countThrows: null as Error | null,
+  countThrows: null,
   countCalls: 0,
   // Throw queue for upsert: first call shifts and throws if non-null;
   // subsequent calls succeed once the queue is exhausted.
-  upsertThrowQueue: [] as Array<Error | null>,
+  upsertThrowQueue: [],
   // Throw queue for createPayloadIndex: each entry maps to the next call,
   // so tests can simulate index-creation failures (strict-mode, network).
-  createIndexThrowQueue: [] as Array<Error | null>,
+  createIndexThrowQueue: [],
 };
 
 class MockQdrantClient {
@@ -118,7 +148,7 @@ class MockQdrantClient {
     }
     return state.getCollectionInfo;
   }
-  async createCollection(_name: string, params: unknown) {
+  async createCollection(_name: string, params: CapturedCollectionParams) {
     state.createCollectionCalls++;
     state.createCollectionParams = params;
     if (state.createCollectionThrows) {
@@ -252,18 +282,7 @@ describe("memory v2 qdrant — collection lifecycle", () => {
     await ensureConceptPageCollection();
 
     expect(state.createCollectionCalls).toBe(1);
-    const params = state.createCollectionParams as {
-      vectors: {
-        dense: { size: number; distance: string; on_disk: boolean };
-        summary_dense: { size: number; distance: string; on_disk: boolean };
-      };
-      sparse_vectors: {
-        sparse: Record<string, unknown>;
-        summary_sparse: Record<string, unknown>;
-      };
-      hnsw_config: { on_disk: boolean; m: number; ef_construct: number };
-      on_disk_payload: boolean;
-    };
+    const params = state.createCollectionParams!;
     expect(params.vectors.dense).toEqual({
       size: 384,
       distance: "Cosine",
@@ -467,10 +486,7 @@ describe("memory v2 qdrant — collection lifecycle", () => {
     expect(result).toEqual({ migrated: true });
 
     // Recreated schema carries summary_dense + summary_sparse.
-    const params = state.createCollectionParams as {
-      vectors: Record<string, unknown>;
-      sparse_vectors: Record<string, unknown>;
-    };
+    const params = state.createCollectionParams!;
     expect(params.vectors.summary_dense).toBeDefined();
     expect(params.sparse_vectors.summary_sparse).toBeDefined();
   });
@@ -620,7 +636,10 @@ describe("memory v2 qdrant — collection lifecycle", () => {
     } catch (err) {
       caught = err;
     }
-    expect((caught as Error | null)?.message).toMatch(/strict mode/i);
+    expect(caught).toHaveProperty(
+      "message",
+      expect.stringMatching(/strict mode/i),
+    );
 
     // Both attempts ran; the strict-mode failure was not swallowed.
     expect(state.createIndexCalls).toEqual([

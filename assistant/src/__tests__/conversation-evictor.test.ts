@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  setSystemTime,
+  test,
+} from "bun:test";
 
 // The evictor's onEvict/shouldProtect methods consult the subagent manager.
 // Stub it so eviction tests run without a real manager: no protected children
@@ -38,16 +46,20 @@ describe("ConversationEvictor", () => {
   beforeEach(() => {
     abortedParents.length = 0;
     sessions = new Map();
-    evictor = new ConversationEvictor(
-      sessions as Map<string, EvictableConversation>,
-      {
-        ttlMs: 1000,
-        maxConversations: 3,
-        memoryThresholdBytes: Number.MAX_SAFE_INTEGER, // disable memory pressure for most tests
-        sweepIntervalMs: 60_000,
-      },
-    );
+    evictor = new ConversationEvictor(sessions, {
+      ttlMs: 1000,
+      maxConversations: 3,
+      memoryThresholdBytes: Number.MAX_SAFE_INTEGER, // disable memory pressure for most tests
+      sweepIntervalMs: 60_000,
+    });
   });
+
+  afterEach(() => setSystemTime());
+
+  function touchAt(id: string, timestamp: number) {
+    setSystemTime(new Date(timestamp));
+    evictor.touch(id);
+  }
 
   describe("TTL eviction", () => {
     test("evicts sessions that have exceeded TTL", () => {
@@ -61,9 +73,9 @@ describe("ConversationEvictor", () => {
       evictor.touch("b");
 
       // Simulate time passing — set last access to 2 seconds ago (TTL is 1s)
-      (
-        evictor as unknown as { lastAccess: Map<string, number> }
-      ).lastAccess.set("a", Date.now() - 2000);
+      const now = Date.now();
+      touchAt("a", now - 2000);
+      setSystemTime(new Date(now));
 
       const result = evictor.sweep();
 
@@ -141,11 +153,9 @@ describe("ConversationEvictor", () => {
 
       // Make s0 and s1 the oldest, keep s2-s4 fresh
       const now = Date.now();
-      const lastAccess = (
-        evictor as unknown as { lastAccess: Map<string, number> }
-      ).lastAccess;
-      lastAccess.set("s0", now - 100); // oldest
-      lastAccess.set("s1", now - 90); // second oldest
+      touchAt("s0", now - 100); // oldest
+      touchAt("s1", now - 90); // second oldest
+      setSystemTime(new Date(now));
       // s2, s3, s4 remain at ~now (within TTL)
 
       const result = evictor.sweep();
@@ -171,13 +181,10 @@ describe("ConversationEvictor", () => {
       sessions.set("s3", s3);
 
       const now = Date.now();
-      const lastAccess = (
-        evictor as unknown as { lastAccess: Map<string, number> }
-      ).lastAccess;
-      lastAccess.set("s0", now - 50); // old but has queued messages
-      lastAccess.set("s1", now - 40);
-      lastAccess.set("s2", now);
-      lastAccess.set("s3", now);
+      touchAt("s0", now - 50); // old but has queued messages
+      touchAt("s1", now - 40);
+      touchAt("s2", now);
+      touchAt("s3", now);
 
       const result = evictor.sweep();
 
@@ -201,13 +208,10 @@ describe("ConversationEvictor", () => {
       sessions.set("s3", s3);
 
       const now = Date.now();
-      const lastAccess = (
-        evictor as unknown as { lastAccess: Map<string, number> }
-      ).lastAccess;
-      lastAccess.set("s0", now - 50); // old but processing
-      lastAccess.set("s1", now - 40);
-      lastAccess.set("s2", now);
-      lastAccess.set("s3", now);
+      touchAt("s0", now - 50); // old but processing
+      touchAt("s1", now - 40);
+      touchAt("s2", now);
+      touchAt("s3", now);
 
       const result = evictor.sweep();
 
@@ -230,14 +234,11 @@ describe("ConversationEvictor", () => {
       sessions.set("fresh-1", fresh1);
       sessions.set("fresh-2", fresh2);
 
-      const lastAccess = (
-        evictor as unknown as { lastAccess: Map<string, number> }
-      ).lastAccess;
       const now = Date.now();
-      lastAccess.set("mode-active", now - 50);
-      lastAccess.set("evictable", now - 40);
-      lastAccess.set("fresh-1", now);
-      lastAccess.set("fresh-2", now);
+      touchAt("mode-active", now - 50);
+      touchAt("evictable", now - 40);
+      touchAt("fresh-1", now);
+      touchAt("fresh-2", now);
 
       const result = evictor.sweep();
 
@@ -346,9 +347,9 @@ describe("ConversationEvictor", () => {
       expect(evictor.trackedCount).toBe(2);
 
       // Backdate 'a' so it's evicted by TTL, 'phantom' cleaned by stale check
-      (
-        evictor as unknown as { lastAccess: Map<string, number> }
-      ).lastAccess.set("a", Date.now() - 2000);
+      const now = Date.now();
+      touchAt("a", now - 2000);
+      setSystemTime(new Date(now));
 
       evictor.sweep();
 

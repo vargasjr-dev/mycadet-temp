@@ -8,6 +8,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 import type { AssistantEvent } from "../../api/index.js";
 import type {
@@ -43,6 +44,10 @@ import {
 } from "../../persistence/conversation-crud.js";
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
+import {
+  conversations,
+  messages,
+} from "../../persistence/schema/conversations.js";
 import {
   assistantEventHub,
   broadcastMessage,
@@ -92,19 +97,16 @@ function makeStreamingSession(events: AssistantEvent[]): Conversation {
 function makePersistingStreamingSession(
   conversationId: string,
   events: AssistantEvent[],
-): Conversation & { callSessionId?: string } {
-  type PersistUserMessageContext = Parameters<typeof persistUserMessageImpl>[0];
-
+): Conversation {
   let turnChannelContext: TurnChannelContext | null = null;
   let turnInterfaceContext: TurnInterfaceContext | null = null;
   let processing = false;
   let owner = 0;
-  const session = {
+  const session: Conversation = asConversation({
     conversationId,
     messages: [],
     abortController: null,
     currentRequestId: undefined,
-    queue: {} as never,
     trustContext: undefined,
     isProcessing: () => processing,
     setProcessing: (value: boolean) => {
@@ -164,10 +166,7 @@ function makePersistingStreamingSession(
     abort: () => {},
     // The image-bearing profile pin reads the leg's history.
     getMessages: () => [],
-  } as unknown as Conversation &
-    PersistUserMessageContext & {
-      callSessionId?: string;
-    };
+  });
 
   return session;
 }
@@ -178,7 +177,7 @@ function parsePersistedMetadata(
   if (!metadata) {
     throw new Error("Expected persisted message metadata");
   }
-  return JSON.parse(metadata) as Record<string, unknown>;
+  return jsonObjectSchema.parse(JSON.parse(metadata));
 }
 
 /**
@@ -192,8 +191,8 @@ describe("voice-session-bridge", () => {
   beforeEach(() => {
     seedVoiceConfig({ enabled: false, text: "" });
     const db = getDb();
-    db.run("DELETE FROM messages");
-    db.run("DELETE FROM conversations");
+    db.delete(messages).run();
+    db.delete(conversations).run();
   });
 
   test("throws when deps not injected", async () => {
@@ -271,9 +270,9 @@ describe("voice-session-bridge", () => {
     const conversation = createConversation("voice bridge abort test");
     let abortCalled = false;
 
-    const session = asConversation({
+    const session: Conversation = asConversation({
       isProcessing: () => false,
-      currentRequestId: undefined as string | undefined,
+      currentRequestId: undefined,
       persistUserMessage: async (options: { requestId?: string }) => {
         session.currentRequestId = options.requestId;
         return { id: "test-msg-id", deduplicated: false };
@@ -319,18 +318,16 @@ describe("voice-session-bridge", () => {
       { type: "message_complete", conversationId: conversation.id },
     ];
 
-    let capturedOptions: Record<string, unknown> | undefined;
+    let capturedOptions: Parameters<Conversation["runAgentLoop"]>[2];
     const session = asConversation({
       ...makeStreamingSession(events),
       runAgentLoop: async (
         _content: string,
         _messageId: string,
-        options?: Record<string, unknown>,
+        options?: Parameters<Conversation["runAgentLoop"]>[2],
       ) => {
         capturedOptions = options;
-        const onEvent =
-          (options as { onEvent?: (msg: AssistantEvent) => void })?.onEvent ??
-          (() => {});
+        const onEvent = options?.onEvent ?? (() => {});
         for (const event of events) {
           onEvent(event);
         }
@@ -367,18 +364,16 @@ describe("voice-session-bridge", () => {
       { type: "message_complete", conversationId: conversation.id },
     ];
 
-    let capturedOptions: Record<string, unknown> | undefined;
+    let capturedOptions: Parameters<Conversation["runAgentLoop"]>[2];
     const session = asConversation({
       ...makeStreamingSession(events),
       runAgentLoop: async (
         _content: string,
         _messageId: string,
-        options?: Record<string, unknown>,
+        options?: Parameters<Conversation["runAgentLoop"]>[2],
       ) => {
         capturedOptions = options;
-        const onEvent =
-          (options as { onEvent?: (msg: AssistantEvent) => void })?.onEvent ??
-          (() => {});
+        const onEvent = options?.onEvent ?? (() => {});
         for (const event of events) {
           onEvent(event);
         }
@@ -407,9 +402,9 @@ describe("voice-session-bridge", () => {
     const conversation = createConversation("voice bridge signal test");
     let abortCalled = false;
 
-    const session = asConversation({
+    const session: Conversation = asConversation({
       isProcessing: () => false,
-      currentRequestId: undefined as string | undefined,
+      currentRequestId: undefined,
       persistUserMessage: async (options: { requestId?: string }) => {
         session.currentRequestId = options.requestId;
         return { id: "test-msg-id", deduplicated: false };
@@ -812,7 +807,7 @@ describe("voice-session-bridge", () => {
           riskLevel: "high",
           allowlistOptions: [],
           scopeOptions: [],
-        } as AssistantEvent);
+        });
         // The auto-deny resolves the prompter immediately, so the agent loop
         // can continue. In production the loop would continue; here we just
         // return to simulate completion.
@@ -905,7 +900,7 @@ describe("voice-session-bridge", () => {
           riskLevel: "medium",
           allowlistOptions: [],
           scopeOptions: [],
-        } as AssistantEvent);
+        });
       },
       handleConfirmationResponse: (
         requestId: string,
@@ -991,7 +986,7 @@ describe("voice-session-bridge", () => {
           riskLevel: "medium",
           allowlistOptions: [],
           scopeOptions: [],
-        } as AssistantEvent);
+        });
       },
       handleConfirmationResponse: (requestId: string, decision: string) => {
         handleConfirmationCalls.push({ requestId, decision });
@@ -1061,7 +1056,7 @@ describe("voice-session-bridge", () => {
           riskLevel: "medium",
           allowlistOptions: [],
           scopeOptions: [],
-        } as AssistantEvent);
+        });
       },
       handleConfirmationResponse: (requestId: string, decision: string) => {
         handleConfirmationCalls.push({ requestId, decision });
@@ -1127,7 +1122,7 @@ describe("voice-session-bridge", () => {
           riskLevel: "low",
           allowlistOptions: [],
           scopeOptions: [],
-        } as AssistantEvent);
+        });
         // For verified guardian voice turns, the confirmation should be
         // auto-approved so the run can continue without a chat approval UI.
       },
@@ -1209,7 +1204,7 @@ describe("voice-session-bridge", () => {
           allowlistOptions: [],
           scopeOptions: [],
           conversationId,
-        } as AssistantEvent);
+        });
       },
       handleConfirmationResponse: (resolvedRequestId: string) => {
         broadcastMessage({
@@ -1218,7 +1213,7 @@ describe("voice-session-bridge", () => {
           conversationId,
           kind: "confirmation",
           state: "approved",
-        } as AssistantEvent);
+        });
       },
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
@@ -1351,7 +1346,7 @@ describe("voice-session-bridge", () => {
           service: "github",
           field: "token",
           label: "GitHub Token",
-        } as AssistantEvent);
+        });
       },
       handleConfirmationResponse: () => {},
       handleSecretResponse: (
@@ -1396,10 +1391,10 @@ describe("voice-session-bridge", () => {
       "voice bridge forcePromptSideEffects leak test",
     );
 
-    const session = {
+    const session: Conversation = asConversation({
       isProcessing: () => false,
       forcePromptSideEffects: false,
-      callSessionId: undefined as string | undefined,
+      callSessionId: undefined,
       persistUserMessage: async () => {
         throw new Error("simulated persistence failure");
       },
@@ -1417,14 +1412,14 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation & { forcePromptSideEffects: boolean };
+    });
 
     injectDeps(() => session);
 
     // Non-guardian voice would normally set forcePromptSideEffects = true.
     // The setup must fail before that assignment happens so the flag stays
     // false and cannot leak into subsequent non-voice turns.
-    let caught: Error | null = null;
+    let caught: unknown;
     try {
       await startVoiceTurn({
         conversationId: conversation.id,
@@ -1439,10 +1434,10 @@ describe("voice-session-bridge", () => {
         onError: () => {},
       });
     } catch (err) {
-      caught = err as Error;
+      caught = err;
     }
 
-    expect(caught?.message).toBe("simulated persistence failure");
+    expect(caught).toHaveProperty("message", "simulated persistence failure");
     expect(session.forcePromptSideEffects).toBe(false);
   });
 
@@ -1457,10 +1452,10 @@ describe("voice-session-bridge", () => {
       (value: unknown): void => {
         lastSetterValue[name] = value;
       };
-    const session = {
+    const session: Conversation = asConversation({
       isProcessing: () => false,
       forcePromptSideEffects: false,
-      callSessionId: undefined as string | undefined,
+      callSessionId: undefined,
       persistUserMessage: async () => {
         throw new Error("simulated persistence failure");
       },
@@ -1478,15 +1473,12 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation & {
-      forcePromptSideEffects: boolean;
-      callSessionId?: string;
-    };
+    });
     session.callSessionId = "session-leak-test-precondition";
 
     injectDeps(() => session);
 
-    let caught: Error | null = null;
+    let caught: unknown;
     try {
       await startVoiceTurn({
         conversationId: conversation.id,
@@ -1502,10 +1494,10 @@ describe("voice-session-bridge", () => {
         onError: () => {},
       });
     } catch (err) {
-      caught = err as Error;
+      caught = err;
     }
 
-    expect(caught?.message).toBe("simulated persistence failure");
+    expect(caught).toHaveProperty("message", "simulated persistence failure");
     expect(lastSetterValue.setChannelCapabilities).toBeNull();
     expect(lastSetterValue.setTrustContext).toBeNull();
     expect(lastSetterValue.setCommandIntent).toBeNull();
@@ -1522,10 +1514,10 @@ describe("voice-session-bridge", () => {
 
     const addEventObserverCalls: unknown[] = [];
 
-    const session = {
+    const session: Conversation = asConversation({
       isProcessing: () => false,
       forcePromptSideEffects: false,
-      callSessionId: undefined as string | undefined,
+      callSessionId: undefined,
       persistUserMessage: async () => {
         throw new Error("persist failed before bridge installed callback");
       },
@@ -1546,14 +1538,11 @@ describe("voice-session-bridge", () => {
       abort: () => {},
       // The image-bearing profile pin reads the leg's history.
       getMessages: () => [],
-    } as unknown as Conversation & {
-      forcePromptSideEffects: boolean;
-      callSessionId?: string;
-    };
+    });
 
     injectDeps(() => session);
 
-    let caught: Error | null = null;
+    let caught: unknown;
     try {
       await startVoiceTurn({
         conversationId: conversation.id,
@@ -1569,10 +1558,11 @@ describe("voice-session-bridge", () => {
         onError: () => {},
       });
     } catch (err) {
-      caught = err as Error;
+      caught = err;
     }
 
-    expect(caught?.message).toBe(
+    expect(caught).toHaveProperty(
+      "message",
       "persist failed before bridge installed callback",
     );
     // The bridge never reached its `conversation.addEventObserver(...)`
@@ -1584,9 +1574,9 @@ describe("voice-session-bridge", () => {
     const conversation = createConversation("voice bridge pre-abort test");
     let abortCalled = false;
 
-    const session = asConversation({
+    const session: Conversation = asConversation({
       isProcessing: () => false,
-      currentRequestId: undefined as string | undefined,
+      currentRequestId: undefined,
       persistUserMessage: async (options: { requestId?: string }) => {
         session.currentRequestId = options.requestId;
         return { id: "test-msg-id", deduplicated: false };

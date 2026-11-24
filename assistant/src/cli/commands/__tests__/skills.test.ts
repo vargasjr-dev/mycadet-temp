@@ -15,13 +15,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
 
 /** Ordered list of captured IPC calls for multi-call assertions. */
-let ipcCalls: Array<{ method: string; params?: unknown }> = [];
+let ipcCalls: Array<{ method: string; params?: Record<string, unknown> }> = [];
 
 /** Queue of results to return for successive cliIpcCall invocations. */
 let mockIpcResults: Array<{
@@ -67,10 +68,10 @@ async function runCommand(
   const originalConsoleLog = console.log;
   const stdoutChunks: string[] = [];
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
   // Bun's console.log bypasses process.stdout.write — capture it separately
   console.log = (...logArgs: unknown[]) => {
@@ -128,9 +129,7 @@ describe("skills list", () => {
 
     expect(ipcCalls).toHaveLength(1);
     expect(ipcCalls[0]!.method).toBe("listSkills");
-    expect(
-      (ipcCalls[0]!.params as { queryParams: unknown }).queryParams,
-    ).toEqual({});
+    expect(ipcCalls[0]!.params?.queryParams).toEqual({});
   });
 
   test("--json derives source from owner for plugin-resident skills", async () => {
@@ -172,10 +171,18 @@ describe("skills list", () => {
     const { stdout } = await runCommand(["skills", "list", "--json"]);
 
     // THEN the plugin skill's source is `plugin:<id>` and owner is preserved
-    const parsed = JSON.parse(stdout) as {
-      ok: boolean;
-      skills: Array<{ id: string; source: string; owner?: unknown }>;
-    };
+    const parsed = z
+      .object({
+        ok: z.boolean(),
+        skills: z.array(
+          z.object({
+            id: z.string(),
+            source: z.string(),
+            owner: z.unknown().optional(),
+          }),
+        ),
+      })
+      .parse(JSON.parse(stdout));
     const caveman = parsed.skills.find((s) => s.id === "caveman");
     const weather = parsed.skills.find((s) => s.id === "weather");
     expect(caveman?.source).toBe("plugin:caveman");
@@ -238,11 +245,9 @@ describe("skills inspect", () => {
 
     expect(ipcCalls).toHaveLength(1);
     expect(ipcCalls[0]!.method).toBe("skillsLocalInspect");
-    expect((ipcCalls[0]!.params as { pathParams: unknown }).pathParams).toEqual(
-      {
-        id: "weather",
-      },
-    );
+    expect(ipcCalls[0]!.params?.pathParams).toEqual({
+      id: "weather",
+    });
   });
 
   test("IPC failure sets exitCode 1", async () => {
@@ -281,11 +286,9 @@ describe("skills uninstall", () => {
 
     expect(ipcCalls).toHaveLength(1);
     expect(ipcCalls[0]!.method).toBe("deleteSkill");
-    expect((ipcCalls[0]!.params as { pathParams: unknown }).pathParams).toEqual(
-      {
-        id: "weather",
-      },
-    );
+    expect(ipcCalls[0]!.params?.pathParams).toEqual({
+      id: "weather",
+    });
   });
 
   test("IPC failure sets exitCode 1", async () => {
@@ -329,7 +332,7 @@ describe("skills install", () => {
     // use `skills add` instead.
     expect(ipcCalls).toHaveLength(1);
     expect(ipcCalls[0]!.method).toBe("installSkill");
-    expect((ipcCalls[0]!.params as { body: unknown }).body).toEqual({
+    expect(ipcCalls[0]!.params?.body).toEqual({
       slug: "weather",
       overwrite: false,
       catalogOnly: true,
@@ -357,7 +360,7 @@ describe("skills install", () => {
     await runCommand(["skills", "install", "weather", "--overwrite"]);
 
     expect(ipcCalls).toHaveLength(1);
-    expect((ipcCalls[0]!.params as { body: unknown }).body).toEqual({
+    expect(ipcCalls[0]!.params?.body).toEqual({
       slug: "weather",
       overwrite: true,
       catalogOnly: true,
@@ -399,7 +402,7 @@ describe("skills add", () => {
     // origin: "skillssh" is required so the daemon routes via resolveSkillSource
     // for all skills.sh-flavoured sources — including the `@`-format which the
     // auto-detect `looksLikeSkillsShSlug()` would otherwise miss (2 segments).
-    expect((ipcCalls[0]!.params as { body: unknown }).body).toEqual({
+    expect(ipcCalls[0]!.params?.body).toEqual({
       slug: "vercel-labs/skills@find-skills",
       origin: "skillssh",
       overwrite: false,
@@ -414,7 +417,7 @@ describe("skills add", () => {
     await runCommand(["skills", "add", "vercel-labs/skills/find-skills"]);
 
     expect(ipcCalls).toHaveLength(1);
-    expect((ipcCalls[0]!.params as { body: unknown }).body).toEqual({
+    expect(ipcCalls[0]!.params?.body).toEqual({
       slug: "vercel-labs/skills/find-skills",
       origin: "skillssh",
       overwrite: false,
@@ -434,7 +437,7 @@ describe("skills add", () => {
     ]);
 
     expect(ipcCalls).toHaveLength(1);
-    expect((ipcCalls[0]!.params as { body: unknown }).body).toEqual({
+    expect(ipcCalls[0]!.params?.body).toEqual({
       slug: "vercel-labs/skills@find-skills",
       origin: "skillssh",
       overwrite: true,
@@ -487,13 +490,15 @@ describe("skills search", () => {
 
     expect(ipcCalls).toHaveLength(2);
     expect(ipcCalls[0]!.method).toBe("listSkills");
-    expect(
-      (ipcCalls[0]!.params as { queryParams: unknown }).queryParams,
-    ).toEqual({ include: "catalog", q: "react" });
+    expect(ipcCalls[0]!.params?.queryParams).toEqual({
+      include: "catalog",
+      q: "react",
+    });
     expect(ipcCalls[1]!.method).toBe("searchSkills");
-    expect(
-      (ipcCalls[1]!.params as { queryParams: unknown }).queryParams,
-    ).toEqual({ q: "react", limit: "10" });
+    expect(ipcCalls[1]!.params?.queryParams).toEqual({
+      q: "react",
+      limit: "10",
+    });
   });
 
   test("--json outputs ok:true with catalog, community, clawhub keys", async () => {

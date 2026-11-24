@@ -11,6 +11,8 @@
  */
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // Mock Twilio provider
 class MockTwilioVoiceProvider {
   static getAuthToken() {
@@ -87,6 +89,10 @@ function makeFormBody(params: Record<string, string>): string {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+const errorResponseSchema = z.object({
+  error: z.object({ code: z.string(), message: z.string() }),
+});
 
 describe("gateway-only ingress enforcement", () => {
   let server: RuntimeHttpServer;
@@ -179,9 +185,7 @@ describe("gateway-only ingress enforcement", () => {
         },
       );
       expect(res.status).toBe(410);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("GONE");
       expect(body.error.message).toContain("Direct webhook access disabled");
     });
@@ -196,9 +200,7 @@ describe("gateway-only ingress enforcement", () => {
         },
       );
       expect(res.status).toBe(410);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("GONE");
     });
 
@@ -212,9 +214,7 @@ describe("gateway-only ingress enforcement", () => {
         },
       );
       expect(res.status).toBe(410);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("GONE");
     });
 
@@ -228,9 +228,7 @@ describe("gateway-only ingress enforcement", () => {
         },
       );
       expect(res.status).toBe(410);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("GONE");
     });
   });
@@ -314,9 +312,7 @@ describe("gateway-only ingress enforcement", () => {
         },
       );
       expect(res.status).toBe(403);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("FORBIDDEN");
       expect(body.error.message).toContain(
         "Direct media-stream access disabled",
@@ -521,9 +517,7 @@ describe("gateway-only ingress enforcement", () => {
         }),
       });
       expect(res.status).toBe(403);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("FORBIDDEN");
     });
 
@@ -581,9 +575,7 @@ describe("gateway-only ingress enforcement", () => {
       });
       // Channel inbound messages require svc_gateway principal type.
       expect(res.status).toBe(403);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("FORBIDDEN");
     });
 
@@ -623,9 +615,7 @@ describe("gateway-only ingress enforcement", () => {
         },
       );
       expect(res.status).toBe(403);
-      const body = (await res.json()) as {
-        error: { code: string; message: string };
-      };
+      const body = errorResponseSchema.parse(await res.json());
       expect(body.error.code).toBe("FORBIDDEN");
       expect(body.error.message).toContain("Direct STT stream access disabled");
     });

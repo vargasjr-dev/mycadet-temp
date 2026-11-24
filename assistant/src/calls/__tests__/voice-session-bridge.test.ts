@@ -148,10 +148,11 @@ import {
   registerHubClient,
 } from "../../__tests__/helpers/hub-clients.js";
 import { setConfig } from "../../__tests__/helpers/set-config.js";
-import type { PreparedModelCall } from "../../agent/loop.js";
+import type { AssistantEvent } from "../../api/index.js";
 import { selectWinningProfile } from "../../config/llm-resolver.js";
 import { getConfig } from "../../config/loader.js";
 import { ABORT_WATCHDOG_MS } from "../../daemon/abort-watchdog.js";
+import type { Conversation } from "../../daemon/conversation.js";
 import { VOICE_ESCALATION_CONTINUATION_MESSAGE_KIND } from "../../plugin-api/constants.js";
 import { assistantEventHub } from "../../runtime/assistant-event-hub.js";
 import {
@@ -185,6 +186,8 @@ interface WaitForIdleCall {
   signal?: AbortSignal;
 }
 
+type RunOptions = NonNullable<Parameters<Conversation["runAgentLoop"]>[2]>;
+
 interface FakeConversation {
   conversationId: string;
   /** Per-conversation profile pin an escalated leg follows; absent = none. */
@@ -210,13 +213,13 @@ interface FakeConversation {
     attachments?: Array<Record<string, unknown>>;
   }) => Promise<{ id: string }>;
   workingDir: string;
-  addEventObserver: (observer: unknown) => () => void;
+  addEventObserver: Conversation["addEventObserver"];
   handleConfirmationResponse: (
     requestId: string,
     decision: string,
     opts?: { decisionContext?: string },
   ) => void;
-  runAgentLoop: (...args: unknown[]) => Promise<void>;
+  runAgentLoop: Conversation["runAgentLoop"];
   warmPromptCache: (options?: Record<string, unknown>) => Promise<void>;
   getMessages: () => Array<{ role: string; content: unknown[] }>;
   abort: (reason?: unknown) => void;
@@ -245,7 +248,9 @@ function makeFakeConversation(opts: {
   const waitForIdleCalls: WaitForIdleCall[] = [];
   const confirmationDecisions: Array<{ requestId: string; decision: string }> =
     [];
-  let clientCallback: ((msg: unknown) => Promise<void>) | undefined;
+  let clientCallback:
+    | Parameters<Conversation["addEventObserver"]>[0]
+    | undefined;
   let persistCount = 0;
   let lastPersistOpts:
     | {
@@ -293,7 +298,9 @@ function makeFakeConversation(opts: {
       if (persistOpts.attachments && persistOpts.attachments.length > 0) {
         messageAttachmentLinks.set(
           `msg-${persistCount}`,
-          persistOpts.attachments.map((a) => a.id as string),
+          persistOpts.attachments.flatMap((a) =>
+            typeof a.id === "string" ? [a.id] : [],
+          ),
         );
       }
       // Recorded before `onPersist` so scripted persist FAILURES also
@@ -308,7 +315,7 @@ function makeFakeConversation(opts: {
     // (the returned disposer invoked).
     addEventObserver: (observer) => {
       opts.events?.push("client:install");
-      clientCallback = observer as (msg: unknown) => Promise<void>;
+      clientCallback = observer;
       return () => {
         opts.events?.push("client:reset");
       };
@@ -330,7 +337,7 @@ function makeFakeConversation(opts: {
     waitForIdleCalls,
     confirmationDecisions,
     /** Deliver an event the way the conversation would, to the installed observer. */
-    emitToClient: async (msg: unknown) => {
+    emitToClient: async (msg: AssistantEvent) => {
       await clientCallback?.(msg);
     },
     persistCount: () => persistCount,
@@ -497,9 +504,9 @@ describe("startVoiceTurn escalation-continuation persistence", () => {
     // not merely echo-suppressed live.
     const fake = makeFakeConversation({ processing: false });
     fakeConversation = fake.conversation;
-    let runOptions: Record<string, unknown> | undefined;
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
-      runOptions = args[2] as Record<string, unknown>;
+    let runOptions: RunOptions | undefined;
+    fake.conversation.runAgentLoop = async (...args) => {
+      runOptions = args[2] ?? {};
     };
 
     await startVoiceTurn({
@@ -837,7 +844,7 @@ describe("startVoiceTurn hiddenSyntheticPrompt", () => {
     const fake = makeFakeConversation({ processing: false });
     fakeConversation = fake.conversation;
     const loopOptions: unknown[] = [];
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
+    fake.conversation.runAgentLoop = async (...args) => {
       loopOptions.push(args[2]);
     };
     const metadata = {
@@ -1202,7 +1209,7 @@ describe("startVoiceTurn guardian approvals", () => {
     toolName: string,
     executionTarget?: "sandbox" | "host",
     input: Record<string, unknown> = {},
-  ) {
+  ): Extract<AssistantEvent, { type: "confirmation_request" }> {
     return {
       type: "confirmation_request",
       requestId: "req-1",
@@ -1227,12 +1234,12 @@ describe("startVoiceTurn guardian approvals", () => {
     const pendingAnnounced: string[] = [];
     await startVoiceTurn({
       ...makeTurnOptions(),
-      trustContext: { trustClass: "guardian" },
+      trustContext: { trustClass: "guardian", sourceChannel: "phone" },
       onApprovalPending: (requestId: string) => {
         pendingAnnounced.push(requestId);
       },
       ...overrides,
-    } as VoiceTurnOptions);
+    });
     return { ...fake, pendingAnnounced };
   }
 
@@ -2123,10 +2130,13 @@ describe("startVoiceTurn tool-event forwarding", () => {
   // huge and must never travel further into the voice layer.
 
   /** Scripts runAgentLoop to emit the given agent-loop events in order. */
-  function makeEventEmittingConversation(events: unknown[]) {
+  function makeEventEmittingConversation(events: AssistantEvent[]) {
     const fake = makeFakeConversation({ processing: false });
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
-      const { onEvent } = args[2] as { onEvent: (msg: unknown) => void };
+    fake.conversation.runAgentLoop = async (...args) => {
+      const onEvent = args[2]?.onEvent;
+      if (!onEvent) {
+        throw new Error("Expected a voice event callback");
+      }
       for (const event of events) {
         onEvent(event);
       }
@@ -2579,8 +2589,11 @@ describe("front-door hub stream gate", () => {
       | "generation_cancelled" = "message_complete",
   ): void {
     const fake = makeFakeConversation({ processing: false });
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
-      const { onEvent } = args[2] as { onEvent: (msg: unknown) => void };
+    fake.conversation.runAgentLoop = async (...args) => {
+      const onEvent = args[2]?.onEvent;
+      if (!onEvent) {
+        throw new Error("Expected a voice event callback");
+      }
       onEvent({
         type: "assistant_turn_start",
         messageId: "assistant-row-1",
@@ -2816,8 +2829,11 @@ describe("transcript hygiene (teardown pass)", () => {
     let release: () => void = () => {};
     const events: string[] = [];
     const fake = makeFakeConversation({ processing: false, events });
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
-      const { onEvent } = args[2] as { onEvent: (msg: unknown) => void };
+    fake.conversation.runAgentLoop = async (...args) => {
+      const onEvent = args[2]?.onEvent;
+      if (!onEvent) {
+        throw new Error("Expected a voice event callback");
+      }
       onEvent({
         type: "assistant_turn_start",
         messageId: "assistant-row-1",
@@ -3161,15 +3177,15 @@ describe("startVoiceTurn with images in history", () => {
   async function runOptionsFor(opts: {
     messages?: Array<{ role: string; content: unknown[] }>;
     turn?: Record<string, unknown>;
-  }): Promise<Record<string, unknown>> {
+  }): Promise<RunOptions> {
     const fake = makeFakeConversation({
       processing: false,
       ...(opts.messages ? { messages: opts.messages } : {}),
     });
     fakeConversation = fake.conversation;
-    let runOptions: Record<string, unknown> = {};
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
-      runOptions = args[2] as Record<string, unknown>;
+    let runOptions: RunOptions = {};
+    fake.conversation.runAgentLoop = async (...args) => {
+      runOptions = args[2] ?? {};
     };
     await startVoiceTurn({ ...makeTurnOptions(), ...(opts.turn ?? {}) });
     return runOptions;
@@ -3238,7 +3254,7 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
     inferenceProfile?: string;
     inferenceProfileExpiresAt?: number;
     turn?: Record<string, unknown>;
-  }): Promise<Record<string, unknown>> {
+  }): Promise<RunOptions> {
     const fake = makeFakeConversation({
       processing: false,
       ...(opts.messages ? { messages: opts.messages } : {}),
@@ -3250,9 +3266,9 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
         : {}),
     });
     fakeConversation = fake.conversation;
-    let runOptions: Record<string, unknown> = {};
-    fake.conversation.runAgentLoop = async (...args: unknown[]) => {
-      runOptions = args[2] as Record<string, unknown>;
+    let runOptions: RunOptions = {};
+    fake.conversation.runAgentLoop = async (...args) => {
+      runOptions = args[2] ?? {};
     };
     await startVoiceTurn({
       ...makeTurnOptions(),
@@ -3263,16 +3279,10 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
   }
 
   function reportPreparedTarget(
-    runOptions: Record<string, unknown>,
+    runOptions: RunOptions,
     overrideProfile: string,
   ): void {
-    const onPrepared = runOptions.onFirstModelCallPrepared as (prepared: {
-      callSite: "mainAgent";
-      overrideProfile: string;
-      forceOverrideProfile: boolean;
-      systemPrompt: string;
-      tools: [];
-    }) => void;
+    const onPrepared = runOptions.onFirstModelCallPrepared!;
     onPrepared({
       callSite: "mainAgent",
       overrideProfile,
@@ -3311,9 +3321,7 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
     const runOptions = await runOptionsFor({});
     const warmPromptCache = mock(() => new Promise<void>(() => {}));
     fakeConversation.warmPromptCache = warmPromptCache;
-    const onFirstModelCallPrepared = runOptions.onFirstModelCallPrepared as (
-      prepared: PreparedModelCall,
-    ) => void;
+    const onFirstModelCallPrepared = runOptions.onFirstModelCallPrepared!;
     const tools = [
       {
         name: "dynamic_tool",
@@ -3387,7 +3395,7 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
 
     // The leg is pinned to the chosen arm itself (see the mix pin test).
     expect(runOptions.overrideProfile).toBe(selectedProfile);
-    reportPreparedTarget(runOptions, runOptions.overrideProfile as string);
+    reportPreparedTarget(runOptions, runOptions.overrideProfile!);
 
     expect(selectedProfile).toBeDefined();
     expect(onEscalationTargetResolved).toHaveBeenCalledWith({
@@ -3400,9 +3408,7 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
     const runOptions = await runOptionsFor({});
     const warmPromptCache = mock(async () => {});
     fakeConversation.warmPromptCache = warmPromptCache;
-    const onFirstModelCallPrepared = runOptions.onFirstModelCallPrepared as (
-      prepared: PreparedModelCall,
-    ) => void;
+    const onFirstModelCallPrepared = runOptions.onFirstModelCallPrepared!;
     onFirstModelCallPrepared({
       callSite: "mainAgent",
       forceOverrideProfile: false,
@@ -3423,9 +3429,7 @@ describe("startVoiceTurn escalated-leg profile pin", () => {
     const runOptions = await runOptionsFor({});
     const warmPromptCache = mock(async () => {});
     fakeConversation.warmPromptCache = warmPromptCache;
-    const onFirstModelCallPrepared = runOptions.onFirstModelCallPrepared as (
-      prepared: PreparedModelCall,
-    ) => void;
+    const onFirstModelCallPrepared = runOptions.onFirstModelCallPrepared!;
 
     onFirstModelCallPrepared({
       callSite: "mainAgent",

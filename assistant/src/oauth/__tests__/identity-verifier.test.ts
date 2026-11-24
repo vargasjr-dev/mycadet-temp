@@ -12,10 +12,16 @@ import type { OAuthProviderRow } from "../oauth-store.js";
 // ---------------------------------------------------------------------------
 
 const originalFetch = globalThis.fetch;
-let mockFetch: ReturnType<typeof mock<any>>;
+type FetchHandler = (
+  url: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
+let mockFetch: ReturnType<typeof mock<FetchHandler>>;
 
 beforeEach(() => {
-  mockFetch = mock(() => Promise.resolve(new Response("{}", { status: 200 })));
+  mockFetch = mock<FetchHandler>(() =>
+    Promise.resolve(new Response("{}", { status: 200 })),
+  );
   globalThis.fetch = fetchMock(mockFetch);
 });
 
@@ -119,9 +125,9 @@ describe("verifyIdentity", () => {
 
       const [url, init] = mockFetch.mock.calls[0];
       expect(url).toBe("https://www.googleapis.com/oauth2/v2/userinfo");
-      expect((init as RequestInit).method).toBe("GET");
-      const headers = (init as RequestInit).headers as Record<string, string>;
-      expect(headers["Authorization"]).toBe("Bearer google-token");
+      expect(init?.method).toBe("GET");
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Authorization")).toBe("Bearer google-token");
     });
 
     test("returns undefined when email is missing", async () => {
@@ -208,9 +214,9 @@ describe("verifyIdentity", () => {
       expect(url).toBe(
         "https://api.hubapi.com/oauth/v1/access-tokens/hs-token-123",
       );
-      const headers = (init as RequestInit).headers as Record<string, string>;
+      const headers = new Headers(init?.headers);
       // Should NOT have Authorization header since token is in URL
-      expect(headers["Authorization"]).toBeUndefined();
+      expect(headers.has("Authorization")).toBe(false);
     });
 
     test("falls back to hub_domain when user is missing", async () => {
@@ -255,11 +261,11 @@ describe("verifyIdentity", () => {
 
       const [url, init] = mockFetch.mock.calls[0];
       expect(url).toBe("https://api.linear.app/graphql");
-      expect((init as RequestInit).method).toBe("POST");
-      const headers = (init as RequestInit).headers as Record<string, string>;
-      expect(headers["Authorization"]).toBe("Bearer linear-token");
-      expect(headers["Content-Type"]).toBe("application/json");
-      expect((init as RequestInit).body).toBe(
+      expect(init?.method).toBe("POST");
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Authorization")).toBe("Bearer linear-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+      expect(init?.body).toBe(
         JSON.stringify({ query: "{ viewer { email name } }" }),
       );
     });
@@ -304,11 +310,9 @@ describe("verifyIdentity", () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
       const [, init] = mockFetch.mock.calls[0];
-      expect((init as RequestInit).method).toBe("POST");
+      expect(init?.method).toBe("POST");
       // Body should be the form-encoded string
-      expect((init as RequestInit).body).toBe(
-        "sync_token=*&resource_types=[%22user%22]",
-      );
+      expect(init?.body).toBe("sync_token=*&resource_types=[%22user%22]");
     });
 
     test("falls back to email when full_name is missing", async () => {
@@ -381,9 +385,9 @@ describe("verifyIdentity", () => {
       expect(result).toBe("Test Bot");
 
       const [, init] = mockFetch.mock.calls[0];
-      const headers = (init as RequestInit).headers as Record<string, string>;
-      expect(headers["Notion-Version"]).toBe("2022-06-28");
-      expect(headers["Authorization"]).toBe("Bearer notion-token");
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Notion-Version")).toBe("2022-06-28");
+      expect(headers.get("Authorization")).toBe("Bearer notion-token");
     });
 
     test("falls back to person.email when name is missing", async () => {
@@ -458,7 +462,7 @@ describe("verifyIdentity", () => {
       expect(result).toBe("Jane Doe");
 
       const [, init] = mockFetch.mock.calls[0];
-      expect((init as RequestInit).method).toBe("POST");
+      expect(init?.method).toBe("POST");
     });
 
     test("falls back to email when name is missing", async () => {

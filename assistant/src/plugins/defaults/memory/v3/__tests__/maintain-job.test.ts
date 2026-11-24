@@ -2,7 +2,10 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import type { ResolvedSkillEntry } from "@mycadet/plugin-api";
 
-import { AssistantConfig } from "../../../../../config/schema.js";
+import {
+  type AssistantConfig,
+  AssistantConfigSchema,
+} from "../../../../../config/schema.js";
 import { EmbeddingBackendUnavailableError } from "../../../../../persistence/embeddings/embedding-backend.js";
 import { EmbeddingBillingBlockError } from "../../../../../persistence/embeddings/embedding-billing-breaker.js";
 import type { MemoryJob } from "../../../../../persistence/jobs-store.js";
@@ -23,9 +26,9 @@ import type { Section, SectionIndex, Slug } from "../types.js";
 // The skill usage-prune stage reads `memory.maintenance.skillPruneDays`; default
 // it off (null = never delete) and override per prune test.
 function makeConfig(skillPruneDays: number | null = null): AssistantConfig {
-  return {
+  return AssistantConfigSchema.parse({
     memory: { maintenance: { skillPruneDays } },
-  } as unknown as AssistantConfig;
+  });
 }
 
 // v3-live (config-gated) is driven through the `isMemoryV3Live` mock slot below;
@@ -64,7 +67,19 @@ function makeIndex(slugs: Slug[]): SectionIndex {
   return { sections, byArticle };
 }
 
-const JOB = { id: "job-1", type: "memory_v3_maintain" } as unknown as MemoryJob;
+const JOB: MemoryJob = {
+  id: "job-1",
+  type: "memory_v3_maintain",
+  payload: {},
+  status: "running",
+  attempts: 1,
+  deferrals: 0,
+  runAfter: 0,
+  lastError: null,
+  startedAt: 0,
+  createdAt: 0,
+  updatedAt: 0,
+};
 
 describe("maintainJob", () => {
   afterEach(() => {
@@ -82,11 +97,11 @@ describe("maintainJob", () => {
       commit: number;
     };
   } {
-    const calls = {
-      built: [] as Slug[][],
-      deleted: [] as string[],
-      upserted: [] as Section[][],
-      warmed: [] as Section[][],
+    const calls: ReturnType<typeof deps>["calls"] = {
+      built: [],
+      deleted: [],
+      upserted: [],
+      warmed: [],
       invalidate: 0,
       commit: 0,
     };
@@ -839,13 +854,13 @@ describe("backfillAllSections", () => {
       probed: number;
     };
   } {
-    const calls = {
+    const calls: ReturnType<typeof deps>["calls"] = {
       ensured: 0,
-      built: [] as Slug[][],
-      deleted: [] as string[],
-      upserted: [] as Section[][],
-      warmed: [] as Section[][],
-      committed: [] as number[],
+      built: [],
+      deleted: [],
+      upserted: [],
+      warmed: [],
+      committed: [],
       probed: 0,
     };
     const base: BackfillJobDeps = {
