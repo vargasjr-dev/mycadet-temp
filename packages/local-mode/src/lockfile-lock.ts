@@ -28,7 +28,7 @@ function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
-function ownerFilePath(lockDir: string): string {
+export function ownerFilePath(lockDir: string): string {
   return path.join(lockDir, "owner");
 }
 
@@ -51,11 +51,16 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
-function tryBreakStaleLock(lockDir: string): void {
+/** `hardStaleMs` defaults to the lockfile's short holds; a lock held for a
+ *  long operation passes `Infinity` so only a dead owner breaks it. */
+export function tryBreakStaleLock(
+  lockDir: string,
+  hardStaleMs = HARD_STALE_LOCK_MS,
+): void {
   try {
     const age = Date.now() - fs.statSync(lockDir).mtimeMs;
     if (age <= STALE_LOCK_MS) return;
-    if (age <= HARD_STALE_LOCK_MS) {
+    if (age <= hardStaleMs) {
       const ownerPid = readOwnerPid(lockDir);
       if (ownerPid !== null && isProcessAlive(ownerPid)) return;
     }
@@ -70,7 +75,7 @@ function tryBreakStaleLock(lockDir: string): void {
 
 /** Remove the lock only if this process still owns it: a lock broken as stale
  *  and re-acquired while `fn` ran records the replacement holder's pid. */
-function releaseLock(lockDir: string): void {
+export function releaseLock(lockDir: string): void {
   try {
     if (readOwnerPid(lockDir) !== process.pid) return;
     fs.rmSync(lockDir, { recursive: true, force: true });
