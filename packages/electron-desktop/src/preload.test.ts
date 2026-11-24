@@ -33,7 +33,16 @@ test("notification preload works without crypto.randomUUID", async () => {
     const invoke = mock((_channel: string, _payload?: unknown) =>
       Promise.resolve(true),
     );
-    const ipc = { invoke, on: () => {} } as unknown as IpcRenderer;
+    const ipc = {
+      invoke,
+      on() {
+        return this;
+      },
+      off() {
+        return this;
+      },
+      send() {},
+    };
     const bridge = createNotificationsBridge(ipc);
     expect(await bridge.registerIdentityPublisher?.()).toBe(true);
     expect(invoke).toHaveBeenCalledWith(
