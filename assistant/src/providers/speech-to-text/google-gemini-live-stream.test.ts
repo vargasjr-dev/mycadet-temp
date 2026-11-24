@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import type { LiveSendRealtimeInputParameters } from "@google/genai";
+
 import type { SttStreamServerEvent } from "../../stt/types.js";
 import { GoogleGeminiLiveStreamingTranscriber } from "./google-gemini-live-stream.js";
 
@@ -36,7 +38,7 @@ interface CapturedConnect {
  * `simulateError`).
  */
 class MockLiveSession {
-  sentInputs: unknown[] = [];
+  sentInputs: LiveSendRealtimeInputParameters[] = [];
   closeCalled = false;
   private readonly callbacks: LiveCallbacksForTests;
 
@@ -44,7 +46,7 @@ class MockLiveSession {
     this.callbacks = callbacks;
   }
 
-  sendRealtimeInput(params: unknown): void {
+  sendRealtimeInput(params: LiveSendRealtimeInputParameters): void {
     this.sentInputs.push(params);
   }
 
@@ -262,9 +264,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
     t.sendAudio(audio, "audio/pcm;rate=16000");
 
     expect(session.sentInputs).toHaveLength(1);
-    const input = session.sentInputs[0] as {
-      audio?: { data: string; mimeType: string };
-    };
+    const input = session.sentInputs[0];
     expect(input.audio?.data).toBe(audio.toString("base64"));
     expect(input.audio?.mimeType).toBe("audio/pcm;rate=16000");
   });
@@ -279,9 +279,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
 
     t.sendAudio(Buffer.from([9, 9, 9]), "audio/pcm");
 
-    const input = session.sentInputs[0] as {
-      audio?: { data: string; mimeType: string };
-    };
+    const input = session.sentInputs[0];
     expect(input.audio?.mimeType).toBe("audio/pcm;rate=24000");
   });
 
@@ -290,9 +288,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
 
     t.sendAudio(Buffer.from([1, 2]), "audio/webm");
 
-    const input = session.sentInputs[0] as {
-      audio?: { data: string; mimeType: string };
-    };
+    const input = session.sentInputs[0];
     expect(input.audio?.mimeType).toBe("audio/webm");
   });
 
@@ -407,9 +403,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
 
     t.stop();
 
-    const endSignal = session.sentInputs.find(
-      (input) => (input as { audioStreamEnd?: boolean }).audioStreamEnd,
-    );
+    const endSignal = session.sentInputs.find((input) => input.audioStreamEnd);
     expect(endSignal).toEqual({ audioStreamEnd: true });
 
     // Provider completes the turn then closes normally.
@@ -455,7 +449,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
 
     const errs = events.filter((e) => e.type === "error");
     expect(errs).toHaveLength(1);
-    expect((errs[0] as { category: string }).category).toBe("auth");
+    expect(errs[0].category).toBe("auth");
     expect(events.filter((e) => e.type === "closed")).toHaveLength(1);
   });
 
@@ -465,7 +459,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
     session.simulateClose(4001, "invalid api key");
 
     const errs = events.filter((e) => e.type === "error");
-    expect((errs[0] as { category: string }).category).toBe("auth");
+    expect(errs[0].category).toBe("auth");
   });
 
   test("unexpected close with 1013 maps to rate-limit error category", async () => {
@@ -474,7 +468,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
     session.simulateClose(1013, "try again later");
 
     const errs = events.filter((e) => e.type === "error");
-    expect((errs[0] as { category: string }).category).toBe("rate-limit");
+    expect(errs[0].category).toBe("rate-limit");
   });
 
   test("unexpected close with arbitrary code maps to provider-error", async () => {
@@ -483,8 +477,8 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
     session.simulateClose(1006, "abnormal closure");
 
     const errs = events.filter((e) => e.type === "error");
-    expect((errs[0] as { category: string }).category).toBe("provider-error");
-    expect((errs[0] as { message: string }).message).toContain("1006");
+    expect(errs[0].category).toBe("provider-error");
+    expect(errs[0].message).toContain("1006");
   });
 
   test("session-level error event emits provider-error + closed", async () => {
@@ -495,8 +489,8 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
     const errs = events.filter((e) => e.type === "error");
     const closedEvents = events.filter((e) => e.type === "closed");
     expect(errs).toHaveLength(1);
-    expect((errs[0] as { category: string }).category).toBe("provider-error");
-    expect((errs[0] as { message: string }).message).toContain("boom");
+    expect(errs[0].category).toBe("provider-error");
+    expect(errs[0].message).toContain("boom");
     expect(closedEvents).toHaveLength(1);
   });
 
@@ -514,8 +508,8 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
     const errs = events.filter((e) => e.type === "error");
     const closedEvents = events.filter((e) => e.type === "closed");
     expect(errs).toHaveLength(1);
-    expect((errs[0] as { category: string }).category).toBe("timeout");
-    expect((errs[0] as { message: string }).message).toContain("inactivity");
+    expect(errs[0].category).toBe("timeout");
+    expect(errs[0].message).toContain("inactivity");
     expect(closedEvents).toHaveLength(1);
   });
 
@@ -705,9 +699,7 @@ describe("GoogleGeminiLiveStreamingTranscriber", () => {
 
     t.sendAudio(Buffer.from([1, 2, 3]), "audio/pcm;encoding=linear16");
 
-    const input = session.sentInputs[0] as {
-      audio?: { data: string; mimeType: string };
-    };
+    const input = session.sentInputs[0];
     // The original `encoding=linear16` parameter must be preserved;
     // only the missing `rate=` is appended.
     expect(input.audio?.mimeType).toBe(

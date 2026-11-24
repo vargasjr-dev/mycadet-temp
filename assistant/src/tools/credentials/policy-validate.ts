@@ -35,9 +35,9 @@ export interface ValidationResult {
  * Returns a result with `valid: true` if the input is well-formed,
  * or `valid: false` with a list of error messages.
  */
-export function validatePolicyInput(
-  input: CredentialPolicyInput,
-): ValidationResult {
+export function validatePolicyInput(input: {
+  [K in keyof CredentialPolicyInput]: unknown;
+}): ValidationResult {
   const errors: string[] = [];
 
   if (input.allowed_tools !== undefined) {

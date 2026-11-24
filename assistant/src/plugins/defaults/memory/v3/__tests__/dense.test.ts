@@ -8,7 +8,7 @@ import {
   test,
 } from "bun:test";
 
-import { AssistantConfig } from "../../../../../config/schema.js";
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 
 // Keep the real exports (e.g. getQdrantClient) so this partial mock is harmless
 // when section-dense-store's transitive imports pull them in; only
@@ -27,11 +27,16 @@ mock.module("../../../../../persistence/embeddings/qdrant-client.js", () => ({
 // embedWithBackend is replaced.
 const realEmbeddingBackend =
   await import("../../../../../persistence/embeddings/embedding-backend.js");
-const embedState = {
-  calls: [] as string[][],
-  throws: null as Error | null,
+const embedState: {
+  calls: string[][];
+  throws: Error | null;
+  dimensionAvailable: boolean;
+  dimensionThrows: Error | null;
+} = {
+  calls: [],
+  throws: null,
   dimensionAvailable: true,
-  dimensionThrows: null as Error | null,
+  dimensionThrows: null,
 };
 mock.module(
   "../../../../../persistence/embeddings/embedding-backend.js",
@@ -63,23 +68,24 @@ mock.module(
 // returns whatever section points the test programmed (in descending score
 // order, matching Qdrant's behavior).
 type MockPoint = {
-  payload: { article: string; ordinal: number };
-  score: number;
+  payload: Record<string, unknown>;
+  score?: number;
 };
 
-const state = {
-  points: [] as MockPoint[],
-  queryThrows: null as Error | null,
-  queryCalls: [] as Array<{
-    collection: string;
-    query: unknown;
-    limit: number;
-  }>,
+const state: {
+  points: MockPoint[];
+  queryThrows: Error | null;
+  queryCalls: Array<{ collection: string; query: unknown; limit: number }>;
+  collectionHasPoints: boolean;
+  scrollThrows: Error | null;
+} = {
+  points: [],
+  queryThrows: null,
+  queryCalls: [],
   // Whether the collection holds any point, as the chunker version check's
-  // `scroll` probe sees it (independent of the programmed query hits).
+  // scroll probe sees it (independent of the programmed query hits).
   collectionHasPoints: false,
-  // Fails that probe, as an unreachable Qdrant does.
-  scrollThrows: null as Error | null,
+  scrollThrows: null,
 };
 
 class MockQdrantClient {
@@ -117,9 +123,9 @@ mock.module("@qdrant/js-client-rest", () => ({
 const realCheckpoints = {
   ...(await import("../../../../../persistence/checkpoints.js")),
 };
-const checkpointState = {
+const checkpointState: { values: Map<string, string>; throws: Error | null } = {
   values: new Map<string, string>(),
-  throws: null as Error | null,
+  throws: null,
 };
 mock.module("../../../../../persistence/checkpoints.js", () => ({
   ...realCheckpoints,
@@ -149,9 +155,9 @@ const {
   SECTION_REBUILD_PENDING_KEY,
 } = await import("../section-dense-store.js");
 
-const CONFIG = {
+const CONFIG = AssistantConfigSchema.parse({
   memory: { qdrant: { vectorSize: 4, onDisk: true } },
-} as unknown as AssistantConfig;
+});
 
 function point(article: string, ordinal: number, score: number): MockPoint {
   return { payload: { article, ordinal }, score };
@@ -227,7 +233,7 @@ describe("memory v3 dense lane", () => {
         payload: {
           article: 123,
           ordinal: 0,
-        } as unknown as MockPoint["payload"],
+        },
         score: 0.9,
       },
       point("topic-x", 1, 0.8),
@@ -315,7 +321,7 @@ describe("denseLaneScored", () => {
     state.points = [
       {
         payload: { article: "page-a", ordinal: 0 },
-      } as unknown as MockPoint,
+      },
     ];
 
     const hits = await denseLaneScored(CONFIG, "query", 5);

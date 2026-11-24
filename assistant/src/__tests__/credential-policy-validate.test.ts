@@ -37,7 +37,7 @@ describe("validatePolicyInput", () => {
 
   test("invalid: allowed_tools not an array", () => {
     const result = validatePolicyInput({
-      allowed_tools: "browser_fill_credential" as unknown as string[],
+      allowed_tools: "browser_fill_credential",
     });
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
@@ -55,7 +55,7 @@ describe("validatePolicyInput", () => {
 
   test("invalid: allowed_tools contains non-string", () => {
     const result = validatePolicyInput({
-      allowed_tools: ["browser_fill_credential", 42 as unknown as string],
+      allowed_tools: ["browser_fill_credential", 42],
     });
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toContain("allowed_tools[1]");
@@ -160,7 +160,7 @@ describe("validatePolicyInput", () => {
 
   test("invalid: allowed_domains not an array", () => {
     const result = validatePolicyInput({
-      allowed_domains: "example.com" as unknown as string[],
+      allowed_domains: "example.com",
     });
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
@@ -178,7 +178,7 @@ describe("validatePolicyInput", () => {
 
   test("invalid: usage_description not a string", () => {
     const result = validatePolicyInput({
-      usage_description: 123 as unknown as string,
+      usage_description: 123,
     });
     expect(result.valid).toBe(false);
     expect(result.errors).toContain("usage_description must be a string");
@@ -186,9 +186,9 @@ describe("validatePolicyInput", () => {
 
   test("multiple errors reported at once", () => {
     const result = validatePolicyInput({
-      allowed_tools: "bad" as unknown as string[],
-      allowed_domains: 42 as unknown as string[],
-      usage_description: true as unknown as string,
+      allowed_tools: "bad",
+      allowed_domains: 42,
+      usage_description: true,
     });
     expect(result.valid).toBe(false);
     expect(result.errors).toHaveLength(3);

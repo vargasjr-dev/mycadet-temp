@@ -11,48 +11,73 @@ import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { desc, eq } from "drizzle-orm";
+import { z } from "zod";
+
 import { reinjectAttachmentPathAnnotations } from "../daemon/conversation-lifecycle.js";
 import type { MessagingConversationContext } from "../daemon/conversation-messaging.js";
 import { persistQueuedMessageBody } from "../daemon/conversation-messaging.js";
 import { createConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
-import { rawGet } from "../persistence/raw-query.js";
+import {
+  attachments,
+  conversations,
+  messageAttachments,
+  messages,
+} from "../persistence/schema/conversations.js";
+import { contentBlockArraySchema } from "../providers/content-block-schema.js";
 import type { ContentBlock } from "../providers/types.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 await initializeDb();
 
 function resetTables() {
   const db = getDb();
-  db.run("DELETE FROM message_attachments");
-  db.run("DELETE FROM attachments");
-  db.run("DELETE FROM messages");
-  db.run("DELETE FROM conversations");
+  db.delete(messageAttachments).run();
+  db.delete(attachments).run();
+  db.delete(messages).run();
+  db.delete(conversations).run();
 }
 
 function makeCtx(conversationId: string): MessagingConversationContext {
-  return {
+  return asConversation({
     conversationId,
     messages: [],
     abortController: null,
     currentRequestId: undefined,
-    queue: {} as never,
     isProcessing: () => false,
     setProcessing: () => {},
     getTurnChannelContext: () => null,
     getTurnInterfaceContext: () => null,
-  } as unknown as MessagingConversationContext;
+  });
 }
 
-function lastAnnotationBlock(ctx: MessagingConversationContext): {
-  type: string;
-  text: string;
-} {
-  const llmMessage = ctx.messages.at(-1)!;
-  return llmMessage.content.at(-1) as {
-    type: string;
-    text: string;
-  };
+const attachmentMetadataSchema = z.object({
+  attachmentStoredPaths: z.record(z.string(), z.string()).optional(),
+});
+
+function textBlock(block: ContentBlock | undefined) {
+  if (block?.type !== "text") {
+    throw new Error("Expected a text annotation");
+  }
+  return block;
+}
+
+function lastAnnotationBlock(ctx: MessagingConversationContext) {
+  return textBlock(ctx.messages.at(-1)?.content.at(-1));
+}
+
+function readMessage(id: string) {
+  return getDb().select().from(messages).where(eq(messages.id, id)).get()!;
+}
+
+function readLatestMessage() {
+  return getDb()
+    .select()
+    .from(messages)
+    .orderBy(desc(messages.createdAt))
+    .get()!;
 }
 
 describe("persistQueuedMessageBody stored path annotations", () => {
@@ -77,15 +102,9 @@ describe("persistQueuedMessageBody stored path annotations", () => {
     });
 
     // Second turn's persisted metadata records the collision-suffixed copy.
-    const row = rawGet<{ metadata: string }>(
-      "test:secondMessageMetadata",
-      "SELECT metadata FROM messages WHERE id = ?",
-      second.id,
-    );
-    const meta = JSON.parse(row!.metadata) as {
-      attachmentStoredPaths: Record<string, string>;
-    };
-    const storedPath = meta.attachmentStoredPaths["0:report.csv"];
+    const row = readMessage(second.id);
+    const meta = attachmentMetadataSchema.parse(JSON.parse(row.metadata!));
+    const storedPath = meta.attachmentStoredPaths!["0:report.csv"];
     expect(storedPath.endsWith("report-2.csv")).toBe(true);
     expect(readFileSync(storedPath).toString()).toBe("world");
 
@@ -97,15 +116,11 @@ describe("persistQueuedMessageBody stored path annotations", () => {
     );
 
     // The first turn's annotation still points at the unsuffixed original.
-    const firstRow = rawGet<{ metadata: string }>(
-      "test:firstMessageMetadata",
-      "SELECT metadata FROM messages WHERE id = ?",
-      first.id,
+    const firstRow = readMessage(first.id);
+    const firstMeta = attachmentMetadataSchema.parse(
+      JSON.parse(firstRow.metadata!),
     );
-    const firstMeta = JSON.parse(firstRow!.metadata) as {
-      attachmentStoredPaths: Record<string, string>;
-    };
-    const firstStoredPath = firstMeta.attachmentStoredPaths["0:report.csv"];
+    const firstStoredPath = firstMeta.attachmentStoredPaths!["0:report.csv"];
     expect(firstStoredPath.endsWith("report.csv")).toBe(true);
     expect(firstStoredPath.endsWith("report-2.csv")).toBe(false);
     expect(readFileSync(firstStoredPath).toString()).toBe("hello");
@@ -114,9 +129,9 @@ describe("persistQueuedMessageBody stored path annotations", () => {
     const rebuilt = reinjectAttachmentPathAnnotations(
       [{ type: "text", text: "I edited it, take another look" }],
       "user",
-      row!.metadata,
+      row.metadata,
     );
-    const rebuiltBlock = rebuilt.at(-1) as { type: "text"; text: string };
+    const rebuiltBlock = textBlock(rebuilt.at(-1));
     expect(rebuiltBlock.text).toBe(annotation.text);
   });
 
@@ -127,13 +142,8 @@ describe("persistQueuedMessageBody stored path annotations", () => {
 
     await persistQueuedMessageBody(ctx, { content: original });
 
-    const row = rawGet<{ metadata: string; content: string }>(
-      "test:offloadMessage",
-      "SELECT metadata, content FROM messages ORDER BY created_at DESC LIMIT 1",
-    );
-    const meta = JSON.parse(row!.metadata) as {
-      attachmentStoredPaths?: Record<string, string>;
-    };
+    const row = readLatestMessage();
+    const meta = attachmentMetadataSchema.parse(JSON.parse(row.metadata!));
     const storedPaths = Object.values(meta.attachmentStoredPaths ?? {});
     expect(storedPaths).toHaveLength(1);
     const filename = basename(storedPaths[0]!);
@@ -146,13 +156,13 @@ describe("persistQueuedMessageBody stored path annotations", () => {
       `[Attachment "${filename}" is stored at: ${storedPaths[0]}]`,
     );
 
-    const persisted = JSON.parse(row!.content) as ContentBlock[];
+    const persisted = contentBlockArraySchema.parse(JSON.parse(row.content));
     const rebuilt = reinjectAttachmentPathAnnotations(
       persisted,
       "user",
-      row!.metadata,
+      row.metadata,
     );
-    const rebuiltBlock = rebuilt.at(-1) as { type: "text"; text: string };
+    const rebuiltBlock = textBlock(rebuilt.at(-1));
     expect(rebuiltBlock.text).toBe(annotation.text);
   });
 
@@ -163,12 +173,8 @@ describe("persistQueuedMessageBody stored path annotations", () => {
     await persistQueuedMessageBody(ctx, { content: "a".repeat(8_000_001) });
     await persistQueuedMessageBody(ctx, { content: "b".repeat(8_000_001) });
 
-    const first = ctx.messages[0].content.at(-1) as {
-      text: string;
-    };
-    const second = ctx.messages[1].content.at(-1) as {
-      text: string;
-    };
+    const first = textBlock(ctx.messages[0].content.at(-1));
+    const second = textBlock(ctx.messages[1].content.at(-1));
     expect(first.text).toContain("oversized-content-");
     expect(second.text).toContain("oversized-content-");
     expect(first.text).not.toBe(second.text);
@@ -189,13 +195,8 @@ describe("persistQueuedMessageBody stored path annotations", () => {
     expect(JSON.stringify(llmContent)).toContain("fenced model copy");
     expect(JSON.stringify(llmContent)).not.toContain(display);
 
-    const row = rawGet<{ metadata: string }>(
-      "test:displayOnlyOffloadMetadata",
-      "SELECT metadata FROM messages ORDER BY created_at DESC LIMIT 1",
-    );
-    const meta = JSON.parse(row!.metadata) as {
-      attachmentStoredPaths?: Record<string, string>;
-    };
+    const row = readLatestMessage();
+    const meta = attachmentMetadataSchema.parse(JSON.parse(row.metadata!));
     expect(meta.attachmentStoredPaths).toBeUndefined();
   });
 

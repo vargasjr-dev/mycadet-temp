@@ -26,6 +26,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
+
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -34,15 +37,19 @@ const TMP_ROOT = process.env.CADET_WORKSPACE_DIR!;
 
 // ── Test fixtures ────────────────────────────────────────────────────
 
-interface FakeRelease {
-  tag_name: string;
-  name: string | null;
-  body: string | null;
-  published_at: string | null;
-  html_url: string;
-  draft: boolean;
-  prerelease: boolean;
-}
+const releaseSchema = z.object({
+  tag_name: z.string(),
+  name: z.string().nullable(),
+  body: z.string().nullable(),
+  published_at: z.string().nullable(),
+  html_url: z.string(),
+  draft: z.boolean(),
+  prerelease: z.boolean(),
+});
+type FakeRelease = z.infer<typeof releaseSchema>;
+
+const tagSchema = releaseSchema.pick({ tag_name: true });
+const releaseListSchema = z.object({ releases: z.array(tagSchema) });
 
 const REL_080: FakeRelease = {
   tag_name: "v0.8.0",
@@ -108,12 +115,13 @@ const originalFetch = globalThis.fetch;
 beforeEach(() => {
   fetchCalls.length = 0;
   fetchHandler = async () => new Response("not configured", { status: 500 });
-  globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
-    const url =
-      typeof args[0] === "string" ? args[0] : (args[0] as URL).toString();
-    fetchCalls.push(url);
-    return fetchHandler(url, args[1]);
-  }) as typeof fetch;
+  globalThis.fetch = fetchMock(
+    async (input: string | URL | Request, init?: RequestInit) => {
+      const url = input instanceof Request ? input.url : input.toString();
+      fetchCalls.push(url);
+      return fetchHandler(url, init);
+    },
+  );
 });
 
 afterEach(() => {
@@ -135,17 +143,18 @@ function jsonResponse(payload: unknown, status = 200): Response {
 
 const cachePath = join(TMP_ROOT, "data", "changelog-cache.json");
 
-interface CacheShape {
-  fetchedAt: string;
-  recent: FakeRelease[];
-  byTag: Record<string, FakeRelease>;
-}
+const cacheSchema = z.object({
+  fetchedAt: z.string(),
+  recent: z.array(releaseSchema),
+  byTag: z.record(z.string(), releaseSchema),
+});
+type CacheShape = z.infer<typeof cacheSchema>;
 
 function readCacheFile(): CacheShape | null {
   if (!existsSync(cachePath)) {
     return null;
   }
-  return JSON.parse(readFileSync(cachePath, "utf-8")) as CacheShape;
+  return cacheSchema.parse(JSON.parse(readFileSync(cachePath, "utf-8")));
 }
 
 function writeCacheFile(cache: CacheShape): void {
@@ -175,19 +184,19 @@ async function runCli(argv: string[]): Promise<CapturedRun> {
   const realStderr = process.stderr.write.bind(process.stderr);
   const realExit = process.exit.bind(process);
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
-  process.stderr.write = ((chunk: unknown) => {
+  };
+  process.stderr.write = (chunk: unknown) => {
     stderrChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stderr.write;
-  process.exit = ((code?: number) => {
+  };
+  process.exit = (code?: number | string | null): never => {
     captured = typeof code === "number" ? code : 0;
     exited = true;
     throw new Error("__test_process_exit__");
-  }) as typeof process.exit;
+  };
 
   const program = new Command();
   program.exitOverride();
@@ -196,7 +205,7 @@ async function runCli(argv: string[]): Promise<CapturedRun> {
   try {
     await program.parseAsync(["node", "assistant", ...argv]);
   } catch (err) {
-    if ((err as Error).message !== "__test_process_exit__") {
+    if (!(err instanceof Error) || err.message !== "__test_process_exit__") {
       throw err;
     }
   } finally {
@@ -232,7 +241,7 @@ describe("assistant changelog (default action)", () => {
     fetchHandler = async () => jsonResponse([REL_080, REL_079]);
     const result = await runCli(["changelog", "--json"]);
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout) as { tag_name: string };
+    const parsed = tagSchema.parse(JSON.parse(result.stdout));
     expect(parsed.tag_name).toBe("v0.8.0");
   });
 
@@ -266,7 +275,7 @@ describe("assistant changelog (default action)", () => {
     fetchHandler = async () => jsonResponse([REL_080]);
     const result = await runCli(["changelog", "--since", "1.0.0", "--json"]);
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout) as { releases: unknown[] };
+    const parsed = releaseListSchema.parse(JSON.parse(result.stdout));
     expect(parsed.releases).toEqual([]);
   });
 
@@ -300,7 +309,7 @@ describe("assistant changelog show <version>", () => {
     fetchHandler = async () => jsonResponse(REL_080);
     const result = await runCli(["changelog", "show", "0.8.0", "--json"]);
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout) as { tag_name: string };
+    const parsed = tagSchema.parse(JSON.parse(result.stdout));
     expect(parsed.tag_name).toBe("v0.8.0");
   });
 
@@ -362,9 +371,7 @@ describe("assistant changelog list", () => {
     fetchHandler = async () => jsonResponse([REL_080, REL_079]);
     const result = await runCli(["changelog", "list", "--json"]);
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout) as {
-      releases: Array<{ tag_name: string }>;
-    };
+    const parsed = releaseListSchema.parse(JSON.parse(result.stdout));
     expect(parsed.releases.map((r) => r.tag_name)).toEqual([
       "v0.8.0",
       "v0.7.9",
@@ -383,9 +390,7 @@ describe("assistant changelog list", () => {
       "5",
     ]);
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout) as {
-      releases: Array<{ tag_name: string }>;
-    };
+    const parsed = releaseListSchema.parse(JSON.parse(result.stdout));
     expect(parsed.releases.length).toBeGreaterThan(0);
     // Even with --limit 5, the page-size buffer absorbs drafts/prereleases.
     expect(fetchCalls[0]).toMatch(/per_page=\d+/);
@@ -496,9 +501,7 @@ describe("assistant changelog cache", () => {
       "--json",
     ]);
     expect(result.exitCode).toBe(0);
-    const parsed = JSON.parse(result.stdout) as {
-      releases: Array<{ tag_name: string }>;
-    };
+    const parsed = releaseListSchema.parse(JSON.parse(result.stdout));
     expect(parsed.releases.map((r) => r.tag_name)).toEqual([
       "v0.8.0",
       "v0.7.9",

@@ -8,8 +8,16 @@ import {
 import { createUserMessage } from "../agent/message-types.js";
 import {
   attachmentIdFragment,
+  type ContentBlock,
   mediaBlockAttachmentId,
 } from "../providers/types.js";
+
+function textBlock(block: ContentBlock | undefined) {
+  if (block?.type !== "text") {
+    throw new Error("Expected a text block");
+  }
+  return block;
+}
 
 // ---------------------------------------------------------------------------
 // attachmentIdFragment
@@ -188,8 +196,10 @@ describe("attachmentsToReferenceBlocks", () => {
         sizeBytes: 10,
       },
     ]);
-    const source = (block as unknown as { source: Record<string, unknown> })
-      .source;
+    if (block.type !== "image") {
+      throw new Error("Expected an image attachment");
+    }
+    const source = block.source;
     expect("width" in source).toBe(false);
     expect("height" in source).toBe(false);
   });
@@ -207,10 +217,10 @@ describe("attachmentsToContentBlocks", () => {
 
     expect(blocks).toHaveLength(1);
     expect(blocks[0].type).toBe("image");
-    const block = blocks[0] as {
-      type: "image";
-      source: { type: string; media_type: string; data: string };
-    };
+    const block = blocks[0];
+    if (block.type !== "image" || block.source.type !== "base64") {
+      throw new Error("Expected a base64 image block");
+    }
     expect(block.source.type).toBe("base64");
     expect(block.source.media_type).toBe("image/jpeg");
     expect(block.source.data).toBe("base64data");
@@ -258,10 +268,10 @@ describe("attachmentsToContentBlocks", () => {
 
     expect(blocks).toHaveLength(1);
     expect(blocks[0].type).toBe("file");
-    const block = blocks[0] as {
-      type: "file";
-      source: { filename: string; media_type: string; data: string };
-    };
+    const block = blocks[0];
+    if (block.type !== "file" || block.source.type !== "base64") {
+      throw new Error("Expected a base64 file block");
+    }
     expect(block.source.filename).toBe("doc.pdf");
     expect(block.source.media_type).toBe("application/pdf");
   });
@@ -299,13 +309,9 @@ describe("attachmentsToContentBlocks", () => {
     ]);
 
     expect(blocks[0].type).toBe("image");
-    expect((blocks[0] as { _attachmentId?: string })._attachmentId).toBe(
-      "att-img",
-    );
+    expect(blocks[0]).toHaveProperty("_attachmentId", "att-img");
     expect(blocks[1].type).toBe("file");
-    expect((blocks[1] as { _attachmentId?: string })._attachmentId).toBe(
-      "att-doc",
-    );
+    expect(blocks[1]).toHaveProperty("_attachmentId", "att-doc");
   });
 
   test("omits the attachment id when the upload has none", async () => {
@@ -332,9 +338,7 @@ describe("createUserMessage with image attachments", () => {
     expect(msg.role).toBe("user");
     expect(msg.content).toHaveLength(2);
     expect(msg.content[0].type).toBe("text");
-    expect((msg.content[0] as { type: "text"; text: string }).text).toBe(
-      "what is this?",
-    );
+    expect(textBlock(msg.content[0]).text).toBe("what is this?");
     expect(msg.content[1].type).toBe("image");
   });
 
@@ -377,10 +381,10 @@ describe("createUserMessage with image attachments", () => {
       { filename: "photo.jpg", mimeType: "image/jpeg", data: base64 },
     ]);
 
-    const imageBlock = msg.content[1] as {
-      type: "image";
-      source: { type: string; media_type: string; data: string };
-    };
+    const imageBlock = msg.content[1];
+    if (imageBlock.type !== "image" || imageBlock.source.type !== "base64") {
+      throw new Error("Expected a base64 image block");
+    }
     expect(imageBlock.source.data).toBe(base64);
     expect(imageBlock.source.media_type).toBe("image/jpeg");
     expect(imageBlock.source.type).toBe("base64");
@@ -407,7 +411,7 @@ describe("enrichMessageWithSourcePaths", () => {
     expect(enriched).not.toBe(original);
     // Original has text + image = 2 blocks; enriched adds 1 annotation = 3
     expect(enriched.content).toHaveLength(3);
-    const annotation = enriched.content[2] as { type: "text"; text: string };
+    const annotation = textBlock(enriched.content[2]);
     expect(annotation.type).toBe("text");
     expect(annotation.text).toBe(
       "[Attached image source: /Users/me/Desktop/photo.jpg]",
@@ -465,7 +469,7 @@ describe("enrichMessageWithSourcePaths", () => {
     expect(enriched).not.toBe(original);
     // text + 2 images + 1 annotation = 4
     expect(enriched.content).toHaveLength(4);
-    const annotation = enriched.content[3] as { type: "text"; text: string };
+    const annotation = textBlock(enriched.content[3]);
     expect(annotation.type).toBe("text");
     expect(annotation.text).toBe(
       "[Attached image source: /path/to/a.jpg]\n[Attached image source: /path/to/b.png]",
@@ -493,7 +497,7 @@ describe("enrichMessageWithSourcePaths", () => {
     expect(enriched).not.toBe(original);
     // text + 2 images + 1 annotation (only for a.jpg) = 4
     expect(enriched.content).toHaveLength(4);
-    const annotation = enriched.content[3] as { type: "text"; text: string };
+    const annotation = textBlock(enriched.content[3]);
     expect(annotation.text).toBe("[Attached image source: /path/to/a.jpg]");
   });
 
@@ -513,7 +517,7 @@ describe("enrichMessageWithSourcePaths", () => {
     expect(enriched).not.toBe(original);
     // text + file = 2 blocks; enriched adds 1 annotation = 3
     expect(enriched.content).toHaveLength(3);
-    const annotation = enriched.content[2] as { type: "text"; text: string };
+    const annotation = textBlock(enriched.content[2]);
     expect(annotation.type).toBe("text");
     expect(annotation.text).toBe(
       '[Attachment "report.pdf" is stored at: /conv/attachments/report-2.pdf]',
@@ -539,10 +543,7 @@ describe("enrichMessageWithSourcePaths", () => {
     const original = await createUserMessage("compare", attachments);
     const enriched = enrichMessageWithSourcePaths(original, attachments);
 
-    const annotation = enriched.content.at(-1) as {
-      type: "text";
-      text: string;
-    };
+    const annotation = textBlock(enriched.content.at(-1));
     expect(annotation.text).toBe(
       "[Attached image source: /Users/me/Desktop/photo.jpg]\n" +
         '[Attachment "data.csv" is stored at: /conv/attachments/data-2.csv]\n' +

@@ -28,6 +28,13 @@ import {
   toolUseResponse,
 } from "./helpers/mock-provider.js";
 
+function textToolResult(block: ContentBlock) {
+  if (block.type !== "tool_result" || typeof block.content !== "string") {
+    throw new Error("Expected a text tool result");
+  }
+  return { ...block, content: block.content };
+}
+
 function makeToolResult(
   content: string,
   toolUseId = "tool_use_1",
@@ -68,7 +75,7 @@ describe("spoolAndStubOversizedToolResults", () => {
     const filePath = getToolResultFilePath(convDir, "tu_big");
     expect(existsSync(filePath)).toBe(true);
     expect(readFileSync(filePath, "utf-8")).toBe(LONG);
-    const stubbed = blocks[0] as { content: string };
+    const stubbed = textToolResult(blocks[0]);
     expect(stubbed.content).toContain(TRUNCATION_MARKER);
     expect(stubbed.content).toContain(filePath);
     expect(stubbed.content.length).toBeLessThan(LONG.length);
@@ -86,8 +93,8 @@ describe("spoolAndStubOversizedToolResults", () => {
       { conversationDir: convDir },
     );
 
-    expect((blocks[0] as { content: string }).content).toBe(
-      (postTurn[0].content[0] as { content: string }).content,
+    expect(textToolResult(blocks[0]).content).toBe(
+      textToolResult(postTurn[0].content[0]).content,
     );
   });
 
@@ -214,13 +221,9 @@ describe("spoolAndStubOversizedToolResults", () => {
     expect(existsSync(getToolResultFilePath(convDir, "tu_a"))).toBe(true);
     expect(existsSync(getToolResultFilePath(convDir, "tu_b"))).toBe(false);
     expect(existsSync(getToolResultFilePath(convDir, "tu_c"))).toBe(true);
-    expect((blocks[0] as { content: string }).content).toContain(
-      TRUNCATION_MARKER,
-    );
-    expect((blocks[1] as { content: string }).content).toBe(SHORT);
-    expect((blocks[2] as { content: string }).content).toContain(
-      TRUNCATION_MARKER,
-    );
+    expect(textToolResult(blocks[0]).content).toContain(TRUNCATION_MARKER);
+    expect(textToolResult(blocks[1]).content).toBe(SHORT);
+    expect(textToolResult(blocks[2]).content).toContain(TRUNCATION_MARKER);
   });
 
   test("keeps full content when the spool directory cannot be created", () => {
@@ -237,7 +240,7 @@ describe("spoolAndStubOversizedToolResults", () => {
         toolCallById: noCall,
       }),
     ).toThrow();
-    expect((blocks[0] as { content: string }).content).toBe(LONG);
+    expect(textToolResult(blocks[0]).content).toBe(LONG);
   });
 });
 
@@ -294,17 +297,15 @@ describe("AgentLoop result-time spooling", () => {
     expect(readFileSync(filePath, "utf-8")).toBe(LONG);
 
     // The second provider call carries the stub, not the full content.
-    const sentResult = calls[1].messages[2].content[0] as { content: string };
+    const sentResult = textToolResult(calls[1].messages[2].content[0]);
     expect(sentResult.content).toContain(TRUNCATION_MARKER);
     expect(sentResult.content).toContain(filePath);
     expect(JSON.stringify(calls.map((c) => c.messages))).not.toContain(LONG);
 
     // Durable history and the emitted tool_result event match what was sent.
-    const historyResult = history[2].content[0] as { content: string };
+    const historyResult = textToolResult(history[2].content[0]);
     expect(historyResult.content).toBe(sentResult.content);
-    const resultEvent = events.find((e) => e.type === "tool_result") as {
-      content: string;
-    };
+    const resultEvent = events.find((e) => e.type === "tool_result")!;
     expect(resultEvent.content).toBe(sentResult.content);
   });
 
@@ -403,7 +404,7 @@ describe("AgentLoop result-time spooling", () => {
 
     // The second provider call carries the full requested window, not a stub;
     // the post-turn pass (conversation-turn-finalize) owns truncating it.
-    const sentResult = calls[1].messages[2].content[0] as { content: string };
+    const sentResult = textToolResult(calls[1].messages[2].content[0]);
     expect(sentResult.content).toBe(LONG);
     expect(existsSync(join(convDir, TOOL_RESULT_DIR))).toBe(false);
   });
@@ -428,7 +429,7 @@ describe("AgentLoop result-time spooling", () => {
       trust: { sourceChannel: "cadet", trustClass: "unknown" },
     });
 
-    const sentResult = calls[1].messages[2].content[0] as { content: string };
+    const sentResult = textToolResult(calls[1].messages[2].content[0]);
     expect(sentResult.content).toBe(LONG);
     expect(existsSync(join(convDir, TOOL_RESULT_DIR))).toBe(false);
   });

@@ -72,6 +72,13 @@ function captureBroadcast(): {
   return { adapter, sent, conversationIds };
 }
 
+function requireNotificationIntent(event: AssistantEvent | undefined) {
+  if (event?.type !== "notification_intent") {
+    throw new Error("Expected a notification intent");
+  }
+  return event;
+}
+
 beforeEach(() => {
   assistantName = null;
 });
@@ -86,10 +93,7 @@ describe("CadetAdapter silent flag", () => {
 
     expect(result.success).toBe(true);
     expect(sent).toHaveLength(1);
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.type).toBe("notification_intent");
     expect(intent.silent).toBe(true);
   });
@@ -98,10 +102,7 @@ describe("CadetAdapter silent flag", () => {
     const { adapter, sent } = captureBroadcast();
     await adapter.send(makePayload({ urgency: "medium" }), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.silent).toBe(true);
   });
 
@@ -109,10 +110,7 @@ describe("CadetAdapter silent flag", () => {
     const { adapter, sent } = captureBroadcast();
     await adapter.send(makePayload({ urgency: "high" }), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.silent).toBe(false);
   });
 
@@ -120,10 +118,7 @@ describe("CadetAdapter silent flag", () => {
     const { adapter, sent } = captureBroadcast();
     await adapter.send(makePayload({ urgency: "critical" }), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.silent).toBe(false);
   });
 
@@ -139,10 +134,7 @@ describe("CadetAdapter silent flag", () => {
       makeDestination(),
     );
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.deliveryId).toBe("delivery-xyz");
     expect(intent.title).toBe("T");
     expect(intent.body).toBe("B");
@@ -162,10 +154,7 @@ describe("CadetAdapter remotePushDispatched pass-through", () => {
       makeDestination(),
     );
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.remotePushDispatched).toBe(true);
     expect(intent.remotePushPlatforms).toEqual(["ios"]);
   });
@@ -177,10 +166,7 @@ describe("CadetAdapter remotePushDispatched pass-through", () => {
       makeDestination(),
     );
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.remotePushDispatched).toBe(false);
   });
 
@@ -188,10 +174,7 @@ describe("CadetAdapter remotePushDispatched pass-through", () => {
     const { adapter, sent } = captureBroadcast();
     await adapter.send(makePayload(), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.remotePushDispatched).toBeUndefined();
   });
 });
@@ -203,10 +186,7 @@ describe("CadetAdapter assistant name", () => {
 
     await adapter.send(makePayload(), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.assistantName).toBe("Example Assistant");
   });
 
@@ -215,10 +195,7 @@ describe("CadetAdapter assistant name", () => {
 
     await adapter.send(makePayload(), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.assistantName).toBeUndefined();
     expect("assistantName" in intent).toBe(false);
   });
@@ -229,10 +206,7 @@ describe("CadetAdapter assistant name", () => {
 
     await adapter.send(makePayload(), makeDestination());
 
-    const intent = sent[0] as Extract<
-      AssistantEvent,
-      { type: "notification_intent" }
-    >;
+    const intent = requireNotificationIntent(sent[0]);
     expect(intent.assistantName).toBeUndefined();
     expect("assistantName" in intent).toBe(false);
   });
@@ -245,9 +219,7 @@ describe("CadetAdapter assistant name", () => {
     assistantName = "Assistant B";
     await adapter.send(makePayload(), makeDestination());
 
-    const intents = sent as Array<
-      Extract<AssistantEvent, { type: "notification_intent" }>
-    >;
+    const intents = sent.map(requireNotificationIntent);
     expect(intents.map((intent) => intent.assistantName)).toEqual([
       "Assistant A",
       "Assistant B",

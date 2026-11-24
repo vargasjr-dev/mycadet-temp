@@ -257,9 +257,9 @@ describe("tool preview lifecycle", () => {
       expect(collector.events).toHaveLength(1);
       const emitted = collector.events[0];
       expect(emitted.type).toBe("tool_use_preview_start");
-      expect((emitted as any).toolUseId).toBe("toolu_abc123");
-      expect((emitted as any).toolName).toBe("bash");
-      expect((emitted as any).conversationId).toBe("test-session-id");
+      expect(emitted).toHaveProperty("toolUseId", "toolu_abc123");
+      expect(emitted).toHaveProperty("toolName", "bash");
+      expect(emitted).toHaveProperty("conversationId", "test-session-id");
     });
 
     test("stamps previewStartedAt on the event and stores it in state", () => {
@@ -280,7 +280,9 @@ describe("tool preview lifecycle", () => {
       });
       const after = Date.now();
 
-      const emitted = collector.events[0] as { previewStartedAt?: number };
+      const emitted = collector.events.find(
+        (event) => event.type === "tool_use_preview_start",
+      )!;
       expect(typeof emitted.previewStartedAt).toBe("number");
       expect(emitted.previewStartedAt!).toBeGreaterThanOrEqual(before);
       expect(emitted.previewStartedAt!).toBeLessThanOrEqual(after);
@@ -321,7 +323,7 @@ describe("tool preview lifecycle", () => {
       // its own (later) execution startedAt
       const toolUseStart = collector.events.find(
         (e) => e.type === "tool_use_start",
-      ) as { previewStartedAt?: number; startedAt?: number };
+      )!;
       expect(toolUseStart).toBeDefined();
       expect(toolUseStart.previewStartedAt).toBe(previewStartedAt);
       expect(typeof toolUseStart.startedAt).toBe("number");
@@ -365,10 +367,10 @@ describe("tool preview lifecycle", () => {
       expect(collector.events).toHaveLength(1);
       const emitted = collector.events[0];
       expect(emitted.type).toBe("tool_input_delta");
-      expect((emitted as any).toolUseId).toBe("toolu_delta456");
-      expect((emitted as any).toolName).toBe("app_create");
-      expect((emitted as any).content).toBe('{"command": "ls"}');
-      expect((emitted as any).conversationId).toBe("test-session-id");
+      expect(emitted).toHaveProperty("toolUseId", "toolu_delta456");
+      expect(emitted).toHaveProperty("toolName", "app_create");
+      expect(emitted).toHaveProperty("content", '{"command": "ls"}');
+      expect(emitted).toHaveProperty("conversationId", "test-session-id");
     });
 
     test("caps cumulative app preview payloads and stops forwarding growth", () => {
@@ -390,10 +392,9 @@ describe("tool preview lifecycle", () => {
       });
 
       expect(collector.events).toHaveLength(1);
-      const emitted = collector.events[0] as Extract<
-        AssistantEvent,
-        { type: "tool_input_delta" }
-      >;
+      const emitted = collector.events.find(
+        (event) => event.type === "tool_input_delta",
+      )!;
       expect(emitted.content).toBe(accumulatedJson.slice(0, 256_000));
     });
 
@@ -415,7 +416,9 @@ describe("tool preview lifecycle", () => {
       }
 
       expect(collector.events).toHaveLength(1);
-      const emitted = collector.events[0] as any;
+      const emitted = collector.events.find(
+        (event) => event.type === "ui_surface_pending",
+      )!;
       expect(emitted.type).toBe("ui_surface_pending");
       expect(emitted.surfaceType).toBe("visual");
       expect(emitted.toolUseId).toBe("toolu_visual");
@@ -483,8 +486,11 @@ describe("tool preview lifecycle", () => {
         (e) => e.type === "tool_result",
       );
       expect(toolResultEvent).toBeDefined();
-      expect((toolResultEvent as any).toolUseId).toBe("toolu_result789");
-      expect((toolResultEvent as any).conversationId).toBe("test-session-id");
+      expect(toolResultEvent).toHaveProperty("toolUseId", "toolu_result789");
+      expect(toolResultEvent).toHaveProperty(
+        "conversationId",
+        "test-session-id",
+      );
     });
   });
 
@@ -764,7 +770,7 @@ describe("tool preview lifecycle", () => {
     function latestWrittenBlocks(): Array<Record<string, unknown>> {
       const calls = updateMessageContentMock.mock.calls;
       const last = calls[calls.length - 1];
-      return JSON.parse(last[1] as string);
+      return JSON.parse(last[1]);
     }
 
     test("the first result reserves one user row and writes its block", async () => {
@@ -942,12 +948,10 @@ describe("tool preview lifecycle", () => {
       return { deps, events: collector.events };
     }
 
-    function emittedToolResult(
-      events: CapturedEvent[],
-    ): Record<string, unknown> {
+    function emittedToolResult(events: CapturedEvent[]) {
       const toolResult = events.find((e) => e.type === "tool_result");
       expect(toolResult).toBeDefined();
-      return toolResult as unknown as Record<string, unknown>;
+      return toolResult!;
     }
 
     test("a result following its tool_use carries the resolved tool name", async () => {
@@ -1077,7 +1081,7 @@ describe("tool preview lifecycle", () => {
 
       // Verify all events carry the same toolUseId
       for (const event of collector.events) {
-        expect((event as any).toolUseId).toBe(toolUseId);
+        expect(event).toHaveProperty("toolUseId", toolUseId);
       }
     });
 
@@ -1160,7 +1164,7 @@ describe("tool preview lifecycle", () => {
 
       // Verify toolUseId consistency across all events
       for (const event of collector.events) {
-        expect((event as any).toolUseId).toBe(toolUseId);
+        expect(event).toHaveProperty("toolUseId", toolUseId);
       }
 
       // Verify activity state transitions

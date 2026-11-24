@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { updateConversationTitle } from "../persistence/conversation-crud.js";
+import type {
+  Message,
+  Provider,
+  ProviderResponse,
+} from "../providers/types.js";
+
 const TITLE_TOOL_NAME = "record_conversation_title";
 
 /** A forced-tool response: the model called `record_conversation_title`. */
-function toolResponse(title: string) {
+function toolResponse(title: string): ProviderResponse {
   return {
     content: [
       {
@@ -20,7 +27,7 @@ function toolResponse(title: string) {
 }
 
 /** A plain-text response: the model ignored the forced tool and emitted text. */
-function textResponse(text: string) {
+function textResponse(text: string): ProviderResponse {
   return {
     content: [{ type: "text", text }],
     model: "test-model",
@@ -30,9 +37,7 @@ function textResponse(text: string) {
 }
 
 function makeProvider(
-  // partial ProviderResponse shapes; `any` keeps the stub assignable to Provider.
-  impl: (messages: any, options: any) => any = async () =>
-    toolResponse("Project kickoff"),
+  impl: Provider["sendMessage"] = async () => toolResponse("Project kickoff"),
 ) {
   return {
     name: "test-provider",
@@ -40,16 +45,18 @@ function makeProvider(
   };
 }
 
-const mockGetConversation = mock(
-  (_conversationId: string) =>
-    ({
-      title: "Generating title...",
-      isAutoTitle: 1,
-    }) as {
-      title: string;
-      isAutoTitle: number;
-    },
-);
+function promptText(message: Message): string {
+  const block = message.content[0];
+  if (block?.type !== "text") {
+    throw new Error("Expected a text prompt");
+  }
+  return block.text;
+}
+
+const mockGetConversation = mock((_conversationId: string) => ({
+  title: "Generating title...",
+  isAutoTitle: 1,
+}));
 type TitleTestRow = {
   role: string;
   content: string;
@@ -62,7 +69,9 @@ const mockGetMessages = mock((): TitleTestRow[] => [
   { role: "assistant", content: "first reply" },
   { role: "user", content: "follow-up" },
 ]);
-const mockUpdateConversationTitle = mock(() => {});
+const mockUpdateConversationTitle = mock<typeof updateConversationTitle>(
+  () => {},
+);
 const mockGetConfiguredProvider = mock(async () => null);
 
 mock.module("../persistence/conversation-crud.js", () => ({
@@ -85,7 +94,10 @@ mock.module("../providers/provider-send-message.js", () => ({
     signal: new AbortController().signal,
     cleanup: () => {},
   }),
-  userMessage: (text: string) => ({ role: "user", content: text }),
+  userMessage: (text: string): Message => ({
+    role: "user",
+    content: [{ type: "text", text }],
+  }),
   extractToolUse: (response: { content?: Array<{ type: string }> }) =>
     response?.content?.find((b) => b.type === "tool_use"),
   extractAllText: (response: {
@@ -117,16 +129,10 @@ import {
 describe("conversation-title-service", () => {
   beforeEach(() => {
     mockGetConversation.mockClear();
-    mockGetConversation.mockImplementation(
-      (_conversationId: string) =>
-        ({
-          title: "Generating title...",
-          isAutoTitle: 1,
-        }) as {
-          title: string;
-          isAutoTitle: number;
-        },
-    );
+    mockGetConversation.mockImplementation((_conversationId: string) => ({
+      title: "Generating title...",
+      isAutoTitle: 1,
+    }));
     mockGetMessages.mockClear();
     mockGetMessages.mockImplementation(() => [
       { role: "user", content: "first message" },
@@ -151,22 +157,15 @@ describe("conversation-title-service", () => {
     expect(result).toEqual({ title: "Project kickoff", updated: true });
     expect(provider.sendMessage).toHaveBeenCalledTimes(1);
 
-    const [, options] = provider.sendMessage.mock.calls[0] as [
-      unknown,
-      {
-        tools: Array<{ name: string }>;
-        systemPrompt: string;
-        config: { callSite: string; tool_choice: unknown };
-      },
-    ];
-    expect(options.config.callSite).toBe("conversationTitle");
-    expect(options.config.tool_choice).toEqual({
+    const [, options] = provider.sendMessage.mock.calls[0];
+    expect(options?.config?.callSite).toBe("conversationTitle");
+    expect(options?.config?.tool_choice).toEqual({
       type: "tool",
       name: TITLE_TOOL_NAME,
     });
-    expect(options.tools).toHaveLength(1);
-    expect(options.tools[0].name).toBe(TITLE_TOOL_NAME);
-    expect(options.systemPrompt).toContain("conversation titles");
+    expect(options?.tools).toHaveLength(1);
+    expect(options?.tools?.[0].name).toBe(TITLE_TOOL_NAME);
+    expect(options?.systemPrompt).toContain("conversation titles");
 
     expect(mockUpdateConversationTitle).toHaveBeenCalledWith(
       "conv-1",
@@ -207,8 +206,7 @@ describe("conversation-title-service", () => {
     await regenerateConversationTitle({ conversationId: "conv-1", provider });
 
     // The prompt sent to the model should contain plain text, not raw JSON.
-    const prompt = (provider.sendMessage.mock.calls[0] as any)?.[0]?.[0]
-      ?.content as string;
+    const prompt = promptText(provider.sendMessage.mock.calls[0][0][0]);
     expect(prompt).not.toContain('"type":"text"');
     expect(prompt).not.toContain('"type":"tool_use"');
     expect(prompt).not.toContain("Tool use");
@@ -248,8 +246,7 @@ describe("conversation-title-service", () => {
 
     await regenerateConversationTitle({ conversationId: "conv-1", provider });
 
-    const prompt = (provider.sendMessage.mock.calls[0] as any)?.[0]?.[0]
-      ?.content as string;
+    const prompt = promptText(provider.sendMessage.mock.calls[0][0][0]);
     expect(prompt).not.toContain('"type":"tool_result"');
     expect(prompt).not.toContain("Tool use");
     expect(prompt).toContain("Search for restaurants");
@@ -266,12 +263,9 @@ describe("conversation-title-service", () => {
 
     expect(result).toEqual({ title: "Project kickoff", updated: true });
     expect(provider.sendMessage).toHaveBeenCalledTimes(1);
-    const [, options] = provider.sendMessage.mock.calls[0] as [
-      unknown,
-      { config: { callSite: string; tool_choice: unknown } },
-    ];
-    expect(options.config.callSite).toBe("conversationTitle");
-    expect(options.config.tool_choice).toEqual({
+    const [, options] = provider.sendMessage.mock.calls[0];
+    expect(options?.config?.callSite).toBe("conversationTitle");
+    expect(options?.config?.tool_choice).toEqual({
       type: "tool",
       name: TITLE_TOOL_NAME,
     });
@@ -579,16 +573,13 @@ describe("conversation-title-service", () => {
       userMessage: "Help me plan the kickoff",
     });
 
-    const [messages, options] = provider.sendMessage.mock.calls[0] as [
-      Array<{ content: string }>,
-      { systemPrompt: string },
-    ];
-    const content = messages[0].content;
+    const [messages, options] = provider.sendMessage.mock.calls[0];
+    const content = promptText(messages[0]);
     // Instructions should be in systemPrompt, not in the user content.
     expect(content).not.toContain("Generate a very short title");
     expect(content).not.toContain("do NOT respond");
-    expect(options.systemPrompt).toContain("Do NOT respond");
-    expect(options.systemPrompt).toContain(
+    expect(options?.systemPrompt).toContain("Do NOT respond");
+    expect(options?.systemPrompt).toContain(
       "same language as the conversation content",
     );
   });
@@ -661,19 +652,17 @@ describe("conversation-title-service", () => {
 
     // Both calls went through — failure didn't break the chain.
     expect(provider.sendMessage).toHaveBeenCalledTimes(2);
-    const firstUpdate = (
-      mockUpdateConversationTitle.mock.calls as unknown as Array<
-        [string, string, number?]
-      >
-    ).find((c) => c[0] === "conv-1");
+    const firstUpdate = mockUpdateConversationTitle.mock.calls.find(
+      (c) => c[0] === "conv-1",
+    );
     expect(firstUpdate).toEqual([
       "conv-1",
       MESSAGE_KEYS.CONVERSATION_TITLE_UNTITLED,
       AUTO_TITLE_DETERMINISTIC,
     ]);
-    const secondUpdate = (
-      mockUpdateConversationTitle.mock.calls as unknown as string[][]
-    ).find((c) => c[0] === "conv-2" && c[1] === "Recovery Title");
+    const secondUpdate = mockUpdateConversationTitle.mock.calls.find(
+      (c) => c[0] === "conv-2" && c[1] === "Recovery Title",
+    );
     expect(secondUpdate).toBeTruthy();
   });
 });

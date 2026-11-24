@@ -9,6 +9,8 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { contentBlockArraySchema } from "../providers/content-block-schema.js";
+
 // ── Shared mock plumbing (must precede module-under-test imports) ──────────
 
 interface AddMessageCall {
@@ -148,6 +150,18 @@ function makeMessageCompleteEvent(
   };
 }
 
+function persistedBlocks(content: string) {
+  return contentBlockArraySchema.parse(JSON.parse(content));
+}
+
+function persistedToolResult(content: string) {
+  const block = persistedBlocks(content)[0];
+  if (block?.type !== "tool_result" || typeof block.content !== "string") {
+    throw new Error("Expected a text tool result");
+  }
+  return block.content;
+}
+
 function lastPersisted(role: "assistant" | "user"): AddMessageCall {
   for (let i = addMessageCalls.length - 1; i >= 0; i--) {
     if (addMessageCalls[i].role === role) {
@@ -192,12 +206,9 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("user");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      content: string;
-    }>;
-    expect(blocks[0].content).not.toContain("sk-ant-api03-");
-    expect(blocks[0].content).toContain("<redacted");
+    const result = persistedToolResult(persisted.content);
+    expect(result).not.toContain("sk-ant-api03-");
+    expect(result).toContain("<redacted");
   });
 
   test("redacts GitHub PAT in tool result content before persistence", async () => {
@@ -216,12 +227,9 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("user");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      content: string;
-    }>;
-    expect(blocks[0].content).not.toContain("ghp_");
-    expect(blocks[0].content).toContain("<redacted");
+    const result = persistedToolResult(persisted.content);
+    expect(result).not.toContain("ghp_");
+    expect(result).toContain("<redacted");
   });
 
   test("does not redact non-secret content (UUID, hex hash) in tool result", async () => {
@@ -240,11 +248,8 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("user");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      content: string;
-    }>;
-    expect(blocks[0].content).toBe(safe);
+    const result = persistedToolResult(persisted.content);
+    expect(result).toBe(safe);
   });
 
   test("live model state (pendingToolResults) is not modified by persistence redaction", async () => {
@@ -288,10 +293,7 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("assistant");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      text?: string;
-    }>;
+    const blocks = persistedBlocks(persisted.content);
     const textBlock = blocks.find((b) => b.type === "text");
     expect(textBlock?.text).not.toContain("sk-ant-api03-");
     expect(textBlock?.text).toContain("<redacted");
@@ -310,10 +312,7 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("assistant");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      text?: string;
-    }>;
+    const blocks = persistedBlocks(persisted.content);
     const textBlock = blocks.find((b) => b.type === "text");
     expect(textBlock?.text).not.toContain("sk-proj-");
     expect(textBlock?.text).toContain("<redacted");
@@ -330,10 +329,7 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("assistant");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      text?: string;
-    }>;
+    const blocks = persistedBlocks(persisted.content);
     const textBlock = blocks.find((b) => b.type === "text");
     expect(textBlock?.text).toBe(safe);
   });
@@ -350,10 +346,7 @@ describe("persistence-layer secret redaction", () => {
     );
 
     const persisted = lastPersisted("assistant");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      text?: string;
-    }>;
+    const blocks = persistedBlocks(persisted.content);
     const textBlock = blocks.find((b) => b.type === "text");
     expect(textBlock?.text).toBe(text);
   });
@@ -403,11 +396,7 @@ describe("thinking timing persistence", () => {
     // THEN the persisted thinking block carries the internal `_`-prefixed
     // timing so a history reload can surface the duration + "Started at" hover
     const persisted = lastPersisted("assistant");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      _startedAt?: number;
-      _completedAt?: number;
-    }>;
+    const blocks = persistedBlocks(persisted.content);
     const thinkingBlock = blocks.find((b) => b.type === "thinking");
     expect(thinkingBlock?._startedAt).toBe(1000);
     expect(thinkingBlock?._completedAt).toBe(1750);
@@ -425,11 +414,7 @@ describe("thinking timing persistence", () => {
     // THEN the thinking block is persisted without timing, so the client hides
     // the duration exactly as a tool call with no timing
     const persisted = lastPersisted("assistant");
-    const blocks = JSON.parse(persisted.content) as Array<{
-      type: string;
-      _startedAt?: number;
-      _completedAt?: number;
-    }>;
+    const blocks = persistedBlocks(persisted.content);
     const thinkingBlock = blocks.find((b) => b.type === "thinking");
     expect(thinkingBlock).toBeDefined();
     expect(thinkingBlock?._startedAt).toBeUndefined();
