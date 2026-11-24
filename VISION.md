@@ -1,7 +1,7 @@
 This page outlines the Cadet north star we're building towards. All external contribution will be evaluated against this doc.
 
-<!-- TODO: Add colors to the edges for RW, RO, RM -->
-<!-- TODO: Make Tools a subgraph that also includes definitions, skills, and MCPs -->
+Edge legend: <span style="color:#16a34a">■</span> green = read-write (RW) · <span style="color:#2563eb">■</span> blue = read-only (RO) · <span style="color:#d97706">■</span> amber = mediated reads (RM) — access to the fact that something exists, never the value itself · uncolored = control / invocation.
+
 ```mermaid
 flowchart LR
   You["Outside World"]
@@ -18,7 +18,12 @@ flowchart LR
   subgraph Sandbox["Sandbox\nDisposable workspace where the assistant performs all of its work."]
     direction TB
     SandboxIpc["Sandbox IPC Server"]
-    Tools["Tools"]
+    subgraph Tools["Tools"]
+      direction TB
+      Definitions["Definitions"]
+      Skills["Skills"]
+      MCPs["MCPs"]
+    end
     Hooks["Hooks"]
     Workspace["Workspace File System"]
   end
@@ -47,9 +52,12 @@ flowchart LR
   Tools --> Workspace
   Tools --> HarnessIpc
   Hooks --> Workspace
-  Egress --> CredStore 
+  Egress --> CredStore
   Egress --> Net
 
+  linkStyle 2,3,6,13,15 stroke:#16a34a,stroke-width:2px
+  linkStyle 4,14 stroke:#2563eb,stroke-width:2px
+  linkStyle 16 stroke:#d97706,stroke-width:2px
 ```
 
 ## The Harness
