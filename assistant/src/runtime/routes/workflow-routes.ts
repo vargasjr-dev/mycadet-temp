@@ -6,7 +6,6 @@
  * manager and the saved-workflow library — a human (via the app) can inspect
  * runs and abort an in-flight one.
  */
-
 import { z } from "zod";
 
 import type { TrustContext } from "../../daemon/trust-context-types.js";
@@ -14,6 +13,7 @@ import { buildChannelPermissionCellQuery } from "../../permissions/channel-permi
 import { getAutoApproveThreshold } from "../../permissions/gateway-threshold-reader.js";
 import { isFullAccessThreshold } from "../../permissions/threshold.js";
 import { getBindingByConversation } from "../../persistence/external-conversation-store.js";
+import { isPlainObject } from "../../util/object.js";
 import { manifestGrantsSideEffects } from "../../workflows/capabilities.js";
 import {
   getJournal,
@@ -83,11 +83,13 @@ const VALID_RUN_STATUSES = [
   "interrupted",
 ] as const;
 
-const workflowRunSchema = z.object({
+const workflowRunStatusSchema = z.enum(VALID_RUN_STATUSES);
+
+export const workflowRunSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   scriptHash: z.string(),
-  status: z.enum(VALID_RUN_STATUSES),
+  status: workflowRunStatusSchema,
   conversationId: z.string().nullable(),
   agentsSpawned: z.number(),
   inputTokens: z.number(),
@@ -104,7 +106,7 @@ const savedWorkflowSchema = z.object({
   path: z.string(),
 });
 
-const workflowLeafSchema = z.object({
+export const workflowLeafSchema = z.object({
   seq: z.number(),
   kind: z.enum(["agent", "workflow"]),
   label: z.string().optional(),
@@ -117,9 +119,9 @@ const workflowLeafSchema = z.object({
   createdAt: z.number().nullable(),
 });
 
-const workflowJournalSchema = z.object({
+export const workflowJournalSchema = z.object({
   runId: z.string(),
-  status: z.enum(VALID_RUN_STATUSES).optional(),
+  status: workflowRunStatusSchema.optional(),
   agentsSpawned: z.number().optional(),
   inputTokens: z.number().optional(),
   outputTokens: z.number().optional(),
@@ -186,14 +188,8 @@ function summarize(value: unknown, max = 200): string | undefined {
 function toWireLeaf(
   entry: WorkflowJournalEntry,
 ): z.infer<typeof workflowLeafSchema> {
-  const request =
-    entry.request && typeof entry.request === "object"
-      ? (entry.request as Record<string, unknown>)
-      : undefined;
-  const opts =
-    request?.opts && typeof request.opts === "object"
-      ? (request.opts as Record<string, unknown>)
-      : undefined;
+  const request = isPlainObject(entry.request) ? entry.request : undefined;
+  const opts = isPlainObject(request?.opts) ? request.opts : undefined;
   const label = typeof opts?.label === "string" ? opts.label : undefined;
   const phase = typeof opts?.phase === "string" ? opts.phase : undefined;
   const promptSummary = summarize(request?.prompt);
@@ -230,12 +226,7 @@ function parseLimit(raw: string | undefined): number | undefined {
 function parseStatus(
   raw: string | undefined,
 ): WorkflowRun["status"] | undefined {
-  if (raw === undefined) {
-    return undefined;
-  }
-  return (VALID_RUN_STATUSES as readonly string[]).includes(raw)
-    ? (raw as WorkflowRun["status"])
-    : undefined;
+  return workflowRunStatusSchema.safeParse(raw).data;
 }
 
 function handleListRuns(queryParams: Record<string, string>) {

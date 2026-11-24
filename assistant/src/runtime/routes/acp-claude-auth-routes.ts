@@ -271,6 +271,17 @@ function handleAuthStatus({ pathParams }: RouteHandlerArgs): {
 // Route definitions
 // ---------------------------------------------------------------------------
 
+export const claudeAuthStartResponseSchema = z.object({
+  mode: z.enum(["loopback", "manual"]),
+  authorize_url: z.string(),
+  state: z.string(),
+});
+
+export const claudeAuthStatusResponseSchema = z.object({
+  status: z.enum(["pending", "connected", "error"]),
+  error: z.string().optional(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "acp_claude_auth_start",
@@ -292,11 +303,7 @@ export const ROUTES: RouteDefinition[] = [
     requestBody: z.object({
       preferManual: z.boolean().optional(),
     }),
-    responseBody: z.object({
-      mode: z.enum(["loopback", "manual"]),
-      authorize_url: z.string(),
-      state: z.string(),
-    }),
+    responseBody: claudeAuthStartResponseSchema,
     handler: handleStartAuth,
   },
   {
@@ -317,10 +324,7 @@ export const ROUTES: RouteDefinition[] = [
     additionalResponses: {
       "404": { description: "No active OAuth flow for the given state" },
     },
-    responseBody: z.object({
-      status: z.enum(["pending", "connected", "error"]),
-      error: z.string().optional(),
-    }),
+    responseBody: claudeAuthStatusResponseSchema,
     handler: handleAuthStatus,
   },
   {

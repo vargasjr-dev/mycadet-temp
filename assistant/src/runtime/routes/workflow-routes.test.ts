@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { ExternalConversationBinding } from "../../persistence/external-conversation-store.js";
+import { z } from "zod";
+
 import type {
   WorkflowJournalEntry,
   WorkflowRun,
@@ -17,7 +18,13 @@ import {
   TooManyRequestsError,
 } from "./errors.js";
 import type { RouteDefinition } from "./types.js";
-import { __setWorkflowRoutesDeps, ROUTES } from "./workflow-routes.js";
+import {
+  __setWorkflowRoutesDeps,
+  ROUTES,
+  workflowJournalSchema,
+  workflowLeafSchema,
+  workflowRunSchema,
+} from "./workflow-routes.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -146,10 +153,13 @@ function setup(opts: {
     },
     getBindingByConversation: (conversationId: string) =>
       opts.bindingExternalChatId
-        ? ({
+        ? {
             conversationId,
             externalChatId: opts.bindingExternalChatId,
-          } as ExternalConversationBinding)
+            sourceChannel: "slack",
+            createdAt: 1000,
+            updatedAt: 1000,
+          }
         : null,
     getJournal: (runId) => opts.journal?.[runId] ?? [],
   });
@@ -182,11 +192,9 @@ describe("workflow routes (happy paths)", () => {
   });
 
   test("listWorkflowRuns returns wire runs", async () => {
-    const result = (await route("listWorkflowRuns").handler({
-      queryParams: {},
-    })) as {
-      runs: Array<{ id: string; scriptHash: string }>;
-    };
+    const result = z
+      .object({ runs: z.array(workflowRunSchema.passthrough()) })
+      .parse(await route("listWorkflowRuns").handler({ queryParams: {} }));
     expect(result.runs.map((r) => r.id)).toEqual(["run-1", "run-2"]);
     // Bulky fields are dropped from the wire shape.
     expect(result.runs[0]).not.toHaveProperty("scriptSource");
@@ -204,19 +212,19 @@ describe("workflow routes (happy paths)", () => {
   });
 
   test("getWorkflowRun returns a single run", async () => {
-    const result = (await route("getWorkflowRun").handler({
+    const result = await route("getWorkflowRun").handler({
       pathParams: { id: "run-1" },
-    })) as { id: string };
-    expect(result.id).toBe("run-1");
+    });
+    expect(result).toHaveProperty("id", "run-1");
   });
 
   test("abortWorkflowRun aborts a known run", async () => {
     const { aborted } = setup({
       runs: [makeRun({ id: "run-1" })],
     });
-    const result = (await route("abortWorkflowRun").handler({
+    const result = await route("abortWorkflowRun").handler({
       pathParams: { id: "run-1" },
-    })) as { ok: boolean; runId: string };
+    });
     expect(result).toEqual({ ok: true, runId: "run-1" });
     expect(aborted).toEqual(["run-1"]);
   });
@@ -225,9 +233,9 @@ describe("workflow routes (happy paths)", () => {
     const { resumed } = setup({
       runs: [makeRun({ id: "run-1", status: "interrupted" })],
     });
-    const result = (await route("resumeWorkflowRun").handler({
+    const result = await route("resumeWorkflowRun").handler({
       pathParams: { id: "run-1" },
-    })) as { ok: boolean; runId: string };
+    });
     expect(result).toEqual({ ok: true, runId: "run-1" });
     expect(resumed).toEqual(["run-1"]);
   });
@@ -268,9 +276,9 @@ describe("workflow routes (happy paths)", () => {
         }),
       ],
     });
-    const result = (await route("resumeWorkflowRun").handler({
+    const result = await route("resumeWorkflowRun").handler({
       pathParams: { id: "run-1" },
-    })) as { ok: boolean; runId: string };
+    });
     expect(result).toEqual({ ok: true, runId: "run-1" });
     expect(resumed).toEqual(["run-1"]);
   });
@@ -371,10 +379,7 @@ describe("workflow routes (happy paths)", () => {
         makeRun({
           id: "run-1",
           status: "interrupted",
-          capabilities: { tools: [{ name: "bash" }] } as unknown as Record<
-            string,
-            unknown
-          >,
+          capabilities: { tools: [{ name: "bash" }] },
         }),
       ],
     });
@@ -430,10 +435,8 @@ describe("workflow routes (happy paths)", () => {
   });
 
   test("listSavedWorkflows returns saved entries", async () => {
-    const result = (await route("listSavedWorkflows").handler({})) as {
-      workflows: SavedWorkflowEntry[];
-    };
-    expect(result.workflows).toEqual([
+    const result = await route("listSavedWorkflows").handler({});
+    expect(result).toHaveProperty("workflows", [
       {
         name: "nightly",
         description: "Nightly job",
@@ -447,27 +450,10 @@ describe("workflow routes (happy paths)", () => {
 // Journal projection
 // ---------------------------------------------------------------------------
 
-interface WireLeaf {
-  seq: number;
-  kind: string;
-  label?: string;
-  phase?: string;
-  promptSummary?: string;
-  status: string;
-  resultSummary?: string;
-  inputTokens?: number;
-  outputTokens?: number;
-  createdAt: number | null;
-}
-
-interface WireJournal {
-  runId: string;
-  status: string;
-  agentsSpawned: number;
-  inputTokens: number;
-  outputTokens: number;
-  leaves: WireLeaf[];
-}
+const journalWireSchema = workflowJournalSchema.extend({
+  // Keep extra fields visible to the tests that check payload projection.
+  leaves: z.array(workflowLeafSchema.passthrough()),
+});
 
 describe("getWorkflowRunJournal", () => {
   test("projects agent leaves with label/phase/promptSummary/resultSummary extracted", async () => {
@@ -490,9 +476,11 @@ describe("getWorkflowRunJournal", () => {
         ],
       },
     });
-    const result = (await route("getWorkflowRunJournal").handler({
-      pathParams: { id: "run-1" },
-    })) as WireJournal;
+    const result = journalWireSchema.parse(
+      await route("getWorkflowRunJournal").handler({
+        pathParams: { id: "run-1" },
+      }),
+    );
 
     expect(result.runId).toBe("run-1");
     expect(result.status).toBe("running");
@@ -527,9 +515,11 @@ describe("getWorkflowRunJournal", () => {
         ],
       },
     });
-    const result = (await route("getWorkflowRunJournal").handler({
-      pathParams: { id: "run-1" },
-    })) as WireJournal;
+    const result = journalWireSchema.parse(
+      await route("getWorkflowRunJournal").handler({
+        pathParams: { id: "run-1" },
+      }),
+    );
 
     const leaf = result.leaves[0];
     expect(leaf).not.toHaveProperty("inputTokens");
@@ -567,9 +557,11 @@ describe("getWorkflowRunJournal", () => {
         ],
       },
     });
-    const result = (await route("getWorkflowRunJournal").handler({
-      pathParams: { id: "run-1" },
-    })) as WireJournal;
+    const result = journalWireSchema.parse(
+      await route("getWorkflowRunJournal").handler({
+        pathParams: { id: "run-1" },
+      }),
+    );
 
     // Only the agent leaves survive, in seq order; the workflow-kind entry (seq
     // 1) is dropped entirely.
@@ -592,9 +584,11 @@ describe("getWorkflowRunJournal", () => {
         ],
       },
     });
-    const result = (await route("getWorkflowRunJournal").handler({
-      pathParams: { id: "run-1" },
-    })) as WireJournal;
+    const result = journalWireSchema.parse(
+      await route("getWorkflowRunJournal").handler({
+        pathParams: { id: "run-1" },
+      }),
+    );
 
     expect(result.leaves[0].status).toBe("failed");
     expect(result.leaves[0].resultSummary).toContain(
@@ -617,9 +611,11 @@ describe("getWorkflowRunJournal", () => {
         ],
       },
     });
-    const result = (await route("getWorkflowRunJournal").handler({
-      pathParams: { id: "run-1" },
-    })) as WireJournal;
+    const result = journalWireSchema.parse(
+      await route("getWorkflowRunJournal").handler({
+        pathParams: { id: "run-1" },
+      }),
+    );
 
     const leaf = result.leaves[0];
     expect(leaf.promptSummary!.length).toBeLessThanOrEqual(201);
@@ -631,9 +627,11 @@ describe("getWorkflowRunJournal", () => {
 
   test("returns an empty leaf list for a run with no journal entries", async () => {
     setup({ runs: [makeRun({ id: "run-1" })] });
-    const result = (await route("getWorkflowRunJournal").handler({
-      pathParams: { id: "run-1" },
-    })) as WireJournal;
+    const result = journalWireSchema.parse(
+      await route("getWorkflowRunJournal").handler({
+        pathParams: { id: "run-1" },
+      }),
+    );
     expect(result.leaves).toEqual([]);
   });
 

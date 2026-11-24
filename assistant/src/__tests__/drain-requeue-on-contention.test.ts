@@ -9,38 +9,31 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import type { AssistantEvent } from "../api/index.js";
 import { CONVERSATION_BUSY_MESSAGE } from "../daemon/conversation-messaging.js";
 import { drainQueue } from "../daemon/conversation-process.js";
 import {
   MessageQueue,
   type QueuedMessage,
 } from "../daemon/conversation-queue-manager.js";
-
-interface FakeEvent {
-  type: string;
-  message?: string;
-  conversationId?: string;
-  requestId?: string;
-  position?: number;
-  clientMessageId?: string;
-}
+import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeQueued(
   content: string,
   requestId: string,
-  events: FakeEvent[],
+  events: AssistantEvent[],
   extra?: Partial<QueuedMessage>,
 ): QueuedMessage {
   return {
     content,
     attachments: [],
     requestId,
-    onEvent: (event: FakeEvent) => {
+    onEvent: (event: AssistantEvent) => {
       events.push(event);
     },
     sentAt: Date.now(),
     ...extra,
-  } as unknown as QueuedMessage;
+  };
 }
 
 function makeFakeConversation(options: {
@@ -55,11 +48,11 @@ function makeFakeConversation(options: {
   // their persist, so tests can assert an early requeue touched none of it.
   const mutationCalls: string[] = [];
   const persistErrors = options.persistErrors ?? [];
-  const conversation = {
+  const conversation = asConversation({
     conversationId: "conv-drain-requeue",
     queue,
     pendingSteerRepair: options.pendingSteerRepair ?? false,
-    preactivatedSkillIds: undefined as string[] | undefined,
+    preactivatedSkillIds: undefined,
     messages: [],
     surfaceActionRequestIds: new Set<string>(),
     activeSurfaceId: undefined,
@@ -90,20 +83,20 @@ function makeFakeConversation(options: {
       }
       return { id: `msg-${persistCalls.length}`, deduplicated: true };
     },
-  };
+  });
   return { conversation, queue, persistCalls, mutationCalls };
 }
 
 describe("drainQueue under processing-lock contention", () => {
   test("a busy persist requeues the message at the front instead of dropping it", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue, persistCalls } = makeFakeConversation({
       persistError: new Error(CONVERSATION_BUSY_MESSAGE),
     });
     queue.push(makeQueued("hello there", "r1", events));
     queue.push(makeQueued("and another", "r2", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     // Exactly one persist attempt; the message is back at the head and the
     // second message was not drained past it.
@@ -116,12 +109,12 @@ describe("drainQueue under processing-lock contention", () => {
   });
 
   test("a lock already held when a single message drains requeues it without touching conversation state", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue, persistCalls, mutationCalls } =
       makeFakeConversation({ processing: true });
     queue.push(makeQueued("hello there", "r1", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     // Requeued intact, and the drain mutated nothing: no per-turn context
     // setters, no dequeue events to the client, no persist attempt.
@@ -134,13 +127,13 @@ describe("drainQueue under processing-lock contention", () => {
   });
 
   test("a lock already held when a batch drains requeues it in order without touching conversation state", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue, persistCalls, mutationCalls } =
       makeFakeConversation({ processing: true });
     queue.push(makeQueued("hello there", "r1", events));
     queue.push(makeQueued("and another", "r2", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     expect(queue.length).toBe(2);
     expect(queue.peek(0)?.requestId).toBe("r1");
@@ -151,13 +144,13 @@ describe("drainQueue under processing-lock contention", () => {
   });
 
   test("a steered drain requeued by the early lock check restores the steer promotion", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue, persistCalls, mutationCalls } =
       makeFakeConversation({ processing: true, pendingSteerRepair: true });
     queue.push(makeQueued("steered head", "r1", events));
     queue.push(makeQueued("queued tail", "r2", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     // The re-drain must see pendingSteerRepair=true so it promotes the
     // steered head alone instead of batching it with the tail.
@@ -170,7 +163,7 @@ describe("drainQueue under processing-lock contention", () => {
   });
 
   test("a steered drain requeued by a busy persist restores the steer promotion", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue, persistCalls } = makeFakeConversation({
       persistError: new Error(CONVERSATION_BUSY_MESSAGE),
       pendingSteerRepair: true,
@@ -178,7 +171,7 @@ describe("drainQueue under processing-lock contention", () => {
     queue.push(makeQueued("steered head", "r1", events));
     queue.push(makeQueued("queued tail", "r2", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     expect(conversation.pendingSteerRepair).toBe(true);
     expect(persistCalls.length).toBe(1);
@@ -189,13 +182,13 @@ describe("drainQueue under processing-lock contention", () => {
   });
 
   test("a non-busy persist failure keeps the drop-and-continue behavior", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue, persistCalls } = makeFakeConversation({
       persistErrors: [new Error("disk exploded")],
     });
     queue.push(makeQueued("hello there", "r1", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     expect(persistCalls.length).toBe(1);
     expect(queue.length).toBe(0);
@@ -218,7 +211,7 @@ describe("drainQueue under processing-lock contention", () => {
  */
 describe("message_requeued corrective event", () => {
   test("a busy persist tells the sender its announced message is queued again", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue } = makeFakeConversation({
       persistError: new Error(CONVERSATION_BUSY_MESSAGE),
     });
@@ -229,7 +222,7 @@ describe("message_requeued corrective event", () => {
     );
     queue.push(makeQueued("and another", "r2", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     expect(events.map((event) => event.type)).toEqual([
       "message_dequeued",
@@ -246,11 +239,11 @@ describe("message_requeued corrective event", () => {
   });
 
   test("a requeue before the dequeue announcement stays silent", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue } = makeFakeConversation({ processing: true });
     queue.push(makeQueued("hello there", "r1", events));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     // The early lock check requeues before announcing anything, so a
     // corrective event here would contradict what the client is showing.
@@ -259,15 +252,15 @@ describe("message_requeued corrective event", () => {
   });
 
   test("only the batch member whose dequeue was announced is corrected", async () => {
-    const headEvents: FakeEvent[] = [];
-    const tailEvents: FakeEvent[] = [];
+    const headEvents: AssistantEvent[] = [];
+    const tailEvents: AssistantEvent[] = [];
     const { conversation, queue } = makeFakeConversation({
       persistError: new Error(CONVERSATION_BUSY_MESSAGE),
     });
     queue.push(makeQueued("hello there", "r1", headEvents));
     queue.push(makeQueued("and another", "r2", tailEvents));
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     // The batch drain announces per member as it walks the batch, and the
     // head's busy persist ends the walk before the tail is announced.
@@ -281,7 +274,7 @@ describe("message_requeued corrective event", () => {
   });
 
   test("a hidden send is announced but never corrected", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue } = makeFakeConversation({
       persistError: new Error(CONVERSATION_BUSY_MESSAGE),
     });
@@ -291,7 +284,7 @@ describe("message_requeued corrective event", () => {
       }),
     );
 
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
 
     // Hidden sends get no queued ack and render no client row, so there is
     // nothing for a corrective event to restore.
@@ -302,7 +295,7 @@ describe("message_requeued corrective event", () => {
   });
 
   test("a second contention round corrects the message again", async () => {
-    const events: FakeEvent[] = [];
+    const events: AssistantEvent[] = [];
     const { conversation, queue } = makeFakeConversation({
       persistErrors: [
         new Error(CONVERSATION_BUSY_MESSAGE),
@@ -311,8 +304,8 @@ describe("message_requeued corrective event", () => {
     });
     queue.push(makeQueued("hello there", "r1", events));
 
-    await drainQueue(conversation as never);
-    await drainQueue(conversation as never);
+    await drainQueue(conversation);
+    await drainQueue(conversation);
 
     // Each round re-announces the dequeue, so each round owes its own
     // correction: the flag settles per announcement, not once per message.

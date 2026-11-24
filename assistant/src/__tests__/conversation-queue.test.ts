@@ -10,6 +10,8 @@ import type {
   ExitReason,
 } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
+import type { TrustContext } from "../daemon/trust-context-types.js";
+import type { emitAssistantReplyNotification } from "../notifications/assistant-reply-producer.js";
 import type { Message, ProviderResponse } from "../providers/types.js";
 import { stampAndBuffer } from "../runtime/assistant-stream-state.js";
 import { createAbortReason } from "../util/abort-reasons.js";
@@ -144,7 +146,9 @@ mock.module("../persistence/turn-outcome.js", () => ({
   stampTurnOutcome: mockStampTurnOutcome,
 }));
 
-const emitAssistantReplyNotificationMock = mock(async () => {});
+const emitAssistantReplyNotificationMock = mock<
+  typeof emitAssistantReplyNotification
+>(async () => {});
 
 mock.module("../notifications/assistant-reply-producer.js", () => ({
   emitAssistantReplyNotification: emitAssistantReplyNotificationMock,
@@ -363,16 +367,6 @@ import { QueuePolicy } from "../daemon/conversation-queue-manager.js";
 import { MessageQueue } from "../daemon/conversation-queue-manager.js";
 
 type ConversationWithWorkspaceDeps = Conversation & {
-  getWorkspaceGitService?: (_workspaceDir: string) => {
-    ensureInitialized: () => Promise<void>;
-  };
-  commitTurnChanges?: (
-    workspaceDir: string,
-    conversationId: string,
-    turnNumber: number,
-    provider?: unknown,
-    deadlineMs?: number,
-  ) => Promise<void>;
   turnCommitLog?: Array<{
     workspaceDir: string;
     conversationId: string;
@@ -382,7 +376,7 @@ type ConversationWithWorkspaceDeps = Conversation & {
 
 function makeConversation(
   sendToClient?: (msg: AssistantEvent) => void,
-): Conversation {
+): ConversationWithWorkspaceDeps {
   const provider = {
     name: "mock",
     async sendMessage(): Promise<ProviderResponse> {
@@ -394,16 +388,15 @@ function makeConversation(
       };
     },
   };
-  const conversationObj = new Conversation(
-    "conv-1",
-    provider,
-    "system prompt",
-    sendToClient ?? (() => {}),
-    "/tmp",
-    { maxTokens: 4096 },
-  );
-  const conversationWithWorkspaceDeps =
-    conversationObj as ConversationWithWorkspaceDeps;
+  const conversationWithWorkspaceDeps: ConversationWithWorkspaceDeps =
+    new Conversation(
+      "conv-1",
+      provider,
+      "system prompt",
+      sendToClient ?? (() => {}),
+      "/tmp",
+      { maxTokens: 4096 },
+    );
   conversationWithWorkspaceDeps.getWorkspaceGitService = () => ({
     ensureInitialized: async () => {},
   });
@@ -430,7 +423,7 @@ function makeConversation(
       await new Promise<void>(() => {});
     }
   };
-  return conversationObj;
+  return conversationWithWorkspaceDeps;
 }
 
 /**
@@ -743,9 +736,9 @@ describe("Conversation message queue", () => {
     const conversation = makeConversation();
     await conversation.loadFromDb();
 
-    const contact = {
-      trustClass: "trusted_contact" as const,
-      sourceChannel: "slack" as const,
+    const contact: TrustContext = {
+      trustClass: "trusted_contact",
+      sourceChannel: "slack",
       requesterExternalUserId: "U-contact",
     };
     conversation.setTrustContext(contact);
@@ -758,9 +751,9 @@ describe("Conversation message queue", () => {
     });
     await waitForPendingRun(1);
 
-    const guardian = {
-      trustClass: "guardian" as const,
-      sourceChannel: "cadet" as const,
+    const guardian: TrustContext = {
+      trustClass: "guardian",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     };
     conversation.enqueueMessage({
@@ -791,9 +784,9 @@ describe("Conversation message queue", () => {
     const conversation = makeConversation();
     await conversation.loadFromDb();
 
-    const guardian = {
-      trustClass: "guardian" as const,
-      sourceChannel: "cadet" as const,
+    const guardian: TrustContext = {
+      trustClass: "guardian",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     };
     conversation.setTrustContext(guardian);
@@ -806,9 +799,9 @@ describe("Conversation message queue", () => {
     });
     await waitForPendingRun(1);
 
-    const contact = {
-      trustClass: "trusted_contact" as const,
-      sourceChannel: "slack" as const,
+    const contact: TrustContext = {
+      trustClass: "trusted_contact",
+      sourceChannel: "slack",
       requesterExternalUserId: "U-contact",
     };
     conversation.enqueueMessage({
@@ -842,9 +835,9 @@ describe("Conversation message queue", () => {
     const conversation = makeConversation();
     await conversation.loadFromDb();
 
-    const contact = {
-      trustClass: "trusted_contact" as const,
-      sourceChannel: "slack" as const,
+    const contact: TrustContext = {
+      trustClass: "trusted_contact",
+      sourceChannel: "slack",
       requesterExternalUserId: "U-contact",
     };
     conversation.setTrustContext(contact);
@@ -853,9 +846,9 @@ describe("Conversation message queue", () => {
       throw new Error("history store exploded");
     };
 
-    const guardian = {
-      trustClass: "guardian" as const,
-      sourceChannel: "cadet" as const,
+    const guardian: TrustContext = {
+      trustClass: "guardian",
+      sourceChannel: "cadet",
       requesterExternalUserId: "guardian-principal",
     };
     await expect(
@@ -1007,7 +1000,7 @@ describe("Conversation message queue", () => {
     const textOf = (m: Message) =>
       (Array.isArray(m.content) ? m.content : [])
         .filter((b) => b.type === "text")
-        .map((b) => (b as { text: string }).text)
+        .map((b) => b.text)
         .join("\n");
     const combinedUserText = userMessages.map(textOf).join("\n");
     expect(combinedUserText).toContain("msg-2");
@@ -2205,7 +2198,7 @@ describe("Batched drain", () => {
     const textOf = (m: Message) =>
       (Array.isArray(m.content) ? m.content : [])
         .filter((b) => b.type === "text")
-        .map((b) => (b as { text: string }).text)
+        .map((b) => b.text)
         .join("\n");
     const combinedMacosText = macosUserMessages.map(textOf).join("\n");
     expect(combinedMacosText).toContain("msg-2");
@@ -2453,14 +2446,14 @@ describe("Batched drain", () => {
       (m) => m.role === "user" && m.content.includes('"image"'),
     );
     expect(userRows).toHaveLength(2);
-    const pathsA = (userRows[0].metadata as Record<string, unknown>)
-      ?.imageSourcePaths as Record<string, string> | undefined;
-    expect(pathsA).toBeDefined();
-    expect(pathsA!["0:a.png"]).toBe("/tmp/a.png");
-    const pathsB = (userRows[1].metadata as Record<string, unknown>)
-      ?.imageSourcePaths as Record<string, string> | undefined;
-    expect(pathsB).toBeDefined();
-    expect(pathsB!["0:b.png"]).toBe("/tmp/b.png");
+    expect(userRows[0].metadata?.imageSourcePaths).toHaveProperty(
+      ["0:a.png"],
+      "/tmp/a.png",
+    );
+    expect(userRows[1].metadata?.imageSourcePaths).toHaveProperty(
+      ["0:b.png"],
+      "/tmp/b.png",
+    );
 
     // The batched run's in-memory history also reflects both image sources
     // (enrichMessageWithSourcePaths injects file:// references for images).
@@ -2470,7 +2463,7 @@ describe("Batched drain", () => {
       .map((m) =>
         (Array.isArray(m.content) ? m.content : [])
           .filter((b) => b.type === "text")
-          .map((b) => (b as { text: string }).text)
+          .map((b) => b.text)
           .join("\n"),
       )
       .join("\n");
@@ -2891,7 +2884,7 @@ describe("Batched drain correctness fixes", () => {
         (m) =>
           "type" in m &&
           m.type === "assistant_activity_state" &&
-          (m as { reason?: string }).reason === "message_dequeued",
+          m.reason === "message_dequeued",
       );
     expect(batchEmissions).toHaveLength(1);
     expect(batchEmissions[0]).toMatchObject({
@@ -2965,8 +2958,7 @@ describe("Batched drain correctness fixes", () => {
       );
       expect(genuineRow?.id).toBeDefined();
 
-      const notifyCalls = emitAssistantReplyNotificationMock.mock
-        .calls as unknown as Array<[{ userMessageId: string | undefined }]>;
+      const notifyCalls = emitAssistantReplyNotificationMock.mock.calls;
       expect(notifyCalls.at(-1)?.[0].userMessageId).toBe(genuineRow!.id);
 
       const trailingEchoes = trailingEvents.filter(
@@ -3146,15 +3138,8 @@ describe("Conversation host attachment directives", () => {
       const confirmation = clientEvents.find(
         (e) => e.type === "confirmation_request",
       );
-      expect(confirmation).toBeDefined();
-      expect(
-        (confirmation as { persistentDecisionsAllowed?: boolean })
-          .persistentDecisionsAllowed,
-      ).toBe(false);
-      conversation.handleConfirmationResponse(
-        (confirmation as { requestId: string }).requestId,
-        "allow",
-      );
+      expect(confirmation?.persistentDecisionsAllowed).toBe(false);
+      conversation.handleConfirmationResponse(confirmation!.requestId, "allow");
 
       await p1;
 
@@ -3220,10 +3205,7 @@ describe("Conversation host attachment directives", () => {
         (e) => e.type === "confirmation_request",
       );
       expect(confirmation).toBeDefined();
-      conversation.handleConfirmationResponse(
-        (confirmation as { requestId: string }).requestId,
-        "deny",
-      );
+      conversation.handleConfirmationResponse(confirmation!.requestId, "deny");
 
       await p1;
 
@@ -3244,9 +3226,7 @@ describe("Conversation host attachment directives", () => {
       expect(warningDelta).toBeUndefined();
       const completion = events.find((e) => e.type === "message_complete");
       expect(completion).toBeDefined();
-      expect(
-        (completion as { attachmentWarnings?: string[] }).attachmentWarnings,
-      ).toEqual(
+      expect(completion?.attachmentWarnings).toEqual(
         expect.arrayContaining([
           expect.stringContaining("access denied by user"),
         ]),
@@ -3293,7 +3273,7 @@ describe("Conversation attachment event payloads", () => {
         {
           type: "image",
           source: { type: "base64", media_type: "image/png", data: "iVBORw0K" },
-        } as any,
+        },
       ],
     });
     await run.onEvent({ type: "llm_call_started" });
@@ -3314,15 +3294,10 @@ describe("Conversation attachment event payloads", () => {
 
     await p1;
 
-    const completion = events.find(
-      (e) => e.type === "message_complete" && Array.isArray(e.attachments),
-    );
-    expect(completion).toBeDefined();
-    const attachments = (
-      completion as {
-        attachments: Array<{ mimeType: string; data: string; id?: string }>;
-      }
-    ).attachments;
+    const completion = events
+      .filter((e) => e.type === "message_complete")
+      .find((event) => Array.isArray(event.attachments));
+    const attachments = completion?.attachments ?? [];
     expect(attachments).toHaveLength(1);
     expect(attachments[0].mimeType).toBe("image/png");
     expect(attachments[0].data).toBe("iVBORw0K");
@@ -3400,7 +3375,7 @@ describe("Regression: cancel semantics and error channel split", () => {
         {
           type: "image",
           source: { type: "base64", media_type: "image/png", data: "iVBORw0K" },
-        } as any,
+        },
       ],
     });
     await run.onEvent({ type: "llm_call_started" });
@@ -3421,12 +3396,8 @@ describe("Regression: cancel semantics and error channel split", () => {
     // conversation instance (see the turnCommitLog note in makeConversation:
     // the shared counter also catches stale turns whose abort watchdog fired
     // late under CI worker starvation).
-    expect(
-      (conversation as ConversationWithWorkspaceDeps).turnCommitLog,
-    ).toHaveLength(1);
-    expect(
-      (conversation as ConversationWithWorkspaceDeps).turnCommitLog?.[0],
-    ).toEqual({
+    expect(conversation.turnCommitLog).toHaveLength(1);
+    expect(conversation.turnCommitLog?.[0]).toEqual({
       workspaceDir: "/tmp",
       conversationId: "conv-1",
       turnNumber: 1,
@@ -3565,9 +3536,7 @@ describe("Regression: cancel semantics and error channel split", () => {
       // makeConversation: the shared counter also catches stale turns from
       // earlier tests whose abort watchdog fired late under CI worker
       // starvation).
-      expect(
-        (conversation as ConversationWithWorkspaceDeps).turnCommitLog,
-      ).toHaveLength(1);
+      expect(conversation.turnCommitLog).toHaveLength(1);
 
       // Complete the second run so the test can clean up
       turnCommitHangForever = false;
@@ -4048,7 +4017,7 @@ describe("drained turns deliver through the conversation sink", () => {
     );
     const prompt = sink.find((e) => e.type === "confirmation_request");
     expect(prompt).toBeDefined();
-    expect((prompt as { toolName: string }).toolName).toBe("acp_spawn");
+    expect(prompt?.toolName).toBe("acp_spawn");
     // Settle it so the prompt's timer does not outlive the test.
     conversation.prompter.denyAllPending();
 

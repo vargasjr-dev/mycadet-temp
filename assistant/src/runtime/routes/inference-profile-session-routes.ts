@@ -5,7 +5,6 @@
  * POST /v1/conversations/inference-profile-session/close — close an active session
  * GET  /v1/conversations/inference-profile-sessions      — list active sessions
  */
-
 import { z } from "zod";
 
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -15,6 +14,7 @@ import {
   listInferenceProfileSessionsWithRemaining,
   setInferenceProfileSession,
 } from "./inference-profile-session-handler.js";
+import { inferenceProfileSessionResponseSchema } from "./inference-profile-session-schema.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -61,6 +61,30 @@ function handleListInferenceProfileSessions({
 // Transport-agnostic route definitions
 // ---------------------------------------------------------------------------
 
+export const closeInferenceProfileSessionResponseSchema = z.object({
+  conversationId: z.string(),
+  closed: z
+    .object({
+      profile: z.string().nullable(),
+      sessionId: z.string().nullable(),
+    })
+    .nullable(),
+  noop: z.boolean(),
+});
+
+export const listInferenceProfileSessionsResponseSchema = z.object({
+  sessions: z.array(
+    z.object({
+      conversationId: z.string(),
+      conversationTitle: z.string().nullable(),
+      profile: z.string(),
+      sessionId: z.string(),
+      expiresAt: z.number(),
+      remainingSeconds: z.number(),
+    }),
+  ),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "inference_profile_open",
@@ -82,20 +106,7 @@ export const ROUTES: RouteDefinition[] = [
       ttlSeconds: z.number().positive().nullable().optional(),
       sessionId: z.string().uuid().optional(),
     }),
-    responseBody: z.object({
-      conversationId: z.string(),
-      profile: z.string().nullable(),
-      sessionId: z.string().nullable(),
-      expiresAt: z.number().nullable(),
-      ttlSeconds: z.number().nullable().optional(),
-      replaced: z
-        .object({
-          profile: z.string().nullable(),
-          sessionId: z.string().nullable(),
-          expiresAt: z.number().nullable(),
-        })
-        .nullable(),
-    }),
+    responseBody: inferenceProfileSessionResponseSchema,
     handler: handleOpenInferenceProfileSession,
   },
   {
@@ -114,16 +125,7 @@ export const ROUTES: RouteDefinition[] = [
     requestBody: z.object({
       conversationId: z.string().min(1),
     }),
-    responseBody: z.object({
-      conversationId: z.string(),
-      closed: z
-        .object({
-          profile: z.string().nullable(),
-          sessionId: z.string().nullable(),
-        })
-        .nullable(),
-      noop: z.boolean(),
-    }),
+    responseBody: closeInferenceProfileSessionResponseSchema,
     handler: handleCloseInferenceProfileSession,
   },
   {
@@ -146,18 +148,7 @@ export const ROUTES: RouteDefinition[] = [
         description: "Optional conversation ID filter",
       },
     ],
-    responseBody: z.object({
-      sessions: z.array(
-        z.object({
-          conversationId: z.string(),
-          conversationTitle: z.string().nullable(),
-          profile: z.string(),
-          sessionId: z.string(),
-          expiresAt: z.number(),
-          remainingSeconds: z.number(),
-        }),
-      ),
-    }),
+    responseBody: listInferenceProfileSessionsResponseSchema,
     handler: handleListInferenceProfileSessions,
   },
 ];

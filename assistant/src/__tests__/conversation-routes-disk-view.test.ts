@@ -8,7 +8,10 @@ import {
 import { join } from "node:path";
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 
+import { z } from "zod";
+
 import { createAssistantMessage } from "../agent/message-types.js";
+import type { AssistantEventEnvelope } from "../api/index.js";
 import type {
   TurnChannelContext,
   TurnInterfaceContext,
@@ -38,6 +41,7 @@ import { initializeDb } from "../persistence/db-init.js";
 import {
   conversationKeys,
   conversations,
+  messages,
 } from "../persistence/schema/index.js";
 import {
   AssistantEventHub,
@@ -45,7 +49,10 @@ import {
 } from "../runtime/assistant-event-hub.js";
 import type { AuthContext } from "../runtime/auth/types.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
-import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
+import {
+  handleSendMessage,
+  sendMessageResponseSchema,
+} from "../runtime/routes/conversation-routes.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
 import { callHandler } from "./helpers/call-route-handler.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
@@ -65,7 +72,20 @@ setConfig("secretDetection", { enabled: false });
 
 await initializeDb();
 
-const conversationInstances = new Map<string, Conversation>();
+type FakeConversation = Conversation & { processing: boolean; owner: number };
+
+const conversationInstances = new Map<string, FakeConversation>();
+const persistedMessageSchema = z.object({
+  role: z.string(),
+  content: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+const acceptedConversationSchema = sendMessageResponseSchema.required({
+  conversationId: true,
+});
+const routeErrorSchema = z.object({
+  error: z.object({ code: z.string(), message: z.string() }),
+});
 
 const authContext: AuthContext = {
   subject: "svc_gateway:self",
@@ -89,9 +109,9 @@ const authContext: AuthContext = {
 
 function resetTables(): void {
   const db = getDb();
-  db.run("DELETE FROM messages");
-  db.run("DELETE FROM conversations");
-  db.run("DELETE FROM conversation_keys");
+  db.delete(messages).run();
+  db.delete(conversations).run();
+  db.delete(conversationKeys).run();
 }
 
 function resetConversationsDir(): void {
@@ -99,7 +119,7 @@ function resetConversationsDir(): void {
   mkdirSync(conversationsDir, { recursive: true });
 }
 
-function createFakeConversation(conversationId: string): Conversation {
+function createFakeConversation(conversationId: string): FakeConversation {
   // Turn-scoped context the double models with plain locals; the real class
   // holds these on the instance, and the accessors below read them through
   // the same closure the methods write. Processing/owner stay FIELDS on the
@@ -107,10 +127,7 @@ function createFakeConversation(conversationId: string): Conversation {
   let turnChannelContext: TurnChannelContext | null = null;
   let turnInterfaceContext: TurnInterfaceContext | null = null;
 
-  const conversation: Conversation & {
-    processing: boolean;
-    owner: number;
-  } = asConversation({
+  const conversation: FakeConversation = asConversation({
     conversationId,
     currentRequestId: undefined,
     modeSessions: mockUnownedModeSessions(),
@@ -260,7 +277,7 @@ function createFakeConversation(conversationId: string): Conversation {
   return conversation;
 }
 
-function getOrCreateFakeConversation(conversationId: string): Conversation {
+function getOrCreateFakeConversation(conversationId: string): FakeConversation {
   const existing = conversationInstances.get(conversationId);
   if (existing) {
     return existing;
@@ -395,10 +412,7 @@ describe("macOS browser backend fallback (no extension, no cdp-inspect)", () => 
     );
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as {
-      accepted: boolean;
-      conversationId: string;
-    };
+    const body = acceptedConversationSchema.parse(await response.json());
 
     // Wait for the agent loop to persist the assistant reply (the fake
     // runAgentLoop persists interface metadata into message records).
@@ -418,13 +432,9 @@ describe("macOS browser backend fallback (no extension, no cdp-inspect)", () => 
       if (!raw) {
         return undefined;
       }
-      const parsed = raw.split("\n").map(
-        (line) =>
-          JSON.parse(line) as {
-            role: string;
-            metadata?: Record<string, unknown>;
-          },
-      );
+      const parsed = raw
+        .split("\n")
+        .map((line) => persistedMessageSchema.parse(JSON.parse(line)));
       return parsed.length >= 2 ? parsed : undefined;
     });
 
@@ -617,10 +627,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
     });
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as {
-      accepted: boolean;
-      conversationId: string;
-    };
+    const body = acceptedConversationSchema.parse(await response.json());
     expect(body.accepted).toBe(true);
     expect(body.conversationId).toBe(seeded.conversationId);
 
@@ -639,9 +646,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
       404,
     );
     expect(response.status).toBe(404);
-    const body = (await response.json()) as {
-      error?: { code?: string; message?: string };
-    };
+    const body = routeErrorSchema.parse(await response.json());
     expect(body.error?.code).toBe("NOT_FOUND");
     expect(body.error?.message).toMatch(/not found/i);
   });
@@ -666,7 +671,7 @@ describe("POST /v1/messages — body.conversationId direct id lookup", () => {
     });
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as { conversationId: string };
+    const body = acceptedConversationSchema.parse(await response.json());
     expect(body.conversationId).toBe(idSeed.conversationId);
     expect(body.conversationId).not.toBe(keySeed.conversationId);
   });
@@ -705,11 +710,7 @@ describe("conversationKey send path disk-view regression", () => {
     );
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as {
-      accepted: boolean;
-      conversationId: string;
-      messageId: string;
-    };
+    const body = acceptedConversationSchema.parse(await response.json());
     expect(body.accepted).toBe(true);
     expect(body.conversationId).toBeDefined();
     expect(body.messageId).toBeDefined();
@@ -744,7 +745,7 @@ describe("conversationKey send path disk-view regression", () => {
       }
       const parsed = raw
         .split("\n")
-        .map((line) => JSON.parse(line) as { role: string; content?: string });
+        .map((line) => persistedMessageSchema.parse(JSON.parse(line)));
       return parsed.length >= 2 ? parsed : undefined;
     });
 
@@ -762,12 +763,8 @@ describe("conversationKey send path disk-view regression", () => {
 // hand a host-capable macOS client a turn with no `computer-use` tool.
 describe("host-proxy preactivation across an interrupt", () => {
   /** A conversation mid-turn whose abort releases the lock, as a loop does. */
-  function busyConversation(conversationId: string): Conversation {
-    const conv = getOrCreateFakeConversation(conversationId) as Conversation & {
-      processing: boolean;
-      owner: number;
-      abortController: AbortController | null;
-    };
+  function busyConversation(conversationId: string): FakeConversation {
+    const conv = getOrCreateFakeConversation(conversationId);
     conv.processing = true;
     conv.owner = 1;
     const controller = new AbortController();
@@ -829,7 +826,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     );
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as { queued?: boolean };
+    const body = sendMessageResponseSchema.parse(await response.json());
     expect(body.queued).toBeUndefined();
 
     // The response lands before the handover: the abort, the wait for the turn
@@ -855,11 +852,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     // the persist and the dispatch all run off the response.
     const conversationKey = `macos-async-${crypto.randomUUID()}`;
     const { conversationId } = getOrCreateConversationMapping(conversationKey);
-    const conv = getOrCreateFakeConversation(conversationId) as Conversation & {
-      processing: boolean;
-      owner: number;
-      abortController: AbortController | null;
-    };
+    const conv = getOrCreateFakeConversation(conversationId);
     conv.processing = true;
     conv.owner = 1;
     // A turn that does not release on the abort, so the handover is still
@@ -881,12 +874,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     // 7 s, plus the commit wait). Answering off the handover costs neither.
     expect(elapsedMs).toBeLessThan(100);
     expect(response.status).toBe(202);
-    const body = (await response.json()) as {
-      accepted?: boolean;
-      requestId?: string;
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await response.json());
     expect(body.accepted).toBe(true);
     // The id the row will be written with, so the client can correlate.
     expect(typeof body.requestId).toBe("string");
@@ -912,19 +900,14 @@ describe("host-proxy preactivation across an interrupt", () => {
     // Without an event the message is accepted and then silently gone.
     const conversationKey = `macos-qfull-${crypto.randomUUID()}`;
     const { conversationId } = getOrCreateConversationMapping(conversationKey);
-    const conv = getOrCreateFakeConversation(conversationId) as Conversation & {
-      processing: boolean;
-      owner: number;
-      abortController: AbortController | null;
-      enqueueMessage: Conversation["enqueueMessage"];
-    };
+    const conv = getOrCreateFakeConversation(conversationId);
     conv.processing = true;
     conv.owner = 1;
     // A turn that never releases, so the handover gives up and falls back to
     // the queue, which is full.
     conv.abortController = new AbortController();
     let enqueuedRequestId: string | undefined;
-    conv.enqueueMessage = ((options: EnqueueMessageOptions) => {
+    conv.enqueueMessage = (options: EnqueueMessageOptions) => {
       enqueuedRequestId = options.requestId;
       // What the real `enqueueMessage` does on a refusal: announce it on the
       // sender's sink as a generic, uncorrelated `queue_full` error. Whether
@@ -941,9 +924,9 @@ describe("host-proxy preactivation across an interrupt", () => {
         requestId: options.requestId ?? crypto.randomUUID(),
         rejected: true,
       };
-    }) as Conversation["enqueueMessage"];
+    };
 
-    const events: Array<Record<string, unknown>> = [];
+    const events: AssistantEventEnvelope[] = [];
     const subscription = assistantEventHub.subscribe({
       type: "client",
       clientId: `queue-full-watcher-${crypto.randomUUID()}`,
@@ -958,10 +941,10 @@ describe("host-proxy preactivation across an interrupt", () => {
     expect(response.status).toBe(202);
 
     // The hub wraps each event in an envelope; the payload is `message`.
-    const accepted = (await response.json()) as { requestId?: string };
+    const accepted = sendMessageResponseSchema.parse(await response.json());
     const reported = await waitFor(() => {
       for (const envelope of events) {
-        const message = envelope.message as Record<string, unknown> | undefined;
+        const message = envelope.message;
         if (message?.type === "error" && message.code === "QUEUE_FULL") {
           return message;
         }
@@ -978,7 +961,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     // running turn failing and tears that turn down over: a turn this send does
     // not own. It must not reach the wire on a fallback.
     const uncorrelated = events.filter((envelope) => {
-      const message = envelope.message as Record<string, unknown> | undefined;
+      const message = envelope.message;
       return message?.type === "error" && message.category === "queue_full";
     });
     expect(uncorrelated).toEqual([]);
@@ -1042,11 +1025,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     );
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as {
-      queued?: boolean;
-      messageId?: string;
-      requestId?: string;
-    };
+    const body = sendMessageResponseSchema.parse(await response.json());
     expect(body.queued).toBeUndefined();
     // `messageId` too, or the client rejects the acceptance and drops the
     // optimistic row, which loses the send to its own retry. It is the running
@@ -1063,14 +1042,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     // either, so a refused enqueue there has to be reported the same way.
     const conversationKey = `macos-lockrace-${crypto.randomUUID()}`;
     const { conversationId } = getOrCreateConversationMapping(conversationKey);
-    const conv = busyConversation(conversationId) as Conversation & {
-      acquireProcessingFenced: () => Promise<number | null>;
-      enqueueMessage: () => {
-        queued: boolean;
-        requestId: string;
-        rejected?: boolean;
-      };
-    };
+    const conv = busyConversation(conversationId);
     // The handover succeeds (the interrupt takes the lock for its repair and
     // gives it back), then another claim owns the conversation by the time the
     // send tries to take it, and the queue it falls back to is full.
@@ -1085,7 +1057,7 @@ describe("host-proxy preactivation across an interrupt", () => {
       rejected: true,
     });
 
-    const events: Array<Record<string, unknown>> = [];
+    const events: AssistantEventEnvelope[] = [];
     const subscription = assistantEventHub.subscribe({
       type: "client",
       clientId: `lock-race-watcher-${crypto.randomUUID()}`,
@@ -1104,7 +1076,7 @@ describe("host-proxy preactivation across an interrupt", () => {
 
     const reported = await waitFor(() => {
       for (const envelope of events) {
-        const message = envelope.message as Record<string, unknown> | undefined;
+        const message = envelope.message;
         if (message?.type === "error" && message.code === "QUEUE_FULL") {
           return message;
         }
@@ -1132,7 +1104,7 @@ describe("host-proxy preactivation across an interrupt", () => {
       "/compact nonsense",
     );
     expect(response.status).toBe(202);
-    const body = (await response.json()) as { messageId?: string };
+    const body = sendMessageResponseSchema.parse(await response.json());
     expect(typeof body.messageId).toBe("string");
 
     // The handover and the canned branch both run off the response.
@@ -1155,11 +1127,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     const conversationKey = `macos-inflight-${crypto.randomUUID()}`;
     const { conversationId } = getOrCreateConversationMapping(conversationKey);
     const clientMessageId = `cmid-${crypto.randomUUID()}`;
-    const conv = getOrCreateFakeConversation(conversationId) as Conversation & {
-      processing: boolean;
-      owner: number;
-      abortController: AbortController | null;
-    };
+    const conv = getOrCreateFakeConversation(conversationId);
     conv.processing = true;
     conv.owner = 1;
     // A turn that does not release, so the first send is still mid-handover
@@ -1171,7 +1139,7 @@ describe("host-proxy preactivation across an interrupt", () => {
       "answer me",
       clientMessageId,
     );
-    const firstBody = (await first.json()) as { requestId?: string };
+    const firstBody = sendMessageResponseSchema.parse(await first.json());
     expect(typeof firstBody.requestId).toBe("string");
     expect(conv.inFlightSendRequestIds.get(clientMessageId)).toBe(
       firstBody.requestId,
@@ -1182,10 +1150,7 @@ describe("host-proxy preactivation across an interrupt", () => {
       "answer me",
       clientMessageId,
     );
-    const retryBody = (await retry.json()) as {
-      messageId?: string;
-      requestId?: string;
-    };
+    const retryBody = sendMessageResponseSchema.parse(await retry.json());
 
     // The same id both times, so the client's single optimistic row is
     // reconciled against one row rather than two racing inserts.
@@ -1218,10 +1183,7 @@ describe("host-proxy preactivation across an interrupt", () => {
       "answer me",
       clientMessageId,
     );
-    const body = (await retry.json()) as {
-      messageId?: string;
-      requestId?: string;
-    };
+    const body = sendMessageResponseSchema.parse(await retry.json());
 
     // The id the first 202 advertised, so the client reconciles its single
     // optimistic row against the row that send is about to write.
@@ -1258,10 +1220,7 @@ describe("host-proxy preactivation across an interrupt", () => {
     );
 
     expect(response.status).toBe(202);
-    const body = (await response.json()) as {
-      messageId?: string;
-      queued?: boolean;
-    };
+    const body = sendMessageResponseSchema.parse(await response.json());
     // Answered from the row the first request wrote, and the turn that request
     // started is still running.
     expect(body.messageId).toBe(existing.id);

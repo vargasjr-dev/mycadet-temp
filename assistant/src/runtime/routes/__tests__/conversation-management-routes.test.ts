@@ -40,8 +40,16 @@ import {
   setBroadcastOverrideForTesting,
   setHubPublishOverrideForTesting,
 } from "../../assistant-event-hub.js";
-import { ROUTES as CONVERSATION_MANAGEMENT_ROUTES } from "../conversation-management-routes.js";
-import { ROUTES as INFERENCE_PROFILE_SESSION_ROUTES } from "../inference-profile-session-routes.js";
+import {
+  createConversationResponseSchema,
+  ROUTES as CONVERSATION_MANAGEMENT_ROUTES,
+} from "../conversation-management-routes.js";
+import {
+  closeInferenceProfileSessionResponseSchema,
+  listInferenceProfileSessionsResponseSchema,
+  ROUTES as INFERENCE_PROFILE_SESSION_ROUTES,
+} from "../inference-profile-session-routes.js";
+import { inferenceProfileSessionResponseSchema } from "../inference-profile-session-schema.js";
 import type { RouteDefinition } from "../types.js";
 
 // ---------------------------------------------------------------------------
@@ -161,9 +169,14 @@ describe("POST /v1/conversations (createConversation)", () => {
   }
 
   test("with a title → persists it as a user-set title (isAutoTitle = 0)", async () => {
-    const result = (await createHandler({
-      body: { conversationType: "standard", title: "Setting up your check-in" },
-    })) as { id: string; created: boolean };
+    const result = createConversationResponseSchema.parse(
+      await createHandler({
+        body: {
+          conversationType: "standard",
+          title: "Setting up your check-in",
+        },
+      }),
+    );
 
     expect(result.created).toBe(true);
     const row = readConversation(result.id);
@@ -173,9 +186,11 @@ describe("POST /v1/conversations (createConversation)", () => {
   });
 
   test("blank title falls back to the replaceable 'New Conversation' placeholder", async () => {
-    const result = (await createHandler({
-      body: { conversationType: "standard", title: "   " },
-    })) as { id: string; created: boolean };
+    const result = createConversationResponseSchema.parse(
+      await createHandler({
+        body: { conversationType: "standard", title: "   " },
+      }),
+    );
 
     expect(result.created).toBe(true);
     const row = readConversation(result.id);
@@ -185,9 +200,11 @@ describe("POST /v1/conversations (createConversation)", () => {
   });
 
   test("no title → 'New Conversation' placeholder", async () => {
-    const result = (await createHandler({
-      body: { conversationType: "standard" },
-    })) as { id: string; created: boolean };
+    const result = createConversationResponseSchema.parse(
+      await createHandler({
+        body: { conversationType: "standard" },
+      }),
+    );
 
     expect(result.created).toBe(true);
     const row = readConversation(result.id);
@@ -205,12 +222,14 @@ describe("POST /v1/conversations (createConversation)", () => {
   });
 
   test("conversationType: background → persists a background row and echoes it back", async () => {
-    const result = (await createHandler({
-      body: {
-        conversationType: "background",
-        title: "Updating personality",
-      },
-    })) as { id: string; conversationType: string; created: boolean };
+    const result = createConversationResponseSchema.parse(
+      await createHandler({
+        body: {
+          conversationType: "background",
+          title: "Updating personality",
+        },
+      }),
+    );
 
     expect(result.created).toBe(true);
     expect(result.conversationType).toBe("background");
@@ -222,18 +241,22 @@ describe("POST /v1/conversations (createConversation)", () => {
   });
 
   test("omitted conversationType still creates a standard row", async () => {
-    const result = (await createHandler({
-      body: { title: "Visible thread" },
-    })) as { id: string; conversationType: string };
+    const result = createConversationResponseSchema.parse(
+      await createHandler({
+        body: { title: "Visible thread" },
+      }),
+    );
 
     expect(result.conversationType).toBe("standard");
     expect(readConversation(result.id)?.conversationType).toBe("standard");
   });
 
   test("explicit conversationType: null behaves exactly like an omitted one", async () => {
-    const result = (await createHandler({
-      body: { conversationType: null, title: "Visible thread" },
-    })) as { id: string; conversationType: string };
+    const result = createConversationResponseSchema.parse(
+      await createHandler({
+        body: { conversationType: null, title: "Visible thread" },
+      }),
+    );
 
     expect(result.conversationType).toBe("standard");
     expect(readConversation(result.id)?.conversationType).toBe("standard");
@@ -278,17 +301,12 @@ describe("PUT /v1/conversations/:id/inference-profile", () => {
     const convId = crypto.randomUUID();
     seedConversation(convId);
 
-    const result = (await putHandler({
-      pathParams: { id: convId },
-      body: { profile: "fast", ttlSeconds: 600 },
-    })) as {
-      conversationId: string;
-      profile: string;
-      sessionId: string | null;
-      expiresAt: number | null;
-      ttlSeconds: number | null;
-      replaced: unknown;
-    };
+    const result = inferenceProfileSessionResponseSchema.parse(
+      await putHandler({
+        pathParams: { id: convId },
+        body: { profile: "fast", ttlSeconds: 600 },
+      }),
+    );
 
     expect(result.conversationId).toBe(convId);
     expect(result.profile).toBe("fast");
@@ -304,16 +322,12 @@ describe("PUT /v1/conversations/:id/inference-profile", () => {
     const convId = crypto.randomUUID();
     seedConversation(convId);
 
-    const result = (await putHandler({
-      pathParams: { id: convId },
-      body: { profile: "fast" },
-    })) as {
-      conversationId: string;
-      profile: string;
-      sessionId: string | null;
-      expiresAt: number | null;
-      ttlSeconds: unknown;
-    };
+    const result = inferenceProfileSessionResponseSchema.parse(
+      await putHandler({
+        pathParams: { id: convId },
+        body: { profile: "fast" },
+      }),
+    );
 
     expect(result.conversationId).toBe(convId);
     expect(result.profile).toBe("fast");
@@ -326,27 +340,23 @@ describe("PUT /v1/conversations/:id/inference-profile", () => {
     seedConversation(convId);
 
     // First PUT — session-backed A
-    const first = (await putHandler({
-      pathParams: { id: convId },
-      body: { profile: "fast", ttlSeconds: 300 },
-    })) as { sessionId: string | null };
+    const first = inferenceProfileSessionResponseSchema.parse(
+      await putHandler({
+        pathParams: { id: convId },
+        body: { profile: "fast", ttlSeconds: 300 },
+      }),
+    );
 
     const firstSessionId = first.sessionId;
     expect(firstSessionId).toBeTruthy();
 
     // Second PUT — session-backed B
-    const second = (await putHandler({
-      pathParams: { id: convId },
-      body: { profile: "slow", ttlSeconds: 600 },
-    })) as {
-      profile: string;
-      sessionId: string | null;
-      replaced: {
-        profile: string | null;
-        sessionId: string | null;
-        expiresAt: number | null;
-      } | null;
-    };
+    const second = inferenceProfileSessionResponseSchema.parse(
+      await putHandler({
+        pathParams: { id: convId },
+        body: { profile: "slow", ttlSeconds: 600 },
+      }),
+    );
 
     expect(second.profile).toBe("slow");
     expect(second.replaced).not.toBeNull();
@@ -366,16 +376,11 @@ describe("POST /v1/conversations/inference-profile-session (inference_profile_op
     const convId = crypto.randomUUID();
     seedConversation(convId);
 
-    const result = (await openHandler({
-      body: { conversationId: convId, profile: "fast", ttlSeconds: 600 },
-    })) as {
-      conversationId: string;
-      profile: string;
-      sessionId: string | null;
-      expiresAt: number | null;
-      ttlSeconds: number | null;
-      replaced: unknown;
-    };
+    const result = inferenceProfileSessionResponseSchema.parse(
+      await openHandler({
+        body: { conversationId: convId, profile: "fast", ttlSeconds: 600 },
+      }),
+    );
 
     expect(result.conversationId).toBe(convId);
     expect(result.profile).toBe("fast");
@@ -403,15 +408,9 @@ describe("GET /v1/conversations/inference-profile-sessions (inference_profile_li
       body: { conversationId: convId, profile: "fast", ttlSeconds: 600 },
     });
 
-    const result = (await listHandler({ queryParams: {} })) as {
-      sessions: Array<{
-        conversationId: string;
-        profile: string;
-        sessionId: string;
-        expiresAt: number;
-        remainingSeconds: number;
-      }>;
-    };
+    const result = listInferenceProfileSessionsResponseSchema.parse(
+      await listHandler({ queryParams: {} }),
+    );
 
     expect(result.sessions).toHaveLength(1);
     const session = result.sessions[0]!;
@@ -434,20 +433,20 @@ describe("POST /v1/conversations/inference-profile-session/close (inference_prof
     seedConversation(convId);
 
     // Open a session first
-    const opened = (await openHandler({
-      body: { conversationId: convId, profile: "fast", ttlSeconds: 600 },
-    })) as { sessionId: string | null };
+    const opened = inferenceProfileSessionResponseSchema.parse(
+      await openHandler({
+        body: { conversationId: convId, profile: "fast", ttlSeconds: 600 },
+      }),
+    );
 
     const openedSessionId = opened.sessionId;
 
     // Now close it
-    const result = (await closeHandler({
-      body: { conversationId: convId },
-    })) as {
-      conversationId: string;
-      noop: boolean;
-      closed: { profile: string | null; sessionId: string | null } | null;
-    };
+    const result = closeInferenceProfileSessionResponseSchema.parse(
+      await closeHandler({
+        body: { conversationId: convId },
+      }),
+    );
 
     expect(result.noop).toBe(false);
     expect(result.closed).not.toBeNull();
@@ -459,12 +458,11 @@ describe("POST /v1/conversations/inference-profile-session/close (inference_prof
     const convId = crypto.randomUUID();
     seedConversation(convId);
 
-    const result = (await closeHandler({
-      body: { conversationId: convId },
-    })) as {
-      noop: boolean;
-      closed: unknown;
-    };
+    const result = closeInferenceProfileSessionResponseSchema.parse(
+      await closeHandler({
+        body: { conversationId: convId },
+      }),
+    );
 
     expect(result.noop).toBe(true);
     expect(result.closed).toBeNull();

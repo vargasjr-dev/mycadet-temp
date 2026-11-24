@@ -2,6 +2,8 @@ import { readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { waitFor } from "../../../__tests__/helpers/wait-for.js";
 import { LlmContextResponseSchema } from "../../../api/responses/llm-context-response.js";
@@ -9,6 +11,7 @@ import {
   sampleConcepts as sharedSampleConcepts,
   sampleConfig,
 } from "../../../plugins/defaults/memory/__tests__/fixtures/memory-v2-activation-fixtures.js";
+import { isPlainObject } from "../../../util/object.js";
 
 // In-memory source of truth for the workspace raw config. Tests assign or
 // mutate this, then `seedRawConfig()` mirrors it to the real config.json the
@@ -33,12 +36,32 @@ function seedRawConfig(): void {
   utimesSync(path, stamp, stamp);
 }
 
+const objectEntriesSchema = z.record(z.string(), jsonObjectSchema);
+const rawLlmSchema = z.object({
+  callSites: objectEntriesSchema.optional(),
+  profiles: objectEntriesSchema.optional(),
+});
+
+function persistedLlm() {
+  return rawLlmSchema.parse(loadRawConfig().llm ?? {});
+}
+
 /** Read a persisted profile entry back from the real workspace config file. */
 function persistedProfile(name: string): Record<string, unknown> {
-  const llm = loadRawConfig().llm as
-    | { profiles?: Record<string, Record<string, unknown>> }
-    | undefined;
-  return llm?.profiles?.[name] ?? {};
+  return persistedLlm().profiles?.[name] ?? {};
+}
+
+function requireFixtureObject(value: unknown): Record<string, unknown> {
+  if (!isPlainObject(value)) {
+    throw new Error("Expected an object in the config fixture");
+  }
+  return value;
+}
+
+function fixtureProfiles(): Record<string, unknown> {
+  return requireFixtureObject(
+    requireFixtureObject(rawConfigFixture.llm).profiles,
+  );
 }
 
 mock.module("../../../providers/registry.js", () => ({
@@ -355,8 +378,8 @@ describe("inspector reads when llmRequestLogs.enabled is false", () => {
       thrown = err;
     }
     expect(thrown).toBeDefined();
-    expect((thrown as { code: string }).code).toBe("LLM_REQUEST_LOGS_DISABLED");
-    expect((thrown as { statusCode: number }).statusCode).toBe(403);
+    expect(thrown).toHaveProperty("code", "LLM_REQUEST_LOGS_DISABLED");
+    expect(thrown).toHaveProperty("statusCode", 403);
   }
 
   test("message llm-context is rejected", async () => {
@@ -836,11 +859,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     expect(savedProfile.provider).toBe("openai");
     expect(savedProfile.model).toBe("gpt-5.5");
@@ -870,11 +889,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     // Only the maxInputTokens override is taken; the non-UI leaves ride
     // from the existing entry.
@@ -898,11 +913,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     expect(savedProfile.provider).toBe("openai");
     expect(savedProfile.provider_connection).toBe("personal-openai");
@@ -920,11 +931,8 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       auth: { type: "platform" },
     });
     // Seed an existing binding so the test starts from a non-empty state.
-    (
-      rawConfigFixture.llm as {
-        profiles: { custom: Record<string, unknown> };
-      }
-    ).profiles.custom.provider_connection = "stale-openai";
+    requireFixtureObject(fixtureProfiles().custom).provider_connection =
+      "stale-openai";
     seedRawConfig();
 
     const result = await replaceProfileRoute.handler({
@@ -940,11 +948,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     // No personal openai connection exists, so the route auto-derives the
     // single Cadet Cloud connection for this managed-routable provider.
@@ -972,11 +976,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       body: { provider: "openai", model: "gpt-5.5" },
     });
 
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
     expect(savedProfile.provider_connection).toBe("cadet");
   });
 
@@ -997,11 +997,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     expect(savedProfile.provider).toBe("fireworks");
     expect(savedProfile.provider_connection).toBe("fireworks");
@@ -1017,11 +1013,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     expect(savedProfile.provider).toBe("openrouter");
     expect(savedProfile.provider_connection).toBe("openrouter-personal");
@@ -1047,11 +1039,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    const savedProfile = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.custom;
+    const savedProfile = persistedProfile("custom");
 
     expect(savedProfile.provider).toBe("minimax");
     expect(savedProfile.model).toBe("MiniMax-M2.7");
@@ -1067,9 +1055,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       // Seed two managed profiles alongside the existing custom one. A
       // cadet-provider entry under a managed name is read-only except the
       // disabled → active status transition (the up-front route check).
-      const profiles = (
-        rawConfigFixture.llm as { profiles: Record<string, unknown> }
-      ).profiles;
+      const profiles = fixtureProfiles();
       profiles["balanced"] = {
         provider: "cadet",
         model: "claude-sonnet-4-6",
@@ -1106,11 +1092,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
     });
 
     test("re-enables a disabled managed balanced profile, preserving seed fields", async () => {
-      (
-        rawConfigFixture.llm as {
-          profiles: Record<string, Record<string, unknown>>;
-        }
-      ).profiles["balanced"]!.status = "disabled";
+      requireFixtureObject(fixtureProfiles().balanced).status = "disabled";
       seedRawConfig();
 
       const result = await replaceProfileRoute.handler({
@@ -1119,11 +1101,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       });
 
       expect(result).toEqual({ ok: true });
-      const savedProfile = (
-        loadRawConfig().llm as {
-          profiles: Record<string, Record<string, unknown>>;
-        }
-      ).profiles["balanced"]!;
+      const savedProfile = persistedProfile("balanced");
 
       expect(savedProfile.status).toBe("active");
       // Seed fields preserved.
@@ -1172,9 +1150,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
       // profile. commitConfigWrite must reinit the provider registry so the
       // status change is reflected in the running daemon immediately, not at
       // the next watcher tick.
-      (rawConfigFixture.llm as { profiles: Record<string, unknown> }).profiles[
-        "balanced"
-      ] = {
+      fixtureProfiles()["balanced"] = {
         source: "cloud",
         provider: "anthropic",
         model: "claude-sonnet-4-6",
@@ -1275,11 +1251,7 @@ describe("profile writes are schema-canonical", () => {
     await configSetRoute.handler({
       body: { path: "llm.profiles.partial.maxTokens", value: 999 },
     });
-    const saved = (
-      loadRawConfig().llm as {
-        profiles: Record<string, Record<string, unknown>>;
-      }
-    ).profiles.partial;
+    const saved = persistedProfile("partial");
     expect(saved.futureField).toBeUndefined();
     expect(saved.maxTokens).toBe(999);
   });
@@ -1290,12 +1262,7 @@ describe("call-site override writes stay sparse", () => {
     (r) => r.operationId === "config_patch",
   )!;
 
-  const savedCallSites = () =>
-    (
-      loadRawConfig().llm as {
-        callSites?: Record<string, Record<string, unknown>>;
-      }
-    ).callSites ?? {};
+  const savedCallSites = () => persistedLlm().callSites ?? {};
 
   beforeEach(() => {
     rawConfigFixture = {
@@ -1408,10 +1375,7 @@ describe("sparse services.stt patch provider seeding", () => {
   )!;
 
   const savedServices = () =>
-    (loadRawConfig().services ?? {}) as Record<
-      string,
-      Record<string, unknown> | undefined
-    >;
+    objectEntriesSchema.parse(loadRawConfig().services ?? {});
 
   beforeEach(() => {
     // No services.stt block: exactly the sparse state where the web
@@ -1530,7 +1494,9 @@ describe("config GET serves profiles verbatim", () => {
   type WireProfiles = Record<string, Record<string, unknown>>;
 
   function wireProfiles(body: unknown): WireProfiles {
-    return (body as { llm: { profiles: WireProfiles } }).llm.profiles;
+    return z
+      .object({ llm: z.object({ profiles: objectEntriesSchema }) })
+      .parse(body).llm.profiles;
   }
 
   beforeEach(() => {
@@ -1592,9 +1558,7 @@ describe("config GET serves profiles verbatim", () => {
       expect(profile).not.toHaveProperty("supportsVision");
     }
 
-    const savedProfiles = (
-      loadRawConfig().llm as { profiles: WireProfiles } | undefined
-    )?.profiles;
+    const savedProfiles = persistedLlm().profiles;
     expect(savedProfiles).toBeDefined();
     for (const profile of Object.values(savedProfiles!)) {
       expect(profile).not.toHaveProperty("invariant");
@@ -1629,10 +1593,7 @@ describe("provider labels follow the open-string Zod schema", () => {
       body: { llm: { callSites: { mainAgent: { maxTokens: 2048 } } } },
     });
 
-    const llm = loadRawConfig().llm as {
-      callSites?: Record<string, { maxTokens?: number }>;
-      profiles?: Record<string, { provider?: string }>;
-    };
+    const llm = persistedLlm();
     expect(llm.callSites?.mainAgent?.maxTokens).toBe(2048);
     expect(llm.profiles?.work?.provider).toBe("anthropic-work");
   });
@@ -1757,7 +1718,7 @@ describe("config writes to a per-agent acp entry", () => {
     id = "claude",
   ): Record<string, unknown> {
     const acp = jsonObjectSchema.parse(raw.acp);
-    const agents = acp.agents as Record<string, Record<string, unknown>>;
+    const agents = objectEntriesSchema.parse(acp.agents);
     return agents[id]!;
   }
 
@@ -1914,7 +1875,7 @@ describe("persisted chat settings", () => {
       });
     });
 
-    test.each([
+    test.each<[string, unknown]>([
       ["conversations", []],
       ["notifications.newMessageEnabled", "true"],
       ["notifications.newMessageEnabled", 1],
@@ -1934,9 +1895,7 @@ describe("persisted chat settings", () => {
         );
         const originalBytes = readFileSync(configPath, "utf-8");
 
-        await expect(
-          writeSetting(writer, path as string, value),
-        ).rejects.toMatchObject({
+        await expect(writeSetting(writer, path, value)).rejects.toMatchObject({
           statusCode: 400,
         });
 

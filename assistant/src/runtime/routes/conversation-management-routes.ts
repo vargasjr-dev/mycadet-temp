@@ -88,6 +88,7 @@ import {
   UnprocessableEntityError,
 } from "./errors.js";
 import { setInferenceProfileSession } from "./inference-profile-session-handler.js";
+import { inferenceProfileSessionResponseSchema } from "./inference-profile-session-schema.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("conversation-management-routes");
@@ -738,6 +739,19 @@ function handleReorderConversations({ body = {}, headers }: RouteHandlerArgs) {
 // Transport-agnostic route definitions
 // ---------------------------------------------------------------------------
 
+export const createConversationResponseSchema = z.object({
+  id: z
+    .string()
+    .describe(
+      "Assistant-minted internal conversation id. The authoritative identifier for the conversation.",
+    ),
+  conversationKey: z
+    .string()
+    .describe("Echo of the optional external key supplied by the client."),
+  conversationType: z.string(),
+  created: z.boolean(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "createConversation",
@@ -769,18 +783,7 @@ export const ROUTES: RouteDefinition[] = [
           "Explicit title for the conversation. When provided on creation, it is persisted as a user-set title (never overwritten by the auto-titler). Used by flows that mint a conversation up-front and don't want an auto-generated title.",
         ),
     }),
-    responseBody: z.object({
-      id: z
-        .string()
-        .describe(
-          "Assistant-minted internal conversation id. The authoritative identifier for the conversation.",
-        ),
-      conversationKey: z
-        .string()
-        .describe("Echo of the optional external key supplied by the client."),
-      conversationType: z.string(),
-      created: z.boolean(),
-    }),
+    responseBody: createConversationResponseSchema,
     handler: handleCreateConversation,
   },
   {
@@ -853,20 +856,7 @@ export const ROUTES: RouteDefinition[] = [
       ttlSeconds: z.number().positive().nullable().optional(),
       sessionId: z.string().uuid().optional(),
     }),
-    responseBody: z.object({
-      conversationId: z.string(),
-      profile: z.string().nullable(),
-      sessionId: z.string().nullable(),
-      expiresAt: z.number().nullable(),
-      ttlSeconds: z.number().nullable().optional(),
-      replaced: z
-        .object({
-          profile: z.string().nullable(),
-          sessionId: z.string().nullable(),
-          expiresAt: z.number().nullable(),
-        })
-        .nullable(),
-    }),
+    responseBody: inferenceProfileSessionResponseSchema,
     handler: handleSetInferenceProfile,
   },
   {
