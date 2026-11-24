@@ -7,7 +7,7 @@ import { routes } from "@/lib/routes";
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
-import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared/github-repository";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared/github-repository";
 
 const TOC_ITEMS = [
   { id: "directory-layout", label: "Directory layout", level: 2 },
@@ -31,7 +31,7 @@ const linkClass =
   "font-semibold text-emerald-700 underline hover:text-emerald-800";
 
 const PLUGIN_API_URL =
-  `${CADET_GITHUB_REPOSITORY}/tree/main/assistant/src/plugin-api`;
+  `${CADET_GITHUB_REPOSITORY_URL}/tree/main/assistant/src/plugin-api`;
 
 const HOOKS_PAGE_URL = "/docs/extensibility/hooks";
 const TOOLS_PAGE_URL = "/docs/extensibility/tools";

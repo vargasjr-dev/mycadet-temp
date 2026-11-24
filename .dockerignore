@@ -4,6 +4,7 @@
 # lockfile, member manifests, and patch files — no source.
 !package.json
 !bun.lock
+!VISION.md
 !patches/
 !patches/**
 # Docs site image: the builder copies the full clients/docs sources (this also

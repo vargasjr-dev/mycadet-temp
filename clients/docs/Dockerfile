@@ -25,6 +25,8 @@ RUN bun install --frozen-lockfile --ignore-scripts --filter=@mycadet/docs
 
 # Copy source after installing dependencies for better layer caching.
 COPY packages/design-library ./packages/design-library
+COPY packages/shared ./packages/shared
+COPY VISION.md ./
 COPY clients/docs ./clients/docs
 
 ENV NEXT_TELEMETRY_DISABLED=1

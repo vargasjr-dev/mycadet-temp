@@ -164,7 +164,6 @@ test("cloud rows render the cloud-hosted subtitle with a relative creation date"
   // The row's own `remote` is the whole signal now — the build's baked
   // stamp is gone (config is served at request time) — so a cloud-hosted
   // row is simply one whose lockfile entry is the cloud.
-  setup(undefined, false, undefined);
   request.mockResolvedValueOnce(
     Response.json({
       status: "selection",
@@ -183,6 +182,7 @@ test("cloud rows render the cloud-hosted subtitle with a relative creation date"
       ],
     }),
   );
+  setup();
   const withDate = await screen.findByRole("radio", { name: /^One/ });
   expect(withDate.textContent).toContain("Cloud-hosted · Created 3d ago");
   const withoutDate = screen.getByRole("radio", { name: /^Two/ });
@@ -209,7 +209,6 @@ test("each row labels itself with its own remote", async () => {
   // self-hosted build's list can hold a cloud assistant (and vice versa) —
   // and a hostile row value falls back to the build's remote, never fails
   // the list.
-  setup(undefined, false, undefined);
   request.mockResolvedValueOnce(
     Response.json({
       status: "selection",
@@ -220,6 +219,7 @@ test("each row labels itself with its own remote", async () => {
       ],
     }),
   );
+  setup();
   const cloud = await screen.findByRole("radio", { name: /^Cloud one/ });
   expect(cloud.textContent).toContain("Cloud-hosted");
   const own = screen.getByRole("radio", { name: /^Own one/ });
