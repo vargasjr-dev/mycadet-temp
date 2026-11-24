@@ -7,7 +7,7 @@ import {
   releaseAnchor,
 } from "@/lib/releases-server";
 import { routes } from "@/lib/routes";
-import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared/github-repository";
 
 function monthAnchor(releasedAt: string) {
   const d = new Date(releasedAt);

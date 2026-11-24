@@ -95,9 +95,6 @@ export function fetchGlossaryContent(): string {
   return fs.readFileSync("../../GLOSSARY.md").toString();
 }
 
-export function fetchVisionContent(): string {
-  return fs.readFileSync("../../VISION.md").toString();
-}
 
 // The legal pages render from markdown under src/content/legal — the
 // hand-maintained JSX bodies became prose files so the copy is editable

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { writeFileAtomic } from "@mycadet/shared";
+import { writeFileAtomic } from "@mycadet/shared/atomic-write";
 import { z } from "zod";
 
 import { getDataDir } from "../util/layout.js";

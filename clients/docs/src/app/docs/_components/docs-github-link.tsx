@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared/github-repository";
 
 /**
  * GitHub wordmark link rendered at the end of the docs header.

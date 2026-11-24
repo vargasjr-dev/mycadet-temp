@@ -1,4 +1,4 @@
-import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
+import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared/github-repository";
 
 const X_ICON = (
   <svg

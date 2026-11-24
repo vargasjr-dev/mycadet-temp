@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
-import { writeFileAtomic } from "@mycadet/shared";
+import { writeFileAtomic } from "@mycadet/shared/atomic-write";
 import { z } from "zod";
 
 import { safeStatSync } from "../util/fs.js";

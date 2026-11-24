@@ -38,10 +38,11 @@
 
 The canonical sources for who we are and how we talk about what we're building. The docs site at [mycadet.ai/docs](https://mycadet.ai/docs) is a rendered view of these files.
 
-| Doc                             | What it is                                                       |
-| ------------------------------- | ---------------------------------------------------------------- |
-| [Constitution](CONSTITUTION.md) | Who we are, what we believe, and what we refuse to compromise on |
-| [Glossary](GLOSSARY.md)         | The shared vocabulary we use to talk about personal intelligence |
+| Doc                             | What it is                                                          |
+| ------------------------------- | ------------------------------------------------------------------- |
+| [Constitution](CONSTITUTION.md) | Who we are, what we believe, and what we refuse to compromise on    |
+| [Glossary](GLOSSARY.md)         | The shared vocabulary we use to talk about personal intelligence    |
+| [Vision](VISION.md)             | The end state we are building every Cadet and the ecosystem towards |
 
 ## Documentation
 

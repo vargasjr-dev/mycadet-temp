@@ -8,6 +8,7 @@
     "./eslint/base": "./eslint/base.mjs",
     "./eslint/no-empty-imports": "./eslint/no-empty-imports.mjs",
     "./eslint/no-re-exports": "./eslint/no-re-exports.mjs",
+    "./atomic-write": "./atomic-write.ts",
     "./fetch": "./fetch.ts",
     "./github-repository": "./github-repository.ts",
     "./providers/baseten": "./providers/baseten.ts",

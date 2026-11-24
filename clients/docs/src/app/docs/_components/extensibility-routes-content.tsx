@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DocsContent } from "@/app/docs/_components/docs-content";
 import { SectionHeading } from "@/app/docs/_components/section-heading";
 import { TableOfContents } from "@/app/docs/_components/table-of-contents";
-import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
+import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared/github-repository";
 
 const TOC_ITEMS = [
   { id: "where-routes-are-served", label: "Where routes are served", level: 2 },
