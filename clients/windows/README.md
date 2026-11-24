@@ -155,58 +155,6 @@ Local and CI packs are unsigned. `.github/workflows/windows-package-smoke.yaml`
 runs the same steps per architecture, then install-, launch-, and
 uninstall-tests the installer.
 
-## Release
-
-`.github/workflows/release-windows.yaml` builds signed release artifacts: both
-`dev-release.yaml` and `release.yml` call it with `{ environment, version }`
-as soon as version resolution succeeds. Windows installers build for dev,
-staging, and production in parallel with the other release jobs.
-
-The workflow stamps the version and builds the helper, preview handler, CLI
-runtime, and renderer on native runners (x64 on `windows-2025`, arm64 on
-`windows-11-vs2026-arm`). Each native payload and its stamped app manifest
-transfer to an x64 `windows-2025` runner
-for packaging and signing through `electron-builder`, because
-[Azure Artifact Signing does not support Windows ARM runners](https://github.com/Azure/artifact-signing-action#runner-requirements).
-The workflow verifies every manifest binary and the installer with
-`Get-AuthenticodeSignature`, requiring valid signatures from the configured
-publisher while allowing Azure certificate rotation. Three bundled Microsoft
-runtime DLL paths also accept valid Microsoft Windows catalog signatures,
-which PowerShell prefers over embedded signatures.
-
-The builder always writes `latest.yml`, including for prerelease versions;
-CD uploads it under the environment's `<env>.yml` channel name.
-
-The executable, installer, and uninstaller use the environment-specific icon
-from `build-resources/icons/<environment>/icon.ico`, matching the local, dev,
-staging, and production desktop identities.
-
-CD uses Azure Artifact Signing (`azure-trusted-signing`) with the shared account,
-certificate profile, regional endpoint, and publisher name defined directly in
-`.github/workflows/release-windows.yaml`. These settings apply to dev, staging,
-and production without GitHub signing variables.
-
-The Cloud Terraform module syncs `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`
-from Secret Manager to repository secrets in `mycadet-temp`. The release job
-signs into Azure over GitHub Actions OIDC. Configure an Entra federated
-credential for each GitHub environment that publishes Windows builds. Use
-issuer `https://token.actions.githubusercontent.com`, audience
-`api://AzureADTokenExchange`, and subject
-`repo:vargasjr-dev/mycadet-temp:environment:<environment>`. The service
-principal needs the Artifact Signing Certificate Profile Signer role on the
-signing account or certificate profile.
-
-Local packaging also supports `pfx` and `command` through the
-`WINDOWS_SIGNING_PROVIDER` environment variable in `electron-builder.config.cjs`.
-
-Production also requires `SENTRY_DSN_WINDOWS` and `SENTRY_AUTH_TOKEN` secrets
-plus the `SENTRY_PROJECT_WINDOWS` variable. The DSN serves both the main
-process and the renderer (baked in as `VITE_SENTRY_DSN_WINDOWS`, which the
-shared web bundle selects on a Windows host), and the token and project enable
-renderer source-map uploads. Non-production builds
-warn and continue when Sentry is not configured. `WINDOWS_SIGNING_TIMESTAMP_URL`
-is optional. Unsigned Windows releases are never published.
-
 ## Checks
 
 ```bash
