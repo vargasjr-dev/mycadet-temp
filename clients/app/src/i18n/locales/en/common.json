@@ -1,6 +1,7 @@
 {
   "aboutPage": {
     "build": "Build",
+    "cliPath": "CLI path",
     "taglineMacOS": "AI assistant for your Mac",
     "taglineWindows": "AI assistant for your PC",
     "version": "Version"

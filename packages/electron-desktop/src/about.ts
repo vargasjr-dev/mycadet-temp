@@ -4,17 +4,17 @@ import { z } from "zod";
 import type { AppVersionInfo } from "@mycadet/ipc-contract";
 
 import { handle } from "./ipc";
+import { getRendererRootUrl } from "./app-config";
+import { getCliBinPath } from "./cli-installer";
+import log from "./app-logger";
 import { createWindow } from "./windows";
 
 export interface AboutRuntime {
-  rendererBase: () => string;
   getAssistantName?: () => string | null;
   onAssistantNameChange?: (listener: () => void) => void;
 }
 
-let runtime: AboutRuntime = {
-  rendererBase: () => "app://mycadet.ai",
-};
+let runtime: AboutRuntime = {};
 
 export const configureAboutRuntime = (next: AboutRuntime): void => {
   runtime = next;
@@ -89,7 +89,7 @@ export const getVersionInfo = (): AppVersionInfo => ({
 const ABOUT_PATH = "/about";
 
 const aboutWindowUrl = (): string => {
-  return `${runtime.rendererBase()}${ABOUT_PATH}`;
+  return `${getRendererRootUrl()}${ABOUT_PATH}`;
 };
 
 // Module-scope handle so reopening the menu item focuses the existing
@@ -112,8 +112,8 @@ export const openAboutWindow = (): void => {
   // don't control.
   aboutWindow = createWindow({
     browserWindow: {
-      width: 360,
-      height: 360,
+      width: 460,
+      height: 400,
       resizable: false,
       minimizable: false,
       maximizable: false,
@@ -133,7 +133,9 @@ export const openAboutWindow = (): void => {
     aboutWindow = null;
   });
 
-  void aboutWindow.loadURL(aboutWindowUrl());
+  void aboutWindow.loadURL(aboutWindowUrl()).catch((error: unknown) => {
+    log.error("[about] Failed to load the About page:", error);
+  });
 };
 
 // Seed the native About panel — which AppleScript and other tooling can
@@ -164,7 +166,10 @@ export const installAbout = (): void => {
   // live identity.
   runtime.onAssistantNameChange?.(applyAboutPanelOptions);
 
-  handle("cadet:app:versionInfo", z.tuple([]), () => getVersionInfo());
+  handle("cadet:app:versionInfo", z.tuple([]), () => ({
+    ...getVersionInfo(),
+    cliPath: process.platform === "win32" ? undefined : getCliBinPath(),
+  }));
 
   // The renderer is sandboxed — `shell.openExternal` only works from
   // main. The About page's website-link click handler routes through

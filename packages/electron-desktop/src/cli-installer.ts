@@ -87,7 +87,11 @@ export function getCliRootDir(): string {
 
 /** The `cadet` bin path within an install directory. */
 function binPathIn(dir: string): string {
-  return path.join(dir, "node_modules", ".bin", "cadet");
+  const bins = path.join(dir, "node_modules", ".bin");
+  const devBin = path.join(bins, "cadet-dev");
+  return CADET_ENVIRONMENT === "dev" && existsSync(devBin)
+    ? devBin
+    : path.join(bins, "cadet");
 }
 
 /** Compare two version-like dir names numerically (so 0.10.0 > 0.9.0). */

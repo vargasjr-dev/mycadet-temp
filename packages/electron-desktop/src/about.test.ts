@@ -171,7 +171,7 @@ describe("openAboutWindow", () => {
     // Dev URL pattern — the test env doesn't set `app.isPackaged` true,
     // so the dev branch runs. URL must end with the renderer-side
     // route path so the React route in the app bundle mounts.
-    expect(loadURLMock.mock.calls[0]?.[0]).toMatch(/\/about$/);
+    expect(loadURLMock.mock.calls[0]?.[0]).toBe("app://mycadet.ai/about");
   });
 
   test("focuses the existing window instead of constructing a second one", () => {

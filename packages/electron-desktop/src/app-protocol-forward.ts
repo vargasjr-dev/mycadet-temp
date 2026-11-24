@@ -1,15 +1,20 @@
 import { app, net, protocol } from "electron";
+import { existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 
 import { type AllowedOrigin } from "./app-origin";
 import {
   forwardOperatorRequest,
+  localRuntimeWebDist,
+  servedAssistantFromLockfile,
   readLockfile,
   servedConfigFromLockfile,
 } from "@mycadet/local-mode";
 import { authorityCookieJar } from "./authority-cookie-jar";
 import { planAppProtocolAssetRequest } from "./app-protocol";
+import { ensureCliInstalled, getCliInstallDir } from "./cli-installer";
+import log from "./app-logger";
 
 /**
  * The `app://` protocol handler all three desktop clients share: one
@@ -67,9 +72,20 @@ const resolveWebDistRoot = (): string => {
   return path.join(repoRoot(), "clients", "web", "dist");
 };
 
+async function resolvePackagedMacWebRoot(): Promise<string> {
+  const entry = servedAssistantFromLockfile(readLockfile());
+  const instanceDist = entry?.cloud === "local" && localRuntimeWebDist(entry);
+  if (instanceDist) return instanceDist;
+
+  const cliWebDist = () =>
+    path.join(getCliInstallDir(), "node_modules", "@mycadet", "web", "dist");
+  if (!existsSync(path.join(cliWebDist(), "index.html"))) {
+    await ensureCliInstalled();
+  }
+  return cliWebDist();
+}
+
 export function registerAppProtocol(): void {
-  const webDistRoot = resolveWebDistRoot();
-  const webIndexHtml = path.join(webDistRoot, "index.html");
   const appDistRoot = resolveAppDistRoot();
   const appIndexHtml = path.join(appDistRoot, "index.html");
   // Read only when injecting an assistant document. A hatch or
@@ -112,6 +128,25 @@ export function registerAppProtocol(): void {
         : pathname.startsWith(WEB_ASSET_PREFIX)
           ? "/assistant"
           : undefined;
+    let webDistRoot = resolveWebDistRoot();
+    if (webPrefix && app.isPackaged && process.platform === "darwin") {
+      try {
+        webDistRoot = await resolvePackagedMacWebRoot();
+      } catch (error) {
+        log.error("[app-protocol] Could not prepare the web bundle:", error);
+        return new Response(
+          "Cadet could not prepare the assistant interface. Reopen the app to retry.",
+          { status: 503 },
+        );
+      }
+    }
+    const webIndexHtml = path.join(webDistRoot, "index.html");
+    if (webPrefix && !existsSync(webIndexHtml)) {
+      return new Response(
+        "The assistant interface is unavailable. Reopen the app to retry.",
+        { status: 503 },
+      );
+    }
     const asset = await planAppProtocolAssetRequest({
       rendererRoot: webPrefix ? webDistRoot : appDistRoot,
       indexHtml: webPrefix ? webIndexHtml : appIndexHtml,

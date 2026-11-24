@@ -19,6 +19,7 @@
  */
 
 import { Command } from "commander";
+import { version } from "../package.json";
 
 import { createLocalSecureKeyBackend } from "./materializers/local-secure-key-backend.js";
 import { getSecurityDir } from "./paths.js";
@@ -39,6 +40,7 @@ function keyBackend() {
 const program = new Command();
 program
   .name("ces")
+  .version(version)
   .description("CES CLI — credential CRUD for the encrypted key store");
 
 program

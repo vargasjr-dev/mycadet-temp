@@ -8,6 +8,7 @@ import {
 
 import { installDock } from "./dock";
 import {
+  explainRunningInstallConflict,
   promptToRelocateIfStranded,
   relocateToApplicationsFolder,
 } from "./move-to-applications";
@@ -29,6 +30,7 @@ startApp({
   platform: "mac-electron",
   interfaceId: "macos",
   titleBarMode: "hidden",
+  onSecondaryInstance: explainRunningInstallConflict,
   precheck: async () => {
     if (hasPendingFiles() || hasPendingDeepLinks()) {
       markRelocationSkipped();

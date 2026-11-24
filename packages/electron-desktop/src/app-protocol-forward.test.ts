@@ -51,10 +51,19 @@ mock.module("./app-logger", () => ({
 let servedConfig: { assistantId?: string; assistantName?: string } = {
   assistantName: "A<ria",
 };
+let runtimeWebDist: string | undefined;
+let cliInstallDir: string;
 
 mock.module("@mycadet/local-mode", () => ({
   readLockfile: () => ({ assistants: [] }),
   servedConfigFromLockfile: () => servedConfig,
+  servedAssistantFromLockfile: () =>
+    runtimeWebDist ? { cloud: "local" } : undefined,
+  localRuntimeWebDist: () => runtimeWebDist,
+}));
+mock.module("./cli-installer", () => ({
+  getCliInstallDir: () => cliInstallDir,
+  ensureCliInstalled: async () => {},
 }));
 
 const { registerAppProtocol } = await import("./app-protocol-forward");
@@ -96,6 +105,7 @@ afterEach(async () => {
   forwardOperator.mockResolvedValue(null);
   cookieSet.mockClear();
   isPackaged = false;
+  runtimeWebDist = undefined;
   delete (process as unknown as { resourcesPath?: string }).resourcesPath;
   Object.defineProperty(process, "platform", ORIGINAL_PLATFORM_DESCRIPTOR);
 });
@@ -270,6 +280,49 @@ describe("registerAppProtocol", () => {
     expect(await web.text()).toContain("<body>web</body>");
     const shell = await handler!(new Request("app://mycadet.ai/some/route"));
     expect(await shell.text()).toContain("<body>shell</body>");
+  });
+
+  test("packaged Mac uses the selected local runtime for the frame and its assets", async () => {
+    await setupPackaged();
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    runtimeWebDist = path.join(process.resourcesPath, "runtime-web");
+    await fs.mkdir(path.join(runtimeWebDist, "assets"), { recursive: true });
+    await writeRenderer(runtimeWebDist, "runtime web");
+    await fs.writeFile(
+      path.join(runtimeWebDist, "assets", "bundle.js"),
+      "runtime asset",
+    );
+    await register();
+
+    const frame = await handler!(new Request("app://mycadet.ai/web/assistant"));
+    expect(await frame.text()).toContain("<body>runtime web</body>");
+    const asset = await handler!(
+      new Request("app://mycadet.ai/assistant/assets/bundle.js"),
+    );
+    expect(await asset.text()).toBe("runtime asset");
+    const about = await handler!(new Request("app://mycadet.ai/about"));
+    expect(await about.text()).toContain("<body>shell</body>");
+  });
+
+  test("packaged Mac serves the CLI's web package when there is no instance web bundle", async () => {
+    await setupPackaged();
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    cliInstallDir = path.join(process.resourcesPath, "cli");
+    const dist = path.join(
+      cliInstallDir,
+      "node_modules",
+      "@mycadet",
+      "web",
+      "dist",
+    );
+    await register();
+    const url = "app://mycadet.ai/web/assistant";
+    expect((await handler!(new Request(url))).status).toBe(503);
+
+    await fs.mkdir(dist, { recursive: true });
+    await writeRenderer(dist, "CLI web");
+    const frame = await handler!(new Request(url));
+    expect(await frame.text()).toContain("<body>CLI web</body>");
   });
 
   test("the operator forward carries the session jar as its cookie source and sink", async () => {

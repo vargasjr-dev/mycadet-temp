@@ -26,7 +26,10 @@ export function AboutPage() {
 
   useEffect(() => {
     if (isElectron()) {
-      void window.cadet?.app.versionInfo().then(setInfo);
+      void window.cadet?.app
+        .versionInfo()
+        .then(setInfo)
+        .catch(() => {});
     }
   }, []);
 
@@ -40,7 +43,7 @@ export function AboutPage() {
           ? t("aboutPage.taglineWindows")
           : t("aboutPage.taglineMacOS")}
       </p>
-      <dl className="mb-7 grid grid-cols-[auto_auto] gap-x-4 gap-y-1.5 text-sm">
+      <dl className="mb-7 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
         <dt className="text-muted-foreground text-right">
           {t("aboutPage.version")}
         </dt>
@@ -53,6 +56,16 @@ export function AboutPage() {
         <dd className="text-left font-mono tabular-nums select-text">
           {display.commitSha}
         </dd>
+        {display.cliPath && (
+          <>
+            <dt className="text-muted-foreground text-right">
+              {t("aboutPage.cliPath")}
+            </dt>
+            <dd className="min-w-0 text-left font-mono text-xs break-all select-text">
+              {display.cliPath}
+            </dd>
+          </>
+        )}
       </dl>
       <a
         href={display.website}

@@ -10,6 +10,7 @@
  */
 
 import { Command } from "commander";
+import { APP_VERSION } from "../version.js";
 
 import {
   handleListDevices,
@@ -45,6 +46,7 @@ export function buildGatewayCliProgram(
   const program = new Command();
   program
     .name("gateway")
+    .version(APP_VERSION)
     .description("Operator commands for gateway-owned state.");
 
   // ── contacts ────────────────────────────────────────────────────

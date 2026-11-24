@@ -190,6 +190,13 @@ function localRuntimeCesDir(
   return isCesSourceDir(candidate) ? candidate : undefined;
 }
 
+export function localRuntimeWebDist(entry: LocalAssistant): string | undefined {
+  const installDir = latestLocalRuntimeInstallDir(entry);
+  if (!installDir) return undefined;
+  const dist = packagePath(installDir, "@mycadet/web", "dist");
+  return existsSync(join(dist, "index.html")) ? dist : undefined;
+}
+
 /**
  * The instance's most recently installed self-managed runtime — the newest
  * entry under `<instanceDir>/runtime/`. New entries are links to shared

@@ -24,7 +24,10 @@ export { stageBasetenBuildContext } from "./remotes/baseten/context";
 export { execBasetenSandbox } from "./remotes/baseten/exec";
 export { localExecDirForService } from "./remotes/local/exec";
 export { getGatewayPidPath } from "./remotes/local/instance";
-export { ensureLocalBinShims } from "./remotes/local/common";
+export {
+  ensureLocalBinShims,
+  localRuntimeWebDist,
+} from "./remotes/local/common";
 export { DEFAULT_EXEC_TIMEOUT, execCommand } from "./operations/exec";
 export {
   appleContainerPair,

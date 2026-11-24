@@ -120,6 +120,7 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
     recordInstallLocation("applications");
     return false;
   }
+  await app.whenReady();
 
   let splash: BrowserWindow | null = null;
   try {
@@ -178,6 +179,10 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
     // On success the process is already quitting/relaunching, so the splash
     // is torn down with it; only close it if we're staying put.
     if (!moved) closeSplash();
+    if (conflictedWithRunningCopy) {
+      await explainRunningInstallConflict();
+      return true;
+    }
     return moved;
   } catch (err) {
     recordInstallLocation("failed");
@@ -185,6 +190,20 @@ export async function relocateToApplicationsFolder(): Promise<boolean> {
     closeSplash();
     return false;
   }
+}
+
+export async function explainRunningInstallConflict(): Promise<void> {
+  if (!app.isPackaged || app.isInApplicationsFolder()) {
+    return;
+  }
+  await app.whenReady();
+  const name = productDisplayName();
+  await dialog.showMessageBox({
+    type: "info",
+    title: `Install ${name}`,
+    message: `Quit the installed copy of ${name} to replace it.`,
+    detail: `Choose ${name} → Quit ${name}, then open the new copy again. You can leave the old app in Applications.`,
+  });
 }
 
 /**

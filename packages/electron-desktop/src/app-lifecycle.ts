@@ -6,7 +6,7 @@ import path from "node:path";
 import { resolveEnvironmentName } from "@mycadet/shared";
 
 import { getAppName } from "./app-name";
-import { APP_HOST, APP_PROTOCOL, getRendererBase } from "./app-config";
+import { APP_HOST, APP_PROTOCOL } from "./app-config";
 import { registerAppProtocol } from "./app-protocol-forward";
 import { BUNDLES_DIR_NAME, CADET_PROTOCOL } from "./bundle-platform";
 import { registerCadetProtocol } from "./cadet-protocol";
@@ -103,6 +103,8 @@ export interface DesktopAppInputs {
    * move-to-Applications relaunch).
    */
   precheck?: () => boolean | Promise<boolean>;
+  /** Allows an installer launch to explain why the running copy won the lock. */
+  onSecondaryInstance?: () => Promise<void>;
   /**
    * The shell's toast-helper identity: the supervised sidecar's executable
    * name, its dev-override env var, and the sidecar client name it registers
@@ -238,8 +240,17 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
   // spawning a parallel main process. The second-instance handler fires on
   // the instance that holds the lock (the primary).
   // https://www.electronjs.org/docs/latest/api/app#apprequestsingleinstancelockadditionaldata
+  applyUserDataSuffix(resolveEnvironmentName());
   const hasInstanceLock = app.requestSingleInstanceLock();
   if (!hasInstanceLock) {
+    if (inputs.onSecondaryInstance) {
+      try {
+        await inputs.onSecondaryInstance();
+      } finally {
+        app.quit();
+      }
+      return;
+    }
     app.quit();
   }
 
@@ -252,7 +263,6 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
     void ensureMainWindow();
   });
 
-  applyUserDataSuffix(resolveEnvironmentName());
   registerPrivilegedSchemes();
   configureMainWindow({ titleBarMode: inputs.titleBarMode });
 
@@ -377,7 +387,6 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installBundles();
       installHotkeysIpc();
       configureAboutRuntime({
-        rendererBase: () => getRendererBase(),
         getAssistantName: getName,
         onAssistantNameChange: onNameChange,
       });

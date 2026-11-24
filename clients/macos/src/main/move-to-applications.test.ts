@@ -152,11 +152,12 @@ describe("relocateToApplicationsFolder", () => {
     expect(getInstallLocation()).toBe("unpackaged");
   });
 
-  test("distinguishes a running /Applications copy from a plain refusal", async () => {
+  test("explains the conflict and stops launching the installer copy", async () => {
     appState.conflict = "existsAndRunning";
 
-    expect(await relocateToApplicationsFolder()).toBe(false);
+    expect(await relocateToApplicationsFolder()).toBe(true);
     expect(getInstallLocation()).toBe("conflict-exists-and-running");
+    expect(dialogCalls.at(-1)?.message).toContain("Quit the installed copy");
   });
 
   test("overwrites a stale copy rather than refusing", async () => {

@@ -9,9 +9,9 @@
  *
  * - `APP_RENDERER_BASE_PROD` — the MAIN window's root, rendering the app
  *   shell (the root-based `@mycadet/app` standalone build).
- * - `RENDERER_BASE_PROD` — auxiliary windows' base (about, command
+ * - `RENDERER_BASE_PROD` — auxiliary windows' base (command
  *   palette, companion, popouts, …), which still render web routes. They
- *   append their own subpath (`/about`, future `/conversations/<id>`,
+ *   append their own subpath (`/conversations/<id>`,
  *   etc.) onto the `/web/assistant` mount the app shell iframes the web
  *   bundle through.
  *

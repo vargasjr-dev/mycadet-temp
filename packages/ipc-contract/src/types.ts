@@ -1067,6 +1067,7 @@ export interface AppVersionInfo {
   commitSha: string;
   copyright: string;
   website: string;
+  cliPath?: string;
 }
 
 export type LocalAssistantRuntimeState =
