@@ -32,6 +32,7 @@ jobs:
           # Use trusted base-branch code for the write-enabled workflow.
           ref: refs/heads/main
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Determine latest release branch
         id: release
@@ -58,38 +59,46 @@ jobs:
       - name: Cherry-pick and create PR
         id: cherry-pick
         env:
-          GH_TOKEN: ${{ github.token }}
+          # A fine-grained token scoped to this repository needs write access
+          # to Contents, Workflows, and Pull requests.
+          GH_TOKEN: ${{ secrets.RELEASE_BACKPORT_TOKEN || github.token }}
+          HAS_BACKPORT_TOKEN: ${{ secrets.RELEASE_BACKPORT_TOKEN != '' }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Use a deterministic branch name based only on the release branch
-          # so that multiple cherry-picks accumulate on a single branch.
-          CHERRY_PICK_BRANCH="cherry-pick/${RELEASE_BRANCH}"
-
-          # Reuse the cherry-pick branch if it already exists, otherwise create it
-          if git ls-remote --exit-code origin "$CHERRY_PICK_BRANCH" >/dev/null 2>&1; then
-            git fetch origin "$CHERRY_PICK_BRANCH"
-            git checkout "$CHERRY_PICK_BRANCH"
-          else
-            git checkout "$RELEASE_BRANCH"
-            git checkout -b "$CHERRY_PICK_BRANCH"
-          fi
+          # Keep failed or manually superseded backports isolated by PR.
+          CHERRY_PICK_BRANCH="backport/${RELEASE_BRANCH}/pr-${PR_NUMBER}"
+          RELEASE_TIP="origin/${RELEASE_BRANCH}"
+          git switch -c "$CHERRY_PICK_BRANCH" "$RELEASE_TIP"
 
           # Detect whether the merge commit has multiple parents (true merge)
           # or a single parent (squash merge). Only pass -m 1 for true merges.
           PARENT_COUNT=$(git cat-file -p "$MERGE_SHA" | grep -c '^parent')
-          CHERRY_PICK_ARGS="--no-edit"
+          CHERRY_PICK_ARGS="--no-edit --empty=drop -x"
           if [ "$PARENT_COUNT" -gt 1 ]; then
             CHERRY_PICK_ARGS="-m 1 $CHERRY_PICK_ARGS"
           fi
 
           if git cherry-pick $CHERRY_PICK_ARGS "$MERGE_SHA"; then
-            git push --no-verify origin "$CHERRY_PICK_BRANCH"
+            if git diff --quiet "$RELEASE_TIP" HEAD; then
+              echo "::notice::#${PR_NUMBER} is already on ${RELEASE_BRANCH}."
+              exit 0
+            fi
+
+            if [ "$HAS_BACKPORT_TOKEN" != "true" ] &&
+              ! git diff --quiet "$RELEASE_TIP" HEAD -- .github/workflows/; then
+              echo "::error::This backport updates a workflow. Configure RELEASE_BACKPORT_TOKEN with Workflows write permission or cherry-pick #${PR_NUMBER} manually."
+              exit 1
+            fi
+
+            gh auth setup-git --hostname github.com
+            if ! git show-ref --verify --quiet "refs/remotes/origin/$CHERRY_PICK_BRANCH"; then
+              git push origin "HEAD:refs/heads/$CHERRY_PICK_BRANCH"
+            fi
 
             # Create a PR only if one doesn't already exist for this branch
             EXISTING_PR=$(gh pr list --head "$CHERRY_PICK_BRANCH" --base "$RELEASE_BRANCH" --json number --jq '.[0].number // empty')
@@ -97,8 +106,8 @@ jobs:
               echo "Cherry-pick pushed to existing PR #${EXISTING_PR}"
             else
               PR_URL=$(gh pr create \
-                --title "Cherry-picks for ${RELEASE_BRANCH}" \
-                --body "Automated cherry-picks onto \`${RELEASE_BRANCH}\`." \
+                --title "Backport #${PR_NUMBER} to ${RELEASE_BRANCH}" \
+                --body "Automated backport of #${PR_NUMBER}." \
                 --base "$RELEASE_BRANCH" \
                 --head "$CHERRY_PICK_BRANCH")
               echo "Created cherry-pick PR: $PR_URL"
