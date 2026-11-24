@@ -27,6 +27,14 @@ import type { CdpClient } from "../types.js";
 
 type CdpCall = { method: string; params?: Record<string, unknown> };
 
+function requireExpression(params: CdpCall["params"]): string {
+  const expression = params?.expression;
+  if (typeof expression !== "string") {
+    throw new Error("Expected a CDP expression");
+  }
+  return expression;
+}
+
 /**
  * Minimal in-memory fake CdpClient. The programmable `handler` is
  * called for every `send` and must return the raw CDP result object
@@ -1228,7 +1236,7 @@ function fakeNavCdp(opts: {
       return opts.navResponse ?? {};
     }
     if (method === "Runtime.evaluate") {
-      const expr = (params as { expression: string }).expression;
+      const expr = requireExpression(params);
       if (expr === "document.location.href") {
         return { result: { value: opts.urlBeforeNav ?? "about:blank" } };
       }
@@ -1356,8 +1364,7 @@ describe("navigateAndWait", () => {
       if (c.method !== "Runtime.evaluate") {
         return false;
       }
-      const expr = (c.params as { expression?: string } | undefined)
-        ?.expression;
+      const expr = c.params?.expression;
       return typeof expr === "string" && expr.includes("readyState");
     });
     expect(pollEvals).toHaveLength(0);
@@ -1399,8 +1406,8 @@ describe("navigateAndWait", () => {
     const pollEvals = cdp.calls.filter(
       (c) =>
         c.method === "Runtime.evaluate" &&
-        typeof (c.params as { expression?: string })?.expression === "string" &&
-        (c.params as { expression: string }).expression.includes("readyState"),
+        typeof c.params?.expression === "string" &&
+        c.params.expression.includes("readyState"),
     );
     expect(pollEvals.length).toBeGreaterThanOrEqual(4);
   });
@@ -1475,7 +1482,7 @@ describe("navigateAndWait", () => {
         return {};
       }
       if (method === "Runtime.evaluate") {
-        const expr = (params as { expression: string }).expression;
+        const expr = requireExpression(params);
         if (expr === "document.location.href" && !sawPreNavRead) {
           sawPreNavRead = true;
           throw new CdpError("cdp_error", "no context");
@@ -1553,7 +1560,7 @@ describe("waitForSelector", () => {
     const cdp = fakeCdp((method, params) => {
       if (method === "Runtime.evaluate") {
         evalCount++;
-        lastExpression = (params as { expression: string }).expression;
+        lastExpression = requireExpression(params);
         // First poll: not present. Second poll: present.
         return { result: { value: evalCount >= 2 } };
       }
@@ -1585,7 +1592,7 @@ describe("waitForSelector", () => {
     const cdp = fakeCdp((method, params) => {
       if (method === "Runtime.evaluate") {
         evalCount++;
-        lastExpression = (params as { expression: string }).expression;
+        lastExpression = requireExpression(params);
         return { result: { value: true } };
       }
       if (method === "DOM.getDocument") {
@@ -1620,7 +1627,7 @@ describe("waitForSelector", () => {
     const cdp = fakeCdp((method, params) => {
       if (method === "Runtime.evaluate") {
         evalCount++;
-        const expression = (params as { expression: string }).expression;
+        const expression = requireExpression(params);
         // Sanity-check: the polling expression must be the visible
         // probe, not the simple existence check.
         expect(expression).toContain("getBoundingClientRect");

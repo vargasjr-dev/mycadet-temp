@@ -9,8 +9,9 @@
  * integration path (conversation-agent-loop) is exercised by
  * `conversation-agent-loop-overflow.test.ts`.
  */
-
 import { describe, expect, mock, test } from "bun:test";
+
+import type { Message } from "../providers/types.js";
 
 // `defaultCompact` resolves the manager from the per-conversation compaction
 // store. Register each test's canned stub in a map the mocked store reads from.
@@ -30,7 +31,7 @@ const { defaultCompact } =
 type ContextWindowResultShape = {
   compacted: boolean;
   summaryText: string;
-  messages: unknown[];
+  messages: Message[];
   previousEstimatedInputTokens: number;
   estimatedInputTokens: number;
   maxInputTokens: number;
@@ -96,15 +97,17 @@ describe("defaultCompact", () => {
       compactedMessages: 7,
     });
     const observed = registerManager("conv-delegates", expected);
-    const messages = [{ role: "user", content: "hi" }] as never;
+    const messages: Message[] = [
+      { role: "user", content: [{ type: "text", text: "hi" }] },
+    ];
     const signal = new AbortController().signal;
 
     // WHEN defaultCompact runs with those messages and a signal
-    const result = (await defaultCompact({
+    const result = await defaultCompact({
       conversationId: "conv-delegates",
       messages,
       signal,
-    })) as unknown as ContextWindowResultShape;
+    });
 
     // THEN the manager saw the same messages and signal
     expect(observed).toHaveLength(1);
@@ -124,7 +127,7 @@ describe("defaultCompact", () => {
     // WHEN defaultCompact runs with force/profile/trust options
     await defaultCompact({
       conversationId: "conv-options",
-      messages: [] as never,
+      messages: [],
       force: true,
       overrideProfile: "fast-profile",
       precomputedEstimate: 1234,
@@ -151,7 +154,7 @@ describe("defaultCompact", () => {
     // WHEN defaultCompact runs with a fixed tail boundary
     await defaultCompact({
       conversationId: "conv-fixed",
-      messages: [] as never,
+      messages: [],
       force: true,
       fixedTailStartIndex: 4,
     });
@@ -183,7 +186,7 @@ describe("defaultCompact", () => {
     await expect(
       defaultCompact({
         conversationId: "conv-conflict",
-        messages: [] as never,
+        messages: [],
         overflowSignal: { actualTokens: 250_000, isInteractive: true },
         fixedTailStartIndex: 4,
       }),

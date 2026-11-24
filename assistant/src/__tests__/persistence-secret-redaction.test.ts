@@ -9,7 +9,10 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
 import { contentBlockArraySchema } from "../providers/content-block-schema.js";
+import { createMockProvider, textResponse } from "./helpers/mock-provider.js";
 
 // ── Shared mock plumbing (must precede module-under-test imports) ──────────
 
@@ -104,7 +107,10 @@ import {
   handleLlmCallStarted,
   handleMessageComplete,
 } from "../daemon/conversation-agent-loop-handlers.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -112,33 +118,31 @@ const CONV = "conv-redact-test";
 
 function makeDeps(): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: CONV,
-      provider: { name: "anthropic" },
+      provider: createMockProvider([textResponse("")], "anthropic").provider,
       currentTurnSurfaces: [],
       trustContext: {
         sourceChannel: "cadet",
         trustClass: "guardian",
       },
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: () => {},
     reqId: "test-req",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
-  } as EventHandlerDeps;
+  };
 }
 
 function makeMessageCompleteEvent(

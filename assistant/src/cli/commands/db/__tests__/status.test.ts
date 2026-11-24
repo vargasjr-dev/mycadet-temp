@@ -103,26 +103,26 @@ async function runStatus(args: string[]): Promise<{
   const originalStderrWrite = process.stderr.write.bind(process.stderr);
   const originalExit = process.exit;
 
-  process.stdout.write = ((chunk: string | Uint8Array) => {
+  process.stdout.write = (chunk: string | Uint8Array) => {
     stdoutChunks.push(
       typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk),
     );
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  process.stderr.write = ((chunk: string | Uint8Array) => {
+  process.stderr.write = (chunk: string | Uint8Array) => {
     stderrChunks.push(
       typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk),
     );
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   // process.exit is captured by throwing — the command finishes its work
   // before exiting, so the throw cleanly unwinds back here.
-  process.exit = ((code?: number) => {
-    exitCode = code ?? 0;
+  process.exit = (code?: number | string | null): never => {
+    exitCode = typeof code === "number" ? code : 0;
     throw new Error("__test_exit__");
-  }) as typeof process.exit;
+  };
 
   try {
     const { Command } = await import("commander");
@@ -133,7 +133,7 @@ async function runStatus(args: string[]): Promise<{
     try {
       await program.parseAsync(["node", "assistant", "db", ...args]);
     } catch (e) {
-      if ((e as Error).message !== "__test_exit__") {
+      if (!(e instanceof Error) || e.message !== "__test_exit__") {
         throw e;
       }
     }

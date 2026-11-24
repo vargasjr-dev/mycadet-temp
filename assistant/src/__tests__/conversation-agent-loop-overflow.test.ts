@@ -32,6 +32,8 @@ import {
 
 import type { LoopToolExecutor } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
+import { MessageQueue } from "../daemon/conversation-queue-manager.js";
+import { PermissionPrompter } from "../permissions/prompter.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import type { Message, Provider } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
@@ -304,9 +306,7 @@ function makeCtx(
   // provider HTTP boundary. The loop owns its mid-loop budget gate, inline
   // compaction, and event emission, so these overflow tests exercise the real
   // escalation/persistence path.
-  const loopProviderName =
-    (ctxOverrides.provider as { name?: string } | undefined)?.name ??
-    "mock-provider";
+  const loopProviderName = ctxOverrides.provider?.name ?? "mock-provider";
   const provider =
     loopProvider ??
     createMockProvider(
@@ -323,9 +323,7 @@ function makeCtx(
 
   const ctx = asConversation({
     conversationId: "test-conv",
-    messages: [
-      { role: "user", content: [{ type: "text", text: "Hello" }] },
-    ] as Message[],
+    messages: [{ role: "user", content: [{ type: "text", text: "Hello" }] }],
     processing: true,
     isProcessing(this: { processing: boolean }) {
       return this.processing;
@@ -345,7 +343,7 @@ function makeCtx(
         usage: { inputTokens: 0, outputTokens: 0 },
         stopReason: "end_turn",
       }),
-    } as unknown as Conversation["provider"],
+    },
     systemPrompt: "system prompt",
 
     contextWindowManager: {
@@ -371,8 +369,7 @@ function makeCtx(
     allowedToolNames: undefined,
     preactivatedSkillIds: undefined,
     skillProjectionState: new Map(),
-    skillProjectionCache:
-      new Map() as unknown as Conversation["skillProjectionCache"],
+    skillProjectionCache: {},
 
     usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     turnCount: 0,
@@ -381,8 +378,8 @@ function makeCtx(
     lastAttachmentWarnings: [],
 
     hasNoClient: false,
-    prompter: {} as unknown as Conversation["prompter"],
-    queue: {} as unknown as Conversation["queue"],
+    prompter: new PermissionPrompter(() => {}),
+    queue: new MessageQueue(),
 
     getWorkspaceGitService: () => ({ ensureInitialized: async () => {} }),
     commitTurnChanges: async () => {},
@@ -494,7 +491,7 @@ function buildLongConversation(messageCount: number): Message[] {
       });
     }
   }
-  return messages as Message[];
+  return messages;
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -952,7 +949,7 @@ describe("session-agent-loop overflow recovery (JARVIS-110)", () => {
                     role: "user",
                     content: [{ type: "text", text: "Hello" }],
                   },
-                ] as Message[],
+                ],
                 compactedPersistedMessages: 50,
                 summaryText: "Emergency summary",
                 previousEstimatedInputTokens: 195_000,
@@ -1048,7 +1045,7 @@ describe("session-agent-loop overflow recovery (JARVIS-110)", () => {
                 role: "user" as const,
                 content: [{ type: "text", text: "Hello" }],
               },
-            ] as Message[],
+            ],
             compactedPersistedMessages: 5,
             summaryText: "Mid-loop compaction summary",
             previousEstimatedInputTokens: 170_000,
@@ -1158,7 +1155,7 @@ describe("session-agent-loop overflow recovery (JARVIS-110)", () => {
                 role: "user" as const,
                 content: [{ type: "text", text: "Hello" }],
               },
-            ] as Message[],
+            ],
             compactedPersistedMessages: 8,
             summaryText: "Compacted large tool results",
             previousEstimatedInputTokens: 175_000,

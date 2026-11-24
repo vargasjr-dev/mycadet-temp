@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { setConfig } from "../../../../__tests__/helpers/set-config.js";
 import type { HostBrowserProxy } from "../../../../daemon/host-browser-proxy.js";
 import type { ToolContext } from "../../../types.js";
@@ -2001,7 +2003,10 @@ describe("pinned-mode selection", () => {
     try {
       getCdpClient(ctx, { mode: "extension" });
     } catch (err) {
-      const cdpErr = err as CdpError;
+      if (!(err instanceof CdpError)) {
+        throw err;
+      }
+      const cdpErr = err;
       expect(cdpErr.code).toBe("transport_error");
       expect(cdpErr.message).toContain("no Chrome Extension connected");
       expect(cdpErr.attemptDiagnostics![0].stage).toBe("candidate_selection");
@@ -2465,11 +2470,23 @@ describe("attempt diagnostics", () => {
     expect(completedLogs.length).toBe(1);
 
     // Verify the log payload contains the expected structure
-    const payload = completedLogs[0].args[0] as Record<string, unknown>;
+    const payload = z
+      .object({
+        conversationId: z.string(),
+        stickyCandidate: z.string(),
+        attemptSequence: z.array(
+          z.object({
+            kind: z.string(),
+            errorCode: z.string().optional(),
+            stage: z.string(),
+          }),
+        ),
+      })
+      .parse(completedLogs[0].args[0]);
     expect(payload.conversationId).toBe("diag-log-shape");
     expect(payload.stickyCandidate).toBe("local");
     expect(Array.isArray(payload.attemptSequence)).toBe(true);
-    const seq = payload.attemptSequence as Array<Record<string, unknown>>;
+    const seq = payload.attemptSequence;
     expect(seq.length).toBe(3); // extension, cdp-inspect, local
     expect(seq[0].kind).toBe("extension");
     expect(seq[0].errorCode).toBe("transport_error");
@@ -2547,7 +2564,10 @@ describe("attempt diagnostics", () => {
       await client.send("Page.navigate");
       expect(true).toBe(false);
     } catch (err) {
-      const cdpErr = err as CdpError;
+      if (!(err instanceof CdpError)) {
+        throw err;
+      }
+      const cdpErr = err;
       expect(cdpErr.code).toBe("cdp_error");
       expect(cdpErr.attemptDiagnostics).toBeDefined();
       expect(cdpErr.attemptDiagnostics).toHaveLength(1);

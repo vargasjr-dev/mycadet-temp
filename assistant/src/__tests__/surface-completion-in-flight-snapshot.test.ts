@@ -16,7 +16,12 @@
  */
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
+import pino from "pino";
+
 import type { AssistantEvent } from "../api/index.js";
+import { contentBlockArraySchema } from "../providers/content-block-schema.js";
+import type { ContentBlock } from "../providers/types.js";
+import { createMockProvider, textResponse } from "./helpers/mock-provider.js";
 
 let broadcasts: AssistantEvent[] = [];
 setBroadcastOverrideForTesting((msg: AssistantEvent) => {
@@ -32,14 +37,12 @@ const {
   handleToolResult,
 } = await import("../daemon/conversation-agent-loop-handlers.js");
 
-import { SurfaceType } from "../api/surfaces.js";
+import { ChoiceSurfaceDataSchema, type SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type {
   EventHandlerDeps,
   EventHandlerState,
 } from "../daemon/conversation-agent-loop-handlers.js";
-import type { CurrentTurnSurface } from "../daemon/conversation-surface-state.js";
-import type { SurfaceStateEntry } from "../daemon/conversation-surface-state.js";
 import {
   ensureConversationExists,
   getMessageById,
@@ -64,12 +67,12 @@ beforeEach(() => {
   SURFACE_ID = `surface-in-flight-${idSeq}`;
   broadcasts = [];
 });
-const CHOICE_DATA = {
+const CHOICE_DATA = ChoiceSurfaceDataSchema.parse({
   options: [
     { id: "inbox", title: "Clean up my inbox" },
     { id: "calendar", title: "Plan my week" },
   ],
-};
+});
 const CHOICE_PAYLOAD = {
   choiceId: "inbox",
   choiceTitle: "Clean up my inbox",
@@ -112,42 +115,40 @@ function showOneShotChoice(ctx: Conversation): void {
     surfaceType: "choice",
     title: "Pick one",
     data: CHOICE_DATA,
-  } as unknown as SurfaceStateEntry);
+  });
   ctx.currentTurnSurfaces.push({
     surfaceId: SURFACE_ID,
     surfaceType: "choice",
     title: "Pick one",
     data: CHOICE_DATA,
     display: "inline",
-  } as CurrentTurnSurface);
+  });
 }
 
 function makeHandlerDeps(ctx: Conversation): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       ...ctx,
-      provider: { name: "anthropic" },
+      provider: createMockProvider([textResponse("")], "anthropic").provider,
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: () => {},
     reqId: "req-in-flight",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "web",
       assistantMessageInterface: "web",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
-  } as EventHandlerDeps;
+  };
 }
 
 /** Create the real reserved assistant row the tool-result appender rewrites. */
@@ -167,12 +168,10 @@ function makeToolState(toolUseId: string, rowId: string): EventHandlerState {
   return state;
 }
 
-function surfaceBlockFrom(
-  blocks: Array<Record<string, unknown>>,
-): Record<string, unknown> | undefined {
-  return blocks.find(
-    (b) => b.type === "ui_surface" && b.surfaceId === SURFACE_ID,
-  );
+function surfaceBlockFrom(blocks: ContentBlock[]) {
+  return blocks
+    .filter((b) => b.type === "ui_surface")
+    .find((b) => b.surfaceId === SURFACE_ID);
 }
 
 describe("a one-shot surface answered before its turn persists", () => {
@@ -187,13 +186,13 @@ describe("a one-shot surface answered before its turn persists", () => {
     ).toHaveLength(1);
 
     const built = buildPersistedAssistantContent(
-      [{ type: "text", text: "Which one?" }] as never,
+      [{ type: "text", text: "Which one?" }],
       ctx.currentTurnSurfaces,
-    ) as unknown as Array<Record<string, unknown>>;
+    );
 
     const block = surfaceBlockFrom(built);
     expect(block?.completed).toBe(true);
-    expect(block?.completionSummary).toBe(EXPECTED_SUMMARY);
+    expect(block).toHaveProperty("completionSummary", EXPECTED_SUMMARY);
   });
 
   test("carries its completion through the tool-result appender", async () => {
@@ -212,9 +211,9 @@ describe("a one-shot surface answered before its turn persists", () => {
     });
 
     const row = getMessageById(rowId);
-    const block = surfaceBlockFrom(row!.content as never);
+    const block = surfaceBlockFrom(contentBlockArraySchema.parse(row!.content));
     expect(block?.completed).toBe(true);
-    expect(block?.completionSummary).toBe(EXPECTED_SUMMARY);
+    expect(block).toHaveProperty("completionSummary", EXPECTED_SUMMARY);
   });
 
   test("survives a ui_update that respreads the snapshot before the turn ends", async () => {
@@ -224,15 +223,14 @@ describe("a one-shot surface answered before its turn persists", () => {
     await handleSurfaceAction(ctx, SURFACE_ID, "inbox", CHOICE_PAYLOAD);
 
     // The `ui_update` merge path replaces the entry with a spread copy.
-    ctx.currentTurnSurfaces[0] = {
-      ...ctx.currentTurnSurfaces[0],
-      data: { ...CHOICE_DATA, title: "Pick one (updated)" },
-    } as CurrentTurnSurface;
+    const snapshot = ctx.currentTurnSurfaces[0];
+    if (snapshot.surfaceType !== "choice") {
+      throw new Error("Expected a choice snapshot");
+    }
+    const data = { ...CHOICE_DATA, title: "Pick one (updated)" };
+    ctx.currentTurnSurfaces[0] = { ...snapshot, data };
 
-    const built = buildPersistedAssistantContent(
-      [],
-      ctx.currentTurnSurfaces,
-    ) as unknown as Array<Record<string, unknown>>;
+    const built = buildPersistedAssistantContent([], ctx.currentTurnSurfaces);
 
     expect(surfaceBlockFrom(built)?.completed).toBe(true);
   });
@@ -255,11 +253,11 @@ describe("a surface with neither a persisted block nor a turn snapshot", () => {
       },
       timer: setTimeout(() => {}, 0),
       surfaceType: "choice",
-    } as never);
+    });
     ctx.surfaceState.set(SURFACE_ID, {
       surfaceType: "choice",
       data: CHOICE_DATA,
-    } as unknown as SurfaceStateEntry);
+    });
 
     await handleSurfaceAction(ctx, SURFACE_ID, "inbox", CHOICE_PAYLOAD);
 

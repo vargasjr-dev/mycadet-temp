@@ -17,12 +17,13 @@
  * all persist to the per-process test DB — and the only fake is the ctx
  * object itself (the loop's own parameter, not a module mock).
  */
-
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentLoopRunOptions } from "../agent/loop.js";
 import type { LLMCallSite } from "../config/schemas/llm.js";
+import { MessageQueue } from "../daemon/conversation-queue-manager.js";
+import { PermissionPrompter } from "../permissions/prompter.js";
 import { resetPluginRegistryAndRegisterDefaults } from "../plugins/defaults/index.js";
 import type { Message } from "../providers/types.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -102,9 +103,7 @@ function makeCtx(
 
   return asConversation({
     conversationId: TEST_CONV_ID,
-    messages: [
-      { role: "user", content: [{ type: "text", text: "Hello" }] },
-    ] as Message[],
+    messages: [{ role: "user", content: [{ type: "text", text: "Hello" }] }],
     processing: true,
     isProcessing(this: { processing: boolean }) {
       return this.processing;
@@ -130,7 +129,7 @@ function makeCtx(
         usage: { inputTokens: 0, outputTokens: 0 },
         stopReason: "end_turn",
       }),
-    } as unknown as Conversation["provider"],
+    },
     systemPrompt: "system prompt",
 
     contextWindowManager: {
@@ -167,8 +166,7 @@ function makeCtx(
     allowedToolNames: undefined,
     preactivatedSkillIds: undefined,
     skillProjectionState: new Map(),
-    skillProjectionCache:
-      new Map() as unknown as Conversation["skillProjectionCache"],
+    skillProjectionCache: {},
 
     usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     turnCount: 0,
@@ -177,8 +175,8 @@ function makeCtx(
     lastAttachmentWarnings: [],
 
     hasNoClient: false,
-    prompter: {} as unknown as Conversation["prompter"],
-    queue: {} as unknown as Conversation["queue"],
+    prompter: new PermissionPrompter(() => {}),
+    queue: new MessageQueue(),
 
     getWorkspaceGitService: () => ({ ensureInitialized: async () => {} }),
     commitTurnChanges: async () => {},

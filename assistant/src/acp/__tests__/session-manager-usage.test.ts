@@ -2,12 +2,11 @@
  * Verifies that an ACP `usage_update` flowing through a live session is
  * recorded on the session's `latestUsage`, reachable via `getStatus()`.
  */
-
 import { describe, expect, mock, test } from "bun:test";
 
 import type { SessionNotification } from "@agentclientprotocol/sdk";
 
-import type { AcpSessionState } from "../types.js";
+import { requireSessionStatus } from "./helpers/acp-session-status.js";
 
 // Captures the client-handler factory each fake process is constructed with
 // so tests can drive session updates through the real wiring (the wrapped
@@ -78,7 +77,7 @@ describe("AcpSessionManager — latestUsage tracking", () => {
       },
     });
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.latestUsage).toEqual({
       usedTokens: 1200,
       contextSize: 200000,
@@ -110,7 +109,7 @@ describe("AcpSessionManager — latestUsage tracking", () => {
       },
     });
 
-    const state = manager.getStatus(acpSessionId) as AcpSessionState;
+    const state = requireSessionStatus(manager, acpSessionId);
     expect(state.latestUsage).toEqual({
       usedTokens: 50,
       contextSize: 100,

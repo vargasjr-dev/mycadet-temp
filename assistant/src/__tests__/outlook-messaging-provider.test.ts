@@ -39,14 +39,14 @@ const mockListMailFolders = mock(() =>
   ]),
 );
 
-const mockListMessages = mock(() =>
-  Promise.resolve({ value: [] as OutlookMessage[] }),
+const mockListMessages = mock(
+  async (): Promise<{ value?: OutlookMessage[] }> => ({ value: [] }),
 );
 
-const mockSearchMessages = mock(() =>
-  Promise.resolve({
-    value: [] as OutlookMessage[],
-    "@odata.count": 0 as number | undefined,
+const mockSearchMessages = mock(
+  async (): Promise<{ value: OutlookMessage[]; "@odata.count"?: number }> => ({
+    value: [],
+    "@odata.count": 0,
   }),
 );
 
@@ -339,9 +339,7 @@ describe("Outlook messaging provider", () => {
     });
 
     test("returns empty array when response has no value", async () => {
-      mockListMessages.mockImplementation(
-        () => Promise.resolve({}) as ReturnType<typeof mockListMessages>,
-      );
+      mockListMessages.mockImplementation(async () => ({}));
 
       const conn = createMockConnection();
       const messages = await outlookMessagingProvider.getHistory(
@@ -404,8 +402,8 @@ describe("Outlook messaging provider", () => {
     test("uses count option for top parameter", async () => {
       mockSearchMessages.mockImplementation(() =>
         Promise.resolve({
-          value: [] as OutlookMessage[],
-          "@odata.count": 0 as number | undefined,
+          value: [],
+          "@odata.count": 0,
         }),
       );
 

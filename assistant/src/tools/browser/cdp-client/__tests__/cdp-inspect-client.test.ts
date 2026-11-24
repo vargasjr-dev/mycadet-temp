@@ -5,6 +5,14 @@ import { beforeEach, describe, expect, test } from "bun:test";
 const { CdpInspectClient, createCdpInspectClient } =
   await import("../cdp-inspect-client.js");
 const { CdpError } = await import("../errors.js");
+
+function requireCdpError(error: unknown): InstanceType<typeof CdpError> {
+  if (!(error instanceof CdpError)) {
+    throw new Error("Expected a CDP error", { cause: error });
+  }
+  return error;
+}
+
 const { CdpWsTransportError } = await import("../cdp-inspect/ws-transport.js");
 const { DevToolsDiscoveryError } = await import("../cdp-inspect/discovery.js");
 
@@ -299,10 +307,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       firstErr = err;
     }
-    expect(firstErr).toBeInstanceOf(CdpError);
-    expect((firstErr as InstanceType<typeof CdpError>).code).toBe(
-      "transport_error",
-    );
+    expect(requireCdpError(firstErr).code).toBe("transport_error");
     expect(probeCount).toBe(1);
     expect(harness.connectCalls).toBe(0);
 
@@ -345,8 +350,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("cdp_error");
     expect(cdpErr.message).toBe("No target with given id found");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
@@ -368,8 +372,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("transport_error");
     expect(cdpErr.message).toBe("websocket closed before open");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
@@ -389,8 +392,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("aborted");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
     // Nothing ran — no discovery, no connect, no transport sends.
@@ -422,8 +424,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("aborted");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
   });
@@ -453,8 +454,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("aborted");
     expect(cdpErr.cdpMethod).toBe("Page.navigate");
   });
@@ -478,8 +478,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("cdp_error");
     expect(cdpErr.message).toBe("invalid expression");
     expect(cdpErr.cdpMethod).toBe("Runtime.evaluate");
@@ -518,8 +517,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("disposed");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
     // No discovery or transport activity took place.
@@ -544,8 +542,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("cdp_error");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
   });
@@ -617,7 +614,7 @@ describe("CdpInspectClient", () => {
         probeDevToolsJsonVersion: async (probeOpts) => {
           // Capture the signal so we can assert the shared attach
           // controller actually fired downstream.
-          probeSignalSeen = (probeOpts as { signal?: AbortSignal }).signal;
+          probeSignalSeen = probeOpts.signal;
           probeResolve?.();
           // Hang forever unless the shared controller fires.
           await new Promise<never>((_, reject) => {
@@ -670,8 +667,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       caught = err;
     }
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("aborted");
     expect(cdpErr.cdpMethod).toBe("Browser.getVersion");
     // Probe saw a non-null signal, meaning ensureSession plumbed one
@@ -708,7 +704,7 @@ describe("CdpInspectClient", () => {
       helpers: {
         probeDevToolsJsonVersion: async (probeOpts) => {
           probeCount += 1;
-          const signal = (probeOpts as { signal?: AbortSignal }).signal;
+          const signal = probeOpts.signal;
           if (probeCount === 1) {
             firstProbeStarted.resolve();
             // Stall until the shared controller aborts us.
@@ -777,8 +773,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       firstErr = err;
     }
-    expect(firstErr).toBeInstanceOf(CdpError);
-    expect((firstErr as InstanceType<typeof CdpError>).code).toBe("aborted");
+    expect(requireCdpError(firstErr).code).toBe("aborted");
 
     // At this point, with the fix, `this.pending` has been cleared
     // synchronously — but without the fix, it would still be set to
@@ -852,8 +847,7 @@ describe("CdpInspectClient", () => {
     } catch (err) {
       firstErr = err;
     }
-    expect(firstErr).toBeInstanceOf(CdpError);
-    expect((firstErr as InstanceType<typeof CdpError>).code).toBe("aborted");
+    expect(requireCdpError(firstErr).code).toBe("aborted");
 
     // …but the second caller is still alive and can make progress
     // once the shared attach finishes.
@@ -1028,8 +1022,7 @@ describe("CdpInspectClient — WS-only fallback", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("transport_error");
     expect(cdpErr.message).toContain("non-loopback");
     expect(connectCalled).toBe(false);
@@ -1070,8 +1063,7 @@ describe("CdpInspectClient — WS-only fallback", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("transport_error");
     expect(connectCalled).toBe(false);
   });
@@ -1111,8 +1103,7 @@ describe("CdpInspectClient — WS-only fallback", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("transport_error");
     expect(connectCalled).toBe(false);
   });
@@ -1153,8 +1144,7 @@ describe("CdpInspectClient — WS-only fallback", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("transport_error");
     // Error message should explain both HTTP and WS failures
     expect(cdpErr.message).toContain("HTTP discovery failed");
@@ -1196,8 +1186,7 @@ describe("CdpInspectClient — WS-only fallback", () => {
       caught = err;
     }
 
-    expect(caught).toBeInstanceOf(CdpError);
-    const cdpErr = caught as InstanceType<typeof CdpError>;
+    const cdpErr = requireCdpError(caught);
     expect(cdpErr.code).toBe("transport_error");
     expect(cdpErr.message).toContain("No usable page targets");
   });

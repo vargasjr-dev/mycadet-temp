@@ -9,14 +9,13 @@ import assert from "node:assert/strict";
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { Message } from "../providers/types.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 import type { AssistantEvent } from "../api/index.js";
 import type { Conversation } from "../daemon/conversation.js";
-import {
-  type MessagingConversationContext,
-  persistUserMessage,
-} from "../daemon/conversation-messaging.js";
+import { persistUserMessage } from "../daemon/conversation-messaging.js";
 import { ConversationModeSessionCoordinator } from "../daemon/conversation-mode-session.js";
 import {
   getConversationByKey,
@@ -123,7 +122,7 @@ await initializeDb();
 /** Conversation that completes its agent loop quickly and emits a text delta + message_complete. */
 function makeCompletingConversation(): Conversation {
   let processing = false;
-  const messages: unknown[] = [];
+  const messages: Message[] = [];
   return asConversation({
     modeSessions: mockUnownedModeSessions(),
     isProcessing: () => processing,
@@ -161,14 +160,14 @@ function makeCompletingConversation(): Conversation {
     },
     handleConfirmationResponse: () => {},
     handleSecretResponse: () => {},
-    getMessages: () => messages as never[],
+    getMessages: () => messages,
   });
 }
 
 /** Conversation that hangs forever in the agent loop (simulates a busy conversation). */
 function makeHangingConversation(): Conversation {
   let processing = false;
-  const messages: unknown[] = [];
+  const messages: Message[] = [];
   const enqueuedMessages: Array<{
     content: string;
     onEvent?: (msg: AssistantEvent) => void;
@@ -219,7 +218,7 @@ function makeHangingConversation(): Conversation {
     },
     handleConfirmationResponse: () => {},
     handleSecretResponse: () => {},
-    getMessages: () => messages as never[],
+    getMessages: () => messages,
     _enqueuedMessages: enqueuedMessages,
   });
 }
@@ -237,7 +236,7 @@ function makePendingApprovalConversation(
 } {
   const queueDepth = options?.queueDepth ?? 0;
   const pending = new Set([requestId]);
-  const messages: unknown[] = [];
+  const messages: Message[] = [];
   const runAgentLoopMock = mock(async () => {});
   const enqueueMessageMock = mock(
     (options: { content: string; requestId?: string }) => ({
@@ -286,7 +285,7 @@ function makePendingApprovalConversation(
     runAgentLoop: runAgentLoopMock,
     handleConfirmationResponse: handleConfirmationResponseMock,
     handleSecretResponse: () => {},
-    getMessages: () => messages as never[],
+    getMessages: () => messages,
   });
 
   return {
@@ -419,13 +418,13 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
       let processing = false;
       let processingOwner = 0;
       const releases: number[] = [];
-      const ctx = Object.assign(makeCompletingConversation(), {
+      const ctx: Conversation = Object.assign(makeCompletingConversation(), {
         conversationId,
         modeSessions,
         messages: [],
-        abortController: null as AbortController | null,
-        currentRequestId: undefined as string | undefined,
-        currentTurnClientMessageId: undefined as string | undefined,
+        abortController: null,
+        currentRequestId: undefined,
+        currentTurnClientMessageId: undefined,
         currentActiveSurfaceId: surface ? "surface-123" : undefined,
         inFlightSendRequestIds: new Map<string, string>(),
         isProcessing: () => processing,
@@ -441,11 +440,7 @@ describe("POST /v1/messages — queue-if-busy and hub publishing", () => {
         getTurnChannelContext: () => null,
         getTurnInterfaceContext: () => null,
       });
-      ctx.persistUserMessage = (options) =>
-        persistUserMessage(
-          ctx as unknown as MessagingConversationContext,
-          options,
-        );
+      ctx.persistUserMessage = (options) => persistUserMessage(ctx, options);
       const runAgentLoop = mock(async (_content: string, messageId: string) => {
         expect(ctx.isProcessing()).toBe(true);
         expect(ctx.messages).toHaveLength(1);

@@ -27,14 +27,14 @@ describe("emit_event body validation", () => {
   test("rejects an out-of-enum kind with BadRequestError", () => {
     expect(() =>
       routeFor("emit_event").handler({
-        body: { kind: "bogus" } as Record<string, unknown>,
+        body: { kind: "bogus" },
       }),
     ).toThrow(BadRequestError);
   });
 
   test("rejects a body missing kind with BadRequestError", () => {
-    expect(() =>
-      routeFor("emit_event").handler({ body: {} as Record<string, unknown> }),
-    ).toThrow(BadRequestError);
+    expect(() => routeFor("emit_event").handler({ body: {} })).toThrow(
+      BadRequestError,
+    );
   });
 });
