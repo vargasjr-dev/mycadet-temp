@@ -1,12 +1,17 @@
 import { execFileSync, spawn, execSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import type { ChildProcess } from "node:child_process";
 import {
   chmodSync,
   existsSync,
   mkdirSync,
+  lstatSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
-  statSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -82,15 +87,15 @@ function normalizeRuntimeVersion(version: string): string {
   return version === "latest" ? version : stripVersionPrefix(version);
 }
 
-export function getLocalRuntimeInstallDir(
-  entry: LocalAssistant,
-  version: string,
-): string {
-  return join(
-    getLocalInstanceDir(entry),
-    "runtime",
-    normalizeRuntimeVersion(version),
-  );
+function sharedRuntimeRoot(): string {
+  const bunGlobalDir =
+    process.env.BUN_INSTALL_GLOBAL_DIR ||
+    join(
+      process.env.BUN_INSTALL || join(homedir(), ".bun"),
+      "install",
+      "global",
+    );
+  return resolve(bunGlobalDir, "cadet-runtimes");
 }
 
 function packagePath(
@@ -187,11 +192,9 @@ function localRuntimeCesDir(
 
 /**
  * The instance's most recently installed self-managed runtime — the newest
- * directory under `<instanceDir>/runtime/`, i.e. the install the last
- * `ensureLocalRuntime` (hatch upgrade) left behind. The lockfile stopped
- * recording the runtime install (version and dir), so recency is derived
- * from the filesystem instead: every install rewrites its own directory,
- * making its mtime the install order.
+ * entry under `<instanceDir>/runtime/`. New entries are links to shared
+ * installs. Older installs are directories. Use the local entry’s timestamp
+ * so another assistant’s install cannot change this assistant’s selection.
  */
 function latestLocalRuntimeInstallDir(
   entry: LocalAssistant,
@@ -205,13 +208,13 @@ function latestLocalRuntimeInstallDir(
   }
   let newest: { dir: string; mtimeMs: number } | undefined;
   for (const dir of installed) {
-    let stat: ReturnType<typeof statSync>;
+    let stat: ReturnType<typeof lstatSync>;
     try {
-      stat = statSync(join(runtimeRoot, dir));
+      stat = lstatSync(join(runtimeRoot, dir));
     } catch {
       continue;
     }
-    if (!stat.isDirectory()) continue;
+    if (!stat.isDirectory() && !stat.isSymbolicLink()) continue;
     if (!newest || stat.mtimeMs > newest.mtimeMs) {
       newest = { dir, mtimeMs: stat.mtimeMs };
     }
@@ -239,12 +242,47 @@ export async function ensureLocalRuntime(
   const normalizedVersion = normalizeRuntimeVersion(version);
   const displayVersion =
     normalizedVersion === "latest" ? "latest" : `v${normalizedVersion}`;
-  const installDir = getLocalRuntimeInstallDir(entry, normalizedVersion);
-
-  if (!options.force && hasLocalRuntimeComponents(installDir)) {
-    return { version: displayVersion, installDir };
+  const root = sharedRuntimeRoot();
+  const sharedDir = join(root, normalizedVersion);
+  let runtimeDir = sharedDir;
+  if (options.force || !hasLocalRuntimeComponents(sharedDir)) {
+    mkdirSync(root, { recursive: true });
+    const stagingDir = mkdtempSync(join(root, `${normalizedVersion}-`));
+    try {
+      await installLocalRuntime(stagingDir, normalizedVersion, displayVersion);
+      if (options.force) {
+        // Other assistants may still be running the previous copy.
+        runtimeDir = stagingDir;
+      } else {
+        try {
+          renameSync(stagingDir, sharedDir);
+        } catch (error) {
+          if (!hasLocalRuntimeComponents(sharedDir)) throw error;
+          // Another process installed this release while we were downloading.
+        }
+      }
+    } finally {
+      if (runtimeDir !== stagingDir) {
+        rmSync(stagingDir, { recursive: true, force: true });
+      }
+    }
   }
 
+  const instanceRuntimeDir = join(getLocalInstanceDir(entry), "runtime");
+  mkdirSync(instanceRuntimeDir, { recursive: true });
+  const installDir = join(
+    instanceRuntimeDir,
+    `${normalizedVersion}-${randomUUID()}`,
+  );
+  symlinkSync(runtimeDir, installDir, "junction");
+  return { version: displayVersion, installDir };
+}
+
+async function installLocalRuntime(
+  installDir: string,
+  normalizedVersion: string,
+  displayVersion: string,
+): Promise<void> {
   ensureBunInstalled();
   mkdirSync(installDir, { recursive: true });
   writeFileSync(
@@ -297,8 +335,6 @@ export async function ensureLocalRuntime(
   } finally {
     closeLogFile(log);
   }
-
-  return { version: displayVersion, installDir };
 }
 
 /**
@@ -1220,21 +1256,6 @@ async function discoverCloudExternalIp(): Promise<string | undefined> {
 
   const [gcpIp, awsIp] = await Promise.all([gcpPromise, awsPromise]);
   return gcpIp ?? awsIp;
-}
-
-/**
- * Check whether watch-mode startup is possible for the assistant daemon.
- * Watch mode requires source files (bun --watch only works with .ts sources,
- * not compiled binaries). Returns true when assistant source can be resolved,
- * false otherwise.
- *
- * Use this before stopping a running assistant for a watch-mode restart — if
- * watch mode isn't available (e.g. packaged desktop app without source), the
- * caller should keep the existing process alive rather than killing it and
- * failing.
- */
-export function isAssistantWatchModeAvailable(): boolean {
-  return resolveAssistantIndexPath() !== undefined;
 }
 
 /**

@@ -231,10 +231,8 @@ export async function upgradeLocal(
       "Local upgrade failed; restoring the previous runtime and service roots...",
     );
     await sleepLocal(upgradedEntry, { force: true });
-    // The lockfile no longer records the runtime install — the newest
-    // directory under the instance's runtime/ root is what the next wake
-    // derives, so a failed upgrade's install must leave, or that wake
-    // would pick the runtime that just failed to start.
+    // Drop only this assistant’s new runtime link. Other assistants can
+    // still use the shared install, and this one can restart its old runtime.
     await rm(runtimeInstall.installDir, { recursive: true, force: true });
     if (backupPath) {
       const restored = await restoreBackup(entry.assistantId, backupPath, {

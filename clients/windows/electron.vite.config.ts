@@ -25,6 +25,8 @@ const { appId } = createRequire(import.meta.url)(
   "./electron-builder.config.cjs",
 ) as { appId: string };
 
+const ownBuildVersion = JSON.stringify(resolveVersion());
+
 const BUILD_DEFINES = {
   __CADET_APP_USER_MODEL_ID__: JSON.stringify(appId),
   __CADET_BUILD_SHA__: JSON.stringify(resolveShortBuildCommitSha()),
@@ -34,7 +36,8 @@ const BUILD_DEFINES = {
   // The channel version the bundled @mycadet/local-mode resolver classifies —
   // resolveVersion() stamps checkouts `-local.`, so a local build's bundled
   // resolver agrees with the baked __CADET_ENVIRONMENT__ above.
-  __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
+  __CADET_OWN_VERSION__: ownBuildVersion,
+  "globalThis.__CADET_OWN_VERSION__": ownBuildVersion,
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||
       process.env.CADET_ENABLE_CHROME_DEVTOOLS === "1",

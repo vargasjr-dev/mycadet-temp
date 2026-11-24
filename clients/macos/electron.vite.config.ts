@@ -69,13 +69,16 @@ const LOCAL_CLI_ENTRY =
 // otherwise. Release builds bake the plain version; app.getVersion() fallback
 // covers bundles built without the define.
 
+const ownBuildVersion = JSON.stringify(resolveVersion());
+
 const BUILD_DEFINES = {
   __CADET_BUILD_SHA__: JSON.stringify(resolveBuildSha()),
   __CADET_ENVIRONMENT__: JSON.stringify(
     process.env.CADET_ENVIRONMENT || "local",
   ),
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
-  __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
+  __CADET_OWN_VERSION__: ownBuildVersion,
+  "globalThis.__CADET_OWN_VERSION__": ownBuildVersion,
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||

@@ -31,6 +31,8 @@ const LOCAL_CLI_ENTRY =
     ? path.resolve(__dirname, "../../cli/src/index.ts")
     : "";
 
+const ownBuildVersion = JSON.stringify(resolveVersion());
+
 const BUILD_DEFINES = {
   __CADET_BUILD_SHA__: JSON.stringify(resolveShortBuildCommitSha()),
   __CADET_ENVIRONMENT__: JSON.stringify(
@@ -39,7 +41,8 @@ const BUILD_DEFINES = {
   // The channel version the bundled @mycadet/local-mode resolver classifies —
   // resolveVersion() stamps checkouts `-local.`, so a local build's bundled
   // resolver agrees with the baked __CADET_ENVIRONMENT__ above.
-  __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
+  __CADET_OWN_VERSION__: ownBuildVersion,
+  "globalThis.__CADET_OWN_VERSION__": ownBuildVersion,
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(

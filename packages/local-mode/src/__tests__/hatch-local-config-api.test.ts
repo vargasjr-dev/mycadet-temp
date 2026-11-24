@@ -42,14 +42,14 @@ mock.module("../remotes/local/hatch-lock", () => ({
     }),
 }));
 const actualCommon = await import("../remotes/local/common");
-const sourceAvailable = mock(() => true);
+const resolveSource = mock((): string | undefined => "/source");
 const installRuntime = mock<typeof actualCommon.ensureLocalRuntime>(
   async (_entry, version) => ({ version, installDir: "/unused" }),
 );
 mock.module("../remotes/local/common", () => ({
   ...actualCommon,
   ensureLocalRuntime: installRuntime,
-  isAssistantWatchModeAvailable: sourceAvailable,
+  localSourceCommandEntry: resolveSource,
 }));
 
 // The readyz seam: hatch's readiness wait polls the entry's gateway port, so
@@ -135,7 +135,7 @@ beforeEach(() => {
     saved.set(key, process.env[key]);
     process.env[key] = path.join(home, key.toLowerCase());
   }
-  sourceAvailable.mockReturnValue(true);
+  resolveSource.mockReturnValue("/source");
   installRuntime.mockClear();
   wakeMock.mockClear();
 });
@@ -154,7 +154,7 @@ describe("hatchLocal's config API handoff", () => {
   test("installs the release before waking when source is absent", async () => {
     const version = "0.13.0-dev.202611231907.2f27f95";
     const savedVersion = process.env.APP_VERSION;
-    sourceAvailable.mockReturnValue(false);
+    resolveSource.mockReturnValue(undefined);
     installRuntime.mockImplementationOnce(async () => {
       expect(wakeMock).not.toHaveBeenCalled();
       return { version, installDir: "/unused" };
@@ -175,7 +175,7 @@ describe("hatchLocal's config API handoff", () => {
   });
 
   test("an install failure is reported before startup", async () => {
-    sourceAvailable.mockReturnValue(false);
+    resolveSource.mockReturnValue(undefined);
     installRuntime.mockRejectedValueOnce(
       new Error("Runtime package unavailable"),
     );

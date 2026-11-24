@@ -10,7 +10,7 @@ import { sleepLocal } from "./sleep";
 import { wakeLocal } from "./wake";
 import {
   ensureLocalRuntime,
-  isAssistantWatchModeAvailable,
+  localSourceCommandEntry,
   setStartupLogging,
 } from "./common";
 import { withLocalHatchLock } from "./hatch-lock";
@@ -33,7 +33,7 @@ import {
   registerLocalAssistantWithCloud,
 } from "../../cloud-registration";
 
-declare const __CADET_OWN_VERSION__: string | undefined;
+import { ownVersion } from "../../environment";
 
 /**
  * Allocate an isolated placement for a named local instance: its data root
@@ -120,12 +120,12 @@ export async function hatchLocal(params: {
       log(`🥚 Hatching local assistant: ${instanceName}`);
       log("");
 
-      if (!isAssistantWatchModeAvailable()) {
-        const runtimeVersion =
-          params.version ??
-          (typeof __CADET_OWN_VERSION__ === "string"
-            ? __CADET_OWN_VERSION__
-            : "latest");
+      if (
+        !["assistant", "gateway", "ces"].every((name) =>
+          localSourceCommandEntry(name),
+        )
+      ) {
+        const runtimeVersion = params.version ?? ownVersion();
         log(`Installing local runtime ${runtimeVersion}…`);
         await ensureLocalRuntime(fresh, runtimeVersion);
       }
