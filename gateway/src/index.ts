@@ -9,10 +9,7 @@ import { loadConfig } from "./config.js";
 import { CircuitBreakerOpenError } from "./runtime/client.js";
 import { getCredentials } from "./credential-cache.js";
 import { credentialKey } from "./credential-key.js";
-import {
-  CredentialWatcher,
-  type CredentialChangeEvent,
-} from "./credential-watcher.js";
+import { startCredentialWatcher } from "./credential-watcher.js";
 import {
   closeTwilioMediaStream,
   handleTwilioMediaWs,
@@ -103,11 +100,7 @@ import { validateEdgeToken } from "./auth/token-exchange.js";
 import { createRouter, type GetClientIp } from "./http/router.js";
 import { ROUTES, webhookDedupCaches } from "./http/routes/index.js";
 import { startSleepWakeDetector } from "./sleep-wake-detector.js";
-import { callTelegramApi } from "./telegram/api.js";
-import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
-import { registerEmailCallbackRoute } from "./email/register-callback.js";
 import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
-import { syncConfiguredTwilioPhoneNumberWebhooks } from "./twilio/webhook-sync.js";
 import { startIpcServer } from "./ipc/server.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
@@ -138,32 +131,6 @@ let postAssistantReadyComplete = false;
  * trigger side effects (e.g. Telegram webhook reconciliation,
  * Slack socket restart).
  */
-const SERVICE_DISPLAY_NAMES: Record<string, string> = {
-  telegram: "Telegram",
-  twilio: "Twilio",
-  whatsapp: "WhatsApp",
-  slack_channel: "Slack channel",
-  discord_channel: "Discord channel",
-};
-
-function detectCredentialChanges(
-  event: CredentialChangeEvent,
-  logTarget: { info: (msg: string) => void },
-): Set<string> {
-  const changed = new Set<string>();
-  for (const service of event.changedServices) {
-    const displayName = SERVICE_DISPLAY_NAMES[service] ?? service;
-    const creds = event.credentials.get(service);
-    logTarget.info(
-      creds
-        ? `${displayName} credentials loaded from credential vault`
-        : `${displayName} credentials cleared`,
-    );
-    changed.add(service);
-  }
-  return changed;
-}
-
 // Shared rate limiter for auth failures and unauthenticated endpoints
 const authRateLimiter = getAuthRateLimiter();
 
@@ -272,8 +239,6 @@ async function main() {
   // Track whether each integration has valid credentials so route
   // preconditions can gate requests synchronously. Updated by the
   // credential watcher callback whenever credentials change.
-  let telegramReady = false;
-  let cadetReady = false;
 
   function maybeStartTunnelForTwilio(
     reason: string,
@@ -857,132 +822,9 @@ async function main() {
   whatsappDedupCache.startCleanup();
   emailDedupCache.startCleanup();
 
-  const telegramCaches = {
-    credentials: credentialCache,
-    configFile: configFileCache,
-  };
-
-  function registerTelegramCommands(): void {
-    callTelegramApi(
-      "setMyCommands",
-      {
-        commands: [
-          { command: "new", description: "Start a new conversation" },
-          { command: "help", description: "Show available commands" },
-        ],
-      },
-      { credentials: credentialCache, configFile: configFileCache },
-    ).catch((err) => {
-      log.error({ err }, "Failed to register Telegram bot commands");
-    });
-  }
-
   const stopSlackClient = startSlackGateway();
 
   const stopDiscordClient = startDiscordGateway();
-
-  /**
-   * Fingerprint of the Telegram bot token the dedup cache's watermark belongs
-   * to. Null while no token is stored, which is itself a bot change: the next
-   * bot to arrive must not meet the departed one's mark.
-   */
-  let lastTelegramTokenFingerprint: string | null = null;
-
-  const credentialWatcher = new CredentialWatcher((event) => {
-    const changed = detectCredentialChanges(event, log);
-
-    // Invalidate the credential cache so subsequent reads pick up fresh values
-    if (changed.size > 0) {
-      credentialCache.invalidate();
-    }
-
-    // Update integration readiness flags from the credential event
-    const telegramCreds = event.credentials.get("telegram");
-    telegramReady = !!(
-      telegramCreds?.bot_token && telegramCreds?.webhook_secret
-    );
-
-    const cadetCreds = event.credentials.get("cadet");
-    cadetReady = !!cadetCreds?.assistant_api_key;
-    if (cadetReady) {
-      // Re-run validate when the API key / base URL change so a warm-pool
-      // claim does not keep the previous assistant's bound owner ids.
-      void ensureCloudIdentityIds();
-    }
-    const twilioCreds = event.credentials.get("twilio");
-
-    // Side effects keyed by service name
-    // `update_id` is a per-bot sequence, so a replacement bot starts below the
-    // previous one's high-water mark and every inbound would be rejected as an
-    // already-processed replay and answered 200. Forgetting the mark is what
-    // keeps delivery working across a bot swap.
-    //
-    // Keyed on the token itself rather than on `changed`. Every `keys.enc`
-    // write polls with `forceChanged`, which reports every configured service
-    // as changed even when its plaintext is identical, so re-saving an
-    // unrelated credential would otherwise clear replay protection for a bot
-    // that never moved and let a delayed retry be processed twice.
-    const telegramTokenFingerprint = telegramCreds?.bot_token
-      ? new Bun.CryptoHasher("sha256")
-          .update(telegramCreds.bot_token)
-          .digest("hex")
-      : null;
-    if (telegramTokenFingerprint !== lastTelegramTokenFingerprint) {
-      lastTelegramTokenFingerprint = telegramTokenFingerprint;
-      telegramDedupCache.reset();
-    }
-    if (changed.has("telegram") && telegramReady) {
-      registerTelegramCommands();
-      reconcileTelegramWebhook(telegramCaches).catch((err) => {
-        log.error(
-          { err },
-          "Failed to reconcile Telegram webhook after credential change",
-        );
-      });
-    }
-
-    if (changed.has("twilio")) {
-      maybeStartTunnelForTwilio("twilio credentials changed", twilioCreds);
-      syncConfiguredTwilioPhoneNumberWebhooks({
-        credentials: credentialCache,
-        configFile: configFileCache,
-      }).catch((err) => {
-        log.warn({ err }, "Twilio webhook sync failed after credential change");
-      });
-    }
-
-    // Register email callback route with the cloud so inbound email
-    // webhooks are forwarded to this gateway (same pattern as Telegram).
-    // Fires on initial credential load and whenever cadet credentials change
-    // (key rotation, late provisioning).
-    if (changed.has("cadet")) {
-      tunnelClient?.refreshCredentials("cadet credentials changed");
-      registerEmailCallbackRoute({
-        credentials: credentialCache,
-        configFile: configFileCache,
-      }).catch((err) => {
-        log.error(
-          { err },
-          "Failed to register email callback route after credential change",
-        );
-      });
-
-      // Cadet credentials are load-bearing for the Telegram webhook URL when
-      // the cloud callback fallback applies: a cloud connection arriving
-      // or rotating after Telegram setup must repoint Telegram at the cloud
-      // callback route without waiting for an unrelated Telegram or ingress
-      // change, or a system wake. Skipped when telegram credentials changed in
-      // the same event, since that branch already reconciled above.
-      if (telegramReady && !changed.has("telegram")) {
-        reconcileTelegramWebhook(telegramCaches).catch((err) => {
-          log.error(
-            { err },
-            "Failed to reconcile Telegram webhook after cadet credential change",
-          );
-        });
-      }
-    }
-  });
 
   const twilioStartupCredentials =
     await readTwilioCredentialsForTunnelStartup();
@@ -991,23 +833,27 @@ async function main() {
   // up at startup for every assistant (not just for Twilio).
   startTunnelForLiveVoice("startup");
 
-  // The credential watcher callback handles credential-backed startup side
-  // effects during the initial poll.
-  await credentialWatcher.start();
-
-  const tasks: (() => StopTask)[] = [
+  // The lifecycle starts. Each one returns its stop thunk, so this list is
+  // the shutdown order as a side effect of starting. The credential
+  // watcher's start is awaited: its initial poll carries the
+  // credential-backed startup side effects, so each start completes before
+  // the next begins.
+  const tasks: (() => StopTask | Promise<StopTask>)[] = [
+    startCredentialWatcher,
     startIpcServer,
     startConfigFileWatcher,
     startSleepWakeDetector,
     startInboundEventExpirationCleanup,
   ];
-  const shutdownTasks = tasks.map((task) => task());
+  const shutdownTasks: StopTask[] = [];
+  for (const task of tasks) {
+    shutdownTasks.push(await task());
+  }
 
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
     const allShutdownTasks: StopTask[] = [
-      () => credentialWatcher.stop(),
       () => tunnelClient.stop(),
       stopDiscordClient,
       stopSlackClient,
