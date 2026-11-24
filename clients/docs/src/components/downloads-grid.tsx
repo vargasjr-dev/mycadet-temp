@@ -273,11 +273,11 @@ function Card({
         </>
       ) : id === "mac" || id === "windows" || id === "linux" ? (
         <>
-          <p className="dl-note">
-            {environment === "dev"
-              ? "The dev channel's latest build, straight from the release train."
-              : "The latest release, straight from the release train."}
-          </p>
+          {environment === "dev" && (
+            <p className="dl-note">
+              The dev channel's latest build, straight from the release train.
+            </p>
+          )}
           <DesktopDownloadLink
             href={DESKTOP_DOWNLOAD_URLS[id][environment]}
             label={`Download for ${id === "mac" ? "Mac" : id === "linux" ? "Linux" : "Windows"}`}
