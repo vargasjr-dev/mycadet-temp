@@ -3,12 +3,10 @@ import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twi
 import { getAuthRateLimiter } from "./auth-rate-limiter.js";
 import { initSigningKey } from "./auth/token-service.js";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
-import { getConfigFileCache } from "./config-file-cache.js";
 import { startConfigFileWatcher } from "./config-file-watcher.js";
 import { loadConfig } from "./config.js";
 import { CircuitBreakerOpenError } from "./runtime/client.js";
 import { getCredentials } from "./credential-cache.js";
-import { credentialKey } from "./credential-key.js";
 import { startCredentialWatcher } from "./credential-watcher.js";
 import {
   closeTwilioMediaStream,
@@ -100,7 +98,6 @@ import { validateEdgeToken } from "./auth/token-exchange.js";
 import { createRouter, type GetClientIp } from "./http/router.js";
 import { ROUTES, webhookDedupCaches } from "./http/routes/index.js";
 import { startSleepWakeDetector } from "./sleep-wake-detector.js";
-import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
 import { startIpcServer } from "./ipc/server.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
@@ -226,7 +223,6 @@ async function main() {
   const credentialCache = getCredentials();
   bindCloudIdentityCredentialCache(credentialCache);
   void ensureCloudIdentityIds();
-  const configFileCache = getConfigFileCache();
   const tunnelClient = getTunnelClient();
   // Tunnel only sees a webhook route on the next tunnel connect, so a registry
   // write changes the advertised rules, so the tunnel re-advertises them on
@@ -239,64 +235,6 @@ async function main() {
   // Track whether each integration has valid credentials so route
   // preconditions can gate requests synchronously. Updated by the
   // credential watcher callback whenever credentials change.
-
-  function maybeStartTunnelForTwilio(
-    reason: string,
-    twilioCredentials?: Record<string, string> | null,
-  ): void {
-    if (!tunnelClient || tunnelClient.isRunning()) {
-      return;
-    }
-    if (!hasTwilioSetupStarted(configFileCache, twilioCredentials)) {
-      return;
-    }
-
-    log.info({ reason }, "Starting Tunnel after Twilio setup detected");
-    tunnelClient.start();
-    return;
-  }
-
-  /**
-   * Start the Tunnel for web live voice.
-   *
-   * Tunnel is the browser's ingress for the live-voice WebSocket, but the tunnel
-   * was historically only started for Twilio (see
-   * {@link maybeStartTunnelForTwilio}). Without this, an assistant with no
-   * Twilio setup never registers a Tunnel, so the browser's
-   * `/v1/live-voice` upgrade fails with "assistant tunnel is not connected".
-   * Live voice is available to every assistant, so this runs unconditionally at
-   * startup. Shares the `tunnelStartRequested` latch with the Twilio path — one
-   * tunnel serves both — and `tunnelClient.start()` is idempotent.
-   */
-  function startTunnelForLiveVoice(reason: string): void {
-    if (!tunnelClient || tunnelClient.isRunning()) {
-      return;
-    }
-    log.info({ reason }, "Starting Tunnel for live voice");
-    tunnelClient.start();
-  }
-
-  async function readTwilioCredentialsForTunnelStartup(): Promise<Record<
-    string,
-    string
-  > | null> {
-    try {
-      const [accountSid, authToken] = await Promise.all([
-        credentialCache.get(credentialKey("twilio", "account_sid")),
-        credentialCache.get(credentialKey("twilio", "auth_token")),
-      ]);
-      if (!accountSid?.trim() || !authToken?.trim()) {
-        return null;
-      }
-      return { account_sid: accountSid, auth_token: authToken };
-    } catch (err) {
-      log.warn(
-        { err },
-        "Failed to read Twilio credentials before Tunnel startup gate",
-      );
-      return null;
-    }
-  }
 
   // Assistant-scoped mirrors of the browser stream sockets: the scoped data
   // plane emits /v1/assistants/<id>/<route> — the same verbatim shape every
@@ -826,12 +764,12 @@ async function main() {
 
   const stopDiscordClient = startDiscordGateway();
 
-  const twilioStartupCredentials =
-    await readTwilioCredentialsForTunnelStartup();
-  maybeStartTunnelForTwilio("startup", twilioStartupCredentials);
-  // Tunnel is also the browser's ingress for web live voice, so bring the tunnel
-  // up at startup for every assistant (not just for Twilio).
-  startTunnelForLiveVoice("startup");
+  // The Tunnel is the browser's ingress for web live voice — which every
+  // assistant has — so it starts unconditionally at startup. Twilio voice and
+  // credential links ride the same always-on tunnel; the client self-manages
+  // from here (ingress disable/enable transitions, reconnects). Its stop runs
+  // once in the SIGTERM shutdown list.
+  tunnelClient.start();
 
   const tasks: (() => StopTask | Promise<StopTask>)[] = [
     startCredentialWatcher,
