@@ -1821,6 +1821,7 @@ jobs:
     # secrets on the dev environment) must not red the dev release.
     permissions:
       contents: read
+      id-token: write
     uses: ./.github/workflows/release-windows.yaml
     with:
       environment: dev

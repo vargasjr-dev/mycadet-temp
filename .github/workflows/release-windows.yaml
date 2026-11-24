@@ -4,7 +4,7 @@ name: Build Windows release artifacts
 # Never dispatched on its own.
 #
 # External gates (repository secrets can be shared across environments):
-#   signing: secrets.AZURE_TENANT_ID, secrets.AZURE_CLIENT_ID, secrets.AZURE_CLIENT_SECRET
+#   signing: secrets.AZURE_TENANT_ID, secrets.AZURE_CLIENT_ID and an Entra federated credential
 #   optional: vars.WINDOWS_SIGNING_TIMESTAMP_URL
 
 on:
@@ -50,7 +50,7 @@ jobs:
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           VERSION: ${{ inputs.version }}
-          HAS_AZURE: ${{ secrets.AZURE_TENANT_ID != '' && secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_CLIENT_SECRET != '' }}
+          HAS_AZURE: ${{ secrets.AZURE_TENANT_ID != '' && secrets.AZURE_CLIENT_ID != '' }}
         run: |
           case "$ENVIRONMENT" in
             dev|staging|production) ;;
@@ -60,7 +60,7 @@ jobs:
             echo "::error::version '$VERSION' is not a release version"; exit 1
           fi
           if [ "$HAS_AZURE" != "true" ]; then
-            echo "::error::Windows signing needs AZURE_TENANT_ID, AZURE_CLIENT_ID, and AZURE_CLIENT_SECRET secrets at repository scope or on the $ENVIRONMENT environment. Unsigned Windows releases are never published."
+            echo "::error::Windows signing needs AZURE_TENANT_ID and AZURE_CLIENT_ID secrets at repository scope or on the $ENVIRONMENT environment. Unsigned Windows releases are never published."
             exit 1
           fi
 
@@ -174,6 +174,9 @@ jobs:
     # A tolerated build failure reports success to needs, but has no payload.
     if: ${{ needs.build.outputs.native_payload_uploaded == 'true' }}
     continue-on-error: ${{ inputs.tolerate_failure }}
+    permissions:
+      contents: read
+      id-token: write
     runs-on: windows-2025
     timeout-minutes: 90
     environment: ${{ inputs.environment }}
@@ -206,13 +209,19 @@ jobs:
         shell: bash
         run: tar -xf native-build.tar
 
+      # Artifact Signing's DefaultAzureCredential uses the Azure CLI session
+      # created by this federated login.
+      - name: Sign in to Azure for Artifact Signing
+        uses: azure/login@eec3c95657c1536435858eda1f3ff5437fee8474 # v2.3.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
       - name: Package and sign NSIS installer
         env:
           WINDOWS_SIGNING_PROVIDER: azure-trusted-signing
           WINDOWS_SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_SIGNING_TIMESTAMP_URL }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TRUSTED_SIGNING_ENDPOINT: https://cus.codesigning.azure.net/
           AZURE_TRUSTED_SIGNING_ACCOUNT: mycadet
           AZURE_TRUSTED_SIGNING_PROFILE: mycadet

@@ -55,7 +55,7 @@ const resolveSigning = () => {
           rfc3161TimeStampServer: timestampUrl,
         },
       };
-    // Authenticates through AZURE_TENANT_ID / AZURE_CLIENT_ID / AZURE_CLIENT_SECRET.
+    // Artifact Signing authenticates through the Azure CLI session in CI.
     case "azure-trusted-signing":
       return {
         azureSignOptions: {

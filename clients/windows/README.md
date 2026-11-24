@@ -186,12 +186,15 @@ certificate profile, regional endpoint, and publisher name defined directly in
 `.github/workflows/release-windows.yaml`. These settings apply to dev, staging,
 and production without GitHub signing variables.
 
-Set `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET` once as
-repository secrets under **Settings > Secrets and variables > Actions**.
-Both callers inherit these secrets. Environment secrets with the same names
-override the repository values. The app registration must have the
-Artifact Signing Certificate Profile Signer role on the signing account or
-certificate profile.
+The Cloud Terraform module syncs `AZURE_TENANT_ID` and `AZURE_CLIENT_ID`
+from Secret Manager to repository secrets in `mycadet-temp`. The release job
+signs into Azure over GitHub Actions OIDC. Configure an Entra federated
+credential for each GitHub environment that publishes Windows builds. Use
+issuer `https://token.actions.githubusercontent.com`, audience
+`api://AzureADTokenExchange`, and subject
+`repo:vargasjr-dev/mycadet-temp:environment:<environment>`. The service
+principal needs the Artifact Signing Certificate Profile Signer role on the
+signing account or certificate profile.
 
 Local packaging also supports `pfx` and `command` through the
 `WINDOWS_SIGNING_PROVIDER` environment variable in `electron-builder.config.cjs`.
