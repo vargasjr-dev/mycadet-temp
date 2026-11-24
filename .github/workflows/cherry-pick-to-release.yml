@@ -59,10 +59,7 @@ jobs:
       - name: Cherry-pick and create PR
         id: cherry-pick
         env:
-          # A fine-grained token scoped to this repository needs write access
-          # to Contents, Workflows, and Pull requests.
-          GH_TOKEN: ${{ secrets.RELEASE_BACKPORT_TOKEN || github.token }}
-          HAS_BACKPORT_TOKEN: ${{ secrets.RELEASE_BACKPORT_TOKEN != '' }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
@@ -73,7 +70,6 @@ jobs:
           # Keep failed or manually superseded backports isolated by PR.
           CHERRY_PICK_BRANCH="backport/${RELEASE_BRANCH}/pr-${PR_NUMBER}"
           RELEASE_TIP="origin/${RELEASE_BRANCH}"
-          git switch -c "$CHERRY_PICK_BRANCH" "$RELEASE_TIP"
 
           # Detect whether the merge commit has multiple parents (true merge)
           # or a single parent (squash merge). Only pass -m 1 for true merges.
@@ -83,16 +79,29 @@ jobs:
             CHERRY_PICK_ARGS="-m 1 $CHERRY_PICK_ARGS"
           fi
 
+          # Check the merged patch before attempting a pick, including when
+          # the patch would conflict with the release branch.
+          if ! git diff --quiet "${MERGE_SHA}^1" "$MERGE_SHA" -- .github/workflows/; then
+            gh pr comment "$PR_NUMBER" --body-file - <<EOF
+          Automatic cherry-picks to \`${RELEASE_BRANCH}\` are unsupported for changes to GitHub Actions workflow files. Apply this backport manually with an account that can push workflow changes.
+
+          \`\`\`bash
+          git fetch origin
+          git switch -c ${CHERRY_PICK_BRANCH} origin/${RELEASE_BRANCH}
+          git cherry-pick ${CHERRY_PICK_ARGS} ${MERGE_SHA}
+          git push -u origin ${CHERRY_PICK_BRANCH}
+          gh pr create --base ${RELEASE_BRANCH} --head ${CHERRY_PICK_BRANCH} --title "Backport #${PR_NUMBER} to ${RELEASE_BRANCH}" --body "Manual backport of #${PR_NUMBER}."
+          \`\`\`
+          EOF
+            echo "::notice::Posted manual backport commands on #${PR_NUMBER}."
+            exit 0
+          fi
+
+          git switch -c "$CHERRY_PICK_BRANCH" "$RELEASE_TIP"
           if git cherry-pick $CHERRY_PICK_ARGS "$MERGE_SHA"; then
             if git diff --quiet "$RELEASE_TIP" HEAD; then
               echo "::notice::#${PR_NUMBER} is already on ${RELEASE_BRANCH}."
               exit 0
-            fi
-
-            if [ "$HAS_BACKPORT_TOKEN" != "true" ] &&
-              ! git diff --quiet "$RELEASE_TIP" HEAD -- .github/workflows/; then
-              echo "::error::This backport updates a workflow. Configure RELEASE_BACKPORT_TOKEN with Workflows write permission or cherry-pick #${PR_NUMBER} manually."
-              exit 1
             fi
 
             gh auth setup-git --hostname github.com
