@@ -1038,6 +1038,7 @@ jobs:
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
           bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
       - name: Publish package
+        id: publish-tarball
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: |
           PKG_NAME=$(node -p "require('./assistant/package.json').name")
@@ -1057,6 +1058,15 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload tarball for the meta shrinkwrap
+        if: ${{ steps.publish-tarball.outputs.published == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-tarball-assistant
+          path: /tmp/npm-dist/package.tgz
+          if-no-files-found: error
 
   publish-npm-cli-prod:
     needs: [extract-version, ci-cli, ci-remote-images]
@@ -1100,6 +1110,7 @@ jobs:
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: bun scripts/pack-npm-cli.ts --deps-version "${{ needs.extract-version.outputs.version }}" --out /tmp/npm-dist
       - name: Publish package
+        id: publish-tarball
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: |
           PKG_NAME=$(node -p "require('./cli/package.json').name")
@@ -1119,6 +1130,15 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload tarball for the meta shrinkwrap
+        if: ${{ steps.publish-tarball.outputs.published == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-tarball-cli
+          path: /tmp/npm-dist/package.tgz
+          if-no-files-found: error
 
   publish-npm-credential-executor-prod:
     needs: [extract-version, ci-credential-executor]
@@ -1168,6 +1188,7 @@ jobs:
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
           bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
       - name: Publish package
+        id: publish-tarball
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: |
           PKG_NAME=$(node -p "require('./credential-executor/package.json').name")
@@ -1187,6 +1208,15 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload tarball for the meta shrinkwrap
+        if: ${{ steps.publish-tarball.outputs.published == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-tarball-credential-executor
+          path: /tmp/npm-dist/package.tgz
+          if-no-files-found: error
 
   publish-npm-gateway-prod:
     needs: [extract-version, ci-gateway]
@@ -1236,6 +1266,7 @@ jobs:
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
           bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
       - name: Publish package
+        id: publish-tarball
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: |
           PKG_NAME=$(node -p "require('./gateway/package.json').name")
@@ -1255,6 +1286,16 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload tarball for the meta shrinkwrap
+        if: ${{ steps.publish-tarball.outputs.published == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-tarball-gateway
+          path: /tmp/npm-dist/package.tgz
+          if-no-files-found: error
+
 
   # `@mycadet/plugin-api` is the public TypeScript authoring contract external
   # plugins compile against. Unlike the other npm packages it is not a package
@@ -1394,6 +1435,7 @@ jobs:
           }
 
       - name: Publish
+        id: publish-tarball
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: |
           PKG_NAME=$(node -p "require('./clients/app/package.json').name")
@@ -1411,6 +1453,15 @@ jobs:
             echo "::error::Verify that @mycadet/app trusts vargasjr-dev/mycadet-temp, release.yml, and the production environment for npm publish."
             exit 1
           fi
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload tarball for the meta shrinkwrap
+        if: ${{ steps.publish-tarball.outputs.published == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-tarball-app
+          path: /tmp/npm-dist/package.tgz
+          if-no-files-found: error
 
   deploy-web-spa-production:
     name: Deploy Web SPA (production)
@@ -1488,6 +1539,7 @@ jobs:
           mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
 
       - name: Publish
+        id: publish-tarball
         if: ${{ steps.npm-release.outputs.published == 'false' }}
         run: |
           PKG_NAME=$(node -p "require('./clients/web/package.json').name")
@@ -1507,6 +1559,15 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload tarball for the meta shrinkwrap
+        if: ${{ steps.publish-tarball.outputs.published == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-tarball-web
+          path: /tmp/npm-dist/package.tgz
+          if-no-files-found: error
 
   publish-meta-prod:
     needs:
@@ -1538,9 +1599,35 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
 
-      - name: Generate npm-shrinkwrap.json
+      - name: Download newly published tarballs
         if: ${{ steps.npm-release.outputs.published == 'false' }}
-        run: ./scripts/npm-generate-meta-shrinkwrap.sh
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: npm-tarball-*
+          path: /tmp/npm-tarballs
+
+      - name: Stage tarballs for shrinkwrap
+        if: ${{ steps.npm-release.outputs.published == 'false' }}
+        env:
+          EXPECTED_VERSION: ${{ needs.extract-version.outputs.version }}
+        run: |
+          mkdir -p /tmp/meta-tarballs
+          for name in $(jq -r '.dependencies | keys[] | select(startswith("@mycadet/")) | split("/")[1]' meta/package.json); do
+            artifact="/tmp/npm-tarballs/npm-tarball-$name/package.tgz"
+            target="/tmp/meta-tarballs/$name.tgz"
+            if [ -f "$artifact" ]; then
+              cp "$artifact" "$target"
+            else
+              # Retry: the package job skipped because this version exists.
+              curl --fail --silent --show-error --retry 3 --max-time 120 \
+                "https://registry.npmjs.org/@mycadet/$name/-/$name-$EXPECTED_VERSION.tgz" \
+                --output "$target"
+            fi
+          done
+
+      - name: Generate npm-shrinkwrap.json off-registry
+        if: ${{ steps.npm-release.outputs.published == 'false' }}
+        run: node scripts/npm-generate-meta-shrinkwrap.mjs /tmp/meta-tarballs
 
       - name: Publish meta-package
         if: ${{ steps.npm-release.outputs.published == 'false' }}
