@@ -75,7 +75,7 @@ mock.module("../guardian-token", () => ({
 }));
 
 const ensureLocalRuntimeMock = mock<typeof commonModule.ensureLocalRuntime>(
-  (resources, version) => ({
+  async (resources, version) => ({
     version,
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }),
@@ -195,7 +195,7 @@ beforeEach(() => {
   leaseGuardianTokenMock.mockReset();
   leaseGuardianTokenMock.mockResolvedValue(makeGuardianToken());
   ensureLocalRuntimeMock.mockReset();
-  ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
+  ensureLocalRuntimeMock.mockImplementation(async (resources, version) => ({
     version,
     installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }));

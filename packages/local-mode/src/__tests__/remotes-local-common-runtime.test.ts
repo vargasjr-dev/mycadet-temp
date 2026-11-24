@@ -35,9 +35,9 @@ describe("ensureLocalRuntime version guard", () => {
     }
   });
 
-  test("throws before any install for untrusted versions", () => {
+  test("throws before any install for untrusted versions", async () => {
     for (const version of MALICIOUS_VERSIONS) {
-      expect(() => ensureLocalRuntime(entry, version)).toThrow(
+      await expect(ensureLocalRuntime(entry, version)).rejects.toThrow(
         `Invalid runtime version '${version}'`,
       );
     }

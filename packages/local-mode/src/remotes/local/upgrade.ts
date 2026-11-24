@@ -182,7 +182,7 @@ export async function upgradeLocal(
   log(
     "⬇️  Downloading local runtime packages (assistant, gateway, credential-executor)...",
   );
-  const runtimeInstall = ensureLocalRuntime(entry, targetVersion, {
+  const runtimeInstall = await ensureLocalRuntime(entry, targetVersion, {
     force,
   });
   const upgradedEntry = entry;

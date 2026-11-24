@@ -33,6 +33,24 @@ let capturedApply: CapturedApply | undefined;
 // replaces the whole module record for every file that runs later in the
 // same bun test process.
 const actualLocalWake = await import("../remotes/local/wake");
+const actualHatchLock = { ...(await import("../remotes/local/hatch-lock")) };
+mock.module("../remotes/local/hatch-lock", () => ({
+  ...actualHatchLock,
+  withLocalHatchLock: <T>(action: () => Promise<T>) =>
+    actualHatchLock.withLocalHatchLock(action, {
+      lockPath: path.join(home, "local-hatch.lock"),
+    }),
+}));
+const actualCommon = await import("../remotes/local/common");
+const sourceAvailable = mock(() => true);
+const installRuntime = mock<typeof actualCommon.ensureLocalRuntime>(
+  async (_entry, version) => ({ version, installDir: "/unused" }),
+);
+mock.module("../remotes/local/common", () => ({
+  ...actualCommon,
+  ensureLocalRuntime: installRuntime,
+  isAssistantWatchModeAvailable: sourceAvailable,
+}));
 
 // The readyz seam: hatch's readiness wait polls the entry's gateway port, so
 // the wake stub brings up a real HTTP server that answers ready there — the
@@ -45,9 +63,7 @@ const wakeMock = mock(async (entry: unknown) => {
     port,
     fetch: (request) => {
       const url = new URL(request.url);
-      return Response.json(
-        url.pathname === "/readyz" ? { ready: true } : {},
-      );
+      return Response.json(url.pathname === "/readyz" ? { ready: true } : {});
     },
   });
   return { ok: true } as never;
@@ -100,6 +116,8 @@ mock.module("../cloud-auth", () => ({
 const { hatchLocal } = await import("../remotes/local/hatch");
 
 afterAll(() => {
+  mock.module("../remotes/local/hatch-lock", () => actualHatchLock);
+  mock.module("../remotes/local/common", () => actualCommon);
   mock.module("../remotes/local/wake", () => actualLocalWake);
   mock.module("../remotes/local/hatch-config", () => actualHatchConfig);
   mock.module("../guardian-token", () => actualGuardianToken);
@@ -117,6 +135,9 @@ beforeEach(() => {
     saved.set(key, process.env[key]);
     process.env[key] = path.join(home, key.toLowerCase());
   }
+  sourceAvailable.mockReturnValue(true);
+  installRuntime.mockClear();
+  wakeMock.mockClear();
 });
 
 afterEach(() => {
@@ -130,6 +151,41 @@ afterEach(() => {
 });
 
 describe("hatchLocal's config API handoff", () => {
+  test("installs the release before waking when source is absent", async () => {
+    const version = "0.13.0-dev.202611231907.2f27f95";
+    const savedVersion = process.env.APP_VERSION;
+    sourceAvailable.mockReturnValue(false);
+    installRuntime.mockImplementationOnce(async () => {
+      expect(wakeMock).not.toHaveBeenCalled();
+      return { version, installDir: "/unused" };
+    });
+    try {
+      expect((await hatchLocal({ name: "packaged-probe", version })).ok).toBe(
+        true,
+      );
+      expect(installRuntime).toHaveBeenCalledWith(
+        expect.objectContaining({ assistantId: "packaged-probe" }),
+        version,
+      );
+      expect(wakeMock).toHaveBeenCalledTimes(1);
+    } finally {
+      if (savedVersion === undefined) delete process.env.APP_VERSION;
+      else process.env.APP_VERSION = savedVersion;
+    }
+  });
+
+  test("an install failure is reported before startup", async () => {
+    sourceAvailable.mockReturnValue(false);
+    installRuntime.mockRejectedValueOnce(
+      new Error("Runtime package unavailable"),
+    );
+    expect(await hatchLocal({ name: "failed-install" })).toMatchObject({
+      ok: false,
+      error: "Runtime package unavailable",
+    });
+    expect(wakeMock).not.toHaveBeenCalled();
+  });
+
   test("the picked provider rides the config API as llm.default.provider", async () => {
     const result = await hatchLocal({
       name: "config-api-probe",
@@ -142,6 +198,7 @@ describe("hatchLocal's config API handoff", () => {
       },
     });
     expect(result.ok).toBe(true);
+    expect(installRuntime).not.toHaveBeenCalled();
     expect(capturedApply).toBeDefined();
     expect(capturedApply?.bearerToken).toBe("test-token");
     expect(capturedApply?.gatewayUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);

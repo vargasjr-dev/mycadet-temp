@@ -8,7 +8,11 @@ import type { LocalAssistant } from "../../lockfile-contract";
 import { getGatewayUrl } from "../../lockfile-contract";
 import { sleepLocal } from "./sleep";
 import { wakeLocal } from "./wake";
-import { setStartupLogging } from "./common";
+import {
+  ensureLocalRuntime,
+  isAssistantWatchModeAvailable,
+  setStartupLogging,
+} from "./common";
 import { withLocalHatchLock } from "./hatch-lock";
 import { applyHatchConfig, buildHatchConfigValues } from "./hatch-config";
 import { waitForReady } from "../../daemon-readiness";
@@ -28,6 +32,8 @@ import {
   fetchCurrentUser,
   registerLocalAssistantWithCloud,
 } from "../../cloud-registration";
+
+declare const __CADET_OWN_VERSION__: string | undefined;
 
 /**
  * Allocate an isolated placement for a named local instance: its data root
@@ -102,6 +108,7 @@ export async function hatchLocal(params: {
   );
 
   let entry: LocalAssistant;
+  let startupAttempted = false;
   try {
     const hatched = await withLocalHatchLock(async () => {
       const fresh: LocalAssistant = {
@@ -113,6 +120,17 @@ export async function hatchLocal(params: {
       log(`🥚 Hatching local assistant: ${instanceName}`);
       log("");
 
+      if (!isAssistantWatchModeAvailable()) {
+        const runtimeVersion =
+          params.version ??
+          (typeof __CADET_OWN_VERSION__ === "string"
+            ? __CADET_OWN_VERSION__
+            : "latest");
+        log(`Installing local runtime ${runtimeVersion}…`);
+        await ensureLocalRuntime(fresh, runtimeVersion);
+      }
+
+      startupAttempted = true;
       try {
         // The wake leg owns starting; the config values ride the assistant's
         // public config API once it is up. wakeLocal maps failures to
@@ -140,8 +158,10 @@ export async function hatchLocal(params: {
       status: 500,
       error:
         (error instanceof Error ? error.message : String(error)) +
-        `\n\n❌ Local assistant startup failed — stopping partial processes.\n` +
-        `   Logs: ${join(resolveAssistantsDir(), instanceName, "logs")} and ${join(resolveLogDir(), "hatch.log")}`,
+        (startupAttempted
+          ? `\n\n❌ Local assistant startup failed — stopping partial processes.\n` +
+            `   Logs: ${join(resolveAssistantsDir(), instanceName, "logs")} and ${join(resolveLogDir(), "hatch.log")}`
+          : ""),
       assistantId: instanceName,
     };
   }

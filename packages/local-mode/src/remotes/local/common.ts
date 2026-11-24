@@ -1,4 +1,4 @@
-import { execFileSync, spawn, spawnSync, execSync } from "node:child_process";
+import { execFileSync, spawn, execSync } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import {
   chmodSync,
@@ -35,7 +35,12 @@ import {
 } from "../../process";
 import { isValidReleaseVersion } from "../../upgrade";
 import { stripVersionPrefix } from "../../version";
-import { openLogFile, openRuntimeLogFile, pipeToLogFile } from "../../xdg-log";
+import {
+  closeLogFile,
+  openLogFile,
+  openRuntimeLogFile,
+  pipeToLogFile,
+} from "../../xdg-log";
 import {
   getDaemonPidPath,
   getGatewayPidPath,
@@ -44,7 +49,7 @@ import {
 
 const _require = createRequire(import.meta.url);
 
-const LOCAL_RUNTIME_PACKAGE = "cadet";
+const LOCAL_RUNTIME_PACKAGE = "mycadet";
 const PATH_DELIMITER = pathListDelimiter(platform());
 const DEFAULT_EXECUTABLE_PATH =
   platform() === "win32"
@@ -214,11 +219,11 @@ function latestLocalRuntimeInstallDir(
   return newest ? join(runtimeRoot, newest.dir) : undefined;
 }
 
-export function ensureLocalRuntime(
+export async function ensureLocalRuntime(
   entry: LocalAssistant,
   version: string,
   options: { force?: boolean } = {},
-): LocalRuntimeInstall {
+): Promise<LocalRuntimeInstall> {
   // Reject anything that is not a trusted release identifier BEFORE it becomes
   // a filesystem path segment or a `bun install` dependency spec. Without this,
   // a package-manager spec (npm alias, tarball/git URL) or a `../`-laden string
@@ -257,23 +262,40 @@ export function ensureLocalRuntime(
   );
 
   const bunPath = resolveBunExecutable();
-  const result = spawnSync(bunPath, ["install", "--ignore-scripts"], {
-    cwd: installDir,
-    stdio: "inherit",
-    env: envWithBunPath(process.env),
-    windowsHide: true,
-  });
-
-  if (result.error || result.status !== 0) {
-    const detail =
-      result.error?.message ?? `bun install exited with code ${result.status}`;
-    throw new Error(`Local runtime install failed: ${detail}`);
-  }
-
-  if (!hasLocalRuntimeComponents(installDir)) {
+  const log = openLogFile("runtime-install.log");
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(bunPath, ["install", "--ignore-scripts"], {
+        cwd: installDir,
+        stdio: ["ignore", log, log],
+        env: envWithBunPath(process.env),
+        windowsHide: true,
+      });
+      child.once("error", reject);
+      child.once("close", (code, signal) => {
+        if (code === 0) resolve();
+        else
+          reject(
+            new Error(`bun install exited with ${signal ?? `code ${code}`}`),
+          );
+      });
+    });
+    if (!hasLocalRuntimeComponents(installDir)) {
+      throw new Error(
+        "Installed runtime is missing assistant, gateway, or credential-executor source.",
+      );
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    const logHint =
+      log === "ignore"
+        ? ""
+        : ` See ${join(resolveLogDir(), "runtime-install.log")}.`;
     throw new Error(
-      `Local runtime install at ${installDir} is missing assistant, gateway, or credential-executor packages.`,
+      `Local runtime install failed (${displayVersion}): ${detail}${logHint}`,
     );
+  } finally {
+    closeLogFile(log);
   }
 
   return { version: displayVersion, installDir };
