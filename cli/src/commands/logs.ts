@@ -239,7 +239,7 @@ async function showLocalLogs(
   if (opts.follow) {
     let fileSize = statSync(logFile).size;
 
-    watch(logFile, () => {
+    const watcher = watch(logFile, () => {
       let newSize: number;
       try {
         newSize = statSync(logFile).size;
@@ -284,6 +284,8 @@ async function showLocalLogs(
         resolve();
       });
     });
+    // The open watcher would otherwise keep the process alive after the signal.
+    watcher.close();
   }
 }
 
