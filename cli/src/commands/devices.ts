@@ -1,46 +1,39 @@
 /**
  * `cadet devices [name]` and `cadet devices revoke <hashedDeviceId> [name] [--yes]`
  *
- * Host-side of pairing lifecycle: list and revoke the devices paired to a LOCAL
- * self-hosted assistant. Calls the loopback-only gateway endpoints
- * `GET /v1/devices` and `POST /v1/devices/revoke` (added in the gateway slice),
- * which self-guard loopback + reject any browser/WebView Origin. The gateway
- * only ever stores the HASHED device id, so list returns and revoke accepts the
- * same `hashedDeviceId` (the raw device id is never persisted anywhere).
+ * Host-side of pairing lifecycle: list and revoke the devices paired to a
+ * local or Docker assistant. Runs the gateway's own `devices list --json` and
+ * `devices revoke <id>` commands, the same way `cadet pair` runs
+ * `gateway pairing mint`. The gateway only ever stores the HASHED device id,
+ * so list returns and revoke accepts the same `hashedDeviceId` (the raw device
+ * id is never persisted anywhere).
  */
 
-import { z } from "zod";
-import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 
 import {
   DeviceRecord,
-  dockerResourceNames,
   getAssistantDisplayName,
   findAssistant,
   loadGuardianToken,
-  loopbackSafeFetch,
-  execOutput,
+  parseDeviceRecords,
+  runGatewayDevicesCommand,
 } from "@mycadet/local-mode";
-import { type LockfileAssistant } from "@mycadet/local-mode/contract";
+import {
+  isDockerEntry,
+  isLocalEntry,
+  type DockerAssistant,
+  type LocalAssistant,
+  type LockfileAssistant,
+} from "@mycadet/local-mode/contract";
 import type { GuardianTokenData } from "@mycadet/local-mode";
 import { computeDeviceId } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
-  CLI_INTERFACE_ID,
-  getClientRegistrationHeaders,
-} from "../lib/client-identity.js";
-import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
-import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
-
-const dockerGatewayResponseSchema = z.object({
-  status: z.number().int().min(200).max(599),
-  body: z.string(),
-});
 
 function printUsage(): void {
   console.log(`cadet devices - List and revoke devices paired to a local assistant
@@ -68,53 +61,35 @@ EXAMPLES:
 `);
 }
 
+type HostAssistant = LocalAssistant | DockerAssistant;
+
 /**
- * Resolve the LOOPBACK gateway base URL for a host-side assistant, or exit with
- * a helpful error. Never falls back to a non-loopback URL.
+ * Narrow to an assistant whose gateway runs on this machine, or exit with a
+ * helpful error.
  */
-function resolveLoopbackBase(entry: LockfileAssistant): string {
-  const displayName = getAssistantDisplayName(entry);
+function requireHostAssistant(entry: LockfileAssistant): HostAssistant {
+  if (isLocalEntry(entry) || isDockerEntry(entry)) return entry;
+  console.error(
+    `Error: no local gateway found for '${getAssistantDisplayName(entry)}'. \`cadet devices\` runs on the machine hosting a local or Docker assistant.`,
+  );
+  process.exit(1);
+}
 
-  if (entry.cloud === "docker")
-    return `http://127.0.0.1:${GATEWAY_INTERNAL_PORT}`;
-
-  const base = getGatewayUrl(entry);
-  if (
-    !base.startsWith("http://127.0.0.1:") &&
-    !base.startsWith("http://localhost:")
-  ) {
+/** Run the gateway's `devices` command, or exit with its error. */
+async function gatewayDevices(
+  entry: HostAssistant,
+  args: string[],
+): Promise<string> {
+  try {
+    return await runGatewayDevicesCommand(entry, args);
+  } catch (err) {
     console.error(
-      `Error: no local gateway found for '${displayName}'. \`cadet devices\` runs on the machine hosting the assistant.`,
+      `Error: the gateway's devices command failed for '${getAssistantDisplayName(entry)}': ${
+        err instanceof Error ? err.message : String(err)
+      }`,
     );
     process.exit(1);
   }
-
-  return base;
-}
-
-/** Docker host management enters the gateway network namespace before calling loopback-only routes. */
-async function deviceRequest(
-  entry: LockfileAssistant,
-  url: string,
-  init: RequestInit,
-): Promise<Response> {
-  if (entry.cloud !== "docker") return loopbackSafeFetch(url, init);
-  const script = `const r = await fetch(process.argv[1], {...JSON.parse(process.argv[2]), signal: AbortSignal.timeout(10000)}); console.log(JSON.stringify({status:r.status, body:await r.text()}));`;
-  const output = await execOutput(
-    "docker",
-    [
-      "exec",
-      dockerResourceNames(entry.assistantId).gatewayContainer,
-      "bun",
-      "-e",
-      script,
-      url,
-      JSON.stringify(init),
-    ],
-    { timeoutMs: 15000 },
-  );
-  const result = dockerGatewayResponseSchema.parse(JSON.parse(output));
-  return new Response(result.body, { status: result.status });
 }
 
 /**
@@ -161,38 +136,24 @@ function formatTimestamp(ms: number | null, absent: string): string {
 }
 
 async function listDevices(
-  entry: LockfileAssistant,
-  base: string,
+  entry: HostAssistant,
   jsonOutput: boolean,
 ): Promise<void> {
   const displayName = getAssistantDisplayName(entry);
 
-  let response: Response;
-  try {
-    response = await deviceRequest(entry, `${base}/v1/devices`, {
-      method: "GET",
-      headers: getClientRegistrationHeaders(CLI_INTERFACE_ID),
-    });
-  } catch (err) {
+  // The JSON document is the command's last stdout line.
+  const stdout = await gatewayDevices(entry, ["list", "--json"]);
+  const listed = parseDeviceRecords(stdout.split("\n").pop() ?? "");
+  if (!listed) {
     console.error(
-      `Error: could not reach the gateway for '${displayName}' at ${base}: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
+      `Error: the gateway gave unexpected output listing devices for '${displayName}'.`,
     );
     process.exit(1);
   }
 
-  if (!response.ok) {
-    console.error(
-      `Error: gateway returned ${response.status} listing devices for '${displayName}'.`,
-    );
-    process.exit(1);
-  }
-
-  const body = (await response.json()) as { devices?: DeviceRecord[] };
   const token = loadGuardianToken(entry.assistantId);
   const hostHash = currentHostHashedDeviceId(token);
-  const devices = (body.devices ?? []).map((device) =>
+  const devices = listed.map((device) =>
     device.hashedDeviceId === hostHash
       ? { ...device, isCurrentHost: true as const }
       : device,
@@ -242,8 +203,7 @@ async function listDevices(
 }
 
 async function revokeDevice(
-  entry: LockfileAssistant,
-  base: string,
+  entry: HostAssistant,
   hashedDeviceId: string,
   yes: boolean,
   jsonOutput: boolean,
@@ -293,31 +253,7 @@ async function revokeDevice(
     }
   }
 
-  let response: Response;
-  try {
-    response = await deviceRequest(entry, `${base}/v1/devices/revoke`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getClientRegistrationHeaders(CLI_INTERFACE_ID),
-      },
-      body: JSON.stringify({ hashedDeviceId }),
-    });
-  } catch (err) {
-    console.error(
-      `Error: could not reach the gateway for '${displayName}' at ${base}: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
-    );
-    process.exit(1);
-  }
-
-  if (!response.ok) {
-    console.error(
-      `Error: gateway returned ${response.status} revoking device for '${displayName}'.`,
-    );
-    process.exit(1);
-  }
+  await gatewayDevices(entry, ["revoke", hashedDeviceId]);
 
   if (jsonOutput) {
     console.log(
@@ -367,8 +303,12 @@ export const devices = Object.assign(
         );
         process.exit(1);
       }
-      const base = resolveLoopbackBase(entry);
-      await revokeDevice(entry, base, hashedDeviceId, yes, jsonOutput);
+      await revokeDevice(
+        requireHostAssistant(entry),
+        hashedDeviceId,
+        yes,
+        jsonOutput,
+      );
       return;
     }
 
@@ -382,8 +322,7 @@ export const devices = Object.assign(
       );
       process.exit(1);
     }
-    const base = resolveLoopbackBase(entry);
-    await listDevices(entry, base, jsonOutput);
+    await listDevices(requireHostAssistant(entry), jsonOutput);
   },
   { description: "List or revoke devices paired to a local assistant" },
 );

@@ -1,9 +1,9 @@
 /**
  * Tests for `cadet devices` (list) and `cadet devices revoke <hashedDeviceId>`:
- * the host-side CLI that calls the loopback `GET /v1/devices` and
- * `POST /v1/devices/revoke` endpoints. Verifies host-gating (refuses paired
- * connections), the destructive-revoke confirmation, and that requests carry no
- * browser/proxy headers.
+ * the host-side CLI that runs the gateway's own `devices list --json` and
+ * `devices revoke <id>` commands. Verifies host-gating (refuses paired
+ * connections), the destructive-revoke confirmation, and that nothing goes
+ * over HTTP.
  */
 import {
   afterAll,
@@ -47,6 +47,28 @@ function stubFetch(
   }) as typeof fetch;
 }
 
+interface GatewayCall {
+  assistantId: string;
+  args: string[];
+}
+
+let gatewayCalls: GatewayCall[] = [];
+let gatewaySpy: ReturnType<typeof spyOn> | undefined;
+
+/** Stub the gateway's `devices` command: the handler returns its stdout or throws. */
+function stubGateway(handler: (args: string[]) => string): void {
+  gatewaySpy = spyOn(localMode, "runGatewayDevicesCommand").mockImplementation(
+    async (entry, args) => {
+      gatewayCalls.push({ assistantId: entry.assistantId, args });
+      return handler(args);
+    },
+  );
+}
+
+function devicesJson(devices: unknown[]): string {
+  return JSON.stringify({ devices });
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -88,79 +110,59 @@ async function runDevices(): Promise<RunResult> {
   return { exited, logs: logs.join("\n"), errors: errors.join("\n") };
 }
 
-function headerKeys(init?: RequestInit): string[] {
-  const h = init?.headers as Record<string, string> | undefined;
-  return h ? Object.keys(h).map((k) => k.toLowerCase()) : [];
-}
-
 describe("cadet devices", () => {
   beforeEach(() => {
     process.env.XDG_CONFIG_HOME = testDir;
     fetchCalls = [];
-    // Default stub: any unexpected call is recorded and 500s.
+    gatewayCalls = [];
+    // Any HTTP call is a regression: the gateway's devices routes are gone.
     stubFetch(() => jsonResponse({ error: "unexpected" }, 500));
+    // Default stub: any unexpected gateway call fails.
+    stubGateway(() => {
+      throw new Error("unexpected gateway call");
+    });
   });
 
-  test("Docker devices list and revoke execute inside the gateway without a host port", async () => {
+  test("Docker devices list and revoke run the gateway's devices command", async () => {
     saveLockfileAssistant({
       assistantId: "docker-fixture",
       cloud: "docker",
     });
-    const calls: string[][] = [];
-    const docker = spyOn(localMode, "execOutput").mockImplementation(
-      async (_command, args) => {
-        calls.push(args);
-        return JSON.stringify({
-          status: 200,
-          body: args.some((arg) => arg.endsWith("/revoke"))
-            ? '{"revoked":true}'
-            : '{"devices":[]}',
-        });
+    stubGateway((args) => (args[0] === "list" ? devicesJson([]) : ""));
+    process.argv = ["bun", "cadet", "devices", "docker-fixture", "--json"];
+    expect((await runDevices()).exited).toBe(false);
+    process.argv = [
+      "bun",
+      "cadet",
+      "devices",
+      "revoke",
+      "fixture-device",
+      "docker-fixture",
+      "--yes",
+      "--json",
+    ];
+    expect((await runDevices()).exited).toBe(false);
+    expect(gatewayCalls).toEqual([
+      { assistantId: "docker-fixture", args: ["list", "--json"] },
+      {
+        assistantId: "docker-fixture",
+        args: ["revoke", "fixture-device"],
       },
-    );
-    try {
-      process.argv = ["bun", "cadet", "devices", "docker-fixture", "--json"];
-      expect((await runDevices()).exited).toBe(false);
-      process.argv = [
-        "bun",
-        "cadet",
-        "devices",
-        "revoke",
-        "fixture-device",
-        "docker-fixture",
-        "--yes",
-        "--json",
-      ];
-      expect((await runDevices()).exited).toBe(false);
-      expect(calls).toHaveLength(2);
-      expect(calls[0].slice(0, 2)).toEqual(["exec", "docker-fixture-gateway"]);
-      expect(calls[0]).toContain("http://127.0.0.1:7830/v1/devices");
-      expect(calls[1]).toContain("http://127.0.0.1:7830/v1/devices/revoke");
-      expect(fetchCalls).toHaveLength(0);
-    } finally {
-      docker.mockRestore();
-    }
+    ]);
+    expect(fetchCalls).toHaveLength(0);
   });
 
-  test("Docker gateway output rejects malformed status and body fields", async () => {
-    saveLockfileAssistant({
-      assistantId: "docker-invalid",
-      cloud: "docker",
-    });
-    const docker = spyOn(localMode, "execOutput").mockResolvedValue(
-      '{"status":"200","body":{}}',
-    );
-    try {
-      process.argv = ["bun", "cadet", "devices", "docker-invalid", "--json"];
-      const result = await runDevices();
-      expect(result.exited).toBe(true);
-      expect(result.errors).toContain("could not reach the gateway");
-    } finally {
-      docker.mockRestore();
-    }
+  test("unparseable gateway output fails the list", async () => {
+    seedLocal("bad-output");
+    stubGateway(() => "not json");
+    process.argv = ["bun", "cadet", "devices", "bad-output", "--json"];
+    const result = await runDevices();
+    expect(result.exited).toBe(true);
+    expect(result.errors).toContain("unexpected output");
   });
 
   afterEach(() => {
+    gatewaySpy?.mockRestore();
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = ORIGINAL_FETCH;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
@@ -191,33 +193,28 @@ describe("cadet devices", () => {
     expect(logs).toContain("cadet devices revoke");
   });
 
-  test("lists active devices over loopback with no browser/proxy headers", async () => {
+  test("lists active devices from the gateway's devices command", async () => {
     seedLocal("list-host", 7833);
-    stubFetch((url) => {
-      if (url.endsWith("/v1/devices")) {
-        return jsonResponse({
-          devices: [
-            {
-              hashedDeviceId: "hashAAA111",
-              platform: "cli",
-              issuedAt: 1_700_000_000_000,
-              expiresAt: 1_800_000_000_000,
-              lastUsedAt: 1_750_000_000_000,
-              clientReportedName: "Alice's Laptop",
-              pairingUserAgent: "cadet-cli/1.2.3 (darwin)",
-            },
-            {
-              hashedDeviceId: "hashBBB222",
-              platform: "webview",
-              issuedAt: 1_700_000_000_000,
-              expiresAt: null,
-              lastUsedAt: null,
-            },
-          ],
-        });
-      }
-      return jsonResponse({ error: "unexpected" }, 500);
-    });
+    stubGateway(() =>
+      devicesJson([
+        {
+          hashedDeviceId: "hashAAA111",
+          platform: "cli",
+          issuedAt: 1_700_000_000_000,
+          expiresAt: 1_800_000_000_000,
+          lastUsedAt: 1_750_000_000_000,
+          clientReportedName: "Alice's Laptop",
+          pairingUserAgent: "cadet-cli/1.2.3 (darwin)",
+        },
+        {
+          hashedDeviceId: "hashBBB222",
+          platform: "webview",
+          issuedAt: 1_700_000_000_000,
+          expiresAt: null,
+          lastUsedAt: null,
+        },
+      ]),
+    );
 
     process.argv = ["bun", "cadet", "devices", "list-host"];
     const { exited, logs } = await runDevices();
@@ -237,13 +234,10 @@ describe("cadet devices", () => {
     expect(logs).toContain("not recorded");
     expect(logs).not.toContain("undefined");
 
-    expect(fetchCalls).toHaveLength(1);
-    const call = fetchCalls[0];
-    expect(call.url).toBe("http://127.0.0.1:7833/v1/devices");
-    expect(call.init?.method).toBe("GET");
-    const keys = headerKeys(call.init);
-    expect(keys).not.toContain("origin");
-    expect(keys).not.toContain("x-forwarded-for");
+    expect(gatewayCalls).toEqual([
+      { assistantId: "list-host", args: ["list", "--json"] },
+    ]);
+    expect(fetchCalls).toHaveLength(0);
   });
 
   // Matches currentHostHashedDeviceId in the command: sha256 of the same
@@ -254,27 +248,23 @@ describe("cadet devices", () => {
 
   test("labels this machine's own host credential in the human list", async () => {
     seedLocal("host-label");
-    stubFetch((url) =>
-      url.endsWith("/v1/devices")
-        ? jsonResponse({
-            devices: [
-              {
-                hashedDeviceId: hostHash(),
-                platform: "cli",
-                issuedAt: 1_700_000_000_000,
-                expiresAt: null,
-                lastUsedAt: null,
-              },
-              {
-                hashedDeviceId: "hashBBB222",
-                platform: "ios",
-                issuedAt: 1_700_000_000_000,
-                expiresAt: null,
-                lastUsedAt: null,
-              },
-            ],
-          })
-        : jsonResponse({ error: "unexpected" }, 500),
+    stubGateway(() =>
+      devicesJson([
+        {
+          hashedDeviceId: hostHash(),
+          platform: "cli",
+          issuedAt: 1_700_000_000_000,
+          expiresAt: null,
+          lastUsedAt: null,
+        },
+        {
+          hashedDeviceId: "hashBBB222",
+          platform: "ios",
+          issuedAt: 1_700_000_000_000,
+          expiresAt: null,
+          lastUsedAt: null,
+        },
+      ]),
     );
 
     process.argv = ["bun", "cadet", "devices", "host-label"];
@@ -300,6 +290,8 @@ describe("cadet devices", () => {
       issuedAt: 1_700_000_000_000,
       expiresAt: null,
       lastUsedAt: null,
+      pairingUserAgent: null,
+      clientReportedName: null,
     };
     const otherRecord = {
       hashedDeviceId: "hashBBB222",
@@ -307,12 +299,10 @@ describe("cadet devices", () => {
       issuedAt: 1_700_000_000_000,
       expiresAt: null,
       lastUsedAt: null,
+      pairingUserAgent: null,
+      clientReportedName: null,
     };
-    stubFetch((url) =>
-      url.endsWith("/v1/devices")
-        ? jsonResponse({ devices: [hostRecord, otherRecord] })
-        : jsonResponse({ error: "unexpected" }, 500),
-    );
+    stubGateway(() => devicesJson([hostRecord, otherRecord]));
 
     process.argv = ["bun", "cadet", "devices", "host-json", "--json"];
     const { exited, logs } = await runDevices();
@@ -329,11 +319,7 @@ describe("cadet devices", () => {
 
   test("revoking the host credential warns on stderr but proceeds", async () => {
     seedLocal("host-revoke", 7839);
-    stubFetch((url) =>
-      url.endsWith("/v1/devices/revoke")
-        ? jsonResponse({ revoked: true })
-        : jsonResponse({ error: "unexpected" }, 500),
-    );
+    stubGateway(() => `Device ${hostHash()} revoked.`);
 
     process.argv = [
       "bun",
@@ -349,12 +335,12 @@ describe("cadet devices", () => {
     expect(exited).toBe(false);
     expect(errors).toContain("own host credential");
     expect(logs).toContain(`Revoked device ${hostHash()}`);
-    expect(fetchCalls).toHaveLength(1);
+    expect(gatewayCalls).toHaveLength(1);
   });
 
   test("prints a clear message when no devices are paired", async () => {
     seedLocal("empty-host");
-    stubFetch(() => jsonResponse({ devices: [] }));
+    stubGateway(() => devicesJson([]));
 
     process.argv = ["bun", "cadet", "devices", "empty-host"];
     const { exited, logs } = await runDevices();
@@ -363,14 +349,9 @@ describe("cadet devices", () => {
     expect(logs).toContain("No devices are paired to empty-host");
   });
 
-  test("revoke posts the hashedDeviceId with --yes (no prompt)", async () => {
+  test("revoke runs the gateway's revoke with --yes (no prompt)", async () => {
     seedLocal("revoke-host", 7834);
-    stubFetch((url) => {
-      if (url.endsWith("/v1/devices/revoke")) {
-        return jsonResponse({ revoked: true, hashedDeviceId: "hashAAA111" });
-      }
-      return jsonResponse({ error: "unexpected" }, 500);
-    });
+    stubGateway(() => "Device hashAAA111 revoked.");
 
     process.argv = [
       "bun",
@@ -386,13 +367,10 @@ describe("cadet devices", () => {
     expect(exited).toBe(false);
     expect(logs).toContain("Revoked device hashAAA111");
 
-    expect(fetchCalls).toHaveLength(1);
-    const call = fetchCalls[0];
-    expect(call.url).toBe("http://127.0.0.1:7834/v1/devices/revoke");
-    expect(call.init?.method).toBe("POST");
-    expect(JSON.parse(String(call.init?.body))).toEqual({
-      hashedDeviceId: "hashAAA111",
-    });
+    expect(gatewayCalls).toEqual([
+      { assistantId: "revoke-host", args: ["revoke", "hashAAA111"] },
+    ]);
+    expect(fetchCalls).toHaveLength(0);
   });
 
   test("revoke without a hashedDeviceId errors and makes no request", async () => {
@@ -401,7 +379,7 @@ describe("cadet devices", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain("hashedDeviceId is required");
-    expect(fetchCalls).toHaveLength(0);
+    expect(gatewayCalls).toHaveLength(0);
   });
 
   test("revoke refuses without --yes in a non-interactive terminal", async () => {
@@ -412,7 +390,7 @@ describe("cadet devices", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain("--yes");
-    expect(fetchCalls).toHaveLength(0);
+    expect(gatewayCalls).toHaveLength(0);
   });
 
   test("host-gates a paired connection (points to the host)", async () => {
@@ -429,7 +407,7 @@ describe("cadet devices", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain("cadet devices");
-    expect(fetchCalls).toHaveLength(0);
+    expect(gatewayCalls).toHaveLength(0);
   });
 
   test("list --json emits a single JSON document and no human text", async () => {
@@ -445,11 +423,7 @@ describe("cadet devices", () => {
         pairingUserAgent: "cadet-cli/1.2.3 (darwin)",
       },
     ];
-    stubFetch((url) =>
-      url.endsWith("/v1/devices")
-        ? jsonResponse({ devices: records })
-        : jsonResponse({ error: "unexpected" }, 500),
-    );
+    stubGateway(() => devicesJson(records));
 
     process.argv = ["bun", "cadet", "devices", "json-host", "--json"];
     const { exited, logs, errors } = await runDevices();
@@ -465,7 +439,7 @@ describe("cadet devices", () => {
 
   test('list --json with zero devices emits {"devices":[]}', async () => {
     seedLocal("json-empty-host");
-    stubFetch(() => jsonResponse({ devices: [] }));
+    stubGateway(() => devicesJson([]));
 
     process.argv = ["bun", "cadet", "devices", "json-empty-host", "--json"];
     const { exited, logs } = await runDevices();
@@ -476,11 +450,7 @@ describe("cadet devices", () => {
 
   test("revoke --json --yes emits one JSON line; identity preamble on stderr", async () => {
     seedLocal("json-revoke-host");
-    stubFetch((url) =>
-      url.endsWith("/v1/devices/revoke")
-        ? jsonResponse({ revoked: true, hashedDeviceId: "hashAAA111" })
-        : jsonResponse({ error: "unexpected" }, 500),
-    );
+    stubGateway(() => "Device hashAAA111 revoked.");
 
     process.argv = [
       "bun",
@@ -525,29 +495,33 @@ describe("cadet devices", () => {
     expect(exited).toBe(true);
     expect(logs).toBe("");
     expect(errors).toContain("--json requires --yes");
-    expect(fetchCalls).toHaveLength(0);
+    expect(gatewayCalls).toHaveLength(0);
   });
 
-  test("list --json still exits 1 with stderr on a non-2xx gateway response", async () => {
+  test("list --json still exits 1 with stderr when the gateway command fails", async () => {
     seedLocal("json-err-host");
-    stubFetch(() => jsonResponse({ error: { code: "FORBIDDEN" } }, 403));
+    stubGateway(() => {
+      throw new Error("gateway exited with code 1: boom");
+    });
 
     process.argv = ["bun", "cadet", "devices", "json-err-host", "--json"];
     const { exited, logs, errors } = await runDevices();
 
     expect(exited).toBe(true);
     expect(logs).toBe("");
-    expect(errors).toContain("403");
+    expect(errors).toContain("boom");
   });
 
-  test("surfaces a non-2xx gateway response on list", async () => {
+  test("surfaces a failed gateway command on list", async () => {
     seedLocal("err-host");
-    stubFetch(() => jsonResponse({ error: { code: "FORBIDDEN" } }, 403));
+    stubGateway(() => {
+      throw new Error("gateway exited with code 1: boom");
+    });
 
     process.argv = ["bun", "cadet", "devices", "err-host"];
     const { exited, errors } = await runDevices();
 
     expect(exited).toBe(true);
-    expect(errors).toContain("403");
+    expect(errors).toContain("boom");
   });
 });
