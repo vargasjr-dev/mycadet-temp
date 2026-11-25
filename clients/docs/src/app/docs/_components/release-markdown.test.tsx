@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ReleaseMarkdown } from "@/app/docs/_components/release-markdown";
 
 const LIST = `- [Getting Started](/docs/getting-started) — Install, set up, and go.
-- [Roadmap](/docs/roadmap) — What's shipping soon.
+- [Roadmap](/roadmap) — What's shipping soon.
 `;
 
 describe("ReleaseMarkdown navCards", () => {

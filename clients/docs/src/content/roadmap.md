@@ -1,4 +1,4 @@
-<!-- TODO: we should migrate roadmap from `/docs/roadmap` to `/roadmap`. No need for redirects -->
+This roadmap is the bridge between today's [architecture](/docs/architecture) and achieving the Cadet [Vision](/docs/vision).
 
 ## Release Migrate from Vellum Desktop Support
 

@@ -18,7 +18,7 @@ export function ArchitectureNorthStarContent() {
         workbench. This page will carry the full north-star narrative and an
         interactive diagram; for now, the path there lives on the{" "}
         <a
-          href="/docs/roadmap"
+          href="/roadmap"
           className="text-stone-900 underline dark:text-stone-100"
         >
           roadmap
