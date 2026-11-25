@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import OpenAI from "openai";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { ProviderError } from "../../../util/errors.js";
 import { isPlaceholderSentinelText } from "../../placeholder-sentinels.js";
+import type { ProviderEvent } from "../../types.js";
 import {
   EMPTY_ASSISTANT_TURN_PLACEHOLDER,
   OpenAIChatCompletionsProvider,
@@ -66,7 +68,7 @@ function stubProvider(
   options?: OpenAIChatCompletionsProviderOptions,
 ): {
   provider: OpenAIChatCompletionsProvider;
-  events: Array<{ type: string; thinking?: string; text?: string }>;
+  events: ProviderEvent[];
   requests: CapturedRequest[];
 } {
   const provider = new OpenAIChatCompletionsProvider(
@@ -77,23 +79,19 @@ function stubProvider(
   const requests: CapturedRequest[] = [];
   // Swap the SDK client for a stub whose chat.completions.create returns our
   // canned async iterable.
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: CapturedRequest) => {
-          requests.push(params);
-          return makeStream(chunks);
-        },
-      },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: CapturedRequest) => {
+      requests.push(params);
+      return makeStream(chunks);
     },
-  };
-  const events: Array<{ type: string; thinking?: string; text?: string }> = [];
+  });
+  const events: ProviderEvent[] = [];
   return { provider, events, requests };
 }
 
 async function runStream(
   provider: OpenAIChatCompletionsProvider,
-  events: Array<{ type: string; thinking?: string; text?: string }>,
+  events: ProviderEvent[],
 ): Promise<{
   thinking: string;
 }> {
@@ -101,7 +99,7 @@ async function runStream(
     [{ role: "user", content: [{ type: "text", text: "hi" }] }],
     {
       onEvent: (e) => {
-        events.push(e as { type: string; thinking?: string; text?: string });
+        events.push(e);
       },
     },
   );
@@ -686,21 +684,17 @@ function stubProviderWithErrors(
   );
   const requests: CapturedRequest[] = [];
   const pending = [...errors];
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: CapturedRequest) => {
-          // Snapshot: the fallback mutates `params` between attempts.
-          requests.push(structuredClone(params));
-          const error = pending.shift();
-          if (error !== undefined) {
-            throw error;
-          }
-          return makeStream(chunks);
-        },
-      },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: CapturedRequest) => {
+      // Snapshot: the fallback mutates `params` between attempts.
+      requests.push(structuredClone(params));
+      const error = pending.shift();
+      if (error !== undefined) {
+        throw error;
+      }
+      return makeStream(chunks);
     },
-  };
+  });
   return { provider, requests };
 }
 
@@ -907,7 +901,7 @@ describe("thinking-mode tool_choice rejection fallback", () => {
     expect(second.tool_choice).toBeUndefined();
     expect(second.reasoning_effort).toBe("high");
     expect(
-      (response.rawRequest as { tool_choice?: unknown }).tool_choice,
+      jsonObjectSchema.parse(response.rawRequest).tool_choice,
     ).toBeUndefined();
     const text = response.content.find((b) => b.type === "text");
     expect(text?.text).toBe("ok");
@@ -944,13 +938,11 @@ describe("thinking-mode tool_choice rejection fallback", () => {
       assert(error instanceof ProviderError, "Expected ProviderError");
       const rejected = error;
       expect(
-        (rejected.rawRequest as { tool_choice?: unknown } | undefined)
-          ?.tool_choice,
+        jsonObjectSchema.parse(rejected.rawRequest).tool_choice,
       ).toBeUndefined();
-      expect(
-        (rejected.rawRequest as { reasoning_effort?: string } | undefined)
-          ?.reasoning_effort,
-      ).toBe("high");
+      expect(jsonObjectSchema.parse(rejected.rawRequest).reasoning_effort).toBe(
+        "high",
+      );
     }
   });
 

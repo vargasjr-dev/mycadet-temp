@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import type { ProviderEvent } from "../../types.js";
 import {
   OpenAIChatCompletionsProvider,
   type OpenAIChatCompletionsProviderOptions,
@@ -54,20 +55,16 @@ function stubProvider(
   model = "test-model",
 ): {
   provider: OpenAIChatCompletionsProvider;
-  events: Array<{ type: string; text?: string }>;
+  events: ProviderEvent[];
 } {
   const provider = new OpenAIChatCompletionsProvider(
     "test-key",
     model,
     options,
   );
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async () => makeStream(chunks),
-      },
-    },
-  };
+  Object.assign(provider["client"].chat.completions, {
+    create: async () => makeStream(chunks),
+  });
   return { provider, events: [] };
 }
 
@@ -103,7 +100,7 @@ describe("OpenAIChatCompletionsProvider XML tool-call salvage", () => {
       {
         tools: [BASH_TOOL],
         onEvent: (e) => {
-          events.push(e as { type: string; text?: string });
+          events.push(e);
         },
       },
     );
@@ -207,7 +204,7 @@ describe("OpenAIChatCompletionsProvider XML tool-call salvage", () => {
       [{ role: "user", content: [{ type: "text", text: "hi" }] }],
       {
         onEvent: (e) => {
-          events.push(e as { type: string; text?: string });
+          events.push(e);
         },
       },
     );

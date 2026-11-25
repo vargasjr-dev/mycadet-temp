@@ -172,15 +172,11 @@ mock.module("../../../../util/logger.js", () => ({
 /** Mutable singleton proxy. Tests set this to control extension availability. */
 let mockSingletonProxy: HostBrowserProxy | null = null;
 
+const { HostBrowserProxy: RealHostBrowserProxy } =
+  await import("../../../../daemon/host-browser-proxy.js");
+
 /** Default proxy that reports unavailable — used when no test override is set. */
-const unavailableFallback: HostBrowserProxy = {
-  isAvailable: () => false,
-  hasExtensionClient: () => false,
-  request: () => Promise.reject(new Error("no extension")),
-  resolve: () => {},
-  hasPendingRequest: () => false,
-  dispose: () => {},
-} as unknown as HostBrowserProxy;
+const unavailableFallback = makeUnavailableProxy();
 
 mock.module("../../../../daemon/host-browser-proxy.js", () => ({
   HostBrowserProxy: {
@@ -211,14 +207,13 @@ const {
 } = await import("../factory.js");
 
 /**
- * Minimal ToolContext suitable for factory tests. Only `conversationId`
- * needs to be populated; other required fields are cast away.
+ * Minimal ToolContext suitable for factory tests.
  * Extension availability is controlled via `mockSingletonProxy`.
  */
 function makeContext(
   overrides: Partial<ToolContext> & { conversationId: string },
 ): ToolContext {
-  return overrides as unknown as ToolContext;
+  return { workingDir: "/tmp", trustClass: "guardian", ...overrides };
 }
 
 /**
@@ -226,11 +221,14 @@ function makeContext(
  * Both isAvailable() and hasExtensionClient() return true.
  */
 function makeAvailableProxy(): HostBrowserProxy {
-  return {
-    request: mock(async () => ({})),
-    isAvailable: () => true,
-    hasExtensionClient: () => true,
-  } as unknown as HostBrowserProxy;
+  const proxy = new RealHostBrowserProxy();
+  proxy.request = mock<HostBrowserProxy["request"]>(async () => ({
+    content: "{}",
+    isError: false,
+  }));
+  proxy.isAvailable = () => true;
+  proxy.hasExtensionClient = () => true;
+  return proxy;
 }
 
 /**
@@ -238,11 +236,14 @@ function makeAvailableProxy(): HostBrowserProxy {
  * (no Chrome Extension). isAvailable() is true but hasExtensionClient() is false.
  */
 function makeMacosBridgeOnlyProxy(): HostBrowserProxy {
-  return {
-    request: mock(async () => ({})),
-    isAvailable: () => true,
-    hasExtensionClient: () => false,
-  } as unknown as HostBrowserProxy;
+  const proxy = new RealHostBrowserProxy();
+  proxy.request = mock<HostBrowserProxy["request"]>(async () => ({
+    content: "{}",
+    isError: false,
+  }));
+  proxy.isAvailable = () => true;
+  proxy.hasExtensionClient = () => false;
+  return proxy;
 }
 
 /**
@@ -250,11 +251,14 @@ function makeMacosBridgeOnlyProxy(): HostBrowserProxy {
  * (proxy exists but no client of any kind is connected).
  */
 function makeUnavailableProxy(): HostBrowserProxy {
-  return {
-    request: mock(async () => ({})),
-    isAvailable: () => false,
-    hasExtensionClient: () => false,
-  } as unknown as HostBrowserProxy;
+  const proxy = new RealHostBrowserProxy();
+  proxy.request = mock<HostBrowserProxy["request"]>(async () => ({
+    content: "{}",
+    isError: false,
+  }));
+  proxy.isAvailable = () => false;
+  proxy.hasExtensionClient = () => false;
+  return proxy;
 }
 
 /**
@@ -267,15 +271,14 @@ function makeActorScopedProxy(opts: {
   bridgeActors: string[];
 }): HostBrowserProxy {
   const allActors = [...opts.extensionActors, ...opts.bridgeActors];
-  return {
-    request: mock(async () => ({})),
-    isAvailable: (actor?: string) =>
-      actor == null ? allActors.length > 0 : allActors.includes(actor),
-    hasExtensionClient: (actor?: string) =>
-      actor == null
-        ? opts.extensionActors.length > 0
-        : opts.extensionActors.includes(actor),
-  } as unknown as HostBrowserProxy;
+  const proxy = makeAvailableProxy();
+  proxy.isAvailable = (actor) =>
+    actor == null ? allActors.length > 0 : allActors.includes(actor);
+  proxy.hasExtensionClient = (actor) =>
+    actor == null
+      ? opts.extensionActors.length > 0
+      : opts.extensionActors.includes(actor);
+  return proxy;
 }
 
 describe("getCdpClient", () => {

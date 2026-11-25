@@ -9,6 +9,15 @@ let mockLlm: Record<string, unknown> = {};
 
 const { resolveSlash } = await import("../daemon/conversation-slash.js");
 
+function requireSlashMessage(
+  result: Awaited<ReturnType<typeof resolveSlash>>,
+): string {
+  if (result.kind !== "unknown") {
+    throw new Error(`Expected a slash response message, got ${result.kind}`);
+  }
+  return result.message;
+}
+
 /**
  * Install the current fixture `llm` config for real. A schema-valid baseline
  * is seeded first so the loader caches a config object; `llm` is then
@@ -17,7 +26,7 @@ const { resolveSlash } = await import("../daemon/conversation-slash.js");
  */
 function applyConfig(): void {
   setConfig("llm", { profiles: {} });
-  const config = getConfig() as { llm: unknown };
+  const config: { llm: unknown } = getConfig();
   config.llm = mockLlm;
 }
 
@@ -32,7 +41,7 @@ describe("/model list", () => {
   test("lists the code-catalog defaults", async () => {
     const result = await resolveSlash("/model");
     expect(result.kind).toBe("unknown");
-    const message = (result as { message: string }).message;
+    const message = requireSlashMessage(result);
     expect(message).toContain("`balanced`");
     expect(message).toContain("`quality-optimized`");
     expect(message).toContain("`cost-optimized`");
@@ -49,8 +58,7 @@ describe("/model list", () => {
     };
     applyConfig();
 
-    const message = ((await resolveSlash("/model")) as { message: string })
-      .message;
+    const message = requireSlashMessage(await resolveSlash("/model"));
     expect(message).toContain("Best results with the most capable model");
     expect(message).toContain("Cheapest responses, for high-volume work");
     expect(message).toContain("Fastest responses, with reasoning turned off");
@@ -58,8 +66,7 @@ describe("/model list", () => {
   });
 
   test("descriptions use the cloud column without a default provider", async () => {
-    const message = ((await resolveSlash("/model")) as { message: string })
-      .message;
+    const message = requireSlashMessage(await resolveSlash("/model"));
     // The quality tier is the column discriminator now that cost-optimized
     // copy is intent-only in both columns (no model names - LUM-2881).
     expect(message).toContain(
@@ -75,7 +82,7 @@ describe("/model switch", () => {
   test("rejects a cloud backup profile as a direct selection", async () => {
     const result = await resolveSlash("/model balanced-backup");
     expect(result.kind).toBe("unknown");
-    expect((result as { message: string }).message).toContain(
+    expect(requireSlashMessage(result)).toContain(
       "Profile `balanced-backup` not found",
     );
   });
@@ -83,7 +90,7 @@ describe("/model switch", () => {
   test("rejects an unknown profile with the available set", async () => {
     const result = await resolveSlash("/model nope");
     expect(result.kind).toBe("unknown");
-    const message = (result as { message: string }).message;
+    const message = requireSlashMessage(result);
     expect(message).toContain("`nope` not found");
     expect(message).toContain("`balanced`");
   });
@@ -96,8 +103,6 @@ describe("/model switch", () => {
     applyConfig();
 
     const result = await resolveSlash("/model nope");
-    expect((result as { message: string }).message).toContain(
-      "`nope` not found",
-    );
+    expect(requireSlashMessage(result)).toContain("`nope` not found");
   });
 });

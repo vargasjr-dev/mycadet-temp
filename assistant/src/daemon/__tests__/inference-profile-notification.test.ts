@@ -8,6 +8,8 @@
  */
 import { describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 
 // The finalize path indexes tool-result messages into memory; keep it inert
@@ -47,7 +49,10 @@ mock.module("../../plugins/defaults/memory/v2/activation-log-store.js", () => ({
 }));
 
 // ── Imports (after mocks) ────────────────────────────────────────────────────
-import { mockUnownedModeSessions } from "../../__tests__/helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "../../__tests__/helpers/mock-conversation.js";
 import type { AgentEvent } from "../../agent/loop.js";
 import type { Message } from "../../providers/types.js";
 import type {
@@ -64,30 +69,33 @@ const PROFILE_KEY = "quality-optimized";
 
 function makeDeps(): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: CONVERSATION_ID,
-      provider: { name: "mock-provider" },
+      provider: {
+        name: "mock-provider",
+        sendMessage: async () => {
+          throw new Error("Event-handler tests do not call the model");
+        },
+      },
       currentTurnSurfaces: [],
       trustContext: undefined,
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: () => {},
     reqId: "req-profile-notify",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
-  } as EventHandlerDeps;
+  };
 }
 
 function messageCompleteEvent(): Extract<

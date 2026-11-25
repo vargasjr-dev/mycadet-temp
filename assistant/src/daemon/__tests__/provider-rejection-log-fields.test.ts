@@ -5,6 +5,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
 import type { AssistantEvent } from "../../api/index.js";
 import { ProviderError } from "../../util/errors.js";
 import * as loggerModule from "../../util/logger.js";
@@ -34,35 +36,41 @@ mock.module("../../util/logger.js", () => ({
 
 // The handlers module binds its logger at import time, so it is loaded
 // dynamically once the logger stub is installed above.
+const { asConversation } =
+  await import("../../__tests__/helpers/mock-conversation.js");
 const { createEventHandlerState, dispatchAgentEvent } =
   await import("../conversation-agent-loop-handlers.js");
 
 function createDeps(): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: "conv-provider-rejection",
-      provider: { name: "openai" },
+      provider: {
+        name: "openai",
+        sendMessage: async () => {
+          throw new Error("Event-handler tests do not call the model");
+        },
+      },
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: (_msg: AssistantEvent) => {},
     reqId: "req-provider-rejection",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
-  } as EventHandlerDeps;
+    },
+    applyCompaction: async () => {},
+  };
 }
 
 describe("buildProviderRejectionLogFields", () => {

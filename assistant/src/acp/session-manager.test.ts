@@ -44,6 +44,7 @@ mock.module("./prepare-agent-env.js", () => ({
 import { asConversation } from "../__tests__/helpers/mock-conversation.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { modelOption } from "./__tests__/helpers/acp-model-option.js";
+import { AcpAgentProcess } from "./agent-process.js";
 import { CadetAcpClientHandler } from "./client-handler.js";
 import { AcpSessionManager } from "./session-manager.js";
 import type { AcpSessionState } from "./types.js";
@@ -97,14 +98,31 @@ function mockConversation(opts?: { enqueueQueued?: boolean }) {
   };
 }
 
-/** Fake AcpAgentProcess covering only the calls firePromptInBackground makes. */
-function fakeProcess(prompt: () => Promise<unknown>, stderr = "") {
-  return {
-    markStderr: () => 0,
-    stderrSince: () => stderr,
-    prompt,
-    kill: mock(() => {}),
-  };
+/** Stand in for the adapter without starting a child process. */
+function fakeProcess(prompt: AcpAgentProcess["prompt"], stderr = "") {
+  const process = new AcpAgentProcess(
+    "claude",
+    { command: "noop", args: [] },
+    () => {
+      throw new Error("The session test does not start an ACP process");
+    },
+  );
+  process.markStderr = () => 0;
+  process.stderrSince = () => stderr;
+  process.prompt = prompt;
+  process.kill = mock(() => {});
+  return process;
+}
+
+function setupProcess(prompt: AcpAgentProcess["prompt"]) {
+  const process = fakeProcess(prompt);
+  process.spawn = () => {};
+  process.initialize = async () => ({
+    protocolVersion: 1,
+    agentCapabilities: {},
+    authMethods: [],
+  });
+  return process;
 }
 
 /** Injects a running session directly into the manager (no child process). */
@@ -149,7 +167,7 @@ function injectSession(
     cwd: "/tmp",
     command: "noop",
   };
-  (manager as any).sessions.set(acpSessionId, entry);
+  manager["sessions"].set(acpSessionId, entry);
   return entry;
 }
 
@@ -158,7 +176,7 @@ function fire(
   acpSessionId: string,
   entry: ReturnType<typeof injectSession>,
 ): Promise<unknown> {
-  const bg = (manager as any).firePromptInBackground(
+  const bg = manager["firePromptInBackground"](
     acpSessionId,
     entry,
     "proto-1",
@@ -280,16 +298,11 @@ describe("AcpSessionManager parent notification", () => {
     const cancelPending = new Promise<void>((r) => {
       resolveCancel = r;
     });
-    const proc = {
-      markStderr: () => 0,
-      stderrSince: () => "",
-      prompt: () => new Promise(() => {}),
-      kill: mock(() => {}),
-      cancel: mock(() => cancelPending),
-    };
+    const proc = fakeProcess(() => new Promise(() => {}));
+    proc.cancel = mock(() => cancelPending);
     const entry = injectSession(manager, "sess-race", "parent-race", proc);
 
-    const cancelPromise = (manager as any).cancel("sess-race");
+    const cancelPromise = manager.cancel("sess-race");
     // Synchronously after kicking off cancel — before the protocol cancel
     // resolves — the status is already "cancelled".
     expect(entry.state.status).toBe("cancelled");
@@ -304,13 +317,8 @@ describe("AcpSessionManager parent notification", () => {
     // status must roll back to running (else the live prompt's eventual settle
     // is wrongly suppressed) and the error must propagate to the caller.
     const manager = new AcpSessionManager(1);
-    const proc = {
-      markStderr: () => 0,
-      stderrSince: () => "",
-      prompt: () => new Promise(() => {}),
-      kill: mock(() => {}),
-      cancel: mock(() => Promise.reject(new Error("adapter down"))),
-    };
+    const proc = fakeProcess(() => new Promise(() => {}));
+    proc.cancel = mock(() => Promise.reject(new Error("adapter down")));
     const entry = injectSession(
       manager,
       "sess-cancel-throw",
@@ -320,7 +328,7 @@ describe("AcpSessionManager parent notification", () => {
     // A prompt is still in flight; cancel must not tear it down on failure.
     entry.currentPrompt = new Promise(() => {});
 
-    await expect((manager as any).cancel("sess-cancel-throw")).rejects.toThrow(
+    await expect(manager.cancel("sess-cancel-throw")).rejects.toThrow(
       "adapter down",
     );
     expect(entry.state.status).toBe("running");
@@ -335,7 +343,7 @@ describe("AcpSessionManager parent notification", () => {
     const proc = fakeProcess(() => Promise.reject(new Error("boom")));
     const entry = injectSession(manager, "sess-stale", "parent-stale", proc);
 
-    const bg = (manager as any).firePromptInBackground(
+    const bg = manager["firePromptInBackground"](
       entry.state.id,
       entry,
       "proto-1",
@@ -618,9 +626,7 @@ describe("AcpSessionManager: teardown during the credential read", () => {
     // Let the handler reach the suspended read, then take the session out from
     // under it exactly as a cancel would.
     await new Promise((r) => setTimeout(r, 5));
-    (manager as unknown as { sessions: Map<string, unknown> }).sessions.delete(
-      "sess-torn-down",
-    );
+    manager["sessions"].delete("sess-torn-down");
     openGate();
     await running;
     resolveGate = undefined;
@@ -678,7 +684,9 @@ describe("AcpSessionManager.steer: a stopped turn hands the agent nothing", () =
 
   test("an already-cancelled turn never fires the prompt", async () => {
     const manager = new AcpSessionManager(1);
-    const prompt = mock(() => Promise.resolve({}));
+    const prompt = mock<AcpAgentProcess["prompt"]>(async () => ({
+      stopReason: "end_turn",
+    }));
     injectSession(manager, "sess-abort-1", "conv-1", fakeProcess(prompt));
 
     await expect(
@@ -694,7 +702,9 @@ describe("AcpSessionManager.steer: a stopped turn hands the agent nothing", () =
   test("a cancel during the in-flight cancel never fires the prompt", async () => {
     const manager = new AcpSessionManager(1);
     const controller = new AbortController();
-    const prompt = mock(() => Promise.resolve({}));
+    const prompt = mock<AcpAgentProcess["prompt"]>(async () => ({
+      stopReason: "end_turn",
+    }));
     const entry = injectSession(
       manager,
       "sess-abort-2",
@@ -702,12 +712,11 @@ describe("AcpSessionManager.steer: a stopped turn hands the agent nothing", () =
       fakeProcess(prompt),
     );
     entry.currentPrompt = Promise.resolve();
-    (entry.process as unknown as { cancel: () => Promise<void> }).cancel =
-      async () => {
-        controller.abort(
-          createAbortReason("user_cancel", "session-manager.test"),
-        );
-      };
+    entry.process.cancel = async () => {
+      controller.abort(
+        createAbortReason("user_cancel", "session-manager.test"),
+      );
+    };
 
     await expect(
       manager.steer("sess-abort-2", "do it", { signal: controller.signal }),
@@ -728,25 +737,16 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
   test("a cancel during protocol setup tears the process down and fires nothing", async () => {
     const manager = new AcpSessionManager(1);
     const controller = new AbortController();
-    const prompt = mock(() => Promise.resolve({}));
-    const proc = {
-      ...fakeProcess(prompt),
-      spawn: () => {},
-      initialize: async () => {},
-      createSession: async () => {
-        // The user stops the turn while the protocol is coming up.
-        controller.abort(REASON);
-        return "proto-1";
-      },
+    const prompt = mock<AcpAgentProcess["prompt"]>(async () => ({
+      stopReason: "end_turn",
+    }));
+    const proc = setupProcess(prompt);
+    proc.createSession = async () => {
+      // The user stops the turn while the protocol is coming up.
+      controller.abort(REASON);
+      return { sessionId: "proto-1", configOptions: [] };
     };
-    const internals = manager as unknown as {
-      registerSession: (opts: {
-        acpSessionId: string;
-        parentConversationId: string;
-      }) => unknown;
-      sessions: Map<string, unknown>;
-    };
-    internals.registerSession = (opts) =>
+    manager["registerSession"] = (opts) =>
       injectSession(
         manager,
         opts.acpSessionId,
@@ -769,7 +769,7 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
 
     expect(prompt).not.toHaveBeenCalled();
     expect(proc.kill).toHaveBeenCalled();
-    expect(internals.sessions.size).toBe(0);
+    expect(manager["sessions"].size).toBe(0);
   });
 
   /**
@@ -780,31 +780,22 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
   test("a cancel during the model pin tears the process down and fires nothing", async () => {
     const manager = new AcpSessionManager(1);
     const controller = new AbortController();
-    const prompt = mock(() => Promise.resolve({}));
+    const prompt = mock<AcpAgentProcess["prompt"]>(async () => ({
+      stopReason: "end_turn",
+    }));
     const setConfigOption = mock(async () => {
       // The user stops the turn while the pin's round trip is open.
       controller.abort(REASON);
       return [modelOption("opus")];
     });
-    const proc = {
-      ...fakeProcess(prompt),
-      spawn: () => {},
-      initialize: async () => {},
-      createSession: async () => ({
-        sessionId: "proto-1",
-        configOptions: [modelOption("sonnet")],
-      }),
-      setConfigOption,
-    };
+    const proc = setupProcess(prompt);
+    proc.createSession = async () => ({
+      sessionId: "proto-1",
+      configOptions: [modelOption("sonnet")],
+    });
+    proc.setConfigOption = setConfigOption;
     let injected: ReturnType<typeof injectSession> | undefined;
-    const internals = manager as unknown as {
-      registerSession: (opts: {
-        acpSessionId: string;
-        parentConversationId: string;
-      }) => unknown;
-      sessions: Map<string, unknown>;
-    };
-    internals.registerSession = (opts) => {
+    manager["registerSession"] = (opts) => {
       injected = injectSession(
         manager,
         opts.acpSessionId,
@@ -831,7 +822,7 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
     expect(injected?.sendToCadet).not.toHaveBeenCalled();
     expect(prompt).not.toHaveBeenCalled();
     expect(proc.kill).toHaveBeenCalled();
-    expect(internals.sessions.size).toBe(0);
+    expect(manager["sessions"].size).toBe(0);
   });
 
   /**
@@ -843,7 +834,9 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
   test("a cancel during the model pin leaves a replacement session for the same id alone", async () => {
     const manager = new AcpSessionManager(2);
     const controller = new AbortController();
-    const prompt = mock(() => Promise.resolve({}));
+    const prompt = mock<AcpAgentProcess["prompt"]>(async () => ({
+      stopReason: "end_turn",
+    }));
     let replacement: ReturnType<typeof injectSession> | undefined;
     let spawnedId: string | undefined;
     const setConfigOption = mock(async () => {
@@ -854,28 +847,21 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
         manager,
         spawnedId!,
         "conv-2",
-        fakeProcess(mock(() => Promise.resolve({}))),
+        fakeProcess(
+          mock<AcpAgentProcess["prompt"]>(async () => ({
+            stopReason: "end_turn",
+          })),
+        ),
       );
       return [modelOption("opus")];
     });
-    const proc = {
-      ...fakeProcess(prompt),
-      spawn: () => {},
-      initialize: async () => {},
-      createSession: async () => ({
-        sessionId: "proto-1",
-        configOptions: [modelOption("sonnet")],
-      }),
-      setConfigOption,
-    };
-    const internals = manager as unknown as {
-      registerSession: (opts: {
-        acpSessionId: string;
-        parentConversationId: string;
-      }) => unknown;
-      sessions: Map<string, unknown>;
-    };
-    internals.registerSession = (opts) => {
+    const proc = setupProcess(prompt);
+    proc.createSession = async () => ({
+      sessionId: "proto-1",
+      configOptions: [modelOption("sonnet")],
+    });
+    proc.setConfigOption = setConfigOption;
+    manager["registerSession"] = (opts) => {
       spawnedId = opts.acpSessionId;
       return injectSession(
         manager,
@@ -901,6 +887,6 @@ describe("AcpSessionManager.spawn: a stopped turn leaves no agent running", () =
     expect(prompt).not.toHaveBeenCalled();
     expect(proc.kill).toHaveBeenCalled();
     expect(replacement?.process.kill).not.toHaveBeenCalled();
-    expect(internals.sessions.get(spawnedId!)).toBe(replacement);
+    expect(manager["sessions"].get(spawnedId!)).toBe(replacement);
   });
 });

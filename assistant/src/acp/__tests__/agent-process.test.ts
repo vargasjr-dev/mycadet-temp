@@ -16,6 +16,7 @@ import type {
 import * as acp from "@agentclientprotocol/sdk";
 
 import { AcpAgentProcess } from "../agent-process.js";
+import { CadetAcpClientHandler } from "../client-handler.js";
 import { AcpConfigOptionRefusedError } from "../types.js";
 import { modelOption } from "./helpers/acp-model-option.js";
 
@@ -29,18 +30,32 @@ function makeProcess(): AcpAgentProcess {
   );
 }
 
+function attachConnection(
+  proc: AcpAgentProcess,
+  methods: Partial<acp.ClientSideConnection>,
+): acp.ClientSideConnection {
+  const connection = new acp.ClientSideConnection(
+    () => new CadetAcpClientHandler("test", () => {}, "conv-test"),
+    {
+      readable: new ReadableStream({
+        start: (controller) => controller.close(),
+      }),
+      writable: new WritableStream(),
+    },
+  );
+  Object.assign(connection, methods);
+  proc["connection"] = connection;
+  return connection;
+}
+
 /** Injects a stub connection whose initialize() resolves with `response`. */
 function stubConnection(
   proc: AcpAgentProcess,
   response: InitializeResponse,
 ): void {
-  (
-    proc as unknown as {
-      connection: { initialize: () => Promise<InitializeResponse> };
-    }
-  ).connection = {
+  attachConnection(proc, {
     initialize: () => Promise.resolve(response),
-  };
+  });
 }
 
 describe("AcpAgentProcess capability getters", () => {
@@ -115,7 +130,7 @@ describe("AcpAgentProcess loadSession/resumeSession", () => {
   } {
     const loadCalls: unknown[] = [];
     const resumeCalls: unknown[] = [];
-    (proc as unknown as { connection: unknown }).connection = {
+    attachConnection(proc, {
       loadSession: (params: unknown) => {
         loadCalls.push(params);
         return Promise.resolve({});
@@ -124,7 +139,7 @@ describe("AcpAgentProcess loadSession/resumeSession", () => {
         resumeCalls.push(params);
         return Promise.resolve({});
       },
-    };
+    });
     return { loadCalls, resumeCalls };
   }
 
@@ -173,12 +188,12 @@ describe("AcpAgentProcess config options", () => {
     proc: AcpAgentProcess,
     configOptions: SessionConfigOption[] | null | undefined,
   ): void {
-    (proc as unknown as { connection: unknown }).connection = {
+    attachConnection(proc, {
       newSession: () =>
         Promise.resolve({ sessionId: "session-1", configOptions }),
       loadSession: () => Promise.resolve({ configOptions }),
       resumeSession: () => Promise.resolve({ configOptions }),
-    };
+    });
   }
 
   test("createSession returns the reported options", async () => {
@@ -237,12 +252,12 @@ describe("AcpAgentProcess config options", () => {
     const proc = makeProcess();
     const calls: unknown[] = [];
     const refreshed = [modelOption("opus")];
-    (proc as unknown as { connection: unknown }).connection = {
+    attachConnection(proc, {
       setSessionConfigOption: (params: unknown) => {
         calls.push(params);
         return Promise.resolve({ configOptions: refreshed });
       },
-    };
+    });
 
     await expect(
       proc.setConfigOption("session-1", "model", "opus"),
@@ -257,12 +272,12 @@ describe("AcpAgentProcess config options", () => {
     const proc = makeProcess();
     const calls: unknown[] = [];
     const refreshed = [modelOption("opus")];
-    (proc as unknown as { connection: unknown }).connection = {
+    attachConnection(proc, {
       setSessionConfigOption: (params: unknown) => {
         calls.push(params);
         return Promise.resolve({ configOptions: refreshed });
       },
-    };
+    });
 
     await proc.setConfigOption("session-1", "thinking", true);
 
@@ -279,12 +294,12 @@ describe("AcpAgentProcess config options", () => {
   test("setConfigOption omits the discriminator for string values", async () => {
     const proc = makeProcess();
     const calls: unknown[] = [];
-    (proc as unknown as { connection: unknown }).connection = {
+    attachConnection(proc, {
       setSessionConfigOption: (params: unknown) => {
         calls.push(params);
         return Promise.resolve({ configOptions: [modelOption("opus")] });
       },
-    };
+    });
 
     await proc.setConfigOption("session-1", "model", "opus");
 
@@ -354,7 +369,7 @@ describe("AcpAgentProcess auth_required retry", () => {
       },
     );
 
-    function failThenSucceed(rejections: unknown[], result: unknown) {
+    function failThenSucceed<T>(rejections: unknown[], result: T) {
       let calls = 0;
       return mock(() => {
         const rejection = rejections[calls];
@@ -381,15 +396,11 @@ describe("AcpAgentProcess auth_required retry", () => {
       { configOptions: [] },
     );
     const prompt = failThenSucceed(options.promptRejections ?? [], {
-      stopReason: "end_turn",
+      stopReason: "end_turn" as const,
     });
     const authenticate = mock(() => Promise.resolve({}));
 
-    const internals = proc as unknown as {
-      connection: unknown;
-      spawnedEnv: NodeJS.ProcessEnv;
-    };
-    internals.connection = {
+    const connection = attachConnection(proc, {
       initialize: () =>
         Promise.resolve({
           protocolVersion: 1,
@@ -401,8 +412,8 @@ describe("AcpAgentProcess auth_required retry", () => {
       setSessionConfigOption,
       prompt,
       authenticate,
-    };
-    internals.spawnedEnv = { ...process.env, ...options.env };
+    });
+    proc["spawnedEnv"] = { ...process.env, ...options.env };
 
     await proc.initialize();
 
@@ -414,7 +425,7 @@ describe("AcpAgentProcess auth_required retry", () => {
       setSessionConfigOption,
       prompt,
       authenticate,
-      internals,
+      connection,
     };
   }
 
@@ -436,7 +447,7 @@ describe("AcpAgentProcess auth_required retry", () => {
 
     expect(refusal).toBeInstanceOf(AcpConfigOptionRefusedError);
     // The adapter's sentence, not the message the SDK framed it in.
-    expect((refusal as Error).message).toBe(
+    expect(refusal instanceof Error ? refusal.message : undefined).toBe(
       "Invalid value for config option model: nope",
     );
   });
@@ -497,7 +508,9 @@ describe("AcpAgentProcess auth_required retry", () => {
       .catch((err: unknown) => err);
 
     expect(refusal).toBeInstanceOf(AcpConfigOptionRefusedError);
-    expect((refusal as Error).message).toBe("Not logged in");
+    expect(refusal instanceof Error ? refusal.message : undefined).toBe(
+      "Not logged in",
+    );
   });
 
   test("setConfigOption leaves a transport failure untyped", async () => {
@@ -687,7 +700,7 @@ describe("AcpAgentProcess auth_required retry", () => {
   });
 
   test("auth_required after the agent process exits throws the not-spawned error", async () => {
-    const { proc, authenticate, internals } = await setupAuthProcess({
+    const { proc, authenticate, connection } = await setupAuthProcess({
       env: { [OPENAI_VAR]: "sk-test" },
     });
 
@@ -695,8 +708,8 @@ describe("AcpAgentProcess auth_required retry", () => {
     // rejects with auth_required, nulling the connection before the retry
     // path runs. spawnedEnv stays satisfiable so only the connection guard
     // can produce the failure.
-    (internals.connection as { newSession: unknown }).newSession = () => {
-      internals.connection = null;
+    connection.newSession = () => {
+      proc["connection"] = null;
       return Promise.reject(authRequiredError);
     };
 

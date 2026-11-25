@@ -6,6 +6,10 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
+
 mock.module("../../persistence/conversation-crud.js", () => ({
   addMessage: () => ({ id: "mock-msg-id" }),
   getMessageById: () => null,
@@ -47,10 +51,15 @@ function createCollectorDeps(): {
   activityStates: ActivityStateCapture[];
 } {
   const activityStates: ActivityStateCapture[] = [];
-  const deps = {
-    ctx: {
+  const deps: EventHandlerDeps = {
+    ctx: asConversation({
       conversationId: "conv-status-text",
-      provider: { name: "anthropic" },
+      provider: {
+        name: "anthropic",
+        sendMessage: async () => {
+          throw new Error("Event-handler tests do not call the model");
+        },
+      },
       streamThinking: false,
       emitActivityState: (
         phase: string,
@@ -67,23 +76,22 @@ function createCollectorDeps(): {
       },
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: (_msg: AssistantEvent) => {},
     reqId: "req-status-text",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
-  } as EventHandlerDeps;
+    },
+    applyCompaction: async () => {},
+  };
   return { deps, activityStates };
 }
 

@@ -1,8 +1,8 @@
 import * as realChildProcess from "node:child_process";
-import { EventEmitter } from "node:events";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
@@ -12,13 +12,6 @@ import { SHELL_DID_NOT_START_MESSAGE } from "../shared/shell-output.js";
 import type { ToolContext } from "../types.js";
 
 const originalSpawn = realChildProcess.spawn;
-
-type FakeChild = EventEmitter & {
-  pid?: number;
-  stdout: EventEmitter;
-  stderr: EventEmitter;
-  kill: () => boolean;
-};
 
 type SpawnImpl = (
   ...args: Parameters<typeof realChildProcess.spawn>
@@ -30,7 +23,7 @@ const spawnCalls: {
   options: realChildProcess.SpawnOptions;
 }[] = [];
 
-let spawnImpl: SpawnImpl = originalSpawn as SpawnImpl;
+let spawnImpl: SpawnImpl = originalSpawn;
 
 const spawnSpy = mock((...args: Parameters<typeof realChildProcess.spawn>) => {
   spawnCalls.push({
@@ -70,10 +63,12 @@ function makeContext(workingDir: string): ToolContext {
   };
 }
 
-function fakeChild(): FakeChild {
-  const child = new EventEmitter() as FakeChild;
-  child.stdout = new EventEmitter();
-  child.stderr = new EventEmitter();
+function fakeChild(): realChildProcess.ChildProcess {
+  const child = new realChildProcess.ChildProcess();
+  Object.defineProperties(child, {
+    stdout: { value: new PassThrough() },
+    stderr: { value: new PassThrough() },
+  });
   child.kill = () => true;
   return child;
 }
@@ -83,7 +78,7 @@ function closeWithoutStart(): ReturnType<typeof realChildProcess.spawn> {
   queueMicrotask(() => {
     child.emit("close", 0, null);
   });
-  return child as unknown as ReturnType<typeof realChildProcess.spawn>;
+  return child;
 }
 
 function spawnError(
@@ -93,7 +88,7 @@ function spawnError(
   queueMicrotask(() => {
     child.emit("error", err);
   });
-  return child as unknown as ReturnType<typeof realChildProcess.spawn>;
+  return child;
 }
 
 describe("bash launch failures are not success", () => {
@@ -102,12 +97,12 @@ describe("bash launch failures are not success", () => {
   beforeEach(() => {
     spawnCalls.length = 0;
     wakeCalls.length = 0;
-    spawnImpl = originalSpawn as SpawnImpl;
+    spawnImpl = originalSpawn;
     workingDir = mkdtempSync(join(tmpdir(), "bash-launch-"));
   });
 
   afterEach(() => {
-    spawnImpl = originalSpawn as SpawnImpl;
+    spawnImpl = originalSpawn;
     rmSync(workingDir, { recursive: true, force: true });
   });
 
@@ -132,9 +127,9 @@ describe("bash launch failures are not success", () => {
 
   test("a failed spawn of the shell is an error", async () => {
     spawnImpl = () => {
-      const err = new Error(
+      const err: NodeJS.ErrnoException = new Error(
         "spawn powershell.exe ENOENT",
-      ) as NodeJS.ErrnoException;
+      );
       err.code = "ENOENT";
       return spawnError(err);
     };
@@ -157,8 +152,7 @@ describe("bash launch failures are not success", () => {
   for (const cronRunId of [undefined, null, "cron-run-123"]) {
     test(`preserves originating schedule ${String(cronRunId)} on background spawn error`, async () => {
       const child = fakeChild();
-      spawnImpl = () =>
-        child as unknown as ReturnType<typeof realChildProcess.spawn>;
+      spawnImpl = () => child;
       const context = { ...makeContext(workingDir), cronRunId };
       await shellTool.execute(
         { command: "echo hello", activity: "test", background: true },

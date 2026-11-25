@@ -8,6 +8,9 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import { setConfig } from "../../__tests__/helpers/set-config.js";
 
 // The finalize path indexes tool-result messages into memory; keep it inert
@@ -49,32 +52,35 @@ function createCollectorDeps(providerName = "anthropic"): {
   events: AssistantEvent[];
 } {
   const events: AssistantEvent[] = [];
-  const deps = {
-    ctx: {
+  const deps: EventHandlerDeps = {
+    ctx: asConversation({
       conversationId: "conv-native-meta",
-      provider: { name: providerName },
+      provider: {
+        name: providerName,
+        sendMessage: async () => {
+          throw new Error("Event-handler tests do not call the model");
+        },
+      },
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: (msg: AssistantEvent) => events.push(msg),
     reqId: "req-native-meta",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
-  } as EventHandlerDeps;
+  };
   return { deps, events };
 }
 

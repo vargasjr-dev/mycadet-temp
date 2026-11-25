@@ -18,6 +18,20 @@ import {
   validateDrafts,
 } from "../daemon/assistant-attachments.js";
 
+function requireText(block: unknown): string {
+  if (
+    !block ||
+    typeof block !== "object" ||
+    !("type" in block) ||
+    block.type !== "text" ||
+    !("text" in block) ||
+    typeof block.text !== "string"
+  ) {
+    throw new Error("Expected a text content block");
+  }
+  return block.text;
+}
+
 // ---------------------------------------------------------------------------
 // estimateBase64Bytes
 // ---------------------------------------------------------------------------
@@ -60,12 +74,7 @@ describe("estimateBase64Bytes", () => {
   });
 
   test("reads sizeBytes from a workspace_ref source", () => {
-    expect(
-      estimateBase64Bytes({ sizeBytes: 4096, media_type: "image/png" } as {
-        sizeBytes?: unknown;
-        data?: unknown;
-      }),
-    ).toBe(4096);
+    expect(estimateBase64Bytes({ sizeBytes: 4096 })).toBe(4096);
   });
 
   test("estimates from inline data on a base64 source", () => {
@@ -337,9 +346,7 @@ describe("cleanAssistantContent", () => {
 
     expect(result.directives).toHaveLength(1);
     expect(result.directives[0].path).toBe("out.png");
-    expect((result.cleanedContent[0] as { text: string }).text).toBe(
-      "Here is the file:",
-    );
+    expect(requireText(result.cleanedContent[0])).toBe("Here is the file:");
   });
 
   test("leaves non-text blocks unchanged", () => {
@@ -371,7 +378,7 @@ describe("cleanAssistantContent", () => {
     expect(result.directives).toHaveLength(0);
     expect(result.warnings).toHaveLength(0);
     // Text should be returned exactly as-is — no trimming or blank-line collapsing
-    expect((result.cleanedContent[0] as { text: string }).text).toBe(
+    expect(requireText(result.cleanedContent[0])).toBe(
       "  Hello\n\n\n\nWorld  ",
     );
   });
@@ -395,12 +402,8 @@ describe("cleanAssistantContent", () => {
     const result = cleanAssistantContent(content);
 
     expect(result.cleanedContent).toHaveLength(2);
-    expect((result.cleanedContent[0] as { text: string }).text).toBe(
-      "real text",
-    );
-    expect((result.cleanedContent[1] as { type: string }).type).toBe(
-      "tool_use",
-    );
+    expect(requireText(result.cleanedContent[0])).toBe("real text");
+    expect(result.cleanedContent[1]).toMatchObject({ type: "tool_use" });
   });
 
   test("returns empty array when all text blocks are placeholder sentinels", () => {
@@ -424,9 +427,7 @@ describe("cleanAssistantContent", () => {
     const result = cleanAssistantContent(content);
 
     expect(result.cleanedContent).toHaveLength(1);
-    expect((result.cleanedContent[0] as { text: string }).text).toBe(
-      "real text",
-    );
+    expect(requireText(result.cleanedContent[0])).toBe("real text");
   });
 });
 
@@ -772,7 +773,7 @@ describe("cleanAssistantContent — cadet links", () => {
     expect(result.directives[0].source).toBe("sandbox");
     expect(result.directives[0].path).toBe("scratch/report.pdf");
     // The link text is preserved (not stripped)
-    expect((result.cleanedContent[0] as { text: string }).text).toContain(
+    expect(requireText(result.cleanedContent[0])).toContain(
       "[report.pdf](cadet://workspace/scratch/report.pdf)",
     );
   });
@@ -788,10 +789,10 @@ describe("cleanAssistantContent — cadet links", () => {
 
     expect(result.directives).toHaveLength(2);
     // cadet link is preserved, legacy tag is stripped
-    expect((result.cleanedContent[0] as { text: string }).text).toContain(
+    expect(requireText(result.cleanedContent[0])).toContain(
       "[report.pdf](cadet://workspace/scratch/report.pdf)",
     );
-    expect((result.cleanedContent[0] as { text: string }).text).not.toContain(
+    expect(requireText(result.cleanedContent[0])).not.toContain(
       "<cadet-attachment",
     );
   });

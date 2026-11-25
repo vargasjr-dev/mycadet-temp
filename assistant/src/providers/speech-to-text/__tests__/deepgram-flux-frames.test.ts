@@ -232,19 +232,17 @@ describe("parseFluxFrame", () => {
         description: "something specific went wrong upstream",
       }),
     );
-    expect(event?.type).toBe("error");
-    expect((event as { message: string }).message).toContain(
-      "something specific went wrong upstream",
-    );
-    expect((event as { message: string }).message).toContain(
-      "SOME_FUTURE_CODE",
-    );
+    if (event?.type !== "error") {
+      throw new Error("Expected a speech-to-text error event");
+    }
+    expect(event.message).toContain("something specific went wrong upstream");
+    expect(event.message).toContain("SOME_FUTURE_CODE");
   });
 
   test("Error frames are categorized from the provider code", () => {
     const categoryOf = (frame: Record<string, unknown>) => {
       const [event] = parseFluxFrame({ type: "Error", ...frame });
-      return (event as { category?: string } | undefined)?.category;
+      return event?.type === "error" ? event.category : undefined;
     };
 
     expect(categoryOf({ code: "INVALID_AUTH" })).toBe("auth");
