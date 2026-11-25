@@ -13,6 +13,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { repairRetiredFireworksModelIdsMigration } from "../workspace/migrations/160-repair-retired-fireworks-model-ids.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { migratedLlmSchema } from "./helpers/migration-llm-schema.js";
 
 const STALE = "accounts/fireworks/models/deepseek-v4-flash-0731";
 const REPLACEMENT = "accounts/fireworks/models/deepseek-v4p1-flash";
@@ -35,7 +37,9 @@ function writeConfig(data: Record<string, unknown>): void {
 }
 
 function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
+  return jsonObjectSchema.parse(
+    JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
+  );
 }
 
 function seedRows(rows: Array<{ name: string; provider: string }>): void {
@@ -95,16 +99,20 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
 
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.maxTokens).toBe(4096);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).model).toBe(
+      REPLACEMENT,
+    );
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).maxTokens).toBe(4096);
     // Non-exact matches and malformed leaves are untouched.
-    expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
-    expect(llm.callSites.malformed).toBe(STALE);
+    expect(jsonObjectSchema.parse(llm.callSites?.heartbeat).model).toBe(
+      `${STALE}-tuned`,
+    );
+    expect(llm.callSites?.malformed).toBe(STALE);
     // Cloud profiles stamped provider "cadet" carry Fireworks model IDs.
-    expect(llm.profiles["cost-optimized"].model).toBe(REPLACEMENT);
-    expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.["cost-optimized"].model).toBe(REPLACEMENT);
+    expect(llm.profiles?.legacy.model).toBe(REPLACEMENT);
   });
 
   test.each([
@@ -129,11 +137,11 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
 
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, unknown>;
-    const profiles = llm.profiles as Record<string, Record<string, unknown>>;
-    expect((llm.default as Record<string, unknown>).model).toBe(replacement);
-    expect(profiles.managed.model).toBe(replacement);
-    expect(profiles.other.model).toBe(stale);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    const profiles = llm.profiles;
+    expect(llm.default?.model).toBe(replacement);
+    expect(profiles?.managed.model).toBe(replacement);
+    expect(profiles?.other.model).toBe(stale);
   });
 
   test("repairs entry-bound fragments whose row kind is fireworks or cadet", () => {
@@ -152,9 +160,9 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
 
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.profiles.bound.model).toBe(REPLACEMENT);
-    expect(llm.profiles.managed.model).toBe(REPLACEMENT);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.profiles?.bound.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.managed.model).toBe(REPLACEMENT);
   });
 
   test("leaves fragments with an explicit other provider untouched", () => {
@@ -175,11 +183,11 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
 
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe(STALE);
-    expect(llm.profiles.byo.model).toBe(STALE);
-    expect(llm.profiles.compatBound.model).toBe(STALE);
-    expect(llm.profiles.dangling.model).toBe(STALE);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe(STALE);
+    expect(llm.profiles?.byo.model).toBe(STALE);
+    expect(llm.profiles?.compatBound.model).toBe(STALE);
+    expect(llm.profiles?.dangling.model).toBe(STALE);
   });
 
   test("leaves entry-name providers untouched when no DB file exists", () => {
@@ -191,8 +199,8 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
 
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.profiles.bound.model).toBe(STALE);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.profiles?.bound.model).toBe(STALE);
   });
 
   test("throws when an entry-name provider needs rows and the DB is unreadable", () => {
@@ -209,8 +217,8 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
     expect(() =>
       repairRetiredFireworksModelIdsMigration.run(workspaceDir),
     ).toThrow();
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.profiles.bound.model).toBe(STALE);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.profiles?.bound.model).toBe(STALE);
 
     // Vendor and absent providers never need the rows, so the same broken
     // DB does not block their repair.
@@ -221,9 +229,9 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
       },
     });
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
-    const repaired = readConfig().llm as Record<string, any>;
-    expect(repaired.default.model).toBe(REPLACEMENT);
-    expect(repaired.profiles.legacy.model).toBe(REPLACEMENT);
+    const repaired = migratedLlmSchema.parse(readConfig().llm);
+    expect(repaired.default?.model).toBe(REPLACEMENT);
+    expect(repaired.profiles?.legacy.model).toBe(REPLACEMENT);
   });
 
   test("is idempotent and a no-op without the stale ID", () => {
@@ -239,9 +247,9 @@ describe("160-repair-retired-fireworks-model-ids migration", () => {
     repairRetiredFireworksModelIdsMigration.run(workspaceDir);
     expect(readConfig()).toEqual(first);
 
-    const llm = first.llm as Record<string, any>;
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.profiles.fine.model).toBe(REPLACEMENT);
+    const llm = migratedLlmSchema.parse(first.llm);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.fine.model).toBe(REPLACEMENT);
   });
 
   test("handles missing config, missing llm block, and invalid JSON", () => {

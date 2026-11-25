@@ -9,7 +9,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { memoryRouterBalancedProfileMigration } from "../workspace/migrations/087-memory-router-balanced-profile.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { configWithCallSitesSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -68,9 +72,7 @@ describe("087-memory-router-balanced-profile migration", () => {
 
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({ profile: "balanced" });
   });
 
@@ -81,9 +83,7 @@ describe("087-memory-router-balanced-profile migration", () => {
 
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({ profile: "balanced" });
   });
 
@@ -91,9 +91,7 @@ describe("087-memory-router-balanced-profile migration", () => {
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({ profile: "balanced" });
   });
 
@@ -113,9 +111,7 @@ describe("087-memory-router-balanced-profile migration", () => {
 
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({ model: "gpt-5.4" });
   });
 
@@ -126,9 +122,13 @@ describe("087-memory-router-balanced-profile migration", () => {
 
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, Record<string, unknown>> };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.record(z.string(), jsonObjectSchema).optional(),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites?.memoryRouter).toBeUndefined();
   });
 
@@ -147,9 +147,7 @@ describe("087-memory-router-balanced-profile migration", () => {
 
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({
       model: "claude-haiku-4-5-20251001",
       effort: "low",
@@ -193,9 +191,7 @@ describe("087-memory-router-balanced-profile migration", () => {
 
     memoryRouterBalancedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.mainAgent).toEqual({
       model: "claude-opus-4-7",
       maxTokens: 32000,

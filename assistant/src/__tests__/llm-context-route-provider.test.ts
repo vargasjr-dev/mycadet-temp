@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { LlmContextResponseSchema } from "../api/responses/llm-context-response.js";
 import { getLogsDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { llmRequestLogs } from "../persistence/schema/index.js";
@@ -16,9 +19,17 @@ const logPayloadRoute = ROUTES.find(
   (r) => r.method === "GET" && r.endpoint === "llm-request-logs/:id/payload",
 )!;
 
-function dispatchLlmContext(messageId: string) {
-  return llmContextRoute.handler({ pathParams: { id: messageId } });
+async function dispatchLlmContext(messageId: string) {
+  return LlmContextResponseSchema.parse(
+    await llmContextRoute.handler({ pathParams: { id: messageId } }),
+  );
 }
+
+const logPayloadSchema = z.object({
+  id: z.string(),
+  requestPayload: z.unknown(),
+  responsePayload: z.unknown(),
+});
 
 function dispatchLogPayload(logId: string) {
   return logPayloadRoute.handler({ pathParams: { id: logId } });
@@ -90,9 +101,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: openAiResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-openrouter")) as {
-      logs: Array<{ summary?: { provider: string } }>;
-    };
+    const body = await dispatchLlmContext("msg-openrouter");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.summary).toEqual(
@@ -109,9 +118,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: openAiResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-fireworks")) as {
-      logs: Array<{ summary?: { provider: string } }>;
-    };
+    const body = await dispatchLlmContext("msg-fireworks");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.summary).toEqual(
@@ -128,9 +135,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: openAiResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-legacy")) as {
-      logs: Array<{ summary?: { provider: string } }>;
-    };
+    const body = await dispatchLlmContext("msg-legacy");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.summary).toEqual(
@@ -147,9 +152,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: "still-not-json",
     });
 
-    const body = (await dispatchLlmContext("msg-raw-only")) as {
-      logs: Array<{ summary?: { provider: string } }>;
-    };
+    const body = await dispatchLlmContext("msg-raw-only");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.summary).toEqual({ provider: "ollama" });
@@ -164,9 +167,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: openAiResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-null-payload")) as {
-      logs: Array<{ requestPayload: unknown; responsePayload: unknown }>;
-    };
+    const body = await dispatchLlmContext("msg-null-payload");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.requestPayload).toBeNull();
@@ -213,9 +214,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: responsesApiResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-responses-legacy")) as {
-      logs: Array<{ summary?: { provider: string; inputTokens?: number } }>;
-    };
+    const body = await dispatchLlmContext("msg-responses-legacy");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.summary).toEqual(
@@ -232,9 +231,7 @@ describe("GET /v1/messages/:id/llm-context provider preference", () => {
       responsePayload: responsesApiResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-responses-openai")) as {
-      logs: Array<{ summary?: { provider: string } }>;
-    };
+    const body = await dispatchLlmContext("msg-responses-openai");
 
     expect(body.logs).toHaveLength(1);
     expect(body.logs[0]?.summary).toEqual(
@@ -275,11 +272,7 @@ describe("GET /v1/messages/:id/llm-context estimated cost cache accounting", () 
       responsePayload: anthropicResponsePayload,
     });
 
-    const body = (await dispatchLlmContext(
-      "msg-cost-openrouter-anthropic",
-    )) as {
-      logs: Array<{ summary?: { estimatedCostUsd?: number | null } }>;
-    };
+    const body = await dispatchLlmContext("msg-cost-openrouter-anthropic");
 
     const cost = body.logs[0]?.summary?.estimatedCostUsd;
     expect(cost).toBeCloseTo(expectedCostUsd, 5);
@@ -297,9 +290,7 @@ describe("GET /v1/messages/:id/llm-context estimated cost cache accounting", () 
       responsePayload: anthropicResponsePayload,
     });
 
-    const body = (await dispatchLlmContext("msg-cost-anthropic")) as {
-      logs: Array<{ summary?: { estimatedCostUsd?: number | null } }>;
-    };
+    const body = await dispatchLlmContext("msg-cost-anthropic");
 
     expect(body.logs[0]?.summary?.estimatedCostUsd).toBeCloseTo(
       expectedCostUsd,
@@ -322,11 +313,9 @@ describe("GET /v1/llm-request-logs/:id/payload", () => {
       responsePayload: resPayload,
     });
 
-    const body = (await dispatchLogPayload("log-payload-ok")) as {
-      id: string;
-      requestPayload: unknown;
-      responsePayload: unknown;
-    };
+    const body = logPayloadSchema.parse(
+      await dispatchLogPayload("log-payload-ok"),
+    );
 
     expect(body.id).toBe("log-payload-ok");
     expect(body.requestPayload).toEqual(JSON.parse(reqPayload));
@@ -346,11 +335,9 @@ describe("GET /v1/llm-request-logs/:id/payload", () => {
       responsePayload: "raw-response-text",
     });
 
-    const body = (await dispatchLogPayload("log-raw-strings")) as {
-      id: string;
-      requestPayload: unknown;
-      responsePayload: unknown;
-    };
+    const body = logPayloadSchema.parse(
+      await dispatchLogPayload("log-raw-strings"),
+    );
 
     expect(body.requestPayload).toBe("raw-request-text");
     expect(body.responsePayload).toBe("raw-response-text");

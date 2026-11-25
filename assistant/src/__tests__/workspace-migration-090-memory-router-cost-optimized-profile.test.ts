@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { memoryRouterCostOptimizedProfileMigration } from "../workspace/migrations/090-memory-router-cost-optimized-profile.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -28,8 +31,16 @@ function writeConfig(data: Record<string, unknown>): void {
   );
 }
 
-function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
+const configSchema = z.looseObject({
+  llm: z.looseObject({
+    callSites: z.record(z.string(), jsonObjectSchema).optional(),
+  }),
+});
+
+function readConfig() {
+  return configSchema.parse(
+    JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
+  );
 }
 
 function configPath(): string {
@@ -65,13 +76,11 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = readConfig();
     // Must mirror the shipped default in call-site-defaults.ts: dropping the
     // contextWindow would regress migrated users to the profile's ~200k window
     // because the resolver prefers an explicit callSites entry.
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       profile: "cost-optimized",
       contextWindow: { maxInputTokens: 1_000_000 },
     });
@@ -88,10 +97,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       profile: "cost-optimized",
       contextWindow: { maxInputTokens: 1_000_000 },
     });
@@ -112,10 +119,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       profile: "cost-optimized",
       contextWindow: { maxInputTokens: 1_000_000 },
     });
@@ -155,10 +160,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({ profile: "balanced" });
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({ profile: "balanced" });
   });
 
   test("skips BYOK workspaces with no existing memoryRouter entry", () => {
@@ -168,9 +171,7 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, Record<string, unknown>> };
-    };
+    const config = readConfig();
     expect(config.llm.callSites?.memoryRouter).toBeUndefined();
   });
 
@@ -186,10 +187,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       model: "claude-sonnet-4-6",
     });
   });
@@ -206,10 +205,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       profile: "balanced",
       effort: "low",
     });
@@ -230,10 +227,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       model: "claude-sonnet-4-6",
       contextWindow: { maxInputTokens: 1_000_000 },
     });
@@ -251,10 +246,8 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       profile: "quality-optimized",
     });
   });
@@ -290,14 +283,12 @@ describe("090-memory-router-cost-optimized-profile migration", () => {
 
     memoryRouterCostOptimizedProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
-    expect(config.llm.callSites.mainAgent).toEqual({
+    const config = readConfig();
+    expect(config.llm.callSites?.mainAgent).toEqual({
       model: "claude-opus-4-7",
       maxTokens: 32000,
     });
-    expect(config.llm.callSites.memoryRouter).toEqual({
+    expect(config.llm.callSites?.memoryRouter).toEqual({
       profile: "cost-optimized",
       contextWindow: { maxInputTokens: 1_000_000 },
     });

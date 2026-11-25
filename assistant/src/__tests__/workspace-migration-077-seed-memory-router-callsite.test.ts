@@ -10,6 +10,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { seedMemoryRouterCallsiteMigration } from "../workspace/migrations/077-seed-memory-router-callsite.js";
+import {
+  configWithCallSitesSchema,
+  configWithOptionalCallSitesSchema,
+} from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -60,9 +64,7 @@ describe("077-seed-memory-router-callsite migration", () => {
 
     seedMemoryRouterCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({
       model: "claude-sonnet-4-6",
       contextWindow: { maxInputTokens: 1_000_000 },
@@ -73,9 +75,7 @@ describe("077-seed-memory-router-callsite migration", () => {
     seedMemoryRouterCallsiteMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({
       model: "claude-sonnet-4-6",
       contextWindow: { maxInputTokens: 1_000_000 },
@@ -97,9 +97,7 @@ describe("077-seed-memory-router-callsite migration", () => {
 
     seedMemoryRouterCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({
       model: "claude-haiku-4-5-20251001",
       effort: "low",
@@ -113,9 +111,7 @@ describe("077-seed-memory-router-callsite migration", () => {
 
     seedMemoryRouterCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
+    const config = configWithOptionalCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites).toBeUndefined();
   });
 
@@ -124,9 +120,7 @@ describe("077-seed-memory-router-callsite migration", () => {
 
     seedMemoryRouterCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.memoryRouter).toEqual({
       model: "claude-sonnet-4-6",
       contextWindow: { maxInputTokens: 1_000_000 },
@@ -145,9 +139,7 @@ describe("077-seed-memory-router-callsite migration", () => {
 
     seedMemoryRouterCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.mainAgent).toEqual({
       model: "claude-opus-4-7",
       maxTokens: 32000,

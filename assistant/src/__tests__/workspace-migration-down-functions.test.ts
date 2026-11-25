@@ -6,7 +6,6 @@
  *  2. Idempotency: calling down() twice produces the same result
  *  3. No-op safety: down() on a workspace where run() never executed
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -18,6 +17,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
@@ -193,10 +195,9 @@ describe("004-extract-collect-usage-data down()", () => {
     const config = readConfig();
     expect(config.collectUsageData).toBeUndefined();
     expect(config.otherSetting).toBe(true);
-    const flagValues = config.assistantFeatureFlagValues as Record<
-      string,
-      unknown
-    >;
+    const flagValues = jsonObjectSchema.parse(
+      config.assistantFeatureFlagValues,
+    );
     expect(flagValues["feature_flags.collect-usage-data.enabled"]).toBe(false);
   });
 
@@ -220,10 +221,9 @@ describe("004-extract-collect-usage-data down()", () => {
 
     const afterDown = readConfig();
     expect(afterDown.collectUsageData).toBeUndefined();
-    const flagValues = afterDown.assistantFeatureFlagValues as Record<
-      string,
-      unknown
-    >;
+    const flagValues = jsonObjectSchema.parse(
+      afterDown.assistantFeatureFlagValues,
+    );
     expect(flagValues["feature_flags.collect-usage-data.enabled"]).toBe(false);
     expect(afterDown.otherSetting).toBe("hello");
   });
@@ -265,10 +265,9 @@ describe("004-extract-collect-usage-data down()", () => {
     extractCollectUsageDataMigration.down!(workspaceDir);
 
     const config = readConfig();
-    const flagValues = config.assistantFeatureFlagValues as Record<
-      string,
-      unknown
-    >;
+    const flagValues = jsonObjectSchema.parse(
+      config.assistantFeatureFlagValues,
+    );
     expect(flagValues["feature_flags.collect-usage-data.enabled"]).toBe(false);
     expect(flagValues["feature_flags.other-flag.enabled"]).toBe(true);
   });
@@ -425,7 +424,9 @@ describe("007-web-search-provider-rename down()", () => {
     webSearchProviderRenameMigration.down!(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services["web-search"].provider).toBe("anthropic-native");
   });
 
@@ -439,10 +440,9 @@ describe("007-web-search-provider-rename down()", () => {
     webSearchProviderRenameMigration.run(workspaceDir);
 
     const afterRun = readConfig();
-    const svcAfterRun = afterRun.services as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const svcAfterRun = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(afterRun.services);
     expect(svcAfterRun["web-search"].provider).toBe(
       "inference-provider-native",
     );
@@ -450,10 +450,9 @@ describe("007-web-search-provider-rename down()", () => {
     webSearchProviderRenameMigration.down!(workspaceDir);
 
     const afterDown = readConfig();
-    const svcAfterDown = afterDown.services as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const svcAfterDown = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(afterDown.services);
     expect(svcAfterDown["web-search"].provider).toBe("anthropic-native");
   });
 
@@ -806,10 +805,9 @@ describe("016-extract-feature-flags-to-protected down()", () => {
     extractFeatureFlagsToProtectedMigration.down!(workspaceDir);
 
     const config = readConfig();
-    const flagValues = config.assistantFeatureFlagValues as Record<
-      string,
-      boolean
-    >;
+    const flagValues = z
+      .record(z.string(), z.boolean())
+      .parse(config.assistantFeatureFlagValues);
     expect(flagValues["feature_flags.my-flag.enabled"]).toBe(true);
     expect(flagValues["feature_flags.other-flag.enabled"]).toBe(false);
     expect(config.otherSetting).toBe(true);
@@ -838,10 +836,9 @@ describe("016-extract-feature-flags-to-protected down()", () => {
     extractFeatureFlagsToProtectedMigration.down!(workspaceDir);
 
     const configAfterDown = readConfig();
-    const flagValues = configAfterDown.assistantFeatureFlagValues as Record<
-      string,
-      boolean
-    >;
+    const flagValues = z
+      .record(z.string(), z.boolean())
+      .parse(configAfterDown.assistantFeatureFlagValues);
     expect(flagValues["feature_flags.test-flag.enabled"]).toBe(false);
     expect(configAfterDown.otherSetting).toBe("hello");
     expect(existsSync(join(protectedDir, "feature-flags.json"))).toBe(false);
@@ -918,10 +915,9 @@ describe("016-extract-feature-flags-to-protected down()", () => {
     extractFeatureFlagsToProtectedMigration.down!(workspaceDir);
 
     const config = readConfig();
-    const flagValues = config.assistantFeatureFlagValues as Record<
-      string,
-      boolean
-    >;
+    const flagValues = z
+      .record(z.string(), z.boolean())
+      .parse(config.assistantFeatureFlagValues);
     expect(flagValues["feature_flags.existing-flag.enabled"]).toBe(false);
     expect(flagValues["feature_flags.new-flag.enabled"]).toBe(true);
   });
@@ -943,10 +939,9 @@ describe("016-extract-feature-flags-to-protected down()", () => {
     extractFeatureFlagsToProtectedMigration.down!(workspaceDir);
 
     const config = readConfig();
-    const flagValues = config.assistantFeatureFlagValues as Record<
-      string,
-      boolean
-    >;
+    const flagValues = z
+      .record(z.string(), z.boolean())
+      .parse(config.assistantFeatureFlagValues);
     expect(flagValues["feature_flags.flag.enabled"]).toBe(true);
   });
 });

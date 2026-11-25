@@ -10,6 +10,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { seedReplySuggestionCallsiteMigration } from "../workspace/migrations/072-seed-reply-suggestion-callsite.js";
+import {
+  configWithCallSitesSchema,
+  configWithOptionalCallSitesSchema,
+} from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -69,9 +73,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
 
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.replySuggestion).toEqual({
       model: "claude-haiku-4-5-20251001",
       effort: "low",
@@ -94,9 +96,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
 
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.replySuggestion).toEqual({
       model: "anthropic/claude-haiku-4.5",
       effort: "low",
@@ -120,9 +120,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
 
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.replySuggestion).toEqual({
       model: "claude-opus-4-7",
       effort: "high",
@@ -145,9 +143,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
 
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.replySuggestion).toEqual({
       model: "gpt-5.4-mini",
       effort: "low",
@@ -169,9 +165,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
 
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.replySuggestion).toEqual({
       model: "claude-opus-4-7",
       effort: "high",
@@ -187,9 +181,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
 
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
+    const config = configWithOptionalCallSitesSchema.parse(readConfig());
     // No callSites object created at all.
     expect(config.llm.callSites).toBeUndefined();
   });
@@ -200,9 +192,7 @@ describe("072-seed-reply-suggestion-callsite migration", () => {
     seedReplySuggestionCallsiteMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.replySuggestion).toEqual({
       model: "claude-haiku-4-5-20251001",
       effort: "low",

@@ -13,6 +13,8 @@ import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 import { seedHeartbeatCallsiteCostDefaultMigration } from "../workspace/migrations/066-seed-heartbeat-callsite-cost-default.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { configWithCallSitesSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -62,9 +64,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual({
       provider: "anthropic",
       model: "claude-haiku-4-5-20251001",
@@ -91,9 +91,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual({
       profile: "cost-optimized",
       maxTokens: 2048,
@@ -116,9 +114,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual({
       speed: "fast",
       provider: "anthropic",
@@ -150,9 +146,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual(heartbeatAgent);
   });
 
@@ -179,9 +173,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual(heartbeatAgent);
   });
 
@@ -200,9 +192,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual({
       provider: "openai",
       model: "gpt-5.4-nano",
@@ -223,9 +213,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.heartbeatAgent).toEqual({
       provider: "gemini",
       model: "gemini-3-flash",
@@ -252,7 +240,7 @@ describe("066-seed-heartbeat-callsite-cost-default migration", () => {
 
     seedHeartbeatCallsiteCostDefaultMigration.run(workspaceDir);
 
-    const onDisk = readConfig() as { llm: unknown };
+    const onDisk = jsonObjectSchema.parse(readConfig());
     const parsed = LLMSchema.parse(onDisk.llm);
     const resolved = resolveCallSiteConfig("heartbeatAgent", parsed);
     expect(resolved.provider).toBe("anthropic");

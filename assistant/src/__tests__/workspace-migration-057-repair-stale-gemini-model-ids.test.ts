@@ -9,8 +9,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { repairStaleGeminiModelIdsMigration } from "../workspace/migrations/057-repair-stale-gemini-model-ids.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -81,9 +84,16 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown> | string> };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.record(
+            z.string(),
+            z.union([jsonObjectSchema, z.string()]),
+          ),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.analyzeConversation).toEqual({
       model: "gemini-3.1-flash-lite-preview",
       temperature: 0,
@@ -128,12 +138,17 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: {
-        default: Record<string, unknown>;
-        profiles: Record<string, Record<string, unknown> | string>;
-      };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          default: jsonObjectSchema,
+          profiles: z.record(
+            z.string(),
+            z.union([jsonObjectSchema, z.string()]),
+          ),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.default).toEqual({
       provider: "gemini",
       model: "gemini-3-flash-preview",
@@ -200,13 +215,15 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     expect(afterSecond).toBe(afterFirst);
 
-    const config = readConfig() as {
-      llm: {
-        default: { model: string };
-        callSites: Record<string, { model: string }>;
-        profiles: Record<string, { model: string }>;
-      };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          default: z.looseObject({ model: z.string() }),
+          callSites: z.record(z.string(), z.looseObject({ model: z.string() })),
+          profiles: z.record(z.string(), z.looseObject({ model: z.string() })),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.default.model).toBe("gemini-3-flash-preview");
     expect(config.llm.callSites.memoryRetrieval.model).toBe(
       "gemini-3.1-flash-lite-preview",
@@ -261,9 +278,15 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { recall: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            recall: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.recall.model).toBe("gemini-3-flash-preview");
   });
 
@@ -282,12 +305,14 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: {
-        callSites: Record<string, { model: string }>;
-        profiles: Record<string, { model: string }>;
-      };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.record(z.string(), z.looseObject({ model: z.string() })),
+          profiles: z.record(z.string(), z.looseObject({ model: z.string() })),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.memoryRetrieval.model).toBe(
       "gemini-3.1-flash-lite-preview",
     );
@@ -315,9 +340,15 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { memoryRetrieval: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            memoryRetrieval: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.memoryRetrieval.model).toBe(
       "gemini-3.1-flash-lite-preview",
     );
@@ -339,9 +370,15 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { recall: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            recall: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.recall.model).toBe("gemini-3-flash-preview");
   });
 
@@ -381,9 +418,15 @@ describe("057-repair-stale-gemini-model-ids migration", () => {
 
     repairStaleGeminiModelIdsMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { mainAgent: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            mainAgent: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.mainAgent.model).toBe("gemini-3-flash-preview");
   });
 

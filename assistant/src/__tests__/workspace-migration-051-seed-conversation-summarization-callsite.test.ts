@@ -12,6 +12,11 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 import { seedConversationSummarizationCallsiteMigration } from "../workspace/migrations/051-seed-conversation-summarization-callsite.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import {
+  configWithCallSitesSchema,
+  configWithOptionalCallSitesSchema,
+} from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -64,9 +69,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.conversationSummarization).toEqual({
       model: "claude-opus-4-7",
       effort: "low",
@@ -89,9 +92,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.conversationSummarization).toEqual({
       model: "claude-opus-4-6",
       effort: "low",
@@ -115,9 +116,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.conversationSummarization).toEqual({
       model: "claude-opus-4-7",
       effort: "high",
@@ -134,9 +133,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.conversationSummarization).toEqual({
       model: "anthropic/claude-opus-4.7",
       effort: "low",
@@ -153,9 +150,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
+    const config = configWithOptionalCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites).toBeUndefined();
   });
 
@@ -165,9 +160,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.conversationSummarization).toEqual({
       model: "claude-opus-4-7",
       effort: "low",
@@ -200,9 +193,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.interactionClassifier).toEqual({
       model: "claude-haiku-4-5-20251001",
     });
@@ -225,7 +216,7 @@ describe("051-seed-conversation-summarization-callsite migration", () => {
 
     seedConversationSummarizationCallsiteMigration.run(workspaceDir);
 
-    const onDisk = readConfig() as { llm: unknown };
+    const onDisk = jsonObjectSchema.parse(readConfig());
     const parsed = LLMSchema.parse(onDisk.llm);
     const resolved = resolveCallSiteConfig("conversationSummarization", parsed);
     expect(resolved.thinking.enabled).toBe(false);

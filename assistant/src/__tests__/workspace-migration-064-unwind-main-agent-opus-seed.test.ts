@@ -3,7 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { unwindMainAgentOpusSeedMigration } from "../workspace/migrations/064-unwind-main-agent-opus-seed.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { configWithActiveProfileSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -52,12 +56,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: {
-        activeProfile: string;
-        callSites: Record<string, unknown>;
-      };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.mainAgent).toBeUndefined();
   });
@@ -77,9 +76,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { activeProfile: string; callSites: Record<string, unknown> };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.mainAgent).toBeUndefined();
   });
@@ -96,9 +93,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { activeProfile: string; callSites: Record<string, unknown> };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("gpt-5-5");
     expect(config.llm.callSites.mainAgent).toBeUndefined();
   });
@@ -120,12 +115,14 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: {
-        activeProfile: string;
-        callSites: Record<string, Record<string, unknown>>;
-      };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          activeProfile: z.string(),
+          callSites: z.record(z.string(), jsonObjectSchema),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.mainAgent).toEqual({
       effort: "low",
@@ -148,9 +145,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { activeProfile: string; callSites: Record<string, unknown> };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.mainAgent).toEqual(mainAgent);
   });
@@ -170,9 +165,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { activeProfile: string; callSites: Record<string, unknown> };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.mainAgent).toEqual(mainAgent);
   });
@@ -191,9 +184,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { activeProfile: string; callSites: Record<string, unknown> };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.mainAgent).toEqual(mainAgent);
   });
@@ -213,9 +204,7 @@ describe("064-unwind-main-agent-opus-seed migration", () => {
 
     unwindMainAgentOpusSeedMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { activeProfile: string; callSites: Record<string, unknown> };
-    };
+    const config = configWithActiveProfileSchema.parse(readConfig());
     expect(config.llm.activeProfile).toBe("balanced");
     expect(config.llm.callSites.interactionClassifier).toEqual({
       model: "claude-opus-4-7",

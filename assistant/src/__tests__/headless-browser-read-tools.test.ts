@@ -166,7 +166,10 @@ describe("executeBrowserScreenshot", () => {
     expect(result.contentBlocks).toHaveLength(1);
     const block = result.contentBlocks![0]!;
 
-    const source = (block as any).source;
+    if (block.type !== "image" || block.source.type !== "base64") {
+      throw new Error("Expected a base64 screenshot");
+    }
+    const source = block.source;
     expect(source.media_type).toBe("image/jpeg");
     expect(source.data).toBe("YWJj");
     // Page.captureScreenshot was called with jpeg quality 80
@@ -239,7 +242,7 @@ describe("executeBrowserWaitFor", () => {
     // First call is Runtime.evaluate checking existence
     const evaluateCall = sendCalls.find((c) => c.method === "Runtime.evaluate");
     expect(evaluateCall).toBeDefined();
-    expect((evaluateCall!.params as { expression: string }).expression).toBe(
+    expect(evaluateCall!.params?.expression).toBe(
       'document.querySelector("#loaded") !== null',
     );
   });
@@ -258,12 +261,8 @@ describe("executeBrowserWaitFor", () => {
     expect(result.content).toContain('Text "Success" appeared');
     const evaluateCall = sendCalls.find((c) => c.method === "Runtime.evaluate");
     expect(evaluateCall).toBeDefined();
-    expect(
-      (evaluateCall!.params as { expression: string }).expression,
-    ).toContain('"Success"');
-    expect(
-      (evaluateCall!.params as { expression: string }).expression,
-    ).toContain(".includes(");
+    expect(evaluateCall!.params?.expression).toContain('"Success"');
+    expect(evaluateCall!.params?.expression).toContain(".includes(");
   });
 
   test("waits for duration (no CDP client acquired)", async () => {
@@ -330,7 +329,7 @@ describe("executeBrowserExtract", () => {
       if (method !== "Runtime.evaluate") {
         return {};
       }
-      const expression = (params as { expression: string }).expression;
+      const expression = params?.expression;
       if (expression === "document.location.href") {
         return { result: { value: "https://example.com/" } };
       }
@@ -361,7 +360,7 @@ describe("executeBrowserExtract", () => {
       if (method !== "Runtime.evaluate") {
         return {};
       }
-      const expression = (params as { expression: string }).expression;
+      const expression = params?.expression;
       if (expression === "document.location.href") {
         return { result: { value: "https://example.com/" } };
       }
@@ -381,7 +380,7 @@ describe("executeBrowserExtract", () => {
       if (method !== "Runtime.evaluate") {
         return {};
       }
-      const expression = (params as { expression: string }).expression;
+      const expression = params?.expression;
       if (expression === "document.location.href") {
         return { result: { value: "https://example.com/" } };
       }
@@ -402,7 +401,7 @@ describe("executeBrowserExtract", () => {
       if (method !== "Runtime.evaluate") {
         return {};
       }
-      const expression = (params as { expression: string }).expression;
+      const expression = params?.expression;
       if (expression === "document.location.href") {
         return { result: { value: "https://example.com/" } };
       }
@@ -434,8 +433,7 @@ describe("executeBrowserExtract", () => {
     const linksCall = sendCalls.find(
       (c) =>
         c.method === "Runtime.evaluate" &&
-        (c.params as { expression: string }).expression ===
-          EXTRACT_LINKS_EXPRESSION,
+        c.params?.expression === EXTRACT_LINKS_EXPRESSION,
     );
     expect(linksCall).toBeDefined();
   });
@@ -445,7 +443,7 @@ describe("executeBrowserExtract", () => {
       if (method !== "Runtime.evaluate") {
         return {};
       }
-      const expression = (params as { expression: string }).expression;
+      const expression = params?.expression;
       if (expression === "document.location.href") {
         return { result: { value: "https://example.com/" } };
       }
@@ -461,8 +459,7 @@ describe("executeBrowserExtract", () => {
     const linksCall = sendCalls.find(
       (c) =>
         c.method === "Runtime.evaluate" &&
-        (c.params as { expression: string }).expression ===
-          EXTRACT_LINKS_EXPRESSION,
+        c.params?.expression === EXTRACT_LINKS_EXPRESSION,
     );
     expect(linksCall).toBeUndefined();
   });

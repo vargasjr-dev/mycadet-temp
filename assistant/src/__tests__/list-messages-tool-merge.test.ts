@@ -27,45 +27,26 @@ import {
 import { COMPUTER_USE_SCREENSHOT_ATTACHMENT_IDS_KEY } from "../persistence/conversation-types.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
+import {
+  attachments,
+  conversations,
+  messageAttachments,
+  messages,
+} from "../persistence/schema/index.js";
 import { handleListMessages } from "../runtime/routes/conversation-routes.js";
 
 await initializeDb();
 
 function resetTables() {
   const db = getDb();
-  db.run("DELETE FROM message_attachments");
-  db.run("DELETE FROM attachments");
-  db.run("DELETE FROM messages");
-  db.run("DELETE FROM conversations");
+  db.delete(messageAttachments).run();
+  db.delete(attachments).run();
+  db.delete(messages).run();
+  db.delete(conversations).run();
 }
 
 function createTestArgs(conversationId: string) {
   return { queryParams: { conversationId } };
-}
-
-interface ToolCallPayload {
-  name: string;
-  input: Record<string, unknown>;
-  result?: string;
-  isError?: boolean;
-}
-
-interface MessagePayload {
-  id: string;
-  mergedMessageIds?: string[];
-  role: string;
-  toolCalls?: ToolCallPayload[];
-  textSegments?: string[];
-  contentOrder?: string[];
-  contentBlocks?: Array<{
-    type: string;
-    attachment?: { id: string; computerUseScreenshot?: boolean };
-    [key: string]: unknown;
-  }>;
-  attachments?: Array<{
-    id: string;
-    computerUseScreenshot?: boolean;
-  }>;
 }
 
 describe("handleListMessages tool_result merging", () => {
@@ -102,15 +83,14 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
     // Should be 2 messages: user prompt + assistant (tool_result user msg suppressed)
-    expect(body.messages).toHaveLength(2);
-    expect(body.messages[0].role).toBe("user");
-    expect(body.messages[1].role).toBe("assistant");
+    expect(response.messages).toHaveLength(2);
+    expect(response.messages[0].role).toBe("user");
+    expect(response.messages[1].role).toBe("assistant");
 
     // Assistant tool call should have proper name AND result
-    const toolCalls = body.messages[1].toolCalls;
+    const toolCalls = response.messages[1].toolCalls;
     expect(toolCalls).toBeDefined();
     expect(toolCalls).toHaveLength(1);
     expect(toolCalls![0].name).toBe("bash");
@@ -119,8 +99,8 @@ describe("handleListMessages tool_result merging", () => {
     // The unified contentBlocks projection ships alongside the legacy arrays,
     // in contentOrder order, with the tool_result already paired onto the
     // tool_use block.
-    expect(body.messages[1].contentOrder).toEqual(["text:0", "tool:0"]);
-    expect(body.messages[1].contentBlocks).toEqual([
+    expect(response.messages[1].contentOrder).toEqual(["text:0", "tool:0"]);
+    expect(response.messages[1].contentBlocks).toEqual([
       { type: "text", text: "Running command." },
       {
         type: "tool_use",
@@ -166,10 +146,9 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(2);
-    const toolCalls = body.messages[1].toolCalls!;
+    expect(response.messages).toHaveLength(2);
+    const toolCalls = response.messages[1].toolCalls!;
     expect(toolCalls).toHaveLength(2);
     expect(toolCalls[0].name).toBe("bash");
     expect(toolCalls[0].result).toBe("dir listing");
@@ -196,11 +175,10 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(3);
-    expect(body.messages[2].role).toBe("user");
-    expect(body.messages[2].textSegments).toEqual(["how are you?"]);
+    expect(response.messages).toHaveLength(3);
+    expect(response.messages[2].role).toBe("user");
+    expect(response.messages[2].textSegments).toEqual(["how are you?"]);
   });
 
   test("includes merged assistant ids for consecutive assistant history rows", async () => {
@@ -222,10 +200,9 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(2);
-    expect(body.messages[1]).toMatchObject({
+    expect(response.messages).toHaveLength(2);
+    expect(response.messages[1]).toMatchObject({
       id: anchor.id,
       role: "assistant",
       mergedMessageIds: [tail.id],
@@ -270,8 +247,7 @@ describe("handleListMessages tool_result merging", () => {
     const anchorBefore = getMessageById(anchor.id)?.metadata;
     const donorBefore = getMessageById(donor.id)?.metadata;
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
-    const merged = body.messages[1]!;
+    const merged = response.messages[1]!;
 
     expect(merged.attachments?.map((attachment) => attachment.id)).toEqual([
       explicit.id,
@@ -326,12 +302,11 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
     // User row dropped entirely; only the assistant survives.
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].role).toBe("assistant");
-    expect(body.messages[0].textSegments).toEqual(["response"]);
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].role).toBe("assistant");
+    expect(response.messages[0].textSegments).toEqual(["response"]);
   });
 
   test("mixed content at pagination boundary keeps real user text", async () => {
@@ -358,14 +333,13 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(2);
-    expect(body.messages[0].role).toBe("user");
-    expect(body.messages[0].textSegments).toEqual(["what about this?"]);
-    expect(body.messages[0].toolCalls).toBeUndefined();
-    expect(body.messages[1].role).toBe("assistant");
-    expect(body.messages[1].textSegments).toEqual(["answering"]);
+    expect(response.messages).toHaveLength(2);
+    expect(response.messages[0].role).toBe("user");
+    expect(response.messages[0].textSegments).toEqual(["what about this?"]);
+    expect(response.messages[0].toolCalls).toBeUndefined();
+    expect(response.messages[1].role).toBe("assistant");
+    expect(response.messages[1].textSegments).toEqual(["answering"]);
   });
 
   test("orphan tool_result + system_notice at boundary is suppressed", async () => {
@@ -392,10 +366,9 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].role).toBe("assistant");
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].role).toBe("assistant");
   });
 
   test("multi-turn: each tool_result merges into correct assistant", async () => {
@@ -449,21 +422,20 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
     // Consecutive assistant messages are merged at query time so the client
     // sees one grouped message (matching the streaming path behavior).
     // user("list files"), merged-assistant(bash + file_read), user("thanks")
-    expect(body.messages).toHaveLength(3);
-    expect(body.messages[0].role).toBe("user");
-    expect(body.messages[1].role).toBe("assistant");
-    expect(body.messages[1].toolCalls).toHaveLength(2);
-    expect(body.messages[1].toolCalls![0].name).toBe("bash");
-    expect(body.messages[1].toolCalls![0].result).toBe("files");
-    expect(body.messages[1].toolCalls![1].name).toBe("file_read");
-    expect(body.messages[1].toolCalls![1].result).toBe("file data");
-    expect(body.messages[2].role).toBe("user");
-    expect(body.messages[2].textSegments).toEqual(["thanks"]);
+    expect(response.messages).toHaveLength(3);
+    expect(response.messages[0].role).toBe("user");
+    expect(response.messages[1].role).toBe("assistant");
+    expect(response.messages[1].toolCalls).toHaveLength(2);
+    expect(response.messages[1].toolCalls![0].name).toBe("bash");
+    expect(response.messages[1].toolCalls![0].result).toBe("files");
+    expect(response.messages[1].toolCalls![1].name).toBe("file_read");
+    expect(response.messages[1].toolCalls![1].result).toBe("file data");
+    expect(response.messages[2].role).toBe("user");
+    expect(response.messages[2].textSegments).toEqual(["thanks"]);
   });
 
   test("tool_result with is_error propagates error status", async () => {
@@ -499,10 +471,9 @@ describe("handleListMessages tool_result merging", () => {
     );
 
     const response = await handleListMessages(createTestArgs(conv.id));
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(2);
-    const tc = body.messages[1].toolCalls![0];
+    expect(response.messages).toHaveLength(2);
+    const tc = response.messages[1].toolCalls![0];
     expect(tc.name).toBe("bash");
     expect(tc.result).toBe("command not found");
     expect(tc.isError).toBe(true);
