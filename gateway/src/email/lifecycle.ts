@@ -1,4 +1,4 @@
-import { webhookDedupCaches } from "../http/routes/webhook-routes.js";
+import { getEmailDedupCache } from "./dedup.js";
 
 /**
  * Start the email integration's background lifecycle and return its stop
@@ -6,7 +6,7 @@ import { webhookDedupCaches } from "../http/routes/webhook-routes.js";
  * cache.
  */
 export function startEmail(): () => void {
-  const { emailDedupCache } = webhookDedupCaches();
-  emailDedupCache.startCleanup();
-  return () => emailDedupCache.stopCleanup();
+  const dedupCache = getEmailDedupCache();
+  dedupCache.startCleanup();
+  return () => dedupCache.stopCleanup();
 }

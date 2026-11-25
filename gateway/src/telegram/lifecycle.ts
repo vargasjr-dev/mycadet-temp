@@ -1,4 +1,4 @@
-import { webhookDedupCaches } from "../http/routes/webhook-routes.js";
+import { getTelegramDedupCache } from "./dedup.js";
 
 /**
  * Start the Telegram integration's background lifecycle and return its stop
@@ -6,7 +6,7 @@ import { webhookDedupCaches } from "../http/routes/webhook-routes.js";
  * cache.
  */
 export function startTelegram(): () => void {
-  const { telegramDedupCache } = webhookDedupCaches();
-  telegramDedupCache.startCleanup();
-  return () => telegramDedupCache.stopCleanup();
+  const dedupCache = getTelegramDedupCache();
+  dedupCache.startCleanup();
+  return () => dedupCache.stopCleanup();
 }

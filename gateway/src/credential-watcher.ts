@@ -31,7 +31,7 @@ import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { getTunnelClient } from "./tunnel/client.js";
 import { hasTwilioSetupStarted } from "./twilio/setup-state.js";
 import { syncConfiguredTwilioPhoneNumberWebhooks } from "./twilio/webhook-sync.js";
-import { webhookDedupCaches } from "./http/routes/index.js";
+import { getTelegramDedupCache } from "./telegram/dedup.js";
 
 const log = getLogger("credential-watcher");
 
@@ -422,7 +422,7 @@ let lastTelegramTokenFingerprint: string | null = null;
 async function onCredentialChange(event: CredentialChangeEvent): Promise<void> {
   const credentials = getCredentials();
   const configFile = getConfigFileCache();
-  const { telegramDedupCache } = webhookDedupCaches();
+  const telegramDedupCache = getTelegramDedupCache();
   const changed = detectCredentialChanges(event, log);
 
   // Invalidate the credential cache so subsequent reads pick up fresh values

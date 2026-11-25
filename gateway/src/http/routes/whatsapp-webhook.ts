@@ -51,10 +51,11 @@ const rejectionLimiter = new RejectionRateLimiter();
 export function createWhatsAppWebhookHandler(
   config: GatewayConfig,
   caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
+  // Production injects the integration-owned singleton (getWhatsappDedupCache)
+  // so the lifecycle sweep sees the same instance; the default keeps direct
+  // creator calls (tests) on a fresh, isolated cache.
+  dedupCache: StringDedupCache = new StringDedupCache(24 * 60 * 60_000),
 ) {
-  // 24-hour TTL — WhatsApp message IDs are globally unique and never reused
-  const dedupCache = new StringDedupCache(24 * 60 * 60_000);
-
   // Build API caches from the credential and config caches for outbound WhatsApp calls
   const apiCaches: WhatsAppApiCaches | undefined = caches?.credentials
     ? { credentials: caches.credentials, configFile: caches.configFile }

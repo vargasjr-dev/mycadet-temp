@@ -65,8 +65,11 @@ const START_COMMAND_ACK_TEXT =
 export function createTelegramWebhookHandler(
   config: GatewayConfig,
   caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
+  // Production injects the integration-owned singleton (getTelegramDedupCache)
+  // so the lifecycle sweep sees the same instance; the default keeps direct
+  // creator calls (tests) on a fresh, isolated cache.
+  dedupCache: DedupCache = new DedupCache(),
 ) {
-  const dedupCache = new DedupCache();
   const dropLog = createTelegramDropLog();
   const resolveBotIdentity = createTelegramBotIdentityResolver(caches);
 

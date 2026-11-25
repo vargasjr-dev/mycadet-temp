@@ -1,4 +1,4 @@
-import { webhookDedupCaches } from "../http/routes/webhook-routes.js";
+import { getWhatsappDedupCache } from "./dedup.js";
 
 /**
  * Start the WhatsApp integration's background lifecycle and return its stop
@@ -6,7 +6,7 @@ import { webhookDedupCaches } from "../http/routes/webhook-routes.js";
  * cache.
  */
 export function startWhatsapp(): () => void {
-  const { whatsappDedupCache } = webhookDedupCaches();
-  whatsappDedupCache.startCleanup();
-  return () => whatsappDedupCache.stopCleanup();
+  const dedupCache = getWhatsappDedupCache();
+  dedupCache.startCleanup();
+  return () => dedupCache.stopCleanup();
 }

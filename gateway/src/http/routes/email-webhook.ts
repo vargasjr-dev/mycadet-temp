@@ -32,10 +32,11 @@ const log = getLogger("email-webhook");
 export function createEmailWebhookHandler(
   config: GatewayConfig,
   caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
+  // Production injects the integration-owned singleton (getEmailDedupCache)
+  // so the lifecycle sweep sees the same instance; the default keeps direct
+  // creator calls (tests) on a fresh, isolated cache.
+  dedupCache: StringDedupCache = new StringDedupCache(24 * 60 * 60_000),
 ) {
-  // 24-hour TTL — Message-IDs are globally unique per RFC 5322
-  const dedupCache = new StringDedupCache(24 * 60 * 60_000);
-
   const handler = async (req: Request): Promise<Response> => {
     const traceId = req.headers.get("x-trace-id") ?? undefined;
     const tlog = traceId ? log.child({ traceId }) : log;

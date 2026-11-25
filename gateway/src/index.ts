@@ -201,22 +201,7 @@ async function main() {
 
   log.info("Starting Cadet Gateway...");
 
-  const tasks: (() => StopTask | Promise<StopTask>)[] = [
-    startCredentialWatcher,
-    startIpcServer,
-    startConfigFileWatcher,
-    startSleepWakeDetector,
-    startInboundEventExpirationCleanup,
-    startTelegram,
-    startWhatsapp,
-    startEmail,
-    startSlackGateway,
-    startDiscordGateway,
-    startTunnelClient,
-  ];
-  const shutdownTasks: StopTask[] = await Promise.all(
-    tasks.map((task) => task()),
-  );
+  logAuthBypassState();
 
   // Initialize the JWT signing key shared with the daemon.
   // This must happen before any request handling.
@@ -754,7 +739,22 @@ async function main() {
     process.exit(1);
   }
 
-  logAuthBypassState();
+  const tasks: (() => StopTask | Promise<StopTask>)[] = [
+    startCredentialWatcher,
+    startIpcServer,
+    startConfigFileWatcher,
+    startSleepWakeDetector,
+    startInboundEventExpirationCleanup,
+    startTelegram,
+    startWhatsapp,
+    startEmail,
+    startSlackGateway,
+    startDiscordGateway,
+    startTunnelClient,
+  ];
+  const shutdownTasks: StopTask[] = await Promise.all(
+    tasks.map((task) => task()),
+  );
 
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");

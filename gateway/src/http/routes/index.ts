@@ -39,11 +39,6 @@ import { ROUTES as channelPermissionOverrideRoutes } from "./channel-permission-
 import { ROUTES as desktopSetupRoutes } from "./desktop-setup-proxy.js";
 import { ROUTES as runtimeProxyRoutes } from "./runtime-proxy.js";
 
-export {
-  webhookDedupCaches,
-  type WebhookDedupCaches,
-} from "./webhook-routes.js";
-
 /** The full route table, in dispatch order — the runtime-proxy catch-all last. */
 export const ROUTES: readonly RouteDefinition[] = [
   ...webhookRoutes,

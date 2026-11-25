@@ -28,19 +28,11 @@ import { createInboundRegisterHandler } from "./inbound-register.js";
 import { createGuardianChannelHandler } from "./guardian-channel-create.js";
 import { createPluginWebhookHandler } from "./plugin-webhook.js";
 import { PLUGIN_WEBHOOK_PATH_PATTERN } from "../../channels/plugin-ingress.js";
+import { getTelegramDedupCache } from "../../telegram/dedup.js";
+import { getWhatsappDedupCache } from "../../whatsapp/dedup.js";
+import { getEmailDedupCache } from "../../email/dedup.js";
 import { resolveCachedPluginIngress } from "../../channels/plugin-ingress-approvals.js";
 import type { RouteDefinition } from "./types.js";
-
-/** The webhook dedup caches the gateway process lifecycle-manages. */
-export type WebhookDedupCaches = {
-  telegramDedupCache: ReturnType<
-    typeof createTelegramWebhookHandler
-  >["dedupCache"];
-  whatsappDedupCache: ReturnType<
-    typeof createWhatsAppWebhookHandler
-  >["dedupCache"];
-  emailDedupCache: ReturnType<typeof createEmailWebhookHandler>["dedupCache"];
-};
 
 const log = getLogger("webhook-routes");
 
@@ -70,9 +62,21 @@ function handlers(): WebhookHandlers {
     const configFile = getConfigFileCache();
     const validationCaches = { credentials, configFile };
     return {
-      telegram: createTelegramWebhookHandler(config, validationCaches),
-      whatsapp: createWhatsAppWebhookHandler(config, validationCaches),
-      email: createEmailWebhookHandler(config, validationCaches),
+      telegram: createTelegramWebhookHandler(
+        config,
+        validationCaches,
+        getTelegramDedupCache(),
+      ),
+      whatsapp: createWhatsAppWebhookHandler(
+        config,
+        validationCaches,
+        getWhatsappDedupCache(),
+      ),
+      email: createEmailWebhookHandler(
+        config,
+        validationCaches,
+        getEmailDedupCache(),
+      ),
       resend: createResendWebhookHandler(config, validationCaches),
       mailgun: createMailgunWebhookHandler(config, validationCaches),
       twilioVoice: createTwilioVoiceWebhookHandler(config, validationCaches),
@@ -96,16 +100,6 @@ function handlers(): WebhookHandlers {
       guardianChannel: createGuardianChannelHandler(),
     };
   })());
-}
-
-/** The dedup caches, for the gateway process's lifecycle management. */
-export function webhookDedupCaches(): WebhookDedupCaches {
-  const h = handlers();
-  return {
-    telegramDedupCache: h.telegram.dedupCache,
-    whatsappDedupCache: h.whatsapp.dedupCache,
-    emailDedupCache: h.email.dedupCache,
-  };
 }
 
 async function telegramConfigured(): Promise<boolean> {
