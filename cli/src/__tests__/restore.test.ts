@@ -91,22 +91,42 @@ afterAll(() => {
 });
 
 describe("restore --help", () => {
-  test("prints usage, description, and examples then exits 0", async () => {
+  test("prints usage, both modes, options, and examples then exits 0", async () => {
     process.argv = ["bun", "cadet", "restore", "--help"];
-    await expect(restore()).rejects.toThrow("process.exit(0)");
-    const output = consoleLogSpy.mock.calls.flat().join("\n");
-    expect(output).toContain("Usage: cadet restore <name>");
+    const stdout: string[] = [];
+    const write = spyOn(process.stdout, "write").mockImplementation((chunk) => {
+      stdout.push(String(chunk));
+      return true;
+    });
+    try {
+      await expect(restore()).rejects.toThrow("process.exit(0)");
+    } finally {
+      write.mockRestore();
+    }
+    const output = stdout.join("");
+    expect(output).toContain("Usage: cadet restore [options] <name>");
     expect(output).toContain("recovers a retired assistant");
+    expect(output).toContain("--from <path>");
+    expect(output).toContain("--dry-run");
+    expect(output).not.toContain("(required)");
     expect(output).toContain("Examples:");
-    expect(output).toContain("cadet restore");
   });
 });
 
 describe("restore error cases", () => {
   test("exits 1 when no name is given", async () => {
     process.argv = ["bun", "cadet", "restore"];
-    await expect(restore()).rejects.toThrow("process.exit(1)");
-    expect(consoleErrorSpy.mock.calls[0][0]).toContain("<name> is required");
+    const stderr: string[] = [];
+    const write = spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      stderr.push(String(chunk));
+      return true;
+    });
+    try {
+      await expect(restore()).rejects.toThrow("process.exit(1)");
+    } finally {
+      write.mockRestore();
+    }
+    expect(stderr.join("")).toContain("missing required argument 'name'");
   });
 
   test("exits 1 when archive is missing", async () => {
