@@ -134,4 +134,28 @@ describe("restore error cases", () => {
     await expect(restore()).rejects.toThrow("process.exit(1)");
     expect(consoleErrorSpy.mock.calls[0][0]).toContain("already exists");
   });
+
+  test("--dry-run without --from reports the recovery and changes nothing", async () => {
+    const name = "retired-one";
+    makeEntry({ assistantId: name, instanceDir: join(testDir, name) });
+    const entry = readLocalEntry(name);
+    writeFileSync(
+      resolveLockfilePath(),
+      JSON.stringify({ assistants: [] }) + "\n",
+    );
+    mkdirSync(retiredDir, { recursive: true });
+    const archivePath = join(retiredDir, `${name}.tar.gz`);
+    writeFileSync(archivePath, "");
+    writeFileSync(
+      join(retiredDir, `${name}.json`),
+      JSON.stringify(entry, null, 2) + "\n",
+    );
+    process.argv = ["bun", "cadet", "restore", name, "--dry-run"];
+    await restore();
+    expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain(
+      "No changes were made",
+    );
+    expect(existsSync(archivePath)).toBe(true);
+    expect(existsSync(join(testDir, name))).toBe(false);
+  });
 });

@@ -177,12 +177,16 @@ export const restore = Object.assign(
           dryRun,
           log: (line) => console.log(line),
         })
-      : await restoreAssistant({ name });
+      : await restoreAssistant({ name, dryRun });
 
     if (!result.ok) fail(result.error);
 
     if (result.kind === "recovery") {
-      console.log(`✅ Recovered assistant '${name}'.`);
+      console.log(
+        result.dryRun
+          ? `Retired archive for '${name}' is ready; restore would unpack it and start the assistant. No changes were made.`
+          : `✅ Recovered assistant '${name}'.`,
+      );
       return;
     }
 

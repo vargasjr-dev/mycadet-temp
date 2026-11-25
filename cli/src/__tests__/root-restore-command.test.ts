@@ -80,9 +80,9 @@ test("cloud restore delegates through the same operation", async () => {
 
 test("without --from the command recovers the retired assistant", async () => {
   process.argv = ["bun", "cadet", "restore", "retired-one"];
-  restoreOp.mockResolvedValue({ ok: true, kind: "recovery" });
+  restoreOp.mockResolvedValue({ ok: true, kind: "recovery", dryRun: false });
   await restore();
-  expect(restoreOp).toHaveBeenCalledWith({ name: "retired-one" });
+  expect(restoreOp).toHaveBeenCalledWith({ name: "retired-one", dryRun: false });
 });
 
 for (const topology of ["local", "docker", "cloud"] as const) {
