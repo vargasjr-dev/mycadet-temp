@@ -14,6 +14,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { convertStrandedSubscriptionOpenaiProfilesMigration } from "../workspace/migrations/144-convert-stranded-subscription-openai-profiles.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { migratedLlmSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -136,24 +138,24 @@ describe("144-convert-stranded-subscription-openai-profiles migration", () => {
 
       convertStrandedSubscriptionOpenaiProfilesMigration.run(workspaceDir);
 
-      const llm = readConfig().llm as Record<string, any>;
+      const llm = migratedLlmSchema.parse(readConfig().llm);
       // Codex-servable models are kept; others fall back to terra.
-      expect(llm.profiles.mine).toMatchObject({
+      expect(llm.profiles?.mine).toMatchObject({
         provider: "chatgpt",
         model: "gpt-5.5",
       });
-      expect(llm.profiles.nano).toMatchObject({
+      expect(llm.profiles?.nano).toMatchObject({
         provider: "chatgpt",
         model: "gpt-5.6-terra",
       });
-      expect(llm.callSites.recall).toMatchObject({
+      expect(llm.callSites?.recall).toMatchObject({
         provider: "chatgpt",
         model: "gpt-5.6-luna",
       });
       // Pinned, other-provider, and managed fragments stay untouched.
-      expect(llm.profiles.pinned.provider).toBe("openai");
-      expect(llm.profiles.other.provider).toBe("anthropic");
-      expect(llm.profiles.managed.provider).toBe("openai");
+      expect(llm.profiles?.pinned.provider).toBe("openai");
+      expect(llm.profiles?.other.provider).toBe("anthropic");
+      expect(llm.profiles?.managed.provider).toBe("openai");
       // The unpinned default provider anchors the code-owned defaults and
       // converts with them.
       expect(llm.defaultProvider).toEqual({ provider: "chatgpt" });
@@ -182,11 +184,15 @@ describe("144-convert-stranded-subscription-openai-profiles migration", () => {
 
     convertStrandedSubscriptionOpenaiProfilesMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.profiles.nullPin.provider).toBe("chatgpt");
-    expect("provider_connection" in llm.profiles.nullPin).toBe(false);
-    expect(llm.profiles.emptyPin.provider).toBe("chatgpt");
-    expect("provider_connection" in llm.profiles.emptyPin).toBe(false);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.profiles?.nullPin.provider).toBe("chatgpt");
+    expect(
+      "provider_connection" in jsonObjectSchema.parse(llm.profiles?.nullPin),
+    ).toBe(false);
+    expect(llm.profiles?.emptyPin.provider).toBe("chatgpt");
+    expect(
+      "provider_connection" in jsonObjectSchema.parse(llm.profiles?.emptyPin),
+    ).toBe(false);
     expect(llm.defaultProvider).toEqual({ provider: "chatgpt" });
   });
 
@@ -218,8 +224,8 @@ describe("144-convert-stranded-subscription-openai-profiles migration", () => {
 
     convertStrandedSubscriptionOpenaiProfilesMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.profiles.mine.provider).toBe("chatgpt");
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.profiles?.mine.provider).toBe("chatgpt");
     expect(llm.defaultProvider).toEqual({ provider: "chatgpt" });
   });
 
@@ -292,8 +298,8 @@ describe("144-convert-stranded-subscription-openai-profiles migration", () => {
       convertStrandedSubscriptionOpenaiProfilesMigration.run(workspaceDir),
     ).toThrow();
     // Nothing converts on the failed attempt.
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.profiles.mine.provider).toBe("openai");
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.profiles?.mine.provider).toBe("openai");
   });
 
   test("is idempotent and tolerates missing or malformed config", () => {

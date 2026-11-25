@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { repairRecallCallsiteEmptyProfileMigration } from "../workspace/migrations/073-repair-recall-callsite-empty-profile.js";
+import { configWithCallSitesSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -60,9 +61,7 @@ describe("073-repair-recall-callsite-empty-profile migration", () => {
 
     repairRecallCallsiteEmptyProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual({
       model: "claude-haiku-4-5-20251001",
     });
@@ -84,9 +83,7 @@ describe("073-repair-recall-callsite-empty-profile migration", () => {
 
     repairRecallCallsiteEmptyProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     // Broken profile pointer is removed, but user's model value is preserved.
     expect(config.llm.callSites.recall).toEqual({
       model: "claude-opus-4-7",
@@ -106,9 +103,7 @@ describe("073-repair-recall-callsite-empty-profile migration", () => {
 
     repairRecallCallsiteEmptyProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual({ profile: "cost-optimized" });
   });
 
@@ -123,9 +118,7 @@ describe("073-repair-recall-callsite-empty-profile migration", () => {
 
     repairRecallCallsiteEmptyProfileMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual({
       model: "anthropic/claude-haiku-4.5",
     });

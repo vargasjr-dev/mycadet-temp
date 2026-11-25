@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { backfillCloudProfileLabelsMigration } from "../workspace/migrations/082-backfill-managed-profile-labels.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -86,10 +88,9 @@ describe("082-backfill-managed-profile-labels migration", () => {
     backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
-    const profiles = jsonObjectSchema.parse(config.llm).profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(config.llm).profiles);
     expect(profiles.balanced.label).toBe("Balanced");
     expect(profiles["quality-optimized"].label).toBe("Quality");
     expect(profiles["cost-optimized"].label).toBe("Speed");
@@ -121,10 +122,9 @@ describe("082-backfill-managed-profile-labels migration", () => {
     backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
-    const profiles = jsonObjectSchema.parse(config.llm).profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(config.llm).profiles);
     expect(profiles.balanced.label).toBe("My Balanced");
     expect(profiles["quality-optimized"].label).toBe("Quality");
     expect(profiles["cost-optimized"].label).toBe("Speed (Managed)");
@@ -148,10 +148,9 @@ describe("082-backfill-managed-profile-labels migration", () => {
     backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
-    const profiles = jsonObjectSchema.parse(config.llm).profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(config.llm).profiles);
     expect(profiles.balanced.label).toBeNull();
   });
 
@@ -176,10 +175,9 @@ describe("082-backfill-managed-profile-labels migration", () => {
     backfillCloudProfileLabelsMigration.run(workspaceDir);
 
     const config = readConfig();
-    const profiles = jsonObjectSchema.parse(config.llm).profiles as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(config.llm).profiles);
     expect("label" in profiles["my-custom"]).toBe(false);
     expect(profiles.balanced.label).toBe("Balanced");
   });

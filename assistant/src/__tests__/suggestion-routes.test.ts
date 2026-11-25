@@ -4,8 +4,9 @@
  * Validates happy path, all null-return paths, caching, staleness check,
  * quote stripping, empty response rejection, and modelIntent verification.
  */
-
 import { describe, expect, mock, test } from "bun:test";
+
+import type { Message, Provider } from "../providers/types.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be defined before importing the module under test
@@ -48,15 +49,10 @@ mock.module("../persistence/conversation-crud.js", () => ({
   reserveMessage: mock(async () => ({ id: "msg-reserve" })),
 }));
 
-const mockGetConfiguredProvider = mock(async () => ({
-  name: "test-provider",
-  sendMessage: mock(async () => ({
-    content: [{ type: "text", text: "Let's do round two!" }],
-    model: "test",
-    usage: { inputTokens: 1, outputTokens: 1 },
-    stopReason: "end_turn",
-  })),
-}));
+const mockGetConfiguredProvider = mock(
+  async (): Promise<ReturnType<typeof makeMockProvider> | null> =>
+    makeMockProvider("Let's do round two!"),
+);
 
 mock.module("../providers/provider-send-message.js", () => ({
   getConfiguredProvider: mockGetConfiguredProvider,
@@ -119,10 +115,19 @@ function makeDeps() {
   };
 }
 
+function firstMessageText(messages: Message[]): string {
+  const content = messages[0]?.content;
+  const block = Array.isArray(content) ? content[0] : undefined;
+  if (block?.type !== "text") {
+    throw new Error("Expected a text block in the suggestion prompt");
+  }
+  return block.text;
+}
+
 function makeMockProvider(text: string) {
   return {
     name: "test-provider",
-    sendMessage: mock(async () => ({
+    sendMessage: mock<Provider["sendMessage"]>(async () => ({
       content: [{ type: "text" as const, text }],
       model: "test",
       usage: { inputTokens: 1, outputTokens: 1 },
@@ -206,12 +211,7 @@ describe("GET /v1/suggestion", () => {
         metadata: null,
       },
     ]);
-    mockGetConfiguredProvider.mockImplementation(
-      async () =>
-        null as unknown as Awaited<
-          ReturnType<typeof mockGetConfiguredProvider>
-        >,
-    );
+    mockGetConfiguredProvider.mockImplementation(async () => null);
 
     const args = makeArgs({ conversationKey: "test-key" });
     const deps = makeDeps();
@@ -410,24 +410,16 @@ describe("GET /v1/suggestion", () => {
     await handleGetSuggestion(args, deps);
 
     expect(provider.sendMessage).toHaveBeenCalledTimes(1);
-    const callArgs: unknown[] = provider.sendMessage.mock.calls[0];
-    const messages = callArgs[0] as Array<{
-      role: string;
-      content: Array<{ type: string; text: string }>;
-    }>;
-    const options = callArgs[1] as {
-      config?: {
-        stop_sequences?: string[];
-        max_tokens?: number;
-      };
-    };
+    const callArgs = provider.sendMessage.mock.calls[0];
+    const messages = callArgs[0];
+    const options = callArgs[1];
 
     expect(messages.length).toBe(1);
     expect(messages[0].role).toBe("user");
-    expect(options.config?.stop_sequences).toEqual(["</reply>"]);
-    expect(options.config?.max_tokens).toBe(60);
-    expect(messages[0].content[0].text).toContain("<assistant_message>");
-    expect(messages[0].content[0].text).toContain("<user_message>");
+    expect(options?.config?.stop_sequences).toEqual(["</reply>"]);
+    expect(options?.config?.max_tokens).toBe(60);
+    expect(firstMessageText(messages)).toContain("<assistant_message>");
+    expect(firstMessageText(messages)).toContain("<user_message>");
   });
 
   test("includes prior user message in prompt when present", async () => {
@@ -463,11 +455,9 @@ describe("GET /v1/suggestion", () => {
     const deps = makeDeps();
     await handleGetSuggestion(args, deps);
 
-    const callArgs: unknown[] = provider.sendMessage.mock.calls[0];
-    const messages = callArgs[0] as Array<{
-      content: Array<{ text: string }>;
-    }>;
-    const userPrompt = messages[0].content[0].text;
+    const callArgs = provider.sendMessage.mock.calls[0];
+    const messages = callArgs[0];
+    const userPrompt = firstMessageText(messages);
     expect(userPrompt).toContain(
       "<user_message>running late, should I grab coffee?</user_message>",
     );
@@ -497,11 +487,9 @@ describe("GET /v1/suggestion", () => {
     const deps = makeDeps();
     await handleGetSuggestion(args, deps);
 
-    const callArgs: unknown[] = provider.sendMessage.mock.calls[0];
-    const messages = callArgs[0] as Array<{
-      content: Array<{ text: string }>;
-    }>;
-    const userPrompt = messages[0].content[0].text;
+    const callArgs = provider.sendMessage.mock.calls[0];
+    const messages = callArgs[0];
+    const userPrompt = firstMessageText(messages);
     expect(userPrompt).toContain(
       "<user_message>(no prior user message)</user_message>",
     );
@@ -529,10 +517,8 @@ describe("GET /v1/suggestion", () => {
     await handleGetSuggestion(args, deps);
 
     expect(provider.sendMessage).toHaveBeenCalledTimes(1);
-    const callArgs: unknown[] = provider.sendMessage.mock.calls[0];
-    const options = callArgs[1] as
-      | { config?: { callSite?: string } }
-      | undefined;
+    const callArgs = provider.sendMessage.mock.calls[0];
+    const options = callArgs[1];
     expect(options?.config?.callSite).toBe("replySuggestion");
   });
 
@@ -567,16 +553,8 @@ describe("GET /v1/suggestion", () => {
     await handleGetSuggestion(args, deps);
 
     expect(provider.sendMessage).toHaveBeenCalledTimes(1);
-    const callArgs: unknown[] = provider.sendMessage.mock.calls[0];
-    const options = callArgs[1] as
-      | {
-          config?: {
-            temperature?: number;
-            thinking?: { type?: string };
-            effort?: string;
-          };
-        }
-      | undefined;
+    const callArgs = provider.sendMessage.mock.calls[0];
+    const options = callArgs[1];
     expect(options?.config?.temperature).toBe(0.7);
     expect(options?.config?.thinking).toEqual({ type: "disabled" });
     expect(options?.config?.effort).toBe("none");
@@ -609,15 +587,14 @@ describe("GET /v1/suggestion", () => {
     const response = await handleGetSuggestion(args, deps);
 
     expect(provider.sendMessage).toHaveBeenCalledTimes(1);
-    const callArgs: unknown[] = provider.sendMessage.mock.calls[0];
-    const messages = callArgs[0] as Array<{ role: string }>;
+    const callArgs = provider.sendMessage.mock.calls[0];
+    const messages = callArgs[0];
     expect(messages).toHaveLength(1);
     expect(messages[0].role).toBe("user");
     expect(messages.every((m) => m.role === "user")).toBe(true);
 
     // Tag-wrapped response is extracted back to just the reply text.
-    const body = response as { suggestion: string | null };
-    expect(body.suggestion).toBe("Sure, works for me");
+    expect(response.suggestion).toBe("Sure, works for me");
   });
 
   test("handles untagged model response by falling back to raw text", async () => {

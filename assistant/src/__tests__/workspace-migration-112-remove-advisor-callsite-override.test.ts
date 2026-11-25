@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { removeAdvisorCallsiteOverrideMigration } from "../workspace/migrations/112-remove-advisor-callsite-override.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -105,7 +106,7 @@ describe("112-remove-advisor-callsite-override migration", () => {
 
     removeAdvisorCallsiteOverrideMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, unknown>;
+    const llm = jsonObjectSchema.parse(readConfig().llm);
     expect("callSites" in llm).toBe(false);
     // The unrelated top-level advisor profile selection is untouched.
     expect(llm.advisorProfile).toBe("frontier");
@@ -124,8 +125,9 @@ describe("112-remove-advisor-callsite-override migration", () => {
 
     removeAdvisorCallsiteOverrideMigration.run(workspaceDir);
 
-    const callSites = (readConfig().llm as Record<string, unknown>)
-      .callSites as Record<string, unknown>;
+    const callSites = jsonObjectSchema.parse(
+      jsonObjectSchema.parse(readConfig().llm).callSites,
+    );
     expect("advisor" in callSites).toBe(false);
     expect(callSites.mainAgent).toEqual({ profile: "opus" });
     expect(callSites.memoryRouter).toEqual({ profile: "latency-optimized" });

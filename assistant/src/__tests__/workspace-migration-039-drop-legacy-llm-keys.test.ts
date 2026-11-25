@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { dropLegacyLlmKeysMigration } from "../workspace/migrations/039-drop-legacy-llm-keys.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -180,7 +182,9 @@ describe("039-drop-legacy-llm-keys migration", () => {
     expect(config.pricingOverrides).toBeUndefined();
 
     // services.inference: provider/model stripped
-    const services = config.services as { inference: Record<string, unknown> };
+    const services = z
+      .looseObject({ inference: jsonObjectSchema })
+      .parse(config.services);
     expect(services.inference.provider).toBeUndefined();
     expect(services.inference.model).toBeUndefined();
 
@@ -201,7 +205,9 @@ describe("039-drop-legacy-llm-keys migration", () => {
     expect(analysis.enabled).toBe(true);
 
     // memory.summarization.modelIntent
-    const memory = config.memory as { summarization: Record<string, unknown> };
+    const memory = z
+      .looseObject({ summarization: jsonObjectSchema })
+      .parse(config.memory);
     expect(memory.summarization.modelIntent).toBeUndefined();
 
     // notifications.decisionModelIntent
@@ -218,9 +224,9 @@ describe("039-drop-legacy-llm-keys migration", () => {
     expect(calls.enabled).toBe(true);
 
     // workspaceGit.commitMessageLLM
-    const workspaceGit = config.workspaceGit as {
-      commitMessageLLM: Record<string, unknown>;
-    };
+    const workspaceGit = z
+      .looseObject({ commitMessageLLM: jsonObjectSchema })
+      .parse(config.workspaceGit);
     expect(workspaceGit.commitMessageLLM.maxTokens).toBeUndefined();
     expect(workspaceGit.commitMessageLLM.temperature).toBeUndefined();
     expect(workspaceGit.commitMessageLLM.useConfiguredProvider).toBeUndefined();
@@ -248,7 +254,9 @@ describe("039-drop-legacy-llm-keys migration", () => {
 
     const config = readConfig();
     expect(config.speed).toBeUndefined();
-    const services = config.services as { inference: Record<string, unknown> };
+    const services = z
+      .looseObject({ inference: jsonObjectSchema })
+      .parse(config.services);
     expect(services.inference.provider).toBeUndefined();
     expect(
       jsonObjectSchema.parse(config.notifications).decisionModelIntent,

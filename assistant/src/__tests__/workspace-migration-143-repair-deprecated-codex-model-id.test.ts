@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { repairDeprecatedCodexModelIdMigration } from "../workspace/migrations/143-repair-deprecated-codex-model-id.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { migratedLlmSchema } from "./helpers/migration-llm-schema.js";
 
 const DEPRECATED = "gpt-5.3-codex";
 const REPLACEMENT = "gpt-5.6-terra";
@@ -78,14 +80,20 @@ describe("143-repair-deprecated-codex-model-id migration", () => {
 
     repairDeprecatedCodexModelIdMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.maxTokens).toBe(4096);
-    expect(llm.callSites.heartbeatAgent.model).toBe(REPLACEMENT);
-    expect(llm.callSites.vision.model).toBe(DEPRECATED);
-    expect(llm.profiles.codex.model).toBe(REPLACEMENT);
-    expect(llm.profiles.codex.source).toBe("user");
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).model).toBe(
+      REPLACEMENT,
+    );
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).maxTokens).toBe(4096);
+    expect(jsonObjectSchema.parse(llm.callSites?.heartbeatAgent).model).toBe(
+      REPLACEMENT,
+    );
+    expect(jsonObjectSchema.parse(llm.callSites?.vision).model).toBe(
+      DEPRECATED,
+    );
+    expect(llm.profiles?.codex.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.codex.source).toBe("user");
   });
 
   test("leaves other providers and other models untouched", () => {

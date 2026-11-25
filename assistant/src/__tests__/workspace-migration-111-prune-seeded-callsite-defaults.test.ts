@@ -9,8 +9,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { pruneSeededCallsiteDefaultsMigration } from "../workspace/migrations/111-prune-seeded-callsite-defaults.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -26,7 +29,7 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readLlm(): Record<string, unknown> | undefined {
-  return readConfig().llm as Record<string, unknown> | undefined;
+  return jsonObjectSchema.optional().parse(readConfig().llm);
 }
 
 function latencySeed(): Record<string, unknown> {
@@ -164,10 +167,9 @@ describe("111-prune-seeded-callsite-defaults migration", () => {
 
     pruneSeededCallsiteDefaultsMigration.run(workspaceDir);
 
-    const callSites = readLlm()?.callSites as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const callSites = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(readLlm()?.callSites);
     expect(Object.keys(callSites).sort()).toEqual([
       "commitMessage",
       "customSite",

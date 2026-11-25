@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { webSearchProviderRenameMigration } from "../workspace/migrations/007-web-search-provider-rename.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -73,7 +76,9 @@ describe("007-web-search-provider-rename migration", () => {
     webSearchProviderRenameMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services["web-search"].provider).toBe("inference-provider-native");
 
     // Other services should be unchanged
@@ -182,10 +187,9 @@ describe("007-web-search-provider-rename migration", () => {
     const afterSecond = readConfig();
 
     expect(afterSecond).toEqual(afterFirst);
-    const services = afterSecond.services as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(afterSecond.services);
     expect(services["web-search"].provider).toBe("inference-provider-native");
   });
 
@@ -250,7 +254,9 @@ describe("007-web-search-provider-rename migration", () => {
     webSearchProviderRenameMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services["web-search"].provider).toBe("inference-provider-native");
     expect(services["web-search"].extraField).toBe("should-survive");
     expect(services["web-search"].mode).toBe("your-own");
@@ -280,7 +286,9 @@ describe("007-web-search-provider-rename migration", () => {
     const config = readConfig();
     expect(config.someTopLevelKey).toBe("value");
 
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services["web-search"].provider).toBe("inference-provider-native");
     expect(services.inference.provider).toBe("openai");
     expect(services["custom-service"]).toEqual({ foo: "bar" });

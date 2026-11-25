@@ -13,6 +13,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { repairRetiredCodexGpt54ModelIdsMigration } from "../workspace/migrations/154-repair-retired-codex-gpt-5-4-model-ids.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { migratedLlmSchema } from "./helpers/migration-llm-schema.js";
 
 const STALE = "gpt-5.4";
 const STALE_MINI = "gpt-5.4-mini";
@@ -45,7 +47,7 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readLlm(): Record<string, any> {
-  return readConfig().llm as Record<string, any>;
+  return migratedLlmSchema.parse(readConfig().llm);
 }
 
 function seedRows(
@@ -127,17 +129,21 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
     repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir);
 
     const llm = readLlm();
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.model).toBe(REPLACEMENT_MINI);
-    expect(llm.callSites.recall.maxTokens).toBe(4096);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).model).toBe(
+      REPLACEMENT_MINI,
+    );
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).maxTokens).toBe(4096);
     // Non-exact matches and malformed leaves are untouched.
-    expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
-    expect(llm.callSites.malformed).toBe(STALE);
-    expect(llm.profiles.codex.model).toBe(REPLACEMENT);
-    expect(llm.profiles.codex.source).toBe("user");
-    expect(llm.profiles.budget.model).toBe(REPLACEMENT_MINI);
-    expect(llm.profiles.current.model).toBe("gpt-5.6-terra");
-    expect(llm.profiles.strayBinding.model).toBe(REPLACEMENT);
+    expect(jsonObjectSchema.parse(llm.callSites?.heartbeat).model).toBe(
+      `${STALE}-tuned`,
+    );
+    expect(llm.callSites?.malformed).toBe(STALE);
+    expect(llm.profiles?.codex.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.codex.source).toBe("user");
+    expect(llm.profiles?.budget.model).toBe(REPLACEMENT_MINI);
+    expect(llm.profiles?.current.model).toBe("gpt-5.6-terra");
+    expect(llm.profiles?.strayBinding.model).toBe(REPLACEMENT);
   });
 
   test("repairs entry-bound fragments whose row is the subscription", () => {
@@ -174,11 +180,13 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
     repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir);
 
     const llm = readLlm();
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.model).toBe(REPLACEMENT_MINI);
-    expect(llm.profiles.bound.model).toBe(REPLACEMENT);
-    expect(llm.profiles.legacy.model).toBe(REPLACEMENT_MINI);
-    expect(llm.profiles.pinned.model).toBe(REPLACEMENT);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).model).toBe(
+      REPLACEMENT_MINI,
+    );
+    expect(llm.profiles?.bound.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.legacy.model).toBe(REPLACEMENT_MINI);
+    expect(llm.profiles?.pinned.model).toBe(REPLACEMENT);
   });
 
   test("judges a binding as a row even when named like a vendor", () => {
@@ -206,8 +214,8 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
     repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir);
 
     const llm = readLlm();
-    expect(llm.profiles.subRow.model).toBe(REPLACEMENT);
-    expect(llm.profiles.keyRow.model).toBe(STALE_MINI);
+    expect(llm.profiles?.subRow.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.keyRow.model).toBe(STALE_MINI);
   });
 
   test("leaves API-key, other-vendor, providerless, and dangling fragments untouched", () => {
@@ -270,10 +278,10 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
     repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir);
 
     const llm = readLlm();
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.profiles.byok.model).toBe(STALE);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.byok.model).toBe(STALE);
     // An entry name with no DB file is dangling.
-    expect(llm.profiles.bound.model).toBe(STALE);
+    expect(llm.profiles?.bound.model).toBe(STALE);
   });
 
   test("throws when an entry name needs rows and the DB is unreadable", () => {
@@ -290,7 +298,7 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
     expect(() =>
       repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir),
     ).toThrow();
-    expect(readLlm().profiles.bound.model).toBe(STALE);
+    expect(readLlm().profiles?.bound.model).toBe(STALE);
 
     // The identity form never needs the rows, so the same broken DB does
     // not block its repair.
@@ -298,7 +306,7 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
       llm: { default: { provider: "chatgpt", model: STALE } },
     });
     repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir);
-    expect(readLlm().default.model).toBe(REPLACEMENT);
+    expect(readLlm().default?.model).toBe(REPLACEMENT);
   });
 
   test("is idempotent and a no-op without the stale IDs", () => {
@@ -314,9 +322,9 @@ describe("154-repair-retired-codex-gpt-5-4-model-ids migration", () => {
     repairRetiredCodexGpt54ModelIdsMigration.run(workspaceDir);
     expect(readConfig()).toEqual(first);
 
-    const llm = first.llm as Record<string, any>;
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.profiles.fine.model).toBe(REPLACEMENT);
+    const llm = migratedLlmSchema.parse(first.llm);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.fine.model).toBe(REPLACEMENT);
   });
 
   test("handles missing config, missing llm block, and invalid JSON", () => {

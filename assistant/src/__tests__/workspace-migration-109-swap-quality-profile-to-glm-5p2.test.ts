@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { swapQualityProfileToGlm52Migration } from "../workspace/migrations/109-swap-quality-profile-to-glm-5p2.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -25,11 +28,11 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readLlm(): Record<string, unknown> {
-  return readConfig().llm as Record<string, unknown>;
+  return jsonObjectSchema.parse(readConfig().llm);
 }
 
 function readProfiles(): Record<string, Record<string, unknown>> {
-  return readLlm().profiles as Record<string, Record<string, unknown>>;
+  return z.record(z.string(), jsonObjectSchema).parse(readLlm().profiles);
 }
 
 beforeEach(() => {

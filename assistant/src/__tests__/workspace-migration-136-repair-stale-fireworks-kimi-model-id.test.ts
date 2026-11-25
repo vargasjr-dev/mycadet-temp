@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { repairStaleFireworksKimiModelIdMigration } from "../workspace/migrations/136-repair-stale-fireworks-kimi-model-id.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { migratedLlmSchema } from "./helpers/migration-llm-schema.js";
 
 const STALE = "accounts/fireworks/models/kimi-k2p5";
 const REPLACEMENT = "accounts/fireworks/models/deepseek-v4-flash";
@@ -74,16 +76,20 @@ describe("136-repair-stale-fireworks-kimi-model-id migration", () => {
 
     repairStaleFireworksKimiModelIdMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.model).toBe(REPLACEMENT);
-    expect(llm.callSites.recall.maxTokens).toBe(4096);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).model).toBe(
+      REPLACEMENT,
+    );
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).maxTokens).toBe(4096);
     // Non-exact matches and malformed leaves are untouched.
-    expect(llm.callSites.heartbeat.model).toBe(`${STALE}-tuned`);
-    expect(llm.callSites.malformed).toBe(STALE);
+    expect(jsonObjectSchema.parse(llm.callSites?.heartbeat).model).toBe(
+      `${STALE}-tuned`,
+    );
+    expect(llm.callSites?.malformed).toBe(STALE);
     // Cloud profiles stamped provider "cadet" carry Fireworks model IDs.
-    expect(llm.profiles["cost-optimized"].model).toBe(REPLACEMENT);
-    expect(llm.profiles.legacy.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.["cost-optimized"].model).toBe(REPLACEMENT);
+    expect(llm.profiles?.legacy.model).toBe(REPLACEMENT);
   });
 
   test("leaves fragments with an explicit other provider untouched", () => {
@@ -98,9 +104,9 @@ describe("136-repair-stale-fireworks-kimi-model-id migration", () => {
 
     repairStaleFireworksKimiModelIdMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe(STALE);
-    expect(llm.profiles.byo.model).toBe(STALE);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe(STALE);
+    expect(llm.profiles?.byo.model).toBe(STALE);
   });
 
   test("is idempotent and a no-op without the stale ID", () => {
@@ -116,9 +122,9 @@ describe("136-repair-stale-fireworks-kimi-model-id migration", () => {
     repairStaleFireworksKimiModelIdMigration.run(workspaceDir);
     expect(readConfig()).toEqual(first);
 
-    const llm = first.llm as Record<string, any>;
-    expect(llm.default.model).toBe(REPLACEMENT);
-    expect(llm.profiles.fine.model).toBe(REPLACEMENT);
+    const llm = migratedLlmSchema.parse(first.llm);
+    expect(llm.default?.model).toBe(REPLACEMENT);
+    expect(llm.profiles?.fine.model).toBe(REPLACEMENT);
   });
 
   test("handles missing config, missing llm block, and invalid JSON", () => {

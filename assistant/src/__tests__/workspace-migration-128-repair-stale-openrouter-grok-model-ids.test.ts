@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { repairStaleOpenrouterGrokModelIdsMigration } from "../workspace/migrations/128-repair-stale-openrouter-grok-model-ids.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { migratedLlmSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -71,15 +73,19 @@ describe("128-repair-stale-openrouter-grok-model-ids migration", () => {
 
     repairStaleOpenrouterGrokModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe("x-ai/grok-4.20");
-    expect(llm.callSites.recall.model).toBe("x-ai/grok-4.5");
-    expect(llm.callSites.recall.maxTokens).toBe(4096);
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe("x-ai/grok-4.20");
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).model).toBe(
+      "x-ai/grok-4.5",
+    );
+    expect(jsonObjectSchema.parse(llm.callSites?.recall).maxTokens).toBe(4096);
     // Non-exact matches and malformed leaves are untouched.
-    expect(llm.callSites.commitMessage.model).toBe("x-ai/grok-4.20-beta-tuned");
-    expect(llm.callSites.malformed).toBe("x-ai/grok-4.20-beta");
-    expect(llm.profiles.fast.model).toBe("x-ai/grok-4.20");
-    expect(llm.profiles.legacy.model).toBe("x-ai/grok-4.5");
+    expect(jsonObjectSchema.parse(llm.callSites?.commitMessage).model).toBe(
+      "x-ai/grok-4.20-beta-tuned",
+    );
+    expect(llm.callSites?.malformed).toBe("x-ai/grok-4.20-beta");
+    expect(llm.profiles?.fast.model).toBe("x-ai/grok-4.20");
+    expect(llm.profiles?.legacy.model).toBe("x-ai/grok-4.5");
   });
 
   test("leaves fragments with an explicit non-OpenRouter provider untouched", () => {
@@ -94,9 +100,9 @@ describe("128-repair-stale-openrouter-grok-model-ids migration", () => {
 
     repairStaleOpenrouterGrokModelIdsMigration.run(workspaceDir);
 
-    const llm = readConfig().llm as Record<string, any>;
-    expect(llm.default.model).toBe("x-ai/grok-4");
-    expect(llm.profiles.byo.model).toBe("x-ai/grok-4.20-beta");
+    const llm = migratedLlmSchema.parse(readConfig().llm);
+    expect(llm.default?.model).toBe("x-ai/grok-4");
+    expect(llm.profiles?.byo.model).toBe("x-ai/grok-4.20-beta");
   });
 
   test("is idempotent and a no-op without stale IDs", () => {
@@ -112,9 +118,9 @@ describe("128-repair-stale-openrouter-grok-model-ids migration", () => {
     repairStaleOpenrouterGrokModelIdsMigration.run(workspaceDir);
     expect(readConfig()).toEqual(first);
 
-    const llm = first.llm as Record<string, any>;
-    expect(llm.default.model).toBe("x-ai/grok-4.20");
-    expect(llm.profiles.fine.model).toBe("x-ai/grok-4.5");
+    const llm = migratedLlmSchema.parse(first.llm);
+    expect(llm.default?.model).toBe("x-ai/grok-4.20");
+    expect(llm.profiles?.fine.model).toBe("x-ai/grok-4.5");
   });
 
   test("handles missing config, missing llm block, and invalid JSON", () => {

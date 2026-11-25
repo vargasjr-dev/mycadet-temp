@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { stripCloudProfileBodiesMigration } from "../workspace/migrations/126-strip-managed-profile-bodies.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -77,8 +79,9 @@ describe("126-strip-managed-profile-bodies", () => {
 
     stripCloudProfileBodiesMigration.run(workspaceDir);
 
-    const profiles = jsonObjectSchema.parse(readConfig().llm)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(readConfig().llm).profiles);
     expect(profiles.balanced).toEqual({
       source: "managed",
       label: "Balanced (Managed)",
@@ -113,8 +116,9 @@ describe("126-strip-managed-profile-bodies", () => {
 
     stripCloudProfileBodiesMigration.run(workspaceDir);
 
-    const profiles = jsonObjectSchema.parse(readConfig().llm)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(readConfig().llm).profiles);
     expect(profiles["my-custom"]).toEqual(custom);
     expect(profiles.balanced).toEqual(shadow);
     expect(profiles["cost-optimized"]).toEqual({ source: "managed" });
@@ -139,8 +143,9 @@ describe("126-strip-managed-profile-bodies", () => {
 
     stripCloudProfileBodiesMigration.run(workspaceDir);
 
-    const profiles = jsonObjectSchema.parse(readConfig().llm)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(readConfig().llm).profiles);
     expect(profiles.balanced).toEqual({
       source: "managed",
       status: "disabled",
@@ -164,8 +169,9 @@ describe("126-strip-managed-profile-bodies", () => {
 
     stripCloudProfileBodiesMigration.run(workspaceDir);
 
-    const profiles = jsonObjectSchema.parse(readConfig().llm)
-      .profiles as Record<string, Record<string, unknown>>;
+    const profiles = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(jsonObjectSchema.parse(readConfig().llm).profiles);
     expect(profiles["os-beta"]).toEqual({
       source: "managed",
       label: "OS Beta",

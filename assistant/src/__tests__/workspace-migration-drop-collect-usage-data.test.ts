@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { dropCollectUsageDataMigration } from "../workspace/migrations/106-drop-collect-usage-data.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Real fs: each test runs the migration against a fresh temp workspace and
 // asserts on the file state it leaves behind.
@@ -39,7 +40,7 @@ describe("106-drop-collect-usage-data migration", () => {
 
     dropCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = readConfig() as Record<string, unknown>;
+    const written = jsonObjectSchema.parse(readConfig());
     expect(written.collectUsageData).toBeUndefined();
     expect(written.legacyTelemetryOptOut).toBe(true);
     expect(written.someSetting).toBe("value");
@@ -50,7 +51,7 @@ describe("106-drop-collect-usage-data migration", () => {
 
     dropCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = readConfig() as Record<string, unknown>;
+    const written = jsonObjectSchema.parse(readConfig());
     expect(written.collectUsageData).toBeUndefined();
     expect(written.legacyTelemetryOptOut).toBeUndefined();
   });
@@ -60,7 +61,7 @@ describe("106-drop-collect-usage-data migration", () => {
 
     dropCollectUsageDataMigration.run(WORKSPACE_DIR);
 
-    const written = readConfig() as Record<string, unknown>;
+    const written = jsonObjectSchema.parse(readConfig());
     expect(written.collectUsageData).toBeUndefined();
     expect(written.legacyTelemetryOptOut).toBeUndefined();
   });

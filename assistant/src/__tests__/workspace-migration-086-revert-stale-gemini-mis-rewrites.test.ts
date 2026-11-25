@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { revertStaleGeminiMisRewritesMigration } from "../workspace/migrations/086-revert-stale-gemini-mis-rewrites.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 
@@ -66,9 +68,15 @@ describe("086-revert-stale-gemini-mis-rewrites migration", () => {
 
     revertStaleGeminiMisRewritesMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { recall: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            recall: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.recall.model).toBe("gemini-3-flash");
   });
 
@@ -84,9 +92,15 @@ describe("086-revert-stale-gemini-mis-rewrites migration", () => {
 
     revertStaleGeminiMisRewritesMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { memoryRetrieval: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            memoryRetrieval: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.callSites.memoryRetrieval.model).toBe("gemini-3-flash");
   });
 
@@ -156,9 +170,15 @@ describe("086-revert-stale-gemini-mis-rewrites migration", () => {
 
     revertStaleGeminiMisRewritesMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { profiles: { custom: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          profiles: z.looseObject({
+            custom: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.profiles.custom.model).toBe("gemini-3-flash");
   });
 
@@ -180,12 +200,18 @@ describe("086-revert-stale-gemini-mis-rewrites migration", () => {
 
     revertStaleGeminiMisRewritesMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: {
-        profiles: { custom: { model: string } };
-        callSites: { recall: { model: string; profile: string } };
-      };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          profiles: z.looseObject({
+            custom: z.looseObject({ model: z.string() }),
+          }),
+          callSites: z.looseObject({
+            recall: z.looseObject({ model: z.string(), profile: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     expect(config.llm.profiles.custom.model).toBe("gemini-3-flash");
     expect(config.llm.callSites.recall.model).toBe("gemini-3-flash");
   });
@@ -206,9 +232,15 @@ describe("086-revert-stale-gemini-mis-rewrites migration", () => {
 
     revertStaleGeminiMisRewritesMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: { mainAgent: { model: string } } };
-    };
+    const config = z
+      .looseObject({
+        llm: z.looseObject({
+          callSites: z.looseObject({
+            mainAgent: z.looseObject({ model: z.string() }),
+          }),
+        }),
+      })
+      .parse(readConfig());
     // For mainAgent the active profile sits above the call-site, so an
     // Ollama active profile dominates the Gemini default and the rewrite
     // must be reverted.

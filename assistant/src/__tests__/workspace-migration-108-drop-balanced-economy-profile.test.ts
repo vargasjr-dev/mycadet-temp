@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { dropBalancedEconomyProfileMigration } from "../workspace/migrations/108-drop-balanced-economy-profile.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -25,11 +28,11 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readLlm(): Record<string, unknown> {
-  return readConfig().llm as Record<string, unknown>;
+  return jsonObjectSchema.parse(readConfig().llm);
 }
 
 function readProfiles(): Record<string, Record<string, unknown>> {
-  return readLlm().profiles as Record<string, Record<string, unknown>>;
+  return z.record(z.string(), jsonObjectSchema).parse(readLlm().profiles);
 }
 
 const managedBalanced = {
@@ -189,10 +192,9 @@ describe("108-drop-balanced-economy-profile migration", () => {
     });
     dropBalancedEconomyProfileMigration.run(workspaceDir);
 
-    const callSites = readLlm().callSites as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const callSites = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(readLlm().callSites);
     expect(callSites.memoryRouter!.profile).toBe("balanced");
     expect(callSites.replySuggestion!.profile).toBe("cost-optimized");
   });
@@ -216,7 +218,7 @@ describe("108-drop-balanced-economy-profile migration", () => {
     });
     dropBalancedEconomyProfileMigration.run(workspaceDir);
 
-    const mix = readProfiles()["my-mix"]!.mix as Array<Record<string, unknown>>;
+    const mix = z.array(jsonObjectSchema).parse(readProfiles()["my-mix"]!.mix);
     expect(mix[0]!.profile).toBe("balanced");
     expect(mix[1]!.profile).toBe("quality-optimized");
   });
@@ -260,7 +262,7 @@ describe("108-drop-balanced-economy-profile migration", () => {
     expect(llm.profileOrder).toEqual(["balanced"]);
     expect(llm.activeProfile).toBe("balanced");
     expect(
-      (llm.callSites as Record<string, Record<string, unknown>>).memoryRouter!
+      z.record(z.string(), jsonObjectSchema).parse(llm.callSites).memoryRouter!
         .profile,
     ).toBe("balanced");
   });

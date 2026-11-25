@@ -10,6 +10,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { seedMainAgentOpusCallsiteMigration } from "../workspace/migrations/050-seed-main-agent-opus-callsite.js";
+import {
+  configWithCallSitesSchema,
+  configWithOptionalCallSitesSchema,
+} from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -60,9 +64,7 @@ describe("050-seed-main-agent-opus-callsite migration", () => {
 
     seedMainAgentOpusCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.mainAgent).toEqual({
       model: "claude-opus-4-7",
       maxTokens: 32000,
@@ -73,9 +75,7 @@ describe("050-seed-main-agent-opus-callsite migration", () => {
     seedMainAgentOpusCallsiteMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.mainAgent).toEqual({
       model: "claude-opus-4-7",
       maxTokens: 32000,
@@ -97,9 +97,7 @@ describe("050-seed-main-agent-opus-callsite migration", () => {
 
     seedMainAgentOpusCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.mainAgent).toEqual({
       model: "claude-haiku-4-5-20251001",
       effort: "low",
@@ -113,9 +111,7 @@ describe("050-seed-main-agent-opus-callsite migration", () => {
 
     seedMainAgentOpusCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
+    const config = configWithOptionalCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites).toBeUndefined();
   });
 
@@ -131,9 +127,7 @@ describe("050-seed-main-agent-opus-callsite migration", () => {
 
     seedMainAgentOpusCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites?: Record<string, unknown> };
-    };
+    const config = configWithOptionalCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites).toBeUndefined();
   });
 
@@ -146,9 +140,7 @@ describe("050-seed-main-agent-opus-callsite migration", () => {
 
     seedMainAgentOpusCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.mainAgent).toEqual({
       model: "claude-opus-4-7",
       maxTokens: 32000,

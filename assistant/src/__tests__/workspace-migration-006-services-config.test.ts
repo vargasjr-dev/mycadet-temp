@@ -9,6 +9,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
@@ -85,7 +88,9 @@ describe("006-services-config migration", () => {
     expect(config.otherSetting).toBe(true);
 
     // Services populated correctly
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services.inference).toEqual({
       mode: "your-own",
       provider: "openai",
@@ -113,7 +118,9 @@ describe("006-services-config migration", () => {
     await servicesConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services.inference.provider).toBe("anthropic");
     expect(services.inference.model).toBe("claude-opus-4-6");
   });
@@ -208,7 +215,9 @@ describe("006-services-config migration", () => {
     await servicesConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
 
     // Legacy fields should win over backfilled defaults
     expect(services.inference.provider).toBe("openai");
@@ -240,7 +249,9 @@ describe("006-services-config migration", () => {
     await servicesConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
 
     // Extra key preserved from spread
     expect(services.inference.extraKey).toBe("should-survive");
@@ -257,7 +268,9 @@ describe("006-services-config migration", () => {
     await servicesConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services["image-generation"].provider).toBe("gemini");
     expect(services["image-generation"].model).toBe("gemini-2.5-flash-image");
   });
@@ -270,7 +283,9 @@ describe("006-services-config migration", () => {
     await servicesConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
     expect(services["image-generation"].provider).toBe("openai");
     expect(services["image-generation"].model).toBe("dall-e-3");
   });
@@ -322,7 +337,9 @@ describe("006-services-config migration", () => {
     await servicesConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
 
     // image-generation: falls back to existing services model value
     expect(services["image-generation"].model).toBe("dall-e-2");

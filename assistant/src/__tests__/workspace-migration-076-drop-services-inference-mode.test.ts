@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { dropServicesInferenceModeMigration } from "../workspace/migrations/076-drop-services-inference-mode.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,7 +128,9 @@ describe("076-drop-services-inference-mode migration", () => {
     dropServicesInferenceModeMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as { inference: Record<string, unknown> };
+    const services = z
+      .looseObject({ inference: jsonObjectSchema })
+      .parse(config.services);
     expect(services.inference.mode).toBeUndefined();
     expect(config.otherKey).toBe("preserved");
   });
@@ -133,16 +138,16 @@ describe("076-drop-services-inference-mode migration", () => {
   test("strips mode:'your-own' just as well as mode:'managed'", () => {
     writeConfig({ services: { inference: { mode: "your-own" } } });
     dropServicesInferenceModeMigration.run(workspaceDir);
-    const services = readConfig().services as {
-      inference: Record<string, unknown>;
-    };
+    const services = z
+      .looseObject({ inference: jsonObjectSchema })
+      .parse(readConfig().services);
     expect(services.inference.mode).toBeUndefined();
   });
 
   test("leaves services.inference as {} after stripping mode", () => {
     writeConfig({ services: { inference: { mode: "managed" } } });
     dropServicesInferenceModeMigration.run(workspaceDir);
-    const services = readConfig().services as Record<string, unknown>;
+    const services = jsonObjectSchema.parse(readConfig().services);
     expect(services.inference).toEqual({});
   });
 
@@ -152,9 +157,9 @@ describe("076-drop-services-inference-mode migration", () => {
       services: { inference: { mode: "your-own", someOtherKey: true } },
     });
     dropServicesInferenceModeMigration.run(workspaceDir);
-    const services = readConfig().services as {
-      inference: Record<string, unknown>;
-    };
+    const services = z
+      .looseObject({ inference: jsonObjectSchema })
+      .parse(readConfig().services);
     expect(services.inference.mode).toBeUndefined();
     expect(services.inference.someOtherKey).toBe(true);
   });
@@ -168,10 +173,9 @@ describe("076-drop-services-inference-mode migration", () => {
       },
     });
     dropServicesInferenceModeMigration.run(workspaceDir);
-    const services = readConfig().services as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(readConfig().services);
     expect(services["inference"]!.mode).toBeUndefined();
     expect(services["image-generation"]!.mode).toBe("managed");
     expect(services["image-generation"]!.provider).toBe("gemini");

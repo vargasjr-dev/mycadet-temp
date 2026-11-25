@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { swapQualityProfileToFableMigration } from "../workspace/migrations/123-swap-quality-profile-to-fable.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -25,8 +28,8 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readProfiles(): Record<string, Record<string, unknown>> {
-  const llm = readConfig().llm as Record<string, unknown>;
-  return llm.profiles as Record<string, Record<string, unknown>>;
+  const llm = jsonObjectSchema.parse(readConfig().llm);
+  return z.record(z.string(), jsonObjectSchema).parse(llm.profiles);
 }
 
 beforeEach(() => {

@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { swapQualityProfileToOpusMigration } from "../workspace/migrations/114-swap-quality-profile-to-opus.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -25,10 +28,9 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readProfiles(): Record<string, Record<string, unknown>> {
-  return (readConfig().llm as Record<string, unknown>).profiles as Record<
-    string,
-    Record<string, unknown>
-  >;
+  return z
+    .record(z.string(), jsonObjectSchema)
+    .parse(jsonObjectSchema.parse(readConfig().llm).profiles);
 }
 
 beforeEach(() => {

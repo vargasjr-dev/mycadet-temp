@@ -25,7 +25,6 @@
  * child processes, and use the real DB (initialized via the test preload's
  * per-file workspace) to verify the row is actually removed.
  */
-
 import {
   afterAll,
   beforeAll,
@@ -36,9 +35,12 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { installAcpConfigStub } from "../../acp/__tests__/helpers/acp-config-stub.js";
 import { installWhichStub } from "../../acp/__tests__/helpers/which-stub.js";
 import type { AcpSessionState } from "../../acp/index.js";
+import type { AssistantEvent } from "../../api/index.js";
 import * as pendingInteractions from "../pending-interactions.js";
 
 const config = await installAcpConfigStub();
@@ -174,6 +176,9 @@ mock.module("../../tools/credentials/broker.js", () => ({
   },
 }));
 
+const bulkDeleteResultSchema = z.object({ deleted: z.number() });
+const deleteResultSchema = z.object({ deleted: z.boolean() });
+
 // Drive the spawn route's high-risk approval gate (ATL-822). `spawnSession`
 // registers a `directResolve` confirmation in `pendingInteractions` and then
 // broadcasts a `confirmation_request`. Real broadcasting needs the event hub /
@@ -184,16 +189,18 @@ mock.module("../../tools/credentials/broker.js", () => ({
 // types are ignored.
 type ApprovalBehavior = "allow" | "deny";
 let approvalBehavior: ApprovalBehavior = "allow";
-const confirmationRequests: Array<Record<string, unknown>> = [];
+const confirmationRequests: Array<
+  Extract<AssistantEvent, { type: "confirmation_request" }>
+> = [];
 
-setBroadcastOverrideForTesting((msg: { type?: string; requestId?: string }) => {
+setBroadcastOverrideForTesting((msg) => {
   if (msg?.type !== "confirmation_request") {
     return;
   }
-  confirmationRequests.push(msg as Record<string, unknown>);
+  confirmationRequests.push(msg);
   const decision = approvalBehavior;
   const interaction = pendingInteractions.resolve(
-    msg.requestId as string,
+    msg.requestId,
     decision === "allow" ? "approved" : "rejected",
   );
   interaction?.directResolve?.(decision);
@@ -201,7 +208,7 @@ setBroadcastOverrideForTesting((msg: { type?: string; requestId?: string }) => {
 
 import { eq } from "drizzle-orm";
 
-import { getDb, getSqlite } from "../../persistence/db-connection.js";
+import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { acpSessionHistory } from "../../persistence/schema/index.js";
 import { setBroadcastOverrideForTesting } from "../assistant-event-hub.js";
@@ -308,7 +315,7 @@ describe("POST /v1/acp/spawn — approval gate", () => {
     expect(prompt.riskLevel).toBe("high");
     expect(prompt.executionTarget).toBe("host");
     expect(prompt.conversationId).toBe("conv-1");
-    expect((prompt.input as { cwd?: string }).cwd).toBe("/work/repo");
+    expect(prompt.input.cwd).toBe("/work/repo");
     // Prompt resolved "allow" → spawn proceeds.
     expect(capturedSpawns).toHaveLength(1);
   });
@@ -565,7 +572,7 @@ describe("DELETE /v1/acp/sessions?status=completed", () => {
   beforeEach(() => {
     inMemoryStates.clear();
     pendingResumeIds.clear();
-    getSqlite().run("DELETE FROM acp_session_history");
+    getDb().delete(acpSessionHistory).run();
   });
 
   test("removes only terminal-state rows; running/initializing rows survive", async () => {
@@ -576,11 +583,11 @@ describe("DELETE /v1/acp/sessions?status=completed", () => {
     seedHistoryRow("row-initializing", "initializing", 5000);
 
     const handler = getBulkDeleteHandler();
-    const result = (await handler({
-      queryParams: { status: "completed" },
-    })) as {
-      deleted: number;
-    };
+    const result = bulkDeleteResultSchema.parse(
+      await handler({
+        queryParams: { status: "completed" },
+      }),
+    );
     expect(result.deleted).toBe(3);
 
     const remaining = listRows();
@@ -607,11 +614,11 @@ describe("DELETE /v1/acp/sessions?status=completed", () => {
     });
 
     const handler = getBulkDeleteHandler();
-    const result = (await handler({
-      queryParams: { status: "completed" },
-    })) as {
-      deleted: number;
-    };
+    const result = bulkDeleteResultSchema.parse(
+      await handler({
+        queryParams: { status: "completed" },
+      }),
+    );
     expect(result.deleted).toBe(1);
 
     const remaining = listRows();
@@ -628,11 +635,11 @@ describe("DELETE /v1/acp/sessions?status=completed", () => {
     pendingResumeIds.add("row-pending-resume");
 
     const handler = getBulkDeleteHandler();
-    const result = (await handler({
-      queryParams: { status: "completed" },
-    })) as {
-      deleted: number;
-    };
+    const result = bulkDeleteResultSchema.parse(
+      await handler({
+        queryParams: { status: "completed" },
+      }),
+    );
     expect(result.deleted).toBe(1);
 
     const remaining = listRows();
@@ -645,11 +652,11 @@ describe("DELETE /v1/acp/sessions?status=completed", () => {
     seedHistoryRow("row-running", "running", 1000);
 
     const handler = getBulkDeleteHandler();
-    const result = (await handler({
-      queryParams: { status: "completed" },
-    })) as {
-      deleted: number;
-    };
+    const result = bulkDeleteResultSchema.parse(
+      await handler({
+        queryParams: { status: "completed" },
+      }),
+    );
     expect(result.deleted).toBe(0);
 
     const remaining = listRows();
@@ -728,11 +735,11 @@ describe("DELETE /v1/acp/sessions/:id", () => {
     insertHistoryRow({ id: "sess-completed", status: "completed" });
 
     const handler = getDeleteSessionHandler();
-    const result = (await handler({
-      pathParams: { id: "sess-completed" },
-    })) as {
-      deleted: boolean;
-    };
+    const result = deleteResultSchema.parse(
+      await handler({
+        pathParams: { id: "sess-completed" },
+      }),
+    );
     expect(result.deleted).toBe(true);
 
     // Row really gone.
@@ -792,9 +799,11 @@ describe("DELETE /v1/acp/sessions/:id", () => {
 
   test("idempotent for unknown id — returns { deleted: false }", async () => {
     const handler = getDeleteSessionHandler();
-    const result = (await handler({
-      pathParams: { id: "does-not-exist" },
-    })) as { deleted: boolean };
+    const result = deleteResultSchema.parse(
+      await handler({
+        pathParams: { id: "does-not-exist" },
+      }),
+    );
     expect(result.deleted).toBe(false);
   });
 
@@ -811,9 +820,11 @@ describe("DELETE /v1/acp/sessions/:id", () => {
     insertHistoryRow({ id: "sess-cancelled", status: "cancelled" });
 
     const handler = getDeleteSessionHandler();
-    const result = (await handler({
-      pathParams: { id: "sess-cancelled" },
-    })) as { deleted: boolean };
+    const result = deleteResultSchema.parse(
+      await handler({
+        pathParams: { id: "sess-cancelled" },
+      }),
+    );
     expect(result.deleted).toBe(true);
   });
 });

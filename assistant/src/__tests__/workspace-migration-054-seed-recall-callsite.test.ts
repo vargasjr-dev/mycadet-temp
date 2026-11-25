@@ -9,9 +9,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { LLMSchema } from "../config/schemas/llm.js";
 import { seedRecallCallsiteMigration } from "../workspace/migrations/054-seed-recall-callsite.js";
+import { configWithCallSitesSchema } from "./helpers/migration-llm-schema.js";
 
 let workspaceDir: string;
 
@@ -87,9 +90,7 @@ describe("054-seed-recall-callsite migration", () => {
     seedRecallCallsiteMigration.run(workspaceDir);
 
     expect(existsSync(configPath())).toBe(true);
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual({
       model: "claude-haiku-4-5-20251001",
       maxTokens: 4096,
@@ -115,9 +116,7 @@ describe("054-seed-recall-callsite migration", () => {
 
     seedRecallCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual({
       profile: "cost-optimized",
       maxTokens: 4096,
@@ -153,9 +152,7 @@ describe("054-seed-recall-callsite migration", () => {
 
     seedRecallCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual(userRecall);
   });
 
@@ -174,9 +171,7 @@ describe("054-seed-recall-callsite migration", () => {
 
     seedRecallCallsiteMigration.run(workspaceDir);
 
-    const config = readConfig() as {
-      llm: { callSites: Record<string, Record<string, unknown>> };
-    };
+    const config = configWithCallSitesSchema.parse(readConfig());
     expect(config.llm.callSites.recall).toEqual({
       model: "gpt-5.4-nano",
       maxTokens: 4096,
@@ -204,7 +199,7 @@ describe("054-seed-recall-callsite migration", () => {
 
     seedRecallCallsiteMigration.run(workspaceDir);
 
-    const onDisk = readConfig() as { llm: unknown };
+    const onDisk = z.looseObject({ llm: z.unknown() }).parse(readConfig());
     const parsed = LLMSchema.parse(onDisk.llm);
     const resolved = resolveCallSiteConfig("recall", parsed);
     expect(resolved.model).toBe("claude-haiku-4-5-20251001");

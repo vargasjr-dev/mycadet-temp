@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { removeAnalyzeConversationConfigMigration } from "../workspace/migrations/129-remove-analyze-conversation-config.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -107,7 +110,9 @@ describe("129-remove-analyze-conversation-config migration", () => {
     removeAnalyzeConversationConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const llm = config.llm as { callSites: Record<string, unknown> };
+    const llm = z
+      .looseObject({ callSites: jsonObjectSchema })
+      .parse(config.llm);
     expect(llm.callSites.analyzeConversation).toBeUndefined();
     expect(llm.callSites.mainAgent).toEqual({ profile: "balanced" });
   });
@@ -140,7 +145,9 @@ describe("129-remove-analyze-conversation-config migration", () => {
 
     const config = readConfig();
     expect(config.analysis).toBeUndefined();
-    const llm = config.llm as { callSites: Record<string, unknown> };
+    const llm = z
+      .looseObject({ callSites: jsonObjectSchema })
+      .parse(config.llm);
     expect(llm.callSites.analyzeConversation).toBeUndefined();
     expect(llm.callSites.recall).toEqual({ effort: "low" });
   });

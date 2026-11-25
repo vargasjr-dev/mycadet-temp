@@ -4,11 +4,15 @@
  * carrying `seq`), while terminal DB rows source it from persisted
  * `eventLogJson`.
  */
-
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AcpSessionState } from "../../acp/index.js";
-import type { AcpSessionUpdateEvent } from "../../api/events/acp-session-update.js";
+import {
+  type AcpSessionUpdateEvent,
+  AcpSessionUpdateEventSchema,
+} from "../../api/events/acp-session-update.js";
 
 const inMemoryStates = new Map<string, AcpSessionState>();
 const bufferedUpdates = new Map<string, AcpSessionUpdateEvent[]>();
@@ -40,7 +44,7 @@ import {
 } from "../../acp/__tests__/helpers/acp-history-db.js";
 import { initializeDb } from "../../persistence/db-init.js";
 
-const { ROUTES } = await import("./acp-routes.js");
+const { ROUTES, sessionEntrySchema } = await import("./acp-routes.js");
 
 await initializeDb();
 
@@ -93,6 +97,14 @@ afterAll(() => {
   clearHistory();
 });
 
+const sessionListSchema = z.object({
+  sessions: z.array(
+    sessionEntrySchema.loose().extend({
+      eventLog: z.array(AcpSessionUpdateEventSchema.loose()).optional(),
+    }),
+  ),
+});
+
 describe("GET /v1/acp/sessions — eventLog", () => {
   test("active in-memory session returns eventLog from the live ring buffer with seq", async () => {
     inMemoryStates.set("active", makeInMemoryState("active", "conv-1"));
@@ -102,16 +114,18 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     ]);
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     const session = result.sessions.find((s) => s.id === "active");
     expect(session).toBeDefined();
-    const eventLog = session?.eventLog as AcpSessionUpdateEvent[];
+    const eventLog = session?.eventLog;
     expect(eventLog).toHaveLength(2);
-    expect(eventLog.map((u) => u.seq)).toEqual([1, 2]);
-    expect(eventLog[0]?.content).toBe("hello");
+    expect(eventLog?.map((u) => u.seq)).toEqual([1, 2]);
+    expect(eventLog?.[0]?.content).toBe("hello");
   });
 
   test("active in-memory session carries task and parentToolUseId from the SessionEntry", async () => {
@@ -124,9 +138,11 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     );
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     const session = result.sessions.find((s) => s.id === "active");
     expect(session).toBeDefined();
@@ -149,16 +165,18 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     });
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     const session = result.sessions.find((s) => s.id === "terminal");
     expect(session).toBeDefined();
-    const eventLog = session?.eventLog as AcpSessionUpdateEvent[];
+    const eventLog = session?.eventLog;
     expect(eventLog).toHaveLength(1);
-    expect(eventLog[0]?.seq).toBe(7);
-    expect(eventLog[0]?.content).toBe("persisted");
+    expect(eventLog?.[0]?.seq).toBe(7);
+    expect(eventLog?.[0]?.content).toBe("persisted");
   });
 
   test("active and terminal sessions both surface tool_call rawInput/rawOutput in eventLog", async () => {
@@ -198,17 +216,19 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     });
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     for (const id of ["active", "terminal"]) {
       const session = result.sessions.find((s) => s.id === id);
       expect(session).toBeDefined();
-      const eventLog = session?.eventLog as AcpSessionUpdateEvent[];
+      const eventLog = session?.eventLog;
       expect(eventLog).toHaveLength(1);
-      expect(eventLog[0]?.rawInput).toEqual(rawInput);
-      expect(eventLog[0]?.rawOutput).toBe(rawOutput);
+      expect(eventLog?.[0]?.rawInput).toEqual(rawInput);
+      expect(eventLog?.[0]?.rawOutput).toBe(rawOutput);
     }
   });
 
@@ -226,9 +246,11 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     );
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     const session = result.sessions.find((s) => s.id === "active");
     expect(session).toBeDefined();
@@ -251,9 +273,11 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     });
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     const session = result.sessions.find((s) => s.id === "terminal-usage");
     expect(session).toBeDefined();
@@ -273,9 +297,11 @@ describe("GET /v1/acp/sessions — eventLog", () => {
     });
 
     const handler = getListHandler();
-    const result = (await handler({
-      queryParams: { conversationId: "conv-1" },
-    })) as { sessions: Array<Record<string, unknown>> };
+    const result = sessionListSchema.parse(
+      await handler({
+        queryParams: { conversationId: "conv-1" },
+      }),
+    );
 
     const session = result.sessions.find((s) => s.id === "terminal-legacy");
     expect(session).toBeDefined();

@@ -9,7 +9,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { repointManagedConnectionsToCadetMigration } from "../workspace/migrations/125-repoint-managed-connections-to-cadet.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -25,7 +28,7 @@ function readConfig(): Record<string, unknown> {
 }
 
 function readLlm(): Record<string, unknown> {
-  return readConfig().llm as Record<string, unknown>;
+  return jsonObjectSchema.parse(readConfig().llm);
 }
 
 beforeEach(() => {
@@ -98,8 +101,10 @@ describe("125-repoint-managed-connections-to-cadet migration", () => {
     repointManagedConnectionsToCadetMigration.run(workspaceDir);
 
     const llm = readLlm();
-    const profiles = llm.profiles as Record<string, Record<string, unknown>>;
-    const callSites = llm.callSites as Record<string, Record<string, unknown>>;
+    const profiles = z.record(z.string(), jsonObjectSchema).parse(llm.profiles);
+    const callSites = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(llm.callSites);
 
     expect((llm.default as Record<string, unknown>).provider_connection).toBe(
       "cadet",

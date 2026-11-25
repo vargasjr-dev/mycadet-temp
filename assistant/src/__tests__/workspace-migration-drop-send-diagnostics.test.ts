@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { dropSendDiagnosticsMigration } from "../workspace/migrations/107-drop-send-diagnostics.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Real fs: each test runs the migration against a fresh temp workspace and
 // asserts on the file state it leaves behind.
@@ -44,7 +45,7 @@ describe("107-drop-send-diagnostics migration", () => {
 
     dropSendDiagnosticsMigration.run(WORKSPACE_DIR);
 
-    const written = readConfig() as Record<string, unknown>;
+    const written = jsonObjectSchema.parse(readConfig());
     expect(written.sendDiagnostics).toBeUndefined();
     expect(written.legacyDiagnosticsOptOut).toBe(true);
     expect(written.someSetting).toBe("value");
@@ -55,7 +56,7 @@ describe("107-drop-send-diagnostics migration", () => {
 
     dropSendDiagnosticsMigration.run(WORKSPACE_DIR);
 
-    const written = readConfig() as Record<string, unknown>;
+    const written = jsonObjectSchema.parse(readConfig());
     expect(written.sendDiagnostics).toBeUndefined();
     expect(written.legacyDiagnosticsOptOut).toBeUndefined();
   });
@@ -65,7 +66,7 @@ describe("107-drop-send-diagnostics migration", () => {
 
     dropSendDiagnosticsMigration.run(WORKSPACE_DIR);
 
-    const written = readConfig() as Record<string, unknown>;
+    const written = jsonObjectSchema.parse(readConfig());
     expect(written.sendDiagnostics).toBeUndefined();
     expect(written.legacyDiagnosticsOptOut).toBeUndefined();
   });
