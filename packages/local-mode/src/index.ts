@@ -151,6 +151,7 @@ export {
 export {
   waitForDaemonReady,
   checkHealth,
+  probeGatewayReadiness,
   type GatewayHealth,
 } from "./daemon-readiness";
 export {

@@ -116,6 +116,32 @@ export async function probeDaemonReadiness(
 }
 
 /**
+ * Ask the gateway's `/readyz` whether the assistant behind it can answer.
+ * `/healthz` only tells you the gateway is up, even if the assistant is dead.
+ */
+export async function probeGatewayReadiness(
+  gatewayUrl: string,
+): Promise<DaemonReadiness> {
+  try {
+    const response = await loopbackSafeFetch(`${gatewayUrl}/readyz`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    const body: unknown = await response.json().catch(() => null);
+    if (
+      typeof body === "object" &&
+      body !== null &&
+      "status" in body &&
+      body.status === "upstream_unreachable"
+    ) {
+      return "unreachable";
+    }
+    return classifyReadyzResponse(response.ok, body);
+  } catch {
+    return "unreachable";
+  }
+}
+
+/**
  * `probeDaemonReadiness` with one retry on a transient timeout: a single
  * probe's 1.5s budget can elapse while a synchronous migration step blocks
  * the daemon's event loop, misreporting a live daemon as unreachable.

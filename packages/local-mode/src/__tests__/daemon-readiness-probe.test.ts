@@ -12,6 +12,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import {
   probeDaemonReadiness,
+  probeGatewayReadiness,
   waitForDaemonMigrationsReady,
 } from "../daemon-readiness";
 
@@ -154,5 +155,16 @@ describe("waitForDaemonMigrationsReady", () => {
       Date.now() + 600,
     );
     expect(readiness).toBe("migrating");
+  });
+});
+
+describe("probeGatewayReadiness", () => {
+  test("a gateway whose assistant is down reads as unreachable", async () => {
+    const port = serveReadyz(() =>
+      Response.json({ status: "upstream_unreachable" }, { status: 503 }),
+    );
+    expect(await probeGatewayReadiness(`http://127.0.0.1:${port}`)).toBe(
+      "unreachable",
+    );
   });
 });
