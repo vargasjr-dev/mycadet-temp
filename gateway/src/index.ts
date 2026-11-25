@@ -760,16 +760,10 @@ async function main() {
   whatsappDedupCache.startCleanup();
   emailDedupCache.startCleanup();
 
-  const stopSlackClient = startSlackGateway();
-
-  const stopDiscordClient = startDiscordGateway();
-
-  // The Tunnel is the browser's ingress for web live voice — which every
-  // assistant has — so it starts unconditionally at startup. Twilio voice and
-  // credential links ride the same always-on tunnel; the client self-manages
-  // from here (ingress disable/enable transitions, reconnects). Its stop runs
-  // once in the SIGTERM shutdown list.
-  tunnelClient.start();
+  function startTunnel(): StopTask {
+    tunnelClient.start();
+    return () => tunnelClient.stop();
+  }
 
   const tasks: (() => StopTask | Promise<StopTask>)[] = [
     startCredentialWatcher,
@@ -777,6 +771,9 @@ async function main() {
     startConfigFileWatcher,
     startSleepWakeDetector,
     startInboundEventExpirationCleanup,
+    startSlackGateway,
+    startDiscordGateway,
+    startTunnel,
   ];
   const shutdownTasks: StopTask[] = await Promise.all(
     tasks.map((task) => task()),
@@ -786,9 +783,6 @@ async function main() {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
     const allShutdownTasks: StopTask[] = [
-      () => tunnelClient.stop(),
-      stopDiscordClient,
-      stopSlackClient,
       () => telegramDedupCache.stopCleanup(),
       () => whatsappDedupCache.stopCleanup(),
       () => emailDedupCache.stopCleanup(),

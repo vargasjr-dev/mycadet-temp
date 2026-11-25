@@ -232,15 +232,6 @@ export class TunnelClient {
     }, RULES_REFRESH_DEBOUNCE_MS);
   }
 
-  /**
-   * Bring the tunnel up. The gateway starts it unconditionally at startup:
-   * the tunnel is the browser's ingress for web live voice, which every
-   * assistant has, and Twilio voice plus credential links ride the same
-   * always-on tunnel — so no integration owns a start/stop pair. From here
-   * the client self-manages: config invalidation drives the public-ingress
-   * disable/enable transitions and reconnects, and `stop()` runs once in the
-   * gateway's SIGTERM shutdown list.
-   */
   start(): void {
     if (this.running || !this.options.tunnelBaseUrl) return;
     log.info("Starting Tunnel client");
