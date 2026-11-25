@@ -114,7 +114,8 @@ function makeContext(): ToolContext {
   return {
     conversationId: "conv-123",
     workingDir,
-  } as unknown as ToolContext;
+    trustClass: "guardian",
+  };
 }
 
 const CONFIG_DIR = join(

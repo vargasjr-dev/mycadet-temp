@@ -7,7 +7,7 @@ import {
   getDisplayMetaForConversations,
 } from "../persistence/conversation-crud.js";
 import { ensureGroupMigration } from "../persistence/conversation-group-migration.js";
-import { getDb } from "../persistence/db-connection.js";
+import { getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { executeConversationGroupCreate } from "../tools/conversation-groups/group_create.js";
 import { executeConversationGroupList } from "../tools/conversation-groups/group_list.js";
@@ -18,7 +18,7 @@ await initializeDb();
 ensureGroupMigration();
 
 function getRawDb(): Database {
-  return (getDb() as unknown as { $client: Database }).$client;
+  return getSqlite();
 }
 
 const ctx: ToolContext = {

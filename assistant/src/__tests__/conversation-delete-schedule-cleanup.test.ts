@@ -21,9 +21,9 @@ import {
   getConversation,
 } from "../persistence/conversation-crud.js";
 import {
-  getDb,
   getLogsSqlite,
   getMemorySqlite,
+  getSqlite,
 } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { ROUTES } from "../runtime/routes/conversation-management-routes.js";
@@ -32,7 +32,7 @@ import { createSchedule, getSchedule } from "../schedule/schedule-store.js";
 await initializeDb();
 
 function getRawDb(): Database {
-  return (getDb() as unknown as { $client: Database }).$client;
+  return getSqlite();
 }
 
 const deleteRoute = ROUTES.find((r) => r.operationId === "deleteConversation")!;

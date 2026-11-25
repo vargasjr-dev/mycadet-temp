@@ -29,12 +29,17 @@ function setupDb(): DrizzleDb {
   return db;
 }
 
-const cadetConnection = {
+const cadetConnection: ProviderConnection = {
   name: "cadet",
   provider: "cadet",
   auth: { type: "platform" },
   label: "Cadet",
-} as unknown as ProviderConnection;
+  baseUrl: null,
+  models: null,
+  createdAt: 0,
+  updatedAt: 0,
+  isManaged: true,
+};
 
 const resolvedAuth: ResolvedAuth = {
   kind: "header",
@@ -106,7 +111,10 @@ describe("effectiveConnectionAuth", () => {
     expect(
       effectiveConnectionAuth({ provider: "anthropic", auth: keyed }),
     ).toBe(keyed);
-    const subscription: Auth = { type: "oauth_subscription" } as Auth;
+    const subscription: Auth = {
+      type: "oauth_subscription",
+      credential: "vault/openai",
+    };
     expect(
       effectiveConnectionAuth({ provider: "openai", auth: subscription }),
     ).toBe(subscription);

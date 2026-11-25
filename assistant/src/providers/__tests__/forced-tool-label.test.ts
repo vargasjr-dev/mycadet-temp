@@ -13,22 +13,29 @@ const TOOL: ShortLabelTool = {
   argumentDescription: "A short label.",
 };
 
-function toolResponse(input: unknown, name = TOOL.name): ProviderResponse {
+function toolResponse(
+  input: Record<string, unknown>,
+  name = TOOL.name,
+): ProviderResponse {
   return {
     content: [{ type: "tool_use", id: "tu-1", name, input }],
     stopReason: "tool_use",
-  } as unknown as ProviderResponse;
+    model: "test-model",
+    usage: { inputTokens: 0, outputTokens: 0 },
+  };
 }
 
 function textResponse(text: string): ProviderResponse {
   return {
     content: [{ type: "text", text }],
     stopReason: "end_turn",
-  } as unknown as ProviderResponse;
+    model: "test-model",
+    usage: { inputTokens: 0, outputTokens: 0 },
+  };
 }
 
-function stubProvider(sendMessage: Provider["sendMessage"]): Provider {
-  return { name: "stub", sendMessage: mock(sendMessage) } as Provider;
+function stubProvider(sendMessage: Provider["sendMessage"]) {
+  return { name: "stub", sendMessage: mock(sendMessage) };
 }
 
 function request(provider: Provider, signal?: AbortSignal) {
@@ -53,13 +60,15 @@ describe("requestShortLabel", () => {
 
     expect(await request(provider)).toBe("Checking the calendar");
 
-    const [, options] = (provider.sendMessage as ReturnType<typeof mock>).mock
-      .calls[0] as [unknown, Record<string, unknown>];
-    const config = options.config as Record<string, unknown>;
+    const [, options] = provider.sendMessage.mock.calls[0];
+    const config = options?.config;
+    if (!config) {
+      throw new Error("Expected the provider call to have a config");
+    }
     expect(config.callSite).toBe("conversationTitle");
     expect(config.conversationId).toBe("conv-1");
     expect(config.tool_choice).toEqual({ type: "tool", name: TOOL.name });
-    expect((options.tools as Array<{ name: string }>)[0]?.name).toBe(TOOL.name);
+    expect(options?.tools?.[0]?.name).toBe(TOOL.name);
   });
 
   test("keeps a compliant plain-text answer when the tool is ignored", async () => {

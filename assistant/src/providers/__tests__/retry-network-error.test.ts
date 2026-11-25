@@ -14,11 +14,12 @@ const { ProviderError } = await import("../../util/errors.js");
 
 import type { Message, Provider, ProviderResponse } from "../types.js";
 
-const OK_RESPONSE = {
+const OK_RESPONSE: ProviderResponse = {
   content: [{ type: "text", text: "ok" }],
   model: "test-model",
   usage: { inputTokens: 1, outputTokens: 1 },
-} as unknown as ProviderResponse;
+  stopReason: "end_turn",
+};
 
 const MESSAGES: Message[] = [
   { role: "user", content: [{ type: "text", text: "hi" }] },

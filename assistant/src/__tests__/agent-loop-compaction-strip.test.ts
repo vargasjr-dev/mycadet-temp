@@ -15,13 +15,12 @@ import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import type { AgentEvent } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import { ContextWindowConfig } from "../config/schemas/inference.js";
+import { ContextWindowConfigSchema } from "../config/schemas/inference.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import {
   createContextWindowManager,
   disposeContextWindowManager,
-  getContextWindowManager,
 } from "../plugins/defaults/compaction/manager-store.js";
 import {
   registerPlugin,
@@ -34,6 +33,7 @@ import type {
   SendMessageOptions,
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
+import { makeCompactionResult } from "./helpers/compaction-result.js";
 
 const testPostCompactPlugin = {
   manifest: { name: "test-post-compact", version: "0.0.0" },
@@ -104,30 +104,32 @@ interface CompactionInputCapture {
 function installCapturingManager(capture: CompactionInputCapture): {
   trust: TrustContext;
 } {
-  createContextWindowManager({
-    provider: { name: "mock-provider" } as unknown as Provider,
-    config: {} as unknown as ContextWindowConfig,
+  const manager = createContextWindowManager({
+    provider: {
+      name: "mock-provider",
+      sendMessage: async () => {
+        throw new Error("Compaction fixture does not send model requests");
+      },
+    },
+    config: ContextWindowConfigSchema.parse({}),
     conversationId: CONVERSATION_ID,
   });
-  const manager = getContextWindowManager(CONVERSATION_ID);
-  if (manager) {
-    manager.maybeCompact = (async (messages: Message[]) => {
-      capture.budget = messages;
-      return {
-        messages: [injectedUserMessage],
-        compacted: true,
-        exhausted: false,
-      };
-    }) as unknown as typeof manager.maybeCompact;
-    manager.recoverContextOverflow = (async (messages: Message[]) => {
-      capture.overflow = messages;
-      return {
-        messages: [injectedUserMessage],
-        compacted: true,
-        exhausted: false,
-      };
-    }) as unknown as typeof manager.recoverContextOverflow;
-  }
+  manager.maybeCompact = async (messages) => {
+    capture.budget = messages;
+    return makeCompactionResult({
+      messages: [injectedUserMessage],
+      compacted: true,
+      exhausted: false,
+    });
+  };
+  manager.recoverContextOverflow = async (messages) => {
+    capture.overflow = messages;
+    return makeCompactionResult({
+      messages: [injectedUserMessage],
+      compacted: true,
+      exhausted: false,
+    });
+  };
   return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 

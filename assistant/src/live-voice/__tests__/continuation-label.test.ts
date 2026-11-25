@@ -49,11 +49,13 @@ function labelResponse(label: string): ProviderResponse {
       },
     ],
     stopReason: "tool_use",
-  } as unknown as ProviderResponse;
+    model: "test-model",
+    usage: { inputTokens: 0, outputTokens: 0 },
+  };
 }
 
 function stubProvider(sendMessage: Provider["sendMessage"]): Provider {
-  return { name: "stub", sendMessage: mock(sendMessage) } as Provider;
+  return { name: "stub", sendMessage: mock(sendMessage) };
 }
 
 const LABEL_ARGS = {
@@ -75,15 +77,19 @@ describe("createContinuationLabeler", () => {
 
     expect(await labeler(LABEL_ARGS)).toBe("Checking tomorrow's calendar");
 
-    const config = captured?.[1]?.config as Record<string, unknown>;
+    const config = captured?.[1]?.config;
+    if (!config) {
+      throw new Error("Expected provider call config");
+    }
     expect(config.callSite).toBe("voiceContinuationLabel");
     expect(config.conversationId).toBe("conversation-123");
     expect(config.tool_choice).toEqual({
       type: "tool",
       name: "record_task_label",
     });
-    const prompt = (captured?.[0]?.[0]?.content as Array<{ text: string }>)[0]
-      ?.text;
+    const content = captured?.[0]?.[0]?.content;
+    const firstBlock = Array.isArray(content) ? content[0] : undefined;
+    const prompt = firstBlock?.type === "text" ? firstBlock.text : undefined;
     expect(prompt).toContain(LABEL_ARGS.interruptedRequest);
   });
 

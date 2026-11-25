@@ -1,18 +1,16 @@
-import type { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { eq } from "drizzle-orm";
 
 import { createConversation } from "../persistence/conversation-crud.js";
 import { ensureGroupMigration } from "../persistence/conversation-group-migration.js";
 import { listConversations } from "../persistence/conversation-queries.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { conversations } from "../persistence/schema/index.js";
 
 await initializeDb();
 ensureGroupMigration();
-
-function getRawDb(): Database {
-  return (getDb() as unknown as { $client: Database }).$client;
-}
 
 /**
  * `originChannel` is what lets each sidebar channel card fetch its own rows,
@@ -27,22 +25,20 @@ function getRawDb(): Database {
  */
 describe("listConversations originChannel filter", () => {
   beforeEach(() => {
-    const raw = getRawDb();
-    raw.run("DELETE FROM conversations");
+    getDb().delete(conversations).run();
   });
 
   /** Set `origin_channel` directly; `createConversation` leaves it unset. */
   function stamp(id: string, originChannel: string | null): void {
-    getRawDb().run("UPDATE conversations SET origin_channel = ? WHERE id = ?", [
-      originChannel,
-      id,
-    ]);
+    getDb()
+      .update(conversations)
+      .set({ originChannel })
+      .where(eq(conversations.id, id))
+      .run();
   }
 
   function listedIds(originChannel: string): string[] {
-    return listConversations({ originChannel } as Parameters<
-      typeof listConversations
-    >[0]).map((c) => c.id);
+    return listConversations({ originChannel }).map((c) => c.id);
   }
 
   test("cadet matches rows that were never attributed", () => {

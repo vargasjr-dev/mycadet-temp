@@ -14,14 +14,13 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import { AgentLoop } from "../agent/loop.js";
-import { ContextWindowConfig } from "../config/schemas/inference.js";
+import { ContextWindowConfigSchema } from "../config/schemas/inference.js";
 import { stripAgedSightFrames } from "../daemon/conversation-sight-frames.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import {
   createContextWindowManager,
   disposeContextWindowManager,
-  getContextWindowManager,
 } from "../plugins/defaults/compaction/manager-store.js";
 import {
   registerPlugin,
@@ -34,6 +33,7 @@ import type {
   ProviderResponse,
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
+import { makeCompactionResult } from "./helpers/compaction-result.js";
 
 const testPostCompactPlugin = {
   manifest: { name: "test-post-compact-transform", version: "0.0.0" },
@@ -127,22 +127,24 @@ function createOverflowingProvider(requests: Message[][]): Provider {
  * loop installs more frames than the bound allows.
  */
 function installOverfullCompactionManager(): { trust: TrustContext } {
-  createContextWindowManager({
-    provider: { name: "mock-provider" } as unknown as Provider,
-    config: {} as unknown as ContextWindowConfig,
+  const manager = createContextWindowManager({
+    provider: {
+      name: "mock-provider",
+      sendMessage: async () => {
+        throw new Error("Compaction fixture does not send model requests");
+      },
+    },
+    config: ContextWindowConfigSchema.parse({}),
     conversationId: CONVERSATION_ID,
   });
-  const manager = getContextWindowManager(CONVERSATION_ID);
-  if (manager) {
-    const rebuild = async () => ({
+  const rebuild = async () =>
+    makeCompactionResult({
       messages: compactedHistoryWithFourFrames(),
       compacted: true,
       exhausted: false,
     });
-    manager.maybeCompact = rebuild as unknown as typeof manager.maybeCompact;
-    manager.recoverContextOverflow =
-      rebuild as unknown as typeof manager.recoverContextOverflow;
-  }
+  manager.maybeCompact = rebuild;
+  manager.recoverContextOverflow = rebuild;
   return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 

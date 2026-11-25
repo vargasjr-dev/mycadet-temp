@@ -110,7 +110,7 @@ import {
   setSubagentConversation,
 } from "../daemon/conversation-registry.js";
 import { addMessage } from "../persistence/conversation-crud.js";
-import { getDb } from "../persistence/db-connection.js";
+import { getDb, getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { wakeAgentForOpportunity } from "../runtime/agent-wake.js";
 import { createSchedule, getScheduleRuns } from "../schedule/schedule-store.js";
@@ -130,8 +130,7 @@ import { setConfig } from "./helpers/set-config.js";
 await initializeDb();
 
 function getRawDb(): import("bun:sqlite").Database {
-  return (getDb() as unknown as { $client: import("bun:sqlite").Database })
-    .$client;
+  return getSqlite();
 }
 
 function latestAssistantText(conversationId: string): string | undefined {

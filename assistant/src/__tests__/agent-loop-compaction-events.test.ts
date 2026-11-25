@@ -14,13 +14,12 @@ import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import type { AgentEvent } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import { ContextWindowConfig } from "../config/schemas/inference.js";
+import { ContextWindowConfigSchema } from "../config/schemas/inference.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import {
   createContextWindowManager,
   disposeContextWindowManager,
-  getContextWindowManager,
 } from "../plugins/defaults/compaction/manager-store.js";
 import {
   registerPlugin,
@@ -33,6 +32,7 @@ import type {
   SendMessageOptions,
 } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
+import { makeCompactionResult } from "./helpers/compaction-result.js";
 
 // Identity post-compact hook: keeps the history the loop handed in, standing
 // in for the daemon-level re-injector these unit tests do not run.
@@ -102,16 +102,18 @@ function fakeCompaction(
   conversationId: string,
   result: { compacted: boolean; exhausted: boolean },
 ): { trust: TrustContext } {
-  createContextWindowManager({
-    provider: { name: "mock-provider" } as unknown as Provider,
-    config: {} as unknown as ContextWindowConfig,
+  const manager = createContextWindowManager({
+    provider: {
+      name: "mock-provider",
+      sendMessage: async () => {
+        throw new Error("Compaction fixture does not send model requests");
+      },
+    },
+    config: ContextWindowConfigSchema.parse({}),
     conversationId,
   });
-  const manager = getContextWindowManager(conversationId);
-  if (manager) {
-    manager.maybeCompact = (async () =>
-      result) as unknown as typeof manager.maybeCompact;
-  }
+  manager.maybeCompact = async (messages) =>
+    makeCompactionResult({ messages, ...result });
   return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 

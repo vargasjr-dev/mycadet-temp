@@ -36,8 +36,8 @@ afterEach(() => {
   rmSync(workspace, { recursive: true, force: true });
 });
 
-function ctx(trustClass: string): ToolContext {
-  return { trustClass } as unknown as ToolContext;
+function ctx(trustClass: ToolContext["trustClass"]): ToolContext {
+  return { conversationId: "conv-test", workingDir: workspace, trustClass };
 }
 
 async function seedPage(slug: string): Promise<void> {

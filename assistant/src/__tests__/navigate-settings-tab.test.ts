@@ -4,7 +4,12 @@ import { run } from "../config/bundled-skills/settings/tools/navigate-settings-t
 import type { ToolContext } from "../tools/types.js";
 
 function makeContext(sendToClient?: (msg: unknown) => void): ToolContext {
-  return { sendToClient } as unknown as ToolContext;
+  return {
+    conversationId: "conv-test",
+    workingDir: "/tmp",
+    trustClass: "guardian",
+    sendToClient,
+  };
 }
 
 const CANONICAL_TABS = [

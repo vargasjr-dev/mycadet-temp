@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { getDb } from "../persistence/db-connection.js";
+import { getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { executeFollowupCreate } from "../tools/followups/followup_create.js";
 import { executeFollowupList } from "../tools/followups/followup_list.js";
@@ -11,7 +11,7 @@ import type { ToolContext } from "../tools/types.js";
 await initializeDb();
 
 function getRawDb(): Database {
-  return (getDb() as unknown as { $client: Database }).$client;
+  return getSqlite();
 }
 
 const ctx: ToolContext = {

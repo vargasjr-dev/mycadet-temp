@@ -33,7 +33,7 @@ let sendMessageImpl: (() => Promise<ProviderResponse>) | null = null;
 // pool.
 let lastMessages: unknown = null;
 
-const mockProvider = {
+const mockProvider: Provider = {
   name: "mock-memory-v3-selector",
   async sendMessage(messages: unknown): Promise<ProviderResponse> {
     lastMessages = messages;
@@ -42,7 +42,7 @@ const mockProvider = {
     }
     return sendMessageImpl();
   },
-} as unknown as Provider;
+};
 
 mock.module("@mycadet/plugin-api", () => ({
   ...realPluginApi,

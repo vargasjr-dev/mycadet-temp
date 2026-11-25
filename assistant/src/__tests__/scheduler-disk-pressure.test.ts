@@ -77,7 +77,7 @@ mock.module("../notifications/emit-signal.js", () => ({
   emitNotificationSignal: mockEmitNotificationSignal,
 }));
 
-import { getDb } from "../persistence/db-connection.js";
+import { getDb, getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { createSchedule } from "../schedule/schedule-store.js";
 import { runScheduleOnce } from "../schedule/scheduler.js";
@@ -85,8 +85,7 @@ import { runScheduleOnce } from "../schedule/scheduler.js";
 await initializeDb();
 
 function rawDb(): import("bun:sqlite").Database {
-  return (getDb() as unknown as { $client: import("bun:sqlite").Database })
-    .$client;
+  return getSqlite();
 }
 
 describe("scheduler disk pressure gate", () => {

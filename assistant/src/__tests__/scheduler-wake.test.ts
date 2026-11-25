@@ -23,7 +23,7 @@ import {
   createConversation,
   setConversationOriginChannelIfUnset,
 } from "../persistence/conversation-crud.js";
-import { getDb } from "../persistence/db-connection.js";
+import { getDb, getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { resolveDefaultScheduleInferenceProfile } from "../schedule/inference-profile.js";
 import {
@@ -36,8 +36,7 @@ await initializeDb();
 
 /** Access the underlying bun:sqlite Database for raw parameterized queries. */
 function getRawDb(): import("bun:sqlite").Database {
-  return (getDb() as unknown as { $client: import("bun:sqlite").Database })
-    .$client;
+  return getSqlite();
 }
 
 /** Force a schedule to be due by setting next_run_at in the past. */

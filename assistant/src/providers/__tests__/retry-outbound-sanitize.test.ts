@@ -17,11 +17,12 @@ import type {
   SendMessageOptions,
 } from "../types.js";
 
-const OK_RESPONSE = {
+const OK_RESPONSE: ProviderResponse = {
   content: [{ type: "text", text: "ok" }],
   model: "test-model",
   usage: { inputTokens: 1, outputTokens: 1 },
-} as unknown as ProviderResponse;
+  stopReason: "end_turn",
+};
 
 const LONE_HIGH = "\uD83C";
 const LONE_LOW = "\uDF89";

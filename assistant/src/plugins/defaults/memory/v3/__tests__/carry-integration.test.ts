@@ -688,7 +688,7 @@ async function runTurn(
   // turn's sections (and the prune valve is scheduled).
   const commit = sections.meta?.[MEMORY_V3_COMMIT_META_KEY];
   if (typeof commit === "function") {
-    (commit as () => void)();
+    commit();
   }
   const netNew = new Set(
     [...refIds(getActiveSections(convId))].filter(
@@ -871,11 +871,10 @@ function ownedBlocks(message: Message): Array<{ type: "text"; text: string }> {
  *  after-memory-prefix placement does. */
 function spliceAfterMemoryPrefix(tail: Message, block: ContentBlock): void {
   let prefix = 0;
-  while (
-    prefix < tail.content.length &&
-    tail.content[prefix]!.type === "text" &&
-    (tail.content[prefix] as { text: string }).text.startsWith("<memory>\n")
-  ) {
+  for (const candidate of tail.content) {
+    if (candidate.type !== "text" || !candidate.text.startsWith("<memory>\n")) {
+      break;
+    }
     prefix += 1;
   }
   tail.content = [
@@ -955,7 +954,7 @@ async function retryTurn(
     }
   }
   if (typeof commit === "function") {
-    (commit as () => void)();
+    commit();
   }
   const pointer = await memoryV3PointerInjector.produce(ctx);
   if (pointer && pointer.text.length > 0) {

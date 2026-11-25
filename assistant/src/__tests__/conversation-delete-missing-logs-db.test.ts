@@ -31,9 +31,9 @@ import {
   getConversation,
 } from "../persistence/conversation-crud.js";
 import {
-  getDb,
   getLogsDb,
   getLogsSqlite,
+  getSqlite,
   getTelemetryDb,
   getTelemetrySqlite,
 } from "../persistence/db-connection.js";
@@ -64,7 +64,7 @@ const logsSchemaDdl = captureSchemaDdl(getLogsSqlite()!);
 const telemetrySchemaDdl = captureSchemaDdl(getTelemetrySqlite()!);
 
 function getRawDb(): Database {
-  return (getDb() as unknown as { $client: Database }).$client;
+  return getSqlite();
 }
 
 /**

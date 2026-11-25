@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, expect, mock, test } from "bun:test";
 
-import type { HostBrowserProxy } from "../../../../daemon/host-browser-proxy.js";
+import { HostBrowserProxy } from "../../../../daemon/host-browser-proxy.js";
 import { CdpError } from "../errors.js";
 import {
   createExtensionCdpClient,
@@ -32,7 +32,8 @@ function fakeProxy(
       signal?: AbortSignal,
     ): Promise<ProxyResult> => handler(input, conversationId, signal),
   );
-  const proxy = { request } as unknown as HostBrowserProxy;
+  const proxy = new HostBrowserProxy();
+  proxy.request = request;
   return { proxy, request };
 }
 

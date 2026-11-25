@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { createConversation } from "../persistence/conversation-crud.js";
 import { ensureGroupMigration } from "../persistence/conversation-group-migration.js";
 import { listConversations } from "../persistence/conversation-queries.js";
-import { getDb } from "../persistence/db-connection.js";
+import { getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { createGroup } from "../persistence/group-crud.js";
 
@@ -12,7 +12,7 @@ await initializeDb();
 ensureGroupMigration();
 
 function getRawDb(): Database {
-  return (getDb() as unknown as { $client: Database }).$client;
+  return getSqlite();
 }
 
 /**

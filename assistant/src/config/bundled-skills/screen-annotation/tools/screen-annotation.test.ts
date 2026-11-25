@@ -15,7 +15,10 @@ function abortedSignal(): AbortSignal {
 
 function recorder() {
   const calls: { toolName: string; input: Record<string, unknown> }[] = [];
-  const context = {
+  const context: ToolContext = {
+    conversationId: "conv-test",
+    workingDir: "/tmp",
+    trustClass: "guardian",
     proxyToolResolver: async (
       toolName: string,
       input: Record<string, unknown>,
@@ -23,7 +26,7 @@ function recorder() {
       calls.push({ toolName, input });
       return { content: "ok", isError: false };
     },
-  } as unknown as ToolContext;
+  };
   return { calls, context };
 }
 
@@ -49,7 +52,11 @@ describe("screen_point_at", () => {
   test("fails with a message when no client is connected", async () => {
     const result = await pointAt(
       { marks: [MARK] },
-      {} as unknown as ToolContext,
+      {
+        conversationId: "conv-test",
+        workingDir: "/tmp",
+        trustClass: "guardian",
+      },
     );
 
     expect(result.isError).toBe(true);

@@ -5,7 +5,7 @@ import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 describe("forwardComputerUseProxyTool", () => {
   test("returns error when proxyToolResolver is missing", async () => {
-    const context = {} as ToolContext;
+    const context: ToolContext = {} as ToolContext;
     const result = await forwardComputerUseProxyTool(
       "computer_use_click",
       { x: 100, y: 200 },
@@ -29,7 +29,10 @@ describe("forwardComputerUseProxyTool", () => {
     let capturedName = "";
     let capturedInput: Record<string, unknown> = {};
 
-    const context = {
+    const context: ToolContext = {
+      conversationId: "conv-test",
+      workingDir: "/tmp",
+      trustClass: "guardian",
       proxyToolResolver: async (
         name: string,
         input: Record<string, unknown>,
@@ -38,7 +41,7 @@ describe("forwardComputerUseProxyTool", () => {
         capturedInput = input;
         return expectedResult;
       },
-    } as unknown as ToolContext;
+    };
 
     const result = await forwardComputerUseProxyTool(
       "computer_use_click",
@@ -57,9 +60,12 @@ describe("forwardComputerUseProxyTool", () => {
       isError: true,
     };
 
-    const context = {
+    const context: ToolContext = {
+      conversationId: "conv-test",
+      workingDir: "/tmp",
+      trustClass: "guardian",
       proxyToolResolver: async () => errorResult,
-    } as unknown as ToolContext;
+    };
 
     const result = await forwardComputerUseProxyTool(
       "computer_use_click",

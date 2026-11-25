@@ -17,13 +17,12 @@ import type { PostCompactContext } from "@mycadet/plugin-api";
 
 import type { AgentEvent } from "../agent/loop.js";
 import { AgentLoop } from "../agent/loop.js";
-import { ContextWindowConfig } from "../config/schemas/inference.js";
+import { ContextWindowConfigSchema } from "../config/schemas/inference.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { HOOKS } from "../plugin-api/constants.js";
 import {
   createContextWindowManager,
   disposeContextWindowManager,
-  getContextWindowManager,
 } from "../plugins/defaults/compaction/manager-store.js";
 import {
   registerPlugin,
@@ -36,6 +35,7 @@ import type {
   SendMessageOptions,
 } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
+import { makeCompactionResult } from "./helpers/compaction-result.js";
 
 const testPostCompactPlugin = {
   manifest: { name: "test-post-compact", version: "0.0.0" },
@@ -99,27 +99,31 @@ function installManager(opts?: { proactiveExhausted?: boolean }): {
   trust: TrustContext;
 } {
   const exhausted = opts?.proactiveExhausted ?? false;
-  createContextWindowManager({
-    provider: { name: "mock-provider" } as unknown as Provider,
-    config: {} as unknown as ContextWindowConfig,
+  const manager = createContextWindowManager({
+    provider: {
+      name: "mock-provider",
+      sendMessage: async () => {
+        throw new Error("Compaction fixture does not send model requests");
+      },
+    },
+    config: ContextWindowConfigSchema.parse({}),
     conversationId: CONVERSATION_ID,
   });
-  const manager = getContextWindowManager(CONVERSATION_ID);
-  if (manager) {
-    manager.maybeCompact = (async () => ({
+  manager.maybeCompact = async () =>
+    makeCompactionResult({
       messages: [userMessage],
       compacted: true,
       exhausted,
-    })) as unknown as typeof manager.maybeCompact;
-    // Overflow-driven compaction routes through `recoverContextOverflow`, not
-    // `maybeCompact`. Stub it too so the overflow test exercises the gate's
-    // overflow branch.
-    manager.recoverContextOverflow = (async () => ({
+    });
+  // Overflow-driven compaction routes through `recoverContextOverflow`, not
+  // `maybeCompact`. Stub it too so the overflow test exercises the gate's
+  // overflow branch.
+  manager.recoverContextOverflow = async () =>
+    makeCompactionResult({
       messages: [userMessage],
       compacted: true,
       exhausted: false,
-    })) as unknown as typeof manager.recoverContextOverflow;
-  }
+    });
   return { trust: { sourceChannel: "cadet", trustClass: "unknown" } };
 }
 
