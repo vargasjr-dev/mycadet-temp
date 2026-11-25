@@ -101,9 +101,8 @@ import { startSleepWakeDetector } from "./sleep-wake-detector.js";
 import { startIpcServer } from "./ipc/server.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { initGatewayDb } from "./db/connection.js";
-import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
+import { startTunnelClient } from "./tunnel/lifecycle.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
-import { getTunnelClient } from "./tunnel/client.js";
 import {
   APP_VERSION,
   VERSION_HEADER_NAME,
@@ -223,19 +222,6 @@ async function main() {
   const credentialCache = getCredentials();
   bindCloudIdentityCredentialCache(credentialCache);
   void ensureCloudIdentityIds();
-  const tunnelClient = getTunnelClient();
-  // Tunnel only sees a webhook route on the next tunnel connect, so a registry
-  // write changes the advertised rules, so the tunnel re-advertises them on
-  // its next connect.
-  onWebhookIngressRoutesChanged(() => {
-    tunnelClient.requestRulesRefresh("webhook-routes-changed");
-  });
-
-  // ── Integration readiness flags ──
-  // Track whether each integration has valid credentials so route
-  // preconditions can gate requests synchronously. Updated by the
-  // credential watcher callback whenever credentials change.
-
   // Assistant-scoped mirrors of the browser stream sockets: the scoped data
   // plane emits /v1/assistants/<id>/<route> — the same verbatim shape every
   // scoped forwarder carries — so the upgrade pre-router admits the scoped
@@ -755,25 +741,27 @@ async function main() {
 
   logAuthBypassState();
 
-  // Start periodic background cleanup for dedup caches
-  telegramDedupCache.startCleanup();
-  whatsappDedupCache.startCleanup();
-  emailDedupCache.startCleanup();
-
-  function startTunnel(): StopTask {
-    tunnelClient.start();
-    return () => tunnelClient.stop();
-  }
-
   const tasks: (() => StopTask | Promise<StopTask>)[] = [
     startCredentialWatcher,
     startIpcServer,
     startConfigFileWatcher,
     startSleepWakeDetector,
     startInboundEventExpirationCleanup,
+    () => {
+      telegramDedupCache.startCleanup();
+      return () => telegramDedupCache.stopCleanup();
+    },
+    () => {
+      whatsappDedupCache.startCleanup();
+      return () => whatsappDedupCache.stopCleanup();
+    },
+    () => {
+      emailDedupCache.startCleanup();
+      return () => emailDedupCache.stopCleanup();
+    },
     startSlackGateway,
     startDiscordGateway,
-    startTunnel,
+    startTunnelClient,
   ];
   const shutdownTasks: StopTask[] = await Promise.all(
     tasks.map((task) => task()),
@@ -782,14 +770,7 @@ async function main() {
   process.on("SIGTERM", () => {
     log.info("SIGTERM received, starting graceful shutdown");
     draining = true;
-    const allShutdownTasks: StopTask[] = [
-      () => telegramDedupCache.stopCleanup(),
-      () => whatsappDedupCache.stopCleanup(),
-      () => emailDedupCache.stopCleanup(),
-      ...shutdownTasks,
-    ];
-
-    const shutdownPromises = allShutdownTasks.map((stopTask) => stopTask());
+    const shutdownPromises = shutdownTasks.map((stopTask) => stopTask());
     setTimeout(() => {
       log.info("Drain window elapsed, stopping server");
       void Promise.allSettled(shutdownPromises).then(() => {
