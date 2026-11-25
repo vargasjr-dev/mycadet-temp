@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { exec } from "../../exec";
+import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset";
 
 /**
  * The full docker topology
@@ -123,4 +124,30 @@ export async function ensureDockerDaemonRunning(
 export function isNoSuchContainerError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return msg.includes("No such container");
+}
+
+/**
+ * Remove an instance's containers, network and volumes, skipping any that
+ * are already gone. Retire and a failed hatch both end here so the two
+ * paths can never disagree about what an instance left behind.
+ */
+export async function removeDockerResources(
+  assistantId: string,
+): Promise<void> {
+  const res = dockerResourceNames(assistantId);
+  for (const container of [
+    res.cesContainer,
+    res.gatewayContainer,
+    res.assistantContainer,
+  ]) {
+    await exec("docker", ["rm", "-f", container]).catch(() => {});
+  }
+  await exec("docker", ["network", "rm", res.network]).catch(() => {});
+  for (const claim of DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates) {
+    await exec("docker", [
+      "volume",
+      "rm",
+      claim.dockerVolume(assistantId),
+    ]).catch(() => {});
+  }
 }

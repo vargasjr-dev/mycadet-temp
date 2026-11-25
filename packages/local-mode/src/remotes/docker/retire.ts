@@ -1,7 +1,7 @@
 import { exec } from "../../exec";
 import { stopProcess, isCadetProcess } from "../../process";
 import { DockerAssistant, isDockerEntry } from "../../lockfile-contract";
-import { dockerResourceNames } from "./common";
+import { removeDockerResources } from "./common";
 import { sleepDocker } from "./sleep";
 import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset";
 
@@ -11,28 +11,6 @@ export async function removeContainer(containerName: string): Promise<void> {
     await exec("docker", ["rm", containerName]);
   } catch {
     // container may not exist or already removed
-  }
-}
-
-/** Remove an instance's containers, network and volumes, skipping any that are already gone. */
-export async function removeDockerResources(
-  assistantId: string,
-): Promise<void> {
-  const res = dockerResourceNames(assistantId);
-  for (const container of [
-    res.cesContainer,
-    res.gatewayContainer,
-    res.assistantContainer,
-  ]) {
-    await exec("docker", ["rm", "-f", container]).catch(() => {});
-  }
-  await exec("docker", ["network", "rm", res.network]).catch(() => {});
-  for (const claim of DOCKER_STATEFUL_SET_SPEC.volumeClaimTemplates) {
-    await exec("docker", [
-      "volume",
-      "rm",
-      claim.dockerVolume(assistantId),
-    ]).catch(() => {});
   }
 }
 

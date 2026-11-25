@@ -51,6 +51,7 @@ import {
   dockerResourceNames,
   ensureLocalBinOnPath,
   LOCAL_BIN_DIR,
+  removeDockerResources,
   startColimaAndAwaitDaemon,
 } from "./common";
 import {
@@ -58,7 +59,6 @@ import {
   type LifecycleReporter,
 } from "../../lifecycle-reporter";
 import { type ServiceName } from "./statefulset";
-import { removeDockerResources } from "./retire";
 import { startContainers } from "./wake";
 import {
   HOST_IMAGE_LOADER_URL,
