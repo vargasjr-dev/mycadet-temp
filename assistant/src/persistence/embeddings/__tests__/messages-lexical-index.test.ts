@@ -219,11 +219,9 @@ describe("MessagesLexicalIndex", () => {
     }
 
     // Sparse-only vector under the "sparse" named vector, no dense vector.
-    expect(point.vector.sparse).toEqual({
-      indices: SPARSE.indices,
-      values: SPARSE.values,
+    expect(point.vector).toMatchObject({
+      sparse: { indices: SPARSE.indices, values: SPARSE.values },
     });
-    expect(point.vector.dense).toBeUndefined();
     expect("dense" in point.vector).toBe(false);
     // The vector field carries only the sparse named vector.
     expect(Object.keys(point.vector)).toEqual(["sparse"]);
