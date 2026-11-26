@@ -1800,12 +1800,9 @@ jobs:
 
   release-android:
     # build-chrome-extension is offline (its own if: false marker); needs on
-    # a skipped job would silently skip the whole android release. The vars
-    # gate keeps the lane killable without a code change (set the repo
-    # variable to 'false' to pause the dev android channel) — so the lane
-    # runs by default and only pauses on an explicit opt-out.
+    # a skipped job would silently skip the whole android release.
     needs: [compute-version]
-    if: ${{ vars.ANDROID_DEV_RELEASE_ENABLED != 'false' && github.ref == 'refs/heads/main' && inputs.dry_run != true }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.dry_run != true }}
     permissions:
       contents: read
       id-token: write
