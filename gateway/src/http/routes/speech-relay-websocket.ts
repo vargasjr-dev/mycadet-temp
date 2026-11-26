@@ -21,6 +21,8 @@
  */
 
 import { Server, ServerWebSocket } from "bun";
+
+import type { RouteDefinition } from "./types.js";
 import { z } from "zod";
 
 import type { OutgoingHttpHeaders } from "node:http";
@@ -580,3 +582,34 @@ export function closeSpeechRelayWebsocket(
     upstream.close(code, reason);
   }
 }
+
+// ── Route table ────────────────────────────────────────────────────────────
+
+/**
+ * Managed-speech relay: daemon-only egress to tunnel. NOT in
+ * TUNNEL_ALLOWED_PATHS — tunnel's inbound tunnel must never reach it.
+ *
+ * Bun ignores the Response returned after `server.upgrade()` succeeds, so the
+ * 101 fallback below is inert on the happy path; the gate's failure Responses
+ * (426 upgrade-required, 500 upgrade-failed) surface as-is.
+ */
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/speech/stt/stream",
+    handler: async (req, _params, _getClientIp, _getRawPeerIp, server) =>
+      (await handleSpeechRelaySttWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+  {
+    path: "/v2/speech/stt/stream",
+    handler: async (req, _params, _getClientIp, _getRawPeerIp, server) =>
+      (await handleSpeechRelaySttV2Ws(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+  {
+    path: "/speech/tts/stream",
+    handler: async (req, _params, _getClientIp, _getRawPeerIp, server) =>
+      (await handleSpeechRelayTtsWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+];

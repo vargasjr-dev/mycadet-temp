@@ -1,3 +1,5 @@
+import type { Server } from "bun";
+
 import type { z } from "zod";
 
 import type { Scope } from "../../auth/types.js";
@@ -33,6 +35,8 @@ export type RouteHandler = (
   params: RouteParams,
   getClientIp: GetClientIp,
   getRawPeerIp: GetRawPeerIp,
+  /** The Bun server, for the rare route that upgrades to a WebSocket. */
+  server?: Server<unknown>,
 ) => Promise<Response> | Response;
 
 /**

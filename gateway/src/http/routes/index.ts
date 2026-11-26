@@ -1,4 +1,5 @@
 import type { RouteDefinition } from "./types.js";
+import { ROUTES as speechRelayRoutes } from "./speech-relay-websocket.js";
 import { ROUTES as webhookRoutes } from "./webhook-routes.js";
 import { ROUTES as audioRoutes } from "./audio-proxy.js";
 import { ROUTES as runtimeHealthRoutes } from "./runtime-health-proxy.js";
@@ -42,6 +43,7 @@ import { ROUTES as runtimeProxyRoutes } from "./runtime-proxy.js";
 /** The full route table, in dispatch order — the runtime-proxy catch-all last. */
 export const ROUTES: readonly RouteDefinition[] = [
   ...webhookRoutes,
+  ...speechRelayRoutes,
   ...audioRoutes,
   ...runtimeHealthRoutes,
   ...psRoutes,

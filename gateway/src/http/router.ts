@@ -72,6 +72,7 @@ export function createRouter(
               matchResult.params,
               getClientIp,
               getRawPeerIp,
+              server,
             );
 
           case "edge": {
@@ -86,6 +87,7 @@ export function createRouter(
               matchResult.params,
               getClientIp,
               getRawPeerIp,
+              server,
             );
           }
 
@@ -101,6 +103,7 @@ export function createRouter(
               matchResult.params,
               getClientIp,
               getRawPeerIp,
+              server,
             );
           }
 
@@ -116,13 +119,20 @@ export function createRouter(
               matchResult.params,
               getClientIp,
               getRawPeerIp,
+              server,
             );
           }
 
           case "track-failures": {
             return wrapWithAuthFailureTracking(
               (r) =>
-                route.handler(r, matchResult.params, getClientIp, getRawPeerIp),
+                route.handler(
+                  r,
+                  matchResult.params,
+                  getClientIp,
+                  getRawPeerIp,
+                  server,
+                ),
               authRateLimiter,
               getClientIp,
               route.trackFailureStatuses,

@@ -38,9 +38,6 @@ import {
 } from "./http/routes/desktop-stream-websocket.js";
 import {
   closeSpeechRelayWebsocket,
-  handleSpeechRelaySttWs,
-  handleSpeechRelaySttV2Ws,
-  handleSpeechRelayTtsWs,
   isSpeechRelaySocketData,
   messageSpeechRelayWebsocket,
   openSpeechRelayWebsocket,
@@ -624,26 +621,6 @@ async function main() {
 
     if (url.pathname === "/v1/live-voice") {
       const upgradeResult = await handleLiveVoiceWs(req, server);
-      if (upgradeResult !== undefined) return upgradeResult;
-      return undefined;
-    }
-
-    // Managed-speech relay: daemon-only egress to tunnel. NOT in
-    // TUNNEL_ALLOWED_PATHS — tunnel's inbound tunnel must never reach it.
-    if (url.pathname === "/v1/speech/stt/stream") {
-      const upgradeResult = await handleSpeechRelaySttWs(req, server);
-      if (upgradeResult !== undefined) return upgradeResult;
-      return undefined;
-    }
-
-    if (url.pathname === "/v2/speech/stt/stream") {
-      const upgradeResult = await handleSpeechRelaySttV2Ws(req, server);
-      if (upgradeResult !== undefined) return upgradeResult;
-      return undefined;
-    }
-
-    if (url.pathname === "/v1/speech/tts/stream") {
-      const upgradeResult = await handleSpeechRelayTtsWs(req, server);
       if (upgradeResult !== undefined) return upgradeResult;
       return undefined;
     }
