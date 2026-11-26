@@ -12,15 +12,11 @@ function providerThatThrows(error: unknown): OpenAIChatCompletionsProvider {
     providerName: "openai-compatible",
     providerLabel: "OpenAI-compatible",
   });
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async () => {
-          throw error;
-        },
-      },
+  Object.assign(provider["client"].chat.completions, {
+    create: async () => {
+      throw error;
     },
-  };
+  });
   return provider;
 }
 

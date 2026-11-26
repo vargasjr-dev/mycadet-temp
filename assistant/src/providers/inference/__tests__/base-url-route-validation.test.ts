@@ -181,9 +181,7 @@ describe("base_url provider-type gate (create)", () => {
       },
     });
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "https://my-vllm.example.com/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "https://my-vllm.example.com/v1");
   });
 
   test("accepts base_url on opencode provider", async () => {
@@ -197,9 +195,7 @@ describe("base_url provider-type gate (create)", () => {
       },
     });
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "https://opencode.ai/zen/go/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "https://opencode.ai/zen/go/v1");
   });
 
   test("accepts base_url on ollama provider", async () => {
@@ -213,9 +209,7 @@ describe("base_url provider-type gate (create)", () => {
       },
     });
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "https://ollama.example.com/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "https://ollama.example.com/v1");
   });
 
   test("allows null base_url on non-openai-compatible provider", async () => {
@@ -229,7 +223,7 @@ describe("base_url provider-type gate (create)", () => {
       },
     });
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string | null }).baseUrl).toBeNull();
+    expect(result).toHaveProperty("baseUrl", null);
   });
 });
 
@@ -353,9 +347,7 @@ describe("base_url SSRF protection (create)", () => {
       },
     });
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "https://api.example.com/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "https://api.example.com/v1");
   });
 });
 
@@ -388,9 +380,7 @@ describe("base_url SSRF bypass for self-hosted daemons (create)", () => {
 
     // THEN the connection is created successfully
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "http://localhost:1234/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "http://localhost:1234/v1");
   });
 
   test("allows private IP (192.168.x.x) when not cloud-hosted", async () => {
@@ -412,9 +402,7 @@ describe("base_url SSRF bypass for self-hosted daemons (create)", () => {
 
     // THEN the connection is created successfully
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "http://192.168.1.100:8080/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "http://192.168.1.100:8080/v1");
   });
 
   test("allows 127.0.0.1 when not cloud-hosted", async () => {
@@ -436,9 +424,7 @@ describe("base_url SSRF bypass for self-hosted daemons (create)", () => {
 
     // THEN the connection is created successfully
     expect(result).toBeDefined();
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "http://127.0.0.1:8080/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "http://127.0.0.1:8080/v1");
   });
 });
 
@@ -487,8 +473,6 @@ describe("base_url provider-type gate (update)", () => {
         base_url: "https://ollama.example.com/v1",
       },
     });
-    expect((result as { baseUrl: string }).baseUrl).toBe(
-      "https://ollama.example.com/v1",
-    );
+    expect(result).toHaveProperty("baseUrl", "https://ollama.example.com/v1");
   });
 });

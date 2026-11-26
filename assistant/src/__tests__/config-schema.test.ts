@@ -8,6 +8,8 @@ import {
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -2149,7 +2151,9 @@ describe("032-tts-provider-unification migration", () => {
     const tts = jsonObjectSchema.parse(
       jsonObjectSchema.parse(result.services).tts,
     );
-    const providers = tts.providers as Record<string, Record<string, unknown>>;
+    const providers = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(tts.providers);
     expect(providers.elevenlabs.voiceId).toBe("my-voice");
     expect(providers.elevenlabs.speed).toBe(0.8);
   });
@@ -2166,7 +2170,9 @@ describe("032-tts-provider-unification migration", () => {
     const tts = jsonObjectSchema.parse(
       jsonObjectSchema.parse(result.services).tts,
     );
-    const providers = tts.providers as Record<string, Record<string, unknown>>;
+    const providers = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(tts.providers);
     expect(providers["fish-audio"].referenceId).toBe("my-ref");
     expect(providers["fish-audio"].format).toBe("wav");
   });
@@ -2241,7 +2247,9 @@ describe("032-tts-provider-unification migration", () => {
     const tts = jsonObjectSchema.parse(
       jsonObjectSchema.parse(result.services).tts,
     );
-    const providers = tts.providers as Record<string, Record<string, unknown>>;
+    const providers = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(tts.providers);
     // Canonical voiceId preserved, legacy speed backfilled
     expect(providers.elevenlabs.voiceId).toBe("canonical-voice");
     expect(providers.elevenlabs.speed).toBe(0.8);

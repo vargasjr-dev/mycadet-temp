@@ -34,18 +34,7 @@ function makeStream(chunks: MockChunk[]): AsyncIterable<MockChunk> {
 }
 
 function clientOf(provider: IonetProvider) {
-  return (
-    provider as unknown as {
-      client: {
-        baseURL: string;
-        chat: {
-          completions: {
-            create: (params: unknown) => Promise<AsyncIterable<MockChunk>>;
-          };
-        };
-      };
-    }
-  ).client;
+  return provider["client"];
 }
 
 describe("IonetProvider", () => {
@@ -60,7 +49,9 @@ describe("IonetProvider", () => {
 
     // The same base URL must be reported on the response, read off the live
     // client instance rather than a constant.
-    client.chat.completions.create = async () => makeStream(OK_CHUNKS);
+    Object.assign(client.chat.completions, {
+      create: async () => makeStream(OK_CHUNKS),
+    });
     const response = await provider.sendMessage([
       { role: "user", content: [{ type: "text", text: "hi" }] },
     ]);
@@ -85,10 +76,12 @@ describe("IonetProvider", () => {
           tool_choice?: unknown;
         }
       | undefined;
-    client.chat.completions.create = async (params) => {
-      seenParams = params as { tools?: unknown; tool_choice?: unknown };
-      return makeStream(OK_CHUNKS);
-    };
+    Object.assign(client.chat.completions, {
+      create: async (params: { tools?: unknown; tool_choice?: unknown }) => {
+        seenParams = params;
+        return makeStream(OK_CHUNKS);
+      },
+    });
     await provider.sendMessage(
       [{ role: "user", content: [{ type: "text", text: "hi" }] }],
       {
@@ -106,10 +99,12 @@ describe("IonetProvider", () => {
 
     // An explicit caller choice still wins.
     let forcedParams: { tool_choice?: unknown } | undefined;
-    client.chat.completions.create = async (params) => {
-      forcedParams = params as { tool_choice?: unknown };
-      return makeStream(OK_CHUNKS);
-    };
+    Object.assign(client.chat.completions, {
+      create: async (params: { tools?: unknown; tool_choice?: unknown }) => {
+        forcedParams = params;
+        return makeStream(OK_CHUNKS);
+      },
+    });
     await provider.sendMessage(
       [{ role: "user", content: [{ type: "text", text: "hi" }] }],
       {
@@ -134,7 +129,9 @@ describe("IonetProvider", () => {
     const client = clientOf(provider);
     expect(client.baseURL).toBe("https://inference.example.test/v1");
 
-    client.chat.completions.create = async () => makeStream(OK_CHUNKS);
+    Object.assign(client.chat.completions, {
+      create: async () => makeStream(OK_CHUNKS),
+    });
     const response = await provider.sendMessage([
       { role: "user", content: [{ type: "text", text: "hi" }] },
     ]);

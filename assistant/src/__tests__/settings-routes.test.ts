@@ -7,10 +7,13 @@
  * paths under `users/`, and writing a different ingress URL drops the tunnel
  * records that described the old one.
  */
-
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Guardian identity resolves via the gateway delivery cache, not the local
 // contacts DB. Seed it per-test via seedGatewayGuardian; persona resolution
@@ -132,6 +135,12 @@ function makeArgs(
 // GET /workspace-files
 // ---------------------------------------------------------------------------
 
+const workspaceFilesSchema = z.object({
+  files: z.array(
+    z.object({ path: z.string(), name: z.string(), exists: z.boolean() }),
+  ),
+});
+
 describe("GET /workspace-files", () => {
   const handler = getHandler("workspace-files", "GET");
 
@@ -140,9 +149,7 @@ describe("GET /workspace-files", () => {
   });
 
   test("with no guardian: returns the static entries only", async () => {
-    const result = (await handler(makeArgs())) as {
-      files: Array<{ path: string; name: string; exists: boolean }>;
-    };
+    const result = workspaceFilesSchema.parse(await handler(makeArgs()));
     const paths = result.files.map((f) => f.path);
     expect(paths).toEqual(["IDENTITY.md", "SOUL.md", "skills/"]);
     expect(paths.find((p) => p.startsWith("users/"))).toBeUndefined();
@@ -158,9 +165,7 @@ describe("GET /workspace-files", () => {
       verifiedVia: "challenge",
     });
 
-    const result = (await handler(makeArgs())) as {
-      files: Array<{ path: string; name: string; exists: boolean }>;
-    };
+    const result = workspaceFilesSchema.parse(await handler(makeArgs()));
     const paths = result.files.map((f) => f.path);
 
     expect(paths).not.toContain("USER.md");
@@ -172,9 +177,7 @@ describe("GET /workspace-files", () => {
   });
 
   test("reflects guardian changes on a subsequent request (not cached)", async () => {
-    let result = (await handler(makeArgs())) as {
-      files: Array<{ path: string }>;
-    };
+    let result = workspaceFilesSchema.parse(await handler(makeArgs()));
     expect(result.files.map((f) => f.path)).not.toContain("users/alice.md");
 
     seedGatewayGuardian({ channelType: "telegram", address: "Alice" });
@@ -186,9 +189,7 @@ describe("GET /workspace-files", () => {
       verifiedVia: "challenge",
     });
 
-    result = (await handler(makeArgs())) as {
-      files: Array<{ path: string }>;
-    };
+    result = workspaceFilesSchema.parse(await handler(makeArgs()));
     expect(result.files.map((f) => f.path)).toContain("users/alice.md");
   });
 });
@@ -222,10 +223,9 @@ describe("GET /workspace-files/read", () => {
       "utf-8",
     );
 
-    const result = (await handler(makeArgs({ path: "users/alice.md" }))) as {
-      path: string;
-      content: string;
-    };
+    const result = z
+      .object({ path: z.string(), content: z.string() })
+      .parse(await handler(makeArgs({ path: "users/alice.md" })));
     expect(result.path).toBe("users/alice.md");
     expect(result.content).toBe(readFileSync(personaPath, "utf-8"));
     expect(result.content).toContain("Preferred name/reference: Alice");
@@ -270,7 +270,7 @@ describe("PUT integrations/ingress/config", () => {
   }
 
   function readIngress(): Record<string, unknown> {
-    return readConfig().ingress as Record<string, unknown>;
+    return jsonObjectSchema.parse(readConfig().ingress);
   }
 
   beforeEach(() => {

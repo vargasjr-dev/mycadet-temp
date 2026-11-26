@@ -9,11 +9,12 @@
  * - timeout: cancel broadcast + timed_out error shape
  * - late delivery: a result for an unknown requestId is tolerated
  */
-
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   setBroadcastOverrideForTesting,
@@ -81,11 +82,24 @@ function writeTheme(content: string): void {
   writeFileSync(join(workspaceDir, "ui", "theme.json"), content);
 }
 
+const snapshotResultSchema = z.looseObject({
+  ok: z.boolean(),
+  error: z.string().optional(),
+  themeSource: z.string(),
+  timedOut: z.boolean().optional(),
+  pngBase64: z.string().optional(),
+  widthPx: z.number().optional(),
+  themeIssues: z.array(z.string()).optional(),
+});
+const snapshotResultAcceptedSchema = z.looseObject({ accepted: z.boolean() });
+
 describe("ui_snapshot", () => {
   test("fails cleanly when no capable client is connected", async () => {
-    const result = (await snapshotRoute.handler({
-      body: { view: "sampler" },
-    })) as { ok: boolean; error?: string; themeSource: string };
+    const result = snapshotResultSchema.parse(
+      await snapshotRoute.handler({
+        body: { view: "sampler" },
+      }),
+    );
     expect(result.ok).toBe(false);
     expect(result.error).toContain("desktop client");
     expect(result.themeSource).toBe("none");
@@ -96,14 +110,11 @@ describe("ui_snapshot", () => {
     fakeClient = { clientId: "client-1", actorPrincipalId: "actor-1" };
     writeTheme(JSON.stringify({ version: 1, tokens: { accent: "#e8a04c" } }));
 
-    const pending = snapshotRoute.handler({
-      body: { view: "chat", timeoutMs: 5_000 },
-    }) as Promise<{
-      ok: boolean;
-      pngBase64?: string;
-      widthPx?: number;
-      themeSource: string;
-    }>;
+    const pending = Promise.resolve(
+      snapshotRoute.handler({
+        body: { view: "chat", timeoutMs: 5_000 },
+      }),
+    ).then((result) => snapshotResultSchema.parse(result));
 
     // The request event is broadcast synchronously at dispatch.
     expect(broadcasts.length).toBe(1);
@@ -113,18 +124,20 @@ describe("ui_snapshot", () => {
     expect(request.msg.view).toBe("chat");
     expect(request.msg.tokens).toEqual({ accent: "#e8a04c" });
 
-    const accepted = (await resultRoute.handler({
-      body: {
-        requestId: request.msg.requestId,
-        pngBase64: PNG_BASE64,
-        widthPx: 1440,
-        heightPx: 1520,
-      },
-      headers: {
-        "x-cadet-client-id": "client-1",
-        "x-cadet-actor-principal-id": "actor-1",
-      },
-    })) as { accepted: boolean };
+    const accepted = snapshotResultAcceptedSchema.parse(
+      await resultRoute.handler({
+        body: {
+          requestId: request.msg.requestId,
+          pngBase64: PNG_BASE64,
+          widthPx: 1440,
+          heightPx: 1520,
+        },
+        headers: {
+          "x-cadet-client-id": "client-1",
+          "x-cadet-actor-principal-id": "actor-1",
+        },
+      }),
+    );
     expect(accepted.accepted).toBe(true);
 
     const result = await pending;
@@ -137,9 +150,11 @@ describe("ui_snapshot", () => {
   test("rejects a result posted by a client other than the target", async () => {
     fakeClient = { clientId: "client-1", actorPrincipalId: "actor-1" };
 
-    const pending = snapshotRoute.handler({
-      body: { view: "sampler", timeoutMs: 5_000 },
-    }) as Promise<{ ok: boolean }>;
+    const pending = Promise.resolve(
+      snapshotRoute.handler({
+        body: { view: "sampler", timeoutMs: 5_000 },
+      }),
+    ).then((result) => snapshotResultSchema.parse(result));
     const requestId = broadcasts[0]!.msg.requestId;
 
     await expect(
@@ -167,9 +182,11 @@ describe("ui_snapshot", () => {
   test("times out with a cancel broadcast when the client never responds", async () => {
     fakeClient = { clientId: "client-1", actorPrincipalId: "actor-1" };
 
-    const result = (await snapshotRoute.handler({
-      body: { view: "sampler", timeoutMs: 50 },
-    })) as { ok: boolean; timedOut?: boolean; error?: string };
+    const result = snapshotResultSchema.parse(
+      await snapshotRoute.handler({
+        body: { view: "sampler", timeoutMs: 50 },
+      }),
+    );
 
     expect(result.ok).toBe(false);
     expect(result.timedOut).toBe(true);
@@ -185,9 +202,11 @@ describe("ui_snapshot", () => {
     fakeClient = { clientId: "client-1", actorPrincipalId: "actor-1" };
     writeTheme(JSON.stringify({ version: 1, tokens: { accent: "magenta" } }));
 
-    const pending = snapshotRoute.handler({
-      body: { view: "sampler", timeoutMs: 5_000 },
-    }) as Promise<{ themeSource: string; themeIssues: string[] }>;
+    const pending = Promise.resolve(
+      snapshotRoute.handler({
+        body: { view: "sampler", timeoutMs: 5_000 },
+      }),
+    ).then((result) => snapshotResultSchema.parse(result));
 
     const request = broadcasts[0]!;
     expect(request.msg.tokens).toBeUndefined();
@@ -202,16 +221,18 @@ describe("ui_snapshot", () => {
 
     const result = await pending;
     expect(result.themeSource).toBe("invalid");
-    expect(result.themeIssues.length).toBeGreaterThan(0);
+    expect(result.themeIssues?.length ?? 0).toBeGreaterThan(0);
   });
 });
 
 describe("host_ui_snapshot_result", () => {
   test("tolerates late delivery for an unknown requestId", async () => {
-    const result = (await resultRoute.handler({
-      body: { requestId: "gone", pngBase64: PNG_BASE64 },
-      headers: { "x-cadet-client-id": "client-1" },
-    })) as { accepted: boolean };
+    const result = snapshotResultAcceptedSchema.parse(
+      await resultRoute.handler({
+        body: { requestId: "gone", pngBase64: PNG_BASE64 },
+        headers: { "x-cadet-client-id": "client-1" },
+      }),
+    );
     expect(result.accepted).toBe(true);
   });
 

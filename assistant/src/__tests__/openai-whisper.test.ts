@@ -25,9 +25,19 @@ function mockFetch(
   );
 }
 
+function getCapturedAudioFile(): File {
+  const file = capturedFormData?.get("file");
+  if (!(file instanceof File)) {
+    throw new Error("Expected a multipart audio file");
+  }
+  return file;
+}
+
 beforeEach(() => {
   capturedFormData = null;
-  globalThis.fetch = mockFetch as typeof fetch;
+  globalThis.fetch = Object.assign(mockFetch, {
+    preconnect: originalFetch.preconnect,
+  });
 });
 
 afterEach(() => {
@@ -45,31 +55,31 @@ describe("OpenAIWhisperProvider", () => {
   describe("extensionFromMime (via transcribe filename)", () => {
     test("plain MIME type resolves to correct extension", async () => {
       await provider.transcribe(dummyAudio, "audio/ogg");
-      const file = capturedFormData?.get("file") as File;
+      const file = getCapturedAudioFile();
       expect(file.name).toBe("audio.ogg");
     });
 
     test("MIME type with parameters resolves to correct extension", async () => {
       await provider.transcribe(dummyAudio, "audio/ogg; codecs=opus");
-      const file = capturedFormData?.get("file") as File;
+      const file = getCapturedAudioFile();
       expect(file.name).toBe("audio.ogg");
     });
 
     test("MIME type with extra whitespace around parameters", async () => {
       await provider.transcribe(dummyAudio, "audio/mpeg ; bitrate=128");
-      const file = capturedFormData?.get("file") as File;
+      const file = getCapturedAudioFile();
       expect(file.name).toBe("audio.mp3");
     });
 
     test("unknown MIME type falls back to .audio", async () => {
       await provider.transcribe(dummyAudio, "audio/unknown-format");
-      const file = capturedFormData?.get("file") as File;
+      const file = getCapturedAudioFile();
       expect(file.name).toBe("audio.audio");
     });
 
     test("unknown MIME type with parameters still falls back", async () => {
       await provider.transcribe(dummyAudio, "audio/unknown; foo=bar");
-      const file = capturedFormData?.get("file") as File;
+      const file = getCapturedAudioFile();
       expect(file.name).toBe("audio.audio");
     });
 
@@ -86,7 +96,7 @@ describe("OpenAIWhisperProvider", () => {
       ["audio/flac", "audio.flac"],
     ])("%s → %s", async (mime, expectedFilename) => {
       await provider.transcribe(dummyAudio, mime);
-      const file = capturedFormData?.get("file") as File;
+      const file = getCapturedAudioFile();
       expect(file.name).toBe(expectedFilename);
     });
   });

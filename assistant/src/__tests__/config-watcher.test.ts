@@ -59,27 +59,32 @@ mock.module("node:fs", () => {
   const actual = require("node:fs");
   return {
     ...actual,
-    watch: (dir: string, ...args: unknown[]) => {
-      let callback: WatchCallback;
-      let options: { recursive?: boolean } | undefined;
-
-      if (typeof args[0] === "function") {
-        callback = args[0] as WatchCallback;
+    watch: (
+      dir: string,
+      optionsOrCallback: { recursive?: boolean } | WatchCallback,
+      callback?: WatchCallback,
+    ) => {
+      if (typeof optionsOrCallback === "function") {
+        capturedWatchers.push({ dir, callback: optionsOrCallback });
       } else {
-        options = args[0] as { recursive?: boolean };
-        callback = args[1] as WatchCallback;
+        if (!callback) {
+          throw new Error("Expected a watch callback");
+        }
+        capturedWatchers.push({ dir, callback, options: optionsOrCallback });
       }
-
-      capturedWatchers.push({ dir, callback, options });
       return fakeWatcher;
     },
-    watchFile: (filePath: string, ...args: unknown[]) => {
-      // Signature is `watchFile(path, [options], listener)` — skip the
-      // optional options arg so we always grab the listener.
-      const listener = (
-        typeof args[0] === "function" ? args[0] : args[1]
-      ) as WatchFileListener;
-      capturedFileWatches.push({ filePath, listener });
+    watchFile: (
+      filePath: string,
+      optionsOrListener: object | WatchFileListener,
+      listener?: WatchFileListener,
+    ) => {
+      const callback =
+        typeof optionsOrListener === "function" ? optionsOrListener : listener;
+      if (!callback) {
+        throw new Error("Expected a watchFile listener");
+      }
+      capturedFileWatches.push({ filePath, listener: callback });
     },
     unwatchFile: (filePath: string) => {
       const idx = capturedFileWatches.findIndex((w) => w.filePath === filePath);

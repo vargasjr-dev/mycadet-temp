@@ -16,7 +16,6 @@ import assert from "node:assert/strict";
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { QuestionPromptResult } from "../../../permissions/question-prompter.js";
 import * as pendingInteractions from "../../pending-interactions.js";
 import { BadRequestError, NotFoundError } from "../errors.js";
 import { ROUTES as QUESTION_ROUTES } from "../question-routes.js";
@@ -79,9 +78,9 @@ afterEach(() => {
 
 describe("POST /v1/question-response", () => {
   test("submit: resolves a one-question batch with an option entry", async () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion("req-1", [{ id: "q1", options: ["yes", "no"] }], (v) =>
-      resolved.push(v as QuestionPromptResult),
+      resolved.push(v),
     );
 
     const result = await call({
@@ -103,7 +102,7 @@ describe("POST /v1/question-response", () => {
   });
 
   test("submit: three-question batch with two options + one free-text", async () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-3",
       [
@@ -111,7 +110,7 @@ describe("POST /v1/question-response", () => {
         { id: "q2", options: ["yes", "no"] },
         { id: "q3", options: ["noon", "1pm"] },
       ],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     const result = await call({
@@ -127,24 +126,26 @@ describe("POST /v1/question-response", () => {
     });
 
     expect(result).toEqual({ success: true });
-    expect(resolved[0]?.overall).toBe("completed");
+    expect(resolved[0]).toMatchObject({ overall: "completed" });
     // Entries are ordered to match the original questions array.
-    expect(resolved[0]?.entries).toEqual([
-      { questionId: "q1", decision: "option", optionId: "alice_work" },
-      { questionId: "q2", decision: "option", optionId: "yes" },
-      { questionId: "q3", decision: "free_text", text: "noon-ish" },
-    ]);
+    expect(resolved[0]).toMatchObject({
+      entries: [
+        { questionId: "q1", decision: "option", optionId: "alice_work" },
+        { questionId: "q2", decision: "option", optionId: "yes" },
+        { questionId: "q3", decision: "free_text", text: "noon-ish" },
+      ],
+    });
   });
 
   test("submit: all-skip resolves with completed + skipped entries", async () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-skip-all",
       [
         { id: "q1", options: ["a", "b"] },
         { id: "q2", options: ["x", "y"] },
       ],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     await call({
@@ -168,14 +169,14 @@ describe("POST /v1/question-response", () => {
   });
 
   test("close: every entry reported as skipped with overall=closed", async () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-close",
       [
         { id: "q1", options: ["a", "b"] },
         { id: "q2", options: ["x", "y"] },
       ],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     const result = await call({
@@ -337,11 +338,11 @@ describe("POST /v1/question-response", () => {
   });
 
   test("legacy single-question shim: resolves against a one-element batch", async () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-legacy",
       [{ id: "q1", options: ["yes", "no"] }],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     const result = await call({
@@ -356,11 +357,11 @@ describe("POST /v1/question-response", () => {
   });
 
   test("legacy single-question shim: free-text resolves against a one-element batch", async () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-legacy-ft",
       [{ id: "q1", options: ["yes", "no"] }],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     await call({

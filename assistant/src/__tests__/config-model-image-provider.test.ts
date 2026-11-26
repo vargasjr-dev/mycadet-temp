@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { invalidateConfigCache } from "../config/loader.js";
 import {
   type ModelSetContext,
@@ -28,8 +30,16 @@ function writeConfig(obj: unknown): void {
   writeFileSync(CONFIG_PATH, JSON.stringify(obj));
 }
 
-function readConfig(): Record<string, unknown> {
-  return JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
+const imageGenerationConfigSchema = z.object({
+  services: z.object({
+    "image-generation": z.object({ provider: z.string(), model: z.string() }),
+  }),
+});
+
+function readImageGenerationConfig() {
+  return imageGenerationConfigSchema.parse(
+    JSON.parse(readFileSync(CONFIG_PATH, "utf8")),
+  ).services["image-generation"];
 }
 
 function makeCtx(): ModelSetContext {
@@ -74,39 +84,36 @@ describe("setImageGenModel — provider derived from model prefix", () => {
   test("gemini model writes provider=gemini", () => {
     setImageGenModel("gemini-3.1-flash-image-preview", makeCtx());
 
-    const config = readConfig();
-    const imageGen = (config.services as any)?.["image-generation"];
-    expect(imageGen?.model).toBe("gemini-3.1-flash-image-preview");
-    expect(imageGen?.provider).toBe("gemini");
+    const imageGen = readImageGenerationConfig();
+    expect(imageGen.model).toBe("gemini-3.1-flash-image-preview");
+    expect(imageGen.provider).toBe("gemini");
   });
 
   test("gpt-image-2 writes provider=openai", () => {
     setImageGenModel("gpt-image-2", makeCtx());
 
-    const config = readConfig();
-    const imageGen = (config.services as any)?.["image-generation"];
-    expect(imageGen?.model).toBe("gpt-image-2");
-    expect(imageGen?.provider).toBe("openai");
+    const imageGen = readImageGenerationConfig();
+    expect(imageGen.model).toBe("gpt-image-2");
+    expect(imageGen.provider).toBe("openai");
   });
 
   test("dall-e-3 writes provider=openai", () => {
     setImageGenModel("dall-e-3", makeCtx());
 
-    const config = readConfig();
-    const imageGen = (config.services as any)?.["image-generation"];
-    expect(imageGen?.model).toBe("dall-e-3");
-    expect(imageGen?.provider).toBe("openai");
+    const imageGen = readImageGenerationConfig();
+    expect(imageGen.model).toBe("dall-e-3");
+    expect(imageGen.provider).toBe("openai");
   });
 
   test("switching from gemini to openai flips provider in place", () => {
     setImageGenModel("gemini-3.1-flash-image-preview", makeCtx());
-    let imageGen = (readConfig().services as any)?.["image-generation"];
-    expect(imageGen?.provider).toBe("gemini");
+    let imageGen = readImageGenerationConfig();
+    expect(imageGen.provider).toBe("gemini");
 
     setImageGenModel("gpt-image-2", makeCtx());
-    imageGen = (readConfig().services as any)?.["image-generation"];
-    expect(imageGen?.model).toBe("gpt-image-2");
-    expect(imageGen?.provider).toBe("openai");
+    imageGen = readImageGenerationConfig();
+    expect(imageGen.model).toBe("gpt-image-2");
+    expect(imageGen.provider).toBe("openai");
   });
 });
 
@@ -123,11 +130,9 @@ describe("setImageGenModel with provider openrouter", () => {
 
     setImageGenModel("openai/gpt-image-2", makeCtx());
 
-    const raw = readConfig() as {
-      services: { "image-generation": { provider: string; model: string } };
-    };
-    expect(raw.services["image-generation"].model).toBe("openai/gpt-image-2");
-    expect(raw.services["image-generation"].provider).toBe("openrouter");
+    const imageGen = readImageGenerationConfig();
+    expect(imageGen.model).toBe("openai/gpt-image-2");
+    expect(imageGen.provider).toBe("openrouter");
   });
 
   test("a google/ slug does not rewrite provider to gemini", () => {
@@ -142,10 +147,8 @@ describe("setImageGenModel with provider openrouter", () => {
 
     setImageGenModel("google/gemini-3.1-flash-image-preview", makeCtx());
 
-    const raw = readConfig() as {
-      services: { "image-generation": { provider: string; model: string } };
-    };
-    expect(raw.services["image-generation"].provider).toBe("openrouter");
+    const imageGen = readImageGenerationConfig();
+    expect(imageGen.provider).toBe("openrouter");
   });
 });
 
@@ -159,12 +162,8 @@ describe("setImageGenModel with provider cadet", () => {
 
     setImageGenModel("gemini-3-pro-image-preview", makeCtx());
 
-    const raw = readConfig() as {
-      services: { "image-generation": { provider: string; model: string } };
-    };
-    expect(raw.services["image-generation"].model).toBe(
-      "gemini-3-pro-image-preview",
-    );
-    expect(raw.services["image-generation"].provider).toBe("cadet");
+    const imageGen = readImageGenerationConfig();
+    expect(imageGen.model).toBe("gemini-3-pro-image-preview");
+    expect(imageGen.provider).toBe("cadet");
   });
 });

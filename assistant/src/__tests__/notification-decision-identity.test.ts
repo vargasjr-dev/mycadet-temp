@@ -41,7 +41,9 @@ mock.module("../prompts/system-prompt.js", () => ({
 // ── Provider mock with system prompt capture ──────────────────────────
 
 let configuredProvider: {
-  sendMessage: (...args: unknown[]) => Promise<unknown>;
+  sendMessage: (
+    ...args: Parameters<Provider["sendMessage"]>
+  ) => Promise<unknown>;
 } | null = null;
 let extractedToolUse: unknown = null;
 let capturedSystemPrompt: string | undefined;
@@ -60,7 +62,7 @@ mock.module("../providers/provider-send-message.js", () => ({
 
 import { evaluateSignal } from "../notifications/decision-engine.js";
 import type { NotificationSignal } from "../notifications/signal.js";
-import type { NotificationChannel } from "../notifications/types.js";
+import type { Provider } from "../providers/types.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -100,8 +102,7 @@ describe("identity context in notification decision engine", () => {
     mockIdentityContext = "I am Jarvis, a helpful assistant";
 
     configuredProvider = {
-      sendMessage: async (...args: unknown[]) => {
-        const options = args[1] as { systemPrompt?: string } | undefined;
+      sendMessage: async (_messages, options) => {
         capturedSystemPrompt = options?.systemPrompt;
         return { content: [] };
       },
@@ -124,7 +125,7 @@ describe("identity context in notification decision engine", () => {
     };
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<assistant-identity>");
@@ -136,8 +137,7 @@ describe("identity context in notification decision engine", () => {
     mockIdentityContext = null;
 
     configuredProvider = {
-      sendMessage: async (...args: unknown[]) => {
-        const options = args[1] as { systemPrompt?: string } | undefined;
+      sendMessage: async (_messages, options) => {
         capturedSystemPrompt = options?.systemPrompt;
         return { content: [] };
       },
@@ -160,7 +160,7 @@ describe("identity context in notification decision engine", () => {
     };
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<assistant-identity>");
@@ -172,8 +172,7 @@ describe("identity context in notification decision engine", () => {
     mockIdentityContext = "A".repeat(3000);
 
     configuredProvider = {
-      sendMessage: async (...args: unknown[]) => {
-        const options = args[1] as { systemPrompt?: string } | undefined;
+      sendMessage: async (_messages, options) => {
         capturedSystemPrompt = options?.systemPrompt;
         return { content: [] };
       },
@@ -196,7 +195,7 @@ describe("identity context in notification decision engine", () => {
     };
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<assistant-identity>");
@@ -223,9 +222,7 @@ describe("identity context in notification decision engine", () => {
     configuredProvider = null;
 
     const signal = makeSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     // Fallback should produce valid copy regardless of identity context
     expect(decision.fallbackUsed).toBe(true);

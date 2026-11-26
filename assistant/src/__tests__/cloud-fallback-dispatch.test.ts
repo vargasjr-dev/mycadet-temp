@@ -315,7 +315,7 @@ describe("cloud fallback dispatch", () => {
         provider.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
       );
 
-      expect((error as { provider?: string }).provider).toBe("openai");
+      expect(error).toMatchObject({ provider: "openai" });
       expect(requestsTo(OPENAI_PATH).length).toBeGreaterThan(1);
       expect(requestsTo(ANTHROPIC_PATH)).toHaveLength(0);
       expect(shouldSkipPrimary({ upstream: "openai" })).toBe(false);
@@ -350,7 +350,7 @@ describe("cloud fallback dispatch", () => {
       provider!.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
     );
 
-    expect((error as { statusCode?: number }).statusCode).toBe(404);
+    expect(error).toMatchObject({ statusCode: 404 });
     expect(new Set(requests.map((request) => request.body.model))).toEqual(
       new Set(["claude-opus-5"]),
     );
@@ -375,7 +375,7 @@ describe("cloud fallback dispatch", () => {
       provider.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
     );
 
-    expect((error as { statusCode?: number }).statusCode).toBe(404);
+    expect(error).toMatchObject({ statusCode: 404 });
     expect(new Set(requests.map((request) => request.body.model))).toEqual(
       new Set(["claude-opus-5"]),
     );
@@ -413,7 +413,7 @@ describe("cloud fallback dispatch", () => {
       provider.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
     );
 
-    expect((error as { provider?: string }).provider).toBe("openai");
+    expect(error).toMatchObject({ provider: "openai" });
     expect(requestsTo(OPENAI_PATH).length).toBeGreaterThan(1);
     expect(requestsTo(ANTHROPIC_PATH).length).toBeGreaterThan(0);
     expect(shouldSkipPrimary({ upstream: "openai" })).toBe(false);

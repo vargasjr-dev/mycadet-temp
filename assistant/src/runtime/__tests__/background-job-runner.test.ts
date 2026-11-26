@@ -14,6 +14,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
 
 // ── Module mocks ─────────────────────────────────────────────────────
@@ -190,10 +191,7 @@ describe("runBackgroundJob", () => {
     });
     // No requestOrigin set on baseOpts → none threaded to processMessage, so no
     // origin-scoped permission grant can fire for an ordinary background job.
-    expect(
-      (processMessageCalls[0].options as { requestOrigin?: string })
-        .requestOrigin,
-    ).toBeUndefined();
+    expect(processMessageCalls[0].options?.requestOrigin).toBeUndefined();
     expect(emitCalls).toHaveLength(0);
   });
 
@@ -227,12 +225,9 @@ describe("runBackgroundJob", () => {
     await runBackgroundJob(baseOpts());
 
     expect(processMessageCalls).toHaveLength(1);
-    const opts = processMessageCalls[0].options as {
-      allowedTools?: unknown;
-      toolGateMode?: unknown;
-    };
-    expect(opts.allowedTools).toBeUndefined();
-    expect(opts.toolGateMode).toBeUndefined();
+    const opts = processMessageCalls[0].options;
+    expect(opts?.allowedTools).toBeUndefined();
+    expect(opts?.toolGateMode).toBeUndefined();
   });
 
   test("threads skipPromptIndexing as skipUserMessageIndexing when set", async () => {
@@ -248,10 +243,8 @@ describe("runBackgroundJob", () => {
     await runBackgroundJob(baseOpts());
 
     expect(processMessageCalls).toHaveLength(1);
-    const opts = processMessageCalls[0].options as {
-      skipUserMessageIndexing?: unknown;
-    };
-    expect(opts.skipUserMessageIndexing).toBeUndefined();
+    const opts = processMessageCalls[0].options;
+    expect(opts?.skipUserMessageIndexing).toBeUndefined();
   });
 
   test("generic exception: returns ok=false with errorKind=exception and emits activity.failed with dedupeKey", async () => {
@@ -311,9 +304,9 @@ describe("runBackgroundJob", () => {
 
     expect(emitCalls).toHaveLength(1);
     expect(emitCalls[0].sourceEventName).toBe("activity.failed");
-    expect(
-      (emitCalls[0].contextPayload as { errorKind: string }).errorKind,
-    ).toBe("model_provider");
+    expect(jsonObjectSchema.parse(emitCalls[0].contextPayload).errorKind).toBe(
+      "model_provider",
+    );
     // A provider-scoped failure code keys the notification on the cause and
     // the resolved provider scope, not the job. `heartbeatAgent` resolves the
     // cost-optimized default profile, so every job failing on this code
@@ -409,9 +402,9 @@ describe("runBackgroundJob", () => {
     expect(result.error?.message).toContain("timed out after 50ms");
     expect(emitCalls).toHaveLength(1);
     expect(emitCalls[0].sourceEventName).toBe("activity.failed");
-    expect(
-      (emitCalls[0].contextPayload as { errorKind: string }).errorKind,
-    ).toBe("timeout");
+    expect(jsonObjectSchema.parse(emitCalls[0].contextPayload).errorKind).toBe(
+      "timeout",
+    );
     // A timeout is job-specific, so it keeps the per-job dedupe key.
     expect(capturedStringSchema.parse(emitCalls[0].dedupeKey)).toMatch(
       /^activity-failed:test-job:\d{4}-\d{2}-\d{2}$/,
@@ -607,7 +600,7 @@ describe("runBackgroundJob presence suppression", () => {
 
   function emittedHint(): Record<string, unknown> {
     expect(emitCalls).toHaveLength(1);
-    return emitCalls[0].attentionHints as Record<string, unknown>;
+    return jsonObjectSchema.parse(emitCalls[0].attentionHints);
   }
 
   test("a carried turn failure lets a focused conversation suppress the alert", async () => {

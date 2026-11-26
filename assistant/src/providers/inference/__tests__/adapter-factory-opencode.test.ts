@@ -31,9 +31,11 @@ describe("opencode adapter factory", () => {
       model: "mimo-v2.5-free",
       streamTimeoutMs: 60_000,
       useNativeWebSearch: false,
-    }) as OpenCodeProvider;
-    const client = (adapter as unknown as { client: { baseURL?: string } })
-      .client;
+    });
+    if (!(adapter instanceof OpenCodeProvider)) {
+      throw new Error("Expected an OpenCode provider");
+    }
+    const client = adapter["client"];
     expect(client.baseURL).toBe(OPENCODE_ZEN_BASE_URL);
   });
 

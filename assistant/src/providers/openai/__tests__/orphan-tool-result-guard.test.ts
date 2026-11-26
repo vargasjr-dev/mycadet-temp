@@ -64,19 +64,12 @@ function stubResponsesCreate(provider: OpenAIResponsesProvider): {
   input: () => ResponsesInputItem[];
 } {
   let captured: ResponsesRequest | undefined;
-  const inner = provider as unknown as {
-    client: {
-      responses: {
-        create: (
-          params: ResponsesRequest,
-        ) => Promise<AsyncIterable<ResponsesStreamEvent>>;
-      };
-    };
-  };
-  inner.client.responses.create = async (params) => {
-    captured = params;
-    return makeEventStream(RESPONSES_OK_EVENTS);
-  };
+  Object.assign(provider["client"].responses, {
+    create: async (params: ResponsesRequest) => {
+      captured = params;
+      return makeEventStream(RESPONSES_OK_EVENTS);
+    },
+  });
   return {
     input: () => captured!.input,
   };
@@ -122,19 +115,12 @@ function stubChatCreate(provider: OpenAIChatCompletionsProvider): {
   messages: () => ChatMessageParam[];
 } {
   let captured: ChatRequest | undefined;
-  const inner = provider as unknown as {
-    client: {
-      chat: {
-        completions: {
-          create: (params: ChatRequest) => Promise<AsyncIterable<ChatChunk>>;
-        };
-      };
-    };
-  };
-  inner.client.chat.completions.create = async (params) => {
-    captured = params;
-    return makeChunkStream(CHAT_OK_CHUNKS);
-  };
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: ChatRequest) => {
+      captured = params;
+      return makeChunkStream(CHAT_OK_CHUNKS);
+    },
+  });
   return {
     messages: () => captured!.messages,
   };
