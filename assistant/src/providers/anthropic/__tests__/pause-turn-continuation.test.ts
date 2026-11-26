@@ -36,6 +36,7 @@ function serverToolUseBlock(id: string): Anthropic.ContentBlock {
     type: "server_tool_use",
     id,
     name: "web_search",
+    caller: { type: "direct" },
     input: { query: "test" },
   };
 }
@@ -113,6 +114,7 @@ describe("pause_turn continuation", () => {
         type: "server_tool_use",
         id: "srvtoolu_1",
         name: "web_search",
+        caller: { type: "direct" },
         input: { query: "test" },
       },
       { type: "text", text: "Done" },

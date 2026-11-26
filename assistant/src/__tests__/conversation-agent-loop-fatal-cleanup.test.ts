@@ -20,7 +20,7 @@ import type { AgentLoop } from "../agent/loop.js";
 import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
 import type { AssistantEvent } from "../api/index.js";
 import type { Conversation } from "../daemon/conversation.js";
-import { SecretPrompter } from "../permissions/secret-prompter.js";
+import { PermissionPrompter } from "../permissions/prompter.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 import { createMockProvider } from "./helpers/mock-provider.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -134,7 +134,7 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     lastAssistantAttachments: [],
     lastAttachmentWarnings: [],
     hasNoClient: false,
-    prompter: new SecretPrompter(),
+    prompter: new PermissionPrompter(() => {}),
     queue: new MessageQueue(),
     markWorkspaceTopLevelDirty: () => {},
     emitActivityState: () => {},
