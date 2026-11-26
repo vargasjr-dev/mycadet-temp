@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { buildApprovalNotificationBlocks } from "../notifications/adapters/slack.js";
 import type {
   ApprovalCardBlock,
@@ -407,7 +409,11 @@ describe("Slack card intent", () => {
       } as never,
       "What should I dig into?",
     );
-    const card = blocks[0] as { title?: { text?: string } };
+    const card = z
+      .looseObject({
+        title: z.looseObject({ text: z.string().optional() }).optional(),
+      })
+      .parse(blocks[0]);
     expect(card.title?.text).toBe("Question");
   });
 
@@ -423,7 +429,11 @@ describe("Slack card intent", () => {
       } as never,
       "Approve this",
     );
-    const card = blocks[0] as { title?: { text?: string } };
+    const card = z
+      .looseObject({
+        title: z.looseObject({ text: z.string().optional() }).optional(),
+      })
+      .parse(blocks[0]);
     expect(card.title?.text).toBe("Approval Request");
   });
 });

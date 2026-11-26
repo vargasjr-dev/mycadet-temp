@@ -512,7 +512,7 @@ describe("ContextWindowManager.emergencyCompact", () => {
     expect(args.messages).toBe(messages);
     expect(args.previousEstimatedInputTokens).toBe(242_201);
     expect(args.overrideProfile).toBe("fast");
-    expect((args.provider as { name: string }).name).toBe("mock-provider");
+    expect(args.provider).toHaveProperty("name", "mock-provider");
     expect(result.summaryText).toBe("emergency summary");
   });
 

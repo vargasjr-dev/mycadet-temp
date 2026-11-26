@@ -82,22 +82,22 @@ async function runStatusCommand(): Promise<{
   const originalStderrWrite = process.stderr.write.bind(process.stderr);
   const originalExit = process.exit.bind(process);
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  process.stderr.write = ((chunk: unknown) => {
+  process.stderr.write = (chunk: unknown) => {
     stderrChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   // Override process.exit to capture the code instead of terminating
-  (process as { exit: (code?: number) => never }).exit = ((code?: number) => {
+  (process as { exit: (code?: number) => never }).exit = (code?: number) => {
     capturedExitCode = code ?? 0;
     exitCalled = true;
     throw new Error(`process.exit(${code})`);
-  }) as typeof process.exit;
+  };
 
   process.exitCode = 0;
 

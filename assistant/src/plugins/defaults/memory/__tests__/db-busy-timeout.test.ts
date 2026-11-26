@@ -11,6 +11,8 @@
  */
 import { expect, test } from "bun:test";
 
+import { z } from "zod";
+
 const { getSqlite, SQLITE_BUSY_TIMEOUT_MS } =
   await import("../../../../persistence/db-connection.js");
 const { initializeDb } = await import("../../../../persistence/db-init.js");
@@ -19,8 +21,8 @@ await initializeDb();
 
 test("the daemon connection runs with the shared busy_timeout", () => {
   const sqlite = getSqlite();
-  const value = (
-    sqlite.query("PRAGMA busy_timeout").get() as { timeout: number }
-  ).timeout;
+  const value = z
+    .looseObject({ timeout: z.number() })
+    .parse(sqlite.query("PRAGMA busy_timeout").get()).timeout;
   expect(value).toBe(SQLITE_BUSY_TIMEOUT_MS);
 });

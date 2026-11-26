@@ -8,6 +8,7 @@ import type {
   ThinkingConfig,
   ThinkingLevel,
 } from "@google/genai";
+import { z } from "zod";
 
 import { MALFORMED_TOOL_CALL_MESSAGE } from "../providers/malformed-tool-call.js";
 import type {
@@ -720,12 +721,14 @@ describe("GeminiProvider", () => {
     ]);
 
     expect(result.content).toHaveLength(1);
-    const block = result.content[0] as {
-      type: string;
-      id: string;
-      name: string;
-      input: unknown;
-    };
+    const block = z
+      .looseObject({
+        type: z.string(),
+        id: z.string(),
+        name: z.string(),
+        input: z.unknown(),
+      })
+      .parse(result.content[0]);
     expect(block.type).toBe("tool_use");
     expect(block.id).toStartWith("call_");
     expect(block.id.length).toBeGreaterThan(5); // call_ + UUID
@@ -752,8 +755,8 @@ describe("GeminiProvider", () => {
       { role: "user", content: [{ type: "text", text: "call 2" }] },
     ]);
 
-    const id1 = (result1.content[0] as { id: string }).id;
-    const id2 = (result2.content[0] as { id: string }).id;
+    const id1 = z.looseObject({ id: z.string() }).parse(result1.content[0]).id;
+    const id2 = z.looseObject({ id: z.string() }).parse(result2.content[0]).id;
     expect(id1).not.toBe(id2);
   });
 
@@ -1135,9 +1138,21 @@ describe("GeminiProvider", () => {
 
     await provider.sendMessage(toolResultWithAudio("audio/mpeg", oversize));
 
-    const contents = lastStreamParams!.contents as Array<{
-      parts: Array<{ functionResponse?: { response: { output: string } } }>;
-    }>;
+    const contents = z
+      .array(
+        z.looseObject({
+          parts: z.array(
+            z.looseObject({
+              functionResponse: z
+                .looseObject({
+                  response: z.looseObject({ output: z.string() }),
+                })
+                .optional(),
+            }),
+          ),
+        }),
+      )
+      .parse(lastStreamParams!.contents);
     expect(contents).toHaveLength(3); // no inlineData Content
     expect(contents[2].parts[0].functionResponse?.response.output).toContain(
       "too large",

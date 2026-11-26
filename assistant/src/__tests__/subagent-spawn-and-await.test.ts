@@ -14,6 +14,8 @@ import assert from "node:assert/strict";
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "../api/index.js";
 import type { Message } from "../providers/types.js";
 
@@ -321,7 +323,7 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
 function broadcastStatuses(events: AssistantEvent[]): string[] {
   return events
     .filter((m) => m.type === "subagent_status_changed")
-    .map((m) => (m as { status: string }).status);
+    .map((m) => z.looseObject({ status: z.string() }).parse(m).status);
 }
 
 /** A fake parent conversation that records injected (enqueued) messages. */

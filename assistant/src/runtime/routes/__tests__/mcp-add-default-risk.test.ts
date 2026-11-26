@@ -3,8 +3,9 @@
  * Policy fields (enabled, risk, tool caps, allow/block lists) are not
  * persisted.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 let stored: {
   servers: Record<string, { transport: Record<string, unknown> }>;
@@ -32,7 +33,7 @@ const { ROUTES } = await import("../mcp-auth-routes.js");
 const addRoute = ROUTES.find((r) => r.operationId === "internal_mcp_add")!;
 
 function addedEntry(): Record<string, unknown> {
-  return saved!.servers["srv"] as Record<string, unknown>;
+  return jsonObjectSchema.parse(saved!.servers["srv"]);
 }
 
 describe("internal_mcp_add persisted shape", () => {

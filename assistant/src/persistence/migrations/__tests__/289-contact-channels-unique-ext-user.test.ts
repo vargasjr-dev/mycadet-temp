@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
@@ -593,9 +594,9 @@ describe("migration 287 — dedup case collisions + drop ext_user indexes", () =
 
     expect(() => migrateContactChannelsUniqueExtUser(db)).not.toThrow();
 
-    const rows = raw
-      .prepare("SELECT id, address FROM contact_channels")
-      .all() as { id: string; address: string }[];
+    const rows = z
+      .array(z.looseObject({ id: z.string(), address: z.string() }))
+      .parse(raw.prepare("SELECT id, address FROM contact_channels").all());
     expect(rows).toHaveLength(1);
     expect(rows[0]!.address).toBe("U999");
   });

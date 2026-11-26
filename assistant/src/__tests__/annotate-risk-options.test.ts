@@ -18,6 +18,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 
 import pino from "pino";
+import { z } from "zod";
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import type {
@@ -35,6 +36,7 @@ import {
 } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
 import type { ContentBlock } from "../providers/types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import {
   asConversation,
   mockUnownedModeSessions,
@@ -103,9 +105,11 @@ function findPersistedToolUse(
   rawContent: ContentBlock[] | string,
   toolUseId: string,
 ): Record<string, unknown> {
-  const parsed = (
-    typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent
-  ) as Array<Record<string, unknown>>;
+  const parsed = z
+    .array(jsonObjectSchema)
+    .parse(
+      typeof rawContent === "string" ? JSON.parse(rawContent) : rawContent,
+    );
   const block = parsed.find((b) => b.type === "tool_use" && b.id === toolUseId);
   if (!block) {
     throw new Error(`tool_use block ${toolUseId} not found`);

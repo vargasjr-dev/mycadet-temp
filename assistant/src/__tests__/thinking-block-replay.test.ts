@@ -6,10 +6,10 @@
  * Phase 2 (mocked): verifies the send-time filtering fix strips historical
  *   thinking blocks while preserving active tool-use continuation blocks.
  */
-
 import { describe, expect, test } from "bun:test";
 
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Phase 1 — Real API reproduction
@@ -65,7 +65,12 @@ describe.skipIf(!apiKey)(
         });
         expect.unreachable("API should have rejected the tampered signature");
       } catch (err: unknown) {
-        const apiErr = err as { status?: number; message?: string };
+        const apiErr = z
+          .looseObject({
+            status: z.number().optional(),
+            message: z.string().optional(),
+          })
+          .parse(err);
         expect(apiErr.status).toBe(400);
         expect(apiErr.message).toContain("signature");
       }

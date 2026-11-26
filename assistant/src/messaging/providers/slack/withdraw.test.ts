@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+
 const getSlackMessageBlocks = mock(
   async (_channel: string, _ts: string): Promise<unknown[] | null> => null,
 );
@@ -27,9 +31,9 @@ describe("stripApprovalActionBlocks", () => {
         actions: [{ type: "button", action_id: "apr:r1:approve_once" }],
       },
     ];
-    const result = stripApprovalActionBlocks(blocks) as Array<
-      Record<string, unknown>
-    >;
+    const result = z
+      .array(jsonObjectSchema)
+      .parse(stripApprovalActionBlocks(blocks));
     expect(result).toHaveLength(1);
     expect(result[0].type).toBe("card");
     expect(result[0].title).toEqual({
@@ -52,9 +56,9 @@ describe("stripApprovalActionBlocks", () => {
         elements: [{ type: "mrkdwn", text: "Source: Slack" }],
       },
     ];
-    const result = stripApprovalActionBlocks(blocks) as Array<
-      Record<string, unknown>
-    >;
+    const result = z
+      .array(jsonObjectSchema)
+      .parse(stripApprovalActionBlocks(blocks));
     expect(result.map((b) => b.type)).toEqual(["section", "context"]);
   });
 
@@ -92,9 +96,9 @@ describe("stripApprovalActionBlocks", () => {
         ],
       },
     ];
-    const result = stripApprovalActionBlocks(blocks) as Array<
-      Record<string, unknown>
-    >;
+    const result = z
+      .array(jsonObjectSchema)
+      .parse(stripApprovalActionBlocks(blocks));
     // Card + source context survive; both tagged instruction blocks are dropped.
     expect(result.map((b) => b.type)).toEqual(["card", "context"]);
     const serialized = JSON.stringify(result);
@@ -139,7 +143,7 @@ describe("withdrawSlackApprovalCard", () => {
     expect(body.channel).toBe("C1");
     expect(body.ts).toBe("1700000000.0001");
 
-    const blocks = body.blocks as Array<Record<string, unknown>>;
+    const blocks = z.array(jsonObjectSchema).parse(body.blocks);
     // original card (no actions) + original context + appended status context
     expect(blocks).toHaveLength(3);
     expect(blocks[0].type).toBe("card");
@@ -165,7 +169,7 @@ describe("withdrawSlackApprovalCard", () => {
     expect(callSlackApi).toHaveBeenCalledTimes(1);
     const [method, body] = callSlackApi.mock.calls[0];
     expect(method).toBe("chat.update");
-    const blocks = body.blocks as Array<Record<string, unknown>>;
+    const blocks = z.array(jsonObjectSchema).parse(body.blocks);
     expect(blocks).toHaveLength(1);
     expect(blocks[0].type).toBe("section");
     expect(JSON.stringify(blocks)).toContain("Denied");
@@ -210,9 +214,9 @@ describe("withdrawSlackApprovalCard", () => {
     expect(callSlackApi.mock.calls.every((c) => c[0] === "chat.update")).toBe(
       true,
     );
-    const retryBlocks = callSlackApi.mock.calls[1][1].blocks as Array<
-      Record<string, unknown>
-    >;
+    const retryBlocks = z
+      .array(jsonObjectSchema)
+      .parse(callSlackApi.mock.calls[1][1].blocks);
     expect(retryBlocks).toHaveLength(1);
     expect(retryBlocks[0].type).toBe("section");
   });

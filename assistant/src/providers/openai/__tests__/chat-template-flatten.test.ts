@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ProviderError } from "../../../util/errors.js";
 import { OpenAIChatCompletionsProvider } from "../chat-completions-provider.js";
 
@@ -84,22 +86,27 @@ describe("chat-template rejection flatten fallback", () => {
 
     // THEN the first request carried a content-parts array
     expect(requests).toHaveLength(2);
-    const first = requests[0] as {
-      messages: Array<{ content: unknown }>;
-    };
+    const first = z
+      .looseObject({
+        messages: z.array(z.looseObject({ content: z.unknown() })),
+      })
+      .parse(requests[0]);
     expect(Array.isArray(first.messages[0].content)).toBe(true);
 
     // AND the retry flattened it to a plain string keeping all the text
-    const second = requests[1] as {
-      messages: Array<{ content: unknown }>;
-    };
+    const second = z
+      .looseObject({
+        messages: z.array(z.looseObject({ content: z.unknown() })),
+      })
+      .parse(requests[1]);
     const flattened = second.messages[0].content;
     expect(flattened).toBe("first paragraph\n\nsecond paragraph");
 
     // AND the retry succeeded
-    const text = response.content.find((b) => b.type === "text") as
-      | { type: "text"; text: string }
-      | undefined;
+    const text = z
+      .looseObject({ type: z.literal("text"), text: z.string() })
+      .optional()
+      .parse(response.content.find((b) => b.type === "text"));
     expect(text?.text).toBe("ok");
   });
 
@@ -119,7 +126,11 @@ describe("chat-template rejection flatten fallback", () => {
     ]);
 
     expect(requests).toHaveLength(2);
-    const retry = requests[1] as { messages: Array<{ content: unknown }> };
+    const retry = z
+      .looseObject({
+        messages: z.array(z.looseObject({ content: z.unknown() })),
+      })
+      .parse(requests[1]);
     expect(retry.messages[0].content).toBe("[Image: a cat]\n\nwhat is this?");
   });
 

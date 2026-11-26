@@ -9,10 +9,12 @@
  *   - Default values (get --format defaults to "path", ascii --width defaults to "60")
  *   - Exit codes on IPC failures
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
@@ -64,12 +66,12 @@ async function runCommand(
   const originalStderrWrite = process.stderr.write.bind(process.stderr);
   const stdoutChunks: string[] = [];
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  process.stderr.write = (() => true) as typeof process.stderr.write;
+  process.stderr.write = () => true;
 
   process.exitCode = 0;
 
@@ -217,10 +219,10 @@ describe("avatar set", () => {
         expect(lastIpcCall!.method).toBe("avatar_set");
         // Path should be absolute
         expect(
-          (
-            (lastIpcCall!.params!.body as Record<string, unknown>)
-              .imagePath as string
-          ).startsWith("/"),
+          z
+            .string()
+            .parse(jsonObjectSchema.parse(lastIpcCall!.params!.body).imagePath)
+            .startsWith("/"),
         ).toBe(true);
       }
       // If the file doesn't exist we skip — the test is about path resolution

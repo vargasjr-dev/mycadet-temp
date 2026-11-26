@@ -9,6 +9,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import { reportIpcFailureWithoutExiting } from "./run-assistant-command.js";
 
@@ -118,7 +120,7 @@ const { runAssistantCommandFull } = await import("./run-assistant-command.js");
 function addressPromptBody(): Record<string, unknown> {
   const call = calls.find((c) => c.operationId === "contacts_prompt");
   expect(call).toBeDefined();
-  return (call!.options as { body: Record<string, unknown> }).body;
+  return z.looseObject({ body: jsonObjectSchema }).parse(call!.options).body;
 }
 
 function wasCalled(operationId: string): boolean {

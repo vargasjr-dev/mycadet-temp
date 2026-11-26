@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, jest, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 const getServerState = jest.fn();
 
 mock.module("../mcp/client.js", () => ({
@@ -60,18 +62,18 @@ describe("internal_mcp_list runtime status", () => {
   test("returns connected from the manager's recorded state", async () => {
     getServerState.mockReturnValue("connected");
 
-    const result = (await listHandler({})) as {
-      servers: { status: string }[];
-    };
+    const result = z
+      .looseObject({ servers: z.array(z.looseObject({ status: z.string() })) })
+      .parse(await listHandler({}));
     expect(result.servers[0].status).toBe("connected");
   });
 
   test("returns needs-auth from the manager's recorded state", async () => {
     getServerState.mockReturnValue("needs-auth");
 
-    const result = (await listHandler({})) as {
-      servers: { status: string }[];
-    };
+    const result = z
+      .looseObject({ servers: z.array(z.looseObject({ status: z.string() })) })
+      .parse(await listHandler({}));
     expect(result.servers[0].status).toBe("needs-auth");
   });
 
@@ -80,9 +82,11 @@ describe("internal_mcp_list runtime status", () => {
     async (runtimeState) => {
       getServerState.mockReturnValue(runtimeState);
 
-      const result = (await listHandler({})) as {
-        servers: { status: string }[];
-      };
+      const result = z
+        .looseObject({
+          servers: z.array(z.looseObject({ status: z.string() })),
+        })
+        .parse(await listHandler({}));
       expect(result.servers[0].status).toBe("error");
     },
   );

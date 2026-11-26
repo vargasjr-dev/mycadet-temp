@@ -13,6 +13,7 @@ import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
+import { z } from "zod";
 
 type IpcCall = {
   method: string;
@@ -114,9 +115,18 @@ describe("merge contacts relay", () => {
       },
     };
 
-    const result = (await handleMergeContactsRoute({
-      body: { keepId: "ct_keep", mergeId: "ct_merge" },
-    })) as { ok: boolean; contact?: { contactType?: string } };
+    const result = z
+      .looseObject({
+        ok: z.boolean(),
+        contact: z
+          .looseObject({ contactType: z.string().optional() })
+          .optional(),
+      })
+      .parse(
+        await handleMergeContactsRoute({
+          body: { keepId: "ct_keep", mergeId: "ct_merge" },
+        }),
+      );
 
     expect(result.contact?.contactType).toBe("human");
   });
@@ -132,7 +142,12 @@ describe("merge contacts relay", () => {
         await handleMergeContactsRoute({ body });
         throw new Error("expected handler to throw");
       } catch (err) {
-        const e = err as { statusCode?: number; message: string };
+        const e = z
+          .looseObject({
+            statusCode: z.number().optional(),
+            message: z.string(),
+          })
+          .parse(err);
         expect(e.message).toBe("keepId and mergeId are required");
         expect(e.statusCode).toBe(400);
       }
@@ -153,7 +168,13 @@ describe("merge contacts relay", () => {
       });
       throw new Error("expected handler to throw");
     } catch (err) {
-      const e = err as { statusCode?: number; code?: string; message: string };
+      const e = z
+        .looseObject({
+          statusCode: z.number().optional(),
+          code: z.string().optional(),
+          message: z.string(),
+        })
+        .parse(err);
       expect(e.message).toBe("Cannot merge a contact with itself");
       expect(e.statusCode).toBe(400);
       expect(e.code).toBe("MERGE_CONTACTS_INVALID");

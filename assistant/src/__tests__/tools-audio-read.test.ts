@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   AUDIO_EXTENSIONS,
   readAudioFile,
@@ -60,9 +62,9 @@ describe("readAudioFile", () => {
       writeFileSync(p, Buffer.from("x"));
       const result = await readAudioFile(p);
       expect(result.isError).toBe(false);
-      const block = result.contentBlocks?.[0] as {
-        source: { media_type: string };
-      };
+      const block = z
+        .looseObject({ source: z.looseObject({ media_type: z.string() }) })
+        .parse(result.contentBlocks?.[0]);
       expect(block.source.media_type).toBe(mime);
     }
   });

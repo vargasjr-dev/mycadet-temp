@@ -232,7 +232,7 @@ describe("computeTransitiveSkillVersionHash", () => {
     try {
       computeTransitiveSkillVersionHash("self-ref", index);
     } catch (err) {
-      expect((err as TransitiveHashError).code).toBe("cycle");
+      expect(err).toHaveProperty("code", "cycle");
     }
   });
 
@@ -256,7 +256,7 @@ describe("computeTransitiveSkillVersionHash", () => {
     try {
       computeTransitiveSkillVersionHash("root", index);
     } catch (err) {
-      expect((err as TransitiveHashError).code).toBe("missing");
+      expect(err).toHaveProperty("code", "missing");
       expect((err as TransitiveHashError).message).toContain("ghost");
     }
   });

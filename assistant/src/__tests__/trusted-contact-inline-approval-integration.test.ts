@@ -16,8 +16,11 @@
  *   e. Guardian-only prompt delivery invariant: non-guardian never receives approval prompt UI
  *   f. Timeout/stale flow: guardian decision after prompt timeout produces deterministic outcome
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const testDir = process.env.CADET_WORKSPACE_DIR!;
 
@@ -367,7 +370,7 @@ describe("(b) prompt-path flow: confirmation_request bridges to guardian", () =>
     expect(emittedSignals.length).toBeGreaterThan(0);
     expect(emittedSignals[0].sourceEventName).toBe("guardian.question");
 
-    const payload = emittedSignals[0].contextPayload as Record<string, unknown>;
+    const payload = jsonObjectSchema.parse(emittedSignals[0].contextPayload);
     expect(payload.requestId).toBe(guardianRequest.id);
     expect(payload.toolName).toBe("bash");
     expect(payload.requesterIdentifier).toBe("@requester");
@@ -1060,10 +1063,9 @@ describe("cross-milestone integration checks", () => {
     // Both the bridge signal and the tool_grant_request signal would target
     // the same guardian binding (guardian-1)
     if (emittedSignals.length > 0) {
-      const payload = emittedSignals[0].contextPayload as Record<
-        string,
-        unknown
-      >;
+      const payload = z
+        .record(z.string(), z.unknown())
+        .parse(emittedSignals[0].contextPayload);
       expect(payload.requesterExternalUserId).toBe("requester-1");
     }
   });

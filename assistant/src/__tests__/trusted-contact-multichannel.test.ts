@@ -8,6 +8,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -206,9 +208,9 @@ for (const config of CHANNEL_CONFIGS) {
         expect(json.reason).toBe("not_a_member");
       }
       expect(deliverReplyCalls.length).toBe(1);
-      const replyText = (
-        deliverReplyCalls[0].payload as Record<string, unknown>
-      ).text as string;
+      const replyText = z
+        .string()
+        .parse(jsonObjectSchema.parse(deliverReplyCalls[0].payload).text);
       if (config.channel === "slack") {
         expect(replyText).toContain("verification code");
       } else {

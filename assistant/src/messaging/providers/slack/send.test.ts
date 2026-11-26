@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { KnownBlock } from "@slack/types";
+import { z } from "zod";
 
 // Derive the mock signature from the real export so it cannot drift from the
 // production response shape (`SlackApiResponse`). A hand-rolled
@@ -499,9 +500,7 @@ describe("sendSlackStreamOp", () => {
       (call) => call[0] === "chat.appendStream",
     );
     expect(calls).toHaveLength(1);
-    expect((calls[0]![1] as { markdownText?: string }).markdownText).toBe(
-      appended,
-    );
+    expect(calls[0]![1]).toHaveProperty("markdownText", appended);
   });
 
   test("a plan that moved with no new words still reaches the message", async () => {
@@ -519,7 +518,12 @@ describe("sendSlackStreamOp", () => {
       (call) => call[0] === "chat.appendStream",
     );
     expect(calls).toHaveLength(1);
-    const body = calls[0]![1] as { markdownText?: string; tasks?: unknown };
+    const body = z
+      .looseObject({
+        markdownText: z.string().optional(),
+        tasks: z.unknown().optional(),
+      })
+      .parse(calls[0]![1]);
     expect(body.markdownText).toBeUndefined();
     expect(body.tasks).toBeDefined();
   });

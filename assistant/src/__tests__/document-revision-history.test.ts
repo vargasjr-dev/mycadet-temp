@@ -5,6 +5,8 @@ import type { SQLQueryBindings } from "bun:sqlite";
  */
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEventEnvelope } from "../api/index.js";
 import {
   listDocumentRevisions,
@@ -27,6 +29,7 @@ import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 import { ROUTES as DOCUMENT_ROUTES } from "../runtime/routes/documents-routes.js";
 import type { RouteDefinition } from "../runtime/routes/types.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 await initializeDb();
 
@@ -247,9 +250,13 @@ describe("history routes", () => {
     const surfaceId = seed("one two");
     updateDocumentContent(surfaceId, "three", "replace");
 
-    const result = (await invoke("listDocumentRevisions", {
-      pathParams: { id: surfaceId },
-    })) as { revisions: Array<Record<string, unknown>> };
+    const result = z
+      .looseObject({ revisions: z.array(jsonObjectSchema) })
+      .parse(
+        await invoke("listDocumentRevisions", {
+          pathParams: { id: surfaceId },
+        }),
+      );
 
     expect(result.revisions).toEqual([
       {

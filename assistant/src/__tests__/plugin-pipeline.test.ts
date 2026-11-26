@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // Stub the conversation scope resolver so the pipeline's conversationId-based
 // scoping can be exercised without a live conversation or DB row.
 const resolveScopeMock = mock(
@@ -63,9 +65,10 @@ describe("plugin pipeline", () => {
     // `broadcast` capability onto every hook context, so assert the field
     // rather than an exact shape.
     expect(result).toMatchObject({ value: 2 });
-    expect(typeof (result as { broadcast?: unknown }).broadcast).toBe(
-      "function",
-    );
+    expect(
+      typeof z.looseObject({ broadcast: z.unknown().optional() }).parse(result)
+        .broadcast,
+    ).toBe("function");
   });
 
   test("discards in-place mutations from a failed hook", async () => {

@@ -10,10 +10,10 @@
  * gateway delegates the actual provider call to the daemon-local handler, so
  * relaying it back would loop gateway→assistant→gateway.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
+import { z } from "zod";
 
 type IpcCall = {
   method: string;
@@ -346,7 +346,12 @@ describe("invite relay routes", () => {
         });
         throw new Error("expected handler to throw");
       } catch (err) {
-        const e = err as { statusCode?: number; message: string };
+        const e = z
+          .looseObject({
+            statusCode: z.number().optional(),
+            message: z.string(),
+          })
+          .parse(err);
         expect(e.message).toBe("Invite not eligible");
         expect(e.statusCode).toBe(400);
       }
@@ -374,11 +379,13 @@ describe("invite relay routes", () => {
         await handleRevokeInvite({ pathParams: { id: "missing" } });
         throw new Error("expected handler to throw");
       } catch (err) {
-        const e = err as {
-          statusCode?: number;
-          code?: string;
-          message: string;
-        };
+        const e = z
+          .looseObject({
+            statusCode: z.number().optional(),
+            code: z.string().optional(),
+            message: z.string(),
+          })
+          .parse(err);
         expect(e.message).toBe("Invite not found");
         expect(e.statusCode).toBe(404);
         expect(e.code).toBe("NOT_FOUND");

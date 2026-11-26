@@ -60,10 +60,10 @@ async function runDomainCommand(...args: string[]) {
 
   const stdoutChunks: string[] = [];
   const origWrite = process.stdout.write.bind(process.stdout);
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
   try {
     const program = new Command();

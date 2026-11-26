@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { ToolContext } from "../../../../tools/types.js";
 import { createAbortReason } from "../../../../util/abort-reasons.js";
 import { run as clearMarks } from "./screen-clear-marks.js";
@@ -174,7 +176,9 @@ describe("the published mark schema", () => {
 
   /** An empty name is a name of nothing, and the host rejects it as one. */
   test("a target has to say something", () => {
-    const target = item.properties?.target as { minLength?: number };
+    const target = z
+      .looseObject({ minLength: z.number().optional() })
+      .parse(item.properties?.target);
     expect(target.minLength).toBe(1);
   });
 

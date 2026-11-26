@@ -127,9 +127,9 @@ describe("SlackAdapter.send", () => {
     expect(sendCalls[0]?.text).not.toContain("ABC123");
     // The send layer keeps the approval so a rejected card can retry as
     // text with the instruction re-attached.
-    expect(
-      (sendCalls[0]?.options?.approval as { requestId?: string } | undefined)
-        ?.requestId,
-    ).toBe("req-q-1");
+    expect(sendCalls[0]?.options?.approval).toHaveProperty(
+      "requestId",
+      "req-q-1",
+    );
   });
 });

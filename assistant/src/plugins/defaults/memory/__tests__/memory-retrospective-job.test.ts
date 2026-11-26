@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../../__tests__/helpers/json-object-schema.js";
 import type { AgentLoopExitReason } from "../../../../hooks/types.js";
 import { getWorkspaceDir } from "../paths.js";
 
@@ -1292,9 +1293,9 @@ describe("memoryRetrospectiveJob", () => {
     await memoryRetrospectiveJob(makeJob(), stubConfig);
 
     expect(wakeCalls).toHaveLength(1);
-    const pin = wakeCalls[0]!.opts.toolContextPin as {
-      requestOrigin?: string;
-    };
+    const pin = z
+      .looseObject({ requestOrigin: z.string().optional() })
+      .parse(wakeCalls[0]!.opts.toolContextPin);
     expect(pin.requestOrigin).toBe("memory_retrospective");
     // The origin pin rides unconditionally — even when proc-to-skills is
     // inactive the checker independently denies the grant, so it stays inert.
@@ -1329,7 +1330,7 @@ describe("memoryRetrospectiveJob", () => {
     expect(addMessageCalls[0]!.conversationId).toBe("fork-conv-1");
     expect(addMessageCalls[0]!.role).toBe("user");
     expect(
-      (addMessageCalls[0]!.options as Record<string, unknown>).metadata,
+      jsonObjectSchema.parse(addMessageCalls[0]!.options).metadata,
     ).toEqual({
       kind: "memory_retrospective_instruction",
       hidden: true,

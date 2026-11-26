@@ -8,6 +8,7 @@ import { Database } from "bun:sqlite";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { clearStoredDb, setStoredDb } from "../persistence/db-singleton.js";
 import { ensureRecallLogsSchema } from "../persistence/migrations/337-move-memory-recall-logs-to-memory-db.js";
@@ -18,6 +19,7 @@ import {
   normalizeTopCandidates,
   recordMemoryRecallLog,
 } from "../plugins/defaults/memory/memory-recall-log-store.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let memorySqlite: Database;
 
@@ -230,7 +232,7 @@ describe("memory-recall-log-store", () => {
 
     const result = getMemoryRecallLogByMessageIds([messageId]);
     expect(result).not.toBeNull();
-    const candidates = result!.topCandidates as Array<Record<string, unknown>>;
+    const candidates = z.array(jsonObjectSchema).parse(result!.topCandidates);
     expect(candidates).toHaveLength(1);
     expect(candidates[0]).toEqual({
       nodeId: "node-abc",
@@ -281,7 +283,7 @@ describe("memory-recall-log-store", () => {
 
     const result = getMemoryRecallLogByMessageIds([messageId]);
     expect(result).not.toBeNull();
-    const candidates = result!.topCandidates as Array<Record<string, unknown>>;
+    const candidates = z.array(jsonObjectSchema).parse(result!.topCandidates);
     expect(candidates).toHaveLength(1);
     expect(candidates[0]).toEqual({
       nodeId: "node-xyz",

@@ -183,9 +183,7 @@ describe("persistUnsendableImageDowngrades (downscalable host)", () => {
       source: { type: "base64", data: SHRUNK_DATA },
     });
     // ...and the link to the attachment row survived the flattening.
-    expect((replacement as { _attachmentId?: string })._attachmentId).toBe(
-      stored.id,
-    );
+    expect(replacement).toHaveProperty("_attachmentId", stored.id);
   });
 
   /** An inline resize input carries its id on the top-level field instead. */

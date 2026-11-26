@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import {
   checkSlackEnvelope,
@@ -78,8 +80,8 @@ describe("checkSlackEnvelope", () => {
     try {
       checkSlackEnvelope({ ok: false, error: "invalid_auth" });
     } catch (err) {
-      expect((err as SlackApiError).status).toBe(401);
-      expect((err as SlackApiError).category).toBe("auth");
+      expect(err).toHaveProperty("status", 401);
+      expect(err).toHaveProperty("category", "auth");
     }
   });
 });
@@ -182,7 +184,9 @@ describe("rawSlackRequest", () => {
     });
     expect(capturedInit?.method).toBe("POST");
     expect(
-      (capturedInit?.headers as Record<string, string>)["Content-Type"],
+      z.record(z.string(), z.string()).parse(capturedInit?.headers)[
+        "Content-Type"
+      ],
     ).toBe("application/x-www-form-urlencoded");
   });
 });

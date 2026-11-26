@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import * as schema from "../schema/index.js";
 import { migrateScheduleSkillScriptHandoff } from "./351-schedule-skill-script-handoff.js";
@@ -25,11 +26,10 @@ function createTestDb() {
 }
 
 function columnNames(sqlite: Database): string[] {
-  return (
-    sqlite.query("PRAGMA table_info(cron_jobs)").all() as Array<{
-      name: string;
-    }>
-  ).map((c) => c.name);
+  return z
+    .array(z.looseObject({ name: z.string() }))
+    .parse(sqlite.query("PRAGMA table_info(cron_jobs)").all())
+    .map((c) => c.name);
 }
 
 const REVERTED = ["then_execute", "skill_id", "skill_version_hash"];

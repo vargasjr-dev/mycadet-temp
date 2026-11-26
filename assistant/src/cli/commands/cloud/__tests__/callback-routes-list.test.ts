@@ -90,12 +90,8 @@ describe("assistant cloud callback-routes list", () => {
     ]);
 
     expect(ipc.calls[0][0]).toBe("cloud_callback_routes_register");
-    expect((ipc.calls[0][1].body as Record<string, unknown>).path).toBe(
-      "webhooks/telegram",
-    );
-    expect((ipc.calls[0][1].body as Record<string, unknown>).type).toBe(
-      "telegram",
-    );
+    expect(ipc.calls[0][1].body).toHaveProperty("path", "webhooks/telegram");
+    expect(ipc.calls[0][1].body).toHaveProperty("type", "telegram");
 
     const parsed = JSON.parse(out.join(""));
     expect(parsed.ok).toBe(true);

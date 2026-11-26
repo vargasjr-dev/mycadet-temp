@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // ---------------------------------------------------------------------------
 // Mocks — must be set up BEFORE importing the module under test
 // ---------------------------------------------------------------------------
@@ -743,9 +745,9 @@ describe("orchestrateOAuthConnect — transport selection", () => {
       });
 
       expect(lastPrepareArgs).not.toBeNull();
-      const capturedConfig = lastPrepareArgs!.config as {
-        scopeSeparator: string;
-      };
+      const capturedConfig = z
+        .looseObject({ scopeSeparator: z.string() })
+        .parse(lastPrepareArgs!.config);
       expect(capturedConfig.scopeSeparator).toBe(",");
     });
 
@@ -760,9 +762,9 @@ describe("orchestrateOAuthConnect — transport selection", () => {
       });
 
       expect(lastPrepareArgs).not.toBeNull();
-      const capturedConfig = lastPrepareArgs!.config as {
-        scopeSeparator: string;
-      };
+      const capturedConfig = z
+        .looseObject({ scopeSeparator: z.string() })
+        .parse(lastPrepareArgs!.config);
       expect(capturedConfig.scopeSeparator).toBe(" ");
     });
 
@@ -781,9 +783,9 @@ describe("orchestrateOAuthConnect — transport selection", () => {
       });
 
       expect(lastStartArgs).not.toBeNull();
-      const capturedConfig = lastStartArgs!.config as {
-        scopeSeparator: string;
-      };
+      const capturedConfig = z
+        .looseObject({ scopeSeparator: z.string() })
+        .parse(lastStartArgs!.config);
       expect(capturedConfig.scopeSeparator).toBe(",");
     });
 
@@ -799,9 +801,9 @@ describe("orchestrateOAuthConnect — transport selection", () => {
       });
 
       expect(lastStartArgs).not.toBeNull();
-      const capturedConfig = lastStartArgs!.config as {
-        scopeSeparator: string;
-      };
+      const capturedConfig = z
+        .looseObject({ scopeSeparator: z.string() })
+        .parse(lastStartArgs!.config);
       expect(capturedConfig.scopeSeparator).toBe(" ");
     });
   });

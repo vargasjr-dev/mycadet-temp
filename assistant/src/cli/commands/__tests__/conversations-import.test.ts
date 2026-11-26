@@ -12,13 +12,15 @@
  *   - --file <path> → reads from file
  *   - Missing file → error and process.exitCode = 1
  */
-
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
@@ -185,12 +187,9 @@ describe("conversations import — valid input", () => {
     expect(lastIpcCall).not.toBeNull();
     expect(lastIpcCall!.method).toBe("conversations_import");
     expect(
-      (
-        (lastIpcCall!.params as Record<string, unknown>).body as Record<
-          string,
-          unknown
-        >
-      ).conversations,
+      z
+        .record(z.string(), z.unknown())
+        .parse(jsonObjectSchema.parse(lastIpcCall!.params).body).conversations,
     ).toHaveLength(1);
   });
 
@@ -210,12 +209,14 @@ describe("conversations import — valid input", () => {
     await runCommand(["conversations", "import", "--file", filePath]);
 
     expect(lastIpcCall).not.toBeNull();
-    const convs = (
-      (lastIpcCall!.params as Record<string, unknown>).body as Record<
-        string,
-        unknown
-      >
-    ).conversations as Array<Record<string, unknown>>;
+    const convs = z
+      .array(jsonObjectSchema)
+      .parse(
+        z
+          .record(z.string(), z.unknown())
+          .parse((lastIpcCall!.params as Record<string, unknown>).body)
+          .conversations,
+      );
     expect(convs[0]!.sourceKey).toBe("chatgpt:abc123");
     expect(convs[0]!.title).toBe("Exported Chat");
   });

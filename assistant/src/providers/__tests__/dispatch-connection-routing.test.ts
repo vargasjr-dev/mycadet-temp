@@ -396,9 +396,7 @@ describe("routing identities", () => {
     try {
       resolveRoutingIdentity("cadet", "not-a-real-model");
     } catch (err) {
-      expect((err as ConnectionResolutionError).reason).toBe(
-        "unroutable_managed_model",
-      );
+      expect(err).toHaveProperty("reason", "unroutable_managed_model");
     }
   });
 
@@ -416,9 +414,7 @@ describe("routing identities", () => {
     try {
       resolveRoutingIdentity("chatgpt", "gpt-5");
     } catch (err) {
-      expect((err as ConnectionResolutionError).reason).toBe(
-        "model_incompatible",
-      );
+      expect(err).toHaveProperty("reason", "model_incompatible");
     }
   });
 

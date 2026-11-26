@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { EVENTS_PUBLISH_IPC_METHOD } from "../../../ipc/events-publish-client.js";
 import { assistantEventHub } from "../../../runtime/assistant-event-hub.js";
 import { handleEventsPublish } from "../events-ipc-routes.js";
@@ -47,8 +49,10 @@ describe(`${EVENTS_PUBLISH_IPC_METHOD} IPC route`, () => {
 
     expect(result).toEqual({ ok: true });
     expect(received).toHaveLength(1);
-    expect((received[0] as { id: string }).id).toBe("evt-1");
-    expect((received[0] as { message: unknown }).message).toEqual(message);
+    expect(received[0]).toHaveProperty("id", "evt-1");
+    expect(
+      z.looseObject({ message: z.unknown() }).parse(received[0]).message,
+    ).toEqual(message);
   });
 
   test("stamps a forwarded conversation-scoped event with a seq for replay", async () => {
@@ -62,12 +66,17 @@ describe(`${EVENTS_PUBLISH_IPC_METHOD} IPC route`, () => {
       type: "generation_cancelled",
       conversationId: "conv-events-test",
     });
-    expect((event as { seq?: number }).seq).toBeUndefined();
+    expect(
+      z.looseObject({ seq: z.number().optional() }).parse(event).seq,
+    ).toBeUndefined();
 
     await handleEventsPublish({ body: { event } });
 
     expect(received).toHaveLength(1);
-    expect(typeof (received[0] as { seq?: unknown }).seq).toBe("number");
+    expect(
+      typeof z.looseObject({ seq: z.unknown().optional() }).parse(received[0])
+        .seq,
+    ).toBe("number");
   });
 
   test("rejects a message that is not a known event type", async () => {

@@ -8,8 +8,9 @@
  *   - stop signals the worker and reports its prior state.
  *   - status reports the worker process liveness + the embedding backend.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import { getMemoryWorkerPidPath } from "../../../../../util/layout.js";
 
@@ -171,8 +172,9 @@ describe("memory_worker_status", () => {
     });
     // The wire value "local" must satisfy the documented response contract.
     expect(
-      embeddingStatusSchema.safeParse((res as { embedding: unknown }).embedding)
-        .success,
+      embeddingStatusSchema.safeParse(
+        z.looseObject({ embedding: z.unknown() }).parse(res).embedding,
+      ).success,
     ).toBe(true);
   });
 
@@ -191,8 +193,9 @@ describe("memory_worker_status", () => {
       embedding: { provider: "custom" },
     });
     expect(
-      embeddingStatusSchema.safeParse((res as { embedding: unknown }).embedding)
-        .success,
+      embeddingStatusSchema.safeParse(
+        z.looseObject({ embedding: z.unknown() }).parse(res).embedding,
+      ).success,
     ).toBe(true);
   });
 

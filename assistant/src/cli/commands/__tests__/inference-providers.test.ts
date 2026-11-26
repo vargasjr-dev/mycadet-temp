@@ -95,14 +95,14 @@ async function run(
   const originalErrorWrite = process.stderr.write.bind(process.stderr);
   const chunks: string[] = [];
   const errorChunks: string[] = [];
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     chunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
-  process.stderr.write = ((chunk: unknown) => {
+  };
+  process.stderr.write = (chunk: unknown) => {
     errorChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   const prevExit = process.exitCode;
   process.exitCode = 0;

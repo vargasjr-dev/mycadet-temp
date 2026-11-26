@@ -179,9 +179,7 @@ describe("abortConversation", () => {
 
     // THEN the controller's reason carries the tagged AbortReason
     expect(observedReason).toBeDefined();
-    expect((observedReason as { kind?: string }).kind).toBe(
-      "preempted_by_new_message",
-    );
+    expect(observedReason).toHaveProperty("kind", "preempted_by_new_message");
   });
 
   test("a user interrupt leaves queued messages for the stopped turn's drain", () => {

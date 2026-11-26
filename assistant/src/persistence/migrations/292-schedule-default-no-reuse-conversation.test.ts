@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import * as schema from "../schema/index.js";
 import { migrateScheduleDefaultNoReuseConversation } from "./292-schedule-default-no-reuse-conversation.js";
@@ -36,11 +37,13 @@ function insertJob(sqlite: Database, id: string, reuse: number) {
 }
 
 function reuseValue(sqlite: Database, id: string): number {
-  return (
-    sqlite
-      .query("SELECT reuse_conversation FROM cron_jobs WHERE id = ?")
-      .get(id) as { reuse_conversation: number }
-  ).reuse_conversation;
+  return z
+    .looseObject({ reuse_conversation: z.number() })
+    .parse(
+      sqlite
+        .query("SELECT reuse_conversation FROM cron_jobs WHERE id = ?")
+        .get(id),
+    ).reuse_conversation;
 }
 
 describe("migration 292: schedules default to no conversation reuse", () => {

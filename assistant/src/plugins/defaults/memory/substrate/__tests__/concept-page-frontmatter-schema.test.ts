@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ConceptPageFrontmatterSchema } from "../types.js";
 
 /**
@@ -24,10 +26,9 @@ describe("ConceptPageFrontmatterSchema", () => {
       as_of: "2026-06-13",
     };
     expect(() => ConceptPageFrontmatterSchema.parse(raw)).not.toThrow();
-    const parsed = ConceptPageFrontmatterSchema.parse(raw) as Record<
-      string,
-      unknown
-    >;
+    const parsed = z
+      .record(z.string(), z.unknown())
+      .parse(ConceptPageFrontmatterSchema.parse(raw));
     // Declared field is typed/kept...
     expect(parsed.summary).toBe("A page about something.");
     // ...and unknown keys pass through rather than being stripped or rejected.

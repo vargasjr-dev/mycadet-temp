@@ -83,11 +83,11 @@ async function runCommand(
   const originalStderrWrite = process.stderr.write.bind(process.stderr);
   const stdoutChunks: string[] = [];
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
-  process.stderr.write = (() => true) as typeof process.stderr.write;
+  };
+  process.stderr.write = () => true;
   process.exitCode = 0;
 
   try {

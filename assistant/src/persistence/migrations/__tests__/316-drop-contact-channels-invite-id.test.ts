@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
 import { migrateDropContactChannelInviteId } from "../316-drop-contact-channels-invite-id.js";
@@ -94,12 +95,14 @@ describe("migration 316 — drop contact_channels.invite_id", () => {
       expect(cols.has(col)).toBe(true);
     }
 
-    const row = raw
-      .prepare(
-        `SELECT contact_id, type, address, external_chat_id, interaction_count
+    const row = jsonObjectSchema.parse(
+      raw
+        .prepare(
+          `SELECT contact_id, type, address, external_chat_id, interaction_count
            FROM contact_channels WHERE id = 'ch-1'`,
-      )
-      .get() as Record<string, unknown>;
+        )
+        .get(),
+    );
     expect(row).toEqual({
       contact_id: "ct-1",
       type: "telegram",

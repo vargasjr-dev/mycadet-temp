@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { FeedItem } from "../../api/responses/home.js";
 import type { NotificationSignal } from "../signal.js";
 import type {
@@ -284,8 +286,12 @@ describe("writeHomeFeedItemForSignal", () => {
     expect(appended.type).toBe("notification");
     // v2 dropped source/author — the side effect must construct items
     // without those fields.
-    expect((appended as { source?: unknown }).source).toBeUndefined();
-    expect((appended as { author?: unknown }).author).toBeUndefined();
+    expect(
+      z.looseObject({ source: z.unknown().optional() }).parse(appended).source,
+    ).toBeUndefined();
+    expect(
+      z.looseObject({ author: z.unknown().optional() }).parse(appended).author,
+    ).toBeUndefined();
     expect(appended.priority).toBe(50);
     expect(appended.status).toBe("new");
     expect(appended.title).toBe("Background job done");

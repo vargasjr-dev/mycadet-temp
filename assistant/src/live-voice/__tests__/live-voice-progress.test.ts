@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import type {
   VoiceProgressNarrator,
   VoiceProgressTextInput,
@@ -521,13 +522,13 @@ describe("LiveVoiceSession progress narration", () => {
     // turn's "ar" (an enforcing TTS provider would otherwise render English
     // words as Arabic). Model speech stays on the turn's language.
     const originalRaw = loadRawConfig();
-    const rawServices = (originalRaw.services ?? {}) as Record<string, unknown>;
+    const rawServices = jsonObjectSchema.parse(originalRaw.services ?? {});
     saveRawConfig({
       ...originalRaw,
       services: {
         ...rawServices,
         stt: {
-          ...((rawServices.stt ?? {}) as Record<string, unknown>),
+          ...jsonObjectSchema.parse(rawServices.stt ?? {}),
           provider: "deepgram",
           language: "ar",
         },

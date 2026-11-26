@@ -2,6 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { TurnDetectorConfig } from "../../calls/media-turn-detector.js";
 import type { VoiceProgressNarrator } from "../../calls/progress-narration.js";
 import { TASK_UPDATE_SILENT_MARKER } from "../../calls/voice-control-protocol.js";
@@ -363,17 +365,20 @@ function foregroundTaskStateOf(session: LiveVoiceSession): {
   resumePending?: boolean;
   hostToolStarted?: boolean;
 } | null {
-  return (
-    session as unknown as {
-      foregroundTaskState: {
-        phase: string;
-        request?: string;
-        interveningTurns?: number;
-        resumePending?: boolean;
-        hostToolStarted?: boolean;
-      } | null;
-    }
-  ).foregroundTaskState;
+  return z
+    .looseObject({
+      foregroundTaskState: z.union([
+        z.looseObject({
+          phase: z.string(),
+          request: z.string().optional(),
+          interveningTurns: z.number().optional(),
+          resumePending: z.boolean().optional(),
+          hostToolStarted: z.boolean().optional(),
+        }),
+        z.null(),
+      ]),
+    })
+    .parse(session).foregroundTaskState;
 }
 
 function makeTtsChunk(text: string): LiveVoiceTtsAudioChunk {
@@ -4437,15 +4442,19 @@ describe("LiveVoiceSession server VAD", () => {
     expect(completedMetrics.llmFirstDeltaMs).not.toBeNull();
     expect(completedMetrics.totalMs).toBeGreaterThan(0);
 
-    const snapshot = completedMetrics.metrics as {
-      recentTurns: Array<{
-        turnId: string;
-        timestamps: {
-          speechStartAtMs: number | null;
-          utteranceEndAtMs: number | null;
-        };
-      }>;
-    };
+    const snapshot = z
+      .looseObject({
+        recentTurns: z.array(
+          z.looseObject({
+            turnId: z.string(),
+            timestamps: z.looseObject({
+              speechStartAtMs: z.union([z.number(), z.null()]),
+              utteranceEndAtMs: z.union([z.number(), z.null()]),
+            }),
+          }),
+        ),
+      })
+      .parse(completedMetrics.metrics);
     const turn = snapshot.recentTurns.find(
       (recent) => recent.turnId === "live-turn-2",
     );
@@ -5683,7 +5692,7 @@ describe("LiveVoiceSession unified front-door endpointing", () => {
   function spokenDeltaText(frames: LiveVoiceServerFrame[]): string {
     return frames
       .filter((frame) => frame.type === "assistant_text_delta")
-      .map((frame) => (frame as { text: string }).text)
+      .map((frame) => z.looseObject({ text: z.string() }).parse(frame).text)
       .join("");
   }
 

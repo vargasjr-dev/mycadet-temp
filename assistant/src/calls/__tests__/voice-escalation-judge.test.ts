@@ -111,9 +111,10 @@ describe("judgeEscalation", () => {
       "assistant: Hi, what can I do?",
     );
     expect(request.body.questions.answer.type).toBe("noul");
-    expect(
-      (request.options.config as { callSite?: string } | undefined)?.callSite,
-    ).toBe(VOICE_ESCALATION_JUDGE_CALL_SITE);
+    expect(request.options.config).toHaveProperty(
+      "callSite",
+      VOICE_ESCALATION_JUDGE_CALL_SITE,
+    );
   });
 
   test("clears below the threshold", async () => {

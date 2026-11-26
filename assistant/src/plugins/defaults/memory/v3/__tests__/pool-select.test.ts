@@ -380,9 +380,10 @@ describe("selectPool — infrastructure failures throw", () => {
       Array.isArray(payload.failures),
     );
     expect(aggregatePayload?.providerName).toBe("stub");
-    const failures = aggregatePayload?.failures as
-      | Array<Record<string, unknown>>
-      | undefined;
+    const failures = z
+      .array(jsonObjectSchema)
+      .optional()
+      .parse(aggregatePayload?.failures);
     expect(failures?.[0]).toMatchObject({ reason: "missing_tool_use" });
   });
 
@@ -584,9 +585,7 @@ describe("selectPool — infrastructure failures throw", () => {
     const providerErrors = warnPayloads().filter(
       (payload) => payload.reason === "provider_error",
     );
-    const error = providerErrors[0]?.error as
-      | Record<string, unknown>
-      | undefined;
+    const error = jsonObjectSchema.optional().parse(providerErrors[0]?.error);
     expect(error?.message).not.toContain(providerSecret);
     expect(error?.message).toContain("[REDACTED]");
   });
@@ -622,9 +621,9 @@ describe("selectPool — request shape", () => {
     expect(cfg?.disableTurnStartCache).toBe(true);
     const tool = call.options?.tools?.[0];
     expect(tool?.name).toBe("select_pages");
-    const inputSchema = tool?.input_schema as {
-      properties?: Record<string, unknown>;
-    };
+    const inputSchema = z
+      .looseObject({ properties: jsonObjectSchema.optional() })
+      .parse(tool?.input_schema);
     expect(Object.keys(inputSchema.properties ?? {})).toEqual(["ids"]);
   });
 
@@ -1232,10 +1231,17 @@ describe("selectPool: cataloged thinking and forced-tool compatibility", () => {
     // The preflight path avoids an incompatible first request, and the
     // pool-level re-prompt loop never engages.
     expect(wireRequests).toHaveLength(1);
-    const first = wireRequests[0] as {
-      tool_choice?: unknown;
-      reasoning?: { effort?: string; summary?: string };
-    };
+    const first = z
+      .looseObject({
+        tool_choice: z.unknown().optional(),
+        reasoning: z
+          .looseObject({
+            effort: z.string().optional(),
+            summary: z.string().optional(),
+          })
+          .optional(),
+      })
+      .parse(wireRequests[0]);
     expect(first.tool_choice).toBeUndefined();
     expect(first.reasoning).toMatchObject({
       effort: "high",

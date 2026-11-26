@@ -11,6 +11,10 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ────────────────────────────────────────────────────────────────────────────
 // Module mocks — must be set up before any imports that pull in the mocked
 // modules. These are shared across all describe blocks in this file.
@@ -153,7 +157,7 @@ mock.module("../contacts/guardian-delivery-reader.js", () => ({
 // handleSendMessage wraps the first-pass resolve with withSourceChannel.
 mock.module("../runtime/trust-context-resolver.js", () => ({
   withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
-    ...(ctx as Record<string, unknown>),
+    ...jsonObjectSchema.parse(ctx),
     sourceChannel,
   }),
 }));
@@ -466,7 +470,7 @@ describe("HTTP POST /v1/messages visibleAppId transport metadata", () => {
     });
 
     expect(res.status).toBe(202);
-    return capturedOptions?.transport as Record<string, unknown> | undefined;
+    return jsonObjectSchema.optional().parse(capturedOptions?.transport);
   }
 
   test("carries the reported visible app onto the transport", async () => {
@@ -746,7 +750,7 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
   }
 
   async function trustClassFor(principalId: string): Promise<string> {
-    return (await trustContextFor(principalId)).trustClass as string;
+    return z.string().parse((await trustContextFor(principalId)).trustClass);
   }
 
   test("guardian principal resolves to guardian context, helper not called", async () => {

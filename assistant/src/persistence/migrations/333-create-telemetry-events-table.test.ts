@@ -9,6 +9,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 const { getDb, getTelemetrySqlite } = await import("../db-connection.js");
 const { initializeDb } = await import("../db-init.js");
 const { migrateCreateTelemetryEventsTable } =
@@ -25,11 +27,12 @@ function telemetryTableExists(name: string): boolean {
 }
 
 function telemetryIndexNames(): string[] {
-  return (
-    getTelemetrySqlite()!
-      .query(`PRAGMA index_list(telemetry_events)`)
-      .all() as Array<{ name: string }>
-  ).map((i) => i.name);
+  return z
+    .array(z.looseObject({ name: z.string() }))
+    .parse(
+      getTelemetrySqlite()!.query(`PRAGMA index_list(telemetry_events)`).all(),
+    )
+    .map((i) => i.name);
 }
 
 describe("migration 333: create telemetry_events on the telemetry DB", () => {

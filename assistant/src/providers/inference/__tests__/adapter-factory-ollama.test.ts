@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { OllamaProvider } from "../../ollama/client.js";
 import {
   buildProviderAdapter,
@@ -30,7 +32,9 @@ function retryOptions(adapter: unknown): RetryOptions {
 function innermostAdapter(adapter: unknown): unknown {
   let node = adapter;
   for (let depth = 0; node && depth < 8; depth++) {
-    const inner = (node as { inner?: unknown }).inner;
+    const inner = z
+      .looseObject({ inner: z.unknown().optional() })
+      .parse(node).inner;
     if (!inner) {
       return node;
     }

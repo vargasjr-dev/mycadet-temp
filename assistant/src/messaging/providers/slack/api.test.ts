@@ -1,5 +1,7 @@
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
@@ -77,7 +79,9 @@ describe("getSlackConversationInfo", () => {
     const authHeaders: string[] = [];
     globalThis.fetch = fetchMock(
       mock(async (_input, init) => {
-        const auth = (init?.headers as Record<string, string>).Authorization;
+        const auth = z
+          .record(z.string(), z.string())
+          .parse(init?.headers).Authorization;
         authHeaders.push(auth);
         if (auth === `Bearer ${BOT_TOKEN}`) {
           return new Response(
@@ -249,10 +253,10 @@ describe("startSlackStream", () => {
       ],
     });
 
-    const chunks = body().chunks as Array<Record<string, unknown>>;
-    expect((chunks[0].title as string).length).toBe(256);
-    expect((chunks[1].title as string).length).toBe(256);
-    expect((chunks[1].details as string).length).toBe(256);
+    const chunks = z.array(jsonObjectSchema).parse(body().chunks);
+    expect(chunks[0].title).toHaveProperty("length", 256);
+    expect(chunks[1].title).toHaveProperty("length", 256);
+    expect(chunks[1].details).toHaveProperty("length", 256);
   });
 });
 

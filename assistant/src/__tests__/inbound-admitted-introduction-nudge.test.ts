@@ -203,12 +203,8 @@ describe("introduction nudge on first admit", () => {
       (call) => call.sourceEventName === "ingress.access_request",
     );
     expect(signal).toBeDefined();
-    expect((signal!.contextPayload as Record<string, unknown>).trigger).toBe(
-      "admitted",
-    );
-    expect((signal!.attentionHints as Record<string, unknown>).urgency).toBe(
-      "medium",
-    );
+    expect(signal!.contextPayload).toHaveProperty("trigger", "admitted");
+    expect(signal!.attentionHints).toHaveProperty("urgency", "medium");
   });
 
   test("repeat message in the same conversation does not re-nudge", async () => {
@@ -286,8 +282,6 @@ describe("introduction nudge on first admit", () => {
     expect(
       "trigger" in (signal!.contextPayload as Record<string, unknown>),
     ).toBe(false);
-    expect((signal!.attentionHints as Record<string, unknown>).urgency).toBe(
-      "high",
-    );
+    expect(signal!.attentionHints).toHaveProperty("urgency", "high");
   });
 });

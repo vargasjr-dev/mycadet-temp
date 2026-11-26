@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../../__tests__/helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Mock state. Reset between tests.
 // ---------------------------------------------------------------------------
@@ -290,7 +292,7 @@ describe("memory-retrospective skill card", () => {
     // authoring run, keyed by the run-derived clientMessageId.
     expect(
       addMessageCalls.map(
-        (c) => (c.options as Record<string, unknown>).clientMessageId,
+        (c) => jsonObjectSchema.parse(c.options).clientMessageId,
       ),
     ).toEqual([
       "skill-card-run-conv-1",

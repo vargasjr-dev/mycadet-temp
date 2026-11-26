@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   setBroadcastOverrideForTesting,
   setHubPublishOverrideForTesting,
@@ -117,7 +119,9 @@ function expectRouteError(
   statusCode: number,
 ): void {
   expect(error).toBeInstanceOf(RouteError);
-  const routeError = error as { code: string; statusCode: number };
+  const routeError = z
+    .looseObject({ code: z.string(), statusCode: z.number() })
+    .parse(error);
   expect(routeError.code).toBe(code);
   expect(routeError.statusCode).toBe(statusCode);
 }

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { GoogleGeminiProvider } from "./google-gemini.js";
 
 const TEST_API_KEY = "google-test-key-for-unit-tests";
@@ -83,11 +85,21 @@ describe("GoogleGeminiProvider", () => {
 
     expect(mockGenerateContent).toHaveBeenCalledTimes(1);
 
-    const call = mockGenerateContent.mock.calls[0][0] as {
-      contents: Array<{
-        parts: Array<{ inlineData?: { mimeType: string; data: string } }>;
-      }>;
-    };
+    const call = z
+      .looseObject({
+        contents: z.array(
+          z.looseObject({
+            parts: z.array(
+              z.looseObject({
+                inlineData: z
+                  .looseObject({ mimeType: z.string(), data: z.string() })
+                  .optional(),
+              }),
+            ),
+          }),
+        ),
+      })
+      .parse(mockGenerateContent.mock.calls[0][0]);
 
     const inlineData = call.contents[0].parts[0].inlineData;
     expect(inlineData?.mimeType).toBe("audio/ogg");
@@ -101,7 +113,9 @@ describe("GoogleGeminiProvider", () => {
 
     await provider.transcribe(Buffer.from("audio"), "audio/wav");
 
-    const call = mockGenerateContent.mock.calls[0][0] as { model: string };
+    const call = z
+      .looseObject({ model: z.string() })
+      .parse(mockGenerateContent.mock.calls[0][0]);
     expect(call.model).toBe("gemini-2.5-flash");
   });
 
@@ -113,7 +127,9 @@ describe("GoogleGeminiProvider", () => {
 
     await provider.transcribe(Buffer.from("audio"), "audio/wav");
 
-    const call = mockGenerateContent.mock.calls[0][0] as { model: string };
+    const call = z
+      .looseObject({ model: z.string() })
+      .parse(mockGenerateContent.mock.calls[0][0]);
     expect(call.model).toBe("gemini-2.0-pro");
   });
 

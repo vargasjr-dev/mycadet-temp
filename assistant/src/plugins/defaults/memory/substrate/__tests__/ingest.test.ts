@@ -271,9 +271,7 @@ describe("ingestPages", () => {
       thrown = err;
     }
     expect(thrown).toBeInstanceOf(IngestLockedError);
-    expect((thrown as InstanceType<typeof IngestLockedError>).holder).toBe(
-      holderPayload,
-    );
+    expect(thrown).toHaveProperty("holder", holderPayload);
 
     expect(await listPages(workspace)).toEqual([]);
     expect(enqueuedJobs).toEqual([]);

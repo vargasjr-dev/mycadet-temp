@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent, AgentLoopRunResult } from "../agent/loop.js";
 import type { SyncChangedEvent } from "../api/events/sync-changed.js";
@@ -400,7 +402,7 @@ describe("Conversation queue — slash-like messages pass through to agent loop"
     expect(lastUserMsg.role).toBe("user");
     const text = lastUserMsg.content
       .filter((b) => b.type === "text")
-      .map((b) => (b as { text: string }).text)
+      .map((b) => z.looseObject({ text: z.string() }).parse(b).text)
       .join("");
     // Content passes through as-is — no rewriting
     expect(text).toContain("/start-the-day");

@@ -9,6 +9,8 @@ import assert from "node:assert/strict";
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // ── Module mocks (must come before imports) ──────────────────────────────────
@@ -42,7 +44,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
 
 /** Read the `llm.default` blob back from the real workspace config file. */
 function persistedDefaultProvider(): unknown {
-  const llm = loadRawConfig().llm as Record<string, unknown> | undefined;
+  const llm = jsonObjectSchema.optional().parse(loadRawConfig().llm);
   return llm?.default;
 }
 
@@ -74,7 +76,9 @@ function availability(result: Record<string, unknown>): {
   status: string;
   message?: string;
 } {
-  return result.availability as { status: string; message?: string };
+  return z
+    .looseObject({ status: z.string(), message: z.string().optional() })
+    .parse(result.availability);
 }
 
 function seedConnection(opts: {

@@ -7,8 +7,9 @@
  * 3. Guardian and unknown actor sessions are correctly skipped
  * 4. Missing guardian binding causes a skip
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Mock notification emission — capture calls without running the full pipeline
 const emittedSignals: Array<Record<string, unknown>> = [];
@@ -149,7 +150,7 @@ describe("bridgeConfirmationRequestToGuardian", () => {
       cadet: "conv-1",
     });
 
-    const payload = emittedSignals[0].contextPayload as Record<string, unknown>;
+    const payload = jsonObjectSchema.parse(emittedSignals[0].contextPayload);
     expect(payload.requestId).toBe(guardianRequest.id);
     expect(payload.requestCode).toBe(guardianRequest.requestCode);
     expect(payload.toolName).toBe("bash");
@@ -251,7 +252,7 @@ describe("bridgeConfirmationRequestToGuardian", () => {
       toolName: "bash",
     });
 
-    const hints = emittedSignals[0].attentionHints as Record<string, unknown>;
+    const hints = jsonObjectSchema.parse(emittedSignals[0].attentionHints);
     expect(hints.requiresAction).toBe(true);
     expect(hints.urgency).toBe("high");
     expect(hints.isAsyncBackground).toBe(false);
@@ -354,7 +355,7 @@ describe("bridgeConfirmationRequestToGuardian", () => {
       toolName: "bash",
     });
 
-    const payload = emittedSignals[0].contextPayload as Record<string, unknown>;
+    const payload = jsonObjectSchema.parse(emittedSignals[0].contextPayload);
     expect(payload.requesterChatId).toBeNull();
   });
 

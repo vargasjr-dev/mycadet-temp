@@ -9,8 +9,9 @@
  * Subagents run their turns through `ConversationRunner.runAgentLoop` with
  * `callSite: "subagentSpawn"`, which is the shape reproduced here.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { AgentLoop } from "../agent/loop.js";
 import { initializeDb } from "../persistence/db-init.js";
@@ -117,10 +118,9 @@ describe("AgentLoop subagent billing-header attribution", () => {
 
     // THEN the transport sees the delegated-work attribution
     expect(configs()).toHaveLength(1);
-    const headers = configs()[0]?.usageAttributionHeaders as Record<
-      string,
-      string
-    >;
+    const headers = z
+      .record(z.string(), z.string())
+      .parse(configs()[0]?.usageAttributionHeaders);
     expect(headers["X-Cadet-Subagent-Role"]).toBe("advisor");
     expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBe("advisor_consult");
     expect(headers["X-Cadet-LLM-Call-Site"]).toBe("subagentSpawn");
@@ -142,10 +142,9 @@ describe("AgentLoop subagent billing-header attribution", () => {
     await runSubagentTurn(wrapped, "conv-loop-plain");
 
     // THEN the base attribution is present without the delegated-work fields
-    const headers = configs()[0]?.usageAttributionHeaders as Record<
-      string,
-      string
-    >;
+    const headers = z
+      .record(z.string(), z.string())
+      .parse(configs()[0]?.usageAttributionHeaders);
     expect(headers["X-Cadet-LLM-Call-Site"]).toBe("subagentSpawn");
     expect(headers["X-Cadet-Subagent-Role"]).toBeUndefined();
     expect(headers["X-Cadet-Subagent-Spawn-Mode"]).toBeUndefined();

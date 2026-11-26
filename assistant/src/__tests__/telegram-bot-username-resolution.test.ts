@@ -9,6 +9,8 @@
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { loadRawConfig } from "../config/loader.js";
 import { ensureTelegramBotUsernameResolved } from "../runtime/channel-invite-transports/telegram.js";
 import { credentialKey } from "../security/credential-key.js";
@@ -41,7 +43,13 @@ function setBotUsername(username: string | undefined): void {
 // ---------------------------------------------------------------------------
 
 function readResolvedBotUsername(): unknown {
-  const raw = loadRawConfig() as { telegram?: { botUsername?: unknown } };
+  const raw = z
+    .looseObject({
+      telegram: z
+        .looseObject({ botUsername: z.unknown().optional() })
+        .optional(),
+    })
+    .parse(loadRawConfig());
   return raw.telegram?.botUsername;
 }
 

@@ -3,8 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { LLMConfigBase } from "../config/schemas/llm.js";
 import { ensureCompleteCustomProfiles } from "../workspace/custom-profile-ensure.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -105,7 +108,7 @@ describe("ensureCompleteCustomProfiles", () => {
       ...LLMConfigBase.parse({ ...distinctiveDefault }),
     };
     // LLMConfigBase carries null sampling defaults ProfileEntry omits.
-    delete (complete as Record<string, unknown>).logitBias;
+    delete jsonObjectSchema.parse(complete).logitBias;
     const config = {
       llm: {
         default: distinctiveDefault,
@@ -145,10 +148,9 @@ describe("ensureCompleteCustomProfiles", () => {
       },
     });
     ensureCompleteCustomProfiles(workspaceDir);
-    const contextWindow = readProfiles().partial.contextWindow as Record<
-      string,
-      unknown
-    >;
+    const contextWindow = z
+      .record(z.string(), z.unknown())
+      .parse(readProfiles().partial.contextWindow);
     expect(contextWindow.futureField).toBe("keep-me");
     expect(contextWindow.maxInputTokens).toBe(111);
   });

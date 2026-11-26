@@ -2849,7 +2849,7 @@ describe("Subagent role-based spawn", () => {
       );
       expect(result.isError).toBe(false);
       expect(capturedConfig!.role).toBe("researcher");
-      expect((capturedConfig!.persona as string).length).toBeLessThan(
+      expect(z.string().parse(capturedConfig!.persona).length).toBeLessThan(
         sentence.length,
       );
     } finally {

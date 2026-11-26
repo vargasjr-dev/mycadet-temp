@@ -3,8 +3,9 @@
  * contributes its blocks rendered through the shared formatter, and the
  * markdown and JSON exports carry the same rows.
  */
-
 import { describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 const CONVERSATION = {
   id: "conv-export",
@@ -68,9 +69,11 @@ function exportHandler() {
 
 describe("conversation export", () => {
   test("markdown export carries each row's rendered blocks", async () => {
-    const result = (await exportHandler()({
-      body: { conversationId: CONVERSATION.id, format: "md" },
-    })) as { output: string };
+    const result = z.looseObject({ output: z.string() }).parse(
+      await exportHandler()({
+        body: { conversationId: CONVERSATION.id, format: "md" },
+      }),
+    );
 
     expect(result.output).toContain("# Export me");
     expect(result.output).toContain("what is on my calendar?");
@@ -80,9 +83,11 @@ describe("conversation export", () => {
   });
 
   test("json export carries the same rows", async () => {
-    const result = (await exportHandler()({
-      body: { conversationId: CONVERSATION.id, format: "json" },
-    })) as { output: string };
+    const result = z.looseObject({ output: z.string() }).parse(
+      await exportHandler()({
+        body: { conversationId: CONVERSATION.id, format: "json" },
+      }),
+    );
 
     expect(result.output).toContain("You have two meetings today.");
     expect(result.output).toContain("what is on my calendar?");

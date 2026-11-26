@@ -8,8 +8,9 @@
  * conversations carry a provenance `source` derived from the `sourceKey`
  * prefix (`import:<provider>`, or `import:unknown` when absent).
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 mock.module("../plugins/defaults/memory/indexer.js", () => ({
   indexMessageNow: async () => {},
@@ -57,13 +58,17 @@ describe("conversations import system-row filtering", () => {
     };
 
     // WHEN the conversation is imported
-    const result = (await importHandler({
-      body,
-    })) as {
-      ok: boolean;
-      imported: number;
-      messages: number;
-    };
+    const result = z
+      .looseObject({
+        ok: z.boolean(),
+        imported: z.number(),
+        messages: z.number(),
+      })
+      .parse(
+        await importHandler({
+          body,
+        }),
+      );
 
     // THEN the import succeeds and only counts the renderable turns
     expect(result.ok).toBe(true);
@@ -102,9 +107,11 @@ describe("conversations import provenance source", () => {
     };
 
     // WHEN the conversation is imported
-    const result = (await importHandler({
-      body,
-    })) as { imported: number };
+    const result = z.looseObject({ imported: z.number() }).parse(
+      await importHandler({
+        body,
+      }),
+    );
     expect(result.imported).toBe(1);
 
     // THEN the created row records the provider-derived provenance source
@@ -113,9 +120,13 @@ describe("conversations import provenance source", () => {
     expect(conv.source).toBe("import:chatgpt");
 
     // AND re-importing the same sourceKey still dedups (no second row)
-    const again = (await importHandler({
-      body,
-    })) as { imported: number; skipped: number };
+    const again = z
+      .looseObject({ imported: z.number(), skipped: z.number() })
+      .parse(
+        await importHandler({
+          body,
+        }),
+      );
     expect(again.imported).toBe(0);
     expect(again.skipped).toBe(1);
     expect(db.select().from(conversations).all()).toHaveLength(1);
@@ -139,9 +150,11 @@ describe("conversations import provenance source", () => {
     };
 
     // WHEN the conversations are imported
-    const result = (await importHandler({
-      body,
-    })) as { imported: number };
+    const result = z.looseObject({ imported: z.number() }).parse(
+      await importHandler({
+        body,
+      }),
+    );
     expect(result.imported).toBe(2);
 
     // THEN each prefix is normalized into import:<provider>, not import:unknown
@@ -167,9 +180,11 @@ describe("conversations import provenance source", () => {
     };
 
     // WHEN the conversation is imported
-    const result = (await importHandler({
-      body,
-    })) as { imported: number };
+    const result = z.looseObject({ imported: z.number() }).parse(
+      await importHandler({
+        body,
+      }),
+    );
     expect(result.imported).toBe(1);
 
     // THEN the created row falls back to the unknown-provider source

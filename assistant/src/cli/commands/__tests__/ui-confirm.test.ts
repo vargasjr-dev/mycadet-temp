@@ -9,11 +9,12 @@
  *   - Conversation ID resolution (same as ui request)
  *   - IPC error handling
  */
-
 import { existsSync as actualExistsSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
@@ -81,10 +82,10 @@ async function runCommand(
   const originalStdoutWrite = process.stdout.write.bind(process.stdout);
   const stdoutChunks: string[] = [];
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
   process.exitCode = 0;
 
@@ -219,7 +220,7 @@ describe("ui confirm — surface shape", () => {
       "No",
     ]);
 
-    const data = lastIpcCall!.params.body.data as Record<string, unknown>;
+    const data = jsonObjectSchema.parse(lastIpcCall!.params.body.data);
     expect(data.confirmLabel).toBe("Yes");
     expect(data.cancelLabel).toBe("No");
   });
@@ -227,7 +228,7 @@ describe("ui confirm — surface shape", () => {
   test("passes default labels in data.confirmLabel and data.cancelLabel", async () => {
     await runCommand(["ui", "confirm", "--message", "OK?"]);
 
-    const data = lastIpcCall!.params.body.data as Record<string, unknown>;
+    const data = jsonObjectSchema.parse(lastIpcCall!.params.body.data);
     expect(data.confirmLabel).toBe("Confirm");
     expect(data.cancelLabel).toBe("Deny");
   });
@@ -235,7 +236,7 @@ describe("ui confirm — surface shape", () => {
   test("includes confirmLabel and cancelLabel in data even when --message is omitted", async () => {
     await runCommand(["ui", "confirm"]);
 
-    const data = lastIpcCall!.params.body.data as Record<string, unknown>;
+    const data = jsonObjectSchema.parse(lastIpcCall!.params.body.data);
     expect(data.confirmLabel).toBe("Confirm");
     expect(data.cancelLabel).toBe("Deny");
   });

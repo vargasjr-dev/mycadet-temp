@@ -18,6 +18,8 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
@@ -78,7 +80,7 @@ async function postResult(
 function sentRequestId(): string {
   const request = sentMessages.find((m) => m.type === "host_cu_request");
   expect(request).toBeDefined();
-  return request?.requestId as string;
+  return z.string().parse(request?.requestId);
 }
 
 /** Observe as the actor that owns `mac-1` in the default fixture. */

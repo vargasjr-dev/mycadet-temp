@@ -380,9 +380,7 @@ describe("writePage + readPage round-trip", () => {
     expect(read).not.toBeNull();
     expect(read!.frontmatter.edges).toEqual([]);
     // Unknown key survives the round-trip instead of being rejected or stripped.
-    expect((read!.frontmatter as Record<string, unknown>).unknown_field).toBe(
-      "oops",
-    );
+    expect(read!.frontmatter).toHaveProperty("unknown_field", "oops");
     expect(read!.body).toBe("body\n");
   });
 

@@ -6,7 +6,6 @@
  * per-process workspace and is asserted by reading the file back. fetch is
  * mocked at the network boundary.
  */
-
 import { readFileSync, rmSync } from "node:fs";
 import {
   afterAll,
@@ -18,6 +17,7 @@ import {
   test,
 } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 // ---------------------------------------------------------------------------
 // Module mocks — must appear before any imports of the module under test
 // ---------------------------------------------------------------------------
@@ -241,9 +241,9 @@ describe("sanity_connect", () => {
   test("does not return token in response", async () => {
     secureKeys[SANITY_TOKEN] = "sk-super-secret";
 
-    const result = (await connectHandler(
-      makeArgs({ projectId: "p", dataset: "d" }),
-    )) as Record<string, unknown>;
+    const result = jsonObjectSchema.parse(
+      await connectHandler(makeArgs({ projectId: "p", dataset: "d" })),
+    );
 
     const resultStr = JSON.stringify(result);
     expect(resultStr).not.toContain("sk-super-secret");

@@ -246,7 +246,8 @@ mock.module("../daemon/handlers/shared.js", () => ({
         : Array.isArray(content) &&
             content.length === 1 &&
             (content[0] as { type?: string })?.type === "text"
-          ? (content[0] as { text?: string }).text
+          ? z.looseObject({ text: z.string().optional() }).parse(content[0])
+              .text
           : undefined;
     if (key !== undefined) {
       const keyed = renderedHistoryContentByContent.get(key);

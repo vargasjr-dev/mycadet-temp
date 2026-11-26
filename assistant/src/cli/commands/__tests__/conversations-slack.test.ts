@@ -210,14 +210,14 @@ async function runCommand(
   const originalStdoutWrite = process.stdout.write.bind(process.stdout);
   const originalStderrWrite = process.stderr.write.bind(process.stderr);
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
-  process.stderr.write = ((chunk: unknown) => {
+  };
+  process.stderr.write = (chunk: unknown) => {
     stderrChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   try {
     const program = new Command();
@@ -266,7 +266,7 @@ async function expectRouteError(
   try {
     await callSlackDetachRoute(body);
   } catch (err) {
-    expect((err as { code?: string }).code).toBe(code);
+    expect(err).toHaveProperty("code", code);
     return;
   }
   throw new Error(`Expected route error ${code}`);

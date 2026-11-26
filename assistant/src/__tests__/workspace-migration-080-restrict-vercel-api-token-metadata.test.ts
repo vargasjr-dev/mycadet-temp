@@ -16,7 +16,6 @@
  *   7. No Vercel record present -> no-op.
  *   8. Idempotent: second run on repaired file is a no-op.
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -30,7 +29,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { restrictVercelApiTokenMetadataMigration } from "../workspace/migrations/080-restrict-vercel-api-token-metadata.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 let metadataPath: string;
@@ -128,7 +130,7 @@ describe("workspace migration 080-restrict-vercel-api-token-metadata", () => {
 
     const result = readMetadata();
     expect(result.version).toBe(5);
-    const creds = result.credentials as Record<string, unknown>[];
+    const creds = z.array(jsonObjectSchema).parse(result.credentials);
     expect(creds).toHaveLength(1);
 
     const vercel = creds[0];
@@ -192,7 +194,7 @@ describe("workspace migration 080-restrict-vercel-api-token-metadata", () => {
     restrictVercelApiTokenMetadataMigration.run(workspaceDir);
 
     const result = readMetadata();
-    const creds = result.credentials as Record<string, unknown>[];
+    const creds = z.array(jsonObjectSchema).parse(result.credentials);
     expect(creds).toHaveLength(2);
 
     // Other credential should be exactly unchanged.
@@ -276,7 +278,7 @@ describe("workspace migration 080-restrict-vercel-api-token-metadata", () => {
     restrictVercelApiTokenMetadataMigration.run(workspaceDir);
 
     const result = readMetadata();
-    const creds = result.credentials as Record<string, unknown>[];
+    const creds = z.array(jsonObjectSchema).parse(result.credentials);
     const vercel = creds.find((c) => c.service === "vercel");
     expect(vercel!.allowedTools).toEqual(["publish_page", "unpublish_page"]);
     expect(vercel!.injectionTemplates).toBeUndefined();

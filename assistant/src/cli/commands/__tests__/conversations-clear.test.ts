@@ -95,10 +95,10 @@ beforeEach(() => {
   prompted = false;
   stderrOutput = "";
   process.exitCode = 0;
-  process.stderr.write = ((chunk: string) => {
+  process.stderr.write = (chunk: string) => {
     stderrOutput += chunk;
     return true;
-  }) as typeof process.stderr.write;
+  };
 });
 
 afterEach(() => {

@@ -243,7 +243,9 @@ describe("POST /v1/export — tar.gz archive", () => {
         "utf-8",
       );
       const parsed = JSON.parse(configContent);
-      const env = parsed.acp.agents.codex.env as Record<string, string>;
+      const env = z
+        .record(z.string(), z.string())
+        .parse(parsed.acp.agents.codex.env);
       expect(Object.keys(env).sort()).toEqual(["OPENAI_API_KEY", "PATH"]);
       for (const value of Object.values(env)) {
         expect(value).toBe("(set)");

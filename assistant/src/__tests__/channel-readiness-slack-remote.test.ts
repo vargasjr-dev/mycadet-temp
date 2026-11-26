@@ -112,9 +112,10 @@ describe("slack remote probe (auth.test)", () => {
 
     // The first slack fetch should hit auth.test
     expect(fetchCalls[0].url).toBe("https://slack.com/api/auth.test");
-    expect(
-      (fetchCalls[0].init?.headers as Record<string, string>).Authorization,
-    ).toBe("Bearer xoxb-fake");
+    expect(fetchCalls[0].init?.headers).toHaveProperty(
+      "Authorization",
+      "Bearer xoxb-fake",
+    );
   });
 
   test("fails when Slack auth.test rejects the bot_token", async () => {

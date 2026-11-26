@@ -9,6 +9,10 @@
  */
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 mock.module("../persistence/conversation-key-store.js", () => ({
@@ -50,7 +54,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
     meta?.hidden === true,
   provenanceFromTrustContext: (ctx: unknown) =>
     ctx
-      ? { provenanceTrustClass: (ctx as Record<string, unknown>).trustClass }
+      ? { provenanceTrustClass: jsonObjectSchema.parse(ctx).trustClass }
       : { provenanceTrustClass: "unknown" },
   setConversationOriginChannelIfUnset: () => {},
   setConversationOriginInterfaceIfUnset: () => {},
@@ -97,7 +101,7 @@ mock.module("../runtime/trust-context-resolver.js", () => ({
     sourceChannel: "cadet",
   }),
   withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
-    ...(ctx as Record<string, unknown>),
+    ...jsonObjectSchema.parse(ctx),
     sourceChannel,
   }),
 }));
@@ -425,15 +429,16 @@ describe("POST /messages turn trust", () => {
     // Guard the test itself: if the injection stopped running the assertion
     // below would pass for the wrong reason.
     expect(slotMoved).toBe(true);
-    expect(
-      (conversation.trustContext as { trustClass?: string } | undefined)
-        ?.trustClass,
-    ).toBe("trusted_contact");
+    expect(conversation.trustContext).toHaveProperty(
+      "trustClass",
+      "trusted_contact",
+    );
 
     // The turn carries the trust this request resolved, not the moved slot.
-    const turnTrust = spies.agentLoopOptions()?.turnTrustContext as
-      | { trustClass?: string }
-      | undefined;
+    const turnTrust = z
+      .looseObject({ trustClass: z.string().optional() })
+      .optional()
+      .parse(spies.agentLoopOptions()?.turnTrustContext);
     expect(turnTrust).toBeDefined();
     expect(turnTrust?.trustClass).toBe("guardian");
   });

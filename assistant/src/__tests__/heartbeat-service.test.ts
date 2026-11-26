@@ -2,6 +2,8 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { hasSetConstructs } from "../schedule/recurrence-engine.js";
 
 const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
@@ -1611,7 +1613,7 @@ describe("HeartbeatService", () => {
       const signal = missedSignals[0]!;
       expect(signal.dedupeKey).toContain("activity-failed:heartbeat-missed:");
       expect(signal.contextPayload.jobName).toBe("heartbeat");
-      const errorMessage = signal.contextPayload.errorMessage as string;
+      const errorMessage = z.string().parse(signal.contextPayload.errorMessage);
       expect(errorMessage).toContain("3");
       expect(signal.attentionHints?.urgency).toBe("medium");
 

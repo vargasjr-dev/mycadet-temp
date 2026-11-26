@@ -388,9 +388,9 @@ describe("toSlimSkill", () => {
     expect(slim!.status).toBe("available");
     expect(slim!.origin).toBe("skillssh");
     expect(slim!.category).toBe("integrations");
-    expect((slim as any).slug).toBe("owner/repo/my-skill");
-    expect((slim as any).sourceRepo).toBe("owner/repo");
-    expect((slim as any).installs).toBe(0);
+    expect(slim).toHaveProperty("slug", "owner/repo/my-skill");
+    expect(slim).toHaveProperty("sourceRepo", "owner/repo");
+    expect(slim).toHaveProperty("installs", 0);
   });
 
   test("returns null for malformed slug", async () => {

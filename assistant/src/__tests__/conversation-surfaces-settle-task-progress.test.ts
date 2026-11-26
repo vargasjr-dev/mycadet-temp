@@ -27,6 +27,7 @@ import {
   settleRunningTaskProgressSurfaces,
   surfaceProxyResolver,
 } from "../daemon/conversation-surfaces.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 const noopLogger = {
@@ -88,7 +89,7 @@ function storedTemplateData(
   if (!stored || stored.surfaceType !== "card") {
     throw new Error(`no stored card for ${surfaceId}`);
   }
-  return stored.data.templateData as Record<string, unknown>;
+  return jsonObjectSchema.parse(stored.data.templateData);
 }
 
 describe("settleRunningTaskProgressSurfaces", () => {
@@ -110,8 +111,9 @@ describe("settleRunningTaskProgressSurfaces", () => {
 
     const updates = updatesFor(sent, surfaceId);
     expect(updates).toHaveLength(1);
-    const templateData = (updates[0].data as CardSurfaceData)
-      .templateData as Record<string, unknown>;
+    const templateData = jsonObjectSchema.parse(
+      (updates[0].data as CardSurfaceData).templateData,
+    );
     expect(templateData.status).toBe("pending");
     expect(templateData.steps).toEqual([
       { label: "Draft email", status: "completed" },

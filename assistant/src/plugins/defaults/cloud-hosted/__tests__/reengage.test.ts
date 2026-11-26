@@ -75,7 +75,9 @@ mock.module("@mycadet/plugin-api", () => ({
   getWorkspaceDir: () => workspaceDir,
   runConversationTurn: async (options: RunConversationTurnOptions) => {
     lastOptions = options;
-    const prompt = (options.content[0] as { text: string }).text;
+    const prompt = z
+      .looseObject({ text: z.string() })
+      .parse(options.content[0]).text;
     if (fileContents !== null) {
       await writeFile(extractInjectedPath(prompt), fileContents, "utf8");
     }
@@ -111,7 +113,8 @@ describe("cloud-hosted /reengage POST", () => {
   });
 
   function promptText(): string {
-    return (lastOptions?.content[0] as { text: string }).text;
+    return z.looseObject({ text: z.string() }).parse(lastOptions?.content[0])
+      .text;
   }
 
   test("returns the structured subject/body the model wrote, and cleans up", async () => {

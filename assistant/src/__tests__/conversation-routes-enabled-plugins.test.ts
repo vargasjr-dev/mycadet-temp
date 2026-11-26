@@ -12,6 +12,8 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 const addMessageMock = mock(async (_conversationId: string, role: string) => ({
@@ -58,7 +60,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
   getMessages: () => [],
   provenanceFromTrustContext: (ctx: unknown) =>
     ctx
-      ? { provenanceTrustClass: (ctx as Record<string, unknown>).trustClass }
+      ? { provenanceTrustClass: jsonObjectSchema.parse(ctx).trustClass }
       : { provenanceTrustClass: "unknown" },
   setConversationOriginChannelIfUnset: () => {},
   setConversationOriginInterfaceIfUnset: () => {},
@@ -108,7 +110,7 @@ mock.module("../runtime/trust-context-resolver.js", () => ({
     sourceChannel: "cadet",
   }),
   withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
-    ...(ctx as Record<string, unknown>),
+    ...jsonObjectSchema.parse(ctx),
     sourceChannel,
   }),
 }));

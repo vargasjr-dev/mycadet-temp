@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { ConversationSurfaceSnapshot } from "../daemon/conversation-surface-snapshots.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 
@@ -389,7 +391,9 @@ describe("listConversationSurfaceSnapshots", () => {
       listConversationSurfaceSnapshots(CONVERSATION_ID).map(
         (snapshot: ConversationSurfaceSnapshot) => ({
           surfaceId: snapshot.surfaceId,
-          title: (snapshot.data.templateData as { title?: string }).title,
+          title: z
+            .looseObject({ title: z.string().optional() })
+            .parse(snapshot.data.templateData).title,
         }),
       ),
     ).toEqual([

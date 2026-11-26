@@ -85,11 +85,13 @@ async function runUiShow(
 
 describe("ui_show advertises visual", () => {
   test("the surface_type enum includes visual", () => {
-    const surfaceTypeEnum = (
-      uiShowTool.input_schema as {
-        properties: { surface_type: { enum: string[] } };
-      }
-    ).properties.surface_type.enum;
+    const surfaceTypeEnum = z
+      .looseObject({
+        properties: z.looseObject({
+          surface_type: z.looseObject({ enum: z.array(z.string()) }),
+        }),
+      })
+      .parse(uiShowTool.input_schema).properties.surface_type.enum;
 
     expect(surfaceTypeEnum).toContain("visual");
   });

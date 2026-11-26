@@ -5,8 +5,9 @@
  * the deadline, which is derived from the approval-window resolver rather
  * than restated as a constant.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 const createCalls: Array<Record<string, unknown>> = [];
 const expireCalls: string[] = [];
@@ -96,7 +97,7 @@ describe("createGuardianRequestForConfirmation", () => {
     const after = Date.now();
 
     expect(createCalls).toHaveLength(1);
-    const expiresAt = createCalls[0].expiresAt as number;
+    const expiresAt = z.number().parse(createCalls[0].expiresAt);
 
     // Bracketed against the clock either side of the call rather than compared
     // to a single Date.now(), so the assertion cannot flake on a slow tick.

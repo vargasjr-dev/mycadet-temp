@@ -9,6 +9,7 @@ import type {
   ProviderResponse,
 } from "../providers/types.js";
 import { RateLimitError } from "../util/errors.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 function makeProvider(response?: Partial<ProviderResponse>): Provider {
   return {
@@ -114,7 +115,7 @@ describe("RateLimitProvider", () => {
       });
 
       expect(receivedArgs[0]).toBe(messages);
-      const receivedOptions = receivedArgs[1] as Record<string, unknown>;
+      const receivedOptions = jsonObjectSchema.parse(receivedArgs[1]);
       expect(receivedOptions.tools).toBe(tools);
       expect(receivedOptions.systemPrompt).toBe(systemPrompt);
       expect(receivedOptions.config).toEqual(options.config);

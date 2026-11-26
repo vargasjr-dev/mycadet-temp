@@ -47,10 +47,10 @@ describe("requirePlatformConnection", () => {
     mockCloudClientCreate = async () => null;
     const stdoutChunks: string[] = [];
     const originalWrite = process.stdout.write.bind(process.stdout);
-    process.stdout.write = ((chunk: unknown) => {
+    process.stdout.write = (chunk: unknown) => {
       stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
       return true;
-    }) as typeof process.stdout.write;
+    };
     process.exitCode = 0;
 
     try {

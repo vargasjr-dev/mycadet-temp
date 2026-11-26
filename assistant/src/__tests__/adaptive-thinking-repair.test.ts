@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { repairAdaptiveThinkingOnCloudProfiles } from "../workspace/adaptive-thinking-repair.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const ADAPTIVE = { enabled: true, streamThinking: true };
 
@@ -42,9 +43,9 @@ function readConfig(): Record<string, unknown> {
 
 function profile(name: string): Record<string, unknown> {
   const config = readConfig();
-  const llm = config.llm as Record<string, unknown>;
-  const profiles = llm.profiles as Record<string, unknown>;
-  return profiles[name] as Record<string, unknown>;
+  const llm = jsonObjectSchema.parse(config.llm);
+  const profiles = jsonObjectSchema.parse(llm.profiles);
+  return jsonObjectSchema.parse(profiles[name]);
 }
 
 describe("repairAdaptiveThinkingOnCloudProfiles", () => {

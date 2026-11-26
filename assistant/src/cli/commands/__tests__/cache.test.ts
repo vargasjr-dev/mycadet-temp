@@ -10,12 +10,13 @@
  *   - `delete` success and error output
  *   - JSON output shape and exit-code behavior on IPC errors
  */
-
 import * as nodeFs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // Snapshot the real fs functions into local constants BEFORE the
 // `mock.module("node:fs", ...)` below replaces the module's live bindings.
@@ -39,7 +40,7 @@ let lastIpcCall: {
 
 /** Access the body bag from the last IPC call params. */
 function lastBody(): Record<string, unknown> {
-  return lastIpcCall!.params!.body as Record<string, unknown>;
+  return jsonObjectSchema.parse(lastIpcCall!.params!.body);
 }
 
 /** The result that cliIpcCall will return. */
@@ -139,15 +140,15 @@ async function runCommand(
     configurable: true,
   });
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  process.stderr.write = ((chunk: unknown) => {
+  process.stderr.write = (chunk: unknown) => {
     localStderrChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   process.exitCode = 0;
 

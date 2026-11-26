@@ -13,6 +13,7 @@ import {
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
 import type { RecallMetadata } from "../../../api/events/tool-result.js";
 import type { ToolContext } from "../../../tools/types.js";
@@ -108,10 +109,12 @@ describe("recallTool definition", () => {
     expect(definition.description).toContain("Search local information");
     expect(definition.description).toContain("workspace files");
 
-    const inputSchema = definition.input_schema as {
-      required?: string[];
-      properties: Record<string, unknown>;
-    };
+    const inputSchema = z
+      .looseObject({
+        required: z.array(z.string()).optional(),
+        properties: jsonObjectSchema,
+      })
+      .parse(definition.input_schema);
     expect(inputSchema.required).toEqual(["query"]);
 
     const properties = inputSchema.properties;

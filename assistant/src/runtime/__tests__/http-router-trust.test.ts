@@ -7,7 +7,6 @@
  * probe route that opts into contacts covers the admitted path, which no
  * shipped route takes yet.
  */
-
 import {
   afterAll,
   beforeAll,
@@ -17,6 +16,8 @@ import {
   mock,
   test,
 } from "bun:test";
+
+import { z } from "zod";
 
 let authDisabled = false;
 const actualEnv = await import("../../config/env.js");
@@ -183,7 +184,9 @@ describe("contact-role tokens", () => {
     const response = await dispatch("POST", "messages", CONTACT);
 
     expect(response.status).toBe(404);
-    const body = (await response.json()) as { error: { code: string } };
+    const body = z
+      .looseObject({ error: z.looseObject({ code: z.string() }) })
+      .parse(await response.json());
     expect(body.error.code).toBe("NOT_FOUND");
     expect(reached).toBeUndefined();
   });
@@ -316,7 +319,9 @@ describe("other tokens", () => {
     const response = await dispatch("POST", "contact-only-probe", GUARDIAN);
 
     expect(response.status).toBe(404);
-    const body = (await response.json()) as { error: { code: string } };
+    const body = z
+      .looseObject({ error: z.looseObject({ code: z.string() }) })
+      .parse(await response.json());
     expect(body.error.code).toBe("NOT_FOUND");
     expect(reached).toBeUndefined();
     expect(resolveSharedPrincipalFresh).not.toHaveBeenCalled();

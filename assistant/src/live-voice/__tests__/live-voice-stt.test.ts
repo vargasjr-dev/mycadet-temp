@@ -182,10 +182,10 @@ function createContext(overrides: Partial<LiveVoiceClientStartFrame> = {}): {
 } {
   const sequencer = createLiveVoiceServerFrameSequencer();
   const frames: LiveVoiceServerFrame[] = [];
-  const startFrame = {
+  const startFrame: LiveVoiceClientStartFrame = {
     ...START_FRAME,
     ...overrides,
-  } as LiveVoiceClientStartFrame;
+  };
 
   return {
     frames,

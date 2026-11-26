@@ -17,8 +17,9 @@
  * in `wakeConvRegistry` keyed by `conversationId` so those module mocks can
  * route captured calls back to the originating conversation's probe arrays.
  */
-
 import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
+
+import { z } from "zod";
 
 import { DiskPressureStatus } from "../../api/events/disk-pressure-status-changed.js";
 import { desktopAutomationLease } from "../../desktop/desktop-automation-lease.js";
@@ -229,11 +230,20 @@ setBroadcastOverrideForTesting(
       return;
     }
     if (frame.type === "ui_surface_show") {
-      const source = (
-        frame.data as
-          | { metadata?: Array<{ label?: string; value?: string }> }
-          | undefined
-      )?.metadata?.find((m) => m.label === "Source")?.value;
+      const source = z
+        .looseObject({
+          metadata: z
+            .array(
+              z.looseObject({
+                label: z.string().optional(),
+                value: z.string().optional(),
+              }),
+            )
+            .optional(),
+        })
+        .optional()
+        .parse(frame.data)
+        ?.metadata?.find((m) => m.label === "Source")?.value;
       probe.surfaceBroadcasts.push({
         surfaceId: frame.surfaceId as string | undefined,
         source,
@@ -1294,9 +1304,9 @@ describe("wakeAgentForOpportunity", () => {
       { resolveTarget: async () => conversation },
     );
 
-    const text = (
-      conversation.persistedTailCalls[0]!.content as Array<{ text: string }>
-    )[0]!.text;
+    const text = z
+      .array(z.looseObject({ text: z.string() }))
+      .parse(conversation.persistedTailCalls[0]!.content)[0]!.text;
     // Trusted framing is verbatim and outside the fence.
     expect(text).toContain("Background command completed (id=bg-2, exit=0):");
     // The boundary-break attempt is escaped inside the fence.
@@ -1333,9 +1343,9 @@ describe("wakeAgentForOpportunity", () => {
       { resolveTarget: async () => conversation },
     );
 
-    const text = (
-      conversation.persistedTailCalls[0]!.content as Array<{ text: string }>
-    )[0]!.text;
+    const text = z
+      .array(z.looseObject({ text: z.string() }))
+      .parse(conversation.persistedTailCalls[0]!.content)[0]!.text;
     // The trailing truncation marker survives and the fence is well-formed.
     expect(text).toContain(marker);
     expect(text).toContain('<external_content source="tool_result">');
@@ -1400,9 +1410,9 @@ describe("wakeAgentForOpportunity", () => {
     // clients are told to refetch so the trigger shows live.
     expect(publishMessagesChangedCalls).toContain(conversation.conversationId);
     // The error-path trigger carries framing only (no untrusted fence).
-    const text = (
-      conversation.persistedTailCalls[0]!.content as Array<{ text: string }>
-    )[0]!.text;
+    const text = z
+      .array(z.looseObject({ text: z.string() }))
+      .parse(conversation.persistedTailCalls[0]!.content)[0]!.text;
     expect(text).toBe(
       '<background_event source="background-tool">\n' +
         "Background command failed (id=bg-3): spawn error\n" +
@@ -3080,9 +3090,10 @@ describe("wakeAgentForOpportunity", () => {
       const blocks = Array.isArray(persistedFirst!.content)
         ? persistedFirst!.content
         : [];
-      const uiBlock = blocks.find(
-        (b: { type?: string }) => b.type === "ui_surface",
-      ) as { surfaceId?: string } | undefined;
+      const uiBlock = z
+        .looseObject({ surfaceId: z.string().optional() })
+        .optional()
+        .parse(blocks.find((b: { type?: string }) => b.type === "ui_surface"));
       expect(uiBlock).toBeDefined();
       expect(uiBlock!.surfaceId).toBe(
         conversation.surfaceBroadcasts[0]!.surfaceId,

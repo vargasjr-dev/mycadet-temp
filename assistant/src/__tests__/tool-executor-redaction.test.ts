@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { redactSensitiveFields } from "../security/redaction.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 /**
  * Build a compound key name in a given casing format from constituent parts.
@@ -69,7 +72,7 @@ describe("redactSensitiveFields", () => {
     };
     const result = redactSensitiveFields(input);
     expect(result.name).toBe("test");
-    const config = result.config as Record<string, unknown>;
+    const config = jsonObjectSchema.parse(result.config);
     expect(config.secret).toBe(R);
     expect(config.endpoint).toBe("https://api.example.com");
   });
@@ -82,7 +85,7 @@ describe("redactSensitiveFields", () => {
       ],
     };
     const result = redactSensitiveFields(input);
-    const items = result.items as Array<Record<string, unknown>>;
+    const items = z.array(jsonObjectSchema).parse(result.items);
     expect(items[0].name).toBe("a");
     expect(items[0].password).toBe(R);
     expect(items[1].name).toBe("b");
@@ -92,10 +95,9 @@ describe("redactSensitiveFields", () => {
   test("recurses into arrays nested inside arrays", () => {
     const input = { calls: [[{ name: "a", token: "plainword" }]] };
     const result = redactSensitiveFields(input);
-    const inner = (result.calls as unknown[][])[0][0] as Record<
-      string,
-      unknown
-    >;
+    const inner = z
+      .record(z.string(), z.unknown())
+      .parse(z.array(z.array(z.unknown())).parse(result.calls)[0][0]);
     expect(inner.name).toBe("a");
     expect(inner.token).toBe(R);
   });
@@ -111,7 +113,7 @@ describe("redactSensitiveFields", () => {
     const input = { value: "x1", nested: { password: "y1" } };
     const result = redactSensitiveFields(input);
     expect(input.value).toBe("x1");
-    expect((input.nested as Record<string, unknown>).password).toBe("y1");
+    expect(input.nested).toHaveProperty("password", "y1");
     expect(result.value).toBe(R);
   });
 

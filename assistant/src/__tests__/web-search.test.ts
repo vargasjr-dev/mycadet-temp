@@ -11,8 +11,11 @@
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { credentialKey } from "../security/credential-key.js";
 import { WEB_SEARCH_BACKEND_FAILURE_MESSAGE } from "../tools/network/web-search-error.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
 import { mockHttp } from "./requests-mock.js";
@@ -395,10 +398,12 @@ describe("WebSearchTool", () => {
       const req = http.lastCall();
       expect(req?.headers["Authorization"]).toBe("Bearer pplx-key");
       expect(req?.headers["Content-Type"]).toBe("application/json");
-      const body = req?.body as {
-        model: string;
-        messages: Array<{ content: string }>;
-      };
+      const body = z
+        .looseObject({
+          model: z.string(),
+          messages: z.array(z.looseObject({ content: z.string() })),
+        })
+        .parse(req?.body);
       expect(body.model).toBe("sonar");
       expect(body.messages[0]?.content).toBe("test query");
     });
@@ -484,7 +489,7 @@ describe("WebSearchTool", () => {
       const req = http.lastCall();
       expect(req?.headers.Authorization).toBe("Bearer tvly-key");
       expect(req?.headers["Content-Type"]).toBe("application/json");
-      const body = req?.body as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(req?.body);
       expect(body.query).toBe("test query");
       expect(body.search_depth).toBe("advanced");
       expect(body.max_results).toBe(20);
@@ -499,7 +504,7 @@ describe("WebSearchTool", () => {
         { query: "test query", freshness: "invalid" },
         "tavily",
       );
-      const body = http.lastCall()?.body as Record<string, unknown>;
+      const body = jsonObjectSchema.parse(http.lastCall()?.body);
       expect(body.time_range).toBeUndefined();
     });
 

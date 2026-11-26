@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { IpcCallError } from "@mycadet/gateway-client/ipc-client";
+import { z } from "zod";
 
 type IpcCall = {
   method: string;
@@ -131,7 +132,13 @@ describe("update contact channel relay", () => {
       });
       throw new Error("expected handler to throw");
     } catch (err) {
-      const e = err as { statusCode?: number; code?: string; message: string };
+      const e = z
+        .looseObject({
+          statusCode: z.number().optional(),
+          code: z.string().optional(),
+          message: z.string(),
+        })
+        .parse(err);
       expect(e.message).toBe("Channel not found");
       expect(e.statusCode).toBe(404);
       expect(e.code).toBe("NOT_FOUND");

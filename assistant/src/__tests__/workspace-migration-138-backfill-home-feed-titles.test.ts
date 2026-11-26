@@ -16,7 +16,6 @@
  *   6. `version`, `updatedAt`, and unrelated item fields are preserved.
  *   7. A second run writes nothing.
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -30,9 +29,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { backfillHomeFeedTitlesMigration } from "../workspace/migrations/138-backfill-home-feed-titles.js";
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { getLastWorkspaceMigrationId } from "../workspace/migrations/runner.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 let feedPath: string;
@@ -179,7 +181,7 @@ describe("workspace migration 138-backfill-home-feed-titles", () => {
 
     backfillHomeFeedTitlesMigration.run(workspaceDir);
 
-    const title = readFeedFile().items[0]!.title as string;
+    const title = z.string().parse(readFeedFile().items[0]!.title);
     expect(title).toBe(
       "Bob shared a very long document that keeps going well past t…",
     );
@@ -198,7 +200,7 @@ describe("workspace migration 138-backfill-home-feed-titles", () => {
 
     backfillHomeFeedTitlesMigration.run(workspaceDir);
 
-    const title = readFeedFile().items[0]!.title as string;
+    const title = z.string().parse(readFeedFile().items[0]!.title);
     expect(title).toBe(
       "This opening sentence runs well beyond the sixty character c…",
     );
@@ -354,9 +356,9 @@ describe("workspace migration 138-backfill-home-feed-titles", () => {
 
     const items: unknown[] = readFeedFile().items;
     expect(items[0]).toBe("not an object");
-    expect((items[1] as Record<string, unknown>).title).toBeUndefined();
-    expect((items[2] as Record<string, unknown>).title).toBeUndefined();
-    expect((items[3] as Record<string, unknown>).title).toBe("Has a summary.");
+    expect(jsonObjectSchema.parse(items[1]).title).toBeUndefined();
+    expect(jsonObjectSchema.parse(items[2]).title).toBeUndefined();
+    expect(items[3]).toHaveProperty("title", "Has a summary.");
   });
 
   test("down() is a no-op (forward-only migration)", () => {

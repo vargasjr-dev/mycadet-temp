@@ -2,6 +2,8 @@ import { describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ── Module mocks (must come before any imports that transitively load these) ──
 
 // Mock conversation-crud before importing tool executors that depend on it.
@@ -289,7 +291,7 @@ describe("notify_parent tool definition", () => {
     expect(def.name).toBe("notify_parent");
     expect(schema.required).toContain("message");
     expect(
-      (schema.properties as Record<string, Record<string, unknown>>).urgency
+      z.record(z.string(), jsonObjectSchema).parse(schema.properties).urgency
         .enum,
     ).toEqual(["info", "important", "blocked"]);
     expect(notifyParentTool.category).toBe("orchestration");

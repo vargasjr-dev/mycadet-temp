@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { POINT_AT_PROXY_TOOL } from "../tools/computer-use/skill-proxy-bridge.js";
 import { clearHubClients, registerHubClient } from "./helpers/hub-clients.js";
 import { asConversation } from "./helpers/mock-conversation.js";
@@ -141,7 +143,9 @@ describe("the computer-use step budget", () => {
     const spent = await settle(
       proxy.request("computer_use_click", {}, "conv-1", proxy.stepCount),
     );
-    expect((spent as { content?: string }).content).toContain("Step limit");
+    expect(
+      z.looseObject({ content: z.string().optional() }).parse(spent).content,
+    ).toContain("Step limit");
 
     // The actor is passed so resolution finds the annotation client and the
     // step limit stays the only thing that could refuse this. Without it the

@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../db-connection.js";
 import * as schema from "../schema/index.js";
@@ -81,11 +82,10 @@ function seedRows(raw: Database, now: number): void {
 }
 
 function ids(raw: Database, table: string): string[] {
-  return (
-    raw.query(`SELECT id FROM ${table} ORDER BY id`).all() as Array<{
-      id: string;
-    }>
-  ).map((row) => row.id);
+  return z
+    .array(z.looseObject({ id: z.string() }))
+    .parse(raw.query(`SELECT id FROM ${table} ORDER BY id`).all())
+    .map((row) => row.id);
 }
 
 describe("migrateDeleteNonDefaultMemoryScopes", () => {

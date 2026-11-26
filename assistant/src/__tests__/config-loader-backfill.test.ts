@@ -19,6 +19,7 @@ import {
 } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -144,8 +145,9 @@ const LEGACY_HATCH_PROFILE_NAMES = [
  * code catalog rather than a workspace body, so they follow the catalog
  * instead of restating its pin.
  */
-const MANAGED_BALANCED_MODEL = CODE_DEFAULT_PROFILE_ENTRIES.balanced
-  .model as string;
+const MANAGED_BALANCED_MODEL = z
+  .string()
+  .parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model);
 
 function createProviderConnectionsDb(): DrizzleDb {
   const sqlite = new Database(":memory:");

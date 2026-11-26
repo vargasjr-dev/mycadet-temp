@@ -1,6 +1,5 @@
 // Smoke command (run all security test files together):
 // bun test src/__tests__/checker.test.ts src/__tests__/conversation-skill-tools.test.ts src/__tests__/skill-script-runner-host.test.ts
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -14,6 +13,8 @@ import {
   spyOn,
   test,
 } from "bun:test";
+
+import { z } from "zod";
 
 const checkerTestDir = process.env.CADET_WORKSPACE_DIR!;
 
@@ -1030,9 +1031,10 @@ describe("Permission Checker", () => {
         version_hash: "v1:customhash123",
       });
 
-      const metadata = lastIpcParams("classify_risk")?.skillMetadata as
-        | { skillId: string; versionHash: string }
-        | undefined;
+      const metadata = z
+        .looseObject({ skillId: z.string(), versionHash: z.string() })
+        .optional()
+        .parse(lastIpcParams("classify_risk")?.skillMetadata);
       expect(metadata?.skillId).toBe("test-opts-explicit");
       expect(metadata?.versionHash).toMatch(/^v1:/);
       expect(metadata?.versionHash).not.toBe("v1:customhash123");

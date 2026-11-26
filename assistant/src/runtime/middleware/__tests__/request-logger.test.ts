@@ -5,8 +5,9 @@
  * of the runtime test suite; the cases here pin down the opt-in
  * `RouteLoggingConfig.silenceSuccessAfter` path.
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 interface CapturedLog {
   level: "info" | "warn" | "error";
@@ -43,7 +44,9 @@ type RequestLogMetadata = import("../request-logger.js").RequestLogMetadata;
 
 function extractStatus(data: unknown): number | undefined {
   if (data && typeof data === "object" && "status" in data) {
-    const s = (data as { status?: unknown }).status;
+    const s = z
+      .looseObject({ status: z.unknown().optional() })
+      .parse(data).status;
     return typeof s === "number" ? s : undefined;
   }
   return undefined;

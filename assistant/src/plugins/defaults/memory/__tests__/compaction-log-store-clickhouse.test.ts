@@ -223,7 +223,7 @@ describe("ClickHouseCompactionLogStore", () => {
     });
 
     const row = jsonObjectSchema.parse(JSON.parse(requests[1]!.body));
-    expect((row.summary_text as string).length).toBe(4000);
+    expect(row.summary_text).toHaveProperty("length", 4000);
   });
 });
 

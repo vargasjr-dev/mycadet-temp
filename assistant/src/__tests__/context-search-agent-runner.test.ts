@@ -9,9 +9,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { RecallMetadataSchema } from "../api/events/tool-result.js";
 import type { AssistantConfig } from "../config/schema.js";
 import type { Provider, ProviderResponse } from "../providers/types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let configuredProvider: Provider | null = null;
 const getConfiguredProviderCallSites: string[] = [];
@@ -700,10 +703,14 @@ describe("runAgenticRecall", () => {
       citationIds: ["workspace:more"],
       unresolved: ["The original seed only named the topic."],
     });
-    const finalOptions = providerCalls[1]?.[1] as {
-      tools?: Array<{ name: string }>;
-    };
-    const finalTools = finalOptions?.tools as Array<{ name: string }>;
+    const finalOptions = z
+      .looseObject({
+        tools: z.array(z.looseObject({ name: z.string() })).optional(),
+      })
+      .parse(providerCalls[1]?.[1]);
+    const finalTools = z
+      .array(z.looseObject({ name: z.string() }))
+      .parse(finalOptions?.tools);
     expect(finalTools.map((tool) => tool.name)).toEqual(["finish_recall"]);
     expect(result.evidence.map((item) => item.id)).toEqual(["workspace:more"]);
     expect(result.content).toBe(
@@ -780,9 +787,15 @@ describe("runAgenticRecall", () => {
     );
 
     expect(providerCalls).toHaveLength(1);
-    const messages = providerCalls[0]?.[0] as Array<{
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const messages = z
+      .array(
+        z.looseObject({
+          content: z.array(
+            z.looseObject({ type: z.string(), text: z.string().optional() }),
+          ),
+        }),
+      )
+      .parse(providerCalls[0]?.[0]);
     const prompt = messages[0]?.content[0]?.text ?? "";
     expect(prompt).toContain(
       "Allowed citation_ids: memory:included, conversations:included",
@@ -880,9 +893,9 @@ describe("runAgenticRecall", () => {
 
     expect(getConfiguredProviderCallSites).toEqual(["recall"]);
     expect(providerCalls).toHaveLength(1);
-    const options = providerCalls[0]?.[1] as {
-      config?: Record<string, unknown>;
-    };
+    const options = z
+      .looseObject({ config: jsonObjectSchema.optional() })
+      .parse(providerCalls[0]?.[1]);
     expect(options.config).toEqual({
       callSite: "recall",
       conversationId: "conv-xyz",
@@ -933,9 +946,9 @@ describe("runAgenticRecall", () => {
     );
 
     expect(providerCalls).toHaveLength(2);
-    const finalizeOptions = providerCalls[1]?.[1] as {
-      config?: Record<string, unknown>;
-    };
+    const finalizeOptions = z
+      .looseObject({ config: jsonObjectSchema.optional() })
+      .parse(providerCalls[1]?.[1]);
     expect(finalizeOptions.config).toEqual({
       callSite: "recall",
       conversationId: "conv-xyz",

@@ -386,7 +386,9 @@ describe("composeInvitePresentation", () => {
       );
       expect(typeof share.displayText).toBe("string");
       expect(typeof invite.guardianInstruction).toBe("string");
-      expect((invite.guardianInstruction as string).length).toBeGreaterThan(0);
+      expect(
+        z.string().parse(invite.guardianInstruction).length,
+      ).toBeGreaterThan(0);
       // One-time secrets from the gateway payload pass through untouched.
       expect(invite.token).toBe(rawToken);
       expect(invite.inviteCode).toBe("654321");

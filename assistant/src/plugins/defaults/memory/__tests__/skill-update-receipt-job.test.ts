@@ -12,6 +12,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../../__tests__/helpers/json-object-schema.js";
 import { setConfig } from "../../../../__tests__/helpers/set-config.js";
@@ -393,7 +394,10 @@ describe("skillUpdateReceiptJob", () => {
     expect(emits).toHaveLength(1);
     const payload = jsonObjectSchema.parse(emits[0]!.contextPayload);
     expect(
-      (payload.updates as Array<{ skillId: string }>).map((u) => u.skillId),
+      z
+        .array(z.looseObject({ skillId: z.string() }))
+        .parse(payload.updates)
+        .map((u) => u.skillId),
     ).toEqual(["b", "c"]);
   });
 

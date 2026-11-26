@@ -496,12 +496,12 @@ describe("executeSubagentSpawn: the spawn boundary carries no profile", () => {
     };
     seedLlmConfig({ activeProfile: "fast" });
     try {
-      const baseContext = {
+      const baseContext: import("../tools/types.js").ToolContext = {
         workingDir: "/tmp",
         conversationId: "subagent-conv-id-3",
         trustClass: "guardian",
         sendToClient: () => {},
-      } as import("../tools/types.js").ToolContext;
+      };
 
       await executeSubagentSpawn(
         { label: "nested", objective: "do nested work" },

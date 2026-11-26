@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
+
 // Capture calls to embedAndUpsert so we can assert on targetType + payload.
 const embedAndUpsertCalls: Array<{
   config: unknown;
@@ -222,13 +224,13 @@ describe("indexPkbFile", () => {
     expect(call.targetType).toBe("pkb_file");
     expect(call.targetId).toBe("doc.md#0");
     expect(call.input).toEqual({ type: "text", text: "# hello\nworld" });
-    const payload = call.extraPayload as Record<string, unknown>;
+    const payload = jsonObjectSchema.parse(call.extraPayload);
     expect(payload.path).toBe("doc.md");
     expect(payload.chunk_index).toBe(0);
     expect(payload).not.toHaveProperty("memory_scope_id");
     expect(typeof payload.mtime_ms).toBe("number");
     expect(typeof payload.content_hash).toBe("string");
-    expect((payload.content_hash as string).length).toBe(16);
+    expect(payload.content_hash).toHaveProperty("length", 16);
   });
 
   test("emits one embedAndUpsert call per chunk for a large file", async () => {

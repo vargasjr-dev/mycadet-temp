@@ -95,15 +95,15 @@ async function runCommand(
     configurable: true,
   });
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  process.stderr.write = ((chunk: unknown) => {
+  process.stderr.write = (chunk: unknown) => {
     stderrChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   process.exitCode = 0;
 

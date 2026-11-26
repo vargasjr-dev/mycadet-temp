@@ -25,7 +25,6 @@
  *      invokes the resolver and replaces workspace defaults with the
  *      pinned-profile values.
  */
-
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import {
@@ -33,6 +32,7 @@ import {
   setConversationInferenceProfile,
 } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 beforeAll(async () => {
   await initializeDb();
@@ -329,7 +329,7 @@ describe("wakeAgentForOpportunity — resolver actually engages", () => {
       { config: { callSite: "mainAgent", overrideProfile: "frontier" } },
     );
 
-    const config = seen?.config as Record<string, unknown>;
+    const config = jsonObjectSchema.parse(seen?.config);
     // Resolver engaged → pinned-profile values applied.
     expect(config.model).toBe("claude-opus-4-7");
     expect(config.max_tokens).toBe(32000);

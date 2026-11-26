@@ -60,6 +60,8 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   type DiffPluginDeps,
   type DiffPluginOptions,
@@ -2493,13 +2495,13 @@ function toggleResult(
 async function invokeEnable(
   args: RouteHandlerArgs = {},
 ): Promise<{ ok: boolean }> {
-  return (await enableHandler(args)) as { ok: boolean };
+  return z.looseObject({ ok: z.boolean() }).parse(await enableHandler(args));
 }
 
 async function invokeDisable(
   args: RouteHandlerArgs = {},
 ): Promise<{ ok: boolean }> {
-  return (await disableHandler(args)) as { ok: boolean };
+  return z.looseObject({ ok: z.boolean() }).parse(await disableHandler(args));
 }
 
 /** Assert the spy received exactly one sync_changed carrying `plugins:list`. */
@@ -2507,7 +2509,9 @@ function expectPluginsListBroadcast(): void {
   expect(broadcastMessageSpy.mock.calls).toHaveLength(1);
   const [msg] = broadcastMessageSpy.mock.calls[0]!;
   expect(msg).toMatchObject({ type: "sync_changed" });
-  expect((msg as { tags: string[] }).tags).toContain("plugins:list");
+  expect(
+    z.looseObject({ tags: z.array(z.string()) }).parse(msg).tags,
+  ).toContain("plugins:list");
 }
 
 describe("POST /v1/plugins/:name/enable", () => {

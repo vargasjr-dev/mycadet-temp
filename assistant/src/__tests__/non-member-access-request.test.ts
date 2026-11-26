@@ -812,7 +812,7 @@ describe("access-request-helper unit tests", () => {
     const payload = jsonObjectSchema.parse(emitSignalCalls[0].contextPayload);
     expect(payload.requestCode).toBeDefined();
     expect(typeof payload.requestCode).toBe("string");
-    expect((payload.requestCode as string).length).toBe(6);
+    expect(payload.requestCode).toHaveProperty("length", 6);
   });
 
   test("notifyGuardianOfAccessRequest includes previousMemberStatus in contextPayload", async () => {

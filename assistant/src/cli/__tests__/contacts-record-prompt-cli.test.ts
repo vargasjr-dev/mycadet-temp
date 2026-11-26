@@ -7,9 +7,11 @@
  * over. That makes the request body, not just the eventual write, the thing
  * worth pinning.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import { GUARDIAN_FORM_SETTLE_MS } from "../../util/guardian-form-timeouts.js";
 import { reportIpcFailureWithoutExiting } from "./run-assistant-command.js";
 
@@ -91,8 +93,12 @@ const baseIpcImplementation = async (
 ) => {
   calls.push({ operationId, options, callOptions });
   if (operationId === "getContact") {
-    const id = (options as { pathParams?: { id?: string } } | undefined)
-      ?.pathParams?.id;
+    const id = z
+      .looseObject({
+        pathParams: z.looseObject({ id: z.string().optional() }).optional(),
+      })
+      .optional()
+      .parse(options)?.pathParams?.id;
     const found = id === undefined ? undefined : contactsById[id];
     if (readFails || !found) {
       // 404-shaped, as a gateway-backed read reports a contact it cannot see.
@@ -135,7 +141,7 @@ const { runAssistantCommand, runAssistantCommandFull } =
 function recordPromptBody(): Record<string, unknown> {
   const call = calls.find((c) => c.operationId === "contacts_record_prompt");
   expect(call).toBeDefined();
-  return (call!.options as { body: Record<string, unknown> }).body;
+  return z.looseObject({ body: jsonObjectSchema }).parse(call!.options).body;
 }
 
 describe("contacts record prompts", () => {
@@ -227,7 +233,9 @@ describe("contacts record prompts", () => {
     );
 
     const call = calls.find((c) => c.operationId === "contacts_record_prompt");
-    const body = (call!.options as { body: Record<string, unknown> }).body;
+    const body = z
+      .looseObject({ body: jsonObjectSchema })
+      .parse(call!.options).body;
     expect(body.timeoutMs).toBe(1000);
     // The socket has to outlast an answer arriving at the deadline, which
     // starts the settle window from there. Giving up sooner would report a

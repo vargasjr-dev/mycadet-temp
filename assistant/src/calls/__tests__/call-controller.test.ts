@@ -8,6 +8,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 
 process.env.DISABLE_HTTP_AUTH = "true";
@@ -475,7 +477,9 @@ function getLatestAssistantText(conversationId: string): string | null {
   return latest.content
     .filter(
       (b): b is { type: "text"; text: string } =>
-        b.type === "text" && typeof (b as { text?: unknown }).text === "string",
+        b.type === "text" &&
+        typeof z.looseObject({ text: z.unknown().optional() }).parse(b).text ===
+          "string",
     )
     .map((b) => b.text)
     .join("");

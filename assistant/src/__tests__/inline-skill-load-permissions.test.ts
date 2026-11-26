@@ -12,10 +12,11 @@
  *    "user_rule" lowers the risk, restoring the escape hatch).
  * 3. Continue matching the existing skill_load:* flow for non-dynamic skills.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 // ── Mock setup (must be before any imports from the project) ──────────────
 
@@ -237,9 +238,13 @@ describe("inline-command skill_load permissions", () => {
 
       await classifyRisk("skill_load", { skill: "dynamic-opts" });
 
-      const metadata = lastIpcParams("classify_risk")?.skillMetadata as
-        | { hasInlineExpansions: boolean; isDynamic: boolean }
-        | undefined;
+      const metadata = z
+        .looseObject({
+          hasInlineExpansions: z.boolean(),
+          isDynamic: z.boolean(),
+        })
+        .optional()
+        .parse(lastIpcParams("classify_risk")?.skillMetadata);
       expect(metadata?.hasInlineExpansions).toBe(true);
       expect(metadata?.isDynamic).toBe(true);
     });
@@ -250,9 +255,13 @@ describe("inline-command skill_load permissions", () => {
 
       await classifyRisk("skill_load", { skill: "plain-opts" });
 
-      const metadata = lastIpcParams("classify_risk")?.skillMetadata as
-        | { hasInlineExpansions: boolean; isDynamic: boolean }
-        | undefined;
+      const metadata = z
+        .looseObject({
+          hasInlineExpansions: z.boolean(),
+          isDynamic: z.boolean(),
+        })
+        .optional()
+        .parse(lastIpcParams("classify_risk")?.skillMetadata);
       expect(metadata?.hasInlineExpansions).toBe(false);
       expect(metadata?.isDynamic).toBe(false);
     });

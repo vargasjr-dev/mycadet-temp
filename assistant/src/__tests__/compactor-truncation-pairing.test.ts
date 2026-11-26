@@ -14,6 +14,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { initializeDb } from "../persistence/db-init.js";
 
 await initializeDb();
@@ -80,7 +82,9 @@ function makeValidatingProvider(response: string): {
           }
           if (block.type === "tool_result") {
             // guard:allow-tool-result-only: the fake validates client-side pairing only
-            const toolUseId = (block as { tool_use_id: string }).tool_use_id;
+            const toolUseId = z
+              .looseObject({ tool_use_id: z.string() })
+              .parse(block).tool_use_id;
             if (!emittedToolUseIds.has(toolUseId)) {
               throw new Error(
                 `No tool call found for function call output with call_id ${toolUseId}.`,
@@ -197,7 +201,9 @@ describe("compaction summary call: pair-safe front truncation", () => {
       for (const block of msg.content) {
         if (block.type === "tool_result") {
           // guard:allow-tool-result-only: counting client-side orphans
-          const toolUseId = (block as { tool_use_id: string }).tool_use_id;
+          const toolUseId = z
+            .looseObject({ tool_use_id: z.string() })
+            .parse(block).tool_use_id;
           if (!toolUseIds.has(toolUseId)) {
             orphans.push(toolUseId);
           }

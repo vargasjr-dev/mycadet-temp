@@ -329,9 +329,9 @@ describe("avatar write/remove handlers", () => {
       writeFileSync(srcPath, Buffer.from("uploaded png bytes"));
 
       const handler = getHandler("avatar_set");
-      const result = (await handler({ body: { imagePath: srcPath } })) as {
-        ok: boolean;
-      };
+      const result = z
+        .looseObject({ ok: z.boolean() })
+        .parse(await handler({ body: { imagePath: srcPath } }));
       expect(result.ok).toBe(true);
 
       expect(existsSync(path(IMAGE_FILENAME))).toBe(true);

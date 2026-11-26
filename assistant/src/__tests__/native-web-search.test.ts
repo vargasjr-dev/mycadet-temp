@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type {
   ContentBlock,
   Message,
   ProviderEvent,
 } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock Anthropic SDK — must be before importing the provider
@@ -263,10 +266,11 @@ describe("Native Web Search — Round-trip", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<Record<string, unknown>>;
-    }>;
+    const sent = z
+      .array(
+        z.looseObject({ role: z.string(), content: z.array(jsonObjectSchema) }),
+      )
+      .parse(lastStreamParams!.messages);
 
     // The assistant message should contain the server_tool_use block
     const assistantMsg = sent.find((m) => m.role === "assistant");
@@ -319,10 +323,11 @@ describe("Native Web Search — Round-trip", () => {
 
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<Record<string, unknown>>;
-    }>;
+    const sent = z
+      .array(
+        z.looseObject({ role: z.string(), content: z.array(jsonObjectSchema) }),
+      )
+      .parse(lastStreamParams!.messages);
 
     // The user message after assistant should contain the web_search_tool_result block
     const userMsgs = sent.filter((m) => m.role === "user");
@@ -356,7 +361,7 @@ describe("Native Web Search — Tool Filtering", () => {
 
     await provider.sendMessage([userMsg("Hi")], { tools: sampleTools });
 
-    const tools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const tools = z.array(jsonObjectSchema).parse(lastStreamParams!.tools);
 
     // Should have 2 tools: file_read (custom) + web_search (native)
     expect(tools).toHaveLength(2);
@@ -383,7 +388,7 @@ describe("Native Web Search — Tool Filtering", () => {
 
     await provider.sendMessage([userMsg("Hi")], { tools: sampleTools });
 
-    const tools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const tools = z.array(jsonObjectSchema).parse(lastStreamParams!.tools);
 
     // Should have both tools as custom definitions
     expect(tools).toHaveLength(2);
@@ -419,7 +424,7 @@ describe("Native Web Search — Tool Filtering", () => {
       tools: toolsWithoutWebSearch,
     });
 
-    const tools = lastStreamParams!.tools as Array<Record<string, unknown>>;
+    const tools = z.array(jsonObjectSchema).parse(lastStreamParams!.tools);
     expect(tools).toHaveLength(1);
     expect(tools[0].name).toBe("file_read");
     expect(tools[0].type).toBeUndefined();
@@ -432,10 +437,16 @@ describe("Native Web Search — Tool Filtering", () => {
 
     await provider.sendMessage([userMsg("Hi")], { tools: sampleTools });
 
-    const tools = lastStreamParams!.tools as Array<{
-      name: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const tools = z
+      .array(
+        z.looseObject({
+          name: z.string(),
+          cache_control: z
+            .looseObject({ type: z.string(), ttl: z.string().optional() })
+            .optional(),
+        }),
+      )
+      .parse(lastStreamParams!.tools);
 
     // file_read is the last custom tool (only custom tool in this case)
     // and it should get cache_control since it's the last in the mappedOther list

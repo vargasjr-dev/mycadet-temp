@@ -8,10 +8,10 @@
  * (accounting, dedup, the fork-boundary scan) reads it through the same
  * helpers.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import {
   addMessage,
@@ -99,7 +99,7 @@ function textOf(rows: Array<{ content: unknown }>): string[] {
     return blocks
       .map((block: unknown) =>
         typeof block === "object" && block !== null && "text" in block
-          ? String((block as { text: unknown }).text)
+          ? String(z.looseObject({ text: z.unknown() }).parse(block).text)
           : "",
       )
       .join("");

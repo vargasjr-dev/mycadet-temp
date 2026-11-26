@@ -4,6 +4,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { MESSAGE_KEYS } from "../../i18n/index.js";
 import type { AttentionState } from "../../persistence/conversation-attention-store.js";
 import type {
@@ -810,7 +812,7 @@ describe("emitAssistantReplyNotification", () => {
 
     await run();
 
-    const title = emitCalls[0].contextPayload.requestedTitle as string;
+    const title = z.string().parse(emitCalls[0].contextPayload.requestedTitle);
     expect(title).toHaveLength(NOTIFICATION_TITLE_MAX_LENGTH);
     expect(title.endsWith("…")).toBe(true);
   });
@@ -885,7 +887,9 @@ describe("emitAssistantReplyNotification", () => {
 
     await run();
 
-    const preview = emitCalls[0].contextPayload.requestedMessage as string;
+    const preview = z
+      .string()
+      .parse(emitCalls[0].contextPayload.requestedMessage);
     expect(preview).toHaveLength(200);
     expect(preview.endsWith("…")).toBe(true);
   });
@@ -1482,7 +1486,9 @@ describe("emitAssistantReplyNotification", () => {
 
       await run();
 
-      const preview = emitCalls[0].contextPayload.requestedMessage as string;
+      const preview = z
+        .string()
+        .parse(emitCalls[0].contextPayload.requestedMessage);
       expect(preview).toHaveLength(200);
       expect(preview.endsWith("…")).toBe(true);
     });

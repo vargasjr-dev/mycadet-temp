@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   DEFAULT_DOCUMENT_TITLE,
   getDocumentsForConversation,
@@ -48,7 +50,9 @@ describe("createDocument route", () => {
       content: "",
       wordCount: 0,
     });
-    const { surfaceId } = result as { surfaceId: string };
+    const { surfaceId } = z
+      .looseObject({ surfaceId: z.string() })
+      .parse(result);
     expect(surfaceId).toMatch(/^doc-[0-9a-f-]{36}$/);
     expect(
       getDocumentsForConversation(CONVERSATION_ID).map((d) => d.surfaceId),
@@ -65,12 +69,12 @@ describe("createDocument route", () => {
   });
 
   test("each create mints a distinct document", async () => {
-    const first = (await create({ conversationId: CONVERSATION_ID })) as {
-      surfaceId: string;
-    };
-    const second = (await create({ conversationId: CONVERSATION_ID })) as {
-      surfaceId: string;
-    };
+    const first = z
+      .looseObject({ surfaceId: z.string() })
+      .parse(await create({ conversationId: CONVERSATION_ID }));
+    const second = z
+      .looseObject({ surfaceId: z.string() })
+      .parse(await create({ conversationId: CONVERSATION_ID }));
 
     expect(first.surfaceId).not.toBe(second.surfaceId);
     expect(getDocumentsForConversation(CONVERSATION_ID)).toHaveLength(2);

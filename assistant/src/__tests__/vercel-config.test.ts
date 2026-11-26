@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { credentialKey } from "../security/credential-key.js";
 import {
   reseedMemorySecureKeys,
@@ -61,7 +63,9 @@ describe("Vercel config handler", () => {
       await setVercelConfig("vl_test_token_123");
 
       expect(lastUpsertCall).not.toBeNull();
-      const tools = lastUpsertCall!.policy?.allowedTools as string[];
+      const tools = z
+        .array(z.string())
+        .parse(lastUpsertCall!.policy?.allowedTools);
       expect(tools).not.toContain("bash");
     });
 
@@ -69,7 +73,9 @@ describe("Vercel config handler", () => {
       await setVercelConfig("vl_test_token_123");
 
       expect(lastUpsertCall).not.toBeNull();
-      const tools = lastUpsertCall!.policy?.allowedTools as string[];
+      const tools = z
+        .array(z.string())
+        .parse(lastUpsertCall!.policy?.allowedTools);
       expect(tools).not.toContain("deploy");
     });
 
@@ -84,7 +90,9 @@ describe("Vercel config handler", () => {
       await setVercelConfig("vl_test_token_123");
 
       expect(lastUpsertCall).not.toBeNull();
-      const tools = lastUpsertCall!.policy?.allowedTools as string[];
+      const tools = z
+        .array(z.string())
+        .parse(lastUpsertCall!.policy?.allowedTools);
       expect(tools).toContain("publish_page");
       expect(tools).toContain("unpublish_page");
     });
@@ -93,7 +101,9 @@ describe("Vercel config handler", () => {
       await setVercelConfig("vl_test_token_123");
 
       expect(lastUpsertCall).not.toBeNull();
-      const tools = lastUpsertCall!.policy?.allowedTools as string[];
+      const tools = z
+        .array(z.string())
+        .parse(lastUpsertCall!.policy?.allowedTools);
       expect(tools).toEqual(["publish_page", "unpublish_page"]);
     });
 

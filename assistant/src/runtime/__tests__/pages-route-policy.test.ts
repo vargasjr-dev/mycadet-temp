@@ -7,11 +7,12 @@
  * declared policy is enforced there: a single-route grant handed to a
  * third-party binary is refused, and a normal client still gets its page.
  */
-
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { seedApp } from "../../__tests__/helpers/seed-app.js";
 import { getAppDirPath } from "../../apps/app-store.js";
@@ -84,7 +85,9 @@ describe("GET /pages/:appId enforces its route policy", () => {
     const response = await fetchPage(PROXY_GRANT_IDENTITY);
 
     expect(response.status).toBe(403);
-    const body = (await response.json()) as { error: { code: string } };
+    const body = z
+      .looseObject({ error: z.looseObject({ code: z.string() }) })
+      .parse(await response.json());
     expect(body.error.code).toBe("FORBIDDEN");
   });
 

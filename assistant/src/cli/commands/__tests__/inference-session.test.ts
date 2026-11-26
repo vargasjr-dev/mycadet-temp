@@ -84,11 +84,11 @@ async function runCommand(
   const originalWrite = process.stdout.write.bind(process.stdout);
   const chunks: string[] = [];
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     const str = typeof chunk === "string" ? chunk : String(chunk);
     chunks.push(str);
     return true;
-  }) as typeof process.stdout.write;
+  };
 
   const prevExitCode = process.exitCode;
   process.exitCode = 0;

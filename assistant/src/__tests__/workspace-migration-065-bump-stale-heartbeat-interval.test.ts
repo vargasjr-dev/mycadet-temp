@@ -87,7 +87,8 @@ describe("065-bump-stale-heartbeat-interval migration", () => {
 
     bumpStaleHeartbeatIntervalMigration.run(workspaceDir);
 
-    expect((readConfig().heartbeat as Record<string, unknown>).intervalMs).toBe(
+    expect(readConfig().heartbeat).toHaveProperty(
+      "intervalMs",
       THIRTY_MINUTES_MS,
     );
   });

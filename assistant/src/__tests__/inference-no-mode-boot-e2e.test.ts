@@ -13,9 +13,9 @@
  *
  * This is the gate test mandated by the cc-cutover-proof rule for Phase 1.2.
  */
-
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
@@ -197,7 +197,7 @@ describe("inference-no-mode-boot-e2e: config without services.inference.mode", (
     if (result.success) {
       // Legacy `services.inference` is stripped: no namespace in the schema.
       expect(
-        (result.data.services as Record<string, unknown>).inference,
+        jsonObjectSchema.parse(result.data.services).inference,
       ).toBeUndefined();
     }
   });
@@ -214,7 +214,7 @@ describe("inference-no-mode-boot-e2e: config without services.inference.mode", (
     expect(result.success).toBe(true);
     if (result.success) {
       expect(
-        (result.data.services as Record<string, unknown>).inference,
+        jsonObjectSchema.parse(result.data.services).inference,
       ).toBeUndefined();
     }
   });

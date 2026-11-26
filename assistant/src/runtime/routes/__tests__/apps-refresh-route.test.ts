@@ -4,7 +4,6 @@
  * `mock.module` is process-global in Bun. Stubs delegate to the real
  * implementations unless this file's tests are running.
  */
-
 import { mkdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -18,6 +17,8 @@ import {
   mock,
   test,
 } from "bun:test";
+
+import { z } from "zod";
 
 import type { CompileResult } from "../../../bundler/app-compiler.js";
 
@@ -171,9 +172,11 @@ describe("apps_refresh route", () => {
     });
 
     await handleRefreshApp({ pathParams: { id: created.id } });
-    const listed = (await handleListApps({})) as {
-      apps: Array<{ id: string; updatedAt: number }>;
-    };
+    const listed = z
+      .looseObject({
+        apps: z.array(z.looseObject({ id: z.string(), updatedAt: z.number() })),
+      })
+      .parse(await handleListApps({}));
 
     expect(listed.apps.find((app) => app.id === created.id)?.updatedAt).toBe(
       builtAt,
@@ -216,9 +219,11 @@ describe("apps_refresh route", () => {
       JSON.stringify({ name: pluginName, version: "1.0.0" }),
     );
     const pluginAppId = `plugins~${pluginName}~viewer`;
-    const before = (await handleListApps({})) as {
-      apps: Array<{ id: string; updatedAt: number }>;
-    };
+    const before = z
+      .looseObject({
+        apps: z.array(z.looseObject({ id: z.string(), updatedAt: z.number() })),
+      })
+      .parse(await handleListApps({}));
     const previousRevision = before.apps.find(
       (app) => app.id === pluginAppId,
     )?.updatedAt;
@@ -232,9 +237,11 @@ describe("apps_refresh route", () => {
     });
 
     await handleRefreshApp({ pathParams: { id: pluginAppId } });
-    const after = (await handleListApps({})) as {
-      apps: Array<{ id: string; updatedAt: number }>;
-    };
+    const after = z
+      .looseObject({
+        apps: z.array(z.looseObject({ id: z.string(), updatedAt: z.number() })),
+      })
+      .parse(await handleListApps({}));
 
     expect(after.apps.find((app) => app.id === pluginAppId)?.updatedAt).toBe(
       builtAt,

@@ -4,9 +4,12 @@ import { describe, expect, test } from "bun:test";
 
 const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
-const noopLogger = new Proxy({} as Record<string, unknown>, {
-  get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
-});
+const noopLogger = new Proxy<Record<string, unknown>>(
+  {},
+  {
+    get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
+  },
+);
 
 const { buildSystemPrompt } = await import("../prompts/system-prompt.js");
 

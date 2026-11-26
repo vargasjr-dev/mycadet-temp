@@ -89,9 +89,12 @@ mock.module("../util/logger.js", () => ({
     fatal: () => {},
   }),
   getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }),
+    new Proxy<Record<string, unknown>>(
+      {},
+      {
+        get: () => () => {},
+      },
+    ),
 }));
 
 const { registerMcpCommand } = await import("../cli/commands/mcp.js");
@@ -113,10 +116,10 @@ async function runMcp(
   const origExit = process.exit;
 
   // Capture process.stdout.write (used by --json output)
-  process.stdout.write = ((data: unknown) => {
+  process.stdout.write = (data: unknown) => {
     stdoutWrites.push(typeof data === "string" ? data : String(data));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
   // Override process.exit to not kill the process
   process.exit = ((code?: number) => {

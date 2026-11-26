@@ -218,9 +218,7 @@ describe("z.toJSONSchema integration", () => {
         io: "input",
       }),
     );
-    const properties = jsonSchema.properties as
-      | Record<string, unknown>
-      | undefined;
+    const properties = jsonObjectSchema.optional().parse(jsonSchema.properties);
     expect(properties).toBeDefined();
     expect(properties!.enabled).toBeDefined();
     expect(properties!.voice).toBeDefined();
@@ -255,9 +253,7 @@ describe("z.toJSONSchema integration", () => {
       }),
     );
     expect(jsonSchema.type).toBe("object");
-    const properties = jsonSchema.properties as
-      | Record<string, unknown>
-      | undefined;
+    const properties = jsonObjectSchema.optional().parse(jsonSchema.properties);
     expect(properties).toBeDefined();
     expect(properties!.targetTokens).toBeDefined();
     expect(properties!.overlapTokens).toBeDefined();
@@ -293,7 +289,7 @@ describe("CLI schema command", () => {
       exitCode = code;
       throw new Error(`process.exit(${code})`);
     }) as never;
-    process.stderr.write = (() => true) as typeof process.stderr.write;
+    process.stderr.write = () => true;
 
     try {
       await program.parseAsync([

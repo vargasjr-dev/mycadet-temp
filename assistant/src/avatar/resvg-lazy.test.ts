@@ -16,6 +16,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../__tests__/helpers/json-object-schema.js";
+
 type LogCall = { bindings: unknown; msg: string };
 const warnCalls: LogCall[] = [];
 
@@ -57,7 +59,7 @@ describe("resvg-lazy — require failure path", () => {
 
     expect(warnCalls.length).toBe(1);
     const call = warnCalls[0]!;
-    const bindings = call.bindings as Record<string, unknown>;
+    const bindings = jsonObjectSchema.parse(call.bindings);
     expect(bindings.platform).toBe(process.platform);
     expect(bindings.arch).toBe(process.arch);
     expect(String(bindings.module)).toContain("@resvg/resvg-js-");

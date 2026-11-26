@@ -6,8 +6,9 @@
  * observable effects on conversation.messages. We import the
  * repairPendingToolUseBlocks behavior through drainQueue's contract.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { Message } from "../providers/types.js";
 
@@ -188,7 +189,9 @@ describe("steer tool-result repair", () => {
 
     const ids = synthetic.content
       .filter((b) => b.type === "tool_result")
-      .map((b) => (b as { tool_use_id: string }).tool_use_id);
+      .map(
+        (b) => z.looseObject({ tool_use_id: z.string() }).parse(b).tool_use_id,
+      );
     expect(ids).toContain("tu_1");
     expect(ids).toContain("tu_2");
   });

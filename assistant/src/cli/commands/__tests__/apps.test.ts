@@ -6,6 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { mockIpc } from "../../../__tests__/requests-mock.js";
 import { createApp, getAppDirPath } from "../../../apps/app-store.js";
@@ -76,7 +78,7 @@ describe("assistant apps inspect", () => {
     expect(result.exitCode).toBe(0);
     const body = parseJson(result.stdout);
     expect(body.ok).toBe(true);
-    const compile = body.compile as { status: string };
+    const compile = z.looseObject({ status: z.string() }).parse(body.compile);
     expect(compile.status).toBe("never_compiled");
   });
 
@@ -105,13 +107,14 @@ describe("assistant apps inspect", () => {
 
     expect(result.exitCode).toBe(0);
     const body = parseJson(result.stdout);
-    const app = body.app as { id: string; source: string };
+    const app = z
+      .looseObject({ id: z.string(), source: z.string() })
+      .parse(body.app);
     expect(app.id).toBe(created.id);
     expect(app.source).toBe(appDir);
-    const compile = body.compile as {
-      status: string;
-      modified: string[];
-    };
+    const compile = z
+      .looseObject({ status: z.string(), modified: z.array(z.string()) })
+      .parse(body.compile);
     expect(compile.status).toBe("stale");
     expect(compile.modified).toEqual(["src/main.tsx"]);
   });

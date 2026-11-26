@@ -76,16 +76,16 @@ async function runPsCommand(
   const originalStdoutWrite = process.stdout.write.bind(process.stdout);
   const originalExit = process.exit.bind(process);
 
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  (process as { exit: (code?: number) => never }).exit = ((code?: number) => {
+  (process as { exit: (code?: number) => never }).exit = (code?: number) => {
     capturedExitCode = code ?? 0;
     exitCalled = true;
     throw new Error(`process.exit(${code})`);
-  }) as typeof process.exit;
+  };
 
   process.exitCode = 0;
 

@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
@@ -71,11 +72,16 @@ describe("migration 014 — backfill inbox thread state", () => {
 
     migrateBackfillInboxThreadStateFromBindings(db);
 
-    const row = raw
-      .query(
-        `SELECT assistant_id, last_message_at FROM assistant_inbox_thread_state WHERE conversation_id = 'c1'`,
-      )
-      .get() as { assistant_id: string; last_message_at: number } | undefined;
+    const row = z
+      .looseObject({ assistant_id: z.string(), last_message_at: z.number() })
+      .optional()
+      .parse(
+        raw
+          .query(
+            `SELECT assistant_id, last_message_at FROM assistant_inbox_thread_state WHERE conversation_id = 'c1'`,
+          )
+          .get(),
+      );
     expect(row?.assistant_id).toBe("self");
     expect(row?.last_message_at).toBe(2000);
   });
@@ -89,9 +95,13 @@ describe("migration 014 — backfill inbox thread state", () => {
 
     expect(() => migrateBackfillInboxThreadStateFromBindings(db)).not.toThrow();
 
-    const count = raw
-      .query(`SELECT COUNT(*) AS n FROM assistant_inbox_thread_state`)
-      .get() as { n: number };
+    const count = z
+      .looseObject({ n: z.number() })
+      .parse(
+        raw
+          .query(`SELECT COUNT(*) AS n FROM assistant_inbox_thread_state`)
+          .get(),
+      );
     expect(count.n).toBe(1);
   });
 

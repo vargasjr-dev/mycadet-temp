@@ -2,6 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   getAppDirPath,
   UNSUPPORTED_LEGACY_APP_HTML,
@@ -111,12 +113,16 @@ describe("handleServePage", () => {
   const pageHandler = getRoute("pages_serve").handler;
 
   test("serves compiled dist/index.html for compiled apps", () => {
-    const html = pageHandler({ pathParams: { appId: "app-1" } }) as string;
+    const html = z
+      .string()
+      .parse(pageHandler({ pathParams: { appId: "app-1" } }));
     expect(html).toContain("/v1/apps/app-1/dist/main.js");
   });
 
   test("serves the unsupported-format message for legacy single-file apps", () => {
-    const html = pageHandler({ pathParams: { appId: "legacy-1" } }) as string;
+    const html = z
+      .string()
+      .parse(pageHandler({ pathParams: { appId: "legacy-1" } }));
     expect(html).toContain(UNSUPPORTED_LEGACY_APP_HTML);
     expect(html).not.toContain("<div>Hello</div>");
   });

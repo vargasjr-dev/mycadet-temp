@@ -22,11 +22,11 @@
  * unless this test is actively running (`storeMockActive`, toggled in
  * beforeEach/afterAll). Mirrors `shadow-plugin.test.ts`.
  */
-
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
@@ -847,11 +847,12 @@ describe("matched-section reconstruction", () => {
       "section[Heading A] for domain-a/page-1",
     );
     expect(
-      (
-        memorySqlite
-          .query(`PRAGMA table_info(memory_v3_selections)`)
-          .all() as Array<{ name: string }>
-      ).map((column) => column.name),
+      z
+        .array(z.looseObject({ name: z.string() }))
+        .parse(
+          memorySqlite.query(`PRAGMA table_info(memory_v3_selections)`).all(),
+        )
+        .map((column) => column.name),
     ).toContain("section_key");
   });
 

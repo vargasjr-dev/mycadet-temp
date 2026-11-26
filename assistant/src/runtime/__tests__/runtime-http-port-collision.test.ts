@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import { emitDaemonError } from "../../daemon/startup-error.js";
 import {
   startRuntimeHttpServer,
@@ -53,7 +56,7 @@ describe("runtime HTTP port collision", () => {
 
       // AND the failure carries the address-collision code the daemon's
       // startup-error categorization branches on
-      expect((err as NodeJS.ErrnoException).code).toBe("EADDRINUSE");
+      expect(err).toHaveProperty("code", "EADDRINUSE");
 
       // AND the message names the occupied port and the env var that moves it
       assert(err instanceof Error);
@@ -81,10 +84,10 @@ describe("runtime HTTP port collision", () => {
     // AND stderr captured so the structured startup-error line is observable
     const written: string[] = [];
     const originalWrite = process.stderr.write.bind(process.stderr);
-    process.stderr.write = ((chunk: string | Uint8Array) => {
+    process.stderr.write = (chunk: string | Uint8Array) => {
       written.push(chunk.toString());
       return true;
-    }) as typeof process.stderr.write;
+    };
 
     try {
       // WHEN the daemon's startup error handler reports the bind failure
@@ -97,9 +100,9 @@ describe("runtime HTTP port collision", () => {
       // THEN the structured line categorizes the failure as PORT_IN_USE
       const line = written.find((entry) => entry.includes("DAEMON_ERROR:"));
       expect(line).toBeDefined();
-      const structured = JSON.parse(
-        (line as string).replace("DAEMON_ERROR:", "").trim(),
-      ) as Record<string, unknown>;
+      const structured = jsonObjectSchema.parse(
+        JSON.parse(z.string().parse(line).replace("DAEMON_ERROR:", "").trim()),
+      );
       expect(structured.error).toBe("PORT_IN_USE");
     } finally {
       process.stderr.write = originalWrite;

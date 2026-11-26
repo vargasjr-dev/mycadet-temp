@@ -78,7 +78,10 @@ const DEFAULT_SPAWN_RESULT: SpawnResult = {
 };
 let spawnResult: SpawnResult = DEFAULT_SPAWN_RESULT;
 const spawnMock = mock(async (...args: unknown[]) => {
-  const options = args[6] as { model?: string } | undefined;
+  const options = z
+    .looseObject({ model: z.string().optional() })
+    .optional()
+    .parse(args[6]);
   return {
     ...spawnResult,
     requestedModel: options?.model?.trim() || undefined,
@@ -669,9 +672,9 @@ describe("POST /v1/acp/spawn: sandboxed bun auto-install on missing binary", () 
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
     // The real adapter binary is spawned, not a `bun x` wrapper.
-    const agentConfigArg = spawnMock.mock.calls[0][1] as {
-      command: string;
-    };
+    const agentConfigArg = z
+      .looseObject({ command: z.string() })
+      .parse(spawnMock.mock.calls[0][1]);
     expect(agentConfigArg.command).toBe("claude-agent-acp");
     // Exactly one install, and it was `bun add --global` (never npm).
     expect(execFileMock).toHaveBeenCalledTimes(1);
@@ -810,9 +813,9 @@ describe("POST /v1/acp/spawn: model selection", () => {
     const handler = getSpawnHandler();
     await handler({ body: SPAWN_BODY });
 
-    const options = spawnMock.mock.calls[0][6] as {
-      model?: string;
-    };
+    const options = z
+      .looseObject({ model: z.string().optional() })
+      .parse(spawnMock.mock.calls[0][6]);
     const approvalInput = jsonObjectSchema.parse(
       confirmationRequests[0]?.input,
     );
@@ -976,7 +979,7 @@ describe("POST /v1/acp/:id/steer: resume approval gate", () => {
     expect(prompt.riskLevel).toBe("high");
     expect(prompt.executionTarget).toBe("host");
     expect(prompt.conversationId).toBe("conv-z");
-    expect((prompt.input as { cwd?: string }).cwd).toBe("/work/repo");
+    expect(prompt.input).toHaveProperty("cwd", "/work/repo");
 
     // After approval settles, the background worker performs the resume.
     await flushAsync();

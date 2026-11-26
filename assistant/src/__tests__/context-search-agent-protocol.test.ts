@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   buildRecallAgentPrompt,
   FINISH_RECALL_TOOL_DEFINITION,
@@ -11,6 +13,7 @@ import {
   validateRecallCitationIds,
 } from "../plugins/defaults/memory/context-search/agent-protocol.js";
 import type { RecallEvidence } from "../plugins/defaults/memory/context-search/types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 function makeEvidence(
   id: string,
@@ -29,10 +32,9 @@ function makeEvidence(
 function schemaProperties(tool: {
   input_schema: Record<string, unknown>;
 }): Record<string, Record<string, unknown>> {
-  return tool.input_schema.properties as Record<
-    string,
-    Record<string, unknown>
-  >;
+  return z
+    .record(z.string(), jsonObjectSchema)
+    .parse(tool.input_schema.properties);
 }
 
 describe("recall agent protocol tool definitions", () => {

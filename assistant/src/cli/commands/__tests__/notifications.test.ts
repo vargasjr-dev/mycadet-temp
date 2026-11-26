@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -93,15 +95,15 @@ async function runRawCommand(args: string[]): Promise<RawCommandResult> {
 
   process.exitCode = 0;
 
-  process.stdout.write = ((chunk: string | Buffer) => {
+  process.stdout.write = (chunk: string | Buffer) => {
     chunks.push(typeof chunk === "string" ? chunk : chunk.toString());
     return true;
-  }) as typeof process.stdout.write;
+  };
 
-  process.stderr.write = ((chunk: string | Buffer) => {
+  process.stderr.write = (chunk: string | Buffer) => {
     stderrChunks.push(typeof chunk === "string" ? chunk : chunk.toString());
     return true;
-  }) as typeof process.stderr.write;
+  };
 
   try {
     const program = new Command();
@@ -568,7 +570,7 @@ describe("notifications list", () => {
 
     expect(exitCode).toBe(0);
     expect(parsed.ok).toBe(true);
-    const items = parsed.items as Array<Record<string, unknown>>;
+    const items = z.array(jsonObjectSchema).parse(parsed.items);
     expect(items).toHaveLength(1);
     expect(items[0].title).toBe("Hello");
   });

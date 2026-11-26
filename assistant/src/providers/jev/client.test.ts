@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ProviderError } from "../../util/errors.js";
 import {
   conversationToState,
@@ -176,9 +178,9 @@ describe("JevProvider.sendMessage", () => {
         },
       },
     });
-    expect(String((captured?.body as { state: string }).state)).toContain(
-      "Please cancel this charge.",
-    );
+    expect(
+      String(z.looseObject({ state: z.string() }).parse(captured?.body).state),
+    ).toContain("Please cancel this charge.");
     expect(response.model).toBe("jev-latest");
     expect(response.usage).toEqual({ inputTokens: 12, outputTokens: 4 });
     expect(response.content[0]).toEqual({

@@ -176,8 +176,8 @@ describe("embedMediaJob", () => {
     const call = embedAndUpsertCalls[0];
     expect(call.targetType).toBe("media");
     expect(call.targetId).toBe("asset-audio");
-    expect((call.input as { type: string }).type).toBe("audio");
-    expect((call.input as { mimeType: string }).mimeType).toBe("audio/mp3");
+    expect(call.input).toHaveProperty("type", "audio");
+    expect(call.input).toHaveProperty("mimeType", "audio/mp3");
   });
 
   test("embeds indexed video asset with correct modality", async () => {
@@ -209,7 +209,7 @@ describe("embedMediaJob", () => {
     const call = embedAndUpsertCalls[0];
     expect(call.targetType).toBe("media");
     expect(call.targetId).toBe("asset-video");
-    expect((call.input as { type: string }).type).toBe("video");
-    expect((call.input as { mimeType: string }).mimeType).toBe("video/mp4");
+    expect(call.input).toHaveProperty("type", "video");
+    expect(call.input).toHaveProperty("mimeType", "video/mp4");
   });
 });

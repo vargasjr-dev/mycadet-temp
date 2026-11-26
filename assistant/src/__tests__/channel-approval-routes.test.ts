@@ -8,6 +8,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const _conversationMocks = new Map<string, unknown>();
@@ -499,7 +501,8 @@ describe("empty content with callbackData bypasses validation", () => {
     const res = await handleChannelInbound(req, noopProcessMessage);
     expect(res.status).toBe(400);
     const body = jsonObjectSchema.parse(await res.json());
-    expect((body.error as Record<string, unknown>).message).toBe(
+    expect(body.error).toHaveProperty(
+      "message",
       "content or attachmentIds is required",
     );
   });
@@ -1092,7 +1095,10 @@ describe("conversational approval engine — standard path", () => {
     const replyCall = deliverSpy.mock.calls.find(
       (call) =>
         typeof call[1] === "object" &&
-        (call[1] as { text?: string }).text?.includes("pending shell command"),
+        z
+          .looseObject({ text: z.string().optional() })
+          .parse(call[1])
+          .text?.includes("pending shell command"),
     );
     expect(replyCall).toBeDefined();
 
@@ -1304,7 +1310,10 @@ describe("keep_pending remains conversational — standard path", () => {
     expect(sessionMock).not.toHaveBeenCalled();
 
     const followupReply = deliverSpy.mock.calls.find((call) =>
-      (call[1] as { text?: string }).text?.includes("confirm the intent"),
+      z
+        .looseObject({ text: z.string().optional() })
+        .parse(call[1])
+        .text?.includes("confirm the intent"),
     );
     expect(followupReply).toBeDefined();
 
@@ -1372,13 +1381,19 @@ describe("engine decision race condition — standard path", () => {
 
     // The engine's optimistic "Approved!" reply should NOT have been delivered
     const approvedReply = deliverSpy.mock.calls.find((call) =>
-      (call[1] as { text?: string }).text?.includes("Approved!"),
+      z
+        .looseObject({ text: z.string().optional() })
+        .parse(call[1])
+        .text?.includes("Approved!"),
     );
     expect(approvedReply).toBeUndefined();
 
     // A stale notice should have been delivered instead
     const staleReply = deliverSpy.mock.calls.find((call) =>
-      (call[1] as { text?: string }).text?.includes("already been resolved"),
+      z
+        .looseObject({ text: z.string().optional() })
+        .parse(call[1])
+        .text?.includes("already been resolved"),
     );
     expect(staleReply).toBeDefined();
 

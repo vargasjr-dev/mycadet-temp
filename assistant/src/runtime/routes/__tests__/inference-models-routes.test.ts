@@ -3,8 +3,9 @@
  *
  *   GET /v1/inference/models  — list all catalog models, optional ?provider=
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { PROVIDER_CATALOG } from "../../../providers/model-catalog.js";
 import { BadRequestError } from "../errors.js";
@@ -22,9 +23,11 @@ function handler(operationId: string): RouteDefinition["handler"] {
 function call(args: RouteHandlerArgs): {
   models: { provider: string; id: string }[];
 } {
-  return handler("inference_models_list")(args) as {
-    models: { provider: string; id: string }[];
-  };
+  return z
+    .looseObject({
+      models: z.array(z.looseObject({ provider: z.string(), id: z.string() })),
+    })
+    .parse(handler("inference_models_list")(args));
 }
 
 describe("GET inference/models", () => {

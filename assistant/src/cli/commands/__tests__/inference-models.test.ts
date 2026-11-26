@@ -32,10 +32,10 @@ beforeEach(() => {
 async function run(args: string[]): Promise<string> {
   const originalWrite = process.stdout.write.bind(process.stdout);
   const chunks: string[] = [];
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     chunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
   try {
     const program = new Command();
     program.exitOverride();

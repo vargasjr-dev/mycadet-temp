@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ── Module mocks (must precede imports) ───────────────────────────────────────
 
 type OrchestrateOptions = {
@@ -445,9 +447,11 @@ describe("oauth-connect-routes", () => {
           "https://www.googleapis.com/auth/gmail.readonly",
         ],
       });
-      const result = findRoute("internal_oauth_connect_status").handler({
-        pathParams: { state: "test-state-uuid-abc123" },
-      }) as Record<string, unknown>;
+      const result = jsonObjectSchema.parse(
+        findRoute("internal_oauth_connect_status").handler({
+          pathParams: { state: "test-state-uuid-abc123" },
+        }),
+      );
       expect(result).toMatchObject({
         status: "complete",
         service: "google",
@@ -472,9 +476,11 @@ describe("oauth-connect-routes", () => {
         service: "google",
         // No accountInfo
       });
-      const result = findRoute("internal_oauth_connect_status").handler({
-        pathParams: { state: "test-state-uuid-abc123" },
-      }) as Record<string, unknown>;
+      const result = jsonObjectSchema.parse(
+        findRoute("internal_oauth_connect_status").handler({
+          pathParams: { state: "test-state-uuid-abc123" },
+        }),
+      );
       expect(result.status).toBe("complete");
       expect(result.account_info).toBeUndefined();
     });

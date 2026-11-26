@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { stripHistoricalWebSearchResults } from "../daemon/web-search-history.js";
 import type { Message } from "../providers/types.js";
 
@@ -382,10 +384,12 @@ describe("stripHistoricalWebSearchResults", () => {
     expect(result[1].content.map((b) => b.type)).toEqual(["text", "tool_use"]);
     const summarized = result[3].content[0];
     expect(summarized.type).toBe("text");
-    expect((summarized as { text: string }).text).toContain("deferred query");
-    expect((summarized as { text: string }).text).toContain(
-      "https://example.com",
-    );
+    expect(
+      z.looseObject({ text: z.string() }).parse(summarized).text,
+    ).toContain("deferred query");
+    expect(
+      z.looseObject({ text: z.string() }).parse(summarized).text,
+    ).toContain("https://example.com");
     expect(stats.serverToolUsesDropped).toBe(1);
     expect(stats.blocksStripped).toBe(1);
     expect(stats.messagesModified).toBe(2);

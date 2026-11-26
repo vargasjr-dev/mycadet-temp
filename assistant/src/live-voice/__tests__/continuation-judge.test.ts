@@ -71,9 +71,10 @@ describe("createContinuationJudge", () => {
       interrupted_request: "Can you hit join now for me?",
       caller_then_said: "Actually just point it out for me.",
     });
-    expect(
-      (request.options.config as { callSite?: string } | undefined)?.callSite,
-    ).toBe(VOICE_CONTINUATION_JUDGE_CALL_SITE);
+    expect(request.options.config).toHaveProperty(
+      "callSite",
+      VOICE_CONTINUATION_JUDGE_CALL_SITE,
+    );
   });
 
   test("keeps at or above the threshold", async () => {

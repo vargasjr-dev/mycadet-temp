@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { RuntimeHttpServer } from "../http-server.js";
 import {
   actorIdentityHeaders,
@@ -49,7 +51,9 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
       },
     });
     expect(res.status).toBe(403);
-    const body = (await res.json()) as { error: { message: string } };
+    const body = z
+      .looseObject({ error: z.looseObject({ message: z.string() }) })
+      .parse(await res.json());
     expect(body.error.message).toContain(
       "Direct desktop stream access disabled",
     );

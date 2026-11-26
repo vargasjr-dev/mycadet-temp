@@ -13,8 +13,9 @@
  * into the sidebar, so the "what promotion must not do" block is as
  * load-bearing as the rest.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   batchSetConversationPlacement,
@@ -164,9 +165,13 @@ describe("what promotion must not do", () => {
 
     batchSetConversationPlacement([{ id: conv.id, groupId: group.id }]);
 
-    const row = getDb()
-      .all(`SELECT surfaced_at FROM conversations WHERE id = '${conv.id}'`)
-      .at(0) as { surfaced_at: number | null };
+    const row = z
+      .looseObject({ surfaced_at: z.union([z.number(), z.null()]) })
+      .parse(
+        getDb()
+          .all(`SELECT surfaced_at FROM conversations WHERE id = '${conv.id}'`)
+          .at(0),
+      );
     expect(row.surfaced_at).toBeNull();
   });
 });

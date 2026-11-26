@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { sttServiceExplicitConfigMigration } from "../workspace/migrations/033-stt-service-explicit-config.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -291,7 +293,9 @@ describe("033-stt-service-explicit-config migration", () => {
     sttServiceExplicitConfigMigration.run(workspaceDir);
 
     const config = readConfig();
-    const services = config.services as Record<string, Record<string, unknown>>;
+    const services = z
+      .record(z.string(), jsonObjectSchema)
+      .parse(config.services);
 
     expect(services.inference.provider).toBe("anthropic");
     expect(services.tts.provider).toBe("elevenlabs");

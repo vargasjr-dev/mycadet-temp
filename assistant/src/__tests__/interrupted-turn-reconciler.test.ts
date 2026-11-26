@@ -1,6 +1,8 @@
 import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   type InterruptedResumeTarget,
   MAX_RESUME_ATTEMPTS,
@@ -196,7 +198,7 @@ describe("resumeInterruptedConversations", () => {
     const attemptsWhenWoken: Record<string, { a: number; b: number }> = {};
     const wakeCalls: Array<Record<string, unknown>> = [];
     const wakeMock = mock(async (opts: Record<string, unknown>) => {
-      const conversationId = opts.conversationId as string;
+      const conversationId = z.string().parse(opts.conversationId);
       attemptsWhenWoken[conversationId] = {
         a: readRow("conv-a").processing_resume_attempts,
         b: readRow("conv-b").processing_resume_attempts,
@@ -236,7 +238,7 @@ describe("resumeInterruptedConversations", () => {
 
     const wakeCalls: string[] = [];
     const wakeMock = mock(async (opts: Record<string, unknown>) => {
-      const conversationId = opts.conversationId as string;
+      const conversationId = z.string().parse(opts.conversationId);
       wakeCalls.push(conversationId);
       if (conversationId === "conv-bad") {
         throw new Error("wake blew up");

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../../__tests__/helpers/json-object-schema.js";
+
 // The command is a door onto the daemon's one send implementation, so what
 // matters is the request it hands the route and what it does with the
 // answer. IPC is stubbed to capture that request; the exit-code helper
@@ -63,7 +65,7 @@ function runSend(args: string[]) {
 function sentBody(): Record<string, unknown> {
   expect(ipcCalls).toHaveLength(1);
   expect(ipcCalls[0]!.method).toBe("channels_send_post");
-  return ipcCalls[0]!.params.body as Record<string, unknown>;
+  return jsonObjectSchema.parse(ipcCalls[0]!.params.body);
 }
 
 describe("the request the command makes", () => {

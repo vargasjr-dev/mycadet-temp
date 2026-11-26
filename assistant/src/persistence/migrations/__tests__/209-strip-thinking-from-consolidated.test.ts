@@ -11,6 +11,8 @@ import type { SQLQueryBindings } from "bun:sqlite";
  */
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 const { getDb, getSqlite } = await import("../../db-connection.js");
 const { initializeDb } = await import("../../db-init.js");
 const {
@@ -141,7 +143,7 @@ describe("migration 209 — strip thinking from consolidated assistant messages"
     expect(result[0].type).toBe("text");
     expect(result[0].text).toBe("\x00__PLACEHOLDER__[internal blocks omitted]");
     // The leading byte must be a literal NUL, produced by SQLite's char(0).
-    expect((result[0].text as string).charCodeAt(0)).toBe(0);
+    expect(z.string().parse(result[0].text).charCodeAt(0)).toBe(0);
   });
 
   test("preserves blocks with a missing/null type", async () => {

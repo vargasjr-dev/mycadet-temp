@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ChannelReplyPayload } from "@mycadet/gateway-client";
 import { ChannelDeliveryError } from "@mycadet/gateway-client/http-delivery";
+import { z } from "zod";
 
 // Replace each channel's provider-API send layer with spies so the dispatcher's
 // routing and sub-operation selection can be asserted without network calls.
@@ -150,7 +151,9 @@ describe("Slack sub-operation selection", () => {
       payload({ text: "hi" }),
     );
     expect(slack.sendSlackReply).toHaveBeenCalledTimes(1);
-    const opts = slack.sendSlackReply.mock.calls[0][2] as { threadTs?: string };
+    const opts = z
+      .looseObject({ threadTs: z.string().optional() })
+      .parse(slack.sendSlackReply.mock.calls[0][2]);
     expect(opts.threadTs).toBe("1700.5");
     expect(slack.sendSlackReaction).not.toHaveBeenCalled();
   });
@@ -161,7 +164,9 @@ describe("Slack sub-operation selection", () => {
       payload({ text: "hi" }),
     );
     expect(slack.sendSlackReply).toHaveBeenCalledTimes(1);
-    const opts = slack.sendSlackReply.mock.calls[0][2] as { threadTs?: string };
+    const opts = z
+      .looseObject({ threadTs: z.string().optional() })
+      .parse(slack.sendSlackReply.mock.calls[0][2]);
     expect(opts.threadTs).toBe("1700.9");
   });
 
@@ -338,7 +343,10 @@ describe("capability gating across channels", () => {
     // The producer asked for a settled message and named no markup. Slack
     // decides that means a context block.
     const [, , , options] = slack.updateSlackMessage.mock.calls[0]!;
-    expect((options as { blocks?: unknown[] }).blocks).toEqual([
+    expect(
+      z.looseObject({ blocks: z.array(z.unknown()).optional() }).parse(options)
+        .blocks,
+    ).toEqual([
       {
         type: "context",
         elements: [
@@ -359,7 +367,10 @@ describe("capability gating across channels", () => {
     });
 
     const [, , , options] = slack.updateSlackMessage.mock.calls[0]!;
-    expect((options as { blocks?: unknown[] }).blocks).toBeUndefined();
+    expect(
+      z.looseObject({ blocks: z.array(z.unknown()).optional() }).parse(options)
+        .blocks,
+    ).toBeUndefined();
   });
 
   test("editChannelMessage now reaches Telegram, not only Slack", async () => {

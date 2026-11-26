@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import {
   createBookmark,
@@ -291,9 +292,9 @@ describe("bookmark-crud", () => {
     listBookmarks(db);
     const sql = captured.at(-1);
     expect(sql).toBeDefined();
-    const plan = raw.query(`EXPLAIN QUERY PLAN ${sql}`).all() as Array<{
-      detail: string;
-    }>;
+    const plan = z
+      .array(z.looseObject({ detail: z.string() }))
+      .parse(raw.query(`EXPLAIN QUERY PLAN ${sql}`).all());
     expect(plan[0]?.detail ?? "").toMatch(/^SCAN message_bookmarks/);
     expect(plan.some((row) => row.detail.includes("SCAN messages"))).toBe(
       false,

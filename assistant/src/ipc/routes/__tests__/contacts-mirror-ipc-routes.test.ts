@@ -6,6 +6,8 @@
  */
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 const upsertContactChannelCalls: unknown[] = [];
@@ -139,7 +141,9 @@ describe("contact identity-mirror IPC-only methods", () => {
     const ipcMethods = routeDefinitionsToIpcMethods(contactRoutes);
     const meta = ipcMethods.find((r) => r.operationId === "get_route_schema");
     expect(meta).toBeDefined();
-    const schema = (await meta!.handler({})) as { operationId: string }[];
+    const schema = z
+      .array(z.looseObject({ operationId: z.string() }))
+      .parse(await meta!.handler({}));
     const schemaIds = new Set(schema.map((e) => e.operationId));
     for (const operationId of MIRROR_OPERATION_IDS) {
       expect(schemaIds.has(operationId)).toBe(false);
@@ -263,7 +267,9 @@ describe("contacts_mirror_upsert_channel", () => {
       body: { contactId: "co-2", type: "slack", address: "U123" },
     });
 
-    const call = upsertContactChannelCalls[0] as { externalChatId?: unknown };
+    const call = z
+      .looseObject({ externalChatId: z.unknown().optional() })
+      .parse(upsertContactChannelCalls[0]);
     expect(call.externalChatId).toBeUndefined();
   });
 

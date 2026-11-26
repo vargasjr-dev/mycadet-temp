@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, spyOn, test } from "bun:test";
 
+import { z } from "zod";
+
 import * as envRegistry from "../config/env-registry.js";
 import {
   isControlPlaneWorkspaceWrite,
@@ -742,8 +744,11 @@ describe("isControlPlaneWorkspaceWrite / prompt surfaces", () => {
   // writable prompt surface.
   test("covers every workspacePath the system sections declare", () => {
     const paths = BUNDLED_SYSTEM_SECTIONS.flatMap((section) => {
-      const wp = (section as { workspacePath?: string | string[] })
-        .workspacePath;
+      const wp = z
+        .looseObject({
+          workspacePath: z.union([z.string(), z.array(z.string())]).optional(),
+        })
+        .parse(section).workspacePath;
       if (!wp) {
         return [];
       }

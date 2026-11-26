@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
 
 // This test exercises the v1 graph search path. `config.memory.v2.enabled`
@@ -74,12 +77,13 @@ describe("searchGraphNodes — _meta filter parity", () => {
     });
 
     expect(hybridSearchCalls).toHaveLength(1);
-    const filter = hybridSearchCalls[0]?.filter as {
-      must_not: Array<Record<string, unknown>>;
-    };
-    const metaClause = filter.must_not.find((c) => c.key === "_meta") as
-      | { match: { value: boolean } }
-      | undefined;
+    const filter = z
+      .looseObject({ must_not: z.array(jsonObjectSchema) })
+      .parse(hybridSearchCalls[0]?.filter);
+    const metaClause = z
+      .looseObject({ match: z.looseObject({ value: z.boolean() }) })
+      .optional()
+      .parse(filter.must_not.find((c) => c.key === "_meta"));
     expect(metaClause?.match.value).toBe(true);
   });
 
@@ -87,12 +91,13 @@ describe("searchGraphNodes — _meta filter parity", () => {
     await searchGraphNodes([0.1], 5);
 
     expect(searchCalls).toHaveLength(1);
-    const filter = searchCalls[0]?.filter as {
-      must_not: Array<Record<string, unknown>>;
-    };
-    const metaClause = filter.must_not.find((c) => c.key === "_meta") as
-      | { match: { value: boolean } }
-      | undefined;
+    const filter = z
+      .looseObject({ must_not: z.array(jsonObjectSchema) })
+      .parse(searchCalls[0]?.filter);
+    const metaClause = z
+      .looseObject({ match: z.looseObject({ value: z.boolean() }) })
+      .optional()
+      .parse(filter.must_not.find((c) => c.key === "_meta"));
     expect(metaClause?.match.value).toBe(true);
   });
 });

@@ -131,7 +131,7 @@ describe("tallyVerdicts — unblinding + panels", () => {
 
   test("derives the winner from scores when `winner` is absent", () => {
     const key: EvalKeyEntry[] = [{ turn: "d1", a: "snapshot", b: "staging" }];
-    const verdicts = [{ turn: "d1", scoreA: 9, scoreB: 2 }] as JudgeVerdict[];
+    const verdicts: JudgeVerdict[] = [{ turn: "d1", scoreA: 9, scoreB: 2 }];
     const r = tallyVerdicts(verdicts, key, { minDecided: 1, minPanel: 1 });
     expect(r.snapshotWins).toBe(1);
   });

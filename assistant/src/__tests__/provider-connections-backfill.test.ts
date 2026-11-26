@@ -9,10 +9,11 @@
  * `<provider>-personal` row with an empty credential slot even when a
  * custom-named connection already exists.
  */
-
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { loadRawConfig } from "../config/loader.js";
 import { getDb } from "../persistence/db-connection.js";
@@ -24,6 +25,7 @@ import {
   getConnection,
   listConnections,
 } from "../providers/inference/connections.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 await initializeDb();
 
@@ -37,9 +39,11 @@ function seedConfig(profiles: Record<string, unknown>): void {
 }
 
 function backfilledConnection(profileName: string): unknown {
-  const llm = loadRawConfig().llm as {
-    profiles?: Record<string, Record<string, unknown>>;
-  };
+  const llm = z
+    .looseObject({
+      profiles: z.record(z.string(), jsonObjectSchema).optional(),
+    })
+    .parse(loadRawConfig().llm);
   return llm.profiles?.[profileName]?.provider_connection;
 }
 

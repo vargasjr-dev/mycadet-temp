@@ -6,6 +6,7 @@ import * as nodeFs from "node:fs";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
@@ -179,8 +180,9 @@ describe("conversations new --json", () => {
       },
     };
     await runNew(["new", "GitHub watcher", "--json"]);
-    const body = (lastIpcCall?.params as { body?: Record<string, unknown> })
-      ?.body;
+    const body = z
+      .looseObject({ body: jsonObjectSchema.optional() })
+      .parse(lastIpcCall?.params)?.body;
     expect(body?.conversationType).toBe("scheduled");
   });
 });

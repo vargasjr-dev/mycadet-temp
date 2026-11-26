@@ -10,9 +10,10 @@
  * deliberate snap persists immediately as its own message and parks nothing
  * (`live-voice-attach-image.test.ts`).
  */
-
 import { Buffer } from "node:buffer";
 import { describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import type {
   VoiceTurnCallbacks,
@@ -190,8 +191,9 @@ async function speakAndRelease(
 }
 
 function parkedFrameId(session: LiveVoiceSession): string | null {
-  return (session as unknown as { pendingTurnAttachmentId: string | null })
-    .pendingTurnAttachmentId;
+  return z
+    .looseObject({ pendingTurnAttachmentId: z.union([z.string(), z.null()]) })
+    .parse(session).pendingTurnAttachmentId;
 }
 
 describe("live-voice attach_frame frame", () => {

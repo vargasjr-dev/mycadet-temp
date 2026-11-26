@@ -106,9 +106,7 @@ describe("125-repoint-managed-connections-to-cadet migration", () => {
       .record(z.string(), jsonObjectSchema)
       .parse(llm.callSites);
 
-    expect((llm.default as Record<string, unknown>).provider_connection).toBe(
-      "cadet",
-    );
+    expect(llm.default).toHaveProperty("provider_connection", "cadet");
     expect(profiles.balanced.provider_connection).toBe("cadet");
     expect(profiles["quality-optimized"].provider_connection).toBe("cadet");
     expect(profiles["os-beta"].provider_connection).toBe("cadet");

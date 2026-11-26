@@ -8,6 +8,10 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // Track the gateway URL; updated once the test server starts.
 let testGatewayUrl = "http://127.0.0.1:0";
 
@@ -43,8 +47,10 @@ mock.module("../ipc/cli-client.js", () => ({
     ipcCallOptions.push({ method, options });
     options?.signal?.throwIfAborted();
     const store = await import("../contacts/contact-store.js");
-    const body = (params?.body ?? params ?? {}) as Record<string, unknown>;
-    const pathParams = (params?.pathParams ?? {}) as Record<string, string>;
+    const body = jsonObjectSchema.parse(params?.body ?? params ?? {});
+    const pathParams = z
+      .record(z.string(), z.string())
+      .parse(params?.pathParams ?? {});
     if (method === "search_contacts") {
       if (searchContactsOverride !== null) {
         return { ok: true, result: searchContactsOverride };
@@ -63,7 +69,9 @@ mock.module("../ipc/cli-client.js", () => ({
       // Fake gateway relay: the daemon route relays merges to the gateway
       // merge core, which validates and mirrors back into the assistant DB.
       // Emulate that against the fixture DB via the mirror write path.
-      const { keepId, mergeId } = body as { keepId: string; mergeId: string };
+      const { keepId, mergeId } = z
+        .looseObject({ keepId: z.string(), mergeId: z.string() })
+        .parse(body);
       // The tool pre-validates both contacts via getContact, so the fake only
       // needs the survivor row (for keepDisplayName).
       const keep = store.getContact(keepId);
@@ -305,11 +313,22 @@ describe("search_contacts route", () => {
     const searchRoute = ROUTES.find(
       (r) => r.operationId === "search_contacts",
     )!;
-    const contacts = (await searchRoute.handler({
-      body: { channelAddress: seededAddress },
-    })) as Array<{
-      channels: Array<{ address: string; externalUserId?: string }>;
-    }>;
+    const contacts = z
+      .array(
+        z.looseObject({
+          channels: z.array(
+            z.looseObject({
+              address: z.string(),
+              externalUserId: z.string().optional(),
+            }),
+          ),
+        }),
+      )
+      .parse(
+        await searchRoute.handler({
+          body: { channelAddress: seededAddress },
+        }),
+      );
 
     expect(contacts.length).toBeGreaterThanOrEqual(1);
     const channel = contacts[0]!.channels[0]!;

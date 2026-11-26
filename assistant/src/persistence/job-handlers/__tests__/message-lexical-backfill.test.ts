@@ -1,5 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { SparseEmbedding } from "../../embeddings/embedding-types.js";
 
 // Capture the batched upserts into the lexical index singleton.
@@ -164,7 +166,7 @@ async function callBackfillRoute(
     throw new Error("messages_lexical_backfill route not found");
   }
   const args: RouteHandlerArgs = { body };
-  return (await route.handler(args)) as { jobId: string };
+  return z.looseObject({ jobId: z.string() }).parse(await route.handler(args));
 }
 
 /**

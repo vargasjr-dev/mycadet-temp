@@ -91,10 +91,9 @@ describe("upsertSkillCardInsertJob payload merge", () => {
 
     const rows = pendingRows();
     expect(rows).toHaveLength(1);
-    const skills = parsedSkills(rows[0]!.payload) as Array<{
-      skillId: string;
-      name: string;
-    }>;
+    const skills = z
+      .array(z.looseObject({ skillId: z.string(), name: z.string() }))
+      .parse(parsedSkills(rows[0]!.payload));
     expect(skills.map((s) => s.skillId)).toEqual(["skill-a", "skill-b"]);
     expect(skills[0]!.name).toBe("Original Name");
   });

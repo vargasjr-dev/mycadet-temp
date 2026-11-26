@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { OutlookDeltaResponse } from "../messaging/providers/outlook/types.js";
 import type { OutlookMessage } from "../messaging/providers/outlook/types.js";
 
@@ -269,10 +271,9 @@ describe("Outlook email watcher — fetchNew", () => {
 
     // Verify fallback called listMessages with appropriate filter
     expect(mockListMessages).toHaveBeenCalledTimes(1);
-    const listCallArgs = mockListMessages.mock.calls[0][1] as Record<
-      string,
-      unknown
-    >;
+    const listCallArgs = z
+      .record(z.string(), z.unknown())
+      .parse(mockListMessages.mock.calls[0][1]);
     expect(listCallArgs.folderId).toBe("inbox");
     expect(listCallArgs.top).toBe(20);
     expect(listCallArgs.filter).toMatch(/receivedDateTime ge /);

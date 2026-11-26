@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   deepRepairHistory,
   isRepairableOrderingError,
@@ -819,12 +821,8 @@ describe("repairHistory", () => {
     ]);
 
     // Verify the pairings are correct
-    expect(
-      (assistantMsg.content[2] as { tool_use_id: string }).tool_use_id,
-    ).toBe("stu_1");
-    expect(
-      (assistantMsg.content[4] as { tool_use_id: string }).tool_use_id,
-    ).toBe("stu_2");
+    expect(assistantMsg.content[2]).toHaveProperty("tool_use_id", "stu_1");
+    expect(assistantMsg.content[4]).toHaveProperty("tool_use_id", "stu_2");
   });
 
   test("downgrades type-mismatched tool_result for server_tool_use", () => {
@@ -915,12 +913,15 @@ describe("repairHistory", () => {
     const downgraded = assistantMsg.content.find(
       (b) =>
         b.type === "text" &&
-        (b as { text: string }).text.includes("srvtoolu_orphan"),
+        z
+          .looseObject({ text: z.string() })
+          .parse(b)
+          .text.includes("srvtoolu_orphan"),
     );
     expect(downgraded).toBeDefined();
     // Titles/URLs from the original results must survive the downgrade so
     // the model can still reason about what was searched.
-    const text = (downgraded as { text: string }).text;
+    const text = z.looseObject({ text: z.string() }).parse(downgraded).text;
     expect(text).toContain("Example");
     expect(text).toContain("https://example.com");
   });
@@ -1034,14 +1035,15 @@ describe("repairHistory", () => {
     const blockTypes = assistantMsg.content.map((b) => b.type);
     expect(blockTypes[0]).toBe("server_tool_use");
     expect(blockTypes[1]).toBe("web_search_tool_result");
-    expect(
-      (assistantMsg.content[1] as { tool_use_id: string }).tool_use_id,
-    ).toBe("stu_missing_result");
+    expect(assistantMsg.content[1]).toHaveProperty(
+      "tool_use_id",
+      "stu_missing_result",
+    );
     // The orphan wsr is downgraded to text.
     expect(blockTypes[2]).toBe("text");
-    expect((assistantMsg.content[2] as { text: string }).text).toContain(
-      "stu_no_use",
-    );
+    expect(
+      z.looseObject({ text: z.string() }).parse(assistantMsg.content[2]).text,
+    ).toContain("stu_no_use");
   });
 
   test("downgrades type-mismatched web_search_tool_result for tool_use", () => {

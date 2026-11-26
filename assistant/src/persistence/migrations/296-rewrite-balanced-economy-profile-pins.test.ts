@@ -3,6 +3,7 @@ import { Database } from "bun:sqlite";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getWorkspaceConfigPath } from "../../util/layout.js";
 import * as schema from "../schema/index.js";
@@ -37,11 +38,13 @@ function createTestDb(withColumns = true) {
 }
 
 function pin(sqlite: Database, table: string, id: string): string | null {
-  return (
-    sqlite
-      .query(`SELECT inference_profile FROM ${table} WHERE id = ?`)
-      .get(id) as { inference_profile: string | null }
-  ).inference_profile;
+  return z
+    .looseObject({ inference_profile: z.union([z.string(), z.null()]) })
+    .parse(
+      sqlite
+        .query(`SELECT inference_profile FROM ${table} WHERE id = ?`)
+        .get(id),
+    ).inference_profile;
 }
 
 describe("migration 296: rewrite balanced-economy profile pins", () => {

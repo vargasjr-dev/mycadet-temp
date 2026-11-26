@@ -49,9 +49,7 @@ describe("restoreSurfaceStateEntry", () => {
 
     expect(entry.surfaceType).toBe("document_preview");
     expect(entry.data).toEqual(persistedBlock.data);
-    expect((entry.data as Record<string, unknown>).mimeType).toBe(
-      "text/markdown",
-    );
+    expect(entry.data).toHaveProperty("mimeType", "text/markdown");
   });
 
   test("preserves daemon-internal surface types and their opaque data", () => {

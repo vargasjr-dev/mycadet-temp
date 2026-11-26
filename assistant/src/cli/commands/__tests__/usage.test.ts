@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+
 let ipcCalls: Array<{ method: string; params?: Record<string, unknown> }> = [];
 let mockIpcResult: {
   ok: boolean;
@@ -47,7 +49,7 @@ async function runCommand(args: string[]): Promise<{ exitCode: number }> {
 
 function lastQueryParams(): Record<string, unknown> {
   const call = ipcCalls.at(-1);
-  return (call?.params?.queryParams ?? {}) as Record<string, unknown>;
+  return jsonObjectSchema.parse(call?.params?.queryParams ?? {});
 }
 
 describe("usage --schedule option", () => {

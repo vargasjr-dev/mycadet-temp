@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ModelPricingOverrideSchema } from "../config/schemas/inference.js";
 import { LLMConfigBase, LLMSchema } from "../config/schemas/llm.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // The `llm.default` blob as configs persist it. Since #139 it is a real
 // schema field (a partial fragment, all leaves optional — parsing must not
@@ -188,7 +191,7 @@ describe("LLMSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(
-        (result.data.callSites as Record<string, unknown>).mainAgnt,
+        jsonObjectSchema.parse(result.data.callSites).mainAgnt,
       ).toBeUndefined();
       expect(result.data.callSites.mainAgent).toBeUndefined();
     }
@@ -218,8 +221,7 @@ describe("LLMSchema", () => {
       expect(result.data.callSites.mainAgent?.profile).toBe("glm-default");
       expect(result.data.callSites.heartbeatAgent?.profile).toBe("glm-default");
       expect(
-        (result.data.callSites as Record<string, unknown>)
-          .proactiveArtifactDecision,
+        jsonObjectSchema.parse(result.data.callSites).proactiveArtifactDecision,
       ).toBeUndefined();
     }
   });
@@ -310,9 +312,14 @@ describe("LLMSchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      const cw = result.data.profiles["sturdy"]?.contextWindow as
-        | { overflowRecovery?: { maxAttempts?: number } }
-        | undefined;
+      const cw = z
+        .looseObject({
+          overflowRecovery: z
+            .looseObject({ maxAttempts: z.number().optional() })
+            .optional(),
+        })
+        .optional()
+        .parse(result.data.profiles["sturdy"]?.contextWindow);
       expect(cw?.overflowRecovery?.maxAttempts).toBe(5);
     }
   });

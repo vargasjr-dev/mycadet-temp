@@ -301,7 +301,7 @@ describe("SubagentManager — provider call-site routing", () => {
 
     expect(capturedProvider).toBeInstanceOf(CallSiteRoutingProvider);
     // Default provider's name surfaces.
-    expect((capturedProvider as { name: string }).name).toBe("anthropic");
+    expect(capturedProvider).toHaveProperty("name", "anthropic");
   });
 
   test("copies parent guardian and auth context into spawned conversation", async () => {

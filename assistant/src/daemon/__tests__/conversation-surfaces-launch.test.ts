@@ -20,8 +20,9 @@
  * caller-supplied `focus` value preserved so fan-out launchers do not
  * steal focus from the origin.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import { setHubPublishOverrideForTesting } from "../../runtime/assistant-event-hub.js";
@@ -211,7 +212,11 @@ function openConversationEvents(): Array<{
 }> {
   return publishCalls
     .filter((e): e is { message: { type: "open_conversation" } } => {
-      const ev = e as { message?: { type?: string } };
+      const ev = z
+        .looseObject({
+          message: z.looseObject({ type: z.string().optional() }).optional(),
+        })
+        .parse(e);
       return ev.message?.type === "open_conversation";
     })
     .map(

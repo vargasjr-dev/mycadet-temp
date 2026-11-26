@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../__tests__/helpers/json-object-schema.js";
 import {
   groupingMessageId,
   type ProviderMessageMetadata,
@@ -144,8 +147,9 @@ describe("readProviderMetadata", () => {
     });
 
     expect(
-      (readProviderMetadata(metadata) as Record<string, unknown> | null)
-        ?.slackFiles,
+      z
+        .union([jsonObjectSchema, z.null()])
+        .parse(readProviderMetadata(metadata))?.slackFiles,
     ).toEqual([{ name: "diagram.png" }]);
   });
 

@@ -15,13 +15,13 @@
  *     the partial aggregate from committed batches), print partial counts in
  *     text mode, and map the IPC status to the standard exit codes.
  */
-
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
 
 import { assertNotLiveDb } from "../../../../__tests__/assert-not-live-db.js";
 import { applyCommandHelp } from "../../../lib/cli-command-help.js";
@@ -49,10 +49,9 @@ let logOutput: string[] = [];
 
 /** Success result echoing one `written` entry per requested page. */
 function defaultIpcHandler(_method: string, params?: any) {
-  const pages = (params?.body?.pages ?? []) as {
-    slug: string;
-    content: string;
-  }[];
+  const pages = z
+    .array(z.looseObject({ slug: z.string(), content: z.string() }))
+    .parse(params?.body?.pages ?? []);
   return {
     ok: true,
     result: {
@@ -246,10 +245,9 @@ describe("--dir input", () => {
 
       expect(exitCode).toBe(0);
       expect(ipcCalls).toHaveLength(1);
-      const pages = ipcCalls[0].params!.body.pages as {
-        slug: string;
-        content: string;
-      }[];
+      const pages = z
+        .array(z.looseObject({ slug: z.string(), content: z.string() }))
+        .parse(ipcCalls[0].params!.body.pages);
       expect(pages.map((p) => p.slug)).toEqual(["people/alice", "top"]);
       expect(pages[0].content).toBe("# Alice\n");
       expect(pages[1].content).toBe("# Top\n");

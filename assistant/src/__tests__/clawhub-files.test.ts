@@ -11,10 +11,10 @@
  *   - toSlimSkill maps inspect metadata to ClawhubSlimSkill
  *   - Cache hit avoids redundant inspect calls
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { ClawhubInspectResult } from "../skills/clawhub.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
@@ -286,7 +286,7 @@ describe("toSlimSkill", () => {
     expect(slim!.category).toBe("integrations");
 
     // Clawhub-specific fields
-    const clawhub = slim as unknown as Record<string, unknown>;
+    const clawhub = jsonObjectSchema.parse(slim);
     expect(clawhub.slug).toBe(slug);
     expect(clawhub.author).toBe("testauthor");
     expect(clawhub.stars).toBe(42);
@@ -310,7 +310,7 @@ describe("toSlimSkill", () => {
 
     const slim = await provider.toSlimSkill(slug);
     expect(slim).not.toBeNull();
-    const clawhub = slim as unknown as Record<string, unknown>;
+    const clawhub = jsonObjectSchema.parse(slim);
     expect(clawhub.author).toBe("");
   });
 });

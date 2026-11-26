@@ -7,8 +7,9 @@
  * global clock, and the `RetryProvider` cases use stub providers whose call
  * counts are the assertion.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   type BreakerRoute,
@@ -1323,7 +1324,8 @@ describe("retry exhaustion accounting", () => {
     );
 
     expect(
-      (thrown as { retriesExhausted?: boolean }).retriesExhausted,
+      z.looseObject({ retriesExhausted: z.boolean().optional() }).parse(thrown)
+        .retriesExhausted,
     ).toBeUndefined();
     expect(primary.calls()).toBe(1);
     expect(backup.calls()).toBe(0);

@@ -7,8 +7,11 @@
  * 4. End-to-end: deny -> approve -> consume grant flow
  * 5. Inline wait-and-resume for trusted-contact grant-gated tools
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const testDir = process.env.CADET_WORKSPACE_DIR!;
 
@@ -236,8 +239,8 @@ describe("ToolApprovalHandler / grant-miss escalation", () => {
     expect(emittedSignals[0].conversationAffinityHint).toEqual({
       cadet: "conv-1",
     });
-    const payload = emittedSignals[0].contextPayload as Record<string, unknown>;
-    const questionText = payload.questionText as string;
+    const payload = jsonObjectSchema.parse(emittedSignals[0].contextPayload);
+    const questionText = z.string().parse(payload.questionText);
     expect(questionText.startsWith("Approve tool: bash")).toBe(true);
     // Requester identity is context, not the subject of the question.
     expect(questionText).toContain("(requested by Bob)");

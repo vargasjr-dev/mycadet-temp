@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import {
   type DurableProfileFields,
@@ -91,11 +92,13 @@ function insertConversation(
 }
 
 function profileOf(sqlite: Database, id: string): unknown {
-  return (
-    sqlite
-      .query("SELECT inference_profile FROM cron_jobs WHERE id = ?")
-      .get(id) as { inference_profile: unknown }
-  ).inference_profile;
+  return z
+    .looseObject({ inference_profile: z.unknown() })
+    .parse(
+      sqlite
+        .query("SELECT inference_profile FROM cron_jobs WHERE id = ?")
+        .get(id),
+    ).inference_profile;
 }
 
 describe("migration 363: backfill cron_jobs.inference_profile", () => {

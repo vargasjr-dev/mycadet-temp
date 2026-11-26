@@ -49,9 +49,7 @@ describe("DB migration readiness HTTP gate", () => {
     const body = jsonObjectSchema.parse(await response.json());
     expect(body.status).toBe("MIGRATING");
     expect(body.reason).toBe("db_migrations_running");
-    expect((body.dbMigrations as Record<string, unknown>).state).toBe(
-      "running",
-    );
+    expect(body.dbMigrations).toHaveProperty("state", "running");
   });
 
   test("continues serving healthz while migrations are running", async () => {
@@ -76,9 +74,7 @@ describe("DB migration readiness HTTP gate", () => {
     const body = jsonObjectSchema.parse(await response.json());
     expect(body.status).toBe("migrating");
     expect(body.ready).toBe(false);
-    expect((body.dbMigrations as Record<string, unknown>).state).toBe(
-      "running",
-    );
+    expect(body.dbMigrations).toHaveProperty("state", "running");
   });
 
   test("allows the migration-repair surface only in the failed state", async () => {
@@ -99,7 +95,7 @@ describe("DB migration readiness HTTP gate", () => {
     response = await fetch(url("/admin/rollback-migrations"), {
       method: "POST",
     });
-    body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    body = jsonObjectSchema.parse(await response.json().catch(() => ({})));
     expect(body.reason).not.toBe("db_migrations_failed");
 
     // Non-repair routes stay gated in the failed state.

@@ -13,8 +13,8 @@ const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 import { mock } from "bun:test";
 
-const noopLogger: Record<string, unknown> = new Proxy(
-  {} as Record<string, unknown>,
+const noopLogger: Record<string, unknown> = new Proxy<Record<string, unknown>>(
+  {},
   {
     get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
   },

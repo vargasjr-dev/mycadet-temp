@@ -4,8 +4,9 @@
  * upserts the local contact/channel identity row. Repeated delivery of the
  * same outcome must be idempotent.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
@@ -37,9 +38,9 @@ describe("handleInviteRedeemed (invite_redeemed)", () => {
   beforeEach(resetTables);
 
   test("mirrors the local contact/channel info row from the outcome", () => {
-    const result = handleInviteRedeemed({ body: { ...OUTCOME } }) as {
-      ok: boolean;
-    };
+    const result = z
+      .looseObject({ ok: z.boolean() })
+      .parse(handleInviteRedeemed({ body: { ...OUTCOME } }));
 
     expect(result.ok).toBe(true);
 

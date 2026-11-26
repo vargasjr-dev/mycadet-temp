@@ -4,6 +4,7 @@ import {
   FRONTMATTER_REGEX,
   parseFrontmatterFields,
 } from "../skills/frontmatter.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 describe("FRONTMATTER_REGEX", () => {
   test("matches a standard frontmatter block", () => {
@@ -254,8 +255,8 @@ describe("parseFrontmatterFields", () => {
     ].join("\n");
     const result = parseFrontmatterFields(input);
     expect(result).not.toBeNull();
-    const meta = result!.fields.metadata as Record<string, unknown>;
-    const cadet = meta.cadet as Record<string, unknown>;
+    const meta = jsonObjectSchema.parse(result!.fields.metadata);
+    const cadet = jsonObjectSchema.parse(meta.cadet);
     expect(cadet.requires).toEqual({
       bins: ["node", "npm"],
       env: ["API_KEY", "SECRET"],

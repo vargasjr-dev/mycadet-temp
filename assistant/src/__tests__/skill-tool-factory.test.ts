@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { getBundledSkillsDir } from "../config/skills.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
 import { resolveSubagentRole } from "../subagent/role-resolution.js";
@@ -16,6 +18,7 @@ import {
 import { RiskLevel } from "../tools/tool-types.js";
 import type { ToolContext } from "../tools/types.js";
 import type { SkillToolEntry } from "./../skills/tool-manifest.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -690,11 +693,9 @@ describe("createSkillTool: parameter misuse redirects", () => {
   });
 
   test("redirect keys stay out of the advertised schema", () => {
-    const properties = (
-      subagentReadEntry().input_schema as {
-        properties: Record<string, unknown>;
-      }
-    ).properties;
+    const properties = z
+      .looseObject({ properties: jsonObjectSchema })
+      .parse(subagentReadEntry().input_schema).properties;
 
     for (const key of bundledToolInputMisuseKeys("subagent_read")) {
       expect(properties[key]).toBeUndefined();
@@ -926,11 +927,17 @@ describe("createSkillTool: subagent_spawn role validation", () => {
   );
 
   test("role declares no enum, so the resolver stays reachable", () => {
-    const role = (
-      subagentSpawnEntry().input_schema as {
-        properties: Record<string, { type?: string; enum?: unknown }>;
-      }
-    ).properties.role;
+    const role = z
+      .looseObject({
+        properties: z.record(
+          z.string(),
+          z.looseObject({
+            type: z.string().optional(),
+            enum: z.unknown().optional(),
+          }),
+        ),
+      })
+      .parse(subagentSpawnEntry().input_schema).properties.role;
 
     expect(role.type).toBe("string");
     // An enum here is enforced by `validateInputAgainstSchema` ahead of the
@@ -942,11 +949,14 @@ describe("createSkillTool: subagent_spawn role validation", () => {
   test("output_contract keeps its enum, which the resolver has no fallback for", () => {
     // The counterpart constraint: unlike `role`, an unrecognized contract has
     // no defined behavior, so rejecting it at the boundary is correct.
-    const contract = (
-      subagentSpawnEntry().input_schema as {
-        properties: Record<string, { enum?: string[] }>;
-      }
-    ).properties.output_contract;
+    const contract = z
+      .looseObject({
+        properties: z.record(
+          z.string(),
+          z.looseObject({ enum: z.array(z.string()).optional() }),
+        ),
+      })
+      .parse(subagentSpawnEntry().input_schema).properties.output_contract;
 
     expect(contract.enum).toEqual(["report", "verdict", "artifact"]);
   });

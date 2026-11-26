@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // Mock the shared `runBackgroundJob` runner so the scheduler's fresh-bootstrap
 // talk-mode path stays observable in unit tests. Each invocation creates a new
 // conversation row (so `getLastScheduleConversationId` lookups reflect reality)
@@ -465,7 +467,7 @@ describe("scheduler conversation reuse", () => {
     saveRawConfig({
       ...originalConfig,
       timeouts: {
-        ...(originalConfig.timeouts as object | undefined),
+        ...z.object({}).passthrough().optional().parse(originalConfig.timeouts),
         scheduleTurnTimeoutSec: 1,
       },
     });

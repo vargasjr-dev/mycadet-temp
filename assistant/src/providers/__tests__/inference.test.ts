@@ -2,11 +2,11 @@
  * Tests for provider_connections: migration, CRUD, and
  * mix-and-match E2E (two profiles, same provider, different connections).
  */
-
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import type { DrizzleDb } from "../../persistence/db-connection.js";
 import { getSqliteFrom } from "../../persistence/db-connection.js";
@@ -47,9 +47,9 @@ function setupDb(): { db: DrizzleDb; raw: Database } {
 describe("migrateCreateProviderConnections", () => {
   test("creates the provider_connections table", () => {
     const { raw } = setupDb();
-    const rows = raw.query("SELECT name FROM provider_connections").all() as {
-      name: string;
-    }[];
+    const rows = z
+      .array(z.looseObject({ name: z.string() }))
+      .parse(raw.query("SELECT name FROM provider_connections").all());
     expect(Array.isArray(rows)).toBe(true);
   });
 

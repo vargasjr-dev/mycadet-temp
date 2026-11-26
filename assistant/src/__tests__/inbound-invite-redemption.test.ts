@@ -167,7 +167,7 @@ describe("inbound invite messages — no daemon-side interception", () => {
     // The standard ACL rejection reply was delivered.
     expect(deliverReplyCalls.length).toBe(1);
     const replyText = String(
-      (deliverReplyCalls[0].payload as Record<string, unknown>).text,
+      jsonObjectSchema.parse(deliverReplyCalls[0].payload).text,
     );
     expect(replyText).toMatch(/approved|tried talking to me/);
   });

@@ -57,9 +57,7 @@ describe("webhooks register", () => {
     ]);
     expect(mockCalls.length).toBe(1);
     expect(mockCalls[0][0]).toBe("webhooks_register");
-    expect((mockCalls[0][1].body as Record<string, unknown>).type).toBe(
-      "telegram",
-    );
+    expect(mockCalls[0][1].body).toHaveProperty("type", "telegram");
   });
 
   it("passes path override", async () => {
@@ -73,7 +71,8 @@ describe("webhooks register", () => {
       "--path",
       "webhooks/twilio/voice",
     ]);
-    expect((mockCalls[0][1].body as Record<string, unknown>).path).toBe(
+    expect(mockCalls[0][1].body).toHaveProperty(
+      "path",
       "webhooks/twilio/voice",
     );
   });
@@ -89,9 +88,7 @@ describe("webhooks register", () => {
       "--source",
       "@bot",
     ]);
-    expect((mockCalls[0][1].body as Record<string, unknown>).source).toBe(
-      "@bot",
-    );
+    expect(mockCalls[0][1].body).toHaveProperty("source", "@bot");
   });
 
   it("calls exitFromIpcResult on error", async () => {

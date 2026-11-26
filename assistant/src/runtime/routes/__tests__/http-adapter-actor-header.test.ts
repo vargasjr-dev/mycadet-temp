@@ -11,8 +11,9 @@
  * handlers (surface action `apr:*` guardian decisions, guardian actions, host
  * proxies) from approval-token bypass via a forged actor principal.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { resolveScopeProfile } from "../../auth/scopes.js";
 import type { AuthContext } from "../../auth/types.js";
@@ -75,10 +76,12 @@ async function invokeEcho(params: {
     params: {},
   });
 
-  return (await response.json()) as {
-    actorPrincipalId: string | null;
-    principalType: string | null;
-  };
+  return z
+    .looseObject({
+      actorPrincipalId: z.union([z.string(), z.null()]),
+      principalType: z.union([z.string(), z.null()]),
+    })
+    .parse(await response.json());
 }
 
 describe("http-adapter actor/principal header sanitization", () => {

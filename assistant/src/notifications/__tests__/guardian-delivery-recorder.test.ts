@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 const createGuardianRequestDeliveryMock = mock();
 const updateGuardianRequestDeliveryMock = mock();
 
@@ -54,14 +56,18 @@ describe("recordGuardianRequestDeliveries", () => {
     });
 
     const channels = createGuardianRequestDeliveryMock.mock.calls.map(
-      (call) => (call[0] as { destinationChannel: string }).destinationChannel,
+      (call) =>
+        z.looseObject({ destinationChannel: z.string() }).parse(call[0])
+          .destinationChannel,
     );
     expect(channels).toEqual(["cadet", "telegram"]);
 
-    const telegramRow = createGuardianRequestDeliveryMock.mock.calls[1]![0] as {
-      destinationChatId?: string;
-      destinationMessageId?: string;
-    };
+    const telegramRow = z
+      .looseObject({
+        destinationChatId: z.string().optional(),
+        destinationMessageId: z.string().optional(),
+      })
+      .parse(createGuardianRequestDeliveryMock.mock.calls[1]![0]);
     expect(telegramRow.destinationChatId).toBe("12345");
     expect(telegramRow.destinationMessageId).toBe("tg-77");
 

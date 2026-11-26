@@ -12,8 +12,9 @@
  * between them: the existence check has to gate the history read, not run
  * alongside it.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 const skillExistsLocallyMock = mock((_id: string): boolean => true);
 const getSkillHistoryMock = mock(async (_id: string, _opts?: unknown) => ({
@@ -63,11 +64,11 @@ beforeEach(() => {
 
 describe("getSkillHistory route", () => {
   test("returns history for a skill that currently exists", async () => {
-    const result = (await handler({
-      pathParams: { id: "release-triage" },
-    })) as {
-      revisions: unknown[];
-    };
+    const result = z.looseObject({ revisions: z.array(z.unknown()) }).parse(
+      await handler({
+        pathParams: { id: "release-triage" },
+      }),
+    );
 
     expect(result.revisions).toHaveLength(1);
     expect(getSkillHistoryMock).toHaveBeenCalledTimes(1);

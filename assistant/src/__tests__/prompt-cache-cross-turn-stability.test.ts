@@ -17,11 +17,11 @@
  * and every boundary marked in turn 1 is marked again in turn 2 so its written
  * prefix stays readable.
  */
-
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 
 import { mergeMessageMetadata } from "../persistence/message-metadata.js";
 import type { Message } from "../providers/types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Provider SDK mocks: must be registered before the transports are imported
@@ -507,9 +507,7 @@ describe("prompt cache cross-turn stability: render pipeline", () => {
 
   test("a persisted pointer on the opening message does not flag it volatile in either turn", () => {
     for (const call of calls) {
-      const config = call.options?.config as
-        | Record<string, unknown>
-        | undefined;
+      const config = jsonObjectSchema.optional().parse(call.options?.config);
       expect(config?.mutableLatestUserMessage).toBeUndefined();
     }
   });

@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 const PNG_MAGIC = Buffer.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0xff, 0xfe, 0x00,
 ]);
@@ -99,14 +101,14 @@ async function runRequestCommand(
   const originalExit = process.exit;
   const callbackOf = (rest: unknown[]): (() => void) | undefined =>
     rest.find((arg) => typeof arg === "function") as (() => void) | undefined;
-  process.stdout.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
+  process.stdout.write = (chunk: string | Uint8Array, ...rest: unknown[]) => {
     chunks.push(
       typeof chunk === "string" ? Buffer.from(chunk) : Buffer.from(chunk),
     );
     callbackOf(rest)?.();
     return true;
-  }) as typeof process.stdout.write;
-  process.stderr.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
+  };
+  process.stderr.write = (chunk: string | Uint8Array, ...rest: unknown[]) => {
     stderrChunks.push(String(chunk));
     const callback = callbackOf(rest);
     if (callback) {
@@ -117,7 +119,7 @@ async function runRequestCommand(
       }
     }
     return true;
-  }) as typeof process.stderr.write;
+  };
   const recordExit = ((code?: number) => {
     exitCalls.push(code ?? Number(process.exitCode ?? 0));
   }) as typeof process.exit;
@@ -273,7 +275,9 @@ describe("oauth request body encoding", () => {
 
     expect(exitCode).toBe(0);
     expect(handleRequestCalls).toHaveLength(1);
-    const call = handleRequestCalls[0] as { body: { parsed_data: unknown } };
+    const call = z
+      .looseObject({ body: z.looseObject({ parsed_data: z.unknown() }) })
+      .parse(handleRequestCalls[0]);
     expect(Buffer.isBuffer(call.body.parsed_data)).toBe(true);
     expect(
       Buffer.from(call.body.parsed_data as Uint8Array).equals(PNG_MAGIC),
@@ -391,10 +395,9 @@ describe("oauth request body output", () => {
     ]);
 
     expect(exitCode).toBe(0);
-    const parsed = JSON.parse(stdout.toString("utf8")) as {
-      body: string;
-      bodyEncoding?: string;
-    };
+    const parsed = z
+      .looseObject({ body: z.string(), bodyEncoding: z.string().optional() })
+      .parse(JSON.parse(stdout.toString("utf8")));
     expect(parsed.body).toBe(PNG_MAGIC.toString("base64"));
     expect(parsed.bodyEncoding).toBe("base64");
   });

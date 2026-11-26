@@ -11,10 +11,12 @@
  *
  * These tests pin current behavior; nothing here changes it.
  */
-
 import { describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { ContentBlock, Message } from "../providers/types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock Anthropic SDK; must be registered before importing the provider.
@@ -75,10 +77,11 @@ async function sendAndCapture(
   const provider = new AnthropicProvider("test-key", "claude-sonnet-4-6");
   const messages: Message[] = [{ role: "user", content: blocks }];
   await provider.sendMessage(messages);
-  return lastStreamParams!.messages as Array<{
-    role: string;
-    content: Array<Record<string, unknown>>;
-  }>;
+  return z
+    .array(
+      z.looseObject({ role: z.string(), content: z.array(jsonObjectSchema) }),
+    )
+    .parse(lastStreamParams!.messages);
 }
 
 describe("provider serializer leak audit", () => {

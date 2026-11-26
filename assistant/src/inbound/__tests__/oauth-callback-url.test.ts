@@ -8,8 +8,9 @@
  * each authorization request, so a URI that varies per attempt makes both
  * mechanisms unusable.
  */
-
 import { afterEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 const resolveCallbackUrl = mock(
   async () => "https://ingress.example/webhooks/oauth/callback",
@@ -66,7 +67,9 @@ describe("resolveOauthCallbackUrl", () => {
 
   test("registers the shared callback path, not a per-caller one", async () => {
     await resolveOauthCallbackUrl();
-    const [, callbackPath] = resolveCallbackUrl.mock.calls[0] as unknown[];
+    const [, callbackPath] = z
+      .array(z.unknown())
+      .parse(resolveCallbackUrl.mock.calls[0]);
     expect(callbackPath).toEqual(OAUTH_CALLBACK_PATH);
     expect(OAUTH_CALLBACK_PATH).toEqual("webhooks/oauth/callback");
   });
@@ -80,15 +83,21 @@ describe("resolveOauthCallbackUrl", () => {
     const second = await resolveOauthCallbackUrl();
     expect(first).toEqual(second);
 
-    const [, pathA, typeA] = resolveCallbackUrl.mock.calls[0] as unknown[];
-    const [, pathB, typeB] = resolveCallbackUrl.mock.calls[1] as unknown[];
+    const [, pathA, typeA] = z
+      .array(z.unknown())
+      .parse(resolveCallbackUrl.mock.calls[0]);
+    const [, pathB, typeB] = z
+      .array(z.unknown())
+      .parse(resolveCallbackUrl.mock.calls[1]);
     expect(pathA).toEqual(pathB);
     expect(typeA).toEqual(typeB);
   });
 
   test("registers one route type so the cloud holds a single admin row", async () => {
     await resolveOauthCallbackUrl();
-    const [, , type] = resolveCallbackUrl.mock.calls[0] as unknown[];
+    const [, , type] = z
+      .array(z.unknown())
+      .parse(resolveCallbackUrl.mock.calls[0]);
     expect(type).toEqual("oauth");
   });
 

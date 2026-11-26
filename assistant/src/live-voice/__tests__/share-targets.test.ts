@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   describeShareTargets,
   formatShareTargetsForPrompt,
@@ -146,7 +148,7 @@ describe("formatShareTargetsForPrompt", () => {
       total: 2,
     });
     expect(block).not.toBeNull();
-    const text = block as string;
+    const text = z.string().parse(block);
     const fenceStart = text.indexOf('<external_content source="web"');
     const fenceEnd = text.indexOf("</external_content>\n");
     expect(fenceStart).toBeGreaterThan(text.indexOf("screen_point_at"));

@@ -45,10 +45,10 @@ async function run(
 ): Promise<{ stdout: string; exitCode: number }> {
   const originalWrite = process.stdout.write.bind(process.stdout);
   const chunks: string[] = [];
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     chunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
 
   const prevExit = process.exitCode;
   process.exitCode = 0;

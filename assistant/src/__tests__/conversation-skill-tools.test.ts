@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { SkillSummary } from "../config/skills.js";
 import type {
   Message,
@@ -2700,8 +2702,8 @@ describe("skill load harness", () => {
   test("buildSkillLoadHistory generates unique tool_use IDs per call", () => {
     const h1 = buildSkillLoadHistory("browser", "v1:abc");
     const h2 = buildSkillLoadHistory("browser", "v1:def");
-    const id1 = (h1[0].content[0] as { id: string }).id;
-    const id2 = (h2[0].content[0] as { id: string }).id;
+    const id1 = z.looseObject({ id: z.string() }).parse(h1[0].content[0]).id;
+    const id2 = z.looseObject({ id: z.string() }).parse(h2[0].content[0]).id;
     expect(id1).not.toBe(id2);
   });
 });

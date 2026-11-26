@@ -2,9 +2,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-const noopLogger = new Proxy({} as Record<string, unknown>, {
-  get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
-});
+const noopLogger = new Proxy<Record<string, unknown>>(
+  {},
+  {
+    get: (_target, prop) => (prop === "child" ? () => noopLogger : () => {}),
+  },
+);
 
 // ── Import after mocks ───────────────────────────────────────────────
 const { buildSystemPrompt } = await import("../prompts/system-prompt.js");

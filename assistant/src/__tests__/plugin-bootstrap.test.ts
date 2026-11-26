@@ -12,12 +12,13 @@
  *
  * `resetPluginRegistryForTests()` isolates registry state between cases.
  */
-
 import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { bootstrapPlugins } from "../daemon/external-plugins-bootstrap.js";
 import { HOOKS } from "../plugin-api/constants.js";
@@ -107,7 +108,9 @@ describe("plugin bootstrap", () => {
     // Every documented field must be present on the context passed to init.
     expect(ctx.config).toBeUndefined(); // no `plugins.alpha` block in fake config
     expect(ctx.logger).toBeDefined();
-    expect(typeof (ctx.logger as { info: unknown }).info).toBe("function");
+    expect(
+      typeof z.looseObject({ info: z.unknown() }).parse(ctx.logger).info,
+    ).toBe("function");
     // Storage dir lives under getWorkspaceDir()/plugins-data/<name> and must have
     // been created on disk by bootstrap.
     expect(ctx.pluginStorageDir).toBe(

@@ -14,7 +14,6 @@
  *     404, pre-fetch traversal rejection)
  *   - catalog-miss short-circuit (no fetch call when id unknown)
  */
-
 import {
   mkdirSync,
   mkdtempSync,
@@ -25,6 +24,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { CatalogSkill } from "../skills/catalog-install.js";
 
@@ -434,10 +435,9 @@ describe("readCatalogSkillFiles (platform mode)", () => {
     expect(fetchCalls[0]!.url).toBe(
       "https://test-cloud.mycadet.ai/v1/skills/remote-skill/files/",
     );
-    const headers = (fetchCalls[0]!.init?.headers ?? {}) as Record<
-      string,
-      string
-    >;
+    const headers = z
+      .record(z.string(), z.string())
+      .parse(fetchCalls[0]!.init?.headers ?? {});
     expect(headers["Accept"]).toBe("application/json");
 
     // Mapped entries: always content === null, isBinary from filename.

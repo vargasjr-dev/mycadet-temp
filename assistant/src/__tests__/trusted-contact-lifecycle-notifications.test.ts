@@ -13,6 +13,10 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Test isolation: in-memory SQLite via temp directory
 // ---------------------------------------------------------------------------
@@ -215,10 +219,9 @@ describe("trusted contact lifecycle notification signals", () => {
     expect(deniedSignals.length).toBe(0);
 
     // Verify guardian_decision payload
-    const gdPayload = guardianDecisionSignals[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const gdPayload = z
+      .record(z.string(), z.unknown())
+      .parse(guardianDecisionSignals[0].contextPayload);
     expect(gdPayload.decision).toBe("denied");
     expect(gdPayload.requesterExternalUserId).toBe("requester-user-456");
     expect(gdPayload.decidedByExternalUserId).toBe("guardian-user-789");
@@ -302,14 +305,12 @@ describe("trusted contact lifecycle notification signals", () => {
 
     // Verify verification_sent payload and that it's suppressed from delivery
     const vsSignal = verificationSentSignals[0];
-    const vsPayload = vsSignal.contextPayload as Record<string, unknown>;
+    const vsPayload = jsonObjectSchema.parse(vsSignal.contextPayload);
     expect(vsPayload.requesterExternalUserId).toBe("requester-user-456");
     expect(vsPayload.verificationSessionId).toBeDefined();
     expect(vsPayload.requesterDisplayName).toBe("Alice Requester");
     expect(vsPayload.decidedByDisplayName).toBe("Guardian Bob");
-    expect(
-      (vsSignal.attentionHints as Record<string, unknown>).visibleInSourceNow,
-    ).toBe(true);
+    expect(vsSignal.attentionHints).toHaveProperty("visibleInSourceNow", true);
 
     // Should NOT emit denied signal
     const deniedSignals = emitSignalCalls.filter(
@@ -445,10 +446,9 @@ describe("trusted contact lifecycle notification signals", () => {
 
     // Verify display names fall back to null/empty when contacts have no
     // display name set.
-    const gdPayload = guardianDecisionSignals[0].contextPayload as Record<
-      string,
-      unknown
-    >;
+    const gdPayload = z
+      .record(z.string(), z.unknown())
+      .parse(guardianDecisionSignals[0].contextPayload);
     expect(gdPayload.requesterDisplayName).toBeNull();
     // Guardian contact exists but displayName was cleared to empty string.
     // The signal enrichment resolves displayName from the contact record,

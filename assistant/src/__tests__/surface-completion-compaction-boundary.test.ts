@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   findPersistedSurfaceInfo,
   markSurfaceCompleted,
@@ -11,6 +13,7 @@ import { conversations, messages } from "../persistence/schema/index.js";
 import { findPersistedSurfaceState } from "../runtime/routes/surface-conversation-resolver.js";
 import { getDbPath } from "../util/layout.js";
 import { assertNotLiveDb } from "./assert-not-live-db.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 await initializeDb();
 
@@ -74,7 +77,7 @@ function seedCompactedConversation(): void {
 /** The surface block as a history reseed would read it back. */
 function readPersistedBlocks(): Array<Record<string, unknown>> {
   const row = getMessages(CONVERSATION_ID).find((r) => r.id === "msg-1")!;
-  return row.content as unknown as Array<Record<string, unknown>>;
+  return z.array(jsonObjectSchema).parse(row.content);
 }
 
 describe("a surface behind the context-compaction boundary", () => {

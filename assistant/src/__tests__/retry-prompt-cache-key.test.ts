@@ -4,8 +4,9 @@
  * `openai` provider only — and never for providers whose clients spread config
  * into wire request bodies (Anthropic 400s unknown fields).
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { RetryProvider } from "../providers/retry.js";
 import type {
@@ -115,7 +116,7 @@ describe("retry normalization for promptCacheKey", () => {
     // resolution cascade — not this test's concern) and the routing keys were
     // consumed, while the copied prompt-cache key survived normalization.
     expect(typeof lastConfig()?.model).toBe("string");
-    expect((lastConfig()?.model as string).length).toBeGreaterThan(0);
+    expect(z.string().parse(lastConfig()?.model).length).toBeGreaterThan(0);
     expect(lastConfig()?.promptCacheKey).toBe("conv-1");
     expect(lastConfig()?.callSite).toBeUndefined();
     expect(lastConfig()?.selectionSeed).toBeUndefined();

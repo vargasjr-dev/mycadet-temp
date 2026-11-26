@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   coerceArrayShapes,
   coerceStringBooleans,
@@ -203,12 +205,16 @@ describe("validateInputAgainstSchema — type checks", () => {
     );
     expect(result.ok).toBe(valid);
     if (!valid) {
-      expect((result as { ok: false; errors: string[] }).errors[0]).toContain(
-        `field must be `,
-      );
-      expect((result as { ok: false; errors: string[] }).errors[0]).toContain(
-        type,
-      );
+      expect(
+        z
+          .looseObject({ ok: z.literal(false), errors: z.array(z.string()) })
+          .parse(result).errors[0],
+      ).toContain(`field must be `);
+      expect(
+        z
+          .looseObject({ ok: z.literal(false), errors: z.array(z.string()) })
+          .parse(result).errors[0],
+      ).toContain(type);
     }
   });
 });

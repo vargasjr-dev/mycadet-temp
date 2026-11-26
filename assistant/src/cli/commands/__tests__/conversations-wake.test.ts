@@ -6,11 +6,13 @@
  * string and applies the schedule's pinned profile (see
  * wake-conversation-routes.test.ts).
  */
-
 import * as nodeFs from "node:fs";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 let lastIpcCall: { method: string; params?: Record<string, unknown> } | null =
   null;
@@ -64,8 +66,9 @@ async function runWake(args: string[]): Promise<number> {
 }
 
 function lastBody(): Record<string, unknown> {
-  const body = (lastIpcCall?.params as { body?: Record<string, unknown> })
-    ?.body;
+  const body = z
+    .looseObject({ body: jsonObjectSchema.optional() })
+    .parse(lastIpcCall?.params)?.body;
   if (!body) {
     throw new Error("no wake_conversation body captured");
   }

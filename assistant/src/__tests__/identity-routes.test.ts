@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { startTestCesRecordServer } from "@mycadet/ces-client/test-support";
+import { z } from "zod";
 
 import {
   resetReadinessForTest,
@@ -590,7 +591,9 @@ describe("identity routes — createdAt selection", () => {
     );
     expect(route).toBeDefined();
 
-    const body = route!.handler({}) as { createdAt?: string };
+    const body = z
+      .looseObject({ createdAt: z.string().optional() })
+      .parse(route!.handler({}));
     expect(body.createdAt).toBe(persistedHatchedAt);
   });
 
@@ -607,7 +610,9 @@ describe("identity routes — createdAt selection", () => {
     );
     expect(route).toBeDefined();
 
-    const body = route!.handler({}) as { createdAt?: string };
+    const body = z
+      .looseObject({ createdAt: z.string().optional() })
+      .parse(route!.handler({}));
     expect(Date.parse(body.createdAt ?? "")).toBeGreaterThan(0);
     expect(existsSync(getHatchedSidecarPath())).toBe(false);
   });

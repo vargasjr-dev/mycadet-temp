@@ -216,9 +216,7 @@ describe("CallSiteRoutingProvider honors provider_connection (satellite gate)", 
     // stub, NOT the default.
     expect(sendMessageCalls.length).toBe(1);
     expect(sendMessageCalls[0].tag).toBe("connection-managed");
-    expect((response as unknown as { tag: string }).tag).toBe(
-      "connection-managed",
-    );
+    expect(response as unknown).toHaveProperty("tag", "connection-managed");
   });
 
   test("connection unset + profile.provider matches default → reuses default (no resolution work)", async () => {

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   safeStringSlice,
   stripOrphanedSurrogates,
@@ -165,7 +167,9 @@ describe("stripOrphanedSurrogatesDeep", () => {
     const result = stripOrphanedSurrogatesDeep(input);
     expect(result.changed).toBe(true);
     expect(result.fixedStringCount).toBe(1);
-    const firstChild = result.value.b[0] as { c: string };
+    const firstChild = z
+      .looseObject({ c: z.string() })
+      .parse(result.value.b[0]);
     expect(firstChild.c).toBe(`bad${REPLACEMENT}`);
     // Clean siblings are preserved by value (structural equality).
     expect(result.value.a).toBe("clean");

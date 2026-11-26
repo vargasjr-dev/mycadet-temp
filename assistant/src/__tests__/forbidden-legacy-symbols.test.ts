@@ -2,6 +2,8 @@ import { execSync } from "node:child_process";
 import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 /**
  * Guard test: fail if any legacy Twilio ingress symbols reappear in
  * production source code, docs, configs, or scripts.
@@ -66,7 +68,9 @@ describe("forbidden legacy symbols", () => {
       );
     } catch (err: unknown) {
       // grep exits with code 1 when no matches are found — that is the expected (passing) case
-      const exitCode = (err as { status?: number }).status;
+      const exitCode = z
+        .looseObject({ status: z.number().optional() })
+        .parse(err).status;
       if (exitCode === 1) {
         // No matches found — test passes
         return;

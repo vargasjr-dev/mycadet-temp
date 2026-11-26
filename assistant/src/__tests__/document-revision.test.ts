@@ -6,6 +6,8 @@ import assert from "node:assert/strict";
  */
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   createDocument,
   getDocumentById,
@@ -350,9 +352,13 @@ describe("POST documents", () => {
 
   test("list items include the revision", async () => {
     const surfaceId = seed();
-    const result = (await route("listDocuments").handler({})) as {
-      documents: Array<{ surfaceId: string; revision: number }>;
-    };
+    const result = z
+      .looseObject({
+        documents: z.array(
+          z.looseObject({ surfaceId: z.string(), revision: z.number() }),
+        ),
+      })
+      .parse(await route("listDocuments").handler({}));
     expect(result.documents).toEqual([
       expect.objectContaining({ surfaceId, revision: 1 }),
     ]);

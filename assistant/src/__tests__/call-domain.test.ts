@@ -9,6 +9,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // Track whether the Twilio provider's initiateCall should succeed or throw
@@ -174,7 +176,9 @@ function getLatestAssistantText(conversationId: string): string | null {
   return latest.content
     .filter(
       (b): b is { type: "text"; text: string } =>
-        b.type === "text" && typeof (b as { text?: unknown }).text === "string",
+        b.type === "text" &&
+        typeof z.looseObject({ text: z.unknown().optional() }).parse(b).text ===
+          "string",
     )
     .map((b) => b.text)
     .join("");

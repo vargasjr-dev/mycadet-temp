@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { setConfig } from "./helpers/set-config.js";
 
 process.env.DISABLE_HTTP_AUTH = "true";
@@ -93,7 +94,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
   getMessages: () => [],
   provenanceFromTrustContext: (ctx: unknown) =>
     ctx
-      ? { provenanceTrustClass: (ctx as Record<string, unknown>).trustClass }
+      ? { provenanceTrustClass: jsonObjectSchema.parse(ctx).trustClass }
       : { provenanceTrustClass: "unknown" },
   setConversationOriginChannelIfUnset: () => {},
   setConversationOriginInterfaceIfUnset: () => {},
@@ -140,7 +141,7 @@ mock.module("../runtime/trust-context-resolver.js", () => ({
     sourceChannel: "cadet",
   }),
   withSourceChannel: (sourceChannel: unknown, ctx: unknown) => ({
-    ...(ctx as Record<string, unknown>),
+    ...jsonObjectSchema.parse(ctx),
     sourceChannel,
   }),
 }));
@@ -590,7 +591,10 @@ describe("handleSendMessage canned wake-up greeting", () => {
     expect(runAgentLoop).not.toHaveBeenCalled();
     const userCall = addMessageMock.mock.calls.find((c) => c[1] === "user");
     expect(userCall).toBeDefined();
-    const options = userCall?.[3] as { clientMessageId?: string } | undefined;
+    const options = z
+      .looseObject({ clientMessageId: z.string().optional() })
+      .optional()
+      .parse(userCall?.[3]);
     expect(options?.clientMessageId).toBe("nonce-wake-123");
   });
 });

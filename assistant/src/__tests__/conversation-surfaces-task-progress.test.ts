@@ -339,7 +339,7 @@ describe("task_progress surface compatibility", () => {
 
     const templateData = jsonObjectSchema.parse(showMessage.data.templateData);
     expect(templateData.status).toBe("in_progress");
-    const steps = templateData.steps as Array<Record<string, unknown>>;
+    const steps = z.array(jsonObjectSchema).parse(templateData.steps);
     expect(steps).toHaveLength(2);
     expect(steps[0]).toEqual({ label: "Valid step", status: "pending" });
     expect(steps[1]).toEqual({
@@ -628,9 +628,10 @@ describe("task_progress surface compatibility", () => {
       'ui_update is unavailable on channel "slack"',
     );
     expect(sent).toHaveLength(0);
-    expect(
-      (ctx.surfaceState.get("surface-1")?.data as CardSurfaceData).template,
-    ).toBe("task_progress");
+    expect(ctx.surfaceState.get("surface-1")?.data).toHaveProperty(
+      "template",
+      "task_progress",
+    );
   });
 
   test("blocks Slack ui_update when the surface is not already stored", async () => {

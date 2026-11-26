@@ -4,8 +4,9 @@
  * default sidebar restore. Other handlers in the file (seen/unread/get)
  * are covered transitively by `conversation-sync-tags.test.ts`.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 // Avoid spinning up the real event hub for the pinned/groups branches.
 setBroadcastOverrideForTesting(() => {});
@@ -256,9 +257,14 @@ describe("GET /v1/conversations/:id", () => {
   test("serves a listed conversation", () => {
     const conv = createConversation({ title: "listed" });
 
-    const detail = getHandler({ pathParams: { id: conv.id } }) as {
-      conversation: { id: string; conversationType: string };
-    };
+    const detail = z
+      .looseObject({
+        conversation: z.looseObject({
+          id: z.string(),
+          conversationType: z.string(),
+        }),
+      })
+      .parse(getHandler({ pathParams: { id: conv.id } }));
 
     expect(detail.conversation.id).toBe(conv.id);
     expect(detail.conversation.conversationType).toBe("standard");
@@ -823,7 +829,7 @@ describe("GET /v1/conversations/unread-count", () => {
   );
 
   function invokeUnreadCount(): { count: number } {
-    return unreadCountHandler({}) as { count: number };
+    return z.looseObject({ count: z.number() }).parse(unreadCountHandler({}));
   }
 
   function seedUnseen(conversationId: string): void {

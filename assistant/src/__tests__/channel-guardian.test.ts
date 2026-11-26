@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 // Telegram bot username mock — production code now reads from config via getTelegramBotUsername()
@@ -65,7 +67,7 @@ mock.module("../ipc/gateway-client.js", () => ({
     if (method === "mark_channel_revoked") {
       const { revokeChannelById } =
         await import("./helpers/seed-contact-channel.js");
-      const channelId = params?.contactChannelId as string | undefined;
+      const channelId = z.string().optional().parse(params?.contactChannelId);
       if (channelId) {
         revokeChannelById(channelId);
       }
@@ -524,11 +526,15 @@ describe("guardian service rate limiting", () => {
       "chat-42",
     );
     expect(result.success).toBe(false);
-    expect((result as { reason: string }).reason).toBeDefined();
-    expect((result as { reason: string }).reason.length).toBeGreaterThan(0);
-    expect((result as { reason: string }).reason.toLowerCase()).toContain(
-      "failed",
-    );
+    expect(
+      z.looseObject({ reason: z.string() }).parse(result).reason,
+    ).toBeDefined();
+    expect(
+      z.looseObject({ reason: z.string() }).parse(result).reason.length,
+    ).toBeGreaterThan(0);
+    expect(
+      z.looseObject({ reason: z.string() }).parse(result).reason.toLowerCase(),
+    ).toContain("failed");
 
     // Verify the rate limit record
     const rl = getRateLimitState("telegram", "user-42", "chat-42");
@@ -583,7 +589,9 @@ describe("guardian service rate limiting", () => {
       "chat-42",
     );
     expect(normalFailure.success).toBe(false);
-    const normalReason = (normalFailure as { reason: string }).reason;
+    const normalReason = z
+      .looseObject({ reason: z.string() })
+      .parse(normalFailure).reason;
 
     // Trigger rate limit (4 more attempts to reach 5 total)
     for (let i = 0; i < 4; i++) {
@@ -608,7 +616,9 @@ describe("guardian service rate limiting", () => {
       "chat-42",
     );
     expect(rateLimitedResult.success).toBe(false);
-    const rateLimitedReason = (rateLimitedResult as { reason: string }).reason;
+    const rateLimitedReason = z
+      .looseObject({ reason: z.string() })
+      .parse(rateLimitedResult).reason;
 
     // Anti-oracle: both responses must be identical
     expect(rateLimitedReason).toBe(normalReason);

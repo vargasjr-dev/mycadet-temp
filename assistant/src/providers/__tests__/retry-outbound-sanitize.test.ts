@@ -5,8 +5,9 @@
  * strict provider parsers reject with a 400, so the guard sits at the one
  * layer every adapter shares instead of inside each client.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { stripOrphanedSurrogates } from "../../util/unicode.js";
 import { RetryProvider } from "../retry.js";
@@ -97,7 +98,9 @@ describe("RetryProvider outbound surrogate sanitization", () => {
       JSON.stringify(sent.options?.tools),
     );
     // The orphan is replaced, not dropped, so surrounding text survives.
-    const text = sent.messages[0]!.content[0] as { text: string };
+    const text = z
+      .looseObject({ text: z.string() })
+      .parse(sent.messages[0]!.content[0]);
     expect(text.text).toBe("memory preview � cut");
   });
 
@@ -124,9 +127,13 @@ describe("RetryProvider outbound surrogate sanitization", () => {
     await new RetryProvider(provider).sendMessage(messages);
 
     const sent = received();
-    const image = sent.messages[0]!.content[0] as { source: unknown };
+    const image = z
+      .looseObject({ source: z.unknown() })
+      .parse(sent.messages[0]!.content[0]);
     expect(image.source).toBe(source);
-    const text = sent.messages[0]!.content[1] as { text: string };
+    const text = z
+      .looseObject({ text: z.string() })
+      .parse(sent.messages[0]!.content[1]);
     expect(text.text).toBe("caption �");
   });
 
@@ -156,7 +163,9 @@ describe("RetryProvider outbound surrogate sanitization", () => {
 
     expect(total).toBe(7);
     const seen = counted!;
-    const text = seen.messages[0]!.content[0] as { text: string };
+    const text = z
+      .looseObject({ text: z.string() })
+      .parse(seen.messages[0]!.content[0]);
     expect(text.text).toBe("count �");
     expect(seen.systemPrompt).toBe("system �");
   });
@@ -171,7 +180,9 @@ describe("RetryProvider outbound surrogate sanitization", () => {
 
     const sent = received();
     expect(sent.messages).toBe(messages);
-    const text = sent.messages[0]!.content[0] as { text: string };
+    const text = z
+      .looseObject({ text: z.string() })
+      .parse(sent.messages[0]!.content[0]);
     expect(text.text).toContain(EMOJI);
   });
 });

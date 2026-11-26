@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { parse as parseYaml } from "yaml";
+import { z } from "zod";
 
 const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
@@ -412,7 +413,10 @@ describe("plugin-resident skills", () => {
           typeof args[0] === "object" &&
           args[0] !== null &&
           "pluginDir" in args[0] &&
-          (args[0] as { pluginDir: string }).pluginDir.endsWith("the-force") &&
+          z
+            .looseObject({ pluginDir: z.string() })
+            .parse(args[0])
+            .pluginDir.endsWith("the-force") &&
           typeof args[1] === "string" &&
           args[1].includes("missing package.json"),
       );
@@ -931,9 +935,9 @@ describe("bundled skill categories", () => {
       "skills",
       "skill-categories-catalog.yaml",
     );
-    const parsed = parseYaml(readFileSync(yamlPath, "utf-8")) as {
-      categories: { slug: string }[];
-    };
+    const parsed = z
+      .looseObject({ categories: z.array(z.looseObject({ slug: z.string() })) })
+      .parse(parseYaml(readFileSync(yamlPath, "utf-8")));
     const validSlugs = new Set(parsed.categories.map((c) => c.slug));
     expect(validSlugs.size).toBeGreaterThan(0);
 
@@ -1023,7 +1027,7 @@ describe("ingress-dependent setup skills declare public-ingress intentionally", 
         try {
           const parsed = JSON.parse(val);
           if (Array.isArray(parsed)) {
-            return parsed as string[];
+            return z.array(z.string()).parse(parsed);
           }
         } catch {
           /* ignore */
@@ -1036,7 +1040,7 @@ describe("ingress-dependent setup skills declare public-ingress intentionally", 
           const parsed = JSON.parse(val);
           const includes = parsed?.cadet?.includes;
           if (Array.isArray(includes)) {
-            return includes as string[];
+            return z.array(z.string()).parse(includes);
           }
         } catch {
           /* ignore */

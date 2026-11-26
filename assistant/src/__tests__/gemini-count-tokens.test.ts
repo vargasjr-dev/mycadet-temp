@@ -6,6 +6,10 @@
  */
 import { describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 let lastCountParams: Record<string, unknown> | undefined;
 let countResult: { totalTokens?: number } = { totalTokens: 1234 };
 
@@ -52,11 +56,15 @@ describe("GeminiProvider.countInputTokens", () => {
 
     expect(count).toBe(1234);
     expect(lastCountParams?.model).toBe("gemini-3-flash-preview");
-    const config = lastCountParams?.config as Record<string, unknown>;
+    const config = jsonObjectSchema.parse(lastCountParams?.config);
     expect(config.systemInstruction).toBe("sys prompt");
-    const cfgTools = config.tools as Array<{
-      functionDeclarations: Array<{ name: string }>;
-    }>;
+    const cfgTools = z
+      .array(
+        z.looseObject({
+          functionDeclarations: z.array(z.looseObject({ name: z.string() })),
+        }),
+      )
+      .parse(config.tools);
     expect(cfgTools[0].functionDeclarations[0].name).toBe("lookup");
     expect(Array.isArray(lastCountParams?.contents)).toBe(true);
   });

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   coerceObjectParamsToJsonString,
   decodeCoercedObjectArgs,
@@ -21,19 +23,20 @@ describe("coerceObjectParamsToJsonString", () => {
       coerceObjectParamsToJsonString(SKILL_EXECUTE_SCHEMA);
 
     expect(objectKeys).toEqual(["input"]);
-    const props = (
-      parameters as { properties: Record<string, { type: string }> }
-    ).properties;
+    const props = z
+      .looseObject({
+        properties: z.record(z.string(), z.looseObject({ type: z.string() })),
+      })
+      .parse(parameters).properties;
     expect(props.input.type).toBe("string");
     // Scalars are left untouched.
     expect(props.tool.type).toBe("string");
     expect(props.activity.type).toBe("string");
     // The required list is preserved.
-    expect((parameters as { required: string[] }).required).toEqual([
-      "tool",
-      "input",
-      "activity",
-    ]);
+    expect(
+      z.looseObject({ required: z.array(z.string()) }).parse(parameters)
+        .required,
+    ).toEqual(["tool", "input", "activity"]);
   });
 
   test("leaves array and scalar params alone (no coercion)", () => {

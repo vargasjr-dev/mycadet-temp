@@ -463,14 +463,10 @@ describe("the due tick honors durable row provenance", () => {
     await runDueSchedulesOnce();
 
     expect(mockWakeAgentForOpportunity).toHaveBeenCalledTimes(1);
-    expect(
-      (
-        mockWakeAgentForOpportunity.mock.calls.at(-1)?.[0] as Record<
-          string,
-          unknown
-        >
-      ).conversationId,
-    ).toBe("conv-other-guardian-owned");
+    expect(mockWakeAgentForOpportunity.mock.calls.at(-1)?.[0]).toHaveProperty(
+      "conversationId",
+      "conv-other-guardian-owned",
+    );
     expect(trustOfLastWake()).toBeUndefined();
   });
 });

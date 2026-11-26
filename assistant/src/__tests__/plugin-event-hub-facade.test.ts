@@ -7,12 +7,14 @@
  * getter cannot slip a host event past the guard. Subscription and non-host
  * publishing must still work and share state with the real hub.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { AssistantEventEnvelope } from "../api/index.js";
 import { assistantEventHub as pluginHub } from "../plugin-api/index.js";
 import { assistantEventHub as rawHub } from "../runtime/assistant-event-hub.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // The hub's `publish` fans out locally only in the main daemon; elsewhere it
 // forwards over IPC. A test process defaults to "main daemon" (set by the test
@@ -24,7 +26,11 @@ function envelope(type: string): AssistantEventEnvelope {
 }
 
 function eventType(event: unknown): unknown {
-  return (event as { message?: { type?: unknown } }).message?.type;
+  return z
+    .looseObject({
+      message: z.looseObject({ type: z.unknown().optional() }).optional(),
+    })
+    .parse(event).message?.type;
 }
 
 /** Register a host-capable desktop client subscriber on the raw hub. */
@@ -65,7 +71,9 @@ describe("plugin-facing assistantEventHub facade", () => {
     // A plain frozen object: its prototype is Object.prototype, which has no
     // `publish`, so `Object.getPrototypeOf(...).publish` / `.constructor` cannot
     // reach the unguarded `AssistantEventHub.prototype.publish`.
-    const proto = Object.getPrototypeOf(pluginHub) as { publish?: unknown };
+    const proto = z
+      .looseObject({ publish: z.unknown().optional() })
+      .parse(Object.getPrototypeOf(pluginHub));
     expect(typeof proto?.publish).not.toBe("function");
 
     const received: AssistantEventEnvelope[] = [];
@@ -88,7 +96,7 @@ describe("plugin-facing assistantEventHub facade", () => {
   });
 
   test("withholds methods that leak subscriber callbacks (Codex P1)", () => {
-    const facade = pluginHub as unknown as Record<string, unknown>;
+    const facade = jsonObjectSchema.parse(pluginHub);
     for (const method of [
       "listClients",
       "listClientsByCapability",
@@ -141,8 +149,9 @@ describe("plugin-facing assistantEventHub facade", () => {
       type: "process",
       callback: (event) => {
         try {
-          (event as { message: { type: string } }).message.type =
-            "host_bash_request";
+          z
+            .looseObject({ message: z.looseObject({ type: z.string() }) })
+            .parse(event).message.type = "host_bash_request";
         } catch {
           // Frozen snapshot — the mutation is rejected.
         }
@@ -251,8 +260,9 @@ describe("plugin-facing assistantEventHub facade", () => {
       type: "process",
       callback: (event) => {
         try {
-          (event as { message: { type: string } }).message.type =
-            "host_bash_request";
+          z
+            .looseObject({ message: z.looseObject({ type: z.string() }) })
+            .parse(event).message.type = "host_bash_request";
         } catch {
           // Isolated frozen copy — the mutation is rejected.
         }

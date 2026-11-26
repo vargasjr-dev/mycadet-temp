@@ -33,10 +33,10 @@ function buildProgram(): Command {
 async function runCli(...argv: string[]): Promise<string> {
   const stdoutChunks: string[] = [];
   const origWrite = process.stdout.write.bind(process.stdout);
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     stdoutChunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
   try {
     await buildProgram().parseAsync(["node", "assistant", ...argv]);
   } finally {

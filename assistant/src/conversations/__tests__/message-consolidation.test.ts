@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { MessageRow } from "../../persistence/conversation-crud.js";
 import { resolveMessageContentBlocks } from "../../persistence/message-content-file.js";
 import {
@@ -366,7 +368,9 @@ describe("mergeConsecutiveAssistantMessages", () => {
     ]);
     expect(messages).toHaveLength(2);
     expect(messages[1].id).toBe("anchor");
-    const blocks = messages[1].content as Array<{ text: string }>;
+    const blocks = z
+      .array(z.looseObject({ text: z.string() }))
+      .parse(messages[1].content);
     expect(blocks.map((blk) => blk.text)).toEqual(["part 1", "part 2"]);
     expect(mergedIdMap.get("anchor")).toEqual(["tail"]);
   });

@@ -1,5 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { sanitizeForTts } from "../../calls/tts-text-sanitizer.js";
 import type { VoiceTurnOptions } from "../../calls/voice-session-bridge.js";
 import {
@@ -193,7 +195,7 @@ async function waitFor(
 function spokenText(frames: LiveVoiceServerFrame[]): string {
   return frames
     .filter((frame) => frame.type === "assistant_text_delta")
-    .map((frame) => (frame as { text: string }).text)
+    .map((frame) => z.looseObject({ text: z.string() }).parse(frame).text)
     .join("");
 }
 

@@ -14,8 +14,9 @@
  *
  * Every case injects `fetchImpl`, so nothing here touches the network.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { probeTunnel } from "../tunnel-probe.js";
 
@@ -375,7 +376,9 @@ describe("probeTunnel", () => {
     const result = await probeTunnel({ publicBaseUrl: BASE, fetchImpl });
     expect(result.kind).toEqual("unreachable");
     expect(result).toHaveProperty("detail");
-    expect((result as { detail: string }).detail).not.toContain(BASE);
+    expect(
+      z.looseObject({ detail: z.string() }).parse(result).detail,
+    ).not.toContain(BASE);
   });
 
   test("unreachable when there is no URL to probe", async () => {

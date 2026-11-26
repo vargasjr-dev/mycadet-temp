@@ -9,12 +9,12 @@
  * `seedV2SkillEntries` so we can assert it was invoked without actually
  * embedding skills.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
 
 import { invalidateConfigCache } from "../config/loader.js";
 import { getWorkspaceDir } from "../util/layout.js";
@@ -83,8 +83,8 @@ async function runCommand(args: string[]): Promise<{ exitCode: number }> {
   const originalStdoutWrite = process.stdout.write.bind(process.stdout);
   const originalStderrWrite = process.stderr.write.bind(process.stderr);
 
-  process.stdout.write = (() => true) as typeof process.stdout.write;
-  process.stderr.write = (() => true) as typeof process.stderr.write;
+  process.stdout.write = () => true;
+  process.stderr.write = () => true;
 
   process.exitCode = 0;
   try {
@@ -236,9 +236,7 @@ describe("all memory v2 routes — MEMORY_V2_DISABLED gate", () => {
           throw new Error("expected handler to throw");
         } catch (err) {
           expect(err).toBeInstanceOf(RouteError);
-          expect((err as InstanceType<typeof RouteError>).code).toBe(
-            MEMORY_V2_DISABLED_CODE,
-          );
+          expect(err).toHaveProperty("code", MEMORY_V2_DISABLED_CODE);
         }
       });
     }
@@ -254,13 +252,15 @@ describe("all memory v2 routes — MEMORY_V2_DISABLED gate", () => {
     );
     expect(route).toBeDefined();
 
-    const result = (await route!.handler({ body: {} })) as {
-      pageCount: number;
-      edgeCount: number;
-      danglingLinks: unknown[];
-      oversizedPages: unknown[];
-      parseFailures: unknown[];
-    };
+    const result = z
+      .looseObject({
+        pageCount: z.number(),
+        edgeCount: z.number(),
+        danglingLinks: z.array(z.unknown()),
+        oversizedPages: z.array(z.unknown()),
+        parseFailures: z.array(z.unknown()),
+      })
+      .parse(await route!.handler({ body: {} }));
 
     // Empty workspace → zero-violation report. The point is that the call
     // returned at all (no MEMORY_V2_DISABLED throw).

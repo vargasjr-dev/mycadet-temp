@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
@@ -49,11 +50,10 @@ describe("migration 136 — drop assistant_id columns", () => {
 
     migrateDropAssistantIdColumns(db);
 
-    const cols = (
-      raw.query(`PRAGMA table_info(assistant_inbox_thread_state)`).all() as {
-        name: string;
-      }[]
-    ).map((c) => c.name);
+    const cols = z
+      .array(z.looseObject({ name: z.string() }))
+      .parse(raw.query(`PRAGMA table_info(assistant_inbox_thread_state)`).all())
+      .map((c) => c.name);
     expect(cols).not.toContain("assistant_id");
     expect(indexExists(raw, "idx_inbox_thread_state_channel")).toBe(true);
   });

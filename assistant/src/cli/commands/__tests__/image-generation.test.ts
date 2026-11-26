@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import { Command } from "commander";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+
 // State for mock
 let mockCalls: Array<[string, Record<string, unknown>]> = [];
 let mockResponse: unknown = {
@@ -59,7 +61,7 @@ describe("image-generation generate", () => {
     ]);
     expect(mockCalls.length).toBe(1);
     expect(mockCalls[0][0]).toBe("image_generation_generate");
-    const body = mockCalls[0][1].body as Record<string, unknown>;
+    const body = jsonObjectSchema.parse(mockCalls[0][1].body);
     expect(body.prompt).toBe("A cat");
     expect(body.mode).toBe("generate");
     expect(body.variants).toBe(1);
@@ -97,9 +99,7 @@ describe("image-generation generate", () => {
       "--output-dir",
       TEST_OUTPUT_DIR,
     ]);
-    expect((mockCalls[0][1].body as Record<string, unknown>).model).toBe(
-      "gpt-image-2",
-    );
+    expect(mockCalls[0][1].body).toHaveProperty("model", "gpt-image-2");
   });
 
   it("passes variants", async () => {
@@ -116,7 +116,7 @@ describe("image-generation generate", () => {
       "--output-dir",
       TEST_OUTPUT_DIR,
     ]);
-    expect((mockCalls[0][1].body as Record<string, unknown>).variants).toBe(3);
+    expect(mockCalls[0][1].body).toHaveProperty("variants", 3);
   });
 
   it("calls exitFromIpcResult on daemon error", async () => {

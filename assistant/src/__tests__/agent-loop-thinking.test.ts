@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { AgentLoop } from "../agent/loop.js";
 import type {
   Message,
@@ -55,7 +57,7 @@ describe("AgentLoop thinking and effort", () => {
     });
 
     const config = lastConfig()!;
-    const thinking = config.thinking as { type: string };
+    const thinking = z.looseObject({ type: z.string() }).parse(config.thinking);
     expect(thinking.type).toBe("adaptive");
   });
 

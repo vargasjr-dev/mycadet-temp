@@ -9,6 +9,7 @@ import {
   type RelationshipTier,
   TIER_INFO,
 } from "../home/relationship-state.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 describe("relationship state contract", () => {
   describe("RelationshipState JSON round-trip", () => {
@@ -143,7 +144,7 @@ describe("relationship state contract", () => {
 
     test("default capabilities omit the tier field (tier is computed at write time)", () => {
       for (const cap of DEFAULT_CAPABILITIES) {
-        expect((cap as Record<string, unknown>).tier).toBeUndefined();
+        expect(jsonObjectSchema.parse(cap).tier).toBeUndefined();
       }
     });
   });

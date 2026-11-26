@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
@@ -120,9 +121,15 @@ describe("migration 131 — drop legacy member/guardian tables", () => {
     migrateDropLegacyMemberGuardianTables(db);
 
     // The straggler rows were synced into contact_channels.
-    const synced = raw
-      .prepare(`SELECT external_user_id FROM contact_channels ORDER BY id`)
-      .all() as { external_user_id: string | null }[];
+    const synced = z
+      .array(
+        z.looseObject({ external_user_id: z.union([z.string(), z.null()]) }),
+      )
+      .parse(
+        raw
+          .prepare(`SELECT external_user_id FROM contact_channels ORDER BY id`)
+          .all(),
+      );
     expect(synced.map((r) => r.external_user_id).sort()).toEqual([
       "U-guardian",
       "U-member",
