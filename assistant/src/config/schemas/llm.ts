@@ -10,6 +10,7 @@ import {
   PROVIDER_CATALOG,
 } from "../../providers/model-catalog.js";
 import { isCodexSubscriptionModel } from "../../providers/openai/codex-models.js";
+import { isPlainObject } from "../../util/object.js";
 import {
   DEFAULT_PROFILE_KEYS,
   DEFAULT_PROFILE_PROVIDERS,
@@ -229,11 +230,11 @@ const KNOWN_CALL_SITE_IDS = new Set<string>(LLMCallSiteEnum.options);
  * a version that recognizes them.
  */
 function dropUnknownCallSiteKeys(value: unknown): unknown {
-  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return value;
   }
   const out: Record<string, unknown> = {};
-  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+  for (const [key, entry] of Object.entries(value)) {
     if (KNOWN_CALL_SITE_IDS.has(key)) {
       out[key] = entry;
     }
@@ -805,10 +806,7 @@ function referenceableProfileKeys(
       if (backupsResolve || !isCloudOnlyProfileKey(name)) {
         return true;
       }
-      const entry =
-        value != null && typeof value === "object" && !Array.isArray(value)
-          ? (value as Record<string, unknown>)
-          : null;
+      const entry = isPlainObject(value) ? value : null;
       return entry != null && entry.provider !== "cadet";
     })
     .map(([name]) => name);
@@ -840,9 +838,7 @@ function collectFallbackProfileIssues(
   const issues: { profileName: string; message: string }[] = [];
   const entries = Object.entries(profiles ?? {});
   const readEntry = (value: unknown): Record<string, unknown> | null =>
-    value != null && typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, unknown>)
-      : null;
+    isPlainObject(value) ? value : null;
   // The always-available default profiles are code-defined
   // (`default-profile-catalog.ts`) and resolve whether or not they are
   // materialized in `llm.profiles`, so their names are always valid

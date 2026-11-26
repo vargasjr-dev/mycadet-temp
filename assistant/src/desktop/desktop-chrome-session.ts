@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { getErrorCode } from "../util/error-details.js";
 import { isPlainObject } from "../util/object.js";
 
 export function shouldRestoreDesktopChromeSession(profileDir: string): boolean {
@@ -28,7 +29,7 @@ export function configureDesktopChromeFrame(profileDir: string): void {
     }
     preferences = value;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (getErrorCode(err) !== "ENOENT") {
       throw err;
     }
   }

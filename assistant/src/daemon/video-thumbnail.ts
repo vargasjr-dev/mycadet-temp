@@ -81,7 +81,7 @@ export async function generateVideoThumbnail(
     return await extractThumbnail(inputPath);
   } catch (err) {
     log.warn(
-      { error: (err as Error).message },
+      { error: err instanceof Error ? err.message : String(err) },
       "Video thumbnail generation failed",
     );
     return null;
@@ -107,7 +107,7 @@ export async function generateVideoThumbnailFromPath(
     return await extractThumbnail(filePath);
   } catch (err) {
     log.warn(
-      { error: (err as Error).message, filePath },
+      { error: err instanceof Error ? err.message : String(err), filePath },
       "Video thumbnail generation from path failed",
     );
     return null;

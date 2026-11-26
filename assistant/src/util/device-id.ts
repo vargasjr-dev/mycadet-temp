@@ -16,7 +16,6 @@
  * The value is cached in memory after the first successful read/write.
  * Falls back to a generated UUID if the file cannot be read or written.
  */
-
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +23,7 @@ import { join } from "node:path";
 import { getDeviceIdOverride } from "../config/env-registry.js";
 import { getWorkspaceDir } from "./layout.js";
 import { getLogger } from "./logger.js";
+import { isPlainObject } from "./object.js";
 
 const log = getLogger("device-id");
 
@@ -134,8 +134,8 @@ export function getDeviceId(): string {
     try {
       if (existsSync(filePath)) {
         const raw = JSON.parse(readFileSync(filePath, "utf-8"));
-        if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-          existing = raw as Record<string, unknown>;
+        if (isPlainObject(raw)) {
+          existing = raw;
         }
       }
     } catch {

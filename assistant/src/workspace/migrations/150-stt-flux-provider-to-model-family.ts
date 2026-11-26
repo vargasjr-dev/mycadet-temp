@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -133,7 +134,5 @@ function dropUnservableModels(providers: Record<string, unknown>): boolean {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  return isPlainObject(value) ? value : null;
 }

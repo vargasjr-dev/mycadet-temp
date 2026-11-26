@@ -9,10 +9,10 @@
  * import-light by contract (no logger, no config, no entropy/encoding logic)
  * so they are safe for this hot-path serializer.
  */
-
 import { REDACTION_PREFIX_PATTERNS } from "@mycadet/service-contracts/secret-detection";
 
 import { memoizePluginPatternDerivation } from "../security/plugin-secret-patterns.js";
+import { isObjectRecord } from "./object.js";
 
 // ---------------------------------------------------------------------------
 // Sensitive-value patterns (derived from shared REDACTION_PREFIX_PATTERNS)
@@ -83,9 +83,9 @@ function redactValue(value: unknown, depth: number): unknown {
     return value.map((item) => redactValue(item, depth + 1));
   }
 
-  if (value != null && typeof value === "object") {
+  if (isObjectRecord(value)) {
     const result: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+    for (const [key, val] of Object.entries(value)) {
       const lowerKey = key.toLowerCase();
       // Fully redact sensitive header values
       if (SENSITIVE_HEADERS.has(lowerKey)) {

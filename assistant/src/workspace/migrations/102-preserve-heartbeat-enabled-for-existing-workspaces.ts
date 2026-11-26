@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { MigrationRunContext, WorkspaceMigration } from "./types.js";
 
 /**
@@ -39,10 +40,10 @@ export const preserveHeartbeatEnabledForExistingWorkspacesMigration: WorkspaceMi
       if (existsSync(configPath)) {
         try {
           const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-          if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+          if (!isPlainObject(raw)) {
             return;
           }
-          config = raw as Record<string, unknown>;
+          config = raw;
         } catch {
           return;
         }
@@ -52,15 +53,11 @@ export const preserveHeartbeatEnabledForExistingWorkspacesMigration: WorkspaceMi
         config.heartbeat = {};
       }
       const heartbeat = config.heartbeat;
-      if (
-        !heartbeat ||
-        typeof heartbeat !== "object" ||
-        Array.isArray(heartbeat)
-      ) {
+      if (!isPlainObject(heartbeat)) {
         return;
       }
 
-      const heartbeatConfig = heartbeat as Record<string, unknown>;
+      const heartbeatConfig = heartbeat;
       if ("enabled" in heartbeatConfig) {
         return;
       }

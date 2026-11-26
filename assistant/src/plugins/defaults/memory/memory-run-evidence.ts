@@ -14,8 +14,9 @@
 // This module sits at the plugin root (shared infra, not a tier) and imports
 // nothing from the plugin, so `substrate/` and the spine can both reach it
 // without a tier importing spine.
-
 import type { ContentBlock } from "@mycadet/plugin-api";
+
+import { isObjectRecord } from "../../../util/object.js";
 
 /**
  * Whether the LAST persisted assistant row on the run's tail carries a text
@@ -191,10 +192,10 @@ export function extractRememberContents(
         continue;
       }
       const input = b.input;
-      if (!input || typeof input !== "object") {
+      if (!isObjectRecord(input)) {
         continue;
       }
-      const content = (input as Record<string, unknown>).content;
+      const content = input.content;
       // `remember` accepts a single string or an array of facts (batch form);
       // flatten both so batched saves still feed the dedup baseline.
       const facts = Array.isArray(content) ? content : [content];

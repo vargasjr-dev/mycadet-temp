@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -25,25 +26,25 @@ export const llmLogRetentionZeroToNullMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return; // Malformed config — skip
     }
 
     const memory = config.memory;
-    if (!memory || typeof memory !== "object" || Array.isArray(memory)) {
+    if (!isPlainObject(memory)) {
       return;
     }
-    const memoryObj = memory as Record<string, unknown>;
+    const memoryObj = memory;
 
     const cleanup = memoryObj.cleanup;
-    if (!cleanup || typeof cleanup !== "object" || Array.isArray(cleanup)) {
+    if (!isPlainObject(cleanup)) {
       return;
     }
-    const cleanupObj = cleanup as Record<string, unknown>;
+    const cleanupObj = cleanup;
 
     if (cleanupObj.llmRequestLogRetentionMs !== 0) {
       return;
@@ -61,25 +62,25 @@ export const llmLogRetentionZeroToNullMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const memory = config.memory;
-    if (!memory || typeof memory !== "object" || Array.isArray(memory)) {
+    if (!isPlainObject(memory)) {
       return;
     }
-    const memoryObj = memory as Record<string, unknown>;
+    const memoryObj = memory;
 
     const cleanup = memoryObj.cleanup;
-    if (!cleanup || typeof cleanup !== "object" || Array.isArray(cleanup)) {
+    if (!isPlainObject(cleanup)) {
       return;
     }
-    const cleanupObj = cleanup as Record<string, unknown>;
+    const cleanupObj = cleanup;
 
     if (cleanupObj.llmRequestLogRetentionMs !== null) {
       return;

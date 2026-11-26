@@ -43,7 +43,6 @@
 // The job handler (`skillCardInsertJob`) lets persistence errors propagate so
 // the jobs worker's retry machinery covers transient failures; the
 // message-level `clientMessageId` dedup makes retried deliveries idempotent.
-
 import {
   addMessage,
   getConversation,
@@ -56,6 +55,7 @@ import {
   upsertSkillCardInsertJob,
 } from "../../../persistence/jobs-store.js";
 import { publishConversationMessagesChanged } from "../../../runtime/sync/resource-sync-events.js";
+import { isObjectRecord } from "../../../util/object.js";
 import { getLogger } from "./logging.js";
 import { SKILL_CARD_MESSAGE_KIND } from "./memory-retrospective-constants.js";
 
@@ -175,10 +175,10 @@ function parseSkillCardInsertPayload(
   }
   const skills: AuthoredSkill[] = [];
   for (const entry of payload.skills) {
-    if (!entry || typeof entry !== "object") {
+    if (!isObjectRecord(entry)) {
       continue;
     }
-    const rec = entry as Record<string, unknown>;
+    const rec = entry;
     if (typeof rec.skillId !== "string" || rec.skillId.length === 0) {
       continue;
     }

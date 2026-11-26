@@ -323,7 +323,7 @@ async function handleCallbackRoutesRegister(
     callbackUrl = await registerCallbackRoute(path, type);
   } catch (err) {
     throw new InternalError(
-      `Failed to register callback route: ${(err as Error).message}`,
+      `Failed to register callback route: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 
@@ -383,7 +383,7 @@ async function fetchCloudJson(path: string, label: string): Promise<unknown> {
     });
   } catch (err) {
     throw new InternalError(
-      `Failed to fetch ${label}: ${(err as Error).message}`,
+      `Failed to fetch ${label}: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 

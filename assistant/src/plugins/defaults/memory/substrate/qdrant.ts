@@ -20,7 +20,6 @@
 // sparse queries (no Qdrant-side RRF). Callers do their own weighted-sum
 // fusion using the `dense_weight` / `sparse_weight` substrate tunables
 // (`resolveSubstrateTuning`), which RRF fusion would discard.
-
 import { existsSync } from "node:fs";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -30,6 +29,8 @@ import { v5 as uuidv5 } from "uuid";
 
 import { getConfig } from "../../../../config/loader.js";
 import type { SparseEmbedding } from "../../../../persistence/embeddings/embedding-types.js";
+import { getErrorCode } from "../../../../util/error-details.js";
+import { isObjectRecord } from "../../../../util/object.js";
 import { resolveQdrantUrl } from "../embeddings.js";
 import { getLogger } from "../logging.js";
 import { getDataDir } from "../paths.js";
@@ -135,7 +136,7 @@ export async function clearReembedSentinel(): Promise<void> {
   try {
     await unlink(reembedSentinelPath());
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (getErrorCode(err) !== "ENOENT") {
       throw err;
     }
   }
@@ -452,13 +453,12 @@ function missingNamedVectors(
   const sparse = (params as { sparse_vectors?: unknown } | undefined)
     ?.sparse_vectors;
   const denseNames =
-    dense && typeof dense === "object" && !("size" in dense)
+    isObjectRecord(dense) && !("size" in dense)
       ? new Set(Object.keys(dense))
       : new Set<string>();
-  const sparseNames =
-    sparse && typeof sparse === "object"
-      ? new Set(Object.keys(sparse as Record<string, unknown>))
-      : new Set<string>();
+  const sparseNames = isObjectRecord(sparse)
+    ? new Set(Object.keys(sparse))
+    : new Set<string>();
 
   const missing: string[] = [];
   for (const name of REQUIRED_DENSE_VECTORS) {
@@ -495,14 +495,14 @@ function wrongSizeNamedVectors(
   // Named-vectors map only — mirror the `!("size" in dense)` guard in
   // `missingNamedVectors`. A single unnamed vector exposes `size` at the top
   // level; its dimension is the collection's and is handled by the caller.
-  if (!dense || typeof dense !== "object" || "size" in dense) {
+  if (!isObjectRecord(dense) || "size" in dense) {
     return [];
   }
   const map: Record<string, unknown> = dense;
   const wrong: string[] = [];
   for (const name of REQUIRED_DENSE_VECTORS) {
     const entry = map[name];
-    if (entry && typeof entry === "object" && "size" in entry) {
+    if (isObjectRecord(entry) && "size" in entry) {
       const size = (entry as { size?: unknown }).size;
       if (typeof size === "number" && size !== expectedSize) {
         wrong.push(name);
@@ -1005,8 +1005,7 @@ export async function hybridQueryConceptPages(
  */
 function isCollectionMissing(err: unknown): boolean {
   if (
-    err &&
-    typeof err === "object" &&
+    isObjectRecord(err) &&
     "status" in err &&
     (err as { status: number }).status === 404
   ) {

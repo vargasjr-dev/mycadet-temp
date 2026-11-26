@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../util/object.js";
 /**
  * Generic, data-driven identity verifier for OAuth providers.
  *
@@ -7,7 +8,6 @@
  * identityHeaders, identityBody, identityResponsePaths, identityFormat,
  * identityOkField).
  */
-
 import type { OAuthProviderRow } from "./oauth-store.js";
 
 // ---------------------------------------------------------------------------
@@ -19,10 +19,10 @@ function getNestedValue(obj: unknown, dotPath: string): unknown {
   const parts = dotPath.split(".");
   let current: unknown = obj;
   for (const part of parts) {
-    if (current == null || typeof current !== "object") {
+    if (!isObjectRecord(current)) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[part];
+    current = current[part];
   }
   return current;
 }

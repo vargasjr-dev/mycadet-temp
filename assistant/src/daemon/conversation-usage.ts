@@ -13,6 +13,7 @@ import type {
   PricingUsage,
 } from "../usage/types.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import {
   resolvePricingForUsageWithOverrides,
   usesAnthropicPricingRules,
@@ -39,10 +40,10 @@ function normalizeTokenCount(value: number | null | undefined): number {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value == null) {
+  if (!isObjectRecord(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 function extractAnthropicCacheCreationFromResponse(

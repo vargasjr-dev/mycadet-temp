@@ -39,7 +39,6 @@
 // crashed `running` rows back to `pending` at startup. The orphan background
 // conversations left by a mid-run crash are swept by
 // `memory-retrospective-startup-cleanup.ts`.
-
 import {
   addMessage,
   type AgentLoopExitReason,
@@ -80,6 +79,7 @@ import {
 import { resolveUserSlug } from "../../../prompts/persona-resolver.js";
 import type { SystemPromptPersonaOverride } from "../../../prompts/system-prompt.js";
 import { wakeAgentForOpportunity } from "../../../runtime/agent-wake.js";
+import { isObjectRecord } from "../../../util/object.js";
 import { findMostRecentRetrospectiveFor } from "./find-most-recent-retrospective-for.js";
 import { getLogger } from "./logging.js";
 import {
@@ -863,12 +863,10 @@ function resolveSourceLiveInterface(
     } catch {
       continue;
     }
-    if (!meta || typeof meta !== "object") {
+    if (!isObjectRecord(meta)) {
       continue;
     }
-    const iface = parseInterfaceId(
-      (meta as Record<string, unknown>).userMessageInterface,
-    );
+    const iface = parseInterfaceId(meta.userMessageInterface);
     if (iface) {
       return iface;
     }
@@ -896,10 +894,10 @@ function resolveSourceLiveClientOs(
     } catch {
       continue;
     }
-    if (!meta || typeof meta !== "object") {
+    if (!isObjectRecord(meta)) {
       continue;
     }
-    const { clientOsFromRequest, client } = meta as Record<string, unknown>;
+    const { clientOsFromRequest, client } = meta;
     if (clientOsFromRequest !== true || !client || typeof client !== "object") {
       continue;
     }
@@ -1117,10 +1115,10 @@ function findFirstTurnContextTimestamp(
     } catch {
       continue;
     }
-    if (!meta || typeof meta !== "object") {
+    if (!isObjectRecord(meta)) {
       continue;
     }
-    const block = (meta as Record<string, unknown>).turnContextBlock;
+    const block = meta.turnContextBlock;
     if (typeof block !== "string") {
       continue;
     }

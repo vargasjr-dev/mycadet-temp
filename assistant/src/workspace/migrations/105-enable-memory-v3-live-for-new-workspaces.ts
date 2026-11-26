@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { MigrationRunContext, WorkspaceMigration } from "./types.js";
 
 /**
@@ -34,10 +35,10 @@ export const enableMemoryV3LiveForNewWorkspacesMigration: WorkspaceMigration = {
     if (existsSync(configPath)) {
       try {
         const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        if (!isPlainObject(raw)) {
           return;
         }
-        config = raw as Record<string, unknown>;
+        config = raw;
       } catch {
         return;
       }
@@ -47,19 +48,19 @@ export const enableMemoryV3LiveForNewWorkspacesMigration: WorkspaceMigration = {
       config.memory = {};
     }
     const memory = config.memory;
-    if (!memory || typeof memory !== "object" || Array.isArray(memory)) {
+    if (!isPlainObject(memory)) {
       return;
     }
-    const memoryConfig = memory as Record<string, unknown>;
+    const memoryConfig = memory;
 
     if (memoryConfig.v3 === undefined) {
       memoryConfig.v3 = {};
     }
     const v3 = memoryConfig.v3;
-    if (!v3 || typeof v3 !== "object" || Array.isArray(v3)) {
+    if (!isPlainObject(v3)) {
       return;
     }
-    const v3Config = v3 as Record<string, unknown>;
+    const v3Config = v3;
 
     // Respect an explicit value already present (idempotent re-runs, or a
     // hatch-time override that set it deliberately).

@@ -31,18 +31,20 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const assetId = input.asset_id as string | undefined;
+  const assetId =
+    typeof input.asset_id === "string" ? input.asset_id : undefined;
   if (!assetId) {
     return { content: "asset_id is required.", isError: true };
   }
 
-  const query = input.query as string | undefined;
+  const query = typeof input.query === "string" ? input.query : undefined;
   if (!query) {
     return { content: "query is required.", isError: true };
   }
 
-  const systemPrompt = input.system_prompt as string | undefined;
-  const model = input.model as string | undefined;
+  const systemPrompt =
+    typeof input.system_prompt === "string" ? input.system_prompt : undefined;
+  const model = typeof input.model === "string" ? input.model : undefined;
 
   const options: ReduceOptions = {
     query,
@@ -84,7 +86,7 @@ export async function run(
     if (isAbortLikeError(err)) {
       throw err;
     }
-    const msg = (err as Error).message;
+    const msg = err instanceof Error ? err.message : String(err);
     return { content: msg, isError: true };
   }
 }

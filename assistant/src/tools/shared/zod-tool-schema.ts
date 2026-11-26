@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isObjectRecord } from "../../util/object.js";
 import {
   ACTIVITY_FIELD,
   declareDaemonActivityField,
@@ -67,17 +68,14 @@ function stripPermissiveAdditionalProperties(node: unknown): void {
     }
     return;
   }
-  if (node === null || typeof node !== "object") {
+  if (!isObjectRecord(node)) {
     return;
   }
-  const record = node as Record<string, unknown>;
+  const record = node;
   const ap = record.additionalProperties;
   if (
     ap === false ||
-    (typeof ap === "object" &&
-      ap !== null &&
-      !Array.isArray(ap) &&
-      Object.keys(ap).length === 0)
+    (isObjectRecord(ap) && !Array.isArray(ap) && Object.keys(ap).length === 0)
   ) {
     delete record.additionalProperties;
   }

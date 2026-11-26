@@ -38,11 +38,12 @@ export function validateTimezone(tz: string): void {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: tz });
   } catch {
-    const err = new Error(
-      `Invalid IANA timezone identifier: "${tz}". Expected a value like "America/Los_Angeles" or "UTC".`,
+    throw Object.assign(
+      new Error(
+        `Invalid IANA timezone identifier: "${tz}". Expected a value like "America/Los_Angeles" or "UTC".`,
+      ),
+      { code: "INVALID_TIMEZONE" },
     );
-    (err as Error & { code?: string }).code = "INVALID_TIMEZONE";
-    throw err;
   }
 }
 

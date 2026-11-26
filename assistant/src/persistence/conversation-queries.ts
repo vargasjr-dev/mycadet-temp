@@ -17,6 +17,7 @@ import {
   wrapUntrustedContent,
 } from "../security/untrusted-content.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { safeStringSlice } from "../util/unicode.js";
 import { isLexicalBackfillComplete } from "./checkpoints.js";
 import { unseenAttentionStateConditions } from "./conversation-attention-store.js";
@@ -1140,10 +1141,10 @@ function buildExcerptWithExternalContentMode(
 
   const walkBlocks = (blocks: unknown[]): void => {
     for (const block of blocks) {
-      if (typeof block !== "object" || block == null) {
+      if (!isObjectRecord(block)) {
         continue;
       }
-      const rec = block as Record<string, unknown>;
+      const rec = block;
       if (rec.type === "text" && typeof rec.text === "string") {
         pushPart(rec.text);
       } else if (rec.type === "thinking" && typeof rec.thinking === "string") {
@@ -1161,10 +1162,10 @@ function buildExcerptWithExternalContentMode(
           pushPart(rec.content);
         } else if (Array.isArray(rec.content)) {
           for (const inner of rec.content) {
-            if (typeof inner !== "object" || inner == null) {
+            if (!isObjectRecord(inner)) {
               continue;
             }
-            const innerRec = inner as Record<string, unknown>;
+            const innerRec = inner;
             if (innerRec.type === "text" && typeof innerRec.text === "string") {
               pushPart(innerRec.text);
             }
@@ -1185,7 +1186,7 @@ function buildExcerptWithExternalContentMode(
         walkBlocks(parsed);
       } else if (typeof parsed === "string") {
         text = parsed;
-      } else if (typeof parsed === "object" && parsed != null) {
+      } else if (isObjectRecord(parsed)) {
         sawStructuredContent = true;
       }
     } catch {

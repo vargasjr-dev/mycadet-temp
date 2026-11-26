@@ -6,7 +6,6 @@
  * bypassing the consolidation buffer. Input comes from a staging directory
  * of .md files (--dir), a JSON manifest file (--file), or piped stdin.
  */
-
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
@@ -14,6 +13,7 @@ import type { Command } from "commander";
 
 import { cliIpcCall, exitCodeFromIpcResult } from "../../../ipc/cli-client.js";
 import type { MemoryIngestResult } from "../../../plugins/defaults/memory/src/memory-ingest-routes.js";
+import { isPlainObject } from "../../../util/object.js";
 import { readStdinSync } from "../../../util/read-stdin.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
@@ -54,12 +54,12 @@ function validateManifest(raw: unknown): IngestPage[] {
     );
   }
   return raw.map((item, i) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
+    if (!isPlainObject(item)) {
       throw new Error(
         `Manifest item [${i}] must be an object with string 'slug' and 'content' fields.`,
       );
     }
-    const { slug, content } = item as Record<string, unknown>;
+    const { slug, content } = item;
     if (typeof slug !== "string" || slug.length === 0) {
       throw new Error(
         `Manifest item [${i}].slug is required and must be a non-empty string.`,

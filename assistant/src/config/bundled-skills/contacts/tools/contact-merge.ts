@@ -18,8 +18,9 @@ export async function executeContactMerge(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const keepId = input.keep_id as string | undefined;
-  const mergeId = input.merge_id as string | undefined;
+  const keepId = typeof input.keep_id === "string" ? input.keep_id : undefined;
+  const mergeId =
+    typeof input.merge_id === "string" ? input.merge_id : undefined;
 
   if (!keepId || typeof keepId !== "string") {
     return { content: "Error: keep_id is required", isError: true };

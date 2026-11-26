@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
+import { isPlainObject } from "../../util/object.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { getNestedValue } from "../lib/nested-value.js";
 import { registerCommand } from "../lib/register-command.js";
@@ -18,11 +19,8 @@ function flattenConfig(
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${key}` : key;
-    if (value != null && typeof value === "object" && !Array.isArray(value)) {
-      Object.assign(
-        result,
-        flattenConfig(value as Record<string, unknown>, path),
-      );
+    if (isPlainObject(value)) {
+      Object.assign(result, flattenConfig(value, path));
     } else {
       result[path] = value;
     }

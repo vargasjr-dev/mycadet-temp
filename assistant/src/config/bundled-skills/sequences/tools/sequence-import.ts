@@ -14,7 +14,8 @@ export async function run(
 ): Promise<ToolExecutionResult> {
   const filePath = input.file_path as string;
   const sequenceId = input.sequence_id as string;
-  const autoEnroll = input.auto_enroll as boolean | undefined;
+  const autoEnroll =
+    typeof input.auto_enroll === "boolean" ? input.auto_enroll : undefined;
 
   if (!filePath) {
     return err("file_path is required.");

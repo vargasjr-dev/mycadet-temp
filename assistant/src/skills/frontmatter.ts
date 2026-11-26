@@ -5,10 +5,10 @@
  * This module provides a single implementation used by the skill catalog loader
  * and the CC command registry.
  */
-
 import { parse as parseYaml } from "yaml";
 
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 
 const log = getLogger("frontmatter");
 
@@ -44,10 +44,10 @@ export function parseFrontmatterFields(
 
   try {
     const parsed = parseYaml(frontmatter);
-    if (parsed == null || typeof parsed !== "object") {
+    if (!isObjectRecord(parsed)) {
       return { fields: {}, body };
     }
-    return { fields: parsed as Record<string, unknown>, body };
+    return { fields: parsed, body };
   } catch (err) {
     log.warn({ err }, "Failed to parse YAML frontmatter");
     return null;

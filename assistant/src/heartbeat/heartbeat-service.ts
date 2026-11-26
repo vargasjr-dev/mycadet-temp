@@ -29,6 +29,7 @@ import {
 import { readTextFileSync } from "../util/fs.js";
 import { getWorkspaceDir, getWorkspacePromptPath } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isPlainObject } from "../util/object.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 import {
   completeHeartbeatRun,
@@ -964,10 +965,10 @@ function stringOrNull(value: unknown): string | null {
 }
 
 function rawObject(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 /**

@@ -94,7 +94,6 @@
  * runner is invoked (e.g. mkdir failures) bubbles up and the jobs-worker
  * treats it as a retryable failure.
  */
-
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -118,6 +117,7 @@ import {
   type MemoryJobType,
 } from "../../../../persistence/jobs-store.js";
 import { runBackgroundJob } from "../../../../runtime/background-job-runner.js";
+import { getErrorCode } from "../../../../util/error-details.js";
 import {
   consumeBufferEntries,
   type ConsumeBufferEntriesResult,
@@ -809,7 +809,7 @@ function readBufferContent(bufferPath: string): string {
   try {
     return readFileSync(bufferPath, "utf-8");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return "";
     }
     throw err;

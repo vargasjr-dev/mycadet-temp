@@ -5,9 +5,9 @@
  * owns this parser rather than importing the host `skills/` copy so the plugin
  * depends only on its own files, `@mycadet/plugin-api`, and external packages.
  */
-
 import { parse as parseYaml } from "yaml";
 
+import { isObjectRecord } from "../../../util/object.js";
 import { getLogger } from "./logging.js";
 
 const log = getLogger("memory-frontmatter");
@@ -41,10 +41,10 @@ export function parseFrontmatterFields(
 
   try {
     const parsed = parseYaml(frontmatter);
-    if (parsed == null || typeof parsed !== "object") {
+    if (!isObjectRecord(parsed)) {
       return { fields: {}, body };
     }
-    return { fields: parsed as Record<string, unknown>, body };
+    return { fields: parsed, body };
   } catch (err) {
     log.warn({ err }, "Failed to parse YAML frontmatter");
     return null;

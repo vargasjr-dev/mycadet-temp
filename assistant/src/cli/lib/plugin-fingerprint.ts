@@ -14,7 +14,6 @@
  * actual diff or a 3-way merge instead re-derives the baseline from the
  * recorded immutable commit SHA (a separate concern from this module).
  */
-
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -22,6 +21,7 @@ import {
   GENERATED_APP_BUILD_DIR,
   walkPluginTree,
 } from "../../plugins/plugin-tree-walk.js";
+import { isPlainObject } from "../../util/object.js";
 
 /** Digest algorithm recorded alongside the file map, for forward compatibility. */
 export type FingerprintAlgorithm = "sha256";
@@ -141,19 +141,15 @@ export function fingerprintsEqual(a: Fingerprint, b: Fingerprint): boolean {
  * recorded baseline" rather than throwing.
  */
 export function parseFingerprint(value: unknown): Fingerprint | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  const obj = value as Record<string, unknown>;
+  const obj = value;
   if (obj.algorithm !== "sha256") {
     return null;
   }
   const rawFiles = obj.files;
-  if (
-    typeof rawFiles !== "object" ||
-    rawFiles === null ||
-    Array.isArray(rawFiles)
-  ) {
+  if (!isPlainObject(rawFiles)) {
     return null;
   }
   const files: Record<string, string> = {};

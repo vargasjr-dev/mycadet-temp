@@ -25,7 +25,6 @@
  * enters the capability layer — `trusted_contact` ≡ `unverified_contact` on
  * capabilities.
  */
-
 import type { BindingStrength } from "@mycadet/gateway-client";
 import {
   VERIFIED_VIA_CHANNEL_CLAIM,
@@ -33,6 +32,7 @@ import {
 } from "@mycadet/gateway-client";
 import type { GuardianActionEmphasis } from "@mycadet/service-contracts/guardian-requests";
 
+import { isObjectRecord } from "../util/object.js";
 import type { ApprovalAction } from "./channel-approval-types.js";
 
 // ---------------------------------------------------------------------------
@@ -109,10 +109,10 @@ export function parseRequesterSignals(
   }
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) {
+    if (!isObjectRecord(parsed)) {
       return {};
     }
-    return compactSignals(parsed as Record<string, unknown>);
+    return compactSignals(parsed);
   } catch {
     return {};
   }

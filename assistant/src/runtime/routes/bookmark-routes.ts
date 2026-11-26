@@ -9,7 +9,6 @@
  * via `assistantEventHub` so any other connected client (e.g. a second
  * macOS window) can refresh its `BookmarkStore` in lock-step.
  */
-
 import { z } from "zod";
 
 import {
@@ -23,6 +22,7 @@ import { getDb } from "../../persistence/db-connection.js";
 import { broadcastMessage } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, NotFoundError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -48,8 +48,9 @@ function handleListBookmarks(): { bookmarks: BookmarkSummary[] } {
 function handleCreateBookmark({
   body = {},
 }: RouteHandlerArgs): BookmarkSummary {
-  const messageId = body.messageId as string | undefined;
-  const conversationId = body.conversationId as string | undefined;
+  const request = parseBody(createBookmarkRequestSchema, body);
+  const messageId = request.messageId;
+  const conversationId = request.conversationId;
 
   if (!messageId || typeof messageId !== "string") {
     throw new BadRequestError("messageId is required");
@@ -111,6 +112,11 @@ export const bookmarkDeleteResponseSchema = z.object({
   success: z.literal(true),
 });
 
+const createBookmarkRequestSchema = z.object({
+  messageId: z.string(),
+  conversationId: z.string(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "bookmarks_list",
@@ -139,10 +145,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Bookmark the given message. Idempotent on `messageId` — calling twice returns the same bookmark.",
     tags: ["bookmarks"],
-    requestBody: z.object({
-      messageId: z.string(),
-      conversationId: z.string(),
-    }),
+    requestBody: createBookmarkRequestSchema,
     responseBody: bookmarkSummarySchema,
     handler: handleCreateBookmark,
   },

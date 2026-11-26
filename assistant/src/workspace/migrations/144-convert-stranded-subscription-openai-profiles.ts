@@ -4,6 +4,7 @@ import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const log = getLogger("migration-144");
@@ -61,10 +62,10 @@ export const convertStrandedSubscriptionOpenaiProfilesMigration: WorkspaceMigrat
       let config: Record<string, unknown>;
       try {
         const raw = JSON.parse(rawText);
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        if (!isPlainObject(raw)) {
           return;
         }
-        config = raw as Record<string, unknown>;
+        config = raw;
       } catch {
         return;
       }
@@ -262,8 +263,8 @@ function convertFragment(fragment: Record<string, unknown> | null): boolean {
 }
 
 function readObject(value: unknown): Record<string, unknown> | null {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }

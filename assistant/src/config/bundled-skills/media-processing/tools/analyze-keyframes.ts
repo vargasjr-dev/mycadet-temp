@@ -96,12 +96,14 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const assetId = input.asset_id as string | undefined;
+  const assetId =
+    typeof input.asset_id === "string" ? input.asset_id : undefined;
   if (!assetId) {
     return { content: "asset_id is required.", isError: true };
   }
 
-  const systemPrompt = input.system_prompt as string | undefined;
+  const systemPrompt =
+    typeof input.system_prompt === "string" ? input.system_prompt : undefined;
   if (!systemPrompt) {
     return { content: "system_prompt is required.", isError: true };
   }
@@ -113,11 +115,14 @@ export async function run(
     return { content: "output_schema is required.", isError: true };
   }
 
-  const mode = (input.mode as string | undefined) ?? "keyframes";
+  const mode =
+    (typeof input.mode === "string" ? input.mode : undefined) ?? "keyframes";
   const contextObj = input.context as Record<string, unknown> | undefined;
-  const model = input.model as string | undefined;
-  const concurrency = input.concurrency as number | undefined;
-  const maxRetries = input.max_retries as number | undefined;
+  const model = typeof input.model === "string" ? input.model : undefined;
+  const concurrency =
+    typeof input.concurrency === "number" ? input.concurrency : undefined;
+  const maxRetries =
+    typeof input.max_retries === "number" ? input.max_retries : undefined;
 
   if (concurrency !== undefined && concurrency < 1) {
     return { content: "concurrency must be at least 1.", isError: true };
@@ -216,7 +221,7 @@ export async function run(
     if (isAbortLikeError(err)) {
       throw err;
     }
-    const msg = (err as Error).message;
+    const msg = err instanceof Error ? err.message : String(err);
     return { content: msg, isError: true };
   }
 }

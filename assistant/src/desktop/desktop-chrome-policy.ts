@@ -8,17 +8,20 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
+import { getErrorCode } from "../util/error-details.js";
+import { isPlainObject } from "../util/object.js";
+
 export function writeDesktopChromePolicy(policyDir: string): void {
   const path = join(policyDir, "cadet-desktop.json");
   let policy: Record<string, unknown> = {};
   try {
     const value: unknown = JSON.parse(readFileSync(path, "utf8"));
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
+    if (!isPlainObject(value)) {
       throw new Error("Desktop Chrome policy must be a JSON object");
     }
-    policy = value as Record<string, unknown>;
+    policy = value;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (getErrorCode(err) !== "ENOENT") {
       throw err;
     }
   }

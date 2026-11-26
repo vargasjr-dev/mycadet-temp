@@ -5,7 +5,6 @@
  * optimised for terminal output rather than the richer serialisations
  * used by the macOS / web clients.
  */
-
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 
@@ -28,6 +27,7 @@ import { getLogger } from "../../util/logger.js";
 import { withSqliteRetry } from "../../util/sqlite-retry.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadGatewayError, BadRequestError, NotFoundError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("conversation-cli-routes");
@@ -42,7 +42,8 @@ function handleListCli({ body = {} }: RouteHandlerArgs) {
   // CLI flag historically named `includeArchived`. Map onto the new
   // `archiveStatus` enum: when set, fetch active + archived together so the
   // user sees archived rows alongside live ones in the picker.
-  const includeArchived = (body.includeArchived as boolean) ?? false;
+  const request = parseBody(listCliRequestSchema, body);
+  const includeArchived = request.includeArchived ?? false;
 
   const rows = listConversations({
     limit,
@@ -70,10 +71,6 @@ const seededConversationMessageSchema = z.object({
   content: z.string(),
 });
 
-type SeededConversationMessage = z.infer<
-  typeof seededConversationMessageSchema
->;
-
 const conversationCreateTypeSchema = z.enum([
   "standard",
   "background",
@@ -85,9 +82,9 @@ function textContentJson(text: string): string {
 }
 
 async function handleCreateCli({ body = {} }: RouteHandlerArgs) {
-  const title = body.title as string | undefined;
-  const messages =
-    (body.messages as SeededConversationMessage[] | undefined) ?? [];
+  const request = parseBody(createCliRequestSchema, body);
+  const title = request.title;
+  const messages = request.messages ?? [];
 
   let conversationType: ConversationCreateType | undefined;
   if (body.conversationType !== undefined) {
@@ -334,6 +331,17 @@ async function handleSlackDetachCli({ body = {} }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
+const listCliRequestSchema = z.object({
+  limit: z.number().int().positive().optional(),
+  includeArchived: z.boolean().optional(),
+});
+
+const createCliRequestSchema = z.object({
+  title: z.string().optional(),
+  messages: z.array(seededConversationMessageSchema).optional(),
+  conversationType: conversationCreateTypeSchema.optional(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "conversation_list_cli",
@@ -347,10 +355,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Simplified conversation list for CLI output — returns id, title, updatedAt.",
     tags: ["conversations"],
-    requestBody: z.object({
-      limit: z.number().int().positive().optional(),
-      includeArchived: z.boolean().optional(),
-    }),
+    requestBody: listCliRequestSchema,
     responseBody: z.object({
       conversations: z.array(
         z.object({
@@ -375,11 +380,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Create a new conversation with an optional title and seeded messages.",
     tags: ["conversations"],
-    requestBody: z.object({
-      title: z.string().optional(),
-      messages: z.array(seededConversationMessageSchema).optional(),
-      conversationType: conversationCreateTypeSchema.optional(),
-    }),
+    requestBody: createCliRequestSchema,
     responseBody: z.object({
       id: z.string(),
       title: z.string(),

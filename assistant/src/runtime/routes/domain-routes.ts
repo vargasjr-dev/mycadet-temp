@@ -4,7 +4,6 @@
  * Delegates to the Cadet Cloud API for register/status and persists
  * the subdomain to local config so getAssistantDomain() can use it.
  */
-
 import { z } from "zod";
 
 import { CadetCloudClient } from "../../cloud/client.js";
@@ -13,6 +12,7 @@ import { getConfig, setConfigSection } from "../../config/loader.js";
 import { getLogger } from "../../util/logger.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, RouteError, UnauthorizedError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("domain-routes");
@@ -85,10 +85,8 @@ async function fetchDomains(
 // ── Handlers ──────────────────────────────────────────────────────────
 
 async function handleDomainRegister({ body = {} }: RouteHandlerArgs) {
-  const { subdomain, email_username } = body as {
-    subdomain?: string;
-    email_username?: string;
-  };
+  const request = parseBody(domainRegisterRequestSchema, body);
+  const { subdomain, email_username } = request;
   const client = await requireClient();
   const apexDomain = getApexDomain();
 
@@ -166,7 +164,8 @@ async function handleDomainStatus(_args: RouteHandlerArgs) {
 }
 
 async function handleDomainVerificationStatus({ body = {} }: RouteHandlerArgs) {
-  const { domain_id } = body as { domain_id?: string };
+  const request = parseBody(domainVerificationStatusRequestSchema, body);
+  const { domain_id } = request;
   if (!domain_id) {
     throw new BadRequestError("domain_id is required");
   }
@@ -207,6 +206,15 @@ async function handleDomainVerificationStatus({ body = {} }: RouteHandlerArgs) {
 
 // ── Route definitions ─────────────────────────────────────────────────
 
+const domainRegisterRequestSchema = z.object({
+  subdomain: z.string().optional(),
+  email_username: z.string().optional(),
+});
+
+const domainVerificationStatusRequestSchema = z.object({
+  domain_id: z.string(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "domain_register",
@@ -219,10 +227,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleDomainRegister,
     summary: "Register a subdomain for this assistant",
     tags: ["domain"],
-    requestBody: z.object({
-      subdomain: z.string().optional(),
-      email_username: z.string().optional(),
-    }),
+    requestBody: domainRegisterRequestSchema,
     responseBody: DomainRegisterResponseSchema,
   },
   {
@@ -249,9 +254,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleDomainVerificationStatus,
     summary: "Get live DNS verification status for a domain",
     tags: ["domain"],
-    requestBody: z.object({
-      domain_id: z.string(),
-    }),
+    requestBody: domainVerificationStatusRequestSchema,
     responseBody: DomainVerificationStatusResponseSchema,
   },
 ];

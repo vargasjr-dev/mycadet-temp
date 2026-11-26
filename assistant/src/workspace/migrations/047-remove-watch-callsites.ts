@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -23,29 +24,25 @@ export const removeWatchCallsitesMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const llm = config.llm;
-    if (!llm || typeof llm !== "object" || Array.isArray(llm)) {
+    if (!isPlainObject(llm)) {
       return;
     }
 
-    const callSites = (llm as Record<string, unknown>).callSites;
-    if (
-      !callSites ||
-      typeof callSites !== "object" ||
-      Array.isArray(callSites)
-    ) {
+    const callSites = llm.callSites;
+    if (!isPlainObject(callSites)) {
       return;
     }
 
-    const sites = callSites as Record<string, unknown>;
+    const sites = callSites;
     let mutated = false;
 
     for (const key of ["watchCommentary", "watchSummary"]) {

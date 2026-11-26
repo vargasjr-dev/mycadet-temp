@@ -14,6 +14,8 @@
 import { existsSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
+
 let mtimeSeq = 0;
 
 export function setConfig(key: string, value: unknown): void {
@@ -22,8 +24,8 @@ export function setConfig(key: string, value: unknown): void {
   if (existsSync(path)) {
     try {
       const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        config = parsed as Record<string, unknown>;
+      if (isPlainObject(parsed)) {
+        config = parsed;
       }
     } catch {
       // Unparseable prior seed — start fresh; the loader treats a corrupt

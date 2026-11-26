@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../ipc/cli-client.js";
+import { isPlainObject } from "../../util/object.js";
 import { readStdinSync } from "../../util/read-stdin.js";
 import { subcommand } from "../lib/cli-command-help.js";
 import { log } from "../logger.js";
@@ -42,10 +43,10 @@ interface ImportResult {
 // -- Validation (pure logic, no daemon imports) --
 
 function validatePayload(raw: unknown): ImportPayload {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isPlainObject(raw)) {
     throw new Error("Input must be a JSON object with a 'conversations' array");
   }
-  const obj = raw as Record<string, unknown>;
+  const obj = raw;
   if (!Array.isArray(obj.conversations)) {
     throw new Error("Input must have a 'conversations' array");
   }
@@ -141,9 +142,7 @@ export function registerConversationsImportCommand(
         },
       });
       if (!r.ok) {
-        return exitFromIpcResult(
-          r as { ok: false; error?: string; statusCode?: number },
-        );
+        return exitFromIpcResult(r);
       }
 
       const result = r.result!;

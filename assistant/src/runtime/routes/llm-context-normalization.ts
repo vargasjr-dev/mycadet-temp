@@ -1,3 +1,4 @@
+import { isPlainObject } from "../../util/object.js";
 export interface LlmContextNormalizationInput {
   requestPayload: unknown;
   responsePayload: unknown;
@@ -1623,19 +1624,18 @@ function hasAnthropicModelPrefix(model: string | undefined): boolean {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value == null || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 function asRecordArray(value: unknown): Record<string, unknown>[] | null {
   if (!Array.isArray(value)) {
     return null;
   }
-  return value.filter(
-    (entry): entry is Record<string, unknown> =>
-      typeof entry === "object" && entry != null && !Array.isArray(entry),
+  return value.filter((entry): entry is Record<string, unknown> =>
+    isPlainObject(entry),
   );
 }
 

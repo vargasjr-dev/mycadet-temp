@@ -19,6 +19,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { getErrorCode } from "../../../../util/error-details.js";
 import { getConfig } from "../../../loader.js";
 
 /** Workspace-relative directory where generated images are saved. */
@@ -81,7 +82,7 @@ function saveGeneratedImages(
             { flag: "wx" },
           );
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+          if (getErrorCode(error) === "EEXIST") {
             continue;
           }
           throw error;
@@ -97,7 +98,10 @@ function saveGeneratedImages(
       }
     }
   } catch (error) {
-    return { savedPaths, saveError: (error as Error).message };
+    return {
+      savedPaths,
+      saveError: error instanceof Error ? error.message : String(error),
+    };
   }
   return { savedPaths };
 }
@@ -148,7 +152,8 @@ export async function run(
     typeof modelOverride === "string" && modelOverride
       ? modelOverride
       : config.services["image-generation"].model;
-  const variants = input.variants as number | undefined;
+  const variants =
+    typeof input.variants === "number" ? input.variants : undefined;
 
   // Resolve source images from file paths (sandboxed to workingDir, edit mode only)
   let sourceImages: Array<{ mimeType: string; dataBase64: string }> | undefined;

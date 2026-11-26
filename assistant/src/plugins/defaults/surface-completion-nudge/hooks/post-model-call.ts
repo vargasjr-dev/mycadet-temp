@@ -44,7 +44,6 @@
  * Defaults register before any user plugin, so this hook runs at the front of
  * the `post-model-call` chain — later hooks see (and may override) its decision.
  */
-
 import {
   type ContentBlock,
   type HookFunction,
@@ -54,6 +53,7 @@ import {
   type PostModelCallContext,
 } from "@mycadet/plugin-api";
 
+import { isObjectRecord } from "../../../../util/object.js";
 import {
   isSurfaceCompletionNudged,
   markSurfaceCompletionNudged,
@@ -113,9 +113,7 @@ function currentCycleMessages(
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value !== null && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : undefined;
+  return isObjectRecord(value) ? value : undefined;
 }
 
 /**

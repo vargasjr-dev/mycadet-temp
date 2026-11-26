@@ -2,6 +2,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const WORKSPACE_MCP_FILENAME = "mcp.json";
@@ -196,10 +197,10 @@ function atomicWrite(path: string, value: unknown): void {
 }
 
 function readObject(value: unknown): Record<string, unknown> | null {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 function readStringRecord(value: unknown): Record<string, string> | null {

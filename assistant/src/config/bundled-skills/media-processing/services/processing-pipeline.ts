@@ -225,7 +225,11 @@ export async function runPipeline(
         onProgress?.(`Completed stage: ${stageName}`);
         break;
       } catch (err) {
-        const errorMsg = safeStringSlice((err as Error).message, 0, 500);
+        const errorMsg = safeStringSlice(
+          err instanceof Error ? err.message : String(err),
+          0,
+          500,
+        );
         onProgress?.(
           `Stage ${stageName} failed (attempt ${attempt + 1}/${maxRetries + 1}): ${errorMsg}`,
         );

@@ -30,6 +30,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
+import { getErrorCode } from "../util/error-details.js";
 import { getWorkspaceDir } from "../util/layout.js";
 
 /** Workspace-relative path clients and the config watcher both key on. */
@@ -210,7 +211,7 @@ function readThemeFileGuarded(
       constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
     );
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+    const code = getErrorCode(err);
     if (code === "ENOENT") {
       return { missing: true };
     }

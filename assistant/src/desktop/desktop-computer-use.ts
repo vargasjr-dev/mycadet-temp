@@ -12,6 +12,7 @@ import type {
 } from "../daemon/host-cu-proxy.js";
 import { safeTimeoutMs } from "../tools/execution-timeout.js";
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
+import { isPlainObject } from "../util/object.js";
 import { DesktopAccessibility } from "./desktop-accessibility.js";
 import { desktopAutomationLease } from "./desktop-automation-lease.js";
 import {
@@ -317,10 +318,10 @@ export function planDesktopComputerUse(
     throw new Error("A sequence must contain between 1 and 10 actions");
   }
   return input.actions.flatMap((action: unknown) => {
-    if (!action || typeof action !== "object" || Array.isArray(action)) {
+    if (!isPlainObject(action)) {
       throw new Error("Each sequence action must be an object");
     }
-    const entry = action as Record<string, unknown>;
+    const entry = action;
     const aliases: Record<string, string> = {
       type: "type_text",
       double_click: "click",

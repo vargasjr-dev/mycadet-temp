@@ -15,6 +15,7 @@ import {
   setInferenceProfileSession,
 } from "./inference-profile-session-handler.js";
 import { inferenceProfileSessionResponseSchema } from "./inference-profile-session-schema.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -28,11 +29,12 @@ async function handleOpenInferenceProfileSession({
   if (body.profile == null || typeof body.profile !== "string") {
     throw new BadRequestError("profile must be a non-empty string");
   }
+  const request = parseBody(openInferenceProfileSessionRequestSchema, body);
   return setInferenceProfileSession({
-    conversationId: body.conversationId as string,
+    conversationId: request.conversationId,
     profile: body.profile,
-    ttlSeconds: body.ttlSeconds as number | null | undefined,
-    sessionId: body.sessionId as string | undefined,
+    ttlSeconds: request.ttlSeconds,
+    sessionId: request.sessionId,
     originClientId: headers?.["x-cadet-client-id"]?.trim() || undefined,
   });
 }
@@ -41,8 +43,9 @@ async function handleCloseInferenceProfileSession({
   body = {},
   headers,
 }: RouteHandlerArgs) {
+  const request = parseBody(closeInferenceProfileSessionRequestSchema, body);
   return closeInferenceProfileSession(
-    body.conversationId as string,
+    request.conversationId,
     headers?.["x-cadet-client-id"]?.trim() || undefined,
   );
 }
@@ -85,6 +88,17 @@ export const listInferenceProfileSessionsResponseSchema = z.object({
   ),
 });
 
+const openInferenceProfileSessionRequestSchema = z.object({
+  conversationId: z.string().min(1),
+  profile: z.string().min(1),
+  ttlSeconds: z.number().positive().nullable().optional(),
+  sessionId: z.string().uuid().optional(),
+});
+
+const closeInferenceProfileSessionRequestSchema = z.object({
+  conversationId: z.string().min(1),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "inference_profile_open",
@@ -100,12 +114,7 @@ export const ROUTES: RouteDefinition[] = [
       "Supports an optional TTL — omit for a sticky (non-expiring) override. " +
       "A profile that provably cannot dispatch is rejected rather than pinned.",
     tags: ["conversations"],
-    requestBody: z.object({
-      conversationId: z.string().min(1),
-      profile: z.string().min(1),
-      ttlSeconds: z.number().positive().nullable().optional(),
-      sessionId: z.string().uuid().optional(),
-    }),
+    requestBody: openInferenceProfileSessionRequestSchema,
     responseBody: inferenceProfileSessionResponseSchema,
     handler: handleOpenInferenceProfileSession,
   },
@@ -122,9 +131,7 @@ export const ROUTES: RouteDefinition[] = [
       "Close the active session-backed inference-profile override for a conversation. " +
       "Only closes session-backed overrides; sticky overrides are left untouched.",
     tags: ["conversations"],
-    requestBody: z.object({
-      conversationId: z.string().min(1),
-    }),
+    requestBody: closeInferenceProfileSessionRequestSchema,
     responseBody: closeInferenceProfileSessionResponseSchema,
     handler: handleCloseInferenceProfileSession,
   },

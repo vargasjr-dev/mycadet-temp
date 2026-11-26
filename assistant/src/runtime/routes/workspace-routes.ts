@@ -28,6 +28,7 @@ import {
   NotFoundError,
   RangeNotSatisfiableError,
 } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 import { RouteResponse } from "./types.js";
 import { walkWorkspaceTree } from "./workspace-tree-walk.js";
@@ -354,9 +355,10 @@ function handleWorkspaceFileContent({
 // ---------------------------------------------------------------------------
 
 function handleWorkspaceWrite({ body, headers }: RouteHandlerArgs) {
-  const path = body?.path as string | undefined;
-  const content = body?.content as string | undefined;
-  const encoding = body?.encoding as string | undefined;
+  const request = parseBody(workspaceWriteRequestSchema, body);
+  const path = request.path;
+  const content = request.content;
+  const encoding = request.encoding;
 
   if (!path || typeof path !== "string") {
     throw new BadRequestError("path is required");
@@ -385,7 +387,8 @@ function handleWorkspaceWrite({ body, headers }: RouteHandlerArgs) {
 // ---------------------------------------------------------------------------
 
 function handleWorkspaceMkdir({ body, headers }: RouteHandlerArgs) {
-  const path = body?.path as string | undefined;
+  const request = parseBody(workspaceMkdirRequestSchema, body);
+  const path = request.path;
   if (!path) {
     throw new BadRequestError("path is required");
   }
@@ -438,8 +441,9 @@ function isSamePathAlias(a: string, b: string): boolean {
 }
 
 function handleWorkspaceRename({ body, headers }: RouteHandlerArgs) {
-  const oldPath = body?.oldPath as string | undefined;
-  const newPath = body?.newPath as string | undefined;
+  const request = parseBody(workspaceRenameRequestSchema, body);
+  const oldPath = request.oldPath;
+  const newPath = request.newPath;
   if (!oldPath || !newPath) {
     throw new BadRequestError("oldPath and newPath are required");
   }
@@ -481,7 +485,8 @@ function handleWorkspaceRename({ body, headers }: RouteHandlerArgs) {
 // ---------------------------------------------------------------------------
 
 function handleWorkspaceDelete({ body, headers }: RouteHandlerArgs) {
-  const path = body?.path as string | undefined;
+  const request = parseBody(workspaceDeleteRequestSchema, body);
+  const path = request.path;
   if (!path) {
     throw new BadRequestError("path is required");
   }
@@ -556,6 +561,28 @@ export const workspaceDeleteResponseSchema = z.object({
   success: z.boolean(),
 });
 
+const workspaceWriteRequestSchema = z.object({
+  path: z.string().describe("Relative file path"),
+  content: z.string().describe("File content").optional(),
+  encoding: z
+    .string()
+    .describe("Content encoding (base64 or utf-8)")
+    .optional(),
+});
+
+const workspaceMkdirRequestSchema = z.object({
+  path: z.string().describe("Relative directory path"),
+});
+
+const workspaceRenameRequestSchema = z.object({
+  oldPath: z.string().describe("Current relative path"),
+  newPath: z.string().describe("New relative path"),
+});
+
+const workspaceDeleteRequestSchema = z.object({
+  path: z.string().describe("Relative path to delete"),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "workspace_tree",
@@ -627,14 +654,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Write workspace file",
     description: "Create or overwrite a file in the workspace.",
     tags: ["workspace"],
-    requestBody: z.object({
-      path: z.string().describe("Relative file path"),
-      content: z.string().describe("File content").optional(),
-      encoding: z
-        .string()
-        .describe("Content encoding (base64 or utf-8)")
-        .optional(),
-    }),
+    requestBody: workspaceWriteRequestSchema,
     responseBody: workspaceWriteResponseSchema,
     handler: handleWorkspaceWrite,
   },
@@ -649,9 +669,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Create workspace directory",
     description: "Create directories recursively in the workspace.",
     tags: ["workspace"],
-    requestBody: z.object({
-      path: z.string().describe("Relative directory path"),
-    }),
+    requestBody: workspaceMkdirRequestSchema,
     responseBody: workspaceMkdirResponseSchema,
     handler: handleWorkspaceMkdir,
   },
@@ -666,10 +684,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Rename workspace entry",
     description: "Rename or move a file or directory in the workspace.",
     tags: ["workspace"],
-    requestBody: z.object({
-      oldPath: z.string().describe("Current relative path"),
-      newPath: z.string().describe("New relative path"),
-    }),
+    requestBody: workspaceRenameRequestSchema,
     responseBody: workspaceRenameResponseSchema,
     handler: handleWorkspaceRename,
   },
@@ -684,9 +699,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Delete workspace entry",
     description: "Delete a file or directory from the workspace.",
     tags: ["workspace"],
-    requestBody: z.object({
-      path: z.string().describe("Relative path to delete"),
-    }),
+    requestBody: workspaceDeleteRequestSchema,
     responseBody: workspaceDeleteResponseSchema,
     handler: handleWorkspaceDelete,
   },

@@ -7,30 +7,27 @@ import {
   resumeEnrollment,
   updateSequence,
 } from "../../../../sequence/store.js";
-import type {
-  SequenceStatus,
-  SequenceStep,
-} from "../../../../sequence/types.js";
 import { isAbortLikeError } from "../../../../tools/shared/abort.js";
 import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
 import { err, ok } from "./shared.js";
+import { parseSteps } from "./steps.js";
 
 export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const id = input.id as string | undefined;
-  const enrollmentId = input.enrollment_id as string | undefined;
-  const enrollmentAction = input.enrollment_action as string | undefined;
+  const id = input.id;
+  const enrollmentId = input.enrollment_id;
+  const enrollmentAction = input.enrollment_action;
 
   throwIfCancelled(context);
 
   // ── Enrollment-level lifecycle actions ──────────────────────────────
-  if (enrollmentId) {
-    if (!enrollmentAction) {
+  if (typeof enrollmentId === "string" && enrollmentId) {
+    if (typeof enrollmentAction !== "string" || !enrollmentAction) {
       return err(
         "enrollment_action is required when enrollment_id is provided.",
       );
@@ -101,28 +98,28 @@ export async function run(
   }
 
   // ── Sequence-level update ──────────────────────────────────────────
-  if (!id) {
+  if (typeof id !== "string" || !id) {
     return err("id is required.");
   }
 
-  const name = input.name as string | undefined;
-  const description = input.description as string | undefined;
-  const status = input.status as SequenceStatus | undefined;
-  const exitOnReply = input.exit_on_reply as boolean | undefined;
-  const stepsRaw = input.steps as Array<Record<string, unknown>> | undefined;
+  const name = typeof input.name === "string" ? input.name : undefined;
+  const description =
+    typeof input.description === "string" ? input.description : undefined;
+  const status = input.status;
+  if (
+    status !== undefined &&
+    status !== "active" &&
+    status !== "paused" &&
+    status !== "archived"
+  ) {
+    return err('status must be "active", "paused", or "archived".');
+  }
+  const exitOnReply =
+    typeof input.exit_on_reply === "boolean" ? input.exit_on_reply : undefined;
+  const stepsRaw = input.steps;
 
   try {
-    const steps = stepsRaw?.map(
-      (s, i): SequenceStep => ({
-        index: i,
-        delaySeconds: (s.delay_seconds as number) ?? 0,
-        subjectTemplate: (s.subject as string) ?? `Step ${i + 1}`,
-        bodyPrompt: (s.body_prompt as string) ?? "",
-        replyInSameConversation:
-          (s.reply_in_same_conversation as boolean) ?? i > 0,
-        requireApproval: (s.require_approval as boolean) ?? false,
-      }),
-    );
+    const steps = stepsRaw == null ? undefined : parseSteps(stepsRaw);
 
     if (steps !== undefined && steps.length === 0) {
       return err(

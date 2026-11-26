@@ -8,11 +8,11 @@
  * tools); skill / plugin / MCP tools that a running daemon registers over its
  * lifecycle are not visible here.
  */
-
 import { readFileSync } from "node:fs";
 
 import type { Command } from "commander";
 
+import { isPlainObject } from "../../util/object.js";
 import { subcommand } from "../lib/cli-command-help.js";
 
 /**
@@ -54,11 +54,11 @@ function resolveToolInput(opts: {
     process.stderr.write(`Error: input is not valid JSON: ${reason}\n`);
     process.exit(2);
   }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+  if (!isPlainObject(parsed)) {
     process.stderr.write("Error: input must be a JSON object.\n");
     process.exit(2);
   }
-  return parsed as Record<string, unknown>;
+  return parsed;
 }
 
 export function registerToolsRunCommand(parent: Command): void {

@@ -8,10 +8,10 @@
  * retries validate (single-flight, with a cooldown after a failed attempt
  * that holds only while the same API key and base URL are stored).
  */
-
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import {
   getCloudAssistantId,
   getCloudOrganizationId,
@@ -84,10 +84,10 @@ export async function fetchCloudIdentityIds(
       return null;
     }
     const body: unknown = await res.json();
-    if (!body || typeof body !== "object") {
+    if (!isObjectRecord(body)) {
       return null;
     }
-    const obj = body as Record<string, unknown>;
+    const obj = body;
     const assistantId = asNonEmptyString(obj.assistant_id);
     const organizationId = asNonEmptyString(obj.organization_id);
     const userId = asNonEmptyString(obj.user_id);

@@ -39,7 +39,6 @@
  * `activation:progress` sync tag so sibling clients refetch, carrying the
  * client that made it so that client can suppress its own echo.
  */
-
 import { randomUUID } from "node:crypto";
 import {
   closeSync,
@@ -75,6 +74,7 @@ import {
   ServiceUnavailableError,
 } from "../runtime/routes/errors.js";
 import { publishActivationProgressChanged } from "../runtime/sync/resource-sync-events.js";
+import { getErrorCode } from "../util/error-details.js";
 import { getDataDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
 import { isPlainObject } from "../util/object.js";
@@ -411,7 +411,7 @@ function processIsAlive(pid: number): boolean {
     return true;
   } catch (err) {
     // EPERM is a process this user may not signal, which is still a process.
-    return (err as NodeJS.ErrnoException).code === "EPERM";
+    return getErrorCode(err) === "EPERM";
   }
 }
 
@@ -436,9 +436,7 @@ function tryAcquireProgressLock(
   try {
     fd = openSync(lockPath, "wx");
   } catch (err) {
-    return (err as NodeJS.ErrnoException).code === "EEXIST"
-      ? "held"
-      : "unavailable";
+    return getErrorCode(err) === "EEXIST" ? "held" : "unavailable";
   }
   try {
     // The pid is what a waiter checks; the timestamp is for whoever reads a
@@ -574,7 +572,7 @@ function restoreDisplacedProgressLock(
   try {
     linkSync(claimedPath, lockPath);
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "EEXIST") {
+    if (getErrorCode(err) === "EEXIST") {
       log.warn(
         { lockPath },
         "A live activation progress lock was displaced during a reclaim and another writer took its place",

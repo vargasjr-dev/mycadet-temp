@@ -10,7 +10,6 @@
  * - "Don't notify me on desktop during work calls"
  * - "Weeknights after 10pm: only critical notifications"
  */
-
 import {
   createTimeout,
   extractToolUse,
@@ -18,6 +17,7 @@ import {
   userMessage,
 } from "../providers/provider-send-message.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import type { AppliesWhenConditions } from "./preferences-store.js";
 
 const log = getLogger("notification-preference-extractor");
@@ -196,10 +196,10 @@ function validateExtractionOutput(
   const preferences: ExtractedPreference[] = [];
 
   for (const raw of input.preferences) {
-    if (typeof raw !== "object" || !raw) {
+    if (!isObjectRecord(raw)) {
       continue;
     }
-    const p = raw as Record<string, unknown>;
+    const p = raw;
 
     if (typeof p.preferenceText !== "string" || !p.preferenceText.trim()) {
       continue;

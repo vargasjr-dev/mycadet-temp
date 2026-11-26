@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../util/object.js";
 /**
  * Approval conversation turn engine.
  *
@@ -7,10 +8,8 @@
  * a safe keep_pending disposition — so that a broken model call never
  * silently approves or rejects a request.
  */
-
 // Hook point: a deterministic classifier could be inserted here as an
 // alternative to model-based inference
-
 import type {
   ApprovalConversationContext,
   ApprovalConversationDisposition,
@@ -33,10 +32,10 @@ function failClosed(): ApprovalConversationResult {
 }
 
 function isValidResult(value: unknown): value is ApprovalConversationResult {
-  if (!value || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return false;
   }
-  const obj = value as Record<string, unknown>;
+  const obj = value;
   if (typeof obj.disposition !== "string") {
     return false;
   }

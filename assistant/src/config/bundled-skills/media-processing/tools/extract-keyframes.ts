@@ -19,7 +19,8 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const assetId = input.asset_id as string | undefined;
+  const assetId =
+    typeof input.asset_id === "string" ? input.asset_id : undefined;
   if (!assetId) {
     return { content: "asset_id is required.", isError: true };
   }
@@ -27,15 +28,29 @@ export async function run(
   const includeAudio = Boolean(input.include_audio);
 
   const options: PreprocessOptions = {
-    intervalSeconds: (input.interval_seconds as number) || undefined,
-    segmentDuration: (input.segment_duration as number) || undefined,
-    deadTimeThreshold: (input.dead_time_threshold as number) || undefined,
-    sectionConfigPath: (input.section_config as string) || undefined,
+    intervalSeconds:
+      (typeof input.interval_seconds === "number"
+        ? input.interval_seconds
+        : undefined) || undefined,
+    segmentDuration:
+      (typeof input.segment_duration === "number"
+        ? input.segment_duration
+        : undefined) || undefined,
+    deadTimeThreshold:
+      (typeof input.dead_time_threshold === "number"
+        ? input.dead_time_threshold
+        : undefined) || undefined,
+    sectionConfigPath:
+      (typeof input.section_config === "string"
+        ? input.section_config
+        : undefined) || undefined,
     detectDeadTime:
       input.detect_dead_time !== undefined
         ? Boolean(input.detect_dead_time)
         : undefined,
-    shortEdge: (input.short_edge as number) || undefined,
+    shortEdge:
+      (typeof input.short_edge === "number" ? input.short_edge : undefined) ||
+      undefined,
     includeAudio,
   };
 
@@ -78,7 +93,7 @@ export async function run(
     if (isAbortLikeError(err)) {
       throw err;
     }
-    const msg = (err as Error).message;
+    const msg = err instanceof Error ? err.message : String(err);
     if (
       msg.startsWith("Media asset not found:") ||
       msg.startsWith("Preprocess requires a video asset.") ||

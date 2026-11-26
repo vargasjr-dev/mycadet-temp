@@ -16,7 +16,6 @@
  * dir (resolved via `getWorkspaceDir()`), so the daemon and the worker address
  * the same file.
  */
-
 import { randomUUID } from "node:crypto";
 import {
   mkdirSync,
@@ -26,6 +25,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+
+import { getErrorCode } from "../../../../util/error-details.js";
 
 /**
  * `<workspace>/plugins-data/default-memory/lanes-version` — inside the memory
@@ -52,7 +53,7 @@ export function readLanesVersion(
     const token = readFileSync(lanesVersionPath(workspaceDir), "utf-8").trim();
     return token.length > 0 ? token : null;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return null;
     }
     return undefined;

@@ -18,6 +18,7 @@ import {
 } from "../../skills/cloud-store.js";
 import { readInstallMeta } from "../../skills/install-meta.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
 
 const log = getLogger("scaffold-cloud-skill");
@@ -272,14 +273,14 @@ export async function executeScaffoldCloudSkill(
       copyFrom?: string;
     }> = [];
     for (const item of input.files) {
-      if (typeof item !== "object" || item === null) {
+      if (!isObjectRecord(item)) {
         return {
           content:
             "Error: each element in files must be a { path, content | copy_from } object",
           isError: true,
         };
       }
-      const { path, content, copy_from } = item as Record<string, unknown>;
+      const { path, content, copy_from } = item;
       if (typeof path !== "string" || !path.trim()) {
         return {
           content: "Error: each file must have a non-empty string path",

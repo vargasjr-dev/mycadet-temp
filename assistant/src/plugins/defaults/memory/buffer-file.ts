@@ -59,7 +59,6 @@
 // entry between them, so the entry is split rather than lost, and the
 // next pass's snapshot selection treats an unterminated tail as
 // in-flight.
-
 import {
   appendFileSync,
   closeSync,
@@ -76,6 +75,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { getErrorCode } from "../../../util/error-details.js";
 import {
   type BufferEntryLines,
   bufferEntryText,
@@ -196,7 +196,7 @@ export async function consumeBufferEntries(
   try {
     fd = openSync(bufferPath, "r");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return {
         removed: 0,
         alreadyAbsent: pending.length,

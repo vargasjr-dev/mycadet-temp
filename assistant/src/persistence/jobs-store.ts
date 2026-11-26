@@ -3,7 +3,9 @@ import { v4 as uuid } from "uuid";
 
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled as isMemoryEnabledForConfig } from "../config/memory-v3-gate.js";
+import { safeParseRecord } from "../util/json.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { truncate } from "../util/truncate.js";
 import { type DrizzleDb, getMemoryDb } from "./db-connection.js";
 import {
@@ -220,11 +222,7 @@ export function upsertDebouncedJob(
     .get();
   if (existing) {
     let existingPayload: Record<string, unknown> = {};
-    try {
-      existingPayload = JSON.parse(existing.payload) as Record<string, unknown>;
-    } catch {
-      existingPayload = {};
-    }
+    existingPayload = safeParseRecord(existing.payload);
     const mergedPayload = { ...existingPayload, ...payload };
     db.update(memoryJobs)
       .set({
@@ -321,11 +319,7 @@ export function upsertSkillCardInsertJob(
     .get();
   if (existing) {
     let existingPayload: Record<string, unknown> = {};
-    try {
-      existingPayload = JSON.parse(existing.payload) as Record<string, unknown>;
-    } catch {
-      existingPayload = {};
-    }
+    existingPayload = safeParseRecord(existing.payload);
     const mergedPayload = {
       ...existingPayload,
       ...payload,
@@ -362,10 +356,10 @@ function mergeSkillCardEntries(
     ...(Array.isArray(incoming) ? incoming : []),
   ];
   for (const entry of candidates) {
-    if (!entry || typeof entry !== "object") {
+    if (!isObjectRecord(entry)) {
       continue;
     }
-    const skillId = (entry as Record<string, unknown>).skillId;
+    const skillId = entry.skillId;
     if (typeof skillId !== "string" || skillId.length === 0) {
       continue;
     }
@@ -484,10 +478,10 @@ export function parseSkillUpdateReceiptPayload(
       return null;
     }
   }
-  if (!payload || typeof payload !== "object") {
+  if (!isObjectRecord(payload)) {
     return null;
   }
-  const rec = payload as Record<string, unknown>;
+  const rec = payload;
   if (
     typeof rec.firstEntryAt !== "number" ||
     typeof rec.lastEntryAt !== "number" ||
@@ -513,10 +507,10 @@ function mergeSkillUpdateReceiptEntries(
     ...(Array.isArray(incoming) ? incoming : []),
   ];
   for (const entry of candidates) {
-    if (!entry || typeof entry !== "object") {
+    if (!isObjectRecord(entry)) {
       continue;
     }
-    const rec = entry as Record<string, unknown>;
+    const rec = entry;
     if (
       typeof rec.entryId !== "string" ||
       rec.entryId.length === 0 ||
@@ -763,11 +757,7 @@ export function enqueuePruneOldLlmRequestLogsJob(retentionMs?: number): string {
       retentionMs >= 0
     ) {
       let payload: Record<string, unknown> = {};
-      try {
-        payload = JSON.parse(existing.payload) as Record<string, unknown>;
-      } catch {
-        payload = {};
-      }
+      payload = safeParseRecord(existing.payload);
       if (payload.retentionMs !== retentionMs) {
         db.update(memoryJobs)
           .set({
@@ -812,11 +802,7 @@ export function enqueuePruneOldConversationsJob(
       retentionDays >= 0
     ) {
       let payload: Record<string, unknown> = {};
-      try {
-        payload = JSON.parse(existing.payload) as Record<string, unknown>;
-      } catch {
-        payload = {};
-      }
+      payload = safeParseRecord(existing.payload);
       if (payload.retentionDays !== retentionDays) {
         db.update(memoryJobs)
           .set({
@@ -861,11 +847,7 @@ export function enqueuePruneOldToolInvocationsJob(
       retentionDays >= 0
     ) {
       let payload: Record<string, unknown> = {};
-      try {
-        payload = JSON.parse(existing.payload) as Record<string, unknown>;
-      } catch {
-        payload = {};
-      }
+      payload = safeParseRecord(existing.payload);
       if (payload.retentionDays !== retentionDays) {
         db.update(memoryJobs)
           .set({

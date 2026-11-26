@@ -5,7 +5,6 @@
  * agent spawns in the background. These routes expose visibility and control
  * over active background tool executions.
  */
-
 import { z } from "zod";
 
 import {
@@ -15,6 +14,7 @@ import {
 } from "../../tools/background-tool-registry.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ── Handlers ──────────────────────────────────────────────────────────
@@ -52,7 +52,8 @@ async function handleBackgroundToolList({
 }
 
 async function handleBackgroundToolCancel({ body = {} }: RouteHandlerArgs) {
-  const id = body.id as string | undefined;
+  const request = parseBody(backgroundToolCancelRequestSchema, body);
+  const id = request.id;
   if (!id) {
     throw new BadRequestError("id is required");
   }
@@ -76,6 +77,10 @@ const CompletedBackgroundToolSchema = BackgroundToolSchema.extend({
   exitCode: z.number().nullable(),
   output: z.string(),
   completedAt: z.number(),
+});
+
+const backgroundToolCancelRequestSchema = z.object({
+  id: z.string(),
 });
 
 export const ROUTES: RouteDefinition[] = [
@@ -122,9 +127,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Cancel a background tool",
     description: "Cancel an active background tool execution by ID.",
     tags: ["background-tools"],
-    requestBody: z.object({
-      id: z.string(),
-    }),
+    requestBody: backgroundToolCancelRequestSchema,
     responseBody: z.object({
       cancelled: z.boolean(),
     }),

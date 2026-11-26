@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../../util/object.js";
 /**
  * Dotted-path get/set helpers for the CLI.
  *
@@ -18,10 +19,10 @@ export function getNestedValue(
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
-    if (current == null || typeof current !== "object") {
+    if (!isObjectRecord(current)) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[key];
+    current = current[key];
   }
   return current;
 }

@@ -6,6 +6,7 @@ import type {
   UsageEvent,
   UsageEventInput,
 } from "../usage/types.js";
+import { isPlainObject } from "../util/object.js";
 import { APP_VERSION } from "../version.js";
 import { getDb } from "./db-connection.js";
 import { rawAll } from "./raw-query.js";
@@ -187,8 +188,8 @@ function parseRawUsage(value: string | null): Record<string, unknown> | null {
   }
   try {
     const parsed = JSON.parse(value);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
+    if (isPlainObject(parsed)) {
+      return parsed;
     }
     return null;
   } catch {

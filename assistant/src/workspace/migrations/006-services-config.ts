@@ -6,6 +6,7 @@ import {
   getProviderKeyAsync,
   getSecureKeyAsync,
 } from "../../security/secure-keys.js";
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 // Inlined per workspace-migration self-containment rule (see migrations
@@ -31,10 +32,10 @@ export const servicesConfigMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
@@ -159,16 +160,16 @@ export const servicesConfigMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const services = config.services;
-    if (!services || typeof services !== "object" || Array.isArray(services)) {
+    if (!isPlainObject(services)) {
       return;
     }
 

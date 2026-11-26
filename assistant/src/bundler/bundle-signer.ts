@@ -4,11 +4,12 @@
  * Computes content hashes, constructs a canonical signing payload,
  * and requests an Ed25519 signature from the Swift client.
  */
-
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
 import JSZip from "jszip";
+
+import { isObjectRecord } from "../util/object.js";
 
 export interface SignatureJson {
   algorithm: "ed25519";
@@ -35,15 +36,15 @@ export type SigningCallback = (payload: string) => Promise<{
  * Recursively sort object keys alphabetically for canonical JSON.
  */
 function sortKeysDeep(obj: unknown): unknown {
-  if (obj == null || typeof obj !== "object") {
+  if (!isObjectRecord(obj)) {
     return obj;
   }
   if (Array.isArray(obj)) {
     return obj.map(sortKeysDeep);
   }
   const sorted: Record<string, unknown> = {};
-  for (const key of Object.keys(obj as Record<string, unknown>).sort()) {
-    sorted[key] = sortKeysDeep((obj as Record<string, unknown>)[key]);
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = sortKeysDeep(obj[key]);
   }
   return sorted;
 }

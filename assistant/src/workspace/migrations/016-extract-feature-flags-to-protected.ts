@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 import { getCadetRoot } from "./utils.js";
 
@@ -53,8 +54,8 @@ export const extractFeatureFlagsToProtectedMigration: WorkspaceMigration = {
     if (existsSync(configPath)) {
       try {
         const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-        if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-          config = raw as Record<string, unknown>;
+        if (isPlainObject(raw)) {
+          config = raw;
         }
       } catch {
         // Malformed config — start with empty object
@@ -93,10 +94,10 @@ export const extractFeatureFlagsToProtectedMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return; // Malformed config — skip
     }

@@ -16,7 +16,6 @@
  * LLM never has to be invoked from the unit suite. `runMemoryV2Migration`
  * threads them together and writes the sentinel on success.
  */
-
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -30,6 +29,7 @@ import {
   getSqliteFrom,
 } from "../../../../persistence/db-connection.js";
 import { upsertEmbedConceptPageJob } from "../../../../persistence/jobs-store.js";
+import { getErrorCode } from "../../../../util/error-details.js";
 import { extractText, userMessage } from "../llm-helpers.js";
 import { getLogger } from "../logging.js";
 import {
@@ -711,7 +711,7 @@ async function appendLines(path: string, lines: string[]): Promise<void> {
   try {
     existing = await readFile(path, "utf-8");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+    if (getErrorCode(err) !== "ENOENT") {
       throw err;
     }
   }
@@ -761,7 +761,7 @@ async function stripMarkerBlock(path: string): Promise<void> {
   try {
     existing = await readFile(path, "utf-8");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return;
     }
     throw err;

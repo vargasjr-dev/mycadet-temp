@@ -1,4 +1,5 @@
 import { loadRawConfig } from "../../config/loader.js";
+import { isPlainObject } from "../../util/object.js";
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
 const OLD_PROFILE = "frontier";
@@ -68,7 +69,5 @@ function isUserOwnedFrontierProfile(): boolean {
 }
 
 function asObject(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  return isPlainObject(value) ? value : null;
 }

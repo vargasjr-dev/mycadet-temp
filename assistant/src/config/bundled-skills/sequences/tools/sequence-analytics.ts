@@ -12,7 +12,8 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const sequenceId = input.sequence_id as string | undefined;
+  const sequenceId =
+    typeof input.sequence_id === "string" ? input.sequence_id : undefined;
 
   const data = getDashboardData();
 

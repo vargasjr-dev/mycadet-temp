@@ -122,7 +122,8 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const filePath = input.file_path as string | undefined;
+  const filePath =
+    typeof input.file_path === "string" ? input.file_path : undefined;
   if (!filePath) {
     return {
       content:
@@ -187,7 +188,9 @@ export async function run(
   }
 
   // Determine title
-  const title = (input.title as string) || basename(filePath);
+  const title =
+    (typeof input.title === "string" ? input.title : undefined) ||
+    basename(filePath);
 
   // Parse optional metadata
   let metadata: Record<string, unknown> | undefined;

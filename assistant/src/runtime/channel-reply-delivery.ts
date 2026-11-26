@@ -16,6 +16,7 @@ import {
 } from "../persistence/conversation-crud.js";
 import { isReactionMessageMetadata } from "../persistence/conversation-types.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { deliverChannelReply } from "./gateway-client.js";
 import type { RuntimeAttachmentMetadata } from "./http-types.js";
 import { makeSentMessageIdReconciler } from "./outbound-post-reconciliation.js";
@@ -362,10 +363,7 @@ function isToolResultUserMessage(msg: PersistedMessage): boolean {
       Array.isArray(parsed) &&
       parsed.length > 0 &&
       parsed.every(
-        (block) =>
-          block !== null &&
-          typeof block === "object" &&
-          (block as Record<string, unknown>).type === "tool_result",
+        (block) => isObjectRecord(block) && block.type === "tool_result",
       )
     );
   } catch {

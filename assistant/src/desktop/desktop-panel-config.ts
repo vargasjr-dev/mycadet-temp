@@ -11,6 +11,7 @@ import {
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { getErrorCode } from "../util/error-details.js";
 import {
   DESKTOP_CHROME_WINDOW_CLASS,
   desktopChromeArguments,
@@ -222,7 +223,7 @@ function seedFile(
     // Publish a complete file atomically without replacing user settings.
     linkSync(temporaryPath, path);
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "EEXIST") {
+    if (getErrorCode(err) !== "EEXIST") {
       throw err;
     }
     if (

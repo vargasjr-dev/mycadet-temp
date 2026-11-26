@@ -34,7 +34,8 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const requestedPlatform = input.platform as string | undefined;
+  const requestedPlatform =
+    typeof input.platform === "string" ? input.platform : undefined;
   if (
     requestedPlatform !== undefined &&
     !VALID_PLATFORMS.includes(requestedPlatform as SettingsPlatform)

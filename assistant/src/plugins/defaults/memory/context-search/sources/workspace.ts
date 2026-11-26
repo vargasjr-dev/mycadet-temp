@@ -3,6 +3,8 @@ import { extname, isAbsolute, join, relative, sep } from "node:path";
 
 import { safeStringSlice } from "@mycadet/plugin-api";
 
+import { isObjectRecord } from "../../../../../util/object.js";
+import { isPlainObject } from "../../../../../util/object.js";
 import { isPathInsideRoot } from "../../path-containment.js";
 import type {
   RecallEvidence,
@@ -973,19 +975,15 @@ function summarizeJsonValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.slice(0, 20).map(summarizeJsonValue);
   }
-  if (!value || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return value;
   }
 
-  const entries = Object.entries(value as Record<string, unknown>).slice(0, 30);
+  const entries = Object.entries(value).slice(0, 30);
   return Object.fromEntries(
     entries.map(([key, entryValue]) => {
-      if (
-        entryValue &&
-        typeof entryValue === "object" &&
-        !Array.isArray(entryValue)
-      ) {
-        const record = entryValue as Record<string, unknown>;
+      if (isPlainObject(entryValue)) {
+        const record = entryValue;
         const preferredKeys = [
           "name",
           "description",

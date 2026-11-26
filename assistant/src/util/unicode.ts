@@ -1,3 +1,4 @@
+import { isObjectRecord } from "./object.js";
 /**
  * UTF-16 surrogate-pair-safe string utilities.
  *
@@ -208,12 +209,12 @@ export function stripOrphanedSurrogatesDeep<T>(
         : { value, changed: false };
     }
 
-    if (value != null && typeof value === "object") {
+    if (isObjectRecord(value)) {
       const proto = Object.getPrototypeOf(value);
       if (proto !== Object.prototype && proto !== null) {
         return { value, changed: false };
       }
-      const source = value as Record<string, unknown>;
+      const source = value;
       const keys = Object.keys(source);
       let next: Record<string, unknown> | null = null;
       for (let i = 0; i < keys.length; i++) {

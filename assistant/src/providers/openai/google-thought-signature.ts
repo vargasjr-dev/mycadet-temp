@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../../util/object.js";
 import {
   isGemini3Model,
   unsignedThoughtSignatureFallback,
@@ -21,10 +22,10 @@ function asNonEmptyString(value: unknown): string | undefined {
 }
 
 function googleObjectThoughtSignature(google: unknown): string | undefined {
-  if (google === null || typeof google !== "object") {
+  if (!isObjectRecord(google)) {
     return undefined;
   }
-  const record = google as Record<string, unknown>;
+  const record = google;
   return (
     asNonEmptyString(record.thought_signature) ??
     asNonEmptyString(record.thoughtSignature)
@@ -38,11 +39,11 @@ function googleObjectThoughtSignature(google: unknown): string | undefined {
 export function googleThoughtSignatureFromUnknown(
   value: unknown,
 ): string | undefined {
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return undefined;
   }
   const extra = (value as { extra_content?: unknown }).extra_content;
-  if (extra === null || typeof extra !== "object") {
+  if (!isObjectRecord(extra)) {
     return undefined;
   }
   return googleObjectThoughtSignature((extra as { google?: unknown }).google);
@@ -158,7 +159,7 @@ function paramsMessages(params: unknown): unknown[] | undefined {
 function assistantToolCalls(
   msg: unknown,
 ): Array<GoogleToolCallExtraContent & { id?: unknown }> | undefined {
-  if (msg === null || typeof msg !== "object") {
+  if (!isObjectRecord(msg)) {
     return undefined;
   }
   const record: { role?: unknown; tool_calls?: unknown } = msg;

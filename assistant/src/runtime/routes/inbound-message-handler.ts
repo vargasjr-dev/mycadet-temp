@@ -108,6 +108,7 @@ import {
 } from "../../util/canonicalize-identity.js";
 import { safeParseRecord } from "../../util/json.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import { truncate } from "../../util/truncate.js";
 import {
   isApprovalHandshakeInProgress,
@@ -1114,12 +1115,9 @@ export async function handleChannelInbound({
 
   // Extract channel command intent (e.g. /start from Telegram)
   const rawCommandIntent = sourceMetadata?.commandIntent;
-  const commandIntent =
-    rawCommandIntent &&
-    typeof rawCommandIntent === "object" &&
-    !Array.isArray(rawCommandIntent)
-      ? (rawCommandIntent as Record<string, unknown>)
-      : undefined;
+  const commandIntent = isPlainObject(rawCommandIntent)
+    ? rawCommandIntent
+    : undefined;
 
   // Extract chat type (e.g. "private", "group", "supergroup") for group chat gating
   const sourceChatType =
@@ -2132,10 +2130,10 @@ function readSlackFilesWithUrlsFromProviderMetadata(
   }
   const files: SlackFileWithUrls[] = [];
   for (const item of raw) {
-    if (item === null || typeof item !== "object" || Array.isArray(item)) {
+    if (!isPlainObject(item)) {
       continue;
     }
-    const record = item as Record<string, unknown>;
+    const record = item;
     const name = typeof record.name === "string" ? record.name.trim() : "";
     if (!name) {
       continue;

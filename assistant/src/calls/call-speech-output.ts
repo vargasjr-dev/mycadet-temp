@@ -14,7 +14,6 @@
  *   via the provider API, streamed through the audio store, and played
  *   via `sendPlayUrl()`.
  */
-
 import { getCatalogProvider } from "../tts/provider-catalog.js";
 import {
   type AudioStoreSink,
@@ -22,6 +21,7 @@ import {
   synthesizeAndEmit,
 } from "../tts/synthesis-stream.js";
 import type { TtsProvider, TtsProviderId } from "../tts/types.js";
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 import type { CallAudioFormat } from "./audio-store.js";
 import type { CallTransport } from "./call-transport.js";
@@ -181,9 +181,7 @@ async function synthesizeAndPlay(
     // Extract error class and code for diagnosable log entries.
     const errName = err instanceof Error ? err.name : String(err);
     const errCode =
-      err instanceof Error && "code" in err
-        ? (err as Error & { code?: string }).code
-        : undefined;
+      err instanceof Error && "code" in err ? getErrorCode(err) : undefined;
 
     // The caller already heard the truncated prompt — any fallback would
     // re-speak it in full (mirrors call-controller's failed-after-audio).

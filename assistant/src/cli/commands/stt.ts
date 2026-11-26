@@ -91,9 +91,7 @@ export function registerSttCommand(program: Command): void {
               process.exitCode = 1;
               return;
             }
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-            );
+            return exitFromIpcResult(r);
           }
 
           const { transcript, provider, durationSeconds } = r.result!;

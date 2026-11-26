@@ -126,7 +126,7 @@ export function registerImageGenerationCommand(program: Command): void {
               });
             } catch (err) {
               errors.push(
-                `Could not read ${filePath}: ${(err as Error).message}`,
+                `Could not read ${filePath}: ${err instanceof Error ? err.message : String(err)}`,
               );
             }
           }

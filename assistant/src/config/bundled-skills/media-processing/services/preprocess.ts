@@ -485,7 +485,7 @@ export async function preprocessForAsset(
         transcriber = await resolveBatchTranscriber({ role: "batch" });
       } catch (err) {
         onProgress?.(
-          `Audio transcription unavailable: ${(err as Error).message}\n`,
+          `Audio transcription unavailable: ${err instanceof Error ? err.message : String(err)}\n`,
         );
       }
     }
@@ -689,7 +689,7 @@ export async function preprocessForAsset(
       rm(tempDir, { recursive: true, force: true }),
       "preprocess temp cleanup",
     );
-    const msg = (err as Error).message;
+    const msg = err instanceof Error ? err.message : String(err);
     updateProcessingStage(stage.id, {
       status: "failed",
       lastError: safeStringSlice(msg, 0, 500),

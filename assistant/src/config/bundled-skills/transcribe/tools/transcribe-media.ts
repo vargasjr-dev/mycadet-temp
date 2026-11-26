@@ -124,7 +124,8 @@ async function splitAudio(
 async function resolveSource(
   input: Record<string, unknown>,
 ): Promise<{ inputPath: string; isVideo: boolean } | ToolExecutionResult> {
-  const filePath = input.file_path as string | undefined;
+  const filePath =
+    typeof input.file_path === "string" ? input.file_path : undefined;
 
   if (!filePath) {
     return {
@@ -275,7 +276,10 @@ export async function run(
   try {
     transcriber = await resolveBatchTranscriber({ role: "batch" });
   } catch (err) {
-    return { content: (err as Error).message, isError: true };
+    return {
+      content: err instanceof Error ? err.message : String(err),
+      isError: true,
+    };
   }
   if (!transcriber) {
     return {
@@ -311,7 +315,7 @@ export async function run(
       throw err;
     }
     return {
-      content: `Transcription failed: ${(err as Error).message}`,
+      content: `Transcription failed: ${err instanceof Error ? err.message : String(err)}`,
       isError: true,
     };
   } finally {

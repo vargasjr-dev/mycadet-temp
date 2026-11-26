@@ -4,6 +4,7 @@ import type {
   PricingUsage,
 } from "../../usage/types.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { resolvePricingForUsageWithOverrides } from "../../util/pricing.js";
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
@@ -46,10 +47,10 @@ interface ReconstructedUsage extends PricingUsage {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value == null) {
+  if (!isObjectRecord(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 function parseRequiredTokenCount(value: unknown): number | null {

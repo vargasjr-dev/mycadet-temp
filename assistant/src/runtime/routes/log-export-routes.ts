@@ -5,7 +5,6 @@
  * to retrieve audit database records, daemon log files, and a sanitized
  * config snapshot as a tar.gz archive.
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -36,6 +35,7 @@ import {
   getWorkspaceConfigPath,
 } from "../../util/layout.js";
 import { getLogger, LOG_FILE_PATTERN } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { APP_VERSION, COMMIT_SHA } from "../../version.js";
 import { assistantEventHub } from "../assistant-event-hub.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -506,9 +506,7 @@ function redactStringValue(val: unknown): string {
  * shape must redact more, never less.
  */
 function asRecord(v: unknown): Record<string, unknown> | undefined {
-  return v && typeof v === "object"
-    ? (v as Record<string, unknown>)
-    : undefined;
+  return isObjectRecord(v) ? v : undefined;
 }
 
 /** Replace every value in a map with its (set)/(empty) presence flag. */

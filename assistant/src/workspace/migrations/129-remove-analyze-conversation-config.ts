@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -24,10 +25,10 @@ export const removeAnalyzeConversationConfigMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
@@ -40,15 +41,10 @@ export const removeAnalyzeConversationConfigMigration: WorkspaceMigration = {
     }
 
     const llm = config.llm;
-    if (llm && typeof llm === "object" && !Array.isArray(llm)) {
-      const callSites = (llm as Record<string, unknown>).callSites;
-      if (
-        callSites &&
-        typeof callSites === "object" &&
-        !Array.isArray(callSites) &&
-        "analyzeConversation" in callSites
-      ) {
-        delete (callSites as Record<string, unknown>).analyzeConversation;
+    if (isPlainObject(llm)) {
+      const callSites = llm.callSites;
+      if (isPlainObject(callSites) && "analyzeConversation" in callSites) {
+        delete callSites.analyzeConversation;
         mutated = true;
       }
     }

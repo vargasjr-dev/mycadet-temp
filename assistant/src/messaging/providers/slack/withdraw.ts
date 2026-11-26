@@ -14,11 +14,11 @@
  * reply, deleted message) or don't round-trip through `chat.update`, it falls
  * back to editing the message down to a status-only block — still an edit.
  */
-
 import { isParkGuardianAction } from "@mycadet/service-contracts/guardian-requests";
 
 import { resolveDecisionStatusWord } from "../../../runtime/channel-approval-types.js";
 import { getLogger } from "../../../util/logger.js";
+import { isObjectRecord } from "../../../util/object.js";
 import { callSlackApi, getSlackMessageBlocks } from "./api.js";
 
 const log = getLogger("slack-withdraw");
@@ -105,11 +105,11 @@ function buildStatusText(params: WithdrawSlackApprovalCardParams): string {
 export function stripApprovalActionBlocks(blocks: unknown[]): unknown[] {
   const result: unknown[] = [];
   for (const block of blocks) {
-    if (!block || typeof block !== "object") {
+    if (!isObjectRecord(block)) {
       result.push(block);
       continue;
     }
-    const b = block as Record<string, unknown>;
+    const b = block;
     if (b.type === "actions") {
       continue;
     }

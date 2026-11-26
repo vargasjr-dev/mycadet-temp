@@ -15,7 +15,6 @@
  * (`commitConfigWrite` + the cloud-profile guards), so a CLI-created profile
  * is completed/materialized identically to a UI-created one.
  */
-
 import { z } from "zod";
 
 import { validateInferenceProfileConfig } from "../../api/constants/profile-config-validation.js";
@@ -64,6 +63,7 @@ import {
   getModelDisplayName,
   isModelInCatalog,
 } from "../../providers/model-catalog.js";
+import { isPlainObject } from "../../util/object.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { commitConfigWrite } from "./conversation-query-routes.js";
 import { BadRequestError, ConflictError, NotFoundError } from "./errors.js";
@@ -364,10 +364,10 @@ function assertConnectionExists(name: string): void {
 }
 
 function asPlainObject(value: unknown): Record<string, unknown> | null {
-  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 /**

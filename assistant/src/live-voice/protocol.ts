@@ -1,5 +1,6 @@
 import type { VoiceEscalationProfileSource } from "../calls/voice-escalation-target.js";
 import { type ClientOs, parseClientOs } from "../channels/types.js";
+import { isObjectRecord } from "../util/object.js";
 import { isPlainObject } from "../util/object.js";
 import {
   parseShareTargetSnapshot,
@@ -1252,10 +1253,10 @@ function isLiveVoiceSightSource(value: unknown): value is LiveVoiceSightSource {
 function validateSightFrameTiming(
   value: unknown,
 ): LiveVoiceSightFrameTiming | null {
-  if (typeof value !== "object" || value === null) {
+  if (!isObjectRecord(value)) {
     return null;
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   const isDuration = (duration: unknown): duration is number =>
     isIntInRange(duration, 0, Number.MAX_SAFE_INTEGER);
   const {

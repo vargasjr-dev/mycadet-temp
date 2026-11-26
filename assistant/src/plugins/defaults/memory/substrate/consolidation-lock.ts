@@ -13,7 +13,6 @@
  * containers and a restarted daemon collides with the dead holder's PID)
  * when the lock is older than {@link STALE_LOCK_TTL_MS}.
  */
-
 import {
   closeSync,
   mkdirSync,
@@ -24,6 +23,7 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { getErrorCode } from "../../../../util/error-details.js";
 import { isProcessAlive } from "../host-utils.js";
 import { getLogger } from "../logging.js";
 
@@ -116,7 +116,7 @@ export function tryAcquireLock(
   try {
     unlinkSync(lockPath);
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+    const code = getErrorCode(err);
     if (code !== "ENOENT") {
       log.warn(
         { err, lockPath },
@@ -141,7 +141,7 @@ function tryCreate(lockPath: string, holderTag?: string): string | null {
   try {
     fd = openSync(lockPath, "wx");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "EEXIST") {
+    if (getErrorCode(err) !== "EEXIST") {
       throw err;
     }
     try {
@@ -243,7 +243,7 @@ export function releaseLock(lockPath: string): void {
   try {
     unlinkSync(lockPath);
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+    const code = getErrorCode(err);
     if (code === "ENOENT") {
       return;
     }

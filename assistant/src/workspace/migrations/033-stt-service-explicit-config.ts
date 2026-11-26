@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -40,10 +41,10 @@ export const sttServiceExplicitConfigMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return; // Malformed JSON — skip
     }
@@ -91,18 +92,18 @@ export const sttServiceExplicitConfigMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     // Remove services.stt entirely.
     const services = config.services;
-    if (services && typeof services === "object" && !Array.isArray(services)) {
-      const servicesObj = services as Record<string, unknown>;
+    if (isPlainObject(services)) {
+      const servicesObj = services;
       delete servicesObj.stt;
     }
 

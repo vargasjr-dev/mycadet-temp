@@ -8,7 +8,6 @@
  * directly off the {@link TurnContext} (or the workspace files) and runs its own
  * gating; see {@link DEFAULT_INJECTOR_ORDER} for the global ordering contract.
  */
-
 import { existsSync, readFileSync, rmSync } from "node:fs";
 
 import type { Message } from "@mycadet/plugin-api";
@@ -24,6 +23,7 @@ import {
   getConfigQuarantineNoticePath,
   getConfigValidationResetNoticePath,
 } from "../../../util/layout.js";
+import { isObjectRecord } from "../../../util/object.js";
 import {
   type InjectionBlock,
   type Injector,
@@ -152,13 +152,10 @@ function readConfigQuarantineNotice(): ConfigQuarantineNotice | null {
   }
   try {
     const parsed: unknown = JSON.parse(readFileSync(noticePath, "utf-8"));
-    if (parsed == null || typeof parsed !== "object") {
+    if (!isObjectRecord(parsed)) {
       return null;
     }
-    const { quarantinedAt, quarantinePath, originalPath } = parsed as Record<
-      string,
-      unknown
-    >;
+    const { quarantinedAt, quarantinePath, originalPath } = parsed;
     if (
       typeof quarantinedAt !== "string" ||
       typeof quarantinePath !== "string" ||
@@ -268,10 +265,10 @@ function readConfigValidationResetNotice(): ConfigValidationResetNotice | null {
   }
   try {
     const parsed: unknown = JSON.parse(readFileSync(noticePath, "utf-8"));
-    if (parsed == null || typeof parsed !== "object") {
+    if (!isObjectRecord(parsed)) {
       return null;
     }
-    const { resetAt, invalidPaths } = parsed as Record<string, unknown>;
+    const { resetAt, invalidPaths } = parsed;
     if (typeof resetAt !== "string") {
       return null;
     }

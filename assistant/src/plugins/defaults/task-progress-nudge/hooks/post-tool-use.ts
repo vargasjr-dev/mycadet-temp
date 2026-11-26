@@ -45,13 +45,14 @@
  * compute the same round count). The mark resets when the round count drops
  * below it (a new turn restarts counting low).
  */
-
 import type {
   ContentBlock,
   HookFunction,
   Message,
   PostToolUseContext,
 } from "@mycadet/plugin-api";
+
+import { isObjectRecord } from "../../../../util/object.js";
 
 /**
  * Canonical nudge notice. Module-level constant so tests and wrapping plugins
@@ -101,19 +102,15 @@ export function resetTaskProgressNudgeStateForTests(): void {
  * server-side normalization tolerance.
  */
 function isTaskProgressShowInput(input: unknown): boolean {
-  if (input === null || typeof input !== "object") {
+  if (!isObjectRecord(input)) {
     return false;
   }
-  const record = input as Record<string, unknown>;
+  const record = input;
   if (record.template === "task_progress") {
     return true;
   }
   const data = record.data;
-  return (
-    data !== null &&
-    typeof data === "object" &&
-    (data as Record<string, unknown>).template === "task_progress"
-  );
+  return isObjectRecord(data) && data.template === "task_progress";
 }
 
 /**

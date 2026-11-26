@@ -49,10 +49,14 @@ export async function executeContactSearch(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const query = input.query as string | undefined;
-  const channelAddress = input.channel_address as string | undefined;
-  const channelType = input.channel_type as string | undefined;
-  const limit = input.limit as number | undefined;
+  const query = typeof input.query === "string" ? input.query : undefined;
+  const channelAddress =
+    typeof input.channel_address === "string"
+      ? input.channel_address
+      : undefined;
+  const channelType =
+    typeof input.channel_type === "string" ? input.channel_type : undefined;
+  const limit = typeof input.limit === "number" ? input.limit : undefined;
 
   if (!query && !channelAddress) {
     return {

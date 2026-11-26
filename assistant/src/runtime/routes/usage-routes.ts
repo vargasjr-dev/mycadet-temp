@@ -89,7 +89,7 @@ function resolveTimezone(queryParams: Record<string, string>): string {
   try {
     validateTimezone(tz);
   } catch (err) {
-    throw new BadRequestError((err as Error).message);
+    throw new BadRequestError(err instanceof Error ? err.message : String(err));
   }
   return tz;
 }

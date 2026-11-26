@@ -174,7 +174,7 @@ function resolveLogDir(config: LogFileConfig): string | undefined {
         const fallback = getLogsDir();
         console.warn(
           `[logger] Configured logFile.dir "${config.dir}" cannot be created ` +
-            `in container (${(err as Error).message}). Falling back to "${fallback}".`,
+            `in container (${err instanceof Error ? err.message : String(err)}). Falling back to "${fallback}".`,
         );
         if (!existsSync(fallback)) {
           mkdirSync(fallback, { recursive: true });

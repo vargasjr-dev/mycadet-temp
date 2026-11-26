@@ -23,7 +23,6 @@
  *
  * Per workspace-migration AGENTS.md, all helpers are inlined.
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -34,6 +33,7 @@ import {
 import { join } from "node:path";
 
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const log = getLogger("workspace-migration-083-system-prompt-prefix-to-file");
@@ -76,15 +76,11 @@ export const systemPromptPrefixToFileMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const parsed: unknown = JSON.parse(raw);
-      if (
-        parsed === null ||
-        typeof parsed !== "object" ||
-        Array.isArray(parsed)
-      ) {
+      if (!isPlainObject(parsed)) {
         log.warn({ configPath }, "config.json is not a JSON object, skipping");
         return;
       }
-      config = parsed as Record<string, unknown>;
+      config = parsed;
     } catch (err) {
       log.warn({ err, configPath }, "Failed to parse config.json, skipping");
       return;
@@ -152,14 +148,10 @@ export const systemPromptPrefixToFileMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const parsed: unknown = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (
-        parsed === null ||
-        typeof parsed !== "object" ||
-        Array.isArray(parsed)
-      ) {
+      if (!isPlainObject(parsed)) {
         return;
       }
-      config = parsed as Record<string, unknown>;
+      config = parsed;
     } catch {
       return;
     }

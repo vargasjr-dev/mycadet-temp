@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isPlainObject } from "../../util/object.js";
 import {
   UNPARSEABLE_TOOL_ARGS_SDK_MESSAGE,
   wrapUnparseableToolArgs,
@@ -226,12 +227,8 @@ export class StreamContentShadow {
   private parseFinalToolInput(buf: string): Record<string, unknown> {
     try {
       const parsed: unknown = JSON.parse(buf);
-      if (
-        parsed !== null &&
-        typeof parsed === "object" &&
-        !Array.isArray(parsed)
-      ) {
-        return parsed as Record<string, unknown>;
+      if (isPlainObject(parsed)) {
+        return parsed;
       }
     } catch {
       // fall through to wrap

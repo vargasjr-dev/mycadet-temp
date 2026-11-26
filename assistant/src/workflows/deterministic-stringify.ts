@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../util/object.js";
 /**
  * Deterministic JSON stringify with recursively sorted object keys.
  *
@@ -17,15 +18,15 @@ export function deterministicStringify(value: unknown): string {
 }
 
 function sortValue(value: unknown): unknown {
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return value;
   }
   if (Array.isArray(value)) {
     return value.map(sortValue);
   }
   const out: Record<string, unknown> = {};
-  for (const key of Object.keys(value as Record<string, unknown>).sort()) {
-    out[key] = sortValue((value as Record<string, unknown>)[key]);
+  for (const key of Object.keys(value).sort()) {
+    out[key] = sortValue(value[key]);
   }
   return out;
 }

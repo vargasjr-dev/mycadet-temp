@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { isUnparseableToolArgs } from "../../providers/unparseable-tool-args.js";
+import { isPlainObject } from "../../util/object.js";
 import { declareDaemonActivityField } from "../schema-transforms.js";
 import { RiskLevel } from "../tool-types.js";
 import type {
@@ -74,8 +75,8 @@ export function resolveSkillExecuteInput(
 ): Record<string, unknown> {
   const raw = envelope.input;
 
-  if (raw != null && typeof raw === "object" && !Array.isArray(raw)) {
-    const obj = raw as Record<string, unknown>;
+  if (isPlainObject(raw)) {
+    const obj = raw;
     // A populated object is the well-formed case. An empty object falls
     // through to sibling rescue: the model may have nested nothing yet placed
     // the real parameters at the top level.
@@ -85,12 +86,8 @@ export function resolveSkillExecuteInput(
   } else if (typeof raw === "string" && raw.trim()) {
     try {
       const parsed: unknown = JSON.parse(raw);
-      if (
-        parsed != null &&
-        typeof parsed === "object" &&
-        !Array.isArray(parsed)
-      ) {
-        return parsed as Record<string, unknown>;
+      if (isPlainObject(parsed)) {
+        return parsed;
       }
     } catch {
       // Not JSON. A weak model may have placed the inner tool's sole required

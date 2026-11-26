@@ -18,8 +18,10 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const assetId = input.asset_id as string | undefined;
-  const filePath = input.file_path as string | undefined;
+  const assetId =
+    typeof input.asset_id === "string" ? input.asset_id : undefined;
+  const filePath =
+    typeof input.file_path === "string" ? input.file_path : undefined;
   const statusFilter = input.status_filter as MediaAssetStatus | undefined;
 
   // Query by asset ID

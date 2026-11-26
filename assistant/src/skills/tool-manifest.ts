@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { CLIENT_OS_VALUES, type ClientOs } from "../channels/types.js";
+import { isPlainObject } from "../util/object.js";
 
 const VALID_RISK_LEVELS = new Set(["low", "medium", "high"]);
 const VALID_EXECUTION_TARGETS = new Set(["host", "sandbox"]);
@@ -41,11 +42,11 @@ export interface SkillToolEntry {
  * Throws descriptive errors for any validation failure.
  */
 export function parseToolManifest(raw: unknown): SkillToolManifest {
-  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isPlainObject(raw)) {
     throw new Error("TOOLS.json must be a JSON object");
   }
 
-  const obj = raw as Record<string, unknown>;
+  const obj = raw;
 
   // Validate version
   if (!("version" in obj)) {
@@ -88,11 +89,11 @@ export function parseToolManifest(raw: unknown): SkillToolManifest {
 }
 
 function parseToolEntry(raw: unknown, prefix: string): SkillToolEntry {
-  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!isPlainObject(raw)) {
     throw new Error(`${prefix}: each tool entry must be a JSON object`);
   }
 
-  const entry = raw as Record<string, unknown>;
+  const entry = raw;
 
   // name
   if (!("name" in entry) || typeof entry.name !== "string") {

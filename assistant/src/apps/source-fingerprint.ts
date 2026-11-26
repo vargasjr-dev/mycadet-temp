@@ -7,10 +7,11 @@
  * `dist/.source-fingerprint.json` after a successful compile. It answers "did
  * this change?" and "which files?", not a reconstructable diff.
  */
-
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { isPlainObject } from "../util/object.js";
 
 /** Digest algorithm recorded alongside the file map, for forward compatibility. */
 export type FingerprintAlgorithm = "sha256";
@@ -158,19 +159,15 @@ export function compareAppSourceFingerprint(
 export function parseAppSourceFingerprint(
   value: unknown,
 ): AppSourceFingerprint | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  const obj = value as Record<string, unknown>;
+  const obj = value;
   if (obj.algorithm !== "sha256") {
     return null;
   }
   const rawFiles = obj.files;
-  if (
-    typeof rawFiles !== "object" ||
-    rawFiles === null ||
-    Array.isArray(rawFiles)
-  ) {
+  if (!isPlainObject(rawFiles)) {
     return null;
   }
   const files: Record<string, string> = {};

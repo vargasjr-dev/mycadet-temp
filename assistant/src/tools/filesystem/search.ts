@@ -4,6 +4,7 @@ import { basename, join, relative } from "node:path";
 import { minimatch } from "minimatch";
 import { RE2JS } from "re2js";
 
+import { getErrorCode } from "../../util/error-details.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { declareDaemonActivityField } from "../schema-transforms.js";
 import {
@@ -333,7 +334,7 @@ export const codeSearchTool = {
         // an explicit file root that can't be read was never searched, so record
         // the failure for the caller to surface as an error.
         if (isExplicitRoot) {
-          const code = (err as NodeJS.ErrnoException)?.code;
+          const code = getErrorCode(err);
           rootReadError = `Error: failed to read file (${code ?? "unreadable"}): ${rawPath}`;
         }
         return;
@@ -432,7 +433,7 @@ export const codeSearchTool = {
         // was never searched, so record the failure for the caller to surface
         // as an error instead of a false "No matches found".
         if (isExplicitRoot) {
-          const code = (err as NodeJS.ErrnoException)?.code;
+          const code = getErrorCode(err);
           rootReadError = `Error: failed to read directory (${code ?? "unreadable"}): ${rawPath}`;
         }
         return;

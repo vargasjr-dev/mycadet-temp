@@ -94,7 +94,7 @@ async function registerWithPlatform(
   try {
     callbackUrl = await registerCallbackRoute(webhookPath, type, source);
   } catch (err) {
-    const msg = (err as Error).message;
+    const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("missing platform registration context")) {
       throw new UnprocessableEntityError(msg);
     }
@@ -216,7 +216,7 @@ async function handleWebhooksList(
     });
   } catch (err) {
     throw new InternalError(
-      `Failed to list webhook routes: ${(err as Error).message}`,
+      `Failed to list webhook routes: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 

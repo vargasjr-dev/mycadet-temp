@@ -1,3 +1,4 @@
+import { isPlainObject } from "./object.js";
 /**
  * Parse JSON without throwing — returns null on failure.
  */
@@ -26,14 +27,10 @@ export function datesToISO<T extends Record<string, unknown>>(
 export function safeParseRecord(raw: string): Record<string, unknown> {
   try {
     const parsed = JSON.parse(raw);
-    if (
-      parsed === null ||
-      typeof parsed !== "object" ||
-      Array.isArray(parsed)
-    ) {
+    if (!isPlainObject(parsed)) {
       return {};
     }
-    return parsed as Record<string, unknown>;
+    return parsed;
   } catch {
     return {};
   }

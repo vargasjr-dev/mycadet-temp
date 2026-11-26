@@ -1,3 +1,4 @@
+import { isPlainObject } from "../util/object.js";
 /**
  * Safely set a nested field on a raw config object's `services` map.
  *
@@ -20,10 +21,7 @@ export function setServiceField(
     ? (raw.services as Record<string, Record<string, unknown>>)
     : {};
   const existing = services[service];
-  const svc: Record<string, unknown> =
-    existing != null && typeof existing === "object" && !Array.isArray(existing)
-      ? existing
-      : {};
+  const svc: Record<string, unknown> = isPlainObject(existing) ? existing : {};
   svc[field] = value;
   services[service] = svc;
   raw.services = services;
@@ -50,10 +48,9 @@ export function setMemoryEmbeddingField(
       ? (raw.memory as Record<string, unknown>)
       : {};
   const existing = memory.embeddings;
-  const embeddings: Record<string, unknown> =
-    existing != null && typeof existing === "object" && !Array.isArray(existing)
-      ? (existing as Record<string, unknown>)
-      : {};
+  const embeddings: Record<string, unknown> = isPlainObject(existing)
+    ? existing
+    : {};
   embeddings[field] = value;
   memory.embeddings = embeddings;
   raw.memory = memory;
@@ -76,13 +73,9 @@ export function deleteMemoryEmbeddingField(
   }
   const memory = raw.memory as Record<string, unknown>;
   const existing = memory.embeddings;
-  if (
-    existing == null ||
-    typeof existing !== "object" ||
-    Array.isArray(existing)
-  ) {
+  if (!isPlainObject(existing)) {
     return;
   }
-  const embeddings = existing as Record<string, unknown>;
+  const embeddings = existing;
   delete embeddings[field];
 }

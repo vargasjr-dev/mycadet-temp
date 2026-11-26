@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 
 import type { ProviderErrorReason } from "../../util/errors.js";
+import { isObjectRecord } from "../../util/object.js";
 import {
   DAILY_LIMIT_PATTERNS,
   FREE_TIER_DAILY_LIMIT_PATTERNS,
@@ -408,9 +409,7 @@ function str(value: unknown): string | undefined {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : undefined;
+  return isObjectRecord(value) ? value : undefined;
 }
 
 function readHeader(headers: unknown): string | undefined {
@@ -438,7 +437,5 @@ function readHeaderValue(
 }
 
 function readCapturedErrorBody(headers: unknown): string | undefined {
-  return headers && typeof headers === "object"
-    ? capturedErrorBodies.get(headers)
-    : undefined;
+  return isObjectRecord(headers) ? capturedErrorBodies.get(headers) : undefined;
 }

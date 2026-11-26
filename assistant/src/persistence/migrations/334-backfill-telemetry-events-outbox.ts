@@ -4,6 +4,7 @@ import { Database } from "bun:sqlite";
 import { getTableName } from "drizzle-orm";
 
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import { getTelemetryDbPath } from "../../util/telemetry-db-path.js";
 import { APP_VERSION } from "../../version.js";
 import {
@@ -61,8 +62,8 @@ function parseWatchdogDetail(
   }
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
+    if (isPlainObject(parsed)) {
+      return parsed;
     }
     return null;
   } catch {

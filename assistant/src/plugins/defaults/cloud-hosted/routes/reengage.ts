@@ -21,7 +21,6 @@
  * to name the one its email is about, and the route returns that id only after
  * validating it against the offered set. See {@link conversationCandidates}.
  */
-
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -30,6 +29,8 @@ import {
   listConversations,
   runConversationTurn,
 } from "@mycadet/plugin-api";
+
+import { isObjectRecord } from "../../../../util/object.js";
 
 // ---------------------------------------------------------------------------
 // Output location — the plugin's own data directory
@@ -101,8 +102,8 @@ function parseEmail(raw: string): ParsedEmail | null {
   for (const candidate of candidates) {
     try {
       const parsed: unknown = JSON.parse(candidate);
-      if (parsed && typeof parsed === "object") {
-        const record = parsed as Record<string, unknown>;
+      if (isObjectRecord(parsed)) {
+        const record = parsed;
         const subject =
           typeof record.subject === "string" ? record.subject.trim() : "";
         const body = typeof record.body === "string" ? record.body.trim() : "";

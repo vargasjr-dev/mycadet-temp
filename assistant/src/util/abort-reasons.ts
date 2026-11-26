@@ -1,3 +1,4 @@
+import { isObjectRecord } from "./object.js";
 /**
  * Tagged AbortReason objects passed as the `reason` argument to
  * `AbortController.abort()` for daemon-owned conversation aborts.
@@ -144,12 +145,12 @@ export function isPreemptedByNewMessage(reasonCandidate: unknown): boolean {
 }
 
 export function isAbortReason(value: unknown): value is AbortReason {
-  if (typeof value !== "object" || value === null) {
+  if (!isObjectRecord(value)) {
     return false;
   }
   return (
-    (value as Record<string, unknown>)[ABORT_REASON_TAG] === true &&
-    typeof (value as Record<string, unknown>).kind === "string" &&
-    typeof (value as Record<string, unknown>).source === "string"
+    value[ABORT_REASON_TAG] === true &&
+    typeof value.kind === "string" &&
+    typeof value.source === "string"
   );
 }

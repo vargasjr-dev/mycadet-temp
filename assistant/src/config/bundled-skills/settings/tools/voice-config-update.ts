@@ -12,6 +12,7 @@ import type {
 } from "../../../../tools/types.js";
 import { listCatalogProviderIds } from "../../../../tts/provider-catalog.js";
 import { ttsVoiceFieldFor } from "../../../../tts/tts-voice-field.js";
+import { isPlainObject } from "../../../../util/object.js";
 import {
   getConfig,
   invalidateConfigCache,
@@ -376,14 +377,14 @@ function deleteLegacySpeechMode(
   svc: "stt" | "tts",
 ): void {
   const services = raw.services;
-  if (!services || typeof services !== "object" || Array.isArray(services)) {
+  if (!isPlainObject(services)) {
     return;
   }
-  const entry = (services as Record<string, unknown>)[svc];
-  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+  const entry = services[svc];
+  if (!isPlainObject(entry)) {
     return;
   }
-  delete (entry as Record<string, unknown>).mode;
+  delete entry.mode;
 }
 
 /**
@@ -393,14 +394,14 @@ function deleteLegacySpeechMode(
  */
 function rawSttProviderPresent(raw: Record<string, unknown>): boolean {
   const services = raw.services;
-  if (!services || typeof services !== "object" || Array.isArray(services)) {
+  if (!isPlainObject(services)) {
     return false;
   }
-  const stt = (services as Record<string, unknown>).stt;
-  if (!stt || typeof stt !== "object" || Array.isArray(stt)) {
+  const stt = services.stt;
+  if (!isPlainObject(stt)) {
     return false;
   }
-  const provider = (stt as Record<string, unknown>).provider;
+  const provider = stt.provider;
   return typeof provider === "string" && provider.trim().length > 0;
 }
 
@@ -408,7 +409,7 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const setting = input.setting as string | undefined;
+  const setting = typeof input.setting === "string" ? input.setting : undefined;
   const value = input.value;
 
   if (!setting) {

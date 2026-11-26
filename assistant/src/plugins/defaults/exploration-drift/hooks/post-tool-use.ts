@@ -53,12 +53,13 @@
  * delegation advice would be wrong there. Subagents run under the
  * `subagentSpawn` call site, so the exemption is a cheap `ctx.callSite` read.
  */
-
 import type {
   HookFunction,
   Message,
   PostToolUseContext,
 } from "@mycadet/plugin-api";
+
+import { isObjectRecord } from "../../../../util/object.js";
 
 /**
  * Canonical long-dig notice. Module-level constant so tests and wrapping
@@ -156,13 +157,13 @@ function toolUsesById(
  * key order.
  */
 function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return JSON.stringify(value) ?? "undefined";
   }
   if (Array.isArray(value)) {
     return `[${value.map(stableStringify).join(",")}]`;
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   const entries = Object.keys(record)
     .sort()
     .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`);

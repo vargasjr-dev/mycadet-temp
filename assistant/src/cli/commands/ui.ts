@@ -14,7 +14,6 @@
  * which manages the surface lifecycle on the active conversation; `snapshot`
  * delegates to `ui_snapshot`, which is conversation-agnostic.
  */
-
 import { writeFileSync } from "node:fs";
 
 import type { Command } from "commander";
@@ -25,6 +24,7 @@ import type {
   InteractiveUiResult,
 } from "../../runtime/interactive-ui-types.js";
 import type { UiSnapshotResult } from "../../runtime/routes/ui-snapshot-routes.js";
+import { isPlainObject } from "../../util/object.js";
 import { readStdinSync } from "../../util/read-stdin.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
@@ -73,16 +73,12 @@ function readPayload(payloadFlag?: string): Record<string, unknown> {
   if (payloadFlag) {
     try {
       const parsed = JSON.parse(payloadFlag);
-      if (
-        typeof parsed !== "object" ||
-        parsed === null ||
-        Array.isArray(parsed)
-      ) {
+      if (!isPlainObject(parsed)) {
         throw new Error(
           "--payload must be a JSON object (not array or primitive).",
         );
       }
-      return parsed as Record<string, unknown>;
+      return parsed;
     } catch (err) {
       if (err instanceof SyntaxError) {
         throw new Error(
@@ -120,16 +116,12 @@ function readPayload(payloadFlag?: string): Record<string, unknown> {
 
   try {
     const parsed = JSON.parse(raw);
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
+    if (!isPlainObject(parsed)) {
       throw new Error(
         "Stdin payload must be a JSON object (not array or primitive).",
       );
     }
-    return parsed as Record<string, unknown>;
+    return parsed;
   } catch (err) {
     if (err instanceof SyntaxError) {
       throw new Error(
@@ -185,14 +177,14 @@ function parseActions(raw: string): InteractiveUiAction[] {
   const actions: InteractiveUiAction[] = [];
   for (let i = 0; i < parsed.length; i++) {
     const item = parsed[i];
-    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+    if (!isPlainObject(item)) {
       throw new Error(
         `--actions[${i}]: each action must be a JSON object with "id" and "label" fields.\n` +
           '  Example: {"id":"approve","label":"Approve"}',
       );
     }
 
-    const obj = item as Record<string, unknown>;
+    const obj = item;
 
     if (typeof obj.id !== "string" || obj.id.length === 0) {
       throw new Error(

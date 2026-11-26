@@ -26,6 +26,7 @@ import {
   NotFoundError,
   RouteError,
 } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import { resolveSurfaceConversation } from "./surface-conversation-resolver.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
@@ -73,10 +74,11 @@ async function handleSurfaceAction({
   replyText?: string;
   decidedAction?: string;
 }> {
-  const conversationId = body?.conversationId as string | null | undefined;
-  const surfaceId = body?.surfaceId as string | undefined;
-  const actionId = body?.actionId as string | undefined;
-  const data = body?.data as Record<string, unknown> | undefined;
+  const request = parseBody(surfaceActionRequestSchema, body);
+  const conversationId = request.conversationId;
+  const surfaceId = request.surfaceId;
+  const actionId = request.actionId;
+  const data = request.data;
 
   if (!surfaceId || typeof surfaceId !== "string") {
     throw new BadRequestError("surfaceId is required");
@@ -225,7 +227,8 @@ async function handleSurfaceUndo({ body, pathParams }: RouteHandlerArgs) {
     throw new BadRequestError("surfaceId path parameter is required");
   }
 
-  const conversationId = body?.conversationId as string | null | undefined;
+  const request = parseBody(surfaceUndoRequestSchema, body);
+  const conversationId = request.conversationId;
   if (conversationId != null && typeof conversationId !== "string") {
     throw new BadRequestError("conversationId must be a string");
   }
@@ -268,6 +271,24 @@ async function handleSurfaceUndo({ body, pathParams }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
+const surfaceActionRequestSchema = z.object({
+  conversationId: z
+    .string()
+    .describe("Conversation that owns the surface")
+    .optional(),
+  surfaceId: z.string().describe("Surface to act on"),
+  actionId: z.string().describe("Action identifier"),
+  data: z
+    .object({})
+    .passthrough()
+    .describe("Action-specific payload")
+    .optional(),
+});
+
+const surfaceUndoRequestSchema = z.object({
+  conversationId: z.string().describe("Conversation that owns the surface"),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "triggerSurfaceAction",
@@ -281,19 +302,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Execute an interactive action on a surface (e.g. button click, form submit).",
     tags: ["surfaces"],
-    requestBody: z.object({
-      conversationId: z
-        .string()
-        .describe("Conversation that owns the surface")
-        .optional(),
-      surfaceId: z.string().describe("Surface to act on"),
-      actionId: z.string().describe("Action identifier"),
-      data: z
-        .object({})
-        .passthrough()
-        .describe("Action-specific payload")
-        .optional(),
-    }),
+    requestBody: surfaceActionRequestSchema,
     responseBody: z.object({
       ok: z.boolean(),
       conversationId: z
@@ -340,9 +349,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Undo last surface action",
     description: "Revert the most recent action on a surface.",
     tags: ["surfaces"],
-    requestBody: z.object({
-      conversationId: z.string().describe("Conversation that owns the surface"),
-    }),
+    requestBody: surfaceUndoRequestSchema,
     responseBody: z.object({
       ok: z.boolean(),
     }),

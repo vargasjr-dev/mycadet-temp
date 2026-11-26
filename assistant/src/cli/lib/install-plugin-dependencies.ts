@@ -45,7 +45,6 @@
  * sibling plugin libraries; production callers fall back to
  * {@link defaultDependencyInstaller}.
  */
-
 import { execFile } from "node:child_process";
 import {
   existsSync,
@@ -59,6 +58,7 @@ import { promisify } from "node:util";
 
 import { ensureBun } from "../../util/bun-runtime.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import { addToPathEnv } from "../../util/os.js";
 
 const execFileAsync = promisify(execFile);
@@ -151,10 +151,10 @@ interface ManifestInstallPlan {
 
 /** A non-empty plain-object record at `value`, or `null`. */
 function nonEmptyRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   return Object.keys(record).length > 0 ? record : null;
 }
 
@@ -185,10 +185,10 @@ function planManifestForInstall(pluginDir: string): ManifestInstallPlan | null {
   } catch {
     return null;
   }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+  if (!isPlainObject(parsed)) {
     return null;
   }
-  const manifest = parsed as Record<string, unknown>;
+  const manifest = parsed;
 
   const peers = nonEmptyRecord(manifest.peerDependencies);
   const hasPluginApiPeer = peers !== null && PLUGIN_API_PACKAGE in peers;

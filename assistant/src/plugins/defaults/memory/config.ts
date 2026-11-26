@@ -2,6 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 
 import type { MemoryConfig } from "../../../config/schemas/memory.js";
 import { MemoryConfigSchema } from "../../../config/schemas/memory.js";
+import { isPlainObject } from "../../../util/object.js";
 import { getLogger } from "./logging.js";
 import { getWorkspaceConfigPath } from "./paths.js";
 
@@ -40,14 +41,14 @@ function readRawMemoryField(path: string): Record<string, unknown> {
   } catch {
     return {};
   }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!isPlainObject(parsed)) {
     return {};
   }
-  const memory = (parsed as Record<string, unknown>).memory;
-  if (memory === null || typeof memory !== "object" || Array.isArray(memory)) {
+  const memory = parsed.memory;
+  if (!isPlainObject(memory)) {
     return {};
   }
-  return memory as Record<string, unknown>;
+  return memory;
 }
 
 /**
@@ -124,10 +125,7 @@ function applyDeploymentContextFill(
   }
   const rawEmbeddings = raw.embeddings;
   const explicitProvider =
-    rawEmbeddings !== null &&
-    typeof rawEmbeddings === "object" &&
-    !Array.isArray(rawEmbeddings) &&
-    (rawEmbeddings as Record<string, unknown>).provider !== undefined;
+    isPlainObject(rawEmbeddings) && rawEmbeddings.provider !== undefined;
   if (!explicitProvider) {
     memory.embeddings.provider = "gemini";
   }

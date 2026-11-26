@@ -19,7 +19,6 @@
  * Writes are atomic (temp + rename) so a crash mid-write leaves either the
  * old file or the new file in place — never a half-written page.
  */
-
 import { randomUUID } from "node:crypto";
 import {
   mkdir,
@@ -34,6 +33,7 @@ import { dirname, join, relative, sep } from "node:path";
 
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
+import { getErrorCode } from "../../../../util/error-details.js";
 import { FRONTMATTER_REGEX } from "../frontmatter.js";
 import { invalidateEdgeIndex } from "./edge-index.js";
 import { invalidatePageIndex } from "./page-index.js";
@@ -284,7 +284,7 @@ export async function readPage(
   try {
     raw = await readFile(path, "utf-8");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return null;
     }
     throw err;
@@ -362,7 +362,7 @@ export async function listPages(workspaceDir: string): Promise<string[]> {
     try {
       entries = await readdir(dir, { withFileTypes: true });
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      if (getErrorCode(err) === "ENOENT") {
         // Root missing → return []. Nested missing dir is impossible mid-walk
         // (we only enqueue what readdir surfaced) but treat the same defensively.
         if (dir === root) {
@@ -416,7 +416,7 @@ export async function hasConceptPages(workspaceDir: string): Promise<boolean> {
     try {
       entries = await readdir(dir, { withFileTypes: true });
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      if (getErrorCode(err) === "ENOENT") {
         if (dir === root) {
           return false;
         }
@@ -463,7 +463,7 @@ export async function deletePage(
   try {
     await rm(path);
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return;
     }
     throw err;
@@ -486,7 +486,7 @@ export async function pageExists(
     await stat(path);
     return true;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return false;
     }
     throw err;

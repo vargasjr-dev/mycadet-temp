@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { getErrorCode } from "../util/error-details.js";
 import { escapeXmlAttr, escapeXmlContent } from "../util/xml.js";
 
 const BUTTON_MASKS = {
@@ -91,7 +92,7 @@ export function writeDesktopWindowTheme(
       sourcePath = path;
       break;
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      if (getErrorCode(err) !== "ENOENT") {
         throw err;
       }
     }

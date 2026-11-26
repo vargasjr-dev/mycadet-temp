@@ -21,7 +21,6 @@
  * own `fetch` (e.g. an authenticated client, a retry-decorated client, or
  * a test fixture) and an override workspace directory.
  */
-
 import { execFile } from "node:child_process";
 import {
   copyFileSync,
@@ -46,6 +45,7 @@ import {
 } from "../../plugins/plugin-tree-walk.js";
 import { ensureBun } from "../../util/bun-runtime.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
+import { isPlainObject } from "../../util/object.js";
 import {
   addToPathEnv,
   getExtraToolPathDirs,
@@ -1044,11 +1044,7 @@ function readPackageJson(path: string): PackageManifest | null {
   }
   try {
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-    return typeof parsed === "object" &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-      ? (parsed as PackageManifest)
-      : null;
+    return isPlainObject(parsed) ? (parsed as PackageManifest) : null;
   } catch {
     return null;
   }
@@ -1621,16 +1617,16 @@ export function readInstallMeta(pluginDir: string): InstallMeta | null {
   } catch {
     return null;
   }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+  if (!isPlainObject(parsed)) {
     return null;
   }
 
-  const obj = parsed as Record<string, unknown>;
+  const obj = parsed;
   const src = obj.source;
-  if (typeof src !== "object" || src === null || Array.isArray(src)) {
+  if (!isPlainObject(src)) {
     return null;
   }
-  const source = src as Record<string, unknown>;
+  const source = src;
   if (typeof obj.name !== "string") {
     return null;
   }

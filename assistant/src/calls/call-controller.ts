@@ -7,7 +7,6 @@
  * injections while preserving all existing call UX behavior (control markers,
  * barge-in, state machine, guardian verification).
  */
-
 import type { AssistantEvent } from "../api/index.js";
 import { revokeScopedApprovalGrantsForContext } from "../approvals/scoped-approval-grants.js";
 import {
@@ -35,6 +34,7 @@ import {
   synthesizeAndEmit,
 } from "../tts/synthesis-stream.js";
 import type { TtsProvider, TtsProviderId } from "../tts/types.js";
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 import type { CallAudioFormat } from "./audio-store.js";
 import {
@@ -1853,9 +1853,7 @@ export class CallController {
         // Extract error class and code for diagnosable log entries.
         const errName = err instanceof Error ? err.name : String(err);
         const errCode =
-          err instanceof Error && "code" in err
-            ? (err as Error & { code?: string }).code
-            : undefined;
+          err instanceof Error && "code" in err ? getErrorCode(err) : undefined;
 
         // `allowNativeFallback` controls whether the LLM's original
         // response text should be sent via native Twilio token-based

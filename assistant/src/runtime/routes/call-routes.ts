@@ -108,9 +108,11 @@ async function handleStartCall({ body }: RouteHandlerArgs) {
   }
 
   const result = await startCall({
-    phoneNumber: (body.phoneNumber as string) ?? "",
-    task: (body.task as string) ?? "",
-    context: body.context as string | undefined,
+    phoneNumber:
+      (typeof body.phoneNumber === "string" ? body.phoneNumber : undefined) ??
+      "",
+    task: (typeof body.task === "string" ? body.task : undefined) ?? "",
+    context: typeof body.context === "string" ? body.context : undefined,
     conversationId: body.conversationId as string,
     assistantId: DAEMON_INTERNAL_ASSISTANT_ID,
     callerIdentityMode: body.callerIdentityMode as
@@ -183,7 +185,7 @@ async function handleCancelCall({ pathParams, body }: RouteHandlerArgs) {
 
   const result = await cancelCall({
     callSessionId,
-    reason: body?.reason as string | undefined,
+    reason: typeof body?.reason === "string" ? body?.reason : undefined,
   });
 
   if (!result.ok) {
@@ -204,7 +206,7 @@ async function handleAnswerCall({ pathParams, body }: RouteHandlerArgs) {
 
   const result = await answerCall({
     callSessionId,
-    answer: (body?.answer as string) ?? "",
+    answer: (typeof body?.answer === "string" ? body?.answer : undefined) ?? "",
     pendingQuestionId:
       typeof body?.pendingQuestionId === "string"
         ? body.pendingQuestionId
@@ -226,7 +228,9 @@ async function handleInstructionCall({ pathParams, body }: RouteHandlerArgs) {
 
   const result = await relayInstruction({
     callSessionId,
-    instructionText: (body?.instruction as string) ?? "",
+    instructionText:
+      (typeof body?.instruction === "string" ? body?.instruction : undefined) ??
+      "",
   });
 
   if (!result.ok) {

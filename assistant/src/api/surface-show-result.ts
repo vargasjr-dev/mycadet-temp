@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../util/object.js";
 /**
  * The `ui_show` tool-result envelope.
  *
@@ -61,9 +62,7 @@ function parseLeadingJsonObject(
   }
   try {
     const parsed: unknown = JSON.parse(trimmed.slice(0, end + 1));
-    return parsed !== null && typeof parsed === "object"
-      ? (parsed as Record<string, unknown>)
-      : undefined;
+    return isObjectRecord(parsed) ? parsed : undefined;
   } catch {
     return undefined;
   }

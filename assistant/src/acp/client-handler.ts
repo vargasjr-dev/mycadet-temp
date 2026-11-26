@@ -5,7 +5,6 @@
  * permission requests, file operations, and terminal management to
  * connected Cadet clients.
  */
-
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 
@@ -38,6 +37,7 @@ import { redactJsonStringLeaves } from "../security/redact-json.js";
 import { redactSensitiveFields } from "../security/redaction.js";
 import { redactSecrets } from "../security/secret-scanner.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { withOomScoreAdj } from "../util/oom-priority.js";
 import { CHILD_OOM_SCORE_ADJ } from "../util/shell-invocation.js";
 
@@ -49,8 +49,8 @@ function redactSensitivePayload(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(redactSensitivePayload);
   }
-  if (value !== null && typeof value === "object") {
-    return redactSensitiveFields(value as Record<string, unknown>);
+  if (isObjectRecord(value)) {
+    return redactSensitiveFields(value);
   }
   return value;
 }

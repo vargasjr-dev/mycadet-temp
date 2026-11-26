@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -42,10 +43,10 @@ export const removeCallsVoiceTranscriptionProviderMigration: WorkspaceMigration 
       let config: Record<string, unknown>;
       try {
         const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        if (!isPlainObject(raw)) {
           return;
         }
-        config = raw as Record<string, unknown>;
+        config = raw;
       } catch {
         return; // Malformed JSON — skip
       }
@@ -113,10 +114,10 @@ export const removeCallsVoiceTranscriptionProviderMigration: WorkspaceMigration 
       let config: Record<string, unknown>;
       try {
         const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        if (!isPlainObject(raw)) {
           return;
         }
-        config = raw as Record<string, unknown>;
+        config = raw;
       } catch {
         return;
       }
@@ -156,8 +157,8 @@ function getObj(
   key: string,
 ): Record<string, unknown> | null {
   const val = parent[key];
-  if (val && typeof val === "object" && !Array.isArray(val)) {
-    return val as Record<string, unknown>;
+  if (isPlainObject(val)) {
+    return val;
   }
   return null;
 }
@@ -200,12 +201,7 @@ function looksLike033Default(stt: Record<string, unknown>): boolean {
   }
   if ("providers" in stt) {
     const providers = stt.providers;
-    if (
-      !providers ||
-      typeof providers !== "object" ||
-      Array.isArray(providers) ||
-      Object.keys(providers as Record<string, unknown>).length > 0
-    ) {
+    if (!isPlainObject(providers) || Object.keys(providers).length > 0) {
       return false;
     }
   }

@@ -11,6 +11,7 @@ import {
 import { join } from "node:path";
 
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const log = getLogger("094-seed-avatar-manifest");
@@ -44,10 +45,10 @@ interface AvatarState {
 
 /** Narrows an unknown value to valid CharacterTraits (presence check only). */
 function isValidTraits(value: unknown): value is CharacterTraits {
-  if (!value || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return false;
   }
-  const t = value as Record<string, unknown>;
+  const t = value;
   return (
     typeof t.bodyShape === "string" &&
     !!t.bodyShape &&

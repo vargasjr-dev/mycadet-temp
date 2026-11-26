@@ -39,7 +39,6 @@
  * a fatal `Error` frame is reported with the provider's own diagnostic, and
  * the close Deepgram sends immediately after it goes straight to `closed`.
  */
-
 import { getConfig } from "../../config/loader.js";
 import type { LiveVoiceFluxConfig } from "../../config/schemas/live-voice.js";
 import type {
@@ -49,6 +48,7 @@ import type {
 } from "../../stt/types.js";
 import { SttError } from "../../stt/types.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import type { FluxEncoding } from "./deepgram-flux-frames.js";
 import {
   buildFluxQueryParams,
@@ -518,10 +518,10 @@ export class DeepgramFluxRealtimeTranscriber implements StreamingTranscriber {
     } catch {
       return;
     }
-    if (typeof frame !== "object" || frame === null || Array.isArray(frame)) {
+    if (!isPlainObject(frame)) {
       return;
     }
-    this.onUnhandledFrame(frame as Record<string, unknown>);
+    this.onUnhandledFrame(frame);
   }
 
   /** Handle provider-side WebSocket close. */

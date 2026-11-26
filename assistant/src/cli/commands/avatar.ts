@@ -34,10 +34,7 @@ export function registerAvatarCommand(program: Command): void {
             { body: { description: opts.description } },
           );
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           log.info(r.result!.message);
         },
@@ -60,10 +57,7 @@ export function registerAvatarCommand(program: Command): void {
             body: { imagePath: resolvedSource },
           });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           log.info(`Avatar set from: ${resolvedSource}`);
         },
@@ -76,10 +70,7 @@ export function registerAvatarCommand(program: Command): void {
             "avatar_remove",
           );
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           if (!r.result!.hadAvatar) {
             log.info("No custom avatar to remove — already using the default.");
@@ -106,10 +97,7 @@ export function registerAvatarCommand(program: Command): void {
             base64?: string;
           }>("avatar_get", { body: { format: opts.format } });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           if (!r.result!.exists) {
@@ -146,10 +134,7 @@ export function registerAvatarCommand(program: Command): void {
             },
           );
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           log.info(
             `Avatar updated: ${opts.bodyShape} body, ${opts.eyeStyle} eyes, ${opts.color} color`,
@@ -163,10 +148,7 @@ export function registerAvatarCommand(program: Command): void {
             "avatar_character_components",
           );
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           if (opts.json) {
@@ -217,10 +199,7 @@ export function registerAvatarCommand(program: Command): void {
             { body: { width: opts.width } },
           );
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           process.stdout.write(r.result!.ascii + "\n");
         },

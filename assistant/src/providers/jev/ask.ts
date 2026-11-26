@@ -5,9 +5,9 @@
  * failure comes back as a non-answer so the caller keeps its default
  * behavior.
  */
-
 import type { LLMCallSite } from "../../config/schemas/llm.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { resolveConfiguredProvider } from "../provider-send-message.js";
 import type { Provider, ProviderResponse } from "../types.js";
 import {
@@ -57,8 +57,7 @@ function answersFrom(
 ): Record<string, unknown> | null {
   const raw = response.rawResponse;
   if (
-    typeof raw === "object" &&
-    raw !== null &&
+    isObjectRecord(raw) &&
     "answers" in raw &&
     typeof raw.answers === "object" &&
     raw.answers !== null
@@ -71,9 +70,7 @@ function answersFrom(
   }
   try {
     const parsed: unknown = JSON.parse(block.text);
-    return typeof parsed === "object" && parsed !== null
-      ? (parsed as Record<string, unknown>)
-      : null;
+    return isObjectRecord(parsed) ? parsed : null;
   } catch {
     return null;
   }

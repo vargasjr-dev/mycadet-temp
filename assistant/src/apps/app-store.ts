@@ -12,7 +12,6 @@
  * time and frozen thereafter (renaming an app does NOT rename its directory).
  * Pre-migration apps (no `dirName` in JSON) fall back to using `id` (UUID).
  */
-
 import { randomUUID } from "node:crypto";
 import {
   existsSync,
@@ -41,6 +40,7 @@ import { rawAll } from "../persistence/raw-query.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import { getDataDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";
 
 const log = getLogger("app-store");
@@ -1354,14 +1354,10 @@ export function backfillAppConversationIds(): void {
       }
 
       for (const block of parsed) {
-        if (
-          block &&
-          typeof block === "object" &&
-          (block as Record<string, unknown>).type === "ui_surface"
-        ) {
-          const data = (block as Record<string, unknown>).data;
-          if (data && typeof data === "object") {
-            const appId = (data as Record<string, unknown>).appId;
+        if (isObjectRecord(block) && block.type === "ui_surface") {
+          const data = block.data;
+          if (isObjectRecord(data)) {
+            const appId = data.appId;
             if (typeof appId === "string" && appId.length > 0) {
               let convIds = appConvMap.get(appId);
               if (!convIds) {

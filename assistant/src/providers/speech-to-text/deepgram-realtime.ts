@@ -28,7 +28,6 @@
  *   no audio owed a response never times out.
  * - All timers and listeners are cleaned up on close to prevent leaks.
  */
-
 import { rankLanguages } from "../../stt/language-metadata.js";
 import type {
   StreamingTranscriber,
@@ -36,6 +35,7 @@ import type {
 } from "../../stt/types.js";
 import { baseLanguageSubtag } from "../../util/language-subtag.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 
 const log = getLogger("deepgram-realtime");
 
@@ -511,7 +511,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
         const msg =
           ev instanceof Error
             ? ev.message
-            : typeof ev === "object" && ev !== null && "message" in ev
+            : isObjectRecord(ev) && "message" in ev
               ? String((ev as { message: unknown }).message)
               : "WebSocket error during connect";
         reject(
@@ -734,7 +734,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
       return;
     }
 
-    if (!frame || typeof frame !== "object") {
+    if (!isObjectRecord(frame)) {
       return;
     }
 
@@ -757,7 +757,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
     // Metadata and other frame types are informational for this adapter;
     // surface them to a wrapping adapter that may care (e.g. relay control
     // frames).
-    this.onUnhandledFrame?.(frame as Record<string, unknown>);
+    this.onUnhandledFrame?.(frame);
   }
 
   /**
@@ -928,7 +928,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
     const message = this.redact(
       ev instanceof Error
         ? ev.message
-        : typeof ev === "object" && ev !== null && "message" in ev
+        : isObjectRecord(ev) && "message" in ev
           ? String((ev as { message: unknown }).message)
           : "WebSocket error",
     );

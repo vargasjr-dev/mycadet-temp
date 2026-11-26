@@ -264,7 +264,7 @@ async function readContactForPrompt(
     };
   }
 
-  const failure = r as { ok: false; error?: string; statusCode?: number };
+  const failure = r;
   exitFromIpcResult(
     failure.statusCode === 404
       ? {
@@ -345,10 +345,7 @@ async function runAddressPrompt(
   );
 
   if (!r.ok) {
-    return exitFromIpcResult(
-      r as { ok: false; error?: string; statusCode?: number },
-      cmd,
-    );
+    return exitFromIpcResult(r, cmd);
   }
 
   if (r.result?.cancelled === true) {
@@ -539,10 +536,7 @@ async function runRecordPrompt(
   );
 
   if (!r.ok) {
-    return exitFromIpcResult(
-      r as { ok: false; error?: string; statusCode?: number },
-      cmd,
-    );
+    return exitFromIpcResult(r, cmd);
   }
 
   if (r.result?.cancelled === true) {
@@ -694,10 +688,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           const results = r.result!.contacts;
@@ -727,10 +718,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           const { contact, assistantMetadata } = r.result!;
@@ -1084,10 +1072,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           if (shouldOutputJson(cmd)) {
@@ -1131,10 +1116,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           const invitesList = r.result!.invites;
@@ -1209,10 +1191,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           const { invite } = r.result!;
@@ -1239,10 +1218,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           if (shouldOutputJson(cmd)) {
@@ -1296,10 +1272,7 @@ export function registerContactsCommand(program: Command): void {
           });
 
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           const result = r.result!;

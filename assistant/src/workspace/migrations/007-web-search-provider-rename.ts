@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 export const webSearchProviderRenameMigration: WorkspaceMigration = {
@@ -16,29 +17,25 @@ export const webSearchProviderRenameMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const services = config.services;
-    if (!services || typeof services !== "object" || Array.isArray(services)) {
+    if (!isPlainObject(services)) {
       return;
     }
 
-    const webSearch = (services as Record<string, unknown>)["web-search"];
-    if (
-      !webSearch ||
-      typeof webSearch !== "object" ||
-      Array.isArray(webSearch)
-    ) {
+    const webSearch = services["web-search"];
+    if (!isPlainObject(webSearch)) {
       return;
     }
 
-    const ws = webSearch as Record<string, unknown>;
+    const ws = webSearch;
     if (ws.provider !== "anthropic-native") {
       return;
     }
@@ -55,29 +52,25 @@ export const webSearchProviderRenameMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const services = config.services;
-    if (!services || typeof services !== "object" || Array.isArray(services)) {
+    if (!isPlainObject(services)) {
       return;
     }
 
-    const webSearch = (services as Record<string, unknown>)["web-search"];
-    if (
-      !webSearch ||
-      typeof webSearch !== "object" ||
-      Array.isArray(webSearch)
-    ) {
+    const webSearch = services["web-search"];
+    if (!isPlainObject(webSearch)) {
       return;
     }
 
-    const ws = webSearch as Record<string, unknown>;
+    const ws = webSearch;
     if (ws.provider !== "inference-provider-native") {
       return;
     }

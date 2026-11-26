@@ -4,12 +4,12 @@
  * Persisted to ~/.cadet/dictation-profiles.json using the
  * atomic-write pattern (write .tmp → rename → chmod).
  */
-
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { safeStringSlice } from "../util/unicode.js";
 
 const log = getLogger("dictation-profile-store");
@@ -99,12 +99,12 @@ function getStorePath(): string {
 let cachedConfig: DictationProfilesConfig | null = null;
 
 function validateAndClampConfig(raw: unknown): DictationProfilesConfig {
-  if (typeof raw !== "object" || raw == null) {
+  if (!isObjectRecord(raw)) {
     log.warn("Invalid dictation-profiles.json: not an object, using defaults");
     return getDefaultConfig();
   }
 
-  const obj = raw as Record<string, unknown>;
+  const obj = raw;
   if (obj.version !== 1 || !Array.isArray(obj.profiles)) {
     log.warn("Invalid dictation-profiles.json format, using defaults");
     return getDefaultConfig();
@@ -115,10 +115,10 @@ function validateAndClampConfig(raw: unknown): DictationProfilesConfig {
   const validProfiles: DictationProfile[] = [];
 
   for (const p of profiles) {
-    if (typeof p !== "object" || p == null) {
+    if (!isObjectRecord(p)) {
       continue;
     }
-    const profile = p as Record<string, unknown>;
+    const profile = p;
     if (typeof profile.id !== "string" || typeof profile.name !== "string") {
       continue;
     }
@@ -138,10 +138,10 @@ function validateAndClampConfig(raw: unknown): DictationProfilesConfig {
     const rawDict = Array.isArray(profile.dictionary) ? profile.dictionary : [];
     const dictionary: DictationDictionaryEntry[] = [];
     for (const entry of rawDict.slice(0, MAX_DICTIONARY_ENTRIES)) {
-      if (typeof entry !== "object" || entry == null) {
+      if (!isObjectRecord(entry)) {
         continue;
       }
-      const e = entry as Record<string, unknown>;
+      const e = entry;
       if (typeof e.spoken !== "string" || typeof e.written !== "string") {
         continue;
       }
@@ -168,10 +168,10 @@ function validateAndClampConfig(raw: unknown): DictationProfilesConfig {
     const rawSnippets = Array.isArray(profile.snippets) ? profile.snippets : [];
     const snippets: DictationSnippet[] = [];
     for (const s of rawSnippets.slice(0, MAX_SNIPPETS)) {
-      if (typeof s !== "object" || s == null) {
+      if (!isObjectRecord(s)) {
         continue;
       }
-      const snip = s as Record<string, unknown>;
+      const snip = s;
       if (
         typeof snip.trigger !== "string" ||
         typeof snip.expansion !== "string"
@@ -210,10 +210,10 @@ function validateAndClampConfig(raw: unknown): DictationProfilesConfig {
   const rawMappings = Array.isArray(obj.appMappings) ? obj.appMappings : [];
   const appMappings: DictationAppMapping[] = [];
   for (const m of rawMappings) {
-    if (typeof m !== "object" || m == null) {
+    if (!isObjectRecord(m)) {
       continue;
     }
-    const mapping = m as Record<string, unknown>;
+    const mapping = m;
     if (typeof mapping.profileId !== "string") {
       continue;
     }

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -24,19 +25,19 @@ export const bumpStaleProviderStreamTimeoutMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const timeouts = config.timeouts;
-    if (!timeouts || typeof timeouts !== "object" || Array.isArray(timeouts)) {
+    if (!isPlainObject(timeouts)) {
       return;
     }
-    const timeoutsObj = timeouts as Record<string, unknown>;
+    const timeoutsObj = timeouts;
 
     if (timeoutsObj.providerStreamTimeoutSec !== 300) {
       return;

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import { AssistantConfig } from "../config/schema.js";
+import { getErrorCode } from "../util/error-details.js";
 import { BackendUnavailableError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { getMemoryDb } from "./db-connection.js";
@@ -56,9 +57,7 @@ export function classifyError(err: unknown): ErrorCategory {
   if (
     err instanceof Error &&
     (/database is locked|SQLITE_BUSY/i.test(err.message) ||
-      /^SQLITE_(BUSY|IOERR)/.test(
-        String((err as Error & { code?: string }).code ?? ""),
-      ))
+      /^SQLITE_(BUSY|IOERR)/.test(String(getErrorCode(err) ?? "")))
   ) {
     return "retryable";
   }
@@ -114,7 +113,7 @@ export function classifyError(err: unknown): ErrorCategory {
     ) {
       return "retryable";
     }
-    const code = (err as Error & { code?: string }).code;
+    const code = getErrorCode(err);
     if (
       typeof code === "string" &&
       /^Connection(Refused|Reset|Timeout)|NetworkUnreachable|Unable.?to.?connect/i.test(

@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import { join } from "node:path";
 
+import { getErrorCode } from "../../util/error-details.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -23,7 +24,7 @@ function readAssignments(workspaceDir: string): Record<string, string[]> {
   try {
     raw = fs.readFileSync(assignmentsPath, "utf8");
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    if (getErrorCode(err) === "ENOENT") {
       return {};
     }
     throw err;
@@ -159,7 +160,7 @@ export const backfillV3LeavesMigration: WorkspaceMigration = {
       try {
         content = fs.readFileSync(file, "utf8");
       } catch (err) {
-        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        if (getErrorCode(err) === "ENOENT") {
           continue;
         }
         throw err;

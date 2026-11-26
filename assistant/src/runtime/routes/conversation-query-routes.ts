@@ -18,7 +18,6 @@
  * DELETE /v1/messages/queued/:id        — delete queued message
  * POST   /v1/messages/queued/:id/steer — steer to a queued message
  */
-
 import { z } from "zod";
 
 import { LlmContextResponseSchema } from "../../api/responses/llm-context-response.js";
@@ -117,6 +116,7 @@ import { initializeProviders } from "../../providers/registry.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { validateAllowlistFile } from "../../security/secret-allowlist.js";
 import { applyModuleLogLevels } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import {
   resolvePricingForUsage,
   usesAnthropicPricingRules,
@@ -134,6 +134,7 @@ import {
   normalizeLlmContextPayloads,
 } from "./llm-context-normalization.js";
 import { assertLlmRequestLoggingEnabled } from "./llm-request-logs-access.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const validEmbeddingProviderSet = new Set<string>(
@@ -181,10 +182,10 @@ const INFERENCE_PROFILE_UI_KEYS = new Set([
 ]);
 
 function asMutablePlainObject(value: unknown): Record<string, unknown> | null {
-  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return null;
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 function mergeInferenceProfileContextWindow(
@@ -432,7 +433,8 @@ async function handleSetImageGenModel({ body }: RouteHandlerArgs) {
   if (!body || typeof body !== "object") {
     throw new BadRequestError("Request body is required");
   }
-  const { modelId } = body as { modelId?: string };
+  const request = parseBody(setImageGenModelRequestSchema, body);
+  const { modelId } = request;
   if (!modelId || typeof modelId !== "string") {
     throw new BadRequestError("Missing required field: modelId");
   }
@@ -453,12 +455,8 @@ async function handleSetEmbeddingConfig({ body }: RouteHandlerArgs) {
   if (!body || typeof body !== "object") {
     throw new BadRequestError("Request body is required");
   }
-  const { provider, model, baseUrl, dimensions } = body as {
-    provider?: string;
-    model?: string;
-    baseUrl?: string;
-    dimensions?: number | null;
-  };
+  const request = parseBody(setEmbeddingConfigRequestSchema, body);
+  const { provider, model, baseUrl, dimensions } = request;
   if (!provider || typeof provider !== "string") {
     throw new BadRequestError("Missing required field: provider");
   }
@@ -925,7 +923,7 @@ async function handleReplaceInferenceProfile({
   if (!name) {
     throw new BadRequestError("Profile name must be a non-empty string");
   }
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
+  if (!isPlainObject(body)) {
     throw new BadRequestError("Body must be a JSON object");
   }
   if (RESERVED_PROFILE_NAMES.has(name)) {
@@ -1463,6 +1461,15 @@ async function handleSteerToMessage(args: RouteHandlerArgs) {
 // Route definitions (shared HTTP + IPC)
 // ---------------------------------------------------------------------------
 
+const setImageGenModelRequestSchema = z.object({ modelId: z.string() });
+
+const setEmbeddingConfigRequestSchema = z.object({
+  provider: z.string(),
+  model: z.string().optional(),
+  baseUrl: z.string().optional(),
+  dimensions: z.number().int().positive().nullable().optional(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "model_get",
@@ -1489,7 +1496,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Set image generation model",
     description: "Change the active image generation model.",
     tags: ["config"],
-    requestBody: z.object({ modelId: z.string() }),
+    requestBody: setImageGenModelRequestSchema,
     handler: handleSetImageGenModel,
   },
   {
@@ -1518,12 +1525,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Change the embedding provider, model, and optional custom endpoint.",
     tags: ["config"],
-    requestBody: z.object({
-      provider: z.string(),
-      model: z.string().optional(),
-      baseUrl: z.string().optional(),
-      dimensions: z.number().int().positive().nullable().optional(),
-    }),
+    requestBody: setEmbeddingConfigRequestSchema,
     handler: handleSetEmbeddingConfig,
   },
   {

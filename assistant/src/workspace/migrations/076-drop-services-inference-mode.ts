@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -29,33 +30,25 @@ export const dropServicesInferenceModeMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const services = config.services;
-    if (
-      services === null ||
-      typeof services !== "object" ||
-      Array.isArray(services)
-    ) {
+    if (!isPlainObject(services)) {
       return;
     }
 
-    const inference = (services as Record<string, unknown>).inference;
-    if (
-      inference === null ||
-      typeof inference !== "object" ||
-      Array.isArray(inference)
-    ) {
+    const inference = services.inference;
+    if (!isPlainObject(inference)) {
       return;
     }
 
-    const inferenceObj = inference as Record<string, unknown>;
+    const inferenceObj = inference;
     if (!("mode" in inferenceObj)) {
       return;
     }

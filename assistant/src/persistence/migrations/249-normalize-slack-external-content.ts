@@ -8,6 +8,7 @@ import {
   parseExternalContentEnvelope,
   unwrapExternalContentForDisplay,
 } from "../../security/untrusted-content.js";
+import { isPlainObject } from "../../util/object.js";
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
 const BATCH_SIZE = 100;
@@ -134,11 +135,11 @@ function parseSlackMetadataEnvelope(rawMetadata: string): {
     return null;
   }
 
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!isPlainObject(parsed)) {
     return null;
   }
 
-  const metadata = parsed as Record<string, unknown>;
+  const metadata = parsed;
   if (typeof metadata.slackMeta !== "string") {
     return null;
   }
@@ -168,10 +169,10 @@ function normalizeMessageContent(content: string): string | null {
 
   let changed = false;
   const normalizedBlocks = parsed.map((block) => {
-    if (block === null || typeof block !== "object" || Array.isArray(block)) {
+    if (!isPlainObject(block)) {
       return block;
     }
-    const record = block as Record<string, unknown>;
+    const record = block;
     if (record.type !== "text" || typeof record.text !== "string") {
       return block;
     }
@@ -245,10 +246,10 @@ function hasNonEmptyRawText(content: string): boolean {
   }
 
   return parsed.some((block) => {
-    if (block === null || typeof block !== "object" || Array.isArray(block)) {
+    if (!isPlainObject(block)) {
       return false;
     }
-    const text = (block as Record<string, unknown>).text;
+    const text = block.text;
     return (
       typeof text === "string" &&
       text.trim().length > 0 &&

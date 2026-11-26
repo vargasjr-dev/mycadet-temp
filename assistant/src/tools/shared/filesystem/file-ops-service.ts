@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 
 import { minimatch } from "minimatch";
 
+import { getErrorCode } from "../../../util/error-details.js";
 import { ensureDir, pathExists } from "../../../util/fs.js";
 import { surrogateSafeWindow } from "../../../util/unicode.js";
 import { isAbortLikeError } from "../abort.js";
@@ -264,9 +265,7 @@ export class FileSystemOps {
         content = await readFile(filePath, "utf-8");
       } catch (err) {
         const code =
-          err instanceof Error && "code" in err
-            ? (err as NodeJS.ErrnoException).code
-            : undefined;
+          err instanceof Error && "code" in err ? getErrorCode(err) : undefined;
         if (code === "EISDIR") {
           return { ok: false, error: Err.notAFile(filePath) };
         }

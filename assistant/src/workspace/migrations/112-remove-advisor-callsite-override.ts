@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -34,29 +35,25 @@ export const removeAdvisorCallsiteOverrideMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const llm = config.llm;
-    if (!llm || typeof llm !== "object" || Array.isArray(llm)) {
+    if (!isPlainObject(llm)) {
       return;
     }
 
-    const callSites = (llm as Record<string, unknown>).callSites;
-    if (
-      !callSites ||
-      typeof callSites !== "object" ||
-      Array.isArray(callSites)
-    ) {
+    const callSites = llm.callSites;
+    if (!isPlainObject(callSites)) {
       return;
     }
 
-    const sites = callSites as Record<string, unknown>;
+    const sites = callSites;
     if (!("advisor" in sites)) {
       return;
     }
@@ -66,7 +63,7 @@ export const removeAdvisorCallsiteOverrideMigration: WorkspaceMigration = {
     // Prune the now-empty callSites map; an absent key is equivalent to the
     // schema's `{}` default.
     if (Object.keys(sites).length === 0) {
-      delete (llm as Record<string, unknown>).callSites;
+      delete llm.callSites;
     }
 
     writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");

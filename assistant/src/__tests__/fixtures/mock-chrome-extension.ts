@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../../util/object.js";
 /**
  * Mock Chrome extension test fixture.
  *
@@ -248,10 +249,10 @@ export function createMockChromeExtension(
     } catch {
       return;
     }
-    if (!parsed || typeof parsed !== "object") {
+    if (!isObjectRecord(parsed)) {
       return;
     }
-    const frame = parsed as Record<string, unknown>;
+    const frame = parsed;
     if (frame.type === "host_browser_request") {
       const typed = frame as unknown as HostBrowserRequestFrame;
       receivedRequests.push(typed);

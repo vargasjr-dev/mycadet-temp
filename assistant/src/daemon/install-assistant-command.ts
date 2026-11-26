@@ -6,7 +6,6 @@
  * that carries none of the install's bin directories. Without this the command
  * is simply missing and every such tool call exits 127.
  */
-
 import { execFileSync } from "node:child_process";
 import {
   appendFileSync,
@@ -24,6 +23,7 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, join, sep } from "node:path";
 
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 
 const NODE_MODULES_SEGMENT = `${sep}node_modules${sep}`;
@@ -175,7 +175,7 @@ function claimCommandPath(commandPath: string): boolean {
     stats = lstatSync(commandPath);
   } catch (err) {
     // Nothing there, so this is free to create.
-    return (err as NodeJS.ErrnoException)?.code === "ENOENT";
+    return getErrorCode(err) === "ENOENT";
   }
 
   if (stats.isSymbolicLink()) {

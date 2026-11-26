@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -47,10 +48,10 @@ export const clearRenamedCostProfileLabelMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const parsed = JSON.parse(rawText);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      if (!isPlainObject(parsed)) {
         return;
       }
-      config = parsed as Record<string, unknown>;
+      config = parsed;
     } catch {
       return;
     }
@@ -86,7 +87,5 @@ export const clearRenamedCostProfileLabelMigration: WorkspaceMigration = {
 };
 
 function readObject(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  return isPlainObject(value) ? value : null;
 }

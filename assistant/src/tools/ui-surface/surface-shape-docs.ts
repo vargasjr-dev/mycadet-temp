@@ -15,18 +15,16 @@
  * `template`/`title` lifted into card data by `normalizeCardShowData`) must
  * stay accepted, so card has no guard here.
  */
-
 import {
   coerceSurfaceDataRecord,
   describeSurfaceDataStringParseFailure,
   FileUploadSurfaceDataSchema,
   normalizeCopyBlockShowData,
 } from "../../api/surfaces.js";
+import { isObjectRecord } from "../../util/object.js";
 
 export function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : null;
+  return isObjectRecord(value) ? value : null;
 }
 
 /**

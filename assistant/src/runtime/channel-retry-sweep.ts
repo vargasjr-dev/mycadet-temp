@@ -1,7 +1,6 @@
 /**
  * Periodic retry sweep for failed channel inbound events.
  */
-
 import type { ChannelId } from "@mycadet/service-contracts/channels";
 import { isChannelId } from "@mycadet/service-contracts/channels";
 
@@ -36,6 +35,7 @@ import {
   recordProcessingFailure,
 } from "../persistence/delivery-status.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import {
   deliverReplyViaCallback,
   findAssistantReplyMessageIdForTurn,
@@ -51,10 +51,10 @@ const DISK_PRESSURE_REMOTE_BLOCK_REPLY =
   "Storage is critically low, so remote messages are ignored until the guardian frees enough space. Please try again later.";
 
 function parseTrustRuntimeContext(value: unknown): TrustContext | undefined {
-  if (!value || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return undefined;
   }
-  const raw = value as Record<string, unknown>;
+  const raw = value;
   const trustClass = raw.trustClass;
   if (
     trustClass !== "guardian" &&
@@ -149,10 +149,10 @@ function parseTrustRuntimeContext(value: unknown): TrustContext | undefined {
 function parseStoredSlackInbound(
   value: unknown,
 ): SlackInboundMessageMetadata | undefined {
-  if (!value || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return undefined;
   }
-  const obj = value as Record<string, unknown>;
+  const obj = value;
   if (typeof obj.channelId !== "string" || typeof obj.channelTs !== "string") {
     return undefined;
   }

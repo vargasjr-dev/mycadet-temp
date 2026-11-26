@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -28,33 +29,25 @@ export const dropWebFetchModeMigration: WorkspaceMigration = {
     let config: Record<string, unknown>;
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
 
     const services = config.services;
-    if (
-      services === null ||
-      typeof services !== "object" ||
-      Array.isArray(services)
-    ) {
+    if (!isPlainObject(services)) {
       return;
     }
 
-    const webFetch = (services as Record<string, unknown>)["web-fetch"];
-    if (
-      webFetch === null ||
-      typeof webFetch !== "object" ||
-      Array.isArray(webFetch)
-    ) {
+    const webFetch = services["web-fetch"];
+    if (!isPlainObject(webFetch)) {
       return;
     }
 
-    const webFetchObj = webFetch as Record<string, unknown>;
+    const webFetchObj = webFetch;
     if (!("mode" in webFetchObj)) {
       return;
     }

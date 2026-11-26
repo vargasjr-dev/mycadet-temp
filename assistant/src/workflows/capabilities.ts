@@ -32,7 +32,6 @@
  * This module is pure logic: it performs no I/O beyond the synchronous
  * tool-registry lookup.
  */
-
 import { TrustClass } from "@mycadet/gateway-client";
 import { z } from "zod";
 
@@ -44,6 +43,7 @@ import {
 } from "../tools/registry.js";
 import { isSideEffectTool } from "../tools/side-effects.js";
 import type { Tool } from "../tools/types.js";
+import { isObjectRecord } from "../util/object.js";
 
 /**
  * Curated read-only baseline available to every workflow leaf without
@@ -124,17 +124,14 @@ export type CapabilityManifest = z.infer<typeof CapabilityManifestSchema>;
 export function normalizeCapabilityManifest(
   stored: unknown,
 ): CapabilityManifest {
-  const obj =
-    stored && typeof stored === "object"
-      ? (stored as Record<string, unknown>)
-      : {};
+  const obj = isObjectRecord(stored) ? stored : {};
   const tools = Array.isArray(obj.tools)
     ? obj.tools
         .map((t) =>
           typeof t === "string"
             ? t
-            : t && typeof t === "object"
-              ? ((t as Record<string, unknown>).name as string | undefined)
+            : isObjectRecord(t)
+              ? (t.name as string | undefined)
               : undefined,
         )
         .filter((n): n is string => typeof n === "string")

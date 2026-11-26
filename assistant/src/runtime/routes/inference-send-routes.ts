@@ -4,7 +4,6 @@
  * POST /v1/inference/send — send a user message to the configured LLM and
  *                           return the model response.
  */
-
 import { z } from "zod";
 
 import { getUserSelectableProfilesForProvider } from "../../config/default-profile-catalog.js";
@@ -20,6 +19,7 @@ import type { ProviderRequestDiagnostics } from "../../providers/request-diagnos
 import { runWithProviderRequestDiagnostics } from "../../providers/request-diagnostics.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, UpstreamProviderError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -32,10 +32,11 @@ async function handleInferenceSend({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError("message must be a non-empty string");
   }
 
-  const systemPrompt = body.systemPrompt as string | undefined;
-  const model = body.model as string | undefined;
-  const profile = body.profile as string | undefined;
-  const maxTokens = body.maxTokens as number | undefined;
+  const request = parseBody(inferenceSendRequestSchema, body);
+  const systemPrompt = request.systemPrompt;
+  const model = request.model;
+  const profile = request.profile;
+  const maxTokens = request.maxTokens;
 
   const selectionSeed = crypto.randomUUID();
 
@@ -180,6 +181,14 @@ function upstreamFailure(
 // Route definition
 // ---------------------------------------------------------------------------
 
+const inferenceSendRequestSchema = z.object({
+  message: z.string().min(1),
+  systemPrompt: z.string().optional(),
+  model: z.string().optional(),
+  profile: z.string().optional(),
+  maxTokens: z.number().int().positive().optional(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "inference_send",
@@ -194,13 +203,7 @@ export const ROUTES: RouteDefinition[] = [
       "Send a user message to the configured LLM provider and return the model response. " +
       "Optionally specify a system prompt, model override, named profile, or max tokens.",
     tags: ["inference"],
-    requestBody: z.object({
-      message: z.string().min(1),
-      systemPrompt: z.string().optional(),
-      model: z.string().optional(),
-      profile: z.string().optional(),
-      maxTokens: z.number().int().positive().optional(),
-    }),
+    requestBody: inferenceSendRequestSchema,
     responseBody: z.object({
       response: z.string(),
       model: z.string(),

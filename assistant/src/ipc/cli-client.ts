@@ -8,11 +8,11 @@
  * The preferred socket path is `{workspaceDir}/assistant.sock`, with a
  * deterministic fallback for long AF_UNIX paths.
  */
-
 import { Socket } from "node:net";
 
 import { IpcFrameReader, writeMessage } from "@mycadet/ipc-server-utils";
 
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 import { getAssistantSocketPath } from "./socket-path.js";
 
@@ -127,7 +127,7 @@ export async function cliIpcCall<T = unknown>(
     socket.unref();
 
     socket.on("error", (err) => {
-      const code = (err as NodeJS.ErrnoException).code;
+      const code = getErrorCode(err);
       log.debug({ err, code, method, socketPath }, "CLI IPC socket error");
       finish({
         ok: false,
@@ -287,7 +287,7 @@ export async function cliIpcCallBinary(
     socket.unref();
 
     socket.on("error", (err) => {
-      const code = (err as NodeJS.ErrnoException).code;
+      const code = getErrorCode(err);
       log.debug(
         { err, code, method, socketPath },
         "CLI IPC binary socket error",
@@ -475,7 +475,7 @@ export async function cliIpcCallStream(
     socket.unref();
 
     socket.on("error", (err) => {
-      const code = (err as NodeJS.ErrnoException).code;
+      const code = getErrorCode(err);
       log.debug(
         { err, code, method, socketPath },
         "CLI IPC stream socket error",

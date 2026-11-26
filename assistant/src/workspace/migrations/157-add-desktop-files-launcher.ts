@@ -9,6 +9,7 @@ import {
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { getErrorCode } from "../../util/error-details.js";
 import type { WorkspaceMigration } from "./types.js";
 
 export const addDesktopFilesLauncherMigration: WorkspaceMigration = {
@@ -22,7 +23,7 @@ export const addDesktopFilesLauncherMigration: WorkspaceMigration = {
     try {
       settings = readFileSync(settingsPath, "utf8");
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      if (getErrorCode(err) === "ENOENT") {
         return;
       }
       throw err;
@@ -80,7 +81,7 @@ export const addDesktopFilesLauncherMigration: WorkspaceMigration = {
       );
       linkSync(pinTemporaryPath, pinPath);
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "EEXIST") {
+      if (getErrorCode(err) !== "EEXIST") {
         throw err;
       }
     } finally {

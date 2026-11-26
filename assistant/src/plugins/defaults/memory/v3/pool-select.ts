@@ -48,7 +48,6 @@
  *     that prefix and queues a notice that the turn drew on core memories
  *     only.
  */
-
 import type {
   ContentBlock,
   Message,
@@ -69,6 +68,7 @@ import {
 } from "../../../../context/token-estimator.js";
 import { classifyConversationError } from "../../../../daemon/conversation-error.js";
 import type { PendingConversationNotice } from "../../../../daemon/conversation-notices.js";
+import { isObjectRecord } from "../../../../util/object.js";
 import { isPlainObject } from "../../../../util/object.js";
 import { redactLogString, truncate } from "../host-utils.js";
 import {
@@ -347,10 +347,10 @@ function renderSnippet(candidate: PoolCandidate): string {
 }
 
 function readStringField(value: unknown, key: string): string | undefined {
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return undefined;
   }
-  const field = (value as Record<string, unknown>)[key];
+  const field = value[key];
   return typeof field === "string" && field.length > 0 ? field : undefined;
 }
 
@@ -380,10 +380,7 @@ function summarizeResponse(response: {
 }
 
 function summarizeError(error: unknown): PoolSelectorAttemptFailure["error"] {
-  const record =
-    error !== null && typeof error === "object"
-      ? (error as Record<string, unknown>)
-      : {};
+  const record = isObjectRecord(error) ? error : {};
   const name =
     error instanceof Error
       ? error.name

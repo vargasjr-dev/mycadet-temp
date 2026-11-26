@@ -10,6 +10,7 @@ import {
   XMLSerializer,
 } from "@xmldom/xmldom";
 
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("desktop-window-config");
@@ -152,7 +153,7 @@ function readConfig(name: string, directories: string[]) {
     try {
       return { path, contents: readFileSync(path, "utf8") };
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      if (getErrorCode(err) !== "ENOENT") {
         throw err;
       }
     }

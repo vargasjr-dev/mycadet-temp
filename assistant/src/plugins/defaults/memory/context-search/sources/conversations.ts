@@ -12,6 +12,7 @@ import {
   parseExternalContentEnvelope,
   wrapUntrustedContent,
 } from "../../../../../security/untrusted-content.js";
+import { isPlainObject } from "../../../../../util/object.js";
 import { getLogger } from "../../logging.js";
 import type { RecallSearchContext, RecallSearchResult } from "../types.js";
 
@@ -324,10 +325,7 @@ function parseSlackRecallMetadata(rawMetadata: string | null): {
   } catch {
     parsed = null;
   }
-  const metadata =
-    parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : {};
+  const metadata = isPlainObject(parsed) ? parsed : {};
 
   return {
     ...(slackMeta.displayName ? { displayName: slackMeta.displayName } : {}),

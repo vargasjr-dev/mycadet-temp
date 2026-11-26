@@ -92,17 +92,20 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const assetId = input.asset_id as string | undefined;
+  const assetId =
+    typeof input.asset_id === "string" ? input.asset_id : undefined;
   if (!assetId) {
     return { content: "asset_id is required.", isError: true };
   }
 
-  const startTime = input.start_time as number | undefined;
+  const startTime =
+    typeof input.start_time === "number" ? input.start_time : undefined;
   if (startTime == null) {
     return { content: "start_time is required (seconds).", isError: true };
   }
 
-  const endTime = input.end_time as number | undefined;
+  const endTime =
+    typeof input.end_time === "number" ? input.end_time : undefined;
   if (endTime == null) {
     return { content: "end_time is required (seconds).", isError: true };
   }
@@ -114,8 +117,10 @@ export async function run(
     };
   }
 
-  const preRoll = (input.pre_roll as number) ?? 3;
-  const postRoll = (input.post_roll as number) ?? 2;
+  const preRoll =
+    (typeof input.pre_roll === "number" ? input.pre_roll : undefined) ?? 3;
+  const postRoll =
+    (typeof input.post_roll === "number" ? input.post_roll : undefined) ?? 2;
   const outputFormatInput =
     typeof input.output_format === "string" ? input.output_format : "mp4";
   const outputFormat = outputFormatInput.toLowerCase();
@@ -126,7 +131,7 @@ export async function run(
       isError: true,
     };
   }
-  const title = input.title as string | undefined;
+  const title = typeof input.title === "string" ? input.title : undefined;
 
   throwIfCancelled(context);
 
@@ -335,7 +340,7 @@ export async function run(
       throw err;
     }
     return {
-      content: `Clip generation failed: ${(err as Error).message}`,
+      content: `Clip generation failed: ${err instanceof Error ? err.message : String(err)}`,
       isError: true,
     };
   }

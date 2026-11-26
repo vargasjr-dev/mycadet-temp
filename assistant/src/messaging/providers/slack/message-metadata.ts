@@ -5,6 +5,7 @@ import {
 import { z } from "zod";
 
 import { safeParseRecord } from "../../../util/json.js";
+import { isPlainObject } from "../../../util/object.js";
 import {
   type ProviderMessageMetadata,
   readProviderMessageMetadata,
@@ -282,8 +283,8 @@ export function readSlackMetadataFromMessageMetadata(
   let parent: Record<string, unknown> | null = null;
   try {
     const parsed: unknown = JSON.parse(metadata);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      parent = parsed as Record<string, unknown>;
+    if (isPlainObject(parsed)) {
+      parent = parsed;
     }
   } catch {
     return null;
@@ -488,12 +489,8 @@ function parseRawObject(
   }
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (
-      parsed !== null &&
-      typeof parsed === "object" &&
-      !Array.isArray(parsed)
-    ) {
-      return parsed as Record<string, unknown>;
+    if (isPlainObject(parsed)) {
+      return parsed;
     }
   } catch {
     // fall through to empty base

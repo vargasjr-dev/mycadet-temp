@@ -39,13 +39,13 @@
  * time-of-use). Freezing stops a subscriber from mutating the in-flight event
  * mid-fanout (the hub delivers one object to every subscriber in turn).
  */
-
 import type { AssistantEventEnvelope } from "../api/index.js";
 import {
   type AssistantEventFilter,
   type AssistantEventHub,
   assistantEventHub,
 } from "../runtime/assistant-event-hub.js";
+import { isObjectRecord } from "../util/object.js";
 
 /**
  * The subset of {@link AssistantEventHub} workspace plugins may use. Picking
@@ -86,7 +86,7 @@ function wireSnapshot<T>(value: T): T {
  * client receives it.
  */
 function deepFreeze<T>(value: T, seen: WeakSet<object> = new WeakSet()): T {
-  if (value === null || typeof value !== "object") {
+  if (!isObjectRecord(value)) {
     return value;
   }
   if (seen.has(value)) {
@@ -94,7 +94,7 @@ function deepFreeze<T>(value: T, seen: WeakSet<object> = new WeakSet()): T {
   }
   seen.add(value);
   for (const key of Object.keys(value)) {
-    deepFreeze((value as Record<string, unknown>)[key], seen);
+    deepFreeze(value[key], seen);
   }
   return Object.freeze(value);
 }

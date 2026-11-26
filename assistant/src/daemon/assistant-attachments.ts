@@ -4,7 +4,6 @@
  * Shared DTOs and utilities for building attachment candidates from
  * directives, tool content blocks, and file reads.
  */
-
 import { readFileSync, statSync } from "node:fs";
 
 import { isPlaceholderSentinelText } from "../providers/placeholder-sentinels.js";
@@ -12,6 +11,7 @@ import {
   hostPolicy,
   sandboxPolicy,
 } from "../tools/shared/filesystem/path-policy.js";
+import { getErrorCode } from "../util/error-details.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -546,7 +546,7 @@ export function resolveSandboxDirective(
   try {
     stat = statSync(resolved);
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+    const code = getErrorCode(err);
     if (code === "ENOENT") {
       return {
         draft: null,
@@ -556,7 +556,7 @@ export function resolveSandboxDirective(
     return {
       draft: null,
       warning: `Skipped sandbox attachment "${directive.path}": stat error: ${
-        (err as Error).message
+        err instanceof Error ? err.message : String(err)
       }`,
     };
   }
@@ -586,7 +586,7 @@ export function resolveSandboxDirective(
     return {
       draft: null,
       warning: `Skipped sandbox attachment "${directive.path}": read error: ${
-        (err as Error).message
+        err instanceof Error ? err.message : String(err)
       }`,
     };
   }
@@ -665,7 +665,7 @@ export async function resolveHostDirective(
   try {
     stat = statSync(resolved);
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+    const code = getErrorCode(err);
     if (code === "ENOENT") {
       return {
         draft: null,
@@ -675,7 +675,7 @@ export async function resolveHostDirective(
     return {
       draft: null,
       warning: `Skipped host attachment "${directive.path}": stat error: ${
-        (err as Error).message
+        err instanceof Error ? err.message : String(err)
       }`,
     };
   }
@@ -703,7 +703,7 @@ export async function resolveHostDirective(
     return {
       draft: null,
       warning: `Skipped host attachment "${directive.path}": read error: ${
-        (err as Error).message
+        err instanceof Error ? err.message : String(err)
       }`,
     };
   }

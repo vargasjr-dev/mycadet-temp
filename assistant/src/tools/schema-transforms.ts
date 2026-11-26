@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../util/object.js";
 import { ToolDefinition } from "./tool-types.js";
 
 /**
@@ -38,11 +39,7 @@ export function declareDaemonActivityField<T extends object>(schema: T): T {
 
 /** Whether `schema` declares the daemon's own `activity` field. */
 function definesDaemonActivityField(schema: unknown): boolean {
-  return (
-    typeof schema === "object" &&
-    schema !== null &&
-    DAEMON_ACTIVITY_SCHEMAS.has(schema)
-  );
+  return isObjectRecord(schema) && DAEMON_ACTIVITY_SCHEMAS.has(schema);
 }
 
 /**
@@ -63,7 +60,7 @@ export function withActivityProperty(
     return schema;
   }
   const properties = schema.properties;
-  if (typeof properties !== "object" || properties === null) {
+  if (!isObjectRecord(properties)) {
     return schema;
   }
   if (schemaDefinesProperty(schema, ACTIVITY_FIELD)) {
@@ -94,8 +91,7 @@ export function injectActivityField(
 
     const schema = def.input_schema as Record<string, unknown> | undefined;
     if (
-      schema == null ||
-      typeof schema !== "object" ||
+      !isObjectRecord(schema) ||
       schema.type !== "object" ||
       !schema.properties
     ) {
@@ -147,11 +143,11 @@ export function schemaDefinesProperty(
   propertyName: string,
   options?: { refBehavior?: "assume-defined" | "assume-undefined" },
 ): boolean {
-  if (schema == null || typeof schema !== "object") {
+  if (!isObjectRecord(schema)) {
     return false;
   }
 
-  const s = schema as Record<string, unknown>;
+  const s = schema;
   const refBehavior = options?.refBehavior ?? "assume-undefined";
 
   // $ref: we can't resolve it, so use the configured behavior
@@ -206,8 +202,7 @@ export function stripActivityField(
   return definitions.map((def) => {
     const schema = def.input_schema as Record<string, unknown> | undefined;
     if (
-      schema == null ||
-      typeof schema !== "object" ||
+      !isObjectRecord(schema) ||
       schema.type !== "object" ||
       !definesDaemonActivityField(schema)
     ) {
@@ -215,18 +210,11 @@ export function stripActivityField(
     }
 
     const properties = schema.properties;
-    if (
-      typeof properties !== "object" ||
-      properties === null ||
-      !(ACTIVITY_FIELD in (properties as Record<string, unknown>))
-    ) {
+    if (!isObjectRecord(properties) || !(ACTIVITY_FIELD in properties)) {
       return def;
     }
 
-    const { [ACTIVITY_FIELD]: _activity, ...remaining } = properties as Record<
-      string,
-      unknown
-    >;
+    const { [ACTIVITY_FIELD]: _activity, ...remaining } = properties;
     const stripped: Record<string, unknown> = {
       ...schema,
       properties: remaining,

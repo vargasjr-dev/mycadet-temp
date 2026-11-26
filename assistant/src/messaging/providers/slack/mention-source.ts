@@ -17,13 +17,14 @@
  * data is blocked until ingress can prove scope (see the LUM-3023 plan's
  * open blockers); nothing in this module resolves ids against any workspace.
  */
-
 import {
   extractSlackChannelReferenceIds,
   extractSlackUserMentionIds,
   renderSlackTextForModel,
   sanitizeSlackLabel,
 } from "@mycadet/slack-text";
+
+import { isPlainObject } from "../../../util/object.js";
 
 export interface SlackMentionLabelMaps {
   /** Slack user id (`U…`/`W…`) to sanitized display label. */
@@ -220,10 +221,10 @@ export function buildSlackMentionSource(
 export function readSlackMentionSource(
   value: unknown,
 ): SlackMentionSourceV1 | undefined {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (!isPlainObject(value)) {
     return undefined;
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   if (record.v !== 1) {
     return undefined;
   }
@@ -253,9 +254,7 @@ export function readSlackMentionSource(
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
+  return isPlainObject(value) ? value : undefined;
 }
 
 function renderMentionSourceText(

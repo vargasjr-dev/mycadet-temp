@@ -355,7 +355,10 @@ export function listRunningHeartbeatRuns(
   const db = getDb();
   const cutoff = Date.now() - maxAgeMs;
   return db
-    .select({ runId: heartbeatRuns.id, startedAt: heartbeatRuns.startedAt })
+    .select({
+      runId: heartbeatRuns.id,
+      startedAt: sql<number>`${heartbeatRuns.startedAt}`,
+    })
     .from(heartbeatRuns)
     .where(
       and(
@@ -366,7 +369,7 @@ export function listRunningHeartbeatRuns(
     )
     .orderBy(desc(heartbeatRuns.startedAt))
     .limit(20)
-    .all() as Array<{ runId: string; startedAt: number }>;
+    .all();
 }
 
 // ---------------------------------------------------------------------------

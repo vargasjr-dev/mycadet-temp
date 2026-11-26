@@ -116,7 +116,9 @@ function writeCache(store: CacheStore): void {
     writeFileSync(path, JSON.stringify(store, null, 2));
   } catch (err) {
     // Cache is best-effort; never fail the command because of a write error.
-    log.warn(`Failed to write changelog cache: ${(err as Error).message}`);
+    log.warn(
+      `Failed to write changelog cache: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -439,7 +441,7 @@ async function withErrorHandling(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch (err) {
-    emitError((err as Error).message);
+    emitError(err instanceof Error ? err.message : String(err));
   }
 }
 

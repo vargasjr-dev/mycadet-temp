@@ -36,7 +36,7 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const account = input.account as string | undefined;
+  const account = typeof input.account === "string" ? input.account : undefined;
   const action = input.action as string;
 
   if (!action) {
@@ -49,8 +49,11 @@ export async function run(
     });
     switch (action) {
       case "list": {
-        const pageSize = (input.page_size as number) ?? 50;
-        const pageToken = input.page_token as string | undefined;
+        const pageSize =
+          (typeof input.page_size === "number" ? input.page_size : undefined) ??
+          50;
+        const pageToken =
+          typeof input.page_token === "string" ? input.page_token : undefined;
 
         const resp = await listContacts(connection, pageSize, pageToken);
         const contacts = (resp.connections ?? []).map(formatContact);

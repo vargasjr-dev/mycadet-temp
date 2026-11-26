@@ -20,11 +20,11 @@
  * module only decides whether a usable override file exists and returns its raw
  * contents, or `null` to mean "fall back to the bundled prompt."
  */
-
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
+import { getErrorCode } from "../../../util/error-details.js";
 import { isPathInsideRoot } from "./path-containment.js";
 
 /**
@@ -146,7 +146,7 @@ export function loadPromptOverride(opts: {
     }
     contents = readFileSync(realResolvedPath, "utf-8");
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
+    const code = getErrorCode(err);
     log.warn(
       { configuredPath: overridePath, resolvedPath, code, fallback: "bundled" },
       `${label} override unreadable; using bundled prompt`,

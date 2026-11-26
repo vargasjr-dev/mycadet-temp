@@ -1,4 +1,5 @@
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import type { OAuthConnection } from "./connection.js";
 import { getConnectionAccessTokenResult } from "./credential-token-resolver.js";
 import { syncManualTokenConnection } from "./manual-token-connection.js";
@@ -218,8 +219,7 @@ export function resolveTokenHeader(
       headerName: string;
       valuePrefix?: unknown;
     } =>
-      typeof t === "object" &&
-      t !== null &&
+      isObjectRecord(t) &&
       (t as { injectionType?: unknown }).injectionType === "header" &&
       typeof (t as { headerName?: unknown }).headerName === "string" &&
       (t as { headerName: string }).headerName.trim() !== "",
@@ -316,9 +316,7 @@ function parseConnectionMetadata(
   }
   try {
     const parsed = JSON.parse(raw);
-    return typeof parsed === "object" && parsed !== null
-      ? (parsed as Record<string, unknown>)
-      : undefined;
+    return isObjectRecord(parsed) ? parsed : undefined;
   } catch {
     return undefined;
   }
