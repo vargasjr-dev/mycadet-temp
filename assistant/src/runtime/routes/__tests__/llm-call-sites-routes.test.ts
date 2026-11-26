@@ -59,34 +59,39 @@ describe("llm-call-sites-routes", () => {
   test("shippedDefaultProfile is the code-owned tier, unaffected by pins", async () => {
     const result = await readCatalog();
     for (const site of result.callSites) {
+      // Only mainAgent ships a profile tier; profileless sites report
+      // undefined (they follow the chat model).
       expect(site.shippedDefaultProfile).toBe(
-        CALL_SITE_DEFAULTS[LLMCallSiteEnum.parse(site.id)]?.profile ??
-          "balanced",
+        CALL_SITE_DEFAULTS[LLMCallSiteEnum.parse(site.id)]?.profile,
       );
     }
   });
 
-  test("profileless call sites report the balanced anchor tier", async () => {
+  test("profileless call sites report no shipped tier — they follow the chat model", async () => {
     const result = await readCatalog();
-    // Both omit `profile` in CALL_SITE_DEFAULTS and ride the resolver's
-    // balanced anchor, so the catalog groups them under Balanced.
+    // Both omit `profile` in CALL_SITE_DEFAULTS, so they inherit the main
+    // agent's winner and ship no tier of their own.
     for (const id of ["workflowLeaf", "vision"]) {
       const site = result.callSites.find((s) => s.id === id);
-      expect(site?.shippedDefaultProfile).toBe("balanced");
+      expect(site?.shippedDefaultProfile).toBeUndefined();
     }
   });
 
-  test("omits an unavailable managed-only shipped default under BYOK", () => {
+  test("voiceEscalationJudge ships no tier; profileless sites report the main agent's winner", () => {
     const managed = buildCallSiteCatalog(LLMSchema.parse({})).find(
       ({ id }) => id === "voiceEscalationJudge",
     );
-    expect(managed?.defaultProfile).toBe("jev-managed");
-    expect(managed?.shippedDefaultProfile).toBe("jev-managed");
+    // voiceEscalationJudge ships no profile tier anymore — it inherits the
+    // main agent's winner like every other profileless site.
+    expect(managed?.shippedDefaultProfile).toBeUndefined();
+    // On an empty workspace its effective key is the main agent's balanced
+    // anchor.
+    expect(managed?.defaultProfile).toBe("balanced");
 
     const byok = buildCallSiteCatalog(
       LLMSchema.parse({ default: { provider: "anthropic" } }),
     ).find(({ id }) => id === "voiceEscalationJudge");
-    expect(byok?.defaultProfile).toBeUndefined();
+    expect(byok?.defaultProfile).toBe("balanced");
     expect(byok?.shippedDefaultProfile).toBeUndefined();
   });
 

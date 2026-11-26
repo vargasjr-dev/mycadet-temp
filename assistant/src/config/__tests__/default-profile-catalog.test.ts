@@ -284,9 +284,9 @@ describe("resolver integration", () => {
   });
 
   test("a user profile cannot shadow latency-optimized", () => {
-    // `latency-optimized` is code-owned: it fronts every live-voice turn, so
-    // a same-named workspace entry never governs what it resolves to. The
-    // entry stays on disk and stays a valid `activeProfile` reference.
+    // `latency-optimized` is code-owned at the catalog level: a same-named
+    // workspace entry never changes what the key resolves to. The entry stays
+    // on disk and stays a valid `activeProfile` reference.
     const llm = LLMSchema.parse({
       profiles: {
         "latency-optimized": {
@@ -299,15 +299,6 @@ describe("resolver integration", () => {
       },
     });
     const body = CODE_DEFAULT_PROFILE_ENTRIES["latency-optimized"]!;
-    for (const callSite of [
-      "voiceFrontDoor",
-      "voiceProgressNarration",
-    ] as const) {
-      const resolved = resolveCallSiteConfig(callSite, llm);
-      expect(resolved.model).toBe(capturedStringSchema.parse(body.model));
-      expect(resolved.model).not.toBe("claude-opus-4-6");
-      expect(String(resolved.provider)).toBe("cadet");
-    }
     // Listing follows resolution: the catalog body is what surfaces.
     expect(getEffectiveProfiles(llm.profiles)["latency-optimized"]?.model).toBe(
       body.model,
@@ -318,6 +309,33 @@ describe("resolver integration", () => {
         profiles: llm.profiles,
       }),
     ).not.toThrow();
+  });
+
+  test("voice latency sites inherit the chat model like every background site", () => {
+    // Velcro #18: the voice sites ship no profile tier, so with no
+    // activeProfile they ride the main agent's balanced anchor — the user's
+    // latency-optimized shadow cannot capture them by name.
+    const llm = LLMSchema.parse({
+      profiles: {
+        "latency-optimized": {
+          provider: "anthropic",
+          model: "claude-opus-4-6",
+          provider_connection: "anthropic-personal",
+          maxTokens: 32000,
+          effort: "high",
+        },
+      },
+    });
+    for (const callSite of [
+      "voiceFrontDoor",
+      "voiceProgressNarration",
+    ] as const) {
+      const resolved = resolveCallSiteConfig(callSite, llm);
+      expect(String(resolved.provider)).toBe("cadet");
+      expect(resolved.model).toBe(
+        CODE_DEFAULT_PROFILE_ENTRIES["balanced"].model,
+      );
+    }
   });
 
   test("a user profile cannot shadow a cloud backup profile", () => {

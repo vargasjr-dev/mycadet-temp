@@ -81,18 +81,18 @@ describe("selection chain", () => {
     expect(forced.model).toBe("gpt-5.5");
   });
 
-  test("activeProfile is mainAgent-only", () => {
+  test("activeProfile anchors every call site through the main agent", () => {
     const llm = LLMSchema.parse({
       profiles: { mine: completeCustom },
       activeProfile: "mine",
       ...anthropicDp,
     });
     expect(resolveCallSiteConfig("mainAgent", llm).model).toBe("gpt-5.5");
-    // A background call site ignores activeProfile entirely and resolves its
-    // default intent through the default provider.
+    // A background call site inherits the main agent's winner — the chat
+    // model is the single default (Velcro #18).
     const summarized = resolveCallSiteConfig("conversationSummarization", llm);
-    expect(summarized.model).not.toBe("gpt-5.5");
-    expect(summarized.provider).toBe("anthropic");
+    expect(summarized.model).toBe("gpt-5.5");
+    expect(summarized.provider).toBe("openai");
   });
 
   test("a call-site profile beats the default intent; the default intent resolves through llm.defaultProvider", () => {
@@ -114,8 +114,8 @@ describe("selection chain", () => {
   test("a null defaultProvider falls back to the cadet catalog bodies", () => {
     const llm = LLMSchema.parse({});
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
-    const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
-    expect(resolved.model).toBe(capturedStringSchema.parse(cadetBody.model));
+    const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["balanced"]!;
+    expect(resolved.model).toBe(cadetBody.model);
     expect(resolved.provider_connection).toBe(cadetBody.provider_connection);
   });
 });
@@ -233,7 +233,7 @@ describe("composeCallSiteTweak", () => {
 });
 
 describe("shipped call-site tuning", () => {
-  test("the escalation judge uses managed Jev by default", () => {
+  test("the escalation judge ships no tier and follows the chat model by default", () => {
     const resolved = resolveCallSiteConfig(
       "voiceEscalationJudge",
       LLMSchema.parse({}),
@@ -241,7 +241,7 @@ describe("shipped call-site tuning", () => {
 
     expect(resolved.provider).toBe("cadet");
     expect(resolved.provider_connection).toBeUndefined();
-    expect(resolved.model).toBe("jev-latest");
+    expect(resolved.model).toBe(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model);
   });
 
   test("the escalation judge falls through on a BYOK default provider", () => {
@@ -478,14 +478,14 @@ describe("composition", () => {
     expect(resolved.provider_connection).toBeUndefined();
   });
 
-  test("profileless call sites anchor on balanced intent through the default provider plus their tweaks", () => {
+  test("profileless call sites inherit the main agent's winner plus their tweaks", () => {
     const llm = LLMSchema.parse(anthropicDp);
     const resolved = resolveCallSiteConfig("workflowLeaf", llm);
     expect(resolved.provider).toBe("anthropic");
     expect(resolved.provider_connection).toBe("anthropic-personal");
     expect(resolved.effort).toBe("low");
     expect(resolved.thinking.enabled).toBe(false);
-    expect(resolveDefaultProfileKey("workflowLeaf", llm)).toBeUndefined();
+    expect(resolveDefaultProfileKey("workflowLeaf", llm)).toBe("balanced");
   });
 });
 
@@ -537,7 +537,7 @@ describe("mix profiles", () => {
 });
 
 describe("resolveDefaultProfileKey", () => {
-  test("mainAgent: activeProfile, else the call-site intent", () => {
+  test("mainAgent: activeProfile, else the balanced anchor; background sites inherit", () => {
     const withActive = LLMSchema.parse({
       profiles: { mine: completeCustom },
       activeProfile: "mine",
@@ -546,8 +546,10 @@ describe("resolveDefaultProfileKey", () => {
     expect(resolveDefaultProfileKey("mainAgent", withActive)).toBe("mine");
     const without = LLMSchema.parse(anthropicDp);
     expect(resolveDefaultProfileKey("mainAgent", without)).toBe("balanced");
+    // conversationSummarization ships no profile — it reports the main
+    // agent's winner.
     expect(resolveDefaultProfileKey("conversationSummarization", without)).toBe(
-      "cost-optimized",
+      "balanced",
     );
   });
 
@@ -569,16 +571,20 @@ describe("explicit default-profile references resolve through the default provid
     "cost-optimized": { provider: "cadet" as const },
   };
 
-  test("an override pin to a default key matches the intent-rung resolution", () => {
-    const llm = LLMSchema.parse({ profiles: managedStubs, ...anthropicDp });
+  test("an override pin to a default key matches the call-site pin resolution", () => {
+    const llm = LLMSchema.parse({
+      profiles: managedStubs,
+      callSites: { conversationSummarization: { profile: "cost-optimized" } },
+      ...anthropicDp,
+    });
     const pinned = resolveCallSiteConfig("mainAgent", llm, {
       overrideProfile: "cost-optimized",
     });
-    // conversationSummarization's call-site default is the same intent.
-    const viaIntent = resolveCallSiteConfig("conversationSummarization", llm);
+    // A site pin to the same default key resolves the same body.
+    const viaSitePin = resolveCallSiteConfig("conversationSummarization", llm);
     expect(pinned.provider).toBe("anthropic");
-    expect(pinned.model).toBe(viaIntent.model);
-    expect(pinned.provider_connection).toBe(viaIntent.provider_connection);
+    expect(pinned.model).toBe(viaSitePin.model);
+    expect(pinned.provider_connection).toBe(viaSitePin.provider_connection);
     expect(pinned.model).not.toBe(
       capturedStringSchema.parse(
         CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"].model,
@@ -652,13 +658,17 @@ describe("hatch-era disabled stubs on default keys", () => {
   };
 
   test("an override pin to a disabled default stub still resolves the provider's column", () => {
-    const llm = LLMSchema.parse({ profiles: disabledStubs, ...anthropicDp });
+    const llm = LLMSchema.parse({
+      profiles: disabledStubs,
+      callSites: { conversationSummarization: { profile: "cost-optimized" } },
+      ...anthropicDp,
+    });
     const pinned = resolveCallSiteConfig("mainAgent", llm, {
       overrideProfile: "cost-optimized",
     });
-    const viaIntent = resolveCallSiteConfig("conversationSummarization", llm);
+    const viaSitePin = resolveCallSiteConfig("conversationSummarization", llm);
     expect(pinned.provider).toBe("anthropic");
-    expect(pinned.model).toBe(viaIntent.model);
+    expect(pinned.model).toBe(viaSitePin.model);
   });
 
   test("activeProfile pointing at a disabled default stub resolves, not falls through", () => {

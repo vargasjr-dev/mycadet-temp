@@ -28,12 +28,11 @@ const callSiteEntrySchema = z.object({
   defaultProfile: z.string().optional(),
   /**
    * The code-owned `CALL_SITE_DEFAULTS` tier key, independent of pins and
-   * tier remaps. Clients group call sites by tier with this; grouping by
-   * `defaultProfile` would scatter pinned or remapped sites across their
-   * winners. Profileless call sites report `balanced`: the resolver's
-   * fallback anchor consults the balanced remap for them, so they follow
-   * the Balanced tier like any balanced-keyed site. A managed-only tier is
-   * omitted when it has no body under the workspace's default provider.
+   * tier remaps. Only `mainAgent` ships one (the Balanced anchor); every
+   * other call site reports undefined and follows the chat model. Clients
+   * grouping by `defaultProfile` would scatter pinned or remapped sites
+   * across their winners. A managed-only tier is omitted when it has no
+   * body under the workspace's default provider.
    */
   shippedDefaultProfile: z.string().optional(),
 });

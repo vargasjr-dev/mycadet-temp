@@ -1,12 +1,13 @@
-import { JEV_MANAGED_PROFILE_KEY } from "./default-profile-names.js";
 import { type LLMCallSite } from "./schemas/llm.js";
 
 type CallSiteDefaultConfig = {
   /**
-   * Named profile the call site resolves to. Omit to fall through to the
-   * balanced intent resolved through `llm.default` — used for call
-   * sites that must resolve to a credentialed provider on every install
-   * rather than pinning a profile that may be unavailable.
+   * Named profile the call site resolves to. Only `mainAgent` ships one —
+   * the balanced intent resolved through `llm.default` is the anchor the
+   * main agent bottoms out on. Every other call site omits this and
+   * inherits the main agent's winner, so the user's chat-model selection is
+   * the single default (Velcro #18). User pins live in
+   * `llm.callSites[callSite].profile`, which still outranks it.
    */
   profile?: string;
   /**
@@ -33,17 +34,16 @@ type CallSiteDefaultConfig = {
 
 export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   mainAgent: { profile: "balanced" },
-  subagentSpawn: { profile: "balanced" },
-  compactionAgent: { profile: "balanced" },
-  patternScan: { profile: "balanced" },
-  narrativeRefinement: { profile: "balanced" },
-  callAgent: { profile: "balanced" },
-  memoryConsolidation: { profile: "balanced", disableCache: true },
-  identityIntro: { profile: "balanced" },
-  emptyStateGreeting: { profile: "balanced" },
+  subagentSpawn: {},
+  compactionAgent: {},
+  patternScan: {},
+  narrativeRefinement: {},
+  callAgent: {},
+  memoryConsolidation: { disableCache: true },
+  identityIntro: {},
+  emptyStateGreeting: {},
 
   memoryRouter: {
-    profile: "cost-optimized",
     contextWindow: { maxInputTokens: 1000000 },
   },
   // Forced-tool selection over a numbered candidate pool: the model picks ids,
@@ -53,33 +53,36 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   // Low effort matches `recall`, the sibling site doing the same kind of
   // bounded judgment, and keeps retrieval latency low on escalated voice turns.
   memoryV3SelectL2: {
-    profile: "balanced",
     temperature: 0,
     effort: "low",
     thinking: { enabled: false, streamThinking: false },
   },
   recall: {
-    profile: "balanced",
     maxTokens: 4096,
     effort: "low",
     thinking: { enabled: false, streamThinking: false },
     temperature: 0,
     disableCache: true,
   },
-  filingAgent: { profile: "cost-optimized" },
-  memoryExtraction: { profile: "cost-optimized" },
-  memoryRetrieval: { profile: "cost-optimized" },
-  memoryRetrospective: { profile: "cost-optimized" },
-  memoryV2Migration: { profile: "cost-optimized" },
-  memoryV2Sweep: { profile: "cost-optimized" },
-  memoryV2Consolidation: { profile: "balanced" },
-  conversationSummarization: { profile: "cost-optimized" },
-  conversationTitle: { profile: "cost-optimized", disableCache: true },
-  approvalCopy: { profile: "cost-optimized" },
-  approvalConversation: { profile: "cost-optimized" },
-  trustRuleSuggestion: { profile: "cost-optimized" },
-  styleAnalyzer: { profile: "cost-optimized" },
-  inference: { profile: "cost-optimized" },
+  conversationStarters: {
+    effort: "low",
+    thinking: { enabled: false },
+  },
+
+  filingAgent: {},
+  memoryExtraction: {},
+  memoryRetrieval: {},
+  memoryRetrospective: {},
+  memoryV2Migration: {},
+  memoryV2Sweep: {},
+  memoryV2Consolidation: {},
+  conversationSummarization: {},
+  conversationTitle: { disableCache: true },
+  approvalCopy: {},
+  approvalConversation: {},
+  trustRuleSuggestion: {},
+  styleAnalyzer: {},
+  inference: {},
   // Vision captioning for the image-fallback plugin. No pinned profile — the
   // plugin resolves a vision-capable profile itself via `doesSupportVision` and
   // passes it as an `overrideProfile`, so the call-site default is a fallback
@@ -88,40 +91,33 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   vision: {},
 
   heartbeatAgent: {
-    profile: "cost-optimized",
   },
   commitMessage: {
-    profile: "cost-optimized",
     maxTokens: 120,
     temperature: 0.2,
     effort: "low",
     thinking: { enabled: false },
   },
   replySuggestion: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
     disableCache: true,
   },
   guardianQuestionCopy: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
   notificationDecision: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
   preferenceExtraction: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
   // Voice intent classification and explicit selected-text edits are
   // latency-sensitive: the caller is waiting for insertion or dispatch.
   interactionClassifier: {
-    profile: "latency-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
@@ -132,7 +128,6 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   // table rather than a model id they may hold no credential for. The profile
   // is user-facing ("Fast"), so a user edit to it moves this call site too.
   voiceProgressNarration: {
-    profile: "latency-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
@@ -143,7 +138,6 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   // cross-session TTFT tails and over-escalation of small talk under open-task
   // context pressure.
   voiceFrontDoor: {
-    profile: "latency-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
@@ -151,33 +145,28 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
   // BYOK install it has no body, so the judge is unavailable and the front
   // door's own decision stands.
   voiceEscalationJudge: {
-    profile: JEV_MANAGED_PROFILE_KEY,
   },
   // The barge-in continuation judge remains off until a TypeSafe profile is
   // pinned here (see live-voice/continuation-judge.ts).
-  voiceContinuationJudge: { profile: "cost-optimized" },
+  voiceContinuationJudge: {},
   // Names the background continuation a barge-in spawns, from the interrupted
   // transcript. The label is fixed at spawn, so the call runs under a short
   // timeout and the deterministic label stands in when it misses; that makes
   // the latency-class profile wasted spend here.
   voiceContinuationLabel: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
     disableCache: true,
   },
   inviteInstructionGenerator: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
   skillCategoryInference: {
-    profile: "cost-optimized",
     effort: "low",
     thinking: { enabled: false },
   },
   homeGreeting: {
-    profile: "cost-optimized",
     maxTokens: 60,
     effort: "low",
     thinking: { enabled: false },
@@ -185,7 +174,6 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     disableCache: true,
   },
   homeSuggestedPrompts: {
-    profile: "cost-optimized",
     maxTokens: 512,
     effort: "low",
     thinking: { enabled: false },

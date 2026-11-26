@@ -37,14 +37,17 @@ import {
  *      user-facing chat-model selection
  *   3. `llm.callSites[callSite].profile` (the call site's named profile)
  *   4. `CALL_SITE_DEFAULTS[callSite].profile` intent resolved through
- *      `llm.default`
- *   5. balanced intent through `llm.default`: the code-owned anchor
- *      for profileless call sites, or when nothing above is usable
+ *      `llm.default` — `mainAgent` only; every other call site's code-owned
+ *      default is profileless
+ *   5. the main agent's winner: profileless call sites and any resolution
+ *      whose every named rung was unusable inherit whatever the chat surface
+ *      resolves to, so the main agent's selection is the single default
+ *      (Velcro #18); `mainAgent` itself bottoms out on the code-owned
+ *      balanced intent through `llm.default`
  *
  * A winner must carry its own `provider` AND `model`: the base layer's schema
- * default identity never stands in for a selected profile. The anchor is
- * code-owned and resolved through `llm.default`, never through
- * user-mutable state.
+ * default identity never stands in for a selected profile. The anchor is the
+ * main agent's winner, which bottoms out in the code-owned catalog.
  *
  * `temperature`/`top_p` come only from the winner (or an explicit call-site
  * tweak); `logitBias` only ever from the winner. These are provider-coupled, so
@@ -159,8 +162,10 @@ export function resolveCallSiteConfig(
 //   2. `llm.activeProfile` (mainAgent only — it IS that call site's selection)
 //   3. `llm.callSites[callSite].profile`
 //   4. `CALL_SITE_DEFAULTS[callSite].profile` intent × default provider
-//   5. balanced intent × default provider (profileless sites, or nothing
-//      above usable)
+//      (`mainAgent` only — every other site's code-owned default is
+//      profileless)
+//   5. main agent's winner (profileless sites, or nothing above usable);
+//      `mainAgent` bottoms out on balanced intent × default provider
 // A winner must carry its own `provider` AND `model`: the base layer's
 // schema-default identity must never stand in for a selected profile (that
 // would be merge inheritance by the back door). A fallback anchor must be
@@ -232,11 +237,29 @@ export function selectWinningProfile(
       return { profileName: intent, source: "default", entry };
     }
   }
-  // Anchor: profileless call sites (`vision`, `workflowLeaf`) and any
-  // resolution whose every named rung was unusable land on balanced intent
-  // through the default provider, bottoming out on the code-owned catalog,
-  // so it always resolves. `profileName` stays null on the catalog path:
-  // the anchor itself is not a selection.
+  // Anchor: profileless call sites and any resolution whose every named rung
+  // was unusable inherit the main agent's winner — the user's chat-model
+  // selection — so a working chat surface means working background call
+  // sites, and a broken one fails loudly at the chat surface instead of
+  // dying privately in the background (Velcro #18). mainAgent itself bottoms
+  // out on the code-owned balanced intent through the default provider so
+  // the chain always resolves and the recursion has a floor. `profileName`
+  // stays null on the catalog path: the anchor itself is not a selection.
+  if (callSite !== "mainAgent") {
+    const main = selectWinningProfile("mainAgent", llm, {
+      ...opts,
+      // The background site's per-turn override belongs to that site, not to
+      // the chat surface whose winner is inherited here.
+      overrideProfile: undefined,
+    });
+    if (main.entry) {
+      return {
+        profileName: main.profileName,
+        source: "default",
+        entry: main.entry,
+      };
+    }
+  }
   return {
     profileName: null,
     source: "default",
@@ -620,14 +643,20 @@ export function resolveDefaultProfileKey(
 /**
  * Returns the code-owned profile tier for catalog display when that tier is
  * available through the workspace's default provider. Workspace call-site
- * pins do not affect this value. A managed-only tier on a BYOK install returns
- * undefined so clients do not report a profile that cannot run there.
+ * pins do not affect this value. Only `mainAgent` ships a profile tier —
+ * every other call site inherits the main agent's winner and reports
+ * undefined so clients can label it as following the chat model. A
+ * managed-only tier on a BYOK install returns undefined so clients do not
+ * report a profile that cannot run there.
  */
 export function resolveShippedDefaultProfileKey(
   callSite: LLMCallSite,
   llm: z.infer<typeof LLMSchema>,
 ): string | undefined {
-  const intent = CALL_SITE_DEFAULTS[callSite]?.profile ?? "balanced";
+  const intent = CALL_SITE_DEFAULTS[callSite]?.profile;
+  if (intent == null) {
+    return undefined;
+  }
   return usableDefaultIntent(intent, llm, {}, () => undefined) == null
     ? undefined
     : intent;

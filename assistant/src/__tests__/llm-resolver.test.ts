@@ -654,7 +654,7 @@ describe("resolveCallSiteConfig", () => {
     expect(resolved.contextWindow.maxInputTokens).toBe(1048576);
   });
 
-  test("call site with no explicit config falls back to CALL_SITE_DEFAULTS", () => {
+  test("a call site with no explicit config inherits the main agent's profile", () => {
     const llm = LLMSchema.parse({
       profiles: {
         "cost-optimized": {
@@ -664,6 +664,7 @@ describe("resolveCallSiteConfig", () => {
           effort: "low",
         },
       },
+      activeProfile: "cost-optimized",
     });
     const resolved = resolveCallSiteConfig("memoryExtraction", llm);
     expect(resolved.model).toBe("claude-haiku-4-5-20251001");
@@ -784,9 +785,10 @@ describe("resolveCallSiteConfig", () => {
       expect(resolved.provider).toBe("openai");
     }
 
-    // Cost-optimized call sites resolve the intent through the BYOK provider.
+    // Profileless call sites inherit the main agent's winner — the user's
+    // active profile — so no site resolves to a cloud-intent model.
     const costSite = resolveCallSiteConfig("heartbeatAgent", byokConfig);
-    expect(costSite.model).toBe(resolveModelIntent("openai", "cost-optimized"));
+    expect(costSite.model).toBe("gpt-5.5");
 
     // mainAgent uses the user's active profile.
     const balancedSite = resolveCallSiteConfig("mainAgent", byokConfig);
@@ -1271,7 +1273,7 @@ describe("resolveDefaultProfileKey", () => {
     expect(resolveDefaultProfileKey("mainAgent", llm)).toBe("balanced");
   });
 
-  test("non-mainAgent ignores activeProfile and returns the call-site intent", () => {
+  test("non-mainAgent inherits the main agent's active profile", () => {
     const llm = LLMSchema.parse({
       profiles: {
         balanced: { provider: "anthropic", model: "claude-sonnet-4-7" },
@@ -1280,14 +1282,14 @@ describe("resolveDefaultProfileKey", () => {
       },
       activeProfile: "gemini",
     });
-    // filingAgent's CALL_SITE_DEFAULTS profile is `cost-optimized` — not gemini.
-    expect(resolveDefaultProfileKey("filingAgent", llm)).toBe("cost-optimized");
+    // filingAgent ships no profile of its own — the chat model is the default.
+    expect(resolveDefaultProfileKey("filingAgent", llm)).toBe("gemini");
   });
 
   test("a disabled managed default stub does not divert the key to custom-*", () => {
-    // The default intent is code-owned: a legacy disabled stub is overridden
-    // by the catalog body, and the user-mutable custom-* clone never captures
-    // the call site.
+    // The main agent's anchor is code-owned: a legacy disabled stub is
+    // overridden by the catalog body, and the user-mutable custom-* clone
+    // never captures the call site.
     const llm = LLMSchema.parse({
       profiles: {
         "cost-optimized": { source: "cloud", status: "disabled" },
@@ -1297,7 +1299,7 @@ describe("resolveDefaultProfileKey", () => {
         },
       },
     });
-    expect(resolveDefaultProfileKey("filingAgent", llm)).toBe("cost-optimized");
+    expect(resolveDefaultProfileKey("filingAgent", llm)).toBe("balanced");
   });
 
   test("mainAgent returns the mix key (not an arm) when activeProfile is a mix", () => {
@@ -1367,11 +1369,9 @@ describe("resolveEffectiveProfileKey", () => {
     ).toBe("pinned");
   });
 
-  test("non-mainAgent: call-site intent when no override", () => {
-    // filingAgent's CALL_SITE_DEFAULTS profile is `cost-optimized`.
-    expect(resolveEffectiveProfileKey("filingAgent", llm)).toBe(
-      "cost-optimized",
-    );
+  test("non-mainAgent: inherits the main agent's active profile when no override", () => {
+    // filingAgent ships no profile — the chat model is the default.
+    expect(resolveEffectiveProfileKey("filingAgent", llm)).toBe("balanced");
   });
 
   test("non-mainAgent: the override outranks an explicit call-site profile (forced or not)", () => {
@@ -1502,18 +1502,19 @@ describe("resolveCallSiteConfig sampling-param provenance (temperature / top_p)"
     expect(resolved.topP).toBeNull();
   });
 
-  test("homeGreeting / commitMessage resolve to a temperature with NO top_p", () => {
+  test("homeGreeting / commitMessage keep call-site temperature with the inherited winner's top_p", () => {
     const greeting = resolveCallSiteConfig("homeGreeting", balancedActive);
-    expect(greeting.model).toBe("claude-haiku-4-5-20251001");
-    // Per-call-site temperature from CALL_SITE_DEFAULTS survives.
+    expect(greeting.model).toBe("MiniMaxAI/MiniMax-M3");
+    // Per-call-site temperature from CALL_SITE_DEFAULTS survives the
+    // inheritance.
     expect(greeting.temperature).toBe(0.7);
-    // The balanced profile's top_p does NOT — both together would trip
-    // Anthropic's "temperature and top_p cannot both be specified".
-    expect(greeting.topP).toBeNull();
+    // The inherited winner's top_p applies — profile and sampling come from
+    // one winner, so they are coherent by construction.
+    expect(greeting.topP).toBe(0.95);
 
     const commit = resolveCallSiteConfig("commitMessage", balancedActive);
     expect(commit.temperature).toBe(0.2);
-    expect(commit.topP).toBeNull();
+    expect(commit.topP).toBe(0.95);
   });
 
   test("a profile-less call site anchors on the balanced intent, which the user's shadow implements (provider AND sampling)", () => {
@@ -1638,7 +1639,7 @@ describe("resolveCallSiteConfig sampling-param provenance (temperature / top_p)"
 });
 
 describe("resolveCallSiteConfig — workflowLeaf default", () => {
-  test("anchors on the balanced intent through the default provider rather than pinning cost-optimized", () => {
+  test("anchors on the main agent's winner rather than pinning cost-optimized", () => {
     const llm = LLMSchema.parse({
       profiles: {
         "cost-optimized": {
@@ -1652,15 +1653,16 @@ describe("resolveCallSiteConfig — workflowLeaf default", () => {
       },
     });
     const resolved = resolveCallSiteConfig("workflowLeaf", llm);
-    // No pinned profile → the model comes from the balanced-intent anchor
-    // through the default provider, NOT the `cost-optimized` profile.
+    // No pinned profile and no activeProfile → the model comes from the
+    // main agent's code-owned balanced anchor, NOT the `cost-optimized`
+    // profile.
     expect(resolved.model).toBe(resolveModelIntent("anthropic", "balanced"));
     expect(resolved.model).not.toBe("claude-haiku-4-5-20251001");
     // Call-site tuning still applies.
     expect(resolved.effort).toBe("low");
     expect(resolved.thinking?.enabled).toBe(false);
-    // The call site has no implicit default profile key.
-    expect(resolveDefaultProfileKey("workflowLeaf", llm)).toBeUndefined();
+    // The call site's default key is the main agent's winner now.
+    expect(resolveDefaultProfileKey("workflowLeaf", llm)).toBe("balanced");
   });
 
   test("honors an explicit workflowLeaf call-site override", () => {
