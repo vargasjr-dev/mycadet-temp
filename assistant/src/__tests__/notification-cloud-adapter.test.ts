@@ -57,11 +57,12 @@ mock.module("../cloud/client.js", () => ({
       return {
         cloudAssistantId: "test-assistant-id",
         fetch: async (path: string, init?: RequestInit) => {
-          if (init?.body && typeof init.body !== "string") {
+          const rawBody = init?.body;
+          if (rawBody != null && typeof rawBody !== "string") {
             throw new Error("Expected a JSON request body");
           }
-          const body = init?.body
-            ? jsonObjectSchema.parse(JSON.parse(init.body))
+          const body = rawBody
+            ? jsonObjectSchema.parse(JSON.parse(rawBody))
             : {};
           fetchCalls.push({
             path,
