@@ -276,7 +276,7 @@ describe("ui_update preserves client-owned keys the daemon schema omits", () => 
     // The update sent to the client also carries them verbatim.
     const update = sent.find((m) => m.type === "ui_surface_update");
     expect(update).toBeDefined();
-    expect((update as { data: Record<string, unknown> }).data).toEqual({
+    expect(update?.data).toEqual({
       title: "Notes (edited)",
       surfaceId: "doc-real",
       content: "# Heading",
@@ -308,12 +308,12 @@ describe("ui_update on a restored unknown surface type", () => {
 
     // The unknown type is preserved and the merge applied verbatim.
     const stored = ctx.surfaceState.get("future-1");
-    expect(stored?.surfaceType as string).toBe("future_widget");
+    expect(stored).toMatchObject({ surfaceType: "future_widget" });
     expect(stored?.data).toEqual({ title: "Widget (edited)", customField: 42 });
 
     const update = sent.find((m) => m.type === "ui_surface_update");
     expect(update).toBeDefined();
-    expect((update as { data: Record<string, unknown> }).data).toEqual({
+    expect(update?.data).toEqual({
       title: "Widget (edited)",
       customField: 42,
     });
@@ -335,9 +335,11 @@ describe("ui_update on a restored unknown surface type", () => {
     // on divergent data.
     ctx.currentTurnSurfaces.push({
       surfaceId: "future-1",
-      surfaceType: "future_widget",
-      data: { title: "Widget", customField: 42 },
-    } as unknown as (typeof ctx.currentTurnSurfaces)[number]);
+      ...restoreSurfaceStateEntry({
+        surfaceType: "future_widget",
+        data: { title: "Widget", customField: 42 },
+      }),
+    });
 
     const result = await surfaceProxyResolver(ctx, "ui_update", {
       surface_id: "future-1",
@@ -346,12 +348,10 @@ describe("ui_update on a restored unknown surface type", () => {
     expect(result.isError).toBe(false);
 
     // The current-turn snapshot reflects the update, matching surfaceState.
-    expect(ctx.currentTurnSurfaces[0]?.data as Record<string, unknown>).toEqual(
-      {
-        title: "Widget (edited)",
-        customField: 42,
-      },
-    );
+    expect(ctx.currentTurnSurfaces[0]?.data).toEqual({
+      title: "Widget (edited)",
+      customField: 42,
+    });
   });
 });
 
@@ -374,15 +374,13 @@ describe("ui_update normalizes modeled fields for known surface types", () => {
     });
     expect(result.isError).toBe(false);
 
-    const storedHtml = (
-      ctx.surfaceState.get("page-1")?.data as { html: unknown }
-    ).html;
+    const storedData = ctx.surfaceState.get("page-1")?.data;
+    const storedHtml =
+      storedData && "html" in storedData ? storedData.html : undefined;
     expect(typeof storedHtml).toBe("string");
 
     const update = sent.find((m) => m.type === "ui_surface_update");
     expect(update).toBeDefined();
-    expect(typeof (update as { data: Record<string, unknown> }).data.html).toBe(
-      "string",
-    );
+    expect(update?.data).toMatchObject({ html: expect.any(String) });
   });
 });

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { MessagingProvider } from "../messaging/provider.js";
 import type { SendOptions } from "../messaging/provider-types.js";
 import type { OAuthConnection } from "../oauth/connection.js";
+import type { ChannelSendParams } from "../runtime/channel-send.js";
 
 const sendMessageMock = mock(async (..._args: unknown[]) => ({
   id: "msg-1",
@@ -50,6 +51,20 @@ const telegramProvider: MessagingProvider = {
 let provider: MessagingProvider = phoneProvider;
 let connection: OAuthConnection | undefined = undefined;
 
+function makeOutlookConnection(): OAuthConnection {
+  return {
+    id: "outlook-conn-1",
+    provider: "outlook",
+    accountInfo: null,
+    request: async () => {
+      throw new Error("Unexpected OAuth request");
+    },
+    withToken: async () => {
+      throw new Error("Unexpected OAuth token request");
+    },
+  };
+}
+
 /** Fires during provider resolution, the first await after the entry guard. */
 let onResolveProvider: (() => void) | null = null;
 
@@ -70,16 +85,21 @@ mock.module("../config/bundled-skills/messaging/tools/shared.js", () => ({
 // ── The transport-backed send ──
 
 const ADDRESSABLE = new Set(["slack", "telegram", "discord", "whatsapp"]);
-const sendChannelTextMock = mock(async (params: Record<string, unknown>) => ({
-  channel: params.channel,
-  chatId: (params.target as { chatId: string }).chatId,
-  ...((params.target as { threadId?: string }).threadId
-    ? { threadId: (params.target as { threadId?: string }).threadId }
-    : {}),
-  messageIds: ["1700000000.000100"],
-  lastMessageId: "1700000000.000100",
-  recordedIn: "home-1",
-}));
+const sendChannelTextMock = mock(
+  async ({ channel, target }: ChannelSendParams) => {
+    if (target.kind !== "chat") {
+      throw new Error("Expected a chat target");
+    }
+    return {
+      channel,
+      chatId: target.chatId,
+      ...(target.threadId ? { threadId: target.threadId } : {}),
+      messageIds: ["1700000000.000100"],
+      lastMessageId: "1700000000.000100",
+      recordedIn: "home-1",
+    };
+  },
+);
 
 mock.module("../runtime/channel-send.js", () => ({
   isProactivelyAddressable: (channel: string) => ADDRESSABLE.has(channel),
@@ -362,10 +382,7 @@ describe("messaging-send tool", () => {
       const filePath = join(dir, "report.pdf");
       writeFileSync(filePath, "pdf-bytes");
       provider = outlookProvider;
-      connection = {
-        id: "outlook-conn-1",
-        provider: "outlook",
-      } as OAuthConnection;
+      connection = makeOutlookConnection();
 
       try {
         const result = await run(
@@ -405,10 +422,7 @@ describe("messaging-send tool", () => {
 
     test("creates an Outlook draft without a To address when conversation_id is not an email", async () => {
       provider = outlookProvider;
-      connection = {
-        id: "outlook-conn-1",
-        provider: "outlook",
-      } as OAuthConnection;
+      connection = makeOutlookConnection();
 
       const result = await run(
         {
@@ -446,10 +460,7 @@ describe("messaging-send tool", () => {
 
     test("creates an Outlook reply draft instead of sending when in_reply_to is set", async () => {
       provider = outlookProvider;
-      connection = {
-        id: "outlook-conn-1",
-        provider: "outlook",
-      } as OAuthConnection;
+      connection = makeOutlookConnection();
 
       const result = await run(
         {
@@ -522,10 +533,7 @@ describe("messaging-send tool", () => {
 
     test("new message", async () => {
       provider = outlookProvider;
-      connection = {
-        id: "outlook-conn-1",
-        provider: "outlook",
-      } as OAuthConnection;
+      connection = makeOutlookConnection();
 
       await expect(
         run(
@@ -543,10 +551,7 @@ describe("messaging-send tool", () => {
 
     test("reply", async () => {
       provider = outlookProvider;
-      connection = {
-        id: "outlook-conn-1",
-        provider: "outlook",
-      } as OAuthConnection;
+      connection = makeOutlookConnection();
 
       await expect(
         run(

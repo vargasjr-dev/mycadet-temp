@@ -19,39 +19,34 @@ function stubChatCompletionsClient(
   provider: VercelAIGatewayProvider,
   capture: (params: Record<string, unknown>) => void,
 ): void {
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: Record<string, unknown>) => {
-          capture(params);
-          return {
-            [Symbol.asyncIterator]: async function* () {
-              yield {
-                choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
-                usage: null,
-                model: "openai/gpt-5.5",
-              };
-            },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: Record<string, unknown>) => {
+      capture(params);
+      return {
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
+            usage: null,
+            model: "openai/gpt-5.5",
           };
         },
-      },
+      };
     },
-  };
+  });
 }
 
 const DEFAULT_BASE_URL = "https://ai-gateway.vercel.sh/v1";
 
 function resolvedBaseURL(provider: VercelAIGatewayProvider): string {
-  return (provider as unknown as { resolvedBaseURL: string }).resolvedBaseURL;
+  return provider["resolvedBaseURL"];
 }
 
 function stubAnthropicInner(
   provider: VercelAIGatewayProvider,
   sendMessage: AnthropicProvider["sendMessage"],
 ): void {
-  (
-    provider as unknown as { anthropicInner: AnthropicProvider }
-  ).anthropicInner = { sendMessage } as unknown as AnthropicProvider;
+  const inner = provider["getAnthropicInner"]();
+  inner.sendMessage = sendMessage;
 }
 
 const USER_MESSAGE: Message[] = [

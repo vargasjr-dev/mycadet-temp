@@ -1,7 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ImageBlock, TableBlock } from "@slack/types";
-
 import { renderSlackBlocks } from "./render.js";
 
 describe("renderSlackBlocks", () => {
@@ -82,7 +80,10 @@ describe("renderSlackBlocks", () => {
       "| **bob** | [site](https://e.com) |",
     ].join("\n");
     const blocks = renderSlackBlocks(table);
-    const t = blocks![0] as TableBlock;
+    const t = blocks![0];
+    if (t?.type !== "table") {
+      throw new Error("Expected a table block");
+    }
     expect(t.rows[1]).toEqual([
       {
         type: "rich_text",
@@ -111,7 +112,10 @@ describe("renderSlackBlocks", () => {
       "| --- | --- |",
       "| **acme** | ![logo](https://e.com/l.png) |",
     ].join("\n");
-    const t = renderSlackBlocks(table)![0] as TableBlock;
+    const t = renderSlackBlocks(table)![0];
+    if (t?.type !== "table") {
+      throw new Error("Expected a table block");
+    }
     expect(t.rows[1]![1]).toEqual({
       type: "rich_text",
       elements: [
@@ -131,7 +135,10 @@ describe("renderSlackBlocks", () => {
       "| --- | --- |",
       "| [README](./README.md) | [api](#api) |",
     ].join("\n");
-    const t = renderSlackBlocks(table)![0] as TableBlock;
+    const t = renderSlackBlocks(table)![0];
+    if (t?.type !== "table") {
+      throw new Error("Expected a table block");
+    }
     expect(t.rows[1]).toEqual([
       {
         type: "rich_text",
@@ -156,7 +163,10 @@ describe("renderSlackBlocks", () => {
 
   test("keeps plain table cells as raw_text", () => {
     const table = ["| A | B |", "| --- | --- |", "| one | two |"].join("\n");
-    const t = renderSlackBlocks(table)![0] as TableBlock;
+    const t = renderSlackBlocks(table)![0];
+    if (t?.type !== "table") {
+      throw new Error("Expected a table block");
+    }
     expect(t.rows[1]).toEqual([
       { type: "raw_text", text: "one" },
       { type: "raw_text", text: "two" },
@@ -169,7 +179,10 @@ describe("renderSlackBlocks", () => {
       "| :-- | :-: | --: | --- |",
       "| a | b | c | d |",
     ].join("\n");
-    const t = renderSlackBlocks(table)![0] as TableBlock;
+    const t = renderSlackBlocks(table)![0];
+    if (t?.type !== "table") {
+      throw new Error("Expected a table block");
+    }
     expect(t.column_settings).toEqual([
       { align: "left" },
       { align: "center" },
@@ -180,7 +193,10 @@ describe("renderSlackBlocks", () => {
 
   test("omits column_settings when no column is aligned", () => {
     const table = ["| A | B |", "| --- | --- |", "| a | b |"].join("\n");
-    const t = renderSlackBlocks(table)![0] as TableBlock;
+    const t = renderSlackBlocks(table)![0];
+    if (t?.type !== "table") {
+      throw new Error("Expected a table block");
+    }
     expect(t.column_settings).toBeUndefined();
   });
 
@@ -210,14 +226,20 @@ describe("renderSlackBlocks", () => {
   test("truncates image alt_text to Slack's 2000-char cap", () => {
     const alt = "x".repeat(2500);
     const blocks = renderSlackBlocks(`![${alt}](https://example.com/cat.png)`);
-    const image = blocks![0] as ImageBlock;
+    const image = blocks![0];
+    if (image?.type !== "image") {
+      throw new Error("Expected a image block");
+    }
     expect(image.type).toBe("image");
     expect(image.alt_text).toBe("x".repeat(2000));
   });
 
   test("falls back to a non-empty alt_text for an image with no alt", () => {
     const blocks = renderSlackBlocks("![](https://example.com/cat.png)");
-    const image = blocks![0] as ImageBlock;
+    const image = blocks![0];
+    if (image?.type !== "image") {
+      throw new Error("Expected a image block");
+    }
     expect(image.type).toBe("image");
     expect(image.alt_text).toBe("image");
   });

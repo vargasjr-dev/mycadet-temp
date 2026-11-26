@@ -202,7 +202,7 @@ describe("createDaemonBatchTranscriber", () => {
       expect.unreachable("should have thrown");
     } catch (err) {
       expect(err).toBe(original);
-      expect((err as Error).name).toBe("AbortError");
+      expect(err).toMatchObject({ name: "AbortError" });
     }
   });
 

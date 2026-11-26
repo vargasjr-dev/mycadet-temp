@@ -69,7 +69,9 @@ function setGuardian(notes: string | null | undefined): void {
 // ── Provider mock with system prompt capture ──────────────────────────
 
 let configuredProvider: {
-  sendMessage: (...args: unknown[]) => Promise<unknown>;
+  sendMessage: (
+    ...args: Parameters<Provider["sendMessage"]>
+  ) => Promise<unknown>;
 } | null = null;
 let extractedToolUse: unknown = null;
 let capturedSystemPrompt: string | undefined;
@@ -88,7 +90,7 @@ mock.module("../providers/provider-send-message.js", () => ({
 
 import { evaluateSignal } from "../notifications/decision-engine.js";
 import type { NotificationSignal } from "../notifications/signal.js";
-import type { NotificationChannel } from "../notifications/types.js";
+import type { Provider } from "../providers/types.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -116,8 +118,7 @@ function makeSignal(
 
 function setupLLMProvider() {
   configuredProvider = {
-    sendMessage: async (...args: unknown[]) => {
-      const options = args[1] as { systemPrompt?: string } | undefined;
+    sendMessage: async (_messages, options) => {
       capturedSystemPrompt = options?.systemPrompt;
       return { content: [] };
     },
@@ -155,7 +156,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<recipient-context>");
@@ -170,7 +171,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
@@ -182,7 +183,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
@@ -194,7 +195,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).not.toContain("<recipient-context>");
@@ -206,7 +207,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(signal, ["cadet"] as NotificationChannel[]);
+    await evaluateSignal(signal, ["cadet"]);
 
     expect(capturedSystemPrompt).toBeDefined();
     expect(capturedSystemPrompt).toContain("<recipient-context>");
@@ -231,9 +232,7 @@ describe("recipient context in notification decision engine", () => {
     configuredProvider = null;
 
     const signal = makeSignal();
-    const decision = await evaluateSignal(signal, [
-      "cadet",
-    ] as NotificationChannel[]);
+    const decision = await evaluateSignal(signal, ["cadet"]);
 
     expect(decision.fallbackUsed).toBe(true);
     expect(decision.shouldNotify).toBe(true);
@@ -248,11 +247,7 @@ describe("recipient context in notification decision engine", () => {
     setupLLMProvider();
 
     const signal = makeSignal();
-    await evaluateSignal(
-      signal,
-      ["cadet"] as NotificationChannel[],
-      "Notify only for urgent items",
-    );
+    await evaluateSignal(signal, ["cadet"], "Notify only for urgent items");
 
     expect(capturedSystemPrompt).toBeDefined();
     const prefsIdx = capturedSystemPrompt!.indexOf("</user-preferences>");

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AssistantConfig } from "../config/schema.js";
+import { AssistantConfigSchema } from "../config/schema.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import type { ExecuteWorkflowOptions } from "./engine.js";
 import { WorkflowNotFoundError } from "./engine.js";
@@ -21,16 +21,16 @@ const TRUST: TrustContext = {
   trustClass: "guardian",
 };
 
-/** Minimal config exposing only the fields the manager reads. */
-function makeConfig(maxConcurrentRuns = 3): AssistantConfig {
-  return {
+/** Default config with a test-specific concurrent run cap. */
+function makeConfig(maxConcurrentRuns = 3) {
+  return AssistantConfigSchema.parse({
     workflows: {
       maxAgentsPerRun: 500,
       maxConcurrentLeaves: 6,
       maxConcurrentRuns,
       journalRetentionDays: 30,
     },
-  } as unknown as AssistantConfig;
+  });
 }
 
 /**
@@ -174,7 +174,7 @@ function makeHarness(opts?: {
         });
         resolve(r);
       });
-    }) as ReturnType<WorkflowRunManagerDeps["executeWorkflow"]>;
+    });
   };
 
   const deps: Partial<WorkflowRunManagerDeps> = {
@@ -184,17 +184,17 @@ function makeHarness(opts?: {
     },
     journal: fake.journal,
     getConfig: () => makeConfig(opts?.maxConcurrentRuns),
-    wake: (async (wakeOpts) => {
+    wake: async (wakeOpts) => {
       wakes.push({
         conversationId: wakeOpts.conversationId,
         hint: wakeOpts.hint,
         source: wakeOpts.source,
       });
       return { invoked: true, producedToolCalls: false };
-    }) as WorkflowRunManagerDeps["wake"],
-    broadcast: ((msg) => {
-      broadcasts.push(msg as { type: string });
-    }) as WorkflowRunManagerDeps["broadcast"],
+    },
+    broadcast: (msg) => {
+      broadcasts.push(msg);
+    },
     newRunId: (() => {
       let n = 0;
       return () => `run-${++n}`;

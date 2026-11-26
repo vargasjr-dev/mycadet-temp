@@ -158,7 +158,7 @@ describe("config_set route - request validation", () => {
     const llm = jsonObjectSchema.parse(saved.llm);
     expect(llm.activeProfile).toBe("my-custom-profile");
 
-    const profiles = llm.profiles as Record<string, Record<string, unknown>>;
+    const profiles = jsonObjectSchema.parse(llm.profiles);
     expect(profiles["my-custom-profile"]).toEqual({
       provider: "anthropic",
       model: "claude-opus-4-6",
@@ -210,11 +210,7 @@ describe("config_allowlist_validate route - error handling", () => {
       error: new SyntaxError("Unexpected token } in JSON at position 42"),
     };
 
-    const result = allowlistRoute.handler({}) as {
-      exists: boolean;
-      parseError?: string;
-      errors: unknown[];
-    };
+    const result = jsonObjectSchema.parse(allowlistRoute.handler({}));
     expect(result.exists).toBe(true);
     expect(result.parseError).toContain("Unexpected token");
     expect(result.errors).toEqual([]);
@@ -222,16 +218,13 @@ describe("config_allowlist_validate route - error handling", () => {
 
   test("returns { exists: false } when file is absent", () => {
     mockAllowlistResult = { kind: "ok", value: null };
-    const result = allowlistRoute.handler({}) as { exists: boolean };
+    const result = jsonObjectSchema.parse(allowlistRoute.handler({}));
     expect(result.exists).toBe(false);
   });
 
   test("returns { exists: true, errors } when file is valid", () => {
     mockAllowlistResult = { kind: "ok", value: [] };
-    const result = allowlistRoute.handler({}) as {
-      exists: boolean;
-      errors: unknown[];
-    };
+    const result = jsonObjectSchema.parse(allowlistRoute.handler({}));
     expect(result.exists).toBe(true);
     expect(result.errors).toEqual([]);
   });
@@ -241,12 +234,9 @@ describe("config_allowlist_validate route - error handling", () => {
       kind: "ok",
       value: [{ index: 0, pattern: "(", message: "Unterminated group" }],
     };
-    const result = allowlistRoute.handler({}) as {
-      exists: boolean;
-      errors: Array<{ index: number; pattern: string; message: string }>;
-    };
+    const result = jsonObjectSchema.parse(allowlistRoute.handler({}));
     expect(result.exists).toBe(true);
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]?.message).toBe("Unterminated group");
+    expect(result.errors).toMatchObject([{ message: "Unterminated group" }]);
   });
 });

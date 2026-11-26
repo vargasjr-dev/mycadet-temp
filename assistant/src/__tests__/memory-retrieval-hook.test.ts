@@ -436,16 +436,15 @@ describe("user-prompt-submit hook (memory retrieval)", () => {
       memoryInjectedBlock: "injected-block",
     });
     expect(recordMemoryRecallLogMock).toHaveBeenCalledTimes(1);
-    const logEntry = recordMemoryRecallLogMock.mock.calls[0]?.[0] as {
-      conversationId: string;
-      reason: string;
-    };
-    expect(logEntry.conversationId).toBe("conv-42");
-    expect(logEntry.reason).toBe("graph:none");
+    expect(recordMemoryRecallLogMock.mock.calls[0]?.[0]).toMatchObject({
+      conversationId: "conv-42",
+      reason: "graph:none",
+    });
     // The `memory_recalled` summary publishes through the shared broadcast hub.
     expect(broadcastMessageMock).toHaveBeenCalledTimes(1);
-    const emitted = broadcastMessageMock.mock.calls[0]?.[0] as AssistantEvent;
-    expect(emitted.type).toBe("memory_recalled");
+    expect(broadcastMessageMock.mock.calls[0]?.[0]).toMatchObject({
+      type: "memory_recalled",
+    });
   });
 
   test("memory-v3 active → v2 persists immediately, then the combined update removes it and persists the v3 card block", async () => {

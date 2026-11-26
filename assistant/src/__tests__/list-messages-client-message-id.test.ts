@@ -30,12 +30,6 @@ function resetTables() {
   db.run("DELETE FROM conversations");
 }
 
-interface MessagePayload {
-  role: string;
-  textSegments?: string[];
-  clientMessageId?: string;
-}
-
 describe("handleListMessages clientMessageId", () => {
   beforeEach(resetTables);
 
@@ -53,12 +47,11 @@ describe("handleListMessages clientMessageId", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
     // THEN the snapshot row carries the nonce back for id-based correlation
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].role).toBe("user");
-    expect(body.messages[0].clientMessageId).toBe("nonce-abc");
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].role).toBe("user");
+    expect(response.messages[0].clientMessageId).toBe("nonce-abc");
   });
 
   test("localizes persisted assistant keys without rewriting legacy text", async () => {
@@ -79,8 +72,7 @@ describe("handleListMessages clientMessageId", () => {
       queryParams: { conversationId: localizedConv.id },
       headers: { "accept-language": "es" },
     });
-    const localizedBody = localizedResponse as { messages: MessagePayload[] };
-    expect(localizedBody.messages[0]?.textSegments).toEqual([
+    expect(localizedResponse.messages[0]?.textSegments).toEqual([
       "Me detuve después de varias llamadas de herramienta con formato incorrecto para evitar que esta conversación creciera indefinidamente. Inténtalo de nuevo o cambia de modelo si el problema continúa.",
     ]);
 
@@ -98,8 +90,7 @@ describe("handleListMessages clientMessageId", () => {
       queryParams: { conversationId: legacyConv.id },
       headers: { "accept-language": "es" },
     });
-    const legacyBody = legacyResponse as { messages: MessagePayload[] };
-    expect(legacyBody.messages[0]?.textSegments).toEqual([legacy]);
+    expect(legacyResponse.messages[0]?.textSegments).toEqual([legacy]);
   });
 
   test("omits clientMessageId when the row was persisted without one", async () => {
@@ -116,10 +107,9 @@ describe("handleListMessages clientMessageId", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
     // THEN the field is absent rather than emitted as null/empty
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].clientMessageId).toBeUndefined();
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].clientMessageId).toBeUndefined();
   });
 });

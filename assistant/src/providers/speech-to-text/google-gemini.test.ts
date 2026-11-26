@@ -197,7 +197,7 @@ describe("GoogleGeminiProvider", () => {
       await provider.transcribe(Buffer.from("audio"), "audio/wav");
       expect.unreachable("should have thrown");
     } catch (err) {
-      expect((err as Error).name).toBe("AbortError");
+      expect(err).toMatchObject({ name: "AbortError" });
       expect(err).toBe(abortError);
     }
   });

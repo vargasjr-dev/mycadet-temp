@@ -44,7 +44,7 @@ describe("ContextOverflowError", () => {
   test("carries cause when supplied", () => {
     const cause = new Error("underlying");
     const err = new ContextOverflowError("outer", "openai", { cause });
-    expect((err as Error & { cause?: unknown }).cause).toBe(cause);
+    expect(err.cause).toBe(cause);
   });
 
   test("forwards rawRequest onto the ProviderError", () => {

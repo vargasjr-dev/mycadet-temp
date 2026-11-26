@@ -68,9 +68,9 @@ class MockWebSocket {
     this.listeners.set(type, list);
   }
 
-  removeEventListener(type: string, listener: unknown): void {
-    const list = this.listeners.get(type as WsEventType);
-    const idx = list?.indexOf(listener as WsListener) ?? -1;
+  removeEventListener(type: WsEventType, listener: WsListener): void {
+    const list = this.listeners.get(type);
+    const idx = list?.indexOf(listener) ?? -1;
     if (list && idx !== -1) {
       list.splice(idx, 1);
     }
@@ -149,7 +149,7 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
   let mockWs: MockWebSocket;
   let dialedUrls: string[];
   let dialedOptions: ({ headers?: Record<string, string> } | undefined)[];
-  let originalWebSocket: unknown;
+  let originalWebSocket: typeof WebSocket;
 
   beforeEach(() => {
     // A fully default config: the acceptance criteria are about what the
@@ -161,18 +161,23 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
     dialedOptions = [];
     infoLogs.length = 0;
 
-    originalWebSocket = (globalThis as Record<string, unknown>).WebSocket;
-    (globalThis as Record<string, unknown>).WebSocket = class {
-      constructor(url: string, options?: { headers?: Record<string, string> }) {
-        dialedUrls.push(url);
-        dialedOptions.push(options);
-        return mockWs;
-      }
-    };
+    originalWebSocket = globalThis.WebSocket;
+    Object.defineProperty(globalThis, "WebSocket", {
+      value: class {
+        constructor(
+          url: string,
+          options?: { headers?: Record<string, string> },
+        ) {
+          dialedUrls.push(url);
+          dialedOptions.push(options);
+          return mockWs;
+        }
+      },
+    });
   });
 
   afterEach(() => {
-    (globalThis as Record<string, unknown>).WebSocket = originalWebSocket;
+    globalThis.WebSocket = originalWebSocket;
   });
 
   async function startSession(
@@ -267,10 +272,12 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
       transcriber.sendAudio(Buffer.from([5, 6]), "audio/pcm");
 
       expect(mockWs.sentData).toHaveLength(2);
-      expect(Array.from(mockWs.sentData[0] as Uint8Array)).toEqual([
-        1, 2, 3, 4,
-      ]);
-      expect(Array.from(mockWs.sentData[1] as Uint8Array)).toEqual([5, 6]);
+      const [first, second] = mockWs.sentData;
+      if (!(first instanceof Uint8Array) || !(second instanceof Uint8Array)) {
+        throw new Error("Expected raw audio bytes");
+      }
+      expect(Array.from(first)).toEqual([1, 2, 3, 4]);
+      expect(Array.from(second)).toEqual([5, 6]);
     });
 
     test("drops audio once the outbound buffer is saturated", async () => {
@@ -726,7 +733,11 @@ describe("DeepgramFluxRealtimeTranscriber", () => {
       const opened = infoLogs.find((entry) =>
         entry.message.includes("Opening Deepgram Flux session"),
       );
-      const logged = String((opened?.data as { url?: string })?.url ?? "");
+      const data = opened?.data;
+      const logged =
+        typeof data === "object" && data !== null && "url" in data
+          ? String(data.url ?? "")
+          : "";
       expect(logged).not.toContain(TEST_API_KEY);
       expect(logged).toContain("key=***");
     });

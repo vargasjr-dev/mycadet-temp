@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import {
   addMessage,
   createConversation,
@@ -147,16 +150,15 @@ function requiredFieldsUnder(
 ): string[] {
   let node: Record<string, unknown> | undefined = schema;
   for (const segment of path) {
-    const properties = node?.properties as
-      | Record<string, Record<string, unknown>>
-      | undefined;
-    node = properties?.[segment];
+    const properties: Record<string, unknown> | undefined =
+      jsonObjectSchema.safeParse(node?.properties).data;
+    node = jsonObjectSchema.safeParse(properties?.[segment]).data;
     while (node?.items) {
-      node = node.items as Record<string, unknown>;
+      node = jsonObjectSchema.parse(node.items);
     }
   }
   const required = node?.required;
-  return Array.isArray(required) ? (required as string[]) : [];
+  return z.array(z.string()).safeParse(required).data ?? [];
 }
 
 describe("watch retrospective", () => {
@@ -416,25 +418,26 @@ describe("watch retrospective", () => {
     const appended = getMessages(summary.conversationId).at(-1)!;
     const surface = appended.content.find(
       (block) => block.type === "ui_surface",
-    ) as { surfaceType: string; data: Record<string, unknown> } | undefined;
-    expect(surface?.surfaceType).toBe("card");
-    expect(surface?.data.template).toBe("watch_retro");
-    expect((surface?.data.templateData as { task: string }).task).toBe(
-      "Filing the receipt",
     );
+    expect(surface?.surfaceType).toBe("card");
+    expect(surface?.data?.template).toBe("watch_retro");
+    expect(surface?.data).toMatchObject({
+      templateData: { task: "Filing the receipt" },
+    });
 
     // `title`, `subtitle` and `body` are the whole report for a renderer too
     // old to know the template, so they are derived here rather than left to
     // the model to remember.
-    expect(surface?.data.title).toBe("Filing the receipt");
-    expect(surface?.data.body).toContain("1. Open the inbox");
+    expect(surface?.data?.title).toBe("Filing the receipt");
+    expect(surface?.data?.body).toContain("1. Open the inbox");
 
     // Providers drop `ui_surface` when serializing history, so without the
     // fallback sibling the model's next turn would not know what it showed.
     const fallback = appended.content.find(
       (block) =>
         block.type === "text" &&
-        (block as { _surfaceFallback?: boolean })._surfaceFallback === true,
+        "_surfaceFallback" in block &&
+        block._surfaceFallback === true,
     );
     expect(fallback).toBeDefined();
   });
@@ -497,10 +500,10 @@ describe("watch retrospective", () => {
     const appended = getMessages(conversationId).at(-1)!;
     const surface = appended.content.find(
       (block) => block.type === "ui_surface",
-    ) as { data: Record<string, unknown> } | undefined;
-    expect((surface?.data.templateData as { task: string }).task).toBe(
-      "Corrected reading",
     );
+    expect(surface?.data).toMatchObject({
+      templateData: { task: "Corrected reading" },
+    });
   });
 
   test("says so when the render was bounded", async () => {

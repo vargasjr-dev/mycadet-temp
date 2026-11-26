@@ -34,16 +34,6 @@ function resetTables() {
   clearConversations();
 }
 
-interface MessagePayload {
-  id: string;
-  role: string;
-  contentBlocks?: Array<{ type: string; text?: string }>;
-  clientMessageId?: string;
-  queueStatus?: "queued" | "processing";
-  queuePosition?: number;
-  attachments?: Array<{ id: string; filename: string; kind: string }>;
-}
-
 /** Register a live conversation whose in-memory queue holds `queued`. */
 function registerLiveConversation(
   conversationId: string,
@@ -66,7 +56,7 @@ function makeQueued(overrides: Partial<QueuedMessage>): QueuedMessage {
     onEvent: () => {},
     sentAt: 1_700_000_000_000,
     ...overrides,
-  } as QueuedMessage;
+  };
 }
 
 describe("handleListMessages in-memory queue", () => {
@@ -94,14 +84,13 @@ describe("handleListMessages in-memory queue", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
     // THEN the queued messages are appended after the persisted row, carrying
     // queue state and keyed by their requestId for the delete/steer endpoints
-    expect(body.messages).toHaveLength(3);
-    expect(body.messages[0].queueStatus).toBeUndefined();
+    expect(response.messages).toHaveLength(3);
+    expect(response.messages[0].queueStatus).toBeUndefined();
 
-    const first = body.messages[1];
+    const first = response.messages[1];
     expect(first.queueStatus).toBe("queued");
     expect(first.queuePosition).toBe(1);
     expect(first.role).toBe("user");
@@ -112,7 +101,7 @@ describe("handleListMessages in-memory queue", () => {
     });
     expect(first.clientMessageId).toBe("nonce-queued");
 
-    const second = body.messages[2];
+    const second = response.messages[2];
     expect(second.queueStatus).toBe("queued");
     expect(second.queuePosition).toBe(2);
     expect(second.id).toBe("req-queued-2");
@@ -131,10 +120,9 @@ describe("handleListMessages in-memory queue", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].contentBlocks?.[0]).toEqual({
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].contentBlocks?.[0]).toEqual({
       type: "text",
       text: "what the user actually typed",
     });
@@ -159,9 +147,8 @@ describe("handleListMessages in-memory queue", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
-    const att = body.messages[0].attachments?.[0];
+    const att = response.messages[0].attachments?.[0];
     expect(att?.filename).toBe("diagram.png");
     expect(att?.kind).toBe("image");
     expect(att?.id).toBe("req-att:attachment:0");
@@ -185,11 +172,10 @@ describe("handleListMessages in-memory queue", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].id).toBe("req-visible");
-    expect(body.messages[0].queuePosition).toBe(1);
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].id).toBe("req-visible");
+    expect(response.messages[0].queuePosition).toBe(1);
   });
 
   test("filters daemon-injected notifications from the snapshot, keeping positions contiguous", async () => {
@@ -228,11 +214,10 @@ describe("handleListMessages in-memory queue", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].id).toBe("req-visible");
-    expect(body.messages[0].queuePosition).toBe(1);
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].id).toBe("req-visible");
+    expect(response.messages[0].queuePosition).toBe(1);
   });
 
   test("does not append queued messages to an older-history page", async () => {
@@ -253,10 +238,9 @@ describe("handleListMessages in-memory queue", () => {
         beforeTimestamp: String(Date.now() + 1_000),
       },
     });
-    const body = response as { messages: MessagePayload[] };
 
     // THEN the queued message is not mixed into the older page
-    expect(body.messages.every((m) => m.queueStatus == null)).toBe(true);
+    expect(response.messages.every((m) => m.queueStatus == null)).toBe(true);
   });
 
   test("returns only persisted rows when the conversation is not live", async () => {
@@ -272,9 +256,8 @@ describe("handleListMessages in-memory queue", () => {
     const response = await handleListMessages({
       queryParams: { conversationId: conv.id },
     });
-    const body = response as { messages: MessagePayload[] };
 
-    expect(body.messages).toHaveLength(1);
-    expect(body.messages[0].queueStatus).toBeUndefined();
+    expect(response.messages).toHaveLength(1);
+    expect(response.messages[0].queueStatus).toBeUndefined();
   });
 });

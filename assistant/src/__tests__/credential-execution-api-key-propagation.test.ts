@@ -259,7 +259,9 @@ describe("CesClient.updateAssistantApiKey()", () => {
       await client.updateAssistantApiKey("key");
       expect(true).toBe(false); // Should not reach here
     } catch (err) {
-      expect((err as Error).message).toContain("handshake");
+      expect(err).toMatchObject({
+        message: expect.stringContaining("handshake"),
+      });
     }
 
     client.close();

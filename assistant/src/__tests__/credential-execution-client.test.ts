@@ -250,7 +250,9 @@ describe("CES client", () => {
       expect(true).toBe(false);
     } catch (err) {
       expect(err).toBeInstanceOf(CesHandshakeError);
-      expect((err as Error).message).toContain("timed out");
+      expect(err).toMatchObject({
+        message: expect.stringContaining("timed out"),
+      });
     }
 
     client.close();
@@ -292,7 +294,9 @@ describe("CES client", () => {
       expect(true).toBe(false);
     } catch (err) {
       expect(err).toBeInstanceOf(CesClientError);
-      expect((err as Error).message).toContain("handshake");
+      expect(err).toMatchObject({
+        message: expect.stringContaining("handshake"),
+      });
     }
 
     client.close();
@@ -361,7 +365,7 @@ describe("CES client", () => {
       expect(true).toBe(false);
     } catch (err) {
       expect(err).toBeInstanceOf(CesTransportError);
-      expect((err as Error).message).toContain("closed");
+      expect(err).toMatchObject({ message: expect.stringContaining("closed") });
     }
   });
 });

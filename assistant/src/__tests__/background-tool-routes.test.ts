@@ -1,18 +1,45 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ROUTES } from "../runtime/routes/background-tool-routes.js";
 import { BadRequestError } from "../runtime/routes/errors.js";
-import type { RouteDefinition } from "../runtime/routes/types.js";
+import type { RouteHandlerArgs } from "../runtime/routes/types.js";
 import {
   _clearRegistryForTesting,
   recordCompletedBackgroundTool,
   registerBackgroundTool,
 } from "../tools/background-tool-registry.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function findRoute(operationId: string): RouteDefinition | undefined {
-  return ROUTES.find((r) => r.operationId === operationId);
+const listResponseSchema = z.object({
+  tools: z.array(jsonObjectSchema),
+  completed: z.array(jsonObjectSchema),
+});
+const cancelResponseSchema = z.object({ cancelled: z.boolean() });
+
+function findRoute(operationId: string) {
+  const route = ROUTES.find(
+    (candidate) => candidate.operationId === operationId,
+  );
+  if (!route) {
+    throw new Error(`Missing route ${operationId}`);
+  }
+  return route;
+}
+
+async function listBackgroundTools(args: RouteHandlerArgs) {
+  return listResponseSchema.parse(
+    await findRoute("background_tool_list").handler(args),
+  );
+}
+
+async function cancelBackgroundTool(args: RouteHandlerArgs) {
+  return cancelResponseSchema.parse(
+    await findRoute("background_tool_cancel").handler(args),
+  );
 }
 
 function makeTool(overrides: {
@@ -47,11 +74,7 @@ afterEach(() => {
 describe("background tool routes", () => {
   describe("GET /v1/background-tools (list)", () => {
     test("returns empty arrays when no tools are registered", async () => {
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({})) as {
-        tools: unknown[];
-        completed: unknown[];
-      };
+      const result = await listBackgroundTools({});
 
       expect(result.tools).toEqual([]);
       expect(result.completed).toEqual([]);
@@ -70,17 +93,7 @@ describe("background tool routes", () => {
         completedAt: 1700000004200,
       });
 
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({})) as {
-        tools: unknown[];
-        completed: Array<{
-          id: string;
-          status: string;
-          exitCode: number | null;
-          output: string;
-          completedAt: number;
-        }>;
-      };
+      const result = await listBackgroundTools({});
 
       expect(result.tools).toEqual([]);
       expect(result.completed).toHaveLength(1);
@@ -117,10 +130,9 @@ describe("background tool routes", () => {
         completedAt: 2,
       });
 
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({
+      const result = await listBackgroundTools({
         queryParams: { conversationId: "conv-a" },
-      })) as { completed: Array<{ id: string }> };
+      });
 
       expect(result.completed.map((t) => t.id)).toEqual(["bg-d1"]);
     });
@@ -135,16 +147,7 @@ describe("background tool routes", () => {
       });
       registerBackgroundTool(tool);
 
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({})) as {
-        tools: Array<{
-          id: string;
-          toolName: string;
-          conversationId: string;
-          command: string;
-          startedAt: number;
-        }>;
-      };
+      const result = await listBackgroundTools({});
 
       expect(result.tools).toHaveLength(1);
       expect(result.tools[0]!.id).toBe("bg-abc123");
@@ -157,10 +160,7 @@ describe("background tool routes", () => {
     test("does not include the cancel function in the response", async () => {
       registerBackgroundTool(makeTool({ id: "bg-1" }));
 
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({})) as {
-        tools: Array<Record<string, unknown>>;
-      };
+      const result = await listBackgroundTools({});
 
       expect(result.tools[0]).not.toHaveProperty("cancel");
     });
@@ -176,12 +176,9 @@ describe("background tool routes", () => {
         makeTool({ id: "bg-3", conversationId: "conv-a" }),
       );
 
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({
+      const result = await listBackgroundTools({
         queryParams: { conversationId: "conv-a" },
-      })) as {
-        tools: Array<{ id: string }>;
-      };
+      });
 
       expect(result.tools).toHaveLength(2);
       expect(result.tools.map((t) => t.id).sort()).toEqual(["bg-1", "bg-3"]);
@@ -195,10 +192,7 @@ describe("background tool routes", () => {
         makeTool({ id: "bg-2", conversationId: "conv-b" }),
       );
 
-      const route = findRoute("background_tool_list")!;
-      const result = (await route.handler({})) as {
-        tools: Array<{ id: string }>;
-      };
+      const result = await listBackgroundTools({});
 
       expect(result.tools).toHaveLength(2);
     });
@@ -209,38 +203,30 @@ describe("background tool routes", () => {
       const tool = makeTool({ id: "bg-cancel-me" });
       registerBackgroundTool(tool);
 
-      const route = findRoute("background_tool_cancel")!;
-      const result = (await route.handler({
+      const result = await cancelBackgroundTool({
         body: { id: "bg-cancel-me" },
-      })) as {
-        cancelled: boolean;
-      };
+      });
 
       expect(result.cancelled).toBe(true);
       expect(tool.cancel).toHaveBeenCalled();
     });
 
     test("returns cancelled: false for unknown ID", async () => {
-      const route = findRoute("background_tool_cancel")!;
-      const result = (await route.handler({
+      const result = await cancelBackgroundTool({
         body: { id: "bg-nonexistent" },
-      })) as {
-        cancelled: boolean;
-      };
+      });
 
       expect(result.cancelled).toBe(false);
     });
 
     test("throws BadRequestError when id is not provided", async () => {
-      const route = findRoute("background_tool_cancel")!;
-      await expect(route.handler({ body: {} })).rejects.toThrow(
+      await expect(cancelBackgroundTool({ body: {} })).rejects.toThrow(
         BadRequestError,
       );
     });
 
     test("throws BadRequestError when body is empty", async () => {
-      const route = findRoute("background_tool_cancel")!;
-      await expect(route.handler({})).rejects.toThrow(BadRequestError);
+      await expect(cancelBackgroundTool({})).rejects.toThrow(BadRequestError);
     });
   });
 });
