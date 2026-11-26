@@ -48,24 +48,24 @@ let channelInfoCalls: string[] = [];
 let botsInfoCalls: string[] = [];
 
 function installFetchStub() {
-  globalThis.fetch = (async (
-    input: RequestInfo | URL,
-    init?: RequestInit,
-  ): Promise<Response> => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : input.url;
-    const headers = new Headers(init?.headers ?? {});
-    expect(headers.get("authorization")).toBe(`Bearer ${BOT_TOKEN}`);
+  globalThis.fetch = Object.assign(
+    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      const headers = new Headers(init?.headers ?? {});
+      expect(headers.get("authorization")).toBe(`Bearer ${BOT_TOKEN}`);
 
-    return new Response(JSON.stringify(fakeSlackResponse(url)), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }) as typeof fetch;
+      return new Response(JSON.stringify(fakeSlackResponse(url)), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 function fakeSlackResponse(url: string): Record<string, unknown> {

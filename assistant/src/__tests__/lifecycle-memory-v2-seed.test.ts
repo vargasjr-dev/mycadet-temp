@@ -227,7 +227,7 @@ describe("maybeSeedCapabilitySkills (daemon startup gate)", () => {
     expect(state.seedCallCount).toBe(1);
     expect(state.warnCalls).toHaveLength(1);
     const [{ obj, msg }] = state.warnCalls;
-    expect((obj as { err: Error }).err.message).toBe("seed failed");
+    expect(obj).toMatchObject({ err: { message: "seed failed" } });
     expect(msg).toBe("Failed to seed v2 skill entries");
   });
 });
@@ -307,9 +307,9 @@ describe("maybeRebuildConceptCollection (daemon startup gate)", () => {
     expect(state.enqueueCalls).toEqual([]);
     expect(state.warnCalls.length).toBeGreaterThan(0);
     const lastWarn = state.warnCalls[state.warnCalls.length - 1];
-    expect((lastWarn.obj as { err: Error }).err.message).toBe(
-      "Qdrant unreachable",
-    );
+    expect(lastWarn.obj).toMatchObject({
+      err: { message: "Qdrant unreachable" },
+    });
   });
 });
 

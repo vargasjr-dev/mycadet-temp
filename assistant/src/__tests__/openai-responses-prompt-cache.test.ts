@@ -10,10 +10,12 @@
  * explicit-mode-with-zero-markers opt-out, and the unflagged-model and Codex
  * regression guards.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { Message } from "../providers/types.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock openai module — must be before importing the provider
@@ -112,15 +114,17 @@ function toolResultMsg(toolUseId: string, content: string): Message {
   };
 }
 
-type WireItem = {
-  type?: string;
-  role?: string;
-  content?: Array<Record<string, unknown>>;
-};
+const wireItemsSchema = z.array(
+  z.looseObject({
+    type: z.string().optional(),
+    role: z.string().optional(),
+    content: z.array(jsonObjectSchema).optional(),
+  }),
+);
 
 /** Indexes of wire input items carrying a `prompt_cache_breakpoint` marker. */
 function breakpointedItemIndexes(): number[] {
-  const input = (lastStreamParams?.input ?? []) as WireItem[];
+  const input = wireItemsSchema.parse(lastStreamParams?.input ?? []);
   const marked: number[] = [];
   input.forEach((item, idx) => {
     if (item.content?.some((p) => p.prompt_cache_breakpoint !== undefined)) {
@@ -141,7 +145,10 @@ beforeEach(() => {
 });
 
 function sentHeaders(): Record<string, string> | undefined {
-  return lastStreamOptions?.headers as Record<string, string> | undefined;
+  return z
+    .record(z.string(), z.string())
+    .optional()
+    .parse(lastStreamOptions?.headers);
 }
 
 // ---------------------------------------------------------------------------
@@ -204,7 +211,7 @@ describe("OpenAIResponsesProvider explicit prompt caching (GPT-5.6+)", () => {
     // No text part, but the trailing input_image is stampable — so the turn
     // anchors the ladder instead of dropping off it entirely.
     expect(breakpointedItemIndexes()).toEqual([0]);
-    const input = (lastStreamParams?.input ?? []) as WireItem[];
+    const input = wireItemsSchema.parse(lastStreamParams?.input ?? []);
     const parts = input[0].content ?? [];
     const last = parts[parts.length - 1];
     expect(last?.type).toBe("input_image");
@@ -283,7 +290,7 @@ describe("OpenAIResponsesProvider explicit prompt caching (GPT-5.6+)", () => {
     // Wire items: [user message, function_call, function_call_output]. Tool
     // outputs cannot carry markers, so the only user-text item is the sole
     // rung on the ladder.
-    const input = (lastStreamParams?.input ?? []) as WireItem[];
+    const input = wireItemsSchema.parse(lastStreamParams?.input ?? []);
     expect(input.map((i) => i.type)).toEqual([
       "message",
       "function_call",

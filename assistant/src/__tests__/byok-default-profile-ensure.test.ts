@@ -187,10 +187,7 @@ describe("ensureByokDefaultProfiles", () => {
       "quality-optimized",
       "cost-optimized",
     ]);
-    const callSites = llm().callSites as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const callSites = profileMapSchema.parse(llm().callSites);
     expect(callSites.subagentSpawn?.profile).toBe("cost-optimized");
     expect(profiles()["my-mix"]?.mix).toEqual([
       { profile: "balanced", weight: 1 },
@@ -246,10 +243,7 @@ describe("ensureByokDefaultProfiles", () => {
     expect(profiles()["custom-quality-optimized"]).toBeUndefined();
     expect(profiles()["custom-cost-optimized"]).toBeUndefined();
     expect(llm().advisorProfile).toBe("quality-optimized");
-    const callSites = llm().callSites as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const callSites = profileMapSchema.parse(llm().callSites);
     expect(callSites.subagentSpawn?.profile).toBe("cost-optimized");
   });
 
@@ -259,7 +253,7 @@ describe("ensureByokDefaultProfiles", () => {
     // Sanity: completion actually baked defaulted fields onto the copies.
     expect(profiles()["custom-balanced"]?.speed).toBe("standard");
     expect(
-      (profiles()["custom-balanced"]?.contextWindow as Record<string, unknown>)
+      jsonObjectSchema.parse(profiles()["custom-balanced"]?.contextWindow)
         .overflowRecovery,
     ).toBeDefined();
 
@@ -916,10 +910,7 @@ describe("ensureByokDefaultProfiles", () => {
       "quality-optimized",
       "cost-optimized",
     ]);
-    const callSites = llm().callSites as Record<
-      string,
-      Record<string, unknown>
-    >;
+    const callSites = profileMapSchema.parse(llm().callSites);
     expect(callSites.subagentSpawn?.profile).toBe("balanced");
     expect(callSites.memoryRouter?.profile).toBe("balanced");
     expect(callSites.memoryRouter?.contextWindow).toEqual({

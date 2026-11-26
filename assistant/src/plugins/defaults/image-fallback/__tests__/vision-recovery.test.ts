@@ -18,7 +18,6 @@ import type {
   PluginLogger,
   PostModelCallContext,
   StopContext,
-  ToolResultContent,
 } from "@mycadet/plugin-api";
 
 // The classifier and the current-turn boundary are the real host helpers the
@@ -127,6 +126,13 @@ function makeCtx(
   };
 }
 
+function nestedBlocks(block: ContentBlock) {
+  if (block.type !== "tool_result" || !block.contentBlocks) {
+    throw new Error("Expected a tool result with nested blocks");
+  }
+  return block.contentBlocks;
+}
+
 function makeStopCtx(): StopContext {
   return {
     conversationId: "conv-vision",
@@ -174,18 +180,14 @@ describe("image-fallback post-model-call vision recovery", () => {
         tool_use_id: "tu-1",
         content: "screenshot taken",
         contentBlocks: [makeImage()],
-      } as ContentBlock),
+      }),
     ];
     const ctx = makeCtx({ messages, error: new Error(VISION_ERROR_MESSAGE) });
 
     await postModelCall(ctx);
 
     expect(ctx.decision).toBe("continue");
-    const nested = (
-      ctx.messages[0].content[0] as ContentBlock & {
-        contentBlocks: ContentBlock[];
-      }
-    ).contentBlocks;
+    const nested = nestedBlocks(ctx.messages[0].content[0]);
     expect(nested.some((b) => b.type === "image")).toBe(false);
     expect(nested[0].type).toBe("text");
   });
@@ -218,13 +220,13 @@ describe("image-fallback post-model-call vision recovery", () => {
         tool_use_id: "tu-old",
         content: "earlier screenshot",
         contentBlocks: [makeImage()],
-      } as ContentBlock),
+      }),
       userMessage({
         type: "tool_result",
         tool_use_id: "tu-new",
         content: "latest screenshot",
         contentBlocks: [makeImage()],
-      } as ContentBlock),
+      }),
     ];
     const ctx = makeCtx({ messages, error: new Error(VISION_ERROR_MESSAGE) });
 
@@ -233,12 +235,10 @@ describe("image-fallback post-model-call vision recovery", () => {
     expect(ctx.decision).toBe("continue");
     // Stale tool-result media is left raw; the outbound sanitizer strips it to
     // a compact removed-media marker on the retry rather than a full caption.
-    const stale = (ctx.messages[0].content[0] as ToolResultContent)
-      .contentBlocks!;
+    const stale = nestedBlocks(ctx.messages[0].content[0]);
     expect(stale[0].type).toBe("image");
     // Current-turn tool-result media is captioned so the retry clears image input.
-    const fresh = (ctx.messages[1].content[0] as ToolResultContent)
-      .contentBlocks!;
+    const fresh = nestedBlocks(ctx.messages[1].content[0]);
     expect(fresh[0].type).toBe("text");
   });
 
@@ -254,7 +254,7 @@ describe("image-fallback post-model-call vision recovery", () => {
     expect(ctx.decision).toBe("continue");
     const block = ctx.messages[0].content[0];
     expect(block.type).toBe("text");
-    expect((block as { text: string }).text).toContain(
+    expect(block.type === "text" ? block.text : undefined).toContain(
       "no vision-capable model",
     );
   });

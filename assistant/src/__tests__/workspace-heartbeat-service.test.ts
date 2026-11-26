@@ -103,10 +103,10 @@ describe("WorkspaceHeartbeatService", () => {
       const proto = Object.getPrototypeOf(service);
       const originalStreaming = proto.execGitStreaming;
       proto.execGitStreaming = async function () {
-        const err = new Error("stdout maxBuffer length exceeded") as Error & {
-          code?: string;
-        };
-        err.code = "ERR_CHILD_PROCESS_STDIO_MAXBUFFER";
+        const err = Object.assign(
+          new Error("stdout maxBuffer length exceeded"),
+          { code: "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" },
+        );
         throw err;
       };
 

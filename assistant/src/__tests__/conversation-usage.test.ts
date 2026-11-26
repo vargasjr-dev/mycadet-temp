@@ -11,8 +11,7 @@ let updateConversationUsageFailures = 0;
 let updateConversationUsageFailureCode = "SQLITE_BUSY";
 
 function sqliteError(code: string): Error {
-  const err = new Error("database is locked") as Error & { code: string };
-  err.code = code;
+  const err = Object.assign(new Error("database is locked"), { code: code });
   return err;
 }
 

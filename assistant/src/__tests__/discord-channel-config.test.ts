@@ -60,21 +60,24 @@ interface FakeDiscord {
 }
 
 function installDiscordApi(fake: FakeDiscord) {
-  globalThis.fetch = (async (input: URL | RequestInfo) => {
-    const url = String(input);
-    if (url.endsWith("/users/@me")) {
-      return new Response(
-        JSON.stringify({ id: "900000000000000001", username: "test-bot" }),
-        { status: fake.meStatus ?? 200 },
-      );
-    }
-    if (url.endsWith("/oauth2/applications/@me")) {
-      return new Response(JSON.stringify(fake.application ?? {}), {
-        status: 200,
-      });
-    }
-    throw new Error(`Unexpected fetch: ${url}`);
-  }) as typeof fetch;
+  globalThis.fetch = Object.assign(
+    async (input: URL | RequestInfo) => {
+      const url = String(input);
+      if (url.endsWith("/users/@me")) {
+        return new Response(
+          JSON.stringify({ id: "900000000000000001", username: "test-bot" }),
+          { status: fake.meStatus ?? 200 },
+        );
+      }
+      if (url.endsWith("/oauth2/applications/@me")) {
+        return new Response(JSON.stringify(fake.application ?? {}), {
+          status: 200,
+        });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 afterAll(async () => {

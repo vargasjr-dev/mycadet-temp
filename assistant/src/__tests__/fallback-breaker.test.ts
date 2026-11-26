@@ -126,7 +126,7 @@ function okResponse(model: string): ProviderResponse {
     model,
     usage: { inputTokens: 1, outputTokens: 1 },
     stopReason: "end_turn",
-  } as ProviderResponse;
+  };
 }
 
 /**
@@ -946,9 +946,7 @@ describe("the backup's retry budget", () => {
     expect(primary.calls()).toBe(0);
     // Tagged like the primary loop's own exhaustion, so error reporting reads a
     // flapping backup as noise rather than an engineering signal.
-    expect((thrown as { retriesExhausted?: boolean }).retriesExhausted).toBe(
-      true,
-    );
+    expect(thrown).toHaveProperty("retriesExhausted", true);
   });
 
   test("a failed probe hands its request a retry budget on the backup too", async () => {
@@ -1281,9 +1279,7 @@ describe("retry exhaustion accounting", () => {
       wrapped.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
     );
 
-    expect((thrown as { retriesExhausted?: boolean }).retriesExhausted).toBe(
-      true,
-    );
+    expect(thrown).toHaveProperty("retriesExhausted", true);
     expect(primary.calls() + refreshed.calls()).toBe(1 + DEFAULT_MAX_RETRIES);
   });
 

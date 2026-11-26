@@ -18,18 +18,21 @@ function fakeFetchReturning(
   status = 200,
   recorder?: FakeFetchCall[],
 ): typeof fetch {
-  return ((url: string | URL | Request, init?: RequestInit) => {
-    recorder?.push({
-      url: typeof url === "string" ? url : url.toString(),
-      init,
-    });
-    return Promise.resolve(
-      new Response(body, {
-        status,
-        headers: { "content-type": "application/x-ndjson" },
-      }),
-    );
-  }) as typeof fetch;
+  return Object.assign(
+    (url: string | URL | Request, init?: RequestInit) => {
+      recorder?.push({
+        url: typeof url === "string" ? url : url.toString(),
+        init,
+      });
+      return Promise.resolve(
+        new Response(body, {
+          status,
+          headers: { "content-type": "application/x-ndjson" },
+        }),
+      );
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 function makeSource(opts: {
@@ -119,7 +122,10 @@ describe("ClickHouseLlmRequestLogSource", () => {
     );
     expect(parsed.searchParams.get("param_log_id")).toBe("log-1");
     expect(call.init?.method).toBe("POST");
-    const auth = (call.init?.headers as Record<string, string>).Authorization;
+    const auth = new Headers(call.init?.headers).get("Authorization");
+    if (auth === null) {
+      throw new Error("Expected an Authorization header");
+    }
     expect(auth).toMatch(/^Basic /);
     const decoded = Buffer.from(auth.slice("Basic ".length), "base64").toString(
       "utf8",

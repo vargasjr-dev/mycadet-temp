@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -146,12 +148,15 @@ describe("generateImage", () => {
     );
 
     expect(lastGenerateParams).not.toBeNull();
-    const contents = jsonObjectSchema.parse(lastGenerateParams)
-      .contents as Array<Record<string, unknown>>;
-    const parts = contents[0].parts as Array<Record<string, unknown>>;
+    const { contents } = z
+      .object({
+        contents: z.array(z.object({ parts: z.array(jsonObjectSchema) })),
+      })
+      .parse(lastGenerateParams);
+    const parts = contents[0].parts;
 
     // First part is the text prompt (with appended title instruction)
-    expect((parts[0] as { text: string }).text).toContain("remove background");
+    expect(parts[0].text).toContain("remove background");
     // Second part is the source image
     expect(parts[1]).toEqual({
       inlineData: { mimeType: "image/jpeg", data: "srcdata" },

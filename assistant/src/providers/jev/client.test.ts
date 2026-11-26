@@ -27,7 +27,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 function stubFetch(
   impl: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
 ): typeof fetch {
-  return impl as typeof fetch;
+  return Object.assign(impl, { preconnect: fetch.preconnect });
 }
 
 describe("parseSystemOneOverride", () => {

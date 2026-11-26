@@ -71,32 +71,32 @@ const captured: CapturedRequest[] = [];
 const originalFetch = globalThis.fetch;
 
 function installFetchStub() {
-  globalThis.fetch = (async (
-    input: RequestInfo | URL,
-    init?: RequestInit,
-  ): Promise<Response> => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : input.url;
-    const method = (init?.method ?? "GET").toUpperCase();
-    const headers = new Headers(init?.headers ?? {});
-    captured.push({
-      url,
-      method,
-      authorization: headers.get("authorization"),
-    });
+  globalThis.fetch = Object.assign(
+    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      const method = (init?.method ?? "GET").toUpperCase();
+      const headers = new Headers(init?.headers ?? {});
+      captured.push({
+        url,
+        method,
+        authorization: headers.get("authorization"),
+      });
 
-    // Craft a minimal OK Slack API envelope per endpoint so the adapter's
-    // post-call mapping doesn't throw.
-    const body = fakeSlackResponse(url);
-    return new Response(JSON.stringify(body), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }) as typeof fetch;
+      // Craft a minimal OK Slack API envelope per endpoint so the adapter's
+      // post-call mapping doesn't throw.
+      const body = fakeSlackResponse(url);
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 function fakeSlackResponse(url: string): Record<string, unknown> {
@@ -241,38 +241,41 @@ describe("Slack adapter token routing", () => {
     // Replace the default fetch stub: first user-token call to history fails
     // with invalid_auth; everything else succeeds.
     let userTokenHistoryCalls = 0;
-    globalThis.fetch = (async (
-      input: RequestInfo | URL,
-      init?: RequestInit,
-    ): Promise<Response> => {
-      const url =
-        typeof input === "string"
-          ? input
-          : input instanceof URL
-            ? input.toString()
-            : input.url;
-      const headers = new Headers(init?.headers ?? {});
-      const auth = headers.get("authorization");
-      captured.push({
-        url,
-        method: (init?.method ?? "GET").toUpperCase(),
-        authorization: auth,
-      });
-      if (
-        url.includes("/conversations.history") &&
-        auth === `Bearer ${USER_TOKEN}`
-      ) {
-        userTokenHistoryCalls += 1;
-        return new Response(
-          JSON.stringify({ ok: false, error: "invalid_auth" }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }
-      return new Response(JSON.stringify(fakeSlackResponse(url)), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    }) as typeof fetch;
+    globalThis.fetch = Object.assign(
+      async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        const headers = new Headers(init?.headers ?? {});
+        const auth = headers.get("authorization");
+        captured.push({
+          url,
+          method: (init?.method ?? "GET").toUpperCase(),
+          authorization: auth,
+        });
+        if (
+          url.includes("/conversations.history") &&
+          auth === `Bearer ${USER_TOKEN}`
+        ) {
+          userTokenHistoryCalls += 1;
+          return new Response(
+            JSON.stringify({ ok: false, error: "invalid_auth" }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify(fakeSlackResponse(url)), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+      { preconnect: fetch.preconnect },
+    );
 
     const resolved = await slackProvider.resolveConnection!();
     expect(resolved).toBeUndefined();

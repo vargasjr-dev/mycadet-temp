@@ -28,17 +28,20 @@ beforeEach(() => {
   calls = [];
   responses = [];
   originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    calls.push({
-      url: typeof input === "string" ? input : input.toString(),
-      init,
-    });
-    const next = responses.shift();
-    if (!next) {
-      throw new Error("downloadSlackFile test: no canned response available");
-    }
-    return next;
-  }) as typeof fetch;
+  globalThis.fetch = Object.assign(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({
+        url: typeof input === "string" ? input : input.toString(),
+        init,
+      });
+      const next = responses.shift();
+      if (!next) {
+        throw new Error("downloadSlackFile test: no canned response available");
+      }
+      return next;
+    },
+    { preconnect: fetch.preconnect },
+  );
 });
 
 afterEach(() => {

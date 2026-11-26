@@ -29,13 +29,16 @@ interface FakeFetchCall {
 }
 
 function fakeFetch(recorder: FakeFetchCall[], status = 200): typeof fetch {
-  return ((url: string | URL | Request, init?: RequestInit) => {
-    recorder.push({
-      url: typeof url === "string" ? url : url.toString(),
-      init,
-    });
-    return Promise.resolve(new Response("", { status }));
-  }) as typeof fetch;
+  return Object.assign(
+    (url: string | URL | Request, init?: RequestInit) => {
+      recorder.push({
+        url: typeof url === "string" ? url : url.toString(),
+        init,
+      });
+      return Promise.resolve(new Response("", { status }));
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 function makeSink(recorder: FakeFetchCall[], status = 200) {
@@ -92,7 +95,7 @@ describe("ClickHouseLlmRequestLogSink.insert", () => {
     });
     // Basic auth is sent.
     expect(
-      (calls[1]!.init?.headers as Record<string, string>).Authorization,
+      new Headers(calls[1]!.init?.headers).get("Authorization"),
     ).toStartWith("Basic ");
   });
 

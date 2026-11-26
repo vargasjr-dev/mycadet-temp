@@ -96,16 +96,19 @@ const { getTelegramConfig, setTelegramConfig } =
   await import("../daemon/handlers/config-telegram.js");
 
 function mockTelegramApi(): typeof fetch {
-  return (async (input: RequestInfo | URL) => {
-    const url = String(input);
-    if (url.includes("/getMe")) {
-      return new Response(
-        JSON.stringify({ ok: true, result: { id: 42, username: "testbot" } }),
-        { status: 200 },
-      );
-    }
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
-  }) as typeof fetch;
+  return Object.assign(
+    async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/getMe")) {
+        return new Response(
+          JSON.stringify({ ok: true, result: { id: 42, username: "testbot" } }),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 function setIngressPublicBaseUrl(url: string): void {

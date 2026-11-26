@@ -171,9 +171,7 @@ describe("withdrawGuardianRequestCards", () => {
       status: "denied",
       decidedByExternalUserId: "U-guardian",
     });
-    expect(typeof (params as { decidedAtMs?: number }).decidedAtMs).toBe(
-      "number",
-    );
+    expect(params).toMatchObject({ decidedAtMs: expect.any(Number) });
   });
 
   test("skips the Slack edit when no channel message id was captured", async () => {
@@ -874,8 +872,6 @@ describe("recordGuardianRequestDeliveries", () => {
       originChannel: "cadet",
     });
     const [params] = withdrawSlackApprovalCard.mock.calls[0];
-    expect((params as { messageTs?: string }).messageTs).toBe(
-      "1700000000.1234",
-    );
+    expect(params).toHaveProperty("messageTs", "1700000000.1234");
   });
 });

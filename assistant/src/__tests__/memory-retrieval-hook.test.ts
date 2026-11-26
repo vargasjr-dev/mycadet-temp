@@ -12,8 +12,9 @@
  * abort signal, and trust class are self-resolved by the hook from a fake
  * conversation installed in the registry mock.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import pino from "pino";
 
 // Stub the persistence helpers BEFORE importing the module under test so the
 // bindings resolve through the mocks.
@@ -72,7 +73,7 @@ import { ESCALATION_CONTINUATION_CONTENT } from "../calls/voice-triage-escalate.
 import type { AssistantConfig } from "../config/schema.js";
 import type { Conversation } from "../daemon/conversation.js";
 import type { QdrantSparseVector } from "../persistence/embeddings/qdrant-client.js";
-import type { ConversationGraphMemory } from "../plugins/defaults/memory/graph/conversation-graph-memory.js";
+import { ConversationGraphMemory } from "../plugins/defaults/memory/graph/conversation-graph-memory.js";
 import userPromptSubmitMemoryRetrieval from "../plugins/defaults/memory/hooks/user-prompt-submit.js";
 import type { Message } from "../providers/types.js";
 import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.js";
@@ -80,6 +81,14 @@ import { asConversation } from "./helpers/mock-conversation.js";
 import { setConfig } from "./helpers/set-config.js";
 
 /** Canonical metrics payload the graph retriever attaches to a real hit. */
+function mockGraphMemory(
+  overrides: Partial<ConversationGraphMemory>,
+): ConversationGraphMemory {
+  const memory = new ConversationGraphMemory("test-graph-memory");
+  memory.dispose();
+  return Object.assign(memory, overrides);
+}
+
 function makeMetrics() {
   return {
     embeddingProvider: "openai",
@@ -141,10 +150,10 @@ function makeFakeGraphMemory(overrides?: {
   };
   const prepareMemoryMock = mock(async () => returnValue);
   const recordPkbQueryVectorsMock = mock(() => {});
-  const memory = {
+  const memory = mockGraphMemory({
     prepareMemory: prepareMemoryMock,
     recordPkbQueryVectors: recordPkbQueryVectorsMock,
-  } as unknown as ConversationGraphMemory;
+  });
   return { memory, prepareMemoryMock, recordPkbQueryVectorsMock };
 }
 
@@ -154,9 +163,7 @@ function makeHookCtx(
   return {
     conversationId: "conv-test",
     userMessageId: "msg-test",
-    logger: {
-      warn: () => {},
-    } as unknown as UserPromptSubmitContext["logger"],
+    logger: pino({ enabled: false }),
     latestMessages: [],
     requestId: "req-test",
     isNonInteractive: false,
@@ -608,9 +615,9 @@ describe("user-prompt-submit hook (memory retrieval)", () => {
         _onEvent: (msg: AssistantEvent) => void,
       ) => Promise.reject(new Error("retrieval failed")),
     );
-    const graphMemory = {
+    const graphMemory = mockGraphMemory({
       prepareMemory: failingPrepare,
-    } as unknown as ConversationGraphMemory;
+    });
     installConversation(graphMemory, { trusted: true });
     const ctx = makeHookCtx();
 
@@ -641,10 +648,10 @@ describe("user-prompt-submit hook (memory retrieval)", () => {
         };
       },
     );
-    const graphMemory = {
+    const graphMemory = mockGraphMemory({
       prepareMemory: prepareMemoryMock,
       recordPkbQueryVectors: mock(() => {}),
-    } as unknown as ConversationGraphMemory;
+    });
     const controller = new AbortController();
     installConversation(graphMemory, {
       trusted: true,

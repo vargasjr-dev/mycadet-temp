@@ -23,14 +23,19 @@ type ProbeCall = {
 };
 
 function stubFetch(status: number, calls: ProbeCall[]) {
-  return (async (url: RequestInfo | URL, init?: RequestInit) => {
-    calls.push({
-      url: String(url),
-      body: JSON.parse(String(init?.body)),
-      headers: { ...(init?.headers as Record<string, string>) },
-    });
-    return new Response(status < 400 ? "{}" : "404 page not found", { status });
-  }) as typeof fetch;
+  return Object.assign(
+    async (url: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({
+        url: String(url),
+        body: JSON.parse(String(init?.body)),
+        headers: Object.fromEntries(new Headers(init?.headers)),
+      });
+      return new Response(status < 400 ? "{}" : "404 page not found", {
+        status,
+      });
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 describe("testInferenceConnection", () => {
@@ -79,9 +84,12 @@ describe("testInferenceConnection", () => {
   });
 
   test("reports a network error_class when the endpoint is unreachable", async () => {
-    const failingFetch = (async () => {
-      throw new Error("connection refused");
-    }) as unknown as typeof fetch;
+    const failingFetch = Object.assign(
+      async () => {
+        throw new Error("connection refused");
+      },
+      { preconnect: fetch.preconnect },
+    );
     const result = await testInferenceConnection(CONNECTION, failingFetch);
     expect(result).toMatchObject({ ok: false, error_class: "network" });
     expect(result?.hint).toContain("connection refused");
@@ -160,9 +168,12 @@ describe("testInferenceConnection", () => {
   });
 
   test("skips when there is no base URL or no model to probe with", async () => {
-    const neverFetch = (async () => {
-      throw new Error("should not be called");
-    }) as unknown as typeof fetch;
+    const neverFetch = Object.assign(
+      async () => {
+        throw new Error("should not be called");
+      },
+      { preconnect: fetch.preconnect },
+    );
     expect(
       await testInferenceConnection(
         { ...CONNECTION, baseUrl: null },

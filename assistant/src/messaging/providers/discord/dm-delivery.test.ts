@@ -59,21 +59,24 @@ const GUILD_CHANNEL = "700000000000000001";
  * payload rather than quietly succeeding.
  */
 function stubFetch(): void {
-  globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
-    const href = String(url);
-    calls.push({
-      url: href,
-      method: init?.method ?? "GET",
-      body: init?.body,
-    });
-    const payload = href.endsWith("/users/@me/channels")
-      ? { id: DM_CHANNEL }
-      : { id: "msg-1" };
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    });
-  }) as typeof fetch;
+  globalThis.fetch = Object.assign(
+    async (url: string | URL | Request, init?: RequestInit) => {
+      const href = url instanceof Request ? url.url : String(url);
+      calls.push({
+        url: href,
+        method: init?.method ?? "GET",
+        body: init?.body,
+      });
+      const payload = href.endsWith("/users/@me/channels")
+        ? { id: DM_CHANNEL }
+        : { id: "msg-1" };
+      return new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+    { preconnect: fetch.preconnect },
+  );
 }
 
 beforeEach(() => {
