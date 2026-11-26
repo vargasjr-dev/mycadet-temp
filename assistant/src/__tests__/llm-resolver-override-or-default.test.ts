@@ -115,7 +115,7 @@ describe("selection chain", () => {
     const llm = LLMSchema.parse({});
     const resolved = resolveCallSiteConfig("conversationSummarization", llm);
     const cadetBody = CODE_DEFAULT_PROFILE_ENTRIES["balanced"]!;
-    expect(resolved.model).toBe(cadetBody.model);
+    expect(resolved.model).toBe(capturedStringSchema.parse(cadetBody.model));
     expect(resolved.provider_connection).toBe(cadetBody.provider_connection);
   });
 });
@@ -241,7 +241,9 @@ describe("shipped call-site tuning", () => {
 
     expect(resolved.provider).toBe("cadet");
     expect(resolved.provider_connection).toBeUndefined();
-    expect(resolved.model).toBe(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model);
+    expect(resolved.model).toBe(
+      capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
+    );
   });
 
   test("the escalation judge falls through on a BYOK default provider", () => {
@@ -671,7 +673,7 @@ describe("hatch-era disabled stubs on default keys", () => {
     expect(pinned.model).toBe(viaSitePin.model);
   });
 
-  test("activeProfile pointing at a disabled default stub resolves, not falls through", () => {
+  test("a call-site pin outranks a disabled activeProfile", () => {
     const llm = LLMSchema.parse({
       profiles: { ...disabledStubs, mine: completeCustom },
       activeProfile: "balanced",
@@ -679,9 +681,10 @@ describe("hatch-era disabled stubs on default keys", () => {
       ...anthropicDp,
     });
     const resolved = resolveCallSiteConfig("mainAgent", llm);
-    // The call-site pin below the active rung must not capture the turn.
-    expect(resolved.provider).toBe("anthropic");
-    expect(resolved.model).not.toBe(completeCustom.model);
+    // The pin is rung 2, above activeProfile (rung 3) — and the disabled
+    // stub never captures the turn.
+    expect(resolved.provider).toBe("openai");
+    expect(resolved.model).toBe(completeCustom.model);
   });
 
   test("a disabled CUSTOM profile is still skipped", () => {

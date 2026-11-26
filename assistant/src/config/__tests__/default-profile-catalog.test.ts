@@ -229,17 +229,16 @@ describe("resolver integration", () => {
     expect(resolved.provider_connection).toBeUndefined();
   });
 
-  test("an empty workspace resolves every call-site default from the catalog", () => {
+  test("an empty workspace resolves every tuned call site on the balanced anchor", () => {
     const llm = LLMSchema.parse({ activeProfile: "balanced" });
-    for (const [callSite, dflt] of Object.entries(CALL_SITE_DEFAULTS)) {
-      if (dflt.profile == null) {
-        continue;
-      }
-      const expected = CODE_DEFAULT_PROFILE_ENTRIES[dflt.profile];
-      const resolved = resolveCallSiteConfig(callSite as LLMCallSite, llm);
-      // A site-level model pin legitimately overrides the profile's model.
-      expect(resolved.model).toBe(
-        capturedStringSchema.parse(dflt.model ?? expected.model),
+    const anchor = capturedStringSchema.parse(
+      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model,
+    );
+    for (const callSite of Object.keys(CALL_SITE_DEFAULTS)) {
+      // No site pins a profile anymore, so every site resolves the anchor's
+      // model; only its knobs (effort, temperature, caps) differ.
+      expect(resolveCallSiteConfig(callSite as LLMCallSite, llm).model).toBe(
+        anchor,
       );
     }
   });
@@ -333,7 +332,9 @@ describe("resolver integration", () => {
       const resolved = resolveCallSiteConfig(callSite, llm);
       expect(String(resolved.provider)).toBe("cadet");
       expect(resolved.model).toBe(
-        CODE_DEFAULT_PROFILE_ENTRIES["balanced"].model,
+        capturedStringSchema.parse(
+          CODE_DEFAULT_PROFILE_ENTRIES["balanced"].model,
+        ),
       );
     }
   });

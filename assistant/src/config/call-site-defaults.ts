@@ -1,57 +1,24 @@
 import { type LLMCallSite } from "./schemas/llm.js";
 
+// Per-call-site tuning merged onto whatever profile the resolution chain
+// picks. No call site ships a profile: unpinned sites resolve
+// overrideProfile → llm.callSites pin → llm.activeProfile → the default
+// provider's balanced profile.
 type CallSiteDefaultConfig = {
-  /**
-   * Named profile the call site resolves to. Only `mainAgent` ships one —
-   * the balanced intent resolved through `llm.default` is the anchor the
-   * main agent bottoms out on. Every other call site omits this and
-   * inherits the main agent's winner, so the user's chat-model selection is
-   * the single default (Velcro #18). User pins live in
-   * `llm.callSites[callSite].profile`, which still outranks it.
-   */
-  profile?: string;
-  /**
-   * Direct model pin overriding the resolved profile's model. The resolver
-   * treats a bare model pin as catalog-implied: it stamps the model's
-   * catalog provider and keeps the provider-agnostic Cadet Cloud
-   * connection (see `resolveOverrideOrDefault`). Reserve for call sites
-   * whose latency envelope the profile's model cannot meet.
-   */
-  model?: string;
   maxTokens?: number;
   effort?: "none" | "low" | "medium" | "high" | "xhigh" | "max";
   temperature?: number | null;
   thinking?: { enabled?: boolean; streamThinking?: boolean };
   contextWindow?: { maxInputTokens?: number };
-  /**
-   * Opt the call site out of prompt caching. Set for one-shot call sites
-   * whose prompts never repeat — or repeat slower than the cache TTL — so
-   * each call would pay the cache-write premium without a future read.
-   * Telemetry confirms ~0–5% cache hit rates on these sites.
-   */
+  // Opt the site out of prompt caching (one-shot prompts, ~0-5% cache hits).
   disableCache?: boolean;
 };
 
-export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
-  mainAgent: { profile: "balanced" },
-  subagentSpawn: {},
-  compactionAgent: {},
-  patternScan: {},
-  narrativeRefinement: {},
-  callAgent: {},
+export const CALL_SITE_DEFAULTS: Partial<
+  Record<LLMCallSite, CallSiteDefaultConfig>
+> = {
   memoryConsolidation: { disableCache: true },
-  identityIntro: {},
-  emptyStateGreeting: {},
-
-  memoryRouter: {
-    contextWindow: { maxInputTokens: 1000000 },
-  },
-  // Forced-tool selection over a numbered candidate pool: the model picks ids,
-  // it does not reason its way to an answer. `effort` has to be named here
-  // because a call-site tweak only overrides the fields it lists, so leaving it
-  // off inherits `balanced`'s `effort: "high"` (see default-profile-catalog).
-  // Low effort matches `recall`, the sibling site doing the same kind of
-  // bounded judgment, and keeps retrieval latency low on escalated voice turns.
+  memoryRouter: { contextWindow: { maxInputTokens: 1000000 } },
   memoryV3SelectL2: {
     temperature: 0,
     effort: "low",
@@ -64,34 +31,7 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     temperature: 0,
     disableCache: true,
   },
-  conversationStarters: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-
-  filingAgent: {},
-  memoryExtraction: {},
-  memoryRetrieval: {},
-  memoryRetrospective: {},
-  memoryV2Migration: {},
-  memoryV2Sweep: {},
-  memoryV2Consolidation: {},
-  conversationSummarization: {},
   conversationTitle: { disableCache: true },
-  approvalCopy: {},
-  approvalConversation: {},
-  trustRuleSuggestion: {},
-  styleAnalyzer: {},
-  inference: {},
-  // Vision captioning for the image-fallback plugin. No pinned profile — the
-  // plugin resolves a vision-capable profile itself via `doesSupportVision` and
-  // passes it as an `overrideProfile`, so the call-site default is a fallback
-  // that inherits the workspace default. Pinning a cloud profile would break
-  // BYOK installs where cloud profiles are uncredentialed.
-  vision: {},
-
-  heartbeatAgent: {
-  },
   commitMessage: {
     maxTokens: 120,
     temperature: 0.2,
@@ -103,69 +43,19 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     thinking: { enabled: false },
     disableCache: true,
   },
-  guardianQuestionCopy: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  notificationDecision: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  preferenceExtraction: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  // Voice intent classification and explicit selected-text edits are
-  // latency-sensitive: the caller is waiting for insertion or dispatch.
-  interactionClassifier: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  // Progress narration only helps when it arrives before the next real output.
-  // `latency-optimized` is the latency-class profile (see
-  // default-profile-catalog.ts): managed installs get the pinned latency model,
-  // BYOK installs resolve their own provider's latency model through the intent
-  // table rather than a model id they may hold no credential for. The profile
-  // is user-facing ("Fast"), so a user edit to it moves this call site too.
-  voiceProgressNarration: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  // The front-door leg fronts EVERY unified live-voice turn and its leading
-  // tokens ARE the endpointing/triage verdict, so both TTFT variance and
-  // judgment quality gate the whole call. Live drives showed the
-  // cost-optimized upstream with multi-second
-  // cross-session TTFT tails and over-escalation of small talk under open-task
-  // context pressure.
-  voiceFrontDoor: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  // The cloud-only profile resolves through the Cadet connection. On a
-  // BYOK install it has no body, so the judge is unavailable and the front
-  // door's own decision stands.
-  voiceEscalationJudge: {
-  },
-  // The barge-in continuation judge remains off until a TypeSafe profile is
-  // pinned here (see live-voice/continuation-judge.ts).
-  voiceContinuationJudge: {},
-  // Names the background continuation a barge-in spawns, from the interrupted
-  // transcript. The label is fixed at spawn, so the call runs under a short
-  // timeout and the deterministic label stands in when it misses; that makes
-  // the latency-class profile wasted spend here.
+  guardianQuestionCopy: { effort: "low", thinking: { enabled: false } },
+  notificationDecision: { effort: "low", thinking: { enabled: false } },
+  preferenceExtraction: { effort: "low", thinking: { enabled: false } },
+  interactionClassifier: { effort: "low", thinking: { enabled: false } },
+  voiceProgressNarration: { effort: "low", thinking: { enabled: false } },
+  voiceFrontDoor: { effort: "low", thinking: { enabled: false } },
   voiceContinuationLabel: {
     effort: "low",
     thinking: { enabled: false },
     disableCache: true,
   },
-  inviteInstructionGenerator: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
-  skillCategoryInference: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
+  inviteInstructionGenerator: { effort: "low", thinking: { enabled: false } },
+  skillCategoryInference: { effort: "low", thinking: { enabled: false } },
   homeGreeting: {
     maxTokens: 60,
     effort: "low",
@@ -179,13 +69,5 @@ export const CALL_SITE_DEFAULTS: Record<LLMCallSite, CallSiteDefaultConfig> = {
     thinking: { enabled: false },
     disableCache: true,
   },
-  // Anonymous and schema leaves inherit the workspace default config (no pinned
-  // profile) so they always resolve to a credentialed provider. Pinning a
-  // cloud profile like `cost-optimized` breaks BYOK installs where the cloud
-  // profiles are uncredentialed. A per-leaf `profile` option or a `workflowLeaf`
-  // call-site override still takes precedence for cost control.
-  workflowLeaf: {
-    effort: "low",
-    thinking: { enabled: false },
-  },
+  workflowLeaf: { effort: "low", thinking: { enabled: false } },
 };

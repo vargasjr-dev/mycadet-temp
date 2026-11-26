@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { CALL_SITE_DEFAULTS } from "../../../config/call-site-defaults.js";
 import { LLMCallSiteEnum, LLMSchema } from "../../../config/schemas/llm.js";
 import {
   buildCallSiteCatalog,
@@ -56,43 +55,27 @@ describe("llm-call-sites-routes", () => {
     }
   });
 
-  test("shippedDefaultProfile is the code-owned tier, unaffected by pins", async () => {
+  test("shippedDefaultProfile is the shared balanced anchor tier", async () => {
     const result = await readCatalog();
     for (const site of result.callSites) {
-      // Only mainAgent ships a profile tier; profileless sites report
-      // undefined (they follow the chat model).
-      expect(site.shippedDefaultProfile).toBe(
-        CALL_SITE_DEFAULTS[LLMCallSiteEnum.parse(site.id)]?.profile,
-      );
+      // Every call site ships the same anchor tier — the chain bottoms out
+      // on balanced for all of them; pins and activeProfile outrank it.
+      expect(site.shippedDefaultProfile).toBe("balanced");
     }
   });
 
-  test("profileless call sites report no shipped tier — they follow the chat model", async () => {
-    const result = await readCatalog();
-    // Both omit `profile` in CALL_SITE_DEFAULTS, so they inherit the main
-    // agent's winner and ship no tier of their own.
-    for (const id of ["workflowLeaf", "vision"]) {
-      const site = result.callSites.find((s) => s.id === id);
-      expect(site?.shippedDefaultProfile).toBeUndefined();
-    }
-  });
-
-  test("voiceEscalationJudge ships no tier; profileless sites report the main agent's winner", () => {
+  test("voiceEscalationJudge reports the shared anchor on managed and BYOK installs", () => {
     const managed = buildCallSiteCatalog(LLMSchema.parse({})).find(
       ({ id }) => id === "voiceEscalationJudge",
     );
-    // voiceEscalationJudge ships no profile tier anymore — it inherits the
-    // main agent's winner like every other profileless site.
-    expect(managed?.shippedDefaultProfile).toBeUndefined();
-    // On an empty workspace its effective key is the main agent's balanced
-    // anchor.
     expect(managed?.defaultProfile).toBe("balanced");
+    expect(managed?.shippedDefaultProfile).toBe("balanced");
 
     const byok = buildCallSiteCatalog(
       LLMSchema.parse({ default: { provider: "anthropic" } }),
     ).find(({ id }) => id === "voiceEscalationJudge");
     expect(byok?.defaultProfile).toBe("balanced");
-    expect(byok?.shippedDefaultProfile).toBeUndefined();
+    expect(byok?.shippedDefaultProfile).toBe("balanced");
   });
 
   test("domains have non-empty id and displayName", async () => {

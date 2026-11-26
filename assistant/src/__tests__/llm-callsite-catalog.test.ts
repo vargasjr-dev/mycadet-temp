@@ -52,28 +52,11 @@ describe("LLM call-site catalog", () => {
     expect(parsed.callSites.memoryRouter?.model).toBe("claude-sonnet-4-6");
   });
 
-  test("CALL_SITE_DEFAULTS covers every LLMCallSite enum value", () => {
-    const defaultIds = new Set(Object.keys(CALL_SITE_DEFAULTS));
-    const missing = LLMCallSiteEnum.options.filter((id) => !defaultIds.has(id));
-    expect(missing).toEqual([]);
-  });
-
   test("CALL_SITE_DEFAULTS contains no unknown call-site keys", () => {
     const enumIds = new Set<string>(LLMCallSiteEnum.options);
     const extra = Object.keys(CALL_SITE_DEFAULTS).filter(
       (id) => !enumIds.has(id),
     );
     expect(extra).toEqual([]);
-  });
-
-  test("every CALL_SITE_DEFAULTS profile, when present, is a non-empty string", () => {
-    for (const [, config] of Object.entries(CALL_SITE_DEFAULTS)) {
-      // A call site may omit `profile` to inherit the workspace default config.
-      if (config.profile === undefined) {
-        continue;
-      }
-      expect(typeof config.profile).toBe("string");
-      expect(config.profile.length).toBeGreaterThan(0);
-    }
   });
 });
