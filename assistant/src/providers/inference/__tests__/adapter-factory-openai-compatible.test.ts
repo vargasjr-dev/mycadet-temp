@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { memorySecureKeyBackend } from "../../../__tests__/helpers/secure-keys.js";
 import { setSecureKeyBackendForTesting } from "../../../security/secure-keys.js";
 import {
   EMPTY_ASSISTANT_TURN_PLACEHOLDER,
   OpenAIChatCompletionsProvider,
 } from "../../openai/chat-completions-provider.js";
+import { RetryProvider } from "../../retry.js";
 import {
   buildProviderAdapter,
   createAdapterFromConnection,
@@ -14,23 +17,19 @@ import type { ProviderConnection, ResolvedAuth } from "../auth.js";
 
 function stubChatCreate(provider: OpenAIChatCompletionsProvider): unknown[] {
   const requests: unknown[] = [];
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: unknown) => {
-          requests.push(params);
-          return {
-            async *[Symbol.asyncIterator]() {
-              yield {
-                choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
-                usage: { prompt_tokens: 2, completion_tokens: 1 },
-              };
-            },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: unknown) => {
+      requests.push(params);
+      return {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
+            usage: { prompt_tokens: 2, completion_tokens: 1 },
           };
         },
-      },
+      };
     },
-  };
+  });
   return requests;
 }
 
@@ -48,14 +47,10 @@ interface RetryOptions {
 function retryOptions(adapter: unknown): RetryOptions {
   let node = adapter;
   for (let depth = 0; node && depth < 8; depth++) {
-    const { options, inner } = node as {
-      options?: RetryOptions;
-      inner?: unknown;
-    };
-    if (options) {
-      return options;
+    if (node instanceof RetryProvider) {
+      return node["options"];
     }
-    node = inner;
+    node = typeof node === "object" && "inner" in node ? node.inner : undefined;
   }
   throw new Error("no RetryProvider found in the adapter wrapper chain");
 }
@@ -73,11 +68,10 @@ describe("adapter factory", () => {
       baseURL: "http://localhost:8080/v1",
       useNativeWebSearch: false,
     });
-    expect(adapter).toBeInstanceOf(OpenAIChatCompletionsProvider);
-    expect(
-      (adapter as unknown as { omitToolChoiceWhenReasoning: boolean })
-        .omitToolChoiceWhenReasoning,
-    ).toBe(true);
+    if (!(adapter instanceof OpenAIChatCompletionsProvider)) {
+      throw new Error("Expected an OpenAI chat-completions adapter");
+    }
+    expect(adapter["omitToolChoiceWhenReasoning"]).toBe(true);
   });
 
   test("openai-compatible round-trips thinking as reasoning_content", () => {
@@ -88,11 +82,10 @@ describe("adapter factory", () => {
       baseURL: "https://example.com/v1",
       useNativeWebSearch: false,
     });
-    expect(adapter).toBeInstanceOf(OpenAIChatCompletionsProvider);
-    expect(
-      (adapter as unknown as { assistantReasoningField?: string })
-        .assistantReasoningField,
-    ).toBe("reasoning_content");
+    if (!(adapter instanceof OpenAIChatCompletionsProvider)) {
+      throw new Error("Expected an OpenAI chat-completions adapter");
+    }
+    expect(adapter["assistantReasoningField"]).toBe("reasoning_content");
   });
 
   test("litellm round-trips thinking as reasoning_content", () => {
@@ -103,11 +96,10 @@ describe("adapter factory", () => {
       baseURL: "https://example.com/v1",
       useNativeWebSearch: false,
     });
-    expect(adapter).toBeInstanceOf(OpenAIChatCompletionsProvider);
-    expect(
-      (adapter as unknown as { assistantReasoningField?: string })
-        .assistantReasoningField,
-    ).toBe("reasoning_content");
+    if (!(adapter instanceof OpenAIChatCompletionsProvider)) {
+      throw new Error("Expected an OpenAI chat-completions adapter");
+    }
+    expect(adapter["assistantReasoningField"]).toBe("reasoning_content");
   });
 
   test("backfills placeholder content after an aborted empty assistant turn", async () => {
@@ -118,8 +110,10 @@ describe("adapter factory", () => {
       baseURL: "http://localhost:8080/v1",
       useNativeWebSearch: false,
     });
-    expect(adapter).toBeInstanceOf(OpenAIChatCompletionsProvider);
-    const provider = adapter as OpenAIChatCompletionsProvider;
+    if (!(adapter instanceof OpenAIChatCompletionsProvider)) {
+      throw new Error("Expected an OpenAI chat-completions adapter");
+    }
+    const provider = adapter;
     const requests = stubChatCreate(provider);
 
     await provider.sendMessage([
@@ -136,13 +130,17 @@ describe("adapter factory", () => {
       },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{
-        role: string;
-        content: string | null;
-        tool_calls?: unknown;
-      }>;
-    };
+    const params = z
+      .looseObject({
+        messages: z.array(
+          z.looseObject({
+            role: z.string(),
+            content: z.unknown(),
+            tool_calls: z.unknown().optional(),
+          }),
+        ),
+      })
+      .parse(requests[0]);
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     expect(assistantMsg.content).toBe(EMPTY_ASSISTANT_TURN_PLACEHOLDER);
     expect(assistantMsg.tool_calls).toBeUndefined();

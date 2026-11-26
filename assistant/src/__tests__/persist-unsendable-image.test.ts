@@ -84,7 +84,9 @@ function makePngBase64(width: number, height: number, padBytes = 0): string {
   return padBytes > 0 ? header + "A".repeat(padBytes) : header;
 }
 
-function imageBlock(data: string, mediaType = "image/png"): ContentBlock {
+type ImageBlock = Extract<ContentBlock, { type: "image" }>;
+
+function imageBlock(data: string, mediaType = "image/png"): ImageBlock {
   return {
     type: "image",
     source: { type: "base64", media_type: mediaType, data },
@@ -256,8 +258,7 @@ describe("persistUnsendableImageDowngrades", () => {
     const toolResult = content.find((b) => b.type === "tool_result");
     expect(toolResult).toBeDefined();
     // AND the tool_result is preserved (pairing intact) with no image left
-    const nested = (toolResult as { contentBlocks?: ContentBlock[] })
-      .contentBlocks;
+    const nested = toolResult?.contentBlocks;
     expect(nested?.some((b) => b.type === "image")).toBe(false);
     expect(nested?.some((b) => b.type === "text")).toBe(true);
   });
@@ -279,10 +280,8 @@ describe("persistUnsendableImageDowngrades", () => {
     // THEN nothing is rewritten and the nested image remains
     expect(rewritten).toBe(0);
     const [content] = storedContent(conv.id);
-    const toolResult = content.find((b) => b.type === "tool_result") as {
-      contentBlocks?: ContentBlock[];
-    };
-    expect(toolResult.contentBlocks?.some((b) => b.type === "image")).toBe(
+    const toolResult = content.find((b) => b.type === "tool_result");
+    expect(toolResult?.contentBlocks?.some((b) => b.type === "image")).toBe(
       true,
     );
   });
@@ -307,12 +306,9 @@ describe("persistUnsendableImageDowngrades", () => {
     // THEN the image survives with its media type corrected to the sniffed one
     expect(rewritten).toBe(1);
     const [content] = storedContent(conv.id);
-    const image = content.find((b) => b.type === "image") as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const image = content.find((b) => b.type === "image");
     expect(image).toBeDefined();
-    expect(image.source).toMatchObject({
+    expect(image?.source).toMatchObject({
       type: "base64",
       media_type: "image/png",
       data: pngData,
@@ -347,20 +343,14 @@ describe("unsendableImageReplacement", () => {
    *  This is the gate that keeps the in-memory recovery from discarding valid
    *  screenshots when only one image in the turn was actually oversized. */
   test("returns null for an image within the provider caps", async () => {
-    const sendable = imageBlock(makePngBase64(1024, 768)) as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const sendable = imageBlock(makePngBase64(1024, 768));
     expect(await unsendableImageReplacement(sendable)).toBeNull();
   });
 
   /** An image past the provider caps that cannot be shrunk on this host (fake
    *  PNG that sips cannot decode) collapses to the unsendable note. */
   test("returns the unsendable note when an oversized image cannot be shrunk", async () => {
-    const oversized = imageBlock(makePngBase64(12000, 9000)) as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const oversized = imageBlock(makePngBase64(12000, 9000));
     const replacement = await unsendableImageReplacement(oversized);
     expect(replacement?.type).toBe("text");
   });
@@ -369,10 +359,7 @@ describe("unsendableImageReplacement", () => {
    *  not process image") that cannot be upscaled on this host collapses to
    *  the unsendable note, same as the oversized direction. */
   test("returns the unsendable note when an undersized image cannot be upscaled", async () => {
-    const undersized = imageBlock(makePngBase64(16, 14)) as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const undersized = imageBlock(makePngBase64(16, 14));
     const replacement = await unsendableImageReplacement(undersized);
     expect(replacement?.type).toBe("text");
   });
@@ -381,10 +368,7 @@ describe("unsendableImageReplacement", () => {
    *  is relabeled with the sniffed type instead of being noted out. */
   test("relabels a mislabeled image with its sniffed media type", async () => {
     const pngData = makePngBase64(1024, 768);
-    const mislabeled = imageBlock(pngData, "image/jpeg") as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const mislabeled = imageBlock(pngData, "image/jpeg");
     const replacement = await unsendableImageReplacement(mislabeled);
     expect(replacement).toMatchObject({
       type: "image",
@@ -398,10 +382,7 @@ describe("unsendableImageReplacement", () => {
   test("relabeling preserves the internal attachment id", async () => {
     const pngData = makePngBase64(1024, 768);
     const mislabeled = {
-      ...(imageBlock(pngData, "image/jpeg") as Extract<
-        ContentBlock,
-        { type: "image" }
-      >),
+      ...imageBlock(pngData, "image/jpeg"),
       _attachmentId: "att-frame-1",
     };
     const replacement = await unsendableImageReplacement(mislabeled);
@@ -416,7 +397,7 @@ describe("unsendableImageReplacement", () => {
   test("relabels a mislabeled workspace_ref without inlining the payload", async () => {
     const pngData = makePngBase64(1024, 768);
     const stored = await uploadAttachment("photo.png", "image/png", pngData);
-    const mislabeledRef = {
+    const mislabeledRef: ImageBlock = {
       type: "image",
       source: {
         type: "workspace_ref",
@@ -424,7 +405,7 @@ describe("unsendableImageReplacement", () => {
         attachmentId: stored.id,
         sizeBytes: Buffer.from(pngData, "base64").length,
       },
-    } as Extract<ContentBlock, { type: "image" }>;
+    };
 
     const replacement = await unsendableImageReplacement(mislabeledRef);
 
@@ -437,10 +418,9 @@ describe("unsendableImageReplacement", () => {
       },
     });
     // AND the corrected reference no longer matches on a second pass
-    expect(
-      await unsendableImageReplacement(
-        replacement as Extract<ContentBlock, { type: "image" }>,
-      ),
-    ).toBeNull();
+    if (replacement?.type !== "image") {
+      throw new Error("Expected an image replacement");
+    }
+    expect(await unsendableImageReplacement(replacement)).toBeNull();
   });
 });

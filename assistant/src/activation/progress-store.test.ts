@@ -5,7 +5,6 @@
  * idempotence and freeze rules, and the step-bump throttle (including its
  * trailing flush).
  */
-
 import {
   chmodSync,
   existsSync,
@@ -30,6 +29,8 @@ import {
   spyOn,
   test,
 } from "bun:test";
+
+import { ActivationProgressSchema } from "../api/responses/activation.js";
 
 /**
  * The real implementation, captured before any spy replaces it, so a stub
@@ -116,9 +117,9 @@ function breakDataDir(): void {
  * cannot warm the in-memory link index the test is measuring.
  */
 function readRawProgress(): ActivationProgress {
-  return JSON.parse(
-    readFileSync(getActivationProgressPath(), "utf-8"),
-  ) as ActivationProgress;
+  return ActivationProgressSchema.parse(
+    JSON.parse(readFileSync(getActivationProgressPath(), "utf-8")),
+  );
 }
 
 /** Rewrite the file behind the store's back. */
@@ -1128,8 +1129,10 @@ describe("activation progress store", () => {
         verify: () => false,
       }).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(RouteError);
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(404);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(404);
       expect(existsSync(getActivationProgressPath())).toBe(false);
     });
 
@@ -1145,7 +1148,10 @@ describe("activation progress store", () => {
       exists = false;
 
       const err = await pending;
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(404);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(404);
       expect(existsSync(getActivationProgressPath())).toBe(false);
     });
   });
@@ -1185,8 +1191,10 @@ describe("activation progress store", () => {
         conversationId: "conv-1",
       }).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(RouteError);
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(503);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(503);
       expect(existsSync(getActivationProgressPath())).toBe(false);
       expect(existsSync(lockPath)).toBe(true);
     });
@@ -1201,7 +1209,10 @@ describe("activation progress store", () => {
         conversationId: "conv-1",
       }).catch((e: unknown) => e);
 
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(503);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(503);
       expect(existsSync(lockPath)).toBe(true);
     });
 
@@ -1234,7 +1245,10 @@ describe("activation progress store", () => {
         conversationId: "conv-1",
       }).catch((e: unknown) => e);
 
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(503);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(503);
       expect(existsSync(lockPath)).toBe(true);
     });
 
@@ -1268,7 +1282,10 @@ describe("activation progress store", () => {
 
       // The other reclaimer owns the removal; a second unlink here could land
       // on whatever it creates once its own reclaim is through.
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(503);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(503);
       expect(existsSync(lockPath)).toBe(true);
       expect(existsSync(reclaimPath)).toBe(true);
     });
@@ -1372,8 +1389,10 @@ describe("activation progress store", () => {
         conversationId: "conv-1",
       }).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(RouteError);
-      expect((err as InstanceType<typeof RouteError>).statusCode).toBe(503);
+      if (!(err instanceof RouteError)) {
+        throw new Error("Expected a route error");
+      }
+      expect(err.statusCode).toBe(503);
       // Nothing was written behind the holder's back, and the lock is still
       // the holder's.
       expect(existsSync(getActivationProgressPath())).toBe(false);

@@ -68,7 +68,7 @@ function okResponse(model: string): ProviderResponse {
     model,
     usage: { inputTokens: 1, outputTokens: 1 },
     stopReason: "end_turn",
-  } as ProviderResponse;
+  };
 }
 
 /** Primary stub that always throws `makeError()`. */
@@ -94,7 +94,7 @@ function backupProvider(
 ): {
   provider: Provider;
   calls: () => number;
-  seenConfig: () => Record<string, unknown>;
+  seenConfig: () => NonNullable<SendMessageOptions["config"]>;
   seenToolNames: () => string[];
 } {
   let calls = 0;
@@ -107,14 +107,14 @@ function backupProvider(
     sendMessage: async (_messages: Message[], options?: SendMessageOptions) => {
       calls += 1;
       seen = options;
-      const config = options?.config as Record<string, unknown> | undefined;
-      return okResponse((config?.model as string | undefined) ?? "unresolved");
+      const config = options?.config;
+      return okResponse(config?.model ?? "unresolved");
     },
   };
   return {
     provider,
     calls: () => calls,
-    seenConfig: () => (seen?.config ?? {}) as Record<string, unknown>,
+    seenConfig: () => seen?.config ?? {},
     seenToolNames: () => (seen?.tools ?? []).map((tool) => tool.name),
   };
 }
@@ -192,10 +192,10 @@ describe("RetryProvider fallback-route escalation", () => {
     expect(config.forceOverrideProfile).toBeUndefined();
     // Usage-attribution headers come from the backup resolution so platform
     // usage events attribute degraded traffic to the backup profile.
-    const headers = config.usageAttributionHeaders as Record<string, string>;
-    expect(headers["X-Cadet-Inference-Profile"]).toBe("backup-profile");
-    expect(headers["X-Cadet-Resolved-Model"]).toBe("backup-model");
-    expect(headers["X-Cadet-Resolved-Provider"]).toBe("anthropic");
+    const headers = config.usageAttributionHeaders;
+    expect(headers?.["X-Cadet-Inference-Profile"]).toBe("backup-profile");
+    expect(headers?.["X-Cadet-Resolved-Model"]).toBe("backup-model");
+    expect(headers?.["X-Cadet-Resolved-Provider"]).toBe("anthropic");
   });
 
   test("401 invalid_credentials after refresh fails → falls back without burning the retry budget", async () => {
@@ -386,7 +386,10 @@ describe("RetryProvider fallback-route escalation", () => {
       wrapped.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
     );
 
-    expect((thrown as InstanceType<typeof ProviderError>).statusCode).toBe(400);
+    if (!(thrown instanceof ProviderError)) {
+      throw new Error("Expected a provider error");
+    }
+    expect(thrown.statusCode).toBe(400);
     expect(route.calls()).toBe(0);
   });
 
@@ -426,9 +429,10 @@ describe("RetryProvider fallback-route escalation", () => {
       wrapped.sendMessage(MESSAGES, { config: { callSite: "mainAgent" } }),
     );
 
-    expect((thrown as InstanceType<typeof ProviderError>).abortReason).toBe(
-      "user_cancelled",
-    );
+    if (!(thrown instanceof ProviderError)) {
+      throw new Error("Expected a provider error");
+    }
+    expect(thrown.abortReason).toBe("user_cancelled");
     expect(primary.calls()).toBe(1);
     expect(route.calls()).toBe(0);
   });
@@ -459,9 +463,7 @@ describe("RetryProvider fallback-route escalation", () => {
 
       expect(thrown).toBe(finalError);
       expect(route.calls()).toBe(0);
-      expect((thrown as { retriesExhausted?: boolean }).retriesExhausted).toBe(
-        true,
-      );
+      expect(thrown).toMatchObject({ retriesExhausted: true });
     },
   );
 
@@ -512,9 +514,7 @@ describe("RetryProvider fallback-route escalation", () => {
 
     expect(routeCalls).toBe(1);
     expect(thrown).toBe(finalError);
-    expect((thrown as { retriesExhausted?: boolean }).retriesExhausted).toBe(
-      true,
-    );
+    expect(thrown).toMatchObject({ retriesExhausted: true });
   });
 
   test("route returned for a disabled backup profile → no send on the backup adapter, original error rethrown", async () => {
@@ -638,7 +638,7 @@ describe("RetryProvider fallback-route escalation", () => {
     );
 
     expect(thrown).toBe(originalError);
-    expect((thrown as Error).cause).toBeUndefined();
+    expect(originalError.cause).toBeUndefined();
     expect(route.calls()).toBe(1);
     expect(backup.calls()).toBe(1);
   });
@@ -775,13 +775,10 @@ describe("RetryProvider fallback-route escalation", () => {
     });
 
     expect(result.model).toBe("backup-model");
-    const headers = backup.seenConfig().usageAttributionHeaders as Record<
-      string,
-      string
-    >;
-    expect(headers["X-Cadet-Inference-Profile"]).toBe("backup-profile");
-    expect(headers["X-Cadet-Resolved-Model"]).toBe("backup-model");
-    expect(headers["X-Cadet-Resolved-Provider"]).toBe("anthropic");
+    const headers = backup.seenConfig().usageAttributionHeaders;
+    expect(headers?.["X-Cadet-Inference-Profile"]).toBe("backup-profile");
+    expect(headers?.["X-Cadet-Resolved-Model"]).toBe("backup-model");
+    expect(headers?.["X-Cadet-Resolved-Provider"]).toBe("anthropic");
   });
 
   test("fallback response without actualProvider → stamped with the backup provider's name", async () => {

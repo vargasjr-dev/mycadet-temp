@@ -7,6 +7,8 @@
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { inferenceProfileSessionResponseSchema } from "../runtime/routes/inference-profile-session-schema.js";
+
 setHubPublishOverrideForTesting(async () => {});
 
 mock.module("../runtime/assistant-event.js", () => ({
@@ -31,9 +33,20 @@ mock.module("../providers/cloud-proxy/context.js", () => ({
 import { createConversation } from "../persistence/conversation-crud.js";
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
+import {
+  conversationAssistantAttentionState,
+  conversationKeys,
+  conversations,
+  externalConversationBindings,
+  messages,
+} from "../persistence/schema/index.js";
 import { providerConnections } from "../persistence/schema/inference.js";
 import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
-import { ROUTES } from "../runtime/routes/inference-profile-session-routes.js";
+import {
+  closeInferenceProfileSessionResponseSchema,
+  listInferenceProfileSessionsResponseSchema,
+  ROUTES,
+} from "../runtime/routes/inference-profile-session-routes.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
@@ -63,11 +76,11 @@ const listRoute = ROUTES.find(
 
 function clearTables(): void {
   const db = getDb();
-  db.run("DELETE FROM conversation_assistant_attention_state");
-  db.run("DELETE FROM external_conversation_bindings");
-  db.run("DELETE FROM conversation_keys");
-  db.run("DELETE FROM messages");
-  db.run("DELETE FROM conversations");
+  db.delete(conversationAssistantAttentionState).run();
+  db.delete(externalConversationBindings).run();
+  db.delete(conversationKeys).run();
+  db.delete(messages).run();
+  db.delete(conversations).run();
 }
 
 describe("inference_profile_open IPC op", () => {
@@ -80,20 +93,23 @@ describe("inference_profile_open IPC op", () => {
   test("opens a session with TTL and returns sessionId + expiresAt", async () => {
     const conv = createConversation("ipc-open-ttl");
 
-    const result = await openRoute.handler({
-      body: { conversationId: conv.id, profile: "balanced", ttlSeconds: 300 },
-      headers: {},
-    });
+    const result = inferenceProfileSessionResponseSchema.parse(
+      await openRoute.handler({
+        body: { conversationId: conv.id, profile: "balanced", ttlSeconds: 300 },
+        headers: {},
+      }),
+    );
 
     expect(result).toMatchObject({
       conversationId: conv.id,
       profile: "balanced",
       replaced: null,
     });
-    expect((result as { sessionId: string }).sessionId).not.toBeNull();
-    expect((result as { expiresAt: number }).expiresAt).toBeGreaterThan(
-      Date.now(),
-    );
+    expect(result.sessionId).not.toBeNull();
+    if (result.expiresAt === null) {
+      throw new Error("Expected the session to expire");
+    }
+    expect(result.expiresAt).toBeGreaterThan(Date.now());
   });
 
   test("opens a sticky session (no ttlSeconds) — sessionId=null, expiresAt=null", async () => {
@@ -127,19 +143,23 @@ describe("inference_profile_open IPC op", () => {
   test("replaced carries prior session when opening over an active session", async () => {
     const conv = createConversation("ipc-open-replace");
 
-    const first = (await openRoute.handler({
-      body: { conversationId: conv.id, profile: "balanced", ttlSeconds: 300 },
-      headers: {},
-    })) as { sessionId: string };
+    const first = inferenceProfileSessionResponseSchema.parse(
+      await openRoute.handler({
+        body: { conversationId: conv.id, profile: "balanced", ttlSeconds: 300 },
+        headers: {},
+      }),
+    );
 
-    const second = (await openRoute.handler({
-      body: {
-        conversationId: conv.id,
-        profile: "cost-optimized",
-        ttlSeconds: 600,
-      },
-      headers: {},
-    })) as { replaced: { profile: string; sessionId: string } | null };
+    const second = inferenceProfileSessionResponseSchema.parse(
+      await openRoute.handler({
+        body: {
+          conversationId: conv.id,
+          profile: "cost-optimized",
+          ttlSeconds: 600,
+        },
+        headers: {},
+      }),
+    );
 
     expect(second.replaced).not.toBeNull();
     expect(second.replaced!.profile).toBe("balanced");
@@ -153,18 +173,19 @@ describe("inference_profile_close IPC op", () => {
   test("closes an active session — noop=false, closed carries profile and sessionId", async () => {
     const conv = createConversation("ipc-close-active");
 
-    const opened = (await openRoute.handler({
-      body: { conversationId: conv.id, profile: "balanced", ttlSeconds: 300 },
-      headers: {},
-    })) as { sessionId: string };
+    const opened = inferenceProfileSessionResponseSchema.parse(
+      await openRoute.handler({
+        body: { conversationId: conv.id, profile: "balanced", ttlSeconds: 300 },
+        headers: {},
+      }),
+    );
 
-    const result = (await closeRoute.handler({
-      body: { conversationId: conv.id },
-      headers: {},
-    })) as {
-      noop: boolean;
-      closed: { profile: string; sessionId: string } | null;
-    };
+    const result = closeInferenceProfileSessionResponseSchema.parse(
+      await closeRoute.handler({
+        body: { conversationId: conv.id },
+        headers: {},
+      }),
+    );
 
     expect(result.noop).toBe(false);
     expect(result.closed).not.toBeNull();
@@ -175,10 +196,12 @@ describe("inference_profile_close IPC op", () => {
   test("close with no active session — noop=true, closed=null", async () => {
     const conv = createConversation("ipc-close-noop");
 
-    const result = (await closeRoute.handler({
-      body: { conversationId: conv.id },
-      headers: {},
-    })) as { noop: boolean; closed: null };
+    const result = closeInferenceProfileSessionResponseSchema.parse(
+      await closeRoute.handler({
+        body: { conversationId: conv.id },
+        headers: {},
+      }),
+    );
 
     expect(result.noop).toBe(true);
     expect(result.closed).toBeNull();
@@ -205,10 +228,12 @@ describe("inference_profile_list IPC op", () => {
       headers: {},
     });
 
-    const result = (await listRoute.handler({
-      queryParams: {},
-      headers: {},
-    })) as { sessions: Array<{ conversationId: string }> };
+    const result = listInferenceProfileSessionsResponseSchema.parse(
+      await listRoute.handler({
+        queryParams: {},
+        headers: {},
+      }),
+    );
 
     expect(result.sessions.length).toBeGreaterThanOrEqual(2);
     const ids = result.sessions.map((s) => s.conversationId);
@@ -233,10 +258,12 @@ describe("inference_profile_list IPC op", () => {
       headers: {},
     });
 
-    const result = (await listRoute.handler({
-      queryParams: { conversationId: conv1.id },
-      headers: {},
-    })) as { sessions: Array<{ conversationId: string }> };
+    const result = listInferenceProfileSessionsResponseSchema.parse(
+      await listRoute.handler({
+        queryParams: { conversationId: conv1.id },
+        headers: {},
+      }),
+    );
 
     expect(result.sessions).toHaveLength(1);
     expect(result.sessions[0].conversationId).toBe(conv1.id);
@@ -245,10 +272,12 @@ describe("inference_profile_list IPC op", () => {
   test("returns empty list when no active session for the given conversationId", async () => {
     const conv = createConversation("ipc-list-empty");
 
-    const result = (await listRoute.handler({
-      queryParams: { conversationId: conv.id },
-      headers: {},
-    })) as { sessions: unknown[] };
+    const result = listInferenceProfileSessionsResponseSchema.parse(
+      await listRoute.handler({
+        queryParams: { conversationId: conv.id },
+        headers: {},
+      }),
+    );
 
     expect(result.sessions).toHaveLength(0);
   });

@@ -4,11 +4,12 @@
  * when a run directory exceeds the configured bundle size cap, and post-delete
  * budget recalculation.
  */
-
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { ProfilerRunManifest } from "../daemon/profiler-run-store.js";
 import {
@@ -113,15 +114,29 @@ afterEach(() => {
 
 // ── Tests ───────────────────────────────────────────────────────────────
 
+const runListSchema = z.object({
+  runs: z.array(z.object({ runId: z.string() })),
+  totalRuns: z.number(),
+  activeRunId: z.string().nullable(),
+});
+const runDetailSchema = z.object({
+  runId: z.string(),
+  status: z.string(),
+  summary: z.string().nullable(),
+  isActive: z.boolean(),
+});
+const deleteRunResultSchema = z.object({
+  deleted: z.boolean(),
+  runId: z.string(),
+  remainingRuns: z.number(),
+  activeRunOverBudget: z.boolean(),
+});
+
 describe("Profiler routes", () => {
   describe("GET /v1/profiler/runs (list)", () => {
     test("returns empty list when no runs exist", () => {
       const route = findRoute("profiler_runs_get")!;
-      const result = route.handler({}) as {
-        runs: unknown[];
-        totalRuns: number;
-        activeRunId: string | null;
-      };
+      const result = runListSchema.parse(route.handler({}));
 
       expect(result.runs).toEqual([]);
       expect(result.totalRuns).toBe(0);
@@ -145,10 +160,7 @@ describe("Profiler routes", () => {
       });
 
       const route = findRoute("profiler_runs_get")!;
-      const result = route.handler({}) as {
-        runs: ProfilerRunManifest[];
-        totalRuns: number;
-      };
+      const result = runListSchema.parse(route.handler({}));
 
       expect(result.totalRuns).toBe(2);
       expect(result.runs[0]!.runId).toBe("new-run");
@@ -160,9 +172,7 @@ describe("Profiler routes", () => {
       createRun("active-run", { sizeBytes: 512 });
 
       const route = findRoute("profiler_runs_get")!;
-      const result = route.handler({}) as {
-        activeRunId: string | null;
-      };
+      const result = runListSchema.parse(route.handler({}));
 
       expect(result.activeRunId).toBe("active-run");
     });
@@ -220,14 +230,11 @@ describe("Profiler routes", () => {
       });
 
       const route = findRoute("profiler_runs_by_runId_get")!;
-      const result = route.handler({
-        pathParams: { runId: "run-with-summary" },
-      }) as {
-        runId: string;
-        status: string;
-        summary: string | null;
-        isActive: boolean;
-      };
+      const result = runDetailSchema.parse(
+        route.handler({
+          pathParams: { runId: "run-with-summary" },
+        }),
+      );
 
       expect(result.runId).toBe("run-with-summary");
       expect(result.status).toBe("completed");
@@ -242,11 +249,11 @@ describe("Profiler routes", () => {
       });
 
       const route = findRoute("profiler_runs_by_runId_get")!;
-      const result = route.handler({
-        pathParams: { runId: "run-no-summary" },
-      }) as {
-        summary: string | null;
-      };
+      const result = runDetailSchema.parse(
+        route.handler({
+          pathParams: { runId: "run-no-summary" },
+        }),
+      );
 
       expect(result.summary).toBeNull();
     });
@@ -259,11 +266,11 @@ describe("Profiler routes", () => {
       });
 
       const route = findRoute("profiler_runs_by_runId_get")!;
-      const result = route.handler({
-        pathParams: { runId: "live-run" },
-      }) as {
-        isActive: boolean;
-      };
+      const result = runDetailSchema.parse(
+        route.handler({
+          pathParams: { runId: "live-run" },
+        }),
+      );
 
       expect(result.isActive).toBe(true);
     });
@@ -284,11 +291,13 @@ describe("Profiler routes", () => {
       });
 
       const route = findRoute("profiler_runs_by_runId_export_post")!;
-      const result = (await route.handler({
+      const result = await route.handler({
         pathParams: { runId: "exportable-run" },
-      })) as Uint8Array;
+      });
 
-      expect(result).toBeInstanceOf(Uint8Array);
+      if (!(result instanceof Uint8Array)) {
+        throw new Error("Expected archive bytes");
+      }
       expect(result.byteLength).toBeGreaterThan(0);
     });
 
@@ -376,14 +385,11 @@ describe("Profiler routes", () => {
       });
 
       const route = findRoute("profiler_runs_by_runId_delete")!;
-      const result = route.handler({
-        pathParams: { runId: "completed-run" },
-      }) as {
-        deleted: boolean;
-        runId: string;
-        remainingRuns: number;
-        activeRunOverBudget: boolean;
-      };
+      const result = deleteRunResultSchema.parse(
+        route.handler({
+          pathParams: { runId: "completed-run" },
+        }),
+      );
 
       expect(result.deleted).toBe(true);
       expect(result.runId).toBe("completed-run");
@@ -419,12 +425,11 @@ describe("Profiler routes", () => {
 
       // Delete one of the runs
       const route = findRoute("profiler_runs_by_runId_delete")!;
-      const result = route.handler({
-        pathParams: { runId: "over-budget-a" },
-      }) as {
-        deleted: boolean;
-        remainingRuns: number;
-      };
+      const result = deleteRunResultSchema.parse(
+        route.handler({
+          pathParams: { runId: "over-budget-a" },
+        }),
+      );
 
       expect(result.deleted).toBe(true);
       // The remaining run should survive since it's within budget now

@@ -58,6 +58,15 @@ setBroadcastOverrideForTesting((msg: AssistantEvent) => _sentBuffer.push(msg));
 const { QuestionPrompter, QuestionBatchValidationError, buildBatchEntries } =
   await import("./question-prompter.js");
 
+function requireQuestionRequest(
+  event: AssistantEvent | undefined,
+): QuestionRequestEvent {
+  if (event?.type !== "question_request") {
+    throw new Error("Expected a question request event");
+  }
+  return event;
+}
+
 function makePrompter() {
   const sent: AssistantEvent[] = [];
   _sentBuffer = sent;
@@ -169,7 +178,7 @@ describe("QuestionPrompter", () => {
     const promise = prompter.prompt(singleQuestionParams);
 
     expect(sent).toHaveLength(1);
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
     expect(req.type).toBe("question_request");
     expect(req.questions).toHaveLength(1);
     expect(req.questions[0]?.id).toBe("q1");
@@ -196,7 +205,7 @@ describe("QuestionPrompter", () => {
       ...threeQuestionParams,
       toolUseId: "tool-q",
     });
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
 
     // THEN the registered interaction carries the full entries (not just the
     // id maps in `metadata`) so a history-load render can rehydrate the card
@@ -227,7 +236,7 @@ describe("QuestionPrompter", () => {
       ],
     });
 
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
     expect(req.freeTextPlaceholder).toBe("Type a fruit");
     expect(req.questions[0]?.freeTextPlaceholder).toBe("Type a fruit");
 
@@ -250,7 +259,7 @@ describe("QuestionPrompter", () => {
     void prompter.prompt(threeQuestionParams);
 
     expect(sent).toHaveLength(1);
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
     expect(req.questions.map((q) => q.id)).toEqual(["q1", "q2", "q3"]);
     // Flat fields mirror the first entry for backwards compat.
     expect(req.question).toBe("Q1?");
@@ -261,7 +270,7 @@ describe("QuestionPrompter", () => {
     const { prompter, sent } = makePrompter();
 
     const promise = prompter.prompt(threeQuestionParams);
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
 
     resolveBatch(req.requestId, [
       { questionId: "q2", kind: "option", optionId: "y" },
@@ -284,7 +293,7 @@ describe("QuestionPrompter", () => {
     const { prompter, sent } = makePrompter();
 
     const promise = prompter.prompt(threeQuestionParams);
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
 
     resolveBatch(req.requestId, [
       { questionId: "q1", kind: "skip" },
@@ -301,7 +310,7 @@ describe("QuestionPrompter", () => {
     const { prompter, sent } = makePrompter();
 
     const promise = prompter.prompt(threeQuestionParams);
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
 
     closeBatch(req.requestId);
 
@@ -366,7 +375,7 @@ describe("QuestionPrompter", () => {
       ...threeQuestionParams,
       signal: ac.signal,
     });
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
     expect(_piStore.has(req.requestId)).toBe(true);
 
     ac.abort();
@@ -396,7 +405,7 @@ describe("QuestionPrompter", () => {
       ...threeQuestionParams,
       signal: ac.signal,
     });
-    const req = sent[0] as QuestionRequestEvent;
+    const req = requireQuestionRequest(sent[0]);
     expect(_piStore.has(req.requestId)).toBe(true);
 
     // Simulate `removeByConversation` clearing the registry entry before

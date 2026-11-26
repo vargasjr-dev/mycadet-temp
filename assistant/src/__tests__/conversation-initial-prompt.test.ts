@@ -17,7 +17,6 @@
 import { describe, expect, test } from "bun:test";
 
 import { resolveInitialSystemPrompt } from "../daemon/conversation-initial-prompt.js";
-import type { ConversationCreateOptions } from "../daemon/handlers/shared.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 
 function spyDeps() {
@@ -39,28 +38,28 @@ function spyDeps() {
   };
 }
 
-const REQUESTER_TRUST = {
+const REQUESTER_TRUST: TrustContext = {
   sourceChannel: "slack",
   trustClass: "trusted_contact",
   requesterExternalUserId: "user-123",
-} as unknown as TrustContext;
+};
 
 // The shape scheduler execute/reuse runs, memory consolidation, and other
 // runBackgroundJob callers pass at construction: guardian class, no
 // per-actor identity.
-const GUARDIAN_BACKGROUND_TRUST = {
+const GUARDIAN_BACKGROUND_TRUST: TrustContext = {
   sourceChannel: "cadet",
   trustClass: "guardian",
-} as unknown as TrustContext;
+};
 
 // Managed desktop: guardian class WITH a requester principal id. The persona
 // resolution may still need the guardian-delivery cache (contact lookup miss
 // or null userFile falls through to the guardian file).
-const GUARDIAN_REQUESTER_TRUST = {
+const GUARDIAN_REQUESTER_TRUST: TrustContext = {
   sourceChannel: "cadet",
   trustClass: "guardian",
   requesterExternalUserId: "principal-123",
-} as unknown as TrustContext;
+};
 
 describe("resolveInitialSystemPrompt", () => {
   test("no construction-time identity: warms the guardian binding, then builds with no trust context", async () => {
@@ -77,7 +76,7 @@ describe("resolveInitialSystemPrompt", () => {
   test("non-guardian channel-routed: threads the requester trust context and skips the guardian warm", async () => {
     const { calls, builtWith, deps } = spyDeps();
     const result = await resolveInitialSystemPrompt(
-      { trustContext: REQUESTER_TRUST } as ConversationCreateOptions,
+      { trustContext: REQUESTER_TRUST },
       deps,
     );
 
@@ -91,7 +90,7 @@ describe("resolveInitialSystemPrompt", () => {
   test("guardian-class background shape: warms the guardian binding, then builds with the trust context", async () => {
     const { calls, builtWith, deps } = spyDeps();
     const result = await resolveInitialSystemPrompt(
-      { trustContext: GUARDIAN_BACKGROUND_TRUST } as ConversationCreateOptions,
+      { trustContext: GUARDIAN_BACKGROUND_TRUST },
       deps,
     );
 
@@ -106,7 +105,7 @@ describe("resolveInitialSystemPrompt", () => {
   test("guardian-class with requester identity (managed desktop): still warms before building", async () => {
     const { calls, builtWith, deps } = spyDeps();
     const result = await resolveInitialSystemPrompt(
-      { trustContext: GUARDIAN_REQUESTER_TRUST } as ConversationCreateOptions,
+      { trustContext: GUARDIAN_REQUESTER_TRUST },
       deps,
     );
 
@@ -118,7 +117,7 @@ describe("resolveInitialSystemPrompt", () => {
   test("an explicit override is used verbatim and skips the warm and build", async () => {
     const { calls, deps } = spyDeps();
     const result = await resolveInitialSystemPrompt(
-      { systemPromptOverride: "CUSTOM PROMPT" } as ConversationCreateOptions,
+      { systemPromptOverride: "CUSTOM PROMPT" },
       deps,
     );
 
@@ -129,7 +128,7 @@ describe("resolveInitialSystemPrompt", () => {
   test("an explicit empty-string override is honored verbatim (not treated as absent)", async () => {
     const { calls, deps } = spyDeps();
     const result = await resolveInitialSystemPrompt(
-      { systemPromptOverride: "" } as ConversationCreateOptions,
+      { systemPromptOverride: "" },
       deps,
     );
 

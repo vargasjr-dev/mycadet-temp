@@ -38,7 +38,7 @@ const callSiteEntrySchema = z.object({
   shippedDefaultProfile: z.string().optional(),
 });
 
-const callSiteCatalogResponseSchema = z.object({
+export const callSiteCatalogResponseSchema = z.object({
   domains: z.array(callSiteDomainSchema),
   callSites: z.array(callSiteEntrySchema),
 });
