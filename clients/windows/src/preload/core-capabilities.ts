@@ -23,13 +23,12 @@ export type WindowsCoreBridge = Pick<
 >;
 
 /**
- * macOS-only bridge surfaces with no Windows counterpart. Both belong to the
- * companion surface, a floating always-present window the Windows shell does
- * not open; the renderer feature-detects them and falls back to web behavior.
- * See `docs/parity-matrix.md`.
+ * macOS-only bridge surfaces with no Windows counterpart: voice activity
+ * belongs to the companion voice session, a floating always-present window
+ * the Windows shell does not open; the renderer feature-detects it and
+ * falls back to web behavior. See `docs/parity-matrix.md`.
  */
 export const WINDOWS_NOT_APPLICABLE_CAPABILITIES = [
-  "companion",
   "voiceActivity",
 ] as const satisfies readonly (keyof CadetBridge)[];
 

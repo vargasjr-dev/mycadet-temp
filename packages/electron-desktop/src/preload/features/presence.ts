@@ -17,28 +17,25 @@ import {
   POWER_EVENT,
   STATUS_CONNECTION,
 } from "@mycadet/ipc-contract";
-import type { BridgeCapabilityRegistry } from "../../capability-registry";
 
-export const install = (
-  bridge: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  bridge.contribute("status", {
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.status = {
     setConnection: (status) => ipcRenderer.send(STATUS_CONNECTION, status),
-  });
-  bridge.contribute("identity", {
+  };
+  bridge.identity = {
     setName: (name) => ipcRenderer.send(IDENTITY_NAME, name),
-  });
-  bridge.contribute("icon", {
+  };
+  bridge.icon = {
     setAvatar: (png) => ipcRenderer.send(ICON_SET_AVATAR, png),
     // `accentHex` is part of the character's contract (the avatar's accent
     // carried separately for the macOS dock icon) — forward it verbatim.
     setCharacter: (character, accentHex) =>
       ipcRenderer.send(ICON_SET_CHARACTER, character, accentHex ?? null),
-  });
-  bridge.contribute("dock", {
+  };
+  bridge.dock = {
     setBadge: (count) => ipcRenderer.send(DOCK_SET_BADGE, count),
-  });
-  bridge.contribute("power", {
+  };
+  bridge.power = {
     onEvent: (callback) => {
       const handler = (_event: IpcRendererEvent, payload: PowerEvent) => {
         callback(payload);
@@ -46,8 +43,8 @@ export const install = (
       ipcRenderer.on(POWER_EVENT, handler);
       return () => ipcRenderer.off(POWER_EVENT, handler);
     },
-  });
-  bridge.contribute("connectivity", {
+  };
+  bridge.connectivity = {
     onState: (callback) => {
       const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
         callback(state);
@@ -60,5 +57,5 @@ export const install = (
     setDevice: (online) => ipcRenderer.send(CONNECTIVITY_SET_DEVICE, online),
     retry: (): Promise<ConnectivityState> =>
       Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_RETRY)),
-  });
+  };
 };

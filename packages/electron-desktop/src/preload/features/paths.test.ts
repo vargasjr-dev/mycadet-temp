@@ -9,7 +9,6 @@ import {
   FILE_OPEN_UNSUBSCRIBE,
   type CadetBridge,
 } from "@mycadet/ipc-contract";
-import { BridgeCapabilityRegistry } from "../../capability-registry";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -34,9 +33,8 @@ mock.module("electron", () =>
 );
 
 const { install: pathsInstall } = await import("./paths");
-const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-pathsInstall(registry);
-const bridge = registry.build();
+const bridge: Partial<CadetBridge> = {};
+pathsInstall(bridge);
 
 test("resolves only native File paths and returns null when unavailable", () => {
   const file = new File(["bundle"], "例.cadet");

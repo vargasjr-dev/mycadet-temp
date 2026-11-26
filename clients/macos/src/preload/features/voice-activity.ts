@@ -1,6 +1,5 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import type {
   CadetBridge,
   VoiceActivityContent,
@@ -10,10 +9,8 @@ import type {
 
 /** The macOS voice-activity bridge: the raw transcript stream and the
  * call controls the companion voice session drives. */
-export const install = (
-  registry: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  registry.contribute("voiceActivity", {
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.voiceActivity = {
     start: (state: VoiceActivityStart): void => {
       ipcRenderer.send("cadet:voiceActivity:start", state);
     },
@@ -38,5 +35,5 @@ export const install = (
         ipcRenderer.off("cadet:voiceActivity:controlEvent", handler);
       };
     },
-  });
+  };
 };

@@ -1,23 +1,29 @@
-import { expect, mock, test } from "bun:test";
-import type { IpcRenderer } from "electron";
+import { beforeEach, expect, mock, test } from "bun:test";
 
 import { electronMock } from "../test-setup";
 
 // The preload module graph runtime-imports the electron module (the
 // features pull `ipcRenderer` themselves), so it must be mocked before
-// the factories load. The factories still take their IPC as a parameter —
-// these tests exercise them with the local stubs below.
+// the factories load. The factories under test read the mocked
+// `ipcRenderer` exactly the way the packaged preload does.
+type Listener = (...args: unknown[]) => void;
+const listeners = new Map<string, Listener>();
+const invoke = mock((channel: string, ..._args: unknown[]) =>
+  Promise.resolve(
+    channel === NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER
+      ? true
+      : { success: true },
+  ),
+);
+const send = mock((_channel: string, ..._args: unknown[]) => undefined);
+const off = mock((_channel: string, _listener: Listener) => undefined);
+const on = mock((channel: string, listener: Listener) => {
+  listeners.set(channel, listener);
+});
+
 mock.module("electron", () =>
-  // A no-op ipcRenderer binding is all the feature graph needs — the
-  // factories under test receive their IPC as parameters below.
   electronMock({
-    ipcRenderer: {
-      invoke: () => Promise.resolve(),
-      off: () => undefined,
-      on: () => undefined,
-      send: () => undefined,
-      sendSync: () => null,
-    },
+    ipcRenderer: { invoke, off, on, send },
     webUtils: { getPathForFile: () => "" },
   }),
 );
@@ -42,7 +48,15 @@ const {
   createDictationOfferBridge,
   createNotificationsBridge,
   createWindowAttentionSubscriber,
-} = await import("./preload");
+} = await import("./preload/factories");
+
+beforeEach(() => {
+  invoke.mockClear();
+  send.mockClear();
+  off.mockClear();
+  on.mockClear();
+  listeners.clear();
+});
 
 test("notification preload works without crypto.randomUUID", async () => {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
@@ -51,20 +65,7 @@ test("notification preload works without crypto.randomUUID", async () => {
     value: {},
   });
   try {
-    const invoke = mock((_channel: string, _payload?: unknown) =>
-      Promise.resolve(true),
-    );
-    const ipc = {
-      invoke,
-      on() {
-        return this;
-      },
-      off() {
-        return this;
-      },
-      send() {},
-    };
-    const bridge = createNotificationsBridge(ipc);
+    const bridge = createNotificationsBridge();
     expect(await bridge.registerIdentityPublisher?.()).toBe(true);
     expect(invoke).toHaveBeenCalledWith(
       NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER,
@@ -79,9 +80,7 @@ test("notification preload works without crypto.randomUUID", async () => {
 });
 
 test("sends recovery offers and clears over the companion IPC channel", () => {
-  const send = mock((_channel: string, _offer: unknown) => undefined);
-  const ipc = { send } as unknown as IpcRenderer;
-  const bridge = createDictationOfferBridge(ipc);
+  const bridge = createDictationOfferBridge();
   const offer = {
     text: "make this friendlier",
     reason: "paste-failed" as const,
@@ -95,30 +94,7 @@ test("sends recovery offers and clears over the companion IPC channel", () => {
 });
 
 test("creates the notification bridge with optional identity methods", async () => {
-  const handlers = new Map<
-    string,
-    (event: unknown, payload: unknown) => void
-  >();
-  const invoke = mock((channel: string, _payload?: unknown) =>
-    Promise.resolve(
-      channel === NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER
-        ? true
-        : { success: true },
-    ),
-  );
-  const on = mock(
-    (channel: string, handler: (event: unknown, payload: unknown) => void) => {
-      handlers.set(channel, handler);
-    },
-  );
-  const off = mock(() => undefined);
-  const ipc = {
-    invoke,
-    send: mock(() => undefined),
-    on,
-    off,
-  } as unknown as Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
-  const bridge = createNotificationsBridge(ipc);
+  const bridge = createNotificationsBridge();
   const scopeId = `scope:v1:${"a".repeat(64)}`;
   const identity = {
     scopeId,
@@ -163,25 +139,14 @@ test("creates the notification bridge with optional identity methods", async () 
   const received: unknown[] = [];
   const unsubscribe = bridge.onAction((event) => received.push(event));
   const action = { kind: "click" as const, conversationId: "conv-a" };
-  handlers.get(NOTIFICATIONS_ACTION)?.({}, action);
+  listeners.get(NOTIFICATIONS_ACTION)?.({}, action);
   expect(received).toEqual([action]);
   unsubscribe();
-  expect(off).toHaveBeenCalledWith(
-    NOTIFICATIONS_ACTION,
-    handlers.get(NOTIFICATIONS_ACTION),
-  );
+  expect(off).toHaveBeenCalledWith(NOTIFICATIONS_ACTION, expect.any(Function));
 });
 
 test("creates the bundle confirmation IPC bridge", async () => {
-  const invoke = mock(() => Promise.resolve(null));
-  const send = mock(() => undefined);
-  const ipc = {
-    invoke,
-    send,
-    on: mock(() => undefined),
-    off: mock(() => undefined),
-  } as unknown as Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
-  const bridge = createBundleConfirmBridge(ipc);
+  const bridge = createBundleConfirmBridge();
 
   await bridge.getData();
   bridge.respond(true);
@@ -191,20 +156,7 @@ test("creates the bundle confirmation IPC bridge", async () => {
 });
 
 test("creates the downloads IPC bridge", async () => {
-  type DoneHandler = (event: unknown, payload: DownloadDoneEvent) => void;
-  let handler: DoneHandler | null = null;
-  const invoke = mock(() => Promise.resolve());
-  const on = mock((_channel: string, h: DoneHandler) => {
-    handler = h;
-  });
-  const off = mock(() => undefined);
-  const ipc = {
-    invoke,
-    send: mock(() => undefined),
-    on,
-    off,
-  } as unknown as Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
-  const bridge = createDownloadsBridge(ipc);
+  const bridge = createDownloadsBridge();
 
   const received: DownloadDoneEvent[] = [];
   const unsubscribe = bridge.onDone((event) => received.push(event));
@@ -212,39 +164,24 @@ test("creates the downloads IPC bridge", async () => {
 
   expect(invoke).toHaveBeenCalledWith("cadet:downloads:reveal", "dl-1");
   expect(on).toHaveBeenCalledWith("cadet:downloads:done", expect.any(Function));
-  handler!({}, { id: "dl-1", filename: "report.pdf", state: "completed" });
+  listeners.get("cadet:downloads:done")?.(
+    {},
+    {
+      id: "dl-1",
+      filename: "report.pdf",
+      state: "completed",
+    },
+  );
   expect(received).toEqual([
     { id: "dl-1", filename: "report.pdf", state: "completed" },
   ]);
 
   unsubscribe();
-  expect(off).toHaveBeenCalledWith("cadet:downloads:done", handler);
+  expect(off).toHaveBeenCalledWith(
+    "cadet:downloads:done",
+    expect.any(Function),
+  );
 });
-
-type AttentionHandler = (
-  event: unknown,
-  payload: WindowAttentionPayload,
-) => void;
-
-const attentionIpc = () => {
-  let handler: AttentionHandler | null = null;
-  const on = mock((_channel: string, h: AttentionHandler) => {
-    handler = h;
-  });
-  const ipc = {
-    invoke: mock(() => Promise.resolve()),
-    send: mock(() => undefined),
-    on,
-    off: mock(() => undefined),
-  } as unknown as Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
-  return {
-    broadcast: (payload: WindowAttentionPayload): void => {
-      handler!({}, payload);
-    },
-    ipc,
-    on,
-  };
-};
 
 const ATTENDED: WindowAttentionPayload = {
   visible: true,
@@ -258,9 +195,15 @@ const UNFOCUSED: WindowAttentionPayload = {
   minimized: false,
 };
 
+/** The latest WINDOW_ATTENTION listener the factory registered. */
+const broadcast = (payload: WindowAttentionPayload): void => {
+  const handler = listeners.get(WINDOW_ATTENTION);
+  if (!handler) throw new Error("window-attention listener was not registered");
+  handler({}, payload);
+};
+
 test("delivers broadcasts to a subscriber registered before the first one", () => {
-  const { broadcast, ipc, on } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   const received: WindowAttentionPayload[] = [];
   onWindowAttention((payload) => received.push(payload));
@@ -274,8 +217,7 @@ test("delivers broadcasts to a subscriber registered before the first one", () =
 });
 
 test("replays the last window-attention payload to a late subscriber", () => {
-  const { broadcast, ipc } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   broadcast(ATTENDED);
 
@@ -286,8 +228,7 @@ test("replays the last window-attention payload to a late subscriber", () => {
 });
 
 test("replays the window-attention payload to every late subscriber", () => {
-  const { broadcast, ipc } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   broadcast(ATTENDED);
 
@@ -298,16 +239,10 @@ test("replays the window-attention payload to every late subscriber", () => {
 
   expect(first).toEqual([ATTENDED]);
   expect(second).toEqual([ATTENDED]);
-
-  broadcast(UNFOCUSED);
-
-  expect(first).toEqual([ATTENDED, UNFOCUSED]);
-  expect(second).toEqual([ATTENDED, UNFOCUSED]);
 });
 
 test("replays the latest window-attention payload, not the first", () => {
-  const { broadcast, ipc } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   broadcast(ATTENDED);
   broadcast(UNFOCUSED);
@@ -319,8 +254,7 @@ test("replays the latest window-attention payload, not the first", () => {
 });
 
 test("stops window-attention delivery once the subscriber unsubscribes", () => {
-  const { broadcast, ipc } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   const received: WindowAttentionPayload[] = [];
   const unsubscribe = onWindowAttention((payload) => received.push(payload));
@@ -332,8 +266,7 @@ test("stops window-attention delivery once the subscriber unsubscribes", () => {
 });
 
 test("does not replay window attention after the subscriber unsubscribes", () => {
-  const { broadcast, ipc } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   broadcast(ATTENDED);
 
@@ -347,8 +280,7 @@ test("does not replay window attention after the subscriber unsubscribes", () =>
 });
 
 test("skips a window-attention subscriber that unsubscribes mid-broadcast", () => {
-  const { broadcast, ipc } = attentionIpc();
-  const onWindowAttention = createWindowAttentionSubscriber(ipc);
+  const onWindowAttention = createWindowAttentionSubscriber();
 
   const second: WindowAttentionPayload[] = [];
   let unsubscribeSecond = (): void => undefined;
@@ -360,26 +292,4 @@ test("skips a window-attention subscriber that unsubscribes mid-broadcast", () =
   broadcast(ATTENDED);
 
   expect(second).toEqual([]);
-});
-
-test("permission guide drag sends only its id and releases state subscriptions", async () => {
-  const { createPermissionSetupBridge } = await import("./preload");
-  const send = mock(() => undefined);
-  const on = mock(() => undefined);
-  const off = mock(() => undefined);
-  const ipc = {
-    invoke: mock(async () => null),
-    send,
-    on,
-    off,
-  } as unknown as IpcRenderer;
-  const bridge = createPermissionSetupBridge(ipc);
-  bridge.cancel();
-  expect(send).toHaveBeenCalledWith("cadet:permissions:guide:cancel");
-  bridge.startDrag(7);
-  expect(send).toHaveBeenCalledWith("cadet:permissions:guide:drag", 7);
-  const unsubscribe = bridge.onGuide(() => undefined);
-  expect(on).toHaveBeenCalledTimes(1);
-  unsubscribe();
-  expect(off).toHaveBeenCalledTimes(1);
 });

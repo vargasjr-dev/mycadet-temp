@@ -29,7 +29,6 @@ import type {
 
 import { composeDesktopPreload } from "@mycadet/electron-desktop/preload";
 import { createMacosCoreBridge } from "./core-capabilities";
-import { install as installCompanion } from "./features/companion";
 import { install as installHelperHotkeys } from "./features/helper-hotkeys";
 import { install as installPermissionsSetup } from "./features/permissions-setup";
 import { install as installVoiceActivity } from "./features/voice-activity";
@@ -63,17 +62,11 @@ export type {
 
 // The client's core bridge, the shared feature set, and the macOS-only
 // features: the helper's raw-keyboard hotkey flavor, the permission-setup
-// guide, and the companion + voice-activity surfaces.
+// guide, and the voice-activity surface. The global `Window.cadet` view is
+// the shared preload entry's, not this file's.
 const bridge = composeDesktopPreload(createMacosCoreBridge(), [
-  installCompanion,
   installHelperHotkeys,
   installPermissionsSetup,
   installVoiceActivity,
 ]);
 contextBridge.exposeInMainWorld("cadet", bridge);
-
-declare global {
-  interface Window {
-    cadet: CadetBridge;
-  }
-}

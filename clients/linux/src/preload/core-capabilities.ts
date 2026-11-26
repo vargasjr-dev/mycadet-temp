@@ -22,11 +22,10 @@ export type LinuxCoreBridge = Pick<
 >;
 
 /**
- * macOS-only companion surfaces with no Linux counterpart. The renderer
+ * macOS-only surfaces with no Linux counterpart. The renderer
  * feature-detects them and falls back to web behavior.
  */
 export const LINUX_NOT_APPLICABLE_CAPABILITIES = [
-  "companion",
   "voiceActivity",
 ] as const satisfies readonly (keyof CadetBridge)[];
 

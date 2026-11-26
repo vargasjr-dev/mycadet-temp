@@ -1,14 +1,6 @@
-import { ipcRenderer } from "electron";
-
-import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import { createVellumMigrationBridge } from "../factories";
 import type { CadetBridge } from "@mycadet/ipc-contract";
 
-export const install = (
-  registry: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  registry.contribute(
-    "vellumMigration",
-    createVellumMigrationBridge(ipcRenderer),
-  );
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.vellumMigration = createVellumMigrationBridge();
 };

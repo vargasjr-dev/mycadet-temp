@@ -3,7 +3,6 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { electronMock } from "../../../test-setup";
 
 import type { CadetBridge } from "@mycadet/ipc-contract";
-import { BridgeCapabilityRegistry } from "../../capability-registry";
 
 const invoke = mock(() => Promise.resolve());
 const on = mock((_channel: string, _listener: unknown) => undefined);
@@ -26,9 +25,8 @@ beforeEach(() => {
 });
 
 test("contributes deep-link delivery and launch-at-login IPC", async () => {
-  const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-  deepLinksInstall(registry);
-  const bridge = registry.build();
+  const bridge: Partial<CadetBridge> = {};
+  deepLinksInstall(bridge);
   const callback = mock(() => undefined);
 
   await bridge.deepLinks?.drain();

@@ -1,13 +1,8 @@
-import { ipcRenderer } from "electron";
-
 import type { CadetBridge } from "@mycadet/ipc-contract";
-import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import { createDownloadsBridge } from "../factories";
 
 // Renderer bridge for download outcome reports and the file-manager reveal,
 // the same shared factory the macOS preload uses.
-export const install = (
-  bridge: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  bridge.contribute("downloads", createDownloadsBridge(ipcRenderer));
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.downloads = createDownloadsBridge();
 };

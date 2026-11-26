@@ -1,6 +1,5 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
   HELPER_DICTATION_FINALIZED_EVENT,
   HELPER_DICTATION_PARTIAL_EVENT,
@@ -35,10 +34,8 @@ const subscribe =
  * for the modifier voice key — so each client's own feature contributes
  * `helper.hotkey` on top of this base.
  */
-export const install = (
-  registry: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  registry.contribute("helper", {
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.helper = {
     ping: (): Promise<"pong"> =>
       Promise.resolve(ipcRenderer.invoke(HELPER_PING)),
     getState: (): Promise<HelperState> =>
@@ -68,5 +65,5 @@ export const install = (
         HELPER_DICTATION_TRANSCRIBED_EVENT,
       ),
     },
-  });
+  };
 };

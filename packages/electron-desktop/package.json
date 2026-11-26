@@ -12,7 +12,7 @@
     "./capability-registry": "./src/capability-registry.ts",
     "./file-open-preload": "./src/file-open-preload.ts",
     "./ipc": "./src/ipc.ts",
-    "./preload": "./src/preload/index.ts",
+    "./preload": "./src/preload.ts",
     "./session-token-store": "./src/session-token-store.ts",
     "./settings": "./src/settings.ts",
     "./status": "./src/status.ts",

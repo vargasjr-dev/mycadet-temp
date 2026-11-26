@@ -90,18 +90,12 @@ test("the composed Linux bridge satisfies every applicable CadetBridge key", () 
 test("the Linux bridge matches the macOS bridge surface up to the documented deltas", () => {
   expect(macBridge).toBeDefined();
   expect(macBridge.hostOS).toBe("macos");
-  // The macOS main registers no menu IPC, so its preload omits the
-  // surface entirely — the menu.* methods below are Linux deltas.
-  expect(Object.keys(macBridge).sort()).toEqual(
-    [...CADET_BRIDGE_KEYS].filter((key) => key !== "menu").sort(),
-  );
+  // The menu IPC is the shared main's `installDesktopMenu`, so every
+  // desktop's preload carries the surface.
+  expect(Object.keys(macBridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
 
   const bridge = linuxBridge;
-  // The menu surface is asserted separately below: macOS registers no
-  // menu IPC, so its preload omits the key entirely.
-  const shared = required.filter((key) => key !== "hostOS" && key !== "menu");
-  expect(macBridge.menu).toBeUndefined();
-  expect(linuxBridge.menu).toBeDefined();
+  const shared = required.filter((key) => key !== "hostOS");
   const linuxSurface = shared.flatMap((key) => surface(bridge[key], key));
   const macSurface = shared.flatMap((key) => surface(macBridge[key], key));
 

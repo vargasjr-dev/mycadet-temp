@@ -1,6 +1,5 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
   PERMISSIONS_GET_STATE,
   PERMISSIONS_OPEN_SETTINGS,
@@ -25,10 +24,8 @@ const invokeItem = (
     ? Promise.resolve(ipcRenderer.invoke(channel, kind))
     : Promise.resolve(ipcRenderer.invoke(channel, kind, presentation));
 
-export const install = (
-  bridge: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  bridge.contribute("permissions", {
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.permissions = {
     getState: (): Promise<SystemPermissionsState> =>
       Promise.resolve(ipcRenderer.invoke(PERMISSIONS_GET_STATE)),
     request: (kind, presentation) =>
@@ -44,5 +41,5 @@ export const install = (
       ipcRenderer.on(PERMISSIONS_STATE_EVENT, handler);
       return () => ipcRenderer.off(PERMISSIONS_STATE_EVENT, handler);
     },
-  });
+  };
 };

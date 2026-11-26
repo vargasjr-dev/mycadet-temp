@@ -1,7 +1,6 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
-import { createDictationOfferBridge } from "@mycadet/electron-desktop/preload";
+import { createDictationOfferBridge } from "../factories";
 import type {
   CadetBridge,
   CompanionAnnotationPhase,
@@ -25,10 +24,11 @@ import type {
 } from "@mycadet/ipc-contract";
 
 /**
- * The macOS companion's bridge: the floating always-present window's
- * surface state, intro flow, annotation, capture, and popover seams. The
- * renderer feature-detects the surface — the Linux and Windows shells
- * never open a companion.
+ * The companion's bridge: the floating always-present window's surface
+ * state, intro flow, annotation, capture, and popover seams. Every
+ * desktop's main process serves these channels — the shells that never
+ * open a companion simply leave the surface idle, and the renderer
+ * feature-detects it either way.
  */
 // The one seam where the renderer trusts the main process: `invoke`
 // resolves to whatever the channel's handler returned. Each method names
@@ -39,10 +39,8 @@ const invoke = async <T>(channel: string, ...args: unknown[]): Promise<T> => {
   return result;
 };
 
-export const install = (
-  registry: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  registry.contribute("companion", {
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.companion = {
     getState: (): Promise<CompanionSurfaceState | null> =>
       invoke<CompanionSurfaceState | null>("cadet:companion:getState"),
     onState: (callback) => {
@@ -196,7 +194,7 @@ export const install = (
     answerWatchRetro: (open: boolean): void => {
       ipcRenderer.send("cadet:companion:answerWatchRetro", open);
     },
-    ...createDictationOfferBridge(ipcRenderer),
+    ...createDictationOfferBridge(),
     answerDictationOffer: (
       answer: DictationOfferAnswer,
       offerId: string,
@@ -251,5 +249,5 @@ export const install = (
     showContextMenu: (): void => {
       ipcRenderer.send("cadet:companion:contextMenu");
     },
-  });
+  };
 };

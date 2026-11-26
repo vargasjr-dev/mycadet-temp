@@ -1,3 +1,5 @@
+import { ipcRenderer, webUtils } from "electron";
+
 import {
   FILE_OPEN_DRAIN,
   FILE_OPEN_EVENT,
@@ -6,18 +8,10 @@ import {
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-export interface FileOpenPreloadDependencies {
-  ipcRenderer: Pick<
-    typeof import("electron").ipcRenderer,
-    "invoke" | "send" | "on" | "off"
-  >;
-  webUtils: Pick<typeof import("electron").webUtils, "getPathForFile">;
-}
-
-export const createFileOpenPreloadBridge = ({
-  ipcRenderer,
-  webUtils,
-}: FileOpenPreloadDependencies): Pick<CadetBridge, "fileOpen" | "paths"> => ({
+export const createFileOpenPreloadBridge = (): Pick<
+  CadetBridge,
+  "fileOpen" | "paths"
+> => ({
   fileOpen: {
     drain: () => ipcRenderer.invoke(FILE_OPEN_DRAIN) as Promise<string[]>,
     onFile: (callback) => {

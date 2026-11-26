@@ -12,7 +12,6 @@ import { AccountShell } from "@app/components/account/account-shell";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
-import { dismissVellumOfferForSession } from "@app/shell/vellum-offer";
 import { useTranslation } from "@app/i18n";
 import { formatSize } from "@mycadet/local-mode";
 import type {
@@ -154,9 +153,10 @@ export function VellumMigrationScreen() {
   const decline = () => {
     const bridge = window.cadet?.vellumMigration;
     void bridge?.decline({ neverAgain });
-    // Back to the initial screen; the session marker keeps this launch
-    // from navigating straight back into the offer.
-    dismissVellumOfferForSession();
+    // Back to the initial screen. The decline quiets the offer in the main
+    // process for the rest of this launch (persistently, with the
+    // don't-ask-again box ticked), so the shell's next probe doesn't walk
+    // the user straight back into it.
     void navigate(routes.index, SETUP_NAVIGATE);
   };
 
@@ -270,8 +270,8 @@ export function VellumMigrationScreen() {
                 size="compact"
                 leftIcon={<ArrowLeft />}
                 onClick={() => {
-                  // The offer returns next launch; this one goes home.
-                  dismissVellumOfferForSession();
+                  // A failed run quiets the offer for this launch; this
+                  // one goes home and the prompt returns next start.
                   void navigate(routes.index, SETUP_NAVIGATE);
                 }}
               >

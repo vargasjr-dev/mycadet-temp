@@ -1,4 +1,4 @@
-import type { IpcRenderer, IpcRendererEvent } from "electron";
+import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type {
   BundleScanData,
@@ -15,14 +15,6 @@ import type {
   VellumMigrationStepEvent,
 } from "@mycadet/ipc-contract";
 import {
-  PERMISSION_GUIDE_CANCEL,
-  PERMISSION_SETUP_BEGIN,
-  PERMISSION_GUIDE_GET,
-  PERMISSION_GUIDE_STATE,
-  PERMISSION_GUIDE_READY,
-  PERMISSION_GUIDE_DISMISS,
-  PERMISSION_GUIDE_DRAG,
-  PERMISSION_GUIDE_REVEAL,
   COMPANION_SET_UNPLACED_DICTATION_OFFER,
   DOWNLOADS_DONE_EVENT,
   DOWNLOADS_REVEAL,
@@ -40,28 +32,24 @@ import {
   VELLUM_MIGRATION_STEP_EVENT,
 } from "@mycadet/ipc-contract";
 
-type RendererIpc = Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
-
-export const createDictationOfferBridge = (
-  ipc: RendererIpc,
-): Pick<
+export const createDictationOfferBridge = (): Pick<
   NonNullable<CadetBridge["companion"]>,
   "setUnplacedDictationOffer"
 > => ({
   setUnplacedDictationOffer: (offer) => {
-    ipc.send(COMPANION_SET_UNPLACED_DICTATION_OFFER, offer);
+    ipcRenderer.send(COMPANION_SET_UNPLACED_DICTATION_OFFER, offer);
   },
 });
 
 const subscribe =
-  <Payload>(ipc: RendererIpc, channel: string) =>
+  <Payload>(channel: string) =>
   (callback: (payload: Payload) => void): (() => void) => {
     const handler = (_event: IpcRendererEvent, payload: Payload): void => {
       callback(payload);
     };
-    ipc.on(channel, handler);
+    ipcRenderer.on(channel, handler);
     return () => {
-      ipc.off(channel, handler);
+      ipcRenderer.off(channel, handler);
     };
   };
 
@@ -77,23 +65,25 @@ const subscribe =
  * holds its default until the next transition on the channel.
  */
 const subscribeWithReplay = <Payload>(
-  ipc: RendererIpc,
   channel: string,
 ): ((callback: (payload: Payload) => void) => () => void) => {
   const callbacks = new Set<(payload: Payload) => void>();
   let latest: { payload: Payload } | null = null;
-  ipc.on(channel, (_event: IpcRendererEvent, payload: Payload): void => {
-    latest = { payload };
-    // Snapshot so a callback that subscribes mid-dispatch is served by its own
-    // replay instead of twice, and re-check membership so one that
-    // unsubscribes mid-dispatch is not called after the fact.
-    for (const callback of [...callbacks]) {
-      if (!callbacks.has(callback)) {
-        continue;
+  ipcRenderer.on(
+    channel,
+    (_event: IpcRendererEvent, payload: Payload): void => {
+      latest = { payload };
+      // Snapshot so a callback that subscribes mid-dispatch is served by its own
+      // replay instead of twice, and re-check membership so one that
+      // unsubscribes mid-dispatch is not called after the fact.
+      for (const callback of [...callbacks]) {
+        if (!callbacks.has(callback)) {
+          continue;
+        }
+        callback(payload);
       }
-      callback(payload);
-    }
-  });
+    },
+  );
   return (callback) => {
     callbacks.add(callback);
     if (latest) {
@@ -107,81 +97,72 @@ const subscribeWithReplay = <Payload>(
   };
 };
 
-export const createDeepLinksBridge = (
-  ipc: RendererIpc,
-): CadetBridge["deepLinks"] => ({
-  drain: () => ipc.invoke("cadet:deepLinks:drain") as Promise<DeepLink[]>,
+export const createDeepLinksBridge = (): CadetBridge["deepLinks"] => ({
+  drain: () =>
+    ipcRenderer.invoke("cadet:deepLinks:drain") as Promise<DeepLink[]>,
   onLink: (callback) => {
     const handler = (_event: IpcRendererEvent, link: DeepLink): void => {
       callback(link);
     };
-    ipc.on("cadet:deepLinks:event", handler);
-    ipc.send("cadet:deepLinks:subscribe");
+    ipcRenderer.on("cadet:deepLinks:event", handler);
+    ipcRenderer.send("cadet:deepLinks:subscribe");
     return () => {
-      ipc.off("cadet:deepLinks:event", handler);
-      ipc.send("cadet:deepLinks:unsubscribe");
+      ipcRenderer.off("cadet:deepLinks:event", handler);
+      ipcRenderer.send("cadet:deepLinks:unsubscribe");
     };
   },
 });
 
-export const createLaunchAtLoginBridge = (
-  ipc: RendererIpc,
-): CadetBridge["launchAtLogin"] => ({
-  get: () => ipc.invoke("cadet:launchAtLogin:get") as Promise<boolean>,
+export const createLaunchAtLoginBridge = (): CadetBridge["launchAtLogin"] => ({
+  get: () => ipcRenderer.invoke("cadet:launchAtLogin:get") as Promise<boolean>,
   set: (enabled) =>
-    ipc.invoke("cadet:launchAtLogin:set", enabled) as Promise<void>,
+    ipcRenderer.invoke("cadet:launchAtLogin:set", enabled) as Promise<void>,
 });
 
 /** Renderer side of `installHotkeysIpc`. */
-export const createHotkeysBridge = (
-  ipc: RendererIpc,
-): CadetBridge["hotkeys"] => ({
-  get: () => ipc.invoke("cadet:hotkeys:get") as Promise<ResolvedHotkey[]>,
+export const createHotkeysBridge = (): CadetBridge["hotkeys"] => ({
+  get: () =>
+    ipcRenderer.invoke("cadet:hotkeys:get") as Promise<ResolvedHotkey[]>,
   set: (key, accelerator) =>
-    ipc.invoke("cadet:hotkeys:set", key, accelerator) as Promise<void>,
-  onChange: subscribe<ResolvedHotkey[]>(ipc, "cadet:hotkeys:changed"),
+    ipcRenderer.invoke("cadet:hotkeys:set", key, accelerator) as Promise<void>,
+  onChange: subscribe<ResolvedHotkey[]>("cadet:hotkeys:changed"),
 });
 
 /** Renderer side of `installBundleConfirmation`. */
-export const createBundleConfirmBridge = (
-  ipc: RendererIpc,
-): CadetBridge["bundleConfirm"] => ({
+export const createBundleConfirmBridge = (): CadetBridge["bundleConfirm"] => ({
   getData: () =>
-    ipc.invoke("cadet:bundleConfirm:getData") as Promise<BundleScanData | null>,
+    ipcRenderer.invoke(
+      "cadet:bundleConfirm:getData",
+    ) as Promise<BundleScanData | null>,
   respond: (accepted) => {
-    ipc.send("cadet:bundleConfirm:respond", accepted);
+    ipcRenderer.send("cadet:bundleConfirm:respond", accepted);
   },
 });
 
 /** Renderer side of `installDownloads`. */
-export const createDownloadsBridge = (
-  ipc: RendererIpc,
-): CadetBridge["downloads"] => ({
-  onDone: subscribe<DownloadDoneEvent>(ipc, DOWNLOADS_DONE_EVENT),
-  reveal: (id) => ipc.invoke(DOWNLOADS_REVEAL, id),
+export const createDownloadsBridge = (): CadetBridge["downloads"] => ({
+  onDone: subscribe<DownloadDoneEvent>(DOWNLOADS_DONE_EVENT),
+  reveal: (id) => ipcRenderer.invoke(DOWNLOADS_REVEAL, id),
 });
 
 /** Renderer side of `installAutoUpdate`. */
-export const createUpdateBridge = (
-  ipc: RendererIpc,
-): CadetBridge["update"] => ({
-  getState: () => ipc.invoke("cadet:update:getState") as Promise<UpdateState>,
-  check: () => ipc.invoke("cadet:update:check") as Promise<void>,
-  install: () => ipc.invoke("cadet:update:install") as Promise<void>,
-  onState: subscribe<UpdateState>(ipc, "cadet:update:state"),
+export const createUpdateBridge = (): CadetBridge["update"] => ({
+  getState: () =>
+    ipcRenderer.invoke("cadet:update:getState") as Promise<UpdateState>,
+  check: () => ipcRenderer.invoke("cadet:update:check") as Promise<void>,
+  install: () => ipcRenderer.invoke("cadet:update:install") as Promise<void>,
+  onState: subscribe<UpdateState>("cadet:update:state"),
 });
 
 /** Renderer side of the notification presenter and identity-memory IPC. */
-export const createNotificationsBridge = (
-  ipc: RendererIpc,
-): CadetBridge["notifications"] => {
+export const createNotificationsBridge = (): CadetBridge["notifications"] => {
   // Sandboxed Electron preload can omit randomUUID. This ID only separates
   // publisher sessions on the same sender and is never a credential.
   const publisherSessionId =
     globalThis.crypto?.randomUUID?.() ??
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   const publisherRegistration = Promise.resolve(
-    ipc.invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
+    ipcRenderer.invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
       publisherSessionId,
     }),
   ).then(
@@ -190,66 +171,48 @@ export const createNotificationsBridge = (
   );
   return {
     show: (payload) =>
-      ipc.invoke(NOTIFICATIONS_SHOW, payload) as Promise<{
+      ipcRenderer.invoke(NOTIFICATIONS_SHOW, payload) as Promise<{
         success: boolean;
         errorMessage?: string;
       }>,
     registerIdentityPublisher: () => publisherRegistration,
     prepareIdentity: async (payload) => {
       await publisherRegistration;
-      await ipc.invoke(NOTIFICATIONS_PREPARE_IDENTITY, {
+      await ipcRenderer.invoke(NOTIFICATIONS_PREPARE_IDENTITY, {
         ...payload,
         publisherSessionId,
       });
     },
     resetIdentities: async (payload) => {
       await publisherRegistration;
-      await ipc.invoke(NOTIFICATIONS_RESET_IDENTITIES, {
+      await ipcRenderer.invoke(NOTIFICATIONS_RESET_IDENTITIES, {
         ...payload,
         publisherSessionId,
       });
     },
-    onAction: subscribe<NotificationActionEvent>(ipc, NOTIFICATIONS_ACTION),
-    onWindowAttention: createWindowAttentionSubscriber(ipc),
+    onAction: subscribe<NotificationActionEvent>(NOTIFICATIONS_ACTION),
+    onWindowAttention: createWindowAttentionSubscriber(),
   };
 };
 
 /** Renderer side of `installWindowAttention`. */
-export function createWindowAttentionSubscriber(
-  ipc: RendererIpc,
-): CadetBridge["notifications"]["onWindowAttention"] {
-  return subscribeWithReplay<WindowAttentionPayload>(ipc, WINDOW_ATTENTION);
+export function createWindowAttentionSubscriber(): CadetBridge["notifications"]["onWindowAttention"] {
+  return subscribeWithReplay<WindowAttentionPayload>(WINDOW_ATTENTION);
 }
 
-/** Optional macOS permission setup and native app drag bridge. */
-export const createPermissionSetupBridge = (
-  ipc: RendererIpc,
-): NonNullable<CadetBridge["permissions"]["setup"]> => ({
-  cancel: () => ipc.send(PERMISSION_GUIDE_CANCEL),
-  begin: (kind, source) => ipc.invoke(PERMISSION_SETUP_BEGIN, kind, source),
-  getGuide: () => ipc.invoke(PERMISSION_GUIDE_GET),
-  onGuide: subscribe(ipc, PERMISSION_GUIDE_STATE),
-  ready: (id, height) => ipc.send(PERMISSION_GUIDE_READY, id, height),
-  dismiss: (id) => ipc.send(PERMISSION_GUIDE_DISMISS, id),
-  startDrag: (id) => ipc.send(PERMISSION_GUIDE_DRAG, id),
-  revealApp: (id) => ipc.invoke(PERMISSION_GUIDE_REVEAL, id),
-});
-
 /** Renderer side of the vellum migration feature. */
-export const createVellumMigrationBridge = (
-  ipc: RendererIpc,
-): CadetBridge["vellumMigration"] => ({
-  get: (): Promise<VellumMigrationProbe> =>
-    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_GET)),
-  prepare: (): Promise<VellumMigrationConfirmInfo | null> =>
-    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_PREPARE)),
-  start: (): Promise<VellumMigrationRunState> =>
-    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_START)),
-  decline: (options): Promise<void> =>
-    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_DECLINE, options)),
-  onStep: subscribe<VellumMigrationStepEvent>(ipc, VELLUM_MIGRATION_STEP_EVENT),
-  onState: subscribeWithReplay<VellumMigrationRunState>(
-    ipc,
-    VELLUM_MIGRATION_STATE_EVENT,
-  ),
-});
+export const createVellumMigrationBridge =
+  (): CadetBridge["vellumMigration"] => ({
+    get: (): Promise<VellumMigrationProbe> =>
+      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_GET)),
+    prepare: (): Promise<VellumMigrationConfirmInfo | null> =>
+      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_PREPARE)),
+    start: (): Promise<VellumMigrationRunState> =>
+      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_START)),
+    decline: (options): Promise<void> =>
+      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_DECLINE, options)),
+    onStep: subscribe<VellumMigrationStepEvent>(VELLUM_MIGRATION_STEP_EVENT),
+    onState: subscribeWithReplay<VellumMigrationRunState>(
+      VELLUM_MIGRATION_STATE_EVENT,
+    ),
+  });

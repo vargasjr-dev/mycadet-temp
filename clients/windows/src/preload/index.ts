@@ -9,15 +9,13 @@ import type {
 import { composeDesktopPreload } from "@mycadet/electron-desktop/preload";
 import { createWindowsCoreBridge } from "./core-capabilities";
 import { install as installHotkeyChords } from "./features/hotkey-chords";
-import { install as installMenu } from "./features/menu";
 
 export type { AppVersionInfo, CadetBridge, CadetCommand };
 
 // The client's core bridge, the shared feature set, and this platform's
-// hotkey chord and menu surfaces; `bridge-parity.test.ts` holds the
-// composed bridge to the full contract.
+// hotkey chord surface; `bridge-parity.test.ts` holds the composed bridge
+// to the full contract.
 const bridge = composeDesktopPreload(createWindowsCoreBridge(), [
   installHotkeyChords,
-  installMenu,
 ]);
 contextBridge.exposeInMainWorld("cadet", bridge);

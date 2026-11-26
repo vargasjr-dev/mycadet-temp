@@ -3,7 +3,6 @@ import { expect, mock, test } from "bun:test";
 import { electronMock } from "../../../test-setup";
 
 import type { CadetBridge } from "@mycadet/ipc-contract";
-import { BridgeCapabilityRegistry } from "../../capability-registry";
 
 const listeners = new Map<string, (...args: unknown[]) => void>();
 const send = mock((_channel: string, ..._args: unknown[]) => undefined);
@@ -27,15 +26,16 @@ mock.module("electron", () =>
 
 const { install: presenceInstall } = await import("./presence");
 
-// A real registry, so the test holds the feature to its actual
+// A real bridge object, so the test holds the feature to its actual
 // contribution contract rather than a stub's.
-const freshRegistry = () => new BridgeCapabilityRegistry<CadetBridge>({});
+const freshBridge = (): Partial<CadetBridge> => {
+  const bridge: Partial<CadetBridge> = {};
+  presenceInstall(bridge);
+  return bridge;
+};
 
 test("contributes the complete presence bridge", () => {
-  const registry = freshRegistry();
-  presenceInstall(registry);
-
-  expect(Object.keys(registry.build()).sort()).toEqual([
+  expect(Object.keys(freshBridge()).sort()).toEqual([
     "connectivity",
     "dock",
     "icon",
@@ -46,9 +46,7 @@ test("contributes the complete presence bridge", () => {
 });
 
 test("publishes status, identity, avatar, and unread state", () => {
-  const registry = freshRegistry();
-  presenceInstall(registry);
-  const bridge = registry.build();
+  const bridge = freshBridge();
 
   bridge.status?.setConnection("thinking");
   bridge.identity?.setName("Example Assistant");
@@ -66,9 +64,7 @@ test("publishes status, identity, avatar, and unread state", () => {
 });
 
 test("delivers power and current connectivity state with cleanup", async () => {
-  const registry = freshRegistry();
-  presenceInstall(registry);
-  const bridge = registry.build();
+  const bridge = freshBridge();
   const powerEvents: unknown[] = [];
   const states: unknown[] = [];
 

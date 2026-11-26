@@ -1,12 +1,10 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   HELPER_HOTKEY_EVENT,
   HELPER_HOTKEY_REGISTRATION_EVENT,
   HELPER_HOTKEY_SET_VOICE_MODE_CHORD,
   type HotkeyEvent,
-  type VoiceModeChordRegistrationResult,
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
@@ -26,20 +24,19 @@ const subscribe =
  * This platform's helper hotkey flavor: the voice mode shortcut's
  * bare-modifier chord, registered with the helper when a sidecar exists.
  * `hotkey.setModifierHold` is absent — the voice key's hold rides the raw
- * keyboard, which only the macOS helper's monitor provides. Extends the
- * shared helper feature's surface (registry merge).
+ * keyboard, which only the macOS helper's monitor provides. Finishes the
+ * shared helper feature's surface.
  */
-export const install = (
-  registry: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  registry.extend("helper", {
-    hotkey: {
-      setVoiceModeChord: (activator) =>
-        ipcRenderer.invoke(HELPER_HOTKEY_SET_VOICE_MODE_CHORD, activator),
-      onRegistrationChange: subscribe<boolean>(
-        HELPER_HOTKEY_REGISTRATION_EVENT,
-      ),
-      onEvent: subscribe<HotkeyEvent>(HELPER_HOTKEY_EVENT),
-    },
-  });
+export const install = (bridge: Partial<CadetBridge>): void => {
+  const helper = bridge.helper;
+  if (!helper) {
+    // Composition order guarantees the shared helper feature ran first.
+    throw new Error("hotkey chords require the shared helper feature");
+  }
+  helper.hotkey = {
+    setVoiceModeChord: (activator) =>
+      ipcRenderer.invoke(HELPER_HOTKEY_SET_VOICE_MODE_CHORD, activator),
+    onRegistrationChange: subscribe<boolean>(HELPER_HOTKEY_REGISTRATION_EVENT),
+    onEvent: subscribe<HotkeyEvent>(HELPER_HOTKEY_EVENT),
+  };
 };

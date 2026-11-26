@@ -98,6 +98,12 @@ const getProbe = (): Promise<DesktopProbe> => {
   return probePromise;
 };
 
+// The offer's this-launch suppression. The engine's vellum-side markers
+// (migrated, declined-never-again) silence future launches on their own;
+// "not now" and a failed run silence this one — the shell's next probe
+// reads quiet until the app starts again.
+let offerDismissedForLaunch = false;
+
 let runState: VellumMigrationRunState = { state: "idle" };
 let confirmCache: ConfirmMigrationInfo | null = null;
 let confirmPromise: Promise<ConfirmMigrationInfo | null> | null = null;
@@ -108,6 +114,11 @@ const send = (channel: string, payload: unknown): void => {
 
 const setRunState = (next: VellumMigrationRunState): void => {
   runState = next;
+  if (next.state === "failed") {
+    // A failed run quiets the offer for this launch — the run screen's
+    // only way out is back, and back should not walk into a fresh offer.
+    offerDismissedForLaunch = true;
+  }
   send(VELLUM_MIGRATION_STATE_EVENT, next);
 };
 
@@ -117,6 +128,12 @@ export const install = (): void => {
   void getProbe();
 
   handle(VELLUM_MIGRATION_GET, z.tuple([]), async () => {
+    if (offerDismissedForLaunch) {
+      return {
+        status: "quiet",
+        reason: "declined",
+      } satisfies VellumMigrationProbe;
+    }
     const probe: VellumMigrationProbe = await getProbe();
     return probe;
   });
@@ -190,6 +207,9 @@ export const install = (): void => {
     VELLUM_MIGRATION_DECLINE,
     z.tuple([z.object({ neverAgain: z.boolean() })]),
     async ([{ neverAgain }]) => {
+      // Any decline quiets the offer for this launch — "not now" included
+      // — so the shell's next probe doesn't walk the user straight back.
+      offerDismissedForLaunch = true;
       const probe = await getProbe();
       if (probe.status !== "offer" || !neverAgain) return;
       // Book the never-again marker on the vellum side (best-effort — a

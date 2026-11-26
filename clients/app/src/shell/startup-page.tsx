@@ -5,7 +5,6 @@ import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { WelcomeScreen } from "@app/domains/onboarding/pages/welcome-screen";
 import { routes } from "@app/utils/routes";
-import { detectVellumOffer } from "@app/shell/vellum-offer";
 
 /** "checking" while the desktop bridge probes for a pending vellum root. */
 type VellumOffer = "checking" | "offer" | "none";
@@ -22,9 +21,16 @@ function useVellumOffer(): VellumOffer {
   useEffect(() => {
     if (offer !== "checking") return;
     let disposed = false;
-    void detectVellumOffer().then((probe) => {
-      if (!disposed) setOffer(probe ? "offer" : "none");
-    });
+    // The engine owns the offer's state machine — machines that migrated
+    // (the CLI's own runs included) or declined for good read quiet, and a
+    // this-launch decline or failed run reads quiet until the next app
+    // start. The renderer only relays the verdict.
+    void window.cadet?.vellumMigration
+      ?.get()
+      .catch(() => null)
+      .then((probe) => {
+        if (!disposed) setOffer(probe?.status === "offer" ? "offer" : "none");
+      });
     return () => {
       disposed = true;
     };

@@ -1,6 +1,5 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
   COMMAND_PALETTE_DISMISS,
   COMMAND_PALETTE_OPEN,
@@ -19,19 +18,17 @@ import {
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-export const install = (
-  registry: BridgeCapabilityRegistry<CadetBridge>,
-): void => {
-  registry.contribute("quickInput", {
+export const install = (bridge: Partial<CadetBridge>): void => {
+  bridge.quickInput = {
     submit: (message) => ipcRenderer.invoke(QUICK_INPUT_SUBMIT, message),
     dismiss: () => ipcRenderer.invoke(QUICK_INPUT_DISMISS),
-  });
-  registry.contribute("commandPalette", {
+  };
+  bridge.commandPalette = {
     open: () => ipcRenderer.invoke(COMMAND_PALETTE_OPEN),
     dismiss: () => ipcRenderer.invoke(COMMAND_PALETTE_DISMISS),
     select: (command) => ipcRenderer.invoke(COMMAND_PALETTE_SELECT, command),
-  });
-  registry.contribute("dictationOverlay", {
+  };
+  bridge.dictationOverlay = {
     setState: (state) => {
       ipcRenderer.send(DICTATION_OVERLAY_SET_STATE, state);
     },
@@ -66,8 +63,8 @@ export const install = (
     setHitRegion: (region) => {
       ipcRenderer.send(DICTATION_OVERLAY_SET_HIT_REGION, region);
     },
-  });
-  registry.contribute("popout", {
+  };
+  bridge.popout = {
     open: (conversationId) => ipcRenderer.invoke(POPOUT_OPEN, conversationId),
-  });
+  };
 };
