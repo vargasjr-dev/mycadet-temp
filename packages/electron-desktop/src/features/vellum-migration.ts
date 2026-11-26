@@ -118,7 +118,10 @@ const managedCliOps = (): ProcessOps => {
           detail: version === null ? out.trim().slice(0, 200) : undefined,
         };
       } catch (err) {
-        return { version: null, detail: (err as Error).message };
+        return {
+          version: null,
+          detail: err instanceof Error ? err.message : String(err),
+        };
       }
     },
     cadetWakeAll: () => runCli(["wake", "--all"]),
@@ -160,7 +163,8 @@ const getProbe = (): Promise<DesktopProbe> => {
   probePromise ??= engine.probe().catch((err: unknown) => {
     log.error("[vellumMigration] probe failed:", err);
     // A failed probe reads as "nothing to offer" — the safe default.
-    return { status: "quiet", reason: "no-vellum-root" } as DesktopProbe;
+    const quiet: DesktopProbe = { status: "quiet", reason: "no-vellum-root" };
+    return quiet;
   });
   return probePromise;
 };
@@ -183,12 +187,12 @@ export const install = (): void => {
   // hosting screen reads the verdict whenever it mounts.
   void getProbe();
 
-  handle(VELLUM_MIGRATION_GET, z.tuple([]) as z.ZodType<[]>, async () => {
+  handle(VELLUM_MIGRATION_GET, z.tuple([]), async () => {
     const probe: VellumMigrationProbe = await getProbe();
     return probe;
   });
 
-  handle(VELLUM_MIGRATION_PREPARE, z.tuple([]) as z.ZodType<[]>, async () => {
+  handle(VELLUM_MIGRATION_PREPARE, z.tuple([]), async () => {
     // Single-flight: the consent facts come from a full detect (a tree
     // size walk) — concurrent requests share one gather.
     confirmPromise ??= getProbe().then(async (probe) => {
@@ -205,7 +209,7 @@ export const install = (): void => {
     }
   });
 
-  handle(VELLUM_MIGRATION_START, z.tuple([]) as z.ZodType<[]>, async () => {
+  handle(VELLUM_MIGRATION_START, z.tuple([]), async () => {
     if (runState.state === "running" || runState.state === "preparing") {
       return runState;
     }
@@ -242,16 +246,17 @@ export const install = (): void => {
       return runState;
     } catch (err) {
       log.error("[vellumMigration] run failed:", err);
-      setRunState({ state: "failed", error: (err as Error).message });
+      setRunState({
+        state: "failed",
+        error: err instanceof Error ? err.message : String(err),
+      });
       return runState;
     }
   });
 
   handle(
     VELLUM_MIGRATION_DECLINE,
-    z.tuple([z.object({ neverAgain: z.boolean() })]) as z.ZodType<
-      [{ neverAgain: boolean }]
-    >,
+    z.tuple([z.object({ neverAgain: z.boolean() })]),
     async ([{ neverAgain }]) => {
       const probe = await getProbe();
       if (probe.status !== "offer" || !neverAgain) return;

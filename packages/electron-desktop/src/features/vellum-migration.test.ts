@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import type { ConfirmMigrationInfo, DesktopProbe } from "@mycadet/vellum";
 
-import { recordedIpcHandlers } from "../../test-setup";
+import "../../test-setup";
+
+import type { VellumMigrationEngine } from "./vellum-migration";
+
+type RunOpts = Parameters<VellumMigrationEngine["run"]>[0];
 
 /**
  * The vellum-migration feature is a shim: the engine (mocked here) owns the
@@ -10,7 +15,7 @@ import { recordedIpcHandlers } from "../../test-setup";
  * single-flight rules (one probe, one prepare gather, one run).
  */
 
-type RawHandler = (event: unknown, ...args: unknown[]) => unknown;
+type RawHandler = (event: unknown, ...args: unknown[]) => Promise<unknown>;
 const handlers = new Map<string, RawHandler>();
 const sent: Array<{ channel: string; payload: unknown }> = [];
 
@@ -28,7 +33,7 @@ mock.module("electron", () => ({
   BrowserWindow: class {},
 }));
 
-const OFFER = {
+const OFFER: DesktopProbe = {
   status: "offer",
   vellumRoot: "/home/u/.local/share/vellum",
   cadetRoot: "/home/u/.local/share/cadet",
@@ -37,7 +42,7 @@ const OFFER = {
   layout: "modern",
 };
 
-const CONFIRM_INFO = {
+const CONFIRM_INFO: ConfirmMigrationInfo = {
   vellumRoot: OFFER.vellumRoot,
   cadetRoot: OFFER.cadetRoot,
   cadetRootExists: false,
@@ -49,9 +54,7 @@ const CONFIRM_INFO = {
 };
 
 const engineCalls = { probe: 0, detect: 0, gather: 0, migrate: 0, decline: 0 };
-let migrateImpl: (
-  opts: Record<string, unknown>,
-) => Promise<unknown> = async () => ({
+let migrateImpl: (opts: RunOpts) => Promise<unknown> = async () => ({
   ok: true,
   exitCode: 0,
   mode: "migrate",
@@ -79,7 +82,7 @@ mock.module("@mycadet/vellum", () => ({
     engineCalls.gather += 1;
     return CONFIRM_INFO;
   },
-  migrate: async (opts: Record<string, unknown>) => {
+  migrate: async (opts: RunOpts) => {
     engineCalls.migrate += 1;
     return migrateImpl(opts);
   },
@@ -141,6 +144,18 @@ const allowedEvent = (): { senderFrame: { origin: string } } => {
   return { senderFrame: { origin: `${protocol}//${host}` } };
 };
 
+/** Narrow a handler result or event payload for assertions. */
+const unwrap = (value: unknown): Record<string, unknown> =>
+  typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
+
+/** Pull a hook off the engine options — loud if the shim stopped sending it. */
+const requireHook = <F>(hook: F | undefined, name: string): F => {
+  if (hook === undefined) throw new Error(`${name} hook missing`);
+  return hook;
+};
+
 beforeEach(() => {
   resetVellumMigrationState();
   handlers.clear();
@@ -180,9 +195,9 @@ describe("install (vellum migration)", () => {
 
   test("get returns the shared probe verdict", async () => {
     install();
-    const probe = (await handlers.get("cadet:vellumMigration:get")!(
+    const probe = await handlers.get("cadet:vellumMigration:get")!(
       allowedEvent(),
-    )) as unknown;
+    );
     expect(probe).toEqual(OFFER);
     expect(engineCalls.probe).toBe(1);
   });
@@ -190,10 +205,10 @@ describe("install (vellum migration)", () => {
   test("prepare single-flights the confirm-info gather", async () => {
     install();
     const handler = handlers.get("cadet:vellumMigration:prepare")!;
-    const [a, b] = [
+    const [a, b]: Promise<unknown>[] = [
       handler(allowedEvent()),
       handler(allowedEvent()),
-    ] as Promise<unknown>[];
+    ];
     expect(await a).toEqual(CONFIRM_INFO);
     expect(await b).toEqual(CONFIRM_INFO);
     expect(engineCalls.detect).toBe(1);
@@ -203,24 +218,24 @@ describe("install (vellum migration)", () => {
   test("start runs once; the engine's hooks stream to the renderer", async () => {
     const seen: Record<string, unknown> = {};
     migrateImpl = async (opts) => {
-      seen.confirm = await (
-        opts.confirm as (info: unknown) => Promise<boolean>
-      )({});
-      (opts.onStepStart as (step: string) => void)("verify");
-      (opts.onStepItem as (step: string, item: unknown) => void)("verify", {
+      seen.confirm = await requireHook(opts.confirm, "confirm")(CONFIRM_INFO);
+      requireHook(opts.onStepStart, "onStepStart")("verify");
+      requireHook(opts.onStepItem, "onStepItem")("verify", {
         name: "assistants/vellum-fresh-eel",
         status: "progress",
         progress: { bytes: 512, totalBytes: 1024 },
       });
-      (opts.onStepDone as (result: unknown) => void)({
+      requireHook(
+        opts.onStepDone,
+        "onStepDone",
+      )({
         step: "verify",
         status: "completed",
         summary: "clean",
         issues: [],
       });
       // The engine's cadet ops are the app's managed CLI, not global npm.
-      const ops = opts.processOps as Record<string, () => Promise<unknown>>;
-      expect(ops.cadetBinAvailable).not.toBeUndefined();
+      expect(opts.processOps?.cadetBinAvailable).not.toBeUndefined();
       return {
         ok: true,
         exitCode: 0,
@@ -235,14 +250,8 @@ describe("install (vellum migration)", () => {
     };
     install();
     const handler = handlers.get("cadet:vellumMigration:start")!;
-    const [first, second] = [
-      handler(allowedEvent()),
-      handler(allowedEvent()),
-    ] as Promise<unknown>[];
-    const finalState = (await Promise.all([first, second]))[0] as {
-      state: string;
-      exitCode?: number;
-    };
+    const [first, second] = [handler(allowedEvent()), handler(allowedEvent())];
+    const finalState = unwrap((await Promise.all([first, second]))[0]);
     expect(seen.confirm).toBe(true);
     expect(engineCalls.migrate).toBe(1);
     expect(finalState.state).toBe("done");
@@ -250,14 +259,16 @@ describe("install (vellum migration)", () => {
     // The state transitions and the step stream both reached the window.
     const statePayloads = sent
       .filter((s) => s.channel === "cadet:vellumMigration:state")
-      .map((s) => (s.payload as { state: string }).state);
+      .map((s) => unwrap(s.payload).state);
     expect(statePayloads).toEqual(["running", "done"]);
     const stepChannels = sent.filter(
       (s) => s.channel === "cadet:vellumMigration:step",
     );
-    expect(
-      stepChannels.map((s) => (s.payload as { kind: string }).kind),
-    ).toEqual(["start", "item", "done"]);
+    expect(stepChannels.map((s) => unwrap(s.payload).kind)).toEqual([
+      "start",
+      "item",
+      "done",
+    ]);
   });
 
   test("a failed run reports state failed with the error", async () => {
@@ -273,12 +284,13 @@ describe("install (vellum migration)", () => {
       durationMs: 0,
     });
     install();
-    const finalState = (await handlers.get("cadet:vellumMigration:start")!(
+    const returned = await handlers.get("cadet:vellumMigration:start")!(
       allowedEvent(),
-    )) as { state: string; exitCode?: number; error?: string };
+    );
+    const finalState = unwrap(returned);
     expect(finalState.state).toBe("failed");
     expect(finalState.exitCode).toBe(6);
-    expect(finalState.error).toContain("6");
+    expect(String(finalState.error)).toContain("6");
   });
 
   test("decline books the never-again marker only when asked", async () => {

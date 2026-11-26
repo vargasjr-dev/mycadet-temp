@@ -239,15 +239,14 @@ export const createPermissionSetupBridge = (
 export const createVellumMigrationBridge = (
   ipc: RendererIpc,
 ): CadetBridge["vellumMigration"] => ({
-  get: () => ipc.invoke(VELLUM_MIGRATION_GET) as Promise<VellumMigrationProbe>,
-  prepare: () =>
-    ipc.invoke(
-      VELLUM_MIGRATION_PREPARE,
-    ) as Promise<VellumMigrationConfirmInfo | null>,
-  start: () =>
-    ipc.invoke(VELLUM_MIGRATION_START) as Promise<VellumMigrationRunState>,
-  decline: (options) =>
-    ipc.invoke(VELLUM_MIGRATION_DECLINE, options) as Promise<void>,
+  get: (): Promise<VellumMigrationProbe> =>
+    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_GET)),
+  prepare: (): Promise<VellumMigrationConfirmInfo | null> =>
+    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_PREPARE)),
+  start: (): Promise<VellumMigrationRunState> =>
+    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_START)),
+  decline: (options): Promise<void> =>
+    Promise.resolve(ipc.invoke(VELLUM_MIGRATION_DECLINE, options)),
   onStep: subscribe<VellumMigrationStepEvent>(ipc, VELLUM_MIGRATION_STEP_EVENT),
   onState: subscribeWithReplay<VellumMigrationRunState>(
     ipc,
