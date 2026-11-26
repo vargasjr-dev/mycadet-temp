@@ -43,11 +43,9 @@ function stubProvider(model: string) {
       },
     };
   };
-  (provider as unknown as { client: unknown }).client = {
-    baseURL: "https://api.anthropic.com",
-    messages: { stream },
-    beta: { messages: { stream } },
-  };
+  Object.assign(provider["client"], { baseURL: "https://api.anthropic.com" });
+  Object.assign(provider["client"].messages, { stream });
+  Object.assign(provider["client"].beta.messages, { stream });
   return { provider, calls };
 }
 

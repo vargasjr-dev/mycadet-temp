@@ -38,23 +38,19 @@ function stubChatProvider(
     options,
   );
   const requests: Array<Record<string, unknown>> = [];
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: Record<string, unknown>) => {
-          requests.push(params);
-          return {
-            async *[Symbol.asyncIterator]() {
-              yield {
-                choices: [{ delta: {}, finish_reason: "stop" }],
-                usage: { prompt_tokens: 1, completion_tokens: 1 },
-              };
-            },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: Record<string, unknown>) => {
+      requests.push(params);
+      return {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: {}, finish_reason: "stop" }],
+            usage: { prompt_tokens: 1, completion_tokens: 1 },
           };
         },
-      },
+      };
     },
-  };
+  });
   return { provider, requests };
 }
 

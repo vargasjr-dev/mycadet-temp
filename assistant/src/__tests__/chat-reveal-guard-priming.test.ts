@@ -20,6 +20,10 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
+import { createMockProvider } from "./helpers/mock-provider.js";
+
 // ── Store mock: reads stay pending until the test releases them ──────────
 // Only reached on the store-fallback path (a ref with no proven value); the
 // proven path redacts the route-served bytes without touching the store.
@@ -89,47 +93,52 @@ import {
   _resetRevealSuccessRegistryForTest,
   recordRevealSuccess,
 } from "../runtime/reveal-success-registry.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 import { SYNTHETIC_OPAQUE_CREDENTIAL } from "./secret-fixtures.js";
 
 function toolResults(events: AssistantEvent[]): string[] {
   return events
     .filter(
       (e): e is Extract<AssistantEvent, { type: "tool_result" }> =>
-        (e as { type?: string }).type === "tool_result",
+        e.type === "tool_result",
     )
     .map((e) => (typeof e.result === "string" ? e.result : ""));
 }
 
 function createMockDeps(collected: AssistantEvent[]): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: "test-conversation",
-      provider: { name: "anthropic" },
+      provider: createMockProvider(
+        [new Error("Unexpected provider call")],
+        "anthropic",
+      ).provider,
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: (msg: AssistantEvent) => {
       collected.push(msg);
     },
     reqId: "test-req-id",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
-  } as EventHandlerDeps;
+    },
+    applyCompaction: async () => {},
+  };
 }
 
 const REVEAL_TOOL_USE: Extract<AgentEvent, { type: "tool_use" }> = {
@@ -245,7 +254,7 @@ function outputChunks(events: AssistantEvent[]): string[] {
   return events
     .filter(
       (e): e is Extract<AssistantEvent, { type: "tool_output_chunk" }> =>
-        (e as { type?: string }).type === "tool_output_chunk",
+        e.type === "tool_output_chunk",
     )
     .map((e) => e.chunk);
 }

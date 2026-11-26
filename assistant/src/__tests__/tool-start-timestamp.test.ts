@@ -10,9 +10,11 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
 import { z } from "zod";
 
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+import { createMockProvider } from "./helpers/mock-provider.js";
 
 let mockedRowContent = "";
 const updates: Array<{ id: string; content: string }> = [];
@@ -52,36 +54,40 @@ import {
   createEventHandlerState,
   handleToolUse,
 } from "../daemon/conversation-agent-loop-handlers.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeDeps(onEvent: (event: AssistantEvent) => void): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: "test-conv",
-      provider: { name: "anthropic" },
+      provider: createMockProvider(
+        [new Error("Unexpected provider call")],
+        "anthropic",
+      ).provider,
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent,
     reqId: "test-req",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "web",
       assistantMessageInterface: "web",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
   };
 }

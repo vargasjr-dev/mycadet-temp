@@ -16,6 +16,10 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
+import { createMockProvider } from "./helpers/mock-provider.js";
+
 // `finalizeMessageContent` (the finalize seam's write) throws `SQLITE_BUSY`
 // for the first `updateContentFailuresRemaining` calls, then records the
 // content written.
@@ -89,43 +93,51 @@ import {
   handleMessageComplete,
 } from "../daemon/conversation-agent-loop-handlers.js";
 import { getConversationPersistedSeq } from "../persistence/conversation-crud.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 const CONVERSATION_ID = "test-session-id";
 
 function createMockDeps(): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: CONVERSATION_ID,
-      provider: { name: "anthropic" },
+      provider: createMockProvider(
+        [new Error("Unexpected provider call")],
+        "anthropic",
+      ).provider,
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: (_msg: AssistantEvent) => {},
     reqId: "test-req-id",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
-  } as EventHandlerDeps;
+    },
+    applyCompaction: async () => {},
+  };
 }
 
-const MESSAGE_COMPLETE_EVENT = {
+const MESSAGE_COMPLETE_EVENT: Extract<
+  AgentEvent,
+  { type: "message_complete" }
+> = {
   type: "message_complete",
   message: { role: "assistant", content: [{ type: "text", text: "done" }] },
-} as Extract<AgentEvent, { type: "message_complete" }>;
+};
 
 describe("agent loop SQLite write-contention resilience", () => {
   let state: EventHandlerState;

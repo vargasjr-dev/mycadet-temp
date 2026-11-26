@@ -77,28 +77,25 @@ const CHANNEL = "D-STREAM";
 const THREAD_TS = "1700000000.000001";
 const CALLBACK_URL = `https://example.test/deliver/slack?channel=${CHANNEL}&threadTs=${THREAD_TS}`;
 
-const textDelta = (text: string): AssistantEvent =>
-  ({
-    type: "assistant_text_delta",
-    text,
-    conversationId: "conv-stream",
-  }) as AssistantEvent;
+const textDelta = (text: string): AssistantEvent => ({
+  type: "assistant_text_delta",
+  text,
+  conversationId: "conv-stream",
+});
 
-const toolUseStart = (toolUseId: string): AssistantEvent =>
-  ({
-    type: "tool_use_start",
-    toolName: "web_search",
-    input: { query: "example" },
-    conversationId: "conv-stream",
-    toolUseId,
-  }) as AssistantEvent;
+const toolUseStart = (toolUseId: string): AssistantEvent => ({
+  type: "tool_use_start",
+  toolName: "web_search",
+  input: { query: "example" },
+  conversationId: "conv-stream",
+  toolUseId,
+});
 
-const messageComplete = (messageId: string): AssistantEvent =>
-  ({
-    type: "message_complete",
-    conversationId: "conv-stream",
-    messageId,
-  }) as AssistantEvent;
+const messageComplete = (messageId: string): AssistantEvent => ({
+  type: "message_complete",
+  conversationId: "conv-stream",
+  messageId,
+});
 
 /**
  * The model drawing a plan: a `ui_show` tool call on the turn's own stream,
@@ -111,52 +108,49 @@ const messageComplete = (messageId: string): AssistantEvent =>
 const taskProgressShow = (
   steps: Array<{ label: string; status: string; detail?: string }>,
   templateTitle?: string,
-): AssistantEvent =>
-  ({
-    type: "tool_use_start",
-    toolName: "ui_show",
-    conversationId: "conv-stream",
-    toolUseId: "tool-ui-show",
-    input: {
-      surface_type: "card",
-      title: "Task progress",
-      data: {
-        template: "task_progress",
-        templateData: {
-          ...(templateTitle ? { title: templateTitle } : {}),
-          steps,
-        },
+): AssistantEvent => ({
+  type: "tool_use_start",
+  toolName: "ui_show",
+  conversationId: "conv-stream",
+  toolUseId: "tool-ui-show",
+  input: {
+    surface_type: "card",
+    title: "Task progress",
+    data: {
+      template: "task_progress",
+      templateData: {
+        ...(templateTitle ? { title: templateTitle } : {}),
+        steps,
       },
     },
-  }) as AssistantEvent;
+  },
+});
 
 /**
  * The successful result of the tool call above. A plan is only applied once its
  * call reports success, so a test that shows a plan without one asserts that
  * nothing renders.
  */
-const toolOk = (toolUseId: string, toolName: string): AssistantEvent =>
-  ({
-    type: "tool_result",
-    toolName,
-    result: "ok",
-    conversationId: "conv-stream",
-    toolUseId,
-  }) as AssistantEvent;
+const toolOk = (toolUseId: string, toolName: string): AssistantEvent => ({
+  type: "tool_result",
+  toolName,
+  result: "ok",
+  conversationId: "conv-stream",
+  toolUseId,
+});
 
 const taskProgressUpdate = (
   steps: Array<{ label: string; status: string }>,
-): AssistantEvent =>
-  ({
-    type: "tool_use_start",
-    toolName: "ui_update",
-    conversationId: "conv-stream",
-    toolUseId: "tool-ui-update",
-    input: {
-      surface_id: "surface-1",
-      data: { templateData: { steps } },
-    },
-  }) as AssistantEvent;
+): AssistantEvent => ({
+  type: "tool_use_start",
+  toolName: "ui_update",
+  conversationId: "conv-stream",
+  toolUseId: "tool-ui-update",
+  input: {
+    surface_id: "surface-1",
+    data: { templateData: { steps } },
+  },
+});
 
 const tick = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -657,7 +651,7 @@ describe("createChannelReplySession", () => {
       isError: true,
       conversationId: "conv-stream",
       toolUseId: "tool-ui-update",
-    } as AssistantEvent);
+    });
     await tick(15);
     await session.finish();
 

@@ -46,18 +46,10 @@ function stubCreate(
   provider: OpenAIChatCompletionsProvider,
   chunks: MockChunk[],
 ): { observedBaseUrl: string } {
-  const inner = provider as unknown as {
-    client: {
-      baseURL: string;
-      chat: {
-        completions: {
-          create: (params: unknown) => Promise<AsyncIterable<MockChunk>>;
-        };
-      };
-    };
-  };
-  const observedBaseUrl = inner.client.baseURL;
-  inner.client.chat.completions.create = async () => makeStream(chunks);
+  const observedBaseUrl = provider["client"].baseURL;
+  Object.assign(provider["client"].chat.completions, {
+    create: async () => makeStream(chunks),
+  });
   return { observedBaseUrl };
 }
 
@@ -132,20 +124,11 @@ describe("OpenAIResponsesProvider resolvedEndpoint", () => {
     });
 
     // AND a stubbed response stream that leaves the real client instance intact
-    const inner = provider as unknown as {
-      client: {
-        baseURL: string;
-        responses: {
-          create: (
-            params: unknown,
-            opts: unknown,
-          ) => Promise<AsyncIterable<ResponsesEvent>>;
-        };
-      };
-    };
-    const observedBaseUrl = inner.client.baseURL;
-    inner.client.responses.create = async () =>
-      makeResponsesStream(OK_RESPONSES_EVENTS);
+
+    const observedBaseUrl = provider["client"].baseURL;
+    Object.assign(provider["client"].responses, {
+      create: async () => makeResponsesStream(OK_RESPONSES_EVENTS),
+    });
 
     // WHEN a message is sent through the provider
     const response = await provider.sendMessage([

@@ -48,9 +48,9 @@ function createProviderWithMock(
   mockGenerateContent = mocked.generateContent;
 
   // Replace the internal client with our mock
-  (provider as unknown as { client: unknown }).client = {
-    models: { generateContent: mocked.generateContent },
-  };
+  Object.assign(provider["client"].models, {
+    generateContent: mocked.generateContent,
+  });
 
   return provider;
 }

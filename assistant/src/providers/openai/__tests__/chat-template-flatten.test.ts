@@ -35,21 +35,17 @@ function stubProviderWithErrors(errors: unknown[]): {
   const provider = new OpenAIChatCompletionsProvider("test-key", "test-model");
   const requests: unknown[] = [];
   const pending = [...errors];
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: unknown) => {
-          // Snapshot: the fallback mutates `params` between attempts.
-          requests.push(JSON.parse(JSON.stringify(params)));
-          const error = pending.shift();
-          if (error !== undefined) {
-            throw error;
-          }
-          return makeStream(OK_CHUNKS);
-        },
-      },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: unknown) => {
+      // Snapshot: the fallback mutates `params` between attempts.
+      requests.push(JSON.parse(JSON.stringify(params)));
+      const error = pending.shift();
+      if (error !== undefined) {
+        throw error;
+      }
+      return makeStream(OK_CHUNKS);
     },
-  };
+  });
   return { provider, requests };
 }
 

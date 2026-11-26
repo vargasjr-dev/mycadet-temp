@@ -10,8 +10,11 @@
  */
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
+import pino from "pino";
+
 import { ensureConversationExists } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { createMockProvider } from "./helpers/mock-provider.js";
 beforeAll(async () => {
   await initializeDb();
   // handleToolResult persists the tool_result row against this conversation.
@@ -31,7 +34,10 @@ import {
   handleToolResult,
   handleToolUse,
 } from "../daemon/conversation-agent-loop-handlers.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 type ToolResultEvent = Extract<AssistantEvent, { type: "tool_result" }>;
 
@@ -42,33 +48,34 @@ function createCollectorDeps(): {
   events: AssistantEvent[];
 } {
   const events: AssistantEvent[] = [];
-  const deps = {
-    ctx: {
+  const deps: EventHandlerDeps = {
+    ctx: asConversation({
       conversationId: "conv-meta",
-      provider: { name: "anthropic" },
+      provider: createMockProvider(
+        [new Error("Unexpected provider call")],
+        "anthropic",
+      ).provider,
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: (msg: AssistantEvent) => events.push(msg),
     reqId: "req-meta",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "macos",
       assistantMessageInterface: "macos",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
-  } as EventHandlerDeps;
+  };
   return { deps, events };
 }
 

@@ -5,6 +5,8 @@ import type { AgentLoop } from "../agent/loop.js";
 import { DiskPressureStatus } from "../api/events/disk-pressure-status-changed.js";
 import type { AssistantEvent } from "../api/index.js";
 import type { Conversation } from "../daemon/conversation.js";
+import { SecretPrompter } from "../permissions/secret-prompter.js";
+import { createMockProvider } from "./helpers/mock-provider.js";
 
 type Context = Conversation;
 
@@ -72,7 +74,10 @@ mock.module("../persistence/conversation-crud.js", () => ({
 }));
 
 import { runAgentLoopImpl } from "../daemon/conversation-agent-loop.js";
-import type { QueueDrainReason } from "../daemon/conversation-queue-manager.js";
+import {
+  MessageQueue,
+  type QueueDrainReason,
+} from "../daemon/conversation-queue-manager.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 function makeCtx(overrides: Partial<Context> = {}): Conversation {
@@ -95,7 +100,10 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
       getActiveModel: () => undefined,
       compactionCircuit: new CompactionCircuit("test-conv"),
     } as unknown as AgentLoop,
-    provider: { name: "mock-provider" } as Context["provider"],
+    provider: createMockProvider(
+      [new Error("Unexpected provider call")],
+      "mock-provider",
+    ).provider,
     systemPrompt: "system",
     contextWindowManager: {
       updateConfig: () => {},
@@ -119,14 +127,14 @@ function makeCtx(overrides: Partial<Context> = {}): Conversation {
     allowedToolNames: undefined,
     preactivatedSkillIds: undefined,
     skillProjectionState: new Map(),
-    skillProjectionCache: new Map() as Context["skillProjectionCache"],
+    skillProjectionCache: {},
     usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     turnCount: 0,
     lastAssistantAttachments: [],
     lastAttachmentWarnings: [],
     hasNoClient: false,
-    prompter: {} as Context["prompter"],
-    queue: {} as Context["queue"],
+    prompter: new SecretPrompter(),
+    queue: new MessageQueue(),
     markWorkspaceTopLevelDirty: () => {},
     emitActivityState: () => {},
     getQueueDepth: () => 0,

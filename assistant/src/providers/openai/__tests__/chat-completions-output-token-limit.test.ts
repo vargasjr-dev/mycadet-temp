@@ -44,21 +44,13 @@ function stubCreate(provider: OpenAIChatCompletionsProvider): {
   requests: Record<string, unknown>[];
 } {
   const requests: Record<string, unknown>[] = [];
-  const inner = provider as unknown as {
-    client: {
-      chat: {
-        completions: {
-          create: (
-            params: Record<string, unknown>,
-          ) => Promise<AsyncIterable<MockChunk>>;
-        };
-      };
-    };
-  };
-  inner.client.chat.completions.create = async (params) => {
-    requests.push(params);
-    return makeStream(OK_CHUNKS);
-  };
+
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: Record<string, unknown>) => {
+      requests.push(params);
+      return makeStream(OK_CHUNKS);
+    },
+  });
   return { requests };
 }
 

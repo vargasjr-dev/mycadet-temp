@@ -22,27 +22,25 @@ interface WireCall {
 /** Replace the SDK client so each chat-completions call is recorded. */
 function stubChatCompletions(provider: OpenAIChatCompletionsProvider) {
   const calls: WireCall[] = [];
-  (provider as unknown as { client: unknown }).client = {
+  Object.assign(provider["client"], {
     baseURL: "https://api.fireworks.example/inference/v1",
-    chat: {
-      completions: {
-        create: async (
-          params: Record<string, unknown>,
-          options?: { headers?: Record<string, string> },
-        ) => {
-          calls.push({ params, headers: options?.headers });
-          return {
-            async *[Symbol.asyncIterator]() {
-              yield {
-                choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
-                usage: { prompt_tokens: 2, completion_tokens: 1 },
-              };
-            },
+  });
+  Object.assign(provider["client"].chat.completions, {
+    create: async (
+      params: Record<string, unknown>,
+      options?: { headers?: Record<string, string> },
+    ) => {
+      calls.push({ params, headers: options?.headers });
+      return {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
+            usage: { prompt_tokens: 2, completion_tokens: 1 },
           };
         },
-      },
+      };
     },
-  };
+  });
   return calls;
 }
 

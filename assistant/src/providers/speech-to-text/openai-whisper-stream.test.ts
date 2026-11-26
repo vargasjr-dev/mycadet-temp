@@ -59,22 +59,14 @@ function createTranscriberWithMock(
   // Replace the internal transcribeAccumulated method with our mock.
   // The mock intercepts after PCM-to-WAV conversion has happened (if
   // applicable), so we can inspect the mimeType that was passed.
-  (
-    transcriber as unknown as {
-      transcribeAccumulated: () => Promise<string>;
-    }
-  ).transcribeAccumulated = async () => {
+  transcriber["transcribeAccumulated"] = async () => {
     // Access accumulated state through the private fields
-    const chunks = (transcriber as unknown as { audioChunks: Buffer[] })
-      .audioChunks;
-    const mime = (transcriber as unknown as { audioMimeType: string })
-      .audioMimeType;
+    const chunks = transcriber["audioChunks"];
+    const mime = transcriber["audioMimeType"];
     const combined = Buffer.concat(chunks);
 
     // Check for PCM-to-WAV conversion (mirrors the real implementation)
-    const isPcm = (
-      transcriber as unknown as { isPcmMimeType: (m: string) => boolean }
-    ).isPcmMimeType(mime);
+    const isPcm = transcriber["isPcmMimeType"](mime);
     const effectiveMime = isPcm ? "audio/wav" : mime;
 
     return transcribeFn(combined, effectiveMime);

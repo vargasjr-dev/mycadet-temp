@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   EMPTY_ASSISTANT_TURN_PLACEHOLDER,
   OpenAIChatCompletionsProvider,
@@ -30,37 +32,37 @@ describe("litellm adapter factory", () => {
       baseURL: "http://localhost:4000/v1",
       useNativeWebSearch: false,
     });
-    expect(adapter).toBeInstanceOf(OpenAIChatCompletionsProvider);
-    const provider = adapter as OpenAIChatCompletionsProvider;
+    if (!(adapter instanceof OpenAIChatCompletionsProvider)) {
+      throw new Error("Expected an OpenAI chat-completions adapter");
+    }
+    const provider = adapter;
     const requests: unknown[] = [];
-    (provider as unknown as { client: unknown }).client = {
-      chat: {
-        completions: {
-          create: async (params: unknown) => {
-            requests.push(params);
-            return {
-              async *[Symbol.asyncIterator]() {
-                yield {
-                  choices: [
-                    { delta: { content: "ok" }, finish_reason: "stop" },
-                  ],
-                  usage: { prompt_tokens: 2, completion_tokens: 1 },
-                };
-              },
+    Object.assign(provider["client"].chat.completions, {
+      create: async (params: unknown) => {
+        requests.push(params);
+        return {
+          async *[Symbol.asyncIterator]() {
+            yield {
+              choices: [{ delta: { content: "ok" }, finish_reason: "stop" }],
+              usage: { prompt_tokens: 2, completion_tokens: 1 },
             };
           },
-        },
+        };
       },
-    };
+    });
 
     await provider.sendMessage([
       { role: "user", content: [{ type: "text", text: "question" }] },
       { role: "assistant", content: [] },
     ]);
 
-    const params = requests[0] as {
-      messages: Array<{ role: string; content: string | null }>;
-    };
+    const params = z
+      .object({
+        messages: z.array(
+          z.object({ role: z.string(), content: z.string().nullable() }),
+        ),
+      })
+      .parse(requests[0]);
     const assistantMsg = params.messages.find((m) => m.role === "assistant")!;
     expect(assistantMsg.content).toBe(EMPTY_ASSISTANT_TURN_PLACEHOLDER);
   });

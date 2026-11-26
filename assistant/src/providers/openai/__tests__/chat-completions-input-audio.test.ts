@@ -48,19 +48,13 @@ function stubCreateCapture(provider: OpenAIChatCompletionsProvider): {
   params: () => CapturedParams;
 } {
   let captured: unknown;
-  const inner = provider as unknown as {
-    client: {
-      chat: {
-        completions: {
-          create: (params: unknown) => Promise<AsyncIterable<MockChunk>>;
-        };
-      };
-    };
-  };
-  inner.client.chat.completions.create = async (params) => {
-    captured = params;
-    return makeStream(OK_CHUNKS);
-  };
+
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: Record<string, unknown>) => {
+      captured = params;
+      return makeStream(OK_CHUNKS);
+    },
+  });
   return { params: () => captured as CapturedParams };
 }
 

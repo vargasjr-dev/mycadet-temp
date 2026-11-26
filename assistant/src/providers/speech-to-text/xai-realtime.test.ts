@@ -475,9 +475,7 @@ describe("XAIRealtimeTranscriber", () => {
     // Drive a direct inspection: the MockWebSocket exposes a private
     // listeners map; asserting size === 1 for each type after start()
     // confirms connect-phase listeners were removed.
-    const listenersByType = (
-      mockWs as unknown as { listeners: Map<string, unknown[]> }
-    ).listeners;
+    const listenersByType = mockWs["listeners"];
     expect(listenersByType.get("open")?.length ?? 0).toBe(0);
     expect(listenersByType.get("error")?.length ?? 0).toBe(1);
     expect(listenersByType.get("close")?.length ?? 0).toBe(1);

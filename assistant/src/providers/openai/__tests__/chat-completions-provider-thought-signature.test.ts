@@ -76,16 +76,12 @@ function stubProvider(
     options,
   );
   const requests: unknown[] = [];
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: unknown) => {
-          requests.push(params);
-          return makeStream(chunks);
-        },
-      },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: unknown) => {
+      requests.push(params);
+      return makeStream(chunks);
     },
-  };
+  });
   return { provider, requests };
 }
 
@@ -101,20 +97,16 @@ function stubProviderWithErrors(
   );
   const requests: unknown[] = [];
   const pending = [...errors];
-  (provider as unknown as { client: unknown }).client = {
-    chat: {
-      completions: {
-        create: async (params: unknown) => {
-          requests.push(JSON.parse(JSON.stringify(params)));
-          const error = pending.shift();
-          if (error !== undefined) {
-            throw error;
-          }
-          return makeStream(chunks);
-        },
-      },
+  Object.assign(provider["client"].chat.completions, {
+    create: async (params: unknown) => {
+      requests.push(JSON.parse(JSON.stringify(params)));
+      const error = pending.shift();
+      if (error !== undefined) {
+        throw error;
+      }
+      return makeStream(chunks);
     },
-  };
+  });
   return { provider, requests };
 }
 

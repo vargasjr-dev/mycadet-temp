@@ -1,28 +1,30 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AgentEvent } from "../agent/loop.js";
+import pino from "pino";
+
 import type { AssistantEvent } from "../api/index.js";
 import {
   createEventHandlerState,
   type EventHandlerDeps,
   handleMaxTokensReached,
 } from "../daemon/conversation-agent-loop-handlers.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 describe("max tokens reached handler", () => {
   test("emits and stores an inline continuation card", () => {
     const sent: AssistantEvent[] = [];
-    const ctx = {
+    const ctx = asConversation({
       conversationId: "conv-1",
       surfaceState: new Map(),
       currentTurnSurfaces: [],
-    };
-    const deps = {
+    });
+    const deps: EventHandlerDeps = {
       ctx,
       onEvent: (msg: AssistantEvent) => sent.push(msg),
       reqId: "req-1",
       isFirstMessage: false,
       shouldGenerateTitle: false,
-      rlog: { warn: () => {} },
+      rlog: pino({ enabled: false }),
       turnChannelContext: {
         userMessageChannel: "cadet",
         assistantMessageChannel: "cadet",
@@ -31,12 +33,13 @@ describe("max tokens reached handler", () => {
         userMessageInterface: "web",
         assistantMessageInterface: "web",
       },
-    } as unknown as EventHandlerDeps;
+      applyCompaction: async () => {},
+    };
 
     handleMaxTokensReached(createEventHandlerState(), deps, {
       type: "max_tokens_reached",
       stopReason: "max_tokens",
-    } as Extract<AgentEvent, { type: "max_tokens_reached" }>);
+    });
 
     const show = sent.find((msg) => msg.type === "ui_surface_show");
     expect(show).toBeDefined();
@@ -45,9 +48,7 @@ describe("max tokens reached handler", () => {
     }
 
     expect(show.surfaceType).toBe("card");
-    expect((show.data as { title?: unknown }).title).toBe(
-      "Response limit reached",
-    );
+    expect(show.data?.title).toBe("Response limit reached");
     expect(show.actions?.[0]?.id).toBe("relay_prompt");
     expect(show.actions?.[0]?.data?.prompt).toContain("Continue");
     expect(show.actions?.[0]?.data?._completeSurface).toBe(true);

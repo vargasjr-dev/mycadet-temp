@@ -20,31 +20,23 @@ describe("chat-completions extraBody", () => {
     const provider = new ExtraBodyProvider("test-key", "qwen/qwen3-8b");
     let seenParams: Record<string, unknown> | undefined;
     let seenOptions: Record<string, unknown> | undefined;
-    (
-      provider as unknown as {
-        client: {
-          chat: {
-            completions: {
-              create: (
-                params: Record<string, unknown>,
-                options?: Record<string, unknown>,
-              ) => Promise<AsyncIterable<unknown>>;
+    Object.assign(provider["client"].chat.completions, {
+      create: async (
+        params: Record<string, unknown>,
+        options?: Record<string, unknown>,
+      ) => {
+        seenParams = params;
+        seenOptions = options;
+        return {
+          async *[Symbol.asyncIterator]() {
+            yield {
+              choices: [{ delta: {}, finish_reason: "stop" }],
+              usage: { prompt_tokens: 1, completion_tokens: 1 },
             };
-          };
+          },
         };
-      }
-    ).client.chat.completions.create = async (params, options) => {
-      seenParams = params;
-      seenOptions = options;
-      return {
-        async *[Symbol.asyncIterator]() {
-          yield {
-            choices: [{ delta: {}, finish_reason: "stop" }],
-            usage: { prompt_tokens: 1, completion_tokens: 1 },
-          };
-        },
-      };
-    };
+      },
+    });
 
     await provider.sendMessage([
       { role: "user", content: [{ type: "text", text: "hi" }] },
@@ -58,24 +50,16 @@ describe("chat-completions extraBody", () => {
       providerName: "cadet",
       providerLabel: "Cadet",
     });
-    (
-      provider as unknown as {
-        client: {
-          chat: {
-            completions: {
-              create: () => Promise<AsyncIterable<unknown>>;
-            };
-          };
-        };
-      }
-    ).client.chat.completions.create = async () => {
-      throw new OpenAI.APIError(
-        400,
-        { detail: "directions are not loaded" },
-        undefined,
-        new Headers(),
-      );
-    };
+    Object.assign(provider["client"].chat.completions, {
+      create: async () => {
+        throw new OpenAI.APIError(
+          400,
+          { detail: "directions are not loaded" },
+          undefined,
+          new Headers(),
+        );
+      },
+    });
 
     try {
       await provider.sendMessage([
@@ -101,29 +85,21 @@ describe("chat-completions extraBody", () => {
       providerName: "cadet",
       providerLabel: "Cadet",
     });
-    (
-      provider as unknown as {
-        client: {
-          chat: {
-            completions: {
-              create: () => Promise<AsyncIterable<unknown>>;
-            };
-          };
-        };
-      }
-    ).client.chat.completions.create = async () => {
-      throw new OpenAI.APIError(
-        400,
-        {
-          message:
-            "This model's maximum context length is 128000 tokens. However, your messages resulted in 150000 tokens.",
-          type: "invalid_request_error",
-          code: "context_length_exceeded",
-        },
-        undefined,
-        new Headers(),
-      );
-    };
+    Object.assign(provider["client"].chat.completions, {
+      create: async () => {
+        throw new OpenAI.APIError(
+          400,
+          {
+            message:
+              "This model's maximum context length is 128000 tokens. However, your messages resulted in 150000 tokens.",
+            type: "invalid_request_error",
+            code: "context_length_exceeded",
+          },
+          undefined,
+          new Headers(),
+        );
+      },
+    });
 
     try {
       await provider.sendMessage([

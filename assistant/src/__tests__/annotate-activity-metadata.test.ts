@@ -22,6 +22,8 @@
  */
 import { beforeAll, describe, expect, test } from "bun:test";
 
+import pino from "pino";
+
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 import type { ToolActivityMetadata } from "../api/events/tool-result.js";
 import type {
@@ -39,7 +41,11 @@ import {
 } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
 import type { ContentBlock } from "../providers/types.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
+import { createMockProvider } from "./helpers/mock-provider.js";
 beforeAll(async () => {
   await initializeDb();
 });
@@ -61,30 +67,31 @@ async function seedAssistantMessage(blocks: unknown): Promise<string> {
 
 function makeDeps(): EventHandlerDeps {
   return {
-    ctx: {
+    ctx: asConversation({
       conversationId: "test-conv",
-      provider: { name: "anthropic" },
+      provider: createMockProvider(
+        [new Error("Unexpected provider call")],
+        "anthropic",
+      ).provider,
       streamThinking: false,
       emitActivityState: () => {},
       markWorkspaceTopLevelDirty: () => {},
       currentTurnSurfaces: [],
       modeSessions: mockUnownedModeSessions(),
-    } as unknown as EventHandlerDeps["ctx"],
+    }),
     onEvent: () => {},
     reqId: "test-req",
     isFirstMessage: false,
     shouldGenerateTitle: false,
-    rlog: new Proxy({} as Record<string, unknown>, {
-      get: () => () => {},
-    }) as unknown as EventHandlerDeps["rlog"],
+    rlog: pino({ enabled: false }),
     turnChannelContext: {
       userMessageChannel: "cadet",
       assistantMessageChannel: "cadet",
-    } as EventHandlerDeps["turnChannelContext"],
+    },
     turnInterfaceContext: {
       userMessageInterface: "web",
       assistantMessageInterface: "web",
-    } as EventHandlerDeps["turnInterfaceContext"],
+    },
     applyCompaction: async () => {},
   };
 }
