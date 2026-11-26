@@ -190,7 +190,6 @@ export type LocalReadAssistantAvatarResult =
 
 export interface CadetBridge {
   platform: "electron";
-  hostOS?: ElectronHostOS;
   app: {
     versionInfo(): Promise<AppVersionInfo>;
     openWebsite(): Promise<void>;
@@ -905,7 +904,6 @@ export interface CadetBridge {
  */
 export const CADET_BRIDGE_KEYS = [
   "platform",
-  "hostOS",
   "app",
   "text",
   "auth",

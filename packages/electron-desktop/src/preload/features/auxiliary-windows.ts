@@ -18,17 +18,25 @@ import {
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-export const install = (bridge: Partial<CadetBridge>): void => {
-  bridge.quickInput = {
+/**
+ * The auxiliary-window surfaces: the quick input, the command palette, the
+ * dictation overlay, and the conversation popout — each a frame the main
+ * process opens and the renderer fills.
+ */
+export const createAuxiliaryWindowSurfaces = (): Pick<
+  CadetBridge,
+  "quickInput" | "commandPalette" | "dictationOverlay" | "popout"
+> => ({
+  quickInput: {
     submit: (message) => ipcRenderer.invoke(QUICK_INPUT_SUBMIT, message),
     dismiss: () => ipcRenderer.invoke(QUICK_INPUT_DISMISS),
-  };
-  bridge.commandPalette = {
+  },
+  commandPalette: {
     open: () => ipcRenderer.invoke(COMMAND_PALETTE_OPEN),
     dismiss: () => ipcRenderer.invoke(COMMAND_PALETTE_DISMISS),
     select: (command) => ipcRenderer.invoke(COMMAND_PALETTE_SELECT, command),
-  };
-  bridge.dictationOverlay = {
+  },
+  dictationOverlay: {
     setState: (state) => {
       ipcRenderer.send(DICTATION_OVERLAY_SET_STATE, state);
     },
@@ -63,8 +71,8 @@ export const install = (bridge: Partial<CadetBridge>): void => {
     setHitRegion: (region) => {
       ipcRenderer.send(DICTATION_OVERLAY_SET_HIT_REGION, region);
     },
-  };
-  bridge.popout = {
+  },
+  popout: {
     open: (conversationId) => ipcRenderer.invoke(POPOUT_OPEN, conversationId),
-  };
-};
+  },
+});

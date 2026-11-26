@@ -27,6 +27,7 @@ import WORKLET_MODULE_URL from "@/domains/chat/voice/live-voice/pcm-downsample-w
 
 import { createAudioContext } from "@/domains/chat/voice/audio-context";
 import { isElectron } from "@/runtime/is-electron";
+import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { requestNativeTranscription } from "@/runtime/native-dictation-transcription";
 
 const WORKLET_PROCESSOR_NAME = "pcm-downsample";
@@ -154,7 +155,7 @@ const MIN_TRANSCRIBED_TIMEOUT_MS = 8000;
 const TRANSCRIBED_TIMEOUT_GRACE_MS = 5000;
 
 function transcribedTimeoutMs(pcmByteLength: number): number {
-  if (window.cadet?.hostOS !== "windows") {
+  if (detectElectronHostOS() !== "windows") {
     return MIN_TRANSCRIBED_TIMEOUT_MS;
   }
   const pcmDurationMs =

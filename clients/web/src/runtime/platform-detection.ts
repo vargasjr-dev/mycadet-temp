@@ -150,15 +150,13 @@ export function clientOsDisplayName(clientOs: ClientOs): string {
 }
 
 /**
- * Detect the Electron host OS. Older preloads omit `hostOS`, so use the
- * renderer platform to distinguish their Windows hosts from macOS.
+ * Detect the Electron host OS from the renderer's navigator. The bridge
+ * carries no host marker — the desktop shell always runs on its own OS, so
+ * the platform string is the single source.
  */
 export function detectElectronHostOS(): ElectronHostOS | null {
   if (!isElectron()) {
     return null;
-  }
-  if (window.cadet?.hostOS) {
-    return window.cadet.hostOS;
   }
   const platform = navigator.platform.toLowerCase();
   if (platform.includes("win")) {

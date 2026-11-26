@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { isElectron } from "@/runtime/is-electron";
+import { detectElectronHostOS } from "@/runtime/platform-detection";
 
 export type DesktopAppPlatform = "macos" | "windows";
 
@@ -15,8 +16,8 @@ export function getBrowserPlatform(): string {
 
 /** Windows is the only positive match; every other signal defaults to macOS. */
 export function detectDesktopAppPlatform(): DesktopAppPlatform {
-  if (isElectron() && window.cadet?.hostOS) {
-    return window.cadet.hostOS === "windows" ? "windows" : "macos";
+  if (isElectron()) {
+    return detectElectronHostOS() === "windows" ? "windows" : "macos";
   }
 
   return isWindowsBrowser() ? "windows" : "macos";

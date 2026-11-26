@@ -23,19 +23,29 @@ mock.module("electron", () =>
   }),
 );
 
-const { WINDOWS_NOT_APPLICABLE_CAPABILITIES } =
-  await import("./core-capabilities");
+// The composition is one shared object literal that branches on
+// `process.platform` (a real preload runs once per platform), so each
+// platform's surface is composed under a mocked platform. The module is
+// imported once — it reads the platform at compose time, not import time.
+const { composeDesktopPreload } =
+  await import("@mycadet/electron-desktop/preload");
 
-// Every real feature module, loaded from disk the way the production glob
-// does, so cross-module bridge-key collisions (which kill the whole
-// `window.cadet` bridge at preload time) surface here.
-
-// The composition under test is the shell's own preload index — the
-// same module the packaged preload runs — not a test-side rebuild.
-await import("./index");
-const windowsBridge = exposed.get("cadet") as CadetBridge;
-await import("../../../macos/src/preload/index");
-const macBridge = exposed.get("cadet") as CadetBridge;
+const composeUnder = (platform: string): Partial<CadetBridge> => {
+  const descriptor = Object.getOwnPropertyDescriptor(process, "platform");
+  if (descriptor) {
+    Object.defineProperty(process, "platform", {
+      configurable: true,
+      value: platform,
+    });
+  }
+  try {
+    return composeDesktopPreload();
+  } finally {
+    if (descriptor) {
+      Object.defineProperty(process, "platform", descriptor);
+    }
+  }
+};
 
 /** Dotted paths of every leaf (method or scalar) under a bridge value. */
 const surface = (value: unknown, prefix = ""): string[] => {
@@ -43,27 +53,31 @@ const surface = (value: unknown, prefix = ""): string[] => {
     return [prefix];
   }
   return Object.entries(value)
-    .flatMap(([key, child]) =>
-      surface(child, prefix ? `${prefix}.${key}` : key),
-    )
+    .flatMap(([key, child]) => surface(child, key ? `${prefix}.${key}` : key))
     .sort();
 };
 
-const NOT_APPLICABLE: readonly string[] = WINDOWS_NOT_APPLICABLE_CAPABILITIES;
-const required = CADET_BRIDGE_KEYS.filter(
-  (key) => !NOT_APPLICABLE.includes(key),
-);
+test("the shell index composes and exposes the shared bridge", async () => {
+  await import("./index");
+  expect(exposed.get("cadet")).toBeDefined();
+});
 
-// Windows draws its own menu bar, themes the native caption buttons, and
-// registers the voice mode shortcut's chord with its keyboard hook.
+test("the composed Windows bridge satisfies every CadetBridge key", () => {
+  const bridge = composeUnder("win32");
+
+  for (const key of CADET_BRIDGE_KEYS) {
+    expect(bridge[key], key).toBeDefined();
+  }
+  expect(Object.keys(bridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
+});
+
+// Windows shares the Linux hotkey chord flavor and adds the native
+// title-bar overlay seam; macOS's raw-keyboard surfaces are its alone.
 const WINDOWS_ONLY_SURFACE = [
   "helper.hotkey.onRegistrationChange",
   "helper.hotkey.setVoiceModeChord",
   "mainWindow.setTitleBarOverlay",
 ];
-// Both are macOS helper contracts read off its raw keyboard monitor: the Fn
-// key, and a hold of a configured modifier set. Windows answers the first with
-// a configurable global chord, and has no hold of its own to register.
 const MACOS_ONLY_SURFACE = [
   "helper.apps.frontmost",
   "helper.apps.quit",
@@ -73,7 +87,6 @@ const MACOS_ONLY_SURFACE = [
   "helper.hotkey.setModifierHold",
   "helper.input.onActivity",
   "helper.input.setActivityWatch",
-  // macOS System Settings accepts native application-bundle drops.
   "permissions.setup.begin",
   "permissions.setup.cancel",
   "permissions.setup.dismiss",
@@ -85,27 +98,16 @@ const MACOS_ONLY_SURFACE = [
   "text.undoInFrontApp",
 ];
 
-test("the composed Windows bridge satisfies every applicable CadetBridge key", () => {
-  const bridge = windowsBridge;
-
-  for (const key of required) {
-    expect(bridge[key], key).toBeDefined();
-  }
-  expect(Object.keys(bridge).sort()).toEqual([...required].sort());
-  expect(bridge.hostOS).toBe("windows");
-});
-
 test("the Windows bridge matches the macOS bridge surface up to the documented deltas", () => {
-  expect(macBridge).toBeDefined();
-  expect(macBridge.hostOS).toBe("macos");
-  // The menu IPC is the shared main's `installDesktopMenu`, so every
-  // desktop's preload carries the surface.
-  expect(Object.keys(macBridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
+  const bridge = composeUnder("win32");
+  const macBridge = composeUnder("darwin");
 
-  const bridge = windowsBridge;
-  const shared = required.filter((key) => key !== "hostOS");
-  const windowsSurface = shared.flatMap((key) => surface(bridge[key], key));
-  const macSurface = shared.flatMap((key) => surface(macBridge[key], key));
+  const windowsSurface = CADET_BRIDGE_KEYS.flatMap((key) =>
+    surface(bridge[key], key),
+  );
+  const macSurface = CADET_BRIDGE_KEYS.flatMap((key) =>
+    surface(macBridge[key], key),
+  );
 
   const windowsOnly = windowsSurface.filter((p) => !macSurface.includes(p));
   const macOnly = macSurface.filter((p) => !windowsSurface.includes(p));

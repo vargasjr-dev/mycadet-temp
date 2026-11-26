@@ -45,7 +45,6 @@ import type {
   DictationPartialsResult,
   DictationTranscribeResult,
   DownloadDoneEvent,
-  ElectronHostOS,
   ModifierHold,
   ModifierHoldRegistrationResult,
   HelperRestartResult,
@@ -82,7 +81,6 @@ declare global {
   interface Window {
     cadet?: {
       platform: "electron";
-      hostOS?: ElectronHostOS;
       app: {
         versionInfo(): Promise<AppVersionInfo>;
         openWebsite(): Promise<void>;

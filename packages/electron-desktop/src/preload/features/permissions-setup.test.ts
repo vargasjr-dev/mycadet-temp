@@ -1,6 +1,6 @@
 import { expect, mock, test } from "bun:test";
 
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../../test-setup";
 
 type Listener = (...args: unknown[]) => void;
 const send = mock((_channel: string, ..._args: unknown[]) => undefined);
@@ -19,24 +19,15 @@ mock.module("electron", () =>
   }),
 );
 
-import {
-  PERMISSION_GUIDE_STATE,
-  type CadetBridge,
-} from "@mycadet/ipc-contract";
+import { PERMISSION_GUIDE_STATE } from "@mycadet/ipc-contract";
 
-// The real composition, so the mac-only feature is held to the bridge the
-// shared features actually open. Imported after the electron mock — the
-// preload graph reads `ipcRenderer` when it evaluates.
-const { composeDesktopPreload } =
-  await import("@mycadet/electron-desktop/preload");
-const { install } = await import("./permissions-setup");
-
-const shared: Partial<CadetBridge> = composeDesktopPreload({});
-install(shared);
-const bridge = shared.permissions?.setup;
+// The real factory, so the seam is held to the bridge the composition
+// actually exposes. Imported after the electron mock — the preload graph
+// reads `ipcRenderer` when it evaluates.
+const { createPermissionSetupBridge } = await import("./permissions");
+const bridge = createPermissionSetupBridge();
 
 test("permission guide drag sends only its id and releases state subscriptions", () => {
-  if (!bridge) throw new Error("permissions.setup was not contributed");
   bridge.cancel();
   expect(send).toHaveBeenCalledWith("cadet:permissions:guide:cancel");
   bridge.startDrag(7);

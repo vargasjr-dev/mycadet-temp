@@ -18,24 +18,32 @@ import {
   STATUS_CONNECTION,
 } from "@mycadet/ipc-contract";
 
-export const install = (bridge: Partial<CadetBridge>): void => {
-  bridge.status = {
+/**
+ * The presence surfaces: connection status, identity, the icon (avatar +
+ * character, with the accent the macOS dock icon carries separately), the
+ * dock badge, power events, and connectivity.
+ */
+export const createPresenceSurfaces = (): Pick<
+  CadetBridge,
+  "status" | "identity" | "icon" | "dock" | "power" | "connectivity"
+> => ({
+  status: {
     setConnection: (status) => ipcRenderer.send(STATUS_CONNECTION, status),
-  };
-  bridge.identity = {
+  },
+  identity: {
     setName: (name) => ipcRenderer.send(IDENTITY_NAME, name),
-  };
-  bridge.icon = {
+  },
+  icon: {
     setAvatar: (png) => ipcRenderer.send(ICON_SET_AVATAR, png),
     // `accentHex` is part of the character's contract (the avatar's accent
     // carried separately for the macOS dock icon) — forward it verbatim.
     setCharacter: (character, accentHex) =>
       ipcRenderer.send(ICON_SET_CHARACTER, character, accentHex ?? null),
-  };
-  bridge.dock = {
+  },
+  dock: {
     setBadge: (count) => ipcRenderer.send(DOCK_SET_BADGE, count),
-  };
-  bridge.power = {
+  },
+  power: {
     onEvent: (callback) => {
       const handler = (_event: IpcRendererEvent, payload: PowerEvent) => {
         callback(payload);
@@ -43,8 +51,8 @@ export const install = (bridge: Partial<CadetBridge>): void => {
       ipcRenderer.on(POWER_EVENT, handler);
       return () => ipcRenderer.off(POWER_EVENT, handler);
     },
-  };
-  bridge.connectivity = {
+  },
+  connectivity: {
     onState: (callback) => {
       const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
         callback(state);
@@ -57,5 +65,5 @@ export const install = (bridge: Partial<CadetBridge>): void => {
     setDevice: (online) => ipcRenderer.send(CONNECTIVITY_SET_DEVICE, online),
     retry: (): Promise<ConnectivityState> =>
       Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_RETRY)),
-  };
-};
+  },
+});

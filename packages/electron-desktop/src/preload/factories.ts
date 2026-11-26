@@ -1,11 +1,15 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type {
+  AppVersionInfo,
   BundleScanData,
+  CadetCommand,
   DeepLink,
   DownloadDoneEvent,
   NotificationActionEvent,
   ResolvedHotkey,
+  TextInsertionResult,
+  TitleBarOverlayTheme,
   UpdateState,
   CadetBridge,
   WindowAttentionPayload,
@@ -216,3 +220,66 @@ export const createVellumMigrationBridge =
       VELLUM_MIGRATION_STATE_EVENT,
     ),
   });
+
+/** The app surface: version reporting and the marketing-site handoff. */
+export const createAppBridge = (): CadetBridge["app"] => ({
+  versionInfo: (): Promise<AppVersionInfo> =>
+    Promise.resolve(ipcRenderer.invoke("cadet:app:versionInfo")),
+  openWebsite: (): Promise<void> =>
+    Promise.resolve(ipcRenderer.invoke("cadet:app:openWebsite")),
+});
+
+/** The command surface: the main process drives renderer commands. */
+export const createCommandsBridge = (): CadetBridge["commands"] => ({
+  on: (callback) => {
+    const handler = (_event: IpcRendererEvent, command: CadetCommand) => {
+      callback(command);
+    };
+    ipcRenderer.on("cadet:command", handler);
+    return () => {
+      ipcRenderer.off("cadet:command", handler);
+    };
+  },
+});
+
+/**
+ * The main window's surface. Windows alone answers `setTitleBarOverlay` —
+ * its title-bar controls are drawn by the system, so theme changes must
+ * reach the native overlay; the other desktops frame their windows
+ * themselves.
+ */
+export const createMainWindowBridge = (): CadetBridge["mainWindow"] => ({
+  ensureVisible: (): Promise<void> =>
+    Promise.resolve(ipcRenderer.invoke("cadet:mainWindow:ensureVisible")),
+  setOnboarding: (active): Promise<void> =>
+    Promise.resolve(
+      ipcRenderer.invoke("cadet:mainWindow:setOnboarding", active),
+    ),
+  navigateTo: (url): Promise<void> =>
+    Promise.resolve(ipcRenderer.invoke("cadet:mainWindow:navigateTo", url)),
+  ...(process.platform === "win32"
+    ? {
+        setTitleBarOverlay: (theme: TitleBarOverlayTheme): Promise<void> =>
+          Promise.resolve(
+            ipcRenderer.invoke("cadet:mainWindow:setTitleBarOverlay", theme),
+          ),
+      }
+    : {}),
+});
+
+/**
+ * The text surface: inserting into (and, where the helper can undo its own
+ * insertion, undoing in) the front app, plus the automation-settings handoff.
+ */
+export const createTextBridge = (): CadetBridge["text"] => ({
+  insertIntoFrontApp: (text): Promise<TextInsertionResult> =>
+    Promise.resolve(ipcRenderer.invoke("cadet:text:insertIntoFrontApp", text)),
+  openAutomationSettings: (): Promise<void> =>
+    Promise.resolve(ipcRenderer.invoke("cadet:text:openAutomationSettings")),
+  ...(process.platform === "darwin"
+    ? {
+        undoInFrontApp: (): Promise<TextInsertionResult> =>
+          Promise.resolve(ipcRenderer.invoke("cadet:text:undoInFrontApp")),
+      }
+    : {}),
+});

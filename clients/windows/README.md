@@ -12,13 +12,13 @@ bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
   local, paired, and platform request forwarding, paired-request frame-origin
   enforcement, CSP, a permission allowlist, and sandboxed `cadet://`
   serving) and then composes `src/main/features/*`.
-- `src/main/features/*` and `src/preload/features/*` are capability modules
-  installed through the registries in `@mycadet/electron-desktop`. Every
-  `.ts` file in those directories is picked up automatically; a new capability
-  is a new file, never an edit to `index.ts`.
-- `src/preload/core-capabilities.ts` is the always-present core of
-  `window.cadet`; `src/preload/bridge-parity.test.ts` holds the composed
-  bridge to the full `CadetBridge` contract against the macOS preload.
+- `src/main/features/*` are capability modules; every `.ts` file there is
+  picked up automatically; a new capability is a new file, never an edit to
+  `index.ts`.
+- The preload is the shared composition in `@mycadet/electron-desktop`
+  (`src/preload/index.ts` just exposes it);
+  `src/preload/bridge-parity.test.ts` holds the composed bridge to the full
+  `CadetBridge` contract against the macOS preload.
 - `native/Cadet.WindowsHelper` is the same-user, non-elevated JSON-RPC helper
   behind UI Automation observation, verified input, dictation, toasts, and
   text insertion (security model in `native/README.md`).

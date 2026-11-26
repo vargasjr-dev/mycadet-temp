@@ -34,13 +34,11 @@ function setUserAgentPlatform(platform?: string): void {
   });
 }
 
-function setElectronHost(hostOS: "macos" | "windows"): void {
+function setElectronHost(): void {
   electron = true;
   (
-    window as unknown as {
-      cadet?: { platform: "electron"; hostOS: "macos" | "windows" };
-    }
-  ).cadet = { platform: "electron", hostOS };
+    window as unknown as { cadet?: { platform: "electron" } }
+  ).cadet = { platform: "electron" };
 }
 
 afterEach(() => {
@@ -51,11 +49,12 @@ afterEach(() => {
   setUserAgentPlatform();
 });
 
-test("uses the Electron host OS", () => {
-  setElectronHost("windows");
+test("uses the Electron host OS, read from the renderer's platform", () => {
+  setElectronHost();
+  setPlatform("Win32");
   expect(detectDesktopAppPlatform()).toBe("windows");
 
-  setElectronHost("macos");
+  setPlatform("MacIntel");
   expect(detectDesktopAppPlatform()).toBe("macos");
 });
 

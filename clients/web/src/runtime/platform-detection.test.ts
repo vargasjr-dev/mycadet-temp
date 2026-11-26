@@ -15,8 +15,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
-import { ElectronHostOS } from "@mycadet/ipc-contract";
-
 let electron = false;
 let nativePlatform = false;
 // What `Capacitor.getPlatform()` reports inside a native shell ("ios" |
@@ -120,16 +118,11 @@ function setMediaMatches(matches: Record<string, boolean>): void {
   });
 }
 
-function setElectronHost(hostOS?: ElectronHostOS): void {
+function setElectronHost(): void {
   electron = true;
   (
-    window as unknown as {
-      cadet?: { platform: "electron"; hostOS?: ElectronHostOS };
-    }
-  ).cadet = {
-    platform: "electron",
-    ...(hostOS ? { hostOS } : {}),
-  };
+    window as unknown as { cadet?: { platform: "electron" } }
+  ).cadet = { platform: "electron" };
 }
 
 afterEach(() => {
@@ -150,21 +143,24 @@ afterEach(() => {
 
 describe("detectClientOs", () => {
   test("returns 'windows' inside the Windows Electron shell", () => {
-    setElectronHost("windows");
+    setElectronHost();
+    setPlatform("Win32");
     expect(detectClientOs()).toBe("windows");
   });
 
   test("returns 'macos' inside the macOS Electron shell", () => {
-    setElectronHost("macos");
+    setElectronHost();
+    setPlatform("MacIntel");
     expect(detectClientOs()).toBe("macos");
   });
 
   test("returns 'linux' inside the Linux Electron shell", () => {
-    setElectronHost("linux");
+    setElectronHost();
+    setPlatform("Linux x86_64");
     expect(detectClientOs()).toBe("linux");
   });
 
-  test("uses the renderer platform for legacy Electron bridges", () => {
+  test("the renderer platform decides the Electron host — the bridge carries no marker", () => {
     setElectronHost();
     setPlatform("MacIntel");
     expect(detectClientOs()).toBe("macos");
@@ -208,7 +204,8 @@ describe("detectClientOs", () => {
     // The Electron macOS shell also satisfies the iOS/native heuristics in
     // some configurations; `isElectron()` must win so macOS isn't reported
     // as iOS.
-    setElectronHost("macos");
+    setElectronHost();
+    setPlatform("MacIntel");
     nativePlatform = true;
     setUserAgent(IPHONE_UA);
     expect(detectClientOs()).toBe("macos");
@@ -439,7 +436,7 @@ describe("useIsMobileWeb", () => {
 
   test("is false inside the Electron shell", () => {
     setUserAgent(IPAD_UA);
-    setElectronHost("macos");
+    setElectronHost();
     expect(renderHook(() => useIsMobileWeb()).result.current).toBe(false);
   });
 
