@@ -76,7 +76,9 @@ mock.module("node:fs", () => {
     },
     watchFile: (
       filePath: string,
-      optionsOrListener: object | WatchFileListener,
+      optionsOrListener:
+        | { persistent?: boolean; interval?: number }
+        | WatchFileListener,
       listener?: WatchFileListener,
     ) => {
       const callback =
