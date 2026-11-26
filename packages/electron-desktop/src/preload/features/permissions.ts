@@ -22,19 +22,19 @@ const invokeItem =
     channel: string,
     kind: SystemPermissionKind,
   ): Promise<SystemPermissionStateItem> =>
-    ipc.invoke(channel, kind) as Promise<SystemPermissionStateItem>;
+    Promise.resolve(ipc.invoke(channel, kind));
 
 export const install = (
   bridge: BridgeCapabilityRegistry<CadetBridge>,
   ipc: IpcRenderer,
 ): void => {
   bridge.contribute("permissions", {
-    getState: () =>
-      ipc.invoke(PERMISSIONS_GET_STATE) as Promise<SystemPermissionsState>,
+    getState: (): Promise<SystemPermissionsState> =>
+      Promise.resolve(ipc.invoke(PERMISSIONS_GET_STATE)),
     request: (kind) => invokeItem(ipc)(PERMISSIONS_REQUEST, kind),
     openSettings: (kind) => invokeItem(ipc)(PERMISSIONS_OPEN_SETTINGS, kind),
-    quitAndReopen: () =>
-      ipc.invoke(PERMISSIONS_QUIT_AND_REOPEN) as Promise<void>,
+    quitAndReopen: (): Promise<void> =>
+      Promise.resolve(ipc.invoke(PERMISSIONS_QUIT_AND_REOPEN)),
     onState: (callback) => {
       const handler = (
         _event: IpcRendererEvent,
@@ -45,9 +45,9 @@ export const install = (
     },
   });
   bridge.contribute("text", {
-    insertIntoFrontApp: (text) =>
-      ipc.invoke(TEXT_INSERT, text) as Promise<TextInsertionResult>,
-    openAutomationSettings: () =>
-      ipc.invoke(TEXT_OPEN_SETTINGS) as Promise<void>,
+    insertIntoFrontApp: (text): Promise<TextInsertionResult> =>
+      Promise.resolve(ipc.invoke(TEXT_INSERT, text)),
+    openAutomationSettings: (): Promise<void> =>
+      Promise.resolve(ipc.invoke(TEXT_OPEN_SETTINGS)),
   });
 };

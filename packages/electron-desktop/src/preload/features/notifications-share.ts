@@ -13,7 +13,7 @@ export const install = (
 ): void => {
   bridge.contribute("notifications", createNotificationsBridge(ipc));
   bridge.contribute("share", {
-    shareFile: (bytes: Uint8Array, filename: string) =>
-      ipc.invoke("cadet:share:file", bytes, filename) as Promise<void>,
+    shareFile: (bytes: Uint8Array, filename: string): Promise<void> =>
+      Promise.resolve(ipc.invoke("cadet:share:file", bytes, filename)),
   });
 };

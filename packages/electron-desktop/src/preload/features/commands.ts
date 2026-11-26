@@ -14,8 +14,9 @@ export const install = (
 ): void => {
   registry.contribute("hotkeys", createHotkeysBridge(ipc));
   registry.contribute("menu", {
-    titles: () =>
-      ipc.invoke(MENU_TITLES) as Promise<Array<{ id: string; label: string }>>,
-    popup: (id, x, y) => ipc.invoke(MENU_POPUP, id, x, y) as Promise<void>,
+    titles: (): Promise<Array<{ id: string; label: string }>> =>
+      Promise.resolve(ipc.invoke(MENU_TITLES)),
+    popup: (id, x, y): Promise<void> =>
+      Promise.resolve(ipc.invoke(MENU_POPUP, id, x, y)),
   });
 };

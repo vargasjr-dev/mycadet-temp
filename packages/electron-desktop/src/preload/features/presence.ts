@@ -50,13 +50,13 @@ export const install = (
       const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
         callback(state);
       ipc.on(CONNECTIVITY_STATE, handler);
-      void (ipc.invoke(CONNECTIVITY_GET) as Promise<ConnectivityState>).then(
-        callback,
-      );
+      void Promise.resolve(ipc.invoke(CONNECTIVITY_GET)).then(callback);
       return () => ipc.off(CONNECTIVITY_STATE, handler);
     },
-    get: () => ipc.invoke(CONNECTIVITY_GET) as Promise<ConnectivityState>,
+    get: (): Promise<ConnectivityState> =>
+      Promise.resolve(ipc.invoke(CONNECTIVITY_GET)),
     setDevice: (online) => ipc.send(CONNECTIVITY_SET_DEVICE, online),
-    retry: () => ipc.invoke(CONNECTIVITY_RETRY) as Promise<ConnectivityState>,
+    retry: (): Promise<ConnectivityState> =>
+      Promise.resolve(ipc.invoke(CONNECTIVITY_RETRY)),
   });
 };

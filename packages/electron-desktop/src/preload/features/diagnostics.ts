@@ -18,8 +18,8 @@ export const install = (
     },
   });
   registry.contribute("feedback", {
-    diagnostics: () =>
-      ipc.invoke(FEEDBACK_DIAGNOSTICS) as Promise<Record<string, unknown>>,
-    logs: () => ipc.invoke(FEEDBACK_LOGS) as Promise<string>,
+    diagnostics: (): Promise<Record<string, unknown>> =>
+      Promise.resolve(ipc.invoke(FEEDBACK_DIAGNOSTICS)),
+    logs: (): Promise<string> => Promise.resolve(ipc.invoke(FEEDBACK_LOGS)),
   });
 };

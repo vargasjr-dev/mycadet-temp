@@ -14,13 +14,11 @@ export const install = (
   ipc: IpcRenderer,
 ): void => {
   registry.contribute("auth", {
-    startOAuth: (options) =>
-      ipc.invoke(AUTH_START_OAUTH, options) as Promise<{
-        sessionToken: string;
-      }>,
-    cancelOAuth: () => ipc.invoke(AUTH_CANCEL_OAUTH) as Promise<void>,
-    getSessionToken: () =>
-      ipc.sendSync(AUTH_GET_SESSION_TOKEN) as string | null,
-    signOut: () => ipc.invoke(AUTH_SIGN_OUT) as Promise<void>,
+    startOAuth: (options): Promise<{ sessionToken: string }> =>
+      Promise.resolve(ipc.invoke(AUTH_START_OAUTH, options)),
+    cancelOAuth: (): Promise<void> =>
+      Promise.resolve(ipc.invoke(AUTH_CANCEL_OAUTH)),
+    getSessionToken: (): string | null => ipc.sendSync(AUTH_GET_SESSION_TOKEN),
+    signOut: (): Promise<void> => Promise.resolve(ipc.invoke(AUTH_SIGN_OUT)),
   });
 };
