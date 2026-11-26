@@ -16,7 +16,7 @@ mock.module("electron", () =>
 
 const { BridgeCapabilityRegistry } =
   await import("@mycadet/electron-desktop/capability-registry");
-const { install: deepLinksInstall } = await import(".//features/deep-links");
+const { install: deepLinksInstall } = await import("@mycadet/electron-desktop/preload/features/deep-links");
 
 beforeEach(() => {
   invoke.mockClear();
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 test("contributes deep-link delivery and launch-at-login IPC", async () => {
   const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-  deepLinksInstall(registry);
+  deepLinksInstall(registry, { invoke, on, off, send } as never);
   const bridge = registry.build();
   const callback = mock(() => undefined);
 

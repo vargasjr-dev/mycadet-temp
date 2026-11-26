@@ -280,5 +280,24 @@
       "updateFailed": "管理员访问更新失败。",
       "notAvailable": "管理员访问仅适用于云端托管的助手。"
     }
+  },
+  "vellumMigration": {
+    "cardTitle": "把你的 Vellum 助手带过来",
+    "cardBody": "我们在这台机器上发现了 Vellum 安装。它的助手可以一步迁入 Cadet。",
+    "cardAction": "导入",
+    "dismissCard": "关闭",
+    "title": "从 Vellum 导入",
+    "body": "我们会把 {{count}} 个助手（约 {{size}}）从你的 Vellum 安装迁入 Cadet。",
+    "sleepNote": "数据迁移期间，你的 Vellum 助手会进入休眠，完成后在 Cadet 中醒来。",
+    "neverAgain": "不再询问",
+    "begin": "开始迁移",
+    "notNow": "暂不",
+    "preparing": "正在检查你的 Vellum 安装…",
+    "runningTitle": "正在迁移你的助手",
+    "doneTitle": "迁移完成",
+    "failedTitle": "没有可导入的内容",
+    "runFailed": "迁移未能完成。你的 Vellum 数据完好无损——随时可以重试。",
+    "nothingFound": "没有找到可导入的 Vellum 安装。",
+    "unavailable": "导入功能当前不可用。"
   }
 }

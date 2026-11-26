@@ -1,4 +1,4 @@
-import { ipcRenderer, type IpcRendererEvent } from "electron";
+import { type IpcRenderer, type IpcRendererEvent } from "electron";
 
 import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
@@ -22,14 +22,15 @@ import {
 } from "@mycadet/ipc-contract";
 
 const subscribe =
+  (ipc: IpcRenderer) =>
   <T>(channel: string) =>
   (callback: (event: T) => void): (() => void) => {
     const listener = (_event: IpcRendererEvent, payload: T): void => {
       callback(payload);
     };
-    ipcRenderer.on(channel, listener);
+    ipc.on(channel, listener);
     return () => {
-      ipcRenderer.off(channel, listener);
+      ipc.off(channel, listener);
     };
   };
 
@@ -42,43 +43,44 @@ const subscribe =
  */
 export const install = (
   registry: BridgeCapabilityRegistry<CadetBridge>,
+  ipc: IpcRenderer,
 ): void => {
   registry.contribute("helper", {
-    ping: () => ipcRenderer.invoke(HELPER_PING) as Promise<"pong">,
-    getState: () => ipcRenderer.invoke(HELPER_GET_STATE),
-    restart: () => ipcRenderer.invoke(HELPER_RESTART),
-    onState: subscribe<HelperState>(HELPER_STATE_EVENT),
+    ping: () => ipc.invoke(HELPER_PING) as Promise<"pong">,
+    getState: () => ipc.invoke(HELPER_GET_STATE),
+    restart: () => ipc.invoke(HELPER_RESTART),
+    onState: subscribe(ipc)<HelperState>(HELPER_STATE_EVENT),
     hotkey: {
       setVoiceModeChord: (activator) =>
-        ipcRenderer.invoke(
+        ipc.invoke(
           HELPER_HOTKEY_SET_VOICE_MODE_CHORD,
           activator,
         ) as Promise<VoiceModeChordRegistrationResult>,
-      onRegistrationChange: subscribe<boolean>(
+      onRegistrationChange: subscribe(ipc)<boolean>(
         HELPER_HOTKEY_REGISTRATION_EVENT,
       ),
-      onEvent: subscribe<HotkeyEvent>(HELPER_HOTKEY_EVENT),
+      onEvent: subscribe(ipc)<HotkeyEvent>(HELPER_HOTKEY_EVENT),
     },
     dictation: {
       setPartials: (enable, deviceName, pushAudio) =>
-        ipcRenderer.invoke(
+        ipc.invoke(
           HELPER_DICTATION_SET_PARTIALS,
           enable,
           deviceName,
           pushAudio,
         ),
       pushAudioChunk: (chunk) => {
-        ipcRenderer.send("cadet:helper:dictation:audio", chunk);
+        ipc.send("cadet:helper:dictation:audio", chunk);
       },
-      onPartial: subscribe<DictationPartialEvent>(
+      onPartial: subscribe(ipc)<DictationPartialEvent>(
         HELPER_DICTATION_PARTIAL_EVENT,
       ),
-      onFinalized: subscribe<DictationPartialEvent>(
+      onFinalized: subscribe(ipc)<DictationPartialEvent>(
         HELPER_DICTATION_FINALIZED_EVENT,
       ),
       transcribe: (audio) =>
-        ipcRenderer.invoke(HELPER_DICTATION_TRANSCRIBE, audio),
-      onTranscribed: subscribe<DictationPartialEvent>(
+        ipc.invoke(HELPER_DICTATION_TRANSCRIBE, audio),
+      onTranscribed: subscribe(ipc)<DictationPartialEvent>(
         HELPER_DICTATION_TRANSCRIBED_EVENT,
       ),
     },

@@ -200,5 +200,24 @@
     "expiresAt": "{time} 到期。",
     "cancel": "取消",
     "enterNewCode": "輸入新代碼"
+  },
+  "vellumMigration": {
+    "cardTitle": "把你的 Vellum 助手帶過來",
+    "cardBody": "我們在這台機器上發現了 Vellum 安裝。它的助手可以一步遷入 Cadet。",
+    "cardAction": "匯入",
+    "dismissCard": "關閉",
+    "title": "從 Vellum 匯入",
+    "body": "我們會把 {{count}} 個助手（約 {{size}}）從你的 Vellum 安裝遷入 Cadet。",
+    "sleepNote": "資料遷移期間，你的 Vellum 助手會進入休眠，完成後在 Cadet 中醒來。",
+    "neverAgain": "不要再詢問",
+    "begin": "開始遷移",
+    "notNow": "暫不",
+    "preparing": "正在檢查你的 Vellum 安裝…",
+    "runningTitle": "正在遷移你的助手",
+    "doneTitle": "遷移完成",
+    "failedTitle": "沒有可匯入的內容",
+    "runFailed": "遷移未能完成。你的 Vellum 資料完好無損——隨時可以重試。",
+    "nothingFound": "找不到可匯入的 Vellum 安裝。",
+    "unavailable": "匯入功能目前無法使用。"
   }
 }

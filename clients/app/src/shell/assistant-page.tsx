@@ -5,6 +5,7 @@ import {
   useOutletContext,
 } from "react-router";
 import { AppShell } from "@app/app-shell";
+import { VellumOfferCard } from "@app/shell/vellum-offer-card";
 import { useTranslation } from "@app/i18n";
 import { selectedAssistantState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
@@ -34,19 +35,26 @@ export function AssistantPage() {
   }
 
   return (
-    <AppShell
-      onShareFeedback={onShareFeedback}
-      assistantId={selection?.id}
-      apiBaseUrl={selection?.apiBase}
-      onNavigate={(path, options) => {
-        void navigate(path, {
-          ...options,
-          // The selection state rides every frame-driven navigation
-          // unwrapped-and-verbatim, so a reload of the deeper entry still
-          // restores it (the reader parses the wrapped shape).
-          state: location.state,
-        });
-      }}
-    />
+    <div className="flex h-screen flex-col">
+      {/* The vellum migration offer rides the shell — an upgrading vellum
+          user lands here, not in onboarding. */}
+      <VellumOfferCard />
+      <div className="min-h-0 flex-1">
+        <AppShell
+          onShareFeedback={onShareFeedback}
+          assistantId={selection?.id}
+          apiBaseUrl={selection?.apiBase}
+          onNavigate={(path, options) => {
+            void navigate(path, {
+              ...options,
+              // The selection state rides every frame-driven navigation
+              // unwrapped-and-verbatim, so a reload of the deeper entry still
+              // restores it (the reader parses the wrapped shape).
+              state: location.state,
+            });
+          }}
+        />
+      </div>
+    </div>
   );
 }

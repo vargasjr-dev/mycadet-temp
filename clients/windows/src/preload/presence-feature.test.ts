@@ -21,7 +21,7 @@ mock.module("electron", () =>
   }),
 );
 
-const { install: presenceInstall } = await import("./features/presence");
+const { install: presenceInstall } = await import("@mycadet/electron-desktop/preload/features/presence");
 
 type FakeCapability = Record<string, (...args: unknown[]) => unknown>;
 
@@ -29,7 +29,7 @@ test("contributes the complete presence bridge", () => {
   const contributions = new Map<string, unknown>();
   presenceInstall({
     contribute: (key: string, value: unknown) => contributions.set(key, value),
-  } as never);
+  } as never, {} as never);
 
   expect([...contributions.keys()].sort()).toEqual([
     "connectivity",
@@ -47,7 +47,7 @@ test("publishes flags, status, identity, avatar, and unread state", () => {
   presenceInstall({
     contribute: (key: string, value: unknown) =>
       contributions.set(key, value as FakeCapability),
-  } as never);
+  } as never, {} as never);
 
   contributions.get("featureFlags")?.set({ sounds: true });
   contributions.get("status")?.setConnection("thinking");
@@ -71,7 +71,7 @@ test("delivers power and current connectivity state with cleanup", async () => {
   presenceInstall({
     contribute: (key: string, value: unknown) =>
       contributions.set(key, value as FakeCapability),
-  } as never);
+  } as never, {} as never);
   const powerEvents: unknown[] = [];
   const states: unknown[] = [];
 

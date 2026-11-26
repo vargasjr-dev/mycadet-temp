@@ -33,14 +33,7 @@ interface StepRow {
 }
 
 /**
- * The vellum → cadet migration's consent + run screen (desktop only —
- * `window.cadet.vellumMigration` is absent on web, and the hosting screen
- * never offers the card there).
- *
- * The engine owns the migration; this screen is the consent UX and the
- * progress surface. The facts shown here come from the engine's own
- * confirm-info gather (the same shape `migrate()`'s confirm callback
- * receives), and the run streams the engine's step events as they happen.
+ * The vellum → cadet migration's consent + run screen
  */
 export function VellumMigrationScreen() {
   const { t } = useTranslation("account");
@@ -160,7 +153,7 @@ export function VellumMigrationScreen() {
   const decline = () => {
     const bridge = window.cadet?.vellumMigration;
     void bridge?.decline({ neverAgain });
-    void navigate(routes.account.onboarding.hosting, SETUP_NAVIGATE);
+    void navigate(routes.assistant, SETUP_NAVIGATE);
   };
 
   return (
@@ -272,12 +265,7 @@ export function VellumMigrationScreen() {
                 variant="ghost"
                 size="compact"
                 leftIcon={<ArrowLeft />}
-                onClick={() =>
-                  void navigate(
-                    routes.account.onboarding.hosting,
-                    SETUP_NAVIGATE,
-                  )
-                }
+                onClick={() => void navigate(routes.assistant, SETUP_NAVIGATE)}
               >
                 {t("actions.back")}
               </Button>

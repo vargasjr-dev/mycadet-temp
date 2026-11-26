@@ -9,7 +9,6 @@ import {
   probeDesktopInstall,
   type ConfirmMigrationInfo,
   type DesktopProbe,
-  type MigrateOptions,
   type ProcessOps,
 } from "@mycadet/vellum";
 import { z } from "zod";
@@ -51,18 +50,6 @@ import log from "../app-logger";
  * reopened window reattaches via the replayed state event.
  */
 
-/**
- * The engine seam, injectable for tests. The shapes mirror the engine's
- * own (probeDesktopInstall / detectInstall+gatherConfirmInfo / migrate /
- * markDeclined) so the real adapter below is a straight passthrough.
- */
-export interface VellumMigrationEngine {
-  probe(): Promise<DesktopProbe>;
-  confirmInfo(vellumRoot: string): Promise<ConfirmMigrationInfo>;
-  run(hooks: MigrateOptions): Promise<{ ok: boolean; exitCode: number }>;
-  decline(vellumRoot: string, neverAgain: boolean): Promise<boolean>;
-}
-
 /** The app's cadet CLI as the engine's ProcessOps cadet surface. */
 const managedCliOps = (): ProcessOps => {
   const runCli = (args: string[]): Promise<void> =>
@@ -90,40 +77,6 @@ const managedCliOps = (): ProcessOps => {
       await ensureCliInstalled();
     },
     cadetBinAvailable: async () => isCliInstalled(),
-    cadetVersion: async () => {
-      if (!isCliInstalled())
-        return {
-          version: null,
-          detail: "the app's cadet CLI is not installed",
-        };
-      try {
-        const out = await new Promise<string>((resolve, reject) => {
-          const child = spawn(getCliBinPath(), ["--version"], {
-            stdio: ["ignore", "pipe", "pipe"],
-          });
-          let stdout = "";
-          child.stdout?.on("data", (chunk) => {
-            stdout += String(chunk);
-          });
-          child.on("error", reject);
-          child.on("exit", (code) => {
-            if (code === 0) resolve(stdout);
-            else
-              reject(new Error(`cadet --version exited ${code ?? "unknown"}`));
-          });
-        });
-        const version = /\bv?(\d+\.\d+\.\d+)\b/.exec(out)?.[1] ?? null;
-        return {
-          version,
-          detail: version === null ? out.trim().slice(0, 200) : undefined,
-        };
-      } catch (err) {
-        return {
-          version: null,
-          detail: err instanceof Error ? err.message : String(err),
-        };
-      }
-    },
     cadetWakeAll: () => runCli(["wake", "--all"]),
     cadetSleep: () => runCli(["sleep", "--all"]),
     // The CLI's browser PKCE flow — the desktop machine has a browser, and
@@ -132,35 +85,11 @@ const managedCliOps = (): ProcessOps => {
   };
 };
 
-const realEngine = (): VellumMigrationEngine => {
-  const ops = managedCliOps();
-  return {
-    probe: () => probeDesktopInstall(),
-    confirmInfo: async (vellumRoot) =>
-      gatherConfirmInfo(await detectInstall({ vellumRoot }, ops), ops),
-    run: async (hooks) => {
-      const report = await migrate(hooks);
-      return { ok: report.ok, exitCode: report.exitCode };
-    },
-    decline: (vellumRoot, neverAgain) =>
-      neverAgain ? markDeclined(vellumRoot) : Promise.resolve(false),
-  };
-};
-
-let engine: VellumMigrationEngine = realEngine();
-
-/** Test seam: swap the engine adapter (the AboutRuntime pattern). */
-export const configureVellumMigrationEngine = (
-  next: VellumMigrationEngine,
-): void => {
-  engine = next;
-};
-
 /** The probe's verdict — started once at install, shared by every caller. */
 let probePromise: Promise<DesktopProbe> | null = null;
 
 const getProbe = (): Promise<DesktopProbe> => {
-  probePromise ??= engine.probe().catch((err: unknown) => {
+  probePromise ??= probeDesktopInstall().catch((err: unknown) => {
     log.error("[vellumMigration] probe failed:", err);
     // A failed probe reads as "nothing to offer" — the safe default.
     const quiet: DesktopProbe = { status: "quiet", reason: "no-vellum-root" };
@@ -197,7 +126,10 @@ export const install = (): void => {
     // size walk) — concurrent requests share one gather.
     confirmPromise ??= getProbe().then(async (probe) => {
       if (probe.status !== "offer") return null;
-      return engine.confirmInfo(probe.vellumRoot);
+      return gatherConfirmInfo(
+        await detectInstall({ vellumRoot: probe.vellumRoot }, managedCliOps()),
+        managedCliOps(),
+      );
     });
     try {
       const info = await confirmPromise;
@@ -220,7 +152,7 @@ export const install = (): void => {
     setRunState({ state: "running" });
     try {
       const probe = await getProbe();
-      const result = await engine.run({
+      const report = await migrate({
         // The root the user consented to — the probe's, every time.
         vellumRoot: probe.status === "offer" ? probe.vellumRoot : undefined,
         confirm: async () => true,
@@ -239,9 +171,9 @@ export const install = (): void => {
         processOps: managedCliOps(),
       });
       setRunState({
-        state: result.ok ? "done" : "failed",
-        exitCode: result.exitCode,
-        ...(result.ok ? {} : { error: `migration exited ${result.exitCode}` }),
+        state: report.ok ? "done" : "failed",
+        exitCode: report.exitCode,
+        ...(report.ok ? {} : { error: `migration exited ${report.exitCode}` }),
       });
       return runState;
     } catch (err) {
@@ -262,7 +194,7 @@ export const install = (): void => {
       if (probe.status !== "offer" || !neverAgain) return;
       // Book the never-again marker on the vellum side (best-effort — a
       // failed write means the prompt returns, the safe default).
-      await engine.decline(probe.vellumRoot, true).catch(() => false);
+      await markDeclined(probe.vellumRoot).catch(() => false);
     },
   );
 };
@@ -273,7 +205,6 @@ export const resetVellumMigrationState = (): void => {
   confirmPromise = null;
   confirmCache = null;
   runState = { state: "idle" };
-  engine = realEngine();
 };
 
 /** Test/feature seam: the last confirmed consent facts (null before prepare). */

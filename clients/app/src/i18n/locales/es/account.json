@@ -280,5 +280,24 @@
       "updateFailed": "Error al actualizar el acceso de administrador.",
       "notAvailable": "El acceso de administrador solo aplica a asistentes alojados en la nube."
     }
+  },
+  "vellumMigration": {
+    "cardTitle": "Trae tu asistente de Vellum",
+    "cardBody": "Encontramos una instalación de Vellum en esta máquina. Sus asistentes pueden mudarse a Cadet en un paso.",
+    "cardAction": "Importar",
+    "dismissCard": "Descartar",
+    "title": "Importar desde Vellum",
+    "body": "Moveremos {{count}} asistente(s) — unos {{size}} — de tu instalación de Vellum a Cadet.",
+    "sleepNote": "Tus asistentes de Vellum se duermen mientras se mueven los datos y despiertan en Cadet al terminar.",
+    "neverAgain": "No volver a preguntar",
+    "begin": "Iniciar migración",
+    "notNow": "Ahora no",
+    "preparing": "Revisando tu instalación de Vellum…",
+    "runningTitle": "Migrando tu asistente",
+    "doneTitle": "Migración completada",
+    "failedTitle": "Nada que importar",
+    "runFailed": "La migración no terminó. Tus datos de Vellum están intactos — inténtalo cuando quieras.",
+    "nothingFound": "No encontramos una instalación de Vellum que importar.",
+    "unavailable": "La importación no está disponible ahora mismo."
   }
 }

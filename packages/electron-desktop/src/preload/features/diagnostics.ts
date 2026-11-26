@@ -1,6 +1,6 @@
-import { ipcRenderer } from "electron";
+import type { IpcRenderer } from "electron";
 
-import type { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
+import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
   DIAGNOSTICS_SET_SHARE,
   FEEDBACK_DIAGNOSTICS,
@@ -10,17 +10,16 @@ import {
 
 export const install = (
   registry: BridgeCapabilityRegistry<CadetBridge>,
+  ipc: IpcRenderer,
 ): void => {
   registry.contribute("diagnostics", {
     setShareDiagnostics: (enabled) => {
-      ipcRenderer.send(DIAGNOSTICS_SET_SHARE, enabled);
+      ipc.send(DIAGNOSTICS_SET_SHARE, enabled);
     },
   });
   registry.contribute("feedback", {
     diagnostics: () =>
-      ipcRenderer.invoke(FEEDBACK_DIAGNOSTICS) as Promise<
-        Record<string, unknown>
-      >,
-    logs: () => ipcRenderer.invoke(FEEDBACK_LOGS) as Promise<string>,
+      ipc.invoke(FEEDBACK_DIAGNOSTICS) as Promise<Record<string, unknown>>,
+    logs: () => ipc.invoke(FEEDBACK_LOGS) as Promise<string>,
   });
 };

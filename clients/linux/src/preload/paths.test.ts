@@ -1,4 +1,5 @@
 import { expect, mock, test } from "bun:test";
+
 import { electronMock } from "@mycadet/electron-desktop/test-setup";
 
 import { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
@@ -32,9 +33,9 @@ mock.module("electron", () =>
   }),
 );
 
-const { install: pathsInstall } = await import("./features/paths");
+const { install: pathsInstall } = await import("@mycadet/electron-desktop/preload/features/paths");
 const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-pathsInstall(registry);
+pathsInstall(registry, {} as never);
 const bridge = registry.build();
 
 test("resolves only native File paths and returns null when unavailable", () => {

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import type { ConfirmMigrationInfo, DesktopProbe } from "@mycadet/vellum";
+import type {
+  ConfirmMigrationInfo,
+  DesktopProbe,
+  MigrateOptions,
+} from "@mycadet/vellum";
 
 import "../../test-setup";
-
-import type { VellumMigrationEngine } from "./vellum-migration";
-
-type RunOpts = Parameters<VellumMigrationEngine["run"]>[0];
 
 /**
  * The vellum-migration feature is a shim: the engine (mocked here) owns the
@@ -54,7 +54,7 @@ const CONFIRM_INFO: ConfirmMigrationInfo = {
 };
 
 const engineCalls = { probe: 0, detect: 0, gather: 0, migrate: 0, decline: 0 };
-let migrateImpl: (opts: RunOpts) => Promise<unknown> = async () => ({
+let migrateImpl: (opts: MigrateOptions) => Promise<unknown> = async () => ({
   ok: true,
   exitCode: 0,
   mode: "migrate",
@@ -82,7 +82,7 @@ mock.module("@mycadet/vellum", () => ({
     engineCalls.gather += 1;
     return CONFIRM_INFO;
   },
-  migrate: async (opts: RunOpts) => {
+  migrate: async (opts: MigrateOptions) => {
     engineCalls.migrate += 1;
     return migrateImpl(opts);
   },
