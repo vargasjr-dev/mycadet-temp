@@ -231,3 +231,11 @@ export const UPDATE_GET_STATE = "cadet:update:getState";
 export const UPDATE_CHECK = "cadet:update:check";
 export const UPDATE_INSTALL = "cadet:update:install";
 export const UPDATE_STATE_EVENT = "cadet:update:state";
+
+// Vellum migration
+export const VELLUM_MIGRATION_GET = "cadet:vellumMigration:get";
+export const VELLUM_MIGRATION_PREPARE = "cadet:vellumMigration:prepare";
+export const VELLUM_MIGRATION_START = "cadet:vellumMigration:start";
+export const VELLUM_MIGRATION_DECLINE = "cadet:vellumMigration:decline";
+export const VELLUM_MIGRATION_STEP_EVENT = "cadet:vellumMigration:step";
+export const VELLUM_MIGRATION_STATE_EVENT = "cadet:vellumMigration:state";

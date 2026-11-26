@@ -15,6 +15,7 @@ export const routes = {
       start: "/account/onboarding/start",
       hosting: "/account/onboarding/hosting",
       apiKey: "/account/onboarding/api-key",
+      vellum: "/account/onboarding/vellum",
     },
     login: "/account/login",
     doctor: "/account/doctor",

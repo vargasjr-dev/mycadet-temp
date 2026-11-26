@@ -78,6 +78,10 @@ import type {
   TextInsertionResult,
   TitleBarOverlayTheme,
   UpdateState,
+  VellumMigrationConfirmInfo,
+  VellumMigrationProbe,
+  VellumMigrationRunState,
+  VellumMigrationStepEvent,
   CadetCommand,
   VoiceActivityContent,
   VoiceActivityControl,
@@ -880,6 +884,18 @@ export interface CadetBridge {
     install(): Promise<void>;
     onState(callback: (state: UpdateState) => void): () => void;
   };
+  vellumMigration: {
+    /** The boot probe's verdict — `quiet` until the main process finishes probing. */
+    get(): Promise<VellumMigrationProbe>;
+    /** Gather the consent screen's facts (single-flight; null while probing). */
+    prepare(): Promise<VellumMigrationConfirmInfo | null>;
+    /** Run the migration. Consent was given by clicking Begin; the run streams events. */
+    start(): Promise<VellumMigrationRunState>;
+    /** Decline; `neverAgain` books the don't-ask-again marker on the vellum side. */
+    decline(options: { neverAgain: boolean }): Promise<void>;
+    onStep(callback: (event: VellumMigrationStepEvent) => void): () => void;
+    onState(callback: (state: VellumMigrationRunState) => void): () => void;
+  };
 }
 
 /**
@@ -922,6 +938,7 @@ export const CADET_BRIDGE_KEYS = [
   "companion",
   "popout",
   "update",
+  "vellumMigration",
 ] as const satisfies readonly (keyof CadetBridge)[];
 
 ({}) satisfies Record<

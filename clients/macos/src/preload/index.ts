@@ -89,6 +89,7 @@ import {
   createLaunchAtLoginBridge,
   createNotificationsBridge,
   createUpdateBridge,
+  createVellumMigrationBridge,
 } from "@mycadet/electron-desktop/preload";
 
 export type {
@@ -672,6 +673,7 @@ const bridge: CadetBridge = {
       invoke<void>("cadet:popout:open", conversationId),
   },
   update: createUpdateBridge(ipcRenderer),
+  vellumMigration: createVellumMigrationBridge(ipcRenderer),
 };
 
 contextBridge.exposeInMainWorld("cadet", bridge);

@@ -610,3 +610,84 @@ export const titleBarOverlayThemeSchema = z.object({
   symbolColor: cssColorSchema,
   colorScheme: z.enum(["light", "dark"]),
 });
+
+// ---------------------------------------------------------------------------
+// Vellum migration
+// ---------------------------------------------------------------------------
+
+export const vellumMigrationProbeSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("offer"),
+    vellumRoot: z.string().min(1),
+    cadetRoot: z.string().min(1),
+    assistantHandles: z.array(z.string()),
+    retiredCount: z.number().int().nonnegative(),
+    layout: z.enum(["legacy", "modern"]),
+  }),
+  z.object({
+    status: z.literal("quiet"),
+    reason: z.enum([
+      "no-vellum-root",
+      "nothing-to-migrate",
+      "cadet-in-use",
+      "already-migrated",
+      "declined",
+    ]),
+  }),
+]);
+
+export const vellumMigrationConfirmInfoSchema = z.object({
+  vellumRoot: z.string().min(1),
+  cadetRoot: z.string().min(1),
+  cadetRootExists: z.boolean(),
+  assistants: z.array(z.object({ name: z.string(), docker: z.boolean() })),
+  retiredCount: z.number().int().nonnegative(),
+  rootSizeBytes: z.number().nonnegative(),
+  dockerVolumeBytes: z.number().nullable(),
+  dockerVolumeCount: z.number().int().nonnegative(),
+});
+
+export const vellumMigrationStepEventSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("start"), step: z.string() }),
+  z.object({
+    kind: z.literal("done"),
+    step: z.string(),
+    status: z.enum(["completed", "skipped", "failed", "planned"]),
+    summary: z.string(),
+    issues: z.array(
+      z.object({
+        severity: z.enum(["info", "warning", "error"]),
+        message: z.string(),
+        path: z.string().optional(),
+      }),
+    ),
+  }),
+  z.object({
+    kind: z.literal("item"),
+    step: z.string(),
+    item: z.object({
+      name: z.string(),
+      status: z.enum(["started", "completed", "warning", "progress"]),
+      summary: z.string().optional(),
+      progress: z
+        .object({
+          bytes: z.number(),
+          totalBytes: z.number().optional(),
+          label: z.string().optional(),
+        })
+        .optional(),
+    }),
+  }),
+]);
+
+export const vellumMigrationRunStateSchema = z.object({
+  state: z.enum(["idle", "preparing", "running", "done", "failed"]),
+  exitCode: z.number().int().optional(),
+  error: z.string().optional(),
+});
+
+export const vellumMigrationDeclineArgsSchema = z.tuple([
+  z.object({ neverAgain: z.boolean() }),
+]) as z.ZodType<[{ neverAgain: boolean }]>;
+
+export const vellumMigrationEmptyArgsSchema = z.tuple([]) as z.ZodType<[]>;

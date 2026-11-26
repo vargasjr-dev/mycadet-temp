@@ -1,5 +1,12 @@
-import { ArrowLeft, Check, Cloud, Container, Laptop } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import {
+  ArrowLeft,
+  Check,
+  Cloud,
+  Container,
+  Laptop,
+  PackageOpen,
+} from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 
 import { AccountShell } from "@app/components/account/account-shell";
@@ -13,6 +20,7 @@ import { useTranslation } from "@app/i18n";
 import { docsUrl, routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import type { Remote } from "@mycadet/local-mode/contract";
+import type { VellumMigrationProbe } from "@mycadet/ipc-contract";
 
 interface HostingOption {
   mode: Remote;
@@ -60,6 +68,25 @@ export function HostingScreen() {
   const [selected, setSelected] = useState<Remote>(
     hasCloudSession ? "cloud" : "local",
   );
+  // The vellum import offer: quiet on web (no bridge) and on machines with
+  // nothing to import — the probe lives in the engine, this is only its card.
+  const [vellumOffer, setVellumOffer] = useState<VellumMigrationProbe | null>(
+    null,
+  );
+  const [vellumDismissed, setVellumDismissed] = useState(false);
+
+  useEffect(() => {
+    let disposed = false;
+    window.cadet?.vellumMigration
+      .get()
+      .then((probe) => {
+        if (!disposed) setVellumOffer(probe);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+    };
+  }, []);
 
   // The cloud card only exists when a live session can back it: without one
   // the card is absent, not merely de-selected.
@@ -107,6 +134,46 @@ export function HostingScreen() {
             {t("hostingScreen.needHelp")}
           </ExternalAnchor>
         </p>
+
+        {vellumOffer?.status === "offer" && !vellumDismissed && (
+          <div className="mt-8 w-full">
+            <div className="flex w-full items-center gap-3 rounded-lg border border-[var(--primary-base)] bg-[var(--surface-lift)] p-3 text-left">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--primary-base)] text-[var(--surface-base)]">
+                <PackageOpen className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-body-medium-default text-[var(--content-default)]">
+                  {t("vellumMigration.cardTitle", {
+                    count: vellumOffer.assistantHandles.length,
+                  })}
+                </div>
+                <span className="mt-1 line-clamp-2 text-label-medium-default leading-[14px] text-[var(--content-tertiary)]">
+                  {t("vellumMigration.cardBody")}
+                </span>
+              </div>
+              <Button
+                variant="primary"
+                size="compact"
+                onClick={() =>
+                  void navigate(
+                    routes.account.onboarding.vellum,
+                    SETUP_NAVIGATE,
+                  )
+                }
+              >
+                {t("vellumMigration.cardAction")}
+              </Button>
+              <button
+                type="button"
+                aria-label={t("vellumMigration.dismissCard")}
+                className="text-[var(--content-tertiary)] hover:text-[var(--content-default)]"
+                onClick={() => setVellumDismissed(true)}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         <div
           role="radiogroup"

@@ -9,6 +9,10 @@ import type {
   UpdateState,
   CadetBridge,
   WindowAttentionPayload,
+  VellumMigrationConfirmInfo,
+  VellumMigrationProbe,
+  VellumMigrationRunState,
+  VellumMigrationStepEvent,
 } from "@mycadet/ipc-contract";
 import {
   PERMISSION_GUIDE_CANCEL,
@@ -28,6 +32,12 @@ import {
   NOTIFICATIONS_RESET_IDENTITIES,
   NOTIFICATIONS_SHOW,
   WINDOW_ATTENTION,
+  VELLUM_MIGRATION_DECLINE,
+  VELLUM_MIGRATION_GET,
+  VELLUM_MIGRATION_PREPARE,
+  VELLUM_MIGRATION_START,
+  VELLUM_MIGRATION_STATE_EVENT,
+  VELLUM_MIGRATION_STEP_EVENT,
 } from "@mycadet/ipc-contract";
 
 type RendererIpc = Pick<IpcRenderer, "invoke" | "off" | "on" | "send">;
@@ -223,4 +233,24 @@ export const createPermissionSetupBridge = (
   dismiss: (id) => ipc.send(PERMISSION_GUIDE_DISMISS, id),
   startDrag: (id) => ipc.send(PERMISSION_GUIDE_DRAG, id),
   revealApp: (id) => ipc.invoke(PERMISSION_GUIDE_REVEAL, id),
+});
+
+/** Renderer side of the vellum migration feature. */
+export const createVellumMigrationBridge = (
+  ipc: RendererIpc,
+): CadetBridge["vellumMigration"] => ({
+  get: () => ipc.invoke(VELLUM_MIGRATION_GET) as Promise<VellumMigrationProbe>,
+  prepare: () =>
+    ipc.invoke(
+      VELLUM_MIGRATION_PREPARE,
+    ) as Promise<VellumMigrationConfirmInfo | null>,
+  start: () =>
+    ipc.invoke(VELLUM_MIGRATION_START) as Promise<VellumMigrationRunState>,
+  decline: (options) =>
+    ipc.invoke(VELLUM_MIGRATION_DECLINE, options) as Promise<void>,
+  onStep: subscribe<VellumMigrationStepEvent>(ipc, VELLUM_MIGRATION_STEP_EVENT),
+  onState: subscribeWithReplay<VellumMigrationRunState>(
+    ipc,
+    VELLUM_MIGRATION_STATE_EVENT,
+  ),
 });

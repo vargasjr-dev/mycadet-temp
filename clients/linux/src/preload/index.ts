@@ -9,6 +9,7 @@ import type {
 import { createLinuxCoreBridge } from "./core-capabilities";
 import { install as installAuth } from "./features/auth";
 import { install as installAutoUpdate } from "./features/auto-update";
+import { install as installVellumMigration } from "./features/vellum-migration";
 import { install as installAuxiliaryWindows } from "./features/auxiliary-windows";
 import { install as installBundles } from "./features/bundles";
 import { install as installCommands } from "./features/commands";
@@ -34,6 +35,7 @@ const bridge = (() => {
   );
   installAuth(registry);
   installAutoUpdate(registry);
+  installVellumMigration(registry);
   installAuxiliaryWindows(registry);
   installBundles(registry);
   installCommands(registry);

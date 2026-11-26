@@ -129,6 +129,15 @@ export const accountRoute = {
               },
             },
             {
+              path: "onboarding/vellum",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/onboarding/pages/vellum-migration-screen").then(
+                    (m) => m.VellumMigrationScreen,
+                  ),
+              },
+            },
+            {
               path: "onboarding/api-key",
               lazy: {
                 Component: () =>

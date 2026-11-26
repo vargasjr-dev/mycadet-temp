@@ -3079,8 +3079,81 @@ export type ColorScheme = "light" | "dark";
 export interface TitleBarOverlayTheme {
   /** The overlay's background, matching the title bar's own surface. */
   color: string;
-  /** The button glyphs, matching the title bar's text. */
+  /** The button glyphs, matching the title bar's own text color. */
   symbolColor: string;
   /** The scheme the two colors are drawn from. */
   colorScheme: ColorScheme;
+}
+
+// ---------------------------------------------------------------------------
+// Vellum migration
+// ---------------------------------------------------------------------------
+
+/** Why the migration prompt is quiet (mirrors the engine's DesktopProbe). */
+export type VellumMigrationQuietReason =
+  | "no-vellum-root"
+  | "nothing-to-migrate"
+  | "cadet-in-use"
+  | "already-migrated"
+  | "declined";
+
+/** The boot probe's verdict, mirrored from the engine's `DesktopProbe`. */
+export type VellumMigrationProbe =
+  | {
+      status: "offer";
+      vellumRoot: string;
+      cadetRoot: string;
+      assistantHandles: string[];
+      retiredCount: number;
+      layout: "legacy" | "modern";
+    }
+  | { status: "quiet"; reason: VellumMigrationQuietReason };
+
+/**
+ * What the consent screen tells the user before the run — mirrored from the
+ * engine's `ConfirmMigrationInfo` (the engine re-gathers it inside the run
+ * and its own confirm callback approves because this screen already asked).
+ */
+export interface VellumMigrationConfirmInfo {
+  vellumRoot: string;
+  cadetRoot: string;
+  cadetRootExists: boolean;
+  assistants: Array<{ name: string; docker: boolean }>;
+  retiredCount: number;
+  rootSizeBytes: number;
+  dockerVolumeBytes: number | null;
+  dockerVolumeCount: number;
+}
+
+/** A live step event during the run (step start/done + nested item progress). */
+export type VellumMigrationStepEvent =
+  | { kind: "start"; step: string }
+  | {
+      kind: "done";
+      step: string;
+      status: "completed" | "skipped" | "failed" | "planned";
+      summary: string;
+      issues: Array<{
+        severity: "info" | "warning" | "error";
+        message: string;
+        path?: string;
+      }>;
+    }
+  | {
+      kind: "item";
+      step: string;
+      item: {
+        name: string;
+        status: "started" | "completed" | "warning" | "progress";
+        summary?: string;
+        progress?: { bytes: number; totalBytes?: number; label?: string };
+      };
+    };
+
+/** The run's coarse state — pushed on every transition, replayed on reattach. */
+export interface VellumMigrationRunState {
+  state: "idle" | "preparing" | "running" | "done" | "failed";
+  /** The engine's exit code when the run reached a conclusion. */
+  exitCode?: number;
+  error?: string;
 }

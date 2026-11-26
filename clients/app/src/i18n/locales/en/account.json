@@ -169,6 +169,25 @@
     "needHelp": "Need help deciding?",
     "optionsAriaLabel": "Hosting options"
   },
+  "vellumMigration": {
+    "cardTitle": "Bring your Vellum assistant",
+    "cardBody": "We found a Vellum install on this machine. Its assistants can move to Cadet in one step.",
+    "cardAction": "Import",
+    "dismissCard": "Dismiss",
+    "title": "Import from Vellum",
+    "body": "We'll move {{count}} assistant(s) — about {{size}} — from your Vellum install into Cadet.",
+    "sleepNote": "Your Vellum assistants are put to sleep while the data moves, and wake up in Cadet when it's done.",
+    "neverAgain": "Don't ask again",
+    "begin": "Begin migration",
+    "notNow": "Not now",
+    "preparing": "Checking your Vellum install…",
+    "runningTitle": "Migrating your assistant",
+    "doneTitle": "Migration complete",
+    "failedTitle": "Nothing to import",
+    "runFailed": "The migration didn't finish. Your Vellum data is untouched — try again anytime.",
+    "nothingFound": "We couldn't find a Vellum install to import.",
+    "unavailable": "Import isn't available right now."
+  },
   "apiKeyScreen": {
     "title": "Connect a Model Provider",
     "body": "Choose the model provider your assistant should use.",

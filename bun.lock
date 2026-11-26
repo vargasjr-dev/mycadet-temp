@@ -707,6 +707,7 @@
         "@mycadet/ipc-contract": "workspace:*",
         "@mycadet/local-mode": "workspace:*",
         "@mycadet/service-contracts": "workspace:*",
+        "@mycadet/vellum": "0.1.5",
         "electron-store": "11.0.2",
         "jszip": "3.10.1",
       },
@@ -1331,6 +1332,8 @@
     "@mycadet/slack-text": ["@mycadet/slack-text@workspace:packages/slack-text"],
 
     "@mycadet/twilio-client": ["@mycadet/twilio-client@workspace:packages/twilio-client"],
+
+    "@mycadet/vellum": ["@mycadet/vellum@0.1.5", "", { "bin": { "migrate-vellum-assistant-to-cadet": "dist/cli.js" } }, "sha512-gPyTEF6+yoc3e6ebx05MlVLCzuIJa0/Dxf/gEFA8yqKMXmi4cxQqOMMyhu2GDR15AE4AjdwmemXi15kYgx6fKA=="],
 
     "@mycadet/web": ["@mycadet/web@workspace:clients/web"],
 

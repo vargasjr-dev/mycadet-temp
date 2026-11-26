@@ -59,6 +59,7 @@ import { install as installDictation } from "./features/dictation";
 import { installDictationOverlay } from "./dictation-overlay-window";
 import { install as installHelperHotkeys } from "./features/helper-hotkeys";
 import { installPermissionGuide } from "./features/permission-guide";
+import { install as installVellumMigration } from "./features/vellum-migration";
 import { install as installTray } from "./features/tray";
 import {
   installCompanionWindow,
@@ -386,6 +387,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       installShare();
       installPermissions();
       installPermissionGuide();
+      installVellumMigration();
       // The companion surface joins the shared composition on every
       // desktop; the hidden preference is the runtime off-switch. The
       // menu-facing visibility entry dispatches into the window wiring, so
