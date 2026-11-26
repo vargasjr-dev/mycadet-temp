@@ -1184,7 +1184,7 @@ async function countTokensViaApi(
 
   // Convert our Message type to Anthropic's expected format
   const anthropicMessages = messages.map((m) => ({
-    role: m.role as "user" | "assistant",
+    role: m.role,
     content: m.content.map((block) => {
       switch (block.type) {
         case "text":

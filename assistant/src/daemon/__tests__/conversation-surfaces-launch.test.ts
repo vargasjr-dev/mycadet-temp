@@ -216,7 +216,7 @@ function openConversationEvents(): Array<{
     })
     .map(
       (e) =>
-        e as unknown as {
+        e as {
           conversationId?: string;
           message: {
             type: "open_conversation";

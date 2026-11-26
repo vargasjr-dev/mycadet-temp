@@ -17,7 +17,7 @@ function indexedChars(article: Slug, title: string, body: string): number {
 /** Deps over a fixture map, scanned in the map's key order. */
 function deps(pages: Record<string, string>) {
   return {
-    listSlugs: async () => Object.keys(pages) as Slug[],
+    listSlugs: async () => Object.keys(pages),
     readPageBody: async (slug: Slug) => pages[slug] ?? "",
   };
 }

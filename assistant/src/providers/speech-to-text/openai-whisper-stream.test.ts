@@ -411,8 +411,7 @@ describe("OpenAIWhisperStreamingTranscriber", () => {
 
       // Wait for just one poll cycle
       await waitFor(() => events.some((e) => e.type === "partial"));
-      const callsAfterFirstPoll = (transcribeFn as ReturnType<typeof mock>).mock
-        .calls.length;
+      const callsAfterFirstPoll = transcribeFn.mock.calls.length;
 
       // Only 1 batch request should have fired despite 3 audio chunks.
       expect(callsAfterFirstPoll).toBe(1);

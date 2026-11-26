@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { stripMediaPayloadsForRetry } from "../daemon/conversation-media-retry.js";
 import { createContextSummaryMessage } from "../plugins/defaults/compaction/window-manager.js";
 import type { ContentBlock, Message } from "../providers/types.js";
+import { requireTextBlock } from "./helpers/require-text-block.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -72,7 +73,7 @@ describe("stripMediaPayloadsForRetry", () => {
     // shared `mediaSourceDescriptor`, and this is what keeps this stub and the
     // camera-frame stub describing dropped media the same way. `makeImageBlock`
     // carries 4 base64 chars, which decode to 3 bytes.
-    expect((firstMsg.content[1] as { type: "text"; text: string }).text).toBe(
+    expect(requireTextBlock(firstMsg.content[1]).text).toBe(
       "[Image omitted from retry context: image/png, 3 bytes]",
     );
   });
@@ -97,9 +98,7 @@ describe("stripMediaPayloadsForRetry", () => {
     const result = stripMediaPayloadsForRetry(messages);
 
     expect(result.replacedBlocks).toBe(1);
-    expect(
-      (result.messages[0].content[1] as { type: "text"; text: string }).text,
-    ).toBe(
+    expect(requireTextBlock(result.messages[0].content[1]).text).toBe(
       "[File omitted from retry context: notes.pdf (application/pdf, 2048 bytes)]",
     );
   });
@@ -158,9 +157,7 @@ describe("stripMediaPayloadsForRetry", () => {
     const content = result.messages[0].content;
     const keptImages = content.filter((b) => b.type === "image");
     const stubs = content.filter(
-      (b) =>
-        b.type === "text" &&
-        (b as { text: string }).text.includes("Image omitted"),
+      (b) => b.type === "text" && b.text.includes("Image omitted"),
     );
     expect(keptImages.length).toBe(3);
     expect(stubs.length).toBe(2);
@@ -214,9 +211,7 @@ describe("stripMediaPayloadsForRetry", () => {
     const content = result.messages[0].content;
     const keptImages = content.filter((b) => b.type === "image");
     const stubs = content.filter(
-      (b) =>
-        b.type === "text" &&
-        (b as { text: string }).text.includes("Image omitted"),
+      (b) => b.type === "text" && b.text.includes("Image omitted"),
     );
     expect(keptImages.length).toBe(3);
     expect(stubs.length).toBe(2);

@@ -7,10 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type {
-  ConversationDeletedContext,
-  HookFunction,
-} from "@mycadet/plugin-api";
+import type { ConversationDeletedContext } from "@mycadet/plugin-api";
 
 import type { DrizzleDb } from "../../../../persistence/db-connection.js";
 import { getMemorySqlite } from "../../../../persistence/db-connection.js";
@@ -37,7 +34,7 @@ await initializeDb();
 ensureMemoryV3PluginSchema();
 
 async function runHook(conversationId: string): Promise<void> {
-  const hook = conversationDeleted as HookFunction<ConversationDeletedContext>;
+  const hook = conversationDeleted;
   await hook({ conversationId } as ConversationDeletedContext);
 }
 

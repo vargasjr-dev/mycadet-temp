@@ -6,9 +6,9 @@
  * the four scenarios from the design brief, and mixed legacy/post-upgrade
  * fixtures.
  */
-
 import { describe, expect, test } from "bun:test";
 
+import { requireTextBlock } from "../../../__tests__/helpers/require-text-block.js";
 import type { Message } from "../../../providers/types.js";
 import {
   extractTagLineTexts,
@@ -402,7 +402,7 @@ describe("renderSlackTranscript — basics", () => {
       },
     ]);
 
-    const text = (out[0].content[0] as { type: "text"; text: string }).text;
+    const text = requireTextBlock(out[0].content[0]).text;
     expect(text).toStartWith(
       '[11/14/23 14:25 @alice]: <external_content source="slack" origin="@alice">',
     );
@@ -420,7 +420,7 @@ describe("renderSlackTranscript — basics", () => {
       },
     ]);
 
-    const text = (out[0].content[0] as { type: "text"; text: string }).text;
+    const text = requireTextBlock(out[0].content[0]).text;
     expect(text.match(/<external_content/g)?.length).toBe(1);
     expect(text).toBe(`[11/14/23 14:25 @alice]: ${legacyWrapped}`);
   });
@@ -435,7 +435,7 @@ describe("renderSlackTranscript — basics", () => {
       },
     ]);
 
-    const text = (out[0].content[0] as { type: "text"; text: string }).text;
+    const text = requireTextBlock(out[0].content[0]).text;
     expect(text).toBe(
       '[11/14/23 14:25 @alice]: <external_content source="slack" origin="@alice">\nshared the draft [attached file: requirements.txt, text/plain]\n</external_content>',
     );
@@ -451,7 +451,7 @@ describe("renderSlackTranscript — basics", () => {
       },
     ]);
 
-    const text = (out[0].content[0] as { type: "text"; text: string }).text;
+    const text = requireTextBlock(out[0].content[0]).text;
     expect(text).toBe(
       '[11/14/23 14:25 @alice]: <external_content source="slack" origin="@alice">\n[attached file: diagram.png, image/png]\n</external_content>',
     );
@@ -512,7 +512,7 @@ describe("renderSlackTranscript — basics", () => {
       },
     ]);
 
-    const text = (out[0].content[0] as { type: "text"; text: string }).text;
+    const text = requireTextBlock(out[0].content[0]).text;
     expect(text.match(/<external_content/g)?.length).toBe(1);
     expect(text).toBe(
       '[11/14/23 14:25 @alice]: <external_content source="slack" origin="@alice">\nold context [attached file: diagram.png, image/png]\n</external_content>',

@@ -23,8 +23,7 @@ mock.module("../../../../persistence/db-connection.js", () => ({
   // DDL runs against it. getSqliteFrom is used in other contexts but not by
   // this migration when the mock is active.
   getTelemetrySqlite: () => openedRaw,
-  getSqliteFrom: (db: unknown) =>
-    (db as unknown as { $client: Database }).$client,
+  getSqliteFrom: (db: unknown) => (db as { $client: Database }).$client,
 }));
 
 import { createWatchdogEventsTable } from "../../../../persistence/migrations/301-create-watchdog-events.js";

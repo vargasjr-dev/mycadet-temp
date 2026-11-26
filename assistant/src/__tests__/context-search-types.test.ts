@@ -63,7 +63,7 @@ describe("normalizeRecallInput", () => {
     expect(() =>
       normalizeRecallInput({
         query: "deployment",
-        sources: ["memory", "calendar"] as unknown as RecallSource[],
+        sources: ["memory", "calendar"] as RecallSource[],
       }),
     ).toThrow("Unknown recall source: calendar");
 

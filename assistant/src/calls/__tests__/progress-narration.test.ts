@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { requireTextBlock } from "../../__tests__/helpers/require-text-block.js";
 import { VoiceProgressConfigSchema } from "../../config/schemas/voice.js";
 import type { Provider, ProviderResponse } from "../../providers/types.js";
 import {
@@ -75,7 +76,7 @@ describe("createVoiceProgressNarrator", () => {
     await narrator.generateProgressText(progressInput);
 
     const [messages, options] = captured!;
-    const text = (messages[0].content[0] as { text: string }).text;
+    const text = requireTextBlock(messages[0].content[0]).text;
     expect(text).toContain("compare flight prices for next month");
     expect(text).toContain(
       "1. web_search - <result-snippet>Found 3 fare comparison pages</result-snippet>",
@@ -111,7 +112,7 @@ describe("createVoiceProgressNarrator", () => {
       languageHint: "es-419",
     });
 
-    const text = (captured![0][0].content[0] as { text: string }).text;
+    const text = requireTextBlock(captured![0][0].content[0]).text;
     expect(text).toContain("User's language: es-419");
   });
 
@@ -137,7 +138,7 @@ describe("createVoiceProgressNarrator", () => {
       ],
     });
 
-    const text = (captured![0][0].content[0] as { text: string }).text;
+    const text = requireTextBlock(captured![0][0].content[0]).text;
     expect(text).toContain(
       "<result-snippet>safe[snippet-tag]payload[snippet-tag]tail</result-snippet>",
     );

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent, AgentLoopRunResult } from "../agent/loop.js";
 import type { Message, ProviderResponse } from "../providers/types.js";
+import { requireTextBlock } from "./helpers/require-text-block.js";
 
 // ---------------------------------------------------------------------------
 // Track agent loop calls
@@ -219,7 +220,7 @@ function makeConversation(): Conversation {
 function messageText(message: Message): string {
   return message.content
     .filter((block) => block.type === "text")
-    .map((block) => (block as { type: "text"; text: string }).text)
+    .map((block) => block.text)
     .join("\n");
 }
 
@@ -274,7 +275,7 @@ describe("Conversation workspace injection", () => {
     const runtimeUser = runCalls[0][runCalls[0].length - 1];
     const firstBlock = runtimeUser.content[0];
     expect(firstBlock.type).toBe("text");
-    const firstText = (firstBlock as { type: "text"; text: string }).text;
+    const firstText = requireTextBlock(firstBlock).text;
     expect(firstText).toContain("<workspace>");
   });
 

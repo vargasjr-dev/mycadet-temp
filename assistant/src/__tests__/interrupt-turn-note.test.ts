@@ -24,6 +24,7 @@ import {
 import { contentBlockArraySchema } from "../providers/content-block-schema.js";
 import { INTERRUPTED_TURN_NOTE_TEXT } from "../util/abort-reasons.js";
 import { asConversation } from "./helpers/mock-conversation.js";
+import { requireTextBlock } from "./helpers/require-text-block.js";
 
 await initializeDb();
 
@@ -159,8 +160,8 @@ describe("interrupted-turn note on the interrupting message", () => {
     });
 
     const llmContent = ctx.messages[0].content;
-    const note = llmContent.at(-1) as { type: "text"; text: string };
-    const annotation = llmContent.at(-2) as { type: "text"; text: string };
+    const note = requireTextBlock(llmContent.at(-1));
+    const annotation = requireTextBlock(llmContent.at(-2));
     expect(note).toHaveProperty("text", INTERRUPTED_TURN_NOTE_TEXT);
     expect(annotation).toHaveProperty(
       "text",

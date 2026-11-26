@@ -106,7 +106,7 @@ function seedWatchedConversation(title: string): WatchedConversation {
   expect(rendered.totalEntries).toBe(2);
   const entryId = rendered.screenshotEntryIds[0];
   expect(entryId).toBeDefined();
-  expect(readWatchScreenshot(entryId as string)).not.toBeNull();
+  expect(readWatchScreenshot(entryId)).not.toBeNull();
 
   return { conversationId: conversation.id, sessionId, entryId: entryId ?? "" };
 }

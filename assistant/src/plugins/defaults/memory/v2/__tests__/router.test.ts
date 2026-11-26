@@ -19,7 +19,6 @@
  * Workspace lives in a `mkdtemp` directory per test; `~/.cadet/` is never
  * touched. The provider is stubbed so no network calls fire.
  */
-
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -32,6 +31,7 @@ import type {
   SendMessageOptions,
 } from "@mycadet/plugin-api";
 
+import { requireTextBlock } from "../../../../../__tests__/helpers/require-text-block.js";
 import type { ToolDefinition } from "../../llm-helpers.js";
 
 // ---------------------------------------------------------------------------
@@ -51,19 +51,22 @@ const warnLogs: Array<{ args: unknown[] }> = [];
 // shape of the shared `makeMockLogger` helper so tests in the same run
 // can't observe a foreign mock from a sibling file.
 function makeRecordingLogger(): unknown {
-  return new Proxy({} as Record<string, unknown>, {
-    get: (_target, prop) => {
-      if (prop === "child") {
-        return makeRecordingLogger;
-      }
-      if (prop === "warn") {
-        return (...args: unknown[]) => {
-          warnLogs.push({ args });
-        };
-      }
-      return () => {};
+  return new Proxy<Record<string, unknown>>(
+    {},
+    {
+      get: (_target, prop) => {
+        if (prop === "child") {
+          return makeRecordingLogger;
+        }
+        if (prop === "warn") {
+          return (...args: unknown[]) => {
+            warnLogs.push({ args });
+          };
+        }
+        return () => {};
+      },
     },
-  });
+  );
 }
 
 mock.module("../../../../../util/logger.js", () => ({
@@ -251,7 +254,10 @@ function makeConfig(overrides?: {
   } as unknown as Parameters<typeof runRouter>[0]["config"];
 }
 
-const COMMON_PARAMS = {
+const COMMON_PARAMS: Pick<
+  Parameters<typeof runRouter>[0],
+  "recentTurnPairs" | "nowText" | "priorEverInjected"
+> = {
   recentTurnPairs: [
     {
       assistantMessage: "Let me check your plan.",
@@ -259,7 +265,7 @@ const COMMON_PARAMS = {
     },
   ],
   nowText: "2026-05-10 14:00 PT",
-  priorEverInjected: [] as { slug: string; turn: number }[],
+  priorEverInjected: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -350,7 +356,7 @@ describe("runRouter — successful tool_use", () => {
 
     expect(providerCalls).toHaveLength(1);
     const [call] = providerCalls;
-    const callConfig = call.options?.config as Record<string, unknown>;
+    const callConfig = call.options?.config;
     expect(callConfig?.callSite).toBe("memoryRouter");
     expect(callConfig?.tool_choice).toEqual({
       type: "tool",
@@ -370,10 +376,9 @@ describe("runRouter — successful tool_use", () => {
     });
 
     const [call] = providerCalls;
-    const schema = call.tools?.[0].input_schema as {
-      properties: { page_ids: { maxItems: number } };
-    };
-    expect(schema.properties.page_ids.maxItems).toBe(50);
+    expect(call.tools?.[0].input_schema).toMatchObject({
+      properties: { page_ids: { maxItems: 50 } },
+    });
     expect(call.tools?.[0].description).toContain("up to 50");
   });
 
@@ -411,11 +416,7 @@ describe("runRouter — successful tool_use", () => {
     expect(userMsg.role).toBe("user");
     expect(userMsg.content).toHaveLength(2);
 
-    const [blockA, blockB] = userMsg.content as Array<{
-      type: string;
-      text: string;
-      cache_control?: { type: string; ttl?: string };
-    }>;
+    const [blockA, blockB] = userMsg.content.map(requireTextBlock);
 
     // Block A — NOW with explicit ephemeral cache breakpoint at 1h TTL
     // (matches the provider's auto-applied breakpoints; the default 5m
@@ -424,7 +425,9 @@ describe("runRouter — successful tool_use", () => {
     expect(blockA.text).toContain("<now>");
     expect(blockA.text).toContain("2026-05-10 14:00 PT");
     expect(blockA.text).toContain("</now>");
-    expect(blockA.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
+    expect(blockA).toMatchObject({
+      cache_control: { type: "ephemeral", ttl: "1h" },
+    });
 
     // Block B — already-injected IDs + last turn, NO cache_control.
     expect(blockB.type).toBe("text");
@@ -433,7 +436,7 @@ describe("runRouter — successful tool_use", () => {
     expect(blockB.text).toContain("<last_turn>");
     expect(blockB.text).toContain("[user]: What's on my plate today?");
     expect(blockB.text).toContain("[assistant]: Let me check your plan.");
-    expect(blockB.cache_control).toBeUndefined();
+    expect(blockB).not.toHaveProperty("cache_control");
   });
 
   test("runRouterBatch front-truncates the oldest <last_turn> message when the char budget is exceeded", async () => {
@@ -464,7 +467,7 @@ describe("runRouter — successful tool_use", () => {
 
     const [call] = providerCalls;
     const userMsg = call.messages[0];
-    const blockB = userMsg.content[1] as { text: string };
+    const blockB = requireTextBlock(userMsg.content[1]);
 
     // The just-arrived user message and the prior assistant reply survive
     // verbatim because they're newest in the walk.
@@ -502,7 +505,7 @@ describe("runRouter — successful tool_use", () => {
     });
 
     const [call] = providerCalls;
-    const blockB = call.messages[0].content[1] as { text: string };
+    const blockB = requireTextBlock(call.messages[0].content[1]);
     expect(blockB.text).toContain(`[assistant]: ${huge}`);
     expect(blockB.text).toContain("[user]: just arrived");
     expect(blockB.text).not.toContain("…");
@@ -741,8 +744,7 @@ describe("runRouter — batched (batch_size set)", () => {
     // Exactly the batches containing alpha or echo should mention any
     // already_injected_id; other batches should have an empty list.
     for (const call of providerCalls) {
-      const text =
-        (call.messages[0].content as Array<{ text?: string }>)[1]?.text ?? "";
+      const text = requireTextBlock(call.messages[0].content[1]).text;
       const hasAlpha = call.systemPrompt?.includes("alpha");
       const hasEcho = call.systemPrompt?.includes("echo");
       const expectsId = hasAlpha || hasEcho;
@@ -930,9 +932,7 @@ describe("runRouter — tier 1 (recently modified)", () => {
     expect(providerCalls.length).toBeLessThanOrEqual(3);
 
     const allSlugs = ["alpha", "bravo", "charlie", "delta", "echo"];
-    const appearances = new Map<string, number>(
-      allSlugs.map((s) => [s, 0] as [string, number]),
-    );
+    const appearances = new Map<string, number>(allSlugs.map((s) => [s, 0]));
     for (const call of providerCalls) {
       for (const slug of allSlugs) {
         if (call.systemPrompt?.includes(slug)) {

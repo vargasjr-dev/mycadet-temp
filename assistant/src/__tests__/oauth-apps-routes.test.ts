@@ -1,5 +1,10 @@
 import { describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import type { orchestrateOAuthConnect } from "../oauth/connect-orchestrator.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 const mockGetApp = mock((_appId: string) => ({
   id: "app-1",
   provider: "google",
@@ -95,12 +100,12 @@ mock.module("../oauth/oauth-store.js", () => ({
   ),
 }));
 
-const mockOrchestrateOAuthConnect = mock(() =>
+const mockOrchestrateOAuthConnect = mock<typeof orchestrateOAuthConnect>(() =>
   Promise.resolve({
     success: true,
     deferred: false,
     grantedScopes: [],
-    accountInfo: null,
+    accountInfo: undefined,
     refreshTokenPresent: false,
   }),
 );
@@ -139,54 +144,42 @@ function makeArgs(
 
 describe("GET /v1/oauth/apps/:appId/connections", () => {
   test("normalizes granted_scopes and has_refresh_token", async () => {
-    const result = (await getRoute(
-      "GET",
-      "oauth/apps/:appId/connections",
-    ).handler(makeArgs({ pathParams: { appId: "app-1" } }))) as {
-      connections: Array<{
-        granted_scopes: unknown;
-        has_refresh_token: unknown;
-      }>;
-    };
+    const result = jsonObjectSchema.parse(
+      await getRoute("GET", "oauth/apps/:appId/connections").handler(
+        makeArgs({ pathParams: { appId: "app-1" } }),
+      ),
+    );
 
-    expect(result.connections[0]?.granted_scopes).toEqual(["email", "profile"]);
-    expect(result.connections[0]?.has_refresh_token).toBe(true);
-    expect(result.connections[1]?.granted_scopes).toEqual([]);
-    expect(result.connections[1]?.has_refresh_token).toBe(false);
+    const connections = z.array(jsonObjectSchema).parse(result.connections);
+    expect(connections[0]?.granted_scopes).toEqual(["email", "profile"]);
+    expect(connections[0]?.has_refresh_token).toBe(true);
+    expect(connections[1]?.granted_scopes).toEqual([]);
+    expect(connections[1]?.has_refresh_token).toBe(false);
   });
 });
 
 describe("GET /v1/oauth/apps", () => {
   test("returns provider metadata with correct types when provider exists", async () => {
-    const result = (await getRoute("GET", "oauth/apps").handler(
-      makeArgs({ queryParams: { provider_key: "google" } }),
-    )) as {
-      provider: {
-        provider_key: string;
-        display_name: string | null;
-        description: string | null;
-        dashboard_url: string | null;
-        client_id_placeholder: string | null;
-        requires_client_secret: boolean;
-      } | null;
-      apps: unknown[];
-    };
+    const result = jsonObjectSchema.parse(
+      await getRoute("GET", "oauth/apps").handler(
+        makeArgs({ queryParams: { provider_key: "google" } }),
+      ),
+    );
 
-    expect(result.provider).not.toBeNull();
-    expect(result.provider!.provider_key).toBe("google");
-    expect(result.provider!.display_name).toBe("Google");
-    expect(result.provider!.description).toBe("Google OAuth provider");
-    expect(result.provider!.requires_client_secret).toBe(true);
-    expect(typeof result.provider!.requires_client_secret).toBe("boolean");
+    const provider = jsonObjectSchema.parse(result.provider);
+    expect(provider.provider_key).toBe("google");
+    expect(provider.display_name).toBe("Google");
+    expect(provider.description).toBe("Google OAuth provider");
+    expect(provider.requires_client_secret).toBe(true);
+    expect(typeof provider.requires_client_secret).toBe("boolean");
   });
 
   test("returns null provider when provider does not exist", async () => {
-    const result = (await getRoute("GET", "oauth/apps").handler(
-      makeArgs({ queryParams: { provider_key: "unknown" } }),
-    )) as {
-      provider: unknown;
-      apps: unknown[];
-    };
+    const result = jsonObjectSchema.parse(
+      await getRoute("GET", "oauth/apps").handler(
+        makeArgs({ queryParams: { provider_key: "unknown" } }),
+      ),
+    );
 
     expect(result.provider).toBeNull();
   });
@@ -203,11 +196,7 @@ describe("POST /v1/oauth/apps/:appId/connect — callback_transport", () => {
     );
 
     expect(mockOrchestrateOAuthConnect).toHaveBeenCalledTimes(1);
-    const callArgs = (
-      mockOrchestrateOAuthConnect.mock.calls as unknown as Array<
-        [{ callbackTransport: string }]
-      >
-    )[0]![0];
+    const callArgs = mockOrchestrateOAuthConnect.mock.calls[0]![0];
     expect(callArgs.callbackTransport).toBe("gateway");
   });
 
@@ -221,11 +210,7 @@ describe("POST /v1/oauth/apps/:appId/connect — callback_transport", () => {
     );
 
     expect(mockOrchestrateOAuthConnect).toHaveBeenCalledTimes(1);
-    const callArgs = (
-      mockOrchestrateOAuthConnect.mock.calls as unknown as Array<
-        [{ callbackTransport: string }]
-      >
-    )[0]![0];
+    const callArgs = mockOrchestrateOAuthConnect.mock.calls[0]![0];
     expect(callArgs.callbackTransport).toBe("loopback");
   });
 
@@ -239,11 +224,7 @@ describe("POST /v1/oauth/apps/:appId/connect — callback_transport", () => {
     );
 
     expect(mockOrchestrateOAuthConnect).toHaveBeenCalledTimes(1);
-    const callArgs = (
-      mockOrchestrateOAuthConnect.mock.calls as unknown as Array<
-        [{ callbackTransport: string }]
-      >
-    )[0]![0];
+    const callArgs = mockOrchestrateOAuthConnect.mock.calls[0]![0];
     expect(callArgs.callbackTransport).toBe("loopback");
   });
 

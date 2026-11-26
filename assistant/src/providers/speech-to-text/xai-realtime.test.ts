@@ -337,7 +337,7 @@ describe("XAIRealtimeTranscriber", () => {
     const textMessages = mockWs.sentData.filter((d) => typeof d === "string");
     expect(textMessages).toHaveLength(1);
     expect(textMessages[0]).toBe('{"type":"audio.done"}');
-    expect(JSON.parse(textMessages[0] as string)).toEqual({
+    expect(JSON.parse(textMessages[0])).toEqual({
       type: "audio.done",
     });
 

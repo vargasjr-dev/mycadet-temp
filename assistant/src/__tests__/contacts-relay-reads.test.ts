@@ -7,8 +7,11 @@
  * error propagates rather than falling back to the assistant DB. getContact
  * surfaces a clean gateway not-found as a 404.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Capture `log.debug(...)` calls so we can assert the daemon-native-search note
 // is emitted on the search path.
@@ -17,18 +20,21 @@ const realLogger = await import("../util/logger.js");
 mock.module("../util/logger.js", () => ({
   ...realLogger,
   getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get:
-        (_target, prop: string) =>
-        (...args: unknown[]) => {
-          if (prop === "debug") {
-            const msg = args.find((a) => typeof a === "string");
-            if (typeof msg === "string") {
-              debugLogs.push(msg);
+    new Proxy<Record<string, unknown>>(
+      {},
+      {
+        get:
+          (_target, prop: string) =>
+          (...args: unknown[]) => {
+            if (prop === "debug") {
+              const msg = args.find((a) => typeof a === "string");
+              if (typeof msg === "string") {
+                debugLogs.push(msg);
+              }
             }
-          }
-        },
-    }),
+          },
+      },
+    ),
 }));
 
 // Guardian display-name override → deterministic sentinel so we can assert it
@@ -128,29 +134,15 @@ mock.module("../contacts/contact-store.js", () => ({
 }));
 
 const { handleListContacts, handleGetContact, ROUTES } =
-  (await import("../runtime/routes/contact-routes.js")) as typeof import("../runtime/routes/contact-routes.js") & {
-    handleListContacts: (q: Record<string, string>) => Promise<{
-      ok: boolean;
-      contacts: Array<{ id: string; displayName: string; role: string }>;
-    }>;
-    handleGetContact: (id: string) => Promise<{
-      ok: boolean;
-      contact: { id: string; displayName: string; role: string };
-      assistantMetadata?: unknown;
-    }>;
-  };
+  await import("../runtime/routes/contact-routes.js");
 
 /** Invoke the inline `search_contacts` POST route handler with a request body. */
-function searchContactsRoute(
-  body: Record<string, unknown>,
-): Promise<Array<{ id: string; displayName: string; role: string }>> {
+async function searchContactsRoute(body: Record<string, unknown>) {
   const route = ROUTES.find((r) => r.operationId === "search_contacts");
   if (!route) {
     throw new Error("search_contacts route not found");
   }
-  return route.handler({ body }) as Promise<
-    Array<{ id: string; displayName: string; role: string }>
-  >;
+  return z.array(jsonObjectSchema).parse(await route.handler({ body }));
 }
 
 function gatewayContact(overrides: Record<string, unknown> = {}) {
@@ -240,12 +232,8 @@ describe("handleListContacts relay", () => {
     expect(result.contacts[0].id).toBe("gw-1");
     // The daemon's withChannelCompat re-derives externalUserId = address even
     // though the gateway emits null — the client-facing guarantee holds.
-    const ch = (
-      result.contacts[0] as {
-        channels: { address: string; externalUserId: string | null }[];
-      }
-    ).channels[0];
-    expect(ch.externalUserId).toBe(ch.address);
+    const ch = result.contacts[0].channels[0];
+    expect(ch).toMatchObject({ externalUserId: ch.address });
   });
 
   test("trusts the gateway-relayed guardian role + applies the name override regardless of the id-set cache", async () => {
@@ -335,9 +323,7 @@ describe("search_contacts route relay boundary", () => {
     expect(localCalls).toContain("searchContacts");
     expectOnlyIdsScopedTelemetryHydration(["search-1"]);
     expect(contacts[0].id).toBe("search-1");
-    expect(
-      (contacts[0] as { interactionCount?: number | null }).interactionCount,
-    ).toBe(5);
+    expect(contacts[0].interactionCount).toBe(5);
     expect(debugLogs.some((m) => m.includes("daemon-native"))).toBe(true);
   });
 
@@ -379,12 +365,8 @@ describe("search_contacts route relay boundary", () => {
     expect(localCalls).toContain("searchContacts");
     expectOnlyIdsScopedTelemetryHydration(["search-1"]);
     expect(contacts[0].id).toBe("search-1");
-    expect(
-      (contacts[0] as { interactionCount?: number | null }).interactionCount,
-    ).toBe(0);
-    expect(
-      (contacts[0] as { lastInteraction?: number | null }).lastInteraction,
-    ).toBeNull();
+    expect(contacts[0].interactionCount).toBe(0);
+    expect(contacts[0].lastInteraction).toBeNull();
   });
 
   test("channel telemetry overlays via (type,address) fallback when the local channel id differs from the gateway id", async () => {
@@ -460,15 +442,7 @@ describe("search_contacts route relay boundary", () => {
 
     expect(localCalls).toContain("searchContacts");
     expectOnlyIdsScopedTelemetryHydration(["search-1"]);
-    const ch = (
-      contacts[0] as unknown as {
-        channels: {
-          lastSeenAt: number | null;
-          interactionCount: number | null;
-          lastInteraction: number | null;
-        }[];
-      }
-    ).channels[0];
+    const ch = z.array(jsonObjectSchema).parse(contacts[0].channels)[0];
     expect(ch.interactionCount).toBe(9);
     expect(ch.lastSeenAt).toBe(555);
     expect(ch.lastInteraction).toBe(777);
@@ -524,10 +498,7 @@ describe("handleGetContact relay", () => {
     // Relayed reads must carry contact-level timestamps — the CLI's detail
     // formatter calls new Date(createdAt/updatedAt) unconditionally, so dropping
     // them surfaces as a RangeError ("Invalid time value").
-    const contact = result.contact as {
-      createdAt?: number;
-      updatedAt?: number;
-    };
+    const contact = result.contact;
     expect(contact.createdAt).toBe(1699000000);
     expect(contact.updatedAt).toBe(1700000000);
   });

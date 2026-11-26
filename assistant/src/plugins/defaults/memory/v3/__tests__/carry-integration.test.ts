@@ -62,6 +62,7 @@ import type {
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
+import { requireTextBlock } from "../../../../../__tests__/helpers/require-text-block.js";
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
@@ -1353,7 +1354,7 @@ describe("memory-v3 carry integration — cache contract", () => {
     // core-beta's and hot-one's leads (byte-exact remainder); turn 2's block
     // is untouched.
     const after7 = JSON.parse(records[6]!.snapshot) as Message[];
-    const turn1Block = (after7[0]!.content[0] as { text: string }).text;
+    const turn1Block = requireTextBlock(after7[0]!.content[0]).text;
     expect(turn1Block).toBe(
       wrapMemoryBlock(
         renderInjectionBlockInner([
@@ -1362,7 +1363,7 @@ describe("memory-v3 carry integration — cache contract", () => {
         ]),
       ),
     );
-    const turn2Block = (after7[2]!.content[0] as { text: string }).text;
+    const turn2Block = requireTextBlock(after7[2]!.content[0]).text;
     expect(turn2Block).toBe(records[1]!.blockText);
   });
 

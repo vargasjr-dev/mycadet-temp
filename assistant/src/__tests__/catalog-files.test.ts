@@ -91,7 +91,7 @@ function installFetchMock(
           : input.url;
     fetchCalls.push({ url, init });
     return handler(url, init);
-  }) as unknown as FetchFn;
+  }) as FetchFn;
 }
 
 function installFetchThrow(error: Error): void {

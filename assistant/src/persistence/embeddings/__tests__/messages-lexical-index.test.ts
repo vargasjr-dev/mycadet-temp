@@ -1,25 +1,38 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { QdrantClient } from "@qdrant/js-client-rest";
+
 // ── Mock Qdrant REST client ───────────────────────────────────────────
+
+type CreateCollectionArgs = Parameters<QdrantClient["createCollection"]>;
+
+type UpsertPoints = Extract<
+  Parameters<QdrantClient["upsert"]>[1],
+  { points: unknown }
+>;
+
+type QueryArgs = Parameters<QdrantClient["query"]>;
+
+type DeleteArgs = Parameters<QdrantClient["delete"]>;
 
 interface CreateCollectionCall {
   name: string;
-  config: Record<string, unknown>;
+  config: CreateCollectionArgs[1];
 }
 
 interface UpsertCall {
   name: string;
-  opts: { points: Array<Record<string, unknown>> };
+  opts: UpsertPoints;
 }
 
 interface QueryCall {
   name: string;
-  opts: Record<string, unknown>;
+  opts: QueryArgs[1];
 }
 
 interface DeleteCall {
   name: string;
-  opts: { filter?: Record<string, unknown>; points?: Array<string | number> };
+  opts: DeleteArgs[1];
 }
 
 let mockCollectionExists: boolean;
@@ -57,7 +70,7 @@ mock.module("@qdrant/js-client-rest", () => ({
       return { exists: mockCollectionExists };
     }
 
-    async createCollection(name: string, config: Record<string, unknown>) {
+    async createCollection(name: string, config: CreateCollectionArgs[1]) {
       createCollectionCalls.push({ name, config });
       mockCollectionExists = true;
     }
@@ -80,14 +93,11 @@ mock.module("@qdrant/js-client-rest", () => ({
       payloadIndexCalls.push(config);
     }
 
-    async upsert(
-      name: string,
-      opts: { points: Array<Record<string, unknown>> },
-    ) {
+    async upsert(name: string, opts: UpsertPoints) {
       upsertCalls.push({ name, opts });
     }
 
-    async query(name: string, opts: Record<string, unknown>) {
+    async query(name: string, opts: QueryArgs[1]) {
       queryCalls.push({ name, opts });
       return { points: mockQueryPoints };
     }
@@ -135,7 +145,7 @@ describe("MessagesLexicalIndex", () => {
     // on disk instead of Qdrant's in-RAM default — this index grows with
     // every message ever written.
     expect(config.sparse_vectors).toBeDefined();
-    expect((config.sparse_vectors as Record<string, unknown>).sparse).toEqual({
+    expect(config.sparse_vectors?.sparse).toEqual({
       index: { on_disk: true },
     });
 
@@ -199,14 +209,14 @@ describe("MessagesLexicalIndex", () => {
     expect(upsertCalls.length).toBe(1);
     const points = upsertCalls[0].opts.points;
     expect(points.length).toBe(1);
-    const point = points[0] as {
-      id: string;
-      vector: Record<string, unknown>;
-      payload: Record<string, unknown>;
-    };
+    const point = points[0];
 
     // Deterministic point id derived from message id.
     expect(point.id).toBe(messagePointId("msg-123"));
+
+    if (!point.vector || Array.isArray(point.vector)) {
+      throw new Error("Expected named vectors");
+    }
 
     // Sparse-only vector under the "sparse" named vector, no dense vector.
     expect(point.vector.sparse).toEqual({
@@ -219,9 +229,9 @@ describe("MessagesLexicalIndex", () => {
     expect(Object.keys(point.vector)).toEqual(["sparse"]);
 
     // Payload carries message_id, conversation_id, created_at.
-    expect(point.payload.message_id).toBe("msg-123");
-    expect(point.payload.conversation_id).toBe("conv-abc");
-    expect(point.payload.created_at).toBe(1700000000);
+    expect(point.payload?.message_id).toBe("msg-123");
+    expect(point.payload?.conversation_id).toBe("conv-abc");
+    expect(point.payload?.created_at).toBe(1700000000);
   });
 
   test("re-upserting the same messageId yields the same point id (idempotent)", async () => {
@@ -236,8 +246,8 @@ describe("MessagesLexicalIndex", () => {
     });
 
     expect(upsertCalls.length).toBe(2);
-    const id1 = (upsertCalls[0].opts.points[0] as { id: string }).id;
-    const id2 = (upsertCalls[1].opts.points[0] as { id: string }).id;
+    const id1 = upsertCalls[0].opts.points[0].id;
+    const id2 = upsertCalls[1].opts.points[0].id;
     expect(id1).toBe(id2);
     expect(id1).toBe(messagePointId("msg-same"));
     // Distinct message ids map to distinct point ids.
@@ -253,7 +263,7 @@ describe("MessagesLexicalIndex", () => {
 
     expect(upsertCalls.length).toBe(1);
     expect(upsertCalls[0].opts.points.length).toBe(2);
-    const ids = upsertCalls[0].opts.points.map((p) => (p as { id: string }).id);
+    const ids = upsertCalls[0].opts.points.map((p) => p.id);
     expect(ids).toEqual([messagePointId("m1"), messagePointId("m2")]);
   });
 
@@ -294,12 +304,13 @@ describe("MessagesLexicalIndex", () => {
     // Three ~10 MiB points split into two upserts: [m1, m2] then [m3]. Every
     // point is preserved across the sub-batches — none is dropped.
     expect(upsertCalls.length).toBe(2);
-    expect(
-      upsertCalls[0].opts.points.map((p) => (p as { id: string }).id),
-    ).toEqual([messagePointId("m1"), messagePointId("m2")]);
-    expect(
-      upsertCalls[1].opts.points.map((p) => (p as { id: string }).id),
-    ).toEqual([messagePointId("m3")]);
+    expect(upsertCalls[0].opts.points.map((p) => p.id)).toEqual([
+      messagePointId("m1"),
+      messagePointId("m2"),
+    ]);
+    expect(upsertCalls[1].opts.points.map((p) => p.id)).toEqual([
+      messagePointId("m3"),
+    ]);
   });
 
   test("searchLexical queries the sparse named vector and returns {messageId, score}", async () => {
@@ -338,11 +349,9 @@ describe("MessagesLexicalIndex", () => {
     await index.searchLexical(SPARSE, 3, { conversationId: "conv-xyz" });
 
     expect(queryCalls.length).toBe(1);
-    const filter = queryCalls[0].opts.filter as {
-      must: Array<{ key: string; match: { value: string } }>;
-    };
+    const filter = queryCalls[0].opts.filter;
     expect(filter).toBeDefined();
-    expect(filter.must).toEqual([
+    expect(filter?.must).toEqual([
       { key: "conversation_id", match: { value: "conv-xyz" } },
     ]);
   });
@@ -352,10 +361,9 @@ describe("MessagesLexicalIndex", () => {
     await index.deleteByConversation("conv-del");
 
     expect(deleteCalls.length).toBe(1);
-    const filter = deleteCalls[0].opts.filter as {
-      must: Array<{ key: string; match: { value: string } }>;
-    };
-    expect(filter.must).toEqual([
+    const { opts } = deleteCalls[0];
+    const filter = "filter" in opts ? opts.filter : undefined;
+    expect(filter?.must).toEqual([
       { key: "conversation_id", match: { value: "conv-del" } },
     ]);
   });
@@ -366,8 +374,10 @@ describe("MessagesLexicalIndex", () => {
 
     expect(deleteCalls.length).toBe(1);
     // `message_id` is unindexed, so deletes target the deterministic point id.
-    expect(deleteCalls[0].opts.points).toEqual([messagePointId("msg-del")]);
-    expect(deleteCalls[0].opts.filter).toBeUndefined();
+    expect(deleteCalls[0].opts).toMatchObject({
+      points: [messagePointId("msg-del")],
+    });
+    expect(deleteCalls[0].opts).not.toHaveProperty("filter");
   });
 
   test("count returns the collection count", async () => {
@@ -413,7 +423,10 @@ describe("MessagesLexicalIndex", () => {
     // No upsert point carries a dense vector.
     for (const call of upsertCalls) {
       for (const point of call.opts.points) {
-        const vector = (point as { vector: Record<string, unknown> }).vector;
+        const vector = point.vector;
+        if (!vector || Array.isArray(vector)) {
+          throw new Error("Expected named vectors");
+        }
         expect("dense" in vector).toBe(false);
       }
     }

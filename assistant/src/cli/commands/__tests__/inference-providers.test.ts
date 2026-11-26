@@ -121,7 +121,7 @@ async function run(
   }
   const stdout = chunks.join("");
   const stderr = errorChunks.join("");
-  const exitCode = (process.exitCode as number) ?? 0;
+  const exitCode = process.exitCode ?? 0;
   process.exitCode = prevExit;
   return { stdout, stderr, exitCode };
 }

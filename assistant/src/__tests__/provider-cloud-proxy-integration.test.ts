@@ -1,25 +1,32 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type {
+  GenerateContentParameters,
+  GoogleGenAIOptions,
+} from "@google/genai";
+import { z } from "zod";
+
 import type { Services } from "../config/schemas/services.js";
 import { PLATFORM_PROVIDER_META } from "../providers/cloud-proxy/constants.js";
 import { credentialKey } from "../security/credential-key.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
 // ---------------------------------------------------------------------------
 // Mock @google/genai to capture constructor arguments for Gemini base URL
 // assertions. Must be before importing the registry.
 // ---------------------------------------------------------------------------
-let lastGeminiConstructorOpts: Record<string, unknown> | null = null;
-let lastGeminiGenerateContentStreamParams: Record<string, unknown> | null =
+let lastGeminiConstructorOpts: GoogleGenAIOptions | null = null;
+let lastGeminiGenerateContentStreamParams: GenerateContentParameters | null =
   null;
 
 mock.module("@google/genai", () => ({
   GoogleGenAI: class MockGoogleGenAI {
-    constructor(opts: Record<string, unknown>) {
+    constructor(opts: GoogleGenAIOptions) {
       lastGeminiConstructorOpts = opts;
     }
     models = {
-      generateContentStream: async (params: Record<string, unknown>) => {
+      generateContentStream: async (params: GenerateContentParameters) => {
         lastGeminiGenerateContentStreamParams = params;
         return {
           [Symbol.asyncIterator]: async function* () {
@@ -186,16 +193,21 @@ function disableCloudProxy() {
   secureKeys.delete(credentialKey("cadet", "assistant_api_key"));
 }
 
-type ProviderWithClientBaseUrl = Record<string, unknown> & {
-  client: { baseURL: string };
-};
+const clientBaseUrlSchema = z.object({
+  client: z.object({ baseURL: z.string() }),
+});
 
-function unwrapInnermostProvider(provider: unknown): ProviderWithClientBaseUrl {
-  let current = provider as Record<string, unknown>;
-  while (current.inner) {
-    current = current.inner as Record<string, unknown>;
+function unwrapInnermostProvider(provider: unknown) {
+  let current = provider;
+  while (
+    current &&
+    typeof current === "object" &&
+    "inner" in current &&
+    current.inner
+  ) {
+    current = current.inner;
   }
-  return current as ProviderWithClientBaseUrl;
+  return clientBaseUrlSchema.parse(current);
 }
 
 /**
@@ -307,22 +319,22 @@ describe("cloud proxy integration — credential precedence", () => {
       const provider = getProvider("typesafe");
       const originalFetch = globalThis.fetch;
       let capturedUrl = "";
-      let capturedHeaders: Record<string, string> = {};
-      globalThis.fetch = (async (
-        input: string | URL | Request,
-        init?: RequestInit,
-      ) => {
-        capturedUrl = String(input);
-        capturedHeaders = (init?.headers ?? {}) as Record<string, string>;
-        return new Response(
-          JSON.stringify({
-            model: "jev-latest",
-            answers: {},
-            usage: { input_tokens: 1, output_tokens: 0 },
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }) as typeof fetch;
+      let capturedHeaders = new Headers();
+      globalThis.fetch = Object.assign(
+        async (input: string | URL | Request, init?: RequestInit) => {
+          capturedUrl = String(input);
+          capturedHeaders = new Headers(init?.headers);
+          return new Response(
+            JSON.stringify({
+              model: "jev-latest",
+              answers: {},
+              usage: { input_tokens: 1, output_tokens: 0 },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        },
+        { preconnect: originalFetch.preconnect },
+      );
       try {
         await provider.sendMessage([userMsg("hello")], {
           config: { model: "jev-latest" },
@@ -334,7 +346,9 @@ describe("cloud proxy integration — credential precedence", () => {
       expect(capturedUrl).toBe(
         `${PLATFORM_BASE}/v1/runtime-proxy/typesafe/v1/systemone`,
       );
-      expect(capturedHeaders.Authorization).toBe(`Bearer ${MANAGED_API_KEY}`);
+      expect(capturedHeaders.get("Authorization")).toBe(
+        `Bearer ${MANAGED_API_KEY}`,
+      );
     });
 
     test("managed anthropic uses anthropic proxy path", async () => {
@@ -373,9 +387,7 @@ describe("cloud proxy integration — credential precedence", () => {
       await initializeProviders(makeProvidersConfig("anthropic", "test-model"));
 
       expect(lastGeminiConstructorOpts).toBeDefined();
-      const httpOptions = lastGeminiConstructorOpts!.httpOptions as
-        | { baseUrl?: string }
-        | undefined;
+      const httpOptions = lastGeminiConstructorOpts?.httpOptions;
       expect(httpOptions).toBeDefined();
       expect(httpOptions!.baseUrl).toContain("/v1/runtime-proxy/gemini");
     });
@@ -411,17 +423,18 @@ describe("cloud proxy integration — credential precedence", () => {
         },
       );
 
-      const constructorHttpOptions = lastGeminiConstructorOpts!.httpOptions as
-        | { baseUrl?: string }
-        | undefined;
+      const constructorHttpOptions = lastGeminiConstructorOpts?.httpOptions;
       expect(constructorHttpOptions?.baseUrl).toContain(
         "/v1/runtime-proxy/gemini",
       );
-      const sentConfig = lastGeminiGenerateContentStreamParams!.config as {
-        httpOptions?: { headers?: Record<string, string> };
-        usageAttributionHeaders?: Record<string, string>;
-      };
-      expect(sentConfig.httpOptions?.headers).toEqual({
+      const sentConfig = jsonObjectSchema.parse(
+        lastGeminiGenerateContentStreamParams?.config,
+      );
+      expect(
+        sentConfig.httpOptions === undefined
+          ? undefined
+          : jsonObjectSchema.parse(sentConfig.httpOptions).headers,
+      ).toEqual({
         "X-Cadet-LLM-Call-Site": "mainAgent",
         "X-Cadet-Inference-Profile": "conversation-profile",
         "X-Cadet-Inference-Profile-Source": "conversation",
@@ -430,9 +443,9 @@ describe("cloud proxy integration — credential precedence", () => {
       });
       expect(sentConfig.usageAttributionHeaders).toBeUndefined();
 
-      const rawRequest = response.rawRequest as {
-        config?: Record<string, unknown>;
-      };
+      const rawRequest = z
+        .object({ config: jsonObjectSchema.optional() })
+        .parse(response.rawRequest);
       expect(rawRequest.config?.usageAttributionHeaders).toBeUndefined();
       expect(rawRequest.config?.httpOptions).toBeUndefined();
     });
@@ -450,11 +463,14 @@ describe("cloud proxy integration — credential precedence", () => {
         { config: { model: "gemini-3.1-pro" } },
       );
 
-      const sentConfig = lastGeminiGenerateContentStreamParams!.config as {
-        httpOptions?: { headers?: Record<string, string> };
-        usageAttributionHeaders?: Record<string, string>;
-      };
-      expect(sentConfig.httpOptions?.headers).toBeUndefined();
+      const sentConfig = jsonObjectSchema.parse(
+        lastGeminiGenerateContentStreamParams?.config,
+      );
+      expect(
+        sentConfig.httpOptions === undefined
+          ? undefined
+          : jsonObjectSchema.parse(sentConfig.httpOptions).headers,
+      ).toBeUndefined();
       expect(sentConfig.usageAttributionHeaders).toBeUndefined();
     });
   });

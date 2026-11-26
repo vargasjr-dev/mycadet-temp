@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { asc, eq } from "drizzle-orm";
 
+import type { RuntimeMessageConversationOptions } from "../runtime/http-types.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const deliveryCalls: Array<{
@@ -311,28 +312,14 @@ describe("channel-retry-sweep", () => {
     for (const c of cases) {
       resetTables();
       const eventId = seedFailedEventWithTrustClass(c.trustClass);
-      let capturedOptions:
-        | {
-            trustContext?: {
-              trustClass?: string;
-              guardianPrincipalId?: string;
-            };
-            isInteractive?: boolean;
-          }
-        | undefined;
+      let capturedOptions: RuntimeMessageConversationOptions | undefined;
 
       let capturedAuthor: TrustContext | undefined;
       let capturedTrust: TrustContext | undefined;
       await sweepFailedEvents(async (conversationId, _content, options) => {
         capturedAuthor = options?.author;
         capturedTrust = options?.trustContext;
-        capturedOptions = options as {
-          trustContext?: {
-            trustClass?: string;
-            guardianPrincipalId?: string;
-          };
-          isInteractive?: boolean;
-        };
+        capturedOptions = options;
         const messageId = `message-${c.trustClass}`;
         const db = getDb();
         db.insert(messages)
@@ -377,10 +364,9 @@ describe("channel-retry-sweep", () => {
       requesterTimezoneOffsetSeconds: -18000,
     });
 
-    let capturedTrust: Record<string, unknown> | undefined;
+    let capturedTrust: TrustContext | undefined;
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedTrust = (options as { trustContext?: Record<string, unknown> })
-        .trustContext;
+      capturedTrust = options?.trustContext;
       const messageId = "message-grounding";
       getDb()
         .insert(messages)
@@ -418,10 +404,9 @@ describe("channel-retry-sweep", () => {
       sourceThreadId: "1700000000.000100",
     });
 
-    let capturedTrust: Record<string, unknown> | undefined;
+    let capturedTrust: TrustContext | undefined;
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedTrust = (options as { trustContext?: Record<string, unknown> })
-        .trustContext;
+      capturedTrust = options?.trustContext;
       const messageId = "message-location";
       getDb()
         .insert(messages)
@@ -453,15 +438,10 @@ describe("channel-retry-sweep", () => {
     });
 
     let capturedContent: string | undefined;
-    let capturedOptions:
-      | { displayContent?: string; slackInbound?: Record<string, unknown> }
-      | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
     await sweepFailedEvents(async (conversationId, content, options) => {
       capturedContent = content;
-      capturedOptions = options as {
-        displayContent?: string;
-        slackInbound?: Record<string, unknown>;
-      };
+      capturedOptions = options;
       const messageId = "message-untrusted-slack";
       getDb()
         .insert(messages)
@@ -502,15 +482,10 @@ describe("channel-retry-sweep", () => {
     });
 
     let capturedContent: string | undefined;
-    let capturedOptions:
-      | { displayContent?: string; slackInbound?: Record<string, unknown> }
-      | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
     await sweepFailedEvents(async (conversationId, content, options) => {
       capturedContent = content;
-      capturedOptions = options as {
-        displayContent?: string;
-        slackInbound?: Record<string, unknown>;
-      };
+      capturedOptions = options;
       const messageId = "message-guardian-slack";
       getDb()
         .insert(messages)
@@ -550,13 +525,9 @@ describe("channel-retry-sweep", () => {
       channelInbound: captured,
     });
 
-    let capturedOptions:
-      | { channelInbound?: Record<string, unknown> }
-      | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
     await sweepFailedEvents(async (conversationId, content, options) => {
-      capturedOptions = options as {
-        channelInbound?: Record<string, unknown>;
-      };
+      capturedOptions = options;
       const messageId = "message-tg-captured";
       getDb()
         .insert(messages)
@@ -573,7 +544,11 @@ describe("channel-retry-sweep", () => {
 
     // The captured envelope is the EXACT object the live turn used, so the
     // replayed row persists an identical providerMeta.
-    expect(capturedOptions?.channelInbound).toEqual(captured);
+    expect(
+      capturedOptions && "channelInbound" in capturedOptions
+        ? capturedOptions.channelInbound
+        : undefined,
+    ).toEqual(captured);
   });
 
   test("reconstructs channelInbound from the stored payload when no capture exists", async () => {
@@ -588,13 +563,9 @@ describe("channel-retry-sweep", () => {
       senderName: "Alice",
     });
 
-    let capturedOptions:
-      | { channelInbound?: Record<string, unknown> }
-      | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
     await sweepFailedEvents(async (conversationId, content, options) => {
-      capturedOptions = options as {
-        channelInbound?: Record<string, unknown>;
-      };
+      capturedOptions = options;
       const messageId = "message-tg-fallback";
       getDb()
         .insert(messages)
@@ -609,7 +580,11 @@ describe("channel-retry-sweep", () => {
       return { messageId };
     });
 
-    expect(capturedOptions?.channelInbound).toEqual({
+    expect(
+      capturedOptions && "channelInbound" in capturedOptions
+        ? capturedOptions.channelInbound
+        : undefined,
+    ).toEqual({
       source: "telegram",
       conversationExternalId: "chat-501",
       messageId: "tg-msg-2",
@@ -628,13 +603,9 @@ describe("channel-retry-sweep", () => {
       channelTs: "1700000001.000100",
     });
 
-    let capturedOptions:
-      | { channelInbound?: Record<string, unknown> }
-      | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
     await sweepFailedEvents(async (conversationId, content, options) => {
-      capturedOptions = options as {
-        channelInbound?: Record<string, unknown>;
-      };
+      capturedOptions = options;
       const messageId = "message-slack-no-neutral";
       getDb()
         .insert(messages)
@@ -649,7 +620,11 @@ describe("channel-retry-sweep", () => {
       return { messageId };
     });
 
-    expect(capturedOptions?.channelInbound).toBeUndefined();
+    expect(
+      capturedOptions && "channelInbound" in capturedOptions
+        ? capturedOptions.channelInbound
+        : undefined,
+    ).toBeUndefined();
   });
 
   test("replays the sender's Slack app context from the captured slackInbound", async () => {
@@ -668,10 +643,10 @@ describe("channel-retry-sweep", () => {
     });
 
     let capturedContent: string | undefined;
-    let capturedOptions: { displayContent?: string } | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
     await sweepFailedEvents(async (conversationId, content, options) => {
       capturedContent = content;
-      capturedOptions = options as { displayContent?: string };
+      capturedOptions = options;
       const messageId = "message-app-context-slack";
       getDb()
         .insert(messages)
@@ -804,10 +779,11 @@ describe("channel-retry-sweep", () => {
     });
 
     let calls = 0;
-    const optionsSeen: Array<{ slackInbound?: unknown }> = [];
+    const optionsSeen: Array<RuntimeMessageConversationOptions | undefined> =
+      [];
     await sweepFailedEvents(async (conversationId, content, options) => {
       calls += 1;
-      optionsSeen.push(options as { slackInbound?: unknown });
+      optionsSeen.push(options);
       if (calls === 1) {
         // First attempt dedups against the orphaned user row a crashed turn
         // left behind — with no assistant reply following it.
@@ -953,18 +929,10 @@ describe("channel-retry-sweep", () => {
       .where(eq(channelInboundEvents.id, inbound.eventId))
       .run();
 
-    let capturedOptions:
-      | {
-          trustContext?: { trustClass?: string; sourceChannel?: string };
-          isInteractive?: boolean;
-        }
-      | undefined;
+    let capturedOptions: RuntimeMessageConversationOptions | undefined;
 
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedOptions = options as {
-        trustContext?: { trustClass?: string; sourceChannel?: string };
-        isInteractive?: boolean;
-      };
+      capturedOptions = options;
       const messageId = "message-no-ctx";
       db.insert(messages)
         .values({

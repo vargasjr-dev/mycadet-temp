@@ -109,7 +109,7 @@ async function runCommand(
   }
 
   const stdout = chunks.join("");
-  const exitCode = (process.exitCode as number) ?? 0;
+  const exitCode = process.exitCode ?? 0;
   process.exitCode = prevExitCode;
 
   return { stdout, exitCode };

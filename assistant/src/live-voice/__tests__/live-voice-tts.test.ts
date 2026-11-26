@@ -428,7 +428,7 @@ describe("streamLiveVoiceTtsAudio", () => {
         }),
         { status: 200 },
       );
-    }) as unknown as typeof globalThis.fetch;
+    }) as typeof globalThis.fetch;
 
     try {
       const frames: LiveVoiceTtsAudioChunk[] = [];

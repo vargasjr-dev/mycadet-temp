@@ -21,6 +21,7 @@ import { registerDefaultPluginInjectors } from "../plugins/defaults/index.js";
 import { stripTailInjectionsForReinjection } from "../plugins/defaults/memory/tail-reinjection-strip.js";
 import type { Message } from "../providers/types.js";
 import { asConversation } from "./helpers/mock-conversation.js";
+import { requireTextBlock } from "./helpers/require-text-block.js";
 
 // Populate the injector registry with the default plugins' injectors the way
 // bootstrap does in production, so `applyRuntimeInjections` walks a non-empty
@@ -102,7 +103,7 @@ describe("stripTailInjectionsForReinjection", () => {
 
     // THEN the earlier message keeps its historical turn-context grounding
     expect(result[0].content).toHaveLength(2);
-    expect((result[0].content[1] as { text: string }).text).toBe(
+    expect(requireTextBlock(result[0].content[1]).text).toBe(
       TURN_CONTEXT_BLOCK,
     );
     // AND only the tail is cleared

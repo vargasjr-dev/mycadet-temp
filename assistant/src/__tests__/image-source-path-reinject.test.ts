@@ -8,6 +8,7 @@ import {
   extractImageSourcePaths,
 } from "../persistence/conversation-crud.js";
 import type { ContentBlock } from "../providers/types.js";
+import { requireTextBlock } from "./helpers/require-text-block.js";
 
 // ---------------------------------------------------------------------------
 // reinjectAttachmentPathAnnotations — re-inject attachment path annotations
@@ -35,7 +36,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
     );
 
     expect(result).toHaveLength(3);
-    const annotation = result[2] as { type: "text"; text: string };
+    const annotation = requireTextBlock(result[2]);
     expect(annotation.type).toBe("text");
     expect(annotation.text).toBe(
       "[Attached image source: /Users/me/Desktop/photo.jpg]",
@@ -103,7 +104,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
     );
 
     expect(result).toHaveLength(3);
-    const annotation = result[2] as { type: "text"; text: string };
+    const annotation = requireTextBlock(result[2]);
     expect(annotation.type).toBe("text");
     expect(annotation.text).toBe(
       "[Attached image source: /path/to/a.jpg]\n[Attached image source: /path/to/b.png]",
@@ -136,7 +137,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
     );
 
     expect(result).toHaveLength(3);
-    const annotation = result[2] as { type: "text"; text: string };
+    const annotation = requireTextBlock(result[2]);
     expect(annotation.text).toBe(
       "[Attached image source: /Users/me/Desktop/photo.jpg]",
     );
@@ -186,7 +187,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
     );
 
     expect(result).toHaveLength(3);
-    const annotation = result[2] as { type: "text"; text: string };
+    const annotation = requireTextBlock(result[2]);
     expect(annotation.text).toBe(
       '[Attachment "report.pdf" is stored at: /conv/attachments/report-2.pdf]',
     );
@@ -204,7 +205,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
       metadata,
     );
 
-    const annotation = result[2] as { type: "text"; text: string };
+    const annotation = requireTextBlock(result[2]);
     expect(annotation.text).toBe(
       '[Attachment "notes: draft.txt" is stored at: /conv/attachments/notes: draft.txt]',
     );
@@ -225,7 +226,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
     );
 
     expect(result).toHaveLength(3);
-    const annotation = result[2] as { type: "text"; text: string };
+    const annotation = requireTextBlock(result[2]);
     expect(annotation.text).toBe(
       "[Attached image source: /Users/me/Desktop/photo.jpg]\n" +
         '[Attachment "data.csv" is stored at: /conv/attachments/data-2.csv]\n' +
@@ -256,10 +257,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
       await createUserMessage("compare", attachments),
       attachments,
     );
-    const liveBlock = enriched.content.at(-1) as {
-      type: "text";
-      text: string;
-    };
+    const liveBlock = requireTextBlock(enriched.content.at(-1));
 
     const metadata = JSON.stringify({
       imageSourcePaths: extractImageSourcePaths(attachments),
@@ -270,7 +268,7 @@ describe("reinjectAttachmentPathAnnotations", () => {
       "user",
       metadata,
     );
-    const rebuiltBlock = rebuilt.at(-1) as { type: "text"; text: string };
+    const rebuiltBlock = requireTextBlock(rebuilt.at(-1));
 
     expect(rebuiltBlock.text).toBe(liveBlock.text);
   });
