@@ -12,6 +12,7 @@ import { AccountShell } from "@app/components/account/account-shell";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
+import { dismissVellumOfferForSession } from "@app/shell/vellum-offer";
 import { useTranslation } from "@app/i18n";
 import { formatSize } from "@mycadet/local-mode";
 import type {
@@ -153,7 +154,10 @@ export function VellumMigrationScreen() {
   const decline = () => {
     const bridge = window.cadet?.vellumMigration;
     void bridge?.decline({ neverAgain });
-    void navigate(routes.assistant, SETUP_NAVIGATE);
+    // Back to the initial screen; the session marker keeps this launch
+    // from navigating straight back into the offer.
+    dismissVellumOfferForSession();
+    void navigate(routes.index, SETUP_NAVIGATE);
   };
 
   return (
@@ -265,7 +269,11 @@ export function VellumMigrationScreen() {
                 variant="ghost"
                 size="compact"
                 leftIcon={<ArrowLeft />}
-                onClick={() => void navigate(routes.assistant, SETUP_NAVIGATE)}
+                onClick={() => {
+                  // The offer returns next launch; this one goes home.
+                  dismissVellumOfferForSession();
+                  void navigate(routes.index, SETUP_NAVIGATE);
+                }}
               >
                 {t("actions.back")}
               </Button>

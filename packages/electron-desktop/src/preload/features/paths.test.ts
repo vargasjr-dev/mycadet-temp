@@ -1,8 +1,7 @@
 import { expect, mock, test } from "bun:test";
 
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+import { electronMock } from "../../../test-setup";
 
-import { BridgeCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
 import {
   FILE_OPEN_DRAIN,
   FILE_OPEN_EVENT,
@@ -10,6 +9,7 @@ import {
   FILE_OPEN_UNSUBSCRIBE,
   type CadetBridge,
 } from "@mycadet/ipc-contract";
+import { BridgeCapabilityRegistry } from "../../capability-registry";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -33,9 +33,9 @@ mock.module("electron", () =>
   }),
 );
 
-const { install: pathsInstall } = await import("@mycadet/electron-desktop/preload/features/paths");
+const { install: pathsInstall } = await import("./paths");
 const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-pathsInstall(registry, {} as never);
+pathsInstall(registry);
 const bridge = registry.build();
 
 test("resolves only native File paths and returns null when unavailable", () => {

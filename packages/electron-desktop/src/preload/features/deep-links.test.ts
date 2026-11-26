@@ -1,12 +1,14 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { electronMock } from "@mycadet/electron-desktop/test-setup";
+
+import { electronMock } from "../../../test-setup";
 
 import type { CadetBridge } from "@mycadet/ipc-contract";
+import { BridgeCapabilityRegistry } from "../../capability-registry";
 
 const invoke = mock(() => Promise.resolve());
-const on = mock(() => undefined);
-const off = mock(() => undefined);
-const send = mock(() => undefined);
+const on = mock((_channel: string, _listener: unknown) => undefined);
+const off = mock((_channel: string, _listener: unknown) => undefined);
+const send = mock((_channel: string, ..._args: unknown[]) => undefined);
 
 mock.module("electron", () =>
   electronMock({
@@ -14,9 +16,7 @@ mock.module("electron", () =>
   }),
 );
 
-const { BridgeCapabilityRegistry } =
-  await import("@mycadet/electron-desktop/capability-registry");
-const { install: deepLinksInstall } = await import("@mycadet/electron-desktop/preload/features/deep-links");
+const { install: deepLinksInstall } = await import("./deep-links");
 
 beforeEach(() => {
   invoke.mockClear();
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 test("contributes deep-link delivery and launch-at-login IPC", async () => {
   const registry = new BridgeCapabilityRegistry<CadetBridge>({});
-  deepLinksInstall(registry, { invoke, on, off, send } as never);
+  deepLinksInstall(registry);
   const bridge = registry.build();
   const callback = mock(() => undefined);
 
@@ -41,11 +41,8 @@ test("contributes deep-link delivery and launch-at-login IPC", async () => {
   expect(invoke).toHaveBeenCalledWith("cadet:launchAtLogin:get");
   expect(invoke).toHaveBeenCalledWith("cadet:launchAtLogin:set", true);
 
-  const calls = on.mock.calls as unknown as Array<
-    [string, (event: unknown, link: { kind: "send"; message: string }) => void]
-  >;
-  const handler = calls[0]?.[1];
-  if (!handler) {
+  const [channel, handler] = on.mock.calls[0] ?? [];
+  if (channel !== "cadet:deepLinks:event" || !handler) {
     throw new Error("Deep-link event handler was not registered");
   }
   handler({}, { kind: "send", message: "hello" });

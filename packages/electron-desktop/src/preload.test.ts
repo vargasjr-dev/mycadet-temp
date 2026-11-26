@@ -1,6 +1,27 @@
 import { expect, mock, test } from "bun:test";
 import type { IpcRenderer } from "electron";
 
+import { electronMock } from "../test-setup";
+
+// The preload module graph runtime-imports the electron module (the
+// features pull `ipcRenderer` themselves), so it must be mocked before
+// the factories load. The factories still take their IPC as a parameter —
+// these tests exercise them with the local stubs below.
+mock.module("electron", () =>
+  // A no-op ipcRenderer binding is all the feature graph needs — the
+  // factories under test receive their IPC as parameters below.
+  electronMock({
+    ipcRenderer: {
+      invoke: () => Promise.resolve(),
+      off: () => undefined,
+      on: () => undefined,
+      send: () => undefined,
+      sendSync: () => null,
+    },
+    webUtils: { getPathForFile: () => "" },
+  }),
+);
+
 import type {
   DownloadDoneEvent,
   WindowAttentionPayload,
@@ -15,13 +36,13 @@ import {
   WINDOW_ATTENTION,
 } from "@mycadet/ipc-contract";
 
-import {
+const {
   createBundleConfirmBridge,
   createDownloadsBridge,
   createDictationOfferBridge,
   createNotificationsBridge,
   createWindowAttentionSubscriber,
-} from "./preload";
+} = await import("./preload");
 
 test("notification preload works without crypto.randomUUID", async () => {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");

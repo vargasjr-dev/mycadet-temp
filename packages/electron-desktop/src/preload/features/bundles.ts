@@ -1,12 +1,11 @@
-import type { IpcRenderer } from "electron";
+import { ipcRenderer } from "electron";
 
 import type { BridgeCapabilityRegistry } from "../../capability-registry";
-import { createBundleConfirmBridge } from "../../preload";
+import { createBundleConfirmBridge } from "../factories";
 import type { CadetBridge } from "@mycadet/ipc-contract";
 
 export const install = (
   registry: BridgeCapabilityRegistry<CadetBridge>,
-  ipc: IpcRenderer,
 ): void => {
-  registry.contribute("bundleConfirm", createBundleConfirmBridge(ipc));
+  registry.contribute("bundleConfirm", createBundleConfirmBridge(ipcRenderer));
 };

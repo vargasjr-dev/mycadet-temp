@@ -170,10 +170,6 @@
     "optionsAriaLabel": "Hosting options"
   },
   "vellumMigration": {
-    "cardTitle": "Bring your Vellum assistant",
-    "cardBody": "We found a Vellum install on this machine. Its assistants can move to Cadet in one step.",
-    "cardAction": "Import",
-    "dismissCard": "Dismiss",
     "title": "Import from Vellum",
     "body": "We'll move {{count}} assistant(s) — about {{size}} — from your Vellum install into Cadet.",
     "sleepNote": "Your Vellum assistants are put to sleep while the data moves, and wake up in Cadet when it's done.",

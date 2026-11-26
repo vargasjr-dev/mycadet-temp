@@ -60,8 +60,6 @@ const WINDOWS_ONLY_SURFACE = [
   "helper.hotkey.onRegistrationChange",
   "helper.hotkey.setVoiceModeChord",
   "mainWindow.setTitleBarOverlay",
-  "menu.popup",
-  "menu.titles",
 ];
 // Both are macOS helper contracts read off its raw keyboard monitor: the Fn
 // key, and a hold of a configured modifier set. Windows answers the first with
@@ -100,10 +98,18 @@ test("the composed Windows bridge satisfies every applicable CadetBridge key", (
 test("the Windows bridge matches the macOS bridge surface up to the documented deltas", () => {
   expect(macBridge).toBeDefined();
   expect(macBridge.hostOS).toBe("macos");
-  expect(Object.keys(macBridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
+  // The macOS main registers no menu IPC, so its preload omits the
+  // surface entirely — the menu.* methods below are Linux deltas.
+  expect(Object.keys(macBridge).sort()).toEqual(
+    [...CADET_BRIDGE_KEYS].filter((key) => key !== "menu").sort(),
+  );
 
   const bridge = windowsBridge;
-  const shared = required.filter((key) => key !== "hostOS");
+  // The menu surface is asserted separately below: macOS registers no
+  // menu IPC, so its preload omits the key entirely.
+  const shared = required.filter((key) => key !== "hostOS" && key !== "menu");
+  expect(macBridge.menu).toBeUndefined();
+  expect(windowsBridge.menu).toBeDefined();
   const windowsSurface = shared.flatMap((key) => surface(bridge[key], key));
   const macSurface = shared.flatMap((key) => surface(macBridge[key], key));
 

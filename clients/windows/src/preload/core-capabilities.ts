@@ -1,10 +1,11 @@
-import type { IpcRenderer, IpcRendererEvent } from "electron";
+import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type {
   AppVersionInfo,
-  TitleBarOverlayTheme,
   CadetBridge,
   CadetCommand,
+  TextInsertionResult,
+  TitleBarOverlayTheme,
 } from "@mycadet/ipc-contract";
 
 export const WINDOWS_CORE_CAPABILITIES = [
@@ -13,6 +14,7 @@ export const WINDOWS_CORE_CAPABILITIES = [
   "app",
   "commands",
   "mainWindow",
+  "text",
 ] as const satisfies readonly (keyof CadetBridge)[];
 
 export type WindowsCoreBridge = Pick<
@@ -32,9 +34,7 @@ export const WINDOWS_NOT_APPLICABLE_CAPABILITIES = [
 ] as const satisfies readonly (keyof CadetBridge)[];
 
 /** The always-present core every `./features/` module builds on. */
-export const createWindowsCoreBridge = (
-  ipcRenderer: Pick<IpcRenderer, "invoke" | "on" | "off">,
-): WindowsCoreBridge => ({
+export const createWindowsCoreBridge = (): WindowsCoreBridge => ({
   platform: "electron",
   hostOS: "windows",
   app: {
@@ -69,5 +69,11 @@ export const createWindowsCoreBridge = (
         "cadet:mainWindow:setTitleBarOverlay",
         theme,
       ) as Promise<void>,
+  },
+  text: {
+    insertIntoFrontApp: (text): Promise<TextInsertionResult> =>
+      ipcRenderer.invoke("cadet:text:insertIntoFrontApp", text),
+    openAutomationSettings: (): Promise<void> =>
+      ipcRenderer.invoke("cadet:text:openAutomationSettings"),
   },
 });

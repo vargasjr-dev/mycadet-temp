@@ -1,4 +1,4 @@
-import { type IpcRenderer, type IpcRendererEvent } from "electron";
+import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
@@ -7,47 +7,42 @@ import {
   PERMISSIONS_QUIT_AND_REOPEN,
   PERMISSIONS_REQUEST,
   PERMISSIONS_STATE_EVENT,
-  TEXT_INSERT,
-  TEXT_OPEN_SETTINGS,
   type SystemPermissionKind,
   type SystemPermissionStateItem,
   type SystemPermissionsState,
-  type TextInsertionResult,
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-const invokeItem =
-  (ipc: IpcRenderer) =>
-  (
-    channel: string,
-    kind: SystemPermissionKind,
-  ): Promise<SystemPermissionStateItem> =>
-    Promise.resolve(ipc.invoke(channel, kind));
+const invokeItem = (
+  channel: string,
+  kind: SystemPermissionKind,
+  presentation?: Parameters<CadetBridge["permissions"]["request"]>[1],
+): Promise<SystemPermissionStateItem> =>
+  // The optional presentation rides only when the caller sent one, so a
+  // main whose handler takes the kind alone sees the same wire shape as
+  // before.
+  presentation === undefined
+    ? Promise.resolve(ipcRenderer.invoke(channel, kind))
+    : Promise.resolve(ipcRenderer.invoke(channel, kind, presentation));
 
 export const install = (
   bridge: BridgeCapabilityRegistry<CadetBridge>,
-  ipc: IpcRenderer,
 ): void => {
   bridge.contribute("permissions", {
     getState: (): Promise<SystemPermissionsState> =>
-      Promise.resolve(ipc.invoke(PERMISSIONS_GET_STATE)),
-    request: (kind) => invokeItem(ipc)(PERMISSIONS_REQUEST, kind),
-    openSettings: (kind) => invokeItem(ipc)(PERMISSIONS_OPEN_SETTINGS, kind),
+      Promise.resolve(ipcRenderer.invoke(PERMISSIONS_GET_STATE)),
+    request: (kind, presentation) =>
+      invokeItem(PERMISSIONS_REQUEST, kind, presentation),
+    openSettings: (kind) => invokeItem(PERMISSIONS_OPEN_SETTINGS, kind),
     quitAndReopen: (): Promise<void> =>
-      Promise.resolve(ipc.invoke(PERMISSIONS_QUIT_AND_REOPEN)),
+      Promise.resolve(ipcRenderer.invoke(PERMISSIONS_QUIT_AND_REOPEN)),
     onState: (callback) => {
       const handler = (
         _event: IpcRendererEvent,
         state: SystemPermissionsState,
       ) => callback(state);
-      ipc.on(PERMISSIONS_STATE_EVENT, handler);
-      return () => ipc.off(PERMISSIONS_STATE_EVENT, handler);
+      ipcRenderer.on(PERMISSIONS_STATE_EVENT, handler);
+      return () => ipcRenderer.off(PERMISSIONS_STATE_EVENT, handler);
     },
-  });
-  bridge.contribute("text", {
-    insertIntoFrontApp: (text): Promise<TextInsertionResult> =>
-      Promise.resolve(ipc.invoke(TEXT_INSERT, text)),
-    openAutomationSettings: (): Promise<void> =>
-      Promise.resolve(ipc.invoke(TEXT_OPEN_SETTINGS)),
   });
 };

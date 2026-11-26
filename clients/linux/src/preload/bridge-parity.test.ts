@@ -52,8 +52,6 @@ const required = CADET_BRIDGE_KEYS.filter(
 const LINUX_ONLY_SURFACE = [
   "helper.hotkey.onRegistrationChange",
   "helper.hotkey.setVoiceModeChord",
-  "menu.popup",
-  "menu.titles",
 ];
 // The macOS helper watches the raw keyboard, which is where the voice key's
 // hold comes from. The Linux sidecar has no such monitor, so its hotkey
@@ -92,10 +90,18 @@ test("the composed Linux bridge satisfies every applicable CadetBridge key", () 
 test("the Linux bridge matches the macOS bridge surface up to the documented deltas", () => {
   expect(macBridge).toBeDefined();
   expect(macBridge.hostOS).toBe("macos");
-  expect(Object.keys(macBridge).sort()).toEqual([...CADET_BRIDGE_KEYS].sort());
+  // The macOS main registers no menu IPC, so its preload omits the
+  // surface entirely — the menu.* methods below are Linux deltas.
+  expect(Object.keys(macBridge).sort()).toEqual(
+    [...CADET_BRIDGE_KEYS].filter((key) => key !== "menu").sort(),
+  );
 
   const bridge = linuxBridge;
-  const shared = required.filter((key) => key !== "hostOS");
+  // The menu surface is asserted separately below: macOS registers no
+  // menu IPC, so its preload omits the key entirely.
+  const shared = required.filter((key) => key !== "hostOS" && key !== "menu");
+  expect(macBridge.menu).toBeUndefined();
+  expect(linuxBridge.menu).toBeDefined();
   const linuxSurface = shared.flatMap((key) => surface(bridge[key], key));
   const macSurface = shared.flatMap((key) => surface(macBridge[key], key));
 

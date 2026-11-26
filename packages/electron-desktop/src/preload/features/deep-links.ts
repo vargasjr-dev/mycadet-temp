@@ -1,16 +1,12 @@
-import type { IpcRenderer } from "electron";
+import { ipcRenderer } from "electron";
 
 import type { BridgeCapabilityRegistry } from "../../capability-registry";
-import {
-  createDeepLinksBridge,
-  createLaunchAtLoginBridge,
-} from "../../preload";
+import { createDeepLinksBridge, createLaunchAtLoginBridge } from "../factories";
 import type { CadetBridge } from "@mycadet/ipc-contract";
 
 export const install = (
   registry: BridgeCapabilityRegistry<CadetBridge>,
-  ipc: IpcRenderer,
 ): void => {
-  registry.contribute("deepLinks", createDeepLinksBridge(ipc));
-  registry.contribute("launchAtLogin", createLaunchAtLoginBridge(ipc));
+  registry.contribute("deepLinks", createDeepLinksBridge(ipcRenderer));
+  registry.contribute("launchAtLogin", createLaunchAtLoginBridge(ipcRenderer));
 };

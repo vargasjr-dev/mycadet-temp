@@ -1,9 +1,10 @@
-import type { IpcRenderer, IpcRendererEvent } from "electron";
+import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type {
   AppVersionInfo,
   CadetBridge,
   CadetCommand,
+  TextInsertionResult,
 } from "@mycadet/ipc-contract";
 
 export const LINUX_CORE_CAPABILITIES = [
@@ -12,6 +13,7 @@ export const LINUX_CORE_CAPABILITIES = [
   "app",
   "commands",
   "mainWindow",
+  "text",
 ] as const satisfies readonly (keyof CadetBridge)[];
 
 export type LinuxCoreBridge = Pick<
@@ -29,9 +31,7 @@ export const LINUX_NOT_APPLICABLE_CAPABILITIES = [
 ] as const satisfies readonly (keyof CadetBridge)[];
 
 /** The always-present core every `./features/` module builds on. */
-export const createLinuxCoreBridge = (
-  ipcRenderer: Pick<IpcRenderer, "invoke" | "on" | "off">,
-): LinuxCoreBridge => ({
+export const createLinuxCoreBridge = (): LinuxCoreBridge => ({
   platform: "electron",
   hostOS: "linux",
   app: {
@@ -61,5 +61,11 @@ export const createLinuxCoreBridge = (
       ) as Promise<void>,
     navigateTo: (url: string): Promise<void> =>
       ipcRenderer.invoke("cadet:mainWindow:navigateTo", url) as Promise<void>,
+  },
+  text: {
+    insertIntoFrontApp: (text): Promise<TextInsertionResult> =>
+      ipcRenderer.invoke("cadet:text:insertIntoFrontApp", text),
+    openAutomationSettings: (): Promise<void> =>
+      ipcRenderer.invoke("cadet:text:openAutomationSettings"),
   },
 });

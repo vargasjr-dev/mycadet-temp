@@ -1,4 +1,4 @@
-import type { IpcRenderer } from "electron";
+import { ipcRenderer } from "electron";
 
 import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
@@ -11,14 +11,15 @@ import {
 
 export const install = (
   registry: BridgeCapabilityRegistry<CadetBridge>,
-  ipc: IpcRenderer,
 ): void => {
   registry.contribute("auth", {
     startOAuth: (options): Promise<{ sessionToken: string }> =>
-      Promise.resolve(ipc.invoke(AUTH_START_OAUTH, options)),
+      Promise.resolve(ipcRenderer.invoke(AUTH_START_OAUTH, options)),
     cancelOAuth: (): Promise<void> =>
-      Promise.resolve(ipc.invoke(AUTH_CANCEL_OAUTH)),
-    getSessionToken: (): string | null => ipc.sendSync(AUTH_GET_SESSION_TOKEN),
-    signOut: (): Promise<void> => Promise.resolve(ipc.invoke(AUTH_SIGN_OUT)),
+      Promise.resolve(ipcRenderer.invoke(AUTH_CANCEL_OAUTH)),
+    getSessionToken: (): string | null =>
+      ipcRenderer.sendSync(AUTH_GET_SESSION_TOKEN),
+    signOut: (): Promise<void> =>
+      Promise.resolve(ipcRenderer.invoke(AUTH_SIGN_OUT)),
   });
 };

@@ -282,10 +282,6 @@
     }
   },
   "vellumMigration": {
-    "cardTitle": "Trae tu asistente de Vellum",
-    "cardBody": "Encontramos una instalación de Vellum en esta máquina. Sus asistentes pueden mudarse a Cadet en un paso.",
-    "cardAction": "Importar",
-    "dismissCard": "Descartar",
     "title": "Importar desde Vellum",
     "body": "Moveremos {{count}} asistente(s) — unos {{size}} — de tu instalación de Vellum a Cadet.",
     "sleepNote": "Tus asistentes de Vellum se duermen mientras se mueven los datos y despiertan en Cadet al terminar.",

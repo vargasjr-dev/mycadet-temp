@@ -282,10 +282,6 @@
     }
   },
   "vellumMigration": {
-    "cardTitle": "把你的 Vellum 助手带过来",
-    "cardBody": "我们在这台机器上发现了 Vellum 安装。它的助手可以一步迁入 Cadet。",
-    "cardAction": "导入",
-    "dismissCard": "关闭",
     "title": "从 Vellum 导入",
     "body": "我们会把 {{count}} 个助手（约 {{size}}）从你的 Vellum 安装迁入 Cadet。",
     "sleepNote": "数据迁移期间，你的 Vellum 助手会进入休眠，完成后在 Cadet 中醒来。",

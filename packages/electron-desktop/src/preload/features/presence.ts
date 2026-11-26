@@ -1,4 +1,4 @@
-import { type IpcRenderer, type IpcRendererEvent } from "electron";
+import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type {
   ConnectivityState,
@@ -21,42 +21,44 @@ import type { BridgeCapabilityRegistry } from "../../capability-registry";
 
 export const install = (
   bridge: BridgeCapabilityRegistry<CadetBridge>,
-  ipc: IpcRenderer,
 ): void => {
   bridge.contribute("status", {
-    setConnection: (status) => ipc.send(STATUS_CONNECTION, status),
+    setConnection: (status) => ipcRenderer.send(STATUS_CONNECTION, status),
   });
   bridge.contribute("identity", {
-    setName: (name) => ipc.send(IDENTITY_NAME, name),
+    setName: (name) => ipcRenderer.send(IDENTITY_NAME, name),
   });
   bridge.contribute("icon", {
-    setAvatar: (png) => ipc.send(ICON_SET_AVATAR, png),
-    setCharacter: (character) => ipc.send(ICON_SET_CHARACTER, character),
+    setAvatar: (png) => ipcRenderer.send(ICON_SET_AVATAR, png),
+    // `accentHex` is part of the character's contract (the avatar's accent
+    // carried separately for the macOS dock icon) — forward it verbatim.
+    setCharacter: (character, accentHex) =>
+      ipcRenderer.send(ICON_SET_CHARACTER, character, accentHex ?? null),
   });
   bridge.contribute("dock", {
-    setBadge: (count) => ipc.send(DOCK_SET_BADGE, count),
+    setBadge: (count) => ipcRenderer.send(DOCK_SET_BADGE, count),
   });
   bridge.contribute("power", {
     onEvent: (callback) => {
       const handler = (_event: IpcRendererEvent, payload: PowerEvent) => {
         callback(payload);
       };
-      ipc.on(POWER_EVENT, handler);
-      return () => ipc.off(POWER_EVENT, handler);
+      ipcRenderer.on(POWER_EVENT, handler);
+      return () => ipcRenderer.off(POWER_EVENT, handler);
     },
   });
   bridge.contribute("connectivity", {
     onState: (callback) => {
       const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
         callback(state);
-      ipc.on(CONNECTIVITY_STATE, handler);
-      void Promise.resolve(ipc.invoke(CONNECTIVITY_GET)).then(callback);
-      return () => ipc.off(CONNECTIVITY_STATE, handler);
+      ipcRenderer.on(CONNECTIVITY_STATE, handler);
+      void Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_GET)).then(callback);
+      return () => ipcRenderer.off(CONNECTIVITY_STATE, handler);
     },
     get: (): Promise<ConnectivityState> =>
-      Promise.resolve(ipc.invoke(CONNECTIVITY_GET)),
-    setDevice: (online) => ipc.send(CONNECTIVITY_SET_DEVICE, online),
+      Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_GET)),
+    setDevice: (online) => ipcRenderer.send(CONNECTIVITY_SET_DEVICE, online),
     retry: (): Promise<ConnectivityState> =>
-      Promise.resolve(ipc.invoke(CONNECTIVITY_RETRY)),
+      Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_RETRY)),
   });
 };

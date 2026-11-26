@@ -1,4 +1,4 @@
-import { type IpcRenderer, type IpcRendererEvent } from "electron";
+import { ipcRenderer, type IpcRendererEvent } from "electron";
 
 import type { BridgeCapabilityRegistry } from "../../capability-registry";
 import {
@@ -21,20 +21,19 @@ import {
 
 export const install = (
   registry: BridgeCapabilityRegistry<CadetBridge>,
-  ipc: IpcRenderer,
 ): void => {
   registry.contribute("quickInput", {
-    submit: (message) => ipc.invoke(QUICK_INPUT_SUBMIT, message),
-    dismiss: () => ipc.invoke(QUICK_INPUT_DISMISS),
+    submit: (message) => ipcRenderer.invoke(QUICK_INPUT_SUBMIT, message),
+    dismiss: () => ipcRenderer.invoke(QUICK_INPUT_DISMISS),
   });
   registry.contribute("commandPalette", {
-    open: () => ipc.invoke(COMMAND_PALETTE_OPEN),
-    dismiss: () => ipc.invoke(COMMAND_PALETTE_DISMISS),
-    select: (command) => ipc.invoke(COMMAND_PALETTE_SELECT, command),
+    open: () => ipcRenderer.invoke(COMMAND_PALETTE_OPEN),
+    dismiss: () => ipcRenderer.invoke(COMMAND_PALETTE_DISMISS),
+    select: (command) => ipcRenderer.invoke(COMMAND_PALETTE_SELECT, command),
   });
   registry.contribute("dictationOverlay", {
     setState: (state) => {
-      ipc.send(DICTATION_OVERLAY_SET_STATE, state);
+      ipcRenderer.send(DICTATION_OVERLAY_SET_STATE, state);
     },
     onState: (callback) => {
       const listener = (
@@ -43,32 +42,32 @@ export const install = (
       ): void => {
         callback(state);
       };
-      ipc.on(DICTATION_OVERLAY_STATE_EVENT, listener);
+      ipcRenderer.on(DICTATION_OVERLAY_STATE_EVENT, listener);
       return () => {
-        ipc.off(DICTATION_OVERLAY_STATE_EVENT, listener);
+        ipcRenderer.off(DICTATION_OVERLAY_STATE_EVENT, listener);
       };
     },
-    getState: () => ipc.invoke(DICTATION_OVERLAY_GET_STATE),
+    getState: () => ipcRenderer.invoke(DICTATION_OVERLAY_GET_STATE),
     requestStop: () => {
-      ipc.send(DICTATION_OVERLAY_REQUEST_STOP);
+      ipcRenderer.send(DICTATION_OVERLAY_REQUEST_STOP);
     },
     onStopRequested: (callback) => {
       const listener = (): void => {
         callback();
       };
-      ipc.on(DICTATION_OVERLAY_STOP_REQUESTED, listener);
+      ipcRenderer.on(DICTATION_OVERLAY_STOP_REQUESTED, listener);
       return () => {
-        ipc.off(DICTATION_OVERLAY_STOP_REQUESTED, listener);
+        ipcRenderer.off(DICTATION_OVERLAY_STOP_REQUESTED, listener);
       };
     },
     setInteractive: (interactive) => {
-      ipc.send(DICTATION_OVERLAY_SET_INTERACTIVE, interactive);
+      ipcRenderer.send(DICTATION_OVERLAY_SET_INTERACTIVE, interactive);
     },
     setHitRegion: (region) => {
-      ipc.send(DICTATION_OVERLAY_SET_HIT_REGION, region);
+      ipcRenderer.send(DICTATION_OVERLAY_SET_HIT_REGION, region);
     },
   });
   registry.contribute("popout", {
-    open: (conversationId) => ipc.invoke(POPOUT_OPEN, conversationId),
+    open: (conversationId) => ipcRenderer.invoke(POPOUT_OPEN, conversationId),
   });
 };
