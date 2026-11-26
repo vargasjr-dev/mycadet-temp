@@ -15,6 +15,8 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { eq } from "drizzle-orm";
+
 import { recoverRestingTrustContext } from "../daemon/conversation-resting-trust.js";
 import { setConversationOriginChannelIfUnset } from "../persistence/conversation-crud.js";
 import { getOrCreateConversation } from "../persistence/conversation-key-store.js";
@@ -26,9 +28,11 @@ await initializeDb();
 
 function rawOriginChannel(id: string): string | null {
   const row = getDb()
-    .all(`SELECT origin_channel FROM conversations WHERE id = '${id}'`)
-    .at(0) as { origin_channel: string | null } | undefined;
-  return row?.origin_channel ?? null;
+    .select({ originChannel: conversations.originChannel })
+    .from(conversations)
+    .where(eq(conversations.id, id))
+    .get();
+  return row?.originChannel ?? null;
 }
 
 beforeEach(() => {
