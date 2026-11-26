@@ -319,6 +319,51 @@ describe("cadet ps — platform status line", () => {
     expect(checkHealthMock).not.toHaveBeenCalled();
   });
 
+  test("a docker assistant whose container is not running lists as sleeping without dialing", async () => {
+    loadAllAssistantsMock.mockReturnValue([
+      {
+        assistantId: "assistant-docker",
+        name: "Dylan",
+        cloud: "docker",
+        port: 7832,
+      },
+    ]);
+    const execOutputMock = spyOn(localMode, "execOutput").mockResolvedValue(
+      "exited\n",
+    );
+
+    try {
+      await listAllAssistants(false);
+    } finally {
+      execOutputMock.mockRestore();
+    }
+
+    expect(stdout.join("\n")).toContain("sleeping");
+    expect(checkHealthMock).not.toHaveBeenCalled();
+  });
+
+  test("a running docker assistant still answers through the health probe", async () => {
+    loadAllAssistantsMock.mockReturnValue([
+      {
+        assistantId: "assistant-docker",
+        name: "Dylan",
+        cloud: "docker",
+        port: 7832,
+      },
+    ]);
+    const execOutputMock = spyOn(localMode, "execOutput").mockResolvedValue(
+      "running\n",
+    );
+
+    try {
+      await listAllAssistants(false);
+    } finally {
+      execOutputMock.mockRestore();
+    }
+
+    expect(checkHealthMock).toHaveBeenCalled();
+  });
+
   test("assistant list renders one stable final row per assistant", async () => {
     loadAllAssistantsMock.mockReturnValue([
       {

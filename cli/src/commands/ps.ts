@@ -8,6 +8,7 @@ import {
   checkHealth,
   cliCommand,
   dockerResourceNames,
+  execOutput,
   fetchGatewayPs,
   findAssistant,
   getActiveAssistant,
@@ -444,15 +445,43 @@ function formatAssistantListRow(
   };
 }
 
-/** A local assistant whose gateway process is gone is asleep, not down. */
-function assistantListHealth(entry: LockfileAssistant): Promise<GatewayHealth> {
+/** A local assistant whose gateway process is gone is asleep, not down —
+ * and likewise a docker assistant whose container isn't running, answered
+ * from `docker inspect` without dialing a dead port. */
+async function assistantListHealth(
+  entry: LockfileAssistant,
+): Promise<GatewayHealth> {
   if (
     entry.cloud === "local" &&
     !isProcessAlive(getGatewayPidPath(entry)).alive
   ) {
-    return Promise.resolve({ status: "sleeping", authenticated: true });
+    return { status: "sleeping", authenticated: true };
+  }
+  if (entry.cloud === "docker") {
+    const state = await getDockerContainerState(
+      dockerResourceNames(entry.assistantId).assistantContainer,
+    );
+    if (state !== "running") {
+      return { status: "sleeping", authenticated: true };
+    }
   }
   return checkHealth(entry);
+}
+
+/** The container's `State.Status`, or null when docker can't answer. */
+async function getDockerContainerState(
+  containerName: string,
+): Promise<string | null> {
+  try {
+    const output = await execOutput(
+      "docker",
+      ["container", "inspect", "--format", "{{.State.Status}}", containerName],
+      { timeoutMs: 5_000 },
+    );
+    return output.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function listAllAssistants(verbose: boolean): Promise<void> {
