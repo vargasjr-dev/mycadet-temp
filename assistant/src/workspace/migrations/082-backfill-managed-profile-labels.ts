@@ -165,5 +165,5 @@ function readObject(value: unknown): Record<string, unknown> | null {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return isPlainObject(value);
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
