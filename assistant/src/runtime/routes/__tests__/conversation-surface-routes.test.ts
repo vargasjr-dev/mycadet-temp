@@ -8,8 +8,9 @@
  *  - GET  /v1/conversations default listing inclusion of surfaced rows
  *  - GET  /v1/conversations?conversationType=background|scheduled unchanged
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // Stub the event hub to avoid spinning up real SSE infrastructure.
 setBroadcastOverrideForTesting(() => {});
@@ -76,25 +77,6 @@ const reorderHandler = findHandler(
   "reorderConversations",
 );
 
-interface SurfaceResponse {
-  ok: boolean;
-  conversationId: string;
-  surfacedAt: number | null;
-}
-
-interface ConversationSummary {
-  id: string;
-  title: string;
-  conversationType: string;
-  surfacedAt?: number;
-}
-
-interface ListResponse {
-  conversations: ConversationSummary[];
-  nextOffset: number;
-  hasMore: boolean;
-}
-
 function clearConversations(): void {
   getDb().delete(conversations).run();
 }
@@ -107,7 +89,20 @@ function seed(
 }
 
 function listIds(queryParams: Record<string, string> = {}): string[] {
-  const response = listHandler({ queryParams }) as ListResponse;
+  const response = z
+    .looseObject({
+      conversations: z.array(
+        z.looseObject({
+          id: z.string(),
+          title: z.string(),
+          conversationType: z.string(),
+          surfacedAt: z.number().optional(),
+        }),
+      ),
+      nextOffset: z.number(),
+      hasMore: z.boolean(),
+    })
+    .parse(listHandler({ queryParams }));
   return response.conversations.map((c) => c.id);
 }
 
@@ -124,10 +119,18 @@ describe("POST /v1/conversations/:id/surface", () => {
   test("surfaces a background conversation and returns the timestamp", () => {
     const id = seed("Background run", "background");
     const before = Date.now();
-    const response = surfaceHandler({
-      pathParams: { id },
-      body: { surfaced: true },
-    }) as SurfaceResponse;
+    const response = z
+      .looseObject({
+        ok: z.boolean(),
+        conversationId: z.string(),
+        surfacedAt: z.union([z.null(), z.number()]),
+      })
+      .parse(
+        surfaceHandler({
+          pathParams: { id },
+          body: { surfaced: true },
+        }),
+      );
     expect(response.ok).toBe(true);
     expect(response.conversationId).toBe(id);
     expect(response.surfacedAt).toBeGreaterThanOrEqual(before);
@@ -144,10 +147,18 @@ describe("POST /v1/conversations/:id/surface", () => {
   test("clearing returns surfacedAt null", () => {
     const id = seed("Background run", "background");
     surfaceHandler({ pathParams: { id }, body: { surfaced: true } });
-    const response = surfaceHandler({
-      pathParams: { id },
-      body: { surfaced: false },
-    }) as SurfaceResponse;
+    const response = z
+      .looseObject({
+        ok: z.boolean(),
+        conversationId: z.string(),
+        surfacedAt: z.union([z.null(), z.number()]),
+      })
+      .parse(
+        surfaceHandler({
+          pathParams: { id },
+          body: { surfaced: false },
+        }),
+      );
     expect(response.surfacedAt).toBeNull();
   });
 
@@ -192,7 +203,20 @@ describe("GET /v1/conversations — surfaced rows in the default listing", () =>
       body: { surfaced: true },
     });
 
-    const response = listHandler({ queryParams: {} }) as ListResponse;
+    const response = z
+      .looseObject({
+        conversations: z.array(
+          z.looseObject({
+            id: z.string(),
+            title: z.string(),
+            conversationType: z.string(),
+            surfacedAt: z.number().optional(),
+          }),
+        ),
+        nextOffset: z.number(),
+        hasMore: z.boolean(),
+      })
+      .parse(listHandler({ queryParams: {} }));
     expect(response.conversations.map((c) => c.id).sort()).toEqual(
       [standardId, backgroundId].sort(),
     );

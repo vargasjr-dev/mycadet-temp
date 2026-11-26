@@ -18,6 +18,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import {
   setBroadcastOverrideForTesting,
   setHubPublishOverrideForTesting,
@@ -395,16 +397,18 @@ describe("feed-writer", () => {
       // to unrelated paths) are passed through untouched.
       const feedPath = getHomeFeedPath();
       const originalWrite = fs.writeFileSync;
-      const spy = spyOn(fs, "writeFileSync").mockImplementation(((
-        path: fs.PathOrFileDescriptor,
-        data: string | NodeJS.ArrayBufferView,
-        options?: fs.WriteFileOptions,
-      ) => {
-        if (typeof path === "string" && path === feedPath) {
-          throw new Error("Simulated write failure");
-        }
-        return originalWrite(path, data, options);
-      }) as typeof fs.writeFileSync);
+      const spy = spyOn(fs, "writeFileSync").mockImplementation(
+        (
+          path: fs.PathOrFileDescriptor,
+          data: string | NodeJS.ArrayBufferView,
+          options?: fs.WriteFileOptions,
+        ) => {
+          if (typeof path === "string" && path === feedPath) {
+            throw new Error("Simulated write failure");
+          }
+          return originalWrite(path, data, options);
+        },
+      );
 
       try {
         const result = await patchFeedItemStatus("fail-item", "seen");
@@ -830,16 +834,18 @@ describe("feed-writer", () => {
 
       const feedPath = getHomeFeedPath();
       const originalWrite = fs.writeFileSync;
-      const spy = spyOn(fs, "writeFileSync").mockImplementation(((
-        path: fs.PathOrFileDescriptor,
-        data: string | NodeJS.ArrayBufferView,
-        options?: fs.WriteFileOptions,
-      ) => {
-        if (typeof path === "string" && path === feedPath) {
-          throw new Error("Simulated write failure");
-        }
-        return originalWrite(path, data, options);
-      }) as typeof fs.writeFileSync);
+      const spy = spyOn(fs, "writeFileSync").mockImplementation(
+        (
+          path: fs.PathOrFileDescriptor,
+          data: string | NodeJS.ArrayBufferView,
+          options?: fs.WriteFileOptions,
+        ) => {
+          if (typeof path === "string" && path === feedPath) {
+            throw new Error("Simulated write failure");
+          }
+          return originalWrite(path, data, options);
+        },
+      );
 
       try {
         const count = await bulkSetFeedItemStatus(["new"], "seen");
@@ -874,9 +880,14 @@ describe("feed-writer", () => {
 
       expect(publishSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
       const lastCall = publishSpy.mock.calls[publishSpy.mock.calls.length - 1]!;
-      const event = lastCall[0] as {
-        message: { type: string; newItemCount: number };
-      };
+      const event = z
+        .looseObject({
+          message: z.looseObject({
+            type: z.string(),
+            newItemCount: z.number(),
+          }),
+        })
+        .parse(lastCall[0]);
       expect(event.message.type).toBe("home_feed_updated");
       expect(event.message.newItemCount).toBe(0);
     });
@@ -934,13 +945,15 @@ describe("feed-writer", () => {
       expect(publishSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
       // Inspect the LAST publish — it reflects the final on-disk state.
       const lastCall = publishSpy.mock.calls[publishSpy.mock.calls.length - 1]!;
-      const event = lastCall[0] as {
-        message: {
-          type: string;
-          updatedAt: string;
-          newItemCount: number;
-        };
-      };
+      const event = z
+        .looseObject({
+          message: z.looseObject({
+            type: z.string(),
+            updatedAt: z.string(),
+            newItemCount: z.number(),
+          }),
+        })
+        .parse(lastCall[0]);
       expect(event.message.type).toBe("home_feed_updated");
       expect(event.message.newItemCount).toBe(2);
       expect(Number.isNaN(Date.parse(event.message.updatedAt))).toBe(false);
@@ -959,9 +972,14 @@ describe("feed-writer", () => {
 
       expect(publishSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
       const lastCall = publishSpy.mock.calls[publishSpy.mock.calls.length - 1]!;
-      const event = lastCall[0] as {
-        message: { type: string; newItemCount: number };
-      };
+      const event = z
+        .looseObject({
+          message: z.looseObject({
+            type: z.string(),
+            newItemCount: z.number(),
+          }),
+        })
+        .parse(lastCall[0]);
       expect(event.message.type).toBe("home_feed_updated");
       expect(event.message.newItemCount).toBe(0);
     });

@@ -370,7 +370,7 @@ function validateObjectInput(
         branch.required.every((key: unknown) => typeof key === "string"),
     )
   ) {
-    const choices = alternatives as { required: string[] }[];
+    const choices: { required: string[] }[] = alternatives;
     if (
       choices.filter((branch) => branch.required.every((key) => key in input))
         .length !== 1

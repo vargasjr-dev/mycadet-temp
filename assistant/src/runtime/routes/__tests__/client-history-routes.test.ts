@@ -1,5 +1,7 @@
 import { afterAll, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 const historyResult = {
   events: [
     {
@@ -63,13 +65,22 @@ function findHandler(operationId: string): RouteDefinition["handler"] {
 describe("list_client_history", () => {
   test("returns ISO timestamps for the calling actor", () => {
     const handler = findHandler("list_client_history");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-123" },
-      queryParams: { clientId: "client-123" },
-    }) as {
-      sessions: Array<{ startedAt: string; endedAt: string | null }>;
-      events: Array<{ occurredAt: string }>;
-    };
+    const result = z
+      .looseObject({
+        sessions: z.array(
+          z.looseObject({
+            startedAt: z.string(),
+            endedAt: z.union([z.null(), z.string()]),
+          }),
+        ),
+        events: z.array(z.looseObject({ occurredAt: z.string() })),
+      })
+      .parse(
+        handler({
+          headers: { "x-cadet-actor-principal-id": "user-123" },
+          queryParams: { clientId: "client-123" },
+        }),
+      );
 
     expect(listHistory).toHaveBeenCalled();
     expect(result.sessions[0].startedAt).toBe("2026-09-16T12:00:00.000Z");
@@ -79,9 +90,16 @@ describe("list_client_history", () => {
 
   test("hides other actors' history", () => {
     const handler = findHandler("list_client_history");
-    const result = handler({
-      headers: { "x-cadet-actor-principal-id": "user-other" },
-    }) as { sessions: unknown[]; events: unknown[] };
+    const result = z
+      .looseObject({
+        sessions: z.array(z.unknown()),
+        events: z.array(z.unknown()),
+      })
+      .parse(
+        handler({
+          headers: { "x-cadet-actor-principal-id": "user-other" },
+        }),
+      );
 
     expect(result.sessions).toEqual([]);
     expect(result.events).toEqual([]);

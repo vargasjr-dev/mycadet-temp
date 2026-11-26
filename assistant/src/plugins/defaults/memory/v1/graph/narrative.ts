@@ -205,7 +205,7 @@ export async function runNarrativeRefinement(
     return result;
   }
 
-  const input = toolBlock.input as {
+  const input: {
     updates?: Array<{
       id: string;
       narrativeRole?: string | null;
@@ -216,7 +216,7 @@ export async function runNarrativeRefinement(
       description: string;
       node_count: number;
     }>;
-  };
+  } = toolBlock.input;
 
   // Apply updates
   for (const update of input.updates ?? []) {

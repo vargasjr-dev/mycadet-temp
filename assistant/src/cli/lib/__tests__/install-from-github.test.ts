@@ -109,7 +109,7 @@ function makeContentsFetch(opts: {
     });
   }
 
-  return (async (input: RequestInfo | URL) => {
+  return async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
 
     if (url.startsWith(CATALOG_URL)) {
@@ -174,7 +174,7 @@ function makeContentsFetch(opts: {
     }
 
     return new Response(`unexpected url: ${url}`, { status: 500 });
-  }) as FetchLike;
+  };
 }
 
 /**

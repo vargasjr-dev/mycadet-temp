@@ -13,6 +13,8 @@
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "./helpers/fetch-mock.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -63,15 +65,17 @@ globalThis.fetch = fetchMock(
           ? input.toString()
           : input.url;
     if (url.includes("/deliver/telegram") && init?.method === "POST") {
-      const body = JSON.parse(init.body as string) as {
-        chatId: string;
-        text: string;
-        assistantId?: string;
-      };
+      const body = z
+        .looseObject({
+          chatId: z.string(),
+          text: z.string(),
+          assistantId: z.string().optional(),
+        })
+        .parse(JSON.parse(init.body as string));
       telegramDeliverCalls.push(body);
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
-    return originalFetch(input, init as never);
+    return originalFetch(input, init);
   },
 );
 

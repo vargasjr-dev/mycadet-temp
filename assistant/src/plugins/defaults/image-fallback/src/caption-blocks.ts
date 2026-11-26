@@ -38,7 +38,6 @@ import {
   type ContentBlock,
   doesSupportVision,
   getModelProfiles,
-  type ImageContent,
   lastToolResultUserMessageIndex,
   type Message,
   type PluginLogger,
@@ -116,7 +115,7 @@ export async function captionImageBlocks(
     }
 
     replaced++;
-    const image = block as ImageContent;
+    const image = block;
 
     // Persist the original to a known, content-hash-deduped location so it
     // survives the text substitution and stays findable on disk. Resolve a

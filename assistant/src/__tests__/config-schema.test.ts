@@ -1985,7 +1985,7 @@ describe("resolveTtsConfig", () => {
     const config = structuredClone(AssistantConfigSchema.parse({}));
     (config.services.tts as { provider: string }).provider = "aws-polly";
     const resolved = resolveTtsConfig(config);
-    expect(resolved.provider as string).toBe("aws-polly");
+    expect(resolved).toHaveProperty("provider", "aws-polly");
     expect(resolved.providerConfig).toEqual({});
   });
 

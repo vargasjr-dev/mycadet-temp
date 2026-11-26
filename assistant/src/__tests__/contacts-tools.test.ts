@@ -427,10 +427,13 @@ describe("contact_merge tool", () => {
     controller.abort();
 
     await expect(
-      executeContactMerge({ keep_id: keepId, merge_id: mergeId }, {
-        ...ctx,
-        signal: controller.signal,
-      } as ToolContext),
+      executeContactMerge(
+        { keep_id: keepId, merge_id: mergeId },
+        {
+          ...ctx,
+          signal: controller.signal,
+        },
+      ),
     ).rejects.toThrow();
 
     // The donor survives: nothing was merged.
@@ -454,7 +457,7 @@ describe("contact_merge tool", () => {
 
     const result = await executeContactMerge(
       { keep_id: keepId, merge_id: mergeId },
-      { ...ctx, signal: controller.signal } as ToolContext,
+      { ...ctx, signal: controller.signal },
     );
     expect(result.isError).toBe(false);
 

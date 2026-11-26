@@ -25,7 +25,7 @@ const routeFor = (operationId: string) => {
 describe("defer route body validation", () => {
   test("defer_create rejects a body missing conversationId", async () => {
     await expect(
-      routeFor("defer_create").handler({ body: {} as Record<string, unknown> }),
+      routeFor("defer_create").handler({ body: {} }),
     ).rejects.toThrow(BadRequestError);
   });
 

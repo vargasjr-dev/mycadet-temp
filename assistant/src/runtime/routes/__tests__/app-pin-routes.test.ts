@@ -5,10 +5,11 @@
  * show: that a pin reaches the client on the app list rather than on a call of
  * its own, and that deleting an app takes its pin with it.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 const publishCalls: unknown[] = [];
 
@@ -32,7 +33,7 @@ import { appPins } from "../../../persistence/schema/index.js";
 import { getWorkspacePluginsDir } from "../../../util/layout.js";
 import { ROUTES as APP_ROUTES } from "../app-management-routes.js";
 import { BadRequestError } from "../errors.js";
-import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
+import type { RouteDefinition } from "../types.js";
 
 function findHandler(operationId: string): RouteDefinition["handler"] {
   const route = APP_ROUTES.find((r) => r.operationId === operationId);
@@ -93,9 +94,18 @@ function makeApp(name: string): string {
 }
 
 async function listApps(): Promise<ListedApp[]> {
-  const result = (await listHandler({} as RouteHandlerArgs)) as {
-    apps: ListedApp[];
-  };
+  const result = z
+    .looseObject({
+      apps: z.array(
+        z.looseObject({
+          id: z.string(),
+          name: z.string(),
+          pinSortPosition: z.number().optional(),
+          pinColor: z.string().optional(),
+        }),
+      ),
+    })
+    .parse(await listHandler({}));
   return result.apps;
 }
 
@@ -103,15 +113,19 @@ async function pin(
   appId: string,
   body: { pinned?: boolean; color?: string | null },
 ) {
-  return (await pinHandler({
-    pathParams: { id: appId },
-    body,
-  })) as {
-    success: boolean;
-    appId: string;
-    pinSortPosition: number | null;
-    pinColor: string | null;
-  };
+  return z
+    .looseObject({
+      success: z.boolean(),
+      appId: z.string(),
+      pinSortPosition: z.union([z.null(), z.number()]),
+      pinColor: z.union([z.null(), z.string()]),
+    })
+    .parse(
+      await pinHandler({
+        pathParams: { id: appId },
+        body,
+      }),
+    );
 }
 
 async function findListed(appId: string): Promise<ListedApp | undefined> {

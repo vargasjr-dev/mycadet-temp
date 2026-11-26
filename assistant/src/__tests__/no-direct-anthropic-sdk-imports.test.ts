@@ -1,6 +1,8 @@
 import { execSync } from "node:child_process";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 /**
  * Guard test: production files under assistant/src must not import
  * `@anthropic-ai/sdk` directly. Only the canonical provider adapter is
@@ -22,7 +24,9 @@ describe("no direct @anthropic-ai/sdk imports", () => {
       ).trim();
     } catch (err) {
       // Exit code 1 means no matches — that's the happy path
-      if ((err as { status?: number }).status === 1) {
+      if (
+        z.looseObject({ status: z.number().optional() }).parse(err).status === 1
+      ) {
         return;
       }
       throw err;

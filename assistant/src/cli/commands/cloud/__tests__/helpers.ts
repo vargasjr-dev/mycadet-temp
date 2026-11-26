@@ -49,10 +49,10 @@ export async function buildCloudProgram(): Promise<Command> {
 export function captureStdout(fn: () => Promise<void>): Promise<string[]> {
   const chunks: string[] = [];
   const origWrite = process.stdout.write.bind(process.stdout);
-  process.stdout.write = ((chunk: unknown) => {
+  process.stdout.write = (chunk: unknown) => {
     chunks.push(typeof chunk === "string" ? chunk : String(chunk));
     return true;
-  }) as typeof process.stdout.write;
+  };
   return fn()
     .then(() => chunks)
     .finally(() => {

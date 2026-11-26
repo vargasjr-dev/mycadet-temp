@@ -584,7 +584,17 @@ describe("AcpSessionManager.resumeFromHistory", () => {
       "--global",
       "@agentclientprotocol/claude-agent-acp@0.75.1",
     ]);
-    const { cwd, env } = options as { cwd?: string; env?: NodeJS.ProcessEnv };
+    const { cwd, env } = z
+      .looseObject({
+        cwd: z.string().optional(),
+        env: z
+          .looseObject({
+            NODE_ENV: z.string().optional(),
+            TZ: z.string().optional(),
+          })
+          .optional(),
+      })
+      .parse(options);
     expect(cwd).toBeDefined();
     expect(cwd!.startsWith(tmpdir())).toBe(true);
     expect(cwd).not.toBe(process.cwd());

@@ -465,7 +465,7 @@ function pruneStaleCapabilities(prefix: string, activeKeys: Set<string>): void {
 
     // Extract sourceKey from JSON
     try {
-      const sources = JSON.parse(row.sourceConversations as string);
+      const sources = JSON.parse(row.sourceConversations);
       const key = Array.isArray(sources) ? sources[0] : null;
       if (key && typeof key === "string" && !activeKeys.has(key)) {
         log.info(

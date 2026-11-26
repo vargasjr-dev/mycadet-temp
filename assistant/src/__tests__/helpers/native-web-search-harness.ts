@@ -52,7 +52,7 @@ export function createHandlerDeps(reqId = "req-web-search"): HandlerHarness {
     trace: () => {},
     fatal: () => {},
   };
-  const deps = {
+  const deps: EventHandlerDeps = {
     ctx: {
       conversationId: "conv-web-search",
       provider: { name: "anthropic" },
@@ -76,7 +76,7 @@ export function createHandlerDeps(reqId = "req-web-search"): HandlerHarness {
       assistantMessageInterface: "macos",
     } as EventHandlerDeps["turnInterfaceContext"],
     applyCompaction: async () => {},
-  } as EventHandlerDeps;
+  };
   return { deps, events, warnings };
 }
 

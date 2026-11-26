@@ -107,7 +107,7 @@ const INVITE_TOKEN_PREFIX = "iv_";
 // ---------------------------------------------------------------------------
 
 export const telegramInviteAdapter: ChannelInviteAdapter = {
-  channel: "telegram" as ChannelId,
+  channel: "telegram",
 
   buildShareLink(params: {
     rawToken: string;

@@ -26,12 +26,12 @@
  * Slugs are generic placeholders (`page-a`, `topic-x`, `page-b`, …) — this is a
  * public repo.
  */
-
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { Message, Provider, ProviderResponse } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
@@ -288,12 +288,14 @@ function selectProvider(keep: Slug[]): Provider {
 
 /** Read back every logged selection source for a turn, in row order. */
 function loggedSources(turn: number): Array<{ slug: Slug; source: string }> {
-  return memorySqlite
-    .query(
-      `SELECT slug, source FROM memory_v3_selections
+  return z.array(z.looseObject({ slug: z.string(), source: z.string() })).parse(
+    memorySqlite
+      .query(
+        `SELECT slug, source FROM memory_v3_selections
          WHERE conversation_id = ? AND turn = ? ORDER BY rowid`,
-    )
-    .all(CONV, turn) as Array<{ slug: Slug; source: string }>;
+      )
+      .all(CONV, turn),
+  );
 }
 
 /** Drive one turn end-to-end: orchestrate → attribute → write. */

@@ -59,7 +59,7 @@ export const dropBalancedEconomyProfileMigration: WorkspaceMigration = {
     }
 
     if (Array.isArray(llm.profileOrder)) {
-      const order = llm.profileOrder as unknown[];
+      const order: unknown[] = llm.profileOrder;
       const pruned = order.filter((name) => name !== ECONOMY);
       if (pruned.length !== order.length) {
         llm.profileOrder = pruned;

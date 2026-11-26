@@ -272,7 +272,7 @@ export async function collectUserHookEntries<TCtx = unknown>(
   for (const { owner, hook } of pending) {
     const fn = await hook;
     if (fn !== null) {
-      out.push({ fn: fn as HookFunction<TCtx>, owner });
+      out.push({ fn: fn, owner });
     }
   }
   return out;

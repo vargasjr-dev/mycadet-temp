@@ -275,7 +275,7 @@ export async function embedAndUpsert(
           text: payloadText,
           modality,
           created_at: (extraPayload?.created_at as number) ?? now,
-          ...(extraPayload as Record<string, unknown> | undefined),
+          ...extraPayload,
         },
         sparseVector,
       ),

@@ -61,7 +61,7 @@ function makePipeline(providerName: string): {
       _messages: Message[],
       options?: SendMessageOptions,
     ): Promise<ProviderResponse> {
-      captured = options?.config as Record<string, unknown> | undefined;
+      captured = options?.config;
       return {
         content: [{ type: "text", text: "ok" }],
         model: "mock-model",

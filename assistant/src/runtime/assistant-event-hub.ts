@@ -294,7 +294,7 @@ export class AssistantEventHub {
       connectedAt: now,
       lastActiveAt: now,
       connectionId,
-    } as SubscriberEntry;
+    };
 
     if (entry.type === "client") {
       log.info(

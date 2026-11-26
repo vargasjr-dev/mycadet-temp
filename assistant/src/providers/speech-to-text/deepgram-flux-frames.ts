@@ -193,7 +193,7 @@ function coerceFrame(raw: unknown): InboundFluxFrame | null {
     log.debug("Dropped a Deepgram Flux payload that is not a frame object");
     return null;
   }
-  return value as InboundFluxFrame;
+  return value;
 }
 
 /** The turn state a frame describes: `event` when present, else `type`. */

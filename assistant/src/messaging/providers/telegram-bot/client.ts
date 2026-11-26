@@ -39,5 +39,5 @@ export async function getMe(botToken: string): Promise<TelegramGetMeResponse> {
     );
   }
 
-  return resp.json() as Promise<TelegramGetMeResponse>;
+  return resp.json();
 }

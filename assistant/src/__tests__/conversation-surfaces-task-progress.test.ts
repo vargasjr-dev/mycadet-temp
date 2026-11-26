@@ -509,8 +509,8 @@ describe("task_progress surface compatibility", () => {
       return;
     }
 
-    const updatedCard = updateMessage.data as CardSurfaceData &
-      Record<string, unknown>;
+    const updatedCard: CardSurfaceData & Record<string, unknown> =
+      updateMessage.data;
     expect(updatedCard.template).toBe("task_progress");
     expect("status" in updatedCard).toBe(false);
     const templateData = jsonObjectSchema.parse(updatedCard.templateData);

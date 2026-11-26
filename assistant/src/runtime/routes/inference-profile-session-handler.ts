@@ -164,7 +164,7 @@ export async function setInferenceProfileSession({
     );
   }
 
-  const selectable = profiles as Record<string, unknown>;
+  const selectable: Record<string, unknown> = profiles;
   const selected = selectable[profile] as Record<string, unknown>;
   if (!profileSupportsTextGeneration(selected, selectable)) {
     throw new BadRequestError(nonTextConversationProfileMessage(profile));

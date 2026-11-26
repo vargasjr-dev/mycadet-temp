@@ -231,7 +231,7 @@ function seedSlackChannelRows(
       channelTs: r.channelTs,
       eventKind: "message",
       displayName: r.displayName,
-    } as SlackMessageMetadata;
+    };
     db.insert(messages)
       .values({
         id: r.id,

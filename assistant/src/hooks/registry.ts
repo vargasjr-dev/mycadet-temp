@@ -59,7 +59,7 @@ export function registerPluginHooks(
       list = [];
       hookRegistry.set(hookName, list);
     }
-    list.push({ fn: fn as HookFunction, pluginName });
+    list.push({ fn: fn, pluginName });
   }
 }
 
@@ -105,7 +105,7 @@ function collectInProcessHookEntries<TCtx = unknown>(
       continue;
     }
     defaultEntries.push({
-      fn: entry.fn as HookFunction<TCtx>,
+      fn: entry.fn,
       owner: { kind: "plugin", id: entry.pluginName },
     });
   }

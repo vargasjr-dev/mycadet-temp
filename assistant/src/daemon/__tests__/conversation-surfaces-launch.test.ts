@@ -183,7 +183,7 @@ function makeContext(overrides?: Partial<Conversation>): HarnessContext {
     sent,
     enqueueCalls,
     processCalls,
-  }) as HarnessContext;
+  });
 }
 
 /**

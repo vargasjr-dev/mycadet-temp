@@ -13,8 +13,9 @@
  *   - a question registered without entries is not reportable,
  *   - the diagnostic (unfiltered) mode is unchanged.
  */
-
 import { afterEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { QuestionEntry } from "../../../api/events/question-request.js";
 import * as pendingInteractions from "../../pending-interactions.js";
@@ -167,11 +168,17 @@ describe("pending-interactions, conversation-scoped", () => {
     registerQuestion("req-1");
 
     // WHEN the route is called with no conversation filter
-    const result = (await handler({
-      queryParams: {},
-    })) as {
-      interactions: Array<{ requestId: string; kind: string }>;
-    };
+    const result = z
+      .looseObject({
+        interactions: z.array(
+          z.looseObject({ requestId: z.string(), kind: z.string() }),
+        ),
+      })
+      .parse(
+        await handler({
+          queryParams: {},
+        }),
+      );
 
     // THEN it still answers with the flat cross-conversation list
     expect(result.interactions).toEqual([

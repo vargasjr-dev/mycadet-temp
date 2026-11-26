@@ -95,7 +95,7 @@ describe("conversation-key-store disk view", () => {
         type: "assistant_text_delta",
         conversationId: "other-conversation",
         text: "x",
-      } as AssistantEventEnvelope["message"],
+      },
     };
     stampAndBuffer(event);
     const baseline = getCurrentSeq();
@@ -124,7 +124,7 @@ describe("conversation-key-store disk view", () => {
         type: "assistant_text_delta",
         conversationId: "other-conversation",
         text: "x",
-      } as AssistantEventEnvelope["message"],
+      },
     };
     stampAndBuffer(event);
     _simulateRestartForTesting();

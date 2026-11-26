@@ -98,7 +98,7 @@ export async function readAudioFile(
 
   let buffer: Buffer;
   try {
-    buffer = (await readFile(resolvedPath)) as Buffer;
+    buffer = await readFile(resolvedPath);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { content: `Error reading file: ${msg}`, isError: true };

@@ -30,9 +30,12 @@
  */
 
 export function makeMockLogger(): unknown {
-  return new Proxy({} as Record<string, unknown>, {
-    get: (_target, prop) => (prop === "child" ? makeMockLogger : () => {}),
-  });
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop) => (prop === "child" ? makeMockLogger : () => {}),
+    },
+  );
 }
 
 /**

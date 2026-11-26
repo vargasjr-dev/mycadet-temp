@@ -19,11 +19,11 @@ const SHA_B = "0123456789abcdef0123456789abcdef01234567";
 
 /** Serve `body` (object or raw string) at the `/v1/plugins/` endpoint. */
 function platformFetch(body: unknown, status = 200): FetchLike {
-  return (async () =>
+  return async () =>
     new Response(typeof body === "string" ? body : JSON.stringify(body), {
       status,
       headers: { "content-type": "application/json" },
-    })) as FetchLike;
+    });
 }
 
 describe("fetchPluginCatalogFromPlatform", () => {
@@ -235,9 +235,9 @@ describe("fetchPluginCatalogFromPlatform", () => {
 
   test("throws when fetch rejects (network error / abort)", async () => {
     const promise = fetchPluginCatalogFromPlatform({
-      fetch: (async () => {
+      fetch: async () => {
         throw new Error("network down");
-      }) as FetchLike,
+      },
     });
     await expect(promise).rejects.toBeInstanceOf(PluginCatalogUnavailableError);
     await expect(promise).rejects.toMatchObject({ status: 503 });

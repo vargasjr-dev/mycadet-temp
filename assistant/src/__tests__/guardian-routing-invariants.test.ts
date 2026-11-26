@@ -1026,7 +1026,7 @@ describe("routing invariant: disambiguation stays fail-closed", () => {
         messageText: "yes approve it",
         conversationId: "conv-1",
         pendingScope: { mode: "scoped", requestIds: [req1.id, req2.id] },
-        approvalConversationGenerator: mockGenerator as any,
+        approvalConversationGenerator: mockGenerator,
       }),
     );
 
@@ -1127,7 +1127,7 @@ describe("routing invariant: disambiguation stays fail-closed", () => {
         messageText: "yes",
         conversationId: "conv-1",
         pendingScope: { mode: "scoped", requestIds: [req.id] },
-        approvalConversationGenerator: mockGenerator as any,
+        approvalConversationGenerator: mockGenerator,
       }),
     );
 
@@ -1742,7 +1742,7 @@ describe("routing invariant: invite handoff bypass for access requests", () => {
       actor: trustedActor({ channel: "cadet" }),
       conversationId: "conv-guardian-conversation",
       pendingScope: { mode: "scoped", requestIds: [req.id] },
-      approvalConversationGenerator: approvalConversationGenerator as any,
+      approvalConversationGenerator: approvalConversationGenerator,
     });
 
     expect(result.consumed).toBe(true);

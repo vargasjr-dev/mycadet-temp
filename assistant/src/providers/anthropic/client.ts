@@ -1142,7 +1142,7 @@ export class AnthropicProvider implements Provider {
           ...params.thinking,
           block_binding: { prefix_mismatch_behavior: "drop_block" },
         };
-        params.thinking = withBinding as Anthropic.ThinkingConfigParam;
+        params.thinking = withBinding;
       }
 
       if (systemPrompt) {

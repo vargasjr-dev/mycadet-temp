@@ -75,7 +75,7 @@ function makeRecordingProvider(responses: ProviderResponse[]): {
       _messages: Message[],
       options?: SendMessageOptions,
     ): Promise<ProviderResponse> {
-      configs.push(options?.config as Record<string, unknown> | undefined);
+      configs.push(options?.config);
       const response = responses[i] ?? responses[responses.length - 1];
       i++;
       return response;
@@ -443,7 +443,7 @@ describe("executeSubagentSpawn: the spawn boundary carries no profile", () => {
           trustClass: "guardian",
           sendToClient: () => {},
           overrideProfile: "fast",
-        } as import("../tools/types.js").ToolContext,
+        },
       );
 
       expect(result.isError).toBe(false);
@@ -472,7 +472,7 @@ describe("executeSubagentSpawn: the spawn boundary carries no profile", () => {
           trustClass: "guardian",
           sendToClient: () => {},
           // no overrideProfile
-        } as import("../tools/types.js").ToolContext,
+        },
       );
 
       expect(capturedConfig).toBeDefined();

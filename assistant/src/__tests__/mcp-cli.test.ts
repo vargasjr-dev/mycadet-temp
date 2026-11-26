@@ -12,6 +12,7 @@ import {
 } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
 
 import { installFastTimers } from "./fast-timers.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
@@ -139,7 +140,9 @@ async function runMcp(
   } catch (e: unknown) {
     // Commander exitOverride throws on parse errors
     if (e && typeof e === "object" && "exitCode" in e) {
-      process.exitCode = (e as { exitCode: number }).exitCode;
+      process.exitCode = z
+        .looseObject({ exitCode: z.number() })
+        .parse(e).exitCode;
     } else {
       throw e;
     }
@@ -150,7 +153,7 @@ async function runMcp(
 
   const stdout = [...stdoutLines, ...stdoutWrites].join("\n");
   const stderr = stderrLines.join("\n");
-  return { stdout, stderr, exitCode: (process.exitCode as number) ?? 0 };
+  return { stdout, stderr, exitCode: process.exitCode ?? 0 };
 }
 
 async function runMcpList(args: string[] = []) {

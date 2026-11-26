@@ -13,6 +13,8 @@
  */
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 import { createConversation } from "../persistence/conversation-crud.js";
@@ -22,13 +24,6 @@ import { RuntimeHttpServer } from "../runtime/http-server.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
-
-type ConversationSummary = {
-  id: string;
-  title: string;
-  source: string;
-  conversationType: string;
-};
 
 describe("GET /v1/conversations includes source discriminator", () => {
   let server: RuntimeHttpServer | null = null;
@@ -52,9 +47,18 @@ describe("GET /v1/conversations includes source discriminator", () => {
     const response = await fetch(url("/conversations"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversations: ConversationSummary[];
-    };
+    const body = z
+      .looseObject({
+        conversations: z.array(
+          z.looseObject({
+            id: z.string(),
+            title: z.string(),
+            source: z.string(),
+            conversationType: z.string(),
+          }),
+        ),
+      })
+      .parse(await response.json());
     expect(body.conversations.length).toBeGreaterThanOrEqual(2);
     for (const conversation of body.conversations) {
       expect(typeof conversation.source).toBe("string");
@@ -69,9 +73,18 @@ describe("GET /v1/conversations includes source discriminator", () => {
     const response = await fetch(url("/conversations"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversations: ConversationSummary[];
-    };
+    const body = z
+      .looseObject({
+        conversations: z.array(
+          z.looseObject({
+            id: z.string(),
+            title: z.string(),
+            source: z.string(),
+            conversationType: z.string(),
+          }),
+        ),
+      })
+      .parse(await response.json());
     const listed = body.conversations.find((item) => item.id === created.id);
     expect(listed).toBeDefined();
     expect(listed?.source).toBe("user");
@@ -87,9 +100,18 @@ describe("GET /v1/conversations includes source discriminator", () => {
     const response = await fetch(url("/conversations"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversations: ConversationSummary[];
-    };
+    const body = z
+      .looseObject({
+        conversations: z.array(
+          z.looseObject({
+            id: z.string(),
+            title: z.string(),
+            source: z.string(),
+            conversationType: z.string(),
+          }),
+        ),
+      })
+      .parse(await response.json());
     const listed = body.conversations.find((item) => item.id === created.id);
     expect(listed).toBeDefined();
     expect(listed?.source).toBe("auto-analysis");

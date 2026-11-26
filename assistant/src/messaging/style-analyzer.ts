@@ -162,7 +162,7 @@ export async function extractStylePatterns(
     return { stylePatterns: [], contactObservations: [] };
   }
 
-  const result = toolBlock.input as {
+  const result: {
     style_patterns?: Array<{
       aspect: string;
       summary: string;
@@ -174,7 +174,7 @@ export async function extractStylePatterns(
       email: string;
       tone_note: string;
     }>;
-  };
+  } = toolBlock.input;
 
   const stylePatterns: StylePattern[] = (result.style_patterns ?? []).map(
     (p) => ({

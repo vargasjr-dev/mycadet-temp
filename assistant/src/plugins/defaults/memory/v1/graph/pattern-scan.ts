@@ -174,7 +174,7 @@ export async function runPatternScan(
     return result;
   }
 
-  const input = toolBlock.input as {
+  const input: {
     patterns?: Array<{
       content: string;
       type: string;
@@ -182,7 +182,7 @@ export async function runPatternScan(
       source_node_ids: string[];
       partOfStory?: string;
     }>;
-  };
+  } = toolBlock.input;
 
   const existingIds = new Set(allNodes.map((n) => n.id));
   const now = Date.now();

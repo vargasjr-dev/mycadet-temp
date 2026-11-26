@@ -110,7 +110,7 @@ export const SkillsConfigSchema = z
   .object({
     entries: z
       .record(z.string(), SkillEntryConfigSchema)
-      .default({} as Record<string, never>)
+      .default({})
       .describe("Map of skill names to their per-skill configuration"),
     load: SkillsLoadConfigSchema.default(SkillsLoadConfigSchema.parse({})),
     install: SkillsInstallConfigSchema.default(

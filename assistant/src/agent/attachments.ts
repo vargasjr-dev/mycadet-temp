@@ -62,7 +62,7 @@ export function attachmentsToReferenceBlocks(
           ...(ref.width != null ? { width: ref.width } : {}),
           ...(ref.height != null ? { height: ref.height } : {}),
         },
-      } as ContentBlock;
+      };
     }
 
     const extractedText = extractedTextForFileBlock(
@@ -79,7 +79,7 @@ export function attachmentsToReferenceBlocks(
         filename: ref.filename,
       },
       ...(extractedText !== undefined ? { extracted_text: extractedText } : {}),
-    } as ContentBlock;
+    };
   });
 }
 
@@ -101,7 +101,7 @@ export function attachmentsToContentBlocks(
             data,
           },
           ...attachmentIdFragment(attachment.id),
-        } as ContentBlock;
+        };
       }
 
       const extractedText = extractedTextForFileBlock(
@@ -120,7 +120,7 @@ export function attachmentsToContentBlocks(
           ? { extracted_text: extractedText }
           : {}),
         ...attachmentIdFragment(attachment.id),
-      } as ContentBlock;
+      };
     }),
   );
 }

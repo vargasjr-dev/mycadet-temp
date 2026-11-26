@@ -45,7 +45,7 @@ mock.module("../has-pending-background-work.js", () => ({
     if (pendingWorkStartedAt !== undefined) {
       return (
         pendingWorkStartedAt >=
-        (args[1] as { startedAfter: number }).startedAfter
+        z.looseObject({ startedAfter: z.number() }).parse(args[1]).startedAfter
       );
     }
     return pendingBackgroundWork;

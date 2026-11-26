@@ -172,7 +172,7 @@ export async function analyzeVideoDirectly(
                   },
                 },
                 { text: promptText },
-              ] as never,
+              ],
             },
           ],
           config: {

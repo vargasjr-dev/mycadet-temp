@@ -184,9 +184,9 @@ export async function executeSubagentSpawn(
   }
 
   const manager = getSubagentManager();
-  const sendToClient = context.sendToClient as
+  const sendToClient:
     | ((msg: { type: string; [key: string]: unknown }) => void)
-    | undefined;
+    | undefined = context.sendToClient;
   if (!sendToClient) {
     return {
       content: "No client connected - cannot spawn subagent.",

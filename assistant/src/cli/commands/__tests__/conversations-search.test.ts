@@ -4,11 +4,11 @@
  * Validates IPC plumbing onto `conversations_search`, human vs `--json`
  * output, empty-result copy, and validation of the search term / --limit.
  */
-
 import * as nodeFs from "node:fs";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+import { z } from "zod";
 
 let lastIpcCall: { method: string; params?: Record<string, unknown> } | null =
   null;
@@ -99,7 +99,8 @@ async function runSearch(
       typeof err === "object" &&
       err !== null &&
       "code" in err &&
-      (err as { code?: string }).code === "commander.helpDisplayed";
+      z.looseObject({ code: z.string().optional() }).parse(err).code ===
+        "commander.helpDisplayed";
     if (!isHelp && (process.exitCode === 0 || process.exitCode === undefined)) {
       process.exitCode = 1;
     }

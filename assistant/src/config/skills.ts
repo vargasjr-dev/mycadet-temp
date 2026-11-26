@@ -287,7 +287,7 @@ export function parseFrontmatter(
           "Metadata failed schema validation; falling back to raw object",
         );
         const raw = metadataRaw as Record<string, unknown>;
-        parsedMeta = raw as z.infer<typeof SkillMetadataSchema>;
+        parsedMeta = raw;
         cadetMeta = raw?.cadet as z.infer<typeof CadetMetadataSchema>;
         if (typeof parsedMeta?.icon === "string") {
           icon = parsedMeta.icon;

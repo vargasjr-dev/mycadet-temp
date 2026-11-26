@@ -318,7 +318,7 @@ export class OpenAIResponsesProvider implements Provider {
     const promptCacheKey =
       typeof configObj?.promptCacheKey === "string" &&
       configObj.promptCacheKey.length > 0
-        ? (configObj.promptCacheKey as string)
+        ? configObj.promptCacheKey
         : undefined;
     let inspectableRequest: unknown | undefined;
 

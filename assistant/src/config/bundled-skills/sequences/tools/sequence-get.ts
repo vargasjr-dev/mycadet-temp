@@ -26,12 +26,12 @@ export async function run(
 
     const activeCount = countActiveEnrollments(id);
     const allEnrollments = listEnrollments({ sequenceId: id });
-    const statusCounts = allEnrollments.reduce(
+    const statusCounts = allEnrollments.reduce<Record<string, number>>(
       (acc, e) => {
         acc[e.status] = (acc[e.status] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>,
+      {},
     );
 
     const lines = [

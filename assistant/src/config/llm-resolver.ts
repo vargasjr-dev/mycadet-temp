@@ -407,8 +407,8 @@ function resolveOverrideOrDefault(
     selection.entry == null ? {} : winnerConfigFragment(selection.entry);
 
   const tweak = composeCallSiteTweak(
-    CALL_SITE_DEFAULTS[callSite] as Mergeable | undefined,
-    llm.callSites?.[callSite] as Mergeable | undefined,
+    CALL_SITE_DEFAULTS[callSite],
+    llm.callSites?.[callSite],
   );
 
   // Direct call-site model overrides are fragments by design: when the tweak
@@ -478,7 +478,7 @@ function winnerConfigFragment(entry: ProfileEntry): Mergeable {
     fallbackProfile: _fallbackProfile,
     ...config
   } = entry;
-  return config as Mergeable;
+  return config;
 }
 
 // ---------------------------------------------------------------------------

@@ -88,7 +88,7 @@ async function handleRollbackMigrations({ body = {} }: RouteHandlerArgs) {
   // registry BEFORE executing any mutations.
   let resolvedTargetIndex = -1;
   if (effectiveWorkspaceMigrationId !== undefined) {
-    const targetId = effectiveWorkspaceMigrationId as string;
+    const targetId = effectiveWorkspaceMigrationId;
     resolvedTargetIndex = WORKSPACE_MIGRATIONS.findIndex(
       (m) => m.id === targetId,
     );

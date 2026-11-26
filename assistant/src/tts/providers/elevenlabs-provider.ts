@@ -92,7 +92,7 @@ export function extractElevenLabsErrorMessage(
   // Try JSON envelopes first.
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     try {
-      const parsed = JSON.parse(trimmed) as unknown;
+      const parsed: unknown = JSON.parse(trimmed);
       if (parsed && typeof parsed === "object") {
         const root: { detail?: unknown; message?: unknown } = parsed;
 

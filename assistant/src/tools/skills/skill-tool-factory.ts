@@ -12,7 +12,6 @@ import { computerUseExecutionTarget } from "../computer-use/target.js";
 import { withActivityProperty } from "../schema-transforms.js";
 import { bundledToolInputMisuseMessage } from "../shared/input-misuse.js";
 import { bundledToolInputRepairs } from "../shared/input-repairs.js";
-import type { ExecutionTarget } from "../tool-types.js";
 import { RiskLevel } from "../tool-types.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../types.js";
 import { formatSkillInputSchema } from "./format-input-schema.js";
@@ -48,13 +47,13 @@ export function createSkillTool(
     description: entry.description,
     category: entry.category,
     defaultRiskLevel: riskMap[entry.risk],
-    executionTarget: entry.execution_target as ExecutionTarget,
+    executionTarget: entry.execution_target,
     ...(isComputerUse
       ? { getExecutionTarget: computerUseExecutionTarget }
       : {}),
     supportedClientOs: entry.supported_client_os,
 
-    input_schema: entry.input_schema as object,
+    input_schema: entry.input_schema,
 
     async execute(
       input: Record<string, unknown>,
@@ -63,9 +62,7 @@ export function createSkillTool(
       // Validate against the schema the model was actually shown: tool
       // definitions carry an injected `activity` field the manifest does not
       // declare, and a call that fills it must not be rejected as unknown.
-      const schema = withActivityProperty(
-        entry.input_schema as Record<string, unknown> | undefined,
-      );
+      const schema = withActivityProperty(entry.input_schema);
       // Tool-specific repairs first: they rewrite keys and shapes the schema
       // does not describe, and the generic coercions below then see the
       // declared parameter names. Repairs describe first-party tools, so only

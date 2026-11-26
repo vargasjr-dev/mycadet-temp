@@ -14,7 +14,7 @@ process.env.DISABLE_HTTP_AUTH = "true";
 import { ConfirmationResponse } from "../daemon/message-types/messages.js";
 import { createGuardianGatewaySim } from "./guardian-gateway-sim.js";
 
-const resolveMock = mock(() => undefined as unknown);
+const resolveMock = mock(() => undefined);
 
 // Sim-backed gateway client: `gatewaySim.state.decideCalls` records any
 // guardian-request status writes the handler under test performs.

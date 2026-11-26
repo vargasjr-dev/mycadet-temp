@@ -42,7 +42,7 @@ function parseGrantedScopes(
   }
 
   try {
-    const parsed = JSON.parse(grantedScopes) as unknown;
+    const parsed: unknown = JSON.parse(grantedScopes);
     if (!Array.isArray(parsed)) {
       return [];
     }

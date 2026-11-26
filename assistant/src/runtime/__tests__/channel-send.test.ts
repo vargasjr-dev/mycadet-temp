@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ensureConversationExists } from "../../persistence/conversation-crud.js";
 import { initializeDb } from "../../persistence/db-init.js";
 
@@ -36,7 +38,13 @@ function fakeTransport(
         ctx: { callbackUrl: ctx.callbackUrl, params: { ...ctx.params } },
         payload: payload,
       });
-      return deliverResult as Awaited<ReturnType<ChannelTransport["deliver"]>>;
+      return z
+        .looseObject({
+          ok: z.boolean(),
+          ts: z.string().optional(),
+          messageIds: z.array(z.string()).optional(),
+        })
+        .parse(deliverResult);
     },
   };
   if (opts.addressable !== false) {

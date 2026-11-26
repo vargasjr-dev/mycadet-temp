@@ -54,7 +54,7 @@ function makeFetch(opts: {
   fail?: boolean;
   remoteCommitDate?: string;
 }): FetchLike {
-  return (async (input: RequestInfo | URL) => {
+  return async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url.includes("/v1/plugins")) {
       if (opts.fail) {
@@ -96,7 +96,7 @@ function makeFetch(opts: {
       );
     }
     return new Response("unexpected url: " + url, { status: 500 });
-  }) as FetchLike;
+  };
 }
 
 /** Materialize an installed plugin copy with an optional provenance sidecar. */

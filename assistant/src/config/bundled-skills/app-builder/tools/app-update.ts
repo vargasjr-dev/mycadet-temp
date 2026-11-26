@@ -1,5 +1,4 @@
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
-import type { AppUpdateInput } from "../../../../tools/apps/executors.js";
 import { executeAppUpdate } from "../../../../tools/apps/executors.js";
 import {
   missingAppIdError,
@@ -22,5 +21,5 @@ export async function run(
   return executeAppUpdate({
     ...input,
     app_id: appId,
-  } as unknown as AppUpdateInput);
+  });
 }

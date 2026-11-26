@@ -41,7 +41,7 @@ function mkEvent(
       text: "x",
     },
     ...overrides,
-  } as AssistantEventEnvelope;
+  };
 }
 
 describe("assistant-stream-state", () => {

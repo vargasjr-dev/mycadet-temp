@@ -35,7 +35,7 @@ export async function run(
 ): Promise<ToolExecutionResult> {
   const rawTab = input.tab as string;
   const tab = LEGACY_TAB_ALIASES[rawTab] ?? rawTab;
-  if (!SETTINGS_TABS.includes(tab as SettingsTab)) {
+  if (!SETTINGS_TABS.includes(tab)) {
     return {
       content: `Error: unknown tab "${rawTab}". Valid tabs: ${SETTINGS_TABS.join(
         ", ",

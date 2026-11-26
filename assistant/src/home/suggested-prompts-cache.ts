@@ -39,7 +39,7 @@ export function readCachedPrompts(): SuggestedPrompt[] | null {
     if (!Array.isArray(parsed)) {
       return null;
     }
-    return parsed as SuggestedPrompt[];
+    return parsed;
   } catch {
     return null;
   }

@@ -129,7 +129,7 @@ describe("TTS catalog parity: daemon vs client", () => {
 
     // Every client catalog provider ID must appear in the daemon catalog
     const missingInDaemon = clientIds.filter(
-      (id) => !daemonIds.includes(id as never),
+      (id) => !daemonIds.some((daemonId) => daemonId === id),
     );
     if (missingInDaemon.length > 0) {
       const message = [

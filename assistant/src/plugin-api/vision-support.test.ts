@@ -53,7 +53,7 @@ function profile(key: string): ModelProfileInfo {
  */
 function applyConfig(): void {
   setConfig("llm", { profiles: {} });
-  const config = getConfig() as { llm: unknown };
+  const config: { llm: unknown } = getConfig();
   config.llm = {
     profiles: mockProfiles,
     ...(mockDefault != null ? { default: mockDefault } : {}),

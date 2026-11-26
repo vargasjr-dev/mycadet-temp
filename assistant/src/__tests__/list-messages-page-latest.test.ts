@@ -21,7 +21,6 @@ mock.module("../daemon/identity-helpers.js", () => ({
   getAssistantName: () => mockAssistantName,
 }));
 
-import type { AssistantEventEnvelope } from "../api/index.js";
 import { writeSlackMetadata } from "../messaging/providers/slack/message-metadata.js";
 import {
   createConversation,
@@ -99,7 +98,7 @@ function advanceGlobalSeq(count: number): void {
         conversationId: "seq-bump-conv",
         text: "x",
       },
-    } as AssistantEventEnvelope);
+    });
   }
 }
 

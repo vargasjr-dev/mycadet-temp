@@ -219,12 +219,11 @@ describe("ensureFreshAcpClaudeToken: failures", () => {
   test("clears refresh material when the refresh succeeds with no access token", async () => {
     expiring = true;
     storedRefreshToken = "refresh-me";
-    refreshImpl = async () =>
-      ({
-        accessToken: "",
-        refreshToken: "refresh-rotated",
-        expiresIn: 3600,
-      }) as OAuth2TokenResult;
+    refreshImpl = async () => ({
+      accessToken: "",
+      refreshToken: "refresh-rotated",
+      expiresIn: 3600,
+    });
 
     await ensureFreshAcpClaudeToken();
 

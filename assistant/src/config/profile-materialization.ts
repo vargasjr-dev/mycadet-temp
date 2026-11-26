@@ -98,7 +98,7 @@ export function completeCustomProfile(
   ) {
     const implied = getCatalogProviderForModel(profile.model);
     if (implied !== undefined) {
-      completed.provider = implied as ProfileEntry["provider"];
+      completed.provider = implied;
     }
   }
 

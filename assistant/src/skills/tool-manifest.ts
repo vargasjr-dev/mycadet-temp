@@ -182,7 +182,7 @@ function parseToolEntry(raw: unknown, prefix: string): SkillToolEntry {
         `${prefix}: "supported_client_os" must be a non-empty array of known client OS values`,
       );
     }
-    supported_client_os = [...new Set(entry.supported_client_os as ClientOs[])];
+    supported_client_os = [...new Set(entry.supported_client_os)];
   }
 
   return {

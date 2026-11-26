@@ -5769,7 +5769,7 @@ export class LiveVoiceSession implements LiveVoiceSessionContract {
     const dialedProvider =
       utterance.dialedSttProvider ??
       this.sharedTranscriber?.providerId ??
-      (sttProvider as SttProviderId);
+      sttProvider;
     return pinnedListeningLanguage(dialedProvider, configured);
   }
 

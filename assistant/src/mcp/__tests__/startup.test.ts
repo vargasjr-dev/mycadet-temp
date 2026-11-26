@@ -107,7 +107,7 @@ describe("startConfiguredMcpServers", () => {
     );
 
     const registered = await startConfiguredMcpServers(
-      workspaceConfigWith("fastmail") as never,
+      workspaceConfigWith("fastmail"),
     );
 
     expect(registered.registeredToolCount).toBe(1);
@@ -127,7 +127,7 @@ describe("startConfiguredMcpServers", () => {
     start.mockRejectedValueOnce(new Error("connection refused"));
 
     const registered = await startConfiguredMcpServers(
-      workspaceConfigWith("fastmail") as never,
+      workspaceConfigWith("fastmail"),
     );
 
     expect(registered.registeredToolCount).toBe(0);
@@ -140,7 +140,7 @@ describe("restartConfiguredMcpServers", () => {
     start.mockResolvedValueOnce(
       startResult([serverReporting("fastmail", "search_email")]),
     );
-    await startConfiguredMcpServers(workspaceConfigWith("fastmail") as never);
+    await startConfiguredMcpServers(workspaceConfigWith("fastmail"));
     expect(getTool("mcp__fastmail__search_email")).toBeDefined();
 
     // The test workspace config declares no MCP servers, which is what a
@@ -159,7 +159,7 @@ describe("restartConfiguredMcpServers", () => {
     start.mockResolvedValueOnce(
       startResult([serverReporting("fastmail", "search_email")]),
     );
-    await startConfiguredMcpServers(workspaceConfigWith("fastmail") as never);
+    await startConfiguredMcpServers(workspaceConfigWith("fastmail"));
     start.mockClear();
 
     await restartConfiguredMcpServers();

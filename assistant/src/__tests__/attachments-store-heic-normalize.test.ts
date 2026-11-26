@@ -8,8 +8,9 @@
  * covered in image-conversion.test.ts. mock.module is process-global — keep
  * these cases in this file.
  */
-
 import { beforeAll, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 mock.module("../config/env.js", () => ({
   isHttpAuthDisabled: () => true,
@@ -231,10 +232,9 @@ describe("HEIC upload normalization wiring", () => {
         filename: "IMG_5.HEIC",
       }),
     );
-    const result = raw as {
-      originalFilename: string;
-      mimeType: string;
-    };
+    const result = z
+      .looseObject({ originalFilename: z.string(), mimeType: z.string() })
+      .parse(raw);
 
     expect(result.originalFilename).toBe("IMG_5.HEIC");
     expect(result.mimeType).toBe("image/heic");
@@ -251,13 +251,17 @@ describe("HEIC upload normalization wiring", () => {
     const registeredPath = join(registerDir, "renamed.jpg");
     writeFileSync(registeredPath, PNG_1PX_BYTES);
 
-    const result = (await registerRoute.handler(
-      jsonUploadArgs({
-        path: registeredPath,
-        mimeType: "image/jpeg",
-        filename: "renamed.jpg",
-      }),
-    )) as { id: string; mimeType: string };
+    const result = z
+      .looseObject({ id: z.string(), mimeType: z.string() })
+      .parse(
+        await registerRoute.handler(
+          jsonUploadArgs({
+            path: registeredPath,
+            mimeType: "image/jpeg",
+            filename: "renamed.jpg",
+          }),
+        ),
+      );
 
     expect(result.mimeType).toBe("image/png");
     expect(getAttachmentById(result.id)?.mimeType).toBe("image/png");

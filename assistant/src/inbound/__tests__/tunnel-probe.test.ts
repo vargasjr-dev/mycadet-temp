@@ -31,7 +31,7 @@ type Route = { status?: number; body?: string; reject?: unknown };
 function asFetch(
   stub: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
 ): typeof fetch {
-  return stub as unknown as typeof fetch;
+  return stub as typeof fetch;
 }
 
 /**

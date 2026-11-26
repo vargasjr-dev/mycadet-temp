@@ -24,7 +24,7 @@
 
 import path from "node:path";
 
-import type { ContentBlock, Message } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 
 /**
  * Minimal shape this helper needs from a `Conversation`. Defining it as an
@@ -103,7 +103,7 @@ export function getInContextPkbPaths(
     if (!Array.isArray(message.content)) {
       continue;
     }
-    for (const block of message.content as ContentBlock[]) {
+    for (const block of message.content) {
       if (block.type !== "tool_use") {
         continue;
       }

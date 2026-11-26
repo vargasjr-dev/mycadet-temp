@@ -280,11 +280,11 @@ export class SttStreamSession {
       return;
     }
 
-    const event = parsed as {
+    const event: {
       type?: string;
       audio?: string;
       mimeType?: string;
-    };
+    } = parsed;
     switch (event.type) {
       case "audio": {
         if (this.state !== "active") {

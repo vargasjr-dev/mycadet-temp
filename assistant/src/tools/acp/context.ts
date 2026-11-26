@@ -16,5 +16,5 @@ import type { ToolContext } from "../types.js";
 export function getSendToClient(
   context: ToolContext,
 ): ((msg: AssistantEvent) => void) | undefined {
-  return context.sendToClient as ((msg: AssistantEvent) => void) | undefined;
+  return context.sendToClient;
 }

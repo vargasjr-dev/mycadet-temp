@@ -169,7 +169,7 @@ export class PermissionChecker {
         cellQuery,
         policyContext.requesterContactId,
       );
-      const riskThreshold = conversationThreshold as RiskThreshold;
+      const riskThreshold: RiskThreshold = conversationThreshold;
 
       // Non-interactive callers (e.g. non-guardian phone voice) force
       // prompting for side-effect tools even when a trust/allow rule would
@@ -341,7 +341,7 @@ export class PermissionChecker {
               riskLevel,
               riskMeta,
               ...mapApprovalProvenance("guardian_auto_approve", {}),
-              riskThreshold: bgThreshold as RiskThreshold,
+              riskThreshold: bgThreshold,
             };
           }
         }

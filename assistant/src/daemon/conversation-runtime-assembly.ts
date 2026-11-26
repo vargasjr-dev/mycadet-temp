@@ -1168,7 +1168,7 @@ function rowToRenderable(row: SlackTranscriptInputRow): RenderableSlackMessage {
       ? row.content
       : JSON.parse(row.content);
     if (Array.isArray(parsed)) {
-      contentBlocks = parsed as ContentBlock[];
+      contentBlocks = parsed;
       plainText = extractPlainTextFromBlocks(contentBlocks);
     } else if (typeof parsed === "string") {
       plainText = parsed;

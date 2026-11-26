@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // ---------------------------------------------------------------------------
 // Module mocks — must appear before any imports of the modules under test
 // ---------------------------------------------------------------------------
@@ -151,9 +153,13 @@ describe("stt-routes", () => {
 
   test("providers list includes each provider's languageSelection", async () => {
     const { handler } = getRoute("stt/providers");
-    const result = (await handler(makeArgs({}))) as {
-      providers: Array<{ id: string; languageSelection: string }>;
-    };
+    const result = z
+      .looseObject({
+        providers: z.array(
+          z.looseObject({ id: z.string(), languageSelection: z.string() }),
+        ),
+      })
+      .parse(await handler(makeArgs({})));
 
     const byId = new Map(result.providers.map((p) => [p.id, p]));
     expect(byId.get("deepgram")?.languageSelection).toBe("manual");
@@ -164,12 +170,20 @@ describe("stt-routes", () => {
 
   test("returns transcribed text with provider and boundary ids", async () => {
     const { handler } = getRoute("stt/transcribe");
-    const result = (await handler(
-      makeArgs({
-        audioBase64: toBase64("fake-audio-data"),
-        mimeType: "audio/wav",
-      }),
-    )) as { text: string; providerId: string; boundaryId: string };
+    const result = z
+      .looseObject({
+        text: z.string(),
+        providerId: z.string(),
+        boundaryId: z.string(),
+      })
+      .parse(
+        await handler(
+          makeArgs({
+            audioBase64: toBase64("fake-audio-data"),
+            mimeType: "audio/wav",
+          }),
+        ),
+      );
 
     expect(result.text).toBe("hello world");
     expect(result.providerId).toBe("openai-whisper");

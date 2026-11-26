@@ -220,7 +220,7 @@ function rawUserContentCarriesActivity(raw: string | null): boolean {
     if (!Array.isArray(parsed)) {
       return true;
     }
-    return blocksCarryNonToolResult(parsed as Array<{ type?: unknown }>);
+    return blocksCarryNonToolResult(parsed);
   } catch {
     return true;
   }

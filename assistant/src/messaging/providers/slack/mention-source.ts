@@ -105,7 +105,7 @@ function utf8ByteLength(value: string): number {
 
 /** Reject strings carrying unpaired surrogates (not valid UTF-8 material). */
 function isWellFormedString(value: string): boolean {
-  const withIsWellFormed = value as string & { isWellFormed?: () => boolean };
+  const withIsWellFormed: string & { isWellFormed?: () => boolean } = value;
   if (typeof withIsWellFormed.isWellFormed === "function") {
     return withIsWellFormed.isWellFormed();
   }

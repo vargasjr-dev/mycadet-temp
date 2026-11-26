@@ -14,7 +14,6 @@ import {
   expandSnippets,
 } from "../../daemon/dictation-text-processing.js";
 import { detectDictationModeHeuristic } from "../../daemon/handlers/dictation.js";
-import type { DictationRequest } from "../../daemon/message-types/diagnostics.js";
 import type { DictationContext } from "../../daemon/message-types/shared.js";
 import {
   createTimeout,
@@ -265,7 +264,7 @@ async function classifyDictation(
     type: "dictation_request",
     transcription: body.transcription,
     context: body.context,
-  } as DictationRequest);
+  });
   return mode === "action" ? "action" : "dictation";
 }
 

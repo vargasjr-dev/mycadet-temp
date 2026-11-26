@@ -109,7 +109,7 @@ export function createMcpTool(
     defaultRiskLevel: riskLevel,
     executionTarget: "host",
 
-    input_schema: metadata.inputSchema as object,
+    input_schema: metadata.inputSchema,
 
     async execute(
       input: Record<string, unknown>,

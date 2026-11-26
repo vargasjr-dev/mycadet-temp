@@ -176,9 +176,9 @@ describe("live-voice photos taken mid-call", () => {
     });
     await speakAndRelease(harness, "what's this");
 
-    const options = turnOptionsAt(harness.startVoiceTurn, 0) as
+    const options:
       | (VoiceTurnOptions & { attachmentIds?: string[] })
-      | undefined;
+      | undefined = turnOptionsAt(harness.startVoiceTurn, 0);
     expect(options?.content).toBe("what's this");
     expect(options?.attachmentIds).toBeUndefined();
   });

@@ -13,6 +13,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 const { getDb, getSqlite, getTelemetrySqlite } =
   await import("../db-connection.js");
 const { initializeDb } = await import("../db-init.js");
@@ -48,14 +50,17 @@ function outboxOnboardingRows(): Array<{
   id: string;
   payload: Record<string, unknown>;
 }> {
-  return (
-    getTelemetrySqlite()!
-      .query(
-        `SELECT id, payload FROM telemetry_events
+  return z
+    .array(z.looseObject({ id: z.string(), payload: z.string() }))
+    .parse(
+      getTelemetrySqlite()!
+        .query(
+          `SELECT id, payload FROM telemetry_events
          WHERE name = 'onboarding' ORDER BY created_at, id`,
-      )
-      .all() as Array<{ id: string; payload: string }>
-  ).map((row) => ({ ...row, payload: JSON.parse(row.payload) }));
+        )
+        .all(),
+    )
+    .map((row) => ({ ...row, payload: JSON.parse(row.payload) }));
 }
 
 function existsInMain(name: string): boolean {

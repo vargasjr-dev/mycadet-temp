@@ -311,7 +311,7 @@ export function postTurnTruncateToolResults(
       return {
         ...tr,
         content: buildTruncatedContent(tr.content, filePath),
-      } as ContentBlock;
+      };
     });
 
     return changed ? { ...msg, content: nextContent } : msg;
@@ -385,7 +385,7 @@ export function derefToolResultReReads(messages: Message[]): {
 
       changed = true;
       dereferencedCount++;
-      return { ...tr, content: REREAD_STUB } as ContentBlock;
+      return { ...tr, content: REREAD_STUB };
     });
 
     return changed ? { ...msg, content: nextContent } : msg;

@@ -123,7 +123,7 @@ describe("conversation candidate validation", () => {
 
       const result = validateConversationActions(
         { cadet: { action: "reuse_existing", conversationId: "conv-valid" } },
-        ["cadet"] as NotificationChannel[],
+        ["cadet"],
         candidateSet,
       );
 
@@ -140,7 +140,7 @@ describe("conversation candidate validation", () => {
 
       const result = validateConversationActions(
         { cadet: { action: "reuse_existing", conversationId: "conv-hacked" } },
-        ["cadet"] as NotificationChannel[],
+        ["cadet"],
         candidateSet,
       );
 
@@ -150,7 +150,7 @@ describe("conversation candidate validation", () => {
     test("reuse_existing with empty candidate set is downgraded to start_new", () => {
       const result = validateConversationActions(
         { cadet: { action: "reuse_existing", conversationId: "conv-any" } },
-        ["cadet"] as NotificationChannel[],
+        ["cadet"],
         undefined,
       );
 

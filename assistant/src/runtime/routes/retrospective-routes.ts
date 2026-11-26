@@ -227,7 +227,7 @@ export const ROUTES: RouteDefinition[] = [
             startedAt: c.createdAt,
             finishedAt,
             durationMs: finishedAt != null ? finishedAt - c.createdAt : null,
-            status: (hasAssistantOutput ? "ok" : "running") as "ok" | "running",
+            status: hasAssistantOutput ? "ok" : "running",
             skipReason: null,
             error: null,
             conversationId: c.id,

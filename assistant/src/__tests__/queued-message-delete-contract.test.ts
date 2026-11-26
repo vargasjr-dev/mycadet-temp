@@ -19,10 +19,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import type { AssistantEvent } from "../api/index.js";
-import {
-  MessageQueue,
-  type QueuedMessage,
-} from "../daemon/conversation-queue-manager.js";
+import { MessageQueue } from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
   setConversation,
@@ -65,7 +62,7 @@ function seedConversation(
       clientMessageId: item.clientMessageId,
       sourceActorPrincipalId: item.sourceActorPrincipalId,
       metadata: item.metadata,
-    } as QueuedMessage);
+    });
   }
   const conversation = {
     conversationId,

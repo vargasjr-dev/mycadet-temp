@@ -17,6 +17,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import { getProcPidPath, getProcSocketPath } from "../../util/layout.js";
 import {
   RouteHostClient,
@@ -91,7 +93,9 @@ describe("route host subprocess", () => {
       null,
     );
     expect(res.status).toBe(200);
-    const body = decode(res.body) as { ok: boolean; pid: number };
+    const body = z
+      .looseObject({ ok: z.boolean(), pid: z.number() })
+      .parse(decode(res.body));
     expect(body.ok).toBe(true);
     // The handler ran in a different process than this test.
     expect(body.pid).not.toBe(process.pid);

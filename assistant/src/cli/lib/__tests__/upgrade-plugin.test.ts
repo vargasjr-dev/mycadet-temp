@@ -72,7 +72,7 @@ function makeFetch(opts: {
   manifestStatus?: number;
   remoteCommitDate?: string;
 }): FetchLike {
-  return (async (input: RequestInfo | URL) => {
+  return async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url.startsWith(CATALOG_URL)) {
       if (opts.manifestStatus !== undefined && opts.manifestStatus !== 200) {
@@ -120,7 +120,7 @@ function makeFetch(opts: {
       return new Response("not found", { status: 404 });
     }
     return new Response(`unexpected url: ${url}`, { status: 500 });
-  }) as FetchLike;
+  };
 }
 
 /**

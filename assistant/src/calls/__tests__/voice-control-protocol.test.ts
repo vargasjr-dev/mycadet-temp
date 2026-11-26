@@ -186,7 +186,7 @@ describe("session control markers", () => {
     ).toBe("Taking a look.");
   });
 
-  test.each([
+  test.each<[string, SessionControlRequest]>([
     ["Okay, talk soon. [END_CALL]", { action: "end" }],
     ["Okay, stopping. [TASK:STOP]", { action: "task_stop" }],
     ["Muted. [MUTE]", { action: "mute" }],
@@ -210,12 +210,9 @@ describe("session control markers", () => {
     ["Muted. [MUTE:soon]", { action: "mute" }],
     ["Muted. [MUTE:0]", { action: "mute" }],
     ["Muted. [MUTE:99999]", { action: "mute" }],
-  ] as Array<[string, SessionControlRequest]>)(
-    "parses the terminal control in %j",
-    (text, expected) => {
-      expect(parseTerminalSessionControl(text)).toEqual(expected);
-    },
-  );
+  ])("parses the terminal control in %j", (text, expected) => {
+    expect(parseTerminalSessionControl(text)).toEqual(expected);
+  });
 
   test("a marker anywhere but the end controls nothing", () => {
     expect(

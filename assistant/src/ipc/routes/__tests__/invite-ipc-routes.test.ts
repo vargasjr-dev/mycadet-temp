@@ -5,8 +5,9 @@
  * documented IPC-only pattern) is what structurally guarantees they can never
  * reach the gateway's HTTP IPC proxy route schema.
  */
-
 import { describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 
@@ -60,7 +61,9 @@ describe("invite IPC-only methods", () => {
     const ipcMethods = routeDefinitionsToIpcMethods(contactRoutes);
     const meta = ipcMethods.find((r) => r.operationId === "get_route_schema");
     expect(meta).toBeDefined();
-    const schema = (await meta!.handler({})) as { operationId: string }[];
+    const schema = z
+      .array(z.looseObject({ operationId: z.string() }))
+      .parse(await meta!.handler({}));
     const schemaIds = new Set(schema.map((e) => e.operationId));
     for (const operationId of INVITE_IPC_OPERATION_IDS) {
       expect(schemaIds.has(operationId)).toBe(false);

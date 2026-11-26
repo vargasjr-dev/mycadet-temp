@@ -60,7 +60,7 @@ function mkEvent(
       text: "x",
     },
     ...overrides,
-  } as AssistantEventEnvelope;
+  };
 }
 
 describe("GET events/tail", () => {

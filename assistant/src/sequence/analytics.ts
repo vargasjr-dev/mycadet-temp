@@ -110,13 +110,10 @@ function computeSequenceMetrics(seq: Sequence): SequenceMetrics {
   const enrollments = listEnrollments({ sequenceId: seq.id });
   const active = countActiveEnrollments(seq.id);
 
-  const statusCounts = enrollments.reduce(
-    (acc, e) => {
-      acc[e.status] = (acc[e.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const statusCounts = enrollments.reduce<Record<string, number>>((acc, e) => {
+    acc[e.status] = (acc[e.status] || 0) + 1;
+    return acc;
+  }, {});
 
   const replies = statusCounts["replied"] ?? 0;
   const completions = statusCounts["completed"] ?? 0;

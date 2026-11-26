@@ -33,7 +33,7 @@ export function truncateToolResultsAcrossHistory(
       return {
         ...tr,
         content: truncateToolResultText(tr.content, maxChars),
-      } as ContentBlock;
+      };
     });
     return changed ? { ...msg, content: nextContent } : msg;
   });

@@ -107,7 +107,7 @@ describe("retryableCall", () => {
       nonRetryableError: ({ message }) => new Error(message),
       decode: (body) => JSON.parse(body) as T,
       ...overrides,
-    } as RetryableCall<T>;
+    };
   }
 
   test("returns the decoded body without retrying on success", async () => {

@@ -129,9 +129,21 @@ return results;
 
         // No `StructuredOutput` fast-fail cluster: every leaf returns a real,
         // schema-valid, non-null result (the collapse manifested as all-null).
-        const leafResults = result.result as Array<z.infer<
-          typeof judgement
-        > | null>;
+        const leafResults = z
+          .array(
+            z.union([
+              z.null(),
+              z.looseObject({
+                severity: z.union([
+                  z.literal("low"),
+                  z.literal("medium"),
+                  z.literal("high"),
+                ]),
+                summary: z.string(),
+              }),
+            ]),
+          )
+          .parse(result.result);
         expect(Array.isArray(leafResults)).toBe(true);
         expect(leafResults).toHaveLength(LEAF_COUNT);
         const nulls = leafResults.filter((r) => r == null);

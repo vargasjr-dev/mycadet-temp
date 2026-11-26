@@ -72,7 +72,7 @@ function makeRecordingProvider(responses: ProviderResponse[]): {
       options?: SendMessageOptions,
     ): Promise<ProviderResponse> {
       sent.push(messages);
-      configs.push(options?.config as Record<string, unknown> | undefined);
+      configs.push(options?.config);
       const response = responses[i] ?? responses[responses.length - 1];
       i++;
       return response;

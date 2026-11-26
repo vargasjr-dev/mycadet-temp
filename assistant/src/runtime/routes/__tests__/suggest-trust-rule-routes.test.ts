@@ -7,8 +7,9 @@
  * - No tool block: provider returns non-tool response → throws
  * - directoryScopeOptions is optional: passes through correctly when absent
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be defined before importing the module under test
@@ -162,13 +163,15 @@ describe("suggestTrustRuleRoute", () => {
       });
 
       expect(mockSendMessage).toHaveBeenCalledTimes(1);
-      const callArgs = mockSendMessage.mock.calls[0] as unknown[];
-      const options = callArgs[1] as {
-        config: {
-          callSite: string;
-          tool_choice: { type: string; name: string };
-        };
-      };
+      const callArgs: unknown[] = mockSendMessage.mock.calls[0];
+      const options = z
+        .looseObject({
+          config: z.looseObject({
+            callSite: z.string(),
+            tool_choice: z.looseObject({ type: z.string(), name: z.string() }),
+          }),
+        })
+        .parse(callArgs[1]);
       expect(options.config.callSite).toBe("trustRuleSuggestion");
       expect(options.config.tool_choice).toEqual({
         type: "tool",
@@ -220,7 +223,9 @@ describe("suggestTrustRuleRoute", () => {
         scopeOptions: baseScopeOptions,
       });
       expect(
-        (result as { directoryScopeOptions?: unknown }).directoryScopeOptions,
+        z
+          .looseObject({ directoryScopeOptions: z.unknown().optional() })
+          .parse(result).directoryScopeOptions,
       ).toBeUndefined();
     });
   });
@@ -229,7 +234,7 @@ describe("suggestTrustRuleRoute", () => {
     test("rejects a body missing required fields with BadRequestError", async () => {
       await expect(
         suggestTrustRuleRoute.handler({
-          body: { tool: "bash" } as Record<string, unknown>,
+          body: { tool: "bash" },
         }),
       ).rejects.toThrow(BadRequestError);
     });
@@ -246,9 +251,9 @@ describe("suggestTrustRuleRoute", () => {
     });
 
     test("validates before reaching the provider", async () => {
-      await expect(
-        suggestTrustRuleRoute.handler({ body: {} as Record<string, unknown> }),
-      ).rejects.toThrow(BadRequestError);
+      await expect(suggestTrustRuleRoute.handler({ body: {} })).rejects.toThrow(
+        BadRequestError,
+      );
       expect(mockSendMessage).not.toHaveBeenCalled();
     });
   });

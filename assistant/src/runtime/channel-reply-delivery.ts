@@ -357,7 +357,7 @@ function isToolResultUserMessage(msg: PersistedMessage): boolean {
     return false;
   }
   try {
-    const parsed = msg.content as unknown;
+    const parsed: unknown = msg.content;
     return (
       Array.isArray(parsed) &&
       parsed.length > 0 &&

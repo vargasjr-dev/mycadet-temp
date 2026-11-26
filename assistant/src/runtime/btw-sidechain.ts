@@ -98,7 +98,7 @@ export async function runBtwSidechain(
       config: {
         max_tokens: params.maxTokens ?? 1024,
         tool_choice: { type: "none" },
-        callSite: params.callSite ?? ("identityIntro" as LLMCallSite),
+        callSite: params.callSite ?? "identityIntro",
       },
       onEvent: (event) => {
         if (event.type === "text_delta") {

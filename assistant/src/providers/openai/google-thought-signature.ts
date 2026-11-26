@@ -165,9 +165,7 @@ function assistantToolCalls(
   if (record.role !== "assistant" || !Array.isArray(record.tool_calls)) {
     return undefined;
   }
-  return record.tool_calls as Array<
-    GoogleToolCallExtraContent & { id?: unknown }
-  >;
+  return record.tool_calls;
 }
 
 export function messagesCarryGoogleThoughtSignature(params: unknown): boolean {

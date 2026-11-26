@@ -103,7 +103,7 @@ export async function handleGuardianTextEngineDecision(
   }
 
   // Decision-bearing disposition — map to ApprovalDecisionResult and apply
-  const decisionAction = engineResult.disposition as ApprovalAction;
+  const decisionAction: ApprovalAction = engineResult.disposition;
   const engineDecision: ApprovalDecisionResult = {
     action: decisionAction,
     source: "plain_text",

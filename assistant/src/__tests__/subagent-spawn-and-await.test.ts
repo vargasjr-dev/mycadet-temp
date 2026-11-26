@@ -1210,7 +1210,7 @@ describe("SubagentManager run budgets", () => {
         toolCallEvent("tool-2"),
         toolCallEvent("tool-3"),
         // Non-tool traffic must not count against the ceiling.
-        { type: "assistant_text_delta", text: "thinking" } as AssistantEvent,
+        { type: "assistant_text_delta", text: "thinking" },
       ],
     };
 

@@ -27,7 +27,7 @@ describe("watcher route body validation", () => {
   test("watcher_create rejects a body missing required fields", () => {
     expect(() =>
       routeFor("watcher_create").handler({
-        body: {} as Record<string, unknown>,
+        body: {},
       }),
     ).toThrow(BadRequestError);
   });
@@ -35,7 +35,7 @@ describe("watcher route body validation", () => {
   test("watcher_update rejects a body missing watcher_id", () => {
     expect(() =>
       routeFor("watcher_update").handler({
-        body: { name: "renamed" } as Record<string, unknown>,
+        body: { name: "renamed" },
       }),
     ).toThrow(BadRequestError);
   });

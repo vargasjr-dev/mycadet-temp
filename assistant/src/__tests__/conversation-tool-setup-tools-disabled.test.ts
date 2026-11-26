@@ -10,7 +10,6 @@
 
 import { describe, expect, mock, test } from "bun:test";
 
-import type { SkillProjectionCache } from "../daemon/conversation-skill-tools.js";
 import type { Message } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 
@@ -44,7 +43,7 @@ function makeToolDef(name: string): ToolDefinition {
 function makeCtx(overrides: Partial<Conversation> = {}): Conversation {
   return asConversation({
     skillProjectionState: new Map(),
-    skillProjectionCache: {} as SkillProjectionCache,
+    skillProjectionCache: {},
     toolsDisabledDepth: 0,
     ...overrides,
   });

@@ -53,7 +53,7 @@ function parseTtl(raw: string | undefined): number | undefined {
     );
   }
   const value = Number(match[1]);
-  const unit = match[2] as keyof typeof TTL_MULTIPLIERS;
+  const unit = match[2];
   const ms = Math.round(value * TTL_MULTIPLIERS[unit]);
   if (ms <= 0) {
     throw new Error(`--ttl must resolve to a positive duration, got ${ms}ms.`);

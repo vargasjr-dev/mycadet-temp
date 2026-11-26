@@ -13,6 +13,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // ── Module mocks (must precede imports of the module under test) ─────
 
 // ── DB layer mocks for session-history ───────────────────────────────
@@ -447,10 +449,20 @@ describe("ensureToolPairing with server_tool_use / web_search_tool_result", () =
 
     await provider.sendMessage(messages);
 
-    const sent = lastStreamParams!.messages as Array<{
-      role: string;
-      content: Array<{ type: string; tool_use_id?: string; id?: string }>;
-    }>;
+    const sent = z
+      .array(
+        z.looseObject({
+          role: z.string(),
+          content: z.array(
+            z.looseObject({
+              type: z.string(),
+              tool_use_id: z.string().optional(),
+              id: z.string().optional(),
+            }),
+          ),
+        }),
+      )
+      .parse(lastStreamParams!.messages);
 
     // Find the assistant message with server_tool_use
     const assistantWithToolUse = sent.find(

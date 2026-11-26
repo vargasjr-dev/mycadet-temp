@@ -51,7 +51,7 @@ function makeContext(opts?: { withClient?: boolean }): ToolContext {
     conversationId: "conv-test",
     trustClass: "guardian",
     ...(opts?.withClient ? { sendToClient: () => {} } : {}),
-  } as ToolContext;
+  };
 }
 
 beforeEach(() => {

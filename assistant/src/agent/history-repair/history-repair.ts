@@ -144,15 +144,7 @@ export function repairHistory(messages: Message[]): RepairResult {
               (block as { tool_use_id: string }).tool_use_id,
             )
           ) {
-            repairedContent.push(
-              downgradeResult(
-                block as {
-                  type: "web_search_tool_result";
-                  tool_use_id: string;
-                  content: unknown;
-                },
-              ),
-            );
+            repairedContent.push(downgradeResult(block));
             stats.orphanToolResultsDowngraded++;
             continue;
           }
@@ -204,15 +196,7 @@ export function repairHistory(messages: Message[]): RepairResult {
             // web_search_tool_result in a user message is orphaned — server-side
             // results belong in the assistant message, not here
             stats.orphanToolResultsDowngraded++;
-            newContent.push(
-              downgradeResult(
-                block as {
-                  type: "web_search_tool_result";
-                  tool_use_id: string;
-                  content: unknown;
-                },
-              ),
-            );
+            newContent.push(downgradeResult(block));
           } else {
             newContent.push(block);
           }
@@ -250,13 +234,7 @@ export function repairHistory(messages: Message[]): RepairResult {
           }
           if (block.type === "web_search_tool_result") {
             stats.orphanToolResultsDowngraded++;
-            return downgradeResult(
-              block as {
-                type: "web_search_tool_result";
-                tool_use_id: string;
-                content: unknown;
-              },
-            );
+            return downgradeResult(block);
           }
           return block;
         });

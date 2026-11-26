@@ -128,10 +128,10 @@ function soleRequiredStringField(innerSchema: unknown): string | null {
   if (innerSchema == null || typeof innerSchema !== "object") {
     return null;
   }
-  const schema = innerSchema as {
+  const schema: {
     required?: unknown;
     properties?: Record<string, { type?: unknown } | undefined>;
-  };
+  } = innerSchema;
   const required = Array.isArray(schema.required) ? schema.required : [];
   if (required.length !== 1) {
     return null;

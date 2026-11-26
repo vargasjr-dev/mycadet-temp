@@ -722,7 +722,7 @@ export class SubagentManager {
         subagentId,
         conversationId: config.parentConversationId,
         event: msg,
-      } as AssistantEvent);
+      });
       // Tool-call budget, counted after the event is forwarded so the ceiling
       // never swallows a child event on its way to the client.
       this.countToolCallAgainstBudget(managed, msg);
@@ -873,7 +873,7 @@ export class SubagentManager {
       objective: config.objective,
       isFork: config.fork ?? false,
       parentToolUseId: config.parentToolUseId,
-    } as AssistantEvent);
+    });
 
     log.info(
       {
@@ -1832,7 +1832,7 @@ export class SubagentManager {
         status: managed.state.status,
         error: managed.state.error,
         usage: managed.state.usage,
-      } as AssistantEvent);
+      });
     }
   }
 
@@ -2138,7 +2138,7 @@ export class SubagentManager {
       status,
       error,
       usage: managed.state.usage,
-    } as AssistantEvent);
+    });
 
     // Mirror the transition to the durable record.
     this.persistState(managed.state);

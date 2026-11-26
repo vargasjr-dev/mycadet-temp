@@ -1609,7 +1609,7 @@ function loadTranscriptWithImages(
 
     let parsed: ContentBlock[];
     try {
-      const raw = JSON.parse(row.content) as unknown;
+      const raw: unknown = JSON.parse(row.content);
       if (typeof raw === "string") {
         parsed = [{ type: "text", text: raw }];
       } else if (Array.isArray(raw)) {

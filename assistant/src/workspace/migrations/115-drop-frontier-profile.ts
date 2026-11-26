@@ -59,7 +59,7 @@ export const dropFrontierProfileMigration: WorkspaceMigration = {
     }
 
     if (Array.isArray(llm.profileOrder)) {
-      const order = llm.profileOrder as unknown[];
+      const order: unknown[] = llm.profileOrder;
       const pruned = order.filter((name) => name !== FRONTIER);
       if (pruned.length !== order.length) {
         llm.profileOrder = pruned;

@@ -212,7 +212,7 @@ export function lineageMessageFilter(segments: LineageSegment[]): SQL {
       ),
     ) as SQL;
   });
-  return (clauses.length === 1 ? clauses[0]! : or(...clauses)!) as SQL;
+  return clauses.length === 1 ? clauses[0]! : or(...clauses)!;
 }
 
 /**

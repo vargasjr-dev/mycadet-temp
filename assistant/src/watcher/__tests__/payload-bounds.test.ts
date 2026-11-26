@@ -6,8 +6,9 @@
  * bounds what reaches model context, sharing the budget across fields so no
  * single field can crowd the others out.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   WATCHER_EVENT_PAYLOAD_MAX_CHARS,
@@ -84,9 +85,11 @@ describe("capPayloadForStorage", () => {
       WATCHER_PAYLOAD_FIELD_COUNT_MAX + 1,
     );
 
-    const long = capPayloadForStorage({
-      attendees: Array.from({ length: 500 }, (_, i) => `p${i}@example.com`),
-    }) as { attendees: unknown[] };
+    const long = z.looseObject({ attendees: z.array(z.unknown()) }).parse(
+      capPayloadForStorage({
+        attendees: Array.from({ length: 500 }, (_, i) => `p${i}@example.com`),
+      }),
+    );
     expect(long.attendees).toHaveLength(WATCHER_PAYLOAD_FIELD_COUNT_MAX + 1);
     expect(String(long.attendees.at(-1))).toContain("more");
 

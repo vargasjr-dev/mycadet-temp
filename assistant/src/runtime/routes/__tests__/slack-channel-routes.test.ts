@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 
 type MockSlackInfo = {
@@ -99,9 +101,19 @@ function createBoundConversation(input: {
 }
 
 async function resolve(conversationId: string): Promise<ResolveResponse> {
-  return (await handler({
-    pathParams: { conversationId },
-  })) as ResolveResponse;
+  return z
+    .looseObject({
+      channelId: z.string(),
+      channelName: z.string().optional(),
+      cached: z.boolean(),
+      resolved: z.boolean(),
+      reason: z.string().optional(),
+    })
+    .parse(
+      await handler({
+        pathParams: { conversationId },
+      }),
+    );
 }
 
 function mockSlackFetch(): void {

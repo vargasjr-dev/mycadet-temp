@@ -33,13 +33,13 @@ type Tree = Record<string, string | Buffer>;
  * with no overlay. Anything else surfaces a 500 so test bugs are loud.
  */
 function makeFetch(): FetchLike {
-  return (async (input: RequestInfo | URL) => {
+  return async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url.includes("api.github.com")) {
       return new Response("not found", { status: 404 });
     }
     return new Response(`unexpected url: ${url}`, { status: 500 });
-  }) as FetchLike;
+  };
 }
 
 /**

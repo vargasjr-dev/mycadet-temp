@@ -34,7 +34,7 @@ export function makeHeicFixtureBytes(): Buffer | null {
       ["-s", "format", "heic", bigPngPath, "--out", heicPath],
       { stdio: "pipe" },
     );
-    return readFileSync(heicPath) as Buffer;
+    return readFileSync(heicPath);
   } catch {
     return null;
   }

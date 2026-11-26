@@ -708,10 +708,17 @@ describe("POST /v1/acp/spawn: sandboxed bun auto-install on missing binary", () 
     const handler = getSpawnHandler();
     await handler({ body: { ...SPAWN_BODY, cwd: "/untrusted/project" } });
 
-    const options = execFileMock.mock.calls[0][2] as {
-      cwd?: string;
-      env?: NodeJS.ProcessEnv;
-    };
+    const options = z
+      .looseObject({
+        cwd: z.string().optional(),
+        env: z
+          .looseObject({
+            NODE_ENV: z.string().optional(),
+            TZ: z.string().optional(),
+          })
+          .optional(),
+      })
+      .parse(execFileMock.mock.calls[0][2]);
     expect(options.cwd).not.toBe("/untrusted/project");
     expect(options.cwd).toContain("cadet-acp-install-");
     expect(options.env?.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();

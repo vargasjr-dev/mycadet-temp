@@ -61,7 +61,7 @@ interface FixtureConfig {
  * fixtures. Anything unrecognised returns 500 so test bugs surface loudly.
  */
 function makeFetch(config: FixtureConfig): FetchLike {
-  return (async (input: RequestInfo | URL) => {
+  return async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
 
     for (const needle of config.failOn ?? []) {
@@ -105,7 +105,7 @@ function makeFetch(config: FixtureConfig): FetchLike {
     }
 
     return new Response("unexpected url: " + url, { status: 500 });
-  }) as FetchLike;
+  };
 }
 
 /** Derive the `<owner>/<repo>[/<path>]` listing key from a contents URL. */
@@ -183,9 +183,7 @@ function bundledMatch(name: string): PluginSearchMatch & {
   if (match.source.kind !== "github") {
     throw new Error(`catalog fixture entry "${name}" is not GitHub-backed`);
   }
-  return match as PluginSearchMatch & {
-    source: Extract<PluginSearchMatch["source"], { kind: "github" }>;
-  };
+  return match;
 }
 
 const PNG_SIGNATURE = Buffer.from([
@@ -810,11 +808,11 @@ describe("getPluginDetails (catalog unavailable, platform enabled)", () => {
 
   /** A platform `/v1/plugins/` fetch serving a single row (unvalidated source). */
   function platformCatalogFetch(row: Record<string, unknown>): FetchLike {
-    return (async () =>
+    return async () =>
       new Response(JSON.stringify({ plugins: [row] }), {
         status: 200,
         headers: { "content-type": "application/json" },
-      })) as FetchLike;
+      });
   }
 
   test("404s a not-installed plugin whose only catalog row has a malformed source", async () => {

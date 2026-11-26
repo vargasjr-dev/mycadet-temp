@@ -1546,9 +1546,9 @@ function mergeSummaryFragments(
     return undefined;
   }
 
-  const summary = {
+  const summary: LlmContextSummary = {
     ...(requestSummary ?? responseSummary)!,
-  } as LlmContextSummary;
+  };
 
   if (!requestSummary || !responseSummary) {
     return summary;

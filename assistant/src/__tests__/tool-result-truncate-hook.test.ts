@@ -128,6 +128,6 @@ describe("tool-result-truncate post-tool-use hook — via runHook", () => {
     await runHook<PostToolUseContext>(HOOKS.POST_TOOL_USE, makeCtx(content));
 
     // THEN the user hook saw the already-truncated content.
-    expect(observed as string | null).toBe(expected.content);
+    expect<string | null>(observed).toBe(expected.content);
   });
 });

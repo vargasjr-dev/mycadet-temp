@@ -167,7 +167,7 @@ function collapseByPath(
 ): Map<string, CollapsedPkbMatch> {
   const best = new Map<string, CollapsedPkbMatch>();
   for (const r of results) {
-    const payload = r.payload as unknown as { path?: unknown; text?: unknown };
+    const payload: { path?: unknown; text?: unknown } = r.payload;
     const path = typeof payload.path === "string" ? payload.path : undefined;
     if (!path) {
       continue;

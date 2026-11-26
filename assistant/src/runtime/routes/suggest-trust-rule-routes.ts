@@ -189,7 +189,7 @@ async function handleSuggestTrustRule({
       throw new Error("No tool_use block in trust rule suggestion response");
     }
 
-    const input = toolBlock.input as Record<string, unknown>;
+    const input = toolBlock.input;
     return {
       pattern: input.pattern as string,
       risk: input.risk as string,

@@ -337,7 +337,7 @@ function createMockTransport(): MockTransport {
     cancelPendingSpeech() {
       state._cancelPendingSpeechCount++;
     },
-  } as MockTransport;
+  };
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

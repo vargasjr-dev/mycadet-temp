@@ -144,7 +144,7 @@ function setMemoryCaption(hash: string, caption: string): void {
   if (cache.size >= MAX_MEMORY_ENTRIES && !cache.has(hash)) {
     const oldest = cache.keys().next();
     if (!oldest.done) {
-      cache.delete(oldest.value as string);
+      cache.delete(oldest.value);
     }
   }
   cache.set(hash, caption);

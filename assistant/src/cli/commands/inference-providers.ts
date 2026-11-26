@@ -98,7 +98,7 @@ async function deriveAuthInput(
   if (!derived) {
     return `Provider "${provider}" authenticates by API key — pass --credential <vault-key> (or an explicit --auth override)`;
   }
-  return derived as unknown as Record<string, unknown>;
+  return derived;
 }
 
 /**

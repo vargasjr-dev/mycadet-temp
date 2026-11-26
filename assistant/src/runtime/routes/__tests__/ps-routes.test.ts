@@ -137,7 +137,7 @@ describe("ps route handler", () => {
         walk(c);
       }
     };
-    walk(root as never);
+    walk(root);
 
     expect(byName.get("qdrant")).toBe("workspace");
     expect(byName.get("memory-worker")).toBe("plugin:default-memory");

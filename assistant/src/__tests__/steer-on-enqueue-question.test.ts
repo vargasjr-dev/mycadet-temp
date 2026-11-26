@@ -83,7 +83,7 @@ function registerParkedTurn(id: string): ParkedTurn {
       },
       sentAt: 0,
       ...message,
-    } as QueuedMessage);
+    });
   };
   // Every case needs a queued message to act on; the plain typed reply is the
   // common one, and cases that need other content re-enqueue over it.

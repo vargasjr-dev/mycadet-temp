@@ -47,7 +47,7 @@ function makeRecordingProvider(name: string): {
       _messages: Message[],
       options?: SendMessageOptions,
     ): Promise<ProviderResponse> {
-      configs.push((options?.config ?? {}) as Record<string, unknown>);
+      configs.push(options?.config ?? {});
       return {
         content: [{ type: "text", text: "ok" }],
         model: "gpt-sub",

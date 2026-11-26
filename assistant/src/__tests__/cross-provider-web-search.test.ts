@@ -270,16 +270,19 @@ const realLogger = await import("../util/logger.js");
 mock.module("../util/logger.js", () => ({
   ...realLogger,
   getLogger: () =>
-    new Proxy({} as Record<string, unknown>, {
-      get: (_target, prop) => {
-        if (prop === "warn") {
-          return (obj: Record<string, unknown>) => {
-            capturedWarnLogs.push(obj);
-          };
-        }
-        return () => {};
+    new Proxy(
+      {},
+      {
+        get: (_target, prop) => {
+          if (prop === "warn") {
+            return (obj: Record<string, unknown>) => {
+              capturedWarnLogs.push(obj);
+            };
+          }
+          return () => {};
+        },
       },
-    }),
+    ),
 }));
 
 const { webSearchTool } = await import("../tools/network/web-search.js");

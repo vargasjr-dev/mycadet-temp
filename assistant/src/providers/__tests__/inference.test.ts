@@ -117,7 +117,7 @@ describe("Connection CRUD", () => {
     const { db } = setupDb();
     const result = createConnection(db, {
       name: "bad-conn",
-      provider: "unknown-llm" as never,
+      provider: "unknown-llm",
       auth: { type: "none" },
     });
     expect(result.ok).toBe(false);

@@ -3676,9 +3676,8 @@ describe("persisted-seq anchor advance on user_message_echo", () => {
     await p1;
     await waitForPendingRun(2);
 
-    const echo = eventsQueued.find((e) => e.type === "user_message_echo") as
-      | (AssistantEvent & { seq?: number })
-      | undefined;
+    const echo: (AssistantEvent & { seq?: number }) | undefined =
+      eventsQueued.find((e) => e.type === "user_message_echo");
     const echoSeq = echo?.seq;
     if (typeof echoSeq !== "number") {
       throw new Error("user_message_echo was not stamped with a seq");

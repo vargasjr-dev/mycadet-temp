@@ -977,7 +977,7 @@ export class AcpSessionManager {
     // to 1 (which the web client would drop as seq <= highWaterMark).
     let maxSeq = 0;
     try {
-      const persisted = JSON.parse(row.eventLogJson) as unknown;
+      const persisted: unknown = JSON.parse(row.eventLogJson);
       if (Array.isArray(persisted)) {
         for (const update of persisted) {
           this.appendToBuffer(acpSessionId, update as AcpSessionUpdateEvent);

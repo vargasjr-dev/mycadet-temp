@@ -17,7 +17,6 @@ import {
   getUsageTotals,
   USAGE_SERIES_GROUP_BY_DIMENSIONS,
   type UsageAggregationFilter,
-  type UsageGranularity,
 } from "../../persistence/llm-usage-store.js";
 import { validateTimezone } from "../../persistence/usage-buckets.js";
 import {
@@ -179,7 +178,7 @@ function handleUsageSeries({ queryParams }: RouteHandlerArgs) {
   const buckets = getUsageGroupedSeries(
     range,
     groupBy as Exclude<GroupByDimension, "conversation">,
-    granularity as UsageGranularity,
+    granularity,
     tz,
     { fillEmpty: true },
     filter,

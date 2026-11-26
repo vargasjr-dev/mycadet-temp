@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { WorkflowsConfig } from "../config/schemas/workflows.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { getSqlite } from "../persistence/db-connection.js";
@@ -1027,16 +1029,25 @@ describe("executeWorkflow — nested workflow()", () => {
     // The workflow() resolution is journaled as a "workflow" snapshot at seq 1.
     const snapshot = journal.find((e) => e.seq === 1);
     expect(snapshot?.kind).toBe("workflow");
-    expect((snapshot?.request as { name: string }).name).toBe("child");
+    expect(
+      z.looseObject({ name: z.string() }).parse(snapshot?.request).name,
+    ).toBe("child");
     // Child leaf labels are attributed to the child workflow.
     const childEntries = journal.filter(
       (e) =>
         e.kind === "agent" &&
-        ["c0", "c1"].includes((e.request as { prompt: string }).prompt),
+        ["c0", "c1"].includes(
+          z.looseObject({ prompt: z.string() }).parse(e.request).prompt,
+        ),
     );
     expect(
       childEntries.map(
-        (e) => (e.request as { opts: { label?: string } }).opts.label,
+        (e) =>
+          z
+            .looseObject({
+              opts: z.looseObject({ label: z.string().optional() }),
+            })
+            .parse(e.request).opts.label,
       ),
     ).toEqual(["child", "child"]);
   });

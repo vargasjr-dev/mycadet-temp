@@ -34,7 +34,7 @@ export function makeAddrInUseError(
   cause?: unknown,
 ): NodeJS.ErrnoException {
   const err = new Error(message, cause === undefined ? undefined : { cause });
-  const errno = err as NodeJS.ErrnoException;
+  const errno: NodeJS.ErrnoException = err;
   errno.code = "EADDRINUSE";
   return errno;
 }

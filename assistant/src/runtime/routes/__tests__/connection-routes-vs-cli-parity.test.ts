@@ -48,7 +48,7 @@ function normalizeTimestamps<T extends object>(
     updatedAt: _u,
     ...rest
   } = obj as T & { createdAt?: unknown; updatedAt?: unknown };
-  return rest as Omit<T, "createdAt" | "updatedAt">;
+  return rest;
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

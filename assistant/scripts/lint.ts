@@ -29,7 +29,7 @@ const steps: Step[] = [
   },
   {
     name: "eslint",
-    command: ["bunx", "eslint", ".", "--max-warnings", "6854"],
+    command: ["bunx", "eslint", ".", "--max-warnings", "6342"],
   },
   {
     name: "knip",

@@ -119,7 +119,7 @@ function translateAgentEventToServerMessage(
     case "server_tool_complete": {
       let resultText = "";
       if (Array.isArray(event.content) && event.content.length > 0) {
-        resultText = (event.content as unknown[])
+        resultText = event.content
           .filter(
             (r): r is { type: string; title: string; url: string } =>
               typeof r === "object" &&

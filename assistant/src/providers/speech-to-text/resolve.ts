@@ -36,7 +36,7 @@ const log = getLogger("stt-resolver");
  */
 const MULTILINGUAL_DEFAULT_PROVIDERS: ReadonlySet<SttProviderId> = new Set([
   "deepgram",
-] as SttProviderId[]);
+]);
 
 /**
  * The language an unset config resolves to on the providers above: nova-3's

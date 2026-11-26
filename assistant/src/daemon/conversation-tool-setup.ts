@@ -461,7 +461,7 @@ export function createToolExecutor(
           // message's fields are untyped here; map them through the same
           // schema-validating helper history restore uses so the tracked
           // surface carries a correlated surfaceType/data pair.
-          const s = msg as Record<string, unknown>;
+          const s: Record<string, unknown> = msg;
           if (typeof s.surfaceId !== "string") {
             return;
           }

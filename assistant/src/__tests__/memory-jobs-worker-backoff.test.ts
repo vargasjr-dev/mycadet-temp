@@ -65,7 +65,7 @@ describe("memory jobs worker adaptive poll interval", () => {
       }
       return 999 as unknown as ReturnType<typeof setTimeout>;
     }) as typeof setTimeout;
-    globalThis.clearTimeout = (() => {}) as typeof clearTimeout;
+    globalThis.clearTimeout = () => {};
 
     try {
       const worker = startMemoryJobsWorkerLoop();

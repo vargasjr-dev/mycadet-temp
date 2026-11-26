@@ -949,7 +949,7 @@ function buildSectionExcerpt(
 
 function buildStructuredJsonExcerpt(contents: string): string {
   try {
-    const parsed = JSON.parse(contents) as unknown;
+    const parsed: unknown = JSON.parse(contents);
     const compact = summarizeJsonValue(parsed);
     return truncateExcerpt(
       JSON.stringify(compact, null, 2),

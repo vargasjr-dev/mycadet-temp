@@ -143,7 +143,7 @@ async function handleWebhooksRegister(
   }
 
   const webhookPath =
-    (pathOverride as string | undefined) ?? deriveWebhookPath(type as string);
+    (pathOverride as string | undefined) ?? deriveWebhookPath(type);
   const sourceIdentifier = source as string | undefined;
 
   if (getIsCloud()) {

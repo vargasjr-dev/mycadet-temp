@@ -870,7 +870,7 @@ class LiveVoiceServerFrameSequencer {
 
   next(frame: LiveVoiceServerFramePayload): LiveVoiceServerFrame {
     this.seq += 1;
-    return { ...frame, seq: this.seq } as LiveVoiceServerFrame;
+    return { ...frame, seq: this.seq };
   }
 
   get lastSeq(): number {

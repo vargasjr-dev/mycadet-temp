@@ -556,9 +556,6 @@ export function buildToolApprovalSeedContentBlocks(
 export function buildToolApprovalSeedContentBlocks(
   payload: GuardianQuestionPayload | Record<string, unknown>,
 ): ApprovalCardBlock[] | null {
-  const data = resolveApprovalCardData(
-    "guardian.question",
-    payload as Record<string, unknown>,
-  );
+  const data = resolveApprovalCardData("guardian.question", payload);
   return data ? renderApprovalCardData(data) : null;
 }

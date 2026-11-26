@@ -44,20 +44,20 @@ export async function runCliCommand(
       (callback as () => void)();
     }
   };
-  process.stdout.write = ((chunk: unknown, ...rest: unknown[]) => {
+  process.stdout.write = (chunk: unknown, ...rest: unknown[]) => {
     const text = typeof chunk === "string" ? chunk : String(chunk);
     stdoutChunks.push(text);
     events.push(text);
     invokeCallback(rest);
     return true;
-  }) as typeof process.stdout.write;
-  process.stderr.write = ((chunk: unknown, ...rest: unknown[]) => {
+  };
+  process.stderr.write = (chunk: unknown, ...rest: unknown[]) => {
     const text = typeof chunk === "string" ? chunk : String(chunk);
     stderrChunks.push(text);
     events.push(text);
     invokeCallback(rest);
     return true;
-  }) as typeof process.stderr.write;
+  };
   process.exit = ((code?: number) => {
     if (code !== undefined) {
       process.exitCode = code;

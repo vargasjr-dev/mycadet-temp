@@ -241,7 +241,7 @@ export async function handlePatchFeedItem({
     throw new InternalError("Failed to persist feed item status");
   }
 
-  return updated as unknown as Record<string, unknown>;
+  return updated;
 }
 
 export function handleListHomeFeed({ body = {} }: RouteHandlerArgs) {

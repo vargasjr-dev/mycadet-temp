@@ -23,7 +23,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 export const voiceInviteAdapter: ChannelInviteAdapter = {
-  channel: "phone" as ChannelId,
+  channel: "phone",
 
   buildShareLink(_params: {
     rawToken: string;

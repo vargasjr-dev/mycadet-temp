@@ -124,7 +124,7 @@ export class AcpAgentProcess {
     });
 
     const stream = acp.ndJsonStream(
-      Writable.toWeb(this.proc.stdin!) as WritableStream<Uint8Array>,
+      Writable.toWeb(this.proc.stdin!),
       Readable.toWeb(
         this.proc.stdout!,
       ) as unknown as ReadableStream<Uint8Array>,

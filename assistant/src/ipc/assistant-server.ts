@@ -722,7 +722,7 @@ export class AssistantIpcServer {
 export function injectLocalActorHeader(
   params: Record<string, unknown> | undefined,
 ): RouteHandlerArgs {
-  const args = (params ?? {}) as RouteHandlerArgs;
+  const args: RouteHandlerArgs = params ?? {};
   const existingHeaders = args.headers;
   const forwardedPrincipal = existingHeaders?.["x-cadet-principal-type"] as
     | PrincipalType

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   buildCallCompletionMessage,
   persistCallCompletionMessage,
@@ -60,7 +62,20 @@ function getLatestAssistantBlocks(conversationId: string): PersistedBlock[] {
     if (m.role !== "assistant") {
       return false;
     }
-    const blocks = m.content as unknown as PersistedBlock[];
+    const blocks = z
+      .array(
+        z.looseObject({
+          type: z.string(),
+          text: z.string().optional(),
+          surfaceType: z.string().optional(),
+          surfaceId: z.string().optional(),
+          data: z
+            .looseObject({ summaryText: z.string().optional() })
+            .optional(),
+          _surfaceFallback: z.boolean().optional(),
+        }),
+      )
+      .parse(m.content);
     return (
       Array.isArray(blocks) &&
       blocks.some(
@@ -69,7 +84,18 @@ function getLatestAssistantBlocks(conversationId: string): PersistedBlock[] {
     );
   });
   expect(rows.length).toBeGreaterThan(0);
-  return rows[rows.length - 1].content as unknown as PersistedBlock[];
+  return z
+    .array(
+      z.looseObject({
+        type: z.string(),
+        text: z.string().optional(),
+        surfaceType: z.string().optional(),
+        surfaceId: z.string().optional(),
+        data: z.looseObject({ summaryText: z.string().optional() }).optional(),
+        _surfaceFallback: z.boolean().optional(),
+      }),
+    )
+    .parse(rows[rows.length - 1].content);
 }
 
 /**

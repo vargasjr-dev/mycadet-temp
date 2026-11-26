@@ -6,17 +6,17 @@
  *   - populated workspace → surfaces slug, bodyBytes, edgeCount, updatedAtMs
  *   - corrupt page on disk → logged-and-skipped, does not poison listing
  */
-
 import { mkdtempSync, rmSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { RouteDefinition } from "../../../../../runtime/routes/types.js";
 import { writePage } from "../../substrate/page-store.js";
 import type { ConceptPage } from "../../substrate/types.js";
-import type { MemoryV2ListConceptPagesResult } from "../memory-v2-routes.js";
 import { ROUTES } from "../memory-v2-routes.js";
 
 // ─── Setup ─────────────────────────────────────────────────────────────────
@@ -56,9 +56,22 @@ afterEach(() => {
 describe("memory_v2_list_concept_pages handler", () => {
   test("returns empty list for an empty workspace", async () => {
     const handler = findHandler("memory_v2_list_concept_pages");
-    const result = (await handler({
-      body: {},
-    })) as MemoryV2ListConceptPagesResult;
+    const result = z
+      .looseObject({
+        pages: z.array(
+          z.looseObject({
+            slug: z.string(),
+            bodyBytes: z.number(),
+            edgeCount: z.number(),
+            updatedAtMs: z.number(),
+          }),
+        ),
+      })
+      .parse(
+        await handler({
+          body: {},
+        }),
+      );
 
     expect(result).toEqual({ pages: [] });
   });
@@ -88,9 +101,22 @@ describe("memory_v2_list_concept_pages handler", () => {
     }
 
     const handler = findHandler("memory_v2_list_concept_pages");
-    const result = (await handler({
-      body: {},
-    })) as MemoryV2ListConceptPagesResult;
+    const result = z
+      .looseObject({
+        pages: z.array(
+          z.looseObject({
+            slug: z.string(),
+            bodyBytes: z.number(),
+            edgeCount: z.number(),
+            updatedAtMs: z.number(),
+          }),
+        ),
+      })
+      .parse(
+        await handler({
+          body: {},
+        }),
+      );
 
     expect(result.pages).toHaveLength(3);
 
@@ -139,9 +165,22 @@ describe("memory_v2_list_concept_pages handler", () => {
     );
 
     const handler = findHandler("memory_v2_list_concept_pages");
-    const result = (await handler({
-      body: {},
-    })) as MemoryV2ListConceptPagesResult;
+    const result = z
+      .looseObject({
+        pages: z.array(
+          z.looseObject({
+            slug: z.string(),
+            bodyBytes: z.number(),
+            edgeCount: z.number(),
+            updatedAtMs: z.number(),
+          }),
+        ),
+      })
+      .parse(
+        await handler({
+          body: {},
+        }),
+      );
 
     expect(result.pages).toHaveLength(1);
     expect(result.pages.map((p) => p.slug)).toEqual(["valid-page"]);

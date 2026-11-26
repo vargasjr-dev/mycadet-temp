@@ -26,6 +26,7 @@ import assert from "node:assert/strict";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { setConfig } from "../../__tests__/helpers/set-config.js";
+import { getConfig } from "../../config/loader.js";
 
 // Connection-routing plumbing over legacy-shaped fixtures (llm.default /
 // activeProfile-centric, no defaultProvider): pinned to the flag-off
@@ -433,19 +434,19 @@ describe("routing identities", () => {
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored-stale-name",
-      { llm: {} } as never,
+      getConfig(),
       "cadet",
       "claude-opus-4-8",
     );
 
-    expect(provider).toEqual({
+    expect<unknown>(provider).toEqual({
       name: "anthropic",
       tag: "managed",
       routeAttribution: {
         connectionName: "cadet",
         isCloudRoute: true,
       },
-    } as never);
+    });
     expect(resolveProviderCalls[0]?.name).toBe("cadet");
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
   });
@@ -466,19 +467,19 @@ describe("routing identities", () => {
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored",
-      { llm: {} } as never,
+      getConfig(),
       "chatgpt",
       "gpt-5.5",
     );
 
-    expect(provider).toEqual({
+    expect<unknown>(provider).toEqual({
       name: "openai",
       tag: "subscription",
       routeAttribution: {
         connectionName: "chatgpt-subscription",
         isCloudRoute: false,
       },
-    } as never);
+    });
     expect(resolveProviderCalls[0]?.name).toBe("chatgpt-subscription");
     // A pre-migration row carries provider "openai": no override needed, the
     // adapter resolves from the row.
@@ -504,7 +505,7 @@ describe("routing identities", () => {
 
     const provider = await tryResolveProviderForConnectionName(
       "ignored",
-      { llm: {} } as never,
+      getConfig(),
       "chatgpt",
       "gpt-5.5",
     );
@@ -533,7 +534,7 @@ describe("routing identities", () => {
 
     const provider = await tryResolveProviderForConnectionName(
       "managed-openai",
-      { llm: {} } as never,
+      getConfig(),
       "openai",
       "gpt-5.5",
     );
@@ -548,7 +549,7 @@ describe("routing identities", () => {
     await expect(
       tryResolveProviderForConnectionName(
         "ignored",
-        { llm: {} } as never,
+        getConfig(),
         "chatgpt",
         "gpt-5.5",
       ),

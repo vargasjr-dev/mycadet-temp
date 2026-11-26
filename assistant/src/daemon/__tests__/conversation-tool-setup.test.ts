@@ -59,8 +59,6 @@ const {
 const { registerSkillTools, unregisterSkillTools } =
   await import("../../tools/registry.js");
 const { finalizeTool } = await import("../../tools/tool-defaults.js");
-type SkillProjectionCache =
-  import("../conversation-skill-tools.js").SkillProjectionCache;
 
 function makeCtx(
   overrides: Partial<Omit<Conversation, "channelCapabilities">> & {
@@ -74,7 +72,7 @@ function makeCtx(
   const { channelCapabilities, ...rest } = overrides;
   return asConversation({
     skillProjectionState: new Map(),
-    skillProjectionCache: {} as SkillProjectionCache,
+    skillProjectionCache: {},
     toolsDisabledDepth: 0,
     ...rest,
     // A partial capability set is filled out to the real shape here; the

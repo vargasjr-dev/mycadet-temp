@@ -101,9 +101,10 @@ describe("handleShareToSlackChannel", () => {
     secureKeyValues.set("credential/slack_channel/bot_token", "xoxb-test");
     seedApp({ id: "app1", name: "My App", description: "A great app" });
 
-    const result = (await handleShareToSlackChannel({
-      body: { appId: "app1", channelId: "C123", message: "Check this out!" },
-    })) as { ok: boolean; ts: string; channel: string };
+    const result: { ok: boolean; ts: string; channel: string } =
+      await handleShareToSlackChannel({
+        body: { appId: "app1", channelId: "C123", message: "Check this out!" },
+      });
 
     expect(result.ok).toBe(true);
     expect(result.ts).toBe("1234567890.123456");

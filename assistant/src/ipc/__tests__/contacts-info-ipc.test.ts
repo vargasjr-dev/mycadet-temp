@@ -155,7 +155,7 @@ describe("handleContactsInfoBatch", () => {
 
   test("rejects a malformed body (non-array contactIds)", () => {
     expect(() =>
-      handleContactsInfoBatch({ body: { contactIds: "nope" } as never }),
+      handleContactsInfoBatch({ body: { contactIds: "nope" } }),
     ).toThrow();
   });
 });

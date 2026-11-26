@@ -58,7 +58,7 @@ function channelContext(overrides: Partial<ToolContext> = {}): ToolContext {
     requesterChatId: "C123",
     sourceMessageId: "1700000000.111111",
     ...overrides,
-  } as ToolContext;
+  };
 }
 
 describe("react_to_message", () => {

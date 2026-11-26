@@ -99,7 +99,7 @@ interface FetchFixtureOpts {
 
 /** A `fetch` that serves the plugin install endpoint from an in-memory tarball. */
 function makeInstallFetch(opts: FetchFixtureOpts): FetchLike {
-  return (async (input: RequestInfo | URL, init?: RequestInit) => {
+  return async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
     const headers = new Headers(init?.headers);
     opts.onRequest?.(url, headers);
@@ -123,7 +123,7 @@ function makeInstallFetch(opts: FetchFixtureOpts): FetchLike {
         ...(opts.sourcePath ? { "X-Plugin-Source-Path": opts.sourcePath } : {}),
       },
     });
-  }) as FetchLike;
+  };
 }
 
 // ─── Test scaffolding ────────────────────────────────────────────────────────

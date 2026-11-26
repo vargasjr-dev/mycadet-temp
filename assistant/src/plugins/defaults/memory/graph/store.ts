@@ -738,7 +738,7 @@ export function applyDiff(
       const updates: Record<string, unknown> = {};
       const c = update.changes;
       if (c.content !== undefined) {
-        updates.content = deduplicateParagraphs(c.content as string);
+        updates.content = deduplicateParagraphs(c.content);
       }
       if (c.type !== undefined) {
         updates.type = c.type;
@@ -1018,7 +1018,7 @@ export function computeGraphStats(): GraphStats {
   for (const n of nodes) {
     byType[n.type] = (byType[n.type] ?? 0) + 1;
     if (n.fidelity !== "gone") {
-      byFidelity[n.fidelity as keyof FidelityBreakdown] += 1;
+      byFidelity[n.fidelity] += 1;
     }
     if (n.significance < 0.15) {
       atRisk++;

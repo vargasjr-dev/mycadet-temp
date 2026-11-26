@@ -320,7 +320,7 @@ async function fetchInitialSyncToken(
       );
     }
 
-    const page = (resp.body ?? {}) as CalendarEventsListResponse;
+    const page: CalendarEventsListResponse = resp.body ?? {};
     syncToken = page.nextSyncToken;
     pageToken = page.nextPageToken;
   } while (pageToken && !syncToken);

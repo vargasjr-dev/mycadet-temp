@@ -295,7 +295,7 @@ function applyStoredProviderToLlmContextResult(
     const summary = normalized.summary
       ? attachEstimatedCost(normalized.summary)
       : undefined;
-    return { ...normalized, summary } as LlmContextRouteResult;
+    return { ...normalized, summary };
   }
 
   const mergedSummary = normalized.summary
@@ -1079,7 +1079,7 @@ async function handleReplaceInferenceProfile({
   // body is a status re-enable, which derives no connection. A user-owned
   // profile sharing a cloud name is fully editable, so it takes the
   // derivation like any other custom profile.
-  const fragment = parsed.data as Record<string, unknown>;
+  const fragment: Record<string, unknown> = parsed.data;
   // Routing identities resolve their connection per-request from the
   // provider value; deriving one here would stamp the canonical cadet row
   // ("cadet" is its stored provider) or create a junk "<identity>-personal"

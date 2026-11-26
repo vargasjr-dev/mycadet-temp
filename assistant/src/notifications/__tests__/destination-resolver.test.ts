@@ -18,7 +18,7 @@ function guardian(
     contactId: "contact-1",
     status: "active",
     ...overrides,
-  } as GuardianDelivery;
+  };
 }
 
 describe("resolveDestinations — gateway guardian list", () => {

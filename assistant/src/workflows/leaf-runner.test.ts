@@ -703,9 +703,15 @@ describe("runLeaf — persona path", () => {
     expect(graphMemoryInstances).toBe(1);
     expect(prepareMemoryCalls).toBe(1);
     expect(disposeCalls).toBe(1);
-    const messages = lastSendCall?.messages as Array<{
-      content: Array<{ type: string; text?: string }>;
-    }>;
+    const messages = z
+      .array(
+        z.looseObject({
+          content: z.array(
+            z.looseObject({ type: z.string(), text: z.string().optional() }),
+          ),
+        }),
+      )
+      .parse(lastSendCall?.messages);
     expect(messages[0]?.content[0]?.text).toBe(MEMORY_BLOCK_TEXT);
 
     // No conversation row — persona keeps the no-persistence guarantee.
@@ -795,9 +801,15 @@ describe("runLeaf — persona path", () => {
       // …but the memory pipeline never ran, so no private memory was injected.
       expect(graphMemoryInstances).toBe(0);
       expect(prepareMemoryCalls).toBe(0);
-      const messages = lastSendCall?.messages as Array<{
-        content: Array<{ type: string; text?: string }>;
-      }>;
+      const messages = z
+        .array(
+          z.looseObject({
+            content: z.array(
+              z.looseObject({ type: z.string(), text: z.string().optional() }),
+            ),
+          }),
+        )
+        .parse(lastSendCall?.messages);
       expect(messages[0]?.content[0]?.text).not.toBe(MEMORY_BLOCK_TEXT);
     } finally {
       if (savedAuth === undefined) {

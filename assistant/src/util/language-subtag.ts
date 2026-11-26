@@ -38,7 +38,7 @@ export function localizedOrDefault<T>(
   fallback: T,
 ): T {
   return hasLocalizedEntry(table, language)
-    ? (table[baseLanguageSubtag(language)!] as T)
+    ? table[baseLanguageSubtag(language)!]
     : fallback;
 }
 

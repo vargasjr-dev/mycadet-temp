@@ -624,7 +624,7 @@ describe("pool input capture", () => {
         ],
       },
       selectorRan: false,
-      selectorFailure: new Error("selector failed") as never,
+      selectorFailure: new Error("selector failed"),
       pool: {
         stable: [
           { slug: "core/page", card: "retained core card", lane: "core" },

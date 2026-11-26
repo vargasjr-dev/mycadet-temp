@@ -3406,7 +3406,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
       channelTs: overrides.channelTs ?? T0,
       eventKind: "message",
       ...overrides,
-    } as SlackMessageMetadata;
+    };
   }
 
   function userRow(opts: {
@@ -4517,7 +4517,7 @@ describe("Slack channel chronological rendering — multi-thread", () => {
       metadata: null,
       clientMessageId: null,
       finalized: 1,
-    } as MessageRow;
+    };
     const rows: MessageRow[] = [
       userRow({
         id: "asked",
@@ -5448,7 +5448,7 @@ describe("assembleSlackActiveThreadFocusBlock", () => {
       channelTs: overrides.channelTs ?? PARENT_TS,
       eventKind: "message",
       ...overrides,
-    } as SlackMessageMetadata;
+    };
   }
 
   function envelope(meta: SlackMessageMetadata | null): string {

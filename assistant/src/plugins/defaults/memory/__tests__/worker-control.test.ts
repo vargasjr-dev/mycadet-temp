@@ -32,7 +32,7 @@ function stubProcessKill(
   permissionErrorPids: Set<number> = new Set(),
 ): () => void {
   const original = process.kill.bind(process);
-  process.kill = ((pid: number, signal?: string | number) => {
+  process.kill = (pid: number, signal?: string | number) => {
     if ((signal ?? 0) !== 0) {
       return true;
     }
@@ -47,7 +47,7 @@ function stubProcessKill(
     const err: NodeJS.ErrnoException = new Error("kill ESRCH");
     err.code = "ESRCH";
     throw err;
-  }) as typeof process.kill;
+  };
   return () => {
     process.kill = original;
   };

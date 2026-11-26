@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { getDocumentById } from "../documents/document-store.js";
 import { getSqlite } from "../persistence/db-connection.js";
 import {
@@ -502,12 +504,14 @@ describe("document_replace_text", () => {
       makeContext({ sendToClient }),
     );
     expect(messages).toHaveLength(1);
-    const msg = messages[0] as {
-      type: string;
-      surfaceId: string;
-      markdown: string;
-      mode: string;
-    };
+    const msg = z
+      .looseObject({
+        type: z.string(),
+        surfaceId: z.string(),
+        markdown: z.string(),
+        mode: z.string(),
+      })
+      .parse(messages[0]);
     expect(msg.type).toBe("document_editor_update");
     expect(msg.surfaceId).toBe("doc-replace");
     expect(msg.mode).toBe("replace");

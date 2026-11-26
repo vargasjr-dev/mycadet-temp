@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 const deliveredChannelReplies: Array<{
   callbackUrl: string;
   payload: Record<string, unknown>;
@@ -150,9 +152,14 @@ mock.module("../../../messaging/providers/index.js", () => ({
 
 mock.module("../../channel-reply-delivery.js", () => ({
   deliverReplyViaCallback: async (...args: unknown[]) => {
-    const options = args[4] as
-      | { messageId?: string; startFromSegment?: number; messageTs?: string }
-      | undefined;
+    const options = z
+      .looseObject({
+        messageId: z.string().optional(),
+        startFromSegment: z.number().optional(),
+        messageTs: z.string().optional(),
+      })
+      .optional()
+      .parse(args[4]);
     const call: (typeof replyDeliveryCalls)[number] = {
       messageId: options?.messageId,
     };
@@ -1056,7 +1063,7 @@ describe("processChannelMessageInBackground — admission (queue if busy)", () =
       _content,
       options,
     ) => {
-      seenOptions = options as unknown as Record<string, unknown>;
+      seenOptions = options as Record<string, unknown>;
       return { messageId: "user-row-1" };
     };
 

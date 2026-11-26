@@ -70,11 +70,13 @@ export const SttProvidersSchema = z
       if (model === undefined) {
         continue;
       }
-      const families = listProviderModelFamilies(providerId as SttProviderId);
+      const families: readonly string[] = listProviderModelFamilies(
+        providerId as SttProviderId,
+      );
       if (families.length === 0) {
         continue;
       }
-      if (typeof model !== "string" || !families.includes(model as never)) {
+      if (typeof model !== "string" || !families.includes(model)) {
         ctx.issues.push({
           code: "custom",
           path: [providerId, "model"],
@@ -129,12 +131,12 @@ const SttRolesSchema = z
       if (selection === undefined) {
         continue;
       }
-      const families = listProviderModelFamilies(
-        selection.provider as SttProviderId,
+      const families: readonly string[] = listProviderModelFamilies(
+        selection.provider,
       );
       if (
         selection.model !== undefined &&
-        !families.includes(selection.model as never)
+        !families.includes(selection.model)
       ) {
         ctx.issues.push({
           code: "custom",

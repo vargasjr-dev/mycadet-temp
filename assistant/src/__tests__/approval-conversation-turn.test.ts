@@ -96,7 +96,7 @@ describe("runApprovalConversationTurn", () => {
       return {
         disposition: "approve_once",
         replyText: "",
-      } as ApprovalConversationResult;
+      };
     };
     const result = await runApprovalConversationTurn(
       makeContext(),

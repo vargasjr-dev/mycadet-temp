@@ -105,7 +105,7 @@ function extractRecentTurnPairs(
 function parseContent(raw: string): ContentBlock[] {
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as ContentBlock[]) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }

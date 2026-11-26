@@ -52,7 +52,6 @@ import type {
   ProviderResponse,
   SendMessageOptions,
   TextContent,
-  ToolResultContent,
 } from "../providers/types.js";
 import { NATIVE_WEB_SEARCH_TOOL_NAME } from "../providers/types.js";
 import {
@@ -1553,7 +1552,7 @@ export class AgentLoop {
         }
         const postToolUseCtx: PostToolUseInputContext = {
           conversationId: this.conversationId,
-          toolResponse: block as ToolResultContent,
+          toolResponse: block,
           messages,
           additionalContext: null,
           model,

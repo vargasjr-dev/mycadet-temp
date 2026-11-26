@@ -1,5 +1,4 @@
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
-import type { AppGenerateIconInput } from "../../../../tools/apps/executors.js";
 import { executeAppGenerateIcon } from "../../../../tools/apps/executors.js";
 import {
   missingAppIdError,
@@ -19,8 +18,5 @@ export async function run(
     return missingAppIdError();
   }
   throwIfCancelled(context);
-  return executeAppGenerateIcon(
-    { ...input, app_id: appId } as unknown as AppGenerateIconInput,
-    context.signal,
-  );
+  return executeAppGenerateIcon({ ...input, app_id: appId }, context.signal);
 }

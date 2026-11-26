@@ -13,8 +13,9 @@
  * `commitConfigWrite` with the registry reinit stubbed); other happy-path
  * writes are covered by the config-write tests.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // ── Module mocks (must come before imports) ──────────────────────────────────
 
@@ -751,9 +752,7 @@ describe("DELETE inference/profiles/:name reference guard", () => {
     );
     expect(result).toEqual({ ok: true, name: "my-fast" });
     expect(loadRawConfig().llm).toBeDefined();
-    expect(
-      (loadRawConfig().llm as { profiles?: Record<string, unknown> }).profiles,
-    ).toEqual({});
+    expect(loadRawConfig().llm).toHaveProperty("profiles", {});
     expect(initializeProvidersCalls).toBe(1);
   });
 });
@@ -1048,7 +1047,9 @@ describe("PUT inference/active-profile validation", () => {
     );
     expect(result).toEqual({ ok: true, activeProfile: "my-fast" });
     expect(
-      (loadRawConfig().llm as { activeProfile?: string }).activeProfile,
+      z
+        .looseObject({ activeProfile: z.string().optional() })
+        .parse(loadRawConfig().llm).activeProfile,
     ).toBe("my-fast");
     // Clients are notified so their config views (composer model pill,
     // Settings) refetch without a manual refresh.
@@ -1101,7 +1102,9 @@ describe("PUT inference/active-profile validation", () => {
       /structured answers rather than chat text/,
     );
     expect(
-      (loadRawConfig().llm as { activeProfile?: string }).activeProfile,
+      z
+        .looseObject({ activeProfile: z.string().optional() })
+        .parse(loadRawConfig().llm).activeProfile,
     ).toBeUndefined();
   });
 
@@ -1130,7 +1133,9 @@ describe("PUT inference/active-profile validation", () => {
       /assistant inference send --profile my-gemini "Reply with OK"/,
     );
     expect(
-      (loadRawConfig().llm as { activeProfile?: string }).activeProfile,
+      z
+        .looseObject({ activeProfile: z.string().optional() })
+        .parse(loadRawConfig().llm).activeProfile,
     ).toBeUndefined();
   });
 

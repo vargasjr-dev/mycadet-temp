@@ -96,14 +96,14 @@ export function resolveDestinations(
         const guardian = resolveGuardian(guardians, channel);
         if (guardian?.externalChatId) {
           const externalChatId = guardian.externalChatId;
-          result.set(channel as NotificationChannel, {
-            channel: channel as NotificationChannel,
+          result.set(channel, {
+            channel: channel,
             endpoint: externalChatId,
             metadata: {
               externalUserId: guardian.address,
             },
             bindingContext: {
-              sourceChannel: channel as NotificationChannel,
+              sourceChannel: channel,
               externalChatId,
               externalUserId: guardian.address,
             },

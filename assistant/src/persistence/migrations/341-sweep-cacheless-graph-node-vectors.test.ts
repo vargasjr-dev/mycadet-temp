@@ -11,6 +11,8 @@
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 const { getDb, getMemorySqlite } = await import("../db-connection.js");
 const { initializeDb } = await import("../db-init.js");
 const { migrateSweepCachelessGraphNodeVectors } =
@@ -45,12 +47,18 @@ function seedNode(id: string, fidelity = "vivid"): void {
 
 /** Rows of the enqueued sweep job, id/type/status only, sorted by id. */
 function sweepJobRows(): Array<{ id: string; type: string; status: string }> {
-  return getMemorySqlite()!
-    .query(
-      `SELECT id, type, status FROM memory_jobs
-       WHERE type = 'sweep_orphaned_graph_node_points' ORDER BY id`,
+  return z
+    .array(
+      z.looseObject({ id: z.string(), type: z.string(), status: z.string() }),
     )
-    .all() as Array<{ id: string; type: string; status: string }>;
+    .parse(
+      getMemorySqlite()!
+        .query(
+          `SELECT id, type, status FROM memory_jobs
+       WHERE type = 'sweep_orphaned_graph_node_points' ORDER BY id`,
+        )
+        .all(),
+    );
 }
 
 /**

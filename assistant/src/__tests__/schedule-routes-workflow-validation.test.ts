@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // Capture workflow-mode run-now dispatch. `handleRunScheduleNow`'s workflow
 // branch calls `getWorkflowRunManager().start(...)`; stub the singleton so the
 // trigger is observable without spinning up the real engine.
@@ -168,10 +170,16 @@ describe("PATCH /schedules/:id — workflow-mode name validation", () => {
       syntax: "cron",
     });
 
-    const result = (await patchRoute().handler({
-      pathParams: { id: schedule.id },
-      body: { mode: "workflow", workflowName: "triage-inbox" },
-    })) as { schedules: Array<{ id: string; mode: string }> };
+    const result = z
+      .looseObject({
+        schedules: z.array(z.looseObject({ id: z.string(), mode: z.string() })),
+      })
+      .parse(
+        await patchRoute().handler({
+          pathParams: { id: schedule.id },
+          body: { mode: "workflow", workflowName: "triage-inbox" },
+        }),
+      );
 
     const updated = result.schedules.find((s) => s.id === schedule.id);
     expect(updated?.mode).toBe("workflow");
@@ -190,10 +198,21 @@ describe("PATCH /schedules/:id — workflow-mode name validation", () => {
 
     // Patching only the message leaves mode=workflow and the name in place, so
     // the validation passes (it reads the persisted name).
-    const result = (await patchRoute().handler({
-      pathParams: { id: schedule.id },
-      body: { message: "trigger now" },
-    })) as { schedules: Array<{ id: string; workflowName: string | null }> };
+    const result = z
+      .looseObject({
+        schedules: z.array(
+          z.looseObject({
+            id: z.string(),
+            workflowName: z.union([z.null(), z.string()]),
+          }),
+        ),
+      })
+      .parse(
+        await patchRoute().handler({
+          pathParams: { id: schedule.id },
+          body: { message: "trigger now" },
+        }),
+      );
 
     expect(result.schedules[0].workflowName).toBe("triage-inbox");
   });
@@ -205,16 +224,25 @@ describe("POST /schedules — workflow mode does not require a message", () => {
   test("creates a workflow schedule with no message field", async () => {
     // Workflow runs trigger workflowName/workflowArgs and ignore job.message,
     // so the endpoint must not force a dummy message for workflow mode.
-    const result = (await createRoute().handler({
-      body: {
-        name: "Nightly triage",
-        description: "Run the triage workflow",
-        expression: "0 9 * * *",
-        mode: "workflow",
-        workflowName: "triage-inbox",
-        // no `message`
-      },
-    })) as { schedule: { mode: string; workflowName: string | null } };
+    const result = z
+      .looseObject({
+        schedule: z.looseObject({
+          mode: z.string(),
+          workflowName: z.union([z.null(), z.string()]),
+        }),
+      })
+      .parse(
+        await createRoute().handler({
+          body: {
+            name: "Nightly triage",
+            description: "Run the triage workflow",
+            expression: "0 9 * * *",
+            mode: "workflow",
+            workflowName: "triage-inbox",
+            // no `message`
+          },
+        }),
+      );
 
     expect(result.schedule.mode).toBe("workflow");
     expect(result.schedule.workflowName).toBe("triage-inbox");
@@ -268,9 +296,13 @@ describe("POST /schedules/:id/run — workflow mode triggers the workflow", () =
       createdFromConversationId: "conv-creator",
     });
 
-    const result = (await runNowRoute().handler({
-      pathParams: { id: schedule.id },
-    })) as { schedules: Array<{ id: string }> };
+    const result = z
+      .looseObject({ schedules: z.array(z.looseObject({ id: z.string() })) })
+      .parse(
+        await runNowRoute().handler({
+          pathParams: { id: schedule.id },
+        }),
+      );
 
     // The workflow was launched with the read-only baseline manifest and
     // guardian trust, forwarding name + args — not a message turn.
@@ -283,9 +315,10 @@ describe("POST /schedules/:id/run — workflow mode triggers the workflow", () =
       hostFunctions: [],
       persona: false,
     });
-    expect((call.trustContext as { trustClass: string }).trustClass).toBe(
-      "guardian",
-    );
+    expect(
+      z.looseObject({ trustClass: z.string() }).parse(call.trustContext)
+        .trustClass,
+    ).toBe("guardian");
     // No wakeConversationId → completion summary targets the creating
     // conversation so the run's result is actually delivered.
     expect(call.conversationId).toBe("conv-creator");

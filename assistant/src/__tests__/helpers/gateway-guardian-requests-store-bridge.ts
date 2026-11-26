@@ -124,7 +124,7 @@ async function decideGuardianRequest(
   const { aclOutcome, ...cas } = parsed;
   const result = await bridgeState.module.decideGuardianRequest(cas);
   if (!result.applied || !aclOutcome) {
-    return result as DecideGuardianRequestIpcResponse;
+    return result;
   }
 
   let mintedSession: DecideAppliedResponse["mintedSession"];
@@ -140,7 +140,7 @@ async function decideGuardianRequest(
     applied: true,
     request: result.request,
     ...(mintedSession ? { mintedSession } : {}),
-  } as DecideGuardianRequestIpcResponse;
+  };
 }
 
 /**

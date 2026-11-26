@@ -80,7 +80,7 @@ export function invalidateAssistantInferredItemsForConversation(
   const parsed = candidates.map((c) => {
     let sources: string[] = [];
     try {
-      const raw = JSON.parse(c.source_conversations) as unknown;
+      const raw: unknown = JSON.parse(c.source_conversations);
       if (Array.isArray(raw)) {
         sources = raw.filter((s): s is string => typeof s === "string");
       }

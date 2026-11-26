@@ -2206,7 +2206,7 @@ describe("wakeAgentForOpportunity", () => {
     conversation: WakeConversation,
     run: () => Promise<unknown>,
   ): Promise<void> => {
-    setConversation(conversation.conversationId, conversation as Conversation);
+    setConversation(conversation.conversationId, conversation);
     try {
       await run();
     } finally {
@@ -4060,7 +4060,7 @@ describe("scheduled wake cancellation", () => {
         await onEvent({
           type: "agent_loop_exit",
           reason: "aborted_pre_call",
-        } as AgentEvent);
+        });
         return runResult(input);
       },
     });

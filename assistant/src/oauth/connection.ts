@@ -129,7 +129,7 @@ export function decodeOAuthResponseBytes(
 
   if (utf8 !== undefined) {
     try {
-      return JSON.parse(utf8) as unknown;
+      return JSON.parse(utf8);
     } catch {
       if (!mediaType || isTextMediaType(mediaType)) {
         return utf8;

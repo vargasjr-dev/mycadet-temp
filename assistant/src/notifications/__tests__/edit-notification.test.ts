@@ -130,7 +130,7 @@ function makeItem(overrides: Partial<FeedItem> = {}): FeedItem {
     status: "new",
     createdAt: "2026-04-14T12:00:00.000Z",
     ...overrides,
-  } as FeedItem;
+  };
 }
 
 function makeDelivery(

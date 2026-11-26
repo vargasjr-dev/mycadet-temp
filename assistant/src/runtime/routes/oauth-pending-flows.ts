@@ -74,11 +74,11 @@ export function createPendingFlowRegistry<
     ttlMs,
 
     start(state, extra) {
-      const flow = {
+      const flow: PendingFlow<TExtra> = {
         ...extra,
         status: "pending",
         createdAt: Date.now(),
-      } as PendingFlow<TExtra>;
+      };
       flows.set(state, flow);
       return flow;
     },

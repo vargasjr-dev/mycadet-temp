@@ -1046,11 +1046,7 @@ export function getConfig(): AssistantConfig {
 
     const contextDefaults = getDeploymentContextDefaults();
     if (Object.keys(contextDefaults).length > 0) {
-      fillContextDefaultsForMissingKeys(
-        config as unknown as Record<string, unknown>,
-        fileConfig,
-        contextDefaults,
-      );
+      fillContextDefaultsForMissingKeys(config, fileConfig, contextDefaults);
       // Refresh the last-known-good safety net with the effective config.
       // `validateWithSchema` captured a snapshot before these deployment-context
       // fills (e.g. IS_CLOUD=true → cloud OAuth service modes) were layered

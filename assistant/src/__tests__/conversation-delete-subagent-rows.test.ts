@@ -87,7 +87,7 @@ function deleteConversationViaRoute(id: string): Promise<unknown> {
     pathParams: { id },
     body: {},
     headers: {},
-  } as Parameters<typeof deleteRoute.handler>[0]) as Promise<unknown>;
+  }) as Promise<unknown>;
 }
 
 describe("DELETE /conversations/:id - subagent row purge order", () => {

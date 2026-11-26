@@ -200,7 +200,7 @@ describe("handleGuardianActivationIntercept", () => {
 
   test("non-telegram channel returns null", async () => {
     const result = await handleGuardianActivationIntercept(
-      makeParams({ sourceChannel: "slack" as any }),
+      makeParams({ sourceChannel: "slack" }),
     );
     expect(result).toBeNull();
     expect(gatewaySessions.calls.create).toHaveLength(0);

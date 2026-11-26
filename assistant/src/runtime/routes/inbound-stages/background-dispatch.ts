@@ -241,7 +241,7 @@ export function processChannelMessageInBackground(
       const cmdIntent =
         commandIntent && typeof commandIntent.type === "string"
           ? {
-              type: commandIntent.type as string,
+              type: commandIntent.type,
               ...(typeof commandIntent.payload === "string"
                 ? { payload: commandIntent.payload }
                 : {}),

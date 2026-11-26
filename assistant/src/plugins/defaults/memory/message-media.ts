@@ -18,7 +18,7 @@ export function extractMediaBlocks(raw: string): Array<{
   index: number;
 }> {
   try {
-    const parsed = JSON.parse(raw) as unknown;
+    const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       return [];
     }

@@ -286,7 +286,7 @@ async function importToolDefaultBounded(
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
     const timeoutSentinel = Symbol("workspace-tool-import-timeout");
-    const importPromise = import(url) as Promise<{ default?: unknown }>;
+    const importPromise: Promise<{ default?: unknown }> = import(url);
     const timeoutPromise = new Promise<typeof timeoutSentinel>((resolve) => {
       timeoutHandle = setTimeout(() => resolve(timeoutSentinel), timeoutMs);
     });
@@ -365,7 +365,7 @@ async function readJsonToolSpec(
     );
     return undefined;
   }
-  return parsed as ToolDefinition;
+  return parsed;
 }
 
 export interface LoadWorkspaceToolsOptions {
@@ -576,7 +576,7 @@ async function loadDesiredLiveTool(
       );
       return undefined;
     }
-    toolSpec = defaultExport as ToolDefinition;
+    toolSpec = defaultExport;
   }
   if (!toolSpec) {
     return undefined;

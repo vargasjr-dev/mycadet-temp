@@ -58,7 +58,7 @@ globalThis.fetch = fetchMock(
 // Suppress real timers for speed — override setTimeout to fire immediately.
 const origSetTimeout = globalThis.setTimeout;
 globalThis.setTimeout = ((fn: (...args: unknown[]) => void) =>
-  origSetTimeout(fn, 0)) as unknown as typeof setTimeout;
+  origSetTimeout(fn, 0)) as typeof setTimeout;
 
 import { refreshOAuth2Token } from "../security/oauth2.js";
 

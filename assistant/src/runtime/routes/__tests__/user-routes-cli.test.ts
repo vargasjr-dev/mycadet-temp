@@ -190,8 +190,6 @@ describe("routes inspect", () => {
   });
 
   test("rejects a body missing path with BadRequestError", async () => {
-    await expect(
-      inspectHandler({ body: {} as Record<string, unknown> }),
-    ).rejects.toThrow(BadRequestError);
+    await expect(inspectHandler({ body: {} })).rejects.toThrow(BadRequestError);
   });
 });

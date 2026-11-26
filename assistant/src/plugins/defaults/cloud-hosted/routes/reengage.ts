@@ -100,7 +100,7 @@ function parseEmail(raw: string): ParsedEmail | null {
   }
   for (const candidate of candidates) {
     try {
-      const parsed = JSON.parse(candidate) as unknown;
+      const parsed: unknown = JSON.parse(candidate);
       if (parsed && typeof parsed === "object") {
         const record = parsed as Record<string, unknown>;
         const subject =

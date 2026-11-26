@@ -1696,7 +1696,7 @@ export async function handleSendMessage(
     approvalConversationGenerator?: ApprovalConversationGenerator;
   },
 ): Promise<unknown> {
-  const body = (rawBody ?? {}) as {
+  const body: {
     conversationKey?: string;
     conversationId?: string;
     content?: string;
@@ -1744,7 +1744,7 @@ export async function handleSendMessage(
       researchFindings?: string[];
       title?: string;
     };
-  };
+  } = rawBody ?? {};
 
   const actorPrincipalId = headers?.["x-cadet-actor-principal-id"];
   const principalType = headers?.["x-cadet-principal-type"];

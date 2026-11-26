@@ -9,7 +9,6 @@
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { FetchLike } from "../fetch-like.js";
 import { invalidatePluginCatalogCache } from "../plugin-catalog-cache.js";
 import {
   findCatalogEntry,
@@ -130,7 +129,7 @@ describe("catalog-backed resolvers (cloud catalog)", () => {
 
   /** A `deps.fetch` serving a small `/v1/plugins/` payload. */
   const catalogDeps: SearchPluginsDeps = {
-    fetch: (async () =>
+    fetch: async () =>
       new Response(
         JSON.stringify({
           plugins: [
@@ -147,7 +146,7 @@ describe("catalog-backed resolvers (cloud catalog)", () => {
           ],
         }),
         { status: 200 },
-      )) as FetchLike,
+      ),
   };
 
   test("findCatalogEntry returns the catalog entry for a known name", async () => {
@@ -201,9 +200,9 @@ describe("catalog-backed resolvers (platform enabled)", () => {
 
   test("propagates PluginCatalogUnavailableError instead of resolving to null", async () => {
     const deps: SearchPluginsDeps = {
-      fetch: (async () => {
+      fetch: async () => {
         throw new Error("network down");
-      }) as FetchLike,
+      },
     };
     const promise = resolvePluginSourceFromCatalog("caveman", deps);
     await expect(promise).rejects.toBeInstanceOf(PluginCatalogUnavailableError);

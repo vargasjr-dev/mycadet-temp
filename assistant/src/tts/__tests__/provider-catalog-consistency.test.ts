@@ -12,10 +12,11 @@
  * credential metadata and deeper structural invariants. This file focuses
  * on fast, local assertions that live next to the catalog source.
  */
-
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   getCatalogProvider,
@@ -54,7 +55,27 @@ const CLIENT_ARTIFACT_PATH = resolve(
 
 function loadClientArtifact(): ClientCatalog {
   const raw = readFileSync(CLIENT_ARTIFACT_PATH, "utf-8");
-  return JSON.parse(raw) as ClientCatalog;
+  return z
+    .looseObject({
+      version: z.number(),
+      providers: z.array(
+        z.looseObject({
+          id: z.string(),
+          displayName: z.string(),
+          subtitle: z.string().optional(),
+          supportsVoiceSelection: z.boolean().optional(),
+          credentialMode: z.string().optional(),
+          credentialsGuide: z
+            .looseObject({
+              description: z.string(),
+              url: z.string(),
+              linkLabel: z.string(),
+            })
+            .optional(),
+        }),
+      ),
+    })
+    .parse(JSON.parse(raw));
 }
 
 // ---------------------------------------------------------------------------
@@ -124,7 +145,7 @@ describe("TTS provider catalog / client artifact consistency", () => {
     const violations: string[] = [];
     for (const clientEntry of clientCatalog.providers) {
       try {
-        const assistantEntry = getCatalogProvider(clientEntry.id as any);
+        const assistantEntry = getCatalogProvider(clientEntry.id);
         if (clientEntry.displayName !== assistantEntry.displayName) {
           violations.push(
             `"${clientEntry.id}": client="${clientEntry.displayName}" vs assistant="${assistantEntry.displayName}"`,
@@ -152,7 +173,7 @@ describe("TTS provider catalog / client artifact consistency", () => {
     const violations: string[] = [];
     for (const clientEntry of clientCatalog.providers) {
       try {
-        const assistantEntry = getCatalogProvider(clientEntry.id as any);
+        const assistantEntry = getCatalogProvider(clientEntry.id);
         if (clientEntry.subtitle !== assistantEntry.subtitle) {
           violations.push(
             `"${clientEntry.id}": client="${clientEntry.subtitle}" vs assistant="${assistantEntry.subtitle}"`,
@@ -174,7 +195,7 @@ describe("TTS provider catalog / client artifact consistency", () => {
     const violations: string[] = [];
     for (const clientEntry of clientCatalog.providers) {
       try {
-        const assistantEntry = getCatalogProvider(clientEntry.id as any);
+        const assistantEntry = getCatalogProvider(clientEntry.id);
         if (
           clientEntry.supportsVoiceSelection !==
           assistantEntry.supportsVoiceSelection
@@ -199,7 +220,7 @@ describe("TTS provider catalog / client artifact consistency", () => {
     const violations: string[] = [];
     for (const clientEntry of clientCatalog.providers) {
       try {
-        const assistantEntry = getCatalogProvider(clientEntry.id as any);
+        const assistantEntry = getCatalogProvider(clientEntry.id);
         const cg = clientEntry.credentialsGuide;
         const ag = assistantEntry.credentialsGuide;
         if (cg && ag) {

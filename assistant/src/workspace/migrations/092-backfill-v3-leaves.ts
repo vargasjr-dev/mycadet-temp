@@ -28,7 +28,7 @@ function readAssignments(workspaceDir: string): Record<string, string[]> {
     }
     throw err;
   }
-  const parsed = JSON.parse(raw) as unknown;
+  const parsed: unknown = JSON.parse(raw);
   return parsed && typeof parsed === "object"
     ? (parsed as Record<string, string[]>)
     : {};

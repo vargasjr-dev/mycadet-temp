@@ -12,6 +12,8 @@ import {
 import { join } from "node:path";
 import { beforeAll, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { walkWorkspaceTree } from "./workspace-tree-walk.js";
 
 const workspaceDir = process.env.CADET_WORKSPACE_DIR!;
@@ -46,7 +48,21 @@ beforeAll(() => {
       "dir",
     );
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "EEXIST") {
+    if (
+      z
+        .looseObject({
+          errno: z.number().optional(),
+          code: z.string().optional(),
+          path: z.string().optional(),
+          syscall: z.string().optional(),
+          name: z.string(),
+          message: z.string(),
+          stack: z.string().optional(),
+          cause: z.unknown().optional(),
+          retriesExhausted: z.boolean().optional(),
+        })
+        .parse(err).code !== "EEXIST"
+    ) {
       throw err;
     }
   }

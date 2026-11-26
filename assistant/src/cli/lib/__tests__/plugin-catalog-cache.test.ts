@@ -46,20 +46,20 @@ function platformFetch(names: string[]): {
       ref: "0".repeat(40),
     })),
   });
-  const fetch: FetchLike = (async () => {
+  const fetch: FetchLike = async () => {
     calls += 1;
     return new Response(body, { status: 200 });
-  }) as never;
+  };
   return { fetch, calls: () => calls };
 }
 
 /** A `deps.fetch` that always fails with a non-2xx (→ unavailable). */
 function failingFetch(): { fetch: FetchLike; calls: () => number } {
   let calls = 0;
-  const fetch: FetchLike = (async () => {
+  const fetch: FetchLike = async () => {
     calls += 1;
     return new Response("", { status: 503 });
-  }) as never;
+  };
   return { fetch, calls: () => calls };
 }
 

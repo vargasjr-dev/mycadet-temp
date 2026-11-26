@@ -94,7 +94,7 @@ export function seedContactChannel(params: {
       canonicalSenderId: address,
       contactId: contact.id,
       channelId: channel.id,
-      status: status as ChannelStatus,
+      status: status,
       policy: (params.policy ?? "allow") as ChannelPolicy,
     });
   }

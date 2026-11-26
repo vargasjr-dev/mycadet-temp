@@ -446,7 +446,7 @@ async function runToolLeaf(
   const loop = new AgentLoop({
     provider,
     systemPrompt,
-    tools: tools as ToolDefinition[],
+    tools: tools,
     toolExecutor: (name, input, onOutput) =>
       executeLeafTool(toolsByName, name, input, {
         ephemeralConversationId,

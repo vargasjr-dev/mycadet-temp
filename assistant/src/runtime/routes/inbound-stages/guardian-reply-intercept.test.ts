@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing the module under test
 // ---------------------------------------------------------------------------
@@ -121,7 +123,9 @@ describe("handleGuardianReplyIntercept", () => {
 
     expect(routeGuardianReplyCalls).toHaveLength(1);
     const ctx = routeGuardianReplyCalls[0] as Record<string, unknown>;
-    const ids = (ctx.pendingScope as { requestIds: string[] }).requestIds;
+    const ids = z
+      .looseObject({ requestIds: z.array(z.string()) })
+      .parse(ctx.pendingScope).requestIds;
     expect(ids).toContain("delivered-req");
     expect(ids).toContain("identity-only-req");
   });

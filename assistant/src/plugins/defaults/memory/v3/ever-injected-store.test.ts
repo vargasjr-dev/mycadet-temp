@@ -27,11 +27,11 @@
  * this test is actively running (`storeMockActive`, toggled in
  * beforeEach/afterAll). Mirrors `__tests__/selection-log-store.test.ts`.
  */
-
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { ensureMemoryV3EverInjectedSchema } from "../../../../persistence/migrations/345-move-memory-v3-ever-injected-to-memory-db.js";
 import * as schema from "../../../../persistence/schema/index.js";
@@ -126,14 +126,17 @@ function summary(conversationId: string) {
 
 /** The conversation's rows in the legacy card table, by slug. */
 function legacySlugs(conversationId: string): string[] {
-  return (
-    memorySqlite
-      .query(
-        `SELECT slug FROM memory_v3_ever_injected
+  return z
+    .array(z.looseObject({ slug: z.string() }))
+    .parse(
+      memorySqlite
+        .query(
+          `SELECT slug FROM memory_v3_ever_injected
          WHERE conversation_id = ? ORDER BY slug`,
-      )
-      .all(conversationId) as Array<{ slug: string }>
-  ).map((row) => row.slug);
+        )
+        .all(conversationId),
+    )
+    .map((row) => row.slug);
 }
 
 /** Whether the ledger on the main connection records the legacy copy. */

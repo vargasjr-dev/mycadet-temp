@@ -148,10 +148,10 @@ function createMockSession(opts?: {
           riskLevel: "medium",
           allowlistOptions: [],
           scopeOptions: [],
-        } as AssistantEvent);
+        });
       }
       // Then complete the turn
-      options?.onEvent?.({ type: "message_complete" } as AssistantEvent);
+      options?.onEvent?.({ type: "message_complete" });
     },
   };
 

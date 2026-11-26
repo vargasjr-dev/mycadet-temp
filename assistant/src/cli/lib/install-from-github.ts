@@ -1341,7 +1341,7 @@ function isGitRefNotFound(err: unknown): boolean {
 /** Extract a stderr/message blob from a spawn error for classification/logging. */
 function subprocessErrorText(err: unknown): string {
   if (err instanceof Error) {
-    const withStreams = err as Error & { stderr?: unknown };
+    const withStreams: Error & { stderr?: unknown } = err;
     const stderr =
       typeof withStreams.stderr === "string" ? withStreams.stderr : "";
     return `${err.message} ${stderr}`.trim();
@@ -1782,14 +1782,14 @@ async function listDir(
     throw new Error(label);
   }
 
-  const body = (await res.json()) as unknown;
+  const body: unknown = await res.json();
   if (!Array.isArray(body)) {
     // A non-array body for a /contents/<dir> path means the path is a
     // file, not a directory — i.e. the plugin name resolved to a single
     // file rather than a plugin directory. Treat as not-a-plugin.
     return null;
   }
-  return body as readonly GitHubContentEntry[];
+  return body;
 }
 
 /**

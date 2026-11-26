@@ -58,9 +58,7 @@ export function readManifest(
   }
 
   try {
-    return parseAvatarManifest(
-      JSON.parse(readFileSync(manifestPath, "utf-8")) as unknown,
-    );
+    return parseAvatarManifest(JSON.parse(readFileSync(manifestPath, "utf-8")));
   } catch (err) {
     log.warn({ err }, "Failed to read avatar manifest — treating as absent");
     return null;
@@ -118,7 +116,7 @@ export function deriveStateFromLegacyFiles(
   let traitsJson: unknown;
   if (existsSync(traitsPath)) {
     try {
-      traitsJson = JSON.parse(readFileSync(traitsPath, "utf-8")) as unknown;
+      traitsJson = JSON.parse(readFileSync(traitsPath, "utf-8"));
     } catch (err) {
       log.warn(
         { err },

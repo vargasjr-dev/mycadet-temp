@@ -47,7 +47,7 @@ const TOOL_DEFAULTS = Object.freeze({
     type: "object",
     properties: {},
     additionalProperties: false,
-  }) as object,
+  }),
   executionTarget: "sandbox" as const,
   category: "",
 });

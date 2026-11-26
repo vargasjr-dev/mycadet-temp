@@ -169,7 +169,7 @@ export async function extractPreferences(
       return { detected: false, preferences: [] };
     }
 
-    const input = toolBlock.input as Record<string, unknown>;
+    const input = toolBlock.input;
     return validateExtractionOutput(input);
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);

@@ -196,11 +196,9 @@ describe("ensureByokDefaultProfiles", () => {
 
     // With the stub gone, the default resolves active and code-defined from
     // the BYOK provider's catalog column.
-    const resolved = resolveDefaultProfileForProvider(
-      profiles() as Record<string, ProfileEntry>,
-      "balanced",
-      { provider: "anthropic" },
-    );
+    const resolved = resolveDefaultProfileForProvider(profiles(), "balanced", {
+      provider: "anthropic",
+    });
     expect(resolved?.status).toBeUndefined();
     expect(resolved?.provider).toBe("anthropic");
     expect(resolved?.provider_connection).toBe("anthropic-personal");
@@ -500,11 +498,9 @@ describe("ensureByokDefaultProfiles", () => {
       label: "My Balanced",
     });
     expect(llm().activeProfile).toBe("balanced");
-    const resolved = resolveDefaultProfileForProvider(
-      profiles() as Record<string, ProfileEntry>,
-      "balanced",
-      { provider: "anthropic" },
-    );
+    const resolved = resolveDefaultProfileForProvider(profiles(), "balanced", {
+      provider: "anthropic",
+    });
     expect(resolved?.label).toBe("My Balanced");
     expect(resolved?.provider).toBe("anthropic");
     expectSecondRunNoop();
@@ -747,11 +743,9 @@ describe("ensureByokDefaultProfiles", () => {
     expect(llm().activeProfile).toBe("balanced");
     expect(llm().advisorProfile).toBe("quality-optimized");
     // With the stub gone, the default resolves active from the cadet column.
-    const resolved = resolveDefaultProfileForProvider(
-      profiles() as Record<string, ProfileEntry>,
-      "balanced",
-      { provider: "cadet" },
-    );
+    const resolved = resolveDefaultProfileForProvider(profiles(), "balanced", {
+      provider: "cadet",
+    });
     expect(resolved?.status).toBeUndefined();
     expectSecondRunNoop();
   });

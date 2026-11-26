@@ -433,7 +433,7 @@ describe("133-collapse-provider-connections migration", () => {
     });
     run();
     const config = readConfig();
-    expect((config as any).workspaceGit).toEqual({ enabled: true });
+    expect(config).toHaveProperty("workspaceGit", { enabled: true });
     const llm = readLlm();
     expect(llm.activeProfile).toBe("my-managed");
     expect(llm.profileOrder).toEqual(["my-managed"]);

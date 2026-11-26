@@ -175,7 +175,7 @@ export async function persistUnsendableImageDowngrades(
 
     let changed = false;
     const next: ContentBlock[] = [];
-    for (const block of parsed as ContentBlock[]) {
+    for (const block of parsed) {
       if (block.type === "image") {
         const replacement = await unsendableImageReplacement(block);
         if (!replacement) {

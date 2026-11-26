@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { SttStreamServerEvent } from "../../stt/types.js";
 import { DeepgramRealtimeTranscriber } from "./deepgram-realtime.js";
 
@@ -1838,12 +1840,14 @@ describe("DeepgramRealtimeTranscriber", () => {
     mockWs.simulateMessage(frame);
 
     expect(events).toHaveLength(1);
-    const event = events[0] as {
-      type: string;
-      text: string;
-      speakerLabel?: string;
-      confidence?: number;
-    };
+    const event = z
+      .looseObject({
+        type: z.string(),
+        text: z.string(),
+        speakerLabel: z.string().optional(),
+        confidence: z.number().optional(),
+      })
+      .parse(events[0]);
     expect(event.type).toBe("final");
     expect(event.text).toBe("hi");
     expect(event.speakerLabel).toBe("2");

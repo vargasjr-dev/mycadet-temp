@@ -114,7 +114,7 @@ export const DEFAULT_PROVIDER_CHOICES: readonly LLMProvider[] = [
 ];
 
 export function isDefaultProviderChoice(value: string): value is LLMProvider {
-  return (DEFAULT_PROVIDER_CHOICES as readonly string[]).includes(value);
+  return DEFAULT_PROVIDER_CHOICES.includes(value);
 }
 
 /**
@@ -1027,10 +1027,7 @@ export const LLMSchema = z
       config.default,
     );
     const profileNames = new Set([
-      ...referenceableProfileKeys(
-        config.profiles as Record<string, unknown> | undefined,
-        backupsResolve,
-      ),
+      ...referenceableProfileKeys(config.profiles, backupsResolve),
       ...DEFAULT_PROFILE_KEYS,
       ...(backupsResolve ? MANAGED_ONLY_PROFILE_KEYS : []),
     ]);

@@ -30,6 +30,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 import type { LoopToolExecutor } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
 import { ContextWindowConfigSchema } from "../config/schemas/inference.js";
@@ -180,9 +182,9 @@ function makeOverflowLadderStub(stubOpts: { maxInputTokens?: number } = {}): {
     if (!state) {
       state = makeInitialReducerState();
     }
-    const step = (await runMockReducer(msgs, opts, state)) as {
-      state: unknown;
-    };
+    const step = z
+      .looseObject({ state: z.unknown() })
+      .parse(await runMockReducer(msgs, opts, state));
     state = step.state;
     return step;
   };
@@ -192,10 +194,12 @@ function makeOverflowLadderStub(stubOpts: { maxInputTokens?: number } = {}): {
     },
     reduceOverflowOneRung,
     recoverContextOverflow: async (msgs: Message[], opts: unknown) => {
-      const options = opts as {
-        actualTokens: number | null;
-        isInteractive: boolean;
-      };
+      const options = z
+        .looseObject({
+          actualTokens: z.union([z.null(), z.number()]),
+          isInteractive: z.boolean(),
+        })
+        .parse(opts);
       // Mirror ContextWindowManager.deriveOverflowTurnTarget: compute the
       // estimation-error-corrected target and include it in the opts the
       // mock reducer receives, so tests can assert on targetTokens.

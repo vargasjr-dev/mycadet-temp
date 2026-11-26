@@ -29,7 +29,7 @@ function frame(type: string): LiveVoiceServerFramePayload {
 }
 
 function sttFinal(text: string): LiveVoiceServerFramePayload {
-  return { type: "stt_final", text } as LiveVoiceServerFramePayload;
+  return { type: "stt_final", text };
 }
 
 /** A reporter whose dispatches are captured instead of sent. */
@@ -99,7 +99,7 @@ function activity(
     turnId: "t1",
     label,
     ...(kind ? { kind } : {}),
-  } as LiveVoiceServerFramePayload;
+  };
 }
 
 describe("phaseForFrame", () => {

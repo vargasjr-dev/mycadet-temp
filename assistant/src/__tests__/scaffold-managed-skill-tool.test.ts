@@ -8,6 +8,8 @@ import {
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { SkillSource } from "../config/skills.js";
 
 const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
@@ -1691,7 +1693,10 @@ describe("scaffold_cloud_skill tool", () => {
     }
     expect(
       skillCardJobUpserts.flatMap((u) =>
-        (u.payload.skills as Array<{ skillId: string }>).map((s) => s.skillId),
+        z
+          .array(z.looseObject({ skillId: z.string() }))
+          .parse(u.payload.skills)
+          .map((s) => s.skillId),
       ),
     ).toEqual(["run-skill-a", "run-skill-b"]);
   });

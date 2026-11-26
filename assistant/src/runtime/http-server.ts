@@ -887,7 +887,7 @@ export class RuntimeHttpServer {
             ? audioDef.responseHeaders(args)
             : audioDef.responseHeaders;
         if (result instanceof ReadableStream) {
-          return new Response(result as ReadableStream<Uint8Array>, {
+          return new Response(result, {
             headers,
           });
         }

@@ -133,7 +133,6 @@ import type {
   ChannelCapabilities,
   InboundActorContext,
 } from "./conversation-assembly-types.js";
-import type { HistoryConversationContext } from "./conversation-history.js";
 import { undo as undoImpl } from "./conversation-history.js";
 import {
   abortConversation,
@@ -2746,7 +2745,7 @@ export class Conversation {
     const msg: AssistantEvent = {
       type: "confirmation_state_changed",
       ...params,
-    } as AssistantEvent;
+    };
     this.emit(msg);
   }
 
@@ -2770,7 +2769,7 @@ export class Conversation {
       requestId,
       reason,
       ...(statusText ? { statusText } : {}),
-    } as AssistantEvent;
+    };
     this.lastActivityStateMsg = msg;
     this.emit(msg);
   }
@@ -3432,7 +3431,7 @@ export class Conversation {
   }
 
   undo(): number {
-    return undoImpl(this as HistoryConversationContext);
+    return undoImpl(this);
   }
 
   // ── Surfaces ─────────────────────────────────────────────────────

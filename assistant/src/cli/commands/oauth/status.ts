@@ -71,7 +71,7 @@ export function registerStatusCommand(oauth: Command): void {
           return exitFromIpcResult(r);
         }
 
-        const result = r.result! as OAuthStatusResponse;
+        const result: OAuthStatusResponse = r.result!;
         const { connections } = result;
 
         if (shouldOutputJson(cmd)) {

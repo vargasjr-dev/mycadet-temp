@@ -297,7 +297,7 @@ function buildResumeCellQuery(
   if (!run.trust || typeof run.trust !== "object") {
     return undefined;
   }
-  const snapshot = run.trust as Partial<TrustContext>;
+  const snapshot: Partial<TrustContext> = run.trust;
   return buildChannelPermissionCellQuery({
     sourceChannel: snapshot.sourceChannel,
     trustClass: snapshot.trustClass,

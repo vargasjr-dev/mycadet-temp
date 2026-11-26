@@ -77,13 +77,10 @@ function handleSequenceGet({ body = {} }: RouteHandlerArgs) {
   }
 
   const enrollments = listEnrollments({ sequenceId: id });
-  const statusCounts = enrollments.reduce(
-    (acc, e) => {
-      acc[e.status] = (acc[e.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const statusCounts = enrollments.reduce<Record<string, number>>((acc, e) => {
+    acc[e.status] = (acc[e.status] || 0) + 1;
+    return acc;
+  }, {});
 
   return {
     ok: true,

@@ -142,7 +142,7 @@ export function parseSystemOneOverride(
   }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(trimmed) as unknown;
+    parsed = JSON.parse(trimmed);
   } catch {
     return null;
   }
@@ -429,7 +429,7 @@ export class JevProvider implements Provider {
       }
       let parsed: unknown;
       try {
-        parsed = JSON.parse(bodyText) as unknown;
+        parsed = JSON.parse(bodyText);
       } catch {
         throw new ProviderError(
           "TypeSafe returned a non-JSON response.",

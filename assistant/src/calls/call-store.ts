@@ -18,7 +18,6 @@ import type {
   CallEventType,
   CallPendingQuestion,
   CallSession,
-  CallStatus,
 } from "./types.js";
 
 const log = getLogger("call-store");
@@ -201,10 +200,7 @@ export function updateCallSession(
   if (updates.status) {
     const current = getCallSession(id);
     if (current) {
-      const result = validateTransition(
-        current.status,
-        updates.status as CallStatus,
-      );
+      const result = validateTransition(current.status, updates.status);
       if (!result.valid) {
         log.warn(
           {

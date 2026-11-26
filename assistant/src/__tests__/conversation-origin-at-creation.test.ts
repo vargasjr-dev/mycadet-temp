@@ -12,8 +12,9 @@
  * migrated, omitting the argument has to behave exactly as it did before the
  * parameter existed, or migrating them stops being safe to do piecemeal.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   createConversation,
@@ -28,9 +29,14 @@ await initializeDb();
 
 /** The raw column, not the parsed accessor, so NULL stays distinguishable. */
 function rawOriginChannel(id: string): string | null {
-  const row = getDb()
-    .all(`SELECT origin_channel FROM conversations WHERE id = '${id}'`)
-    .at(0) as { origin_channel: string | null } | undefined;
+  const row = z
+    .looseObject({ origin_channel: z.union([z.null(), z.string()]) })
+    .optional()
+    .parse(
+      getDb()
+        .all(`SELECT origin_channel FROM conversations WHERE id = '${id}'`)
+        .at(0),
+    );
   return row?.origin_channel ?? null;
 }
 

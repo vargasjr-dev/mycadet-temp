@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import type { CadetTtsSocketOptions } from "../cadet-tts-socket.js";
 import { synthesizeOverCadetTtsSocket } from "../cadet-tts-socket.js";
@@ -149,7 +151,7 @@ describe("synthesizeOverCadetTtsSocket", () => {
     expect(
       frames
         .slice(0, 3)
-        .map((f) => (f.text as string).length)
+        .map((f) => z.string().parse(f.text).length)
         .reduce((a, b) => a + b, 0),
     ).toBe(4500);
 

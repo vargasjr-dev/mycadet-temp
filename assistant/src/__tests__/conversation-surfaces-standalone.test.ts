@@ -462,7 +462,7 @@ describe("cleanupStandaloneSurface", () => {
     });
     ctx.surfaceState.set("surf-c1", {
       surfaceType: "confirmation",
-      data: { message: "test" } as never,
+      data: { message: "test" },
     });
     ctx.pendingSurfaceActions.set("surf-c1", { surfaceType: "confirmation" });
     ctx.lastSurfaceAction.set("surf-c1", { actionId: "confirm" });
@@ -539,7 +539,7 @@ describe("standalone surface cleanup on conversation dispose", () => {
         type: "ui_surface_dismiss",
         conversationId: ctx.conversationId,
         surfaceId,
-      } as AssistantEvent);
+      });
       entry.resolve({ status: "cancelled", surfaceId });
     }
     ctx.pendingStandaloneSurfaces!.clear();
@@ -588,7 +588,7 @@ describe("standalone surface cleanup on conversation dispose", () => {
         type: "ui_surface_dismiss",
         conversationId: ctx.conversationId,
         surfaceId,
-      } as AssistantEvent);
+      });
       entry.resolve({ status: "cancelled", surfaceId });
     }
     ctx.pendingStandaloneSurfaces!.clear();

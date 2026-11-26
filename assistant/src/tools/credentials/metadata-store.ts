@@ -349,7 +349,7 @@ export async function listCredentialRecordsLive(): Promise<CredentialRecordListR
   const remote = await cesRecordBackend.list();
   if (remote !== null) {
     return {
-      records: remote.map((entry) => entry.record as CredentialMetadata),
+      records: remote.map((entry) => entry.record),
       unreachable: false,
     };
   }

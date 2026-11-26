@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { getSqliteFrom } from "../../db-connection.js";
 import * as schema from "../../schema/index.js";
@@ -30,11 +31,14 @@ function insertConnection(
 }
 
 function connectionNames(db: ReturnType<typeof createTestDb>): string[] {
-  return (
-    getSqliteFrom(db)
-      .query(`SELECT name FROM provider_connections ORDER BY name`)
-      .all() as Array<{ name: string }>
-  ).map((r) => r.name);
+  return z
+    .array(z.looseObject({ name: z.string() }))
+    .parse(
+      getSqliteFrom(db)
+        .query(`SELECT name FROM provider_connections ORDER BY name`)
+        .all(),
+    )
+    .map((r) => r.name);
 }
 
 const LEGACY = [

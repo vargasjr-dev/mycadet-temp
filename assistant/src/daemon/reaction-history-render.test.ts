@@ -21,7 +21,7 @@ function reactionMeta(
       ...reaction,
     },
     ...rest,
-  } as ProviderMessageMetadata;
+  };
 }
 
 const noTarget = () => undefined;
@@ -156,7 +156,7 @@ describe("renderReactionHistoryText", () => {
       conversationExternalId: "C123",
       messageId: "1716000000.000001",
       eventKind: "message",
-    } as ProviderMessageMetadata;
+    };
     expect(renderReactionHistoryText(meta, noTarget)).toBeNull();
   });
 });

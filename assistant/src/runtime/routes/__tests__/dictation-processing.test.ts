@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { DictationProfile } from "../../../daemon/dictation-profile-store.js";
 
 let profile: DictationProfile;
@@ -55,13 +57,17 @@ async function dictate(
     cursorInTextField: true,
   },
 ) {
-  return (await route.handler({
-    body: { transcription, context },
-  })) as {
-    text: string;
-    mode: string;
-    actionPlan?: string;
-  };
+  return z
+    .looseObject({
+      text: z.string(),
+      mode: z.string(),
+      actionPlan: z.string().optional(),
+    })
+    .parse(
+      await route.handler({
+        body: { transcription, context },
+      }),
+    );
 }
 
 beforeEach(() => {

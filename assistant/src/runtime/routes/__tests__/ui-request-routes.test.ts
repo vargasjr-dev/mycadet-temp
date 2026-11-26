@@ -18,9 +18,7 @@ const route = ROUTES[0];
 
 describe("ui_request body validation", () => {
   test("rejects a body missing required fields with BadRequestError", async () => {
-    await expect(
-      route.handler({ body: {} as Record<string, unknown> }),
-    ).rejects.toThrow(BadRequestError);
+    await expect(route.handler({ body: {} })).rejects.toThrow(BadRequestError);
   });
 
   test("rejects an out-of-enum surfaceType with BadRequestError", async () => {

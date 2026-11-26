@@ -4,8 +4,9 @@
  *   GET /v1/inference/callsites        — one row per LLM call site
  *   GET /v1/inference/callsites/:site  — 400 on an unknown site
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { LLMCallSiteEnum } from "../../../config/schemas/llm.js";
 import { BadRequestError } from "../errors.js";
@@ -26,9 +27,17 @@ function call(operationId: string, args: RouteHandlerArgs): Promise<unknown> {
 
 describe("GET inference/callsites", () => {
   test("returns one summary row per call site", async () => {
-    const result = (await call("inference_callsites_list", {})) as {
-      callSites: { callSite: string; provider: string; model: string }[];
-    };
+    const result = z
+      .looseObject({
+        callSites: z.array(
+          z.looseObject({
+            callSite: z.string(),
+            provider: z.string(),
+            model: z.string(),
+          }),
+        ),
+      })
+      .parse(await call("inference_callsites_list", {}));
     expect(result.callSites.length).toBe(LLMCallSiteEnum.options.length);
     for (const row of result.callSites) {
       expect(typeof row.provider).toBe("string");

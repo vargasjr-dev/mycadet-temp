@@ -1,5 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 const mockListProviders = mock(() => [
   {
     provider: "google",
@@ -141,16 +143,20 @@ describe("GET /v1/oauth/providers", () => {
     );
 
     expect(status).toBe(200);
-    const { providers } = body as {
-      providers: Array<{
-        provider_key: string;
-        display_name: string | null;
-        description: string | null;
-        dashboard_url: string | null;
-        client_id_placeholder: string | null;
-        requires_client_secret: boolean;
-      }>;
-    };
+    const { providers } = z
+      .looseObject({
+        providers: z.array(
+          z.looseObject({
+            provider_key: z.string(),
+            display_name: z.union([z.null(), z.string()]),
+            description: z.union([z.null(), z.string()]),
+            dashboard_url: z.union([z.null(), z.string()]),
+            client_id_placeholder: z.union([z.null(), z.string()]),
+            requires_client_secret: z.boolean(),
+          }),
+        ),
+      })
+      .parse(body);
 
     expect(providers).toHaveLength(2);
     expect(providers[0]!.provider_key).toBe("google");
@@ -191,12 +197,16 @@ describe("GET /v1/oauth/providers", () => {
     );
 
     expect(status).toBe(200);
-    const { providers } = body as {
-      providers: Array<{
-        provider_key: string;
-        logo_url: string | null;
-      }>;
-    };
+    const { providers } = z
+      .looseObject({
+        providers: z.array(
+          z.looseObject({
+            provider_key: z.string(),
+            logo_url: z.union([z.null(), z.string()]),
+          }),
+        ),
+      })
+      .parse(body);
 
     expect(providers[0]!.logo_url).toBe("https://cdn.simpleicons.org/google");
     expect(providers[1]!.logo_url).toBeNull();
@@ -215,16 +225,18 @@ describe("GET /v1/oauth/providers/:providerKey", () => {
     // emits camelCase keys (see provider-serializer.ts). The list endpoint
     // uses `serializeProviderSummary` and emits snake_case — these are
     // separate wire formats by design.
-    const { provider } = body as {
-      provider: {
-        providerKey: string;
-        displayName: string | null;
-        description: string | null;
-        dashboardUrl: string | null;
-        clientIdPlaceholder: string | null;
-        requiresClientSecret: boolean;
-      };
-    };
+    const { provider } = z
+      .looseObject({
+        provider: z.looseObject({
+          providerKey: z.string(),
+          displayName: z.union([z.null(), z.string()]),
+          description: z.union([z.null(), z.string()]),
+          dashboardUrl: z.union([z.null(), z.string()]),
+          clientIdPlaceholder: z.union([z.null(), z.string()]),
+          requiresClientSecret: z.boolean(),
+        }),
+      })
+      .parse(body);
 
     expect(provider.providerKey).toBe("google");
     expect(provider.displayName).toBe("Google");
@@ -238,7 +250,9 @@ describe("GET /v1/oauth/providers/:providerKey", () => {
     );
 
     expect(status).toBe(404);
-    const { error } = body as { error: { code: string } };
+    const { error } = z
+      .looseObject({ error: z.looseObject({ code: z.string() }) })
+      .parse(body);
     expect(error.code).toBe("NOT_FOUND");
   });
 });

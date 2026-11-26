@@ -70,7 +70,7 @@ function getAllowedRequestHostPatterns(
 
   if (providerRow.injectionTemplates) {
     try {
-      const parsed = JSON.parse(providerRow.injectionTemplates) as unknown;
+      const parsed: unknown = JSON.parse(providerRow.injectionTemplates);
       if (Array.isArray(parsed)) {
         for (const entry of parsed) {
           if (

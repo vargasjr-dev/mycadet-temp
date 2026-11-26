@@ -124,7 +124,7 @@ export const servicesConfigMigration: WorkspaceMigration = {
       typeof config.imageGenModel === "string"
         ? config.imageGenModel
         : typeof existingServices["image-generation"]?.model === "string"
-          ? (existingServices["image-generation"].model as string)
+          ? existingServices["image-generation"].model
           : "gemini-2.5-flash-image";
     services["image-generation"] = {
       ...(existingServices["image-generation"] ?? {}),

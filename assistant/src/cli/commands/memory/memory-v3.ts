@@ -58,7 +58,7 @@ function collectRepeatable(value: string, acc: string[]): string[] {
  * re-judge measures the exact same turn set.
  */
 function readTurnIdsFromFile(path: string): string[] {
-  const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
+  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
   if (!Array.isArray(parsed)) {
     throw new Error(
       `--turns-file ${path} must be a JSON array (a key.json or packets.json)`,
@@ -75,11 +75,11 @@ function readTurnIdsFromFile(path: string): string[] {
 
 /** Read and parse a JSON file, asserting it is an array. */
 function readJsonArray<T>(path: string, label: string): T[] {
-  const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
+  const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
   if (!Array.isArray(parsed)) {
     throw new Error(`--${label} ${path} must be a JSON array`);
   }
-  return parsed as T[];
+  return parsed;
 }
 
 /** Render an eval-tally result as a human-readable summary block. */

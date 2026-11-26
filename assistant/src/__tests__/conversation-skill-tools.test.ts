@@ -138,7 +138,7 @@ mock.module("../tools/skills/skill-tool-factory.js", () => ({
       category: entry.category,
       defaultRiskLevel: RiskLevel.Medium,
       executionTarget: "sandbox" as const,
-      input_schema: entry.input_schema as object,
+      input_schema: entry.input_schema,
       execute: async () => ({ content: "", isError: false }),
     }));
   },

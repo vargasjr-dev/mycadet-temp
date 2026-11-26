@@ -6,10 +6,11 @@
  * here write real plugin directories under the per-test-process workspace
  * plugins dir and converge them against the real schedule store.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
@@ -44,9 +45,18 @@ interface SerializedSchedule {
 }
 
 async function listed(id: string): Promise<SerializedSchedule> {
-  const { schedules } = (await listHandler({ queryParams: {} })) as {
-    schedules: SerializedSchedule[];
-  };
+  const { schedules } = z
+    .looseObject({
+      schedules: z.array(
+        z.looseObject({
+          id: z.string(),
+          sourceKey: z.union([z.null(), z.string()]),
+          enabled: z.boolean(),
+          disarmReason: z.union([z.null(), z.string()]),
+        }),
+      ),
+    })
+    .parse(await listHandler({ queryParams: {} }));
   const found = schedules.find((s) => s.id === id);
   if (!found) {
     throw new Error(`schedule ${id} missing from the list response`);
@@ -55,9 +65,16 @@ async function listed(id: string): Promise<SerializedSchedule> {
 }
 
 async function fetched(id: string): Promise<SerializedSchedule> {
-  const { schedule } = (await getHandler({ pathParams: { id } })) as {
-    schedule: SerializedSchedule;
-  };
+  const { schedule } = z
+    .looseObject({
+      schedule: z.looseObject({
+        id: z.string(),
+        sourceKey: z.union([z.null(), z.string()]),
+        enabled: z.boolean(),
+        disarmReason: z.union([z.null(), z.string()]),
+      }),
+    })
+    .parse(await getHandler({ pathParams: { id } }));
   return schedule;
 }
 

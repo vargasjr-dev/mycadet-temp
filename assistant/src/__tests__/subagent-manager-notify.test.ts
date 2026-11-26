@@ -180,9 +180,9 @@ describe("SubagentManager abort notification", () => {
     injectFakeSubagent(manager, subagentId, state, parentSender);
 
     // A different sender (simulating abort from a different thread's socket).
-    const abortingSender = ((_msg: AssistantEvent) => {}) as (
-      msg: AssistantEvent,
-    ) => void;
+    const abortingSender: (msg: AssistantEvent) => void = (
+      _msg: AssistantEvent,
+    ) => {};
 
     manager.abort(subagentId, abortingSender);
 

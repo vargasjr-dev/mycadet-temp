@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { BatchTranscriber } from "../../../stt/types.js";
 import { SttError } from "../../../stt/types.js";
 
@@ -147,7 +149,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const result = await tryTranscribeAudioAttachments(["a1"]);
 
     expect(result.status).toBe("no_provider");
-    const reason = (result as { reason: string }).reason;
+    const reason = z.looseObject({ reason: z.string() }).parse(result).reason;
     expect(reason).toContain("speech-to-text");
     expect(reason).toContain("voice message transcription");
     expect(reason).not.toContain("OpenAI");
@@ -167,7 +169,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const result = await tryTranscribeAudioAttachments(["a1"]);
 
     expect(result.status).toBe("error");
-    const reason = (result as { reason: string }).reason;
+    const reason = z.looseObject({ reason: z.string() }).parse(result).reason;
     // Friendly copy replaces the raw provider string.
     expect(reason).not.toContain("API rate limit exceeded");
     expect(reason).toContain("OpenAI Whisper");
@@ -193,7 +195,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const result = await tryTranscribeAudioAttachments(["a1"]);
 
     expect(result.status).toBe("error");
-    const reason = (result as { reason: string }).reason;
+    const reason = z.looseObject({ reason: z.string() }).parse(result).reason;
     expect(reason).not.toContain("{");
     expect(reason).not.toContain("INVALID_AUTH");
     expect(reason).toContain("API key");
@@ -218,7 +220,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const result = await tryTranscribeAudioAttachments(["a1"]);
 
     expect(result.status).toBe("error");
-    const reason = (result as { reason: string }).reason;
+    const reason = z.looseObject({ reason: z.string() }).parse(result).reason;
     expect(reason).toBe(managedMessage);
     // The BYOK rewrite must not appear over a userFacing message.
     expect(reason).not.toContain("API key");
@@ -243,7 +245,7 @@ describe("tryTranscribeAudioAttachments", () => {
     const result = await tryTranscribeAudioAttachments(["a1"]);
 
     expect(result.status).toBe("error");
-    const reason = (result as { reason: string }).reason;
+    const reason = z.looseObject({ reason: z.string() }).parse(result).reason;
     expect(reason).toBe(creditsMessage);
     expect(reason).not.toContain("returned an error while transcribing");
   });
@@ -262,9 +264,9 @@ describe("tryTranscribeAudioAttachments", () => {
     const result = await tryTranscribeAudioAttachments(["a1"]);
 
     expect(result.status).toBe("error");
-    expect((result as { reason: string }).reason).toContain(
-      "Transcription timed out",
-    );
+    expect(
+      z.looseObject({ reason: z.string() }).parse(result).reason,
+    ).toContain("Transcription timed out");
   });
 
   test("multiple audio attachments are transcribed and concatenated", async () => {

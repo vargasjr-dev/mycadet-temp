@@ -411,10 +411,10 @@ function isKnownUneditedBody(
   // No connection binding: the bare provider means the default entry of
   // that kind, and a stamped binding would re-introduce the collapsed
   // field on disk.
-  const materialized = materializeProfile(template, copyProvider) as Record<
-    string,
-    unknown
-  >;
+  const materialized: Record<string, unknown> = materializeProfile(
+    template,
+    copyProvider,
+  );
   if (
     entry.model !== materialized.model &&
     !(HISTORICAL_INTENT_MODELS[key][copyProvider] ?? []).includes(entry.model)

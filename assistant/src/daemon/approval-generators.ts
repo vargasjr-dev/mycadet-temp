@@ -199,7 +199,7 @@ export function createApprovalConversationGenerator(): ApprovalConversationGener
       );
     }
 
-    const input = toolUseBlock.input as Record<string, unknown>;
+    const input = toolUseBlock.input;
 
     // Strict validation of the structured output
     const disposition = input.disposition;

@@ -12,7 +12,6 @@
 import type {
   AssistantEvent,
   ContentBlock,
-  ImageContent,
   Message,
 } from "@mycadet/plugin-api";
 import { and, desc, eq, inArray, ne, type SQL, sql } from "drizzle-orm";
@@ -772,7 +771,7 @@ export class ConversationGraphMemory {
       type: "memory_status",
       enabled: true,
       degraded: false,
-    } as AssistantEvent);
+    });
 
     this.lastInjectedBlock = contextBlock;
     this.lastInjectedNodeIds = [
@@ -1241,7 +1240,7 @@ function injectMemoryBlock(
         media_type: img.mediaType,
         data: img.base64Data,
       },
-    } as ImageContent);
+    });
     blocks.push({
       type: "text" as const,
       text: `</memory_image>`,

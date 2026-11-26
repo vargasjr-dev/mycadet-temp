@@ -120,7 +120,7 @@ function createHarness(overrides?: Partial<CallSetupFlowDeps>) {
       spoken.push(text);
     },
     updateCallSession: (_id, updates) => {
-      sessionUpdates.push(updates as Record<string, unknown>);
+      sessionUpdates.push(updates);
     },
     recordCallEvent: (_callSessionId, eventType, payload) => {
       events.push({ eventType, payload });

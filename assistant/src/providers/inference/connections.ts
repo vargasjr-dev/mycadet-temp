@@ -196,7 +196,7 @@ export function createConnection(
 ):
   | { ok: true; connection: ProviderConnection }
   | { ok: false; error: ConnectionCreateError } {
-  if (!VALID_CONNECTION_PROVIDERS.includes(input.provider as never)) {
+  if (!VALID_CONNECTION_PROVIDERS.includes(input.provider)) {
     return {
       ok: false,
       error: { code: "invalid_provider", provider: input.provider },
@@ -285,7 +285,7 @@ export function updateConnection(
 
   if (
     input.provider !== undefined &&
-    !VALID_CONNECTION_PROVIDERS.includes(input.provider as never)
+    !VALID_CONNECTION_PROVIDERS.includes(input.provider)
   ) {
     return {
       ok: false,

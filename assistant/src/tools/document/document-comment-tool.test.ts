@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   createComment,
   getComment,
@@ -317,8 +319,9 @@ describe("executeCommentReply", () => {
     // Verify SSE event
     expect(sent).toHaveLength(1);
     expect(sent[0].type).toBe("document_comment_created");
-    const eventComment = (sent[0] as unknown as { comment: { id: string } })
-      .comment;
+    const eventComment = z
+      .looseObject({ comment: z.looseObject({ id: z.string() }) })
+      .parse(sent[0]).comment;
     expect(eventComment.id).toBe(body.comment.id);
   });
 

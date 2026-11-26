@@ -110,9 +110,7 @@ export function registerConnectCommand(oauth: Command): void {
             return exitFromIpcResult(providerCheck);
           }
 
-          const providerRow = providerCheck.result?.provider as
-            | Record<string, unknown>
-            | undefined;
+          const providerRow = providerCheck.result?.provider;
           const authorizeUrl = providerRow?.authUrl as string | undefined;
 
           // Manual-token providers don't use OAuth2 browser flows

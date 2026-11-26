@@ -14,8 +14,9 @@
  *      empty payload — the `false` default never reaches the queue.
  *   6. invalid `op` values are rejected by the enum schema.
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import * as realJobsStore from "../../../persistence/jobs-store.js";
 
@@ -72,7 +73,9 @@ const backfillRoute = memoryV2Routes.find(
 async function runRoute(
   params: Record<string, unknown>,
 ): Promise<BackfillResult> {
-  return (await backfillRoute.handler({ body: params })) as BackfillResult;
+  return z
+    .looseObject({ jobId: z.string() })
+    .parse(await backfillRoute.handler({ body: params }));
 }
 
 beforeEach(() => {

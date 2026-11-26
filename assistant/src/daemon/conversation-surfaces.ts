@@ -2983,7 +2983,7 @@ function applySurfaceUpdate(
       // `SURFACE_DATA_SCHEMAS` with it would read `undefined` and throw), so
       // forward the merge opaquely rather than dropping the update, mirroring
       // restore's verbatim handling of the same types.
-      mergedData = rawMerged as AnySurfaceData;
+      mergedData = rawMerged;
       ctx.surfaceState.set(surfaceId, {
         ...stored,
         data: rawMerged,
@@ -3004,7 +3004,7 @@ function applySurfaceUpdate(
       mergedPair = buildSurfaceShowPair(stored.surfaceType, rawMerged);
       if (mergedPair !== undefined) {
         const normalized = { ...rawMerged, ...mergedPair.data };
-        mergedData = normalized as AnySurfaceData;
+        mergedData = normalized;
         ctx.surfaceState.set(surfaceId, {
           ...stored,
           data: normalized,
@@ -3750,7 +3750,7 @@ export async function surfaceProxyResolver(
       title: app.name,
       data: surfaceData,
       ...(toolUseId ? { toolCallId: toolUseId } : {}),
-    } as UiSurfaceShow);
+    });
 
     // Track surface for persistence
     ctx.currentTurnSurfaces.push({

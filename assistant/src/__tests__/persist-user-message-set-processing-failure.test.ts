@@ -34,7 +34,7 @@ function makeContext(behavior: ContextBehavior = {}): {
   let processing = false;
   let owner = 0;
   const releases: number[] = [];
-  const ctx = {
+  const ctx: MessagingConversationContext = {
     conversationId: "conv-processing-ownership",
     messages: [],
     abortController: null,
@@ -66,7 +66,7 @@ function makeContext(behavior: ContextBehavior = {}): {
     },
     getTurnChannelContext: () => null,
     getTurnInterfaceContext: () => null,
-  } as unknown as MessagingConversationContext;
+  };
   return { ctx, processing: () => processing, releases };
 }
 

@@ -96,7 +96,7 @@ async function handleStartCall({ body }: RouteHandlerArgs) {
 
   const idempotencyKey =
     typeof body.idempotencyKey === "string" && body.idempotencyKey
-      ? (body.idempotencyKey as string)
+      ? body.idempotencyKey
       : null;
 
   if (idempotencyKey) {

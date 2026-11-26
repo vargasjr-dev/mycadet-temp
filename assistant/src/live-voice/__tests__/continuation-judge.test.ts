@@ -29,7 +29,7 @@ function fakeProvider(
     options?: SendMessageOptions,
   ) => Promise<ProviderResponse>,
 ): Provider {
-  return { name: "typesafe", sendMessage: respond } as Provider;
+  return { name: "typesafe", sendMessage: respond };
 }
 
 const baseArgs = {

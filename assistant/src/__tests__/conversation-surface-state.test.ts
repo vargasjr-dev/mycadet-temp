@@ -71,7 +71,7 @@ describe("restoreSurfaceStateEntry", () => {
     // The recorded type must survive restart so the client renders the surface
     // it recorded rather than a coerced dynamic_page. (The verbatim string is
     // carried under the SurfaceType-typed field via the restore boundary cast.)
-    expect(entry.surfaceType as string).toBe("some_future_surface");
+    expect(entry).toHaveProperty("surfaceType", "some_future_surface");
     expect(entry.data).toEqual({ keep: "me" });
   });
 

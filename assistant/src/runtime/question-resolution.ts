@@ -189,9 +189,8 @@ function buildChatReplyResult(
 export function readBatchMetadata(
   interaction: ReturnType<typeof pendingInteractions.get>,
 ): QuestionBatchMetadata {
-  const meta = interaction?.metadata as
-    | Partial<QuestionBatchMetadata>
-    | undefined;
+  const meta: Partial<QuestionBatchMetadata> | undefined =
+    interaction?.metadata;
   return {
     orderedIds: meta?.orderedIds ?? [],
     optionsById: meta?.optionsById ?? {},

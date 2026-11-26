@@ -52,7 +52,10 @@ mock.module("../../../persistence/conversation-crud.js", () => ({
     const title =
       typeof opts === "string"
         ? opts
-        : ((opts as { title?: string } | undefined)?.title ?? null);
+        : (z
+            .looseObject({ title: z.string().optional() })
+            .optional()
+            .parse(opts)?.title ?? null);
     const id = `conv-${createdConversations.length + 1}`;
     const conv = { id, title };
     createdConversations.push(conv);

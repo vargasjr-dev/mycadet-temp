@@ -556,9 +556,8 @@ function makeProviderStub(): Provider {
     name: "stub",
     sendMessage: async (messages) => {
       selectCalls += 1;
-      const first = messages[0]!.content[0] as
-        | (ContentBlock & { cache_control?: unknown })
-        | undefined;
+      const first: (ContentBlock & { cache_control?: unknown }) | undefined =
+        messages[0]!.content[0];
       stablePrefixCaptures.push(
         first && first.type === "text" && first.cache_control
           ? { text: first.text, cacheControl: first.cache_control }

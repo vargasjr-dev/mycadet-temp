@@ -50,7 +50,23 @@ async function getSchema(routes: RouteDefinition[]): Promise<SchemaEntry[]> {
   const meta = ipcMethods.find((r) => r.operationId === "get_route_schema");
   expect(meta).toBeDefined();
   const result = await meta!.handler({});
-  return result as SchemaEntry[];
+  return z
+    .array(
+      z.looseObject({
+        operationId: z.string(),
+        endpoint: z.string(),
+        method: z.string(),
+        policy: z.union([
+          z.null(),
+          z.looseObject({
+            requiredScopes: z.array(z.string()),
+            allowedPrincipalTypes: z.array(z.string()),
+            allowedTrustClasses: z.array(z.string()),
+          }),
+        ]),
+      }),
+    )
+    .parse(result);
 }
 
 // ---------------------------------------------------------------------------

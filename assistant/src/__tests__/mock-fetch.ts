@@ -72,7 +72,7 @@ export function mockFetch(
       status: entry.response.status,
       headers: { "Content-Type": "application/json" },
     });
-  }) as unknown as typeof globalThis.fetch;
+  }) as typeof globalThis.fetch;
 }
 
 export function getMockFetchCalls(): { path: string; init: RequestInit }[] {

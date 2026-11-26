@@ -147,7 +147,7 @@ async function processSegment(
 
   const response = await client.models.generateContent({
     model,
-    contents: [{ role: "user" as const, parts: parts as never }],
+    contents: [{ role: "user" as const, parts: parts }],
     config: {
       ...(options.signal ? { abortSignal: options.signal } : {}),
       systemInstruction: options.systemPrompt,
@@ -355,7 +355,7 @@ export async function mapSegments(
       );
 
       if (processingResult.status === "success" && processingResult.result) {
-        const segResult = processingResult.result as SegmentMapResult;
+        const segResult = processingResult.result;
         results.push(segResult);
         successCount++;
 

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { Conversation } from "../daemon/conversation.js";
-import type { SkillProjectionCache } from "../daemon/conversation-skill-tools.js";
 import type { Message } from "../providers/types.js";
 import { setHubPublishOverrideForTesting } from "../runtime/assistant-event-hub.js";
 import { ToolDefinition } from "../tools/tool-types.js";
@@ -73,7 +72,7 @@ function makeProjectionCtx(
 ): Conversation {
   return asConversation({
     skillProjectionState: new Map(),
-    skillProjectionCache: {} as SkillProjectionCache,
+    skillProjectionCache: {},
     toolsDisabledDepth: 0,
     ...overrides,
   });

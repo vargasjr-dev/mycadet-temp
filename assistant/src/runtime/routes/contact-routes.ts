@@ -1051,11 +1051,11 @@ export async function handleMergeContactsRoute(args: RouteHandlerArgs) {
  * write).
  */
 export async function handleUpdateContactChannelRoute(args: RouteHandlerArgs) {
-  const body = (args.body ?? {}) as {
+  const body: {
     status?: string;
     policy?: string;
     reason?: string;
-  };
+  } = args.body ?? {};
 
   try {
     const result = await ipcCallPersistent("update_contact_channel", {

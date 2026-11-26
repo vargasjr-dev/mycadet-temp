@@ -1795,7 +1795,7 @@ describe("NL approval routing via destination-scoped guardian requests", () => {
       content: "yes",
       externalMessageId: `msg-nl-approve-${Date.now()}`,
     });
-    const res = await handleChannelInbound(req, noopProcessMessage as any);
+    const res = await handleChannelInbound(req, noopProcessMessage);
     const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);
@@ -1846,7 +1846,7 @@ describe("NL approval routing via destination-scoped guardian requests", () => {
       content: "approve",
       externalMessageId: `msg-nl-mismatch-${Date.now()}`,
     });
-    const res = await handleChannelInbound(req, noopProcessMessage as any);
+    const res = await handleChannelInbound(req, noopProcessMessage);
     const body = jsonObjectSchema.parse(await res.json());
 
     expect(body.accepted).toBe(true);

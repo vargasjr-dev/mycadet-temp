@@ -157,7 +157,7 @@ function toolContext(overrides: Partial<ToolContext>): ToolContext {
     trustClass: "guardian",
     sendToClient: () => {},
     ...overrides,
-  } as ToolContext;
+  };
 }
 
 describe("executeSubagentSpawn: cronRunId forwarding", () => {

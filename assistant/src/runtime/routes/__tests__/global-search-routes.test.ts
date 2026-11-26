@@ -10,8 +10,9 @@
  * `q` string flip the conversation arm to `includeArchived: true`, and the
  * filter token is stripped from the term before any backend is called.
  */
-
 import { afterEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { ContactWithChannels } from "../../../contacts/types.js";
 
@@ -80,9 +81,19 @@ describe("global-search contacts recency source", () => {
       }),
     ];
 
-    const result = (await handler({
-      queryParams: { q: "ali", categories: "contacts" },
-    })) as { results: { contacts: { id: string; lastInteraction: number }[] } };
+    const result = z
+      .looseObject({
+        results: z.looseObject({
+          contacts: z.array(
+            z.looseObject({ id: z.string(), lastInteraction: z.number() }),
+          ),
+        }),
+      })
+      .parse(
+        await handler({
+          queryParams: { q: "ali", categories: "contacts" },
+        }),
+      );
 
     expect(result.results.contacts).toHaveLength(1);
     expect(result.results.contacts[0].lastInteraction).toBe(5000);
@@ -95,9 +106,19 @@ describe("global-search contacts recency source", () => {
       makeContact({ id: "ct_c", displayName: "C", updatedAt: 100 }),
     ];
 
-    const result = (await handler({
-      queryParams: { q: "x", categories: "contacts" },
-    })) as { results: { contacts: { id: string; lastInteraction: number }[] } };
+    const result = z
+      .looseObject({
+        results: z.looseObject({
+          contacts: z.array(
+            z.looseObject({ id: z.string(), lastInteraction: z.number() }),
+          ),
+        }),
+      })
+      .parse(
+        await handler({
+          queryParams: { q: "x", categories: "contacts" },
+        }),
+      );
 
     expect(result.results.contacts.map((c) => c.id)).toEqual([
       "ct_a",
@@ -259,9 +280,16 @@ describe("global-search q parser", () => {
     // Clients highlight matches with these tokens, so they must come from
     // the same tokenizer the sparse index uses (non-alphanumeric splits),
     // with filter tokens already stripped.
-    const result = (await handler({
-      queryParams: { q: "is:archived alpha,beta", categories: "conversations" },
-    })) as { query: string; queryTokens: string[] };
+    const result = z
+      .looseObject({ query: z.string(), queryTokens: z.array(z.string()) })
+      .parse(
+        await handler({
+          queryParams: {
+            q: "is:archived alpha,beta",
+            categories: "conversations",
+          },
+        }),
+      );
 
     expect(result.query).toBe("alpha,beta");
     expect(result.queryTokens).toEqual(["alpha", "beta"]);

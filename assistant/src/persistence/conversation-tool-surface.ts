@@ -126,7 +126,7 @@ export function getConversationToolSurface(
       return null;
     }
     return {
-      tools: parsed as ToolDefinition[],
+      tools: parsed,
       delegateIndependentTasks: row.delegateIndependentTasks ?? null,
     };
   } catch {

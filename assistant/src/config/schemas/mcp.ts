@@ -93,7 +93,7 @@ export const McpConfigSchema = z
   .object({
     servers: z
       .record(z.string(), McpServerConfigSchema)
-      .default({} as Record<string, never>)
+      .default({})
       .describe("Map of MCP server names to their configurations"),
   })
   .describe(

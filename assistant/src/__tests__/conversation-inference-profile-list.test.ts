@@ -9,6 +9,8 @@
  */
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 import {
@@ -21,12 +23,6 @@ import { RuntimeHttpServer } from "../runtime/http-server.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
-
-type ConversationSummary = {
-  id: string;
-  title: string;
-  inferenceProfile?: string;
-};
 
 describe("conversation HTTP responses include inferenceProfile", () => {
   let server: RuntimeHttpServer | null = null;
@@ -52,9 +48,17 @@ describe("conversation HTTP responses include inferenceProfile", () => {
     const response = await fetch(url("/conversations"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversations: ConversationSummary[];
-    };
+    const body = z
+      .looseObject({
+        conversations: z.array(
+          z.looseObject({
+            id: z.string(),
+            title: z.string(),
+            inferenceProfile: z.string().optional(),
+          }),
+        ),
+      })
+      .parse(await response.json());
     const pinnedListed = body.conversations.find((c) => c.id === pinned.id);
     const unsetListed = body.conversations.find((c) => c.id === unset.id);
     expect(pinnedListed).toBeDefined();
@@ -72,9 +76,15 @@ describe("conversation HTTP responses include inferenceProfile", () => {
     const response = await fetch(url(`/conversations/${conv.id}`));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversation: ConversationSummary;
-    };
+    const body = z
+      .looseObject({
+        conversation: z.looseObject({
+          id: z.string(),
+          title: z.string(),
+          inferenceProfile: z.string().optional(),
+        }),
+      })
+      .parse(await response.json());
     expect(body.conversation.id).toBe(conv.id);
     expect(body.conversation.inferenceProfile).toBe("balanced");
   });

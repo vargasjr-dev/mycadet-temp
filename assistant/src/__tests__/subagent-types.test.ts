@@ -4,7 +4,6 @@ import {
   SUBAGENT_LIMITS,
   type SubagentConfig,
   type SubagentState,
-  type SubagentStatus,
   TERMINAL_STATUSES,
 } from "../subagent/types.js";
 
@@ -66,7 +65,7 @@ describe("SubagentState type shape", () => {
         label: "Test",
         objective: "Do something",
       },
-      status: "pending" as SubagentStatus,
+      status: "pending",
       conversationId: "conv-id",
       isFork: false,
       createdAt: Date.now(),

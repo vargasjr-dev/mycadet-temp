@@ -26,7 +26,7 @@ import { telegramInviteAdapter } from "../runtime/channel-invite-transports/tele
 // Helpers
 // ---------------------------------------------------------------------------
 
-const CHANNEL: ChannelId = "telegram" as ChannelId;
+const CHANNEL: ChannelId = "telegram";
 
 // ---------------------------------------------------------------------------
 // buildShareLink

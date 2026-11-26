@@ -7,8 +7,9 @@
  * `ProviderResponse.resolvedEndpoint` and must be omitted — not guessed —
  * when the provider does not surface one.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import { LLMSchema } from "../../../config/schemas/llm.js";
 import type { ConfiguredProviderOptions } from "../../../providers/provider-send-message.js";
@@ -127,13 +128,19 @@ describe("inference_send evidence", () => {
     });
 
     // WHEN the inference_send handler processes a request
-    const result = (await inferenceSendHandler()({
-      body: { message: "hi" },
-    })) as {
-      response: string;
-      model: string;
-      evidence?: { resolved_endpoint?: string };
-    };
+    const result = z
+      .looseObject({
+        response: z.string(),
+        model: z.string(),
+        evidence: z
+          .looseObject({ resolved_endpoint: z.string().optional() })
+          .optional(),
+      })
+      .parse(
+        await inferenceSendHandler()({
+          body: { message: "hi" },
+        }),
+      );
 
     // THEN the response echoes the model text
     expect(result.response).toBe("hello");
@@ -156,9 +163,17 @@ describe("inference_send evidence", () => {
     resolutionConnectionName = "gemini-personal";
 
     // WHEN the inference_send handler processes a request
-    const result = (await inferenceSendHandler()({
-      body: { message: "hi" },
-    })) as { evidence?: { connection_name?: string } };
+    const result = z
+      .looseObject({
+        evidence: z
+          .looseObject({ connection_name: z.string().optional() })
+          .optional(),
+      })
+      .parse(
+        await inferenceSendHandler()({
+          body: { message: "hi" },
+        }),
+      );
 
     // THEN the evidence names the connection that authenticated the send
     expect(result.evidence?.connection_name).toBe("gemini-personal");
@@ -169,9 +184,17 @@ describe("inference_send evidence", () => {
     nextResponse = baseResponse({ resolvedEndpoint: undefined });
 
     // WHEN the inference_send handler processes a request
-    const result = (await inferenceSendHandler()({
-      body: { message: "hi" },
-    })) as { evidence?: { resolved_endpoint?: string } };
+    const result = z
+      .looseObject({
+        evidence: z
+          .looseObject({ resolved_endpoint: z.string().optional() })
+          .optional(),
+      })
+      .parse(
+        await inferenceSendHandler()({
+          body: { message: "hi" },
+        }),
+      );
 
     // THEN no evidence object is fabricated — the endpoint stays unknown
     expect(result.evidence).toBeUndefined();
@@ -203,9 +226,7 @@ describe("inference_send evidence", () => {
 
     // THEN the failure carries the evidence needed to diagnose it
     expect(error).toBeInstanceOf(UpstreamProviderError);
-    expect(
-      (error as InstanceType<typeof UpstreamProviderError>).details,
-    ).toEqual({
+    expect(error).toHaveProperty("details", {
       error_class: "Error",
       error_stack_head: expect.any(String),
       evidence: {

@@ -3,11 +3,12 @@
  * `config.json` and surfaces the resolved (post-default) values via the
  * response payload.
  */
-
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import { invalidateConfigCache } from "../../../config/loader.js";
 import { ROUTES } from "../heartbeat-routes.js";
@@ -78,13 +79,15 @@ describe("setHeartbeatConfig handler", () => {
     );
 
     const handler = findHandler("updateHeartbeatConfig");
-    const result = (await handler({ body: { enabled: true } })) as {
-      enabled: boolean;
-      intervalMs: number;
-      activeHoursStart: number | null;
-      activeHoursEnd: number | null;
-      success: boolean;
-    };
+    const result = z
+      .looseObject({
+        enabled: z.boolean(),
+        intervalMs: z.number(),
+        activeHoursStart: z.union([z.null(), z.number()]),
+        activeHoursEnd: z.union([z.null(), z.number()]),
+        success: z.boolean(),
+      })
+      .parse(await handler({ body: { enabled: true } }));
 
     // On-disk: only user-set heartbeat fields, no schema defaults baked in.
     const onDisk = readConfig();
@@ -127,10 +130,12 @@ describe("getHeartbeatConfig handler", () => {
     invalidateConfigCache();
 
     const handler = findHandler("getHeartbeatConfig");
-    const result = (await handler({})) as {
-      timezone: string | null;
-      effectiveTimezone: string | null;
-    };
+    const result = z
+      .looseObject({
+        timezone: z.union([z.null(), z.string()]),
+        effectiveTimezone: z.union([z.null(), z.string()]),
+      })
+      .parse(await handler({}));
 
     expect(result.timezone).toBeNull();
     expect(result.effectiveTimezone).toBe("America/Los_Angeles");

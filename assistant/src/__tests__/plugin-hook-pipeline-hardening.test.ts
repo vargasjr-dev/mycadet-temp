@@ -120,7 +120,7 @@ describe("hook output validation", () => {
           },
         },
         { type: "tool_result", tool_use_id: "tu-1", content: "ok" },
-      ] as Message["content"],
+      ],
     };
     const final = await runUserPromptHook((ctx) => {
       ctx.latestMessages.push(injected);

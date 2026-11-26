@@ -1,5 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import type {
   QueuedDispatch,
   QueuedMessage,
@@ -56,7 +58,8 @@ mock.module("../../tools/background-tool-registry.js", () => ({
     tools.some(
       (tool) =>
         options?.startedAfter === undefined ||
-        (tool as { startedAt: number }).startedAt >= options.startedAfter,
+        z.looseObject({ startedAt: z.number() }).parse(tool).startedAt >=
+          options.startedAfter,
     ),
 }));
 mock.module("../../daemon/conversation-registry.js", () => ({

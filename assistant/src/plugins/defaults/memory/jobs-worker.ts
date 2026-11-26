@@ -332,7 +332,7 @@ export function startMemoryJobsWorkerLoop(): MemoryJobsWorker {
         }
       });
     }, currentIntervalMs);
-    (timer as NodeJS.Timeout).unref?.();
+    timer.unref?.();
   };
 
   void tick().then(() => {

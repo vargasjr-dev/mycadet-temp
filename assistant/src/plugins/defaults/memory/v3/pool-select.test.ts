@@ -23,7 +23,7 @@ import type {
   ProviderResponse,
 } from "@mycadet/plugin-api";
 
-import type { MemoryRoutingTurn, Slug } from "./types.js";
+import type { MemoryRoutingTurn } from "./types.js";
 
 const realPluginApi = await import("@mycadet/plugin-api");
 
@@ -74,9 +74,7 @@ const turn: MemoryRoutingTurn = {
 
 const pool: Parameters<typeof selectPool>[0] = {
   stable: [],
-  finder: [
-    { slug: "page-a" as Slug, descriptor: "a descriptor", lane: "needle" },
-  ],
+  finder: [{ slug: "page-a", descriptor: "a descriptor", lane: "needle" }],
 };
 
 describe("selectPool", () => {
@@ -164,13 +162,13 @@ describe("selectPool", () => {
         },
       ]);
     const candidate: Parameters<typeof renderFinderLine>[0] = {
-      slug: "page-a" as Slug,
+      slug: "page-a",
       descriptor: "a descriptor",
       lane: "needle",
     };
     await selectPool(
       {
-        stable: [{ slug: "page-s" as Slug, card: "card s", lane: "core" }],
+        stable: [{ slug: "page-s", card: "card s", lane: "core" }],
         finder: [candidate],
       },
       turn,

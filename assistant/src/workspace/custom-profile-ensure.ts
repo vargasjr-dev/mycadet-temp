@@ -112,7 +112,7 @@ export function completedProfileBody(
   }
   return mergePreservingUnknownKeys(
     entry,
-    completeCustomProfile(dflt, parsed.data) as Record<string, unknown>,
+    completeCustomProfile(dflt, parsed.data),
   );
 }
 

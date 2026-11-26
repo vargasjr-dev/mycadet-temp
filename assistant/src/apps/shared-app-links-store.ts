@@ -100,7 +100,7 @@ export function getSharedAppLink(
   return {
     id: row.id,
     shareToken: row.shareToken,
-    bundleData: row.bundleData as Buffer,
+    bundleData: row.bundleData,
     bundleSizeBytes: row.bundleSizeBytes,
     manifestJson: row.manifestJson,
     downloadCount: row.downloadCount,

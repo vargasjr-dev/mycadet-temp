@@ -100,7 +100,7 @@ export function snapshotHistoryRow(
   if (opts.includeEventLog !== false) {
     eventLog = [];
     try {
-      const parsed = JSON.parse(row.eventLogJson) as unknown;
+      const parsed: unknown = JSON.parse(row.eventLogJson);
       if (Array.isArray(parsed)) {
         eventLog = parsed;
       }
@@ -193,9 +193,7 @@ export function getAcpSessionSnapshot(
   const snapshotOptions = {
     includeEventLog: opts.includeEventLog ?? true,
   };
-  const live = (manager.getStatus() as AcpSessionState[]).find(
-    (state) => state.id === acpSessionId,
-  );
+  const live = manager.getStatus().find((state) => state.id === acpSessionId);
   if (live) {
     return fromLiveState(live, manager, snapshotOptions);
   }
@@ -214,7 +212,7 @@ export function listAcpSessionSnapshots(opts: {
   includeEventLog?: boolean;
 }): AcpSessionSnapshotPage {
   const manager = getAcpSessionManager();
-  const inMemory = manager.getStatus() as AcpSessionState[];
+  const inMemory = manager.getStatus();
   const snapshotOptions = {
     includeEventLog: opts.includeEventLog ?? true,
   };

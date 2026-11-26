@@ -50,7 +50,7 @@ const reconcileRoute = ROUTES.find(
 function reconcile(parentConversationId: string) {
   return reconcileRoute.handler({
     queryParams: { parentConversationId },
-  } as Parameters<typeof reconcileRoute.handler>[0]) as {
+  }) as {
     subagents: Record<string, Record<string, unknown>>;
   };
 }

@@ -23,7 +23,7 @@ function createMockProvider(): {
       _messages: Message[],
       options?: SendMessageOptions,
     ): Promise<ProviderResponse> {
-      capturedConfig = options?.config as Record<string, unknown> | undefined;
+      capturedConfig = options?.config;
       return {
         content: [{ type: "text", text: "Hello" }],
         model: "mock-model",

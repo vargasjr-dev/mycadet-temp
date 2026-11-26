@@ -16,9 +16,9 @@ describe("requestSupportsInlineAudio", () => {
   test("unknown models fail closed unless a profile declares audio support", () => {
     expect(requestSupportsInlineAudio("qwen2.5-omni")).toBe(false);
 
-    const config = getConfig() as {
+    const config: {
       llm: { profiles: Record<string, unknown> };
-    };
+    } = getConfig();
     config.llm = {
       profiles: {
         gateway: {

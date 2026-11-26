@@ -11,11 +11,7 @@ import type {
 import { z } from "zod";
 
 import { MALFORMED_TOOL_CALL_MESSAGE } from "../providers/malformed-tool-call.js";
-import type {
-  ContentBlock,
-  Message,
-  ProviderEvent,
-} from "../providers/types.js";
+import type { Message, ProviderEvent } from "../providers/types.js";
 import { ContextOverflowError } from "../providers/types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 import { createAbortReason } from "../util/abort-reasons.js";
@@ -1537,7 +1533,7 @@ describe("GeminiProvider", () => {
             type: "thinking",
             thinking: "hmm...",
             signature: "sig",
-          } as ContentBlock,
+          },
           { type: "text", text: "Hello" },
         ],
       },
@@ -1566,7 +1562,7 @@ describe("GeminiProvider", () => {
             type: "thinking",
             thinking: "hmm...",
             signature: "sig",
-          } as ContentBlock,
+          },
         ],
       },
       { role: "user", content: [{ type: "text", text: "Hello" }] },

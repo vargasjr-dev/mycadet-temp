@@ -1266,7 +1266,7 @@ describe("pairDeliveryWithConversation", () => {
 
       const result = await pairDeliveryWithConversation(
         signal,
-        channel as NotificationChannel,
+        channel,
         makeCopy(),
       );
 

@@ -919,9 +919,7 @@ async function handleSetActiveProfile({ body = {} }: RouteHandlerArgs) {
       `Profile "${name}" is disabled and cannot be set as the active profile. Enable it first, or pick another.`,
     );
   }
-  if (
-    !profileSupportsTextGeneration(entry, effective as Record<string, unknown>)
-  ) {
+  if (!profileSupportsTextGeneration(entry, effective)) {
     throw new BadRequestError(nonTextConversationProfileMessage(name));
   }
   // No escape hatch here: an active profile that cannot dispatch locks the

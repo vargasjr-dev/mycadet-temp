@@ -79,7 +79,7 @@ mock.module("../apps/app-store.js", () => ({
       >
     >,
   ) => {
-    updateArgs = updates as Record<string, unknown>;
+    updateArgs = updates;
     return { ...mockApp!, ...updates };
   },
   deleteApp: () => {},

@@ -246,7 +246,7 @@ export function createVoiceProgressNarrator(options: {
         if (toolBlock?.name !== PROGRESS_TOOL_NAME) {
           return null;
         }
-        const value = (toolBlock.input as Record<string, unknown>).update;
+        const value = toolBlock.input.update;
         if (typeof value !== "string") {
           return null;
         }

@@ -37,7 +37,7 @@ function fakeProvider(
   return {
     name: "typesafe",
     sendMessage: respond,
-  } as Provider;
+  };
 }
 
 describe("recentConversationForJudge", () => {

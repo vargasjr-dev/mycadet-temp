@@ -14,10 +14,10 @@
  *   normally. The gate also covers the `skill_execute` indirection by
  *   gating the resolved inner tool name.
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { SkillProjectionCache } from "../daemon/conversation-skill-tools.js";
+import { z } from "zod";
+
 import { PermissionPrompter } from "../permissions/prompter.js";
 import { SecretPrompter } from "../permissions/secret-prompter.js";
 import type { Message } from "../providers/types.js";
@@ -138,7 +138,7 @@ function makeProjectionCtx(
 ): Conversation {
   return asConversation({
     skillProjectionState: new Map(),
-    skillProjectionCache: {} as SkillProjectionCache,
+    skillProjectionCache: {},
     toolsDisabledDepth: 0,
     ...overrides,
   });
@@ -326,11 +326,13 @@ describe("createResolveToolsCallback — toolContextPin", () => {
     expect(liveSlackUiShow).toEqual(clientlessSlackUiShow);
     expect(liveSlackUiShow).toEqual(liveDesktopUiShow);
     expect(
-      (
-        liveSlackUiShow.input_schema as {
-          properties: { surface_type: { enum: string[] } };
-        }
-      ).properties.surface_type.enum,
+      z
+        .looseObject({
+          properties: z.looseObject({
+            surface_type: z.looseObject({ enum: z.array(z.string()) }),
+          }),
+        })
+        .parse(liveSlackUiShow.input_schema).properties.surface_type.enum,
     ).toContain("choice");
     expect(liveSlackUiShow.description).toContain("dynamic_page");
   });

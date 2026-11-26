@@ -6,10 +6,10 @@
  * filter, and the camera-frame flags are exercised on stored rows rather than
  * on a stub's idea of them.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { isToolResultOnlyUserMessage } from "../../conversations/message-consolidation.js";
 import {
@@ -57,7 +57,23 @@ function listAttachments(queryParams: Record<string, string>): ListResult {
   if (!route) {
     throw new Error("attachment_list route not registered");
   }
-  return route.handler({ queryParams }) as ListResult;
+  return z
+    .looseObject({
+      attachments: z.array(
+        z.looseObject({
+          id: z.string(),
+          filename: z.string(),
+          messageId: z.string(),
+          createdAt: z.number(),
+          sightFrame: z.boolean(),
+          ambientKeep: z.boolean(),
+          thumbnailData: z.string().optional(),
+        }),
+      ),
+      total: z.number(),
+      hasMore: z.boolean(),
+    })
+    .parse(route.handler({ queryParams }));
 }
 
 function resetTables(): void {

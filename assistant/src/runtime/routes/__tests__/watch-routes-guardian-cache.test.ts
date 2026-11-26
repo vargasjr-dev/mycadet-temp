@@ -10,6 +10,7 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { GuardianDelivery } from "@mycadet/gateway-client";
+import { z } from "zod";
 
 let cachedResult: GuardianDelivery[] | null = null;
 let freshResult: GuardianDelivery[] | null = null;
@@ -60,7 +61,9 @@ function newSocket() {
   return {
     types,
     send: (data: string) => {
-      types.push((JSON.parse(data) as { type: string }).type);
+      types.push(
+        z.looseObject({ type: z.string() }).parse(JSON.parse(data)).type,
+      );
     },
     close: () => {},
   };

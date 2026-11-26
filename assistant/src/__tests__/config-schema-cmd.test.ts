@@ -285,10 +285,10 @@ describe("CLI schema command", () => {
     const origExit = process.exit;
     const origStderrWrite = process.stderr.write.bind(process.stderr);
     let exitCode: number | undefined;
-    process.exit = ((code?: number) => {
+    process.exit = (code?: number) => {
       exitCode = code;
       throw new Error(`process.exit(${code})`);
-    }) as never;
+    };
     process.stderr.write = () => true;
 
     try {

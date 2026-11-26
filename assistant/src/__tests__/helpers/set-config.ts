@@ -21,7 +21,7 @@ export function setConfig(key: string, value: unknown): void {
   let config: Record<string, unknown> = {};
   if (existsSync(path)) {
     try {
-      const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
+      const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         config = parsed as Record<string, unknown>;
       }

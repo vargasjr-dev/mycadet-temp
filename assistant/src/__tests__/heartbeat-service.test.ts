@@ -215,7 +215,6 @@ mock.module("../util/logger.js", () => ({
 import type {
   CredentialHealthReport,
   CredentialHealthResult,
-  CredentialHealthStatus,
 } from "../credential-health/credential-health-service.js";
 import {
   setBroadcastOverrideForTesting,
@@ -991,7 +990,7 @@ describe("HeartbeatService", () => {
         connectionId: overrides.connectionId ?? "conn-1",
         provider: overrides.provider ?? "google",
         accountInfo: overrides.accountInfo ?? "user@example.com",
-        status: overrides.status ?? ("missing_token" as CredentialHealthStatus),
+        status: overrides.status ?? "missing_token",
         details: overrides.details ?? "Token not found",
         missingScopes: overrides.missingScopes ?? [],
         canAutoRecover: overrides.canAutoRecover ?? false,

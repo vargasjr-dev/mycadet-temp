@@ -1216,7 +1216,7 @@ describe("GET /v1/plugins/search", () => {
   });
 
   test("re-packs readonly match array into a mutable copy", async () => {
-    const frozenMatches = Object.freeze([
+    const frozenMatches: readonly PluginSearchMatch[] = Object.freeze([
       Object.freeze({
         name: "a",
         path: "github:acme/a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -1227,7 +1227,7 @@ describe("GET /v1/plugins/search", () => {
           ref: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         } as const,
       }),
-    ]) as readonly PluginSearchMatch[];
+    ]);
     getCatalogSpy.mockImplementation(async (ref) =>
       catalog(ref, frozenMatches),
     );

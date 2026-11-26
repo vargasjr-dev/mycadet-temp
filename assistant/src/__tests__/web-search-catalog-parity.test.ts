@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   SEARCH_PROVIDER_CATALOG,
   type SearchProviderCatalogEntry,
@@ -87,9 +89,22 @@ function entryToPlain(
 describe("web-search catalog parity (TS canonical vs meta/ JSON)", () => {
   test("provider list and metadata match exactly", () => {
     const json = loadJsonCatalog();
-    const expected = SEARCH_PROVIDER_CATALOG.map(
-      entryToPlain,
-    ) as unknown as JsonCatalogEntry[];
+    const expected = z
+      .array(
+        z.looseObject({
+          id: z.string(),
+          displayName: z.string(),
+          displayNameLong: z.string().optional(),
+          apiKeyPrefix: z.string().optional(),
+          envVar: z.string().optional(),
+          secretKey: z.string().optional(),
+          fallbackOrder: z.number().optional(),
+          privacyPolicyUrl: z.string().optional(),
+          supportsApiBase: z.boolean().optional(),
+          defaultApiBase: z.string().optional(),
+        }),
+      )
+      .parse(SEARCH_PROVIDER_CATALOG.map(entryToPlain));
     expect(json.providers).toEqual(expected);
   });
 

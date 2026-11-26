@@ -7,8 +7,9 @@
  * `removeByConversation()` so we exercise the tracker in isolation
  * without spinning up a Conversation, prompter, or proxy.
  */
-
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { AssistantEvent } from "../api/index.js";
 import {
@@ -39,7 +40,21 @@ afterEach(() => {
 function lastResolvedEvent() {
   const evt = publishedMessages.find((m) => m.type === "interaction_resolved");
   expect(evt).toBeDefined();
-  return evt as Extract<AssistantEvent, { type: "interaction_resolved" }>;
+  return z
+    .looseObject({
+      type: z.literal("interaction_resolved"),
+      requestId: z.string(),
+      conversationId: z.string(),
+      state: z.union([
+        z.literal("approved"),
+        z.literal("cancelled"),
+        z.literal("answered"),
+        z.literal("rejected"),
+        z.literal("superseded"),
+      ]),
+      kind: z.string(),
+    })
+    .parse(evt);
 }
 
 describe("pendingInteractions.resolve emits interaction_resolved", () => {

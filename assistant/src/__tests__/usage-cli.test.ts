@@ -39,10 +39,10 @@ async function runCommand(args: string[]): Promise<{
   process.exitCode = 0;
   logLines.length = 0;
   const originalExit = process.exit;
-  process.exit = ((code?: number) => {
+  process.exit = (code?: number) => {
     process.exitCode = code ?? 0;
     throw new Error(`process.exit(${code ?? 0})`);
-  }) as typeof process.exit;
+  };
 
   try {
     const program = new Command();

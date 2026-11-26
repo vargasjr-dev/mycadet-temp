@@ -109,8 +109,8 @@ function getStoredSteps(ctx: Conversation): DoordashStep[] | null {
   if (card.template !== "task_progress" || !isPlainObject(card.templateData)) {
     return null;
   }
-  const steps = (card.templateData as Record<string, unknown>).steps;
-  return Array.isArray(steps) ? (steps as DoordashStep[]) : null;
+  const steps = card.templateData.steps;
+  return Array.isArray(steps) ? steps : null;
 }
 
 function pushStepsUpdate(

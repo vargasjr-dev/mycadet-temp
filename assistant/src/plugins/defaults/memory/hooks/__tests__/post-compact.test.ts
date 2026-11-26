@@ -37,9 +37,7 @@ mock.module("../../../../../daemon/conversation-runtime-assembly.js", () => ({
       return realAssembly.applyRuntimeInjections(messages, options);
     }
     calls.push({ messages, options });
-    return { messages: reinjectedHistory, blocks: {} } as Awaited<
-      ReturnType<ApplyRuntimeInjections>
-    >;
+    return { messages: reinjectedHistory, blocks: {} };
   }) satisfies ApplyRuntimeInjections,
 }));
 

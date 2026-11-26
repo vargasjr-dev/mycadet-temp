@@ -316,7 +316,7 @@ export function registerSequenceCommand(program: Command): void {
 function resolveJson(cmd: Command): boolean {
   let c: Command | null = cmd;
   while (c) {
-    if ((c.opts() as { json?: boolean }).json) {
+    if (c.opts().json) {
       return true;
     }
     c = c.parent;

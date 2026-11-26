@@ -7,8 +7,9 @@
  * the engine without touching the DB or LLM, then assert the runner is
  * invoked with the expected options shape.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import { WATCHER_PAYLOAD_TEXT_MAX_CHARS } from "../constants.js";
 
@@ -187,9 +188,14 @@ function sandwichOf(opts: Record<string, unknown>): {
   content: string;
   postamble: string;
 } {
-  const sandwich = opts.assistantSandwich as
-    | { preamble: string; content: string; postamble: string }
-    | undefined;
+  const sandwich = z
+    .looseObject({
+      preamble: z.string(),
+      content: z.string(),
+      postamble: z.string(),
+    })
+    .optional()
+    .parse(opts.assistantSandwich);
   if (!sandwich) {
     throw new Error("sandwich missing");
   }
@@ -237,9 +243,14 @@ describe("runWatchersOnce — Phase 2 runBackgroundJob integration", () => {
     // NOT in the user-role preamble or postamble. The postamble is the
     // trusted user-role action instruction; it must contain the disposition
     // block schema but must NOT contain the watcher name or event payload.
-    const sandwich = opts.assistantSandwich as
-      | { preamble: string; content: string; postamble: string }
-      | undefined;
+    const sandwich = z
+      .looseObject({
+        preamble: z.string(),
+        content: z.string(),
+        postamble: z.string(),
+      })
+      .optional()
+      .parse(opts.assistantSandwich);
     expect(sandwich).toBeDefined();
     if (!sandwich) {
       throw new Error("sandwich missing");
@@ -359,9 +370,14 @@ describe("runWatchersOnce — Phase 2 runBackgroundJob integration", () => {
 
     expect(runJobCalls).toHaveLength(1);
     const opts = runJobCalls[0];
-    const sandwich = opts.assistantSandwich as
-      | { preamble: string; content: string; postamble: string }
-      | undefined;
+    const sandwich = z
+      .looseObject({
+        preamble: z.string(),
+        content: z.string(),
+        postamble: z.string(),
+      })
+      .optional()
+      .parse(opts.assistantSandwich);
     if (!sandwich) {
       throw new Error("sandwich missing");
     }

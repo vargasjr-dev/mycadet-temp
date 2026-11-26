@@ -23,10 +23,7 @@ beforeAll(async () => {
   await initializeDb();
 });
 
-import type {
-  ConversationAction,
-  NotificationDecision,
-} from "../notifications/types.js";
+import type { NotificationDecision } from "../notifications/types.js";
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -74,9 +71,7 @@ async function routeCadetDelivery(
   decision: NotificationDecision,
 ) {
   const guarded = enforceGuardianRequestConversationAffinity(decision, signal);
-  const conversationAction = guarded.conversationActions?.cadet as
-    | ConversationAction
-    | undefined;
+  const conversationAction = guarded.conversationActions?.cadet;
   return pairDeliveryWithConversation(
     signal,
     "cadet",

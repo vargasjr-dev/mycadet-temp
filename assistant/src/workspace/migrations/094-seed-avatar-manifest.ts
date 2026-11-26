@@ -81,7 +81,7 @@ function deriveStateFromLegacyFiles(avatarDir: string): AvatarState {
   const traitsPath = join(avatarDir, TRAITS_FILENAME);
   if (existsSync(traitsPath)) {
     try {
-      const traits = JSON.parse(readFileSync(traitsPath, "utf-8")) as unknown;
+      const traits: unknown = JSON.parse(readFileSync(traitsPath, "utf-8"));
       if (isValidTraits(traits)) {
         return { kind: "character", traits, source: null, image: null };
       }

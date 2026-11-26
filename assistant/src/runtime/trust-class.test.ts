@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { TRUST_CLASS_VALUES } from "@mycadet/gateway-client";
+import { z } from "zod";
 
 import { resolveCapabilities } from "./capabilities.js";
 import {
@@ -133,7 +134,18 @@ describe("derivePersonaTrustFlags", () => {
       const flags = derivePersonaTrustFlags(trustClass);
       const guidance = resolveCapabilities(trustClass).promptTrustGuidance;
       for (const [flag, expected] of Object.entries(guidanceByFlag)) {
-        if (flags[flag as keyof PersonaTrustFlags]) {
+        if (
+          flags[
+            z
+              .union([
+                z.literal("trustClass"),
+                z.literal("isGuardian"),
+                z.literal("isTrustedContact"),
+                z.literal("isStranger"),
+              ])
+              .parse(flag)
+          ]
+        ) {
           expect(guidance).toBe(expected as typeof guidance);
         }
       }

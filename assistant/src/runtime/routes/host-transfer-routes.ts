@@ -92,7 +92,7 @@ async function handleTransferContentGet({
       match.proxy.getTargetActorPrincipalIdForTransfer(transferId);
     if (targetActorPrincipalId) {
       await assertHostProxyResultBinding({
-        headers: headers as Record<string, string | undefined>,
+        headers: headers,
         targetActorPrincipalId,
         op: "host_transfer",
         missingClientIdMessage:
@@ -190,7 +190,7 @@ async function handleTransferContentPut({
       match.proxy.getTargetActorPrincipalIdForTransfer(transferId);
     if (targetActorPrincipalId) {
       await assertHostProxyResultBinding({
-        headers: headers as Record<string, string | undefined>,
+        headers: headers,
         targetActorPrincipalId,
         op: "host_transfer",
         missingClientIdMessage:
@@ -247,7 +247,7 @@ async function handleTransferResult({ body, headers }: RouteHandlerArgs) {
   }
 
   await assertHostProxyResultBinding({
-    headers: headers as Record<string, string | undefined> | undefined,
+    headers: headers,
     targetClientId: peeked.targetClientId,
     targetConnectionId: peeked.targetConnectionId,
     targetActorPrincipalId: peeked.targetActorPrincipalId,

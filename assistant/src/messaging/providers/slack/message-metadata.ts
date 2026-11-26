@@ -281,7 +281,7 @@ export function readSlackMetadataFromMessageMetadata(
 
   let parent: Record<string, unknown> | null = null;
   try {
-    const parsed = JSON.parse(metadata) as unknown;
+    const parsed: unknown = JSON.parse(metadata);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       parent = parsed as Record<string, unknown>;
     }

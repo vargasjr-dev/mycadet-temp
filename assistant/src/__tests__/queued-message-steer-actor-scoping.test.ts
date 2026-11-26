@@ -10,10 +10,7 @@
  */
 import { afterEach, describe, expect, test } from "bun:test";
 
-import {
-  MessageQueue,
-  type QueuedMessage,
-} from "../daemon/conversation-queue-manager.js";
+import { MessageQueue } from "../daemon/conversation-queue-manager.js";
 import {
   deleteConversation,
   setConversation,
@@ -49,7 +46,7 @@ function seedProcessingConversation(
       onEvent: () => {},
       sentAt: Date.now(),
       sourceActorPrincipalId: item.sourceActorPrincipalId,
-    } as QueuedMessage);
+    });
   }
   const abortController = new AbortController();
   const conversation = {

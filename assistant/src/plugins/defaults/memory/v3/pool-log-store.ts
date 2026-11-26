@@ -232,7 +232,7 @@ function toStoredPool(row: PoolRow): StoredPool {
   return {
     turn: row.turn,
     record: {
-      candidates: candidates as PoolCandidateRecord[],
+      candidates: candidates,
       pool_size: row.pool_size,
       selected_count: row.selected_count,
       selector_ran: row.selector_ran === 1,
@@ -506,7 +506,7 @@ export function readPoolInputForTurn(
       selector_prompt_hash: row.selector_prompt_hash,
       kept_all: row.kept_all === 1,
       gate_reason: row.gate_reason,
-      candidate_text_hashes: hashes as string[],
+      candidate_text_hashes: hashes,
     };
   });
 }

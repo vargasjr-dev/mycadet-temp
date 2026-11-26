@@ -140,7 +140,7 @@ export class McpClient {
         effectiveConfig = {
           ...transportConfig,
           headers: { ...transportConfig.headers, ...storedHeaders },
-        } as McpTransport;
+        };
       }
     }
 

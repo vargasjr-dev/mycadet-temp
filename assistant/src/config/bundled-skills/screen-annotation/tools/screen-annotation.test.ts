@@ -111,10 +111,13 @@ describe("screen_clear_marks", () => {
   test("a cancelled turn still takes the marks down", async () => {
     const { calls, context } = recorder();
 
-    const result = await clearMarks({}, {
-      ...context,
-      signal: abortedSignal(),
-    } as ToolContext);
+    const result = await clearMarks(
+      {},
+      {
+        ...context,
+        signal: abortedSignal(),
+      },
+    );
 
     expect(result.isError).toBe(false);
     expect(calls).toEqual([

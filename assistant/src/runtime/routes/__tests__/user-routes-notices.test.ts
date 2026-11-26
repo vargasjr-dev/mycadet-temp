@@ -9,7 +9,6 @@
  * tests drive the real router with real auth contexts so the ordering, not
  * just the declared policy, is what is proved.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -23,6 +22,7 @@ import {
 } from "bun:test";
 
 import { PLUGIN_ADMISSION_DENIED_NOTICE_PATH } from "@mycadet/gateway-client";
+import { z } from "zod";
 
 // Route policies are only evaluated when HTTP auth is on.
 import { getWorkspacePluginsDir } from "../../../util/layout.js";
@@ -167,7 +167,12 @@ describe("plugin notice routes", () => {
     ).toBe(403);
     const response = await dispatch("POST", NOTICE_ROOT_ENDPOINT, GATEWAY);
     expect(response.status).toBe(200);
-    const body = (await response.json()) as EchoBody;
+    const body = z
+      .looseObject({
+        pathname: z.string(),
+        principalType: z.union([z.null(), z.string()]),
+      })
+      .parse(await response.json());
     expect(body.principalType).toBe("svc_gateway");
   });
 
@@ -203,7 +208,12 @@ describe("plugin notice routes", () => {
   test("the gateway's service principal reaches the plugin's handler", async () => {
     const response = await dispatch("POST", NOTICE_ENDPOINT, GATEWAY);
     expect(response.status).toBe(200);
-    const body = (await response.json()) as EchoBody;
+    const body = z
+      .looseObject({
+        pathname: z.string(),
+        principalType: z.union([z.null(), z.string()]),
+      })
+      .parse(await response.json());
     expect(body.principalType).toBe("svc_gateway");
     expect(body.pathname).toBe(`/v1/${NOTICE_ENDPOINT}`);
   });
@@ -211,7 +221,12 @@ describe("plugin notice routes", () => {
   test("the rest of the plugin's namespace still serves actor clients", async () => {
     const response = await dispatch("POST", SIBLING_ENDPOINT, ACTOR);
     expect(response.status).toBe(200);
-    const body = (await response.json()) as EchoBody;
+    const body = z
+      .looseObject({
+        pathname: z.string(),
+        principalType: z.union([z.null(), z.string()]),
+      })
+      .parse(await response.json());
     expect(body.principalType).toBe("actor");
     expect(body.pathname).toBe(`/v1/${SIBLING_ENDPOINT}`);
   });

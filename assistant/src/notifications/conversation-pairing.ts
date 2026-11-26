@@ -29,7 +29,6 @@
  * 4. A fresh background conversation, bound under that namespace.
  */
 
-import type { ChannelId } from "@mycadet/service-contracts/channels";
 import { isChannelId } from "@mycadet/service-contracts/channels";
 
 import type { ConversationStrategy } from "../channels/config.js";
@@ -134,7 +133,7 @@ export async function pairDeliveryWithConversation(
 ): Promise<PairingResult> {
   try {
     const signal = rawSignal;
-    const strategy = getConversationStrategy(channel as ChannelId);
+    const strategy = getConversationStrategy(channel);
 
     if (strategy === "not_deliverable" || strategy === "push_only") {
       return {
@@ -430,7 +429,7 @@ export async function pairDeliveryWithConversation(
     );
     const fallbackStrategy = (() => {
       try {
-        return getConversationStrategy(channel as ChannelId);
+        return getConversationStrategy(channel);
       } catch {
         return "not_deliverable" as const;
       }

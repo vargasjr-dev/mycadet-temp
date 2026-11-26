@@ -670,7 +670,7 @@ async function handleDeleteConnection({ pathParams = {} }: RouteHandlerArgs) {
   const nameIsEntryName = !VALID_CONNECTION_PROVIDERS.includes(name);
   const referencingProfiles = Object.entries(profiles)
     .filter(([, p]) => {
-      const entry = p as Record<string, unknown>;
+      const entry: Record<string, unknown> = p;
       return (
         entry.provider_connection === name ||
         (nameIsEntryName && entry.provider === name)

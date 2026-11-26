@@ -97,7 +97,7 @@ describe("merge contacts relay", () => {
         timeoutMs: undefined,
       },
     ]);
-    expect(result as unknown).toEqual(gatewayResponse);
+    expect(result).toEqual(gatewayResponse);
     // Must NOT write the assistant DB directly.
     expect(contactStoreWriteGuard).not.toHaveBeenCalled();
   });

@@ -716,7 +716,27 @@ describe("038-unify-llm-callsite-configs migration", () => {
     // Every original key must still be present
     for (const key of Object.keys(original)) {
       expect(config[key]).toEqual(
-        original[key as keyof typeof original] as unknown,
+        original[
+          z
+            .union([
+              z.literal("thinking"),
+              z.literal("maxTokens"),
+              z.literal("memory"),
+              z.literal("speed"),
+              z.literal("services"),
+              z.literal("effort"),
+              z.literal("contextWindow"),
+              z.literal("pricingOverrides"),
+              z.literal("filing"),
+              z.literal("heartbeat"),
+              z.literal("workspaceGit"),
+              z.literal("calls"),
+              z.literal("notifications"),
+              z.literal("ui"),
+              z.literal("analysis"),
+            ])
+            .parse(key)
+        ],
       );
     }
     expect(config.llm).toBeDefined();

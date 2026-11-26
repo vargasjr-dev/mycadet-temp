@@ -3,8 +3,9 @@
  * so a catalog skill's `setup.ts` can register a script-mode schedule via the
  * CLI/HTTP path instead of the in-assistant `schedule_create` tool.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { initializeDb } from "../../../persistence/db-init.js";
 import { ROUTES } from "../schedule-routes.js";
@@ -29,7 +30,16 @@ interface CreateResult {
 }
 
 async function create(body: Record<string, unknown>): Promise<CreateResult> {
-  return (await createHandler({ body })) as CreateResult;
+  return z
+    .looseObject({
+      schedule: z.looseObject({
+        name: z.string(),
+        mode: z.string(),
+        script: z.union([z.null(), z.string()]),
+        timeoutMs: z.union([z.null(), z.number()]),
+      }),
+    })
+    .parse(await createHandler({ body }));
 }
 
 describe("createSchedule route — script mode", () => {

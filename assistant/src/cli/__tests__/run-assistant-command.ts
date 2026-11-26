@@ -38,7 +38,7 @@ export function reportIpcFailureWithoutExiting(r: {
  * either an encoding string or the callback.
  */
 function captureWrites(chunks: string[]): typeof process.stdout.write {
-  return ((
+  return (
     chunk: string | Uint8Array,
     encoding?: unknown,
     cb?: (err?: Error | null) => void,
@@ -51,7 +51,7 @@ function captureWrites(chunks: string[]): typeof process.stdout.write {
       callback();
     }
     return true;
-  }) as typeof process.stdout.write;
+  };
 }
 
 /**

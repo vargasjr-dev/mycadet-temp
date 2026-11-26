@@ -41,8 +41,6 @@ const HTTP_METHODS = [
 
 type HttpMethod = (typeof HTTP_METHODS)[number];
 
-type HandlerExtension = (typeof HANDLER_EXTENSIONS)[number];
-
 // ── Schemas ─────────────────────────────────────────────────────────
 
 const InspectParams = z
@@ -104,9 +102,7 @@ async function discoverRoutes(routesDir: string): Promise<DiscoveredRoute[]> {
       if (entry.isDirectory()) {
         scanDir(fullPath);
       } else if (entry.isFile()) {
-        const ext = HANDLER_EXTENSIONS.find((e) => entry.name.endsWith(e)) as
-          | HandlerExtension
-          | undefined;
+        const ext = HANDLER_EXTENSIONS.find((e) => entry.name.endsWith(e));
         if (!ext) {
           continue;
         }

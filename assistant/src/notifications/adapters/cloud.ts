@@ -215,7 +215,7 @@ export class CloudPushAdapter implements ChannelAdapter {
       const responseText = await response.text().catch(() => "");
       let responseBody: unknown = null;
       try {
-        responseBody = JSON.parse(responseText) as unknown;
+        responseBody = JSON.parse(responseText);
       } catch {
         responseBody = null;
       }

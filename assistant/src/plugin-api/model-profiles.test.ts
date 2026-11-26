@@ -30,7 +30,7 @@ const { getModelProfiles } = await import("./model-profiles.js");
  */
 function listProfiles(): ReturnType<typeof getModelProfiles> {
   setConfig("llm", { profiles: {} });
-  const config = getConfig() as { llm: unknown };
+  const config: { llm: unknown } = getConfig();
   config.llm = {
     profiles: mockProfiles,
     activeProfile: mockActiveProfile,

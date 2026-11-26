@@ -45,7 +45,7 @@ export function resolveTtsConfig(
 ): ResolvedTtsConfig {
   const ttsService = config.services.tts;
 
-  const provider = providerOverride ?? (ttsService.provider as TtsProviderId);
+  const provider = providerOverride ?? ttsService.provider;
 
   // Resolve provider-specific config from the canonical providers map.
   const providerConfig = resolveProviderConfig(config, provider);
@@ -69,11 +69,11 @@ function resolveProviderConfig(
   config: AssistantConfig,
   provider: TtsProviderId,
 ): Record<string, unknown> {
-  const ttsProviders = config.services.tts.providers as Record<string, unknown>;
+  const ttsProviders: Record<string, unknown> = config.services.tts.providers;
 
   const providerBlock = ttsProviders[provider];
   if (providerBlock != null && typeof providerBlock === "object") {
-    return { ...providerBlock } as Record<string, unknown>;
+    return { ...providerBlock };
   }
 
   return {};

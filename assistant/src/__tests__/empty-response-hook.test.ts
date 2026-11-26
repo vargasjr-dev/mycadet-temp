@@ -574,7 +574,7 @@ describe("empty-response post-model-call hook — via runHook", () => {
     );
 
     // THEN the user hook saw the default's continue, and its override wins.
-    expect(observedDecision as string | null).toBe("continue");
+    expect<string | null>(observedDecision).toBe("continue");
     expect(result.decision).toBe("stop");
   });
 });
