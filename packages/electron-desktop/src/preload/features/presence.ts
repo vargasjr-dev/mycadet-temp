@@ -23,10 +23,10 @@ import {
  * character, with the accent the macOS dock icon carries separately), the
  * dock badge, power events, and connectivity.
  */
-export const createPresenceSurfaces = (): Pick<
+export const presenceSurfaces: Pick<
   CadetBridge,
   "status" | "identity" | "icon" | "dock" | "power" | "connectivity"
-> => ({
+> = {
   status: {
     setConnection: (status) => ipcRenderer.send(STATUS_CONNECTION, status),
   },
@@ -57,13 +57,12 @@ export const createPresenceSurfaces = (): Pick<
       const handler = (_event: IpcRendererEvent, state: ConnectivityState) =>
         callback(state);
       ipcRenderer.on(CONNECTIVITY_STATE, handler);
-      void Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_GET)).then(callback);
+      void ipcRenderer.invoke(CONNECTIVITY_GET).then(callback);
       return () => ipcRenderer.off(CONNECTIVITY_STATE, handler);
     },
-    get: (): Promise<ConnectivityState> =>
-      Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_GET)),
+    get: (): Promise<ConnectivityState> => ipcRenderer.invoke(CONNECTIVITY_GET),
     setDevice: (online) => ipcRenderer.send(CONNECTIVITY_SET_DEVICE, online),
     retry: (): Promise<ConnectivityState> =>
-      Promise.resolve(ipcRenderer.invoke(CONNECTIVITY_RETRY)),
+      ipcRenderer.invoke(CONNECTIVITY_RETRY),
   },
-});
+};

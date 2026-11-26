@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { DesktopAppPlatform } from "@/runtime/desktop-app-platform";
 import { CADET_DOWNLOADS_URL } from "@/utils/external-urls";
 import {
   getLocalBool,
@@ -60,7 +59,7 @@ export function ensureDesktopAppFirstSeenAt(): void {
   }
 }
 
-export function useDesktopAppNudgeState(platform: DesktopAppPlatform): {
+export function useDesktopAppNudgeState(): {
   bannerShouldShow: boolean;
   ageEligible: boolean;
   handleDownload: () => void;
@@ -100,12 +99,12 @@ export function useDesktopAppNudgeState(platform: DesktopAppPlatform): {
     openDesktopAppDownload();
     writeDesktopAppDownloaded();
     setDownloaded(true);
-  }, [platform]);
+  }, []);
 
   const handleBannerDismiss = useCallback(() => {
     writeDesktopAppBannerDismissed();
     setBannerDismissed(true);
-  }, [platform]);
+  }, []);
 
   return useMemo(
     () => ({

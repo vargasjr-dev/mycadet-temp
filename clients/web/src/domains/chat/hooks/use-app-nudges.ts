@@ -37,10 +37,6 @@ import {
   useIsIOSWeb,
   useIsMobileWeb,
 } from "@/runtime/platform-detection";
-import {
-  useDesktopAppPlatform,
-  type DesktopAppPlatform,
-} from "@/runtime/desktop-app-platform";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,8 +76,6 @@ export interface AppNudgesState {
    * the surface to nudge on.
    */
   mobilePromotion: NativeAppPromotion | null;
-  /** Desktop app target selected from browser platform signals. */
-  desktopAppPlatform: DesktopAppPlatform;
   /** The active platform nudge. Handlers are platform-specific. */
   nudge: PlatformNudgeState;
   /** Whether the main-area app-download banner should render. */
@@ -128,7 +122,6 @@ export function useAppNudges(
   const isOnIOSSafari = useIsIOSSafariWeb();
   const isOnMobileWeb = useIsMobileWeb();
   const isOnDesktop = useIsDesktopAppWeb();
-  const desktopAppPlatform = useDesktopAppPlatform();
 
   // iOS Safari is left to Apple's Smart App Banner. `useIsIOSWeb` already
   // excludes it, but `useIsMobileWeb` does not, so without this guard the
@@ -229,7 +222,7 @@ export function useAppNudges(
   // Platform nudge
   // -------------------------------------------------------------------------
   const mobileNudge = useNativeAppNudgeState(nudgeTarget ?? "generic");
-  const desktopNudge = useDesktopAppNudgeState(desktopAppPlatform);
+  const desktopNudge = useDesktopAppNudgeState();
   const nudge = mobilePromotion ? mobileNudge : desktopNudge;
 
   // Desktop is time-based; native mobile promotion is turn-based.
@@ -322,7 +315,6 @@ export function useAppNudges(
     isOnDesktop,
     isOnNudgePlatform,
     mobilePromotion,
-    desktopAppPlatform,
     nudge,
     showBanner,
     githubNudge,

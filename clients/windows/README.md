@@ -1,104 +1,18 @@
-# Cadet - Windows (Electron)
+# Cadet Windows app
 
-The Windows desktop client. Like `clients/macos`, this is an Electron shell
-around the `clients/web` renderer: in dev it loads the Vite dev server (or
-vel's edge proxy when `vel up` is running), and in packaged builds it serves a
-bundled `resources/cli-runtime/web-dist` over a privileged `app://` protocol.
+Electron shell around the shared `clients/web` renderer: in dev it attaches
+to `vel up` (or a standalone Vite), and packaged builds serve the bundled
+runtime over a privileged `app://` protocol. The bridge to the main process
+is the shared static preload in `@mycadet/electron-desktop`
+(`src/preload/index.ts` is a one-line import), and
+`src/preload/bridge-parity.test.ts` holds the composed bridge to the full
+`CadetBridge` contract.
 
-## Layout
-
-- `src/main/index.ts` boots the hardened shell (single-instance lock,
-  per-environment `userData`, `app://` serving with path-traversal protection,
-  local, paired, and platform request forwarding, paired-request frame-origin
-  enforcement, CSP, a permission allowlist, and sandboxed `cadet://`
-  serving) and then composes `src/main/features/*`.
-- `src/main/features/*` are capability modules; every `.ts` file there is
-  picked up automatically; a new capability is a new file, never an edit to
-  `index.ts`.
-- The preload is the shared composition in `@mycadet/electron-desktop`
-  (`src/preload/index.ts` just exposes it);
-  `src/preload/bridge-parity.test.ts` holds the composed bridge to the full
-  `CadetBridge` contract against the macOS preload.
-- `native/Cadet.WindowsHelper` is the same-user, non-elevated JSON-RPC helper
-  behind UI Automation observation, verified input, dictation, toasts, and
-  text insertion (security model in `native/README.md`).
-  `native/Cadet.PreviewHandler` is the Explorer preview and thumbnail handler
-  for `.cadet` bundles.
-- `src/main/features/voice-mode-chord.ts` registers the voice mode shortcut's
-  bare-modifier binding with the helper's low-level keyboard hook, because an
-  Electron `globalShortcut` cannot express one. A clean tap (chord down, chord
-  key up, nothing else in between) toggles voice mode system-wide; a shortcut
-  passing through the chord's keys (Alt+Tab over Alt) disarms instead.
-- [`docs/parity-matrix.md`](docs/parity-matrix.md) maps every bridge key and
-  main-process capability to its Windows module, its macOS counterpart, and the
-  test or packaged smoke that covers it, and lists the macOS concepts with no
-  Windows equivalent.
-
-## Permissions and helper security
-
-Windows has no Accessibility, Input Monitoring, or Automation permission
-model; those rows are hidden on a Windows host. Microphone and screen access
-report the Windows privacy settings, and `permissions.openSettings` deep-links
-to the `ms-settings:` page for the kinds a user can change. The helper never
-requests elevation: capabilities return unavailable when the target is
-elevated or protected.
-
-## Packaged CLI provisioning
-
-Packaged Windows startup installs the bundled CLI runtime for the current user:
-
-- The immutable payload is read from `resources/cli-runtime` and copied to
-  `<Electron userData>/cli/<version>`.
-- `<Electron userData>/cli/install-state.json` records the current runtime and
-  one valid fallback. Reusing an older installed version preserves the prior
-  current version as the fallback.
-- A small owned launcher is installed under `%LOCALAPPDATA%\Cadet\bin` and
-  delegates to the selected versioned runtime. Non-production channels use
-  separate launcher directories. A launcher without the Cadet ownership
-  marker is left untouched.
-- Long-lived assistant, gateway, and worker executables remain in the
-  versioned runtime. Provisioning and uninstall never replace or remove those
-  executables while they may be running.
-- The versioned runtime includes the web SPA used by the web client and remote
-  web ingress.
-- The launcher directory is added to `HKCU\Environment\Path`. The app broadcasts
-  the environment change to the Windows shell after a successful write.
-- Machine PATH entries are evaluated before user entries. If another `cadet`
-  command (`cadet.exe` or `cadet.cmd`) wins resolution, startup records the
-  launcher as shadowed.
-
-The CLI runtime ships SOURCE, not compiled binaries: the packaged `bun.exe`
-executes the tracked TypeScript of the CLI, assistant, gateway, and
-credential-executor directly (the same model the mac app uses). Module
-resolution is file-relative from the source tree's `node_modules`, so imports
-resolve regardless of the launch working directory, and bun's lazy imports
-stay lazy. Only `bun.exe` remains a compiled binary in the runtime; the PATH
-launcher is a generated `cadet.cmd` shim pointing at the versioned install.
-
-`cadet retire` stages assistant data before archiving it. On Windows the
-background archive uses PowerShell and the built-in `tar.exe`; other platforms
-use the existing POSIX archive process.
-
-## Automated backups
-
-The packaged Windows client does not expose automated backup configuration yet.
-The installed `cadet backup <name>` command creates an on-demand local export,
-but the internal `assistant backup` command is not installed on the user PATH.
-
-Windows has no implicit offsite destination. A future automated backup surface
-must ask the user to select a OneDrive folder, external drive, or network
-location explicitly. OneDrive environment variables are insufficient because
-a machine can expose personal and organization-managed accounts at the same
-time.
-
-## Updates and troubleshooting
-
-Packaged builds poll the channel-, platform-, and architecture-isolated feed
-`https://storage.googleapis.com/mycadet-<env>-releases/win-electron/<arch>/`
-through `electron-updater`, download in the background, and install on quit
-(`src/main/auto-update.ts`). Main-process logs land in `cadet.log` under
-`%APPDATA%\<product name>\logs`; the helper's state and restart action are on
-`window.cadet.helper`, and the tray menu offers a restart.
+The Windows helper (`native/Cadet.WindowsHelper`) is the same-user,
+non-elevated JSON-RPC process behind UI Automation observation, verified
+input, dictation, toasts, and text insertion; its security model is in
+[`native/README.md`](native/README.md). `native/Cadet.PreviewHandler` is
+the Explorer preview and thumbnail handler for `.cadet` bundles.
 
 ## Development
 
@@ -110,50 +24,18 @@ Probes for `vel up` at `localhost:3000` and attaches to it, or falls back to
 standalone mode (spawns `clients/web`'s Vite on :5173, shell only, no
 backends). Scripts assume a POSIX shell; on Windows use Git Bash (or WSL).
 
-To test local web changes against the deployed dev platform without starting
-Vite or opening a local development port, run this from PowerShell:
-
-```powershell
-$env:CADET_ENVIRONMENT="dev"
-$env:CADET_DEV_URL="https://dev.mycadet.ai/assistant"
-bun run dev:electron-local-web
-```
-
-This builds the local `clients/web` source, serves it from Electron's
-`app://` origin, and forwards platform API requests to `dev-assistant`.
-
-## Packaging
+## Packaging and releases
 
 ```bash
-bun run pack                     # dev installer for testing on another machine
-bun run pack --environment local # local-platform installer
-bun run pack:debug               # dev installer with Chrome DevTools enabled
+bun run pack        # dev installer for testing on another machine
+bun run pack:debug  # dev installer with Chrome DevTools enabled
 ```
 
-`pack` builds every bundled resource (`build:runtime`, `build:native-helper`,
-`build:preview-handler`) before `electron-builder`, so the Explorer preview
-handler DLL that `electron-builder.config.cjs` requires is always present.
-The builder rebuilds the Electron main and preload entrypoints immediately
-before collecting app files, including when it is invoked directly.
-
-The default `dev` environment keeps an installed test build connected to the
-deployed dev platform, including its login endpoint. Pass `--environment local`
-only when a cloud server is available at `localhost:7840` (the app server edge).
-
-`build:runtime` bundles the Bun pinned in `.tool-versions`: the host `bun.exe`
-is used when its sha256 matches `scripts/bun-release.ts`, otherwise the
-matching GitHub release is downloaded and verified. Bump the pins there when
-the Bun version changes.
-
-`build:preview-handler` installs its manifest dependencies before invoking
-MSBuild. It installs the manifest's pinned vcpkg baseline in the ignored
-`clients/windows/.build-tools` directory and reuses it for future builds. This
-keeps packaging independent of vcpkg copies exposed by Visual Studio,
-environment variables, or `PATH`.
-
-Local and CI packs are unsigned. `.github/workflows/windows-package-smoke.yaml`
-runs the same steps per architecture, then install-, launch-, and
-uninstall-tests the installer.
+`pack` builds every bundled resource (CLI runtime, native helper, preview
+handler) before `electron-builder`; local and CI packs are unsigned, and
+`.github/workflows/windows-package-smoke.yaml` install-, launch-, and
+uninstall-tests the installer per architecture. Packaged builds
+self-update through `electron-updater` from the per-channel release feed.
 
 ## Checks
 

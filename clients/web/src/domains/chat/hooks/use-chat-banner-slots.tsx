@@ -49,7 +49,6 @@ export function useChatBannerSlots({
   const {
     showBanner,
     mobilePromotion,
-    desktopAppPlatform,
     nudge,
     showGitHubBanner,
     githubNudge,
@@ -69,7 +68,6 @@ export function useChatBannerSlots({
             />
           ) : (
             <DesktopAppBanner
-              platform={desktopAppPlatform}
               onDownload={nudge.handleDownload}
               onDismiss={nudge.handleBannerDismiss}
             />
@@ -101,7 +99,6 @@ export function useChatBannerSlots({
   }, [
     showBanner,
     mobilePromotion,
-    desktopAppPlatform,
     nudge,
     showGitHubBanner,
     githubNudge,

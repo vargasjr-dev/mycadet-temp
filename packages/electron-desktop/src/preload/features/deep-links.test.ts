@@ -15,8 +15,7 @@ mock.module("electron", () =>
   }),
 );
 
-const { createDeepLinksBridge, createLaunchAtLoginBridge } =
-  await import("../factories");
+const { deepLinksBridge, launchAtLoginBridge } = await import("../factories");
 
 beforeEach(() => {
   invoke.mockClear();
@@ -27,8 +26,8 @@ beforeEach(() => {
 
 test("contributes deep-link delivery and launch-at-login IPC", async () => {
   const bridge: Partial<CadetBridge> = {
-    deepLinks: createDeepLinksBridge(),
-    launchAtLogin: createLaunchAtLoginBridge(),
+    deepLinks: deepLinksBridge,
+    launchAtLogin: launchAtLoginBridge,
   };
   const callback = mock(() => undefined);
 

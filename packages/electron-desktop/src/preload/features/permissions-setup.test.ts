@@ -24,8 +24,8 @@ import { PERMISSION_GUIDE_STATE } from "@mycadet/ipc-contract";
 // The real factory, so the seam is held to the bridge the composition
 // actually exposes. Imported after the electron mock — the preload graph
 // reads `ipcRenderer` when it evaluates.
-const { createPermissionSetupBridge } = await import("./permissions");
-const bridge = createPermissionSetupBridge();
+const { permissionSetup } = await import("./permissions");
+const bridge = permissionSetup;
 
 test("permission guide drag sends only its id and releases state subscriptions", () => {
   bridge.cancel();

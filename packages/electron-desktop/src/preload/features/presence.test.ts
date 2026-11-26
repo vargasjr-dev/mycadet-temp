@@ -24,11 +24,11 @@ mock.module("electron", () =>
   }),
 );
 
-const { createPresenceSurfaces } = await import("./presence");
+const { presenceSurfaces } = await import("./presence");
 
 // The real grouped factory, so the test holds the surfaces to their actual
 // contribution contract rather than a stub's.
-const freshBridge = (): Partial<CadetBridge> => createPresenceSurfaces();
+const freshBridge = (): Partial<CadetBridge> => presenceSurfaces;
 
 test("contributes the complete presence bridge", () => {
   expect(Object.keys(freshBridge()).sort()).toEqual([

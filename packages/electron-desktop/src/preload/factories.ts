@@ -36,14 +36,14 @@ import {
   VELLUM_MIGRATION_STEP_EVENT,
 } from "@mycadet/ipc-contract";
 
-export const createDictationOfferBridge = (): Pick<
+export const dictationOfferBridge: Pick<
   NonNullable<CadetBridge["companion"]>,
   "setUnplacedDictationOffer"
-> => ({
+> = {
   setUnplacedDictationOffer: (offer) => {
     ipcRenderer.send(COMPANION_SET_UNPLACED_DICTATION_OFFER, offer);
   },
-});
+};
 
 const subscribe =
   <Payload>(channel: string) =>
@@ -59,8 +59,8 @@ const subscribe =
 
 /**
  * Like {@link subscribe}, but the IPC listener is installed once when the
- * factory runs and the latest payload is replayed to each callback as it
- * registers.
+ * subscriber is created and the latest payload is replayed to each callback
+ * as it registers.
  *
  * Push-only channels whose first payload arrives on page load need this: the
  * preload evaluates ahead of every page script, so the listener below is in
@@ -101,7 +101,7 @@ const subscribeWithReplay = <Payload>(
   };
 };
 
-export const createDeepLinksBridge = (): CadetBridge["deepLinks"] => ({
+export const deepLinksBridge: CadetBridge["deepLinks"] = {
   drain: () =>
     ipcRenderer.invoke("cadet:deepLinks:drain") as Promise<DeepLink[]>,
   onLink: (callback) => {
@@ -115,25 +115,25 @@ export const createDeepLinksBridge = (): CadetBridge["deepLinks"] => ({
       ipcRenderer.send("cadet:deepLinks:unsubscribe");
     };
   },
-});
+};
 
-export const createLaunchAtLoginBridge = (): CadetBridge["launchAtLogin"] => ({
+export const launchAtLoginBridge: CadetBridge["launchAtLogin"] = {
   get: () => ipcRenderer.invoke("cadet:launchAtLogin:get") as Promise<boolean>,
   set: (enabled) =>
     ipcRenderer.invoke("cadet:launchAtLogin:set", enabled) as Promise<void>,
-});
+};
 
 /** Renderer side of `installHotkeysIpc`. */
-export const createHotkeysBridge = (): CadetBridge["hotkeys"] => ({
+export const hotkeysBridge: CadetBridge["hotkeys"] = {
   get: () =>
     ipcRenderer.invoke("cadet:hotkeys:get") as Promise<ResolvedHotkey[]>,
   set: (key, accelerator) =>
     ipcRenderer.invoke("cadet:hotkeys:set", key, accelerator) as Promise<void>,
   onChange: subscribe<ResolvedHotkey[]>("cadet:hotkeys:changed"),
-});
+};
 
 /** Renderer side of `installBundleConfirmation`. */
-export const createBundleConfirmBridge = (): CadetBridge["bundleConfirm"] => ({
+export const bundleConfirmBridge: CadetBridge["bundleConfirm"] = {
   getData: () =>
     ipcRenderer.invoke(
       "cadet:bundleConfirm:getData",
@@ -141,38 +141,42 @@ export const createBundleConfirmBridge = (): CadetBridge["bundleConfirm"] => ({
   respond: (accepted) => {
     ipcRenderer.send("cadet:bundleConfirm:respond", accepted);
   },
-});
+};
 
 /** Renderer side of `installDownloads`. */
-export const createDownloadsBridge = (): CadetBridge["downloads"] => ({
+export const downloadsBridge: CadetBridge["downloads"] = {
   onDone: subscribe<DownloadDoneEvent>(DOWNLOADS_DONE_EVENT),
   reveal: (id) => ipcRenderer.invoke(DOWNLOADS_REVEAL, id),
-});
+};
 
 /** Renderer side of `installAutoUpdate`. */
-export const createUpdateBridge = (): CadetBridge["update"] => ({
+export const updateBridge: CadetBridge["update"] = {
   getState: () =>
     ipcRenderer.invoke("cadet:update:getState") as Promise<UpdateState>,
   check: () => ipcRenderer.invoke("cadet:update:check") as Promise<void>,
   install: () => ipcRenderer.invoke("cadet:update:install") as Promise<void>,
   onState: subscribe<UpdateState>("cadet:update:state"),
-});
+};
 
-/** Renderer side of the notification presenter and identity-memory IPC. */
+/**
+ * The one surface built per composition: it owns a publisher-session identity
+ * (a per-preload random ID) whose registration is awaited by the identity
+ * methods, so it cannot be a shared module-level object.
+ */
 export const createNotificationsBridge = (): CadetBridge["notifications"] => {
   // Sandboxed Electron preload can omit randomUUID. This ID only separates
   // publisher sessions on the same sender and is never a credential.
   const publisherSessionId =
     globalThis.crypto?.randomUUID?.() ??
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-  const publisherRegistration = Promise.resolve(
-    ipcRenderer.invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
+  const publisherRegistration = ipcRenderer
+    .invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
       publisherSessionId,
-    }),
-  ).then(
-    (registered) => registered === true,
-    () => false,
-  );
+    })
+    .then(
+      (registered) => registered === true,
+      () => false,
+    );
   return {
     show: (payload) =>
       ipcRenderer.invoke(NOTIFICATIONS_SHOW, payload) as Promise<{
@@ -199,38 +203,39 @@ export const createNotificationsBridge = (): CadetBridge["notifications"] => {
   };
 };
 
-/** Renderer side of `installWindowAttention`. */
+/**
+ * Built per composition: each subscriber keeps its own latest-payload replay
+ * state, so a shared instance would cross-talk between compositions.
+ */
 export function createWindowAttentionSubscriber(): CadetBridge["notifications"]["onWindowAttention"] {
   return subscribeWithReplay<WindowAttentionPayload>(WINDOW_ATTENTION);
 }
 
 /** Renderer side of the vellum migration feature. */
-export const createVellumMigrationBridge =
-  (): CadetBridge["vellumMigration"] => ({
-    get: (): Promise<VellumMigrationProbe> =>
-      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_GET)),
-    prepare: (): Promise<VellumMigrationConfirmInfo | null> =>
-      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_PREPARE)),
-    start: (): Promise<VellumMigrationRunState> =>
-      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_START)),
-    decline: (options): Promise<void> =>
-      Promise.resolve(ipcRenderer.invoke(VELLUM_MIGRATION_DECLINE, options)),
-    onStep: subscribe<VellumMigrationStepEvent>(VELLUM_MIGRATION_STEP_EVENT),
-    onState: subscribeWithReplay<VellumMigrationRunState>(
-      VELLUM_MIGRATION_STATE_EVENT,
-    ),
-  });
+export const vellumMigrationBridge: CadetBridge["vellumMigration"] = {
+  get: (): Promise<VellumMigrationProbe> =>
+    ipcRenderer.invoke(VELLUM_MIGRATION_GET),
+  prepare: (): Promise<VellumMigrationConfirmInfo | null> =>
+    ipcRenderer.invoke(VELLUM_MIGRATION_PREPARE),
+  start: (): Promise<VellumMigrationRunState> =>
+    ipcRenderer.invoke(VELLUM_MIGRATION_START),
+  decline: (options): Promise<void> =>
+    ipcRenderer.invoke(VELLUM_MIGRATION_DECLINE, options),
+  onStep: subscribe<VellumMigrationStepEvent>(VELLUM_MIGRATION_STEP_EVENT),
+  onState: subscribeWithReplay<VellumMigrationRunState>(
+    VELLUM_MIGRATION_STATE_EVENT,
+  ),
+};
 
 /** The app surface: version reporting and the marketing-site handoff. */
-export const createAppBridge = (): CadetBridge["app"] => ({
+export const appBridge: CadetBridge["app"] = {
   versionInfo: (): Promise<AppVersionInfo> =>
-    Promise.resolve(ipcRenderer.invoke("cadet:app:versionInfo")),
-  openWebsite: (): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke("cadet:app:openWebsite")),
-});
+    ipcRenderer.invoke("cadet:app:versionInfo"),
+  openWebsite: (): Promise<void> => ipcRenderer.invoke("cadet:app:openWebsite"),
+};
 
 /** The command surface: the main process drives renderer commands. */
-export const createCommandsBridge = (): CadetBridge["commands"] => ({
+export const commandsBridge: CadetBridge["commands"] = {
   on: (callback) => {
     const handler = (_event: IpcRendererEvent, command: CadetCommand) => {
       callback(command);
@@ -240,46 +245,44 @@ export const createCommandsBridge = (): CadetBridge["commands"] => ({
       ipcRenderer.off("cadet:command", handler);
     };
   },
-});
+};
 
-/**
- * The main window's surface. Windows alone answers `setTitleBarOverlay` —
- * its title-bar controls are drawn by the system, so theme changes must
- * reach the native overlay; the other desktops frame their windows
- * themselves.
- */
-export const createMainWindowBridge = (): CadetBridge["mainWindow"] => ({
+/** The main window's surface, minus the Windows-only overlay hook. */
+export const mainWindowBridge: Omit<
+  CadetBridge["mainWindow"],
+  "setTitleBarOverlay"
+> = {
   ensureVisible: (): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke("cadet:mainWindow:ensureVisible")),
+    ipcRenderer.invoke("cadet:mainWindow:ensureVisible"),
   setOnboarding: (active): Promise<void> =>
-    Promise.resolve(
-      ipcRenderer.invoke("cadet:mainWindow:setOnboarding", active),
-    ),
+    ipcRenderer.invoke("cadet:mainWindow:setOnboarding", active),
   navigateTo: (url): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke("cadet:mainWindow:navigateTo", url)),
-  ...(process.platform === "win32"
-    ? {
-        setTitleBarOverlay: (theme: TitleBarOverlayTheme): Promise<void> =>
-          Promise.resolve(
-            ipcRenderer.invoke("cadet:mainWindow:setTitleBarOverlay", theme),
-          ),
-      }
-    : {}),
-});
+    ipcRenderer.invoke("cadet:mainWindow:navigateTo", url),
+};
 
 /**
- * The text surface: inserting into (and, where the helper can undo its own
- * insertion, undoing in) the front app, plus the automation-settings handoff.
+ * Windows alone answers `setTitleBarOverlay` — its title-bar controls are
+ * drawn by the system, so theme changes must reach the native overlay; the
+ * other desktops frame their windows themselves.
  */
-export const createTextBridge = (): CadetBridge["text"] => ({
+export const mainWindowSetTitleBarOverlay: NonNullable<
+  CadetBridge["mainWindow"]["setTitleBarOverlay"]
+> = (theme: TitleBarOverlayTheme): Promise<void> =>
+  ipcRenderer.invoke("cadet:mainWindow:setTitleBarOverlay", theme);
+
+/** The text surface, minus the macOS-only undo hook. */
+export const textBridge: Omit<CadetBridge["text"], "undoInFrontApp"> = {
   insertIntoFrontApp: (text): Promise<TextInsertionResult> =>
-    Promise.resolve(ipcRenderer.invoke("cadet:text:insertIntoFrontApp", text)),
+    ipcRenderer.invoke("cadet:text:insertIntoFrontApp", text),
   openAutomationSettings: (): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke("cadet:text:openAutomationSettings")),
-  ...(process.platform === "darwin"
-    ? {
-        undoInFrontApp: (): Promise<TextInsertionResult> =>
-          Promise.resolve(ipcRenderer.invoke("cadet:text:undoInFrontApp")),
-      }
-    : {}),
-});
+    ipcRenderer.invoke("cadet:text:openAutomationSettings"),
+};
+
+/**
+ * Where the helper can undo its own insertion — the automation-feedback loop
+ * needs a way to roll it back.
+ */
+export const textUndoInFrontApp: NonNullable<
+  CadetBridge["text"]["undoInFrontApp"]
+> = (): Promise<TextInsertionResult> =>
+  ipcRenderer.invoke("cadet:text:undoInFrontApp");

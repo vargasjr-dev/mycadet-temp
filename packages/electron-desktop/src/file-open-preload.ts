@@ -8,10 +8,7 @@ import {
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-export const createFileOpenPreloadBridge = (): Pick<
-  CadetBridge,
-  "fileOpen" | "paths"
-> => ({
+export const fileOpenSurfaces: Pick<CadetBridge, "fileOpen" | "paths"> = {
   fileOpen: {
     drain: () => ipcRenderer.invoke(FILE_OPEN_DRAIN) as Promise<string[]>,
     onFile: (callback) => {
@@ -38,4 +35,4 @@ export const createFileOpenPreloadBridge = (): Pick<
       }
     },
   },
-});
+};

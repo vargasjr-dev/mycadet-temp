@@ -1,6 +1,6 @@
 import { ipcRenderer, type IpcRendererEvent } from "electron";
 
-import { createDictationOfferBridge } from "../factories";
+import { dictationOfferBridge } from "../factories";
 import type {
   CadetBridge,
   CompanionAnnotationPhase,
@@ -39,7 +39,7 @@ const invoke = async <T>(channel: string, ...args: unknown[]): Promise<T> => {
   return result;
 };
 
-export const createCompanionBridge = (): CadetBridge["companion"] => ({
+export const companionBridge: CadetBridge["companion"] = {
   getState: (): Promise<CompanionSurfaceState | null> =>
     invoke<CompanionSurfaceState | null>("cadet:companion:getState"),
   onState: (callback) => {
@@ -185,7 +185,7 @@ export const createCompanionBridge = (): CadetBridge["companion"] => ({
   answerWatchRetro: (open: boolean): void => {
     ipcRenderer.send("cadet:companion:answerWatchRetro", open);
   },
-  ...createDictationOfferBridge(),
+  ...dictationOfferBridge,
   answerDictationOffer: (
     answer: DictationOfferAnswer,
     offerId: string,
@@ -233,4 +233,4 @@ export const createCompanionBridge = (): CadetBridge["companion"] => ({
   showContextMenu: (): void => {
     ipcRenderer.send("cadet:companion:contextMenu");
   },
-});
+};

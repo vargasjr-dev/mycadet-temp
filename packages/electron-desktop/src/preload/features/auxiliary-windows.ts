@@ -23,10 +23,10 @@ import {
  * dictation overlay, and the conversation popout — each a frame the main
  * process opens and the renderer fills.
  */
-export const createAuxiliaryWindowSurfaces = (): Pick<
+export const auxiliaryWindowSurfaces: Pick<
   CadetBridge,
   "quickInput" | "commandPalette" | "dictationOverlay" | "popout"
-> => ({
+> = {
   quickInput: {
     submit: (message) => ipcRenderer.invoke(QUICK_INPUT_SUBMIT, message),
     dismiss: () => ipcRenderer.invoke(QUICK_INPUT_DISMISS),
@@ -75,4 +75,4 @@ export const createAuxiliaryWindowSurfaces = (): Pick<
   popout: {
     open: (conversationId) => ipcRenderer.invoke(POPOUT_OPEN, conversationId),
   },
-});
+};

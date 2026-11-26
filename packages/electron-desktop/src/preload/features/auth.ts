@@ -8,13 +8,11 @@ import {
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-export const createAuthBridge = (): CadetBridge["auth"] => ({
+export const authBridge: CadetBridge["auth"] = {
   startOAuth: (options): Promise<{ sessionToken: string }> =>
-    Promise.resolve(ipcRenderer.invoke(AUTH_START_OAUTH, options)),
-  cancelOAuth: (): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke(AUTH_CANCEL_OAUTH)),
+    ipcRenderer.invoke(AUTH_START_OAUTH, options),
+  cancelOAuth: (): Promise<void> => ipcRenderer.invoke(AUTH_CANCEL_OAUTH),
   getSessionToken: (): string | null =>
     ipcRenderer.sendSync(AUTH_GET_SESSION_TOKEN),
-  signOut: (): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke(AUTH_SIGN_OUT)),
-});
+  signOut: (): Promise<void> => ipcRenderer.invoke(AUTH_SIGN_OUT),
+};

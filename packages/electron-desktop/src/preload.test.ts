@@ -43,9 +43,9 @@ import {
 } from "@mycadet/ipc-contract";
 
 const {
-  createBundleConfirmBridge,
-  createDownloadsBridge,
-  createDictationOfferBridge,
+  bundleConfirmBridge,
+  downloadsBridge,
+  dictationOfferBridge,
   createNotificationsBridge,
   createWindowAttentionSubscriber,
 } = await import("./preload/factories");
@@ -80,7 +80,7 @@ test("notification preload works without crypto.randomUUID", async () => {
 });
 
 test("sends recovery offers and clears over the companion IPC channel", () => {
-  const bridge = createDictationOfferBridge();
+  const bridge = dictationOfferBridge;
   const offer = {
     text: "make this friendlier",
     reason: "paste-failed" as const,
@@ -146,7 +146,7 @@ test("creates the notification bridge with optional identity methods", async () 
 });
 
 test("creates the bundle confirmation IPC bridge", async () => {
-  const bridge = createBundleConfirmBridge();
+  const bridge = bundleConfirmBridge;
 
   await bridge.getData();
   bridge.respond(true);
@@ -156,7 +156,7 @@ test("creates the bundle confirmation IPC bridge", async () => {
 });
 
 test("creates the downloads IPC bridge", async () => {
-  const bridge = createDownloadsBridge();
+  const bridge = downloadsBridge;
 
   const received: DownloadDoneEvent[] = [];
   const unsubscribe = bridge.onDone((event) => received.push(event));

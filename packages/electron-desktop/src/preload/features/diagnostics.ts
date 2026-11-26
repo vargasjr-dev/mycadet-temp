@@ -7,15 +7,14 @@ import {
   type CadetBridge,
 } from "@mycadet/ipc-contract";
 
-export const createDiagnosticsBridge = (): CadetBridge["diagnostics"] => ({
+export const diagnosticsBridge: CadetBridge["diagnostics"] = {
   setShareDiagnostics: (enabled) => {
     ipcRenderer.send(DIAGNOSTICS_SET_SHARE, enabled);
   },
-});
+};
 
-export const createFeedbackBridge = (): CadetBridge["feedback"] => ({
+export const feedbackBridge: CadetBridge["feedback"] = {
   diagnostics: (): Promise<Record<string, unknown>> =>
-    Promise.resolve(ipcRenderer.invoke(FEEDBACK_DIAGNOSTICS)),
-  logs: (): Promise<string> =>
-    Promise.resolve(ipcRenderer.invoke(FEEDBACK_LOGS)),
-});
+    ipcRenderer.invoke(FEEDBACK_DIAGNOSTICS),
+  logs: (): Promise<string> => ipcRenderer.invoke(FEEDBACK_LOGS),
+};

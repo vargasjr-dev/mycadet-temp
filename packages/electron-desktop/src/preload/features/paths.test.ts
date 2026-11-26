@@ -32,8 +32,8 @@ mock.module("electron", () =>
   }),
 );
 
-const { createFileOpenPreloadBridge } = await import("../../file-open-preload");
-const bridge: Partial<CadetBridge> = createFileOpenPreloadBridge();
+const { fileOpenSurfaces } = await import("../../file-open-preload");
+const bridge: Partial<CadetBridge> = fileOpenSurfaces;
 
 test("resolves only native File paths and returns null when unavailable", () => {
   const file = new File(["bundle"], "例.cadet");

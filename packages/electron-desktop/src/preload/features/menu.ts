@@ -9,9 +9,8 @@ import { MENU_POPUP, MENU_TITLES } from "@mycadet/ipc-contract";
  * process, whose shared `installDesktopMenu` owns the one template —
  * macOS's app menu included.
  */
-export const createMenuBridge = (): CadetBridge["menu"] => ({
+export const menuBridge: CadetBridge["menu"] = {
   titles: (): Promise<Array<{ id: string; label: string }>> =>
-    Promise.resolve(ipcRenderer.invoke(MENU_TITLES)),
-  popup: (id, x, y): Promise<void> =>
-    Promise.resolve(ipcRenderer.invoke(MENU_POPUP, id, x, y)),
-});
+    ipcRenderer.invoke(MENU_TITLES),
+  popup: (id, x, y): Promise<void> => ipcRenderer.invoke(MENU_POPUP, id, x, y),
+};

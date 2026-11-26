@@ -27,7 +27,6 @@ import WORKLET_MODULE_URL from "@/domains/chat/voice/live-voice/pcm-downsample-w
 
 import { createAudioContext } from "@/domains/chat/voice/audio-context";
 import { isElectron } from "@/runtime/is-electron";
-import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { requestNativeTranscription } from "@/runtime/native-dictation-transcription";
 
 const WORKLET_PROCESSOR_NAME = "pcm-downsample";
@@ -152,19 +151,6 @@ async function startAudioPump(
 }
 
 const MIN_TRANSCRIBED_TIMEOUT_MS = 8000;
-const TRANSCRIBED_TIMEOUT_GRACE_MS = 5000;
-
-function transcribedTimeoutMs(pcmByteLength: number): number {
-  if (detectElectronHostOS() !== "windows") {
-    return MIN_TRANSCRIBED_TIMEOUT_MS;
-  }
-  const pcmDurationMs =
-    (pcmByteLength / (PUSH_SAMPLE_RATE * Int16Array.BYTES_PER_ELEMENT)) * 1000;
-  return Math.max(
-    MIN_TRANSCRIBED_TIMEOUT_MS,
-    pcmDurationMs + TRANSCRIBED_TIMEOUT_GRACE_MS,
-  );
-}
 
 /**
  * One-shot native speech recognition of a complete recording, used as the
@@ -205,7 +191,7 @@ export async function transcribeNativeAudioBlob(
         onTranscribed,
       },
       pcm,
-      transcribedTimeoutMs(pcm.byteLength),
+      MIN_TRANSCRIBED_TIMEOUT_MS,
     );
     if (!result.ok) {
       console.info("dictation: native transcribe unavailable:", result.reason);

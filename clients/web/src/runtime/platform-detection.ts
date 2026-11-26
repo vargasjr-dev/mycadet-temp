@@ -2,12 +2,24 @@ import { Capacitor } from "@capacitor/core";
 import type { ElectronHostOS } from "@mycadet/ipc-contract";
 import { useSyncExternalStore } from "react";
 
-import {
-  getBrowserPlatform,
-  isKnownUnsupportedDesktopBrowser,
-} from "@/runtime/desktop-app-platform";
 import { isElectron } from "@/runtime/is-electron";
 import { isNativePlatform } from "@/runtime/native-platform";
+
+/** The browser's platform string: `userAgentData` when present, else `navigator.platform`. */
+const getBrowserPlatform = (): string => {
+  const uaData = (
+    navigator as Navigator & {
+      userAgentData?: { platform?: string };
+    }
+  ).userAgentData;
+  return uaData?.platform || navigator.platform;
+};
+
+/** True when the browser identifies as a desktop system outside the macOS/Windows promotion. */
+const isKnownUnsupportedDesktopBrowser = (): boolean => {
+  const platformSignals = `${getBrowserPlatform()} ${navigator.userAgent}`;
+  return /\b(?:CrOS|Linux|X11|FreeBSD|OpenBSD|NetBSD)\b/i.test(platformSignals);
+};
 
 /**
  * Returns true when the current browser is running on iOS (iPhone, iPod, or iPad).
@@ -386,7 +398,7 @@ export function useIsMobileWeb(): boolean {
   );
 }
 
-/** Desktop browser user who may be offered the detected desktop app. */
+/** Desktop browser user who may be offered the desktop app. */
 export function useIsDesktopAppWeb(): boolean {
   return useSyncExternalStore(
     noop,

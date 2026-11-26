@@ -13,9 +13,7 @@ import type {
  * process serves these channels (they ride the shared companion window),
  * so the surface ships on all three platforms.
  */
-export const createVoiceActivitySurface = (): NonNullable<
-  CadetBridge["voiceActivity"]
-> => ({
+export const voiceActivitySurface: NonNullable<CadetBridge["voiceActivity"]> = {
   start: (state: VoiceActivityStart): void => {
     ipcRenderer.send("cadet:voiceActivity:start", state);
   },
@@ -40,4 +38,4 @@ export const createVoiceActivitySurface = (): NonNullable<
       ipcRenderer.off("cadet:voiceActivity:controlEvent", handler);
     };
   },
-});
+};

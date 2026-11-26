@@ -1,8 +1,4 @@
-import { contextBridge } from "electron";
-
-import { composeDesktopPreload } from "@mycadet/electron-desktop/preload";
-
-// The preload is one shared composition in the electron-desktop package;
-// this shell just exposes it. `bridge-parity.test.ts` holds the composed
-// bridge to the full contract.
-contextBridge.exposeInMainWorld("cadet", composeDesktopPreload());
+// The whole preload — composition and `exposeInMainWorld` — lives in the
+// electron-desktop package; this shell's entry just imports it.
+// `bridge-parity.test.ts` holds the composed bridge to the full contract.
+import "@mycadet/electron-desktop/preload";

@@ -22,9 +22,7 @@ mock.module("@/components/nudges/native-app-banner", () => ({
   NativeAppBanner: () => <div data-testid="native-app-banner" />,
 }));
 mock.module("@/components/nudges/desktop-app-banner", () => ({
-  DesktopAppBanner: ({ platform }: { platform: string }) => (
-    <div data-testid="desktop-app-banner" data-platform={platform} />
-  ),
+  DesktopAppBanner: () => <div data-testid="desktop-app-banner" />,
 }));
 mock.module("@/domains/chat/components/queued-messages-drawer", () => ({
   QueuedMessagesDrawer: () => null,
@@ -47,7 +45,6 @@ function makeNudges(overrides: Partial<Nudges> = {}): Nudges {
     isOnDesktop: true,
     isOnNudgePlatform: true,
     mobilePromotion: null,
-    desktopAppPlatform: "macos",
     nudge: {
       bannerShouldShow: false,
       handleDownload: noop,
@@ -132,19 +129,6 @@ describe("useChatBannerSlots — banner slot construction", () => {
     render(result.current.mainBannerSlot);
     expect(screen.getByTestId("desktop-app-banner")).toBeDefined();
     expect(screen.queryByTestId("native-app-banner")).toBeNull();
-  });
-
-  test("passes the detected desktop platform to the banner", () => {
-    const { result } = renderHook(useChatBannerSlots, {
-      initialProps: makeParams(
-        makeNudges({ showBanner: true, desktopAppPlatform: "windows" }),
-      ),
-    });
-
-    render(result.current.mainBannerSlot);
-    expect(screen.getByTestId("desktop-app-banner").dataset.platform).toBe(
-      "windows",
-    );
   });
 
   test("clearing the flag drops the slot back to null", () => {
