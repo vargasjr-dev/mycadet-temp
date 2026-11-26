@@ -1,9 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Logger } from "pino";
 import { z } from "zod";
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getConfig } from "../../config.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import {
   resolveCredentialWithRefresh,
@@ -279,15 +278,30 @@ function buildResendReplySender(apiKey: string, log: Logger): EmailReplySender {
 
 // ── Webhook handler factory ─────────────────────────────────────────
 
-export function createResendWebhookHandler(
-  config: GatewayConfig,
-  caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
-) {
-  const dedupCache = new StringDedupCache(24 * 60 * 60_000);
+let resendDedupCache: StringDedupCache | undefined;
 
-  const handler = async (req: Request): Promise<Response> => {
-    const traceId = req.headers.get("x-trace-id") ?? undefined;
-    const tlog = traceId ? log.child({ traceId }) : log;
+/**
+ * The Resend webhook's dedup cache, born here so every request shares one
+ * instance. No lifecycle sweep — the TTL evicts on read (as before).
+ */
+export function getResendDedupCache(): StringDedupCache {
+  return (resendDedupCache ??= new StringDedupCache(24 * 60 * 60_000));
+}
+
+/** Test isolation: drop the singleton so the next get starts fresh. */
+export function resetForTests(): void {
+  resendDedupCache = undefined;
+}
+
+/** The `/webhooks/resend` provider callback. Reads the config and credential
+ * singletons at request time — no factory, no injection. */
+export async function handleResendWebhook(req: Request): Promise<Response> {
+  const config = getConfig();
+  const credentials = getCredentials();
+  const dedupCache = getResendDedupCache();
+
+  const traceId = req.headers.get("x-trace-id") ?? undefined;
+  const tlog = traceId ? log.child({ traceId }) : log;
 
     if (req.method !== "POST") {
       return Response.json({ error: "Method not allowed" }, { status: 405 });
@@ -314,7 +328,7 @@ export function createResendWebhookHandler(
     //   resend/api_key        — for fetching email content from the API
 
     const webhookSecret = await resolveCredentialWithRefresh(
-      caches?.credentials,
+      credentials,
       credentialKey("resend", "webhook_secret"),
     );
 
@@ -329,7 +343,7 @@ export function createResendWebhookHandler(
     // ── Signature verification ──────────────────────────────────────
 
     const signatureValid = await verifySecretWithRefresh({
-      credentials: caches?.credentials,
+      credentials: credentials,
       key: credentialKey("resend", "webhook_secret"),
       verify: (secret) => verifySvixSignature(req.headers, rawBody, secret),
       log: tlog,
@@ -382,7 +396,7 @@ export function createResendWebhookHandler(
     // the actual email body and headers.
 
     const apiKeyResult = await resolveEmailCredentialOrRelease({
-      credentials: caches?.credentials,
+      credentials: credentials,
       key: credentialKey("resend", "api_key"),
       dedupCache,
       dedupKey: messageId,
@@ -427,7 +441,4 @@ export function createResendWebhookHandler(
       sendReply: apiKey ? buildResendReplySender(apiKey, tlog) : undefined,
       logFields: { emailId },
     });
-  };
-
-  return { handler, dedupCache };
 }

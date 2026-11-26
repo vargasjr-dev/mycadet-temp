@@ -12,7 +12,10 @@
  * calls from callers whose identity the gateway has already confirmed.
  */
 
+import { getConfig } from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
+import { getCredentials } from "../../credential-cache.js";
 import { getLogger } from "../../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
 import {
@@ -46,12 +49,15 @@ function twimlResponse(body: string, status = 200): Response {
   return new Response(body, { status, headers: TWIML_HEADERS });
 }
 
-export function createTwilioVoiceVerifyCallbackHandler(
-  config: GatewayConfig,
-  caches?: TwilioValidationCaches,
-) {
-  return async (req: Request): Promise<Response> => {
-    const validation = await validateTwilioWebhookRequest(req, config, caches);
+export async function handleTwilioVoiceVerifyCallback(
+  req: Request,
+): Promise<Response> {
+  const config = getConfig();
+  const caches = {
+    credentials: getCredentials(),
+    configFile: getConfigFileCache(),
+  };
+  const validation = await validateTwilioWebhookRequest(req, config, caches);
     if (validation instanceof Response) return validation;
 
     const { params } = validation;
@@ -203,14 +209,13 @@ export function createTwilioVoiceVerifyCallbackHandler(
       { callSid, fromNumber },
       "Voice verification complete — forwarding to assistant for call setup",
     );
-    return forwardToAssistant(
-      config,
-      params,
-      req.url,
-      validation.validatedCandidateUrl,
-      caches,
-    );
-  };
+  return forwardToAssistant(
+    config,
+    params,
+    req.url,
+    validation.validatedCandidateUrl,
+    caches,
+  );
 }
 
 // ---------------------------------------------------------------------------

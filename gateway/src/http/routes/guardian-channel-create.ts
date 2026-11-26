@@ -71,10 +71,9 @@ export async function findGuardian(): Promise<
 // Handler factory
 // ---------------------------------------------------------------------------
 
-export function createGuardianChannelHandler() {
-  return async function handleGuardianChannelCreate(
-    req: Request,
-  ): Promise<Response> {
+export async function handleGuardianChannelCreate(
+  req: Request,
+): Promise<Response> {
     // ── Parse & validate request body ─────────────────────────────
 
     let rawBody: unknown;
@@ -145,5 +144,4 @@ export function createGuardianChannelHandler() {
       ok: true,
       verified_via: "platform_auto_register",
     });
-  };
 }

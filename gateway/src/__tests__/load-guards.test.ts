@@ -1,8 +1,28 @@
 import { describe, test, expect } from "bun:test";
-import { createTelegramWebhookHandler } from "../http/routes/telegram-webhook.js";
+import { beforeEach, mock } from "bun:test";
+
+import * as realConfig from "../config.js";
 import type { GatewayConfig } from "../config.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
+
+let activeCredentials: CredentialCache;
+let activeConfig: GatewayConfig;
+
+mock.module("../config.js", () => ({
+  ...realConfig,
+  getConfig: () => activeConfig,
+}));
+
+mock.module("../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
+const { handleTelegramWebhook, resetBotIdentityForTests, resetDropLogForTests } =
+  await import("../http/routes/telegram-webhook.js");
+const { resetForTests } = await import("../telegram/dedup.js");
+
+activeCredentials = makeCaches().credentials;
 
 function makeCaches() {
   const credentials = {
@@ -40,11 +60,14 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
 }
 
 describe("payload size guard", () => {
+  beforeEach(() => {
+    resetForTests();
+    resetBotIdentityForTests();
+    resetDropLogForTests();
+    activeConfig = makeConfig();
+    activeCredentials = makeCaches().credentials;
+  });
   test("returns 413 when content-length exceeds limit", async () => {
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig(),
-      makeCaches(),
-    );
     const body = JSON.stringify({ data: "x".repeat(300) });
     const req = new Request("http://localhost:7830/webhooks/telegram", {
       method: "POST",
@@ -55,17 +78,13 @@ describe("payload size guard", () => {
         "x-telegram-bot-api-secret-token": "wh-sec",
       },
     });
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
     expect(res.status).toBe(413);
     const json = await res.json();
     expect(json.error).toBe("Payload too large");
   });
 
   test("returns 413 when body exceeds limit even without content-length", async () => {
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig(),
-      makeCaches(),
-    );
     const body = JSON.stringify({ data: "x".repeat(300) });
     const req = new Request("http://localhost:7830/webhooks/telegram", {
       method: "POST",
@@ -75,15 +94,12 @@ describe("payload size guard", () => {
         "x-telegram-bot-api-secret-token": "wh-sec",
       },
     });
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
     expect(res.status).toBe(413);
   });
 
   test("accepts payload within limit", async () => {
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig({ maxWebhookPayloadBytes: 10000 }),
-      makeCaches(),
-    );
+    activeConfig = makeConfig({ maxWebhookPayloadBytes: 10000 });
     const body = JSON.stringify({
       update_id: 1,
       message: {
@@ -102,7 +118,7 @@ describe("payload size guard", () => {
         "x-telegram-bot-api-secret-token": "wh-sec",
       },
     });
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
     // Will fail downstream (routing reject) but should NOT be 413
     expect(res.status).not.toBe(413);
   });

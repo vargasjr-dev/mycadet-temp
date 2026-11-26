@@ -1,6 +1,7 @@
 import { LOCAL_ASSISTANT_ID } from "../../assistant-id.js";
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
+import { getCredentials } from "../../credential-cache.js";
 import { getLogger } from "../../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../../cloud-identity.js";
 import { resolveAdmissionPolicy } from "../../risk/admission-policy-cache.js";
@@ -16,7 +17,6 @@ import {
 } from "../../routing/resolve-assistant.js";
 import {
   validateTwilioWebhookRequest,
-  type TwilioValidationCaches,
 } from "../../twilio/validate-webhook.js";
 import {
   findPendingPhoneSession,
@@ -42,12 +42,15 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
-export function createTwilioVoiceWebhookHandler(
-  config: GatewayConfig,
-  caches?: TwilioValidationCaches & { configFile?: ConfigFileCache },
-) {
-  return async (req: Request): Promise<Response> => {
-    const validation = await validateTwilioWebhookRequest(req, config, caches);
+export async function handleTwilioVoiceWebhook(
+  req: Request,
+): Promise<Response> {
+  const config = getConfig();
+  const caches = {
+    credentials: getCredentials(),
+    configFile: getConfigFileCache(),
+  };
+  const validation = await validateTwilioWebhookRequest(req, config, caches);
     if (validation instanceof Response) return validation;
 
     const { params } = validation;
@@ -76,7 +79,7 @@ export function createTwilioVoiceWebhookHandler(
       }
 
       const phoneRouting = params.To
-        ? resolveAssistantByPhoneNumber(config, params.To, caches?.configFile)
+        ? resolveAssistantByPhoneNumber(config, params.To, caches.configFile)
         : undefined;
 
       if (phoneRouting && "assistantId" in phoneRouting) {
@@ -211,7 +214,7 @@ export function createTwilioVoiceWebhookHandler(
         req.url,
         resolvePublicBaseWssUrl(
           config,
-          caches?.configFile,
+          caches.configFile,
           platformCloudId,
           validation.validatedCandidateUrl,
         ),
@@ -230,8 +233,7 @@ export function createTwilioVoiceWebhookHandler(
           },
         );
       }
-      log.error({ err }, "Failed to forward Twilio voice webhook to runtime");
-      return Response.json({ error: "Internal server error" }, { status: 502 });
-    }
-  };
+    log.error({ err }, "Failed to forward Twilio voice webhook to runtime");
+    return Response.json({ error: "Internal server error" }, { status: 502 });
+  }
 }

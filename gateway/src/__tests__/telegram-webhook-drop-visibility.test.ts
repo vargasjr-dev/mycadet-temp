@@ -1,7 +1,8 @@
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import * as realConfig from "../config.js";
 
 import type { GatewayConfig } from "../config.js";
 import type { CredentialCache } from "../credential-cache.js";
@@ -43,8 +44,37 @@ mock.module("../fetch.js", () => ({
   },
 }));
 
-const { createTelegramWebhookHandler } =
-  await import("../http/routes/telegram-webhook.js");
+// Config and credential singletons the plain handler reads at request time.
+const activeCredentials = makeCaches().credentials;
+
+mock.module("../config.js", () => ({
+  ...realConfig,
+  getConfig: () => activeConfig,
+}));
+
+mock.module("../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
+mock.module("../config-file-cache.js", () => ({
+  getConfigFileCache: () => ({
+    getString: () => undefined,
+    getBoolean: () => undefined,
+    getNumber: () => undefined,
+    getStringArray: () => undefined,
+    getRecord: () => undefined,
+    refreshNow: () => {},
+  }),
+}));
+
+const {
+  handleTelegramWebhook,
+  resetBotIdentityForTests,
+  resetDropLogForTests,
+} = await import("../http/routes/telegram-webhook.js");
+const { resetForTests } = await import("../telegram/dedup.js");
+
+const activeConfig = makeConfig();
 
 const SECRET = "test-webhook-secret";
 const GROUP_CHAT_ID = -1001234567890;
@@ -135,13 +165,14 @@ function webhookRequest(payload: unknown): Request {
 }
 
 describe("telegram webhook: dropped updates are visible", () => {
+  beforeEach(() => {
+    resetForTests();
+    resetBotIdentityForTests();
+    resetDropLogForTests();
+  });
   test("an unaddressed group message is acknowledged and its drop is written at a level the streams keep", async () => {
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig(),
-      makeCaches(),
-    );
 
-    const res = await handler(webhookRequest(groupMessage(9001)));
+    const res = await handleTelegramWebhook(webhookRequest(groupMessage(9001)));
 
     // Telegram must still see success, or it retries the update forever.
     expect(res.status).toBe(200);
@@ -159,13 +190,9 @@ describe("telegram webhook: dropped updates are visible", () => {
   test("repeated drops from the same chat do not keep writing", async () => {
     // One line carries the whole diagnosis; a busy group would otherwise
     // write one line per message.
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig(),
-      makeCaches(),
-    );
 
-    await handler(webhookRequest(groupMessage(9101, "group")));
-    await handler(webhookRequest(groupMessage(9102, "group")));
+    await handleTelegramWebhook(webhookRequest(groupMessage(9101, "group")));
+    await handleTelegramWebhook(webhookRequest(groupMessage(9102, "group")));
 
     const records = readLogRecords();
     expect(records.filter((r) => r["updateId"] === 9101)).toHaveLength(1);
@@ -175,13 +202,9 @@ describe("telegram webhook: dropped updates are visible", () => {
   test("a drop that names no chat is written every time, not once per process", async () => {
     // Nothing to dedup on: a message with no chat id cannot share a key with
     // the next one, so a wave of them stays visible at any process age.
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig(),
-      makeCaches(),
-    );
 
     for (const updateId of [9401, 9402]) {
-      const res = await handler(
+      const res = await handleTelegramWebhook(
         webhookRequest({
           update_id: updateId,
           message: { message_id: 1, text: "hi", from: { id: 42 } },
@@ -202,12 +225,8 @@ describe("telegram webhook: dropped updates are visible", () => {
   test("ordinary unreadable traffic stays quiet", async () => {
     // A sticker is not a misconfiguration and scales with how chatty a chat
     // is, so it never promotes.
-    const { handler } = createTelegramWebhookHandler(
-      makeConfig(),
-      makeCaches(),
-    );
 
-    const res = await handler(
+    const res = await handleTelegramWebhook(
       webhookRequest({
         update_id: 9201,
         message: {

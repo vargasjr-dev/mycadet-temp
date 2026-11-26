@@ -30,9 +30,22 @@ mock.module("../../runtime/client.js", () => ({
   CircuitBreakerOpenError: class extends Error {},
 }));
 
+// Config and credential singletons the plain handler reads at request time.
+let activeCredentials: CredentialCache;
+
+mock.module("../../config.js", () => ({
+  getConfig: () => config,
+}));
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
 // Import after mocks are registered
-const { createResendWebhookHandler, normalizeResendToCadetPayload } =
+const { handleResendWebhook, getResendDedupCache, resetForTests, normalizeResendToCadetPayload } =
   await import("./resend-webhook.js");
+
+activeCredentials = makeCaches().credentials;
 
 // --- Sender authentication -------------------------------------------------
 // Resend inbound trust hinges on `senderAuthenticated`, derived from the
@@ -171,6 +184,8 @@ function postRequest(messageId: string): Request {
 }
 
 beforeEach(() => {
+  resetForTests();
+  activeCredentials = makeCaches().credentials;
   handleInboundMock.mockClear();
   handleInboundMock.mockImplementation(() =>
     Promise.resolve({ forwarded: true, rejected: false }),
@@ -179,35 +194,29 @@ beforeEach(() => {
 
 describe("resend-webhook API-key resolution", () => {
   it("releases the reserved dedup key and returns 500 when the API-key read throws", async () => {
-    const { handler, dedupCache } = createResendWebhookHandler(
-      config,
-      makeCaches({ apiKeyThrows: true }),
-    );
+    activeCredentials = makeCaches({ apiKeyThrows: true }).credentials;
     const messageId = "<throw-msg-1@example.com>";
-    const res = await handler(postRequest(messageId));
+    const res = await handleResendWebhook(postRequest(messageId));
 
     expect(res.status).toBe(500);
     // The throw happens at API-key resolution, before the pipeline runs.
     expect(handleInboundMock).not.toHaveBeenCalled();
     // Released: Resend's retry delivery reserves the key again instead of
     // being silently deduped and dropped.
-    expect(dedupCache.reserve(messageId)).toBe(true);
+    expect(getResendDedupCache().reserve(messageId)).toBe(true);
   });
 
   it("forwards through the pipeline and keeps the key deduped when the API key resolves", async () => {
     // API key omitted (undefined): the body fetch is skipped but the event
     // still forwards — a non-throwing resolution must not 500.
-    const { handler, dedupCache } = createResendWebhookHandler(
-      config,
-      makeCaches(),
-    );
+    activeCredentials = makeCaches().credentials;
     const messageId = "<ok-msg-1@example.com>";
-    const res = await handler(postRequest(messageId));
+    const res = await handleResendWebhook(postRequest(messageId));
 
     expect(res.status).toBe(200);
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
     // A processed delivery stays deduped: the retry reservation is refused.
-    expect(dedupCache.reserve(messageId)).toBe(false);
+    expect(getResendDedupCache().reserve(messageId)).toBe(false);
   });
 });
 
@@ -235,8 +244,7 @@ function signedRequest(bodyObj: unknown): Request {
 
 describe("resend-webhook payload validation", () => {
   it("acknowledges a non-received event (delivery status, bounce) without forwarding", async () => {
-    const { handler } = createResendWebhookHandler(config, makeCaches());
-    const res = await handler(
+    const res = await handleResendWebhook(
       signedRequest({ type: "email.delivered", data: { email_id: "e1" } }),
     );
     expect(res.status).toBe(200);
@@ -246,8 +254,7 @@ describe("resend-webhook payload validation", () => {
   it("drops an email.received event whose `to` is not an array, rather than forwarding a garbage recipient", async () => {
     // A string `to` must be treated as malformed, not as a list: indexing it
     // would forward `to[0]` — a single character — as the recipient address.
-    const { handler } = createResendWebhookHandler(config, makeCaches());
-    const res = await handler(
+    const res = await handleResendWebhook(
       signedRequest({
         type: "email.received",
         created_at: "2026-04-03T01:00:00.000Z",

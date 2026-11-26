@@ -1,15 +1,15 @@
 import { timingSafeEqual } from "crypto";
 import { buildWhatsAppTransportMetadata } from "../../channels/transport-hints.js";
 import { readSavedIngressPublicBaseUrl } from "../../remote-web/public-base-url.js";
-import type { GatewayConfig } from "../../config.js";
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getConfig } from "../../config.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import {
   resolveCredentialWithRefresh,
   verifySecretWithRefresh,
 } from "../../credential-refresh.js";
-import { StringDedupCache } from "../../dedup-cache.js";
+import { getWhatsappDedupCache } from "../../whatsapp/dedup.js";
 import {
   appendFailedAttachmentNotice,
   ingestAttachments,
@@ -48,21 +48,17 @@ const log = getLogger("whatsapp-webhook");
 
 const rejectionLimiter = new RejectionRateLimiter();
 
-export function createWhatsAppWebhookHandler(
-  config: GatewayConfig,
-  caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
-  // Production injects the integration-owned singleton (getWhatsappDedupCache)
-  // so the lifecycle sweep sees the same instance; the default keeps direct
-  // creator calls (tests) on a fresh, isolated cache.
-  dedupCache: StringDedupCache = new StringDedupCache(24 * 60 * 60_000),
-) {
-  // Build API caches from the credential and config caches for outbound WhatsApp calls
-  const apiCaches: WhatsAppApiCaches | undefined = caches?.credentials
-    ? { credentials: caches.credentials, configFile: caches.configFile }
-    : undefined;
+/** The `/webhooks/whatsapp` provider callback. Reads the config, credential,
+ * and dedup-cache singletons at request time — no factory, no injection. */
+export async function handleWhatsAppWebhook(req: Request): Promise<Response> {
+  const config = getConfig();
+  const credentials = getCredentials();
+  const dedupCache = getWhatsappDedupCache();
 
-  const handler = async (req: Request): Promise<Response> => {
-    const traceId = req.headers.get("x-trace-id") ?? undefined;
+  // Build API caches from the credential cache for outbound WhatsApp calls
+  const apiCaches: WhatsAppApiCaches = { credentials, configFile: getConfigFileCache() };
+
+  const traceId = req.headers.get("x-trace-id") ?? undefined;
     const tlog = traceId ? log.child({ traceId }) : log;
 
     // Meta sends a GET request to verify the webhook subscription
@@ -73,8 +69,8 @@ export function createWhatsAppWebhookHandler(
       const challenge = url.searchParams.get("hub.challenge");
 
       // Resolve the verify token from cache
-      const verifyToken = caches?.credentials
-        ? await caches.credentials.get(
+      const verifyToken = credentials
+        ? await credentials.get(
             credentialKey("whatsapp", "webhook_verify_token"),
           )
         : undefined;
@@ -116,7 +112,7 @@ export function createWhatsAppWebhookHandler(
     // Signature validation is required — reject requests when the app secret is not configured
     // rather than silently accepting unauthenticated payloads (fail-closed).
     const appSecret = await resolveCredentialWithRefresh(
-      caches?.credentials,
+      credentials,
       credentialKey("whatsapp", "app_secret"),
     );
     if (!appSecret) {
@@ -128,7 +124,7 @@ export function createWhatsAppWebhookHandler(
     }
 
     const signatureValid = await verifySecretWithRefresh({
-      credentials: caches?.credentials,
+      credentials,
       key: credentialKey("whatsapp", "app_secret"),
       verify: (secret) =>
         verifyWhatsAppWebhookSignature(req.headers, rawBody, secret),
@@ -382,7 +378,4 @@ export function createWhatsAppWebhookHandler(
     }
 
     return Response.json({ ok: true });
-  };
-
-  return { handler, dedupCache };
 }

@@ -1,106 +1,35 @@
 /**
  * Provider webhook route declarations (dispatch-only, never in the spec):
  * unauthenticated by design — each provider's payload validates by its own
- * mechanism. The dedup caches are exported because the gateway process owns
- * their lifecycle.
+ * mechanism. Every handler is a plain function that reads the config,
+ * credential, and config-file singletons at request time; importing this
+ * module stays side-effect-free because nothing here runs at import.
  */
 
 import {
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
 } from "@mycadet/service-contracts/twilio-ingress";
-import { getConfig } from "../../config.js";
 import { getCredentials } from "../../credential-cache.js";
-import { getConfigFileCache } from "../../config-file-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { getLogger } from "../../logger.js";
-import { createTelegramWebhookHandler } from "./telegram-webhook.js";
-import { createWhatsAppWebhookHandler } from "./whatsapp-webhook.js";
-import { createEmailWebhookHandler } from "./email-webhook.js";
-import { createTwilioVoiceWebhookHandler } from "./twilio-voice-webhook.js";
-import { createTwilioStatusWebhookHandler } from "./twilio-status-webhook.js";
-import { createTwilioVoiceVerifyCallbackHandler } from "./twilio-voice-verify-callback.js";
-import { createResendWebhookHandler } from "./resend-webhook.js";
-import { createMailgunWebhookHandler } from "./mailgun-webhook.js";
-import { createOAuthCallbackHandler } from "./oauth-callback.js";
-import { createMcpOAuthClientMetadataHandler } from "./mcp-oauth-client-metadata.js";
-import { createInboundRegisterHandler } from "./inbound-register.js";
-import { createGuardianChannelHandler } from "./guardian-channel-create.js";
-import { createPluginWebhookHandler } from "./plugin-webhook.js";
+import { handleTelegramWebhook } from "./telegram-webhook.js";
+import { handleWhatsAppWebhook } from "./whatsapp-webhook.js";
+import { handleEmailWebhook } from "./email-webhook.js";
+import { handleTwilioVoiceWebhook } from "./twilio-voice-webhook.js";
+import { handleTwilioStatusWebhook } from "./twilio-status-webhook.js";
+import { handleTwilioVoiceVerifyCallback } from "./twilio-voice-verify-callback.js";
+import { handleResendWebhook } from "./resend-webhook.js";
+import { handleMailgunWebhook } from "./mailgun-webhook.js";
+import { handleOAuthCallback } from "./oauth-callback.js";
+import { handleMcpOAuthClientMetadata } from "./mcp-oauth-client-metadata.js";
+import { handleInboundRegister } from "./inbound-register.js";
+import { handleGuardianChannelCreate } from "./guardian-channel-create.js";
+import { handlePluginWebhook } from "./plugin-webhook.js";
 import { PLUGIN_WEBHOOK_PATH_PATTERN } from "../../channels/plugin-ingress.js";
-import { getTelegramDedupCache } from "../../telegram/dedup.js";
-import { getWhatsappDedupCache } from "../../whatsapp/dedup.js";
-import { getEmailDedupCache } from "../../email/dedup.js";
-import { resolveCachedPluginIngress } from "../../channels/plugin-ingress-approvals.js";
 import type { RouteDefinition } from "./types.js";
 
 const log = getLogger("webhook-routes");
-
-interface WebhookHandlers {
-  telegram: ReturnType<typeof createTelegramWebhookHandler>;
-  whatsapp: ReturnType<typeof createWhatsAppWebhookHandler>;
-  email: ReturnType<typeof createEmailWebhookHandler>;
-  resend: ReturnType<typeof createResendWebhookHandler>;
-  mailgun: ReturnType<typeof createMailgunWebhookHandler>;
-  twilioVoice: ReturnType<typeof createTwilioVoiceWebhookHandler>;
-  twilioStatus: ReturnType<typeof createTwilioStatusWebhookHandler>;
-  twilioVerify: ReturnType<typeof createTwilioVoiceVerifyCallbackHandler>;
-  plugin: ReturnType<typeof createPluginWebhookHandler>;
-  oauthCallback: ReturnType<typeof createOAuthCallbackHandler>;
-  mcpMetadata: ReturnType<typeof createMcpOAuthClientMetadataHandler>;
-  inboundRegister: ReturnType<typeof createInboundRegisterHandler>;
-  guardianChannel: ReturnType<typeof createGuardianChannelHandler>;
-}
-
-let built: WebhookHandlers | undefined;
-
-/** Built on first request — module import stays side-effect-free. */
-function handlers(): WebhookHandlers {
-  return (built ??= (() => {
-    const config = getConfig();
-    const credentials = getCredentials();
-    const configFile = getConfigFileCache();
-    const validationCaches = { credentials, configFile };
-    return {
-      telegram: createTelegramWebhookHandler(
-        config,
-        validationCaches,
-        getTelegramDedupCache(),
-      ),
-      whatsapp: createWhatsAppWebhookHandler(
-        config,
-        validationCaches,
-        getWhatsappDedupCache(),
-      ),
-      email: createEmailWebhookHandler(
-        config,
-        validationCaches,
-        getEmailDedupCache(),
-      ),
-      resend: createResendWebhookHandler(config, validationCaches),
-      mailgun: createMailgunWebhookHandler(config, validationCaches),
-      twilioVoice: createTwilioVoiceWebhookHandler(config, validationCaches),
-      twilioStatus: createTwilioStatusWebhookHandler(config, validationCaches),
-      twilioVerify: createTwilioVoiceVerifyCallbackHandler(
-        config,
-        validationCaches,
-      ),
-      plugin: createPluginWebhookHandler({
-        config,
-        resolve: resolveCachedPluginIngress,
-        credentials,
-        // HMAC payloads can sign the public request URL. Read through the cache
-        // so a tunnel registering a public base is picked up without a restart.
-        ingressPublicBaseUrl: () =>
-          configFile.getString("ingress", "publicBaseUrl"),
-      }),
-      oauthCallback: createOAuthCallbackHandler(config),
-      mcpMetadata: createMcpOAuthClientMetadataHandler(configFile),
-      inboundRegister: createInboundRegisterHandler(config, credentials),
-      guardianChannel: createGuardianChannelHandler(),
-    };
-  })());
-}
 
 async function telegramConfigured(): Promise<boolean> {
   const [token, secret] = await Promise.all([
@@ -135,39 +64,39 @@ export const ROUTES: RouteDefinition[] = [
     path: "/webhooks/telegram",
     handler: async (req) =>
       (await telegramConfigured())
-        ? handlers().telegram.handler(req)
+        ? handleTelegramWebhook(req)
         : notConfigured("Telegram"),
   },
   {
     path: TWILIO_VOICE_WEBHOOK_PATH,
-    handler: (req) => handlers().twilioVoice(req),
+    handler: handleTwilioVoiceWebhook,
   },
   {
     path: TWILIO_STATUS_WEBHOOK_PATH,
-    handler: (req) => handlers().twilioStatus(req),
+    handler: handleTwilioStatusWebhook,
   },
   {
     path: "/webhooks/twilio/voice-verify",
-    handler: (req) => handlers().twilioVerify(req),
+    handler: handleTwilioVoiceVerifyCallback,
   },
   {
     path: "/webhooks/whatsapp",
     handler: async (req) =>
       (await whatsappConfigured())
-        ? handlers().whatsapp.handler(req)
+        ? handleWhatsAppWebhook(req)
         : notConfigured("WhatsApp"),
   },
   {
     path: "/webhooks/email",
-    handler: (req) => handlers().email.handler(req),
+    handler: handleEmailWebhook,
   },
   {
     path: "/webhooks/resend",
-    handler: (req) => handlers().resend.handler(req),
+    handler: handleResendWebhook,
   },
   {
     path: "/webhooks/mailgun",
-    handler: (req) => handlers().mailgun.handler(req),
+    handler: handleMailgunWebhook,
   },
   // Plugin-declared webhooks. Public like their neighbours above; what makes
   // them safe is that only a guardian-approved declaration creates one, every
@@ -176,7 +105,7 @@ export const ROUTES: RouteDefinition[] = [
   // declarations are upgraded in the pre-router, before this entry is reached.
   {
     path: PLUGIN_WEBHOOK_PATH_PATTERN,
-    handler: (req, params) => handlers().plugin(req, params[0]!, params[1]!),
+    handler: (req, params) => handlePluginWebhook(req, params[0]!, params[1]!),
   },
   {
     // BYO provider registration (auto-verify guardian email)
@@ -184,25 +113,25 @@ export const ROUTES: RouteDefinition[] = [
     method: "post",
     auth: "edge-scoped",
     scope: "internal.write",
-    handler: (req) => handlers().inboundRegister(req),
+    handler: handleInboundRegister,
   },
   {
     // Guardian channel creation (platform auto-verify)
     path: "/contacts/guardian/channel",
     method: "post",
     auth: "edge-guardian",
-    handler: (req) => handlers().guardianChannel(req),
+    handler: handleGuardianChannelCreate,
   },
   {
     path: "/webhooks/oauth/callback",
     method: "get",
     auth: "track-failures",
     trackFailureStatuses: [400],
-    handler: (req) => handlers().oauthCallback(req),
+    handler: handleOAuthCallback,
   },
   {
     path: "/oauth/client-metadata.json",
     method: "get",
-    handler: () => handlers().mcpMetadata(),
+    handler: handleMcpOAuthClientMetadata,
   },
 ];

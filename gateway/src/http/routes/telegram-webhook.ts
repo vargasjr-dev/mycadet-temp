@@ -1,13 +1,13 @@
 import { eventRefersToAnotherMessage } from "../../channels/inbound-event.js";
 import { buildTelegramTransportMetadata } from "../../channels/transport-hints.js";
-import type { ConfigFileCache } from "../../config-file-cache.js";
+import { getConfig } from "../../config.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
 import { readSavedIngressPublicBaseUrl } from "../../remote-web/public-base-url.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { verifySecretWithRefresh } from "../../credential-refresh.js";
 import { recordDenialReplyIfAllowed } from "../../db/denial-reply-rate-limiter.js";
-import { DedupCache } from "../../dedup-cache.js";
+import { getTelegramDedupCache } from "../../telegram/dedup.js";
 import { ContentMismatchError } from "../../download-validation.js";
 import {
   appendFailedAttachmentNotice,
@@ -62,20 +62,58 @@ const rejectionLimiter = new RejectionRateLimiter();
 const START_COMMAND_ACK_TEXT =
   "Starting up... you'll get my first message in a moment.";
 
-export function createTelegramWebhookHandler(
-  config: GatewayConfig,
-  caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
-  // Production injects the integration-owned singleton (getTelegramDedupCache)
-  // so the lifecycle sweep sees the same instance; the default keeps direct
-  // creator calls (tests) on a fresh, isolated cache.
-  dedupCache: DedupCache = new DedupCache(),
-) {
-  const dropLog = createTelegramDropLog();
-  const resolveBotIdentity = createTelegramBotIdentityResolver(caches);
+let botIdentityResolver:
+  | ReturnType<typeof createTelegramBotIdentityResolver>
+  | undefined;
 
-  const handler = async (req: Request): Promise<Response> => {
-    const traceId = req.headers.get("x-trace-id") ?? undefined;
-    const tlog = traceId ? log.child({ traceId }) : log;
+/**
+ * The bot identity resolver, born once so the getMe round-trip is memoized
+ * across requests — a fresh resolver per request would ask Telegram who the
+ * bot is on every webhook delivery.
+ */
+function getBotIdentityResolver(): ReturnType<
+  typeof createTelegramBotIdentityResolver
+> {
+  return (botIdentityResolver ??= createTelegramBotIdentityResolver({
+    credentials: getCredentials(),
+    configFile: getConfigFileCache(),
+  }));
+}
+
+let dropLog: ReturnType<typeof createTelegramDropLog> | undefined;
+
+/**
+ * The admission drop log, born once so its per-chat dedup persists across
+ * requests — a fresh log per request would write one line per message.
+ */
+function getDropLog(): ReturnType<typeof createTelegramDropLog> {
+  return (dropLog ??= createTelegramDropLog());
+}
+
+/** Test isolation: drop the memoized bot identity resolver. */
+export function resetBotIdentityForTests(): void {
+  botIdentityResolver = undefined;
+}
+
+/** Test isolation: reset the admission drop log's per-chat memo. */
+export function resetDropLogForTests(): void {
+  dropLog = undefined;
+}
+
+/** The `/webhooks/telegram` provider callback. Reads the config, credential,
+ * and dedup-cache singletons at request time — no factory, no injection. */
+export async function handleTelegramWebhook(req: Request): Promise<Response> {
+  const config = getConfig();
+  const caches = {
+    credentials: getCredentials(),
+    configFile: getConfigFileCache(),
+  };
+  const dedupCache = getTelegramDedupCache();
+  const dropLog = getDropLog();
+  const resolveBotIdentity = getBotIdentityResolver();
+
+  const traceId = req.headers.get("x-trace-id") ?? undefined;
+  const tlog = traceId ? log.child({ traceId }) : log;
 
     if (req.method !== "POST") {
       return Response.json({ error: "Method not allowed" }, { status: 405 });
@@ -827,7 +865,4 @@ export function createTelegramWebhookHandler(
     }
 
     return respond({ ok: true });
-  };
-
-  return { handler, dedupCache };
 }

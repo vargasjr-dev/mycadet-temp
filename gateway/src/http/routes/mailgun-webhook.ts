@@ -1,8 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Logger } from "pino";
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getConfig } from "../../config.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import {
   resolveCredentialWithRefresh,
@@ -262,15 +261,30 @@ function buildMailgunReplySender(
 
 // ── Webhook handler factory ─────────────────────────────────────────
 
-export function createMailgunWebhookHandler(
-  config: GatewayConfig,
-  caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
-) {
-  // 24-hour TTL — Mailgun token is unique per webhook delivery
-  const dedupCache = new StringDedupCache(24 * 60 * 60_000);
+let mailgunDedupCache: StringDedupCache | undefined;
 
-  const handler = async (req: Request): Promise<Response> => {
-    const traceId = req.headers.get("x-trace-id") ?? undefined;
+/**
+ * The Mailgun webhook's dedup cache, born here so every request shares one
+ * instance. No lifecycle sweep — the TTL evicts on read (as before).
+ */
+export function getMailgunDedupCache(): StringDedupCache {
+  // 24-hour TTL — Mailgun token is unique per webhook delivery
+  return (mailgunDedupCache ??= new StringDedupCache(24 * 60 * 60_000));
+}
+
+/** Test isolation: drop the singleton so the next get starts fresh. */
+export function resetForTests(): void {
+  mailgunDedupCache = undefined;
+}
+
+/** The `/webhooks/mailgun` provider callback. Reads the config and credential
+ * singletons at request time — no factory, no injection. */
+export async function handleMailgunWebhook(req: Request): Promise<Response> {
+  const config = getConfig();
+  const credentials = getCredentials();
+  const dedupCache = getMailgunDedupCache();
+
+  const traceId = req.headers.get("x-trace-id") ?? undefined;
     const tlog = traceId ? log.child({ traceId }) : log;
 
     if (req.method !== "POST") {
@@ -305,7 +319,7 @@ export function createMailgunWebhookHandler(
     // ── Credential resolution ───────────────────────────────────────
 
     const signingKey = await resolveCredentialWithRefresh(
-      caches?.credentials,
+      credentials,
       credentialKey("mailgun", "webhook_signing_key"),
     );
 
@@ -326,7 +340,7 @@ export function createMailgunWebhookHandler(
     const signature = fields["signature"] ?? "";
 
     const signatureValid = await verifySecretWithRefresh({
-      credentials: caches?.credentials,
+      credentials: credentials,
       key: credentialKey("mailgun", "webhook_signing_key"),
       verify: (key) => verifyMailgunSignature(key, timestamp, token, signature),
       log: tlog,
@@ -359,7 +373,7 @@ export function createMailgunWebhookHandler(
     // ── Forward through the shared email pipeline ───────────────────
 
     const apiKeyResult = await resolveEmailCredentialOrRelease({
-      credentials: caches?.credentials,
+      credentials: credentials,
       key: credentialKey("mailgun", "api_key"),
       dedupCache,
       dedupKey: token,
@@ -385,7 +399,4 @@ export function createMailgunWebhookHandler(
       traceId,
       sendReply: apiKey ? buildMailgunReplySender(apiKey, tlog) : undefined,
     });
-  };
-
-  return { handler, dedupCache };
 }

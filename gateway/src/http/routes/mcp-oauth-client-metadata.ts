@@ -5,43 +5,40 @@ import {
 } from "@mycadet/service-contracts/mcp-oauth";
 import { normalizeHttpPublicBaseUrlWithoutTrailingSlash } from "@mycadet/service-contracts/ingress";
 
-import type { ConfigFileCache } from "../../config-file-cache.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
 
-type MetadataConfig = Pick<ConfigFileCache, "getBoolean" | "getString">;
+/** The `/oauth/client-metadata.json` document. Reads the config-file cache
+ * singleton at request time — no factory, no injection. */
+export function handleMcpOAuthClientMetadata(): Response {
+  const configFile = getConfigFileCache();
+  const ingressEnabled = configFile.getBoolean("ingress", "enabled", {
+    force: true,
+  });
+  const publicBaseUrl = normalizeHttpPublicBaseUrlWithoutTrailingSlash(
+    configFile.getString("ingress", "publicBaseUrl", { force: true }),
+  );
 
-export function createMcpOAuthClientMetadataHandler(
-  configFile: MetadataConfig,
-) {
-  return (): Response => {
-    const ingressEnabled = configFile.getBoolean("ingress", "enabled", {
-      force: true,
-    });
-    const publicBaseUrl = normalizeHttpPublicBaseUrlWithoutTrailingSlash(
-      configFile.getString("ingress", "publicBaseUrl", { force: true }),
-    );
-
-    if (
-      ingressEnabled === false ||
-      !publicBaseUrl ||
-      new URL(publicBaseUrl).protocol !== "https:"
-    ) {
-      return Response.json(
-        { error: "MCP OAuth client metadata is unavailable" },
-        { status: 503 },
-      );
-    }
-
+  if (
+    ingressEnabled === false ||
+    !publicBaseUrl ||
+    new URL(publicBaseUrl).protocol !== "https:"
+  ) {
     return Response.json(
-      buildMcpOAuthClientMetadata({
-        clientId: buildMcpOAuthClientMetadataUrl(publicBaseUrl),
-        redirectUris: [buildMcpOAuthCallbackUrl(publicBaseUrl)],
-      }),
-      {
-        headers: {
-          "Cache-Control": "no-store",
-          "X-Content-Type-Options": "nosniff",
-        },
-      },
+      { error: "MCP OAuth client metadata is unavailable" },
+      { status: 503 },
     );
-  };
+  }
+
+  return Response.json(
+    buildMcpOAuthClientMetadata({
+      clientId: buildMcpOAuthClientMetadataUrl(publicBaseUrl),
+      redirectUris: [buildMcpOAuthCallbackUrl(publicBaseUrl)],
+    }),
+    {
+      headers: {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    },
+  );
 }

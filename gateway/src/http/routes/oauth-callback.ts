@@ -1,4 +1,4 @@
-import type { GatewayConfig } from "../../config.js";
+import { getConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
 import { forwardOAuthCallback } from "../../runtime/client.js";
 
@@ -55,9 +55,9 @@ export function _resetConsumedStates(): void {
   consumedStates.clear();
 }
 
-export function createOAuthCallbackHandler(config: GatewayConfig) {
-  return async (req: Request): Promise<Response> => {
-    const url = new URL(req.url);
+export async function handleOAuthCallback(req: Request): Promise<Response> {
+  const config = getConfig();
+  const url = new URL(req.url);
     const state = url.searchParams.get("state");
     const code = url.searchParams.get("code");
     const error = url.searchParams.get("error");
@@ -127,12 +127,11 @@ export function createOAuthCallbackHandler(config: GatewayConfig) {
       // Transport errors are transient — roll back so the callback can be retried.
       rollBackConsumedState(state);
       log.error({ err }, "Failed to forward OAuth callback to runtime");
-      return new Response(
-        renderErrorPage("Authorization failed. Please try again."),
-        { status: 502, headers: { "Content-Type": "text/html" } },
-      );
-    }
-  };
+    return new Response(
+      renderErrorPage("Authorization failed. Please try again."),
+      { status: 502, headers: { "Content-Type": "text/html" } },
+    );
+  }
 }
 
 function renderSuccessPage(): string {

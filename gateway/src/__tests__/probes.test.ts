@@ -1,4 +1,6 @@
 import { describe, test, expect, afterAll, spyOn, afterEach } from "bun:test";
+import { mock } from "bun:test";
+import * as realConfig from "../config.js";
 
 const env: Record<string, string> = {
   TELEGRAM_BOT_TOKEN: "test-tok",
@@ -13,12 +15,16 @@ for (const [k, v] of Object.entries(env)) {
 }
 
 const { loadConfig } = await import("../config.js");
-const { createTelegramWebhookHandler } =
-  await import("../http/routes/telegram-webhook.js");
+mock.module("../config.js", () => ({
+  ...realConfig,
+  getConfig: () => config,
+}));
+
+const { handleTelegramWebhook } = await import(
+  "../http/routes/telegram-webhook.js"
+);
 
 const config = await loadConfig();
-
-const { handler: handleTelegramWebhook } = createTelegramWebhookHandler(config);
 
 let draining = false;
 let postAssistantReadyComplete = true;

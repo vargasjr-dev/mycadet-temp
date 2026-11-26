@@ -30,12 +30,27 @@ mock.module("../../runtime/client.js", () => ({
   CircuitBreakerOpenError: class extends Error {},
 }));
 
+// Config and credential singletons the plain handler reads at request time.
+let activeCredentials: CredentialCache;
+
+mock.module("../../config.js", () => ({
+  getConfig: () => config,
+}));
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
 // Import after mocks are registered
 const {
-  createMailgunWebhookHandler,
+  handleMailgunWebhook,
+  getMailgunDedupCache,
+  resetForTests,
   extractMailgunAuthResults,
   normalizeMailgunToCadetPayload,
 } = await import("./mailgun-webhook.js");
+
+activeCredentials = makeCaches().credentials;
 
 // --- Sender authentication -------------------------------------------------
 // Mailgun inbound trust hinges on `senderAuthenticated`, derived from the
@@ -201,6 +216,8 @@ function postRequest(token: string): Request {
 }
 
 beforeEach(() => {
+  resetForTests();
+  activeCredentials = makeCaches().credentials;
   handleInboundMock.mockClear();
   handleInboundMock.mockImplementation(() =>
     Promise.resolve({ forwarded: true, rejected: false }),
@@ -209,12 +226,9 @@ beforeEach(() => {
 
 describe("mailgun-webhook API-key resolution", () => {
   it("releases the reserved dedup token and returns 500 when the API-key read throws", async () => {
-    const { handler, dedupCache } = createMailgunWebhookHandler(
-      config,
-      makeCaches({ apiKeyThrows: true }),
-    );
+    activeCredentials = makeCaches({ apiKeyThrows: true }).credentials;
     const token = "throw-token-1";
-    const res = await handler(postRequest(token));
+    const res = await handleMailgunWebhook(postRequest(token));
 
     expect(res.status).toBe(500);
     // The throw happens at API-key resolution, before the pipeline runs.
@@ -222,20 +236,17 @@ describe("mailgun-webhook API-key resolution", () => {
     // Released: Mailgun's retry delivery reserves the token again instead of
     // being silently deduped and dropped (StringDedupCache reservations have
     // no TTL, so a stranded reservation would be permanent).
-    expect(dedupCache.reserve(token)).toBe(true);
+    expect(getMailgunDedupCache().reserve(token)).toBe(true);
   });
 
   it("forwards through the pipeline and keeps the token deduped when the API key resolves", async () => {
-    const { handler, dedupCache } = createMailgunWebhookHandler(
-      config,
-      makeCaches({ apiKey: "mg-api-key" }),
-    );
+    activeCredentials = makeCaches({ apiKey: "mg-api-key" }).credentials;
     const token = "ok-token-1";
-    const res = await handler(postRequest(token));
+    const res = await handleMailgunWebhook(postRequest(token));
 
     expect(res.status).toBe(200);
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
     // A processed delivery stays deduped: the retry reservation is refused.
-    expect(dedupCache.reserve(token)).toBe(false);
+    expect(getMailgunDedupCache().reserve(token)).toBe(false);
   });
 });

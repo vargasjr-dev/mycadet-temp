@@ -1,4 +1,5 @@
 import { describe, test, expect, mock, afterEach } from "bun:test";
+import * as realConfig from "../config.js";
 import { createHmac } from "node:crypto";
 import type { GatewayConfig } from "../config.js";
 import type { CredentialCache } from "../credential-cache.js";
@@ -38,8 +39,32 @@ mock.module("../logger.js", () => ({
   getLogger: () => createMockLogger(),
 }));
 
-const { createWhatsAppWebhookHandler } =
-  await import("../http/routes/whatsapp-webhook.js");
+// Config and credential singletons the plain handler reads at request time.
+let activeCredentials: CredentialCache;
+
+mock.module("../config.js", () => ({
+  ...realConfig,
+  getConfig: () => makeConfig(),
+}));
+
+mock.module("../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
+mock.module("../config-file-cache.js", () => ({
+  getConfigFileCache: () => ({
+    getString: () => undefined,
+    getBoolean: () => undefined,
+    getNumber: () => undefined,
+    getStringArray: () => undefined,
+    getRecord: () => undefined,
+    refreshNow: () => {},
+  }),
+}));
+
+const { handleWhatsAppWebhook } = await import(
+  "../http/routes/whatsapp-webhook.js"
+);
 
 const APP_SECRET = "test-whatsapp-app-secret";
 
@@ -111,7 +136,7 @@ describe("WhatsApp webhook force retry on credential-missing", () => {
   test("succeeds after force-refreshing a missing app secret", async () => {
     // First get() returns undefined; second get({ force: true }) returns the secret
     let callCount = 0;
-    const credentials = {
+    activeCredentials = {
       get: async (_key: string, opts?: { force?: boolean }) => {
         callCount++;
         if (!opts?.force) return undefined;
@@ -120,9 +145,6 @@ describe("WhatsApp webhook force retry on credential-missing", () => {
       invalidate: () => {},
     } as unknown as CredentialCache;
 
-    const { handler } = createWhatsAppWebhookHandler(makeConfig(), {
-      credentials,
-    });
 
     const body = JSON.stringify(makeStatusPayload());
     const signature = computeSignature(body, APP_SECRET);
@@ -136,7 +158,7 @@ describe("WhatsApp webhook force retry on credential-missing", () => {
       body,
     });
 
-    const res = await handler(req);
+    const res = await handleWhatsAppWebhook(req);
     expect(res.status).toBe(200);
     // The credential cache should have been called at least twice (initial + force)
     expect(callCount).toBeGreaterThanOrEqual(2);
@@ -144,14 +166,11 @@ describe("WhatsApp webhook force retry on credential-missing", () => {
 
   test("returns 500 when force refresh also returns undefined", async () => {
     // Both get() and get({ force: true }) return undefined
-    const credentials = {
+    activeCredentials = {
       get: async () => undefined,
       invalidate: () => {},
     } as unknown as CredentialCache;
 
-    const { handler } = createWhatsAppWebhookHandler(makeConfig(), {
-      credentials,
-    });
 
     const body = JSON.stringify(makeStatusPayload());
 
@@ -164,7 +183,7 @@ describe("WhatsApp webhook force retry on credential-missing", () => {
       body,
     });
 
-    const res = await handler(req);
+    const res = await handleWhatsAppWebhook(req);
     expect(res.status).toBe(500);
 
     const json = (await res.json()) as { error?: string };

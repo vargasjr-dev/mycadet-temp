@@ -35,10 +35,7 @@ import {
   PluginAdmissionDeniedNoticeSchema,
 } from "@mycadet/gateway-client";
 
-import {
-  findDeclaredRoute,
-  type PluginIngressResolution,
-} from "../../channels/plugin-ingress-approvals.js";
+import { findDeclaredRoute } from "../../channels/plugin-ingress-approvals.js";
 import {
   verifyDeclaredSignature,
   type VerificationRejection,
@@ -54,7 +51,6 @@ import {
   type InboundAdmission,
 } from "../../handlers/handle-inbound.js";
 import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import {
   commitInboundEvent,
@@ -65,6 +61,10 @@ import {
   resolveCredentialWithRefresh,
   verifySecretWithRefresh,
 } from "../../credential-refresh.js";
+import { getConfig } from "../../config.js";
+import { getConfigFileCache } from "../../config-file-cache.js";
+import { getCredentials } from "../../credential-cache.js";
+import { resolveCachedPluginIngress } from "../../channels/plugin-ingress-approvals.js";
 import { getLogger } from "../../logger.js";
 import { readLimitedBodyBytes } from "../read-limited-body.js";
 import { verifyCadetSignature } from "../cadet-signature.js";
@@ -263,26 +263,6 @@ async function notifyPluginAdmissionDenied(opts: {
   }
 }
 
-export interface PluginWebhookHandlerDeps {
-  config: GatewayConfig;
-  /** Approved-ingress view; cached by the caller so this stays off the disk. */
-  resolve: () => PluginIngressResolution;
-  /** Signing secrets, read through the TTL cache so rotation is picked up. */
-  credentials: CredentialCache | undefined;
-  /**
-   * The assistant's configured public ingress base, when there is one.
-   *
-   * Used by HMAC payloads containing `request-url`. A gateway behind a proxy
-   * sees a different URL than the one a vendor signed, and the configured base
-   * is one candidate spelling. Optional so tests and hosts without public
-   * ingress still verify against the remaining candidates.
-   */
-  ingressPublicBaseUrl?: () => string | undefined;
-  fetchImpl?: (
-    input: string | URL | Request,
-    init?: RequestInit,
-  ) => Promise<Response>;
-}
 
 /**
  * Handle `/webhooks/plugins/:plugin/:path`.
@@ -305,11 +285,20 @@ export interface PluginWebhookHandlerDeps {
  * The cost is one HMAC on requests to a route that cannot be served, bounded
  * by the same body cap as everything else here.
  */
-export function createPluginWebhookHandler(deps: PluginWebhookHandlerDeps) {
-  const { config, resolve, credentials, fetchImpl } = deps;
-  const ingressPublicBaseUrl = deps.ingressPublicBaseUrl;
-
-  return async (req: Request, plugin: string, path: string) => {
+/** The plugin-declared webhook handler. Reads the config, credential, and
+ * ingress-resolution singletons at request time — no factory, no injection. */
+export async function handlePluginWebhook(
+  req: Request,
+  plugin: string,
+  path: string,
+): Promise<Response> {
+  const config = getConfig();
+  const resolve = resolveCachedPluginIngress;
+  const credentials = getCredentials();
+  // HMAC payloads can sign the public request URL. Read through the cache so
+  // a tunnel registering a public base is picked up without a restart.
+  const ingressPublicBaseUrl = (): string | undefined =>
+    getConfigFileCache().getString("ingress", "publicBaseUrl");
     let match: ReturnType<typeof findDeclaredRoute>;
     try {
       // WebSocket routes are declared here but upgraded elsewhere; serving one
@@ -437,7 +426,6 @@ export function createPluginWebhookHandler(deps: PluginWebhookHandlerDeps) {
       req,
       body: body.bytes,
       search,
-      fetchImpl,
     };
 
     const inbound = route.inbound;
@@ -448,7 +436,6 @@ export function createPluginWebhookHandler(deps: PluginWebhookHandlerDeps) {
     }
 
     return deliverGatedInbound({ inbound, forward });
-  };
 }
 
 /**

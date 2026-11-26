@@ -1,6 +1,18 @@
 import { describe, expect, test } from "bun:test";
 
-import { createMcpOAuthClientMetadataHandler } from "./mcp-oauth-client-metadata.js";
+import { mock } from "bun:test";
+
+import type { ConfigFileCache } from "../../config-file-cache.js";
+
+let activeConfigFile: Pick<ConfigFileCache, "getBoolean" | "getString">;
+
+mock.module("../../config-file-cache.js", () => ({
+  getConfigFileCache: () => activeConfigFile,
+}));
+
+const { handleMcpOAuthClientMetadata } = await import(
+  "./mcp-oauth-client-metadata.js"
+);
 
 function config(values: { enabled?: boolean; publicBaseUrl?: string }) {
   return {
@@ -11,14 +23,12 @@ function config(values: { enabled?: boolean; publicBaseUrl?: string }) {
 
 describe("MCP OAuth client metadata", () => {
   test("publishes the direct OAuth callback for public HTTPS ingress", async () => {
-    const handle = createMcpOAuthClientMetadataHandler(
-      config({
+    activeConfigFile = config({
         enabled: true,
         publicBaseUrl: "https://tunnel.example/assistant-123/",
-      }),
-    );
+      });
 
-    const response = handle();
+    const response = handleMcpOAuthClientMetadata();
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
@@ -37,14 +47,12 @@ describe("MCP OAuth client metadata", () => {
   });
 
   test("publishes canonical URLs for equivalent ingress spellings", async () => {
-    const handle = createMcpOAuthClientMetadataHandler(
-      config({
+    activeConfigFile = config({
         enabled: true,
         publicBaseUrl: "https://TUNNEL.EXAMPLE:443/a/../assistant-123///",
-      }),
-    );
+      });
 
-    const response = handle();
+    const response = handleMcpOAuthClientMetadata();
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
@@ -57,24 +65,20 @@ describe("MCP OAuth client metadata", () => {
   });
 
   test("does not publish a document without HTTPS ingress", async () => {
-    const handle = createMcpOAuthClientMetadataHandler(
-      config({ publicBaseUrl: "http://localhost:8501/assistant-123" }),
-    );
+    activeConfigFile = config({ publicBaseUrl: "http://localhost:8501/assistant-123" });
 
-    const response = handle();
+    const response = handleMcpOAuthClientMetadata();
 
     expect(response.status).toBe(503);
   });
 
   test("does not publish a document when ingress is disabled", async () => {
-    const handle = createMcpOAuthClientMetadataHandler(
-      config({
+    activeConfigFile = config({
         enabled: false,
         publicBaseUrl: "https://tunnel.example/assistant-123",
-      }),
-    );
+      });
 
-    const response = handle();
+    const response = handleMcpOAuthClientMetadata();
 
     expect(response.status).toBe(503);
   });

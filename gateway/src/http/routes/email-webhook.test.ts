@@ -41,8 +41,24 @@ mock.module("../../runtime/client.js", () => ({
   CircuitBreakerOpenError: class extends Error {},
 }));
 
+// Config and credential singletons the plain handler reads at request time.
+// Tests swap `activeConfig` / `activeCredentials` per test for isolation.
+let activeConfig: GatewayConfig;
+let activeCredentials: CredentialCache;
+
+mock.module("../../config.js", () => ({
+  getConfig: () => activeConfig,
+}));
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
 // Import after mocks are registered
-const { createEmailWebhookHandler } = await import("./email-webhook.js");
+const { handleEmailWebhook } = await import("./email-webhook.js");
+const { getEmailDedupCache, resetForTests } = await import(
+  "../../email/dedup.js"
+);
 
 // --- Helpers ---------------------------------------------------------------
 
@@ -116,10 +132,16 @@ function makeCaches(secret?: string) {
   return { credentials };
 }
 
+activeConfig = baseConfig;
+activeCredentials = makeCaches().credentials;
+
 // --- Tests ----------------------------------------------------------------
 
 describe("email-webhook", () => {
   beforeEach(() => {
+    resetForTests();
+    activeConfig = baseConfig;
+    activeCredentials = makeCaches().credentials;
     handleInboundMock.mockClear();
     handleInboundMock.mockResolvedValue({ forwarded: true, rejected: false });
     uploadCounter = 0;
@@ -130,18 +152,16 @@ describe("email-webhook", () => {
   });
 
   it("rejects non-POST requests with 405", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const req = new Request("http://localhost:7830/webhooks/email", {
       method: "GET",
     });
-    const res = await handler(req);
+    const res = await handleEmailWebhook(req);
     expect(res.status).toBe(405);
   });
 
   it("forwards a valid email event to runtime", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload();
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const json = (await res.json()) as { ok: boolean };
@@ -167,37 +187,33 @@ describe("email-webhook", () => {
   });
 
   it("acknowledges payloads missing required fields", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = JSON.stringify({ someOtherEvent: true });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
     expect(handleInboundMock).not.toHaveBeenCalled();
   });
 
   it("deduplicates events by message ID", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({ messageId: "<dedup-test@example.com>" });
 
-    const res1 = await handler(postRequest(body));
+    const res1 = await handleEmailWebhook(postRequest(body));
     expect(res1.status).toBe(200);
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
 
-    const res2 = await handler(postRequest(body));
+    const res2 = await handleEmailWebhook(postRequest(body));
     expect(res2.status).toBe(200);
     // Second call should be deduped
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
   });
 
   it("rejects payloads exceeding size limit", async () => {
-    const config = { ...baseConfig, maxWebhookPayloadBytes: 10 };
-    const { handler } = createEmailWebhookHandler(config, makeCaches());
+    activeConfig = { ...baseConfig, maxWebhookPayloadBytes: 10 };
     const body = makeEmailPayload();
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(413);
   });
 
   it("rejects invalid JSON with 400", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = "not json";
     const req = new Request("http://localhost:7830/webhooks/email", {
       method: "POST",
@@ -207,18 +223,17 @@ describe("email-webhook", () => {
       },
       body,
     });
-    const res = await handler(req);
+    const res = await handleEmailWebhook(req);
     expect(res.status).toBe(400);
   });
 
   it("uses fromName as displayName when provided", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       from: "alice@example.com",
       fromName: "Alice Smith",
       messageId: "<display-name@example.com>",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const callArgs = handleInboundMock.mock.calls[0];
@@ -230,12 +245,11 @@ describe("email-webhook", () => {
   });
 
   it("falls back to email as displayName when fromName is absent", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       from: "bob@example.com",
       messageId: "<no-name@example.com>",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const callArgs = handleInboundMock.mock.calls[0];
@@ -246,13 +260,12 @@ describe("email-webhook", () => {
   });
 
   it("prefers strippedText over bodyText", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       strippedText: "New reply here",
       bodyText: "On Monday, someone wrote:\n> old content\n\nNew reply here",
       messageId: "<stripped@example.com>",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const callArgs = handleInboundMock.mock.calls[0];
@@ -261,7 +274,6 @@ describe("email-webhook", () => {
   });
 
   it("falls back to bodyText when strippedText is absent", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = JSON.stringify({
       from: "test@example.com",
       to: "bot@mycadet.bot",
@@ -269,7 +281,7 @@ describe("email-webhook", () => {
       conversationId: "conv-fallback",
       bodyText: "Full body content here",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const callArgs = handleInboundMock.mock.calls[0];
@@ -278,20 +290,16 @@ describe("email-webhook", () => {
   });
 
   it("returns 409 when webhook secret is not configured", async () => {
-    const emptyCaches = {
-      credentials: {
-        get: async () => undefined,
-        invalidate: () => {},
-      } as unknown as CredentialCache,
-    };
-    const { handler } = createEmailWebhookHandler(baseConfig, emptyCaches);
+    activeCredentials = {
+      get: async () => undefined,
+      invalidate: () => {},
+    } as unknown as CredentialCache;
     const body = makeEmailPayload({ messageId: "<no-secret@example.com>" });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(409);
   });
 
   it("rejects requests with wrong webhook secret (HMAC mismatch)", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({ messageId: "<wrong-secret@example.com>" });
     // Sign with a different secret than what the cache returns
     const req = new Request("http://localhost:7830/webhooks/email", {
@@ -302,12 +310,11 @@ describe("email-webhook", () => {
       },
       body,
     });
-    const res = await handler(req);
+    const res = await handleEmailWebhook(req);
     expect(res.status).toBe(403);
   });
 
   it("rejects requests with missing signature header", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       messageId: "<missing-header@example.com>",
     });
@@ -316,19 +323,18 @@ describe("email-webhook", () => {
       headers: { "content-type": "application/json" },
       body,
     });
-    const res = await handler(req);
+    const res = await handleEmailWebhook(req);
     expect(res.status).toBe(403);
   });
 
   it("passes email subject and threading headers in sourceMetadata", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       subject: "Re: Project Update",
       inReplyTo: "<parent@example.com>",
       references: "<root@example.com> <parent@example.com>",
       messageId: "<metadata@example.com>",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const callArgs = handleInboundMock.mock.calls[0];
@@ -349,17 +355,13 @@ describe("email-webhook", () => {
   });
 
   it("uses messageId as dedup key for event ID", async () => {
-    const { handler, dedupCache } = createEmailWebhookHandler(
-      baseConfig,
-      makeCaches(),
-    );
     const body = makeEmailPayload({
       messageId: "<unique-dedup-id@example.com>",
     });
-    await handler(postRequest(body));
+    await handleEmailWebhook(postRequest(body));
 
     // The dedup cache should have reserved this message ID
-    const status = dedupCache.reserve("<unique-dedup-id@example.com>");
+    const status = getEmailDedupCache().reserve("<unique-dedup-id@example.com>");
     // Should return false because it's already reserved/marked
     expect(status).toBe(false);
   });
@@ -376,11 +378,10 @@ describe("email-webhook", () => {
       verificationIntercepted: true,
       verificationReplyText: "You're verified!",
     });
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       messageId: "<verification-intercept@example.com>",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       ok: true,
@@ -396,11 +397,10 @@ describe("email-webhook", () => {
       inviteIntercepted: true,
       inviteReplyText: "Invite redeemed — welcome!",
     });
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       messageId: "<invite-intercept@example.com>",
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       ok: true,
@@ -416,14 +416,13 @@ describe("email-webhook", () => {
       inviteIntercepted: true,
       inviteReplyText: "Invite redeemed — welcome!",
     });
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       messageId: "<intercept-dedup@example.com>",
     });
-    await handler(postRequest(body));
+    await handleEmailWebhook(postRequest(body));
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
 
-    const res2 = await handler(postRequest(body));
+    const res2 = await handleEmailWebhook(postRequest(body));
     expect(res2.status).toBe(200);
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
   });
@@ -431,8 +430,7 @@ describe("email-webhook", () => {
   it("returns 403 (not 409) when cache miss resolves on force-refresh but signature is invalid", async () => {
     // Simulate: initial cache miss, force-refresh returns real secret,
     // but signature doesn't match. Should be 403 (not 409 "not configured").
-    const caches = {
-      credentials: {
+    activeCredentials = {
         get: async (_key: string, opts?: { force?: boolean }) => {
           // First call: cache miss
           if (!opts?.force) return undefined;
@@ -440,9 +438,8 @@ describe("email-webhook", () => {
           return TEST_WEBHOOK_SECRET;
         },
         invalidate: () => {},
-      } as unknown as CredentialCache,
-    };
-    const { handler } = createEmailWebhookHandler(baseConfig, caches);
+      } as unknown as CredentialCache;
+
     const body = makeEmailPayload({
       messageId: "<stale-var-fix@example.com>",
     });
@@ -455,13 +452,12 @@ describe("email-webhook", () => {
       },
       body,
     });
-    const res = await handler(req);
+    const res = await handleEmailWebhook(req);
     // This was the stale variable bug — it used to return 409 here
     expect(res.status).toBe(403);
   });
 
   it("uploads inline attachments and forwards their ids to the runtime", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       messageId: "<with-attachment@example.com>",
       attachments: [
@@ -473,7 +469,7 @@ describe("email-webhook", () => {
         },
       ],
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     expect(uploadAttachmentMock).toHaveBeenCalledTimes(1);
@@ -492,9 +488,8 @@ describe("email-webhook", () => {
   });
 
   it("forwards without attachmentIds when no attachments are present", async () => {
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({ messageId: "<no-attachment@example.com>" });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
     expect(uploadAttachmentMock).not.toHaveBeenCalled();
     const options = handleInboundMock.mock.calls[0][2] as {
@@ -507,7 +502,6 @@ describe("email-webhook", () => {
     uploadAttachmentMock.mockImplementationOnce(() =>
       Promise.reject(new MockAttachmentValidationError("unsupported type")),
     );
-    const { handler } = createEmailWebhookHandler(baseConfig, makeCaches());
     const body = makeEmailPayload({
       messageId: "<rejected-attachment@example.com>",
       attachments: [
@@ -519,7 +513,7 @@ describe("email-webhook", () => {
         },
       ],
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(200);
 
     const event = handleInboundMock.mock.calls[0][1] as {
@@ -536,10 +530,6 @@ describe("email-webhook", () => {
     uploadAttachmentMock.mockImplementation(() =>
       Promise.reject(new Error("runtime 503")),
     );
-    const { handler, dedupCache } = createEmailWebhookHandler(
-      baseConfig,
-      makeCaches(),
-    );
     const body = makeEmailPayload({
       messageId: "<transient-upload-fail@example.com>",
       attachments: [
@@ -551,11 +541,11 @@ describe("email-webhook", () => {
         },
       ],
     });
-    const res = await handler(postRequest(body));
+    const res = await handleEmailWebhook(postRequest(body));
     expect(res.status).toBe(500);
     expect(handleInboundMock).not.toHaveBeenCalled();
     // Unreserved so the cloud's retry delivery can be processed.
-    expect(dedupCache.reserve("<transient-upload-fail@example.com>")).toBe(
+    expect(getEmailDedupCache().reserve("<transient-upload-fail@example.com>")).toBe(
       true,
     );
   });

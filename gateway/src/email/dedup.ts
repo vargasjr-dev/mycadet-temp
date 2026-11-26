@@ -12,3 +12,8 @@ export function getEmailDedupCache(): StringDedupCache {
   // 24-hour TTL — Message-IDs are globally unique per RFC 5322
   return (cache ??= new StringDedupCache(24 * 60 * 60_000));
 }
+
+/** Test isolation: drop the singleton so the next get starts fresh. */
+export function resetForTests(): void {
+  cache = undefined;
+}

@@ -36,7 +36,7 @@ mock.module("../../auth/guardian-bootstrap.js", () => ({
 }));
 
 // Import after mocks are registered
-const { createGuardianChannelHandler } =
+const { handleGuardianChannelCreate } =
   await import("./guardian-channel-create.js");
 const { initGatewayDb, getGatewayDb, resetGatewayDb } =
   await import("../../db/connection.js");
@@ -98,8 +98,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
   it("creates a guardian channel binding and returns 200", async () => {
     seedGuardian("principal-1");
 
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       postRequest({
         type: "email",
         address: "user@example.com",
@@ -131,8 +130,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
   it("returns 404 when no guardian contact exists", async () => {
     // Empty gateway DB — no guardian row seeded.
 
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       postRequest({
         type: "email",
         address: "user@example.com",
@@ -150,8 +148,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
   it("returns 404 when guardian has no principal_id", async () => {
     seedGuardian(null);
 
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       postRequest({
         type: "email",
         address: "user@example.com",
@@ -165,8 +162,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
   });
 
   it("returns 400 on missing required fields", async () => {
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       postRequest({
         type: "email",
         // missing address, externalUserId, status
@@ -180,8 +176,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
   });
 
   it("returns 400 when status is not 'active'", async () => {
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       postRequest({
         type: "email",
         address: "user@example.com",
@@ -196,8 +191,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
   });
 
   it("returns 400 on invalid JSON body", async () => {
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       new Request("http://localhost:7830/v1/contacts/guardian/channel", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -214,8 +208,7 @@ describe("POST /v1/contacts/guardian/channel", () => {
     seedGuardian("principal-1");
     createGuardianBindingMock.mockRejectedValue(new Error("DB write failed"));
 
-    const handler = createGuardianChannelHandler();
-    const res = await handler(
+        const res = await handleGuardianChannelCreate(
       postRequest({
         type: "email",
         address: "user@example.com",

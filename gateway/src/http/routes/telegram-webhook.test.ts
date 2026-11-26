@@ -1,4 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import * as realConfig from "../../config.js";
 import type { GatewayConfig } from "../../config.js";
 import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";
 import type { CredentialCache } from "../../credential-cache.js";
@@ -51,7 +52,24 @@ mock.module("../../telegram/download.js", () => ({
 }));
 
 // Import after mocks are registered
-const { createTelegramWebhookHandler } = await import("./telegram-webhook.js");
+// Config and credential singletons the plain handler reads at request time.
+let activeCredentials: CredentialCache;
+
+mock.module("../../config.js", () => ({
+  ...realConfig,
+  getConfig: () => baseConfig,
+}));
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
+mock.module("../../config-file-cache.js", () => ({
+  getConfigFileCache: () => ({}),
+}));
+
+const { handleTelegramWebhook } = await import("./telegram-webhook.js");
+const { resetForTests } = await import("../../telegram/dedup.js");
 
 // --- Helpers ---------------------------------------------------------------
 
@@ -102,6 +120,8 @@ function makeCaches() {
 
 describe("telegram-webhook callback query acknowledgment", () => {
   beforeEach(() => {
+    resetForTests();
+    activeCredentials = makeCaches().credentials;
     callTelegramApiMock.mockClear();
     callTelegramApiMock.mockImplementation(
       (_method: string, _body: Record<string, unknown>, _opts?: unknown) =>
@@ -117,9 +137,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
   });
 
   it("acknowledges callback query after successful forwarding", async () => {
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve", 300);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -140,9 +159,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       }),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve", 301);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -159,9 +177,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       Promise.resolve({ forwarded: false, rejected: false }),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve", 304);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(500);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -178,9 +195,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       Promise.reject(new Error("boom")),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve", 305);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(500);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -193,9 +209,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
   });
 
   it("acknowledges callback query when /new command is triggered via callback", async () => {
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("/new", 302);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -208,9 +223,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
   });
 
   it("acknowledges callback query when /start command is triggered via callback", async () => {
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("/start", 313);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -224,7 +238,6 @@ describe("telegram-webhook callback query acknowledgment", () => {
   });
 
   it("forwards /start with payload as channel command-intent metadata without sending ACK", async () => {
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = JSON.stringify({
       update_id: 314,
       message: {
@@ -234,7 +247,7 @@ describe("telegram-webhook callback query acknowledgment", () => {
         from: { id: 42, first_name: "Alice", language_code: "en" },
       },
     });
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     expect(handleInboundMock).toHaveBeenCalledTimes(1);
@@ -252,7 +265,6 @@ describe("telegram-webhook callback query acknowledgment", () => {
   });
 
   it("does not call answerCallbackQuery for regular text messages", async () => {
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = JSON.stringify({
       update_id: 303,
       message: {
@@ -262,7 +274,7 @@ describe("telegram-webhook callback query acknowledgment", () => {
         from: { id: 42, first_name: "Alice" },
       },
     });
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const answerCalls = callTelegramApiMock.mock.calls.filter(
@@ -285,9 +297,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       }),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve", 306);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const clearCalls = callTelegramApiMock.mock.calls.filter(
@@ -315,9 +326,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       }),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:stale:approve", 307);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const clearCalls = callTelegramApiMock.mock.calls.filter(
@@ -340,9 +350,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       }),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve", 308);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const clearCalls = callTelegramApiMock.mock.calls.filter(
@@ -364,9 +373,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       }),
     );
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve_once", 310);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
 
     expect(res.status).toBe(200);
     const clearCalls = callTelegramApiMock.mock.calls.filter(
@@ -410,9 +418,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       return Promise.resolve({});
     });
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve_once", 311);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(res.status).toBe(200);
@@ -456,9 +463,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       return Promise.resolve({});
     });
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("gapr:run1:approve", 309);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(res.status).toBe(200);
@@ -496,9 +502,8 @@ describe("telegram-webhook callback query acknowledgment", () => {
       return Promise.resolve({});
     });
 
-    const { handler } = createTelegramWebhookHandler(baseConfig, makeCaches());
     const body = makeCallbackQueryBody("apr:run1:approve_once", 312);
-    const res = await handler(postRequest(body));
+    const res = await handleTelegramWebhook(postRequest(body));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(res.status).toBe(200);

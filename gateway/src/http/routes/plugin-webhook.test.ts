@@ -1,9 +1,12 @@
 import { createHmac } from "node:crypto";
+import * as realConfig from "../../config.js";
+import * as realIngressApprovals from "../../channels/plugin-ingress-approvals.js";
 import { setTestSigningKey } from "../../__tests__/helpers/signing-key.js";
 
 import {
   afterAll,
   beforeAll,
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -15,6 +18,7 @@ import "../../__tests__/test-preload.js";
 import { initSigningKey } from "../../auth/token-service.js";
 import { IngressInboundSchema } from "../../channels/ingress-inbound.js";
 import type { GatewayInboundEvent } from "../../channels/inbound-event.js";
+import type { CredentialCache } from "../../credential-cache.js";
 import type { PluginIngressResolution } from "../../channels/plugin-ingress-approvals.js";
 import type { IngressRoute } from "../../channels/plugin-ingress.js";
 import type { GatewayConfig } from "../../config.js";
@@ -65,10 +69,37 @@ mock.module("../../handlers/handle-inbound.js", () => ({
   },
 }));
 
-const { createPluginWebhookHandler } = await import("./plugin-webhook.js");
-type PluginWebhookHandlerDeps = Parameters<
-  typeof createPluginWebhookHandler
->[0];
+// The plain handler reads the config, credential, config-file, and
+// ingress-resolution singletons at request time; tests swap them per test.
+let activeResolve: () => PluginIngressResolution;
+let activeCredentials: CredentialCache;
+
+mock.module("../../config.js", () => ({
+  ...realConfig,
+  getConfig: () => CONFIG,
+}));
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
+mock.module("../../config-file-cache.js", () => ({
+  getConfigFileCache: () => ({
+    getString: () => undefined,
+    getBoolean: () => undefined,
+    getNumber: () => undefined,
+    getStringArray: () => undefined,
+    getRecord: () => undefined,
+    refreshNow: () => {},
+  }),
+}));
+
+mock.module("../../channels/plugin-ingress-approvals.js", () => ({
+  ...realIngressApprovals,
+  resolveCachedPluginIngress: () => activeResolve(),
+}));
+
+const { handlePluginWebhook } = await import("./plugin-webhook.js");
 
 // The handler mints a real service token for the upstream hop. Initialising
 // the key beats mocking token-exchange, which is process-wide in bun and
@@ -92,6 +123,7 @@ afterAll(() => {
 // Claims outlive a test by design, so the tests below would otherwise dedup
 // against each other rather than against a redelivery.
 beforeEach(() => {
+  activeCredentials = CREDENTIALS;
   getGatewayDb().delete(inboundSeenEvents).run();
   gateCalls.events.length = 0;
   gateCalls.options.length = 0;
@@ -130,12 +162,14 @@ const CADET_SECRET = "platform-webhook-secret";
 const VENDOR_SECRET = "whsec_vendor";
 
 /** Stands in for the credential cache, holding secrets by key. */
+afterEach(() => {
+  while (fetchRestores.length) fetchRestores.pop()!();
+});
+
 function credentialsFor(entries: Record<string, string>) {
   return {
     get: async (key: string) => entries[key],
-  } as unknown as Parameters<
-    typeof createPluginWebhookHandler
-  >[0]["credentials"];
+  } as unknown as CredentialCache;
 }
 
 const CREDENTIALS = credentialsFor({
@@ -144,6 +178,8 @@ const CREDENTIALS = credentialsFor({
   "credential/meeting-bot/vendor_webhook_secret": VENDOR_SECRET,
   "credential/meeting-bot/shortcut_ingress_token": "shortcut-static-token",
 });
+
+activeCredentials = CREDENTIALS;
 
 function sign(body: string, secret: string): string {
   return `sha256=${createHmac("sha256", secret).update(body, "utf8").digest("hex")}`;
@@ -163,12 +199,19 @@ function approvedWith(routes: IngressRoute[]): PluginIngressResolution {
 }
 
 /** Records the upstream call and answers 200. */
+const fetchRestores: (() => void)[] = [];
+
+function installGlobalFetch(
+  impl: (input: string | URL | Request, init?: RequestInit) => Promise<Response>,
+): void {
+  const saved = globalThis.fetch;
+  globalThis.fetch = impl as unknown as typeof fetch;
+  fetchRestores.push(() => (globalThis.fetch = saved));
+}
+
 function recordingFetch() {
   const calls: { url: string; method: string; body: string }[] = [];
-  const fetchImpl = async (
-    input: string | URL | Request,
-    init?: RequestInit,
-  ): Promise<Response> => {
+  installGlobalFetch(async (input, init) => {
     calls.push({
       url: String(input),
       method: init?.method ?? "GET",
@@ -178,8 +221,8 @@ function recordingFetch() {
           : "",
     });
     return new Response("ok", { status: 200 });
-  };
-  return { calls, fetchImpl };
+  });
+  return { calls };
 }
 
 /** A signed POST. Pass `secret` to sign with something else, or "" for none. */
@@ -193,15 +236,10 @@ function post(path: string, body = "{}", secret = PLUGIN_SECRET): Request {
 
 describe("approved routes", () => {
   it("forwards to the plugin's route namespace on the runtime", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", '{"event":"joined"}'),
       "meeting-bot",
       "realtime",
@@ -217,15 +255,10 @@ describe("approved routes", () => {
   });
 
   it("carries the query string through", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    await handle(
+    await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime?token=abc"),
       "meeting-bot",
       "realtime",
@@ -238,15 +271,10 @@ describe("approved routes", () => {
     // Providers store the URL we hand them and may call it back with a
     // slash appended. The plugin serves what it declared, so the forward
     // uses the declared spelling rather than the requested one.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime/", '{"event":"joined"}'),
       "meeting-bot",
       "realtime/",
@@ -270,15 +298,10 @@ describe("the gate", () => {
   it("does not forward a route the plugin declares but nobody approved", async () => {
     // The whole point of the gate: pending is not served, however well the
     // delivery is signed.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => pendingWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => pendingWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -295,20 +318,15 @@ describe("the gate", () => {
     // A prober cannot sign, and the difference between 404 and 409 is exactly
     // what would tell them a route is declared here. Every way of failing
     // before the signature has to land on the same answer.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => pendingWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => pendingWith([ROUTE]);
 
     for (const req of [
       post("/webhooks/plugins/meeting-bot/realtime", "{}", ""),
       post("/webhooks/plugins/meeting-bot/realtime", "{}", "wrong-secret"),
       post("/webhooks/plugins/meeting-bot/realtime", "x".repeat(2048)),
     ]) {
-      const res = await handle(req, "meeting-bot", "realtime");
+      const res = await handlePluginWebhook(req, "meeting-bot", "realtime");
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ error: "Not Found" } as never);
     }
@@ -318,15 +336,11 @@ describe("the gate", () => {
   it("hides a missing secret on an unapproved route", async () => {
     // 409 "secret not configured" would name the plugin and the route to a
     // caller who has proved nothing.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: credentialsFor({}),
-      resolve: () => pendingWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = credentialsFor({});
+    activeResolve = () => pendingWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -339,11 +353,8 @@ describe("the gate", () => {
   it("serves a cadet-signed declaration nobody approved", async () => {
     // Only a caller holding the cloud secret can reach it, and the user
     // extended that trust when they connected their account.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () =>
+    const { calls } = recordingFetch();
+    activeResolve = () =>
         resolution({
           pending: [
             {
@@ -352,11 +363,9 @@ describe("the gate", () => {
               digest: "d".repeat(32),
             },
           ],
-        }),
-      fetchImpl,
-    });
+        });
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", CADET_SECRET),
       "meeting-bot",
       "realtime",
@@ -368,11 +377,8 @@ describe("the gate", () => {
 
   it("still demands the cloud signature on an unapproved cadet route", async () => {
     // Skipping approval did not skip authentication.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () =>
+    const { calls } = recordingFetch();
+    activeResolve = () =>
         resolution({
           pending: [
             {
@@ -381,11 +387,9 @@ describe("the gate", () => {
               digest: "d".repeat(32),
             },
           ],
-        }),
-      fetchImpl,
-    });
+        });
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", PLUGIN_SECRET),
       "meeting-bot",
       "realtime",
@@ -396,15 +400,10 @@ describe("the gate", () => {
   });
 
   it("404s a plugin with no declaration at all", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/other/realtime"),
       "other",
       "realtime",
@@ -415,15 +414,10 @@ describe("the gate", () => {
   });
 
   it("does not let one plugin's approval serve another's path", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/evil/realtime"),
       "evil",
       "realtime",
@@ -434,15 +428,10 @@ describe("the gate", () => {
   });
 
   it("404s a path the approved declaration does not name", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/admin"),
       "meeting-bot",
       "admin",
@@ -454,13 +443,8 @@ describe("the gate", () => {
 
   it("matches exactly, so an approved path does not carry its subtree", async () => {
     // Approving `realtime` approved that path, not everything beneath it.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
     for (const path of [
       "realtime/extra",
@@ -468,7 +452,7 @@ describe("the gate", () => {
       "realtime%2fextra",
       "REALTIME",
     ]) {
-      const res = await handle(
+      const res = await handlePluginWebhook(
         post(`/webhooks/plugins/meeting-bot/${path}`),
         "meeting-bot",
         path,
@@ -480,15 +464,10 @@ describe("the gate", () => {
 
   it("refuses to serve a websocket-kind route over plain HTTP", async () => {
     // Approving a WebSocket route did not approve an HTTP one at that path.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([{ ...ROUTE, kind: "websocket" as const }]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([{ ...ROUTE, kind: "websocket" as const }]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -499,17 +478,12 @@ describe("the gate", () => {
   });
 
   it("fails closed when the approved set cannot be resolved", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => {
+    const { calls } = recordingFetch();
+    activeResolve = () => {
         throw new Error("db unavailable");
-      },
-      fetchImpl,
-    });
+      };
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -523,15 +497,10 @@ describe("the gate", () => {
 describe("signature verification", () => {
   it("rejects an unsigned request", async () => {
     // Approval decides which paths exist; it does not say who may call them.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", ""),
       "meeting-bot",
       "realtime",
@@ -542,15 +511,10 @@ describe("signature verification", () => {
   });
 
   it("rejects a signature made with the wrong secret", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", "not-the-secret"),
       "meeting-bot",
       "realtime",
@@ -561,13 +525,8 @@ describe("signature verification", () => {
   });
 
   it("rejects a signature that does not cover this body", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
     const tampered = new Request(
       "http://gateway/webhooks/plugins/meeting-bot/realtime",
@@ -580,7 +539,7 @@ describe("signature verification", () => {
       },
     );
 
-    const res = await handle(tampered, "meeting-bot", "realtime");
+    const res = await handlePluginWebhook(tampered, "meeting-bot", "realtime");
 
     expect(res.status).toBe(403);
     expect(calls).toEqual([]);
@@ -589,15 +548,11 @@ describe("signature verification", () => {
   it("refuses to serve the route at all when no secret is configured", async () => {
     // Fail closed: a missing secret is a setup mistake, and treating it as
     // "no signature required" would turn it into an open public endpoint.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: credentialsFor({}),
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = credentialsFor({});
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -608,15 +563,10 @@ describe("signature verification", () => {
   });
 
   it("verifies a cadet-signed route against the cloud secret", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", CADET_SECRET),
       "meeting-bot",
       "realtime",
@@ -629,15 +579,10 @@ describe("signature verification", () => {
   it("does not accept the plugin's own secret on a cadet-signed route", async () => {
     // Otherwise declaring `signer: "cadet"` would widen rather than narrow
     // who can reach the route.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([{ ...ROUTE, signer: "cadet" as const }]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", PLUGIN_SECRET),
       "meeting-bot",
       "realtime",
@@ -648,15 +593,10 @@ describe("signature verification", () => {
   });
 
   it("does not accept the cloud secret on a plugin-signed route", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", CADET_SECRET),
       "meeting-bot",
       "realtime",
@@ -730,15 +670,10 @@ describe("declared verification", () => {
         secret: { field: "shortcut_ingress_token" },
       },
     };
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([bearerRoute]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([bearerRoute]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost('{"event":"automation.delivery"}', {
         Authorization: "Bearer shortcut-static-token",
       }),
@@ -758,15 +693,10 @@ describe("declared verification", () => {
         secret: { field: "shortcut_ingress_token" },
       },
     };
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([bearerRoute]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([bearerRoute]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       new Request(
         "http://gateway/webhooks/plugins/meeting-bot/realtime?token=shortcut-static-token",
         {
@@ -783,16 +713,11 @@ describe("declared verification", () => {
   });
 
   it("accepts a delivery signed the vendor's way", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([BODY_ONLY]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([BODY_ONLY]);
 
     const body = '{"event":"comms.message.received"}';
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "X-Osis-Signature": `sha256=${hmac(body, VENDOR_SECRET)}`,
       }),
@@ -808,15 +733,10 @@ describe("declared verification", () => {
   it("reads the secret from the declared field, not webhook_secret", async () => {
     // The plugin's own `webhook_secret` must not open a route the manifest
     // said is verified by something else.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([BODY_ONLY]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([BODY_ONLY]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost("{}", {
         "X-Osis-Signature": `sha256=${hmac("{}", PLUGIN_SECRET)}`,
       }),
@@ -831,15 +751,10 @@ describe("declared verification", () => {
   it("stops accepting the cloud scheme once a descriptor is declared", async () => {
     // Otherwise a declared route would have two ways in, and the weaker one
     // would decide.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([BODY_ONLY]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([BODY_ONLY]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "{}", VENDOR_SECRET),
       "meeting-bot",
       "realtime",
@@ -852,17 +767,13 @@ describe("declared verification", () => {
   it("409s when the declared field holds nothing", async () => {
     // Same fail-closed rule as a missing `webhook_secret`: the route is
     // declared and approved, but nothing can authenticate a caller yet.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: credentialsFor({
+    const { calls } = recordingFetch();
+    activeCredentials = credentialsFor({
         "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
-      }),
-      resolve: () => approvedWith([BODY_ONLY]),
-      fetchImpl,
-    });
+      });
+    activeResolve = () => approvedWith([BODY_ONLY]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost("{}", {
         "X-Osis-Signature": `sha256=${hmac("{}", VENDOR_SECRET)}`,
       }),
@@ -877,16 +788,11 @@ describe("declared verification", () => {
   it("signs over the bytes as received, not a reserialization", async () => {
     // Every vendor here signs pre-parse, so whitespace inside the JSON is
     // part of what was signed.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([BODY_ONLY]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([BODY_ONLY]);
 
     const body = '{ "event" :  "comms.message.received" }';
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "X-Osis-Signature": `sha256=${hmac(body, VENDOR_SECRET)}`,
       }),
@@ -899,17 +805,12 @@ describe("declared verification", () => {
   });
 
   it("accepts a timestamped preamble inside the window", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([TIMESTAMPED]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([TIMESTAMPED]);
 
     const body = '{"event":"message.received"}';
     const ts = String(Math.floor(Date.now() / 1000));
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "X-Spectrum-Timestamp": ts,
         "X-Spectrum-Signature": `v0=${hmac(`v0:${ts}:${body}`, VENDOR_SECRET)}`,
@@ -923,17 +824,12 @@ describe("declared verification", () => {
   });
 
   it("rejects a replay outside the declared window", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([TIMESTAMPED]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([TIMESTAMPED]);
 
     const body = '{"event":"message.received"}';
     const ts = String(Math.floor(Date.now() / 1000) - 3600);
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "X-Spectrum-Timestamp": ts,
         "X-Spectrum-Signature": `v0=${hmac(`v0:${ts}:${body}`, VENDOR_SECRET)}`,
@@ -949,16 +845,11 @@ describe("declared verification", () => {
   it("rejects a delivery that omits a header the payload names", async () => {
     // Dropping the timestamp must not silently change what was signed into
     // something the caller can produce.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([TIMESTAMPED]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([TIMESTAMPED]);
 
     const body = '{"event":"message.received"}';
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "X-Spectrum-Signature": `v0=${hmac(`v0::${body}`, VENDOR_SECRET)}`,
       }),
@@ -971,15 +862,10 @@ describe("declared verification", () => {
   });
 
   it("rejects a delivery carrying no signature header at all", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([BODY_ONLY]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([BODY_ONLY]);
 
-    const res = await handle(vendorPost("{}", {}), "meeting-bot", "realtime");
+    const res = await handlePluginWebhook(vendorPost("{}", {}), "meeting-bot", "realtime");
 
     expect(res.status).toBe(403);
     expect(calls).toEqual([]);
@@ -1026,17 +912,13 @@ describe("standard-webhooks verification", () => {
   }
 
   it("forwards a delivery signed the spec's way", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: STANDARD_CREDENTIALS,
-      resolve: () => approvedWith([STANDARD]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = STANDARD_CREDENTIALS;
+    activeResolve = () => approvedWith([STANDARD]);
 
     const body = '{"event_type":"message.received"}';
     const signed = signStandard(body);
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "webhook-id": signed.id,
         "webhook-timestamp": signed.timestamp,
@@ -1052,17 +934,13 @@ describe("standard-webhooks verification", () => {
   });
 
   it("rejects a bad Standard Webhooks signature", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: STANDARD_CREDENTIALS,
-      resolve: () => approvedWith([STANDARD]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = STANDARD_CREDENTIALS;
+    activeResolve = () => approvedWith([STANDARD]);
 
     const body = '{"event_type":"message.received"}';
     const signed = signStandard(body);
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "webhook-id": signed.id,
         "webhook-timestamp": signed.timestamp,
@@ -1077,19 +955,15 @@ describe("standard-webhooks verification", () => {
   });
 
   it("409s when the Standard Webhooks secret field holds nothing", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: credentialsFor({
+    const { calls } = recordingFetch();
+    activeCredentials = credentialsFor({
         "credential/meeting-bot/webhook_secret": PLUGIN_SECRET,
-      }),
-      resolve: () => approvedWith([STANDARD]),
-      fetchImpl,
-    });
+      });
+    activeResolve = () => approvedWith([STANDARD]);
 
     const body = '{"event_type":"message.received"}';
     const signed = signStandard(body);
-    const res = await handle(
+    const res = await handlePluginWebhook(
       vendorPost(body, {
         "webhook-id": signed.id,
         "webhook-timestamp": signed.timestamp,
@@ -1106,15 +980,10 @@ describe("standard-webhooks verification", () => {
 
 describe("payload limits", () => {
   it("rejects a body over the webhook cap without forwarding it", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "x".repeat(2048)),
       "meeting-bot",
       "realtime",
@@ -1127,13 +996,8 @@ describe("payload limits", () => {
   it("caps on the streamed bytes, not the Content-Length header", async () => {
     // The caller is unauthenticated, so Content-Length is attacker-controlled
     // and absent on chunked requests — a header-only guard would be bypassable.
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
     const oversized = new Request(
       "http://gateway/webhooks/plugins/meeting-bot/realtime",
@@ -1150,22 +1014,17 @@ describe("payload limits", () => {
       },
     );
 
-    const res = await handle(oversized, "meeting-bot", "realtime");
+    const res = await handlePluginWebhook(oversized, "meeting-bot", "realtime");
 
     expect(res.status).toBe(413);
     expect(calls).toEqual([]);
   });
 
   it("forwards a body at the cap", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeResolve = () => approvedWith([ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime", "x".repeat(1024)),
       "meeting-bot",
       "realtime",
@@ -1178,16 +1037,12 @@ describe("payload limits", () => {
 
 describe("upstream failures", () => {
   it("reports a runtime that cannot be reached as 502", async () => {
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl: async () => {
-        throw new Error("ECONNREFUSED");
-      },
+    activeResolve = () => approvedWith([ROUTE]);
+    installGlobalFetch(async () => {
+      throw new Error("ECONNREFUSED");
     });
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -1197,14 +1052,12 @@ describe("upstream failures", () => {
   });
 
   it("passes an upstream error status through rather than masking it", async () => {
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([ROUTE]),
-      fetchImpl: async () => new Response("no such route", { status: 404 }),
-    });
+    activeResolve = () => approvedWith([ROUTE]);
+    installGlobalFetch(async () =>
+      new Response("no such route", { status: 404 }),
+    );
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/realtime"),
       "meeting-bot",
       "realtime",
@@ -1266,35 +1119,32 @@ describe("inbound delivery", () => {
     gateCalls.options.length = 0;
     admitImpl = opts.admit ?? (async () => ADMIT_GUARDIAN);
 
-    const deps: PluginWebhookHandlerDeps = {
-      config: CONFIG,
-      credentials: CREDENTIALS,
-      resolve: () => approvedWith([opts.route ?? INBOUND_ROUTE]),
-      fetchImpl: async (input, init) => {
-        forwards.push({
-          url: String(input),
-          body:
-            init?.body instanceof ArrayBuffer
-              ? new TextDecoder().decode(init.body)
-              : "",
-        });
-        return new Response("{}", { status: opts.pluginStatus ?? 200 });
-      },
-    };
+    activeCredentials = CREDENTIALS;
+    activeResolve = () => approvedWith([opts.route ?? INBOUND_ROUTE]);
+    installGlobalFetch(async (input, init) => {
+      forwards.push({
+        url: String(input),
+        body:
+          init?.body instanceof ArrayBuffer
+            ? new TextDecoder().decode(init.body)
+            : "",
+      });
+      return new Response("{}", { status: opts.pluginStatus ?? 200 });
+    });
     return {
       handled: gateCalls.events,
       options: gateCalls.options,
       forwards,
-      deps,
+      deps: { restoreFetch: fetchRestores.at(-1)! },
     };
   }
 
   function deliver(
-    deps: PluginWebhookHandlerDeps,
+    _deps?: unknown,
     vendorBody: unknown = MESSAGE,
   ) {
     const body = JSON.stringify(vendorBody);
-    return createPluginWebhookHandler(deps)(
+    return handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/events", body),
       "meeting-bot",
       "events",
@@ -1304,9 +1154,9 @@ describe("inbound delivery", () => {
   it("gates on what the vendor sent, not on anything the plugin says", async () => {
     // The declaration reads the sender out of the delivery itself, which is
     // what lets the gate run before the plugin is involved at all.
-    const { handled, deps } = harness();
+    const { handled } = harness();
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(res.status).toBe(200);
     expect(handled).toHaveLength(1);
@@ -1318,9 +1168,9 @@ describe("inbound delivery", () => {
   it("reaches the plugin exactly once, with the vendor's own payload", async () => {
     // One crossing, and the plugin gets what the vendor sent rather than the
     // gateway's reading of it: only the plugin knows which event this is.
-    const { forwards, deps } = harness();
+    const { forwards } = harness();
 
-    await deliver(deps);
+    await deliver({ restoreFetch: () => {} });
 
     expect(forwards).toHaveLength(1);
     expect(forwards[0]!.url).toBe(
@@ -1332,7 +1182,7 @@ describe("inbound delivery", () => {
   it("does not reach the plugin at all when the gate refuses", async () => {
     // The point of gating first. A rejected sender must not reach a plugin
     // that would otherwise run a turn for them.
-    const { forwards, deps } = harness({
+    const { forwards } = harness({
       admit: async () => ({
         admitted: false,
         result: {
@@ -1343,7 +1193,7 @@ describe("inbound delivery", () => {
       }),
     });
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(forwards).toEqual([]);
     expect(res.status).toBe(200);
@@ -1352,7 +1202,7 @@ describe("inbound delivery", () => {
   it("does not reach the plugin when the sender is below the admission floor", async () => {
     // The vendor body must not reach a plugin free to run a turn. A separate
     // notice asks the plugin to send the canned denial instead.
-    const { forwards, deps } = harness({
+    const { forwards } = harness({
       admit: async () => ({
         admitted: true,
         routing: { assistantId: "self" } as never,
@@ -1362,7 +1212,7 @@ describe("inbound delivery", () => {
       }),
     });
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(res.status).toBe(200);
     expect(forwards).toHaveLength(1);
@@ -1383,7 +1233,7 @@ describe("inbound delivery", () => {
   });
 
   it("reaches the plugin when the sender clears the floor", async () => {
-    const { forwards, deps } = harness({
+    const { forwards } = harness({
       admit: async () => ({
         admitted: true,
         routing: { assistantId: "self" } as never,
@@ -1393,7 +1243,7 @@ describe("inbound delivery", () => {
       }),
     });
 
-    await deliver(deps);
+    await deliver({ restoreFetch: () => {} });
 
     expect(forwards).toHaveLength(1);
   });
@@ -1401,7 +1251,7 @@ describe("inbound delivery", () => {
   it("treats a missing verdict as the least trusted sender", async () => {
     // Verdict resolution can fail. Reading that as "no constraint" would
     // admit exactly the sender the floor exists to stop.
-    const { forwards, deps } = harness({
+    const { forwards } = harness({
       admit: async () => ({
         admitted: true,
         routing: { assistantId: "self" } as never,
@@ -1411,7 +1261,7 @@ describe("inbound delivery", () => {
       }),
     });
 
-    await deliver(deps);
+    await deliver({ restoreFetch: () => {} });
 
     expect(forwards).toHaveLength(1);
     expect(forwards[0]!.url).toContain(PLUGIN_ADMISSION_DENIED_NOTICE_PATH);
@@ -1425,7 +1275,7 @@ describe("inbound delivery", () => {
     // The floor decision already landed. A missing plugin route or a failed
     // send must not ask the vendor to retry a message that will only be
     // denied again.
-    const { forwards, deps } = harness({
+    const { forwards } = harness({
       admit: async () => ({
         admitted: true,
         routing: { assistantId: "self" } as never,
@@ -1436,7 +1286,7 @@ describe("inbound delivery", () => {
       pluginStatus: 404,
     });
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
@@ -1445,9 +1295,9 @@ describe("inbound delivery", () => {
   });
 
   it("tells the pipeline which plugin and which route it came from", async () => {
-    const { options, deps } = harness();
+    const { options } = harness();
 
-    await deliver(deps);
+    await deliver({ restoreFetch: () => {} });
 
     expect(options[0]?.sourceMetadata).toEqual({
       plugin: "meeting-bot",
@@ -1456,9 +1306,9 @@ describe("inbound delivery", () => {
   });
 
   it("does not echo the plugin's body back to the vendor", async () => {
-    const { deps } = harness();
+    harness();
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(await res.json()).toEqual({ ok: true });
   });
@@ -1466,9 +1316,9 @@ describe("inbound delivery", () => {
   it("forwards a delivery with no sender without gating it", async () => {
     // A vendor's delivery probe. There is nobody to admit, so there is no
     // admission decision to make, and the plugin still needs to see it.
-    const { handled, forwards, deps } = harness();
+    const { handled, forwards } = harness();
 
-    const res = await deliver(deps, { event: "probe" });
+    const res = await deliver(undefined, { event: "probe" });
 
     expect(handled).toHaveLength(0);
     expect(forwards).toHaveLength(1);
@@ -1480,9 +1330,9 @@ describe("inbound delivery", () => {
     // sender, and the shape many receipts take. There is nobody to admit, so
     // answering 4xx would tell the vendor its ordinary traffic is malformed
     // and invite it to disable the endpoint.
-    const { handled, forwards, deps } = harness();
+    const { handled, forwards } = harness();
 
-    const res = await deliver(deps, {
+    const res = await deliver(undefined, {
       message: { externalMessageId: "msg-1", content: "delivered" },
     });
 
@@ -1494,9 +1344,9 @@ describe("inbound delivery", () => {
   it("refuses a delivery the declaration matched only partly", async () => {
     // Half a message means the declaration and the payload disagree. Passing
     // it on would hand the plugin a sender the gateway never checked.
-    const { handled, forwards, deps } = harness();
+    const { handled, forwards } = harness();
 
-    const res = await deliver(deps, {
+    const res = await deliver(undefined, {
       message: { conversationExternalId: "chat-1" },
       actor: { actorExternalId: "(202) 555-0142" },
     });
@@ -1509,8 +1359,8 @@ describe("inbound delivery", () => {
   it("forwards an unparsable body rather than dropping it", async () => {
     // The signature checked out, so this is the vendor sending something the
     // gateway cannot read, not an attacker. The plugin may still know it.
-    const { forwards, deps } = harness();
-    const res = await createPluginWebhookHandler(deps)(
+    const { forwards } = harness();
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/events", "{ not json"),
       "meeting-bot",
       "events",
@@ -1521,24 +1371,24 @@ describe("inbound delivery", () => {
   });
 
   it("leaves a route that declares no inbound a plain proxy", async () => {
-    const { handled, forwards, deps } = harness({
+    const { handled, forwards } = harness({
       route: { ...INBOUND_ROUTE, inbound: undefined },
     });
 
-    await deliver(deps);
+    await deliver({ restoreFetch: () => {} });
 
     expect(handled).toHaveLength(0);
     expect(forwards).toHaveLength(1);
   });
 
   it("asks the vendor to retry when the pipeline throws", async () => {
-    const { deps } = harness({
+    harness({
       admit: async () => {
         throw new Error("runtime is down");
       },
     });
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(res.status).toBe(503);
     expect(res.headers.get("Retry-After")).toBe("30");
@@ -1547,28 +1397,26 @@ describe("inbound delivery", () => {
   it("asks the vendor to retry when the plugin refuses an admitted delivery", async () => {
     // The gate said yes and the plugin could not take it. Acknowledging would
     // lose a message the sender was entitled to have delivered.
-    const { deps } = harness({ pluginStatus: 500 });
+    harness({ pluginStatus: 500 });
 
-    const res = await deliver(deps);
+    const res = await deliver();
 
     expect(res.status).toBe(503);
   });
 
   it("delivers nothing from a route awaiting approval", async () => {
-    const { handled, forwards, deps } = harness();
-    const res = await createPluginWebhookHandler({
-      ...deps,
-      resolve: () =>
-        resolution({
-          pending: [
-            {
-              plugin: "meeting-bot",
-              routes: [INBOUND_ROUTE],
-              digest: "d".repeat(32),
-            },
-          ],
-        }),
-    })(
+    const { handled, forwards } = harness();
+    activeResolve = () =>
+      resolution({
+        pending: [
+          {
+            plugin: "meeting-bot",
+            routes: [INBOUND_ROUTE],
+            digest: "d".repeat(32),
+          },
+        ],
+      });
+    const res = await handlePluginWebhook(
       post("/webhooks/plugins/meeting-bot/events", JSON.stringify(MESSAGE)),
       "meeting-bot",
       "events",
@@ -1581,10 +1429,10 @@ describe("inbound delivery", () => {
 
   describe("dedup", () => {
     it("runs a redelivered message once, and acknowledges the second copy", async () => {
-      const { handled, forwards, deps } = harness();
+      const { handled, forwards } = harness();
 
-      const first = await deliver(deps);
-      const second = await deliver(deps);
+      const first = await deliver();
+      const second = await deliver();
 
       expect(handled).toHaveLength(1);
       expect(forwards).toHaveLength(1);
@@ -1593,10 +1441,10 @@ describe("inbound delivery", () => {
     });
 
     it("does not treat the next message in a conversation as a retry", async () => {
-      const { handled, deps } = harness();
+      const { handled } = harness();
 
-      await deliver(deps);
-      await deliver(deps, {
+      await deliver({ restoreFetch: () => {} });
+      await deliver(undefined, {
         ...MESSAGE,
         message: { ...MESSAGE.message, externalMessageId: "msg-2" },
       });
@@ -1619,15 +1467,15 @@ describe("inbound delivery", () => {
     });
 
     it("claims under the plugin-scoped id, not the vendor's", async () => {
-      const { deps } = harness();
-      await deliver(deps);
+      harness();
+      await deliver({ restoreFetch: () => {} });
 
       expect(readInboundEventClaim(DEDUP_KEY)?.state).toBe("committed");
     });
 
     it("claims nothing for a delivery that carried no sender", async () => {
-      const { deps } = harness();
-      await deliver(deps, { event: "probe" });
+      harness();
+      await deliver(undefined, { event: "probe" });
 
       expect(
         getGatewayDb().select().from(inboundSeenEvents).all(),
@@ -1639,13 +1487,13 @@ describe("inbound delivery", () => {
       const entered = new Promise<void>((resolve) => {
         enter = resolve;
       });
-      const { deps } = harness({
+      harness({
         admit: () => {
           enter();
           return new Promise<never>(() => {});
         },
       });
-      void deliver(deps);
+      void deliver();
       await entered;
 
       const claim = readInboundEventClaim(DEDUP_KEY);
@@ -1721,15 +1569,11 @@ describe("HMAC URL and form-encoded inbound", () => {
   }
 
   it("gates a form-encoded delivery on its form params and forwards it", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: TWILIO_CREDENTIALS,
-      resolve: () => approvedWith([FORM_HMAC_ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = TWILIO_CREDENTIALS;
+    activeResolve = () => approvedWith([FORM_HMAC_ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       twilioPost({
         MessageSid: "SM9001",
         AccountSid: "AC01",
@@ -1757,17 +1601,13 @@ describe("HMAC URL and form-encoded inbound", () => {
   });
 
   it("forwards a form delivery with no sender ungated", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: TWILIO_CREDENTIALS,
-      resolve: () => approvedWith([FORM_HMAC_ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = TWILIO_CREDENTIALS;
+    activeResolve = () => approvedWith([FORM_HMAC_ROUTE]);
 
     // A status callback carries no From on the wire in some shapes; with no
     // sender there is nothing to admit and the plugin interprets it.
-    const res = await handle(
+    const res = await handlePluginWebhook(
       twilioPost({ MessageSid: "SM9002", MessageStatus: "delivered" }),
       "meeting-bot",
       "realtime",
@@ -1779,15 +1619,11 @@ describe("HMAC URL and form-encoded inbound", () => {
   });
 
   it("rejects a delivery signed with the wrong token", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: TWILIO_CREDENTIALS,
-      resolve: () => approvedWith([FORM_HMAC_ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = TWILIO_CREDENTIALS;
+    activeResolve = () => approvedWith([FORM_HMAC_ROUTE]);
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       twilioPost(
         {
           MessageSid: "SM9003",
@@ -1810,13 +1646,9 @@ describe("HMAC URL and form-encoded inbound", () => {
   });
 
   it("verifies against the cloud-injected URL when the raw URL differs", async () => {
-    const { calls, fetchImpl } = recordingFetch();
-    const handle = createPluginWebhookHandler({
-      config: CONFIG,
-      credentials: TWILIO_CREDENTIALS,
-      resolve: () => approvedWith([FORM_HMAC_ROUTE]),
-      fetchImpl,
-    });
+    const { calls } = recordingFetch();
+    activeCredentials = TWILIO_CREDENTIALS;
+    activeResolve = () => approvedWith([FORM_HMAC_ROUTE]);
 
     // Twilio signed the cloud callback URL; the gateway sees localhost.
     // The proxy injects the original URL it handed the vendor, and the
@@ -1837,7 +1669,7 @@ describe("HMAC URL and form-encoded inbound", () => {
       )
       .digest("base64");
 
-    const res = await handle(
+    const res = await handlePluginWebhook(
       twilioPost(params, {
         signature,
         headers: { "X-Cadet-Ingress-Url": injected },

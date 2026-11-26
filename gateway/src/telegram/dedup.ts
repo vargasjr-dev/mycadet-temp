@@ -11,3 +11,8 @@ let cache: DedupCache | undefined;
 export function getTelegramDedupCache(): DedupCache {
   return (cache ??= new DedupCache());
 }
+
+/** Test isolation: drop the singleton so the next get starts fresh. */
+export function resetForTests(): void {
+  cache = undefined;
+}

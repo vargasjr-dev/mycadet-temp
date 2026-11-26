@@ -1,4 +1,5 @@
 import { describe, test, expect, mock, afterEach, beforeEach } from "bun:test";
+import * as realConfig from "../config.js";
 import type { GatewayConfig } from "../config.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
@@ -28,8 +29,37 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-const { createTelegramWebhookHandler } =
-  await import("../http/routes/telegram-webhook.js");
+// Config and credential singletons the plain handler reads at request time;
+// tests swap them per test for isolation.
+let activeConfig: GatewayConfig;
+let activeCredentials: CredentialCache;
+
+mock.module("../config.js", () => ({
+  ...realConfig,
+  getConfig: () => activeConfig,
+}));
+
+mock.module("../credential-cache.js", () => ({
+  getCredentials: () => activeCredentials,
+}));
+
+mock.module("../config-file-cache.js", () => ({
+  getConfigFileCache: () => ({
+    getString: () => undefined,
+    getBoolean: () => undefined,
+    getNumber: () => undefined,
+    getStringArray: () => undefined,
+    getRecord: () => undefined,
+    refreshNow: () => {},
+  }),
+}));
+
+const {
+  handleTelegramWebhook,
+  resetBotIdentityForTests,
+  resetDropLogForTests,
+} = await import("../http/routes/telegram-webhook.js");
+const { resetForTests } = await import("../telegram/dedup.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   const merged: GatewayConfig = {
@@ -109,6 +139,11 @@ let fetchCalls: {
 }[];
 
 beforeEach(async () => {
+  resetForTests();
+  resetBotIdentityForTests();
+  resetDropLogForTests();
+  activeConfig = makeConfig();
+  activeCredentials = makeCaches().credentials;
   // P3 admission policy cache is required by `handleInbound`; init fresh
   // per test so the cache state mirrors the freshly-reset gateway DB.
   resetGatewayDb();
@@ -229,17 +264,16 @@ describe("telegram webhook handler: replyCallbackUrl", () => {
     const saved = process.env.GATEWAY_PORT;
     process.env.GATEWAY_PORT = "9000";
     try {
-      const config = makeConfig({
+      activeConfig = makeConfig({
         routingEntries: [
           { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
         ],
       });
       installFetchMock();
-      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
       const payload = makeTelegramPayload("hello");
       const req = makeWebhookRequest(payload);
-      const res = await handler(req);
+      const res = await handleTelegramWebhook(req);
 
       expect(res.status).toBe(200);
 
@@ -259,17 +293,16 @@ describe("telegram webhook handler: replyCallbackUrl", () => {
     const saved = process.env.GATEWAY_PORT;
     delete process.env.GATEWAY_PORT;
     try {
-      const config = makeConfig({
+      activeConfig = makeConfig({
         routingEntries: [
           { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
         ],
       });
       installFetchMock();
-      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
       const payload = makeTelegramPayload("hello", 2001);
       const req = makeWebhookRequest(payload);
-      const res = await handler(req);
+      const res = await handleTelegramWebhook(req);
 
       expect(res.status).toBe(200);
 
@@ -292,17 +325,16 @@ describe("telegram webhook handler: replyCallbackUrl", () => {
       }),
     );
     try {
-      const config = makeConfig({
+      activeConfig = makeConfig({
         routingEntries: [
           { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
         ],
       });
       installFetchMock();
-      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
       const payload = makeTelegramPayload("hello ingress");
       const req = makeWebhookRequest(payload);
-      const res = await handler(req);
+      const res = await handleTelegramWebhook(req);
 
       expect(res.status).toBe(200);
 
@@ -320,20 +352,19 @@ describe("telegram webhook handler: replyCallbackUrl", () => {
     const saved = process.env.GATEWAY_PORT;
     process.env.GATEWAY_PORT = "9000";
     try {
-      const config = makeConfig({
+      activeConfig = makeConfig({
         routingEntries: [
           { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
         ],
       });
       installFetchMock();
-      const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
       const base = makeTelegramPayload("hello topic", 2002);
       const payload = {
         ...base,
         message: { ...base.message, message_thread_id: 777 },
       };
-      const res = await handler(makeWebhookRequest(payload));
+      const res = await handleTelegramWebhook(makeWebhookRequest(payload));
 
       expect(res.status).toBe(200);
 
@@ -351,17 +382,16 @@ describe("telegram webhook handler: replyCallbackUrl", () => {
 
 describe("telegram webhook handler: /new rejection", () => {
   test("/start with payload forwards command intent metadata, does not reset conversation, and suppresses ACK", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("/start deep-link-token", 2501);
     const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -387,17 +417,16 @@ describe("telegram webhook handler: /new rejection", () => {
   });
 
   test("bare /start (no payload) sends ACK and forwards to runtime", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("/start", 2503);
     const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -424,14 +453,13 @@ describe("telegram webhook handler: /new rejection", () => {
   test("/start on an unrouted chat forwards instead of sending a setup notice", async () => {
     // Regression: an unrouted chat used to hit the unmapped `reject` policy
     // and get a "not fully set up" notice instead of reaching the assistant.
-    const config = makeConfig();
+    activeConfig = makeConfig();
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("/start", 2502);
     (payload.message as any).chat.id = 54321;
     const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -449,13 +477,12 @@ describe("telegram webhook handler: /new rejection", () => {
   });
 
   test("/new on an unrouted chat resets instead of sending a rejection notice", async () => {
-    const config = makeConfig();
+    activeConfig = makeConfig();
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("/new", 3001);
     const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -470,17 +497,16 @@ describe("telegram webhook handler: /new rejection", () => {
   });
 
   test("/new succeeds and sends confirmation when routing matches", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("/new", 4001);
     const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -516,7 +542,7 @@ describe("telegram webhook handler: in-flight dedup", () => {
       resolveFirst = r;
     });
 
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
@@ -571,14 +597,13 @@ describe("telegram webhook handler: in-flight dedup", () => {
       },
     );
 
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
     const payload = makeTelegramPayload("hello", 9001);
 
     // Fire first request (will block on runtime call)
-    const first = handler(makeWebhookRequest(payload));
+    const first = handleTelegramWebhook(makeWebhookRequest(payload));
 
     // Fire second request with same update_id while first is in-flight
-    const second = await handler(makeWebhookRequest(payload));
+    const second = await handleTelegramWebhook(makeWebhookRequest(payload));
     expect(second.status).toBe(503);
     expect(second.headers.get("Retry-After")).toBe("1");
 
@@ -588,14 +613,14 @@ describe("telegram webhook handler: in-flight dedup", () => {
     expect(firstRes.status).toBe(200);
 
     // Third request after processing completed — should get cached 200
-    const third = await handler(makeWebhookRequest(payload));
+    const third = await handleTelegramWebhook(makeWebhookRequest(payload));
     expect(third.status).toBe(200);
     const thirdBody = await third.json();
     expect(thirdBody.ok).toBe(true);
   });
 
   test("failed processing unreserves, allowing retry to be processed normally", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
@@ -651,37 +676,35 @@ describe("telegram webhook handler: in-flight dedup", () => {
       },
     );
 
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
     const payload = makeTelegramPayload("hello", 9002);
 
     // First attempt fails — should return 500 and unreserve
-    const first = await handler(makeWebhookRequest(payload));
+    const first = await handleTelegramWebhook(makeWebhookRequest(payload));
     expect(first.status).toBe(500);
 
     // Retry with same update_id — should be processed (not permanently deduped)
-    const retry = await handler(makeWebhookRequest(payload));
+    const retry = await handleTelegramWebhook(makeWebhookRequest(payload));
     expect(retry.status).toBe(200);
     const retryBody = await retry.json();
     expect(retryBody.ok).toBe(true);
   });
 
   test("after successful processing, duplicates return cached success", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
     const payload = makeTelegramPayload("hello", 9003);
 
     // Process successfully
-    const first = await handler(makeWebhookRequest(payload));
+    const first = await handleTelegramWebhook(makeWebhookRequest(payload));
     expect(first.status).toBe(200);
 
     // Duplicate returns cached response without hitting the runtime again
     const beforeCount = fetchCalls.length;
-    const dup = await handler(makeWebhookRequest(payload));
+    const dup = await handleTelegramWebhook(makeWebhookRequest(payload));
     expect(dup.status).toBe(200);
     const dupBody = await dup.json();
     expect(dupBody.ok).toBe(true);
@@ -713,17 +736,16 @@ function makeCallbackQueryPayload(data: string, updateId = 7001) {
 
 describe("telegram webhook handler: callback_query forwarding", () => {
   test("forwards callback_query data to the runtime with callback metadata", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeCallbackQueryPayload("apr:run-abc:approve", 7001);
     const req = makeWebhookRequest(payload);
-    const res = await handler(req);
+    const res = await handleTelegramWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -739,17 +761,16 @@ describe("telegram webhook handler: callback_query forwarding", () => {
   });
 
   test("acknowledges the callback query via answerCallbackQuery after forwarding", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeCallbackQueryPayload("apr:run-xyz:reject", 7002);
     const req = makeWebhookRequest(payload);
-    await handler(req);
+    await handleTelegramWebhook(req);
 
     // Allow the fire-and-forget answerCallbackQuery call to complete
     await new Promise((r) => setTimeout(r, 50));
@@ -763,17 +784,16 @@ describe("telegram webhook handler: callback_query forwarding", () => {
   });
 
   test("does not call answerCallbackQuery for regular text messages", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("hello", 7003);
     const req = makeWebhookRequest(payload);
-    await handler(req);
+    await handleTelegramWebhook(req);
 
     // Allow any fire-and-forget calls to complete
     await new Promise((r) => setTimeout(r, 50));
@@ -786,17 +806,16 @@ describe("telegram webhook handler: callback_query forwarding", () => {
   });
 
   test("regular text messages do not include callback metadata in runtime payload", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
     const payload = makeTelegramPayload("hello", 7004);
     const req = makeWebhookRequest(payload);
-    await handler(req);
+    await handleTelegramWebhook(req);
 
     const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
     expect(runtimeCall).toBeDefined();
@@ -827,7 +846,7 @@ describe("telegram webhook handler: rooms", () => {
   }
 
   test("a supergroup message that mentions the bot is forwarded with the room facts", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         {
           type: "conversation_id",
@@ -837,9 +856,8 @@ describe("telegram webhook handler: rooms", () => {
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    const res = await handler(makeWebhookRequest(makeGroupPayload(5001)));
+    const res = await handleTelegramWebhook(makeWebhookRequest(makeGroupPayload(5001)));
     expect(res.status).toBe(200);
 
     const runtimeCall = fetchCalls.find((c) => c.url.includes("/inbound"));
@@ -855,7 +873,7 @@ describe("telegram webhook handler: rooms", () => {
   });
 
   test("the bot's identity is resolved once and reused across updates", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         {
           type: "conversation_id",
@@ -865,10 +883,9 @@ describe("telegram webhook handler: rooms", () => {
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    await handler(makeWebhookRequest(makeGroupPayload(5101)));
-    await handler(makeWebhookRequest(makeGroupPayload(5102)));
+    await handleTelegramWebhook(makeWebhookRequest(makeGroupPayload(5101)));
+    await handleTelegramWebhook(makeWebhookRequest(makeGroupPayload(5102)));
 
     expect(fetchCalls.filter((c) => c.url.endsWith("/getMe"))).toHaveLength(1);
     expect(fetchCalls.filter((c) => c.url.includes("/inbound"))).toHaveLength(
@@ -879,15 +896,14 @@ describe("telegram webhook handler: rooms", () => {
   test("a private-chat message never asks Telegram who the bot is", async () => {
     // Private chats are admitted without the identity, so a deployment that
     // only ever sees them makes no getMe call at all.
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         { type: "conversation_id", key: "12345", assistantId: "assistant-a" },
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    await handler(makeWebhookRequest(makeTelegramPayload("hello", 5301)));
+    await handleTelegramWebhook(makeWebhookRequest(makeTelegramPayload("hello", 5301)));
 
     expect(fetchCalls.filter((c) => c.url.endsWith("/getMe"))).toHaveLength(0);
     expect(fetchCalls.filter((c) => c.url.includes("/inbound"))).toHaveLength(
@@ -898,7 +914,7 @@ describe("telegram webhook handler: rooms", () => {
   test("/new@bot in a supergroup resets the group conversation", async () => {
     // Telegram spells a group command `/new@username`; the route's parser
     // must see `/new`, or the reset silently becomes an ordinary message.
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         {
           type: "conversation_id",
@@ -908,9 +924,8 @@ describe("telegram webhook handler: rooms", () => {
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    const res = await handler(
+    const res = await handleTelegramWebhook(
       makeWebhookRequest(
         makeGroupPayload(5401, {
           text: "/new@cadet_bot",
@@ -929,7 +944,7 @@ describe("telegram webhook handler: rooms", () => {
   });
 
   test("a supergroup message that does not address the bot never reaches the runtime", async () => {
-    const config = makeConfig({
+    activeConfig = makeConfig({
       routingEntries: [
         {
           type: "conversation_id",
@@ -939,9 +954,8 @@ describe("telegram webhook handler: rooms", () => {
       ],
     });
     installFetchMock();
-    const { handler } = createTelegramWebhookHandler(config, makeCaches());
 
-    const res = await handler(
+    const res = await handleTelegramWebhook(
       makeWebhookRequest(
         makeGroupPayload(5201, { text: "lunch anyone?", entities: [] }),
       ),

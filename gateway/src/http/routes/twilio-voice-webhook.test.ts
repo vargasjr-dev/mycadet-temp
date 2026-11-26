@@ -19,10 +19,12 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
 import { resolvePublicBaseWssUrl } from "../../runtime/client.js";
 
-import { createTwilioVoiceWebhookHandler } from "./twilio-voice-webhook.js";
 import type { GatewayConfig } from "../../config.js";
 import { makeGatewayConfig } from "../../__tests__/helpers/gateway-config.js";
 import type { ConfigFileCache } from "../../config-file-cache.js";
+import * as realGatewayClient from "@mycadet/gateway-client";
+import * as realConfig from "../../config.js";
+import * as realAdmissionPolicyCache from "../../risk/admission-policy-cache.js";
 let lastForwardedParams: Record<string, string> | undefined;
 let _lastForwardedOriginalUrl: string | undefined;
 let forwardCalled = false;
@@ -76,11 +78,13 @@ let phoneExempt = false;
 let phonePolicy = "everyone";
 
 mock.module("@mycadet/gateway-client", () => ({
+  ...realGatewayClient,
   isAdmissionPolicyExemptChannel: (channel: string) =>
     channel === "phone" ? phoneExempt : false,
 }));
 
 mock.module("../../risk/admission-policy-cache.js", () => ({
+  ...realAdmissionPolicyCache,
   getAdmissionPolicyCache: () => ({ get: () => phonePolicy }),
 }));
 
@@ -124,10 +128,32 @@ function makeCachesWithPhoneNumbers(mapping?: Record<string, string>) {
   return { configFile };
 }
 
+// Config and config-file singletons the plain handler reads at request time.
+let activeConfigFile: ConfigFileCache;
+
+mock.module("../../config.js", () => ({
+  ...realConfig,
+  getConfig: () => baseConfig,
+}));
+
+mock.module("../../credential-cache.js", () => ({
+  getCredentials: () => ({
+    get: async () => undefined,
+    invalidate: () => {},
+  }),
+}));
+
+mock.module("../../config-file-cache.js", () => ({
+  getConfigFileCache: () => activeConfigFile,
+}));
+
+const { handleTwilioVoiceWebhook } = await import("./twilio-voice-webhook.js");
+
 // ── Tests ──────────────────────────────────────────────────────────────
 
 describe("twilio voice webhook handler", () => {
   beforeEach(() => {
+    activeConfigFile = makeCachesWithPhoneNumbers().configFile;
     lastForwardedParams = undefined;
     _lastForwardedOriginalUrl = undefined;
     forwardCalled = false;
@@ -136,17 +162,13 @@ describe("twilio voice webhook handler", () => {
   });
 
   test("inbound call resolves assistant by To number and forwards to daemon", async () => {
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_inbound_1",
       From: "+14155551234",
       To: "+15550001111",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     // Gateway resolves assistant for routing but does NOT forward assistantId to daemon
@@ -155,17 +177,13 @@ describe("twilio voice webhook handler", () => {
   });
 
   test("inbound call with unknown To number falls through to the local assistant", async () => {
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_inbound_fallback",
       From: "+14155551234",
       To: "+19999999999",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     // Gateway resolves fallback for routing, forwards call to daemon without assistantId
@@ -176,27 +194,19 @@ describe("twilio voice webhook handler", () => {
     // Caller-ID-withheld call: no `From` to route on. resolveAssistant
     // fail-closes on the missing identity, but a voice line is intentionally
     // open, so the handler answers via the local assistant.
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_inbound_anon",
       To: "+12015550199",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
   });
 
   test("outbound call (callSessionId present) does not resolve assistant by phone", async () => {
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest(
+        const req = makeVoiceRequest(
       {
         CallSid: "CA_outbound_1",
         From: "+15550001111",
@@ -205,18 +215,14 @@ describe("twilio voice webhook handler", () => {
       "?callSessionId=existing-session-id",
     );
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
   });
 
   test("empty callSessionId is treated as inbound (resolves assistant by To number)", async () => {
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest(
+        const req = makeVoiceRequest(
       {
         CallSid: "CA_empty_session",
         From: "+14155551234",
@@ -225,7 +231,7 @@ describe("twilio voice webhook handler", () => {
       "?callSessionId=",
     );
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
@@ -233,33 +239,33 @@ describe("twilio voice webhook handler", () => {
   });
 
   test("inbound call resolves second assistant by To number", async () => {
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_inbound_3",
       From: "+14155551234",
       To: "+15550002222",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
   });
 
   test("inbound call without assistantPhoneNumbers falls through to the local assistant", async () => {
-    // No configFile cache means no phone number mapping — falls through to the
+    // No phone number mapping in the config-file cache — falls through to the
     // standard routing chain, which resolves locally.
-    const handler = createTwilioVoiceWebhookHandler(baseConfig);
+    activeConfigFile = {
+      getString: () => undefined,
+      getRecord: () => undefined,
+      refreshNow: () => {},
+    } as unknown as ConfigFileCache;
     const req = makeVoiceRequest({
       CallSid: "CA_inbound_5",
       From: "+14155551234",
       To: "+15550001111",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
@@ -269,17 +275,13 @@ describe("twilio voice webhook handler", () => {
     phoneExempt = false; // phone is enforced
     phonePolicy = "no_one";
 
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_no_one",
       From: "+14155551234",
       To: "+15550001111",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     const body = await res.text();
@@ -291,17 +293,13 @@ describe("twilio voice webhook handler", () => {
     phoneExempt = false;
     phonePolicy = "everyone";
 
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_everyone",
       From: "+14155551234",
       To: "+15550001111",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
@@ -311,17 +309,13 @@ describe("twilio voice webhook handler", () => {
     phoneExempt = true; // exercise the defensive exempt branch
     phonePolicy = "no_one";
 
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest({
+        const req = makeVoiceRequest({
       CallSid: "CA_exempt",
       From: "+14155551234",
       To: "+15550001111",
     });
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);
@@ -331,11 +325,7 @@ describe("twilio voice webhook handler", () => {
     phoneExempt = false;
     phonePolicy = "no_one";
 
-    const handler = createTwilioVoiceWebhookHandler(
-      baseConfig,
-      makeCachesWithPhoneNumbers(),
-    );
-    const req = makeVoiceRequest(
+        const req = makeVoiceRequest(
       {
         CallSid: "CA_outbound_no_one",
         From: "+15550001111",
@@ -344,7 +334,7 @@ describe("twilio voice webhook handler", () => {
       "?callSessionId=existing-session-id",
     );
 
-    const res = await handler(req);
+    const res = await handleTwilioVoiceWebhook(req);
 
     expect(res.status).toBe(200);
     expect(forwardCalled).toBe(true);

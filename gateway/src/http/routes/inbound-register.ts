@@ -19,8 +19,7 @@ import { z } from "zod";
 import { createGuardianBinding } from "../../auth/guardian-bootstrap.js";
 import { getGatewayDb } from "../../db/connection.js";
 import { contacts as gwContacts } from "../../db/schema.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import { getLogger } from "../../logger.js";
 import { validateMailgunEmail } from "./mailgun-identity.js";
@@ -100,11 +99,8 @@ export async function findGuardian(): Promise<
 // Handler factory
 // ---------------------------------------------------------------------------
 
-export function createInboundRegisterHandler(
-  _config: GatewayConfig,
-  credentialCache: CredentialCache,
-) {
-  return async function handleInboundRegister(req: Request): Promise<Response> {
+export async function handleInboundRegister(req: Request): Promise<Response> {
+  const credentialCache = getCredentials();
     // ── Parse & validate request body ─────────────────────────────
 
     let rawBody: unknown;
@@ -215,5 +211,4 @@ export function createInboundRegisterHandler(
       ok: true,
       verified_via: "webhook_registration",
     });
-  };
 }

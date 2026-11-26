@@ -1,13 +1,12 @@
 import { buildEmailTransportMetadata } from "../../channels/transport-hints.js";
-import type { ConfigFileCache } from "../../config-file-cache.js";
-import type { GatewayConfig } from "../../config.js";
-import type { CredentialCache } from "../../credential-cache.js";
+import { getConfig } from "../../config.js";
+import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
 import {
   resolveCredentialWithRefresh,
   verifySecretWithRefresh,
 } from "../../credential-refresh.js";
-import { StringDedupCache } from "../../dedup-cache.js";
+import { getEmailDedupCache } from "../../email/dedup.js";
 import {
   appendFailedEmailAttachmentNotice,
   ingestEmailAttachments,
@@ -29,16 +28,14 @@ import {
 
 const log = getLogger("email-webhook");
 
-export function createEmailWebhookHandler(
-  config: GatewayConfig,
-  caches?: { credentials?: CredentialCache; configFile?: ConfigFileCache },
-  // Production injects the integration-owned singleton (getEmailDedupCache)
-  // so the lifecycle sweep sees the same instance; the default keeps direct
-  // creator calls (tests) on a fresh, isolated cache.
-  dedupCache: StringDedupCache = new StringDedupCache(24 * 60 * 60_000),
-) {
-  const handler = async (req: Request): Promise<Response> => {
-    const traceId = req.headers.get("x-trace-id") ?? undefined;
+/** The `/webhooks/email` provider callback. Reads the config, credential, and
+ * dedup-cache singletons at request time — no factory, no injection. */
+export async function handleEmailWebhook(req: Request): Promise<Response> {
+  const config = getConfig();
+  const credentials = getCredentials();
+  const dedupCache = getEmailDedupCache();
+
+  const traceId = req.headers.get("x-trace-id") ?? undefined;
     const tlog = traceId ? log.child({ traceId }) : log;
 
     if (req.method !== "POST") {
@@ -65,7 +62,7 @@ export function createEmailWebhookHandler(
     // Signature validation is required — reject when no secret is configured
     // rather than silently accepting unauthenticated payloads (fail-closed).
     const webhookSecret = await resolveCredentialWithRefresh(
-      caches?.credentials,
+      credentials,
       credentialKey("cadet", "webhook_secret"),
     );
     if (!webhookSecret) {
@@ -77,7 +74,7 @@ export function createEmailWebhookHandler(
     }
 
     const signatureValid = await verifySecretWithRefresh({
-      credentials: caches?.credentials,
+      credentials,
       key: credentialKey("cadet", "webhook_secret"),
       verify: (secret) =>
         verifyEmailWebhookSignature(req.headers, rawBody, secret),
@@ -288,7 +285,4 @@ export function createEmailWebhookHandler(
       dedupCache.unreserve(eventId);
       return Response.json({ error: "Internal error" }, { status: 500 });
     }
-  };
-
-  return { handler, dedupCache };
 }

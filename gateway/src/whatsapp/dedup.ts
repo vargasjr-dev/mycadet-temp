@@ -12,3 +12,8 @@ export function getWhatsappDedupCache(): StringDedupCache {
   // 24-hour TTL — WhatsApp message IDs are globally unique and never reused
   return (cache ??= new StringDedupCache(24 * 60 * 60_000));
 }
+
+/** Test isolation: drop the singleton so the next get starts fresh. */
+export function resetForTests(): void {
+  cache = undefined;
+}
