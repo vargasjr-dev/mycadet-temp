@@ -222,7 +222,7 @@ jobs:
         env:
           WINDOWS_SIGNING_PROVIDER: azure-trusted-signing
           WINDOWS_SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_SIGNING_TIMESTAMP_URL }}
-          AZURE_TRUSTED_SIGNING_ENDPOINT: https://cus.codesigning.azure.net/
+          AZURE_TRUSTED_SIGNING_ENDPOINT: https://eus.codesigning.azure.net/
           AZURE_TRUSTED_SIGNING_ACCOUNT: mycadet
           AZURE_TRUSTED_SIGNING_PROFILE: mycadet
         run: bunx electron-builder --win --config electron-builder.config.cjs --publish never
