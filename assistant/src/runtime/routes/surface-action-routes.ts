@@ -12,6 +12,7 @@ import { z } from "zod";
 import { isHttpAuthDisabled } from "../../config/env.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { processGuardianDecision } from "../guardian-action-service.js";
 import {
@@ -26,7 +27,6 @@ import {
   NotFoundError,
   RouteError,
 } from "./errors.js";
-import { parseBody } from "./parse-body.js";
 import { resolveSurfaceConversation } from "./surface-conversation-resolver.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
@@ -74,11 +74,10 @@ async function handleSurfaceAction({
   replyText?: string;
   decidedAction?: string;
 }> {
-  const request = parseBody(surfaceActionRequestSchema, body);
-  const conversationId = request.conversationId;
-  const surfaceId = request.surfaceId;
-  const actionId = request.actionId;
-  const data = request.data;
+  const conversationId = body?.conversationId;
+  const surfaceId = body?.surfaceId;
+  const actionId = body?.actionId;
+  const data = body?.data;
 
   if (!surfaceId || typeof surfaceId !== "string") {
     throw new BadRequestError("surfaceId is required");
@@ -88,6 +87,10 @@ async function handleSurfaceAction({
   }
   if (conversationId != null && typeof conversationId !== "string") {
     throw new BadRequestError("conversationId must be a string");
+  }
+
+  if (data !== undefined && !isPlainObject(data)) {
+    throw new BadRequestError("data must be an object");
   }
 
   // Intercept access-request approval actions (apr:<requestId>:<action>)
@@ -227,8 +230,7 @@ async function handleSurfaceUndo({ body, pathParams }: RouteHandlerArgs) {
     throw new BadRequestError("surfaceId path parameter is required");
   }
 
-  const request = parseBody(surfaceUndoRequestSchema, body);
-  const conversationId = request.conversationId;
+  const conversationId = body?.conversationId;
   if (conversationId != null && typeof conversationId !== "string") {
     throw new BadRequestError("conversationId must be a string");
   }
@@ -271,24 +273,6 @@ async function handleSurfaceUndo({ body, pathParams }: RouteHandlerArgs) {
 // Route definitions
 // ---------------------------------------------------------------------------
 
-const surfaceActionRequestSchema = z.object({
-  conversationId: z
-    .string()
-    .describe("Conversation that owns the surface")
-    .optional(),
-  surfaceId: z.string().describe("Surface to act on"),
-  actionId: z.string().describe("Action identifier"),
-  data: z
-    .object({})
-    .passthrough()
-    .describe("Action-specific payload")
-    .optional(),
-});
-
-const surfaceUndoRequestSchema = z.object({
-  conversationId: z.string().describe("Conversation that owns the surface"),
-});
-
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "triggerSurfaceAction",
@@ -302,7 +286,19 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Execute an interactive action on a surface (e.g. button click, form submit).",
     tags: ["surfaces"],
-    requestBody: surfaceActionRequestSchema,
+    requestBody: z.object({
+      conversationId: z
+        .string()
+        .describe("Conversation that owns the surface")
+        .optional(),
+      surfaceId: z.string().describe("Surface to act on"),
+      actionId: z.string().describe("Action identifier"),
+      data: z
+        .object({})
+        .passthrough()
+        .describe("Action-specific payload")
+        .optional(),
+    }),
     responseBody: z.object({
       ok: z.boolean(),
       conversationId: z
@@ -349,7 +345,9 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Undo last surface action",
     description: "Revert the most recent action on a surface.",
     tags: ["surfaces"],
-    requestBody: surfaceUndoRequestSchema,
+    requestBody: z.object({
+      conversationId: z.string().describe("Conversation that owns the surface"),
+    }),
     responseBody: z.object({
       ok: z.boolean(),
     }),
