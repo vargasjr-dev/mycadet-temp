@@ -30,7 +30,7 @@
     "@mycadet/ipc-contract": "workspace:*",
     "@mycadet/local-mode": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
-    "@mycadet/vellum": "0.1.5",
+    "@mycadet/vellum": "0.2.0",
     "electron-store": "11.0.2",
     "jszip": "3.10.1"
   },
