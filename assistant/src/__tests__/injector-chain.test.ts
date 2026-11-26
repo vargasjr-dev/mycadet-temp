@@ -421,10 +421,22 @@ describe("injector chain", () => {
       ...makeTurnContext(),
     });
 
-    expect(result.blocks.injectorChainBlock).toBeUndefined();
-    // Sanity: the message array is untouched when no options fire (no
-    // hardcoded branches apply, and the chain contributed nothing).
-    expect(result.messages).toEqual(runMessages);
+    expect(result.blocks.injectorChainBlock).toBe(
+      buildUnifiedTurnContextBlock({ timestamp: FIXED_TURN_TIMESTAMP }),
+    );
+    // The unified-turn-context block rides along even with no live
+    // conversation (the host-clock fallback — a turn must never go without
+    // a `current_time`, or the model grounds on the stalest block in its
+    // history), so the tail gains exactly that block and nothing else.
+    expect(result.messages).toHaveLength(runMessages.length);
+    const tail = result.messages[result.messages.length - 1]!;
+    expect(tail.role).toBe("user");
+    const tailText = tail.content
+      .filter((block) => block.type === "text")
+      .map((block) => block.text)
+      .join("\n");
+    expect(tailText).toContain("<turn_context>");
+    expect(tailText).toContain("hello");
   });
 
   test("applyRuntimeInjections without turnContext still runs the chain under a synthesized context", async () => {

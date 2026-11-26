@@ -2432,10 +2432,19 @@ export async function applyRuntimeInjections(
   //
   // `current_time` is computed fresh here from those timezone inputs rather
   // than frozen, so every assembly — including post-compaction re-injections
-  // later in a long turn — reflects the current wall clock. The snapshot's
-  // presence gates the block: the timestamp (and therefore the whole
-  // `<turn_context>` injection) is only produced for turns the loop has frozen
-  // a snapshot for.
+  // later in a long turn — reflects the current wall clock.
+  //
+  // The block must never go silent: when the loop has not frozen a snapshot
+  // for this assembly (a conversation evicted from the live registry and
+  // reloaded from the DB, an assembly that runs before the loop's turn-start
+  // freeze, a test-fake registration), emitting nothing leaves the model
+  // grounded on the STALEST `current_time:` line still sitting in its
+  // rehydrated history — observed live as a Tuesday stamp answering a
+  // Thursday question. The historical per-message blocks keep their original
+  // stamps (the compactor anchors on them), so the only defense is a fresh
+  // block on the current turn. The host-clock fallback resolves the timezone
+  // cascade without client input; it is correct even when the client
+  // timezone is unknown.
   const uiConfig = getConfig().ui;
   const configuredUserTimezone = canonicalizeTimeZone(
     uiConfig?.userTimezone ?? null,
@@ -2453,7 +2462,7 @@ export async function applyRuntimeInjections(
         clientTimezone,
         detectedTimezone,
       })
-    : undefined;
+    : formatTurnTimestamp({});
   const timeSinceLastMessage = temporalSnapshot?.timeSinceLastMessage ?? null;
 
   // The `<active_subagents>` status block is sourced from the live
