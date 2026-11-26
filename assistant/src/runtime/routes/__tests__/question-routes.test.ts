@@ -126,9 +126,9 @@ describe("POST /v1/question-response", () => {
     });
 
     expect(result).toEqual({ success: true });
-    expect(resolved[0]).toMatchObject({ overall: "completed" });
     // Entries are ordered to match the original questions array.
-    expect(resolved[0]).toMatchObject({
+    expect(resolved[0]).toEqual({
+      overall: "completed",
       entries: [
         { questionId: "q1", decision: "option", optionId: "alice_work" },
         { questionId: "q2", decision: "option", optionId: "yes" },
