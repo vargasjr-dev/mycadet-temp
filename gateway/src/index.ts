@@ -475,24 +475,10 @@ async function main() {
       }
       // Check that the upstream assistant is also reachable so callers
       // know the full stack is ready, not just the gateway process.
-      //
       // The assistant's readiness body (`ready`, `dbMigrations`) is forwarded
       // so programmatic callers — the upgrade/hatch CLI waits in particular —
       // can distinguish "still migrating" (200, ready:false) from "ready" and
       // detect terminally failed migrations.
-      //
-      // Status-code contract while the gateway's own post-assistant-ready
-      // work is incomplete (every non-probe route 503s "starting"):
-      // - Assistant still migrating (ready:false body): 200. Migrations can
-      //   take minutes and the orchestrator must keep the pod in service —
-      //   the forwarded ready:false body already keeps body-aware CLI waits
-      //   waiting.
-      // - Assistant ready, gateway backfills still running: 503 "starting".
-      //   This window is seconds long, and reporting ready here would let
-      //   the orchestrator route traffic — and CLI waits declare the stack
-      //   ready — while every route still 503s (upgrade would commit early;
-      //   hatch would burn its guardian-lease budget against the closed
-      //   gate).
       try {
         const upstream = await fetch(
           `${config.assistantRuntimeBaseUrl}/readyz`,
