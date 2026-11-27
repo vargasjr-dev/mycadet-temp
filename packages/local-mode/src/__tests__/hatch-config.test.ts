@@ -67,9 +67,22 @@ describe("hatch-config", () => {
     });
   });
 
-  test("buildHatchConfigValues adds the default hatch provider when no config exists", () => {
+  test("buildHatchConfigValues adds the default hatch provider and the client's timezone when no config exists", () => {
     expect(buildHatchConfigValues({}, "anthropic")).toEqual({
       "llm.default.provider": "anthropic",
+      "ui.detectedTimezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+  });
+
+  test("buildHatchConfigValues keeps an explicit ui.detectedTimezone", () => {
+    expect(
+      buildHatchConfigValues(
+        { "ui.detectedTimezone": "Asia/Tokyo" },
+        "anthropic",
+      ),
+    ).toEqual({
+      "llm.default.provider": "anthropic",
+      "ui.detectedTimezone": "Asia/Tokyo",
     });
   });
 
@@ -85,6 +98,7 @@ describe("hatch-config", () => {
     ).toEqual({
       "llm.default.provider": "openai",
       "llm.default.model": "gpt-5.4",
+      "ui.detectedTimezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
   });
 

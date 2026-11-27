@@ -2,10 +2,10 @@
  * Hatch-time config values and their delivery to the assistant.
  *
  * Hatch collects flat dot-notation key=value pairs (plus the onboarding
- * provider) and applies them through the assistant's public config API
- * (`POST /v1/config/set`) after the assistant is up — the same API the web
- * client and `assistant config set` use. There is no side channel: a remote
- * hatch and a local hatch speak the same route.
+ * provider and the client's detected timezone) and applies them through the
+ * assistant's public config API (`POST /v1/config/set`) after the assistant
+ * is up — the same API the web client and `assistant config set` use. There
+ * is no side channel: a remote hatch and a local hatch speak the same route.
  */
 
 /**
@@ -40,20 +40,35 @@ export function buildNestedConfig(
 
 /**
  * Ensure hatch always provides enough initial LLM config for the assistant to
- * detect a fresh off-cloud hatch and seed BYOK profiles.
+ * detect a fresh off-cloud hatch and seed BYOK profiles, and seed the
+ * assistant's home timezone from the hatching client's clock.
+ *
+ * The timezone seed is what keeps zone-less recurring schedules off the
+ * container's host clock (UTC): the scheduler resolves a schedule's zone as
+ * explicit zone → `ui.userTimezone` → `ui.detectedTimezone` → host clock, and
+ * nothing but the web app ever writes the detected tier. Seeding it here pins
+ * the zone ONCE, at creation, from the client doing the hatching —
+ * deliberately a snapshot, not a per-message sync: a schedule defined in EST
+ * must not silently re-anchor when a later message arrives from PST.
  */
 export function buildHatchConfigValues(
   configValues: Record<string, string>,
   provider: string | null | undefined,
 ): Record<string, string> {
-  if (!provider || configValues["llm.default.provider"]) {
+  if (!provider) {
     return configValues;
   }
+  const withProvider = configValues["llm.default.provider"]
+    ? configValues
+    : { ...configValues, "llm.default.provider": provider };
 
-  return {
-    ...configValues,
-    "llm.default.provider": provider,
-  };
+  if (!withProvider["ui.detectedTimezone"]) {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timeZone) {
+      return { ...withProvider, "ui.detectedTimezone": timeZone };
+    }
+  }
+  return withProvider;
 }
 
 export interface ApplyHatchConfigOptions {
