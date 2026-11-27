@@ -75,9 +75,8 @@ export function WebSearchCard() {
         "inference-provider-native",
       );
     }
-    const wsService = daemonConfig.services?.["web-search"] as
-      | { provider?: string; apiBase?: string }
-      | undefined;
+    const wsService: { provider?: string; apiBase?: string } | undefined =
+      daemonConfig.services?.["web-search"];
     return (
       wsService?.provider ||
       getLocalSetting(LS_WEB_SEARCH_PROVIDER, "inference-provider-native")
@@ -85,9 +84,8 @@ export function WebSearchCard() {
   }, [daemonConfig]);
 
   const serverApiBase = useMemo((): string => {
-    const wsService = daemonConfig?.services?.["web-search"] as
-      | { apiBase?: string }
-      | undefined;
+    const wsService: { apiBase?: string } | undefined =
+      daemonConfig?.services?.["web-search"];
     return wsService?.apiBase ?? "";
   }, [daemonConfig]);
 

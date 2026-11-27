@@ -31,7 +31,7 @@ function assistantWithToolCalls(
 }
 
 afterEach(() => {
-  delete window.cadet;
+  delete (window as unknown as { cadet?: unknown }).cadet;
 });
 
 describe("chat utilities", () => {
