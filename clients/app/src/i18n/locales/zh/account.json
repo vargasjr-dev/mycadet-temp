@@ -279,7 +279,12 @@
       "updated": "管理员访问已更新。",
       "updateFailed": "管理员访问更新失败。",
       "notAvailable": "管理员访问仅适用于云端托管的助手。"
-    }
+    },
+    "healthSection": "健康状态",
+    "healthHealthy": "健康",
+    "healthUnhealthy": "异常 — {{detail}}",
+    "healthChecking": "正在检查健康状态...",
+    "healthUnknown": "健康状态未知"
   },
   "vellumMigration": {
     "title": "从 Vellum 导入",

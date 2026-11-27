@@ -1,9 +1,10 @@
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
 import { useParams } from "react-router";
+import { useState } from "react";
 
-import { AssistantBackupsTable } from "@app/domains/account/assistants/assistant-backups-table";
 import { AssistantAdminAccessPanel } from "@app/domains/account/assistants/assistant-admin-access-panel";
+import { AssistantBackupsTable } from "@app/domains/account/assistants/assistant-backups-table";
+import { AssistantHealthBadge } from "@app/domains/account/assistants/assistant-health-badge";
 import { AssistantUpgradesPanel } from "@app/domains/account/assistants/assistant-upgrades-panel";
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
@@ -102,6 +103,12 @@ export function AssistantsPage() {
           )}
           {selected && (
             <>
+              <section>
+                <h3 className="mb-3 text-body-large-default text-[var(--content-default)]">
+                  {t("assistantsPage.healthSection")}
+                </h3>
+                <AssistantHealthBadge assistantId={selected.id} />
+              </section>
               <section>
                 <h3 className="mb-3 text-body-large-default text-[var(--content-default)]">
                   {t("assistantsPage.upgradesSection")}

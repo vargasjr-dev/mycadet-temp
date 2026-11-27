@@ -279,7 +279,12 @@
       "updated": "Acceso de administrador actualizado.",
       "updateFailed": "Error al actualizar el acceso de administrador.",
       "notAvailable": "El acceso de administrador solo aplica a asistentes alojados en la nube."
-    }
+    },
+    "healthSection": "Estado",
+    "healthHealthy": "Saludable",
+    "healthUnhealthy": "Con problemas — {{detail}}",
+    "healthChecking": "Comprobando el estado...",
+    "healthUnknown": "Estado desconocido"
   },
   "vellumMigration": {
     "title": "Importar desde Vellum",

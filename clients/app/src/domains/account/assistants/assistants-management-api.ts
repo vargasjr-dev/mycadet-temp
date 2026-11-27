@@ -176,6 +176,50 @@ export async function restoreAssistantBackup(
   };
 }
 
+/** One assistant's live health verdict — the same checks the cloud admin
+ * console's infra tab runs: the assistant row's status, the node's GCP
+ * state, and the vm gateway's probe. The marker answers "is the vm up";
+ * an unseeded assistant vault still 401s the daemon API while showing
+ * healthy here (the identity binding is a deeper check than this probe). */
+export interface AssistantHealth {
+  ok: boolean;
+  checks: { name: string; ok: boolean; detail: string }[];
+  checkedAt: string;
+}
+
+const HealthSchema = z.object({
+  ok: z.boolean(),
+  checks: z.array(
+    z.object({
+      name: z.string(),
+      ok: z.boolean(),
+      detail: z.string(),
+    }),
+  ),
+  checkedAt: z.string(),
+});
+
+export async function getAssistantHealth(
+  assistantId: string,
+): Promise<ManagementResult<AssistantHealth>> {
+  const result = await dial(
+    scoped(assistantId, "/health"),
+    "Failed to load assistant health.",
+  );
+  if (!result.ok) {
+    return result;
+  }
+  const parsed = HealthSchema.safeParse(result.data);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      status: result.status,
+      error: toErrorObject(parsed.error.message, undefined),
+    };
+  }
+  return { ok: true, status: result.status, data: parsed.data };
+}
+
 export async function fetchRuntimeVersion(
   assistantId: string,
 ): Promise<string | null> {
