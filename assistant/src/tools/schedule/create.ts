@@ -106,9 +106,12 @@ export async function executeScheduleCreate(
   const fireAt = parsed.fire_at;
   // mode / routing_intent / workflow_args (and capabilities, read below) stay
   // raw-input reads: they are undeclared in the schema (see its doc comment).
-  const mode = (input.mode as ScheduleMode | undefined) ?? "execute";
-  const routingIntent =
-    typeof input.routing_intent === "string" ? input.routing_intent : undefined;
+  const mode = VALID_MODES.find(
+    (candidate) => candidate === (input.mode ?? "execute"),
+  );
+  const routingIntent = VALID_ROUTING_INTENTS.find(
+    (candidate) => candidate === input.routing_intent,
+  );
   const routingHints = parsed.routing_hints;
   const quiet = parsed.quiet ?? false;
   const reuseConversation = parsed.reuse_conversation;
@@ -164,7 +167,7 @@ export async function executeScheduleCreate(
   }
 
   // Validate mode
-  if (!VALID_MODES.includes(mode)) {
+  if (mode === undefined) {
     return {
       content: `Error: mode must be one of: ${VALID_MODES.join(", ")}`,
       isError: true,
@@ -220,10 +223,7 @@ export async function executeScheduleCreate(
   }
 
   // Validate routing_intent
-  if (
-    routingIntent !== undefined &&
-    !VALID_ROUTING_INTENTS.includes(routingIntent as RoutingIntent)
-  ) {
+  if (typeof input.routing_intent === "string" && routingIntent === undefined) {
     return {
       content: `Error: routing_intent must be one of: ${VALID_ROUTING_INTENTS.join(", ")}`,
       isError: true,
@@ -269,7 +269,7 @@ export async function executeScheduleCreate(
           expression: null,
           nextRunAt: fireAtMs,
           mode,
-          routingIntent: routingIntent as RoutingIntent | undefined,
+          routingIntent,
           routingHints,
           quiet,
           reuseConversation,
@@ -373,7 +373,7 @@ export async function executeScheduleCreate(
         syntax: resolved.syntax,
         expression: resolved.expression,
         mode,
-        routingIntent: routingIntent as RoutingIntent | undefined,
+        routingIntent,
         routingHints,
         quiet,
         reuseConversation,

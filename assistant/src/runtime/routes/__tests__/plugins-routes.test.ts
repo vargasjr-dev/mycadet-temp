@@ -2775,7 +2775,9 @@ describe("GET /v1/plugins/:name/icon", () => {
 
     // Exact bytes flow through unmodified as an image/png body.
     expect(result).toBeInstanceOf(RouteResponse);
-    expect(Buffer.from(result.body as Uint8Array).equals(bytes)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(result.body)).equals(bytes),
+    ).toBe(true);
     expect(result.headers["Content-Type"]).toBe("image/png");
     expect(result.headers["Content-Length"]).toBe(String(bytes.length));
     // Private immutable cache + nosniff: an authenticated per-workspace

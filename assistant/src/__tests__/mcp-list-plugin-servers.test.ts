@@ -12,10 +12,11 @@
  *    OAuth status is read from the plugin and endpoint-scoped credential
  *    identity, while workspace static headers remain isolated.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, jest, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 const getServerState = jest.fn();
 const hasMcpOAuthTokens = jest.fn(async (target: any) => {
@@ -125,7 +126,27 @@ function unabyssManifest(): unknown {
 }
 
 async function listServers(): Promise<ListedServer[]> {
-  const result = (await listHandler({})) as { servers: ListedServer[] };
+  const result = z
+    .looseObject({
+      servers: z.array(
+        z.looseObject({
+          id: z.string(),
+          status: z.string(),
+          source: z
+            .union([z.literal("plugin"), z.literal("workspace")])
+            .optional(),
+          pluginName: z.string().optional(),
+          hasOAuth: z.boolean(),
+          hasStaticAuth: z.boolean(),
+          authType: z.string(),
+          transport: z.looseObject({
+            type: z.string(),
+            url: z.string().optional(),
+          }),
+        }),
+      ),
+    })
+    .parse(await listHandler({}));
   return result.servers;
 }
 

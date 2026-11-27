@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { RecallSource } from "../api/events/tool-result.js";
-import type { AssistantConfig } from "../config/schema.js";
+import { AssistantConfigSchema } from "../config/schema.js";
 import { formatDeterministicRecallAnswer } from "../plugins/defaults/memory/context-search/format.js";
 import { runDeterministicRecallSearch } from "../plugins/defaults/memory/context-search/search.js";
 import type {
@@ -14,7 +14,7 @@ function makeContext(): RecallSearchContext {
   return {
     workingDir: "/workspace",
     conversationId: "conv-xyz",
-    config: {} as AssistantConfig,
+    config: AssistantConfigSchema.parse({}),
   };
 }
 

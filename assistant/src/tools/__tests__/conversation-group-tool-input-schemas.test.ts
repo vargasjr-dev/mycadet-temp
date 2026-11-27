@@ -7,7 +7,10 @@ import type { z } from "zod";
 import { conversationGroupCreateInputSchema } from "../conversation-groups/group_create.js";
 import { conversationMoveToGroupInputSchema } from "../conversation-groups/move_to_group.js";
 import { toToolInputSchema } from "../shared/zod-tool-schema.js";
-import { expectNoSchemaDrift } from "./tool-schema-drift-harness.js";
+import {
+  expectNoSchemaDrift,
+  toolManifestSchema,
+} from "./tool-schema-drift-harness.js";
 
 /**
  * Drift guard between the conversation-groups skill's hand-written
@@ -17,15 +20,17 @@ import { expectNoSchemaDrift } from "./tool-schema-drift-harness.js";
  * schema, so it has no entry here.
  */
 
-const toolsJson = JSON.parse(
-  readFileSync(
-    join(
-      import.meta.dir,
-      "../../config/bundled-skills/conversation-groups/TOOLS.json",
+const toolsJson = toolManifestSchema.parse(
+  JSON.parse(
+    readFileSync(
+      join(
+        import.meta.dir,
+        "../../config/bundled-skills/conversation-groups/TOOLS.json",
+      ),
+      "utf8",
     ),
-    "utf8",
   ),
-) as Parameters<typeof expectNoSchemaDrift>[1];
+);
 
 const CASES: {
   name: string;

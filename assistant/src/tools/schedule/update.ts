@@ -155,8 +155,8 @@ export async function executeScheduleUpdate(
 
   // Mode validation and pass-through
   if (input.mode !== undefined) {
-    const mode = input.mode as ScheduleMode;
-    if (!VALID_MODES.includes(mode)) {
+    const mode = VALID_MODES.find((candidate) => candidate === input.mode);
+    if (mode === undefined) {
       return {
         content: `Error: mode must be one of: ${VALID_MODES.join(", ")}`,
         isError: true,
@@ -178,8 +178,10 @@ export async function executeScheduleUpdate(
 
   // Routing intent validation and pass-through
   if (input.routing_intent !== undefined) {
-    const routingIntent = input.routing_intent as RoutingIntent;
-    if (!VALID_ROUTING_INTENTS.includes(routingIntent)) {
+    const routingIntent = VALID_ROUTING_INTENTS.find(
+      (candidate) => candidate === input.routing_intent,
+    );
+    if (routingIntent === undefined) {
       return {
         content: `Error: routing_intent must be one of: ${VALID_ROUTING_INTENTS.join(", ")}`,
         isError: true,
@@ -311,11 +313,11 @@ export async function executeScheduleUpdate(
   if (updates.mode !== undefined || updates.workflowName !== undefined) {
     if (existing) {
       const resultingMode =
-        updates.mode !== undefined ? (updates.mode as string) : existing.mode;
+        updates.mode !== undefined ? updates.mode : existing.mode;
       if (resultingMode === "workflow") {
         const resultingWorkflowName =
           updates.workflowName !== undefined
-            ? ((updates.workflowName as string | null) ?? "")
+            ? (updates.workflowName ?? "")
             : (existing.workflowName ?? "");
         if (!resultingWorkflowName) {
           return {
@@ -355,9 +357,10 @@ export async function executeScheduleUpdate(
   const writeOpts = context.signal ? { signal: context.signal } : undefined;
 
   try {
-    const job = isPluginSourced
-      ? await setUserEnabled(jobId, updates.enabled as boolean, writeOpts)
-      : await updateSchedule(jobId, updates, writeOpts);
+    const job =
+      isPluginSourced && parsed.enabled !== undefined
+        ? await setUserEnabled(jobId, parsed.enabled, writeOpts)
+        : await updateSchedule(jobId, updates, writeOpts);
 
     if (!job) {
       return { content: `Error: Schedule not found: ${jobId}`, isError: true };

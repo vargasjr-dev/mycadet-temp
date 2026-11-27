@@ -340,9 +340,11 @@ export function wrapSqliteForSlowQueryLogging(
         if (typeof prop === "string" && TIMED_METHODS.has(prop)) {
           let fn = timed.get(prop);
           if (!fn) {
-            const call = (
-              target as unknown as Record<string, (...a: unknown[]) => unknown>
-            )[prop].bind(target);
+            const method: unknown = Reflect.get(target, prop, target);
+            if (typeof method !== "function") {
+              return method;
+            }
+            const call = method.bind(target);
             fn = (...args: unknown[]): unknown => {
               if (timing) {
                 return call(...args);
@@ -377,10 +379,8 @@ export function wrapSqliteForSlowQueryLogging(
         // Everything else (columnNames, paramsCount, finalize, toString, …)
         // passes straight through, bound to the real statement so native
         // methods keep their `this`.
-        const value = Reflect.get(target, prop, target);
-        return typeof value === "function"
-          ? (value as (...a: unknown[]) => unknown).bind(target)
-          : value;
+        const value: unknown = Reflect.get(target, prop, target);
+        return typeof value === "function" ? value.bind(target) : value;
       },
     });
 

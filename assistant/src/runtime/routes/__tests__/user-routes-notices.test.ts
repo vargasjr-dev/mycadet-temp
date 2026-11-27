@@ -60,11 +60,6 @@ export const PATCH = echo;
 export const DELETE = echo;
 `;
 
-interface EchoBody {
-  pathname: string;
-  principalType: string | null;
-}
-
 function context(
   principalType: AuthContext["principalType"],
   scopeProfile: ScopeProfile,
@@ -249,7 +244,12 @@ describe("plugin notice routes", () => {
       body: {},
     });
     expect(response.status).toBe(200);
-    const body = (await new Response(response.body).json()) as EchoBody;
+    const body = z
+      .looseObject({
+        pathname: z.string(),
+        principalType: z.union([z.null(), z.string()]),
+      })
+      .parse(await new Response(response.body).json());
     expect(body.pathname).toBe(`/v1/${NOTICE_ENDPOINT}`);
     expect(body.principalType).toBe("svc_gateway");
   });

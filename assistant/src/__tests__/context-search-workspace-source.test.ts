@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import type { AssistantConfig } from "../config/schema.js";
+import { AssistantConfigSchema } from "../config/schema.js";
 import {
   inspectWorkspacePaths,
   searchWorkspaceSource,
@@ -39,7 +39,7 @@ function makeContext(workingDir: string): RecallSearchContext {
   return {
     workingDir,
     conversationId: "conversation-123",
-    config: {} as AssistantConfig,
+    config: AssistantConfigSchema.parse({}),
   };
 }
 

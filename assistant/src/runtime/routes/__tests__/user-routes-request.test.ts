@@ -13,10 +13,11 @@
  * workspace code, while the identity the handler has always seen, and every
  * other header, still reaches it.
  */
-
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { getWorkspaceRoutesDir } from "../../../util/layout.js";
 import type { RouteHandlerArgs, RouteResponse } from "../types.js";
@@ -62,7 +63,17 @@ const IDENTITY_HEADERS_IN: Record<string, string> = {
 async function echo(args: RouteHandlerArgs): Promise<EchoBody> {
   const response = await getHandler(args);
   expect(response.status).toBe(200);
-  return (await new Response(response.body).json()) as EchoBody;
+  return z
+    .looseObject({
+      origin: z.string(),
+      pathname: z.string(),
+      tags: z.array(z.string()),
+      subject: z.union([z.null(), z.string()]),
+      principalType: z.union([z.null(), z.string()]),
+      actorPrincipalId: z.union([z.null(), z.string()]),
+      clientId: z.union([z.null(), z.string()]),
+    })
+    .parse(await new Response(response.body).json());
 }
 
 beforeEach(() => {

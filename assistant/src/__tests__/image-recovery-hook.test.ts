@@ -19,7 +19,6 @@
  * Uses the real SQLite DB wired up via `test-preload.ts` (per-file temp
  * workspace) so the durable-persist leg exercises the same path production does.
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { PluginLogger } from "../hooks/types.js";
@@ -171,6 +170,13 @@ function makePostModelCallCtx(
   };
 }
 
+function requireImageBlock(block: ContentBlock | string | undefined) {
+  if (typeof block === "string" || block?.type !== "image") {
+    throw new TypeError("Expected an image content block");
+  }
+  return block;
+}
+
 describe("image-recovery post-model-call hook — direct", () => {
   beforeEach(() => {
     resetImageRecoveryStoreForTests();
@@ -267,18 +273,12 @@ describe("image-recovery post-model-call hook — direct", () => {
     // kept — both in the working history and in the stored row, so the
     // mismatch cannot re-reject on this or any later turn.
     expect(ctx.decision).toBe("continue");
-    const workingImage = ctx.messages[0].content[0] as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const workingImage = requireImageBlock(ctx.messages[0].content[0]);
     expect(workingImage.source).toMatchObject({
       media_type: "image/png",
       data: pngData,
     });
-    const storedImage = getMessages(conv.id)[0].content[0] as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const storedImage = requireImageBlock(getMessages(conv.id)[0].content[0]);
     expect(storedImage.source).toMatchObject({
       media_type: "image/png",
       data: pngData,
@@ -312,10 +312,7 @@ describe("image-recovery post-model-call hook — direct", () => {
     // "corrected — resend" loop.
     expect(ctx.decision).toBe("stop");
     expect(isImageRecoveryAttempted(ctx.conversationId)).toBe(false);
-    const image = ctx.messages[0].content[0] as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const image = requireImageBlock(ctx.messages[0].content[0]);
     expect(image.source).toMatchObject({
       media_type: "image/png",
       data: bmpData,

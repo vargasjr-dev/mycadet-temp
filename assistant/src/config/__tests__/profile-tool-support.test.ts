@@ -2,13 +2,14 @@ import { describe, expect, test } from "bun:test";
 
 import { profileSupportsTools } from "../profile-tool-support.js";
 import type { AssistantConfig } from "../schema.js";
+import { AssistantConfigSchema } from "../schema.js";
 import { LLMSchema } from "../schemas/llm.js";
 
 /** An `AssistantConfig` carrying nothing the profile lookup does not read. */
 function configWithProfiles(
   profiles: Record<string, Record<string, unknown>>,
 ): AssistantConfig {
-  return { llm: LLMSchema.parse({ profiles }) } as AssistantConfig;
+  return AssistantConfigSchema.parse({ llm: LLMSchema.parse({ profiles }) });
 }
 
 describe("profileSupportsTools", () => {

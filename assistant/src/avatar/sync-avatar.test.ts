@@ -24,6 +24,7 @@ import {
 
 import { AvatarState } from "@mycadet/avatar-manifest";
 import { NOTIFICATION_AVATAR_SPEC_VERSION } from "@mycadet/avatar-manifest/notification-avatar";
+import { z } from "zod";
 
 import * as realCloudClient from "../cloud/client.js";
 import * as realAvatarManifest from "./avatar-manifest.js";
@@ -227,7 +228,7 @@ function makeClient(assistantId = "asst-1", baseUrl = "https://platform.a") {
     baseUrl,
     cloudAssistantId: assistantId,
     fetch: async (path: string, init: RequestInit) => {
-      patches.push({ path, body: JSON.parse(init.body as string) });
+      patches.push({ path, body: JSON.parse(z.string().parse(init.body)) });
       return respond();
     },
   };

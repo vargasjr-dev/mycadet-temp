@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { referenceMediaBlocksForPersist } from "../daemon/persist-media-references.js";
 import { getAttachmentsForMessage } from "../persistence/attachments-store.js";
 import {
@@ -61,10 +63,29 @@ describe("referenceMediaBlocksForPersist", () => {
       ContentBlock,
       { type: "tool_result" }
     >;
-    const nested = toolResult.contentBlocks![0] as Extract<
-      ContentBlock,
-      { type: "image" }
-    >;
+    const nested = z
+      .looseObject({
+        type: z.literal("image"),
+        source: z.union([
+          z.looseObject({
+            type: z.literal("base64"),
+            media_type: z.string(),
+            data: z.string(),
+            filename: z.string().optional(),
+          }),
+          z.looseObject({
+            type: z.literal("workspace_ref"),
+            media_type: z.string(),
+            attachmentId: z.string(),
+            sizeBytes: z.number(),
+            filename: z.string().optional(),
+            width: z.number().optional(),
+            height: z.number().optional(),
+          }),
+        ]),
+        _attachmentId: z.string().optional(),
+      })
+      .parse(toolResult.contentBlocks![0]);
     expect(nested.source.type).toBe("workspace_ref");
     expect(JSON.stringify(referenced)).not.toContain(IMAGE_B64);
 

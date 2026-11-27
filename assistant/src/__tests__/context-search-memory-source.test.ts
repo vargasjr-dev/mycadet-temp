@@ -368,7 +368,7 @@ function makeContext(
   return {
     workingDir: "/tmp/example-workspace",
     conversationId: "conv-123",
-    config: { memory: { v2: { enabled: false } } } as AssistantConfig,
+    config: AssistantConfigSchema.parse({ memory: { v2: { enabled: false } } }),
     ...overrides,
   };
 }

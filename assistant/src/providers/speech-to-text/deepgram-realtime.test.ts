@@ -1347,7 +1347,7 @@ describe("DeepgramRealtimeTranscriber", () => {
 
       transcriber.stop();
       const textMessages = mockWs.sentData.filter((d) => typeof d === "string");
-      expect(JSON.parse(textMessages.at(-1) as string)).toEqual({
+      expect(JSON.parse(z.string().parse(textMessages.at(-1)))).toEqual({
         type: "CloseStream",
       });
       mockWs.simulateClose(1000, "normal");
@@ -1397,7 +1397,9 @@ describe("DeepgramRealtimeTranscriber", () => {
     expect(mockWs.sentData).toHaveLength(1);
     const sent = mockWs.sentData[0];
     expect(sent).toBeInstanceOf(Uint8Array);
-    expect(Buffer.from(sent as Uint8Array).toString()).toBe("raw-pcm-data");
+    expect(Buffer.from(z.instanceof(Uint8Array).parse(sent)).toString()).toBe(
+      "raw-pcm-data",
+    );
   });
 
   test("sendAudio drops frames when backpressure is high", async () => {

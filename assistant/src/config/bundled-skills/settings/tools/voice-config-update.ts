@@ -4,8 +4,10 @@ import {
   DEEPGRAM_MULTI_LANGUAGE_CODES,
   DEEPGRAM_NOVA3_MONOLINGUAL_CODES,
 } from "../../../../providers/speech-to-text/deepgram.js";
-import { listProviderModelFamilies } from "../../../../providers/speech-to-text/provider-catalog.js";
-import type { SttProviderId } from "../../../../stt/types.js";
+import {
+  listProviderIds,
+  listProviderModelFamilies,
+} from "../../../../providers/speech-to-text/provider-catalog.js";
 import type {
   ToolContext,
   ToolExecutionResult,
@@ -58,7 +60,12 @@ const VOICE_SETTINGS = {
 type VoiceSettingName = keyof typeof VOICE_SETTINGS;
 
 /** Exported so tests can assert parity with the TOOLS.json `setting` enum. */
-export const VALID_SETTINGS = Object.keys(VOICE_SETTINGS) as VoiceSettingName[];
+export const VALID_SETTINGS =
+  Object.keys(VOICE_SETTINGS).filter(isVoiceSettingName);
+
+function isVoiceSettingName(setting: string): setting is VoiceSettingName {
+  return Object.hasOwn(VOICE_SETTINGS, setting);
+}
 
 const VALID_TIMEOUTS: readonly number[] = VALID_CONVERSATION_TIMEOUTS;
 
@@ -196,22 +203,13 @@ const STT_LANGUAGE_ALIASES: Record<
 };
 
 function validateSetting(
-  setting: string,
+  setting: VoiceSettingName,
   value: unknown,
   activeTtsProviderId?: string,
   activeSttProviderId?: string,
 ):
   | { ok: true; coerced: string | boolean | number }
   | { ok: false; error: string } {
-  if (!VALID_SETTINGS.includes(setting as VoiceSettingName)) {
-    return {
-      ok: false,
-      error: `Unknown setting "${setting}". Valid settings: ${VALID_SETTINGS.join(
-        ", ",
-      )}`,
-    };
-  }
-
   switch (setting) {
     case "activation_key": {
       if (typeof value !== "string" || value.length === 0) {
@@ -302,9 +300,10 @@ function validateSetting(
       return { ok: true, coerced: coercedStt };
     }
     case "stt_model": {
-      const families = listProviderModelFamilies(
-        (activeSttProviderId ?? "") as SttProviderId,
+      const provider = listProviderIds().find(
+        (id) => id === activeSttProviderId,
       );
+      const families = provider ? listProviderModelFamilies(provider) : [];
       if (families.length === 0) {
         return {
           ok: false,
@@ -312,7 +311,7 @@ function validateSetting(
         };
       }
       const normalized = typeof value === "string" ? value.trim() : "";
-      if (!families.includes(normalized as never)) {
+      if (!families.some((family) => family === normalized)) {
         return {
           ok: false,
           error: `stt_model must be one of: ${families.join(", ")}`,
@@ -444,6 +443,12 @@ export async function run(
       ? getConfig().services.stt.provider
       : undefined;
 
+  if (!isVoiceSettingName(setting)) {
+    return {
+      content: `Error: Unknown setting "${setting}". Valid settings: ${VALID_SETTINGS.join(", ")}`,
+      isError: true,
+    };
+  }
   const validation = validateSetting(
     setting,
     value,
@@ -458,11 +463,11 @@ export async function run(
   // broadcast and config write below are what the user would notice.
   throwIfCancelled(context);
 
-  const meta: VoiceSettingMeta = VOICE_SETTINGS[setting as VoiceSettingName];
+  const meta: VoiceSettingMeta = VOICE_SETTINGS[setting];
   const friendlyName =
     setting === "tts_voice_id"
       ? ttsVoiceFieldFor(activeTtsProviderId).label
-      : FRIENDLY_NAMES[setting as VoiceSettingName];
+      : FRIENDLY_NAMES[setting];
 
   // The `ttsVoiceId` UserDefaults key is an ElevenLabs concept on the desktop
   // client. A managed (cadet) or other-provider voice lives only in daemon

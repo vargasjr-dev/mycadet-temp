@@ -12,6 +12,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { RelationshipStateSchema } from "../../api/responses/home.js";
+
 // Stub the OAuth connection store so the writer runs without a
 // database. Tests push provider rows into `fakeConnections` before
 // invoking the writer.
@@ -54,32 +56,6 @@ const {
   writeOnboardingSidecar,
   writeRelationshipState,
 } = await import("../relationship-state-writer.js");
-
-type RelationshipStateLike = {
-  version: number;
-  assistantId: string;
-  tier: number;
-  progressPercent: number;
-  facts: Array<{
-    id: string;
-    category: string;
-    text: string;
-    confidence: string;
-    source: string;
-  }>;
-  capabilities: Array<{
-    id: string;
-    name: string;
-    description: string;
-    tier: string;
-    gate: string;
-  }>;
-  conversationCount: number;
-  hatchedDate: string;
-  assistantName: string;
-  userName?: string;
-  updatedAt: string;
-};
 
 // Per CI gotchas: each test gets its own temp workspace dir to avoid
 // `.git/index.lock` style races on shared tmp paths.
@@ -343,9 +319,9 @@ describe("relationship-state-writer", () => {
       const path = getRelationshipStatePath();
       expect(existsSync(path)).toBe(true);
 
-      const decoded = JSON.parse(
-        readFileSync(path, "utf-8"),
-      ) as RelationshipStateLike;
+      const decoded = RelationshipStateSchema.parse(
+        JSON.parse(readFileSync(path, "utf-8")),
+      );
       expect(decoded.version).toBe(1);
       expect(decoded.assistantId).toBe("default");
       expect(decoded.conversationCount).toBe(3);
@@ -376,9 +352,9 @@ describe("relationship-state-writer", () => {
       await backfillRelationshipStateIfMissing();
 
       expect(existsSync(path)).toBe(true);
-      const decoded = JSON.parse(
-        readFileSync(path, "utf-8"),
-      ) as RelationshipStateLike;
+      const decoded = RelationshipStateSchema.parse(
+        JSON.parse(readFileSync(path, "utf-8")),
+      );
       expect(decoded.version).toBe(1);
       expect(decoded.assistantId).toBe("default");
       expect(decoded.conversationCount).toBe(2);
@@ -397,7 +373,7 @@ describe("relationship-state-writer", () => {
       const path = getRelationshipStatePath();
       expect(existsSync(path)).toBe(true);
       const firstRaw = readFileSync(path, "utf-8");
-      const firstDecoded = JSON.parse(firstRaw) as RelationshipStateLike;
+      const firstDecoded = RelationshipStateSchema.parse(JSON.parse(firstRaw));
 
       // Wait long enough that any regression which re-writes the file
       // would produce a visibly different `updatedAt`.
@@ -407,7 +383,9 @@ describe("relationship-state-writer", () => {
 
       const secondRaw = readFileSync(path, "utf-8");
       expect(secondRaw).toBe(firstRaw);
-      const secondDecoded = JSON.parse(secondRaw) as RelationshipStateLike;
+      const secondDecoded = RelationshipStateSchema.parse(
+        JSON.parse(secondRaw),
+      );
       expect(secondDecoded.updatedAt).toBe(firstDecoded.updatedAt);
     });
   });
@@ -561,9 +539,9 @@ describe("relationship-state-writer", () => {
 
       // The file must exist and parse cleanly.
       expect(existsSync(path)).toBe(true);
-      const decoded = JSON.parse(
-        origRead(path, "utf-8"),
-      ) as RelationshipStateLike;
+      const decoded = RelationshipStateSchema.parse(
+        JSON.parse(origRead(path, "utf-8")),
+      );
       expect(decoded.version).toBe(1);
       expect(decoded.userName).toBe("Concurrent");
       updatedAtSeen.add(decoded.updatedAt);

@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   addMessage,
   createConversation,
@@ -30,20 +32,6 @@ const READ_ONLY_HEADERS = {
   "x-cadet-subject": "actor:self:fork-route-read-only",
   "x-cadet-principal-type": "actor",
   "x-cadet-scope-profile": "ui_page_v1",
-};
-
-type ConversationSummary = {
-  id: string;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-  conversationType: string;
-  source: string;
-  forkParent?: {
-    conversationId: string;
-    messageId: string;
-    title: string;
-  };
 };
 
 describe("POST /v1/conversations/fork", () => {
@@ -84,9 +72,25 @@ describe("POST /v1/conversations/fork", () => {
     });
 
     expect(forkResponse.status).toBe(200);
-    const forkBody = (await forkResponse.json()) as {
-      conversation: ConversationSummary;
-    };
+    const forkBody = z
+      .looseObject({
+        conversation: z.looseObject({
+          id: z.string(),
+          title: z.string(),
+          createdAt: z.number(),
+          updatedAt: z.number(),
+          conversationType: z.string(),
+          source: z.string(),
+          forkParent: z
+            .looseObject({
+              conversationId: z.string(),
+              messageId: z.string(),
+              title: z.string(),
+            })
+            .optional(),
+        }),
+      })
+      .parse(await forkResponse.json());
 
     expect(forkBody.conversation).toMatchObject({
       title: "Roadmap draft (Fork)",
@@ -104,9 +108,25 @@ describe("POST /v1/conversations/fork", () => {
       { headers: AUTH_HEADERS },
     );
     expect(detailResponse.status).toBe(200);
-    const detailBody = (await detailResponse.json()) as {
-      conversation: ConversationSummary;
-    };
+    const detailBody = z
+      .looseObject({
+        conversation: z.looseObject({
+          id: z.string(),
+          title: z.string(),
+          createdAt: z.number(),
+          updatedAt: z.number(),
+          conversationType: z.string(),
+          source: z.string(),
+          forkParent: z
+            .looseObject({
+              conversationId: z.string(),
+              messageId: z.string(),
+              title: z.string(),
+            })
+            .optional(),
+        }),
+      })
+      .parse(await detailResponse.json());
 
     expect(forkBody).toEqual(detailBody);
   });

@@ -369,7 +369,7 @@ describe("sendDiscordAttachments", () => {
     // Files ride as `files[n]`, with the JSON body moved to `payload_json`
     // and each file declared in `attachments` keyed by the same n.
     expect(form.get("files[0]")).toBeInstanceOf(Blob);
-    const payload = JSON.parse(form.get("payload_json") as string);
+    const payload = JSON.parse(z.string().parse(form.get("payload_json")));
     expect(payload.attachments).toEqual([{ id: 0, filename: "report.pdf" }]);
     expect(payload.allowed_mentions).toEqual({ parse: ["users"] });
 

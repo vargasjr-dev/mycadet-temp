@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { stripOrphanedSurrogates } from "../../../util/unicode.js";
 import type { XaiTtsSocketOptions } from "../xai-tts-socket.js";
 import { synthesizeOverXaiTtsSocket } from "../xai-tts-socket.js";
@@ -147,7 +149,7 @@ describe("synthesizeOverXaiTtsSocket", () => {
 
   /** Frames sent by the session, parsed as JSON. */
   function sentFrames(): { type?: string; delta?: string }[] {
-    return mockWs.sentData.map((d) => JSON.parse(d as string));
+    return mockWs.sentData.map((d) => JSON.parse(z.string().parse(d)));
   }
 
   // ── Connect + text framing ─────────────────────────────────────────

@@ -4,7 +4,6 @@
  * Shared ROUTES (13 routes) are served by both the HTTP server and IPC.
  * Routes requiring authContext remain HTTP-only via skillHttpOnlyRouteDefinitions().
  */
-
 import { z } from "zod";
 
 import {
@@ -29,6 +28,7 @@ import {
 } from "../../daemon/handlers/skills.js";
 import { getCategories } from "../../skills/categories-cache.js";
 import { getSkillHistory } from "../../skills/skill-history.js";
+import { isPlainObject } from "../../util/object.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, InternalError, NotFoundError } from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
@@ -488,10 +488,23 @@ export const ROUTES: RouteDefinition[] = [
     }),
     responseBody: z.object({ ok: z.boolean() }),
     handler: ({ pathParams, body = {} }: RouteHandlerArgs) => {
+      const env = z
+        .record(z.string(), z.string())
+        .optional()
+        .safeParse(body.env);
+      if (!env.success) {
+        throw new BadRequestError("env must be an object of string values");
+      }
+      if (body.apiKey !== undefined && typeof body.apiKey !== "string") {
+        throw new BadRequestError("apiKey must be a string");
+      }
+      if (body.config !== undefined && !isPlainObject(body.config)) {
+        throw new BadRequestError("config must be an object");
+      }
       const result = configureSkill(pathParams!.id, {
-        env: body.env as Record<string, string> | undefined,
-        apiKey: body.apiKey as string | undefined,
-        config: body.config as Record<string, unknown> | undefined,
+        env: env.data,
+        apiKey: body.apiKey,
+        config: body.config,
       });
       if (!result.success) {
         throw new InternalError(result.error);
@@ -776,11 +789,17 @@ export const ROUTES: RouteDefinition[] = [
     responseBody: z.object({ ok: z.boolean() }),
     responseStatus: "201",
     handler: async ({ body = {} }: RouteHandlerArgs) => {
-      const { skillId, name, description, bodyMarkdown } = body as Record<
-        string,
-        string
-      >;
-      if (!skillId || !name || !description || !bodyMarkdown) {
+      const { skillId, name, description, bodyMarkdown } = body;
+      if (
+        typeof skillId !== "string" ||
+        !skillId ||
+        typeof name !== "string" ||
+        !name ||
+        typeof description !== "string" ||
+        !description ||
+        typeof bodyMarkdown !== "string" ||
+        !bodyMarkdown
+      ) {
         throw new BadRequestError(
           "skillId, name, description, and bodyMarkdown are required",
         );

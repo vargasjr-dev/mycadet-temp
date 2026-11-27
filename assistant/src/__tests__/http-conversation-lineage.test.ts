@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 process.env.DISABLE_HTTP_AUTH = "true";
 
 import {
@@ -15,17 +17,19 @@ import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
 
-type ConversationSummary = {
-  id: string;
-  title: string;
-  displayOrder?: number | null;
-  isPinned?: boolean;
-  forkParent?: {
-    conversationId: string;
-    messageId: string;
-    title: string;
-  };
-};
+const conversationSummarySchema = z.looseObject({
+  id: z.string(),
+  title: z.string(),
+  displayOrder: z.union([z.null(), z.number()]).optional(),
+  isPinned: z.boolean().optional(),
+  forkParent: z
+    .looseObject({
+      conversationId: z.string(),
+      messageId: z.string(),
+      title: z.string(),
+    })
+    .optional(),
+});
 
 describe("conversation lineage in HTTP reads", () => {
   let server: RuntimeHttpServer | null = null;
@@ -48,10 +52,12 @@ describe("conversation lineage in HTTP reads", () => {
     const response = await fetch(url("/conversations"));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversations: ConversationSummary[];
-      hasMore: boolean;
-    };
+    const body = z
+      .looseObject({
+        conversations: z.array(conversationSummarySchema),
+        hasMore: z.boolean(),
+      })
+      .parse(await response.json());
     const listedChild = body.conversations.find((item) => item.id === child.id);
 
     expect(listedChild).toMatchObject({
@@ -73,9 +79,11 @@ describe("conversation lineage in HTTP reads", () => {
     const response = await fetch(url(`/conversations/${child.id}`));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversation: ConversationSummary;
-    };
+    const body = z
+      .looseObject({
+        conversation: conversationSummarySchema,
+      })
+      .parse(await response.json());
 
     expect(body.conversation).toMatchObject({
       id: child.id,
@@ -96,9 +104,11 @@ describe("conversation lineage in HTTP reads", () => {
     const response = await fetch(url(`/conversations/${conversation.id}`));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversation: ConversationSummary;
-    };
+    const body = z
+      .looseObject({
+        conversation: conversationSummarySchema,
+      })
+      .parse(await response.json());
 
     expect(body.conversation).toMatchObject({
       id: conversation.id,
@@ -117,9 +127,11 @@ describe("conversation lineage in HTTP reads", () => {
     const response = await fetch(url(`/conversations/${child.id}`));
     expect(response.status).toBe(200);
 
-    const body = (await response.json()) as {
-      conversation: ConversationSummary;
-    };
+    const body = z
+      .looseObject({
+        conversation: conversationSummarySchema,
+      })
+      .parse(await response.json());
 
     expect(body.conversation.forkParent).toEqual({
       conversationId: parent.id,
@@ -139,9 +151,11 @@ describe("conversation lineage in HTTP reads", () => {
 
     const listResponse = await fetch(url("/conversations"));
     expect(listResponse.status).toBe(200);
-    const listBody = (await listResponse.json()) as {
-      conversations: ConversationSummary[];
-    };
+    const listBody = z
+      .looseObject({
+        conversations: z.array(conversationSummarySchema),
+      })
+      .parse(await listResponse.json());
     const listedChild = listBody.conversations.find(
       (item) => item.id === child.id,
     );
@@ -150,9 +164,11 @@ describe("conversation lineage in HTTP reads", () => {
 
     const detailResponse = await fetch(url(`/conversations/${child.id}`));
     expect(detailResponse.status).toBe(200);
-    const detailBody = (await detailResponse.json()) as {
-      conversation: ConversationSummary;
-    };
+    const detailBody = z
+      .looseObject({
+        conversation: conversationSummarySchema,
+      })
+      .parse(await detailResponse.json());
     expect(detailBody.conversation.forkParent).toBeUndefined();
   });
 

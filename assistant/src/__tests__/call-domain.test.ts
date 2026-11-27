@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { AssistantConfigSchema } from "../config/schema.js";
 import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // Track whether the Twilio provider's initiateCall should succeed or throw
@@ -190,14 +191,14 @@ function makeConfig(
     userNumber?: string;
   } = {},
 ): AssistantConfig {
-  return {
+  return AssistantConfigSchema.parse({
     calls: {
       callerIdentity: {
         allowPerCallOverride: overrides.allowPerCallOverride ?? true,
         userNumber: overrides.userNumber,
       },
     },
-  } as unknown as AssistantConfig;
+  });
 }
 
 describe("resolveCallerIdentity — strict implicit-default policy", () => {

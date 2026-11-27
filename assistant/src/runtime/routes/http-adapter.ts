@@ -2,8 +2,8 @@
  * Adapts transport-agnostic RouteDefinitions into HTTPRouteDefinitions
  * for the HTTP server's route table.
  */
-
 import { mapGatewayIpcConnectError } from "../../ipc/gateway-ipc-errors.js";
+import { isObjectRecord } from "../../util/object.js";
 import { requireBoundGuardian } from "../auth/require-bound-guardian.js";
 import type { HttpErrorCode } from "../http-errors.js";
 import { httpError } from "../http-errors.js";
@@ -94,8 +94,8 @@ export function routeDefinitionsToHTTPRoutes(
             contentType === ""
           ) {
             try {
-              const parsed = (await req.json()) as Record<string, unknown>;
-              if (parsed && typeof parsed === "object") {
+              const parsed = await req.json();
+              if (isObjectRecord(parsed)) {
                 body = parsed;
               }
             } catch {

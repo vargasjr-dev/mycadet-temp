@@ -3,11 +3,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import type { SkillSummary } from "../config/skills.js";
-import type {
-  Message,
-  ToolResultContent,
-  ToolUseContent,
-} from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import type { SkillInstallMeta } from "../skills/install-meta.js";
 import { RiskLevel } from "../tools/tool-types.js";
 import { ToolDefinition } from "../tools/tool-types.js";
@@ -2688,11 +2684,15 @@ describe("skill load harness", () => {
     expect(history[0].role).toBe("assistant");
     expect(history[1].role).toBe("user");
     // Verify tool_use block
-    const toolUse = history[0].content[0] as ToolUseContent;
+    const toolUse = z
+      .looseObject({ type: z.literal("tool_use"), name: z.string() })
+      .parse(history[0].content[0]);
     expect(toolUse.type).toBe("tool_use");
     expect(toolUse.name).toBe("skill_load");
     // Verify tool_result has marker
-    const toolResult = history[1].content[0] as ToolResultContent;
+    const toolResult = z
+      .looseObject({ type: z.literal("tool_result"), content: z.string() })
+      .parse(history[1].content[0]);
     expect(toolResult.type).toBe("tool_result");
     expect(toolResult.content).toContain(
       '<loaded_skill id="browser" version="v1:abc123" />',

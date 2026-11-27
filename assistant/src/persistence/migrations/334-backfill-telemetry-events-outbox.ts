@@ -225,15 +225,12 @@ function selectUnshippedRows(
   spec: LegacyBackfillSpec,
 ): LegacyRow[] {
   const keyPrefix = `telemetry:${spec.sourceId}:last_reported`;
-  const checkpoint = raw.query(
+  const checkpoint = raw.query<{ value: string }, [string]>(
     /*sql*/ `SELECT value FROM ${getTableName(flushCheckpoints)} WHERE key = ?`,
   );
-  const atValue = (
-    checkpoint.get(`${keyPrefix}_at`) as { value: string } | null
-  )?.value;
+  const atValue = checkpoint.get(`${keyPrefix}_at`)?.value;
   const at = atValue != null ? Number(atValue) : null;
-  const id = (checkpoint.get(`${keyPrefix}_id`) as { value: string } | null)
-    ?.value;
+  const id = checkpoint.get(`${keyPrefix}_id`)?.value;
 
   const base = /*sql*/ `SELECT * FROM ${spec.table}`;
   const order = /*sql*/ ` ORDER BY created_at, id`;

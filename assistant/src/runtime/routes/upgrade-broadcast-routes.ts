@@ -18,13 +18,10 @@ async function handleUpgradeBroadcast({ body }: RouteHandlerArgs) {
     throw new BadRequestError("Request body must be a JSON object");
   }
 
-  const { type } = body as { type?: unknown };
+  const { type } = body;
 
   if (type === "starting") {
-    const { targetVersion, expectedDowntimeSeconds } = body as {
-      targetVersion?: unknown;
-      expectedDowntimeSeconds?: unknown;
-    };
+    const { targetVersion, expectedDowntimeSeconds } = body;
 
     if (typeof targetVersion !== "string" || targetVersion.length === 0) {
       throw new BadRequestError(
@@ -53,7 +50,7 @@ async function handleUpgradeBroadcast({ body }: RouteHandlerArgs) {
   }
 
   if (type === "progress") {
-    const { statusMessage } = body as { statusMessage?: unknown };
+    const { statusMessage } = body;
 
     if (typeof statusMessage !== "string" || statusMessage.length === 0) {
       throw new BadRequestError(
@@ -72,11 +69,7 @@ async function handleUpgradeBroadcast({ body }: RouteHandlerArgs) {
   }
 
   if (type === "complete") {
-    const { installedVersion, success, rolledBackToVersion } = body as {
-      installedVersion?: unknown;
-      success?: unknown;
-      rolledBackToVersion?: unknown;
-    };
+    const { installedVersion, success, rolledBackToVersion } = body;
 
     if (typeof installedVersion !== "string" || installedVersion.length === 0) {
       throw new BadRequestError(

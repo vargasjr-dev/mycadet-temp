@@ -38,6 +38,7 @@ import {
   getWorkspaceSkillsDir,
 } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import {
   hasPluginManifest,
   readPluginManifest,
@@ -258,8 +259,7 @@ export function parseFrontmatter(
   // metadata is already a parsed object from YAML — validate with Zod schema
   let icon: string | undefined;
   let emoji: string | undefined;
-  let parsedMeta: z.infer<typeof SkillMetadataSchema> | undefined;
-  let cadetMeta: z.infer<typeof CadetMetadataSchema> | undefined;
+  let cadetMeta: Record<string, unknown> | undefined;
 
   const metadataRaw = fields.metadata;
   if (metadataRaw != null) {
@@ -270,13 +270,13 @@ export function parseFrontmatter(
         { skillFilePath },
         "Metadata must be a YAML object, not a string; ignoring metadata field",
       );
-    } else if (typeof metadataRaw === "object") {
+    } else if (isObjectRecord(metadataRaw)) {
       const zodResult = SkillMetadataSchema.safeParse(metadataRaw);
       if (zodResult.success) {
-        parsedMeta = zodResult.data;
+        const parsedMeta = zodResult.data;
         cadetMeta = parsedMeta.cadet;
         icon = parsedMeta.icon;
-        emoji = cadetMeta?.emoji ?? parsedMeta.emoji;
+        emoji = parsedMeta.cadet?.emoji ?? parsedMeta.emoji;
       } else {
         // Zod validation failed — fall back to raw parsed object so we don't
         // lose all metadata because of a single bad field value.  We coerce
@@ -286,18 +286,14 @@ export function parseFrontmatter(
           { err: zodResult.error, skillFilePath },
           "Metadata failed schema validation; falling back to raw object",
         );
-        const raw = metadataRaw as Record<string, unknown>;
-        parsedMeta = raw;
-        cadetMeta = raw?.cadet as z.infer<typeof CadetMetadataSchema>;
-        if (typeof parsedMeta?.icon === "string") {
-          icon = parsedMeta.icon;
-        }
-        if (cadetMeta && typeof cadetMeta === "object") {
-          emoji =
-            typeof cadetMeta.emoji === "string" ? cadetMeta.emoji : undefined;
-        }
-        if (!emoji && typeof parsedMeta?.emoji === "string") {
-          emoji = parsedMeta.emoji;
+        const rawCadetMeta = metadataRaw.cadet;
+        cadetMeta = isObjectRecord(rawCadetMeta) ? rawCadetMeta : undefined;
+        icon =
+          typeof metadataRaw.icon === "string" ? metadataRaw.icon : undefined;
+        emoji =
+          typeof cadetMeta?.emoji === "string" ? cadetMeta.emoji : undefined;
+        if (!emoji && typeof metadataRaw.emoji === "string") {
+          emoji = metadataRaw.emoji;
         }
       }
     }
@@ -1193,7 +1189,7 @@ export function listReferenceFiles(directoryPath: string): string | null {
       return null;
     }
 
-    const entries = readdirSync(refsDir, { recursive: true }) as string[];
+    const entries = readdirSync(refsDir, { recursive: true, encoding: "utf8" });
     const mdFiles = entries
       .filter((f) => f.toLowerCase().endsWith(".md"))
       .filter((f) => {

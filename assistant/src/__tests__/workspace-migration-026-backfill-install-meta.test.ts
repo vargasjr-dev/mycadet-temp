@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { backfillInstallMetaMigration } from "../workspace/migrations/026-backfill-install-meta.js";
 
 // ---------------------------------------------------------------------------
@@ -310,7 +312,9 @@ describe("026-backfill-install-meta migration", () => {
     expect(meta!.installedBy).toBeUndefined();
     // installedAt should be directory mtime (an ISO string)
     expect(typeof meta!.installedAt).toBe("string");
-    expect(new Date(meta!.installedAt as string).getTime()).not.toBeNaN();
+    expect(
+      new Date(z.string().parse(meta!.installedAt)).getTime(),
+    ).not.toBeNaN();
   });
 
   test("infers custom origin when no version.json and no integrity entry", () => {
@@ -465,7 +469,9 @@ describe("026-backfill-install-meta migration", () => {
     expect(meta).not.toBeNull();
     // Should be an ISO date from dir mtime
     expect(typeof meta!.installedAt).toBe("string");
-    expect(new Date(meta!.installedAt as string).getTime()).not.toBeNaN();
+    expect(
+      new Date(z.string().parse(meta!.installedAt)).getTime(),
+    ).not.toBeNaN();
   });
 
   test("uses directory mtime as installedAt when no version.json exists", () => {
@@ -476,7 +482,9 @@ describe("026-backfill-install-meta migration", () => {
     const meta = readInstallMeta("mtime-fallback");
     expect(meta).not.toBeNull();
     expect(typeof meta!.installedAt).toBe("string");
-    expect(new Date(meta!.installedAt as string).getTime()).not.toBeNaN();
+    expect(
+      new Date(z.string().parse(meta!.installedAt)).getTime(),
+    ).not.toBeNaN();
   });
 
   // ─── down() rollback ──────────────────────────────────────────────────
