@@ -273,7 +273,10 @@ export async function embedAndUpsert(
         {
           text: payloadText,
           modality,
-          created_at: extraPayload?.created_at ?? now,
+          created_at:
+            typeof extraPayload?.created_at === "number"
+              ? extraPayload.created_at
+              : now,
           ...extraPayload,
         },
         sparseVector,
