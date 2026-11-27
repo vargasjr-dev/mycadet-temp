@@ -715,7 +715,10 @@ type LLMCallSiteConfig = z.infer<typeof LLMCallSiteConfig>;
  * for it. This is the RESOLVED view handed to the matrix resolvers — the
  * stored shape is the `llm.default` blob below, whose fields are all optional
  * and whose `provider` is the loose provider set; readers clamp both via
- * `isDefaultProviderChoice`.
+ * `isDefaultProviderChoice`. Default-profile resolution derives the
+ * selection from the active profile's own provider when it carries one;
+ * this blob fills provider-abstract selections and installs without an
+ * active profile.
  *
  * When `connectionName` is absent, `resolveDefaultConnectionName`
  * (`../default-provider.js`) supplies the convention. No

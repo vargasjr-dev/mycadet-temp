@@ -15,6 +15,7 @@ import { isDefaultProfileKey } from "./default-profile-names.js";
 import {
   type LLMCallSite,
   LLMConfigBase,
+  type LLMDefaultConfig,
   type LLMSchema,
   type ProfileEntry,
   routingIdentityModelIssue,
@@ -232,7 +233,34 @@ export function selectWinningProfile(
  * default-profile key must yield the same body the call-site intent rung
  * would — the default provider's column, never unconditionally the cadet
  * column.
- *
+ */
+
+/**
+ * The default-provider selection that default-profile intents resolve
+ * through. The user's single model selection — `llm.activeProfile` — owns it
+ * when the named profile carries its own provider (the picked chat model's
+ * provider anchors every background site too). A default-key active profile
+ * ("balanced") is provider-abstract, so the explicit `llm.default` blob fills
+ * it; no selection at all resolves the managed cloud column.
+ */
+function effectiveDefaultSelection(
+  llm: z.infer<typeof LLMSchema>,
+): LLMDefaultConfig | undefined {
+  const name = llm.activeProfile;
+  const stored =
+    name != null && !isDefaultProfileKey(name)
+      ? llm.profiles?.[name]
+      : undefined;
+  if (stored?.provider != null) {
+    return {
+      provider: stored.provider,
+      provider_connection: stored.provider_connection,
+    };
+  }
+  return llm.default;
+}
+
+/**
  * A persisted managed stub carries no user intent (defaults cannot be
  * disabled through any write path), so the pure catalog overrides an
  * unusable one. An unusable user-owned shadow is returned as-is so the rung
@@ -245,7 +273,7 @@ function providerAwareEntry(
   const entry = resolveDefaultProfileForProvider(
     llm.profiles,
     name,
-    llm.default,
+    effectiveDefaultSelection(llm),
   );
   if (!isDefaultProfileKey(name) || entry?.mix != null) {
     return entry;
@@ -262,7 +290,11 @@ function providerAwareEntry(
   if (workspace != null && workspace.provider !== "cadet") {
     return entry;
   }
-  return resolveDefaultProfileForProvider(undefined, name, llm.default);
+  return resolveDefaultProfileForProvider(
+    undefined,
+    name,
+    effectiveDefaultSelection(llm),
+  );
 }
 
 /**
@@ -341,7 +373,7 @@ function usableDefaultIntent(
   let entry = resolveDefaultProfileForProvider(
     llm.profiles,
     intent,
-    llm.default,
+    effectiveDefaultSelection(llm),
   );
   if (entry?.mix != null) {
     entry = resolveProfileFragment(intent, llm, opts, (n) =>
@@ -364,7 +396,7 @@ function usableDefaultIntent(
   const catalog = resolveDefaultProfileForProvider(
     undefined,
     intent,
-    llm.default,
+    effectiveDefaultSelection(llm),
   );
   if (catalog != null && catalog.provider != null && catalog.model != null) {
     return catalog;

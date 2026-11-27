@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { z } from "zod";
 
-import { CODE_DEFAULT_PROFILE_ENTRIES } from "../config/default-profile-catalog.js";
+import {
+  CODE_DEFAULT_PROFILE_ENTRIES,
+  resolveDefaultProfileForProvider,
+} from "../config/default-profile-catalog.js";
 import {
   composeCallSiteTweak,
   type ResolutionFallbackReason,
@@ -606,6 +609,46 @@ describe("explicit default-profile references resolve through the default provid
     expect(resolved.model).not.toBe(
       capturedStringSchema.parse(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model),
     );
+  });
+
+  test("the anchor rides the active profile's own provider and connection", () => {
+    const llm = LLMSchema.parse({
+      profiles: {
+        mine: {
+          source: "user",
+          provider: "openai",
+          provider_connection: "openai-personal",
+        },
+      },
+      activeProfile: "mine",
+    });
+    const resolved = resolveCallSiteConfig("voiceEscalationJudge", llm);
+    // The incomplete pick fails tier 3, but its provider still anchors the
+    // profileless site — no separate llm.default selection is consulted.
+    expect(resolved.provider).toBe("openai");
+    expect(resolved.provider_connection).toBe("openai-personal");
+    expect(resolved.model).toBe(
+      capturedStringSchema.parse(
+        resolveDefaultProfileForProvider(undefined, "balanced", {
+          provider: "openai",
+        })?.model,
+      ),
+    );
+  });
+
+  test("a user shadow of a default key anchors verbatim under a divergent llm.default", () => {
+    const llm = LLMSchema.parse({
+      profiles: {
+        balanced: { source: "user", provider: "openai", model: "gpt-5.5" },
+      },
+      activeProfile: "balanced",
+      ...anthropicDp,
+    });
+    const resolved = resolveCallSiteConfig("voiceEscalationJudge", llm);
+    // "balanced" is provider-abstract: the usable user shadow of the key
+    // wins verbatim — llm.default never diverts the column here.
+    expect(resolved.provider).toBe("openai");
+    expect(resolved.model).toBe(capturedStringSchema.parse("gpt-5.5"));
   });
 
   test("a cadet default provider keeps the cadet bodies", () => {
