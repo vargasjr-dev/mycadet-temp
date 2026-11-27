@@ -5,7 +5,6 @@
  * per-turn tool list; core tools are unaffected. `null` (no per-chat
  * restriction) leaves the list unchanged.
  */
-
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
@@ -15,6 +14,7 @@ import {
   __clearRegistryForTesting,
   registerPluginTools,
 } from "../../tools/registry.js";
+import { finalizeTool } from "../../tools/tool-defaults.js";
 import { ToolDefinition } from "../../tools/tool-types.js";
 import type { Tool } from "../../tools/types.js";
 import type { Conversation } from "../conversation.js";
@@ -28,11 +28,11 @@ function def(name: string): ToolDefinition {
 }
 
 function pluginTool(name: string): Tool {
-  return {
+  return finalizeTool({
     name,
     description: name,
     input_schema: def(name).input_schema,
-  } as unknown as Tool;
+  });
 }
 
 function makeCtx(overrides: Partial<Conversation> = {}): Conversation {

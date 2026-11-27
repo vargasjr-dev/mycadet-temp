@@ -14,12 +14,7 @@ export function setServiceField(
   field: string,
   value: unknown,
 ): void {
-  const services: Record<string, Record<string, unknown>> = raw.services !=
-    null &&
-  typeof raw.services === "object" &&
-  !Array.isArray(raw.services)
-    ? (raw.services as Record<string, Record<string, unknown>>)
-    : {};
+  const services = isPlainObject(raw.services) ? raw.services : {};
   const existing = services[service];
   const svc: Record<string, unknown> = isPlainObject(existing) ? existing : {};
   svc[field] = value;
@@ -41,12 +36,7 @@ export function setMemoryEmbeddingField(
   field: string,
   value: unknown,
 ): void {
-  const memory: Record<string, unknown> =
-    raw.memory != null &&
-    typeof raw.memory === "object" &&
-    !Array.isArray(raw.memory)
-      ? (raw.memory as Record<string, unknown>)
-      : {};
+  const memory = isPlainObject(raw.memory) ? raw.memory : {};
   const existing = memory.embeddings;
   const embeddings: Record<string, unknown> = isPlainObject(existing)
     ? existing
@@ -64,14 +54,10 @@ export function deleteMemoryEmbeddingField(
   raw: Record<string, unknown>,
   field: string,
 ): void {
-  if (
-    raw.memory == null ||
-    typeof raw.memory !== "object" ||
-    Array.isArray(raw.memory)
-  ) {
+  const memory = raw.memory;
+  if (!isPlainObject(memory)) {
     return;
   }
-  const memory = raw.memory as Record<string, unknown>;
   const existing = memory.embeddings;
   if (!isPlainObject(existing)) {
     return;

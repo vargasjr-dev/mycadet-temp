@@ -22,7 +22,7 @@ function syncEvent(): AssistantEventEnvelope {
     message: {
       type: "sync_changed",
       tags: ["my-app:items"],
-    } as unknown as AssistantEventEnvelope["message"],
+    } satisfies AssistantEventEnvelope["message"],
   };
 }
 

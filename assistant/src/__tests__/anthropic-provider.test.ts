@@ -1852,7 +1852,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     // ui_surface card plus a `_surfaceFallback` text sibling. The provider
     // must drop the ui_surface block and send the fallback text as the
     // assistant turn's real content — no placeholder needed.
-    const skillCardBlock = {
+    const skillCardBlock: ContentBlock = {
       type: "ui_surface",
       surfaceId: "skill-card-run-conv-1",
       surfaceType: "skill_card",
@@ -1868,7 +1868,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
           },
         ],
       },
-    } as unknown as ContentBlock;
+    };
     const fallbackBlock = {
       type: "text",
       text: "New skill learned: Example skill",
@@ -1907,7 +1907,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     // sentinel to preserve role alternation. Conveying the card's meaning is
     // the producer's job, via the `_surfaceFallback` text sibling — not
     // something the provider reconstructs at request time.
-    const callSummaryBlock = {
+    const callSummaryBlock: ContentBlock = {
       type: "ui_surface",
       surfaceId: "call-1",
       surfaceType: "call_summary",
@@ -1918,7 +1918,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
         duration: 42,
         events: [],
       },
-    } as unknown as ContentBlock;
+    };
     const messages: Message[] = [
       userMsg("Start"),
       { role: "assistant", content: [callSummaryBlock] },

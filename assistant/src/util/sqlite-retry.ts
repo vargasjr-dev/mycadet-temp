@@ -1,3 +1,4 @@
+import { getErrorCode } from "./error-details.js";
 /**
  * Retry helper for transient SQLite write contention.
  *
@@ -23,7 +24,6 @@
  * failure). Do not wrap a partial sequence whose earlier statements already
  * committed — a retry would double-apply them.
  */
-
 import { getLogger } from "./logger.js";
 import { abortableSleep, computeRetryDelay } from "./retry.js";
 import { runWithSqliteQueryLabel } from "./sqlite-query-label.js";
@@ -61,7 +61,7 @@ export interface SqliteRetryOptions {
 }
 
 function sqliteErrorCode(err: unknown): string {
-  return (err as { code?: string } | null)?.code ?? "";
+  return getErrorCode(err) ?? "";
 }
 
 /**

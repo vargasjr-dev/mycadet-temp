@@ -1,3 +1,4 @@
+import { parseJsonRecord } from "../../util/json.js";
 /**
  * Resolve the conversation ID by precedence:
  *   1. Explicit value provided in `opts.explicit`
@@ -15,7 +16,7 @@ export function tryResolveConversationId(
   const contextJson = process.env.__SKILL_CONTEXT_JSON;
   if (contextJson) {
     try {
-      const parsed = JSON.parse(contextJson) as Record<string, unknown>;
+      const parsed = parseJsonRecord(contextJson);
       if (typeof parsed.conversationId === "string" && parsed.conversationId) {
         return parsed.conversationId;
       }

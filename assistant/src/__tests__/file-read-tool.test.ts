@@ -11,6 +11,7 @@ import { afterEach, beforeAll, describe, expect, test } from "bun:test";
 
 import { finalizeTool } from "../tools/tool-defaults.js";
 import type { Tool, ToolContext } from "../tools/types.js";
+import { getObjectProperty } from "../util/object.js";
 
 let fileReadTool: Tool;
 const testDirs: string[] = [];
@@ -143,7 +144,7 @@ describe("file_read image support", () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain("Image loaded");
     expect(result.content).toContain("image/jpeg");
-    expect((result as any).contentBlocks).toBeDefined();
+    expect(getObjectProperty(result, "contentBlocks")).toBeDefined();
     expect((result as any).contentBlocks[0].type).toBe("image");
     expect((result as any).contentBlocks[0].source.media_type).toBe(
       "image/jpeg",
@@ -161,7 +162,7 @@ describe("file_read image support", () => {
 
     expect(result.isError).toBe(false);
     expect(result.content).toContain("image/png");
-    expect((result as any).contentBlocks).toBeDefined();
+    expect(getObjectProperty(result, "contentBlocks")).toBeDefined();
   });
 
   test("ignores offset/limit for image files", async () => {

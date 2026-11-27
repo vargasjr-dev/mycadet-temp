@@ -116,7 +116,8 @@ function repairFragment(fragment: Record<string, unknown> | null): boolean {
   }
   if (
     fragment.provider !== undefined &&
-    !REPAIRABLE_PROVIDERS.has(fragment.provider as string)
+    (typeof fragment.provider !== "string" ||
+      !REPAIRABLE_PROVIDERS.has(fragment.provider))
   ) {
     return false;
   }

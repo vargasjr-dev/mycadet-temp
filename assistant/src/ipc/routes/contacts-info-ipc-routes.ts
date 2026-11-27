@@ -13,7 +13,6 @@
  * shared `ROUTES` array, so they can never reach the gateway's HTTP IPC proxy
  * route schema.
  */
-
 import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -24,6 +23,7 @@ import {
   contacts,
 } from "../../persistence/schema/index.js";
 import type { RouteHandlerArgs } from "../../runtime/routes/types.js";
+import { parseJsonRecord } from "../../util/json.js";
 
 /**
  * Derive the daemon-owned assistant-metadata block. Gated on
@@ -42,7 +42,7 @@ function toAssistantMetadata(
   let metadata: Record<string, unknown> | null = null;
   if (metadataText) {
     try {
-      metadata = JSON.parse(metadataText) as Record<string, unknown>;
+      metadata = parseJsonRecord(metadataText);
     } catch {
       metadata = null;
     }

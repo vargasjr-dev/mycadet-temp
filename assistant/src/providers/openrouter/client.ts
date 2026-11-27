@@ -1,3 +1,4 @@
+import { getObjectProperty, isObjectRecord } from "../../util/object.js";
 import { AnthropicProvider } from "../anthropic/client.js";
 import {
   isAnthropicModel,
@@ -56,8 +57,10 @@ export function openRouterOutputTokenLimitField(
  * wire-format `provider: { only: [...] }` field. Exported for tests.
  */
 export function extractOnlyList(config: unknown): string[] {
-  const cfg = config as { openrouter?: { only?: unknown } } | undefined;
-  const only = cfg?.openrouter?.only;
+  const only = getObjectProperty(
+    getObjectProperty(config, "openrouter"),
+    "only",
+  );
   if (!Array.isArray(only)) {
     return [];
   }
@@ -74,10 +77,9 @@ export function extractOnlyList(config: unknown): string[] {
 const VALID_REASONING_SUMMARIES = new Set(["auto", "concise", "detailed"]);
 
 function extractReasoningSummaryOverride(config: unknown): string | undefined {
-  const cfg = config as
-    | { openrouter?: { reasoning?: { summary?: unknown } } }
-    | undefined;
-  const summary = cfg?.openrouter?.reasoning?.summary;
+  const openrouter = getObjectProperty(config, "openrouter");
+  const reasoning = getObjectProperty(openrouter, "reasoning");
+  const summary = getObjectProperty(reasoning, "summary");
   return typeof summary === "string" && VALID_REASONING_SUMMARIES.has(summary)
     ? summary
     : undefined;
@@ -102,14 +104,17 @@ export function withOpenRouterBodyExtras(
   if (only.length === 0) {
     return options;
   }
-  const { openrouter: _openrouter, ...rest } = options.config as Record<
-    string,
-    unknown
-  >;
-  const existingProvider = (rest.provider ?? {}) as Record<string, unknown>;
+  const { openrouter: _openrouter, ...rest } = options.config;
+  const existingProvider = rest.provider;
   return {
     ...options,
-    config: { ...rest, provider: { ...existingProvider, only } },
+    config: {
+      ...rest,
+      provider: {
+        ...(isObjectRecord(existingProvider) ? existingProvider : {}),
+        only,
+      },
+    },
   };
 }
 
@@ -128,10 +133,13 @@ class OpenRouterResponsesProvider extends OpenAIResponsesProvider {
     if (only.length === 0) {
       return {};
     }
-    const existingProvider = ((
-      options?.config as Record<string, unknown> | undefined
-    )?.provider ?? {}) as Record<string, unknown>;
-    return { provider: { ...existingProvider, only } };
+    const existingProvider = options?.config?.provider;
+    return {
+      provider: {
+        ...(isObjectRecord(existingProvider) ? existingProvider : {}),
+        only,
+      },
+    };
   }
 }
 
@@ -244,11 +252,11 @@ export class OpenRouterProvider extends OpenAIChatCompletionsProvider {
     }
     const only = extractOnlyList(config);
     if (only.length > 0) {
-      const existingProvider = (config?.provider ?? {}) as Record<
-        string,
-        unknown
-      >;
-      extras.provider = { ...existingProvider, only };
+      const existingProvider = config?.provider;
+      extras.provider = {
+        ...(isObjectRecord(existingProvider) ? existingProvider : {}),
+        only,
+      };
     }
     return extras;
   }

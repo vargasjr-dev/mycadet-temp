@@ -1,3 +1,4 @@
+import { fetchMock } from "./helpers/fetch-mock.js";
 /**
  * Global test utility for mocking `globalThis.fetch`.
  *
@@ -34,45 +35,44 @@ export function mockFetch(
 
   entries.push({ path, init, response });
 
-  globalThis.fetch = (async (
-    input: RequestInfo | URL,
-    actualInit?: RequestInit,
-  ) => {
-    const url = String(input);
-    calls.push({ path: url, init: actualInit ?? {} });
+  globalThis.fetch = fetchMock(
+    async (input: RequestInfo | URL, actualInit?: RequestInit) => {
+      const url = String(input);
+      calls.push({ path: url, init: actualInit ?? {} });
 
-    const idx = entries.findIndex((e) => {
-      if (!url.includes(e.path)) {
-        return false;
-      }
-      for (const [key, val] of Object.entries(e.init)) {
-        if (
-          (actualInit as Record<string, unknown> | undefined)?.[key] !== val
-        ) {
+      const idx = entries.findIndex((e) => {
+        if (!url.includes(e.path)) {
           return false;
         }
-      }
-      return true;
-    });
-
-    if (idx === -1) {
-      return new Response(JSON.stringify({ detail: "No mock matched" }), {
-        status: 500,
+        for (const [key, val] of Object.entries(e.init)) {
+          if (
+            (actualInit as Record<string, unknown> | undefined)?.[key] !== val
+          ) {
+            return false;
+          }
+        }
+        return true;
       });
-    }
 
-    const entry = entries[idx];
-    entries.splice(idx, 1);
+      if (idx === -1) {
+        return new Response(JSON.stringify({ detail: "No mock matched" }), {
+          status: 500,
+        });
+      }
 
-    if (entry.response instanceof Response) {
-      return entry.response;
-    }
+      const entry = entries[idx];
+      entries.splice(idx, 1);
 
-    return new Response(JSON.stringify(entry.response.body ?? null), {
-      status: entry.response.status,
-      headers: { "Content-Type": "application/json" },
-    });
-  }) as typeof globalThis.fetch;
+      if (entry.response instanceof Response) {
+        return entry.response;
+      }
+
+      return new Response(JSON.stringify(entry.response.body ?? null), {
+        status: entry.response.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+  );
 }
 
 export function getMockFetchCalls(): { path: string; init: RequestInit }[] {

@@ -6,12 +6,12 @@ export function extractTextFromStoredMessageContent(
   raw: string | ContentBlock[],
 ): string {
   try {
-    const parsed = Array.isArray(raw) ? raw : (JSON.parse(raw) as unknown);
+    const parsed: unknown = Array.isArray(raw) ? raw : JSON.parse(raw);
     if (typeof parsed === "string") {
       return parsed;
     }
     if (!Array.isArray(parsed)) {
-      return raw as string;
+      return typeof raw === "string" ? raw : "";
     }
     const blocks: ContentBlock[] = parsed;
     const lines: string[] = [];
@@ -113,17 +113,15 @@ export function stringifyMessageContent(
     return parsed.trim();
   }
   if (!Array.isArray(parsed)) {
-    return (stored as string).trim();
+    return typeof stored === "string" ? stored.trim() : "";
   }
   const parts: string[] = [];
   for (const block of parsed) {
-    if (
-      block &&
-      typeof block === "object" &&
-      getObjectProperty(block, "type") === "text" &&
-      typeof getObjectProperty(block, "text") === "string"
-    ) {
-      parts.push((block as { text: string }).text);
+    if (getObjectProperty(block, "type") === "text") {
+      const text = getObjectProperty(block, "text");
+      if (typeof text === "string") {
+        parts.push(text);
+      }
     }
   }
   return parts.join("\n").trim();

@@ -1082,13 +1082,14 @@ async function handleReplaceInferenceProfile({
   // provider value; deriving one here would stamp the canonical cadet row
   // ("cadet" is its stored provider) or create a junk "<identity>-personal"
   // connection for chatgpt.
+  const provider = fragment.provider;
   if (
     !isCloud &&
-    fragment.provider &&
+    typeof provider === "string" &&
+    provider &&
     !fragment.provider_connection &&
-    !ROUTING_IDENTITY_PROVIDERS.has(fragment.provider as string)
+    !ROUTING_IDENTITY_PROVIDERS.has(provider)
   ) {
-    const provider = fragment.provider as string;
     const db = getDb();
     // Exclude the orphaned legacy `*-managed` rows: they may still linger in
     // provider_connections on upgraded workspaces (hidden from the list route

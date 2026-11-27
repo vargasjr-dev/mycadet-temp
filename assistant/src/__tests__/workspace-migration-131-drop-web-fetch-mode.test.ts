@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { getObjectProperty } from "../util/object.js";
 import { dropWebFetchModeMigration } from "../workspace/migrations/131-drop-web-fetch-mode.js";
 
 // ---------------------------------------------------------------------------
@@ -62,7 +63,7 @@ describe("131-drop-web-fetch-mode", () => {
 
     dropWebFetchModeMigration.run(workspaceDir);
 
-    expect((readConfig().services as any)["web-fetch"]).toEqual({
+    expect(getObjectProperty(readConfig().services, "web-fetch")).toEqual({
       provider: "firecrawl",
     });
   });

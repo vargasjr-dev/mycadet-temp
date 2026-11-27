@@ -1,3 +1,4 @@
+import { getErrorCode } from "../util/error-details.js";
 /**
  * SQLite corruption watchdog.
  *
@@ -19,7 +20,6 @@
  * needed. Non-corruption errors (constraint violations, syntax errors,
  * transient `SQLITE_BUSY`) are ignored.
  */
-
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("sqlite-corruption-watchdog");
@@ -34,7 +34,7 @@ const log = getLogger("sqlite-corruption-watchdog");
  * a real database.
  */
 export function isSqliteCorruptionError(err: unknown): boolean {
-  const code = (err as { code?: string } | null)?.code ?? "";
+  const code = getErrorCode(err) ?? "";
   if (code.startsWith("SQLITE_CORRUPT") || code.startsWith("SQLITE_NOTADB")) {
     return true;
   }

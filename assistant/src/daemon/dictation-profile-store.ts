@@ -111,7 +111,7 @@ function validateAndClampConfig(raw: unknown): DictationProfilesConfig {
   }
 
   // Clamp profiles
-  const profiles = (obj.profiles as unknown[]).slice(0, MAX_PROFILES);
+  const profiles: unknown[] = obj.profiles.slice(0, MAX_PROFILES);
   const validProfiles: DictationProfile[] = [];
 
   for (const p of profiles) {

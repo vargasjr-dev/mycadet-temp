@@ -368,7 +368,7 @@ function readEmbeddingCache(
     return null;
   }
   const dense = row.vectorBlob
-    ? blobToVector(row.vectorBlob as Buffer)
+    ? blobToVector(row.vectorBlob)
     : z.array(z.number()).parse(JSON.parse(row.vectorJson!));
   return { dense, contentHash: row.contentHash };
 }

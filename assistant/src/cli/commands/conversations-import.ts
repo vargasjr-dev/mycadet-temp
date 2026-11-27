@@ -10,22 +10,8 @@ import { log } from "../logger.js";
 
 // -- Import payload schema (local, no daemon imports) --
 
-interface ImportMessage {
-  role: string;
-  content: string | Array<{ type: string; text: string }>;
-  createdAt?: number;
-}
-
-interface ImportConversation {
-  sourceKey?: string;
-  title: string;
-  createdAt?: number;
-  updatedAt?: number;
-  messages: ImportMessage[];
-}
-
 interface ImportPayload {
-  conversations: ImportConversation[];
+  conversations: Record<string, unknown>[];
 }
 
 interface ImportResult {
@@ -50,9 +36,8 @@ function validatePayload(raw: unknown): ImportPayload {
   if (!Array.isArray(obj.conversations)) {
     throw new Error("Input must have a 'conversations' array");
   }
-  for (let i = 0; i < obj.conversations.length; i++) {
-    const conv = obj.conversations[i] as Record<string, unknown>;
-    if (!conv.title || typeof conv.title !== "string") {
+  const conversations = obj.conversations.map((conv: unknown, i) => {
+    if (!isPlainObject(conv) || !conv.title || typeof conv.title !== "string") {
       throw new Error(
         `conversations[${i}].title is required and must be a string`,
       );
@@ -60,9 +45,9 @@ function validatePayload(raw: unknown): ImportPayload {
     if (!Array.isArray(conv.messages) || conv.messages.length === 0) {
       throw new Error(`conversations[${i}].messages must be a non-empty array`);
     }
-    for (let j = 0; j < (conv.messages as unknown[]).length; j++) {
-      const msg = (conv.messages as Array<Record<string, unknown>>)[j];
-      if (!msg.role || typeof msg.role !== "string") {
+    for (let j = 0; j < conv.messages.length; j++) {
+      const msg: unknown = conv.messages[j];
+      if (!isPlainObject(msg) || !msg.role || typeof msg.role !== "string") {
         throw new Error(`conversations[${i}].messages[${j}].role is required`);
       }
       if (msg.content === undefined || msg.content === null) {
@@ -71,8 +56,9 @@ function validatePayload(raw: unknown): ImportPayload {
         );
       }
     }
-  }
-  return obj as unknown as ImportPayload;
+    return conv;
+  });
+  return { conversations };
 }
 
 // -- CLI registration --
@@ -135,10 +121,7 @@ export function registerConversationsImportCommand(
 
       const r = await cliIpcCall<ImportResult>("conversations_import", {
         body: {
-          conversations: payload.conversations as unknown as Record<
-            string,
-            unknown
-          >[],
+          conversations: payload.conversations,
         },
       });
       if (!r.ok) {

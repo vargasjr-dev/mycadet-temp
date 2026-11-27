@@ -125,8 +125,6 @@ let activeLogFileConfig: LogFileConfig | null = null;
 /** Severity names accepted by `logFile.levels` — shared with the config schema. */
 type ModuleLogLevel = (typeof LOG_LEVELS)[number];
 
-const MODULE_LOG_LEVELS: ReadonlySet<string> = new Set(LOG_LEVELS);
-
 /**
  * Per-module ("kind") level overrides from `logFile.levels` config, applied
  * without a restart: the daemon re-applies them whenever workspace
@@ -148,8 +146,9 @@ export function applyModuleLogLevels(
 ): void {
   moduleLevels.clear();
   for (const [name, level] of Object.entries(levels ?? {})) {
-    if (MODULE_LOG_LEVELS.has(level)) {
-      moduleLevels.set(name, level as ModuleLogLevel);
+    const knownLevel = LOG_LEVELS.find((candidate) => candidate === level);
+    if (knownLevel !== undefined) {
+      moduleLevels.set(name, knownLevel);
     } else {
       console.warn(
         `[logger] ignoring logFile.levels.${name}: "${level}" is not a log level`,
@@ -390,8 +389,7 @@ export function getLogger(name: string): Logger {
  */
 function cliWrite(output: NodeJS.WriteStream): (...args: unknown[]) => void {
   return (...args: unknown[]) => {
-    const msg =
-      typeof args[0] === "string" ? args[0] : (args[1] as string | undefined);
+    const msg = typeof args[0] === "string" ? args[0] : args[1];
     output.write((msg ?? "") + "\n");
   };
 }
@@ -401,11 +399,11 @@ function cliWrite(output: NodeJS.WriteStream): (...args: unknown[]) => void {
  * (trace/debug/info/warn) and stderr (error/fatal). Implemented without pino:
  * the CLI only ever prints the message text, and pino's ~70-module graph
  * costs ~17 MiB per process, which short-lived CLI invocations should not
- * pay. Typed as pino's Logger so call sites keep pino call signatures; only
- * the level methods are real, so anything beyond them fails at runtime —
- * extend this object before using other pino APIs in CLI code.
+ * pay. The level methods keep pino's call signatures.
  */
-export function getCliLogger(_name: string): Logger {
+export function getCliLogger(
+  _name: string,
+): Pick<Logger, "trace" | "debug" | "info" | "warn" | "error" | "fatal"> {
   const toStdout = cliWrite(process.stdout);
   const toStderr = cliWrite(process.stderr);
   return {
@@ -415,5 +413,5 @@ export function getCliLogger(_name: string): Logger {
     warn: toStdout,
     error: toStderr,
     fatal: toStderr,
-  } as unknown as Logger;
+  };
 }

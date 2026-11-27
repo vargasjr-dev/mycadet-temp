@@ -3,7 +3,6 @@
  * `createResolveToolsCallback`. Excluded tool names must not appear in the
  * tool list resolved per turn, nor in the executor's `allowedToolNames`.
  */
-
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
@@ -15,6 +14,7 @@ import {
   registerMcpTools,
   registerPluginTools,
 } from "../../tools/registry.js";
+import { finalizeTool } from "../../tools/tool-defaults.js";
 import { ToolDefinition } from "../../tools/tool-types.js";
 import type { Tool } from "../../tools/types.js";
 import type { Conversation } from "../conversation.js";
@@ -28,19 +28,19 @@ function def(name: string): ToolDefinition {
 }
 
 function mcpTool(name: string): Tool {
-  return {
+  return finalizeTool({
     name,
     description: name,
     input_schema: def(name).input_schema,
-  } as unknown as Tool;
+  });
 }
 
 function pluginTool(name: string): Tool {
-  return {
+  return finalizeTool({
     name,
     description: name,
     input_schema: def(name).input_schema,
-  } as unknown as Tool;
+  });
 }
 
 function makeCtx(overrides: Partial<Conversation> = {}): Conversation {

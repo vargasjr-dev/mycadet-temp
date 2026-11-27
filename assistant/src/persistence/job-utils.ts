@@ -230,7 +230,7 @@ export async function embedAndUpsert(
   if (cachedRow) {
     // Prefer BLOB (compact), fall back to JSON for unmigrated rows
     if (cachedRow.vectorBlob) {
-      vector = blobToVector(cachedRow.vectorBlob as Buffer);
+      vector = blobToVector(cachedRow.vectorBlob);
     } else {
       vector = JSON.parse(cachedRow.vectorJson!);
     }
@@ -273,7 +273,7 @@ export async function embedAndUpsert(
         {
           text: payloadText,
           modality,
-          created_at: (extraPayload?.created_at as number) ?? now,
+          created_at: extraPayload?.created_at ?? now,
           ...extraPayload,
         },
         sparseVector,

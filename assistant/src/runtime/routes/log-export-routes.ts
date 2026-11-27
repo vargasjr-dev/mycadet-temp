@@ -29,6 +29,7 @@ import {
   messages,
   toolInvocations,
 } from "../../persistence/schema/index.js";
+import { parseJsonRecord } from "../../util/json.js";
 import {
   getDaemonStderrLogPath,
   getDataDir,
@@ -524,7 +525,7 @@ function readSanitizedConfig(): Record<string, unknown> | undefined {
 
   try {
     const raw = readFileSync(configPath, "utf-8");
-    const config = JSON.parse(raw) as Record<string, unknown>;
+    const config = parseJsonRecord(raw);
 
     delete config.apiKeys;
 

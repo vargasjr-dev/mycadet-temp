@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { credentialKey } from "../security/credential-key.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 import {
   reseedMemorySecureKeys,
   useMemorySecureKeys,
@@ -52,22 +53,24 @@ beforeEach(() => {
   fetchCalls = [];
   fetchHandler = () => ({ ok: true, body: { ok: true } });
   socketHealth = { channel: "slack", status: "connected" };
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input.toString();
-    fetchCalls.push({ url, init });
-    const { ok, body, scopes } = fetchHandler(url, init);
-    const headers: Record<string, string> = {
-      "content-type": "application/json",
-    };
-    // Slack stamps the granted scopes on every Web API response.
-    if (scopes !== undefined) {
-      headers["x-oauth-scopes"] = scopes;
-    }
-    return new Response(JSON.stringify(body), {
-      status: ok ? 200 : 500,
-      headers,
-    });
-  }) as typeof globalThis.fetch;
+  globalThis.fetch = fetchMock(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      fetchCalls.push({ url, init });
+      const { ok, body, scopes } = fetchHandler(url, init);
+      const headers: Record<string, string> = {
+        "content-type": "application/json",
+      };
+      // Slack stamps the granted scopes on every Web API response.
+      if (scopes !== undefined) {
+        headers["x-oauth-scopes"] = scopes;
+      }
+      return new Response(JSON.stringify(body), {
+        status: ok ? 200 : 500,
+        headers,
+      });
+    },
+  );
 });
 
 afterEach(() => {
@@ -153,9 +156,9 @@ describe("slack remote probe (auth.test)", () => {
 
   test("reports network failure as a failed check", async () => {
     mockSecureKeys[credentialKey("slack_channel", "bot_token")] = "xoxb-fake";
-    globalThis.fetch = (async () => {
+    globalThis.fetch = fetchMock(async () => {
       throw new Error("ECONNREFUSED");
-    }) as unknown as typeof globalThis.fetch;
+    });
 
     const [snapshot] = await runSlackRemoteProbe();
     const authTest = snapshot.remoteChecks!.find(

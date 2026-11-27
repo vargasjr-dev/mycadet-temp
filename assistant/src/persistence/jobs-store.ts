@@ -3,6 +3,7 @@ import { v4 as uuid } from "uuid";
 
 import { getConfig } from "../config/loader.js";
 import { isMemoryEnabled as isMemoryEnabledForConfig } from "../config/memory-v3-gate.js";
+import { parseJsonRecord } from "../util/json.js";
 import { safeParseRecord } from "../util/json.js";
 import { getLogger } from "../util/logger.js";
 import { isObjectRecord } from "../util/object.js";
@@ -1256,7 +1257,7 @@ export function getMemoryJobCounts(): Record<string, number> {
 function parseRow(row: typeof memoryJobs.$inferSelect): MemoryJob {
   let payload: Record<string, unknown> = {};
   try {
-    payload = JSON.parse(row.payload) as Record<string, unknown>;
+    payload = parseJsonRecord(row.payload);
   } catch {
     payload = { raw: row.payload };
   }

@@ -60,19 +60,19 @@ export function createWatcher(params: {
   const pollIntervalMs = params.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
   const enabled = params.enabled ?? true;
 
-  const row = {
+  const row: Watcher = {
     id,
     name: params.name,
     providerId: params.providerId,
     enabled,
     pollIntervalMs,
     actionPrompt: params.actionPrompt,
-    watermark: null as string | null,
-    conversationId: null as string | null,
+    watermark: null,
+    conversationId: null,
     status: "idle",
     consecutiveErrors: 0,
-    lastError: null as string | null,
-    lastPollAt: null as number | null,
+    lastError: null,
+    lastPollAt: null,
     nextPollAt: enabled ? now : 0,
     configJson: params.configJson ?? null,
     credentialService: params.credentialService,

@@ -580,7 +580,7 @@ export const ROUTES: RouteDefinition[] = [
       sourceText: z.string().describe("Source text for drafting"),
     }),
     handler: async ({ body = {} }: RouteHandlerArgs) => {
-      const sourceText = body.sourceText as string | undefined;
+      const sourceText = body.sourceText;
       if (!sourceText || typeof sourceText !== "string") {
         throw new BadRequestError("sourceText is required");
       }
@@ -734,17 +734,21 @@ export const ROUTES: RouteDefinition[] = [
       skillId: z.string().optional(),
     }),
     handler: async ({ body = {} }: RouteHandlerArgs) => {
-      const slug =
-        (body.slug as string) ?? (body.url as string) ?? (body.spec as string);
+      const slug = body.slug ?? body.url ?? body.spec;
       if (!slug || typeof slug !== "string") {
         throw new BadRequestError("slug, url, or spec is required");
       }
       const result = await installSkill({
         slug,
-        version: body.version as string | undefined,
-        origin: body.origin as "clawhub" | "skillssh" | undefined,
-        catalogOnly: body.catalogOnly as boolean | undefined,
-        overwrite: body.overwrite as boolean | undefined,
+        version: typeof body.version === "string" ? body.version : undefined,
+        origin:
+          body.origin === "clawhub" || body.origin === "skillssh"
+            ? body.origin
+            : undefined,
+        catalogOnly:
+          typeof body.catalogOnly === "boolean" ? body.catalogOnly : undefined,
+        overwrite:
+          typeof body.overwrite === "boolean" ? body.overwrite : undefined,
       });
       if (!result.success) {
         throw new InternalError(result.error);

@@ -27,7 +27,7 @@ const log = getLogger("notification-source-active");
 
 export interface ResolveVisibleInSourceOptions {
   conversationId: string | undefined;
-  logger?: pino.Logger;
+  logger?: Pick<pino.Logger, "warn">;
   actorPrincipalId?: string;
 }
 
@@ -63,7 +63,7 @@ export async function resolveCompletionVisibleInSourceNow(
 
 /** The same active guardian identity the local completion delivery targets. */
 export async function resolveCompletionRecipientPrincipalId(
-  logger?: pino.Logger,
+  logger?: Pick<pino.Logger, "warn">,
 ): Promise<string | undefined> {
   try {
     const guardians = await getGuardianDelivery();

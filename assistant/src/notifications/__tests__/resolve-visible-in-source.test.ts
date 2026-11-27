@@ -4,8 +4,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type pino from "pino";
-
 const CONVERSATION_ID = "conv-1";
 
 let webFocused = false;
@@ -80,7 +78,7 @@ describe("resolveVisibleInSourceNow", () => {
     expect(
       resolveVisibleInSourceNow({
         conversationId: CONVERSATION_ID,
-        logger: { warn } as unknown as pino.Logger,
+        logger: { warn },
       }),
     ).toBe(false);
     expect(warn).toHaveBeenCalledTimes(1);
@@ -152,7 +150,7 @@ describe("resolveCompletionVisibleInSourceNow", () => {
     expect(
       await resolveCompletionVisibleInSourceNow({
         conversationId: CONVERSATION_ID,
-        logger: { warn } as unknown as pino.Logger,
+        logger: { warn },
       }),
     ).toBe(false);
     expect(webPresenceArgs).toEqual([]);
@@ -165,7 +163,7 @@ describe("resolveCompletionVisibleInSourceNow", () => {
     expect(
       await resolveCompletionVisibleInSourceNow({
         conversationId: CONVERSATION_ID,
-        logger: { warn } as unknown as pino.Logger,
+        logger: { warn },
       }),
     ).toBe(false);
     expect(warn).toHaveBeenCalledTimes(1);

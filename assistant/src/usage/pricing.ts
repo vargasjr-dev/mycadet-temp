@@ -14,7 +14,7 @@ import type {
 
 const log = getLogger("usage-pricing");
 
-function normalizeTokenCount(value: number | null | undefined): number {
+function normalizeTokenCount(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return 0;
   }
@@ -67,10 +67,10 @@ function extractAnthropicCacheCreationFromResponse(
 
   return {
     ephemeral_5m_input_tokens: normalizeTokenCount(
-      cacheCreation.ephemeral_5m_input_tokens as number | null | undefined,
+      cacheCreation.ephemeral_5m_input_tokens,
     ),
     ephemeral_1h_input_tokens: normalizeTokenCount(
-      cacheCreation.ephemeral_1h_input_tokens as number | null | undefined,
+      cacheCreation.ephemeral_1h_input_tokens,
     ),
   };
 }

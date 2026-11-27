@@ -592,12 +592,16 @@ function selectOrphanedLogsInRange(
   }
 
   const candidateMessageIds = [
-    ...new Set(candidates.map((c) => c.messageId as string)),
+    ...new Set(
+      candidates.flatMap((c) => (c.messageId === null ? [] : [c.messageId])),
+    ),
   ];
   const existing = existingMessageIds(candidateMessageIds);
 
   // Orphaned = the referenced message no longer exists.
-  return candidates.filter((c) => !existing.has(c.messageId as string));
+  return candidates.filter(
+    (c) => c.messageId !== null && !existing.has(c.messageId),
+  );
 }
 
 /**

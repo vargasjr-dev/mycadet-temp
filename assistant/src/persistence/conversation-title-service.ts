@@ -567,7 +567,7 @@ function extractTextForTitle(raw: string | Array<{ type: string }>): string {
       return parsed;
     }
     if (!Array.isArray(parsed)) {
-      return raw as string;
+      return typeof raw === "string" ? raw : "";
     }
     const texts: string[] = [];
     for (const block of parsed) {

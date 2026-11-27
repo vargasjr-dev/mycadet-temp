@@ -1,3 +1,4 @@
+import { getErrorCode } from "../util/error-details.js";
 /**
  * Structured startup error reporting for daemon processes.
  *
@@ -51,7 +52,7 @@ function categorizeDaemonError(err: unknown): DaemonStartupError {
     };
   }
 
-  const code = (err as { code?: string }).code ?? "";
+  const code = getErrorCode(err) ?? "";
   const name = (err as { name?: string }).name ?? "";
   const message =
     err instanceof Error

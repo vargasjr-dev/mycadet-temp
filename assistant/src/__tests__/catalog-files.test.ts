@@ -28,6 +28,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import type { CatalogSkill } from "../skills/catalog-install.js";
+import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
@@ -83,37 +84,41 @@ function installFetchMock(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
 ): void {
   fetchCalls = [];
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : input.url;
-    fetchCalls.push({ url, init });
-    return handler(url, init);
-  }) as FetchFn;
+  globalThis.fetch = fetchMock(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      fetchCalls.push({ url, init });
+      return handler(url, init);
+    },
+  );
 }
 
 function installFetchThrow(error: Error): void {
   fetchCalls = [];
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : input.url;
-    fetchCalls.push({ url, init });
-    throw error;
-  }) as unknown as FetchFn;
+  globalThis.fetch = fetchMock(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      fetchCalls.push({ url, init });
+      throw error;
+    },
+  );
 }
 
 function installFetchForbidden(): void {
   fetchCalls = [];
-  globalThis.fetch = (async () => {
+  globalThis.fetch = fetchMock(async () => {
     throw new Error("fetch should not have been called");
-  }) as unknown as FetchFn;
+  });
 }
 
 // Temp directories created during tests, cleaned up in afterEach.

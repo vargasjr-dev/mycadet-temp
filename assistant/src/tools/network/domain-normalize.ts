@@ -27,7 +27,7 @@ export interface DomainInfo {
  * Returns `null` for inputs that cannot be parsed into a valid hostname
  * (e.g. IP addresses, localhost, empty strings).
  */
-export function normalizeDomain(input: string): DomainInfo | null {
+export function normalizeDomain(input: unknown): DomainInfo | null {
   if (!input || typeof input !== "string") {
     return null;
   }

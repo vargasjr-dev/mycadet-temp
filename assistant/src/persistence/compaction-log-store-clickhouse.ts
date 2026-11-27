@@ -30,6 +30,7 @@ import { getConfig } from "../config/loader.js";
 import type { CompactionLogsClickHouseConfig } from "../config/schemas/compaction-logs.js";
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
+import { parseJsonRecord } from "../util/json.js";
 import { getLogger } from "../util/logger.js";
 
 const log = getLogger("compaction-log-store");
@@ -281,7 +282,7 @@ export class ClickHouseCompactionLogStore {
       if (trimmed.length === 0) {
         continue;
       }
-      rows.push(JSON.parse(trimmed) as Record<string, unknown>);
+      rows.push(parseJsonRecord(trimmed));
     }
     return pairRowsIntoEvents(rows);
   }

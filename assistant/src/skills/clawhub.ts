@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 
 import { getWorkspaceSkillsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import {
   computeSkillHash,
   readInstallMeta,
@@ -415,6 +416,14 @@ export async function clawhubSearch(
   return { skills };
 }
 
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function readCount(value: unknown): number {
+  return typeof value === "number" ? value : 0;
+}
+
 async function clawhubExplore(opts?: {
   limit?: number;
   sort?: string;
@@ -444,17 +453,20 @@ async function clawhubExplore(opts?: {
 
     // Normalize explore response to ClawhubSearchResultItem shape
     const skills: ClawhubSearchResultItem[] = items.map(
-      (item: Record<string, unknown>) => ({
-        name: (item.displayName as string) ?? (item.slug as string) ?? "",
-        slug: (item.slug as string) ?? "",
-        description: (item.summary as string) ?? "",
-        author: (item.author as string) ?? "",
-        stars: (item.stats as Record<string, number>)?.stars ?? 0,
-        installs: (item.stats as Record<string, number>)?.installsAllTime ?? 0,
-        version: (item.tags as Record<string, string>)?.latest ?? "",
-        createdAt: (item.createdAt as number) ?? 0,
-        source: "clawhub",
-      }),
+      (item: Record<string, unknown>) => {
+        const slug = readString(item.slug) ?? "";
+        return {
+          name: readString(item.displayName) ?? slug,
+          slug,
+          description: readString(item.summary) ?? "",
+          author: readString(item.author) ?? "",
+          stars: readCount(getObjectProperty(item.stats, "stars")),
+          installs: readCount(getObjectProperty(item.stats, "installsAllTime")),
+          version: readString(getObjectProperty(item.tags, "latest")) ?? "",
+          createdAt: readCount(item.createdAt),
+          source: "clawhub",
+        };
+      },
     );
     return { skills };
   } catch {
@@ -539,9 +551,9 @@ export async function clawhubInspect(
           : null,
         files: Array.isArray(rawFiles)
           ? rawFiles.map((f: Record<string, unknown>) => ({
-              path: (f.path as string) ?? "",
-              size: (f.size as number) ?? 0,
-              contentType: (f.contentType as string) ?? undefined,
+              path: readString(f.path) ?? "",
+              size: readCount(f.size),
+              contentType: readString(f.contentType),
             }))
           : null,
         skillMdContent:

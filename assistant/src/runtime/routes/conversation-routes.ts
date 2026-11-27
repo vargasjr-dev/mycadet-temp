@@ -163,6 +163,7 @@ import {
   isHeicFilename,
   normalizeImageBase64,
 } from "../../util/image-conversion.js";
+import { parseJsonRecord } from "../../util/json.js";
 import { getWorkspaceDir, getWorkspacePromptPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
 import { safeStringSlice } from "../../util/unicode.js";
@@ -411,9 +412,7 @@ function isHiddenMessage(metadata: string | null): boolean {
     return false;
   }
   try {
-    return isHiddenMessageMetadata(
-      JSON.parse(metadata) as Record<string, unknown>,
-    );
+    return isHiddenMessageMetadata(parseJsonRecord(metadata));
   } catch {
     return false;
   }
@@ -1152,7 +1151,7 @@ export async function handleListMessages({
     let deletedAt: number | undefined;
     if (msg.metadata) {
       try {
-        const meta = JSON.parse(msg.metadata) as Record<string, unknown>;
+        const meta = parseJsonRecord(msg.metadata);
         if (typeof meta.sentAt === "number") {
           sentAt = meta.sentAt;
         }

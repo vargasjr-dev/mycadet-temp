@@ -4,10 +4,10 @@
  * Provides CRUD operations for the media_assets and processing_stages tables.
  * Uses content-hash deduplication (same pattern as attachments-store.ts).
  */
-
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
+import { parseJsonRecord } from "../util/json.js";
 import { getDb } from "./db-connection.js";
 import { mediaAssets } from "./schema/index.js";
 import { mediaKeyframes } from "./schema/index.js";
@@ -226,7 +226,7 @@ function parseAssetRow(row: typeof mediaAssets.$inferSelect): MediaAsset {
   let metadata: Record<string, unknown> | null = null;
   if (row.metadata) {
     try {
-      metadata = JSON.parse(row.metadata) as Record<string, unknown>;
+      metadata = parseJsonRecord(row.metadata);
     } catch {
       metadata = null;
     }
@@ -322,7 +322,7 @@ function parseKeyframeRow(
   let metadata: Record<string, unknown> | null = null;
   if (row.metadata) {
     try {
-      metadata = JSON.parse(row.metadata) as Record<string, unknown>;
+      metadata = parseJsonRecord(row.metadata);
     } catch {
       metadata = null;
     }

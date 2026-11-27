@@ -6,10 +6,10 @@
 // used by notification-feed and memory filters, the source-aware
 // `resolveConversationKind` classifier, and the pure predicates over a
 // persisted message's `metadata` record.
-
 import type { ChannelId } from "@mycadet/service-contracts/channels";
 
 import { parseChannelId } from "../channels/types.js";
+import { parseJsonRecord } from "../util/json.js";
 
 /**
  * Where a conversation came from, stated by whoever creates it.
@@ -345,7 +345,7 @@ export function messageMetadataIsAmbientSightKeep(
     return false;
   }
   try {
-    const parsed = JSON.parse(metadata) as Record<string, unknown>;
+    const parsed = parseJsonRecord(metadata);
     return (
       parsed.scripted === true &&
       sightFrameAttachmentIdsFromMetadata(parsed).length > 0

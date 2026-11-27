@@ -23,14 +23,19 @@ export function datesToISO<T extends Record<string, unknown>>(
   return result as { [K in keyof T]: T[K] extends Date ? string : T[K] };
 }
 
+/** Parse a JSON object, rejecting other JSON values. */
+export function parseJsonRecord(raw: string): Record<string, unknown> {
+  const parsed: unknown = JSON.parse(raw);
+  if (!isPlainObject(parsed)) {
+    throw new SyntaxError("Expected a JSON object");
+  }
+  return parsed;
+}
+
 /** Tolerant JSON parse that returns `{}` for invalid or non-object payloads. */
 export function safeParseRecord(raw: string): Record<string, unknown> {
   try {
-    const parsed = JSON.parse(raw);
-    if (!isPlainObject(parsed)) {
-      return {};
-    }
-    return parsed;
+    return parseJsonRecord(raw);
   } catch {
     return {};
   }

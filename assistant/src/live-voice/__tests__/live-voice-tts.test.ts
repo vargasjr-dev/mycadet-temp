@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
 import { useMemorySecureKeys } from "../../__tests__/helpers/secure-keys.js";
 
 useMemorySecureKeys({
@@ -417,7 +418,7 @@ describe("streamLiveVoiceTtsAudio", () => {
     config = makeConfig({ provider: "elevenlabs" });
     const originalFetch = globalThis.fetch;
     let capturedUrl = "";
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
+    globalThis.fetch = fetchMock(async (input: RequestInfo | URL) => {
       capturedUrl = typeof input === "string" ? input : input.toString();
       return new Response(
         new ReadableStream<Uint8Array>({
@@ -428,7 +429,7 @@ describe("streamLiveVoiceTtsAudio", () => {
         }),
         { status: 200 },
       );
-    }) as typeof globalThis.fetch;
+    });
 
     try {
       const frames: LiveVoiceTtsAudioChunk[] = [];

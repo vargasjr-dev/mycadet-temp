@@ -313,7 +313,7 @@ function makeContext(
     conversationId,
     trustClass: "guardian" as const,
     ...extras,
-  } as import("../tools/types.js").ToolContext;
+  } satisfies import("../tools/types.js").ToolContext;
 }
 
 // ── Tool definitions ────────────────────────────────────────────────

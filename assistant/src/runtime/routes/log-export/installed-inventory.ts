@@ -24,12 +24,12 @@
  * skills, hand-authored workspace skills, first-party default plugins) report
  * `null` for the fields they don't persist. No file body is ever emitted.
  */
-
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { listAllPlugins } from "../../../cli/lib/list-installed-plugins.js";
 import { listInstalledSkills } from "../../../skills/available-skills.js";
+import { parseJsonRecord } from "../../../util/json.js";
 import { getLogger } from "../../../util/logger.js";
 
 const log = getLogger("installed-inventory");
@@ -129,10 +129,7 @@ function readStoredPluginMeta(pluginDir: string): StoredPluginMeta {
     return empty;
   }
   try {
-    const raw = JSON.parse(readFileSync(metaPath, "utf8")) as Record<
-      string,
-      unknown
-    >;
+    const raw = parseJsonRecord(readFileSync(metaPath, "utf8"));
     const str = (value: unknown): string | null =>
       typeof value === "string" && value.length > 0 ? value : null;
     return {

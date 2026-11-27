@@ -5,11 +5,13 @@
  * dual-write-gap survivor INSERT) plus the new guarantees: one transaction
  * (induced-failure rollback) and idempotent retry (donor gone → no-op).
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { getSqlite } from "../../../persistence/db-connection.js";
+import { eq } from "drizzle-orm";
+
+import { getDb, getSqlite } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
+import { contactChannels } from "../../../persistence/schema/index.js";
 import { handleContactsMirrorMergeContact } from "../contacts-mirror-ipc-routes.js";
 
 await initializeDb();
@@ -71,10 +73,12 @@ function contactRow(id: string): {
 }
 
 function channelOwner(id: string): string | null {
-  const row = getSqlite()
-    .prepare("SELECT contact_id FROM contact_channels WHERE id = ?")
-    .get(id) as { contact_id: string } | undefined;
-  return row?.contact_id ?? null;
+  const row = getDb()
+    .select({ contactId: contactChannels.contactId })
+    .from(contactChannels)
+    .where(eq(contactChannels.id, id))
+    .get();
+  return row?.contactId ?? null;
 }
 
 function merge(overrides: Record<string, unknown> = {}): unknown {

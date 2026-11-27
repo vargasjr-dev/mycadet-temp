@@ -71,6 +71,6 @@ export function markdownToEmailHtml(markdown: string): string {
     return trimmed;
   }
 
-  const innerHtml = marked.parse(trimmed) as string;
+  const innerHtml = marked.parse(trimmed, { async: false });
   return wrapInEmailTemplate(innerHtml);
 }

@@ -93,8 +93,8 @@ describe("normalizeDomain", () => {
   });
 
   test("returns null for null-like input", () => {
-    expect(normalizeDomain(null as unknown as string)).toBeNull();
-    expect(normalizeDomain(undefined as unknown as string)).toBeNull();
+    expect(normalizeDomain(null)).toBeNull();
+    expect(normalizeDomain(undefined)).toBeNull();
   });
 
   // ── Co.uk / multi-part TLD ──────────────────────────────────────────

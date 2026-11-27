@@ -81,6 +81,7 @@ import {
   searchSkillsRegistry,
 } from "../../skills/skillssh-registry.js";
 import { getWorkspaceSkillsDir } from "../../util/layout.js";
+import { isObjectRecord } from "../../util/object.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { getConfigWatcher } from "../config-watcher.js";
 import type {
@@ -683,7 +684,7 @@ export async function getSkill(
             const skillSlug = slim.slug.split("/").pop() ?? slim.slug;
             const audits = await fetchSkillAudits(sourceRepo, [skillSlug]);
             if (audits[skillSlug]) {
-              (slim as { audit?: SkillAuditData }).audit = audits[skillSlug];
+              slim.audit = audits[skillSlug];
             }
           } catch (err) {
             log.warn(
@@ -692,7 +693,11 @@ export async function getSkill(
             );
           }
         }
-        return { skill: slim as SkillDetailResponse };
+        if (slim.origin === "clawhub") {
+          const { owner: _pluginOwner, ...detail } = slim;
+          return { skill: detail };
+        }
+        return { skill: slim };
       }
       return { error: `Skill "${skillId}" not found`, status: 404 };
     }
@@ -727,17 +732,11 @@ export async function getSkill(
       const inspectResult = await clawhubInspect(slim.slug);
       if (inspectResult.data) {
         const data = inspectResult.data;
-        (detail as { owner?: typeof data.owner }).owner = data.owner;
-        (detail as { stats?: typeof data.stats }).stats = data.stats;
-        (
-          detail as {
-            latestVersion?: typeof data.latestVersion;
-          }
-        ).latestVersion = data.latestVersion;
-        (detail as { createdAt?: typeof data.createdAt }).createdAt =
-          data.createdAt;
-        (detail as { updatedAt?: typeof data.updatedAt }).updatedAt =
-          data.updatedAt;
+        detail.owner = data.owner;
+        detail.stats = data.stats;
+        detail.latestVersion = data.latestVersion;
+        detail.createdAt = data.createdAt;
+        detail.updatedAt = data.updatedAt;
       }
     } catch (err) {
       log.warn({ err, skillId }, "Failed to enrich clawhub skill detail");
@@ -766,7 +765,7 @@ export async function getSkill(
       const skillSlug = slim.slug.split("/").pop() ?? slim.slug;
       const audits = await fetchSkillAudits(sourceRepo, [skillSlug]);
       if (audits[skillSlug]) {
-        (detail as { audit?: SkillAuditData }).audit = audits[skillSlug];
+        detail.audit = audits[skillSlug];
       }
     } catch (err) {
       log.warn(
@@ -862,9 +861,7 @@ export function getSkillLocalDetail(skillId: string):
             toolNames: summary.toolManifest.toolNames,
           }
         : null,
-      installMeta: installMeta
-        ? (installMeta as unknown as Record<string, unknown>)
-        : null,
+      installMeta: installMeta ? { ...installMeta } : null,
       config: configEntry
         ? {
             enabled: configEntry.enabled !== false,
@@ -1415,9 +1412,8 @@ export async function uninstallSkill(
 
     // Clean config entry
     const raw = loadRawConfig();
-    const skills = raw.skills as Record<string, unknown> | undefined;
-    const entries = skills?.entries as Record<string, unknown> | undefined;
-    if (entries?.[skillId]) {
+    const entries = isObjectRecord(raw.skills) ? raw.skills.entries : undefined;
+    if (isObjectRecord(entries) && entries[skillId]) {
       delete entries[skillId];
       saveConfigWithSuppression(raw);
     }

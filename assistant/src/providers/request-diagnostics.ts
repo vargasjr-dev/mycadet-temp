@@ -159,7 +159,7 @@ function installOutboundHttpDiagnostics(): void {
   }
   installed = true;
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async function instrumentedFetch(
+  async function instrumentedFetch(
     input: RequestInfo | URL,
     init?: RequestInit,
   ): Promise<Response> {
@@ -184,7 +184,10 @@ function installOutboundHttpDiagnostics(): void {
       }
       throw error;
     }
-  } as typeof globalThis.fetch;
+  }
+  globalThis.fetch = Object.assign(instrumentedFetch, {
+    preconnect: originalFetch.preconnect,
+  });
 }
 
 function requestUrl(input: RequestInfo | URL): string | undefined {

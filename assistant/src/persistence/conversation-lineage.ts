@@ -73,7 +73,11 @@ export function isReferentialFork(row: {
   forkStrategy: string | null;
   forkParentConversationId: string | null;
   forkParentMessageId: string | null;
-}): boolean {
+}): row is {
+  forkStrategy: typeof REFERENTIAL_FORK_STRATEGY;
+  forkParentConversationId: string;
+  forkParentMessageId: string;
+} {
   return (
     row.forkStrategy === REFERENTIAL_FORK_STRATEGY &&
     row.forkParentConversationId !== null &&
@@ -137,11 +141,11 @@ export function resolveConversationLineage(
     if (!isReferentialFork(current)) {
       break;
     }
-    const parentId = current.forkParentConversationId as string;
+    const parentId = current.forkParentConversationId;
     if (visited.has(parentId)) {
       break;
     }
-    const bound = deps.loadMessageBound(current.forkParentMessageId as string);
+    const bound = deps.loadMessageBound(current.forkParentMessageId);
     if (bound === null) {
       break;
     }

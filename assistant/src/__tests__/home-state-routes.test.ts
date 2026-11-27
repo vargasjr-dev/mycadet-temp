@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { RelationshipStateSchema } from "../api/responses/home.js";
+
 // Stub the OAuth connection store before importing anything that
 // transitively pulls in the writer — otherwise importing the route
 // module would try to open the real OAuth DB.
@@ -28,20 +30,6 @@ const { writeRelationshipState, getRelationshipStatePath } =
   await import("../home/relationship-state-writer.js");
 
 const handleGetHomeState = ROUTES[0].handler;
-
-interface RelationshipStateWire {
-  version: number;
-  assistantId: string;
-  tier: number;
-  progressPercent: number;
-  facts: unknown[];
-  capabilities: Array<{ id: string; tier: string }>;
-  conversationCount: number;
-  hatchedDate: string;
-  assistantName: string;
-  userName?: string;
-  updatedAt: string;
-}
 
 let workspaceDir: string;
 let origWorkspaceDir: string | undefined;
@@ -85,7 +73,7 @@ describe("home-state-routes", () => {
       await writeRelationshipState();
       expect(existsSync(getRelationshipStatePath())).toBe(true);
 
-      const body = (await handleGetHomeState({})) as RelationshipStateWire;
+      const body = RelationshipStateSchema.parse(await handleGetHomeState({}));
       expect(body.version).toBe(1);
       expect(body.assistantId).toBe("default");
       expect(body.capabilities).toHaveLength(6);
@@ -97,7 +85,7 @@ describe("home-state-routes", () => {
     test("read-through fallback when the file is missing", async () => {
       expect(existsSync(getRelationshipStatePath())).toBe(false);
 
-      const body = (await handleGetHomeState({})) as RelationshipStateWire;
+      const body = RelationshipStateSchema.parse(await handleGetHomeState({}));
       expect(body.version).toBe(1);
       expect(body.tier).toBe(1);
       expect(body.progressPercent).toBe(0);
@@ -113,7 +101,7 @@ describe("home-state-routes", () => {
       mkdirSync(join(path, ".."), { recursive: true });
       writeFileSync(path, "this is not json", "utf-8");
 
-      const body = (await handleGetHomeState({})) as RelationshipStateWire;
+      const body = RelationshipStateSchema.parse(await handleGetHomeState({}));
       expect(body.version).toBe(1);
       expect(body.capabilities).toHaveLength(6);
     });
@@ -134,7 +122,7 @@ describe("home-state-routes", () => {
         "utf-8",
       );
 
-      const body = (await handleGetHomeState({})) as RelationshipStateWire;
+      const body = RelationshipStateSchema.parse(await handleGetHomeState({}));
       expect(body.userName).toBe("Jamie");
     });
   });

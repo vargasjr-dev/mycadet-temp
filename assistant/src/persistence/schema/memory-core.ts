@@ -57,7 +57,7 @@ export const memoryEmbeddings = sqliteTable(
     model: text("model").notNull(),
     dimensions: integer("dimensions").notNull(),
     vectorJson: text("vector_json"),
-    vectorBlob: blob("vector_blob"),
+    vectorBlob: blob("vector_blob", { mode: "buffer" }),
     contentHash: text("content_hash"),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),

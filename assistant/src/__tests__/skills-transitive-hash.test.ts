@@ -10,6 +10,7 @@ import {
   computeTransitiveSkillVersionHash,
   TransitiveHashError,
 } from "../skills/transitive-version-hash.js";
+import { getObjectProperty } from "../util/object.js";
 
 const testDirs: string[] = [];
 
@@ -257,7 +258,7 @@ describe("computeTransitiveSkillVersionHash", () => {
       computeTransitiveSkillVersionHash("root", index);
     } catch (err) {
       expect(err).toHaveProperty("code", "missing");
-      expect((err as TransitiveHashError).message).toContain("ghost");
+      expect(getObjectProperty(err, "message")).toContain("ghost");
     }
   });
 

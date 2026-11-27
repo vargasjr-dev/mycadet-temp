@@ -335,7 +335,7 @@ export function recordConversationSeenSignal(params: {
   const eventObservedAt = observedAt ?? now;
   const metadataJson = metadata ? JSON.stringify(metadata) : "{}";
 
-  const event: typeof conversationAttentionEvents.$inferInsert = {
+  const event: typeof conversationAttentionEvents.$inferSelect = {
     id: eventId,
     conversationId,
     sourceChannel,
@@ -433,7 +433,7 @@ export function recordConversationSeenSignal(params: {
       .run();
   });
 
-  return rowToEvent(event as typeof conversationAttentionEvents.$inferSelect);
+  return rowToEvent(event);
 }
 
 // ── markConversationUnread ───────────────────────────────────────────

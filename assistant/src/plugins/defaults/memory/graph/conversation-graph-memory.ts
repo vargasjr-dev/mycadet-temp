@@ -569,8 +569,8 @@ export class ConversationGraphMemory {
       injectedTokens: 0,
       latencyMs: 0,
       mode: "none" as const,
-      injectedBlockText: null as string | null,
-      metrics: null as RetrievalMetrics | null,
+      injectedBlockText: null,
+      metrics: null,
     };
 
     if (!isMemoryEnabled(config)) {
