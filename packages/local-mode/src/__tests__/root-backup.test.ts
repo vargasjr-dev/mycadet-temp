@@ -10,8 +10,10 @@ import {
   rm,
   stat,
   symlink,
+  utimes,
   writeFile,
 } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as tar from "tar";
@@ -27,6 +29,7 @@ import {
   validateRootArchive,
 } from "../root-backup";
 import { STATE_ROOTS } from "../state-roots";
+import { getBackupsDir } from "../backup-ops";
 import * as localCapture from "../remotes/local/capture";
 import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "../../../../cli/src/__tests__/commands-mock.js";
@@ -113,6 +116,14 @@ afterEach(() => {
   onSleep = undefined;
 });
 
+function operationLockPath(assistantId: string): string {
+  return join(
+    getBackupsDir(),
+    ".operations",
+    createHash("sha256").update(assistantId).digest("hex"),
+  );
+}
+
 const scratch: string[] = [];
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), "root-backup-test-"));
@@ -160,6 +171,7 @@ async function fixture() {
 afterEach(async () => {
   for (const dir of scratch.splice(0))
     await rm(dir, { recursive: true, force: true });
+  await rm(operationLockPath("test"), { recursive: true, force: true });
 });
 
 describe("root tar backup", () => {
@@ -482,6 +494,48 @@ describe("root tar backup", () => {
       release();
       await first;
     }
+    await validateRootArchive(file);
+  });
+  test("a lock left by a process that has exited doesn't block the next backup", async () => {
+    const { entry, file } = await fixture();
+    running = false;
+    const lock = operationLockPath(entry.assistantId);
+    await mkdir(lock, { recursive: true });
+    const exited = Bun.spawnSync(["true"]).pid;
+    await writeFile(join(lock, "owner"), String(exited));
+    const started = new Date(Date.now() - 60_000);
+    await utimes(lock, started, started);
+
+    await createRootBackup(entry, file);
+    await validateRootArchive(file);
+  });
+  test("a long-running backup keeps its lock however old it is", async () => {
+    const { entry, file } = await fixture();
+    running = false;
+    const lock = operationLockPath(entry.assistantId);
+    await mkdir(lock, { recursive: true });
+    const owner = Bun.spawn(["sleep", "30"]);
+    try {
+      await writeFile(join(lock, "owner"), String(owner.pid));
+      const started = new Date(Date.now() - 60 * 60_000);
+      await utimes(lock, started, started);
+
+      await expect(createRootBackup(entry, file)).rejects.toThrow(
+        "Another backup/restore",
+      );
+    } finally {
+      owner.kill();
+    }
+  });
+  test("an ownerless lock from an older CLI is cleared once it's old", async () => {
+    const { entry, file } = await fixture();
+    running = false;
+    const lock = operationLockPath(entry.assistantId);
+    await mkdir(lock, { recursive: true });
+    const old = new Date(Date.now() - 60_000);
+    await utimes(lock, old, old);
+
+    await createRootBackup(entry, file);
     await validateRootArchive(file);
   });
   test("deferred recovery restore keeps services stopped so its caller can select the runtime", async () => {

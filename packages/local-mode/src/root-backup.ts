@@ -42,6 +42,7 @@ import {
   type StateRoot,
 } from "./state-roots";
 import { execOutput } from "./exec";
+import { ownerFilePath, releaseLock, tryBreakStaleLock } from "./lockfile-lock";
 
 /** Plain tar root layout; no credential decoding or logical workspace transformation. */
 export async function packRoot(root: string, output: string): Promise<void> {
@@ -548,22 +549,30 @@ export async function withRootOperationLock<T>(
   if (owned?.has(lock)) {
     return work();
   }
-  try {
-    await mkdir(lock, { mode: 0o700 });
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST")
+  const acquire = () =>
+    mkdir(lock, { mode: 0o700 }).then(
+      () => true,
+      (error: NodeJS.ErrnoException) => {
+        if (error.code !== "EEXIST") throw error;
+        return false;
+      },
+    );
+  // An interrupted backup leaves its lock behind; clear it once its owner is gone.
+  if (!(await acquire())) {
+    tryBreakStaleLock(lock, Infinity);
+    if (!(await acquire()))
       throw new Error(
         `Another backup/restore owns ${lock}. If its process has exited, remove that operation lock and retry.`,
       );
-    throw error;
   }
   try {
+    await writeFile(ownerFilePath(lock), String(process.pid));
     return await ownedOperationLocks.run(
       new Set([...(owned ?? []), lock]),
       work,
     );
   } finally {
-    await rm(lock, { recursive: true, force: true });
+    releaseLock(lock);
   }
 }
 
