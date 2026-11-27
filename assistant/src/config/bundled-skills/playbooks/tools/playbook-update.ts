@@ -29,7 +29,7 @@ export async function executePlaybookUpdate(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const playbookId = input.playbook_id as string;
+  const playbookId = input.playbook_id;
   if (!playbookId || typeof playbookId !== "string") {
     return {
       content: "Error: playbook_id is required and must be a string",

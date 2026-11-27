@@ -22,18 +22,21 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
-  const conversationId = input.conversation_id as string;
-  const limit = input.limit as number | undefined;
-  const threadId = input.thread_id as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
+  const conversationId = input.conversation_id;
+  const limit = typeof input.limit === "number" ? input.limit : undefined;
+  const threadId =
+    typeof input.thread_id === "string" ? input.thread_id : undefined;
 
-  if (!conversationId) {
+  if (typeof conversationId !== "string" || !conversationId) {
     return err("conversation_id is required.");
   }
 
   try {
     const provider = await resolveProvider(platform);
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     let messages;
     if (threadId && provider.getThreadReplies) {

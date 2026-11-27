@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 // ── Mock modules ────────────────────────────────────────────────────────────
 
 const testTmpDir = process.env.CADET_WORKSPACE_DIR!;
@@ -296,10 +300,12 @@ describe("Shell tool input validation", () => {
 
   test("tool definition includes required schema fields", () => {
     const def = shellTool;
-    const schema = def.input_schema as {
-      required: string[];
-      properties: Record<string, unknown>;
-    };
+    const schema = z
+      .looseObject({
+        required: z.array(z.string()),
+        properties: jsonObjectSchema,
+      })
+      .parse(def.input_schema);
     expect(def.name).toBe("bash");
     expect(schema.required).toContain("command");
     expect(schema.required).toContain("activity");

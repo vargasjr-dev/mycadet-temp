@@ -348,8 +348,7 @@ export async function queryIndex(
 
   return results.map((r) => ({
     documentId:
-      (r.payload.document_id as string | undefined) ??
-      documentIdFromPoint(plugin, r.payload.target_id),
+      r.payload.document_id ?? documentIdFromPoint(plugin, r.payload.target_id),
     score: r.score,
     text: r.payload.text,
     modality: r.payload.modality ?? "text",

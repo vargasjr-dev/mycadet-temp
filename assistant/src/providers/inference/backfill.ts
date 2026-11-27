@@ -173,7 +173,8 @@ function ensureProviderConnection(
     return false;
   }
 
-  const provider = entry.provider as string | undefined;
+  const provider =
+    typeof entry.provider === "string" ? entry.provider : undefined;
   if (!provider) {
     return false;
   }

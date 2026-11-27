@@ -53,7 +53,6 @@
  * value written by a previous process could only ever be lower than any seq
  * the new process assigns -- never ambiguous against it.
  */
-
 import {
   mkdirSync,
   readFileSync,
@@ -70,6 +69,7 @@ import {
 import type { AssistantEventEnvelope } from "../api/index.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import type { AssistantEventPublishOptions } from "./assistant-event-publish-options.js";
 import {
   matchesTargeting,
@@ -481,8 +481,7 @@ function readReservedCeiling(): number {
       parsed !== null &&
       "reservedSeqCeiling" in parsed
     ) {
-      const ceiling = (parsed as { reservedSeqCeiling: unknown })
-        .reservedSeqCeiling;
+      const ceiling = getObjectProperty(parsed, "reservedSeqCeiling");
       if (
         typeof ceiling === "number" &&
         Number.isFinite(ceiling) &&

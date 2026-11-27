@@ -3,8 +3,9 @@
  * producer hands us a verbatim message via contextPayload.requestedMessage, the
  * engine must skip the LLM call entirely and use the copy as-is.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 // ── Mocks (must precede imports from mocked modules) ──────────────────
 
@@ -634,18 +635,24 @@ describe("decision tool title field specification", () => {
 
     await evaluateSignal(makeLlmSignal(), ["cadet"]);
 
-    const tool = capturedTools?.[0] as {
-      input_schema: {
-        properties: {
-          renderedCopy: {
-            properties: Record<
-              string,
-              { properties: { title: { description: string } } }
-            >;
-          };
-        };
-      };
-    };
+    const tool = z
+      .looseObject({
+        input_schema: z.looseObject({
+          properties: z.looseObject({
+            renderedCopy: z.looseObject({
+              properties: z.record(
+                z.string(),
+                z.looseObject({
+                  properties: z.looseObject({
+                    title: z.looseObject({ description: z.string() }),
+                  }),
+                }),
+              ),
+            }),
+          }),
+        }),
+      })
+      .parse(capturedTools?.[0]);
     const description =
       tool.input_schema.properties.renderedCopy.properties.cadet.properties
         .title.description;

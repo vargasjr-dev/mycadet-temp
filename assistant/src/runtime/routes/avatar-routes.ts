@@ -162,7 +162,7 @@ function handleRenderFromTraits({ body, headers }: RouteHandlerArgs) {
 }
 
 async function handleGenerateAvatar({ body, headers }: RouteHandlerArgs) {
-  const raw = (body as Record<string, unknown>)?.description;
+  const raw = body?.description;
   const description = typeof raw === "string" ? raw.trim() : "";
   if (!description) {
     throw new BadRequestError("description is required");
@@ -260,9 +260,7 @@ function handleRemoveAvatar({ headers }: RouteHandlerArgs) {
 }
 
 async function handleGetAvatar({ queryParams, body }: RouteHandlerArgs) {
-  const format = (queryParams?.format ??
-    (body as Record<string, unknown>)?.format ??
-    "path") as string;
+  const format = queryParams?.format ?? body?.format ?? "path";
 
   if (format !== "path" && format !== "base64") {
     throw new BadRequestError(
@@ -295,8 +293,7 @@ async function handleGetAvatar({ queryParams, body }: RouteHandlerArgs) {
 }
 
 function handleCharacterAscii({ queryParams, body }: RouteHandlerArgs) {
-  const widthRaw =
-    queryParams?.width ?? (body as Record<string, unknown>)?.width ?? "60";
+  const widthRaw = queryParams?.width ?? body?.width ?? "60";
   const widthStr = String(widthRaw);
 
   if (!/^\d+$/.test(widthStr)) {
@@ -321,7 +318,13 @@ function handleCharacterAscii({ queryParams, body }: RouteHandlerArgs) {
 
   let traits: CharacterTraits;
   try {
-    traits = JSON.parse(readFileSync(traitsPath, "utf-8")) as CharacterTraits;
+    traits = z
+      .looseObject({
+        bodyShape: z.string(),
+        eyeStyle: z.string(),
+        color: z.string(),
+      })
+      .parse(JSON.parse(readFileSync(traitsPath, "utf-8")));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new BadRequestError(`Failed to read character traits: ${message}`);

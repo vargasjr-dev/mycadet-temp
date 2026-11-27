@@ -58,10 +58,7 @@ export async function executeFollowupList(
   const contactId = parsedInput.data.contact_id;
   const overdueOnly = parsedInput.data.overdue_only;
 
-  if (
-    status &&
-    !VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])
-  ) {
+  if (status && !VALID_STATUSES.includes(status)) {
     return {
       content: `Error: Invalid status "${status}". Must be one of: ${VALID_STATUSES.join(
         ", ",

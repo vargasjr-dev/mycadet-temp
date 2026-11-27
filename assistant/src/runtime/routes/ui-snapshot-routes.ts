@@ -12,12 +12,10 @@
  * so no permission gate applies; an unavailable or outdated client degrades
  * to a clean error the CLI can explain.
  */
-
 import { randomUUID } from "node:crypto";
 
 import { z } from "zod";
 
-import { HostUiSnapshotView } from "../../api/events/host-ui-snapshot.js";
 import type { HostUiSnapshotResultPayload } from "../../daemon/message-types/host-ui-snapshot.js";
 import { readWorkspaceTheme } from "../../theme/workspace-theme.js";
 import { assistantEventHub, broadcastMessage } from "../assistant-event-hub.js";
@@ -29,6 +27,7 @@ import {
 import { resolveActorPrincipalIdForLocalGuardian } from "../local-actor-identity.js";
 import * as pendingInteractions from "../pending-interactions.js";
 import { BadRequestError, ForbiddenError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const DEFAULT_SNAPSHOT_TIMEOUT_MS = 30_000;
@@ -122,7 +121,7 @@ async function handleUiSnapshot({
         {
           type: "host_ui_snapshot_request",
           requestId,
-          view: view as HostUiSnapshotView,
+          view: view,
           ...(theme.theme?.tokens ? { tokens: theme.theme.tokens } : {}),
         },
         undefined,
@@ -158,15 +157,9 @@ async function handleHostUiSnapshotResult({ body, headers }: RouteHandlerArgs) {
     throw new BadRequestError("Request body is required");
   }
 
+  const request = parseBody(hostUiSnapshotResultRequestSchema, body);
   const { requestId, pngBase64, widthPx, heightPx, isError, errorMessage } =
-    body as {
-      requestId?: string;
-      pngBase64?: string;
-      widthPx?: number;
-      heightPx?: number;
-      isError?: boolean;
-      errorMessage?: string;
-    };
+    request;
 
   if (!requestId || typeof requestId !== "string") {
     throw new BadRequestError("requestId is required");
@@ -226,6 +219,18 @@ async function handleHostUiSnapshotResult({ body, headers }: RouteHandlerArgs) {
 // Route definitions (shared HTTP + IPC)
 // ---------------------------------------------------------------------------
 
+const hostUiSnapshotResultRequestSchema = z.object({
+  requestId: z.string().describe("Pending UI-snapshot request ID"),
+  pngBase64: z
+    .string()
+    .describe("Base64 PNG capture of the staged view")
+    .optional(),
+  widthPx: z.number().optional(),
+  heightPx: z.number().optional(),
+  isError: z.boolean().optional(),
+  errorMessage: z.string().optional(),
+});
+
 export const ROUTES: RouteDefinition[] = [
   {
     operationId: "ui_snapshot",
@@ -284,17 +289,7 @@ export const ROUTES: RouteDefinition[] = [
       "Resolve a pending UI-snapshot request by requestId. Returns 200 even " +
       "when no pending interaction matches (late delivery is tolerated).",
     tags: ["host"],
-    requestBody: z.object({
-      requestId: z.string().describe("Pending UI-snapshot request ID"),
-      pngBase64: z
-        .string()
-        .describe("Base64 PNG capture of the staged view")
-        .optional(),
-      widthPx: z.number().optional(),
-      heightPx: z.number().optional(),
-      isError: z.boolean().optional(),
-      errorMessage: z.string().optional(),
-    }),
+    requestBody: hostUiSnapshotResultRequestSchema,
     responseBody: z.object({
       accepted: z.boolean(),
     }),

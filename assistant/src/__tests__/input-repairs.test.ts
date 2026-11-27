@@ -2,11 +2,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { SkillToolEntry } from "../skills/tool-manifest.js";
 import {
   bundledToolInputAliases,
   bundledToolInputRepairs,
 } from "../tools/shared/input-repairs.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const TOOL = "scaffold_cloud_skill";
 const FIND_TOOL = "find_similar_skills";
@@ -30,9 +33,14 @@ function manifestEntry(name: string): SkillToolEntry {
 }
 
 function declaredProperties(name: string): Record<string, { type?: string }> {
-  const schema = manifestEntry(name).input_schema as {
-    properties: Record<string, { type?: string }>;
-  };
+  const schema = z
+    .looseObject({
+      properties: z.record(
+        z.string(),
+        z.looseObject({ type: z.string().optional() }),
+      ),
+    })
+    .parse(manifestEntry(name).input_schema);
   return schema.properties;
 }
 
@@ -158,11 +166,15 @@ describe("bundledToolInputRepairs: files written as a path-keyed map", () => {
   });
 
   test("an entry spelling out every declared file property is read as one file", () => {
-    const schema = manifestEntry(TOOL).input_schema as {
-      properties: {
-        files: { items: { properties: Record<string, unknown> } };
-      };
-    };
+    const schema = z
+      .looseObject({
+        properties: z.looseObject({
+          files: z.looseObject({
+            items: z.looseObject({ properties: jsonObjectSchema }),
+          }),
+        }),
+      })
+      .parse(manifestEntry(TOOL).input_schema);
     const declared = Object.keys(schema.properties.files.items.properties);
     expect(declared).toContain("path");
     const entry = Object.fromEntries(declared.map((key) => [key, "value"]));

@@ -120,8 +120,7 @@ const seededGraphs: ConversationGraphMemory[] = [];
  */
 function seedV2Identity(text: string | null): void {
   const graph = new ConversationGraphMemory("conv-test-1");
-  (graph as unknown as { lastInjectedBlock: string | null }).lastInjectedBlock =
-    text;
+  graph["lastInjectedBlock"] = text;
   seededGraphs.push(graph);
 }
 

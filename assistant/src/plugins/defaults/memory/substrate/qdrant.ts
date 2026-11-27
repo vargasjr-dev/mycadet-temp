@@ -30,7 +30,7 @@ import { v5 as uuidv5 } from "uuid";
 import { getConfig } from "../../../../config/loader.js";
 import type { SparseEmbedding } from "../../../../persistence/embeddings/embedding-types.js";
 import { getErrorCode } from "../../../../util/error-details.js";
-import { isObjectRecord } from "../../../../util/object.js";
+import { getObjectProperty, isObjectRecord } from "../../../../util/object.js";
 import { resolveQdrantUrl } from "../embeddings.js";
 import { getLogger } from "../logging.js";
 import { getDataDir } from "../paths.js";
@@ -311,7 +311,7 @@ async function ensureConceptPageCollectionOnce(): Promise<{
     if (
       err instanceof Error &&
       "status" in err &&
-      (err as { status: number }).status === 409
+      getObjectProperty(err, "status") === 409
     ) {
       _collectionReady = true;
       return { migrated };
@@ -450,8 +450,7 @@ function missingNamedVectors(
 ): string[] {
   const params = info.config?.params;
   const dense = params?.vectors;
-  const sparse = (params as { sparse_vectors?: unknown } | undefined)
-    ?.sparse_vectors;
+  const sparse = getObjectProperty(params, "sparse_vectors");
   const denseNames =
     isObjectRecord(dense) && !("size" in dense)
       ? new Set(Object.keys(dense))
@@ -503,7 +502,7 @@ function wrongSizeNamedVectors(
   for (const name of REQUIRED_DENSE_VECTORS) {
     const entry = map[name];
     if (isObjectRecord(entry) && "size" in entry) {
-      const size = (entry as { size?: unknown }).size;
+      const size = getObjectProperty(entry, "size");
       if (typeof size === "number" && size !== expectedSize) {
         wrong.push(name);
       }
@@ -744,7 +743,7 @@ export async function backfillKindOnPointsWithPrefix(
         ...(offset !== undefined ? { offset } : {}),
       });
       for (const point of result.points) {
-        const slug = (point.payload as { slug?: unknown } | null)?.slug;
+        const slug = getObjectProperty(point.payload, "slug");
         if (typeof slug !== "string") {
           continue;
         }
@@ -946,7 +945,7 @@ export async function hybridQueryConceptPages(
   // the destructuring below stays uniform; the empty `points: []` matches
   // the shape of a no-hit Qdrant response.
   const emptyResult = {
-    points: [] as Array<{ payload?: unknown; score?: number }>,
+    points: [] satisfies Array<{ payload?: unknown; score?: number }>,
   };
   const runQueries = async () =>
     Promise.all([
@@ -982,7 +981,7 @@ export async function hybridQueryConceptPages(
     set: (entry: ConceptPageQueryResult, score: number) => void,
   ): void => {
     for (const point of points ?? []) {
-      const slug = (point.payload as { slug?: unknown } | null)?.slug;
+      const slug = getObjectProperty(point.payload, "slug");
       if (typeof slug !== "string") {
         continue;
       }
@@ -1007,7 +1006,7 @@ function isCollectionMissing(err: unknown): boolean {
   if (
     isObjectRecord(err) &&
     "status" in err &&
-    (err as { status: number }).status === 404
+    getObjectProperty(err, "status") === 404
   ) {
     return true;
   }

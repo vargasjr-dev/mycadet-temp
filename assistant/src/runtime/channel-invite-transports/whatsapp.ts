@@ -8,8 +8,6 @@
  * `undefined` (triggering generic instructions) when not configured.
  */
 
-import { ChannelId } from "@mycadet/service-contracts/channels";
-
 import { getConfig } from "../../config/loader.js";
 import type { ChannelInviteAdapter } from "../channel-invite-types.js";
 
@@ -36,7 +34,7 @@ export function resolveWhatsAppDisplayNumber(): string | undefined {
 // ---------------------------------------------------------------------------
 
 export const whatsappInviteAdapter: ChannelInviteAdapter = {
-  channel: "whatsapp" as ChannelId,
+  channel: "whatsapp",
 
   resolveChannelHandle(): string | undefined {
     return resolveWhatsAppDisplayNumber();

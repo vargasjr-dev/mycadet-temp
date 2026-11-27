@@ -4,7 +4,7 @@ import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 
 import { getLogger } from "../../util/logger.js";
-import { isPlainObject } from "../../util/object.js";
+import { getObjectProperty, isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const log = getLogger("migration-144");
@@ -195,7 +195,7 @@ function isSubscriptionOnlyWorkspace(workspaceDir: string): boolean {
       const parsed: unknown = JSON.parse(subscription.auth);
       const authType =
         parsed !== null && typeof parsed === "object"
-          ? (parsed as { type?: unknown }).type
+          ? getObjectProperty(parsed, "type")
           : undefined;
       if (authType !== "oauth_subscription") {
         return false;

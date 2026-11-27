@@ -176,10 +176,8 @@ function seedPendingConfirmation(
   // Access private ownedIds so denyAllPending/dispose can find this request.
   // promptResolve/promptReject callbacks are stored in pendingInteractions via
   // registerPendingInteraction, which is called separately in each test.
-  const prompter = conversation["prompter"] as unknown as {
-    ownedIds: Set<string>;
-  };
-  prompter.ownedIds.add(requestId);
+  const prompter = conversation["prompter"];
+  prompter["ownedIds"].add(requestId);
 }
 
 /**
@@ -311,10 +309,8 @@ describe("approval cascading", () => {
 
     // Remove req-stale from the prompter's ownedIds (simulating it was
     // already resolved by another path before cascade reaches it)
-    const prompter = conversationObj["prompter"] as unknown as {
-      ownedIds: Set<string>;
-    };
-    prompter.ownedIds.delete("req-stale");
+    const prompter = conversationObj["prompter"];
+    prompter["ownedIds"].delete("req-stale");
 
     // This should not throw — cascade should skip req-stale gracefully
     expect(() => {

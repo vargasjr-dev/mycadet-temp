@@ -81,7 +81,7 @@ export type LLMProvider = z.infer<typeof LLMProvider>;
  * point share one rule.
  */
 export function unknownLlmProviderIssue(provider: string): string | null {
-  return (KNOWN_LLM_PROVIDERS as readonly string[]).includes(provider)
+  return KNOWN_LLM_PROVIDERS.some((candidate: string) => candidate === provider)
     ? null
     : `Invalid provider "${provider}". Valid providers: ${KNOWN_LLM_PROVIDERS.join(", ")}.`;
 }
@@ -109,7 +109,7 @@ export const DEFAULT_PROVIDER_CHOICES: readonly LLMProvider[] = [
       // A catalog provider outside the known provider set cannot be
       // referenced by any profile, so it cannot back the defaults either.
       .filter((id): id is LLMProvider =>
-        (KNOWN_LLM_PROVIDERS as readonly string[]).includes(id),
+        KNOWN_LLM_PROVIDERS.some((candidate: string) => candidate === id),
       ),
   ]),
 ];
@@ -1034,7 +1034,9 @@ export const LLMSchema = z
       // mix validation below, which bars the profile from any mix.)
       if (
         siteConfig?.profile === JEV_MANAGED_PROFILE_KEY &&
-        !(JEV_MANAGED_PROFILE_CALL_SITES as readonly string[]).includes(siteId)
+        !JEV_MANAGED_PROFILE_CALL_SITES.some(
+          (candidate: string) => candidate === siteId,
+        )
       ) {
         ctx.addIssue({
           code: "custom",

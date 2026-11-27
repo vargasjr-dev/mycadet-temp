@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * xAI realtime streaming STT adapter.
  *
@@ -27,12 +29,12 @@
  *   per the protocol, the socket stays open after an error frame.
  * - All timers and listeners are cleaned up on close to prevent leaks.
  */
-
 import type {
   StreamingTranscriber,
   SttStreamServerEvent,
 } from "../../stt/types.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 
 const log = getLogger("xai-realtime");
 
@@ -338,7 +340,7 @@ export class XAIRealtimeTranscriber implements StreamingTranscriber {
             ev instanceof Error
               ? ev.message
               : typeof ev === "object" && ev !== null && "message" in ev
-                ? String((ev as { message: unknown }).message)
+                ? String(getObjectProperty(ev, "message"))
                 : "WebSocket error during connect";
           settleReject(new Error(`xAI realtime connect error: ${msg}`));
           return;
@@ -495,7 +497,25 @@ export class XAIRealtimeTranscriber implements StreamingTranscriber {
 
     let frame: XAIStreamFrame;
     try {
-      frame = JSON.parse(raw) as XAIStreamFrame;
+      frame = z
+        .looseObject({
+          type: z.string().optional(),
+          is_final: z.boolean().optional(),
+          speech_final: z.boolean().optional(),
+          text: z.string().optional(),
+          words: z
+            .array(
+              z.looseObject({
+                word: z.string().optional(),
+                speaker: z.number().optional(),
+                start: z.number().optional(),
+                end: z.number().optional(),
+              }),
+            )
+            .optional(),
+          message: z.string().optional(),
+        })
+        .parse(JSON.parse(raw));
     } catch {
       log.debug("Dropped non-JSON xAI frame");
       return;
@@ -642,7 +662,7 @@ export class XAIRealtimeTranscriber implements StreamingTranscriber {
       ev instanceof Error
         ? ev.message
         : typeof ev === "object" && ev !== null && "message" in ev
-          ? String((ev as { message: unknown }).message)
+          ? String(getObjectProperty(ev, "message"))
           : "WebSocket error";
 
     log.error({ error: ev }, "xAI realtime WebSocket error");
@@ -800,7 +820,25 @@ function tryParseHandshakeFrame(data: unknown): XAIStreamFrame | undefined {
     return undefined;
   }
   try {
-    const frame = JSON.parse(raw) as XAIStreamFrame;
+    const frame = z
+      .looseObject({
+        type: z.string().optional(),
+        is_final: z.boolean().optional(),
+        speech_final: z.boolean().optional(),
+        text: z.string().optional(),
+        words: z
+          .array(
+            z.looseObject({
+              word: z.string().optional(),
+              speaker: z.number().optional(),
+              start: z.number().optional(),
+              end: z.number().optional(),
+            }),
+          )
+          .optional(),
+        message: z.string().optional(),
+      })
+      .parse(JSON.parse(raw));
     if (frame && typeof frame === "object") {
       return frame;
     }

@@ -1,7 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 
 import { setDbReady } from "../../daemon/daemon-readiness.js";
-import type { RouteHandlerArgs } from "../../runtime/routes/types.js";
 import { AssistantIpcServer } from "../assistant-server.js";
 import { cliIpcCall } from "../cli-client.js";
 
@@ -12,11 +11,7 @@ for (const cancelOnDisconnect of [true, false]) {
   test(`timed-out IPC request cancels its action only when opted in: ${cancelOnDisconnect}`, async () => {
     setDbReady(true);
     server = new AssistantIpcServer();
-    const methods = (
-      server as unknown as {
-        methods: Map<string, (args: RouteHandlerArgs) => Promise<unknown>>;
-      }
-    ).methods;
+    const methods = server["methods"];
     const setup = Promise.withResolvers<void>();
     const completed = Promise.withResolvers<void>();
     let signal: AbortSignal | undefined;

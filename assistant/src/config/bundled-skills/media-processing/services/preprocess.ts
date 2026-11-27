@@ -9,6 +9,8 @@ import {
 } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { z } from "zod";
+
 import {
   createProcessingStage,
   deleteKeyframesForAsset,
@@ -615,7 +617,15 @@ export async function preprocessForAsset(
     let sectionBoundaries: SectionBoundary[];
     if (options.sectionConfigPath) {
       const raw = await readFile(options.sectionConfigPath, "utf-8");
-      sectionBoundaries = JSON.parse(raw) as SectionBoundary[];
+      sectionBoundaries = z
+        .array(
+          z.looseObject({
+            label: z.string(),
+            startSeconds: z.number(),
+            endSeconds: z.number(),
+          }),
+        )
+        .parse(JSON.parse(raw));
     } else {
       sectionBoundaries = createDefaultSections(durationSeconds);
     }

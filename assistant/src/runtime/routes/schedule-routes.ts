@@ -515,7 +515,8 @@ async function handleCreateSchedule(body: Record<string, unknown>) {
     typeof body.timezone === "string" ? body.timezone.trim() : "";
   const timezone = timezoneRaw === "" ? null : timezoneRaw;
   const enabled = body.enabled !== false;
-  const mode = (body.mode as string | undefined) ?? "execute";
+  const mode =
+    (typeof body.mode === "string" ? body.mode : undefined) ?? "execute";
   const inferenceProfile =
     body.inferenceProfile == null ? null : body.inferenceProfile;
 

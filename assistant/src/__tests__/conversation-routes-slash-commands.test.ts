@@ -634,11 +634,7 @@ describe("handleSendMessage flag taken after its queue decision", () => {
     const { conversation } = makeConversation();
     const { persistUserMessage } = makeConversation();
     void persistUserMessage;
-    (
-      conversation as unknown as {
-        persistUserMessage: ReturnType<typeof mock>;
-      }
-    ).persistUserMessage = mock(async () => {
+    conversation["persistUserMessage"] = mock(async () => {
       throw new Error("disk on fire");
     });
 

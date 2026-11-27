@@ -423,9 +423,7 @@ describe("resolveCallSiteConfig", () => {
     };
     const { fallbacks, opts } = collect();
     const resolved = resolveCallSiteConfig("mainAgent", llm, opts);
-    expect(resolved.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
-    );
+    expect(resolved.model).toBe(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model);
     expect(fallbacks).toContainEqual({
       callSite: "mainAgent",
       requested: "nonexistent",
@@ -598,9 +596,7 @@ describe("resolveCallSiteConfig", () => {
       pricingOverrides: [],
     };
     const resolved = resolveCallSiteConfig("mainAgent", llm);
-    expect(resolved.model).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
-    );
+    expect(resolved.model).toBe(CODE_DEFAULT_PROFILE_ENTRIES.balanced.model);
   });
 
   test("mainAgent activeProfile determines identity when no explicit call-site tweak exists", () => {

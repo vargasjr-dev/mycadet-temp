@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * xAI TTS WebSocket streaming session.
  *
@@ -11,8 +13,8 @@
  * Error codes/wording are caller-owned via error factories (stream-read
  * pattern), keeping this module free of provider imports.
  */
-
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import { isHighSurrogate } from "../../util/unicode.js";
 import type { StreamReadTimeouts } from "../stream-read.js";
 import {
@@ -258,7 +260,13 @@ export function synthesizeOverXaiTtsSocket(
 
       let frame: XaiTtsFrame;
       try {
-        frame = JSON.parse(raw) as XaiTtsFrame;
+        frame = z
+          .looseObject({
+            type: z.string().optional(),
+            delta: z.string().optional(),
+            message: z.string().optional(),
+          })
+          .parse(JSON.parse(raw));
       } catch {
         log.debug("Dropped non-JSON xAI TTS frame");
         return;
@@ -328,7 +336,7 @@ export function synthesizeOverXaiTtsSocket(
         ev instanceof Error
           ? ev.message
           : typeof ev === "object" && ev !== null && "message" in ev
-            ? String((ev as { message: unknown }).message)
+            ? String(getObjectProperty(ev, "message"))
             : "WebSocket error";
       fail(makeStreamError(message));
     });

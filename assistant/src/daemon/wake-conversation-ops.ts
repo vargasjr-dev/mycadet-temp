@@ -11,7 +11,6 @@
  * touch the message store, so `runtime/agent-wake.ts` references only the
  * erased `Conversation` type and never imports `message-protocol.ts`.
  */
-
 import type { AgentEvent } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
 import {
@@ -28,6 +27,7 @@ import { publishConversationMessagesChanged } from "../runtime/sync/resource-syn
 import type { CompletedBackgroundTool } from "../tools/background-tool-registry.js";
 import { ToolDefinition } from "../tools/tool-types.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import type { Conversation } from "./conversation.js";
 import type {
   SubagentToolGateMode,
@@ -124,7 +124,7 @@ function translateAgentEventToServerMessage(
             (r): r is { type: string; title: string; url: string } =>
               typeof r === "object" &&
               r != null &&
-              (r as { type?: string }).type === "web_search_result",
+              getObjectProperty(r, "type") === "web_search_result",
           )
           .map((r) => `${r.title}\n${r.url}`)
           .join("\n\n");

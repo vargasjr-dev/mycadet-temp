@@ -8,8 +8,9 @@
  *
  * Rule: cc-cutover-proof (see PR_B_TASK.md).
  */
-
 import { beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 // ── Real imports ──────────────────────────────────────────────────────────────
 import { getDb } from "../../../persistence/db-connection.js";
@@ -78,15 +79,21 @@ describe("CLI vs HTTP route parity", () => {
     clearConnections();
 
     // ── HTTP route path ───────────────────────────────────────────────────────
-    const httpResult = (await findHandler(
-      "inference_provider_connections_create",
-    )({
-      body: {
-        name: payload.name,
-        provider: payload.provider,
-        auth: payload.auth,
-      },
-    })) as { name: string; provider: string; auth: object };
+    const httpResult = z
+      .looseObject({
+        name: z.string(),
+        provider: z.string(),
+        auth: z.object({}).passthrough(),
+      })
+      .parse(
+        await findHandler("inference_provider_connections_create")({
+          body: {
+            name: payload.name,
+            provider: payload.provider,
+            auth: payload.auth,
+          },
+        }),
+      );
 
     expect(httpResult.name).toBe(payload.name);
     const httpRow = getConnection(getDb(), payload.name);

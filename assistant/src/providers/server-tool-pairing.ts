@@ -1,3 +1,4 @@
+import { getObjectProperty } from "../util/object.js";
 // Single source of truth for pairing server-side tool blocks (e.g. native
 // web_search) across a message list. Pure leaf module: consumed by the
 // provider formatter, load-time history repair, and any other pass that must
@@ -19,7 +20,7 @@ export function isServerToolUseBlock(
   return (
     typeof block === "object" &&
     block != null &&
-    (block as { type: string }).type === "server_tool_use"
+    getObjectProperty(block, "type") === "server_tool_use"
   );
 }
 
@@ -32,7 +33,7 @@ export function isWebSearchToolResultBlock(block: unknown): block is {
   return (
     typeof block === "object" &&
     block != null &&
-    (block as { type: string }).type === "web_search_tool_result"
+    getObjectProperty(block, "type") === "web_search_tool_result"
   );
 }
 
@@ -40,7 +41,7 @@ function isToolResultShapedBlock(block: unknown): boolean {
   return (
     typeof block === "object" &&
     block != null &&
-    (block as { type?: string }).type === "tool_result"
+    getObjectProperty(block, "type") === "tool_result"
   );
 }
 

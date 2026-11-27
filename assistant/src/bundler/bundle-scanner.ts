@@ -95,7 +95,9 @@ export async function scanBundle(zipPath: string): Promise<ScanResult> {
     await scanHtmlEntry(zip, manifest.entry as string, findings);
   }
   const entryName = manifest
-    ? (manifest.entry as string | undefined)
+    ? typeof manifest.entry === "string"
+      ? manifest.entry
+      : undefined
     : undefined;
   await scanAssets(zip, findings, entryName);
 

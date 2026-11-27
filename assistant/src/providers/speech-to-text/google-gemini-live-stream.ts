@@ -29,7 +29,6 @@
  * `provider-error` for everything else), a configurable inactivity
  * timeout, and idempotent cleanup.
  */
-
 import type { LiveServerMessage, Session } from "@google/genai";
 import { GoogleGenAI, Modality } from "@google/genai";
 
@@ -38,6 +37,7 @@ import type {
   SttStreamServerEvent,
 } from "../../stt/types.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 
 const log = getLogger("google-gemini-live-stream");
 
@@ -661,13 +661,13 @@ export class GoogleGeminiLiveStreamingTranscriber implements StreamingTranscribe
     }
     if (typeof ev === "object" && ev !== null) {
       if ("message" in ev) {
-        const m = (ev as { message: unknown }).message;
+        const m = getObjectProperty(ev, "message");
         if (m !== undefined && m !== null) {
           return String(m);
         }
       }
       if ("error" in ev) {
-        const e = (ev as { error: unknown }).error;
+        const e = getObjectProperty(ev, "error");
         if (e instanceof Error) {
           return e.message;
         }

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { askQuestionTool } from "../ask-question/ask-question-tool.js";
 import { reactToMessageTool } from "../channel/react-to-message.js";
 import { fileEditTool } from "../filesystem/edit.js";
@@ -170,10 +172,18 @@ describe("derived input_schema", () => {
       fileEditTool,
       fileListTool,
     ]) {
-      const schema = tool.input_schema as {
-        properties: Record<string, { type?: string; description?: string }>;
-        required: string[];
-      };
+      const schema = z
+        .looseObject({
+          properties: z.record(
+            z.string(),
+            z.looseObject({
+              type: z.string().optional(),
+              description: z.string().optional(),
+            }),
+          ),
+          required: z.array(z.string()),
+        })
+        .parse(tool.input_schema);
       expect(schema.required).toContain("activity");
       expect(schema.required).toContain("path");
       expect(schema.properties.activity?.type).toBe("string");
@@ -184,10 +194,18 @@ describe("derived input_schema", () => {
   });
 
   test("optional runtime-tolerant fields keep their descriptions and stay non-required", () => {
-    const schema = fileReadTool.input_schema as {
-      properties: Record<string, { type?: string; description?: string }>;
-      required: string[];
-    };
+    const schema = z
+      .looseObject({
+        properties: z.record(
+          z.string(),
+          z.looseObject({
+            type: z.string().optional(),
+            description: z.string().optional(),
+          }),
+        ),
+        required: z.array(z.string()),
+      })
+      .parse(fileReadTool.input_schema);
     expect(schema.properties.start_index?.type).toBe("number");
     expect(schema.properties.start_index?.description).toContain("0-indexed");
     expect(schema.required).not.toContain("start_index");

@@ -106,7 +106,10 @@ export function registerStatusCommand(program: Command): void {
           ["", ""],
           ["Memory", `${fmtMb(h.memory.currentMb)} / ${fmtMb(h.memory.maxMb)}`],
           ...(h.disk
-            ? ([["Disk", `${fmtMb(h.disk.freeMb)} free`]] as [string, string][])
+            ? ([["Disk", `${fmtMb(h.disk.freeMb)} free`]] satisfies [
+                string,
+                string,
+              ][])
             : []),
         ];
 

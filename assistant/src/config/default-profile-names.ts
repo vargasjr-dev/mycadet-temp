@@ -60,7 +60,7 @@ export const FALLBACK_PROFILE_BY_KEY: Record<
 };
 
 export function isDefaultProfileKey(value: string): value is DefaultProfileKey {
-  return (DEFAULT_PROFILE_KEYS as readonly string[]).includes(value);
+  return DEFAULT_PROFILE_KEYS.some((candidate: string) => candidate === value);
 }
 
 /**
@@ -95,7 +95,9 @@ export const MANAGED_ONLY_PROFILE_KEYS = [
 ] as const;
 
 export function isCloudOnlyProfileKey(value: string): boolean {
-  return (MANAGED_ONLY_PROFILE_KEYS as readonly string[]).includes(value);
+  return MANAGED_ONLY_PROFILE_KEYS.some(
+    (candidate: string) => candidate === value,
+  );
 }
 
 /**
@@ -132,5 +134,7 @@ export type DefaultProfileProvider = (typeof DEFAULT_PROFILE_PROVIDERS)[number];
 export function isDefaultProfileProvider(
   value: string,
 ): value is DefaultProfileProvider {
-  return (DEFAULT_PROFILE_PROVIDERS as readonly string[]).includes(value);
+  return DEFAULT_PROFILE_PROVIDERS.some(
+    (candidate: string) => candidate === value,
+  );
 }

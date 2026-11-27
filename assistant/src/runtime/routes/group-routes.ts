@@ -7,7 +7,6 @@
  * DELETE /v1/groups/:groupId     — delete a group
  * POST   /v1/groups/reorder      — reorder groups
  */
-
 import { z } from "zod";
 
 import {
@@ -21,6 +20,7 @@ import {
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { publishConversationListChanged } from "../sync/resource-sync-events.js";
 import { BadRequestError, ForbiddenError, NotFoundError } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const groupSchema = z.object({
@@ -113,8 +113,8 @@ function handleUpdateGroup({
   if (!existing) {
     throw new NotFoundError("Group not found");
   }
-  const name = body.name as string | undefined;
-  const sortPosition = body.sortPosition as number | undefined;
+  const name = typeof body.name === "string" ? body.name : undefined;
+  const sortPosition = body.sortPosition;
   if (name !== undefined && typeof name !== "string") {
     throw new BadRequestError("name must be a string");
   }
@@ -161,9 +161,8 @@ function handleDeleteGroup({ pathParams = {}, headers }: RouteHandlerArgs) {
 }
 
 function handleReorderGroups({ body = {}, headers }: RouteHandlerArgs) {
-  const updates = body.updates as
-    | Array<{ groupId: string; sortPosition: number }>
-    | undefined;
+  const request = parseBody(reorderGroupsRequestSchema, body);
+  const updates = request.updates;
   if (!Array.isArray(updates)) {
     throw new BadRequestError("Missing updates array");
   }
@@ -198,6 +197,17 @@ function handleReorderGroups({ body = {}, headers }: RouteHandlerArgs) {
 // ---------------------------------------------------------------------------
 // Route definitions
 // ---------------------------------------------------------------------------
+
+const reorderGroupsRequestSchema = z.object({
+  updates: z
+    .array(
+      z.object({
+        groupId: z.string(),
+        sortPosition: z.number(),
+      }),
+    )
+    .describe("Array of { groupId, sortPosition } objects"),
+});
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -309,16 +319,7 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Reorder groups",
     description: "Batch-update sort positions for conversation groups.",
     tags: ["groups"],
-    requestBody: z.object({
-      updates: z
-        .array(
-          z.object({
-            groupId: z.string(),
-            sortPosition: z.number(),
-          }),
-        )
-        .describe("Array of { groupId, sortPosition } objects"),
-    }),
+    requestBody: reorderGroupsRequestSchema,
     responseBody: z.object({ ok: z.boolean() }),
     additionalResponses: {
       "403": {

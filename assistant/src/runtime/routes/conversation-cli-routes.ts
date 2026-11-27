@@ -128,12 +128,14 @@ async function handleCreateCli({ body = {} }: RouteHandlerArgs) {
 // ---------------------------------------------------------------------------
 
 function handleExportCli({ body = {} }: RouteHandlerArgs) {
-  const format = (body.format as string) ?? "md";
+  const format =
+    (typeof body.format === "string" ? body.format : undefined) ?? "md";
   if (format !== "md" && format !== "json") {
     throw new BadRequestError('format must be "md" or "json"');
   }
 
-  let conversationId = body.conversationId as string | undefined;
+  let conversationId =
+    typeof body.conversationId === "string" ? body.conversationId : undefined;
 
   if (!conversationId) {
     const all = listConversations({ limit: 1 });

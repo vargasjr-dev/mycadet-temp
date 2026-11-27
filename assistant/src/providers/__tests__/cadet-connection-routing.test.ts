@@ -99,7 +99,7 @@ describe("effectiveConnectionAuth", () => {
       { type: "api_key", credential: "vault/x" },
       { type: "none" },
       { type: "platform" },
-    ] as Auth[]) {
+    ] satisfies Auth[]) {
       expect(
         effectiveConnectionAuth({ provider: "cadet", auth: stored }),
       ).toEqual({ type: "platform" });

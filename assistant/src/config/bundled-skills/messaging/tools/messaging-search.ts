@@ -22,17 +22,20 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
-  const query = input.query as string;
-  const maxResults = input.max_results as number | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
+  const query = input.query;
+  const maxResults =
+    typeof input.max_results === "number" ? input.max_results : undefined;
 
-  if (!query) {
+  if (typeof query !== "string" || !query) {
     return err("query is required.");
   }
 
   try {
     const provider = await resolveProvider(platform);
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     const result = await provider.search(conn, query, { count: maxResults });
     return ok(

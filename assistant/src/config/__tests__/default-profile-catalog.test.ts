@@ -411,7 +411,7 @@ describe("schema validation", () => {
     // order and the intent x provider matrix.
     expect(
       BACKUP_PROFILE_KEYS.some((key) =>
-        (DEFAULT_PROFILE_KEYS as readonly string[]).includes(key),
+        DEFAULT_PROFILE_KEYS.some((candidate: string) => candidate === key),
       ),
     ).toBe(false);
   });
@@ -628,7 +628,7 @@ describe("resolveDefaultProfileForProvider", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(
         resolveDefaultProfileForProvider(undefined, key, undefined),
-      ).toEqual(getEffectiveProfile(undefined, key) as ProfileEntry);
+      ).toEqual(getEffectiveProfile(undefined, key));
     }
   });
 
@@ -652,7 +652,7 @@ describe("resolveDefaultProfileForProvider", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(
         resolveDefaultProfileForProvider(undefined, key, dp("cadet")),
-      ).toEqual(getEffectiveProfile(undefined, key) as ProfileEntry);
+      ).toEqual(getEffectiveProfile(undefined, key));
     }
   });
 });

@@ -20,6 +20,8 @@ import type { SQLQueryBindings } from "bun:sqlite";
 import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import { ensureMemoryV3EverInjectedSchema } from "../../../../../persistence/migrations/345-move-memory-v3-ever-injected-to-memory-db.js";
 import {
@@ -42,12 +44,25 @@ interface Row {
 }
 
 function rows(db: Database): Row[] {
-  return db
-    .query(
-      `SELECT conversation_id, slug, section_key, injected_at, bytes, pruned_at
-       FROM memory_v3_injected_sections ORDER BY conversation_id, slug, section_key`,
+  return z
+    .array(
+      z.looseObject({
+        conversation_id: z.string(),
+        slug: z.string(),
+        section_key: z.string(),
+        injected_at: z.number(),
+        bytes: z.number(),
+        pruned_at: z.union([z.null(), z.number()]),
+      }),
     )
-    .all() as Row[];
+    .parse(
+      db
+        .query(
+          `SELECT conversation_id, slug, section_key, injected_at, bytes, pruned_at
+       FROM memory_v3_injected_sections ORDER BY conversation_id, slug, section_key`,
+        )
+        .all(),
+    );
 }
 
 function legacyRows(

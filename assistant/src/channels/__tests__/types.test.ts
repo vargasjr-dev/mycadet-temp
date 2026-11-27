@@ -14,7 +14,9 @@ import {
 describe("INTERFACE_IDS", () => {
   test("includes chrome-extension", () => {
     expect(
-      (INTERFACE_IDS as readonly string[]).includes("chrome-extension"),
+      INTERFACE_IDS.some(
+        (candidate: string) => candidate === "chrome-extension",
+      ),
     ).toBe(true);
   });
 
@@ -32,7 +34,9 @@ describe("INTERFACE_IDS", () => {
       "slack",
       "email",
     ]) {
-      expect((INTERFACE_IDS as readonly string[]).includes(id)).toBe(true);
+      expect(INTERFACE_IDS.some((candidate: string) => candidate === id)).toBe(
+        true,
+      );
     }
   });
 });
@@ -209,16 +213,16 @@ describe("parseClientOs", () => {
 
   test("includes android (mobile-web parity with ios)", () => {
     expect(parseClientOs("android")).toBe("android");
-    expect((CLIENT_OS_VALUES as readonly string[]).includes("android")).toBe(
-      true,
-    );
+    expect(
+      CLIENT_OS_VALUES.some((candidate: string) => candidate === "android"),
+    ).toBe(true);
   });
 
   test("includes linux (Electron desktop client)", () => {
     expect(parseClientOs("linux")).toBe("linux");
-    expect((CLIENT_OS_VALUES as readonly string[]).includes("linux")).toBe(
-      true,
-    );
+    expect(
+      CLIENT_OS_VALUES.some((candidate: string) => candidate === "linux"),
+    ).toBe(true);
   });
 
   test("rejects transport-only interface ids and unknown values", () => {

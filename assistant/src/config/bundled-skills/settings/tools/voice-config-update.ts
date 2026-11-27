@@ -329,7 +329,9 @@ function validateSetting(
       }
       const normalized = value.trim().toLowerCase();
       const coerced = STT_LANGUAGE_ALIASES[normalized] ?? normalized;
-      if (!(VALID_STT_LANGUAGES as readonly string[]).includes(coerced)) {
+      if (
+        !VALID_STT_LANGUAGES.some((candidate: string) => candidate === coerced)
+      ) {
         return {
           ok: false,
           error: STT_LANGUAGE_ERROR,

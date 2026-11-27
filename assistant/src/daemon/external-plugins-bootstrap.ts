@@ -43,7 +43,6 @@
  * Surfaces are only torn down when a single plugin is rolled back after a failed
  * bring-up, via {@link teardownPlugin}.
  */
-
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -72,6 +71,7 @@ import {
 } from "../tools/registry.js";
 import { getWorkspaceDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import { APP_VERSION } from "../version.js";
 
 const log = getLogger("plugins-bootstrap");
@@ -90,7 +90,7 @@ function validatePluginConfig(
     validator != null &&
     typeof validator === "object" &&
     "parse" in validator &&
-    typeof (validator as { parse: unknown }).parse === "function"
+    typeof getObjectProperty(validator, "parse") === "function"
   ) {
     try {
       return (validator as { parse: (input: unknown) => unknown }).parse(raw);

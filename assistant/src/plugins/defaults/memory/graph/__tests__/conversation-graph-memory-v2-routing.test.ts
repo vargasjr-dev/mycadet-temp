@@ -110,7 +110,7 @@ const embedWithBackendMock = mock(async (_config, texts: string[]) => ({
 }));
 const generateSparseEmbeddingMock = mock((_text: string) => ({
   indices: [1, 2, 3],
-  values: [0.5, 0.5, 0.5] as number[],
+  values: [0.5, 0.5, 0.5],
 }));
 const realEmbeddingBackend =
   await import("../../../../../persistence/embeddings/embedding-backend.js");
@@ -281,7 +281,7 @@ function makeMemory(): InstanceType<typeof ConversationGraphMemory> {
   // `fetchRecentSummaries` DB read it depends on, isolating the per-turn path
   // for these unit tests. Context-load is covered by its own block below.
   const m = new ConversationGraphMemory("conv-test-1");
-  (m as unknown as { initialized: boolean }).initialized = true;
+  m["initialized"] = true;
   return m;
 }
 

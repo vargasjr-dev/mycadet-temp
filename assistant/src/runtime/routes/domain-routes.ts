@@ -38,7 +38,6 @@ type DomainListResponse = z.infer<typeof DomainListResponseSchema>;
 const DomainRegisterResponseSchema = DomainEntrySchema.extend({
   email_error: z.object({ detail: z.string(), code: z.string() }).optional(),
 });
-type DomainRegisterResponse = z.infer<typeof DomainRegisterResponseSchema>;
 
 const DomainVerificationStatusResponseSchema = z.object({
   domain: z.string(),
@@ -79,7 +78,22 @@ async function fetchDomains(
     throw new RouteError(String(detail), "LIST_FAILED", response.status);
   }
 
-  return (await response.json()) as DomainListResponse;
+  return z
+    .looseObject({
+      count: z.number(),
+      results: z.array(
+        z.looseObject({
+          id: z.string(),
+          subdomain: z.string().optional(),
+          domain: z.string().optional(),
+          created_at: z.string().optional(),
+          created: z.string().optional(),
+        }),
+      ),
+      next: z.union([z.null(), z.string()]).optional(),
+      previous: z.union([z.null(), z.string()]).optional(),
+    })
+    .parse(await response.json());
 }
 
 // ── Handlers ──────────────────────────────────────────────────────────
@@ -127,7 +141,18 @@ async function handleDomainRegister({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError(String(detail));
   }
 
-  const data = (await response.json()) as DomainRegisterResponse;
+  const data = z
+    .looseObject({
+      id: z.string(),
+      subdomain: z.string().optional(),
+      domain: z.string().optional(),
+      created_at: z.string().optional(),
+      created: z.string().optional(),
+      email_error: z
+        .looseObject({ detail: z.string(), code: z.string() })
+        .optional(),
+    })
+    .parse(await response.json());
 
   // Persist the subdomain to config so getAssistantDomain() can use it
   const registeredSubdomain =
@@ -199,9 +224,13 @@ async function handleDomainVerificationStatus({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  return (await response.json()) as z.infer<
-    typeof DomainVerificationStatusResponseSchema
-  >;
+  return z
+    .looseObject({
+      domain: z.string(),
+      status: z.string(),
+      message: z.string(),
+    })
+    .parse(await response.json());
 }
 
 // ── Route definitions ─────────────────────────────────────────────────

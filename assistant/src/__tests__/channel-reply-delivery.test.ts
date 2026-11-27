@@ -5,6 +5,7 @@ import { z } from "zod";
 import { REACTION_MESSAGE_KIND } from "../persistence/conversation-types.js";
 import { resolveMessageContentBlocks } from "../persistence/message-content-file.js";
 import type { RuntimeAttachmentMetadata } from "../runtime/http-types.js";
+import { getObjectProperty } from "../util/object.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 type DeliveryCall = {
@@ -245,7 +246,7 @@ mock.module("../daemon/handlers/shared.js", () => ({
         ? content
         : Array.isArray(content) &&
             content.length === 1 &&
-            (content[0] as { type?: string })?.type === "text"
+            getObjectProperty(content[0], "type") === "text"
           ? z.looseObject({ text: z.string().optional() }).parse(content[0])
               .text
           : undefined;

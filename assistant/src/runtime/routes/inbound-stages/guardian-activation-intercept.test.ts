@@ -263,10 +263,10 @@ describe("handleGuardianActivationIntercept", () => {
     expect(gatewaySessions.calls.create).toHaveLength(1);
     // Carrying the guard is what keeps the stranger's code alive: the mint
     // supersedes by bound identity, and this sender is not that identity.
-    expect(
-      (gatewaySessions.calls.create[0] as Record<string, unknown>)
-        .ifNoneActiveForExternalUserId,
-    ).toBe("user-42");
+    expect(gatewaySessions.calls.create[0]).toHaveProperty(
+      "ifNoneActiveForExternalUserId",
+      "user-42",
+    );
     expect(emitNotificationSignalCalls).toHaveLength(1);
   });
 

@@ -1,4 +1,5 @@
 import type { ContentBlock } from "../providers/types.js";
+import { getObjectProperty } from "../util/object.js";
 import { escapeXmlAttr } from "../util/xml.js";
 
 export function extractTextFromStoredMessageContent(
@@ -119,8 +120,8 @@ export function stringifyMessageContent(
     if (
       block &&
       typeof block === "object" &&
-      (block as { type?: string }).type === "text" &&
-      typeof (block as { text?: unknown }).text === "string"
+      getObjectProperty(block, "type") === "text" &&
+      typeof getObjectProperty(block, "text") === "string"
     ) {
       parts.push((block as { text: string }).text);
     }

@@ -4,10 +4,12 @@
  * deliverable (NOT source-active suppressed) and carry the option payload the
  * broadcaster renders; identity guards skip emission rather than misroute.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { GuardianRequestWire } from "@mycadet/gateway-client";
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 
 const emitSignalMock = mock(
   (_params: Record<string, unknown>): Promise<Record<string, unknown>> =>
@@ -117,11 +119,13 @@ describe("bridgeQuestionRequestToGuardian", () => {
 
     expect(result).toMatchObject({ bridged: true });
     expect(emitSignalMock).toHaveBeenCalledTimes(1);
-    const signal = emitSignalMock.mock.calls[0]?.[0] as {
-      attentionHints: Record<string, unknown>;
-      contextPayload: Record<string, unknown>;
-      conversationAffinityHint?: Record<string, string>;
-    };
+    const signal = z
+      .looseObject({
+        attentionHints: jsonObjectSchema,
+        contextPayload: jsonObjectSchema,
+        conversationAffinityHint: z.record(z.string(), z.string()).optional(),
+      })
+      .parse(emitSignalMock.mock.calls[0]?.[0]);
     // The in-app card is pinned to the conversation the question was asked
     // in — never left to LLM conversation routing.
     expect(signal.conversationAffinityHint).toEqual({ cadet: "conv-1" });

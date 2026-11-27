@@ -12,7 +12,7 @@
 import { REDACTION_PREFIX_PATTERNS } from "@mycadet/service-contracts/secret-detection";
 
 import { memoizePluginPatternDerivation } from "../security/plugin-secret-patterns.js";
-import { isObjectRecord } from "./object.js";
+import { getObjectProperty, isObjectRecord } from "./object.js";
 
 // ---------------------------------------------------------------------------
 // Sensitive-value patterns (derived from shared REDACTION_PREFIX_PATTERNS)
@@ -119,7 +119,7 @@ function serializeError(err: unknown, depth: number): unknown {
   };
 
   // AssistantError and subclasses carry a structured ErrorCode
-  if ("code" in err && typeof (err as { code: unknown }).code === "string") {
+  if ("code" in err && typeof getObjectProperty(err, "code") === "string") {
     serialized.code = (err as { code: string }).code;
   }
 

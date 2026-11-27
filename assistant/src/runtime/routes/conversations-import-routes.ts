@@ -102,10 +102,7 @@ function deriveImportSource(sourceKey: string | undefined): string {
 // -- Handler --
 
 async function handleConversationsImport({ body }: RouteHandlerArgs) {
-  if (
-    !body ||
-    !Array.isArray((body as Record<string, unknown>).conversations)
-  ) {
+  if (!body || !Array.isArray(body.conversations)) {
     throw new BadRequestError("conversations array required");
   }
 

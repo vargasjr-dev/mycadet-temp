@@ -149,7 +149,7 @@ describe("SubagentManager fork — prompt source and role decoupling", () => {
   });
 
   afterEach(() => {
-    (manager as unknown as { stopSweep: () => void }).stopSweep();
+    manager["stopSweep"]();
   });
 
   /** Spawn a fork and return the single conversation that spawn() constructed. */

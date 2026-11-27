@@ -1640,7 +1640,9 @@ function validateAudioConfig(
 function isLiveVoiceClientFrameType(
   value: string,
 ): value is LiveVoiceClientFrameType {
-  return (LIVE_VOICE_CLIENT_FRAME_TYPES as readonly string[]).includes(value);
+  return LIVE_VOICE_CLIENT_FRAME_TYPES.some(
+    (candidate: string) => candidate === value,
+  );
 }
 
 function isLiveVoiceTurnDetectionMode(
@@ -1648,7 +1650,9 @@ function isLiveVoiceTurnDetectionMode(
 ): value is LiveVoiceTurnDetectionMode {
   return (
     typeof value === "string" &&
-    (LIVE_VOICE_TURN_DETECTION_MODES as readonly string[]).includes(value)
+    LIVE_VOICE_TURN_DETECTION_MODES.some(
+      (candidate: string) => candidate === value,
+    )
   );
 }
 

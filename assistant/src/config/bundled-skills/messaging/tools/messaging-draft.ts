@@ -18,9 +18,13 @@ export async function run(
 
   switch (action) {
     case "create": {
-      const platform = input.platform as string | undefined;
-      const conversationId = input.conversation_id as string | undefined;
-      const text = input.text as string | undefined;
+      const platform =
+        typeof input.platform === "string" ? input.platform : undefined;
+      const conversationId =
+        typeof input.conversation_id === "string"
+          ? input.conversation_id
+          : undefined;
+      const text = typeof input.text === "string" ? input.text : undefined;
 
       if (!platform) {
         return err("platform is required for creating a draft.");
@@ -37,14 +41,16 @@ export async function run(
         platform,
         conversationId,
         text,
-        threadId: input.thread_id as string | undefined,
-        subject: input.subject as string | undefined,
+        threadId:
+          typeof input.thread_id === "string" ? input.thread_id : undefined,
+        subject: typeof input.subject === "string" ? input.subject : undefined,
       });
       return ok(`Draft created (ID: ${draft.id}). Stored locally for review.`);
     }
 
     case "list": {
-      const platform = input.platform as string | undefined;
+      const platform =
+        typeof input.platform === "string" ? input.platform : undefined;
       if (!platform) {
         return err("platform is required for listing drafts.");
       }
@@ -56,8 +62,10 @@ export async function run(
     }
 
     case "delete": {
-      const draftId = input.draft_id as string | undefined;
-      const platform = input.platform as string | undefined;
+      const draftId =
+        typeof input.draft_id === "string" ? input.draft_id : undefined;
+      const platform =
+        typeof input.platform === "string" ? input.platform : undefined;
       if (!draftId) {
         return err("draft_id is required for deleting a draft.");
       }

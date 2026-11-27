@@ -71,7 +71,7 @@ const SLOW_STREAM_FIXTURE_ROUTE = {
           ctrl.close();
         },
       }),
-      headers: {} as Record<string, string>,
+      headers: {} satisfies Record<string, string>,
     };
   },
 };
@@ -106,7 +106,7 @@ const CANCEL_FIXTURE_ROUTE = {
           // Hold open — no close() until aborted
         },
       }),
-      headers: {} as Record<string, string>,
+      headers: {} satisfies Record<string, string>,
     };
   },
 };

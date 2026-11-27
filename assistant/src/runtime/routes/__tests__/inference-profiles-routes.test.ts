@@ -17,6 +17,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+
 // ── Module mocks (must come before imports) ──────────────────────────────────
 
 let initializeProvidersCalls = 0;
@@ -137,9 +139,10 @@ function seedCadetConnection(): void {
 }
 
 function persistedProfiles(): Record<string, unknown> {
-  const llm = loadRawConfig().llm as
-    | { profiles?: Record<string, unknown> }
-    | undefined;
+  const llm = z
+    .looseObject({ profiles: jsonObjectSchema.optional() })
+    .optional()
+    .parse(loadRawConfig().llm);
   return llm?.profiles ?? {};
 }
 

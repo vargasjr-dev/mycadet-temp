@@ -34,10 +34,11 @@
 // sphere. Gemini's API, by contrast, returns raw (un-normalised) vectors at
 // query time. To keep the fit and apply paths consistent we L2-normalise the
 // input before applying the correction, regardless of source.
-
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+
+import { z } from "zod";
 
 import type { EmbeddingProviderName } from "../../../persistence/embeddings/embedding-types.js";
 import { getDataDir } from "./paths.js";
@@ -314,7 +315,25 @@ async function loadCalibration(
   }
   try {
     const raw = await readFile(path, "utf8");
-    const parsed = JSON.parse(raw) as AnisotropyCalibration;
+    const parsed = z
+      .looseObject({
+        provider: z.union([
+          z.literal("openai"),
+          z.literal("gemini"),
+          z.literal("ollama"),
+          z.literal("custom"),
+          z.literal("local"),
+        ]),
+        model: z.string(),
+        dim: z.number(),
+        mean: z.array(z.number()),
+        components: z.array(z.array(z.number())),
+        componentVariance: z.array(z.number()),
+        totalVariance: z.number(),
+        sampleCount: z.number(),
+        fitAt: z.number(),
+      })
+      .parse(JSON.parse(raw));
     cache.set(key, parsed);
     return parsed;
   } catch {

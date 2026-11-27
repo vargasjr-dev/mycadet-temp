@@ -37,7 +37,8 @@ async function handleRollbackMigrations({ body = {} }: RouteHandlerArgs) {
 
   // When rollbackToRegistryCeiling is true, auto-determine targets
   // from this daemon's own migration registry ceilings.
-  let effectiveDbVersion = targetDbVersion as number | undefined;
+  let effectiveDbVersion =
+    typeof targetDbVersion === "number" ? targetDbVersion : undefined;
   let effectiveWorkspaceMigrationId = targetWorkspaceMigrationId as
     | string
     | undefined;

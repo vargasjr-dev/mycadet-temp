@@ -14,11 +14,11 @@
  * `filing/run-now` route enqueues a `pkb_filing` job with `{ force: true }`,
  * which bypasses the handler's empty-buffer skip.
  */
-
 import type { LLMCallSite } from "@mycadet/plugin-api";
 
 import type { MemoryJob } from "../../../../persistence/jobs-store.js";
 import { runBackgroundJob } from "../../../../runtime/background-job-runner.js";
+import { getObjectProperty } from "../../../../util/object.js";
 import { getLogger } from "../logging.js";
 import { hasPkbBufferContent } from "./pkb-schedule.js";
 
@@ -79,7 +79,7 @@ This is your knowledge base — keep it sharp.`;
  * enqueued with `{ force: true }` (the `filing/run-now` route).
  */
 export async function pkbFilingJob(job: MemoryJob): Promise<void> {
-  const force = (job.payload as { force?: boolean })?.force === true;
+  const force = getObjectProperty(job.payload, "force") === true;
   if (!force && !hasPkbBufferContent()) {
     log.debug("Buffer is empty, skipping filing");
     return;

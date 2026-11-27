@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { DynamicPageSurfaceData } from "../api/surfaces.js";
 import { UiSurfaceShowDynamicPage } from "../daemon/message-types/surfaces.js";
 import { INTERACTIVE_SURFACE_TYPES } from "../daemon/message-types/surfaces.js";
@@ -40,11 +42,13 @@ describe("DynamicPageSurfaceData shape", () => {
 describe("Tool definition includes dynamic_page", () => {
   test("input_schema surface_type enum includes dynamic_page", () => {
     const definition = uiShowTool;
-    const surfaceTypeEnum = (
-      definition.input_schema as {
-        properties: { surface_type: { enum: string[] } };
-      }
-    ).properties.surface_type.enum;
+    const surfaceTypeEnum = z
+      .looseObject({
+        properties: z.looseObject({
+          surface_type: z.looseObject({ enum: z.array(z.string()) }),
+        }),
+      })
+      .parse(definition.input_schema).properties.surface_type.enum;
 
     expect(surfaceTypeEnum).toContain("dynamic_page");
   });

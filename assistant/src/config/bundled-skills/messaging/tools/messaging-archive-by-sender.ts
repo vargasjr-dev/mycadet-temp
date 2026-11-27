@@ -24,10 +24,11 @@ export async function run(
     );
   }
 
-  const platform = input.platform as string | undefined;
-  const query = input.query as string;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
+  const query = input.query;
 
-  if (!query) {
+  if (typeof query !== "string" || !query) {
     return err("query is required.");
   }
   throwIfCancelled(context);
@@ -41,7 +42,8 @@ export async function run(
       );
     }
 
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     // Recheck: provider resolution and the connection lookup are awaits, and a
     // cancel landing during either must not still archive up to 5000 messages.

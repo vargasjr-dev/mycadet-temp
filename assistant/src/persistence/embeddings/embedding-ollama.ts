@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { getOllamaBaseUrlEnv } from "../../config/env.js";
 import {
   type EmbeddingBackend,
@@ -5,11 +7,6 @@ import {
   type EmbeddingRequestOptions,
   normalizeEmbeddingInput,
 } from "./embedding-types.js";
-
-interface OllamaEmbeddingsResponse {
-  data?: Array<{ embedding: number[] }>;
-  embeddings?: number[][];
-}
 
 const DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434/v1";
 
@@ -59,7 +56,14 @@ export class OllamaEmbeddingBackend implements EmbeddingBackend {
         `Ollama embeddings request failed (${response.status}): ${body}`,
       );
     }
-    const payload = (await response.json()) as OllamaEmbeddingsResponse;
+    const payload = z
+      .looseObject({
+        data: z
+          .array(z.looseObject({ embedding: z.array(z.number()) }))
+          .optional(),
+        embeddings: z.array(z.array(z.number())).optional(),
+      })
+      .parse(await response.json());
     if (Array.isArray(payload.data)) {
       return payload.data.map((item) => item.embedding);
     }

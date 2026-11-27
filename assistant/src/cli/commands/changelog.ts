@@ -16,11 +16,11 @@
  * the user at startup. A follow-up PR will add a tiny "doorbell" wake when
  * the running version's `release_id` advances.
  */
-
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type { Command } from "commander";
+import { z } from "zod";
 
 import { getWorkspaceDir } from "../../util/layout.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
@@ -172,7 +172,19 @@ async function fetchReleaseList(limit: number): Promise<GitHubRelease[]> {
     const text = await res.text().catch(() => "");
     throw new Error(describeGithubError(res.status, text));
   }
-  return (await res.json()) as GitHubRelease[];
+  return z
+    .array(
+      z.looseObject({
+        tag_name: z.string(),
+        name: z.union([z.null(), z.string()]),
+        body: z.union([z.null(), z.string()]),
+        published_at: z.union([z.null(), z.string()]),
+        html_url: z.string(),
+        draft: z.boolean(),
+        prerelease: z.boolean(),
+      }),
+    )
+    .parse(await res.json());
 }
 
 async function fetchReleaseByTag(tag: string): Promise<GitHubRelease | null> {
@@ -185,7 +197,17 @@ async function fetchReleaseByTag(tag: string): Promise<GitHubRelease | null> {
     const text = await res.text().catch(() => "");
     throw new Error(describeGithubError(res.status, text));
   }
-  return (await res.json()) as GitHubRelease;
+  return z
+    .looseObject({
+      tag_name: z.string(),
+      name: z.union([z.null(), z.string()]),
+      body: z.union([z.null(), z.string()]),
+      published_at: z.union([z.null(), z.string()]),
+      html_url: z.string(),
+      draft: z.boolean(),
+      prerelease: z.boolean(),
+    })
+    .parse(await res.json());
 }
 
 // ── Cache-aware loaders ──────────────────────────────────────────────

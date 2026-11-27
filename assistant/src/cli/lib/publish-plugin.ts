@@ -11,11 +11,12 @@
  * Designed for direct programmatic use with an injected `fetch`, mirroring
  * {@link ./install-from-github} and {@link ./search-plugins}.
  */
-
 import { execFile } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
+
+import { z } from "zod";
 
 const execFileAsync = promisify(execFile);
 
@@ -335,7 +336,16 @@ async function postPublishRequest(
     },
   );
 
-  return (await resp.json()) as PublishResult;
+  return z
+    .looseObject({
+      ok: z.boolean(),
+      pr_url: z.string().optional(),
+      pr_number: z.number().optional(),
+      status: z.string().optional(),
+      error: z.string().optional(),
+      message: z.string().optional(),
+    })
+    .parse(await resp.json());
 }
 
 /**

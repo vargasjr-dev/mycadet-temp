@@ -702,7 +702,9 @@ export function registerPluginsCommand(program: Command): void {
           const strategy = opts.strategy;
           if (
             strategy !== undefined &&
-            !(PLUGIN_UPGRADE_STRATEGIES as readonly string[]).includes(strategy)
+            !PLUGIN_UPGRADE_STRATEGIES.some(
+              (candidate: string) => candidate === strategy,
+            )
           ) {
             console.error(
               `Invalid --strategy "${strategy}". Expected one of: ${PLUGIN_UPGRADE_STRATEGIES.join(", ")}.`,

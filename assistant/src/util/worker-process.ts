@@ -7,7 +7,6 @@
  * these helpers with their own PID path, entry point, and error type — the
  * PID-file bookkeeping lives here in one place.
  */
-
 import {
   closeSync,
   existsSync,
@@ -20,6 +19,7 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { getCurrentLogFilePath, getLogger } from "./logger.js";
+import { getObjectProperty } from "./object.js";
 import { setOomScoreAdj, WORKER_OOM_SCORE_ADJ } from "./oom-priority.js";
 import { isProcessAlive } from "./process-liveness.js";
 import {
@@ -47,7 +47,7 @@ function isEsrchError(err: unknown): boolean {
     !!err &&
     typeof err === "object" &&
     "code" in err &&
-    (err as { code?: unknown }).code === "ESRCH"
+    getObjectProperty(err, "code") === "ESRCH"
   );
 }
 

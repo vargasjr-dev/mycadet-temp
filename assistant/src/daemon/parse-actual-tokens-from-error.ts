@@ -1,4 +1,5 @@
 import { isContextOverflowError } from "../providers/types.js";
+import { getObjectProperty } from "../util/object.js";
 
 /**
  * Parse the actual token count reported by the provider for a
@@ -84,7 +85,7 @@ function extractMessage(errorOrMessage: unknown): string | null {
     return errorOrMessage;
   }
   if (typeof errorOrMessage === "object" && "message" in errorOrMessage) {
-    const msg = (errorOrMessage as { message?: unknown }).message;
+    const msg = getObjectProperty(errorOrMessage, "message");
     if (typeof msg === "string") {
       return msg;
     }

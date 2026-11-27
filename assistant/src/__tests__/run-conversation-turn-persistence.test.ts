@@ -41,6 +41,7 @@ import { getBindingByConversation } from "../persistence/external-conversation-s
 import { createConnection } from "../providers/inference/connections.js";
 import * as providerRegistry from "../providers/registry.js";
 import type { Provider, ProviderResponse } from "../providers/types.js";
+import { getObjectProperty } from "../util/object.js";
 import { createMockProvider, textResponse } from "./helpers/mock-provider.js";
 import { setConfig } from "./helpers/set-config.js";
 import { waitFor } from "./helpers/wait-for.js";
@@ -279,7 +280,7 @@ describe("runConversationTurn persistence", () => {
     expect(
       broadcasts.filter(
         (msg) =>
-          (msg as { type: string }).type === "conversation_list_invalidated",
+          getObjectProperty(msg, "type") === "conversation_list_invalidated",
       ),
     ).toEqual([]);
   });

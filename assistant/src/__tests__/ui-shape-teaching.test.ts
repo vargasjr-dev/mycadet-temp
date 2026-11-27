@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { ToolContext, ToolExecutionResult } from "../tools/types.js";
 import { uiShowTool } from "../tools/ui-surface/definitions.js";
 import {
@@ -27,11 +29,13 @@ function makeContext(onProxy?: () => void): ToolContext {
 
 describe("surface_type enum derivation", () => {
   test("input_schema enum is derived from SURFACE_SHAPE_DOCS", () => {
-    const surfaceTypeEnum = (
-      uiShowTool.input_schema as {
-        properties: { surface_type: { enum: string[] } };
-      }
-    ).properties.surface_type.enum;
+    const surfaceTypeEnum = z
+      .looseObject({
+        properties: z.looseObject({
+          surface_type: z.looseObject({ enum: z.array(z.string()) }),
+        }),
+      })
+      .parse(uiShowTool.input_schema).properties.surface_type.enum;
 
     expect(surfaceTypeEnum).toEqual(SURFACE_TYPE_NAMES);
     expect(surfaceTypeEnum).toContain("card");

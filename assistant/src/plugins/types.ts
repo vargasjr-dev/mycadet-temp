@@ -8,7 +8,6 @@
  *
  * Design doc: `.private/plans/agent-plugin-system.md`.
  */
-
 import type { CompactionCircuitClosedEvent } from "../api/events/compaction-circuit-closed.js";
 import type { CompactionCircuitOpenEvent } from "../api/events/compaction-circuit-open.js";
 import type { HookEventOwner } from "../api/events/hook-event.js";
@@ -25,6 +24,7 @@ import type { HookFunction } from "../plugin-api/types.js";
 import type { Message } from "../providers/types.js";
 import type { Tool } from "../tools/types.js";
 import { AssistantError, ErrorCode } from "../util/errors.js";
+import { getObjectProperty } from "../util/object.js";
 
 // ─── Manifest ────────────────────────────────────────────────────────────────
 
@@ -411,8 +411,7 @@ export function isJobQueueResolution(
     typeof value === "object" &&
     value !== null &&
     "queueResolution" in value &&
-    typeof (value as { queueResolution: unknown }).queueResolution ===
-      "string" &&
+    typeof getObjectProperty(value, "queueResolution") === "string" &&
     QUEUE_RESOLUTIONS.has(
       (value as { queueResolution: string }).queueResolution,
     )

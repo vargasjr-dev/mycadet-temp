@@ -5,7 +5,6 @@
  * resolution) shared across the voice provider and the
  * config handler. Uses fetch() directly — no twilio npm package.
  */
-
 import {
   lookupIncomingPhoneNumberSid,
   twilioAuthHeader,
@@ -14,6 +13,7 @@ import {
   type TwilioWebhookUrls,
   updatePhoneNumberWebhooks as updateTwilioPhoneNumberWebhooks,
 } from "@mycadet/twilio-client";
+import { z } from "zod";
 
 import { getConfig } from "../config/loader.js";
 import { credentialKey } from "../security/credential-key.js";
@@ -93,13 +93,17 @@ export async function listIncomingPhoneNumbers(
     );
   }
 
-  const data = (await res.json()) as {
-    incoming_phone_numbers: Array<{
-      phone_number: string;
-      friendly_name: string;
-      capabilities: { voice: boolean };
-    }>;
-  };
+  const data = z
+    .looseObject({
+      incoming_phone_numbers: z.array(
+        z.looseObject({
+          phone_number: z.string(),
+          friendly_name: z.string(),
+          capabilities: z.looseObject({ voice: z.boolean() }),
+        }),
+      ),
+    })
+    .parse(await res.json());
 
   return data.incoming_phone_numbers.map((n) => ({
     phoneNumber: n.phone_number,
@@ -147,13 +151,17 @@ export async function searchAvailableNumbers(
     );
   }
 
-  const data = (await res.json()) as {
-    available_phone_numbers: Array<{
-      phone_number: string;
-      friendly_name: string;
-      capabilities: { voice: boolean };
-    }>;
-  };
+  const data = z
+    .looseObject({
+      available_phone_numbers: z.array(
+        z.looseObject({
+          phone_number: z.string(),
+          friendly_name: z.string(),
+          capabilities: z.looseObject({ voice: z.boolean() }),
+        }),
+      ),
+    })
+    .parse(await res.json());
 
   return data.available_phone_numbers.map((n) => ({
     phoneNumber: n.phone_number,
@@ -191,11 +199,13 @@ export async function provisionPhoneNumber(
     );
   }
 
-  const data = (await res.json()) as {
-    phone_number: string;
-    friendly_name: string;
-    capabilities: { voice: boolean };
-  };
+  const data = z
+    .looseObject({
+      phone_number: z.string(),
+      friendly_name: z.string(),
+      capabilities: z.looseObject({ voice: z.boolean() }),
+    })
+    .parse(await res.json());
 
   return {
     phoneNumber: data.phone_number,

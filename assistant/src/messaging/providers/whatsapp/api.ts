@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * WhatsApp Business Cloud API client for direct outbound messaging.
  *
@@ -6,7 +8,6 @@
  * and payload shapes mirror the gateway's whatsapp/api.ts so behavior is
  * identical.
  */
-
 import { credentialKey } from "../../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../../security/secure-keys.js";
 import { getLogger } from "../../../util/logger.js";
@@ -36,17 +37,6 @@ class WhatsAppNonRetryableError extends Error {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-interface WhatsAppApiErrorDetail {
-  message?: string;
-  type?: string;
-  code?: number;
-  fbtrace_id?: string;
-}
-
-interface WhatsAppApiErrorResponse {
-  error?: WhatsAppApiErrorDetail;
-}
-
 function isAuthError(status: number): boolean {
   return status === 401 || status === 403;
 }
@@ -64,7 +54,18 @@ function whatsappCall<T>(
     doFetch,
     detailFrom: (body) => {
       try {
-        return (JSON.parse(body) as WhatsAppApiErrorResponse).error?.message;
+        return z
+          .looseObject({
+            error: z
+              .looseObject({
+                message: z.string().optional(),
+                type: z.string().optional(),
+                code: z.number().optional(),
+                fbtrace_id: z.string().optional(),
+              })
+              .optional(),
+          })
+          .parse(JSON.parse(body)).error?.message;
       } catch {
         return undefined;
       }

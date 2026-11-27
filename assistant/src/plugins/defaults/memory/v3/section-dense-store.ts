@@ -18,7 +18,6 @@
 // This module owns the write side (collection lifecycle + upserts) and the
 // shared Qdrant client; the read side (`dense.ts`) reuses that client to query
 // this collection.
-
 import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import { v5 as uuidv5 } from "uuid";
 
@@ -37,6 +36,7 @@ import {
   writeEmbeddingCache,
 } from "../../../../persistence/embeddings/embedding-cache.js";
 import { embeddingContentHashWithExtras } from "../../../../persistence/embeddings/embedding-types.js";
+import { getObjectProperty } from "../../../../util/object.js";
 import { embedWithBackend, resolveQdrantUrl } from "../embeddings.js";
 import { getLogger } from "../logging.js";
 import { memoryDbOrNull } from "../memory-db.js";
@@ -403,7 +403,7 @@ export async function ensureSectionCollection(
       const vectors = info.config?.params?.vectors;
       const size =
         vectors && typeof vectors === "object" && "size" in vectors
-          ? (vectors as { size?: unknown }).size
+          ? getObjectProperty(vectors, "size")
           : undefined;
       if (typeof size === "number" && size !== vectorSize) {
         log.warn(
@@ -756,7 +756,7 @@ export async function listSectionArticles(
       ...(offset !== undefined ? { offset } : {}),
     });
     for (const point of result.points) {
-      const article = (point.payload as { article?: unknown } | null)?.article;
+      const article = getObjectProperty(point.payload, "article");
       if (typeof article === "string") {
         articles.add(article);
       }

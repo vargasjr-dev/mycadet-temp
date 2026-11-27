@@ -37,9 +37,9 @@ export async function run(
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
   const account = typeof input.account === "string" ? input.account : undefined;
-  const action = input.action as string;
+  const action = input.action;
 
-  if (!action) {
+  if (typeof action !== "string" || !action) {
     return err("action is required (list or search).");
   }
 
@@ -70,8 +70,8 @@ export async function run(
       }
 
       case "search": {
-        const query = input.query as string;
-        if (!query) {
+        const query = input.query;
+        if (typeof query !== "string" || !query) {
           return err("query is required for search action.");
         }
 

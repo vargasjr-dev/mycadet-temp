@@ -5,12 +5,12 @@
  * Uses @google/genai SDK directly (not the GeminiProvider wrapper) to leverage
  * responseMimeType, responseSchema, and usageMetadata for cost tracking.
  */
-
 import { createHash } from "node:crypto";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { ApiError, GoogleGenAI } from "@google/genai";
+import { z } from "zod";
 
 import { computeRetryDelay, sleep } from "../../../../util/retry.js";
 import { ConcurrencyPool } from "./concurrency-pool.js";
@@ -328,7 +328,17 @@ export async function mapSegments(
     if (await fileExists(resultPath)) {
       try {
         const existingData = await readFile(resultPath, "utf-8");
-        const existing = JSON.parse(existingData) as SegmentMapResult;
+        const existing = z
+          .looseObject({
+            segmentId: z.string(),
+            startSeconds: z.number(),
+            endSeconds: z.number(),
+            result: z.unknown(),
+            model: z.string(),
+            inputTokens: z.number(),
+            outputTokens: z.number(),
+          })
+          .parse(JSON.parse(existingData));
         results.push(existing);
         successCount++;
         costTracker.record({

@@ -14,7 +14,6 @@
  * rejection, and `isRepairableOrderingError` recognizes the rejections it can
  * recover — so detection and repair of ordering drift live together as one unit.
  */
-
 import { isEffectivelyEmptyContent } from "../../providers/content-blocks.js";
 import { analyzeServerToolPairing } from "../../providers/server-tool-pairing.js";
 import type {
@@ -24,6 +23,7 @@ import type {
   ToolUseContent,
 } from "../../providers/types.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 
 const log = getLogger("history-repair");
 
@@ -345,18 +345,14 @@ function formatWebSearchContent(content: unknown): string {
       if (
         typeof r !== "object" ||
         r == null ||
-        (r as { type?: string }).type !== "web_search_result"
+        getObjectProperty(r, "type") !== "web_search_result"
       ) {
         continue;
       }
-      const title =
-        typeof (r as { title?: unknown }).title === "string"
-          ? (r as { title: string }).title
-          : "(untitled)";
-      const url =
-        typeof (r as { url?: unknown }).url === "string"
-          ? (r as { url: string }).url
-          : "";
+      const rawTitle = getObjectProperty(r, "title");
+      const title = typeof rawTitle === "string" ? rawTitle : "(untitled)";
+      const rawUrl = getObjectProperty(r, "url");
+      const url = typeof rawUrl === "string" ? rawUrl : "";
       const idx = entries.length + 1;
       entries.push(url ? `${idx}. ${title}\n   ${url}` : `${idx}. ${title}`);
     }

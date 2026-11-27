@@ -176,11 +176,7 @@ describe("ChannelReadinessService", () => {
     expect(probe.remoteCallCount).toBe(1);
 
     // Manually age the cached snapshot beyond TTL
-    const cached = (
-      service as unknown as {
-        snapshots: Map<string, { checkedAt: number }>;
-      }
-    ).snapshots.get("phone::__default__")!;
+    const cached = service["snapshots"].get("phone::__default__")!;
     cached.checkedAt = Date.now() - REMOTE_TTL_MS - 1;
 
     // Second call should re-run remote checks
@@ -237,7 +233,7 @@ describe("ChannelReadinessService", () => {
       "carrier_pigeon" as ChannelId,
     );
 
-    expect(snapshot.channel).toBe("carrier_pigeon" as ChannelId);
+    expect(snapshot.channel).toBe("carrier_pigeon");
     expect(snapshot.ready).toBe(false);
     expect(snapshot.reasons).toEqual([
       {
@@ -549,11 +545,7 @@ describe("ChannelReadinessService", () => {
     await service.getReadiness("phone", true);
 
     // Age snapshot beyond TTL so remote checks are stale
-    const cached = (
-      service as unknown as {
-        snapshots: Map<string, { checkedAt: number }>;
-      }
-    ).snapshots.get("phone::__default__")!;
+    const cached = service["snapshots"].get("phone::__default__")!;
     cached.checkedAt = Date.now() - REMOTE_TTL_MS - 1;
 
     // Local-only call should not be blocked by stale remote failure

@@ -4,6 +4,7 @@ import type {
   TextContent,
   WebSearchToolResultContent,
 } from "../providers/types.js";
+import { getObjectProperty } from "../util/object.js";
 
 export interface StripStats {
   blocksStripped: number;
@@ -132,7 +133,7 @@ function formatAsText(
       (r): r is { type: string; title?: unknown; url?: unknown } =>
         typeof r === "object" &&
         r != null &&
-        (r as { type?: string }).type === "web_search_result",
+        getObjectProperty(r, "type") === "web_search_result",
     )
     .map((r, i) => {
       const title = typeof r.title === "string" ? r.title : "(untitled)";

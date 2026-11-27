@@ -1,6 +1,7 @@
 import type { SQLQueryBindings } from "bun:sqlite";
 
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import { getLogger } from "../logging.js";
 import { memorySqliteOrNull } from "../memory-db.js";
@@ -258,6 +259,17 @@ export function getMemoryV2ActivationLogByMessageIds(
       | "router"
       | "v3_shadow",
     concepts: JSON.parse(row.concepts_json) as MemoryV2ConceptRowRecord[],
-    config: JSON.parse(row.config_json) as MemoryV2ConfigSnapshot,
+    config: z
+      .looseObject({
+        d: z.number(),
+        c_user: z.number(),
+        c_assistant: z.number(),
+        c_now: z.number(),
+        k: z.number(),
+        hops: z.number(),
+        top_k: z.number(),
+        epsilon: z.number(),
+      })
+      .parse(JSON.parse(row.config_json)),
   };
 }

@@ -1,3 +1,4 @@
+import { getObjectProperty } from "./object.js";
 /**
  * Shared retry utilities with exponential backoff + jitter.
  *
@@ -184,7 +185,7 @@ export function extractRetryAfterMs(headers: unknown): number | undefined {
   }
 
   let raw: string | null | undefined;
-  if (typeof (headers as { get?: unknown }).get === "function") {
+  if (typeof getObjectProperty(headers, "get") === "function") {
     raw = (headers as { get(k: string): string | null }).get("retry-after");
   } else if (typeof headers === "object") {
     raw = (headers as Record<string, string>)["retry-after"];

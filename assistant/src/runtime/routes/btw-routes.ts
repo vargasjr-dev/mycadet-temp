@@ -59,8 +59,11 @@ async function handleBtw({
   body,
   abortSignal,
 }: RouteHandlerArgs): Promise<ReadableStream<Uint8Array>> {
-  const conversationKey = body?.conversationKey as string | undefined;
-  const content = body?.content as string | undefined;
+  const conversationKey =
+    typeof body?.conversationKey === "string"
+      ? body?.conversationKey
+      : undefined;
+  const content = typeof body?.content === "string" ? body?.content : undefined;
 
   if (!conversationKey) {
     throw new BadRequestError("conversationKey is required");

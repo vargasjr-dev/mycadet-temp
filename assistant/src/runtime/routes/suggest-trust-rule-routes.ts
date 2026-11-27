@@ -193,7 +193,7 @@ async function handleSuggestTrustRule({
     return {
       pattern: input.pattern as string,
       risk: input.risk as string,
-      scope: input.scope as string | undefined,
+      scope: typeof input.scope === "string" ? input.scope : undefined,
       description: input.description as string,
       scopeOptions: req.scopeOptions,
       directoryScopeOptions: req.directoryScopeOptions,

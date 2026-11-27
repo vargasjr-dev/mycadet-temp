@@ -117,9 +117,7 @@ export function parseSubagentMessages(
         block.type === "mcp_tool_use"
       ) {
         const name = typeof block.name === "string" ? block.name : "unknown";
-        const input = isRecord(block.input)
-          ? (block.input as Record<string, unknown>)
-          : {};
+        const input = isRecord(block.input) ? block.input : {};
         const id = typeof block.id === "string" ? block.id : "";
         events.push({
           type: "tool_use",

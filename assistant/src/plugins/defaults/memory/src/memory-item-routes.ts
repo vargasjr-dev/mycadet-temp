@@ -70,7 +70,6 @@ import {
 import type {
   CapabilityKind,
   Fidelity,
-  ImageRef,
   MemoryNode,
   MemoryType,
   NewNode,
@@ -131,11 +130,11 @@ function isValidType(value: string): value is MemoryType {
 }
 
 function isValidSortField(value: string): value is SortField {
-  return (VALID_SORT_FIELDS as readonly string[]).includes(value);
+  return VALID_SORT_FIELDS.some((candidate: string) => candidate === value);
 }
 
 function isCapabilityKind(value: string): value is CapabilityKind {
-  return (CAPABILITY_KINDS as readonly string[]).includes(value);
+  return CAPABILITY_KINDS.some((candidate: string) => candidate === value);
 }
 
 /**
@@ -283,7 +282,9 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
     stability: row.stability,
     reinforcementCount: row.reinforcementCount,
     lastReinforced: row.lastReinforced,
-    sourceConversations: JSON.parse(row.sourceConversations) as string[],
+    sourceConversations: z
+      .array(z.string())
+      .parse(JSON.parse(row.sourceConversations)),
     sourceType: row.sourceType as
       | "direct"
       | "inferred"
@@ -291,7 +292,18 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
       | "told-by-other",
     narrativeRole: row.narrativeRole,
     partOfStory: row.partOfStory,
-    imageRefs: row.imageRefs ? (JSON.parse(row.imageRefs) as ImageRef[]) : null,
+    imageRefs: row.imageRefs
+      ? z
+          .array(
+            z.looseObject({
+              messageId: z.string(),
+              blockIndex: z.number(),
+              description: z.string(),
+              mimeType: z.string(),
+            }),
+          )
+          .parse(JSON.parse(row.imageRefs))
+      : null,
   };
 }
 

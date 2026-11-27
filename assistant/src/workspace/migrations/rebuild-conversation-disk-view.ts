@@ -9,6 +9,7 @@ import {
 import { join } from "node:path";
 
 import { asc, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { resolveConversationDirectoryPaths } from "../../persistence/conversation-directories.js";
 import {
@@ -72,7 +73,9 @@ function getProjectedAttachmentFilenames(messagesPath: string): Set<string> {
       continue;
     }
     try {
-      const parsed = JSON.parse(line) as { attachments?: unknown };
+      const parsed = z
+        .looseObject({ attachments: z.unknown().optional() })
+        .parse(JSON.parse(line));
       if (!Array.isArray(parsed.attachments)) {
         continue;
       }

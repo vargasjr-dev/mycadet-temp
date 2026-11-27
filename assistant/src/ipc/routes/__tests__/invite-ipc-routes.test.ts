@@ -9,6 +9,7 @@ import { describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
 
 useMemorySecureKeys();
@@ -78,17 +79,19 @@ describe("invite IPC-only methods", () => {
 // `invite-service` module mocks other suites install in a shared bun process.
 describe("invites_compose_presentation", () => {
   test("returns an { invite } envelope preserving the one-time mint payload", async () => {
-    const result = (await INVITE_IPC_METHODS.invites_compose_presentation({
-      body: {
-        contactId: "ct-1",
-        invite: {
-          id: "inv-1",
-          sourceChannel: "phone",
-          friendName: "Sam Example",
-          voiceCode: "123456",
+    const result = z.looseObject({ invite: jsonObjectSchema }).parse(
+      await INVITE_IPC_METHODS.invites_compose_presentation({
+        body: {
+          contactId: "ct-1",
+          invite: {
+            id: "inv-1",
+            sourceChannel: "phone",
+            friendName: "Sam Example",
+            voiceCode: "123456",
+          },
         },
-      },
-    })) as { invite: Record<string, unknown> };
+      }),
+    );
 
     expect(result.invite.id).toBe("inv-1");
     expect(result.invite.voiceCode).toBe("123456");

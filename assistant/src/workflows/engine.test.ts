@@ -170,7 +170,7 @@ describe("extractWorkflowMeta", () => {
         `export const meta = { name: (((globalThis).__pwned = true), "n"), description: "d" };`,
       ),
     ).toThrow();
-    expect((globalThis as Record<string, unknown>).__pwned).toBe(false);
+    expect(globalThis).toHaveProperty("__pwned", false);
     delete (globalThis as Record<string, unknown>).__pwned;
   });
 });

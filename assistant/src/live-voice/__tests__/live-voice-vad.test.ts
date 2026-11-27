@@ -3639,27 +3639,18 @@ describe("LiveVoiceSession server VAD", () => {
       continuationAnnounceSilenceMs: 20,
     });
     await session.start();
-    const internals = session as unknown as {
-      receiveTaskOutcome: (
-        outcome: import("../task-outcomes.js").VoiceTaskOutcome,
-      ) => boolean;
-      launchAssistantTurn: (
-        utterance: unknown,
-        content: string,
-        opts?: unknown,
-      ) => Promise<boolean>;
-    };
-    const launch = internals.launchAssistantTurn.bind(session);
+    const internals = session;
+    const launch = internals["launchAssistantTurn"].bind(session);
     const failed = mock(() => {
       throw new Error("thinking frame write failed");
     });
-    internals.launchAssistantTurn = async (utterance, content, opts) => {
+    internals["launchAssistantTurn"] = async (utterance, content, opts) => {
       if (content === CONTINUATION_DELIVERY_CONTENT) {
         return failed();
       }
       return launch(utterance, content, opts);
     };
-    internals.receiveTaskOutcome({
+    internals["receiveTaskOutcome"]({
       taskId: "continuation-1",
       message: "THE_RESULT",
       metadata: {},
@@ -4032,12 +4023,8 @@ describe("LiveVoiceSession server VAD", () => {
     // every transcript-derived idle signal still reads "nobody is speaking".
     await session.handleBinaryAudio(LOUD_CHUNK);
 
-    const internals = session as unknown as {
-      receiveTaskOutcome: (
-        outcome: import("../task-outcomes.js").VoiceTaskOutcome,
-      ) => boolean;
-    };
-    internals.receiveTaskOutcome({
+    const internals = session;
+    internals["receiveTaskOutcome"]({
       taskId: "continuation-1",
       message: "THE_RESULT",
       metadata: {},

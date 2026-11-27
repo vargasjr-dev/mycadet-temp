@@ -7,8 +7,9 @@
  * same dispatch, same spoken reply, and no interference with the capture cycle
  * a voice session is running alongside it.
  */
-
 import { describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { VoiceTurnOptions } from "../../calls/voice-session-bridge.js";
 import type {
@@ -348,13 +349,17 @@ describe("typed live-voice turns", () => {
       (frame): frame is Extract<LiveVoiceServerFrame, { type: "metrics" }> =>
         frame.type === "metrics",
     );
-    const turn = (
-      metrics?.metrics as {
-        recentTurns?: {
-          timestamps: Record<string, number | null>;
-        }[];
-      }
-    )?.recentTurns?.[0];
+    const turn = z
+      .looseObject({
+        recentTurns: z
+          .array(
+            z.looseObject({
+              timestamps: z.record(z.string(), z.union([z.number(), z.null()])),
+            }),
+          )
+          .optional(),
+      })
+      .parse(metrics?.metrics)?.recentTurns?.[0];
 
     expect(turn?.timestamps.utteranceEndAtMs).not.toBeNull();
     // Nothing was transcribed, and stamping a transcript mark would invent a

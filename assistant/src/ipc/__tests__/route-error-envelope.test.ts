@@ -22,13 +22,10 @@ import { AssistantIpcServer, type IpcResponse } from "../assistant-server.js";
  * test exercises the actual production code path without exporting a
  * test-only API on the server class.
  */
-type PrivateApi = {
-  buildErrorResponse(id: string, err: unknown): IpcResponse;
-};
 
 function buildErrorResponse(err: unknown): IpcResponse {
-  const server = new AssistantIpcServer() as unknown as PrivateApi;
-  return server.buildErrorResponse("req-1", err);
+  const server = new AssistantIpcServer();
+  return server["buildErrorResponse"]("req-1", err);
 }
 
 describe("AssistantIpcServer error envelope", () => {

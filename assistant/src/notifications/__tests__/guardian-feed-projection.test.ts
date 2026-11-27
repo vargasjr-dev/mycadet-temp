@@ -432,16 +432,18 @@ describe("writeGuardianFeedReceipt", () => {
     // the read path, so the missing-item and lost-write cases separate.
     const feedPath = getHomeFeedPath();
     const originalWrite = fs.writeFileSync;
-    const spy = spyOn(fs, "writeFileSync").mockImplementation(((
-      path: fs.PathOrFileDescriptor,
-      data: string | NodeJS.ArrayBufferView,
-      options?: fs.WriteFileOptions,
-    ) => {
-      if (typeof path === "string" && path === feedPath) {
-        throw new Error("Simulated write failure");
-      }
-      return originalWrite(path, data, options);
-    }) as typeof fs.writeFileSync);
+    const spy = spyOn(fs, "writeFileSync").mockImplementation(
+      (
+        path: fs.PathOrFileDescriptor,
+        data: string | NodeJS.ArrayBufferView,
+        options?: fs.WriteFileOptions,
+      ) => {
+        if (typeof path === "string" && path === feedPath) {
+          throw new Error("Simulated write failure");
+        }
+        return originalWrite(path, data, options);
+      },
+    );
     try {
       expect(
         await writeGuardianFeedReceipt({

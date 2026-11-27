@@ -98,6 +98,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getMessages } from "@mycadet/plugin-api";
+import { z } from "zod";
 
 import {
   isMemoryV3Live,
@@ -219,7 +220,15 @@ export function readConsolidationFailureState(): ConsolidationFailureState | nul
     return null;
   }
   try {
-    const parsed = JSON.parse(raw) as Partial<ConsolidationFailureState>;
+    const parsed = z
+      .looseObject({
+        consecutiveFailures: z.number().optional(),
+        lastFailureAt: z.number().optional(),
+        kind: z
+          .union([z.literal("billing"), z.literal("transient")])
+          .optional(),
+      })
+      .parse(JSON.parse(raw));
     if (
       typeof parsed.consecutiveFailures !== "number" ||
       !Number.isFinite(parsed.consecutiveFailures) ||

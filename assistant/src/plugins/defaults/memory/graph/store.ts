@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
 // Memory Graph — Data access layer
 // ---------------------------------------------------------------------------
-
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
+import { z } from "zod";
 
 import {
   type DrizzleDb,
@@ -18,9 +18,7 @@ import {
 } from "../../../../persistence/schema/index.js";
 import type {
   ApplyDiffResult,
-  EmotionalCharge,
   Fidelity,
-  ImageRef,
   MemoryDiff,
   MemoryEdge,
   MemoryNode,
@@ -64,18 +62,44 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
     lastAccessed: row.lastAccessed,
     lastConsolidated: row.lastConsolidated,
     eventDate: row.eventDate ?? null,
-    emotionalCharge: JSON.parse(row.emotionalCharge) as EmotionalCharge,
+    emotionalCharge: z
+      .looseObject({
+        valence: z.number(),
+        intensity: z.number(),
+        decayCurve: z.union([
+          z.literal("linear"),
+          z.literal("logarithmic"),
+          z.literal("transformative"),
+          z.literal("permanent"),
+        ]),
+        decayRate: z.number(),
+        originalIntensity: z.number(),
+      })
+      .parse(JSON.parse(row.emotionalCharge)),
     fidelity: row.fidelity as Fidelity,
     confidence: row.confidence,
     significance: row.significance,
     stability: row.stability,
     reinforcementCount: row.reinforcementCount,
     lastReinforced: row.lastReinforced,
-    sourceConversations: JSON.parse(row.sourceConversations) as string[],
+    sourceConversations: z
+      .array(z.string())
+      .parse(JSON.parse(row.sourceConversations)),
     sourceType: row.sourceType as SourceType,
     narrativeRole: row.narrativeRole,
     partOfStory: row.partOfStory,
-    imageRefs: row.imageRefs ? (JSON.parse(row.imageRefs) as ImageRef[]) : null,
+    imageRefs: row.imageRefs
+      ? z
+          .array(
+            z.looseObject({
+              messageId: z.string(),
+              blockIndex: z.number(),
+              description: z.string(),
+              mimeType: z.string(),
+            }),
+          )
+          .parse(JSON.parse(row.imageRefs))
+      : null,
   };
 }
 

@@ -79,7 +79,7 @@ async function handleImageGenerationGenerate(
 
   // Resolve aliases and OpenRouter slugs against the configured provider.
   // Built-in providers still list the current catalog on unknown values.
-  let resolvedModel = model as string | undefined;
+  let resolvedModel = typeof model === "string" ? model : undefined;
   if (typeof resolvedModel === "string" && resolvedModel) {
     const resolved = resolveRequestedImageModel(resolvedModel, svc.provider);
     if (resolved.error) {

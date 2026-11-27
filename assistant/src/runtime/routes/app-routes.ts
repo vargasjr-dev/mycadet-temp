@@ -156,8 +156,8 @@ function contentTypeForPath(filePath: string): string {
  * Validates the filename to prevent path traversal.
  */
 function handleServeDistFile({ pathParams }: RouteHandlerArgs): Uint8Array {
-  const appId = pathParams?.appId as string;
-  const filename = pathParams?.filename as string;
+  const appId = pathParams?.appId;
+  const filename = pathParams?.filename;
 
   // Reject any traversal attempts on appId
   if (
@@ -206,8 +206,8 @@ const MAX_APP_ASSET_BYTES = 25 * 1024 * 1024;
  * them via `window.cadet.asset(path)`.
  */
 function handleServeAppAsset({ pathParams }: RouteHandlerArgs): Uint8Array {
-  const appId = pathParams?.appId as string;
-  const assetPath = pathParams?.path as string;
+  const appId = pathParams?.appId;
+  const assetPath = pathParams?.path;
 
   if (
     !appId ||
@@ -281,7 +281,21 @@ async function handleShareApp({ rawBody }: RouteHandlerArgs): Promise<{
       throw new BadRequestError("Invalid bundle: missing manifest.json");
     }
     const manifestText = await manifestFile.async("text");
-    manifest = JSON.parse(manifestText) as AppManifest;
+    manifest = z
+      .looseObject({
+        format_version: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+        icon: z.string().optional(),
+        preview: z.string().optional(),
+        created_at: z.string(),
+        created_by: z.string(),
+        entry: z.string(),
+        capabilities: z.array(z.string()),
+        version: z.string().optional(),
+        content_id: z.string().optional(),
+      })
+      .parse(JSON.parse(manifestText));
     if (!manifest.name || !manifest.entry) {
       throw new BadRequestError("Invalid manifest: missing required fields");
     }
@@ -322,7 +336,21 @@ function handleGetSharedAppMetadata({ pathParams }: RouteHandlerArgs) {
 
   let manifest: AppManifest;
   try {
-    manifest = JSON.parse(record.manifestJson) as AppManifest;
+    manifest = z
+      .looseObject({
+        format_version: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+        icon: z.string().optional(),
+        preview: z.string().optional(),
+        created_at: z.string(),
+        created_by: z.string(),
+        entry: z.string(),
+        capabilities: z.array(z.string()),
+        version: z.string().optional(),
+        content_id: z.string().optional(),
+      })
+      .parse(JSON.parse(record.manifestJson));
   } catch {
     throw new RouteError("Corrupted manifest data", "INTERNAL_ERROR", 500);
   }

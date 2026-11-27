@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import type {
   QuestionPromptOutcome,
   QuestionPromptParams,
@@ -113,21 +116,31 @@ describe("askQuestionTool definition", () => {
     expect(def.description).toContain("up to 5");
     expect(def.description).toContain("Skip button");
 
-    const schema = def.input_schema as {
-      properties: Record<
-        string,
-        {
-          type?: string;
-          items?: {
-            properties?: Record<
-              string,
-              { type?: string; minItems?: number; maxItems?: number }
-            >;
-          };
-        }
-      >;
-      required?: string[];
-    };
+    const schema = z
+      .looseObject({
+        properties: z.record(
+          z.string(),
+          z.looseObject({
+            type: z.string().optional(),
+            items: z
+              .looseObject({
+                properties: z
+                  .record(
+                    z.string(),
+                    z.looseObject({
+                      type: z.string().optional(),
+                      minItems: z.number().optional(),
+                      maxItems: z.number().optional(),
+                    }),
+                  )
+                  .optional(),
+              })
+              .optional(),
+          }),
+        ),
+        required: z.array(z.string()).optional(),
+      })
+      .parse(def.input_schema);
     const optionsSchema =
       schema.properties.questions?.items?.properties?.options;
     expect(optionsSchema?.type).toBe("array");
@@ -723,22 +736,26 @@ describe("AskQuestionTool batched input", () => {
 describe("askQuestionTool definition (batched schema)", () => {
   test("exposes batched questions and a desktop help alternative", () => {
     const def = askQuestionTool;
-    const schema = def.input_schema as {
-      properties: Record<
-        string,
-        {
-          type?: string;
-          minItems?: number;
-          maxItems?: number;
-          items?: {
-            type?: string;
-            properties?: Record<string, unknown>;
-            required?: string[];
-          };
-        }
-      >;
-      required?: string[];
-    };
+    const schema = z
+      .looseObject({
+        properties: z.record(
+          z.string(),
+          z.looseObject({
+            type: z.string().optional(),
+            minItems: z.number().optional(),
+            maxItems: z.number().optional(),
+            items: z
+              .looseObject({
+                type: z.string().optional(),
+                properties: jsonObjectSchema.optional(),
+                required: z.array(z.string()).optional(),
+              })
+              .optional(),
+          }),
+        ),
+        required: z.array(z.string()).optional(),
+      })
+      .parse(def.input_schema);
 
     const questions = schema.properties.questions;
     expect(questions?.type).toBe("array");

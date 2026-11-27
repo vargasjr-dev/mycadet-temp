@@ -18,6 +18,7 @@
  * wrote a row rather than whose turn wrote it.
  */
 import { type TrustClass, TrustClassSchema } from "@mycadet/gateway-client";
+import { z } from "zod";
 
 import type { MessageRow } from "../persistence/conversation-crud.js";
 import type { TrustContext } from "./trust-context-types.js";
@@ -29,7 +30,9 @@ function parseProvenanceTrustClass(
     return undefined;
   }
   try {
-    const parsed = JSON.parse(metadata) as { provenanceTrustClass?: unknown };
+    const parsed = z
+      .looseObject({ provenanceTrustClass: z.unknown().optional() })
+      .parse(JSON.parse(metadata));
     const result = TrustClassSchema.safeParse(parsed?.provenanceTrustClass);
     if (result.success) {
       return result.data;

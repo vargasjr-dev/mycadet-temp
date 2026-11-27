@@ -13,6 +13,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 const { getDb, getSqlite, getTelemetrySqlite } =
   await import("../db-connection.js");
 const { initializeDb } = await import("../db-init.js");
@@ -42,14 +44,23 @@ function outboxLifecycleRows(): Array<{
   created_at: number;
   payload: Record<string, unknown>;
 }> {
-  return (
-    getTelemetrySqlite()!
-      .query(
-        `SELECT id, created_at, payload FROM telemetry_events
+  return z
+    .array(
+      z.looseObject({
+        id: z.string(),
+        created_at: z.number(),
+        payload: z.string(),
+      }),
+    )
+    .parse(
+      getTelemetrySqlite()!
+        .query(
+          `SELECT id, created_at, payload FROM telemetry_events
          WHERE name = 'lifecycle' ORDER BY created_at, id`,
-      )
-      .all() as Array<{ id: string; created_at: number; payload: string }>
-  ).map((row) => ({ ...row, payload: JSON.parse(row.payload) }));
+        )
+        .all(),
+    )
+    .map((row) => ({ ...row, payload: JSON.parse(row.payload) }));
 }
 
 const SOURCE_COLUMNS = `

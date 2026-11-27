@@ -11,7 +11,6 @@
  * - No persistence: a leaf run creates no conversation rows and no workspace
  *   files.
  */
-
 import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,6 +18,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../__tests__/helpers/json-object-schema.js";
 import { setConfig } from "../__tests__/helpers/set-config.js";
 
 // ---------------------------------------------------------------------------
@@ -205,9 +205,7 @@ describe("runLeaf — schema path", () => {
     expect(tool?.name).toBe("emit_result");
     // input_schema is derived from the Zod schema (no $schema key).
     expect(tool?.input_schema).toBeDefined();
-    expect(
-      (tool?.input_schema as Record<string, unknown>).$schema,
-    ).toBeUndefined();
+    expect(jsonObjectSchema.parse(tool?.input_schema).$schema).toBeUndefined();
 
     // No conversation rows created.
     expect(countConversations()).toBe(before);

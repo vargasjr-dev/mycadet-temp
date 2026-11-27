@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { ProviderError, type ProviderErrorReason } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
@@ -241,11 +243,13 @@ function extractErrorMessage(bodyText: string, status: number): string {
   const trimmed = bodyText.trim();
   if (trimmed.length > 0) {
     try {
-      const parsed = JSON.parse(trimmed) as {
-        error?: unknown;
-        message?: unknown;
-        detail?: unknown;
-      };
+      const parsed = z
+        .looseObject({
+          error: z.unknown().optional(),
+          message: z.unknown().optional(),
+          detail: z.unknown().optional(),
+        })
+        .parse(JSON.parse(trimmed));
       const nested =
         parsed.error && isPlainObject(parsed.error)
           ? parsed.error.message
@@ -498,7 +502,8 @@ export class JevProvider implements Provider {
   ): Promise<ProviderResponse> {
     const { systemPrompt, config, onEvent, signal } = options ?? {};
     const configObj: Record<string, unknown> | undefined = config;
-    const modelOverride = configObj?.model as string | undefined;
+    const modelOverride =
+      typeof configObj?.model === "string" ? configObj?.model : undefined;
     const usageAttributionHeaders = configObj?.usageAttributionHeaders as
       | Record<string, string>
       | undefined;

@@ -29,8 +29,8 @@ export async function executePlaybookCreate(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const trigger = input.trigger as string;
-  const action = input.action as string;
+  const trigger = input.trigger;
+  const action = input.action;
 
   if (!trigger || typeof trigger !== "string") {
     return {

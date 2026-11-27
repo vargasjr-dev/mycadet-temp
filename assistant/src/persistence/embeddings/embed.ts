@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
 // Shared embedding utility with retry + exponential backoff
 // ---------------------------------------------------------------------------
-
 import { AssistantConfig } from "../../config/schema.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import {
   abortableSleep,
   computeRetryDelay,
@@ -84,13 +84,13 @@ export function isTransientEmbeddingError(err: unknown): boolean {
 
 function getErrorStatusCode(err: Error): unknown {
   if ("status" in err) {
-    const status = (err as { status: unknown }).status;
+    const status = getObjectProperty(err, "status");
     if (status != null) {
       return status;
     }
   }
   if ("statusCode" in err) {
-    return (err as { statusCode: unknown }).statusCode;
+    return getObjectProperty(err, "statusCode");
   }
   return undefined;
 }
@@ -99,7 +99,7 @@ function getErrorRetryAfterMs(err: unknown): number | undefined {
   if (!(err instanceof Error)) {
     return undefined;
   }
-  const candidate = (err as { retryAfterMs?: unknown }).retryAfterMs;
+  const candidate = getObjectProperty(err, "retryAfterMs");
   if (typeof candidate === "number" && candidate >= 0) {
     return candidate;
   }

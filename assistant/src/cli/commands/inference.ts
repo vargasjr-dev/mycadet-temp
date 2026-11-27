@@ -60,9 +60,7 @@ interface InferenceSendErrorDetails {
 }
 
 function asErrorDetails(value: unknown): InferenceSendErrorDetails {
-  return value && typeof value === "object"
-    ? (value as InferenceSendErrorDetails)
-    : {};
+  return value && typeof value === "object" ? value : {};
 }
 
 const DEFAULT_INFERENCE_IPC_TIMEOUT_MS = 32 * 60 * 1000;

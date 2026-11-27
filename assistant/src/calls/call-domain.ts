@@ -143,8 +143,8 @@ export async function resolveCallerIdentity(
 
   if (requestedMode != null) {
     if (
-      !(VALID_CALLER_IDENTITY_MODES as readonly string[]).includes(
-        requestedMode,
+      !VALID_CALLER_IDENTITY_MODES.some(
+        (candidate: string) => candidate === requestedMode,
       )
     ) {
       return {

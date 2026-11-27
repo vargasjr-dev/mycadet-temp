@@ -16,7 +16,6 @@
  *
  * Design doc: `.private/plans/agent-plugin-system.md`.
  */
-
 import { z } from "zod";
 
 import { makeHookBroadcast } from "../hooks/hook-broadcast.js";
@@ -25,6 +24,7 @@ import { getHookEntriesFor } from "../hooks/registry.js";
 import type { BaseHookContext } from "../hooks/types.js";
 import { type HookName, HOOKS } from "../plugin-api/constants.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import {
   runInPluginContext,
   runOutsidePluginContext,
@@ -44,10 +44,10 @@ function isPluginLogger(value: unknown): value is {
   return (
     value !== null &&
     typeof value === "object" &&
-    typeof (value as { info?: unknown }).info === "function" &&
-    typeof (value as { warn?: unknown }).warn === "function" &&
-    typeof (value as { error?: unknown }).error === "function" &&
-    typeof (value as { debug?: unknown }).debug === "function"
+    typeof getObjectProperty(value, "info") === "function" &&
+    typeof getObjectProperty(value, "warn") === "function" &&
+    typeof getObjectProperty(value, "error") === "function" &&
+    typeof getObjectProperty(value, "debug") === "function"
   );
 }
 

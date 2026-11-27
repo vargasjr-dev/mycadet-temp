@@ -55,9 +55,7 @@ function seedSummary(
 
 function recentSummaries(): string[] {
   const cgm = new ConversationGraphMemory(CURRENT);
-  return (
-    cgm as unknown as { fetchRecentSummaries: () => string[] }
-  ).fetchRecentSummaries();
+  return cgm["fetchRecentSummaries"]();
 }
 
 beforeEach(() => {

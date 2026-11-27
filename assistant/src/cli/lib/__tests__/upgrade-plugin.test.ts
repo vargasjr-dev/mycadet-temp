@@ -8,7 +8,6 @@
  * {@link GitRunner} that materializes a tree, and the install target is a real
  * temp directory passed via `workspacePluginsDir` — no globals are patched.
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -20,6 +19,8 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { FetchLike } from "../fetch-like.js";
 import {
@@ -83,15 +84,27 @@ function makeFetch(opts: {
       if (opts.manifest === undefined) {
         return new Response(JSON.stringify({ plugins: [] }), { status: 200 });
       }
-      const manifest = opts.manifest as {
-        plugins?: Array<{
-          name: string;
-          source?: { source: string; repo?: string; ref?: string };
-          description?: string;
-          category?: string;
-          license?: string;
-        }>;
-      };
+      const manifest = z
+        .looseObject({
+          plugins: z
+            .array(
+              z.looseObject({
+                name: z.string(),
+                source: z
+                  .looseObject({
+                    source: z.string(),
+                    repo: z.string().optional(),
+                    ref: z.string().optional(),
+                  })
+                  .optional(),
+                description: z.string().optional(),
+                category: z.string().optional(),
+                license: z.string().optional(),
+              }),
+            )
+            .optional(),
+        })
+        .parse(opts.manifest);
       const rows = (manifest.plugins ?? []).map((entry) => ({
         name: entry.name,
         ...(entry.source?.repo ? { repo: entry.source.repo } : {}),

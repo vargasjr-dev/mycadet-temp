@@ -13,8 +13,8 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const id = input.id as string;
-  if (!id) {
+  const id = input.id;
+  if (typeof id !== "string" || !id) {
     return err("id is required.");
   }
 

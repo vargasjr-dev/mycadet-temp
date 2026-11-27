@@ -2,6 +2,8 @@ import { describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
+
 const mockListProviders = mock(() => [
   {
     provider: "google",
@@ -168,9 +170,9 @@ describe("GET /v1/oauth/providers", () => {
       queryParams: {},
     });
 
-    const { providers } = body as {
-      providers: Array<Record<string, unknown>>;
-    };
+    const { providers } = z
+      .looseObject({ providers: z.array(jsonObjectSchema) })
+      .parse(body);
 
     const expectedKeys = [
       "provider_key",

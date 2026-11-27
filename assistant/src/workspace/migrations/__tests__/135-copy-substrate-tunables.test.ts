@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { MemoryConfigSchema } from "../../../config/schemas/memory.js";
 import { MemoryV2ConfigSchema } from "../../../config/schemas/memory-v2.js";
 import {
@@ -104,7 +105,7 @@ function read(): Record<string, unknown> {
   return JSON.parse(readRaw());
 }
 function memory(): Record<string, unknown> {
-  return read().memory as Record<string, unknown>;
+  return jsonObjectSchema.parse(read().memory);
 }
 
 beforeEach(() => {

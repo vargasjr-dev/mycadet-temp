@@ -718,11 +718,7 @@ function clientHandlerFor(
   manager: Manager,
   acpSessionId: string,
 ): CadetAcpClientHandler {
-  const entry = (
-    manager as unknown as {
-      sessions: Map<string, { clientHandler: CadetAcpClientHandler }>;
-    }
-  ).sessions.get(acpSessionId);
+  const entry = manager["sessions"].get(acpSessionId);
   if (!entry) {
     throw new Error(`No ACP session registered for "${acpSessionId}"`);
   }
@@ -1000,13 +996,8 @@ describe("AcpSessionManager: a resumed id and the process it replaced", () => {
     // The user stops the turn and a resume takes the id over, both while the
     // pin's round trip is still open.
     controller.abort();
-    const internals = manager as unknown as {
-      registerSession: (opts: Record<string, unknown>) => {
-        state: AcpSessionState;
-      };
-      eventBuffers: Map<string, unknown[]>;
-    };
-    const replacement = internals.registerSession({
+    const internals = manager;
+    const replacement = internals["registerSession"]({
       acpSessionId,
       agentId: "agent-model",
       agentConfig: { command: "echo", args: ["hi"] },
@@ -1044,7 +1035,7 @@ describe("AcpSessionManager: a resumed id and the process it replaced", () => {
     expect(state.parentConversationId).toBe("conv-resumed");
     expect(state.model).toBeUndefined();
     expect(state.availableModels).toBeUndefined();
-    expect(internals.eventBuffers.get(acpSessionId)).toEqual([]);
+    expect(internals["eventBuffers"].get(acpSessionId)).toEqual([]);
     expect(sent).toEqual([]);
   });
 });

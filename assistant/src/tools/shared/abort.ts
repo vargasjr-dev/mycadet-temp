@@ -1,4 +1,5 @@
 import { type AbortReason, isAbortReason } from "../../util/abort-reasons.js";
+import { getObjectProperty } from "../../util/object.js";
 
 // The guard itself lives on the plugin API surface, the one module a plugin
 // may import from, so host tools and plugin tools share a single
@@ -15,11 +16,11 @@ export function extractAbortReason(err: unknown): AbortReason | undefined {
   if (isAbortReason(err)) {
     return err;
   }
-  const reason = (err as { reason?: unknown } | null)?.reason;
+  const reason = getObjectProperty(err, "reason");
   if (isAbortReason(reason)) {
     return reason;
   }
-  const abortReason = (err as { abortReason?: unknown } | null)?.abortReason;
+  const abortReason = getObjectProperty(err, "abortReason");
   if (isAbortReason(abortReason)) {
     return abortReason;
   }

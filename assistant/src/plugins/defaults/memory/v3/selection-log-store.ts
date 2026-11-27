@@ -436,7 +436,7 @@ export interface SelectionSummary {
 }
 
 function isSelectionSource(source: string): source is SelectionSource {
-  return (SELECTION_SOURCES as readonly string[]).includes(source);
+  return SELECTION_SOURCES.some((candidate: string) => candidate === source);
 }
 
 export function summarizeSelections(conversationId: string): SelectionSummary {

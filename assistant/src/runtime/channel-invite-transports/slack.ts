@@ -7,8 +7,6 @@
  * no `buildShareLink` or `extractInboundToken` needed.
  */
 
-import { ChannelId } from "@mycadet/service-contracts/channels";
-
 import { getConfig } from "../../config/loader.js";
 import type { ChannelInviteAdapter } from "../channel-invite-types.js";
 
@@ -37,7 +35,7 @@ function resolveSlackBotInfo(): SlackBotInfo | undefined {
 // ---------------------------------------------------------------------------
 
 export const slackInviteAdapter: ChannelInviteAdapter = {
-  channel: "slack" as ChannelId,
+  channel: "slack",
 
   resolveChannelHandle(): string | undefined {
     const botInfo = resolveSlackBotInfo();

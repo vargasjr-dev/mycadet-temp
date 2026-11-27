@@ -89,6 +89,7 @@ import {
 } from "./errors.js";
 import { setInferenceProfileSession } from "./inference-profile-session-handler.js";
 import { inferenceProfileSessionResponseSchema } from "./inference-profile-session-schema.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("conversation-management-routes");
@@ -134,7 +135,9 @@ async function cancelScheduleIfLast(conversationId: string): Promise<void> {
 
 function handleCreateConversation({ body = {}, headers }: RouteHandlerArgs) {
   const conversationKey =
-    (body.conversationKey as string | undefined) ?? crypto.randomUUID();
+    (typeof body.conversationKey === "string"
+      ? body.conversationKey
+      : undefined) ?? crypto.randomUUID();
   // The shared route adapter does not runtime-validate the body against the
   // Zod requestBody (it's codegen-only), so guard the types here: a malformed
   // `{ title: 123 }` would otherwise throw on `.trim()` and 500, and an
@@ -197,7 +200,7 @@ async function handleForkConversation({
   body = {},
   headers,
 }: RouteHandlerArgs) {
-  const conversationId = body.conversationId as string | undefined;
+  const conversationId = body.conversationId;
   if (!conversationId || typeof conversationId !== "string") {
     throw new BadRequestError("Missing conversationId");
   }
@@ -237,7 +240,7 @@ async function handleForkConversation({
 }
 
 async function handleSwitchConversation({ body = {} }: RouteHandlerArgs) {
-  const conversationId = body.conversationId as string | undefined;
+  const conversationId = body.conversationId;
   if (!conversationId || typeof conversationId !== "string") {
     throw new BadRequestError("Missing conversationId");
   }
@@ -273,8 +276,13 @@ async function handleSetInferenceProfile({
   return setInferenceProfileSession({
     conversationId: pathParams.id!,
     profile: body.profile,
-    ttlSeconds: body.ttlSeconds as number | null | undefined,
-    sessionId: body.sessionId as string | undefined,
+    ttlSeconds:
+      typeof body.ttlSeconds === "number"
+        ? body.ttlSeconds
+        : body.ttlSeconds === null
+          ? null
+          : undefined,
+    sessionId: typeof body.sessionId === "string" ? body.sessionId : undefined,
     originClientId: headers?.["x-cadet-client-id"]?.trim() || undefined,
   });
 }
@@ -284,7 +292,7 @@ async function handleUpdateConversationEnabledPlugins({
   body = {},
   headers,
 }: RouteHandlerArgs) {
-  const enabledPlugins = body.enabledPlugins as string[] | null | undefined;
+  const enabledPlugins = body.enabledPlugins;
   // The field is required; `null` is the explicit "clear the scope" signal.
   // A missing field (malformed/empty body) must not silently clear the scope.
   if (enabledPlugins === undefined) {
@@ -327,7 +335,7 @@ function handleRenameConversation({
   body = {},
   headers,
 }: RouteHandlerArgs) {
-  const name = body.name as string | undefined;
+  const name = body.name;
   if (!name || typeof name !== "string") {
     throw new BadRequestError("Missing name");
   }
@@ -440,7 +448,7 @@ function handleArchiveConversationsBulk({
   body = {},
   headers,
 }: RouteHandlerArgs) {
-  const rawIds = body.conversationIds as string[] | undefined;
+  const rawIds = body.conversationIds;
   if (!Array.isArray(rawIds) || rawIds.length === 0) {
     throw new BadRequestError("conversationIds must be a non-empty array");
   }
@@ -449,6 +457,9 @@ function handleArchiveConversationsBulk({
   const archivedIds: string[] = [];
 
   for (const rawId of rawIds) {
+    if (typeof rawId !== "string") {
+      continue;
+    }
     try {
       const conversationId = resolveOrThrow(rawId);
       const archived = archiveConversation(conversationId);
@@ -690,7 +701,7 @@ async function handleResolveMetaSlashCommand({
   pathParams = {},
   body = {},
 }: RouteHandlerArgs) {
-  const command = body.command as string | undefined;
+  const command = body.command;
   if (!command || typeof command !== "string") {
     throw new BadRequestError("Missing command");
   }
@@ -710,13 +721,8 @@ async function handleResolveMetaSlashCommand({
 }
 
 function handleReorderConversations({ body = {}, headers }: RouteHandlerArgs) {
-  const updates = body.updates as
-    | Array<{
-        conversationId: string;
-        isPinned?: boolean;
-        groupId?: string | null;
-      }>
-    | undefined;
+  const request = parseBody(reorderConversationsRequestSchema, body);
+  const updates = request.updates;
   if (!Array.isArray(updates)) {
     throw new BadRequestError("Missing updates array");
   }
@@ -750,6 +756,16 @@ export const createConversationResponseSchema = z.object({
     .describe("Echo of the optional external key supplied by the client."),
   conversationType: z.string(),
   created: z.boolean(),
+});
+
+const reorderConversationsRequestSchema = z.object({
+  updates: z.array(
+    z.object({
+      conversationId: z.string(),
+      isPinned: z.boolean().optional(),
+      groupId: z.string().nullable().optional(),
+    }),
+  ),
 });
 
 export const ROUTES: RouteDefinition[] = [
@@ -1138,15 +1154,7 @@ export const ROUTES: RouteDefinition[] = [
       "Batch-update which group holds each conversation, and its pin state. " +
       "Lists are ordered by recency, so this sets placement, not order.",
     tags: ["conversations"],
-    requestBody: z.object({
-      updates: z.array(
-        z.object({
-          conversationId: z.string(),
-          isPinned: z.boolean().optional(),
-          groupId: z.string().nullable().optional(),
-        }),
-      ),
-    }),
+    requestBody: reorderConversationsRequestSchema,
     responseBody: z.object({ ok: z.boolean() }),
     handler: handleReorderConversations,
   },

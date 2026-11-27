@@ -6,13 +6,13 @@
  * secure credential store (`elevenlabs/api_key`) and the voice configuration
  * from `services.tts.providers.elevenlabs` config section.
  */
-
 import { getConfig } from "../../config/loader.js";
 import { DEFAULT_ELEVENLABS_VOICE_ID } from "../../config/schemas/elevenlabs.js";
 import type { TtsElevenLabsProviderConfig } from "../../config/schemas/tts.js";
 import { credentialKey } from "../../security/credential-key.js";
 import { getSecureKeyAsync } from "../../security/secure-keys.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import { resolvePcmOutputSampleRateHz } from "../pcm-sample-rates.js";
 import type { TtsProviderDefinition } from "../provider-definition.js";
 import {
@@ -98,7 +98,7 @@ export function extractElevenLabsErrorMessage(
 
         // Standard ElevenLabs shape: { detail: { message } }
         if (root.detail && typeof root.detail === "object") {
-          const detailMessage = (root.detail as { message?: unknown }).message;
+          const detailMessage = getObjectProperty(root.detail, "message");
           if (typeof detailMessage === "string" && detailMessage.trim()) {
             return detailMessage.trim();
           }

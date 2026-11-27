@@ -7,7 +7,6 @@
  * runAgentLoop method here, passing itself as the loop context.
  */
 
-import { ChannelId } from "@mycadet/service-contracts/channels";
 import { isNoResponseOnlyText } from "@mycadet/service-contracts/no-response";
 import { v4 as uuid } from "uuid";
 
@@ -21,7 +20,6 @@ import type {
 import { createAssistantMessage } from "../agent/message-types.js";
 import type { AssistantEvent } from "../api/index.js";
 import type {
-  InterfaceId,
   TurnChannelContext,
   TurnInterfaceContext,
 } from "../channels/types.js";
@@ -821,8 +819,8 @@ export async function runAgentLoopImpl(
       return { userMessageChannel: origin, assistantMessageChannel: origin };
     }
     return {
-      userMessageChannel: "cadet" as ChannelId,
-      assistantMessageChannel: "cadet" as ChannelId,
+      userMessageChannel: "cadet",
+      assistantMessageChannel: "cadet",
     };
   })();
 
@@ -843,8 +841,8 @@ export async function runAgentLoopImpl(
       };
     }
     return {
-      userMessageInterface: "web" as InterfaceId,
-      assistantMessageInterface: "web" as InterfaceId,
+      userMessageInterface: "web",
+      assistantMessageInterface: "web",
     };
   })();
 

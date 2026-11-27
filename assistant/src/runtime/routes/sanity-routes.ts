@@ -64,10 +64,11 @@ async function handleDiscover(
       return { error: "discovery_failed" };
     }
 
-    const raw = (await response.json()) as Array<{
-      id: string;
-      displayName?: string;
-    }>;
+    const raw = z
+      .array(
+        z.looseObject({ id: z.string(), displayName: z.string().optional() }),
+      )
+      .parse(await response.json());
     const projects = raw.map((p) => ({
       id: p.id,
       displayName: p.displayName ?? p.id,
@@ -91,7 +92,9 @@ async function handleDiscover(
     return { error: "discovery_failed" };
   }
 
-  const raw = (await response.json()) as Array<{ name: string }>;
+  const raw = z
+    .array(z.looseObject({ name: z.string() }))
+    .parse(await response.json());
   const datasets = raw.map((d) => d.name);
   return { projectId, datasets };
 }

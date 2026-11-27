@@ -6,6 +6,7 @@ import {
   withOpenRouterBodyExtras,
 } from "../providers/openrouter/client.js";
 import type { SendMessageOptions } from "../providers/types.js";
+import { getObjectProperty } from "../util/object.js";
 
 /** Expose the protected `buildExtraCreateParams` hook for assertion. */
 class ProbeOpenRouterProvider extends OpenRouterProvider {
@@ -52,9 +53,7 @@ describe("OpenRouter provider.only plumbing", () => {
         model: "anthropic/claude-opus-4.7",
         provider: { only: ["Anthropic"] },
       });
-      expect((result?.config as Record<string, unknown>).openrouter).toBe(
-        undefined,
-      );
+      expect(getObjectProperty(result?.config, "openrouter")).toBe(undefined);
     });
 
     test("returns options unchanged when only list is empty", () => {

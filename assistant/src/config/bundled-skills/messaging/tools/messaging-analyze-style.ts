@@ -99,18 +99,26 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
   const maxMessages = Math.min(
-    Math.max((input.max_messages as number) ?? 50, 1),
+    Math.max(
+      (typeof input.max_messages === "number"
+        ? input.max_messages
+        : undefined) ?? 50,
+      1,
+    ),
     100,
   );
-  const queryFilter = input.query_filter as string | undefined;
+  const queryFilter =
+    typeof input.query_filter === "string" ? input.query_filter : undefined;
 
   throwIfCancelled(context);
 
   try {
     const provider = await resolveProvider(platform);
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     // Search for sent messages using the cloud's search
     const query =

@@ -9,12 +9,13 @@
  * came from the durable layer, which is the restart scenario (fresh process,
  * warm file).
  */
-
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import {
   closeCaptionStore,
@@ -43,9 +44,21 @@ interface CacheRow {
 }
 
 function rowsFor(hash: string): CacheRow[] {
-  return inspector
-    .query(`SELECT * FROM image_captions WHERE image_hash = ?`)
-    .all(hash) as CacheRow[];
+  return z
+    .array(
+      z.looseObject({
+        image_hash: z.string(),
+        conversation_id: z.string(),
+        caption: z.string(),
+        created_at: z.number(),
+        last_used_at: z.number(),
+      }),
+    )
+    .parse(
+      inspector
+        .query(`SELECT * FROM image_captions WHERE image_hash = ?`)
+        .all(hash),
+    );
 }
 
 function rowCount(): number {

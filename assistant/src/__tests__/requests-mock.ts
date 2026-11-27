@@ -43,7 +43,7 @@
 import { EventEmitter } from "node:events";
 import { mock } from "bun:test";
 
-import { isPlainObject } from "../util/object.js";
+import { getObjectProperty, isPlainObject } from "../util/object.js";
 
 // ---------------------------------------------------------------------------
 // Shared matching kernel
@@ -485,7 +485,7 @@ const RETRYABLE_CONNECT_CODES = new Set(["ENOENT", "ECONNREFUSED"]);
 
 function isRetryableIpcConnectError(err: unknown): boolean {
   if (typeof err === "object" && err !== null && "code" in err) {
-    const code = (err as { code?: unknown }).code;
+    const code = getObjectProperty(err, "code");
     return typeof code === "string" && RETRYABLE_CONNECT_CODES.has(code);
   }
   return false;

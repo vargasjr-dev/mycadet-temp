@@ -1105,20 +1105,22 @@ describe("atomic write failure", () => {
     // Capture original before spyOn replaces it. This is deterministic
     // regardless of user privileges (unlike chmod 0o555 which fails as root).
     const originalWrite = fs.writeFileSync;
-    const spy = spyOn(fs, "writeFileSync").mockImplementation(((
-      path: fs.PathOrFileDescriptor,
-      data: string | NodeJS.ArrayBufferView,
-      options?: fs.WriteFileOptions,
-    ) => {
-      if (
-        typeof path === "string" &&
-        path.startsWith(targetDir) &&
-        path.includes(".tmp-")
-      ) {
-        throw new Error("Simulated write failure");
-      }
-      return originalWrite(path, data, options);
-    }) as typeof fs.writeFileSync);
+    const spy = spyOn(fs, "writeFileSync").mockImplementation(
+      (
+        path: fs.PathOrFileDescriptor,
+        data: string | NodeJS.ArrayBufferView,
+        options?: fs.WriteFileOptions,
+      ) => {
+        if (
+          typeof path === "string" &&
+          path.startsWith(targetDir) &&
+          path.includes(".tmp-")
+        ) {
+          throw new Error("Simulated write failure");
+        }
+        return originalWrite(path, data, options);
+      },
+    );
 
     try {
       expect(() => {

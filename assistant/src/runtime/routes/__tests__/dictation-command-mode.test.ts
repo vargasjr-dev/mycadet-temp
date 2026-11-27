@@ -4,8 +4,9 @@
  * words wanted the selection changed or asked about it, and the route answers
  * `command` with the edit or `question` with the words as they were.
  */
-
 import { afterEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
 
 type ToolInput = { kind?: string; text?: string };
 let nextToolInput: ToolInput | null = null;
@@ -56,21 +57,20 @@ const route = ROUTES.find((r) => r.operationId === "dictation_post")!;
 const SELECTION = "Please send me the files.";
 
 async function speakOverSelection(transcription: string) {
-  return (await route.handler({
-    body: {
-      transcription,
-      context: {
-        bundleIdentifier: "com.example.mail",
-        appName: "Example Mail",
-        windowTitle: "New Message",
-        selectedText: SELECTION,
-        cursorInTextField: true,
+  return z.looseObject({ text: z.string(), mode: z.string() }).parse(
+    await route.handler({
+      body: {
+        transcription,
+        context: {
+          bundleIdentifier: "com.example.mail",
+          appName: "Example Mail",
+          windowTitle: "New Message",
+          selectedText: SELECTION,
+          cursorInTextField: true,
+        },
       },
-    },
-  })) as {
-    text: string;
-    mode: string;
-  };
+    }),
+  );
 }
 
 afterEach(() => {

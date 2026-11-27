@@ -156,7 +156,7 @@ export async function generateImage(
     }
   }
 
-  const config = { responseModalities: ["TEXT", "IMAGE"] as string[] };
+  const config = { responseModalities: ["TEXT", "IMAGE"] satisfies string[] };
   const contents = [{ role: "user" as const, parts }];
 
   // For the cloud proxy, bypass the @google/genai SDK and make direct HTTP

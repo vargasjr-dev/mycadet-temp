@@ -7,6 +7,7 @@ import {
   exitCodeFromIpcResult,
   exitFromIpcResult,
 } from "../../ipc/cli-client.js";
+import { getObjectProperty } from "../../util/object.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { confirmPrompt } from "../lib/confirm-prompt.js";
 import { registerCommand } from "../lib/register-command.js";
@@ -138,8 +139,8 @@ function readSeedMessages(contentFile?: string): SeedResult {
     ) {
       return { error: `message ${index} must include role and content` };
     }
-    const role = (value as { role?: unknown }).role;
-    const content = (value as { content?: unknown }).content;
+    const role = getObjectProperty(value, "role");
+    const content = getObjectProperty(value, "content");
     if (
       (role !== "user" && role !== "assistant") ||
       typeof content !== "string"

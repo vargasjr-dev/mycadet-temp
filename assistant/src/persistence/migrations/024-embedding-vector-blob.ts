@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
 /**
@@ -44,7 +46,7 @@ export function migrateEmbeddingVectorBlob(database: DrizzleDb): void {
     raw.exec("BEGIN");
     try {
       for (const row of rows) {
-        const parsed = JSON.parse(row.vector_json) as number[];
+        const parsed = z.array(z.number()).parse(JSON.parse(row.vector_json));
         const f32 = new Float32Array(parsed);
         const buf = Buffer.from(f32.buffer, f32.byteOffset, f32.byteLength);
         update.run(buf, row.id);

@@ -12,15 +12,15 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const filePath = input.file_path as string;
-  const sequenceId = input.sequence_id as string;
+  const filePath = input.file_path;
+  const sequenceId = input.sequence_id;
   const autoEnroll =
     typeof input.auto_enroll === "boolean" ? input.auto_enroll : undefined;
 
-  if (!filePath) {
+  if (typeof filePath !== "string" || !filePath) {
     return err("file_path is required.");
   }
-  if (!sequenceId) {
+  if (typeof sequenceId !== "string" || !sequenceId) {
     return err("sequence_id is required.");
   }
   // Only the auto-enroll branch mutates; the default preview branch reads.

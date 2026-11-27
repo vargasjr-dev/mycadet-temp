@@ -55,13 +55,16 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
   const conversationId = input.conversation_id as string;
   const text = input.text as string;
-  const subject = input.subject as string | undefined;
-  const inReplyTo = input.in_reply_to as string | undefined;
+  const subject = typeof input.subject === "string" ? input.subject : undefined;
+  const inReplyTo =
+    typeof input.in_reply_to === "string" ? input.in_reply_to : undefined;
   const attachmentPaths = input.attachment_paths as string[] | undefined;
-  const threadId = input.thread_id as string | undefined;
+  const threadId =
+    typeof input.thread_id === "string" ? input.thread_id : undefined;
 
   if (!conversationId) {
     return err("conversation_id is required.");
@@ -136,7 +139,8 @@ export async function run(
       return err("Attachments are only supported on Gmail and Outlook.");
     }
 
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
 
     // Gmail: create a draft instead of sending directly

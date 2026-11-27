@@ -1,4 +1,5 @@
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 
 const log = getLogger("embedding-billing-breaker");
 
@@ -86,7 +87,7 @@ export function extractHttpStatus(err: unknown): number | undefined {
 
   // SDK-style errors (OpenAI, Anthropic) carry `.status` directly.
   if ("status" in err) {
-    const s = (err as { status?: unknown }).status;
+    const s = getObjectProperty(err, "status");
     if (typeof s === "number") {
       return s;
     }

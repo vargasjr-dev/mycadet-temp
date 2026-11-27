@@ -12,9 +12,9 @@
  * Ordinary replies and scheduled results retain platform-owner delivery
  * when the guardian lookup is unavailable.
  */
-
 import { CadetCloudClient } from "../../cloud/client.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import {
   isRetryableNetworkError,
   isRetryableStatus,
@@ -80,7 +80,7 @@ function flattenAlertField(value: string): string {
 
 /** Whether a fetch error is the per-attempt abort timeout firing. */
 function isAttemptTimeout(err: unknown): boolean {
-  const name = (err as { name?: unknown } | null)?.name;
+  const name = getObjectProperty(err, "name");
   return name === "TimeoutError" || name === "AbortError";
 }
 
@@ -100,7 +100,7 @@ function acceptedPlatforms(body: unknown): RemotePushPlatform[] | undefined {
   if (typeof body !== "object" || body === null) {
     return undefined;
   }
-  const value = (body as { accepted_platforms?: unknown }).accepted_platforms;
+  const value = getObjectProperty(body, "accepted_platforms");
   if (!Array.isArray(value)) {
     return undefined;
   }

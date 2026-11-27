@@ -8,13 +8,15 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
   const types = input.types as string[] | undefined;
-  const limit = input.limit as number | undefined;
+  const limit = typeof input.limit === "number" ? input.limit : undefined;
 
   try {
     const provider = await resolveProvider(platform);
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     const conversations = await provider.listConversations(conn, {
       types: types as Array<"channel" | "dm" | "group" | "inbox"> | undefined,

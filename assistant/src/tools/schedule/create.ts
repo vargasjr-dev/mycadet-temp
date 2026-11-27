@@ -107,7 +107,8 @@ export async function executeScheduleCreate(
   // mode / routing_intent / workflow_args (and capabilities, read below) stay
   // raw-input reads: they are undeclared in the schema (see its doc comment).
   const mode = (input.mode as ScheduleMode | undefined) ?? "execute";
-  const routingIntent = input.routing_intent as string | undefined;
+  const routingIntent =
+    typeof input.routing_intent === "string" ? input.routing_intent : undefined;
   const routingHints = parsed.routing_hints;
   const quiet = parsed.quiet ?? false;
   const reuseConversation = parsed.reuse_conversation;

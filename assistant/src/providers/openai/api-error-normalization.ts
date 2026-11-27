@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 import type { ProviderErrorReason } from "../../util/errors.js";
-import { isObjectRecord } from "../../util/object.js";
+import { getObjectProperty, isObjectRecord } from "../../util/object.js";
 import {
   DAILY_LIMIT_PATTERNS,
   FREE_TIER_DAILY_LIMIT_PATTERNS,
@@ -238,7 +238,7 @@ export function normalizeOpenAIAPIError(
   // past MAX_CAPTURED_BODY_CHARS into an invalid prefix — fall back to the
   // SDK's parsed object so we don't drop code/type/param it already extracted.
   const parsedRaw = parseBody(rawBody);
-  const sdkError = (error as { error?: unknown }).error;
+  const sdkError = getObjectProperty(error, "error");
   const parsed = asRecord(parsedRaw) ?? sdkError ?? parsedRaw;
   const body = extractBody(parsed);
 
@@ -251,10 +251,9 @@ export function normalizeOpenAIAPIError(
   if (body.detail && body.detail !== message) {
     out.detail = body.detail;
   }
-  const code = body.apiErrorCode ?? scalar((error as { code?: unknown }).code);
-  const type = body.apiErrorType ?? scalar((error as { type?: unknown }).type);
-  const param =
-    body.apiErrorParam ?? scalar((error as { param?: unknown }).param);
+  const code = body.apiErrorCode ?? scalar(getObjectProperty(error, "code"));
+  const type = body.apiErrorType ?? scalar(getObjectProperty(error, "type"));
+  const param = body.apiErrorParam ?? scalar(getObjectProperty(error, "param"));
   if (code) {
     out.apiErrorCode = code;
   }
@@ -423,7 +422,7 @@ function readHeaderValue(
   if (!headers) {
     return undefined;
   }
-  const get = (headers as { get?: unknown }).get;
+  const get = getObjectProperty(headers, "get");
   const getter = typeof get === "function" ? get.bind(headers) : undefined;
   for (const name of names) {
     const raw = getter

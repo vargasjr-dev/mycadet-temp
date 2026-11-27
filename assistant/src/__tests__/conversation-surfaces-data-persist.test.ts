@@ -11,6 +11,7 @@ import {
 import { z } from "zod";
 
 import type { AssistantEvent } from "../api/index.js";
+import { getObjectProperty } from "../util/object.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 setBroadcastOverrideForTesting(() => {});
@@ -56,7 +57,7 @@ async function seedRows(
     // same assumption for card-only fixtures.
     if (
       blocks.length > 0 &&
-      blocks.every((b) => (b as { type?: unknown }).type === "ui_surface")
+      blocks.every((b) => getObjectProperty(b, "type") === "ui_surface")
     ) {
       blocks.push({
         type: "text",

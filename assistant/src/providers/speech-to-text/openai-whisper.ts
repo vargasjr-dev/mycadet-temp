@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type { SttTranscribeResult } from "../../stt/types.js";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
@@ -73,7 +75,9 @@ export async function whisperTranscribe(
     );
   }
 
-  const result = (await response.json()) as { text?: string };
+  const result = z
+    .looseObject({ text: z.string().optional() })
+    .parse(await response.json());
   return result.text?.trim() ?? "";
 }
 

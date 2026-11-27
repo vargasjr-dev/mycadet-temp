@@ -45,7 +45,7 @@ import {
 } from "../../plugins/plugin-tree-walk.js";
 import { ensureBun } from "../../util/bun-runtime.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
-import { isPlainObject } from "../../util/object.js";
+import { getObjectProperty, isPlainObject } from "../../util/object.js";
 import {
   addToPathEnv,
   getExtraToolPathDirs,
@@ -1044,7 +1044,7 @@ function readPackageJson(path: string): PackageManifest | null {
   }
   try {
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
-    return isPlainObject(parsed) ? (parsed as PackageManifest) : null;
+    return isPlainObject(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -1164,11 +1164,11 @@ function resolvePostinstallScript(
 
   const scripts =
     typeof parsed === "object" && parsed !== null && "scripts" in parsed
-      ? (parsed as { scripts?: unknown }).scripts
+      ? getObjectProperty(parsed, "scripts")
       : undefined;
   const command =
     typeof scripts === "object" && scripts !== null && "postinstall" in scripts
-      ? (scripts as { postinstall?: unknown }).postinstall
+      ? getObjectProperty(scripts, "postinstall")
       : undefined;
   if (typeof command !== "string" || command.trim() === "") {
     return null;

@@ -10,10 +10,10 @@
 // — dim-match gating, legacy-null-hash handling, blob encode/decode, and the
 // upsert on the unique key — so other embedders (e.g. the v3 section dense
 // store) reuse one implementation instead of duplicating it.
-
 import { randomUUID } from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { getLogger } from "../../util/logger.js";
 import type { getDb } from "../db-connection.js";
@@ -76,7 +76,7 @@ export function readEmbeddingCache(
   }
   const dense = row.vectorBlob
     ? blobToVector(row.vectorBlob as Buffer)
-    : (JSON.parse(row.vectorJson!) as number[]);
+    : z.array(z.number()).parse(JSON.parse(row.vectorJson!));
   return { dense, contentHash: row.contentHash };
 }
 

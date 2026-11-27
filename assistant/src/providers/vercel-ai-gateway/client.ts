@@ -95,7 +95,8 @@ export class VercelAIGatewayProvider extends OpenAIChatCompletionsProvider {
     options?: SendMessageOptions,
   ): Record<string, unknown> {
     const config: Record<string, unknown> | undefined = options?.config;
-    const effort = config?.effort as string | undefined;
+    const effort =
+      typeof config?.effort === "string" ? config?.effort : undefined;
     const mappedEffort = effort
       ? EFFORT_TO_REASONING_EFFORT[effort]
       : undefined;

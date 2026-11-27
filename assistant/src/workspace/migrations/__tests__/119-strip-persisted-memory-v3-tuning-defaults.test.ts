@@ -9,6 +9,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { stripPersistedMemoryV3TuningDefaultsMigration as MIG } from "../119-strip-persisted-memory-v3-tuning-defaults.js";
 
 let workspaceDir: string;
@@ -21,7 +24,7 @@ function read(): Record<string, unknown> {
   return JSON.parse(readFileSync(configPath, "utf-8"));
 }
 function v3(): Record<string, unknown> {
-  return (read().memory as { v3: Record<string, unknown> }).v3;
+  return z.looseObject({ v3: jsonObjectSchema }).parse(read().memory).v3;
 }
 
 beforeEach(() => {

@@ -48,7 +48,7 @@ import type {
 } from "../../stt/types.js";
 import { SttError } from "../../stt/types.js";
 import { getLogger } from "../../util/logger.js";
-import { isPlainObject } from "../../util/object.js";
+import { getObjectProperty, isPlainObject } from "../../util/object.js";
 import type { FluxEncoding } from "./deepgram-flux-frames.js";
 import {
   buildFluxQueryParams,
@@ -801,7 +801,7 @@ function describeSocketEvent(ev: unknown): string {
     return ev.message;
   }
   if (typeof ev === "object" && ev !== null && "message" in ev) {
-    return String((ev as { message: unknown }).message);
+    return String(getObjectProperty(ev, "message"));
   }
   return "WebSocket error";
 }

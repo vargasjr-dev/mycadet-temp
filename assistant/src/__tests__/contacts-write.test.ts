@@ -12,9 +12,13 @@ import { join } from "node:path";
 import type { SQLQueryBindings } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { eq } from "drizzle-orm";
+
 import { upsertContactChannel } from "../contacts/contacts-write.js";
-import { getSqlite } from "../persistence/db-connection.js";
+import { getDb, getSqlite } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { contactChannels } from "../persistence/schema/index.js";
+
 await initializeDb();
 
 function resetContactTables(): void {
@@ -24,9 +28,11 @@ function resetContactTables(): void {
 }
 
 function channelOwnerById(channelId: string): string | undefined {
-  const row = getSqlite()
-    .query("SELECT contact_id AS contactId FROM contact_channels WHERE id = ?")
-    .get(channelId) as { contactId?: string } | undefined;
+  const row = getDb()
+    .select({ contactId: contactChannels.contactId })
+    .from(contactChannels)
+    .where(eq(contactChannels.id, channelId))
+    .get();
   return row?.contactId;
 }
 

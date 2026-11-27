@@ -15,10 +15,10 @@
 // handler, the v2 path bypasses `embedAndUpsert` because that helper is hard-
 // coupled to the v1 Qdrant collection — v2 uses its own collection via
 // `upsertConceptPageEmbedding`.
-
 import { randomUUID } from "node:crypto";
 
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { AssistantConfig } from "../../../../config/schema.js";
 import { getDb } from "../../../../persistence/db-connection.js";
@@ -369,7 +369,7 @@ function readEmbeddingCache(
   }
   const dense = row.vectorBlob
     ? blobToVector(row.vectorBlob as Buffer)
-    : (JSON.parse(row.vectorJson!) as number[]);
+    : z.array(z.number()).parse(JSON.parse(row.vectorJson!));
   return { dense, contentHash: row.contentHash };
 }
 

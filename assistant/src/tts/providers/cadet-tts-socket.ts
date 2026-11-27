@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Cadet Cloud TTS WebSocket streaming session.
  *
@@ -12,8 +14,8 @@
  * Error codes/wording are caller-owned via error factories (stream-read
  * pattern), keeping this module free of provider imports.
  */
-
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import { isHighSurrogate } from "../../util/unicode.js";
 import type { StreamReadTimeouts } from "../stream-read.js";
 import {
@@ -303,7 +305,14 @@ export function synthesizeOverCadetTtsSocket(
 
       let frame: RelayTtsFrame;
       try {
-        frame = JSON.parse(ev.data) as RelayTtsFrame;
+        frame = z
+          .looseObject({
+            type: z.string().optional(),
+            code: z.string().optional(),
+            detail: z.string().optional(),
+            description: z.string().optional(),
+          })
+          .parse(JSON.parse(ev.data));
       } catch {
         log.debug("Dropped non-JSON relay TTS frame");
         return;
@@ -365,7 +374,7 @@ export function synthesizeOverCadetTtsSocket(
         ev instanceof Error
           ? ev.message
           : typeof ev === "object" && ev !== null && "message" in ev
-            ? String((ev as { message: unknown }).message)
+            ? String(getObjectProperty(ev, "message"))
             : "WebSocket error";
       fail(makeStreamError(message));
     });

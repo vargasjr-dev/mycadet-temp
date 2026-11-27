@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+import { z } from "zod";
+
 import { resolveBundledDir } from "../../util/bundled-asset.js";
 
 /**
@@ -46,9 +48,16 @@ export function getAllDefaultPluginNames(): readonly string[] {
       }
       let manifest: { name?: unknown };
       try {
-        manifest = JSON.parse(
-          readFileSync(join(DEFAULTS_DIR, entry.name, "package.json"), "utf-8"),
-        ) as { name?: unknown };
+        manifest = z
+          .looseObject({ name: z.unknown().optional() })
+          .parse(
+            JSON.parse(
+              readFileSync(
+                join(DEFAULTS_DIR, entry.name, "package.json"),
+                "utf-8",
+              ),
+            ),
+          );
       } catch {
         // A subdirectory without a readable package.json is not a plugin.
         continue;

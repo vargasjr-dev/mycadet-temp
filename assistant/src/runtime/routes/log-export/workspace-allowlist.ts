@@ -13,7 +13,6 @@
  * suffix). Directory names that don't match the canonical
  * `<ISO-with-dashes>_<conversationId>` format are silently skipped (Rule 3).
  */
-
 import {
   closeSync,
   cpSync,
@@ -26,6 +25,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { StringDecoder } from "node:string_decoder";
+
+import { z } from "zod";
 
 import { parseConversationDirName } from "../../../persistence/conversation-directories.js";
 import { getConversationsDir } from "../../../util/layout.js";
@@ -152,7 +153,9 @@ function lineMatchesWindow(
   }
   let record: { ts?: unknown };
   try {
-    record = JSON.parse(line) as { ts?: unknown };
+    record = z
+      .looseObject({ ts: z.unknown().optional() })
+      .parse(JSON.parse(line));
   } catch {
     return false;
   }

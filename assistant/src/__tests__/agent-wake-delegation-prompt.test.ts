@@ -233,8 +233,7 @@ describe("the delegation section on a direct wake", () => {
         ? "base [wake persona]"
         : "base [delegation section]";
     };
-    (target as unknown as Record<string, unknown>).buildCurrentSystemPrompt =
-      buildUnderPersona;
+    target["buildCurrentSystemPrompt"] = buildUnderPersona;
 
     await wakeAgentForOpportunity(
       {

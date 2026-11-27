@@ -528,9 +528,7 @@ function paramsMessages(
     .loose()
     .catch({})
     .parse(params).messages;
-  return Array.isArray(messages)
-    ? (messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[])
-    : undefined;
+  return Array.isArray(messages) ? messages : undefined;
 }
 
 function messagesCarryAssistantReasoningField(params: unknown): boolean {
@@ -1061,7 +1059,7 @@ export class OpenAIChatCompletionsProvider implements Provider {
           let parameters = t.input_schema as OpenAI.FunctionParameters;
           if (this.coerceObjectArgsToJsonString) {
             const coerced = coerceObjectParamsToJsonString(t.input_schema);
-            parameters = coerced.parameters as OpenAI.FunctionParameters;
+            parameters = coerced.parameters;
             if (coerced.objectKeys.length > 0) {
               coercedObjectKeys.set(t.name, coerced.objectKeys);
             }

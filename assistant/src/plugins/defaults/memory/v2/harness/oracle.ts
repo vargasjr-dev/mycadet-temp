@@ -17,6 +17,7 @@ import type { SQLQueryBindings } from "bun:sqlite";
  * always excluded.
  */
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import type { DrizzleDb } from "../../../../../persistence/db-connection.js";
 import { messages } from "../../../../../persistence/schema/index.js";
@@ -131,7 +132,18 @@ export function extractOracleTurns(
     let loggedConfig: MemoryV2ConfigSnapshot;
     try {
       concepts = JSON.parse(row.concepts_json) as MemoryV2ConceptRowRecord[];
-      loggedConfig = JSON.parse(row.config_json) as MemoryV2ConfigSnapshot;
+      loggedConfig = z
+        .looseObject({
+          d: z.number(),
+          c_user: z.number(),
+          c_assistant: z.number(),
+          c_now: z.number(),
+          k: z.number(),
+          hops: z.number(),
+          top_k: z.number(),
+          epsilon: z.number(),
+        })
+        .parse(JSON.parse(row.config_json));
     } catch {
       continue;
     }

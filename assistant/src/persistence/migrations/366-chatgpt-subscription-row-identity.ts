@@ -1,3 +1,4 @@
+import { getObjectProperty } from "../../util/object.js";
 import { type DrizzleDb, getSqliteFrom } from "../db-connection.js";
 
 /**
@@ -46,7 +47,7 @@ export function migrateChatgptSubscriptionRowIdentity(
     const parsed: unknown = JSON.parse(row.auth);
     authType =
       parsed !== null && typeof parsed === "object"
-        ? (parsed as { type?: unknown }).type
+        ? getObjectProperty(parsed, "type")
         : undefined;
   } catch {
     return;

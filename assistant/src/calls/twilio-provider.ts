@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { twilioAuthHeader } from "@mycadet/twilio-client";
 import { twilioBaseUrl } from "@mycadet/twilio-client";
+import { z } from "zod";
 
 import { credentialKey } from "../security/credential-key.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
@@ -84,7 +85,7 @@ export class TwilioVoiceProvider implements VoiceProvider {
       );
     }
 
-    const data = (await res.json()) as { sid: string };
+    const data = z.looseObject({ sid: z.string() }).parse(await res.json());
     log.info({ callSid: data.sid }, "Twilio call initiated");
     return { callSid: data.sid };
   }
@@ -150,7 +151,7 @@ export class TwilioVoiceProvider implements VoiceProvider {
       );
     }
 
-    const data = (await res.json()) as { status: string };
+    const data = z.looseObject({ status: z.string() }).parse(await res.json());
     return data.status;
   }
 
@@ -186,9 +187,9 @@ export class TwilioVoiceProvider implements VoiceProvider {
 
     if (incomingRes.ok) {
       incomingOk = true;
-      const incomingData = (await incomingRes.json()) as {
-        incoming_phone_numbers: unknown[];
-      };
+      const incomingData = z
+        .looseObject({ incoming_phone_numbers: z.array(z.unknown()) })
+        .parse(await incomingRes.json());
       if (incomingData.incoming_phone_numbers.length > 0) {
         log.info(
           { phoneNumber },
@@ -218,9 +219,9 @@ export class TwilioVoiceProvider implements VoiceProvider {
 
     if (outgoingRes.ok) {
       outgoingOk = true;
-      const outgoingData = (await outgoingRes.json()) as {
-        outgoing_caller_ids: unknown[];
-      };
+      const outgoingData = z
+        .looseObject({ outgoing_caller_ids: z.array(z.unknown()) })
+        .parse(await outgoingRes.json());
       if (outgoingData.outgoing_caller_ids.length > 0) {
         log.info(
           { phoneNumber },

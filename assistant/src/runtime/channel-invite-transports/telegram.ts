@@ -8,9 +8,9 @@
  * The `iv_` prefix distinguishes invite tokens from `gv_` (guardian
  * verification) tokens that use the same `/start` deep-link mechanism.
  */
-
 import type { CommandIntent, SourceMetadata } from "@mycadet/gateway-client";
 import { ChannelId } from "@mycadet/service-contracts/channels";
+import { z } from "zod";
 
 import {
   invalidateConfigCache,
@@ -69,10 +69,17 @@ export async function ensureTelegramBotUsernameResolved(): Promise<void> {
       );
       return;
     }
-    const body = (await res.json()) as {
-      ok: boolean;
-      result?: { id?: number; username?: string };
-    };
+    const body = z
+      .looseObject({
+        ok: z.boolean(),
+        result: z
+          .looseObject({
+            id: z.number().optional(),
+            username: z.string().optional(),
+          })
+          .optional(),
+      })
+      .parse(await res.json());
     const username = body.result?.username;
     if (!username) {
       getLogger("telegram-invite").warn(

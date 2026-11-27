@@ -166,7 +166,9 @@ function resolveProviderSignal(
 function isDefaultProfileProvider(
   value: string,
 ): value is (typeof DEFAULT_PROFILE_PROVIDERS)[number] {
-  return (DEFAULT_PROFILE_PROVIDERS as readonly string[]).includes(value);
+  return DEFAULT_PROFILE_PROVIDERS.some(
+    (candidate: string) => candidate === value,
+  );
 }
 
 function readObject(value: unknown): Record<string, unknown> | null {

@@ -143,7 +143,7 @@ registerHook("app_generate_icon", (_name, input, result) => {
 });
 
 registerHook("app_delete", (_name, input) => {
-  const appId = input.app_id as string | undefined;
+  const appId = typeof input.app_id === "string" ? input.app_id : undefined;
   if (appId) {
     broadcastAppFilesChanged(appId);
   }
@@ -180,7 +180,7 @@ registerHook([...DOCUMENT_MUTATION_TOOL_NAMES], () => {
 });
 
 registerHook("voice_config_update", (_name, input) => {
-  const setting = input.setting as string | undefined;
+  const setting = typeof input.setting === "string" ? input.setting : undefined;
   if (!setting) {
     return;
   }

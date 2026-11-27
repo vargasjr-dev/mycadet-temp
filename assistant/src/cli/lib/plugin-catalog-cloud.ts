@@ -13,11 +13,11 @@
  * invalid `integration` is kept without it, and a row that fails the base
  * row schema is skipped, so one bad row never blanks the whole catalog.
  */
-
 import { z } from "zod";
 
 import { resolveCloudBaseUrl } from "../../config/env.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import {
   type MarketplaceEntry,
   mcpIntegrationSchema,
@@ -158,7 +158,7 @@ export async function fetchPluginCatalogFromPlatform(
 /** Name of an invalid row for logging, or its position when it has none. */
 function describeInvalidRow(row: unknown, index: number): string {
   if (row && typeof row === "object" && "name" in row) {
-    const name = (row as { name: unknown }).name;
+    const name = getObjectProperty(row, "name");
     if (typeof name === "string" && name.length > 0) {
       return name;
     }

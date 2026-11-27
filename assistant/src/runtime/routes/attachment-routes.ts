@@ -39,6 +39,7 @@ import {
   normalizeImageBytes,
 } from "../../util/image-conversion.js";
 import { getWorkspaceDir } from "../../util/layout.js";
+import { getObjectProperty } from "../../util/object.js";
 import { ACTOR_PRINCIPALS, LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import {
   BadRequestError,
@@ -48,6 +49,7 @@ import {
   RangeNotSatisfiableError,
   UnsupportedMediaTypeError,
 } from "./errors.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 import { RouteResponse } from "./types.js";
 
@@ -344,8 +346,7 @@ async function handleJsonUpload(
   }
 
   const trustedSource =
-    gatewayTrustedSource &&
-    (body as { trustedSource?: boolean }).trustedSource === true;
+    gatewayTrustedSource && getObjectProperty(body, "trustedSource") === true;
 
   const validation = validateAttachmentUpload(filename, mimeType, {
     trustedSource,
@@ -478,7 +479,8 @@ async function handleUploadAttachmentRoute(args: RouteHandlerArgs) {
 }
 
 function handleDeleteAttachmentRoute({ body }: RouteHandlerArgs) {
-  const attachmentId = body?.attachmentId as string | undefined;
+  const attachmentId =
+    typeof body?.attachmentId === "string" ? body?.attachmentId : undefined;
 
   if (!attachmentId || typeof attachmentId !== "string") {
     throw new BadRequestError("attachmentId is required");
@@ -670,11 +672,8 @@ function assertWithinWorkspace(filePath: string): string {
 }
 
 function handleAttachmentRegister({ body = {} }: RouteHandlerArgs) {
-  const { path, mimeType, filename } = body as {
-    path?: string;
-    mimeType?: string;
-    filename?: string;
-  };
+  const request = parseBody(attachmentRegisterRequestSchema, body);
+  const { path, mimeType, filename } = request;
 
   if (!path || typeof path !== "string") {
     throw new BadRequestError("path is required");
@@ -718,10 +717,8 @@ function handleAttachmentRegister({ body = {} }: RouteHandlerArgs) {
 }
 
 function handleAttachmentLookup({ body = {} }: RouteHandlerArgs) {
-  const { sourcePath, conversationId } = body as {
-    sourcePath?: string;
-    conversationId?: string;
-  };
+  const request = parseBody(attachmentLookupRequestSchema, body);
+  const { sourcePath, conversationId } = request;
 
   if (!sourcePath || typeof sourcePath !== "string") {
     throw new BadRequestError("sourcePath is required");
@@ -809,6 +806,20 @@ function handleListAttachmentsRoute({ queryParams }: RouteHandlerArgs) {
     hasMore: offset + attachments.length < total,
   };
 }
+
+const attachmentRegisterRequestSchema = z.object({
+  path: z.string().describe("Absolute path to the file"),
+  mimeType: z.string().describe("MIME type of the file"),
+  filename: z
+    .string()
+    .describe("Display filename (defaults to basename of path)")
+    .optional(),
+});
+
+const attachmentLookupRequestSchema = z.object({
+  sourcePath: z.string().describe("Original source path of the file"),
+  conversationId: z.string().describe("Conversation ID to search within"),
+});
 
 export const ROUTES: RouteDefinition[] = [
   {
@@ -960,14 +971,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Register an on-disk file as a file-backed attachment. The file must be within the workspace directory and must remain on disk for the lifetime of the attachment.",
     tags: ["attachments"],
-    requestBody: z.object({
-      path: z.string().describe("Absolute path to the file"),
-      mimeType: z.string().describe("MIME type of the file"),
-      filename: z
-        .string()
-        .describe("Display filename (defaults to basename of path)")
-        .optional(),
-    }),
+    requestBody: attachmentRegisterRequestSchema,
     responseBody: z.object({
       id: z.string(),
       originalFilename: z.string(),
@@ -991,10 +995,7 @@ export const ROUTES: RouteDefinition[] = [
     description:
       "Search for a previously registered attachment by its original source path, scoped to a conversation.",
     tags: ["attachments"],
-    requestBody: z.object({
-      sourcePath: z.string().describe("Original source path of the file"),
-      conversationId: z.string().describe("Conversation ID to search within"),
-    }),
+    requestBody: attachmentLookupRequestSchema,
     responseBody: z.object({
       filePath: z.string(),
     }),

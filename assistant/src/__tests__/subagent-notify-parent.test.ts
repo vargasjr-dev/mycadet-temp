@@ -171,7 +171,7 @@ function makeContext(
     conversationId,
     trustClass: "guardian" as const,
     ...extras,
-  } as import("../tools/types.js").ToolContext;
+  } satisfies import("../tools/types.js").ToolContext;
 }
 
 /** Drain capturedMessages and return the latest one. */

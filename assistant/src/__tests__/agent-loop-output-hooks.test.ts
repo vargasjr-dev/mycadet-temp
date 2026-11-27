@@ -738,7 +738,7 @@ describe("agent loop output hooks", () => {
         model: "mock-model",
         usage: { inputTokens: 1, outputTokens: 1 },
         stopReason: "tool_use",
-      } as ProviderResponse,
+      } satisfies ProviderResponse,
       textResponse(`Your code is ${placeholder}.`),
     ];
     const { provider } = createMockProvider(toolThenText);

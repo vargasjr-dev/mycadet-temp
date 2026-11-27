@@ -237,7 +237,7 @@ const HOT_SURFACE_TYPES = [
 ] as const;
 
 const COLD_SURFACE_INDEX = SURFACE_TYPE_NAMES.filter(
-  (name) => !(HOT_SURFACE_TYPES as readonly string[]).includes(name),
+  (name) => !HOT_SURFACE_TYPES.some((candidate: string) => candidate === name),
 )
   .map((name) => `${name} (${SURFACE_SHAPE_DOCS[name]!.purpose})`)
   .join(", ");

@@ -7,7 +7,6 @@
  *
  * Idempotent: safe to re-run after interruption at any point.
  */
-
 import { randomUUID } from "node:crypto";
 import {
   existsSync,
@@ -20,6 +19,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+
+import { z } from "zod";
 
 import type { WorkspaceMigration } from "./types.js";
 
@@ -324,9 +325,23 @@ export const backfillInstallMetaMigration: WorkspaceMigration = {
       const installMetaPath = join(skillsDir, name, INSTALL_META_FILENAME);
       if (existsSync(installMetaPath)) {
         try {
-          const meta = JSON.parse(
-            readFileSync(installMetaPath, "utf-8"),
-          ) as SkillInstallMeta;
+          const meta = z
+            .looseObject({
+              origin: z.union([
+                z.literal("cadet"),
+                z.literal("custom"),
+                z.literal("skillssh"),
+                z.literal("clawhub"),
+              ]),
+              installedAt: z.string(),
+              installedBy: z.string().optional(),
+              backfilledBy: z.string().optional(),
+              version: z.string().optional(),
+              slug: z.string().optional(),
+              sourceRepo: z.string().optional(),
+              contentHash: z.string().optional(),
+            })
+            .parse(JSON.parse(readFileSync(installMetaPath, "utf-8")));
 
           // Only remove install-meta.json that were backfilled by this migration.
           // Files written by the normal install flow (CLI, daemon, etc.) won't

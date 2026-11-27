@@ -7,11 +7,12 @@
  * Drift is the exact comparison of the provenance sidecar's commit against the
  * marketplace pin, so the fixtures vary those two SHAs.
  */
-
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { FetchLike } from "../fetch-like.js";
 import {
@@ -63,16 +64,28 @@ function makeFetch(opts: {
       if (opts.marketplace === undefined) {
         return new Response(JSON.stringify({ plugins: [] }), { status: 200 });
       }
-      const manifest = opts.marketplace as {
-        plugins?: Array<{
-          name: string;
-          source?: { source: string; repo?: string; ref?: string };
-          description?: string;
-          category?: string;
-          homepage?: string;
-          license?: string;
-        }>;
-      };
+      const manifest = z
+        .looseObject({
+          plugins: z
+            .array(
+              z.looseObject({
+                name: z.string(),
+                source: z
+                  .looseObject({
+                    source: z.string(),
+                    repo: z.string().optional(),
+                    ref: z.string().optional(),
+                  })
+                  .optional(),
+                description: z.string().optional(),
+                category: z.string().optional(),
+                homepage: z.string().optional(),
+                license: z.string().optional(),
+              }),
+            )
+            .optional(),
+        })
+        .parse(opts.marketplace);
       const rows = (manifest.plugins ?? []).map((entry) => ({
         name: entry.name,
         ...(entry.source?.repo ? { repo: entry.source.repo } : {}),

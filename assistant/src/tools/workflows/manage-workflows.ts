@@ -52,7 +52,7 @@ export async function executeManageWorkflows(
   if (!parsedInput.success) {
     return invalidToolInputResult("manage_workflows", parsedInput.error);
   }
-  const action = input.action as string | undefined;
+  const action = typeof input.action === "string" ? input.action : undefined;
   const runId = parsedInput.data.run_id;
   const manager = getWorkflowRunManager();
 

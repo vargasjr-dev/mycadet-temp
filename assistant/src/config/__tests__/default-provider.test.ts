@@ -142,12 +142,21 @@ describe("LLMSchema.default (the base blob)", () => {
 
   test("JSON Schema emission includes the field's object shape", () => {
     // Same options `handleGetConfigSchema` uses.
-    const json = z.toJSONSchema(LLMSchema, {
-      unrepresentable: "any",
-      io: "input",
-    }) as {
-      properties?: Record<string, { properties?: Record<string, unknown> }>;
-    };
+    const json = z
+      .looseObject({
+        properties: z
+          .record(
+            z.string(),
+            z.looseObject({ properties: jsonObjectSchema.optional() }),
+          )
+          .optional(),
+      })
+      .parse(
+        z.toJSONSchema(LLMSchema, {
+          unrepresentable: "any",
+          io: "input",
+        }),
+      );
     const field = json.properties?.default;
     expect(field?.properties?.provider).toBeDefined();
   });

@@ -11,11 +11,11 @@ export async function run(
   input: Record<string, unknown>,
   toolContext: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const sequenceId = input.sequence_id as string;
+  const sequenceId = input.sequence_id;
   const emails = input.emails as string | string[];
   const context = input.context as Record<string, unknown> | undefined;
 
-  if (!sequenceId) {
+  if (typeof sequenceId !== "string" || !sequenceId) {
     return err("sequence_id is required.");
   }
   if (!emails) {

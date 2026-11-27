@@ -35,7 +35,7 @@ import type {
 } from "../../stt/types.js";
 import { baseLanguageSubtag } from "../../util/language-subtag.js";
 import { getLogger } from "../../util/logger.js";
-import { isObjectRecord } from "../../util/object.js";
+import { getObjectProperty, isObjectRecord } from "../../util/object.js";
 
 const log = getLogger("deepgram-realtime");
 
@@ -512,7 +512,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
           ev instanceof Error
             ? ev.message
             : isObjectRecord(ev) && "message" in ev
-              ? String((ev as { message: unknown }).message)
+              ? String(getObjectProperty(ev, "message"))
               : "WebSocket error during connect";
         reject(
           new Error(`Deepgram realtime connect error: ${this.redact(msg)}`),
@@ -929,7 +929,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
       ev instanceof Error
         ? ev.message
         : isObjectRecord(ev) && "message" in ev
-          ? String((ev as { message: unknown }).message)
+          ? String(getObjectProperty(ev, "message"))
           : "WebSocket error",
     );
 

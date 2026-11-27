@@ -67,7 +67,7 @@ describe("094-seed-avatar-manifest", () => {
     const manifest = readManifest();
     expect(manifest.kind).toBe("image");
     expect(manifest.traits).toBeNull();
-    const image = manifest.image as Record<string, unknown>;
+    const image = jsonObjectSchema.parse(manifest.image);
     expect(typeof image.updatedAt).toBe("string");
     expect(typeof image.etag).toBe("string");
   });

@@ -10,11 +10,13 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
-  const conversationId = input.conversation_id as string;
-  const messageId = input.message_id as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
+  const conversationId = input.conversation_id;
+  const messageId =
+    typeof input.message_id === "string" ? input.message_id : undefined;
 
-  if (!conversationId) {
+  if (typeof conversationId !== "string" || !conversationId) {
     return err("conversation_id is required.");
   }
   throwIfCancelled(context);
@@ -26,7 +28,8 @@ export async function run(
         `${provider.displayName} does not support marking messages as read.`,
       );
     }
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     // Recheck: provider resolution and the connection lookup are awaits, and a
     // cancel landing in either must not still mutate the mailbox.

@@ -10,7 +10,6 @@ import { validateRruleSetLines } from "../../schedule/recurrence-engine.js";
 import {
   detectScheduleSyntax,
   normalizeScheduleSyntax,
-  type ScheduleSyntax,
 } from "../../schedule/recurrence-types.js";
 import { validateScriptTimeoutMs } from "../../schedule/run-script.js";
 import type {
@@ -330,10 +329,13 @@ export async function executeScheduleUpdate(
   }
 
   // Set-aware pre-validation for RRULE expressions
-  const effectiveSyntax = updates.syntax as string | undefined;
+  const effectiveSyntax =
+    typeof updates.syntax === "string" ? updates.syntax : undefined;
   const effectiveExpr =
-    (updates.expression as string | undefined) ??
-    (updates.cronExpression as string | undefined);
+    (typeof updates.expression === "string" ? updates.expression : undefined) ??
+    (typeof updates.cronExpression === "string"
+      ? updates.cronExpression
+      : undefined);
   if (
     effectiveExpr &&
     typeof effectiveExpr === "string" &&
@@ -355,32 +357,7 @@ export async function executeScheduleUpdate(
   try {
     const job = isPluginSourced
       ? await setUserEnabled(jobId, updates.enabled as boolean, writeOpts)
-      : await updateSchedule(
-          jobId,
-          updates as {
-            name?: string;
-            description?: string;
-            cronExpression?: string;
-            timezone?: string | null;
-            message?: string;
-            script?: string | null;
-            enabled?: boolean;
-            syntax?: ScheduleSyntax;
-            expression?: string;
-            mode?: ScheduleMode;
-            routingIntent?: RoutingIntent;
-            routingHints?: Record<string, unknown>;
-            quiet?: boolean;
-            reuseConversation?: boolean;
-            maxRetries?: number;
-            retryBackoffMs?: number;
-            timeoutMs?: number | null;
-            workflowName?: string | null;
-            workflowArgs?: unknown;
-            inferenceProfile?: string | null;
-          },
-          writeOpts,
-        );
+      : await updateSchedule(jobId, updates, writeOpts);
 
     if (!job) {
       return { content: `Error: Schedule not found: ${jobId}`, isError: true };

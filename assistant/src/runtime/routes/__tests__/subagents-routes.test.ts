@@ -15,8 +15,11 @@
  * route-shape tests. The message store is real (seeded rows), so the
  * detail parsing runs against genuine DB reads.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Manager mock
@@ -135,19 +138,23 @@ describe("reconcileSubagents", () => {
       },
     ]);
 
-    const result = (await reconcileHandler({
-      queryParams: { parentConversationId: "conv-parent" },
-    })) as {
-      subagents: Record<
-        string,
-        {
-          status: string;
-          label?: string;
-          conversationId?: string;
-          parentToolUseId?: string;
-        }
-      >;
-    };
+    const result = z
+      .looseObject({
+        subagents: z.record(
+          z.string(),
+          z.looseObject({
+            status: z.string(),
+            label: z.string().optional(),
+            conversationId: z.string().optional(),
+            parentToolUseId: z.string().optional(),
+          }),
+        ),
+      })
+      .parse(
+        await reconcileHandler({
+          queryParams: { parentConversationId: "conv-parent" },
+        }),
+      );
 
     expect(result.subagents["sa-1"]).toEqual({
       status: "running",
@@ -164,9 +171,11 @@ describe("reconcileSubagents", () => {
   });
 
   test("returns an empty record for a conversation with no children", async () => {
-    const result = (await reconcileHandler({
-      queryParams: { parentConversationId: "conv-empty" },
-    })) as { subagents: Record<string, unknown> };
+    const result = z.looseObject({ subagents: jsonObjectSchema }).parse(
+      await reconcileHandler({
+        queryParams: { parentConversationId: "conv-empty" },
+      }),
+    );
 
     expect(result.subagents).toEqual({});
   });
@@ -202,17 +211,23 @@ describe("getSubagentDetail", () => {
       config: { id: "sa-1", label: "Auditor", parentToolUseId: "toolu_9" },
     });
 
-    const result = (await detailHandler({
-      pathParams: { id: "sa-1" },
-      queryParams: { conversationId: "conv-parent" },
-    })) as {
-      subagentId: string;
-      objective?: string;
-      status?: string;
-      label?: string;
-      parentToolUseId?: string;
-      events: Array<{ type: string; content: string }>;
-    };
+    const result = z
+      .looseObject({
+        subagentId: z.string(),
+        objective: z.string().optional(),
+        status: z.string().optional(),
+        label: z.string().optional(),
+        parentToolUseId: z.string().optional(),
+        events: z.array(
+          z.looseObject({ type: z.string(), content: z.string() }),
+        ),
+      })
+      .parse(
+        await detailHandler({
+          pathParams: { id: "sa-1" },
+          queryParams: { conversationId: "conv-parent" },
+        }),
+      );
 
     expect(result.objective).toBe("audit the daemon");
     expect(result.events.some((e) => e.content === "found three gaps")).toBe(
@@ -233,10 +248,17 @@ describe("getSubagentDetail", () => {
       assistantText: "legacy text",
     });
 
-    const result = (await detailHandler({
-      pathParams: { id: "sa-unknown" },
-      queryParams: { conversationId: "conv-child" },
-    })) as { objective?: string; label?: string };
+    const result = z
+      .looseObject({
+        objective: z.string().optional(),
+        label: z.string().optional(),
+      })
+      .parse(
+        await detailHandler({
+          pathParams: { id: "sa-unknown" },
+          queryParams: { conversationId: "conv-child" },
+        }),
+      );
 
     expect(result.objective).toBe("legacy objective");
     expect(result.label).toBeUndefined();

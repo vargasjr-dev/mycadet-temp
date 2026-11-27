@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { getLogger } from "../../util/logger.js";
 import { MAX_RETRY_AFTER_MS, parseRetryAfterMs } from "../../util/retry.js";
 import type {
@@ -20,12 +22,6 @@ export class GeminiEmbedError extends Error {
     this.status = status;
     this.retryAfterMs = retryAfterMs;
   }
-}
-
-interface GeminiEmbedResponse {
-  embedding?: {
-    values?: number[];
-  };
 }
 
 interface GeminiBatchEmbedResponse {
@@ -229,7 +225,13 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
     }
     let payload: GeminiBatchEmbedResponse;
     try {
-      payload = (await response.json()) as GeminiBatchEmbedResponse;
+      payload = z
+        .looseObject({
+          embeddings: z
+            .array(z.looseObject({ values: z.array(z.number()).optional() }))
+            .optional(),
+        })
+        .parse(await response.json());
     } catch (err) {
       log.warn(
         {
@@ -299,7 +301,13 @@ export class GeminiEmbeddingBackend implements EmbeddingBackend {
         retryAfterMs,
       );
     }
-    const payload = (await response.json()) as GeminiEmbedResponse;
+    const payload = z
+      .looseObject({
+        embedding: z
+          .looseObject({ values: z.array(z.number()).optional() })
+          .optional(),
+      })
+      .parse(await response.json());
     const values = payload.embedding?.values;
     if (!Array.isArray(values) || values.length === 0) {
       throw new Error("Gemini embeddings response missing vector values");

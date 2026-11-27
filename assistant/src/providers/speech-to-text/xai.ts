@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type { SttTranscribeResult } from "../../stt/types.js";
 
 const XAI_STT_URL = "https://api.x.ai/v1/stt";
@@ -84,7 +86,9 @@ async function xaiTranscribe(
     );
   }
 
-  const result = (await response.json()) as { text?: string };
+  const result = z
+    .looseObject({ text: z.string().optional() })
+    .parse(await response.json());
   return result.text?.trim() ?? "";
 }
 

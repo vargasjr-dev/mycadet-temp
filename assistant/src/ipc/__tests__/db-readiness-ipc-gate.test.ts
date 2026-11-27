@@ -23,13 +23,10 @@ import { AssistantIpcServer, type IpcResponse } from "../assistant-server.js";
  * the test exercises the real production path without exporting a test-only API
  * (same pattern as route-error-envelope.test.ts).
  */
-type PrivateApi = {
-  dbMigrationGateResponse(method: string, id: string): IpcResponse | null;
-};
 
 function gate(method: string): IpcResponse | null {
-  const server = new AssistantIpcServer() as unknown as PrivateApi;
-  return server.dbMigrationGateResponse(method, "req-1");
+  const server = new AssistantIpcServer();
+  return server["dbMigrationGateResponse"](method, "req-1");
 }
 
 describe("AssistantIpcServer DB migration readiness gate", () => {

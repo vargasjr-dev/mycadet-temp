@@ -19,6 +19,7 @@ import { claudeResumeHint } from "../../acp/resume-hint.js";
 import { ACP_CLAUDE_AUTH_REQUIRED_CODE } from "../../api/events/acp-auth-required.js";
 import { throwIfCancelled } from "../../plugin-api/tool-cancellation.js";
 import { FailedDependencyError } from "../../runtime/routes/errors.js";
+import { getObjectProperty } from "../../util/object.js";
 import { isAbortLikeError } from "../shared/abort.js";
 import {
   invalidToolInputResult,
@@ -51,7 +52,7 @@ function acpSpawnErrorCode(err: unknown): string | undefined {
     err instanceof FailedDependencyError &&
     typeof err.details === "object" &&
     err.details !== null &&
-    (err.details as { code?: unknown }).code === ACP_CLAUDE_OAUTH_MISSING_CODE
+    getObjectProperty(err.details, "code") === ACP_CLAUDE_OAUTH_MISSING_CODE
   ) {
     return ACP_CLAUDE_OAUTH_MISSING_CODE;
   }
@@ -207,7 +208,7 @@ export async function executeAcpSpawn(
       const message =
         err instanceof Error
           ? err.message
-          : String((err as { message?: unknown }).message ?? err);
+          : String(getObjectProperty(err, "message") ?? err);
       markAcpConnectCardRaised(context.conversationId, agent);
       return {
         content: `${message}\n\n${ACP_AUTH_RECOVERY_GUIDANCE}`,

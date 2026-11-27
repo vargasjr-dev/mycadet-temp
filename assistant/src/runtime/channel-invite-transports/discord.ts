@@ -10,13 +10,11 @@
  * they share a server with it.
  */
 
-import { ChannelId } from "@mycadet/service-contracts/channels";
-
 import { getConfig } from "../../config/loader.js";
 import type { ChannelInviteAdapter } from "../channel-invite-types.js";
 
 export const discordInviteAdapter: ChannelInviteAdapter = {
-  channel: "discord" as ChannelId,
+  channel: "discord",
 
   resolveChannelHandle(): string | undefined {
     const { botUsername } = getConfig().discord;

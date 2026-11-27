@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Discord REST client for direct outbound messaging.
  *
@@ -12,7 +14,6 @@
  *   https://docs.discord.com/developers/topics/rate-limits
  *   https://docs.discord.com/developers/reference
  */
-
 import { credentialKey } from "../../../security/credential-key.js";
 import { getSecureKeyResultAsync } from "../../../security/secure-keys.js";
 import { BackendUnavailableError, ConfigError } from "../../../util/errors.js";
@@ -79,7 +80,13 @@ interface DiscordErrorBody {
 
 function parseErrorBody(body: string): DiscordErrorBody {
   try {
-    return JSON.parse(body) as DiscordErrorBody;
+    return z
+      .looseObject({
+        message: z.string().optional(),
+        retry_after: z.number().optional(),
+        global: z.boolean().optional(),
+      })
+      .parse(JSON.parse(body));
   } catch {
     return {};
   }

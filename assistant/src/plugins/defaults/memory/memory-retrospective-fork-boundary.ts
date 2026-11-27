@@ -7,8 +7,8 @@
 // retrospective row produced any post-fork output worth preserving as the
 // next run's dedup baseline). Lives in its own module so the sweep doesn't
 // have to import the job handler's full dependency graph.
-
 import { getMessages } from "@mycadet/plugin-api";
+import { z } from "zod";
 
 import { getLogger } from "./logging.js";
 import {
@@ -43,9 +43,9 @@ export function findForkBoundaryCreatedAt(
       continue;
     }
     try {
-      const parsed = JSON.parse(row.metadata) as {
-        forkSourceMessageId?: unknown;
-      };
+      const parsed = z
+        .looseObject({ forkSourceMessageId: z.unknown().optional() })
+        .parse(JSON.parse(row.metadata));
       if (typeof parsed.forkSourceMessageId === "string") {
         return row.createdAt;
       }
@@ -65,7 +65,9 @@ function isRetrospectiveInstructionRow(metadata: string | null): boolean {
     return false;
   }
   try {
-    const parsed = JSON.parse(metadata) as { kind?: unknown };
+    const parsed = z
+      .looseObject({ kind: z.unknown().optional() })
+      .parse(JSON.parse(metadata));
     return parsed.kind === MEMORY_RETROSPECTIVE_INSTRUCTION_KIND;
   } catch {
     return false;

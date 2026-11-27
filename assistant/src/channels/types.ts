@@ -223,7 +223,7 @@ const LEGACY_INTERFACE_ALIASES: Record<string, InterfaceId> = {
 export function isInterfaceId(value: unknown): value is InterfaceId {
   return (
     typeof value === "string" &&
-    (INTERFACE_IDS as readonly string[]).includes(value)
+    INTERFACE_IDS.some((candidate: string) => candidate === value)
   );
 }
 
@@ -231,7 +231,7 @@ export function parseInterfaceId(value: unknown): InterfaceId | null {
   if (typeof value !== "string") {
     return null;
   }
-  if ((INTERFACE_IDS as readonly string[]).includes(value)) {
+  if (INTERFACE_IDS.some((candidate: string) => candidate === value)) {
     return value as InterfaceId;
   }
   const alias = LEGACY_INTERFACE_ALIASES[value];
@@ -268,7 +268,7 @@ export function parseClientOs(value: unknown): ClientOs | null {
   if (typeof value !== "string") {
     return null;
   }
-  return (CLIENT_OS_VALUES as readonly string[]).includes(value)
+  return CLIENT_OS_VALUES.some((candidate: string) => candidate === value)
     ? (value as ClientOs)
     : null;
 }

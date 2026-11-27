@@ -23,7 +23,6 @@ import {
 import {
   normalizeSubagentLabel,
   settleUnsupervisedStatus,
-  type SubagentState,
 } from "../subagent/types.js";
 import { resolveSubagentId } from "../tools/subagent/resolve.js";
 import type { ToolContext } from "../tools/types.js";
@@ -620,18 +619,6 @@ describe("SubagentManager.rehydrateFromDb", () => {
 });
 
 /** The manager internals a label lookup reads. */
-interface LabelLookupInternals {
-  subagents: Map<
-    string,
-    {
-      conversation: null;
-      state: SubagentState;
-      parentSendToClient: () => void;
-    }
-  >;
-  parentToChildren: Map<string, Set<string>>;
-  labelIndex: Map<string, string>;
-}
 
 /** Ids injected into the shared manager, torn down after each test. */
 const heldIds: string[] = [];
@@ -641,20 +628,20 @@ const heldIds: string[] = [];
  * subagent has once its conversation is released: metadata only, no live run.
  */
 function holdInMemory(rec: SubagentRecord): void {
-  const internals = getSubagentManager() as unknown as LabelLookupInternals;
-  internals.subagents.set(rec.id, {
+  const internals = getSubagentManager();
+  internals["subagents"].set(rec.id, {
     conversation: null,
     state: subagentStateFromRecord(rec),
     parentSendToClient: () => {},
   });
-  internals.labelIndex.set(
+  internals["labelIndex"].set(
     `${rec.parentConversationId}:${normalizeSubagentLabel(rec.label)}`,
     rec.id,
   );
-  if (!internals.parentToChildren.has(rec.parentConversationId)) {
-    internals.parentToChildren.set(rec.parentConversationId, new Set());
+  if (!internals["parentToChildren"].has(rec.parentConversationId)) {
+    internals["parentToChildren"].set(rec.parentConversationId, new Set());
   }
-  internals.parentToChildren.get(rec.parentConversationId)!.add(rec.id);
+  internals["parentToChildren"].get(rec.parentConversationId)!.add(rec.id);
   heldIds.push(rec.id);
 }
 

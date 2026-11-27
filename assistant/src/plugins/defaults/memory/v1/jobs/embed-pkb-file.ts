@@ -6,6 +6,7 @@ import {
   isMemoryEnabled,
   type MemoryJob,
 } from "../../../../../persistence/jobs-store.js";
+import { getObjectProperty } from "../../../../../util/object.js";
 import { getMemoryConfig } from "../../config.js";
 import { indexPkbFile } from "../pkb/pkb-index.js";
 
@@ -40,7 +41,7 @@ export async function embedPkbFileJob(
       error !== null &&
       typeof error === "object" &&
       "code" in error &&
-      (error as { code?: unknown }).code === "ENOENT"
+      getObjectProperty(error, "code") === "ENOENT"
     ) {
       return;
     }

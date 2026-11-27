@@ -8,11 +8,17 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
-  const query = (input.query as string) ?? "category:promotions newer_than:90d";
-  const maxMessages = input.max_messages as number | undefined;
-  const maxSenders = input.max_senders as number | undefined;
-  const pageToken = input.page_token as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
+  const query =
+    (typeof input.query === "string" ? input.query : undefined) ??
+    "category:promotions newer_than:90d";
+  const maxMessages =
+    typeof input.max_messages === "number" ? input.max_messages : undefined;
+  const maxSenders =
+    typeof input.max_senders === "number" ? input.max_senders : undefined;
+  const pageToken =
+    typeof input.page_token === "string" ? input.page_token : undefined;
 
   try {
     const provider = await resolveProvider(platform);
@@ -23,7 +29,8 @@ export async function run(
       );
     }
 
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     const result = await provider.senderDigest!(conn, query, {
       maxMessages,

@@ -198,15 +198,17 @@ export async function setSlackChannelConfig(
         method: "POST",
         headers: { Authorization: `Bearer ${botToken}` },
       });
-      const data = (await res.json()) as {
-        ok: boolean;
-        error?: string;
-        team_id?: string;
-        team?: string;
-        url?: string;
-        user_id?: string;
-        user?: string;
-      };
+      const data = z
+        .looseObject({
+          ok: z.boolean(),
+          error: z.string().optional(),
+          team_id: z.string().optional(),
+          team: z.string().optional(),
+          url: z.string().optional(),
+          user_id: z.string().optional(),
+          user: z.string().optional(),
+        })
+        .parse(await res.json());
       if (!data.ok) {
         return currentErrorSnapshot(
           `Slack API validation failed: ${data.error ?? "unknown error"}`,
@@ -271,11 +273,13 @@ export async function setSlackChannelConfig(
           method: "POST",
           headers: { Authorization: `Bearer ${existingUserToken}` },
         });
-        const data = (await res.json()) as {
-          ok: boolean;
-          error?: string;
-          team_id?: string;
-        };
+        const data = z
+          .looseObject({
+            ok: z.boolean(),
+            error: z.string().optional(),
+            team_id: z.string().optional(),
+          })
+          .parse(await res.json());
         if (!data.ok) {
           shouldClear = true;
           clearReason = "User token validation failed; it has been removed.";
@@ -357,11 +361,13 @@ export async function setSlackChannelConfig(
         method: "POST",
         headers: { Authorization: `Bearer ${userToken}` },
       });
-      const data = (await res.json()) as {
-        ok: boolean;
-        error?: string;
-        team_id?: string;
-      };
+      const data = z
+        .looseObject({
+          ok: z.boolean(),
+          error: z.string().optional(),
+          team_id: z.string().optional(),
+        })
+        .parse(await res.json());
       if (!data.ok) {
         return currentErrorSnapshot(
           `Slack API validation failed: ${data.error ?? "unknown error"}`,

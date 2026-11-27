@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { parse as parseYaml } from "yaml";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { backfillLeafIdsMigration } from "../093-backfill-leaf-ids.js";
 
 const LEAVES_REL = join("memory", "v3", "data", "leaves");
@@ -43,7 +44,7 @@ function readLeaf(
     throw new Error(`leaf ${rel} lost its frontmatter`);
   }
   return {
-    frontmatter: parseYaml(match[1]) as Record<string, unknown>,
+    frontmatter: jsonObjectSchema.parse(parseYaml(match[1])),
     body: match[2],
   };
 }

@@ -12,7 +12,6 @@ import {
 } from "@mycadet/gateway-client";
 import {
   ADMISSION_POLICY_DEFAULT,
-  type AdmissionPolicy,
   isAdmissionPolicy,
   isAdmissionPolicyExemptChannel,
 } from "@mycadet/gateway-client";
@@ -76,10 +75,7 @@ import {
   getAttachmentsByIds,
   validateAttachmentUpload,
 } from "../../persistence/attachments-store.js";
-import {
-  recordConversationSeenSignal,
-  type SignalType,
-} from "../../persistence/conversation-attention-store.js";
+import { recordConversationSeenSignal } from "../../persistence/conversation-attention-store.js";
 import {
   addMessage,
   getMessageById,
@@ -298,7 +294,7 @@ export async function handleChannelInbound({
   const approvalConversationGenerator = createApprovalConversationGenerator();
   const heartbeatService = HeartbeatService.getInstance();
 
-  const body = rawBody as {
+  const body: {
     sourceChannel?: string;
     interface?: string;
     conversationExternalId?: string;
@@ -315,7 +311,7 @@ export async function handleChannelInbound({
     callbackQueryId?: string;
     callbackData?: string;
     clientTimezone?: unknown;
-  };
+  } = rawBody;
 
   const {
     conversationExternalId,
@@ -487,7 +483,7 @@ export async function handleChannelInbound({
   const admissionPolicyFromGateway = isAdmissionPolicy(
     sourceMetadata?.admissionPolicy,
   )
-    ? (sourceMetadata!.admissionPolicy as AdmissionPolicy)
+    ? sourceMetadata!.admissionPolicy
     : ADMISSION_POLICY_DEFAULT;
 
   // Callback payloads (button presses, delete sentinels) are decision
@@ -1223,7 +1219,7 @@ export async function handleChannelInbound({
                 : body.callbackData!;
             recordConversationSeenSignal({
               conversationId: result.conversationId,
-              signalType: `${sourceChannel}_callback` as SignalType,
+              signalType: `${sourceChannel}_callback`,
               confidence: "inferred",
               sourceChannel,
               source: "inbound-message-handler",
@@ -1236,7 +1232,7 @@ export async function handleChannelInbound({
                 : trimmedContent;
             recordConversationSeenSignal({
               conversationId: result.conversationId,
-              signalType: `${sourceChannel}_inbound_message` as SignalType,
+              signalType: `${sourceChannel}_inbound_message`,
               confidence: "inferred",
               sourceChannel,
               source: "inbound-message-handler",
@@ -1280,7 +1276,7 @@ export async function handleChannelInbound({
               : body.callbackData!;
           recordConversationSeenSignal({
             conversationId: result.conversationId,
-            signalType: `${sourceChannel}_callback` as SignalType,
+            signalType: `${sourceChannel}_callback`,
             confidence: "inferred",
             sourceChannel,
             source: "inbound-message-handler",

@@ -5,6 +5,7 @@ import {
   ensureConversationExists,
 } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { getObjectProperty } from "../util/object.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 beforeAll(async () => {
@@ -41,7 +42,7 @@ async function seedRows(
     // same assumption for card-only fixtures.
     if (
       blocks.length > 0 &&
-      blocks.every((b) => (b as { type?: unknown }).type === "ui_surface")
+      blocks.every((b) => getObjectProperty(b, "type") === "ui_surface")
     ) {
       blocks.push({
         type: "text",

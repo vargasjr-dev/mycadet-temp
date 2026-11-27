@@ -811,7 +811,7 @@ describe("AgentLoop", () => {
         },
         contentBlocks: [
           { type: "text" as const, text: "attachment" },
-        ] as ContentBlock[],
+        ] satisfies ContentBlock[],
         riskLevel: "low",
       };
     };

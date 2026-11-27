@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 /**
  * The assistant image copies workspace package sources after `bun install`,
  * and the container smoke step resolves each declared `workspace:*`
@@ -11,9 +13,15 @@ import { describe, expect, test } from "bun:test";
 describe("assistant Dockerfile workspace packages", () => {
   test("copies every workspace dependency into the image", () => {
     const repoRoot = join(import.meta.dir, "../../..");
-    const pkg = JSON.parse(
-      readFileSync(join(repoRoot, "assistant/package.json"), "utf8"),
-    ) as { dependencies?: Record<string, string> };
+    const pkg = z
+      .looseObject({
+        dependencies: z.record(z.string(), z.string()).optional(),
+      })
+      .parse(
+        JSON.parse(
+          readFileSync(join(repoRoot, "assistant/package.json"), "utf8"),
+        ),
+      );
     const dockerfile = readFileSync(
       join(repoRoot, "assistant/Dockerfile"),
       "utf8",

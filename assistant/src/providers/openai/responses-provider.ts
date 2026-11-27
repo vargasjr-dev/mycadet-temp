@@ -303,10 +303,18 @@ export class OpenAIResponsesProvider implements Provider {
   ): Promise<ProviderResponse> {
     const { tools, systemPrompt, config, onEvent, signal } = options ?? {};
     const configObj: Record<string, unknown> | undefined = config;
-    const maxTokens = configObj?.max_tokens as number | undefined;
-    const modelOverride = configObj?.model as string | undefined;
-    const effort = configObj?.effort as string | undefined;
-    const verbosity = configObj?.verbosity as string | undefined;
+    const maxTokens =
+      typeof configObj?.max_tokens === "number"
+        ? configObj?.max_tokens
+        : undefined;
+    const modelOverride =
+      typeof configObj?.model === "string" ? configObj?.model : undefined;
+    const effort =
+      typeof configObj?.effort === "string" ? configObj?.effort : undefined;
+    const verbosity =
+      typeof configObj?.verbosity === "string"
+        ? configObj?.verbosity
+        : undefined;
     const usageAttributionHeaders = configObj?.usageAttributionHeaders as
       | Record<string, string>
       | undefined;

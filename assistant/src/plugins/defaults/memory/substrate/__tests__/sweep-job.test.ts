@@ -39,6 +39,10 @@ import type {
   ProviderResponse,
   SendMessageOptions,
 } from "@mycadet/plugin-api";
+import { z } from "zod";
+
+import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
+import { getObjectProperty } from "../../../../../util/object.js";
 
 // Provider stub. Each test sets `providerStub` to control the response;
 // `null` simulates "no configured provider".
@@ -171,12 +175,17 @@ function extractFirstUserText(msgs: { content: unknown }[]): string {
   if (!first || !Array.isArray(first.content)) {
     return "";
   }
-  const block = first.content.find(
-    (b: unknown) =>
-      typeof b === "object" &&
-      b !== null &&
-      (b as { type?: string }).type === "text",
-  ) as { text?: string } | undefined;
+  const block = z
+    .looseObject({ text: z.string().optional() })
+    .optional()
+    .parse(
+      first.content.find(
+        (b: unknown) =>
+          typeof b === "object" &&
+          b !== null &&
+          getObjectProperty(b, "type") === "text",
+      ),
+    );
   return block?.text ?? "";
 }
 
@@ -463,7 +472,7 @@ describe("memoryV2SweepJob — recent messages", () => {
     expect(emitted.sourceChannel).toBe("scheduler");
     const day = new Date().toISOString().slice(0, 10);
     expect(emitted.dedupeKey).toBe(`activity-failed:memory.v2.sweep:${day}`);
-    const contextPayload = emitted.contextPayload as Record<string, unknown>;
+    const contextPayload = jsonObjectSchema.parse(emitted.contextPayload);
     expect(contextPayload.jobName).toBe("memory.v2.sweep");
     expect(contextPayload.errorKind).toBe("exception");
     expect(contextPayload.errorMessage).toContain("simulated provider failure");

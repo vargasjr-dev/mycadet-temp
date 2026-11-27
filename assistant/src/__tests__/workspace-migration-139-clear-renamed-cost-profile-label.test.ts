@@ -85,7 +85,7 @@ describe("139-clear-renamed-cost-profile-label migration", () => {
 
       run();
 
-      expect(costProfile().label).toBe(label as string);
+      expect(costProfile().label).toBe(label);
     }
   });
 

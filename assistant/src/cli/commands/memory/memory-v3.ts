@@ -14,7 +14,6 @@
  *     checkpoint. For the transition before A/B/cutover, since the collection
  *     starts empty and the incremental maintain pass only re-embeds deltas.
  */
-
 import { readFileSync, writeFileSync } from "node:fs";
 
 import type { Command } from "commander";
@@ -28,6 +27,7 @@ import type {
   MemoryV3BackfillSectionsResult,
   MemoryV3RebuildIndexResult,
 } from "../../../plugins/defaults/memory/src/memory-v3-routes.js";
+import { getObjectProperty } from "../../../util/object.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
 
@@ -65,7 +65,7 @@ function readTurnIdsFromFile(path: string): string[] {
     );
   }
   const ids = parsed
-    .map((e) => (e as { turn?: unknown }).turn)
+    .map((e) => getObjectProperty(e, "turn"))
     .filter((t): t is string => typeof t === "string");
   if (ids.length === 0) {
     throw new Error(`--turns-file ${path} contained no turn ids`);

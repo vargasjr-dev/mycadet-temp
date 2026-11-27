@@ -28,6 +28,7 @@ import {
   deleteCredentialMetadata,
   upsertCredentialMetadata,
 } from "../../tools/credentials/metadata-store.js";
+import { getObjectProperty } from "../../util/object.js";
 import { ChannelConfigResultBaseSchema } from "./channel-config-result.js";
 import { log } from "./shared.js";
 
@@ -49,11 +50,11 @@ function summarizeTelegramError(err: unknown): string {
   } else {
     parts.push(String(err));
   }
-  const path = (err as { path?: unknown })?.path;
+  const path = getObjectProperty(err, "path");
   if (typeof path === "string" && path.length > 0) {
     parts.push(`path=${path}`);
   }
-  const code = (err as { code?: unknown })?.code;
+  const code = getObjectProperty(err, "code");
   if (typeof code === "string" && code.length > 0) {
     parts.push(`code=${code}`);
   }
@@ -136,10 +137,17 @@ export async function setTelegramConfig(
         error: `Telegram API validation failed: ${body}`,
       };
     }
-    const data = (await res.json()) as {
-      ok: boolean;
-      result?: { id?: number; username?: string };
-    };
+    const data = z
+      .looseObject({
+        ok: z.boolean(),
+        result: z
+          .looseObject({
+            id: z.number().optional(),
+            username: z.string().optional(),
+          })
+          .optional(),
+      })
+      .parse(await res.json());
     if (!data.ok || !data.result?.username) {
       return {
         success: false,

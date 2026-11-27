@@ -63,7 +63,9 @@ export function channelForCallback(
     return undefined;
   }
   const channel = pathname.slice(CALLBACK_PREFIX.length);
-  return (DIRECT_DELIVERY_CHANNELS as readonly string[]).includes(channel)
+  return DIRECT_DELIVERY_CHANNELS.some(
+    (candidate: string) => candidate === channel,
+  )
     ? (channel as DirectDeliveryChannel)
     : undefined;
 }

@@ -11,6 +11,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { TrustVerdict } from "@mycadet/gateway-client";
+import { z } from "zod";
 
 const GUARDIAN_USER_ID = "U_GUARDIAN_VERDICT";
 const MEMBER_USER_ID = "U_MEMBER_VERDICT";
@@ -401,10 +402,9 @@ describe("reaction intercept consumes the stamped verdict directly", () => {
     expect(dispatchedTurns).toHaveLength(1);
     // Non-Slack wake turns ride the ordinary neutral-envelope carrier, the
     // same lane inbound messages use.
-    const channelInbound = dispatchedTurns[0].channelInbound as Record<
-      string,
-      unknown
-    >;
+    const channelInbound = z
+      .record(z.string(), z.unknown())
+      .parse(dispatchedTurns[0].channelInbound);
     expect(channelInbound.eventKind).toBe("reaction");
     expect(channelInbound.source).toBe("discord");
     expect(dispatchedTurns[0].slackReactionRowMeta).toBeUndefined();

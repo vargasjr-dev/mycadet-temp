@@ -23,11 +23,12 @@
  *     alone cannot distinguish a clean run from a mid-flight crash even
  *     once assistant output exists.
  */
-
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { invalidateConfigCache } from "../../../config/loader.js";
 import { createConversation } from "../../../persistence/conversation-crud.js";
@@ -126,20 +127,26 @@ function readMemoryJobRows(): Array<{
   lastError: string | null;
   payload: string;
 }> {
-  return getMemorySqlite()!
-    .query(
-      `
+  return z
+    .array(
+      z.looseObject({
+        id: z.string(),
+        status: z.string(),
+        lastError: z.union([z.string(), z.null()]),
+        payload: z.string(),
+      }),
+    )
+    .parse(
+      getMemorySqlite()!
+        .query(
+          `
     SELECT id, status, last_error AS lastError, payload
     FROM memory_jobs
     ORDER BY id
   `,
-    )
-    .all() as Array<{
-    id: string;
-    status: string;
-    lastError: string | null;
-    payload: string;
-  }>;
+        )
+        .all(),
+    );
 }
 
 describe("listConsolidationRuns handler", () => {

@@ -1102,7 +1102,10 @@ describe("channel activity timing", () => {
     new Promise((resolve) => setTimeout(resolve, 10));
 
   const phases = (): unknown[] =>
-    sentActivity.map((entry) => (entry as { phase?: unknown }).phase);
+    sentActivity.map(
+      (entry) =>
+        z.looseObject({ phase: z.unknown().optional() }).parse(entry).phase,
+    );
 
   beforeEach(() => {
     deliveredChannelReplies.length = 0;

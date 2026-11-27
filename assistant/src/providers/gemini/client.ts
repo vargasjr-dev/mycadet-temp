@@ -436,8 +436,12 @@ export class GeminiProvider implements Provider {
   ): Promise<ProviderResponse> {
     const { tools, systemPrompt, config, onEvent, signal } = options ?? {};
     const configObj: Record<string, unknown> | undefined = config;
-    const maxTokens = configObj?.max_tokens as number | undefined;
-    const modelOverride = configObj?.model as string | undefined;
+    const maxTokens =
+      typeof configObj?.max_tokens === "number"
+        ? configObj?.max_tokens
+        : undefined;
+    const modelOverride =
+      typeof configObj?.model === "string" ? configObj?.model : undefined;
     const usageAttributionHeaders = configObj?.usageAttributionHeaders as
       | Record<string, string>
       | undefined;

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
+
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing the module under test
 // ---------------------------------------------------------------------------
@@ -92,7 +94,7 @@ describe("handleGuardianReplyIntercept", () => {
     await handleGuardianReplyIntercept(makeParams({ sourceChannel: "slack" }));
 
     expect(routeGuardianReplyCalls).toHaveLength(1);
-    const ctx = routeGuardianReplyCalls[0] as Record<string, unknown>;
+    const ctx = jsonObjectSchema.parse(routeGuardianReplyCalls[0]);
     // Must be a blocked scope, NOT undefined — blocks identity fallback
     expect(ctx.pendingScope).toEqual({ mode: "blocked" });
   });
@@ -107,7 +109,7 @@ describe("handleGuardianReplyIntercept", () => {
     );
 
     expect(routeGuardianReplyCalls).toHaveLength(1);
-    const ctx = routeGuardianReplyCalls[0] as Record<string, unknown>;
+    const ctx = jsonObjectSchema.parse(routeGuardianReplyCalls[0]);
     // Must be unset — identity-based fallback stays active
     expect(ctx.pendingScope).toBeUndefined();
   });
@@ -122,7 +124,7 @@ describe("handleGuardianReplyIntercept", () => {
     await handleGuardianReplyIntercept(makeParams({ sourceChannel: "slack" }));
 
     expect(routeGuardianReplyCalls).toHaveLength(1);
-    const ctx = routeGuardianReplyCalls[0] as Record<string, unknown>;
+    const ctx = jsonObjectSchema.parse(routeGuardianReplyCalls[0]);
     const ids = z
       .looseObject({ requestIds: z.array(z.string()) })
       .parse(ctx.pendingScope).requestIds;

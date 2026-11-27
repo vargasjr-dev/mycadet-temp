@@ -178,7 +178,7 @@ describe("resolveMessageContentBlocks", () => {
       { type: "some_retired_block_kind", payload: 1 },
     ];
     expect(resolveMessageContentBlocks(JSON.stringify(historical))).toEqual(
-      historical as ContentBlock[],
+      historical,
     );
   });
 
@@ -207,7 +207,7 @@ describe("resolveMessageContentBlocks", () => {
     expect(contentBlockArraySchema.safeParse(surfaceRow).success).toBe(true);
     // `data` stays opaque and internal riders survive the round trip.
     expect(resolveMessageContentBlocks(JSON.stringify(surfaceRow))).toEqual(
-      surfaceRow as unknown as ContentBlock[],
+      surfaceRow,
     );
   });
 
@@ -233,7 +233,7 @@ describe("resolveMessageContentBlocks", () => {
     ];
     expect(contentBlockArraySchema.safeParse(llmSurfaceRow).success).toBe(true);
     expect(resolveMessageContentBlocks(JSON.stringify(llmSurfaceRow))).toEqual(
-      llmSurfaceRow as unknown as ContentBlock[],
+      llmSurfaceRow,
     );
   });
 

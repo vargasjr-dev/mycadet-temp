@@ -34,6 +34,7 @@ import {
 } from "node:path";
 
 import { bridgeEmojiAppIcon } from "@mycadet/app-icons";
+import { z } from "zod";
 
 import { resolveConversationLineage } from "../daemon/conversation-lineage.js";
 import { rawAll } from "../persistence/raw-query.js";
@@ -302,7 +303,12 @@ export function resolveAppDir(id: string): {
     const filePath = join(dir, entry);
     try {
       const raw = readFileSync(filePath, "utf-8");
-      const parsed = JSON.parse(raw) as { id?: string; dirName?: string };
+      const parsed = z
+        .looseObject({
+          id: z.string().optional(),
+          dirName: z.string().optional(),
+        })
+        .parse(JSON.parse(raw));
       if (parsed.id === id) {
         const dirName = parsed.dirName || id;
         if (parsed.dirName) {
@@ -464,7 +470,12 @@ function collectExistingDirNames(): Set<string> {
     }
     try {
       const raw = readFileSync(join(dir, entry), "utf-8");
-      const parsed = JSON.parse(raw) as { id?: string; dirName?: string };
+      const parsed = z
+        .looseObject({
+          id: z.string().optional(),
+          dirName: z.string().optional(),
+        })
+        .parse(JSON.parse(raw));
       // Use dirName if present, otherwise fall back to id (pre-migration)
       names.add(parsed.dirName ?? parsed.id ?? entry.replace(/\.json$/, ""));
     } catch {

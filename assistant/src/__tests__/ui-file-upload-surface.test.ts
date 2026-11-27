@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { FileUploadSurfaceDataSchema } from "../api/surfaces.js";
 import { FileUploadSurfaceData } from "../api/surfaces.js";
 import { UiSurfaceShowFileUpload } from "../daemon/message-types/surfaces.js";
@@ -76,11 +78,13 @@ describe("file_upload interactivity", () => {
 describe("ui_show tool includes file_upload", () => {
   test("input_schema surface_type enum includes file_upload", () => {
     const definition = uiShowTool;
-    const surfaceTypeEnum = (
-      definition.input_schema as {
-        properties: { surface_type: { enum: string[] } };
-      }
-    ).properties.surface_type.enum;
+    const surfaceTypeEnum = z
+      .looseObject({
+        properties: z.looseObject({
+          surface_type: z.looseObject({ enum: z.array(z.string()) }),
+        }),
+      })
+      .parse(definition.input_schema).properties.surface_type.enum;
 
     expect(surfaceTypeEnum).toContain("file_upload");
   });

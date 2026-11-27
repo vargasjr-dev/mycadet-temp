@@ -10,6 +10,7 @@ import {
 
 import { z } from "zod";
 
+import { getObjectProperty } from "../util/object.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const _conversationMocks = new Map<string, unknown>();
@@ -446,7 +447,7 @@ describe("non-decision messages during pending approval (no conversational engin
     const statusCall = replySpy.mock.calls.find(
       (call) =>
         typeof call[1] === "object" &&
-        (call[1] as { chatId?: string }).chatId === "chat-123",
+        getObjectProperty(call[1], "chatId") === "chat-123",
     );
     expect(statusCall).toBeDefined();
     const statusPayload: { text?: string } = statusCall![1];
@@ -972,7 +973,7 @@ describe("plain-text channel approval decisions", () => {
     const statusCall = deliverSpy.mock.calls.find(
       (call) =>
         typeof call[1] === "object" &&
-        (call[1] as { chatId?: string }).chatId === "chat-123",
+        getObjectProperty(call[1], "chatId") === "chat-123",
     );
     expect(statusCall).toBeDefined();
     const statusPayload: {
@@ -1456,7 +1457,7 @@ describe("non-decision status reply for different channels", () => {
     const statusCall = deliverSpy.mock.calls.find(
       (call) =>
         typeof call[1] === "object" &&
-        (call[1] as { chatId?: string }).chatId === "chat-123",
+        getObjectProperty(call[1], "chatId") === "chat-123",
     );
     expect(statusCall).toBeDefined();
     const statusPayload: { text?: string } = statusCall![1];
@@ -1500,7 +1501,7 @@ describe("non-decision status reply for different channels", () => {
     const statusCall = replySpy.mock.calls.find(
       (call) =>
         typeof call[1] === "object" &&
-        (call[1] as { chatId?: string }).chatId === "chat-123",
+        getObjectProperty(call[1], "chatId") === "chat-123",
     );
     expect(statusCall).toBeDefined();
     const statusPayload: { text?: string } = statusCall![1];

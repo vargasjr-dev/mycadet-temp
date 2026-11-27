@@ -94,7 +94,6 @@ mock.module("../notifications/emit-signal.js", () => ({
   }),
 }));
 
-import type { AssistantEvent } from "../api/index.js";
 import { getConfig } from "../config/loader.js";
 import {
   type AbortContext,
@@ -156,18 +155,7 @@ function attachRunningChild(
   settle: () => void;
 } {
   const manager = getSubagentManager();
-  const internals = manager as unknown as {
-    subagents: Map<
-      string,
-      {
-        conversation: unknown;
-        state: SubagentState;
-        parentSendToClient: (msg: AssistantEvent) => void;
-        runInFlight?: boolean;
-      }
-    >;
-    parentToChildren: Map<string, Set<string>>;
-  };
+  const internals = manager;
   const subagentId = `sub-${parentConversationId}-${cronRunId ?? "default"}`;
   const entry = {
     conversation: null,
@@ -189,11 +177,12 @@ function attachRunningChild(
     parentSendToClient: () => {},
     runInFlight: true,
   };
-  internals.subagents.set(subagentId, entry);
+  internals["subagents"].set(subagentId, entry);
   const children =
-    internals.parentToChildren.get(parentConversationId) ?? new Set<string>();
+    internals["parentToChildren"].get(parentConversationId) ??
+    new Set<string>();
   children.add(subagentId);
-  internals.parentToChildren.set(parentConversationId, children);
+  internals["parentToChildren"].set(parentConversationId, children);
   return {
     settle: () => {
       entry.state.status = "completed";

@@ -2,6 +2,7 @@ import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import { v5 as uuidv5 } from "uuid";
 
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import type { SparseEmbedding } from "./embedding-types.js";
 
 const log = getLogger("messages-lexical-index");
@@ -182,7 +183,7 @@ export class MessagesLexicalIndex {
       if (
         err instanceof Error &&
         "status" in err &&
-        (err as { status: number }).status === 409
+        getObjectProperty(err, "status") === 409
       ) {
         if (await this.ensurePayloadIndexesSafe()) {
           this.collectionReady = true;
@@ -486,7 +487,7 @@ export class MessagesLexicalIndex {
       err &&
       typeof err === "object" &&
       "status" in err &&
-      (err as { status: number }).status === 404
+      getObjectProperty(err, "status") === 404
     ) {
       return true;
     }

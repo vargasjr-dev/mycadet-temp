@@ -11,7 +11,6 @@
  * configured byte-count, run-count, and free-space budgets are satisfied.
  * The active run (identified by CADET_PROFILER_RUN_ID) is never deleted.
  */
-
 import {
   existsSync,
   lstatSync,
@@ -24,6 +23,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+
+import { z } from "zod";
 
 import {
   getProfilerMaxBytes,
@@ -125,7 +126,16 @@ function readManifest(runDir: string): ProfilerRunManifest | null {
   const manifestPath = join(runDir, MANIFEST_FILENAME);
   try {
     const raw = readFileSync(manifestPath, "utf-8");
-    return JSON.parse(raw) as ProfilerRunManifest;
+    return z
+      .looseObject({
+        runId: z.string(),
+        status: z.union([z.literal("active"), z.literal("completed")]),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        totalBytes: z.number(),
+        completedAt: z.string().optional(),
+      })
+      .parse(JSON.parse(raw));
   } catch {
     return null;
   }

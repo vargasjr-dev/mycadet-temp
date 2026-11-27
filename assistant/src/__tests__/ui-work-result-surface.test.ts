@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "../api/index.js";
 import { SurfaceType } from "../api/surfaces.js";
 import { WorkResultSurfaceData } from "../api/surfaces.js";
@@ -37,11 +39,13 @@ function makeContext(sent: AssistantEvent[] = []): Conversation {
 }
 
 function getSurfaceTypeEnum(): string[] {
-  return (
-    uiShowTool.input_schema as {
-      properties: { surface_type: { enum: string[] } };
-    }
-  ).properties.surface_type.enum;
+  return z
+    .looseObject({
+      properties: z.looseObject({
+        surface_type: z.looseObject({ enum: z.array(z.string()) }),
+      }),
+    })
+    .parse(uiShowTool.input_schema).properties.surface_type.enum;
 }
 
 describe("work_result surface protocol", () => {

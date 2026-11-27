@@ -2,7 +2,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Database } from "bun:sqlite";
 
-import { isPlainObject } from "../../util/object.js";
+import { getObjectProperty, isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -247,7 +247,7 @@ function isSubscriptionAuth(auth: string): boolean {
     return (
       parsed !== null &&
       typeof parsed === "object" &&
-      (parsed as { type?: unknown }).type === "oauth_subscription"
+      getObjectProperty(parsed, "type") === "oauth_subscription"
     );
   } catch {
     return false;

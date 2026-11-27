@@ -8,7 +8,6 @@
  * `fetch` dependency). No globals are monkey-patched and no `--test-hook`
  * exports leak into production code.
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -21,6 +20,8 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import { readPluginMcpServers } from "../../../plugins/mcp-servers.js";
 import { PluginManifestError } from "../../../util/plugin-manifest.js";
@@ -121,22 +122,30 @@ function makeContentsFetch(opts: {
       if (opts.manifest === undefined) {
         return new Response("not found", { status: 404 });
       }
-      const manifest = opts.manifest as {
-        plugins?: Array<{
-          name: string;
-          source?: {
-            source: string;
-            repo?: string;
-            ref?: string;
-            path?: string;
-          };
-          description?: string;
-          category?: string;
-          homepage?: string;
-          license?: string;
-          icon?: string;
-        }>;
-      };
+      const manifest = z
+        .looseObject({
+          plugins: z
+            .array(
+              z.looseObject({
+                name: z.string(),
+                source: z
+                  .looseObject({
+                    source: z.string(),
+                    repo: z.string().optional(),
+                    ref: z.string().optional(),
+                    path: z.string().optional(),
+                  })
+                  .optional(),
+                description: z.string().optional(),
+                category: z.string().optional(),
+                homepage: z.string().optional(),
+                license: z.string().optional(),
+                icon: z.string().optional(),
+              }),
+            )
+            .optional(),
+        })
+        .parse(opts.manifest);
       const rows = (manifest.plugins ?? []).map((entry) => ({
         name: entry.name,
         ...(entry.source?.repo ? { repo: entry.source.repo } : {}),

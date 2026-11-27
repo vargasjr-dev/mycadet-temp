@@ -21,8 +21,9 @@
  *
  *   const result = await classifyRisk("bash", { command: "ls" });
  */
-
 import { mock } from "bun:test";
+
+import { getObjectProperty } from "../../util/object.js";
 
 // ── Response registry ───────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export function installIpcMock(): void {
     },
     isRetryableIpcConnectError: (err: unknown) => {
       if (typeof err === "object" && err !== null && "code" in err) {
-        const code = (err as { code?: unknown }).code;
+        const code = getObjectProperty(err, "code");
         return code === "ENOENT" || code === "ECONNREFUSED";
       }
       return false;

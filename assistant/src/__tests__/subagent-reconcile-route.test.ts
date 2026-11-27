@@ -6,6 +6,8 @@
  */
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { getDb } from "../persistence/db-connection.js";
 import { migrateCreateSubagentsTable } from "../persistence/migrations/311-create-subagents-table.js";
 import { migrateAddSubagentParentToolUseId } from "../persistence/migrations/356-add-subagent-parent-tool-use-id.js";
@@ -17,6 +19,7 @@ import {
 } from "../persistence/subagent-store.js";
 import { ROUTES } from "../runtime/routes/subagents-routes.js";
 import { getSubagentManager } from "../subagent/index.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 const PARENT_ID = "parent-reconcile-1";
 
@@ -48,11 +51,13 @@ const reconcileRoute = ROUTES.find(
 )!;
 
 function reconcile(parentConversationId: string) {
-  return reconcileRoute.handler({
-    queryParams: { parentConversationId },
-  }) as {
-    subagents: Record<string, Record<string, unknown>>;
-  };
+  return z
+    .looseObject({ subagents: z.record(z.string(), jsonObjectSchema) })
+    .parse(
+      reconcileRoute.handler({
+        queryParams: { parentConversationId },
+      }),
+    );
 }
 
 beforeEach(() => {

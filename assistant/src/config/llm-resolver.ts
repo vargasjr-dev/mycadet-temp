@@ -713,7 +713,9 @@ function deepMerge(...sources: Mergeable[]): Mergeable {
         // when it's also a plain object preserves leaf-by-leaf merge
         // semantics; otherwise we recurse against an empty object so the
         // result is a freshly-allocated clone rather than an alias.
-        const base = isPlainObject(existing) ? existing : ({} as Mergeable);
+        const base = isPlainObject(existing)
+          ? existing
+          : ({} satisfies Mergeable);
         out[key] = deepMerge(base, value);
       } else {
         out[key] = value;

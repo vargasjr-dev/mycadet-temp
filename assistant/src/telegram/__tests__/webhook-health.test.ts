@@ -1,6 +1,9 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "../../__tests__/helpers/fetch-mock.js";
+import { jsonObjectSchema } from "../../__tests__/helpers/json-object-schema.js";
 import { useMemorySecureKeyMap } from "../../__tests__/helpers/secure-keys.js";
 
 // ── Mutable mock state ────────────────────────────────────────────────
@@ -456,7 +459,7 @@ describe("alerting", () => {
       isAsyncBackground: true,
     });
 
-    const payload = signal.contextPayload as Record<string, unknown>;
+    const payload = jsonObjectSchema.parse(signal.contextPayload);
     expect(payload.channel).toBe("telegram");
     expect(payload.status).toBe("delivery_failing");
     expect(payload.pendingUpdateCount).toBe(3);
@@ -476,10 +479,9 @@ describe("alerting", () => {
     await runTelegramWebhookHealthCheck();
 
     expect(emittedSignals).toHaveLength(1);
-    const payload = emittedSignals[0]!.contextPayload as Record<
-      string,
-      unknown
-    >;
+    const payload = z
+      .record(z.string(), z.unknown())
+      .parse(emittedSignals[0]!.contextPayload);
     expect(payload.status).toBe("not_registered");
     expect(payload.title).toBe("Telegram webhook is not registered");
   });

@@ -400,16 +400,13 @@ describe("POST /messages turn trust", () => {
     const spies = makeConversationWithPendingConfirmation(false);
     setConversation(CONV_ID, spies.conversation);
 
-    const conversation = spies.conversation as unknown as {
-      trustContext: unknown;
-      persistUserMessage: () => Promise<{ id: string; deduplicated: boolean }>;
-    };
+    const conversation = spies.conversation;
 
     // Another actor writes the slot inside the window, after the route
     // resolves this request's trust and before the loop call.
     let slotMoved = false;
-    conversation.persistUserMessage = async () => {
-      conversation.trustContext = {
+    conversation["persistUserMessage"] = async () => {
+      conversation["trustContext"] = {
         trustClass: "trusted_contact",
         sourceChannel: "slack",
         requesterExternalUserId: "U-other-actor",
@@ -429,7 +426,7 @@ describe("POST /messages turn trust", () => {
     // Guard the test itself: if the injection stopped running the assertion
     // below would pass for the wrong reason.
     expect(slotMoved).toBe(true);
-    expect(conversation.trustContext).toHaveProperty(
+    expect(conversation["trustContext"]).toHaveProperty(
       "trustClass",
       "trusted_contact",
     );

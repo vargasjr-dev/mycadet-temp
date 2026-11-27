@@ -1,3 +1,4 @@
+import { z } from "zod";
 // ── Activation key validation ────────────────────────────────────────
 
 const VALID_ACTIVATION_KEYS = ["fn", "ctrl", "fn_shift", "none"] as const;
@@ -139,7 +140,20 @@ export function normalizeActivationKey(
   // Try JSON parse first (PTTActivator payloads start with '{')
   if (trimmed.startsWith("{")) {
     try {
-      const parsed = JSON.parse(trimmed) as PTTActivatorPayload;
+      const parsed = z
+        .looseObject({
+          kind: z.union([
+            z.literal("none"),
+            z.literal("key"),
+            z.literal("modifierOnly"),
+            z.literal("modifierKey"),
+            z.literal("mouseButton"),
+          ]),
+          keyCode: z.union([z.null(), z.number()]).optional(),
+          modifierFlags: z.union([z.null(), z.number()]).optional(),
+          mouseButton: z.union([z.null(), z.number()]).optional(),
+        })
+        .parse(JSON.parse(trimmed));
       const error = validatePTTActivator(parsed);
       if (error) {
         return { ok: false, reason: `Invalid PTTActivator: ${error}` };
@@ -156,7 +170,7 @@ export function normalizeActivationKey(
 
   // Legacy: direct enum match
   const lower = trimmed.toLowerCase();
-  if ((VALID_ACTIVATION_KEYS as readonly string[]).includes(lower)) {
+  if (VALID_ACTIVATION_KEYS.some((candidate: string) => candidate === lower)) {
     return { ok: true, value: lower as ActivationKey };
   }
 
