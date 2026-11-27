@@ -101,6 +101,7 @@ import {
 import { markProcessed } from "../../persistence/delivery-status.js";
 import { upsertBinding } from "../../persistence/external-conversation-store.js";
 import type { ContentBlock } from "../../providers/types.js";
+import { persistDetectedClientTimezone } from "../../schedule/sync-detected-timezone.js";
 import { checkIngressForSecrets } from "../../security/secret-ingress.js";
 import {
   canonicalizeInboundIdentity,
@@ -1426,6 +1427,7 @@ export async function handleChannelInbound({
         sourceMetadata,
         conversationId: result.conversationId,
       });
+      persistDetectedClientTimezone(inboundClientTimezone);
       const slackTranscriptTimestampTimezone =
         sourceChannel === "slack"
           ? resolveSlackTranscriptTimestampTimezone(inboundClientTimezone)
