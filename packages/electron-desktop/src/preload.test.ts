@@ -55,8 +55,6 @@ beforeEach(() => {
   send.mockClear();
   off.mockClear();
   on.mockClear();
-  // `listeners` is NOT cleared: the shared window-attention subscriber
-  // registers its dispatcher at module load, before the first test.
 });
 
 test("notification preload works without crypto.randomUUID", async () => {

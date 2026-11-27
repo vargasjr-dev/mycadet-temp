@@ -49,7 +49,7 @@ import { fileOpenSurfaces } from "./file-open-preload";
  * register their channels everywhere, with internal guards where a
  * capability is platform-specific).
  */
-export const composeDesktopPreload = (): Partial<CadetBridge> => ({
+export const desktopPreload: Partial<CadetBridge> = {
   platform: "electron",
   app: appBridge,
   commands: commandsBridge,
@@ -89,11 +89,11 @@ export const composeDesktopPreload = (): Partial<CadetBridge> => ({
     setup: permissionSetup,
   },
   voiceActivity: voiceActivitySurface,
-});
+};
 
 // Every desktop shim's preload is a one-line import of this module: it
-// composes the bridge and exposes it under the contract's key.
-contextBridge.exposeInMainWorld("cadet", composeDesktopPreload());
+// exposes the bridge under the contract's key.
+contextBridge.exposeInMainWorld("cadet", desktopPreload);
 
 declare global {
   interface Window {

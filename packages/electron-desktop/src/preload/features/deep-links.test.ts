@@ -5,7 +5,9 @@ import { electronMock } from "../../../test-setup";
 import type { CadetBridge } from "@mycadet/ipc-contract";
 
 const invoke = mock(() => Promise.resolve());
-const on = mock((_channel: string, _listener: unknown) => undefined);
+const on = mock(
+  (_channel: string, _listener: (...args: unknown[]) => void) => undefined,
+);
 const off = mock((_channel: string, _listener: unknown) => undefined);
 const send = mock((_channel: string, ..._args: unknown[]) => undefined);
 

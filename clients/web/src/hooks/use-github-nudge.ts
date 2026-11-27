@@ -1,13 +1,8 @@
 /**
- * GitHub-nudge public API.
+ * GitHub repo state for the community page.
  *
- * Backed by `useNudgeStore`; this file exposes the GitHub-specific
- * derived state, click handlers, and a few non-React readers used by the
- * Discord-nudge prerequisite checks.
- *
- * The nudge is gated behind two engagement thresholds (either one
- * qualifies): a minimum account age (time since first observation) and
- * a minimum number of user messages sent.
+ * The chat nudge stack is gone; what survives is the star action and the
+ * store-backed flag the community page reads.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,27 +11,11 @@ import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
 
 import { useNudgeStore } from "@/stores/nudge-store";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 /** Minimum account age (ms since first observation) before the nudge is eligible. */
 export const GITHUB_MIN_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /** Minimum user messages sent before the nudge is eligible. */
 export const GITHUB_MIN_USER_MESSAGES = 5;
-
-// ---------------------------------------------------------------------------
-// Public readers (non-React, for cross-module prerequisite checks)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// First-seen timestamp
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
 
 export interface GitHubNudgeState {
   /** True iff the user hasn't starred, hasn't dismissed, and meets an engagement gate. */
@@ -100,10 +79,6 @@ export function useGitHubNudgeState(): GitHubNudgeState {
     [starred, bannerDismissed, engagementMet, handleStar, handleBannerDismiss],
   );
 }
-
-// ---------------------------------------------------------------------------
-// Repo URL helper
-// ---------------------------------------------------------------------------
 
 export function openGitHubRepo(): void {
   window.open(CADET_GITHUB_REPOSITORY_URL, "_blank", "noopener,noreferrer");

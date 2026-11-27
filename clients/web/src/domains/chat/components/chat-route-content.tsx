@@ -1060,15 +1060,11 @@ export function ChatMainPanel({
   });
 
   // A conversation whose branch parent was deleted renders its own messages
-  // and nothing before them. Composed into the banner slot rather than
-  // replacing it, and kept undefined when there is nothing to show, because
-  // `ChatBody` decides whether to render the banner container from whether
-  // this node exists.
-  const orphanedHistoryBanner =
+  // and nothing before them.
+  const mainBannerWithNotices =
     activeConversation?.historyOrphaned === true ? (
       <OrphanedHistoryNotice />
     ) : null;
-  const mainBannerWithNotices = orphanedHistoryBanner || undefined;
 
   // -------------------------------------------------------------------------
   // JSX construction
