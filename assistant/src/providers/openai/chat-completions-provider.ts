@@ -746,6 +746,32 @@ function flattenContentPartsToStrings(params: unknown): boolean {
   return flattened;
 }
 
+/**
+ * Newer Mistral models (mistral-large-latest / large-4) return assistant
+ * content as typed blocks — OpenAI's content-part shape,
+ * `[{type:"text", text:"..."}]` — where the Chat Completions spec says a
+ * string, so concatenating a delta straight onto the running text yields
+ * "[object Object]" while the HTTP 200 keeps health checks green. Join the
+ * text of every part; non-text parts contribute nothing here (tool calls
+ * arrive via `delta.tool_calls`, reasoning via the reasoning fields).
+ */
+function textFromResponseContent(content: unknown): string | null {
+  if (typeof content === "string") {
+    return content;
+  }
+  if (!Array.isArray(content)) {
+    return null;
+  }
+  const textPart = z.object({ text: z.string() }).loose();
+  const joined = content
+    .map((part) => {
+      const parsed = textPart.safeParse(part);
+      return parsed.success ? parsed.data.text : "";
+    })
+    .join("");
+  return joined.length > 0 ? joined : null;
+}
+
 type OpenAICompatRetryKind =
   | "reasoning-opt-out"
   | "thinking-tool-choice"
@@ -1296,12 +1322,13 @@ export class OpenAIChatCompletionsProvider implements Provider {
         for await (const chunk of stream) {
           const choice = chunk.choices[0];
           if (choice) {
-            if (choice.delta.content) {
+            const deltaText = textFromResponseContent(choice.delta.content);
+            if (deltaText) {
               if (this.parseThinkTags) {
-                pendingContent += choice.delta.content;
+                pendingContent += deltaText;
                 flushPendingContent(false);
               } else {
-                emitVisibleText(choice.delta.content);
+                emitVisibleText(deltaText);
               }
             }
 
