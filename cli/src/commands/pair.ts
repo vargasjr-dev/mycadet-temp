@@ -32,7 +32,9 @@ import {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import {
+  assistantAsleepMessage,
   getAssistantDisplayName,
+  isAssistantAsleep,
   loopbackSafeFetch,
   pairCliStdoutToResult,
   pairDocker,
@@ -191,6 +193,10 @@ async function mintPairingChallengeOrExit(
       stdout = await cloudPair(entry);
     }
   } catch (err) {
+    if (await isAssistantAsleep(entry)) {
+      console.error(`Error: ${assistantAsleepMessage(entry)}`);
+      process.exit(1);
+    }
     console.error(
       `Error: could not mint a pairing challenge on the gateway ` +
         `(${err instanceof Error ? err.message : String(err)}).`,

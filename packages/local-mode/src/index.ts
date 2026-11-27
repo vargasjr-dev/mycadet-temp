@@ -24,6 +24,7 @@ export { stageBasetenBuildContext } from "./remotes/baseten/context";
 export { execBasetenSandbox } from "./remotes/baseten/exec";
 export { localExecDirForService } from "./remotes/local/exec";
 export { getGatewayPidPath } from "./remotes/local/instance";
+export { assistantAsleepMessage, isAssistantAsleep } from "./assistant-asleep";
 export {
   ensureLocalBinShims,
   localRuntimeWebDist,

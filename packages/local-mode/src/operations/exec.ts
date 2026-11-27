@@ -1,3 +1,4 @@
+import { assistantAsleepMessage, isAssistantAsleep } from "../assistant-asleep";
 import { readCloudToken } from "../cloud-auth";
 import { getCloudBaseUrl } from "@mycadet/shared";
 import { cliCommand } from "../environment";
@@ -60,6 +61,9 @@ export async function execCommand(
     case "local":
       return await execLocal(entry, opts);
     case "docker":
+      if (await isAssistantAsleep(entry)) {
+        return { ok: false, status: 1, error: assistantAsleepMessage(entry) };
+      }
       return await execDocker(entry, opts);
     case "apple-container": {
       const fullServiceName = `cadet-${opts.service}`;
