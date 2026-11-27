@@ -20,7 +20,7 @@ mock.module("../discord/lifecycle.js", () => ({
   getDiscordGatewayClient: () => discordClient,
 }));
 
-const { channelSocketHealthRoutes } =
+const { channelSocketHealthRoutes, _credentialReadForTests } =
   await import("./channel-socket-health-handlers.js");
 
 function route(channel: string) {
@@ -31,6 +31,8 @@ function route(channel: string) {
 beforeEach(() => {
   slackClient = null;
   discordClient = null;
+  delete _credentialReadForTests.slack;
+  delete _credentialReadForTests.discord;
 });
 
 describe("channel_socket_health", () => {
@@ -77,11 +79,38 @@ describe("channel_socket_health", () => {
   });
 
   test("distinguishes an absent client from a dead one", async () => {
-    // No client means no credentials, which the local credential checks
-    // already report. Calling that "disconnected" would double-report a
-    // channel the user never set up as a channel that broke.
+    // No client and no stored credential: the channel was never set up.
+    // Calling that "disconnected" would report a channel the user never set
+    // up as a channel that broke.
+    _credentialReadForTests.slack = async () => "missing";
+
     expect(await route("slack")()).toEqual({
       channel: "slack",
+      status: "not_configured",
+    });
+  });
+
+  test("a stored credential with no live client is disconnected, not unconfigured", async () => {
+    // The case this fixes: the token is in the store, the gateway client has
+    // not booted (a missed watcher event, a boot racing the write), and the
+    // old answer — "credentials are not configured" — sent the user hunting
+    // credentials they had already entered. The socket is down; the setup is
+    // done.
+    _credentialReadForTests.discord = async () => "ok";
+
+    expect(await route("discord")()).toEqual({
+      channel: "discord",
+      status: "disconnected",
+    });
+  });
+
+  test("an unreachable store stays not_configured rather than claiming a fault", async () => {
+    // The store cannot be read, so nothing is known; the readiness layer
+    // treats this as indeterminate instead of sending the user to setup.
+    _credentialReadForTests.discord = async () => "unreachable";
+
+    expect(await route("discord")()).toEqual({
+      channel: "discord",
       status: "not_configured",
     });
   });
@@ -98,14 +127,17 @@ describe("channel_socket_health", () => {
   test("reads the client through the getter on every call", async () => {
     // Clients are torn down and rebuilt on a credential change, so a captured
     // reference would keep answering for a client that is no longer live.
-    expect(await route("discord")()).toMatchObject({
-      status: "not_configured",
-    });
-
-    discordClient = {
-      getConnectionHealth: () =>
-        ({ connected: true, lastLivenessAt: undefined }) as never,
+    const connectedClient: FakeClient = {
+      getConnectionHealth: () => ({
+        connected: true,
+        lastLivenessAt: undefined,
+      }),
     };
+    discordClient = connectedClient;
     expect(await route("discord")()).toMatchObject({ status: "connected" });
+
+    discordClient = null;
+    _credentialReadForTests.discord = async () => "ok";
+    expect(await route("discord")()).toMatchObject({ status: "disconnected" });
   });
 });

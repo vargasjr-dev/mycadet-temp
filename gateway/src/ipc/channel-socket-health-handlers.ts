@@ -20,6 +20,12 @@ import {
 
 import { getDiscordGatewayClient } from "../discord/lifecycle.js";
 import { getSlackSocketClient } from "../slack/lifecycle.js";
+import {
+  DISCORD_CHANNEL_CREDENTIAL_SPEC,
+  readServiceCredentialsResult,
+  SLACK_CHANNEL_CREDENTIAL_SPEC,
+  type ServiceCredentialSpec,
+} from "../credential-reader.js";
 import type { ChannelConnectionHealth } from "../channels/types.js";
 import type { IpcRoute } from "./server.js";
 
@@ -40,6 +46,47 @@ export type SocketHealthSources = Partial<
   >
 >;
 
+/** The credential spec whose presence distinguishes unconfigured from down. */
+const credentialSpecs: Partial<
+  Record<ChannelSocketHealthIpcParams["channel"], ServiceCredentialSpec>
+> = {
+  slack: SLACK_CHANNEL_CREDENTIAL_SPEC,
+  discord: DISCORD_CHANNEL_CREDENTIAL_SPEC,
+};
+
+/**
+ * Read the channel's credential set through the same spec-driven path the
+ * credential watcher polls, so "is it configured" is answered by the store
+ * rather than inferred from the client's absence.
+ */
+async function readChannelCredentials(
+  channel: ChannelSocketHealthIpcParams["channel"],
+): Promise<"ok" | "missing" | "unreachable" | null> {
+  const override = _credentialReadForTests[channel];
+  if (override) {
+    return override();
+  }
+  const spec = credentialSpecs[channel];
+  if (!spec) {
+    return null;
+  }
+  const read = await readServiceCredentialsResult(spec);
+  return read.status;
+}
+
+/**
+ * Test-only seam: per-channel credential-read outcomes, checked before the
+ * real spec-driven read. Exists so the socket-health tests can drive the
+ * "stored credential, no live client" discrimination without masking the
+ * credential-reader module process-wide.
+ */
+export const _credentialReadForTests: Partial<
+  Record<
+    ChannelSocketHealthIpcParams["channel"],
+    () => Promise<"ok" | "missing" | "unreachable">
+  >
+> = {};
+
 /**
  * The live channel clients' getters, resolved straight from each channel's
  * lifecycle singleton. Each client is torn down and rebuilt on a credential
@@ -56,7 +103,7 @@ export const channelSocketHealthRoutes: IpcRoute[] = [
   {
     method: "channel_socket_health",
     schema: ChannelSocketHealthIpcParamsSchema,
-    handler: (params?: Record<string, unknown>) => {
+    handler: async (params?: Record<string, unknown>) => {
       const { channel } = ChannelSocketHealthIpcParamsSchema.parse(params);
       const source = sources[channel];
       if (!source) {
@@ -67,6 +114,17 @@ export const channelSocketHealthRoutes: IpcRoute[] = [
       }
       const client = source();
       if (!client) {
+        // A null client and a stored credential is a socket that has not come
+        // up (or a boot the watcher missed), not an unconfigured channel:
+        // reporting not_configured here sent users hunting credentials they
+        // had already entered, and only a restart repaired the real state.
+        const read = await readChannelCredentials(channel);
+        if (read === "ok") {
+          return {
+            channel,
+            status: "disconnected",
+          } satisfies ChannelSocketHealthIpcResponse;
+        }
         return {
           channel,
           status: "not_configured",
