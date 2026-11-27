@@ -25,7 +25,7 @@ import type { MigrationResult } from "./index.js";
 const log = getLogger("m0006-reconcile-contacts");
 
 function getRawGatewayDb(): Database {
-  return (getGatewayDb() as unknown as { $client: Database }).$client;
+  return getGatewayDb().$client;
 }
 
 /**

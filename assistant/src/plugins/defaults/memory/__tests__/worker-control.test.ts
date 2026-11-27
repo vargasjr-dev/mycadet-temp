@@ -67,10 +67,9 @@ function stubBunSpawn(
   },
 ): () => void {
   const original = Bun.spawn;
-  (Bun as { spawn: typeof Bun.spawn }).spawn = (() =>
-    makeChild()) as unknown as typeof Bun.spawn;
+  Bun.spawn = (() => makeChild()) as unknown as typeof Bun.spawn;
   return () => {
-    (Bun as { spawn: typeof Bun.spawn }).spawn = original;
+    Bun.spawn = original;
   };
 }
 

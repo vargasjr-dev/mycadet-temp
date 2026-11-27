@@ -607,7 +607,7 @@ function finalAssistantText(history: Message[]): string {
 function isZodSchema(
   schema: z.ZodType | Record<string, unknown>,
 ): schema is z.ZodType {
-  return typeof (schema as { safeParse?: unknown }).safeParse === "function";
+  return typeof schema.safeParse === "function";
 }
 
 /**

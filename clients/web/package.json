@@ -19,7 +19,7 @@
     "build-storybook": "storybook build",
     "dev": "echo 'clients/web has no vite dev server. The cadet app server is how app/web assets load by running `cadet-local app start`.' && exit 1",
     "knip": "knip",
-    "lint": "eslint . --max-warnings 2717",
+    "lint": "eslint . --max-warnings 2354",
     "openapi-ts": "bun run scripts/generate-clients.ts",
     "postinstall": "bash scripts/postinstall.sh",
     "pretypecheck": "bun run openapi-ts",

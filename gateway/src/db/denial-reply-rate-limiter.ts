@@ -112,8 +112,7 @@ function maybePrune(now: number): void {
   const windowStart = now - DENIAL_REPLY_WINDOW_MS;
   try {
     const db = getGatewayDb();
-    const raw = (db as unknown as { $client: import("bun:sqlite").Database })
-      .$client;
+    const raw = db.$client;
     const { changes } = raw
       .prepare(`DELETE FROM channel_denial_reply_log WHERE sent_at < ?`)
       .run(windowStart);

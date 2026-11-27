@@ -630,7 +630,7 @@ describe("TranscriptMessageBody", () => {
         dispatchEvent: mock(() => false),
       })),
     });
-    window.open = openMock as unknown as typeof window.open;
+    window.open = openMock;
 
     try {
       const { getByTestId } = render(
@@ -2921,9 +2921,9 @@ describe("TranscriptMessageBody", () => {
     clickCadetLink("cadet://workspace/scratch/qa%20shot.png", "desktop");
     clickModalAction("Download file");
     expect(downloadAttachmentMock).toHaveBeenCalledTimes(1);
-    expect(
-      (downloadAttachmentMock.mock.calls[0] as unknown[])[0],
-    ).toMatchObject({ id: "att-enc" });
+    expect(downloadAttachmentMock.mock.calls[0][0]).toMatchObject({
+      id: "att-enc",
+    });
   });
 
   test("bare-label links to files sharing a basename resolve independently", () => {
@@ -2958,9 +2958,9 @@ describe("TranscriptMessageBody", () => {
     clickCadetLink("cadet://workspace/b/result.png", "second");
     clickModalAction("Download file");
     expect(downloadAttachmentMock).toHaveBeenCalledTimes(1);
-    expect(
-      (downloadAttachmentMock.mock.calls[0] as unknown[])[0],
-    ).toMatchObject({ id: "att-second" });
+    expect(downloadAttachmentMock.mock.calls[0][0]).toMatchObject({
+      id: "att-second",
+    });
   });
 
   test("bare label cannot be shadowed by an unrelated attachment with that name", () => {
@@ -2998,9 +2998,9 @@ describe("TranscriptMessageBody", () => {
     clickCadetLink("cadet://workspace/qa-delete-desktop-dialog.png", "desktop");
     clickModalAction("Download file");
     expect(downloadAttachmentMock).toHaveBeenCalledTimes(1);
-    expect(
-      (downloadAttachmentMock.mock.calls[0] as unknown[])[0],
-    ).toMatchObject({ id: "att-real" });
+    expect(downloadAttachmentMock.mock.calls[0][0]).toMatchObject({
+      id: "att-real",
+    });
   });
 
   test("workspace link click opens the action modal; Go to file navigates", () => {
@@ -3089,17 +3089,17 @@ describe("TranscriptMessageBody", () => {
     // Link text still wins when it names the attachment.
     clickCadetLink("cadet://workspace/out/final.pdf", "report.pdf");
     clickModalAction("Download file");
-    expect(
-      (downloadAttachmentMock.mock.calls[0] as unknown[])[0],
-    ).toMatchObject({ id: "att-label" });
+    expect(downloadAttachmentMock.mock.calls[0][0]).toMatchObject({
+      id: "att-label",
+    });
 
     // Malformed percent-encoding: decodeURIComponent throws, raw basename
     // fallback still finds the attachment.
     clickCadetLink("cadet://workspace/qa%ZZshot.png", "shot");
     clickModalAction("Download file");
-    expect(
-      (downloadAttachmentMock.mock.calls[1] as unknown[])[0],
-    ).toMatchObject({ id: "att-raw" });
+    expect(downloadAttachmentMock.mock.calls[1][0]).toMatchObject({
+      id: "att-raw",
+    });
   });
 
   test("renders assistant attachments via the separate MessageAttachments strip", () => {
@@ -3771,7 +3771,7 @@ describe("TranscriptMessageBody: response asset cards", () => {
                 surfaceType: "document_preview",
                 data: { surfaceId: "surf-notes", title: "A Small Note" },
               },
-            } as ConversationContentBlock,
+            },
             toolUseBlock(toolCalls[1]!),
             textBlock("created the weather test document."),
           ],
@@ -3837,7 +3837,7 @@ describe("TranscriptMessageBody: response asset cards", () => {
                 surfaceType: "dynamic_page",
                 data: { appId: "app-7", preview: { title: "Tracker" } },
               },
-            } as ConversationContentBlock,
+            },
             textBlock("Built the tracker."),
           ],
           toolCalls,
@@ -3876,7 +3876,7 @@ describe("TranscriptMessageBody: response asset cards", () => {
                 surfaceType: "dynamic_page",
                 data: { appId: "app-8", html: "<main></main>" },
               },
-            } as ConversationContentBlock,
+            },
           ],
           timestamp: 1_000,
         }}

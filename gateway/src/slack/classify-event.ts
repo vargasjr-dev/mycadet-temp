@@ -41,29 +41,29 @@ export function classifySlackEvent(
 ): ClassifiedSlackEvent | null {
   const type = event.type;
   if (type === "app_mention") {
-    return { kind: "app_mention", event: event as SlackChannelMessageEvent };
+    return { kind: "app_mention", event: event };
   }
   if (type === "reaction_added") {
-    return { kind: "reaction_added", event: event as SlackReactionEvent };
+    return { kind: "reaction_added", event: event };
   }
   if (type === "reaction_removed") {
-    return { kind: "reaction_removed", event: event as SlackReactionEvent };
+    return { kind: "reaction_removed", event: event };
   }
   if (type === "message") {
     const subtype = (event as SlackMessageChangedEvent).subtype;
     if (subtype === "message_changed") {
       return {
         kind: "message_changed",
-        event: event as SlackMessageChangedEvent,
+        event: event,
       };
     }
     if (subtype === "message_deleted") {
       return {
         kind: "message_deleted",
-        event: event as SlackMessageDeletedEvent,
+        event: event,
       };
     }
-    return { kind: "message", event: event as SlackChannelMessageEvent };
+    return { kind: "message", event: event };
   }
   return null;
 }

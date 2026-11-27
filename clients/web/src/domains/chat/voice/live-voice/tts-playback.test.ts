@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import {
   LiveVoiceAudioPlayer,
   decodePcm16Base64,
-  type AudioContextLike,
 } from "@/domains/chat/voice/live-voice/tts-playback";
 import { TONE_PRESETS } from "@/lib/sounds/tone-presets";
 
@@ -244,7 +243,7 @@ function makePlayer(): {
 } {
   const ctx = new MockAudioContext();
   const player = new LiveVoiceAudioPlayer({
-    audioContextFactory: () => ctx as unknown as AudioContextLike,
+    audioContextFactory: () => ctx,
   });
   return { player, ctx };
 }
@@ -277,7 +276,7 @@ function makeMeteringPlayer(): {
 } {
   const ctx = new MeteringMockAudioContext();
   const player = new LiveVoiceAudioPlayer({
-    audioContextFactory: () => ctx as unknown as AudioContextLike,
+    audioContextFactory: () => ctx,
   });
   return { player, ctx };
 }
@@ -299,7 +298,7 @@ function makeMediaStreamPlayer(...playErrors: (Error | undefined)[]): {
   const elements = [new MockMediaStreamPlaybackElement(playErrors[0])];
   let handedOut = 0;
   const player = new LiveVoiceAudioPlayer({
-    audioContextFactory: () => ctx as unknown as AudioContextLike,
+    audioContextFactory: () => ctx,
     useMediaStreamOutput: true,
     mediaStreamPlaybackElementFactory: () => {
       if (handedOut < elements.length) {
@@ -1056,7 +1055,7 @@ describe("LiveVoiceAudioPlayer output mute", () => {
   test("no gain stage available: records the flag without throwing", () => {
     // A context that cannot make one (lightweight host) simply cannot mute.
     const { player, ctx } = makePlayer();
-    const noGain = ctx as unknown as { createGain?: unknown };
+    const noGain: { createGain?: unknown } = ctx;
     delete noGain.createGain;
     player.prewarm();
 

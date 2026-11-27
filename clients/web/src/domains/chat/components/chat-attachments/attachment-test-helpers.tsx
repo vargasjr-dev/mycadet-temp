@@ -83,7 +83,7 @@ export function makeFileList(files: File[]): FileList {
     item: (i: number) => files[i] ?? null,
   } as unknown as FileList;
   files.forEach((file, i) => {
-    (list as unknown as Record<number, File>)[i] = file;
+    list[i] = file;
   });
   return list;
 }

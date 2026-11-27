@@ -58,7 +58,7 @@ mock.module("../ipc/cli-client.js", () => ({
       return { ok: true, result: store.searchContacts(body) };
     }
     if (method === "getContact") {
-      const id = pathParams.id ?? (body as { id?: string }).id;
+      const id = pathParams.id ?? body.id;
       const contact = id ? store.getContact(id) : null;
       if (!contact) {
         return { ok: false, error: `Contact "${id}" not found` };

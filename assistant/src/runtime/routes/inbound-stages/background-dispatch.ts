@@ -594,7 +594,7 @@ function startChannelActivity(params: {
   };
 
   const interval = setInterval(tick, refreshMs ?? ACTIVITY_PHASE_POLL_MS);
-  (interval as { unref?: () => void }).unref?.();
+  interval.unref?.();
 
   const show = (): void => {
     if (stopped || showing) {

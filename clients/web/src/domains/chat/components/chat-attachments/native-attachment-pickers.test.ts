@@ -263,7 +263,7 @@ describe("native pickers: slicing the read", () => {
     expect(pickFull).toEqual([]);
     expect(readPaths).toEqual(["/tmp/long.bin", "/tmp/long.bin"]);
     expect(file?.size).toBe(READ_SLICE_BYTES + tail.length);
-    expect((await (file as File).text()).endsWith(tail)).toBe(true);
+    expect((await file.text()).endsWith(tail)).toBe(true);
   });
 
   test("reads past a size that understates the file", async () => {
@@ -708,7 +708,7 @@ describe("native pickers: what holds the assembled bytes", () => {
 
     const sink = collector();
     await pickFilesNative(sink.onFile);
-    const file = sink.files[0] as File;
+    const file = sink.files[0];
 
     expect(readPaths).toHaveLength(2);
     expect(file.size).toBe(READ_SLICE_BYTES + tail.length);

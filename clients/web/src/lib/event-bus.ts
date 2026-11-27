@@ -317,13 +317,13 @@ export function subscribe<K extends BusEventName>(
     set = new Set();
     handlers.set(event, set);
   }
-  set.add(handler as AnyHandler);
+  set.add(handler);
   return () => {
     const current = handlers.get(event);
     if (!current) {
       return;
     }
-    current.delete(handler as AnyHandler);
+    current.delete(handler);
     if (current.size === 0) {
       handlers.delete(event);
     }

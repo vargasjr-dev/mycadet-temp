@@ -115,7 +115,7 @@ test("a failed readiness request offers a read-only reconnect", async () => {
   const get = client.get;
   client.get = mock(async () => {
     throw new Error("request failed");
-  }) as unknown as typeof client.get;
+  });
   mount();
   const retry = await screen.findByRole("button", { name: "Reconnect" });
   expect(open).not.toHaveBeenCalled();

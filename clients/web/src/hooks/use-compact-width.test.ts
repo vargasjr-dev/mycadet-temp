@@ -40,7 +40,7 @@ beforeEach(() => {
     disconnect() {
       observers.delete(this.entry);
     }
-  } as unknown as typeof ResizeObserver;
+  };
 });
 
 afterEach(() => {

@@ -44,7 +44,7 @@ function rawActiveThreadRows(): Array<{
   threadTs: string;
   channelId: string | null;
 }> {
-  const rawDb = (getGatewayDb() as unknown as { $client: unknown }).$client as {
+  const rawDb = getGatewayDb().$client as {
     prepare: (sql: string) => {
       all: () => Array<{ thread_ts: string; channel_id: string | null }>;
     };
@@ -63,7 +63,7 @@ function trackThread(): void {
 }
 
 function trackLegacyThreadWithoutChannel(): void {
-  const rawDb = (getGatewayDb() as unknown as { $client: unknown }).$client as {
+  const rawDb = getGatewayDb().$client as {
     prepare: (sql: string) => { run: (...params: unknown[]) => void };
   };
   rawDb

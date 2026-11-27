@@ -5,8 +5,7 @@ import type { SlackInboundEvent } from "./envelope.js";
 
 // The classifier receives tolerantly-parsed events (fields already collapsed to
 // their declared types); it discriminates purely on `type` / `subtype`.
-const as = (o: Record<string, unknown>): SlackInboundEvent =>
-  o as unknown as SlackInboundEvent;
+const as = (o: Record<string, unknown>): SlackInboundEvent => o;
 
 describe("classifySlackEvent", () => {
   test("classifies an app_mention", () => {

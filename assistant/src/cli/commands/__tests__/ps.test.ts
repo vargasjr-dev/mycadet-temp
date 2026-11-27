@@ -81,7 +81,7 @@ async function runPsCommand(
     return true;
   };
 
-  (process as { exit: (code?: number) => never }).exit = (code?: number) => {
+  process.exit = (code?: number) => {
     capturedExitCode = code ?? 0;
     exitCalled = true;
     throw new Error(`process.exit(${code})`);
@@ -101,7 +101,7 @@ async function runPsCommand(
     }
   } finally {
     process.stdout.write = originalStdoutWrite;
-    (process as { exit: (code?: number) => never }).exit = originalExit;
+    process.exit = originalExit;
   }
 
   const exitCode = exitCalled ? capturedExitCode : (process.exitCode ?? 0);

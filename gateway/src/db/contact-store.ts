@@ -1,5 +1,3 @@
-import { type Database } from "bun:sqlite";
-
 import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 
 import { isBindingDemotion, type RiskThreshold } from "@mycadet/gateway-client";
@@ -954,7 +952,7 @@ export class ContactStore {
     }
 
     const now = Date.now();
-    const raw = (this.db as unknown as { $client: Database }).$client;
+    const raw = this.db.$client;
     const result = raw
       .prepare(
         `UPDATE contact_channels

@@ -51,7 +51,7 @@ function carrying(
     input: {},
     pendingConfirmation: { requestId: REQUEST_ID },
     ...overrides,
-  } as ChatMessageToolCall;
+  };
 }
 
 function trailerRowCount(messages: DisplayMessage[]): number {
@@ -74,7 +74,7 @@ describe("pending confirmation is always reachable", () => {
     pendingConfirmation = {
       requestId: REQUEST_ID,
       toolName: "bash",
-    } as PendingConfirmationState;
+    };
   });
 
   test("a prompt on a chip the transcript draws is not repeated in the trailer", () => {
@@ -120,7 +120,7 @@ describe("pending confirmation is always reachable", () => {
         id: "tc-1",
         name: "bash",
         input: {},
-      } as ChatMessageToolCall),
+      }),
     ];
 
     expect(trailerRowCount(messages)).toBe(1);
@@ -133,7 +133,7 @@ describe("pending confirmation is always reachable", () => {
         id: "tc-1",
         name: "bash",
         input: {},
-      } as ChatMessageToolCall),
+      }),
     ];
 
     expect(trailerRowCount(messages)).toBe(0);

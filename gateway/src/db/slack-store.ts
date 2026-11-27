@@ -1,4 +1,3 @@
-import type { Database } from "bun:sqlite";
 import { and, eq, gt, isNotNull, isNull, like } from "drizzle-orm";
 import { type GatewayDb, getGatewayDb } from "./connection.js";
 import {
@@ -330,7 +329,7 @@ export class SlackStore {
 
   cleanupExpiredThreads(): number {
     const now = Date.now();
-    const raw = (this.db as unknown as { $client: Database }).$client;
+    const raw = this.db.$client;
     return raw
       .prepare("DELETE FROM slack_active_threads WHERE expires_at < ?")
       .run(now).changes;
@@ -369,7 +368,7 @@ export class SlackStore {
 
   cleanupExpiredEvents(): number {
     const now = Date.now();
-    const raw = (this.db as unknown as { $client: Database }).$client;
+    const raw = this.db.$client;
     return raw
       .prepare("DELETE FROM slack_seen_events WHERE expires_at < ?")
       .run(now).changes;

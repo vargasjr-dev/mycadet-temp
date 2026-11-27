@@ -120,7 +120,7 @@ export function SttRoleOverrides() {
   });
   // `services.stt` falls under the ConfigGetResponse index signature
   // (`unknown`), so narrow it explicitly, as the provider form does.
-  const stt = daemonConfig?.services?.stt as SttConfigShape | undefined;
+  const stt: SttConfigShape | undefined = daemonConfig?.services?.stt;
   const entries = sttRoleOverrideEntries(stt);
 
   // Display names for the base providers. Variant rows are filtered out of

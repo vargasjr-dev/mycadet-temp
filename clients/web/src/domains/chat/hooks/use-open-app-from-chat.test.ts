@@ -134,17 +134,15 @@ beforeEach(() => {
     mainView: "chat",
     activeAppId: null,
     openedAppState: null,
-    loadApp: loadAppMock as unknown as typeof viewerSnapshot.loadApp,
-    loadDocument:
-      loadDocumentMock as unknown as typeof viewerSnapshot.loadDocument,
+    loadApp: loadAppMock,
+    loadDocument: loadDocumentMock,
     enterAppEditing: enterAppEditingMock,
     exitAppEditing: exitAppEditingMock,
   });
   useConversationStore.setState({
     activeConversationId: null,
     draftConversationIds: new Set(),
-    setEditingConversationId:
-      setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
+    setEditingConversationId: setEditingConversationIdMock,
   });
   useSetupLocalAssistant(ASSISTANT_ID);
 });

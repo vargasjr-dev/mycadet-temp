@@ -73,9 +73,9 @@ export class LlmContextRequestError extends Error {
 /** Pull `error.code` out of the daemon's `{ error: { code, message } }` envelope. */
 function extractErrorCode(error: unknown): string | undefined {
   if (error && typeof error === "object" && "error" in error) {
-    const inner = (error as { error?: unknown }).error;
+    const inner = error.error;
     if (inner && typeof inner === "object" && "code" in inner) {
-      const code = (inner as { code?: unknown }).code;
+      const code = inner.code;
       if (typeof code === "string") {
         return code;
       }

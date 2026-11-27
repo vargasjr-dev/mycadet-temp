@@ -93,7 +93,7 @@ async function runStatusCommand(): Promise<{
   };
 
   // Override process.exit to capture the code instead of terminating
-  (process as { exit: (code?: number) => never }).exit = (code?: number) => {
+  process.exit = (code?: number) => {
     capturedExitCode = code ?? 0;
     exitCalled = true;
     throw new Error(`process.exit(${code})`);
@@ -118,7 +118,7 @@ async function runStatusCommand(): Promise<{
   } finally {
     process.stdout.write = originalStdoutWrite;
     process.stderr.write = originalStderrWrite;
-    (process as { exit: (code?: number) => never }).exit = originalExit;
+    process.exit = originalExit;
   }
 
   const exitCode = exitCalled ? capturedExitCode : (process.exitCode ?? 0);

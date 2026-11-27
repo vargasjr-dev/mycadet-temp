@@ -50,7 +50,7 @@ async function handlePostVercelConfig({ body = {} }: RouteHandlerArgs) {
       const result = await setVercelConfig(apiToken);
       if (!result.success) {
         throw new BadRequestError(
-          (result as { error?: string }).error ?? "Failed to set Vercel config",
+          result.error ?? "Failed to set Vercel config",
         );
       }
       return result;

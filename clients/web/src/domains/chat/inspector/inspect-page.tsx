@@ -342,7 +342,7 @@ function Header({
         total: prev?.total ?? 0,
         error:
           err && typeof err === "object" && "message" in err
-            ? String((err as { message: unknown }).message)
+            ? String(err.message)
             : t("chat:inspectPage.exportFailed"),
       }));
     } finally {
@@ -1019,7 +1019,7 @@ function ErrorState({ error, onRetry }: ErrorStateProps): ReactNode {
   const { t: tChat } = useTranslation("chat");
   const message =
     error && typeof error === "object" && "message" in error
-      ? String((error as { message: unknown }).message)
+      ? String(error.message)
       : tChat("inspectPage.loadContextFailed");
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-8 text-center">

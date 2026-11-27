@@ -119,7 +119,7 @@ describe("plugin registry", () => {
       const plugin = buildPlugin(name || "x");
       // Override the name post-build so the empty-string case exercises the
       // same code path as the others (buildPlugin uses the literal value).
-      (plugin.manifest as { name: string }).name = name;
+      plugin.manifest.name = name;
       expect(() => registerPlugin(plugin)).toThrow(PluginExecutionError);
     }
   });

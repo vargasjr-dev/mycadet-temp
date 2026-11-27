@@ -2059,7 +2059,7 @@ export class SubagentManager {
       typeof this.sweepTimer === "object" &&
       "unref" in this.sweepTimer
     ) {
-      (this.sweepTimer as { unref: () => void }).unref();
+      this.sweepTimer.unref();
     }
   }
 

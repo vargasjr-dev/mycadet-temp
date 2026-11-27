@@ -353,8 +353,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
     const server = makeFakeServer();
     await handleLiveVoiceWs(makeTunnelReq(), server);
 
-    const call = (server.upgrade as ReturnType<typeof mock>).mock
-      .calls[0] as unknown[];
+    const call: unknown[] = (server.upgrade as ReturnType<typeof mock>).mock
+      .calls[0];
     expect(
       (call[1] as { data: LiveVoiceSocketData }).data.guardianPrincipalId,
     ).toBe("test-user");
@@ -481,8 +481,8 @@ describe("createLiveVoiceWebsocketHandler — tunnel-attested managed auth", () 
 
     expect(res).toBeUndefined();
     expect(server.upgrade).toHaveBeenCalledTimes(1);
-    const call = (server.upgrade as ReturnType<typeof mock>).mock
-      .calls[0] as unknown[];
+    const call: unknown[] = (server.upgrade as ReturnType<typeof mock>).mock
+      .calls[0];
     expect(
       (call[1] as { data: LiveVoiceSocketData }).data.guardianPrincipalId,
     ).toBe("test-user");
@@ -549,7 +549,7 @@ describe("the live voice websocket handlers", () => {
     openLiveVoiceWebsocket(ws as never);
 
     const MockWS = globalThis.WebSocket as unknown as ReturnType<typeof mock>;
-    const call = MockWS.mock.calls[0] as unknown[];
+    const call: unknown[] = MockWS.mock.calls[0];
     const parsed = new URL(call[0] as string);
     expect(parsed.protocol).toBe("ws:");
     expect(parsed.host).toBe("runtime.internal:7821");

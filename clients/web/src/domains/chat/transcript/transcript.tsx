@@ -453,11 +453,11 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
     const grouped = useMemo(() => {
       if (!conversationId) {
         return {
-          history: partition.historyItems as SessionGroupedTranscriptItem[],
+          history: partition.historyItems,
           latest: [
             ...(partition.anchorMessage ? [partition.anchorMessage] : []),
             ...partition.responseItems,
-          ] as SessionGroupedTranscriptItem[],
+          ],
         };
       }
       const getModeSession = (message: DisplayMessage) => message.modeSession;

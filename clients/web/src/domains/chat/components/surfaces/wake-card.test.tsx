@@ -30,7 +30,7 @@ function wakeSurface(): Surface {
       body: WAKE_BODY,
       metadata: [{ label: "Source", value: "workflow_completed" }],
     },
-  } as unknown as Surface;
+  };
 }
 
 afterEach(() => {
@@ -50,7 +50,7 @@ describe("wake card", () => {
   test("falls back to a true generic title for an unlisted source", () => {
     const surface = wakeSurface();
     surface.data = {
-      ...(surface.data as Record<string, unknown>),
+      ...surface.data,
       metadata: [{ label: "Source", value: "something-new" }],
     } as never;
 
@@ -128,7 +128,7 @@ describe("wake card", () => {
 
   test("a card that is not a wake keeps its metadata and body", () => {
     // GIVEN an ordinary card surface carrying the same shape
-    const surface = {
+    const surface: Surface = {
       surfaceId: "card-access-request",
       surfaceType: "card",
       data: {
@@ -136,7 +136,7 @@ describe("wake card", () => {
         body: "Alice asked for access.",
         metadata: [{ label: "Source", value: "Slack" }],
       },
-    } as unknown as Surface;
+    };
 
     render(<CardSurface surface={surface} onAction={() => {}} />);
 

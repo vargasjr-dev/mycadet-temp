@@ -112,7 +112,7 @@ describe("the popover's approvals", () => {
     const { container, answers } = renderWith({
       ...ONE,
       items: [{ ...ONE.items[0], permission: "screen" }],
-    } as CompanionPopoverContent);
+    });
 
     fireEvent.click(buttonOf(container, "Allow")!);
 
@@ -175,7 +175,7 @@ describe("the popover's credential", () => {
       ...SECRET,
       service: "GitHub",
       providerKey: "github",
-    } as CompanionPopoverContent);
+    });
 
     expect(container.querySelector("img")).not.toBeNull();
   });

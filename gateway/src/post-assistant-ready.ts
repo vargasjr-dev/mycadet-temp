@@ -45,7 +45,7 @@ const MAX_WAIT_MS = 5 * 60 * 1_000; // 5 minutes
 const DEFERRED_RETRY_INTERVAL_MS = 30_000;
 
 function getRawDb(drizzleDb: GatewayDb): Database {
-  return (drizzleDb as unknown as { $client: Database }).$client;
+  return drizzleDb.$client;
 }
 
 /**

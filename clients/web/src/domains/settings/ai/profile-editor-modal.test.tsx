@@ -566,14 +566,14 @@ describe("ProfileEditorModal create mode — model-first", () => {
   });
 
   test("each openai-compatible endpoint serves its own models", async () => {
-    const lmStudio = {
+    const lmStudio: ProviderConnection = {
       ...makeConnection("lm-studio", "openai-compatible"),
       models: [{ id: "model-1", displayName: "Model 1" }],
-    } as unknown as ProviderConnection;
-    const vllmBox = {
+    };
+    const vllmBox: ProviderConnection = {
       ...makeConnection("vllm-box", "openai-compatible"),
       models: [{ id: "model-2", displayName: "Model 2" }],
-    } as unknown as ProviderConnection;
+    };
     const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
     const onSave = (name: string, entry: unknown) => {
       saveCalls.push({ name, entry: entry as Record<string, unknown> });
@@ -909,10 +909,10 @@ describe("ProfileEditorModal edit mode — catalog-absent bound model", () => {
     // (gateway alias, unrefreshed model) that the connection's returned
     // list does not include. The Model field still shows that id, and
     // Save stays enabled.
-    const lmStudio = {
+    const lmStudio: ProviderConnection = {
       ...makeConnection("lm-studio", "openai-compatible"),
       models: [{ id: "llama-3.1", displayName: "Llama 3.1" }],
-    } as unknown as ProviderConnection;
+    };
 
     renderEdit(
       {
@@ -1002,7 +1002,7 @@ describe("ProfileEditorModal edit mode — catalog-absent bound model", () => {
           connections={[makeConnection("openrouter", "openrouter")]}
           assistantId={ASSISTANT_ID}
           onSave={(name, entry) => {
-            saveCalls.push({ name, entry: entry as Record<string, unknown> });
+            saveCalls.push({ name, entry: entry });
             return Promise.resolve();
           }}
           onCancel={() => {}}
@@ -1063,10 +1063,10 @@ describe("ProfileEditorModal edit mode — catalog-absent bound model", () => {
 });
 
 describe("ProfileEditorModal modalities", () => {
-  const lmStudio = {
+  const lmStudio: ProviderConnection = {
     ...makeConnection("lm-studio", "openai-compatible"),
     models: [{ id: "llama-3.1", displayName: "Llama 3.1" }],
-  } as unknown as ProviderConnection;
+  };
 
   async function seedSupportingAssistant() {
     const { MIN_VERSION } =
@@ -1559,10 +1559,10 @@ describe("ProfileEditorModal: explains why Save is blocked", () => {
 // ---------------------------------------------------------------------------
 
 describe("entries wire shape", () => {
-  const anthropicWork = {
+  const anthropicWork: ProviderConnection = {
     ...makeConnection("anthropic-work"),
     label: "Work key",
-  } as unknown as ProviderConnection;
+  };
   const anthropicPersonal = makeConnection("anthropic-personal");
 
   async function gateOn() {
@@ -1655,10 +1655,10 @@ describe("entries wire shape", () => {
   test("a gated endpoint save writes the endpoint name as the provider", async () => {
     const store = await gateOn();
     try {
-      const lmStudio = {
+      const lmStudio: ProviderConnection = {
         ...makeConnection("lm-studio", "openai-compatible"),
         models: [{ id: "model-1", displayName: "Model 1" }],
-      } as unknown as ProviderConnection;
+      };
       const { saveCalls, onSave } = collectSaves();
       renderCreate([lmStudio], onSave);
 

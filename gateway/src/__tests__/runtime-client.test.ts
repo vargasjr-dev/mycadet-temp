@@ -118,7 +118,7 @@ describe("forwardToRuntime", () => {
     });
     await forwardToRuntime(config, payload);
 
-    const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
+    const calledUrl = fetchMock.mock.calls[0][0] as string;
     expect(calledUrl).toBe("http://localhost:9999/v1/channels/inbound");
   });
 
@@ -196,7 +196,7 @@ describe("forwardToRuntime", () => {
     const config = makeConfig({});
     await forwardToRuntime(config, payload);
 
-    const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
+    const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
     const headers = calledInit.headers as Record<string, string>;
     expect(headers["x-cadet-subject"]).toBe("svc:gateway:self");
     expect(headers["x-cadet-principal-type"]).toBe("svc_gateway");
@@ -210,7 +210,7 @@ describe("forwardToRuntime", () => {
     const config = makeConfig({});
     await forwardToRuntime(config, payload);
 
-    const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
+    const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
     expect(calledInit.signal).toBeInstanceOf(AbortSignal);
   });
 });
@@ -311,12 +311,12 @@ describe("forwardTwilioVoiceWebhook", () => {
     expect(result.body).toBe(twiml);
     expect(result.headers["Content-Type"]).toBe("text/xml");
 
-    const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
+    const calledUrl = fetchMock.mock.calls[0][0] as string;
     expect(calledUrl).toBe(
       "http://localhost:7821/v1/internal/twilio/voice-webhook",
     );
 
-    const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
+    const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
     const sentBody = JSON.parse(calledInit.body as string);
     expect(sentBody.params).toEqual(params);
     expect(sentBody.originalUrl).toBe(originalUrl);
@@ -398,10 +398,10 @@ describe("forwardTwilioStatusWebhook", () => {
     const result = await forwardTwilioStatusWebhook(config, params);
     expect(result.status).toBe(200);
 
-    const calledUrl = (fetchMock.mock.calls[0] as unknown[])[0] as string;
+    const calledUrl = fetchMock.mock.calls[0][0] as string;
     expect(calledUrl).toBe("http://localhost:7821/v1/internal/twilio/status");
 
-    const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
+    const calledInit = fetchMock.mock.calls[0][1] as RequestInit;
     const sentBody = JSON.parse(calledInit.body as string);
     expect(sentBody.params).toEqual(params);
   });

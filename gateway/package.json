@@ -22,7 +22,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate:openapi": "bun run scripts/generate-openapi.ts",
-    "lint": "eslint . --max-warnings 1514",
+    "lint": "eslint . --max-warnings 1421",
     "lint:unused": "knip --include files,dependencies,unlisted",
     "schema": "bun run src/cli/schema.ts",
     "start": "bun run src/index.ts",

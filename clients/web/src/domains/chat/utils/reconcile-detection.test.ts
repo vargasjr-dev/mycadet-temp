@@ -8,10 +8,10 @@ import type { DisplayMessage } from "@/domains/chat/types/types";
 import { textBody } from "@/domains/chat/utils/message-test-helpers";
 
 function userRow(id: string, text: string): DisplayMessage {
-  return { id, role: "user", ...textBody(text) } as DisplayMessage;
+  return { id, role: "user", ...textBody(text) };
 }
 function assistantRow(id: string, text: string): DisplayMessage {
-  return { id, role: "assistant", ...textBody(text) } as DisplayMessage;
+  return { id, role: "assistant", ...textBody(text) };
 }
 function withPhoto(message: DisplayMessage, id: string): DisplayMessage {
   return {
@@ -145,7 +145,7 @@ describe("a tool-gated turn", () => {
     id: "a1",
     role: "assistant",
     ...textBody("Found it. Sending now."),
-  } as DisplayMessage;
+  };
 
   const serverRow: DisplayMessage = {
     id: "a1",
@@ -155,7 +155,7 @@ describe("a tool-gated turn", () => {
       { type: "text", text: "Found it." },
       { type: "text", text: "Sending now." },
     ],
-  } as DisplayMessage;
+  };
 
   test("the projected server row carries nothing the local view lacks", () => {
     expect(

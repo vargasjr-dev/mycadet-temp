@@ -35,10 +35,8 @@ export function migrateBackfillAudioAttachmentMimeTypes(
       )
       .run(mime, pattern);
 
-    if ((result as { changes?: number }).changes) {
-      console.log(
-        `Backfilled ${(result as { changes: number }).changes} .${ext} attachments → ${mime}`,
-      );
+    if (result.changes) {
+      console.log(`Backfilled ${result.changes} .${ext} attachments → ${mime}`);
     }
   }
 }

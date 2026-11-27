@@ -66,7 +66,7 @@ export function makeConfig(
     maxAttachmentConcurrency: 3,
     trustProxy: false,
     ...overrides,
-  } as GatewayConfig;
+  };
 }
 
 export function makeFakeServer(upgradeResult: boolean = true) {
@@ -82,8 +82,8 @@ export function makeFakeServer(upgradeResult: boolean = true) {
 
 /** The socket data the handler asked Bun to attach to the upgraded socket. */
 export function upgradedData<T>(server: import("bun").Server<unknown>): T {
-  const call = (server.upgrade as ReturnType<typeof mock>).mock
-    .calls[0] as unknown[];
+  const call: unknown[] = (server.upgrade as ReturnType<typeof mock>).mock
+    .calls[0];
   return (call[1] as { data: T }).data;
 }
 

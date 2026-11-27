@@ -2,8 +2,8 @@ import { describe, expect, mock, test } from "bun:test";
 
 const consoleErrorMock = mock((..._args: unknown[]) => {});
 const consoleWarnMock = mock((..._args: unknown[]) => {});
-console.error = consoleErrorMock as unknown as typeof console.error;
-console.warn = consoleWarnMock as unknown as typeof console.warn;
+console.error = consoleErrorMock;
+console.warn = consoleWarnMock;
 
 const { normalizeToError } =
   await import("@mycadet/design-library/utils/normalize-error");

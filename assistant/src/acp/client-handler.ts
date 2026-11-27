@@ -308,7 +308,7 @@ export class CadetAcpClientHandler implements Client {
         log.debug(
           {
             acpSessionId: this.acpSessionId,
-            updateType: (update as { sessionUpdate: string }).sessionUpdate,
+            updateType: update.sessionUpdate,
           },
           "Ignoring unhandled session update type",
         );

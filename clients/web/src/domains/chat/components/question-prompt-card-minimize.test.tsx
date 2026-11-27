@@ -107,7 +107,7 @@ function installResizeObserver(): void {
     disconnect() {
       resizeObservers.delete(this.entry);
     }
-  } as unknown as typeof ResizeObserver;
+  };
 }
 
 /**

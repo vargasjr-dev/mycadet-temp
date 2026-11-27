@@ -196,15 +196,15 @@ interface AnimationFrameStub {
 function stubAnimationFrame(): AnimationFrameStub {
   const pending = new Map<number, FrameRequestCallback>();
   let nextHandle = 1;
-  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+  globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => {
     const handle = nextHandle;
     nextHandle += 1;
     pending.set(handle, callback);
     return handle;
-  }) as typeof requestAnimationFrame;
-  globalThis.cancelAnimationFrame = ((handle: number) => {
+  };
+  globalThis.cancelAnimationFrame = (handle: number) => {
     pending.delete(handle);
-  }) as typeof cancelAnimationFrame;
+  };
   return {
     pendingCount: () => pending.size,
     fireFrame() {
@@ -407,8 +407,7 @@ describe("frame sampler extraction", () => {
   });
 
   test("keeps scheduling when no 2D context is available", () => {
-    HTMLCanvasElement.prototype.getContext = (() =>
-      null) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = () => null;
     const { gate, offers } = createRecordingGate();
     const video = createFakeVideo();
     const sampler = createFrameSampler({ gate, onDecision: () => {} });

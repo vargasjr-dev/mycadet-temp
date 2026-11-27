@@ -68,16 +68,15 @@ const ipcMock = mock(
       if (mirrorWritesFail) {
         throw new Error("mirror unavailable");
       }
-      const body = options?.body as
-        | { contactId?: string; notes?: string | null }
-        | undefined;
+      const body: { contactId?: string; notes?: string | null } | undefined =
+        options?.body;
       if (body?.contactId && body.notes !== undefined) {
         mirroredNotes.set(body.contactId, body.notes);
       }
       return { ok: true };
     }
     if (method === "contacts_info_batch") {
-      const body = options?.body as { contactIds?: string[] } | undefined;
+      const body: { contactIds?: string[] } | undefined = options?.body;
       return {
         infos: (body?.contactIds ?? [])
           .filter((id) => mirroredNotes.has(id))
@@ -151,7 +150,7 @@ function makeRequest(body: Record<string, unknown>): Request {
 }
 
 function callsFor(op: string): { body: Record<string, unknown> }[] {
-  return (ipcMock.mock.calls as unknown as unknown[][])
+  return ipcMock.mock.calls
     .filter((c) => c[0] === op)
     .map((c) => c[1] as { body: Record<string, unknown> });
 }

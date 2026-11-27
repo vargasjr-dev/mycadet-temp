@@ -733,7 +733,7 @@ async function processJob(
     return await handler(job, config);
   }
 
-  const rawType = (job as { type: string }).type;
+  const rawType = job.type;
   if (LEGACY_JOB_TYPES.has(rawType)) {
     log.debug({ jobId: job.id, type: rawType }, "Dropping legacy job");
     return;

@@ -60,7 +60,7 @@ export function negotiateLocale(preferred: readonly string[]): SupportedLocale {
     if (normalized === "") {
       continue;
     }
-    const matched = (SUPPORTED_LOCALES as readonly string[]).find(
+    const matched = SUPPORTED_LOCALES.find(
       (l) => l.toLowerCase() === normalized.toLowerCase(),
     );
     if (matched) {
@@ -78,9 +78,7 @@ export function negotiateLocale(preferred: readonly string[]): SupportedLocale {
       }
     }
     const base = normalized.split("-")[0].toLowerCase();
-    const baseMatched = (SUPPORTED_LOCALES as readonly string[]).find(
-      (l) => l.toLowerCase() === base,
-    );
+    const baseMatched = SUPPORTED_LOCALES.find((l) => l.toLowerCase() === base);
     if (baseMatched) {
       return baseMatched as SupportedLocale;
     }

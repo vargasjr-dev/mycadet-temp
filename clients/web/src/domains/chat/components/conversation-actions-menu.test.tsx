@@ -159,7 +159,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onPinToggle: () => {},
@@ -175,7 +175,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           isPinned: true,
@@ -191,7 +191,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onArchive: () => {},
@@ -205,7 +205,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onDelete: () => {},
@@ -219,7 +219,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onArchive: () => {},
@@ -234,7 +234,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           isReadonly: true,
@@ -253,7 +253,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           isArchived: true,
@@ -268,7 +268,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           isReadonly: true,
@@ -285,7 +285,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           variant: "header",
@@ -304,7 +304,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           variant: "header",
@@ -319,7 +319,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           variant: "header",
@@ -355,7 +355,7 @@ describe("renderConversationMenuItems", () => {
       const html = renderToStaticMarkup(
         <>
           {renderConversationMenuItems({
-            Primitive: Menu as unknown as ConversationMenuPrimitive,
+            Primitive: Menu,
             t,
             doneLabels,
             variant,
@@ -371,7 +371,7 @@ describe("renderConversationMenuItems", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onRename: () => {},
@@ -391,7 +391,7 @@ describe("renderConversationMenuItems — Move to group submenu", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onPinToggle: () => {},
@@ -405,7 +405,7 @@ describe("renderConversationMenuItems — Move to group submenu", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           moveToGroups: [],
@@ -422,7 +422,7 @@ describe("renderConversationMenuItems — Move to group submenu", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           moveToGroups: [
@@ -443,7 +443,7 @@ describe("renderConversationMenuItems — Move to group submenu", () => {
     const withRemove = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           moveToGroups: [{ id: "g_research", name: "Research" }],
@@ -458,7 +458,7 @@ describe("renderConversationMenuItems — Move to group submenu", () => {
     const withoutRemove = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           moveToGroups: [{ id: "g_research", name: "Research" }],
@@ -538,7 +538,7 @@ describe("renderConversationMenuItems — mark read/unread exclusivity", () => {
     const html = renderToStaticMarkup(
       <>
         {renderConversationMenuItems({
-          Primitive: Menu as unknown as ConversationMenuPrimitive,
+          Primitive: Menu,
           t,
           doneLabels,
           onMarkRead: () => {},
@@ -562,7 +562,7 @@ describe("renderConversationMenuItems: read-state iconography", () => {
 
   test("an unread conversation shows the sealed envelope", () => {
     const html = menuHtml({
-      Primitive: Menu as unknown as ConversationMenuPrimitive,
+      Primitive: Menu,
       t,
       doneLabels,
       onMarkRead: () => {},
@@ -574,7 +574,7 @@ describe("renderConversationMenuItems: read-state iconography", () => {
 
   test("a read conversation shows the opened envelope", () => {
     const html = menuHtml({
-      Primitive: Menu as unknown as ConversationMenuPrimitive,
+      Primitive: Menu,
       t,
       doneLabels,
       onMarkUnread: () => {},

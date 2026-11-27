@@ -34,9 +34,7 @@ async function handleSetTelegramConfig({ body = {} }: RouteHandlerArgs) {
   const { botToken } = body as { botToken?: string };
   const result = await setTelegramConfig(botToken);
   if (!result.success) {
-    throw new BadRequestError(
-      (result as { error?: string }).error ?? "Failed to set Telegram config",
-    );
+    throw new BadRequestError(result.error ?? "Failed to set Telegram config");
   }
   return result;
 }
@@ -52,7 +50,7 @@ async function handleSetTelegramCommands({ body = {} }: RouteHandlerArgs) {
   const result = await setTelegramCommands(commands);
   if (!result.success) {
     throw new BadRequestError(
-      (result as { error?: string }).error ?? "Failed to set Telegram commands",
+      result.error ?? "Failed to set Telegram commands",
     );
   }
   return result;
@@ -65,9 +63,7 @@ async function handleSetupTelegram({ body = {} }: RouteHandlerArgs) {
   };
   const result = await setupTelegram(commands, botToken);
   if (!result.success) {
-    throw new BadRequestError(
-      (result as { error?: string }).error ?? "Telegram setup failed",
-    );
+    throw new BadRequestError(result.error ?? "Telegram setup failed");
   }
   return result;
 }

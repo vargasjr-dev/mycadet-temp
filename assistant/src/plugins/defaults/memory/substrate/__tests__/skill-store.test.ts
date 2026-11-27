@@ -1164,8 +1164,8 @@ describe("listSkillEntries", () => {
     // mutated; suppress so we can prove cache invariance even if a future
     // refactor swaps freeze for a plain clone.
     try {
-      (first[0] as { id: string }).id = "tampered";
-      (first[0] as { content: string }).content = "tampered";
+      first[0].id = "tampered";
+      first[0].content = "tampered";
     } catch {
       // expected under Object.freeze
     }

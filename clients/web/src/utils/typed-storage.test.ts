@@ -31,7 +31,7 @@ describe("createStorageAccessor", () => {
     scope: "user",
     parse: (raw) => {
       const parsed: unknown = JSON.parse(raw);
-      return Array.isArray(parsed) ? (parsed as string[]) : null;
+      return Array.isArray(parsed) ? parsed : null;
     },
     serialize: JSON.stringify,
     fallback: [],
@@ -380,7 +380,7 @@ describe("createRecordStorageAccessor", () => {
     if (typeof r.value !== "number" || typeof r.label !== "string") {
       return null;
     }
-    return { value: r.value as number, label: r.label as string };
+    return { value: r.value, label: r.label };
   }
 
   const record = createRecordStorageAccessor<TestEntry>({

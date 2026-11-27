@@ -59,7 +59,7 @@ beforeEach(() => {
       ({ matches: true }) as MediaQueryList as typeof window.matchMedia;
   }
   // Ensure matchMedia returns matches: true for the coarse-pointer query.
-  window.matchMedia = ((query: string) => ({
+  window.matchMedia = (query: string) => ({
     matches: query.includes("coarse"),
     media: query,
     onchange: null,
@@ -68,12 +68,12 @@ beforeEach(() => {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+  });
 });
 
 afterEach(() => {
   // Restore a reasonable default.
-  window.matchMedia = ((query: string) => ({
+  window.matchMedia = (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -82,7 +82,7 @@ afterEach(() => {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+  });
 });
 
 // ---------------------------------------------------------------------------

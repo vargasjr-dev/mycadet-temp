@@ -20,7 +20,7 @@ import type { MigrationResult } from "./index.js";
 const log = getLogger("m0005-dedup-addresses");
 
 function getRawGatewayDb(): Database {
-  return (getGatewayDb() as unknown as { $client: Database }).$client;
+  return getGatewayDb().$client;
 }
 
 export function up(): MigrationResult {

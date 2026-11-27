@@ -152,7 +152,7 @@ export const thresholdRoutes: IpcRoute[] = [
         .run();
       void ipcCallAssistant("emit_event", {
         body: { kind: "contacts_changed" },
-      } as unknown as Record<string, unknown>).catch(() => {});
+      }).catch(() => {});
       return {
         ok: true,
         contactId: parsed.contactId,

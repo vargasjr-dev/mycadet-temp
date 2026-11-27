@@ -503,9 +503,7 @@ describe("upsertVerifiedContactChannel — revoked/blocked guards", () => {
     });
 
     // Gateway DB owns the verified ACL state.
-    const gwActivate = gwUpdates.find(
-      (u) => (u.set as { status?: string }).status === "active",
-    );
+    const gwActivate = gwUpdates.find((u) => u.set.status === "active");
     expect(gwActivate).toBeTruthy();
     expect(gwActivate!.set).toMatchObject({ verifiedVia: "challenge" });
     expect(gwActivate!.set.verifiedAt).toEqual(expect.any(Number));
@@ -887,9 +885,7 @@ describe("upsertVerifiedContactChannel — revoked/blocked guards", () => {
     });
 
     // verifiedVia is gateway-owned; the assistant mirror no longer carries it.
-    const gwActivate = gwUpdates.find(
-      (u) => (u.set as { status?: string }).status === "active",
-    );
+    const gwActivate = gwUpdates.find((u) => u.set.status === "active");
     expect(gwActivate!.set).toMatchObject({ verifiedVia: "manual" });
   });
 });
@@ -931,9 +927,7 @@ describe("upsertVerifiedContactChannel — invite target-contact binding", () =>
     });
 
     // Gateway channel re-parented to the target contact too.
-    const gwReparent = gwUpdates.find(
-      (u) => (u.set as { contactId?: string }).contactId === "co-mom",
-    );
+    const gwReparent = gwUpdates.find((u) => u.set.contactId === "co-mom");
     expect(gwReparent).toBeTruthy();
 
     // The re-parent keys on the (type,address) logical key, not the assistant
@@ -954,9 +948,7 @@ describe("upsertVerifiedContactChannel — invite target-contact binding", () =>
     );
 
     // The verified gateway write lands under the bound (target) contact.
-    expect(
-      gwUpdates.some((u) => (u.set as { status?: string }).status === "active"),
-    ).toBe(true);
+    expect(gwUpdates.some((u) => u.set.status === "active")).toBe(true);
   });
 
   test("activates the gateway channel even when the assistant mirror upsert fails", async () => {
@@ -983,9 +975,7 @@ describe("upsertVerifiedContactChannel — invite target-contact binding", () =>
     // The gateway activation still ran (mirror failure is best-effort), so the
     // gateway source of truth is verified rather than left inactive.
     expect(result).toEqual({ verified: true });
-    expect(
-      gwUpdates.some((u) => (u.set as { status?: string }).status === "active"),
-    ).toBe(true);
+    expect(gwUpdates.some((u) => u.set.status === "active")).toBe(true);
   });
 
   test("does not reassign when the channel already belongs to the target contact", async () => {
@@ -1004,9 +994,7 @@ describe("upsertVerifiedContactChannel — invite target-contact binding", () =>
     // No gateway re-parent (a bare contactId update) fires when the channel
     // already belongs to the target contact.
     const gwReparent = gwUpdates.find(
-      (u) =>
-        (u.set as { contactId?: string }).contactId === "co-mom" &&
-        (u.set as { status?: string }).status === undefined,
+      (u) => u.set.contactId === "co-mom" && u.set.status === undefined,
     );
     expect(gwReparent).toBeUndefined();
 
@@ -1054,9 +1042,7 @@ describe("upsertVerifiedContactChannel — invite target-contact binding", () =>
     // The gateway row is re-parented to the target by the (type,address)
     // logical key, not the assistant channel id (the byKey activation update
     // omits contactId, so without this the gateway row keeps the old contact).
-    const gwReparent = gwUpdates.find(
-      (u) => (u.set as { contactId?: string }).contactId === "co-target",
-    );
+    const gwReparent = gwUpdates.find((u) => u.set.contactId === "co-target");
     expect(gwReparent).toBeTruthy();
     const where = gwReparent!.where as {
       op: string;

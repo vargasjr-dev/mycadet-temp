@@ -59,21 +59,21 @@ const userEcho = (seq: number, id: string, text: string) =>
     type: "user_message_echo",
     messageId: id,
     text,
-  } as AssistantEvent);
+  });
 const textDelta = (seq: number, id: string, text: string) =>
   env(seq, {
     type: "assistant_text_delta",
     messageId: id,
     text,
-  } as AssistantEvent);
+  });
 const thinkingDelta = (seq: number, id: string, thinking: string) =>
   env(seq, {
     type: "assistant_thinking_delta",
     messageId: id,
     thinking,
-  } as AssistantEvent);
+  });
 const complete = (seq: number, id: string) =>
-  env(seq, { type: "message_complete", messageId: id } as AssistantEvent);
+  env(seq, { type: "message_complete", messageId: id });
 const handoff = (seq: number, id: string) =>
   env(seq, {
     type: "generation_handoff",
@@ -88,7 +88,7 @@ const handoff = (seq: number, id: string) =>
         computerUseScreenshot: true,
       },
     ],
-  } as AssistantEvent);
+  });
 const toolUseStart = (
   seq: number,
   id: string,
@@ -101,7 +101,7 @@ const toolUseStart = (
     toolUseId,
     toolName: name,
     input: {},
-  } as AssistantEvent);
+  });
 const surfacePending = (seq: number, id: string, toolUseId: string) =>
   env(seq, {
     type: "ui_surface_pending",
@@ -195,18 +195,18 @@ describe("rolling-snapshot reducer", () => {
         messageId: "u1",
         text: "Open the page",
         modeSession,
-      } as AssistantEvent),
+      }),
       env(2, {
         type: "assistant_turn_start",
         messageId: "a1",
         modeSession,
-      } as AssistantEvent),
+      }),
       textDelta(3, "a1", "Done"),
       env(4, {
         type: "message_complete",
         messageId: "a1",
         modeSession,
-      } as AssistantEvent),
+      }),
     ]);
 
     expect(snapshot.messages.map((message) => message.modeSession)).toEqual([
@@ -357,7 +357,7 @@ describe("rolling-snapshot reducer", () => {
         type: "message_dequeued",
         conversationId: "conv-1",
         requestId: "req-1",
-      } as AssistantEvent);
+      });
       const snapshot = queuedSnapshot();
       snapshot.messages[0] = {
         ...snapshot.messages[0]!,
@@ -401,7 +401,7 @@ describe("rolling-snapshot reducer", () => {
           type: "message_dequeued",
           conversationId: "conv-1",
           requestId: "req-1",
-        } as AssistantEvent),
+        }),
       ]);
 
       expect(resolved.messages[0]?.queueStatus).toBeUndefined();
@@ -415,13 +415,13 @@ describe("rolling-snapshot reducer", () => {
           type: "message_dequeued",
           conversationId: "conv-1",
           requestId: "req-1",
-        } as AssistantEvent),
+        }),
         env(3, {
           type: "message_requeued",
           conversationId: "conv-1",
           requestId: "req-1",
           position: 1,
-        } as AssistantEvent),
+        }),
       ]);
 
       // The drain gave the message back to the queue, so the row it cleared
@@ -436,7 +436,7 @@ describe("rolling-snapshot reducer", () => {
           type: "message_queued_deleted",
           conversationId: "conv-1",
           requestId: "req-1",
-        } as AssistantEvent),
+        }),
       ]);
 
       expect(resolved.messages).toEqual([]);
@@ -450,7 +450,7 @@ describe("rolling-snapshot reducer", () => {
         messageId: id,
         toolUseId,
         toolName: "bash",
-      } as AssistantEvent);
+      });
     const confirmationRequest = (
       seq: number,
       requestId: string,
@@ -538,7 +538,7 @@ describe("rolling-snapshot reducer", () => {
       env(seq, {
         type: "assistant_turn_start",
         messageId: id,
-      } as AssistantEvent);
+      });
     const activityIdle = (seq: number) =>
       env(seq, {
         type: "assistant_activity_state",

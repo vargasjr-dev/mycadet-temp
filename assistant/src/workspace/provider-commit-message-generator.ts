@@ -277,7 +277,7 @@ class ProviderCommitMessageGenerator {
       // Extract text from response
       const textBlocks = response.content.filter((b) => b.type === "text");
       const text = textBlocks
-        .map((b) => (b as { type: "text"; text: string }).text)
+        .map((b) => b.text)
         .join("")
         .trim();
 

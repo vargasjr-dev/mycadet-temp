@@ -744,7 +744,7 @@ describe("replayMissedEvents", () => {
         "replay:CROUTED01:1700000060.000000",
       );
       // Mentions are replayed through the app_mention path.
-      const raw = emitted[0].event.raw as { type?: string };
+      const raw: { type?: string } = emitted[0].event.raw;
       expect(raw.type).toBe("app_mention");
       expect(emitted[0].threadTs).toBe(parentTs);
     } finally {
@@ -886,7 +886,7 @@ describe("replayMissedEvents", () => {
       // Synthetic event must use type:"message" so it routes through the
       // DM normalize path (which has the default-assistant fallback) rather
       // than the app_mention path (which doesn't).
-      const raw = emitted[0].event.raw as { type?: string };
+      const raw: { type?: string } = emitted[0].event.raw;
       expect(raw.type).toBe("message");
     } finally {
       rawDb.close();
@@ -1030,12 +1030,12 @@ describe("replayMissedEvents", () => {
       await client.replayMissedEvents(ws);
       await flushAsyncEventEmission();
       expect(emitted).toHaveLength(1);
-      const raw = emitted[0].event.raw as {
+      const raw: {
         subtype?: string;
         files?: unknown;
         attachments?: unknown;
         blocks?: unknown;
-      };
+      } = emitted[0].event.raw;
       expect(raw.subtype).toBe("file_share");
       expect(raw.files).toEqual(files);
       expect(raw.attachments).toEqual(attachments);

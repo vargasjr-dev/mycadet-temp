@@ -717,7 +717,7 @@ describe("AssistantSideMenu · overlay bottom scroll reserve", () => {
       }
       unobserve() {}
       disconnect() {}
-    } as unknown as typeof ResizeObserver;
+    };
 
     try {
       const { container } = render(

@@ -301,7 +301,7 @@ describe("user blocks", () => {
     ]);
     const users = blocks.filter((b) => b.kind === "user");
     expect(users).toHaveLength(1);
-    expect((users[0] as { id: string }).id).toBe("u-echo");
+    expect(users[0].id).toBe("u-echo");
   });
 
   it("keeps a user_message_chunk that does not match any marker", () => {
@@ -385,7 +385,7 @@ describe("tool blocks", () => {
         toolTitle: "Edit",
         // Passthrough field not in the store type; read defensively.
         locations: [{ path: "a.ts", line: 12 }, { path: "b.ts" }],
-      } as AcpRunRawEvent,
+      },
     ]);
 
     const tool = blocks[0] as Extract<AcpChatBlock, { kind: "tool" }>;
@@ -436,14 +436,14 @@ describe("tool blocks", () => {
         toolCallId: "tc1",
         toolTitle: "Edit",
         locations: [{ path: "a.ts", line: 12 }],
-      } as AcpRunRawEvent,
+      },
       {
         seq: 1,
         updateType: "tool_call_update",
         toolCallId: "tc1",
         // ACP `locations: []` means "replace with empty".
         locations: [],
-      } as AcpRunRawEvent,
+      },
     ]);
 
     const tool = blocks[0] as Extract<AcpChatBlock, { kind: "tool" }>;
@@ -458,7 +458,7 @@ describe("tool blocks", () => {
         toolCallId: "tc1",
         toolTitle: "Edit",
         locations: [{ path: "a.ts", line: 12 }],
-      } as AcpRunRawEvent,
+      },
       event({
         updateType: "tool_call_update",
         toolCallId: "tc1",

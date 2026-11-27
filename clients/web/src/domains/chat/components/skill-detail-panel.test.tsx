@@ -69,7 +69,7 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
       throw skillError;
     }
     return {
-      data: { skill: skillPayload } as SkillsByIdGetResponse,
+      data: { skill: skillPayload },
       ...okResponse,
     };
   }),
@@ -149,7 +149,7 @@ describe("SkillDetailPanel skill query states", () => {
     const client = makeQueryClient();
     client.setQueryData(
       skillQueryKey(),
-      { skill: makeSkillDetail() } as SkillsByIdGetResponse,
+      { skill: makeSkillDetail() },
       // Backdate the entry past `staleTime` so the mount kicks off a
       // background revalidation (the panel, unlike the detail page, doesn't
       // force one with `refetchOnMount: "always"`).

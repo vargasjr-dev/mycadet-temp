@@ -59,7 +59,7 @@ const textDelta = (seq: number, conv: string, id: string, text: string) =>
     type: "assistant_text_delta",
     messageId: id,
     text,
-  } as AssistantEvent);
+  });
 
 const store = () => useChatSessionStore.getState();
 
@@ -198,7 +198,7 @@ describe("chat-session-store — snapshot + optimistic", () => {
       text: "hi",
       messageId: "msg-user-1",
       clientMessageId: "nonce-1",
-    } as AssistantEvent);
+    });
     pushSseEvent(id, echo);
     store().applyEnvelopeToSnapshot(echo);
     expect(store().snapshot?.messages.some((m) => m.id === "msg-user-1")).toBe(
@@ -222,7 +222,7 @@ describe("chat-session-store — snapshot + optimistic", () => {
       text: "hi",
       messageId: "msg-user-1",
       clientMessageId: "nonce-1",
-    } as AssistantEvent);
+    });
     pushSseEvent(id, echo);
     store().applyEnvelopeToSnapshot(echo);
 
@@ -399,7 +399,7 @@ describe("chat-session-store — snapshot + optimistic", () => {
         text: "look",
         messageId: "msg-server-1",
         clientMessageId: "nonce-1",
-      } as AssistantEvent),
+      }),
     );
     // …while the handler upgrades the retained optimistic copy in place
     // (mirrors handleUserMessageEcho's attachment-carrying branch).

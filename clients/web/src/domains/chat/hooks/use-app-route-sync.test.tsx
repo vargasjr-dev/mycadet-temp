@@ -77,15 +77,13 @@ beforeEach(() => {
     mainView: "chat",
     activeAppId: null,
     openedAppState: null,
-    loadApp: loadAppMock as unknown as typeof viewerSnapshot.loadApp,
+    loadApp: loadAppMock,
     closeApp: closeAppMock,
-    setMainView:
-      setMainViewMock as unknown as typeof viewerSnapshot.setMainView,
+    setMainView: setMainViewMock,
   });
   useConversationStore.setState({
     activeConversationId: CONV_ID,
-    setEditingConversationId:
-      setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
+    setEditingConversationId: setEditingConversationIdMock,
   });
 });
 

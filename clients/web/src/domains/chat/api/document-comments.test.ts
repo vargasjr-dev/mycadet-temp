@@ -82,7 +82,7 @@ beforeEach(() => {
   capturedOptions = [];
   nextResult = null;
 
-  const c = client as unknown as Record<string, unknown>;
+  const c: Record<string, unknown> = client;
   c.get = mockMethod("get");
   c.post = mockMethod("post");
   c.patch = mockMethod("patch");
@@ -90,7 +90,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  const c = client as unknown as Record<string, unknown>;
+  const c: Record<string, unknown> = client;
   c.get = originalGet;
   c.post = originalPost;
   c.patch = originalPatch;

@@ -133,13 +133,13 @@ function outlineOf(
       along += length;
     }
     for (let leg = 0; leg < legs.length; leg += 1) {
-      const span = legs[leg] as number;
+      const span = legs[leg];
       if (along > span && leg < legs.length - 1) {
         along -= span;
         continue;
       }
       const part = span === 0 ? 0 : Math.min(along / span, 1);
-      const corner = corners[leg / 2] as { centre: Point; from: number };
+      const corner: { centre: Point; from: number } = corners[leg / 2];
       if (leg % 2 === 0) {
         const angle = corner.from + (Math.PI / 2) * part;
         return {
@@ -166,7 +166,7 @@ function outlineOf(
           { x: left - radius, y: top },
         ],
       ];
-      const [from, to] = edges[(leg - 1) / 2] as [Point, Point];
+      const [from, to] = edges[(leg - 1) / 2];
       return {
         x: from.x + (to.x - from.x) * part,
         y: from.y + (to.y - from.y) * part,

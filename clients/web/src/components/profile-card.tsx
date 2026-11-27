@@ -195,7 +195,7 @@ function HandleEditor<T>({
     }
     if (availability && !availability.available) {
       // Prefer the server's message; fall back to local copy keyed by code.
-      const code = availability.code as HandleErrorCode | null;
+      const code = availability.code;
       return (
         availability.message ??
         (code
@@ -438,7 +438,7 @@ function UserHandleSection({ initial, onSaved }: UserHandleSectionProps) {
       // except it types ``code`` as ``UsernameErrorCode`` while ``SaveResult``
       // accepts the alias ``HandleErrorCode``. They're the same union, so the
       // cast is purely a type-system bridge.
-      return result as SaveResult<UserMe>;
+      return result;
     },
     [assistantId],
   );
@@ -448,7 +448,7 @@ function UserHandleSection({ initial, onSaved }: UserHandleSectionProps) {
       // The user-handle availability shape is the same as the assistant
       // shape (same codes, same message field) so we can return it
       // verbatim — the cast just satisfies the TS contract.
-      return checkUsernameAvailable(v, signal) as Promise<HandleAvailability>;
+      return checkUsernameAvailable(v, signal);
     },
     [],
   );

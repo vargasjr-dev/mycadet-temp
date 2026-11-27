@@ -334,7 +334,7 @@ function setBounded<K, V>(
   map.delete(key);
   map.set(key, value);
   while (map.size > limit) {
-    const oldest = map.keys().next().value as K | undefined;
+    const oldest = map.keys().next().value;
     if (oldest === undefined) {
       return;
     }
@@ -407,9 +407,7 @@ function setIdentityGenerationGuard(
 ): boolean {
   if (!identityGenerationGuards.has(key)) {
     while (identityGenerationGuards.size >= GENERATION_GUARD_LIMIT) {
-      const oldest = identityGenerationGuards.values().next().value as
-        | IdentityGenerationGuard
-        | undefined;
+      const oldest = identityGenerationGuards.values().next().value;
       if (!oldest) {
         break;
       }
@@ -745,9 +743,7 @@ function ensurePublicationScope(scopeId: string): PublicationScope {
     return existing;
   }
   while (publicationScopes.size >= PUBLICATION_SCOPE_LIMIT) {
-    const oldestScopeId = publicationScopes.keys().next().value as
-      | string
-      | undefined;
+    const oldestScopeId = publicationScopes.keys().next().value;
     if (!oldestScopeId) {
       break;
     }

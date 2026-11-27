@@ -27,7 +27,7 @@ export interface EmojiEntry {
 const STOPWORDS = new Set(["and", "the", "with", "face", "flag"]);
 
 function namesOf(hexcode: string): string[] {
-  const names = (slackNames as Record<string, string | string[]>)[hexcode];
+  const names = slackNames[hexcode];
   return names === undefined ? [] : Array.isArray(names) ? names : [names];
 }
 
@@ -42,7 +42,7 @@ function aliasesOf(entry: CompactEmoji, own: string): string[] {
   );
 }
 
-export const EMOJI_CATALOG: EmojiEntry[] = (compact as CompactEmoji[])
+export const EMOJI_CATALOG: EmojiEntry[] = compact
   .flatMap((entry) =>
     namesOf(entry.hexcode).map((shortcode) => ({
       shortcode,

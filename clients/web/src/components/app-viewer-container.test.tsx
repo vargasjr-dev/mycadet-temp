@@ -1,3 +1,4 @@
+import { requireElement } from "@/lib/require-element.test-helper";
 /**
  * Tests for `AppViewerContainer`: fullscreen mode and that app actions are
  * forwarded to the sandbox fetch proxy.
@@ -63,7 +64,7 @@ function setSandboxFlag(value: boolean): void {
 }
 
 function getIframe(): HTMLIFrameElement {
-  return document.querySelector("iframe") as HTMLIFrameElement;
+  return requireElement(document.querySelector("iframe"), HTMLIFrameElement);
 }
 
 afterEach(() => {
@@ -115,9 +116,10 @@ function getFloatingExitButton(): HTMLButtonElement | null {
 }
 
 function getRoot(): HTMLElement {
-  return document.querySelector(
-    "[data-testid='app-viewer-root']",
-  ) as HTMLElement;
+  return requireElement(
+    document.querySelector("[data-testid='app-viewer-root']"),
+    HTMLElement,
+  );
 }
 
 describe("AppViewerContainer fullscreen", () => {
@@ -141,10 +143,10 @@ describe("AppViewerContainer fullscreen", () => {
   test("the floating exit button restores the framed nav-bar view", () => {
     renderViewer({ enableFullscreen: true });
 
-    fireEvent.click(getMaximizeButton() as HTMLButtonElement);
+    fireEvent.click(requireElement(getMaximizeButton(), HTMLButtonElement));
     expect(getMaximizeButton()).toBeNull();
 
-    fireEvent.click(getFloatingExitButton() as HTMLButtonElement);
+    fireEvent.click(requireElement(getFloatingExitButton(), HTMLButtonElement));
 
     expect(getMaximizeButton()).not.toBeNull();
     expect(getRoot().classList.contains("rounded-xl")).toBe(true);
@@ -154,7 +156,7 @@ describe("AppViewerContainer fullscreen", () => {
   test("Escape exits fullscreen", () => {
     renderViewer({ enableFullscreen: true });
 
-    fireEvent.click(getMaximizeButton() as HTMLButtonElement);
+    fireEvent.click(requireElement(getMaximizeButton(), HTMLButtonElement));
     expect(getRoot().classList.contains("fixed")).toBe(true);
 
     act(() => {

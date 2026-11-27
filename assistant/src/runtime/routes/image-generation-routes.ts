@@ -66,9 +66,7 @@ async function handleImageGenerationGenerate(
   // Validate edit mode requirements
   if (
     resolvedMode === "edit" &&
-    (!sourceImages ||
-      !Array.isArray(sourceImages) ||
-      (sourceImages as unknown[]).length === 0)
+    (!sourceImages || !Array.isArray(sourceImages) || sourceImages.length === 0)
   ) {
     throw new BadRequestError("Edit mode requires at least one source image");
   }

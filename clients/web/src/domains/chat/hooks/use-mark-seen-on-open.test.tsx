@@ -43,7 +43,7 @@ function unreadConversation(): Conversation {
   return {
     conversationId: "conv-1",
     hasUnseenLatestAssistantMessage: true,
-  } as Conversation;
+  };
 }
 
 function setup(
@@ -148,7 +148,7 @@ describe("useMarkSeenOnOpen", () => {
       {
         conversationId: "conv-1",
         hasUnseenLatestAssistantMessage: false,
-      } as Conversation,
+      },
       3,
     );
 

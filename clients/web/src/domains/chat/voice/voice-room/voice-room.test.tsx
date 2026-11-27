@@ -1923,10 +1923,10 @@ describe("VoiceRoom: camera", () => {
       get: () => 480,
     });
 
-    const canvas = HTMLCanvasElement.prototype as unknown as {
+    const canvas: {
       getContext: unknown;
       toBlob: unknown;
-    };
+    } = HTMLCanvasElement.prototype;
     const originalGetContext = canvas.getContext;
     const originalToBlob = canvas.toBlob;
     canvas.getContext = () => ({ drawImage: () => {} });
@@ -3365,7 +3365,7 @@ describe("VoiceRoom: camera", () => {
               addListener: () => {},
               removeListener: () => {},
               dispatchEvent: () => false,
-            } as MediaQueryList;
+            };
           }) as typeof window.matchMedia,
         });
       }

@@ -276,9 +276,7 @@ function normalizeProviderError(
 
 function isProviderConfigurationError(err: unknown): boolean {
   const code =
-    err instanceof Error && "code" in err
-      ? String((err as Error & { code?: unknown }).code)
-      : undefined;
+    err instanceof Error && "code" in err ? String(err.code) : undefined;
   if (
     code?.endsWith("_NO_API_KEY") ||
     code?.endsWith("_NO_REFERENCE_ID") ||

@@ -525,9 +525,7 @@ export function useConversationHistory({
       }
       try {
         const parsed_secret = interactions.pendingSecret
-          ? parsePendingSecretState(
-              interactions.pendingSecret as Record<string, unknown>,
-            )
+          ? parsePendingSecretState(interactions.pendingSecret)
           : null;
         if (
           parsed_secret &&
@@ -551,7 +549,7 @@ export function useConversationHistory({
             pendingConfirmationBeforeFetch
         ) {
           const parsedConfirmation = parsePendingConfirmationData(
-            interactions.pendingConfirmation as Record<string, unknown>,
+            interactions.pendingConfirmation,
           );
           if (
             pendingConfirmationBeforeFetch &&

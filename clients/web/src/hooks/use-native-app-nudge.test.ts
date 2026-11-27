@@ -39,7 +39,7 @@ describe("Android promotion readiness", () => {
 
   test("sends Android to the Play listing", () => {
     const open = mock(() => null);
-    window.open = open as typeof window.open;
+    window.open = open;
 
     openNativeAppStore("android");
     expect(open).toHaveBeenCalledWith(
@@ -87,7 +87,7 @@ describe("native app nudge state", () => {
 
   test("keeps iOS download state on the existing key", () => {
     const open = mock(() => null);
-    window.open = open as typeof window.open;
+    window.open = open;
     const { result } = renderHook(() => useNativeAppNudgeState("ios"));
 
     act(() => result.current.handleDownload());
@@ -117,7 +117,7 @@ describe("native app nudge state", () => {
 
   test("stores generic nudge state under the mobile keys", () => {
     const open = mock(() => null);
-    window.open = open as typeof window.open;
+    window.open = open;
     const { result } = renderHook(() => useNativeAppNudgeState("generic"));
 
     act(() => result.current.handleDownload());

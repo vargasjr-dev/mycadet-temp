@@ -35,7 +35,7 @@ import type { MigrationResult } from "./index.js";
 const log = getLogger("m0009-invite-fields-backfill");
 
 function getRawGatewayDb(): Database {
-  return (getGatewayDb() as unknown as { $client: Database }).$client;
+  return getGatewayDb().$client;
 }
 
 interface AssistantInviteRow {

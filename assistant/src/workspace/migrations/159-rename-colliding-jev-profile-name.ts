@@ -212,7 +212,7 @@ function rewriteConfigReferences(
   }
 
   if (Array.isArray(llm.profileOrder)) {
-    llm.profileOrder = (llm.profileOrder as unknown[]).map((name) =>
+    llm.profileOrder = llm.profileOrder.map((name) =>
       typeof name === "string" ? (renames.get(name) ?? name) : name,
     );
   }

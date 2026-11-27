@@ -112,7 +112,7 @@ export async function runPointerMessageTurn(
           msg.type === "assistant_text_delta" &&
           "text" in msg
         ) {
-          generatedText += (msg as { text: string }).text;
+          generatedText += msg.text;
         }
         if (
           "type" in msg &&
@@ -120,9 +120,9 @@ export async function runPointerMessageTurn(
         ) {
           agentLoopError =
             "message" in msg
-              ? (msg as { message: string }).message
+              ? msg.message
               : "userMessage" in msg
-                ? (msg as { userMessage: string }).userMessage
+                ? msg.userMessage
                 : "Agent loop failed";
         }
       },

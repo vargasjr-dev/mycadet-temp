@@ -199,7 +199,7 @@ function optionalBoolean(v: unknown): boolean | undefined {
 }
 
 function optionalStringArray(v: unknown): string[] | undefined {
-  return Array.isArray(v) ? (v as string[]) : undefined;
+  return Array.isArray(v) ? v : undefined;
 }
 
 function optionalRecord(v: unknown): Record<string, unknown> | undefined {
@@ -209,7 +209,7 @@ function optionalRecord(v: unknown): Record<string, unknown> | undefined {
 }
 
 function optionalTypedArray<T>(v: unknown): T[] | undefined {
-  return Array.isArray(v) ? (v as T[]) : undefined;
+  return Array.isArray(v) ? v : undefined;
 }
 
 export function parsePendingSecretState(

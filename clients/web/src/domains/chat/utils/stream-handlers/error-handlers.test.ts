@@ -66,8 +66,8 @@ describe("handleStreamError", () => {
       ctx.setOptimisticSends as unknown as ReturnType<typeof Object>
     ).mock.calls[0][0] as (prev: DisplayMessage[]) => DisplayMessage[];
     const remaining = updater([
-      { id: "cmid-1", role: "user", textSegments: ["hello"] } as DisplayMessage,
-      { id: "other", role: "user" } as DisplayMessage,
+      { id: "cmid-1", role: "user", textSegments: ["hello"] },
+      { id: "other", role: "user" },
     ]);
     expect(remaining.map((m) => m.id)).toEqual(["other"]);
   });

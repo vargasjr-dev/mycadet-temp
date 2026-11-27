@@ -616,7 +616,7 @@ function repointRetiredReferences(
   }
 
   if (Array.isArray(llm.profileOrder)) {
-    llm.profileOrder = (llm.profileOrder as unknown[]).filter(
+    llm.profileOrder = llm.profileOrder.filter(
       (name) => typeof name !== "string" || !retired.has(name),
     );
   }

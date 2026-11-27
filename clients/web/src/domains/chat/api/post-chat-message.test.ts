@@ -1,3 +1,4 @@
+import { fetchMock } from "@/lib/fetch-mock.test-helper";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 // Mock the effective-timezone resolver so we can control the zone
@@ -31,8 +32,8 @@ describe("postChatMessage onboarding payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         // The heyapi client passes a Request object as `input`; read the body
         // by cloning and calling `.text()` so we can decode the JSON payload.
         const url = input instanceof Request ? input.url : String(input);
@@ -66,8 +67,8 @@ describe("postChatMessage onboarding payload", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
   });
 
   afterEach(() => {
@@ -220,8 +221,8 @@ describe("postChatMessage wire-field bilingual cutover", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
         if (input instanceof Request) {
@@ -238,8 +239,8 @@ describe("postChatMessage wire-field bilingual cutover", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
   });
 
   afterEach(() => {
@@ -348,8 +349,8 @@ describe("postChatMessage server-minted conversation flow", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
         if (input instanceof Request) {
@@ -362,8 +363,8 @@ describe("postChatMessage server-minted conversation flow", () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
   });
 
   afterEach(() => {
@@ -489,8 +490,8 @@ describe("postChatMessage clientTimezone payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
         if (input instanceof Request) {
@@ -507,8 +508,8 @@ describe("postChatMessage clientTimezone payload", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
   });
 
   afterEach(() => {
@@ -578,8 +579,8 @@ describe("postChatMessage scripted payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
         if (input instanceof Request) {
@@ -596,8 +597,8 @@ describe("postChatMessage scripted payload", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
   });
 
   afterEach(() => {
@@ -663,8 +664,8 @@ describe("postChatMessage visibleAppId payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = mock(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = fetchMock(
+      mock(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
         if (input instanceof Request) {
@@ -681,8 +682,8 @@ describe("postChatMessage visibleAppId payload", () => {
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
-      },
-    ) as unknown as typeof fetch;
+      }),
+    );
   });
 
   afterEach(() => {

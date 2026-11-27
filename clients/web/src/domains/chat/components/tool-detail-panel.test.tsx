@@ -899,7 +899,7 @@ describe("ToolDetailPanel", () => {
             },
           },
         ],
-      } as DisplayMessage,
+      },
     ]);
     const { getByText } = render(
       <ToolDetailPanel
@@ -1409,7 +1409,7 @@ describe("ToolDetailPanel", () => {
             role: "assistant",
             contentBlocks: [{ type: "thinking", thinking: "live reasoning" }],
           },
-        ] as DisplayMessage[]),
+        ]),
       });
     });
     const detail = makeDetail({
@@ -1438,7 +1438,7 @@ describe("ToolDetailPanel", () => {
               { type: "thinking", thinking: "live reasoning, extended" },
             ],
           },
-        ] as DisplayMessage[]),
+        ]),
       });
     });
     expect(getByText("live reasoning, extended")).toBeDefined();
@@ -1469,7 +1469,7 @@ describe("ToolDetailPanel", () => {
         contentBlocks: [
           { type: "thinking", thinking: "the full committed reasoning" },
         ],
-      } as DisplayMessage,
+      },
     ]);
     const detail = makeDetail({
       kind: "thinking",
@@ -1501,7 +1501,7 @@ describe("ToolDetailPanel", () => {
               { type: "thinking", thinking: "segment two" },
             ],
           },
-        ] as DisplayMessage[]),
+        ]),
       });
     });
     const detail = makeDetail({

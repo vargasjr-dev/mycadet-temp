@@ -17,7 +17,7 @@ describe("browser_tabs request body validation", () => {
   test("rejects a command outside the enum with BadRequestError", async () => {
     await expect(
       route.handler({
-        body: { command: "frobnicate" } as Record<string, unknown>,
+        body: { command: "frobnicate" },
       }),
     ).rejects.toThrow(BadRequestError);
   });

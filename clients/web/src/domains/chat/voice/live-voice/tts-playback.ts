@@ -257,7 +257,7 @@ export interface AudioContextLike {
 export type AudioContextFactory = () => AudioContextLike;
 
 const defaultAudioContextFactory: AudioContextFactory = () =>
-  createAudioContext() as unknown as AudioContextLike;
+  createAudioContext();
 
 /**
  * `paused` and `readyState` are read for diagnostics only. A route that was

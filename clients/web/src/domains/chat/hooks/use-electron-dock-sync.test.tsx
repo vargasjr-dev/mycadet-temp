@@ -59,7 +59,7 @@ function unread(conversationId: string): Conversation {
   return {
     conversationId,
     hasUnseenLatestAssistantMessage: true,
-  } as Conversation;
+  };
 }
 
 function setup(opts: {
@@ -155,8 +155,8 @@ describe("useElectronDockSync", () => {
     setup({
       conversations: [
         unread("a"),
-        { ...unread("b"), archivedAt: 1234 } as Conversation,
-        { ...unread("c"), conversationType: "background" } as Conversation,
+        { ...unread("b"), archivedAt: 1234 },
+        { ...unread("c"), conversationType: "background" },
       ],
       serverCount: null,
     });

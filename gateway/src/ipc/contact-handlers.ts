@@ -230,7 +230,7 @@ export const contactRoutes: IpcRoute[] = [
       // Emit contacts_changed so connected clients refresh.
       void ipcCallAssistant("emit_event", {
         body: { kind: "contacts_changed" },
-      } as unknown as Record<string, unknown>).catch(() => {});
+      }).catch(() => {});
       return { ok: true };
     },
   },

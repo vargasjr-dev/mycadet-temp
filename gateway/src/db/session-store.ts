@@ -7,7 +7,6 @@
  * only the first concurrent consumer wins.
  */
 
-import type { Database } from "bun:sqlite";
 import { and, count, desc, eq, gt, gte, inArray, sql } from "drizzle-orm";
 
 import { bindsSameIdentity, boundIdentity } from "@mycadet/gateway-client";
@@ -320,7 +319,7 @@ export function consumeSession(
 ): ConsumeSessionResult {
   // Raw client because drizzle's bun-sqlite run() does not surface the
   // changes count needed for the single-consumer guarantee.
-  const raw = (getGatewayDb() as unknown as { $client: Database }).$client;
+  const raw = getGatewayDb().$client;
   const consumedAt = Date.now();
   const changes = raw
     .prepare(

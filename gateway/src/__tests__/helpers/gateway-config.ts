@@ -28,5 +28,5 @@ export function makeGatewayConfig(
     runtimeTimeoutMs: 30000,
     trustProxy: false,
     ...overrides,
-  } as unknown as GatewayConfig;
+  };
 }

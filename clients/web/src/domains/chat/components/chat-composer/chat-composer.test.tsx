@@ -1,3 +1,4 @@
+import { requireElement } from "@/lib/require-element.test-helper";
 /**
  * Tests for the `ChatComposer` extraction.
  *
@@ -2723,13 +2724,22 @@ describe("ChatComposer — live-voice integration", () => {
     // holds the voice-mode button (disabled below), so the send arrow is absent.
     expect(queryByRole("group", { name: "Voice session" })).toBeNull();
     expect(queryByLabelText("Send message")).toBeNull();
-    const textarea = container.querySelector("textarea") as HTMLTextAreaElement;
+    const textarea = requireElement(
+      container.querySelector("textarea"),
+      HTMLTextAreaElement,
+    );
     expect(textarea.disabled).toBe(false);
     // ...except both mic entry points are disabled: the running session owns
     // the microphone, so no second capture flow may start from here
-    const liveVoice = getByLabelText("Start voice mode") as HTMLButtonElement;
+    const liveVoice = requireElement(
+      getByLabelText("Start voice mode"),
+      HTMLButtonElement,
+    );
     expect(liveVoice.disabled).toBe(true);
-    const dictation = getByLabelText("Start voice input") as HTMLButtonElement;
+    const dictation = requireElement(
+      getByLabelText("Start voice input"),
+      HTMLButtonElement,
+    );
     expect(dictation.disabled).toBe(true);
   });
 
@@ -2774,7 +2784,10 @@ describe("ChatComposer — live-voice integration", () => {
 
     // THEN the end control is still actionable and clicking it stops the
     // session through the store-registered controls
-    const end = getByLabelText("End voice session") as HTMLButtonElement;
+    const end = requireElement(
+      getByLabelText("End voice session"),
+      HTMLButtonElement,
+    );
     expect(end.disabled).toBe(false);
     fireEvent.click(end);
     expect(liveControls.stop).toHaveBeenCalledTimes(1);
@@ -2840,7 +2853,10 @@ describe("ChatComposer — live-voice integration", () => {
     // THEN the send arrow is mounted and pressable, even with nothing in the
     // draft: the words the user spoke are the payload, and `submitMessage`
     // waits for them before it reads the composer.
-    const send = getByLabelText("Send message") as HTMLButtonElement;
+    const send = requireElement(
+      getByLabelText("Send message"),
+      HTMLButtonElement,
+    );
     expect(send.disabled).toBe(false);
   });
 
@@ -2891,7 +2907,10 @@ describe("ChatComposer — live-voice integration", () => {
     expect(queryByRole("group", { name: "Voice session" })).toBeNull();
     expect(getByLabelText("Start voice mode")).toBeTruthy();
     // ...with dictation treated as available again (failed = inactive)
-    const dictation = getByLabelText("Start voice input") as HTMLButtonElement;
+    const dictation = requireElement(
+      getByLabelText("Start voice input"),
+      HTMLButtonElement,
+    );
     expect(dictation.disabled).toBe(false);
   });
 
@@ -3006,7 +3025,10 @@ describe("ChatComposer — live-voice integration", () => {
     // THEN the active-UI swap follows the session state, not eligibility:
     // the bar (and its ✕ stop control) stays until teardown completes...
     expect(getByRole("group", { name: "Voice session" })).toBeTruthy();
-    const end = getByLabelText("End voice session") as HTMLButtonElement;
+    const end = requireElement(
+      getByLabelText("End voice session"),
+      HTMLButtonElement,
+    );
     expect(end.disabled).toBe(false);
     // ...while the entry-point button stays gated off
     expect(queryByLabelText("Start voice mode")).toBeNull();
@@ -3102,7 +3124,10 @@ describe("ChatComposer — text area during a live-voice session", () => {
       "this is a text that I am just speaking",
     );
     expect(textareaRowHidden(container)).toBe(false);
-    const textarea = container.querySelector("textarea") as HTMLTextAreaElement;
+    const textarea = requireElement(
+      container.querySelector("textarea"),
+      HTMLTextAreaElement,
+    );
     expect(textarea.disabled).toBe(false);
   });
 
@@ -3121,7 +3146,10 @@ describe("ChatComposer — text area during a live-voice session", () => {
     // and thread B's own row is not a session surface
     expect(queryByLabelText("Voice transcript")).toBeNull();
     expect(textareaRowHidden(container)).toBe(false);
-    const textarea = container.querySelector("textarea") as HTMLTextAreaElement;
+    const textarea = requireElement(
+      container.querySelector("textarea"),
+      HTMLTextAreaElement,
+    );
     expect(textarea.disabled).toBe(false);
   });
 
@@ -3137,7 +3165,10 @@ describe("ChatComposer — text area during a live-voice session", () => {
     // is there with an editable textarea
     expect(queryByLabelText("Voice transcript")).toBeNull();
     expect(textareaRowHidden(container)).toBe(false);
-    const textarea = container.querySelector("textarea") as HTMLTextAreaElement;
+    const textarea = requireElement(
+      container.querySelector("textarea"),
+      HTMLTextAreaElement,
+    );
     expect(textarea.disabled).toBe(false);
   });
 

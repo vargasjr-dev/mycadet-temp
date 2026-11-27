@@ -169,7 +169,7 @@ describe("the replacement turn on the wire", () => {
     env(11, {
       type: "generation_cancelled",
       conversationId: CONV,
-    } as AssistantEvent),
+    }),
     env(12, {
       type: "assistant_activity_state",
       conversationId: CONV,
@@ -182,23 +182,23 @@ describe("the replacement turn on the wire", () => {
       conversationId: CONV,
       messageId: "u2",
       text: "What is 17 times 23?",
-    } as AssistantEvent),
+    }),
     env(14, {
       type: "assistant_turn_start",
       conversationId: CONV,
       messageId: "msg-b",
-    } as AssistantEvent),
+    }),
     env(15, {
       type: "assistant_text_delta",
       conversationId: CONV,
       messageId: "msg-b",
       text: "391.",
-    } as AssistantEvent),
+    }),
     env(16, {
       type: "message_complete",
       conversationId: CONV,
       messageId: "msg-b",
-    } as AssistantEvent),
+    }),
   ];
 
   test("the reply renders under its own row and the composer returns to idle", () => {

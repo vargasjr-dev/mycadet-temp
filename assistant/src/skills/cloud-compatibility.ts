@@ -15,7 +15,7 @@ export function normalizeSkillPlatforms(
   const platforms = [
     ...new Set(
       value.filter((platform): platform is SkillPlatform =>
-        (SKILL_PLATFORM_VALUES as readonly unknown[]).includes(platform),
+        SKILL_PLATFORM_VALUES.includes(platform),
       ),
     ),
   ];

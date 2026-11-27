@@ -7,12 +7,6 @@ import {
   useGroupsByGroupIdPatchMutation,
   useGroupsPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import type { Options } from "@/generated/daemon/sdk.gen";
-import type {
-  GroupsByGroupIdDeleteData,
-  GroupsByGroupIdPatchData,
-  GroupsPostData,
-} from "@/generated/daemon/types.gen";
 
 import {
   appendGroup,
@@ -112,7 +106,7 @@ export function useConversationGroupActions({
           // callers pass `undefined` against assistants that predate it,
           // which keeps the field off the wire.
           body: icon != null ? { name: trimmed, icon } : { name: trimmed },
-        } as Options<GroupsPostData>);
+        });
         replaceOptimisticGroup(queryClient, assistantId, optimisticId, created);
         return created;
       } catch {
@@ -155,7 +149,7 @@ export function useConversationGroupActions({
         await patchGroupAsync({
           path: { assistant_id: assistantId, groupId },
           body: { name: trimmed, ...(iconChanged ? { icon } : {}) },
-        } as Options<GroupsByGroupIdPatchData>);
+        });
       } catch {
         patchGroup(queryClient, assistantId, groupId, {
           name: currentName,
@@ -195,7 +189,7 @@ export function useConversationGroupActions({
       try {
         await deleteGroupAsync({
           path: { assistant_id: assistantId, groupId },
-        } as Options<GroupsByGroupIdDeleteData>);
+        });
       } catch {
         // Full rollback not possible — the group's prior state is destroyed
         // by `deleteGroupAndResetConversations`. Invalidate both caches so

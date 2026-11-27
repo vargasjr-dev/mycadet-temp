@@ -62,9 +62,7 @@ function buildAdvisorLoop(
 describe("AgentLoop — provider-native web search gate", () => {
   test("attaches the native web_search server tool when the provider supports it", async () => {
     const { provider, calls } = createMockProvider([endTurn("guidance")]);
-    (
-      provider as { supportsNativeWebSearch?: boolean }
-    ).supportsNativeWebSearch = true;
+    provider.supportsNativeWebSearch = true;
 
     const loop = buildAdvisorLoop(provider, true);
     await loop.run({ ...baseRun, messages: userMessages });
@@ -94,9 +92,7 @@ describe("AgentLoop — provider-native web search gate", () => {
 
   test("attaches nothing when the flag is off, even on a native provider", async () => {
     const { provider, calls } = createMockProvider([endTurn("guidance")]);
-    (
-      provider as { supportsNativeWebSearch?: boolean }
-    ).supportsNativeWebSearch = true;
+    provider.supportsNativeWebSearch = true;
 
     const loop = buildAdvisorLoop(provider, false);
     await loop.run({ ...baseRun, messages: userMessages });
@@ -109,9 +105,7 @@ describe("AgentLoop — provider-native web search gate", () => {
 
   test("does not duplicate web_search when a tool of that name is already present", async () => {
     const { provider, calls } = createMockProvider([endTurn("guidance")]);
-    (
-      provider as { supportsNativeWebSearch?: boolean }
-    ).supportsNativeWebSearch = true;
+    provider.supportsNativeWebSearch = true;
 
     // A loop that already exposes a `web_search` client tool (e.g. researcher
     // role). The gate must not append a second `web_search` entry.
@@ -139,17 +133,11 @@ describe("AgentLoop — provider-native web search gate", () => {
   test("false positive: static flag is native but the ROUTED target is not — attaches nothing", async () => {
     const { provider, calls } = createMockProvider([endTurn("guidance")]);
     // The construction-time default supports native search…
-    (
-      provider as { supportsNativeWebSearch?: boolean }
-    ).supportsNativeWebSearch = true;
+    provider.supportsNativeWebSearch = true;
     // …but the advisorProfile routes `subagentSpawn` to a provider/model that
     // does NOT. The routing-aware probe wins, so no unexecutable client tool is
     // surfaced to the otherwise tool-less advisor.
-    (
-      provider as {
-        supportsNativeWebSearchFor?: (o?: SendMessageOptions) => boolean;
-      }
-    ).supportsNativeWebSearchFor = () => false;
+    provider.supportsNativeWebSearchFor = () => false;
 
     const loop = buildAdvisorLoop(provider, true);
     await loop.run({ ...baseRun, messages: userMessages });
@@ -163,11 +151,7 @@ describe("AgentLoop — provider-native web search gate", () => {
     const { provider, calls } = createMockProvider([endTurn("guidance")]);
     // The construction-time default lacks native search (flag absent/falsy)…
     // …but the advisorProfile routes to a provider/model that has it.
-    (
-      provider as {
-        supportsNativeWebSearchFor?: (o?: SendMessageOptions) => boolean;
-      }
-    ).supportsNativeWebSearchFor = () => true;
+    provider.supportsNativeWebSearchFor = () => true;
 
     const loop = buildAdvisorLoop(provider, true);
     await loop.run({ ...baseRun, messages: userMessages });
@@ -180,11 +164,7 @@ describe("AgentLoop — provider-native web search gate", () => {
   test("the routing probe receives the loop's callSite", async () => {
     const { provider, calls } = createMockProvider([endTurn("guidance")]);
     const probeOptions: (SendMessageOptions | undefined)[] = [];
-    (
-      provider as {
-        supportsNativeWebSearchFor?: (o?: SendMessageOptions) => boolean;
-      }
-    ).supportsNativeWebSearchFor = (o) => {
+    provider.supportsNativeWebSearchFor = (o) => {
       probeOptions.push(o);
       return true;
     };

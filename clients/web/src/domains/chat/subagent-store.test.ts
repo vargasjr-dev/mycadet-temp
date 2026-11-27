@@ -666,7 +666,7 @@ describe("receiveEvent", () => {
             results: [],
           },
         },
-      } as SubagentInnerEvent,
+      },
       timestamp: NOW + 700,
     });
 
@@ -2645,7 +2645,7 @@ describe("reconcileFromDaemon", () => {
       event: {
         type: "assistant_text_delta",
         content: "hello",
-      } as SubagentInnerEvent,
+      },
       timestamp: NOW,
     });
     reconcileReply = {
@@ -2679,7 +2679,7 @@ describe("reconcileFromDaemon", () => {
       event: {
         type: "assistant_text_delta",
         content: "hello",
-      } as SubagentInnerEvent,
+      },
       timestamp: NOW,
     });
     getState().updateUsage({

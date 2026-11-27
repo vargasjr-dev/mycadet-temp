@@ -205,7 +205,7 @@ export async function ipcCallAssistantRaw(
     };
 
     const reader = new IpcFrameReader(
-      (envelope, binary) => settleEnvelope(envelope as IpcResponse, binary),
+      (envelope, binary) => settleEnvelope(envelope, binary),
       // A malformed frame is unrecoverable for a one-shot call: the stream
       // position is lost, so fail rather than wait out the timeout.
       (err) => finish(undefined, new IpcTransportError(err.message)),
@@ -221,7 +221,7 @@ export async function ipcCallAssistantRaw(
           const envelope = streamEnvelope;
           streamEnvelope = undefined;
           if (!envelope || envelope.id !== reqId) return;
-          settleEnvelope(envelope as IpcResponse, concatChunks(streamChunks));
+          settleEnvelope(envelope, concatChunks(streamChunks));
           streamChunks = [];
         },
       },
@@ -318,7 +318,7 @@ export async function ipcSuggestTrustRule(
 ): Promise<SuggestTrustRuleResponse> {
   const result = await ipcCallAssistant("suggest_trust_rule", {
     body: params,
-  } as unknown as Record<string, unknown>);
+  });
   if (!result || typeof result !== "object" || Array.isArray(result)) {
     throw new Error("ipcSuggestTrustRule: unexpected response shape");
   }

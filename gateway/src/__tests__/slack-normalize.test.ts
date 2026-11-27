@@ -34,7 +34,7 @@ function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
     runtimeTimeoutMs: 30000,
     trustProxy: false,
     ...overrides,
-  } as GatewayConfig;
+  };
 }
 
 function makeEvent(
@@ -207,9 +207,7 @@ describe("normalizeSlackAppMention", () => {
     const result = await normalizeSlackAppMention(event, "evt-012", config);
 
     expect(result).not.toBeNull();
-    expect(result!.event.raw).toEqual(
-      event as unknown as Record<string, unknown>,
-    );
+    expect(result!.event.raw).toEqual(event);
   });
 });
 

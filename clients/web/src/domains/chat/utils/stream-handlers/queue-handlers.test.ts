@@ -40,7 +40,7 @@ describe("handleMessageQueued", () => {
       ctx.setOptimisticSends as unknown as ReturnType<typeof Object>
     ).mock.calls[0][0] as (prev: DisplayMessage[]) => DisplayMessage[];
     const updated = updater([
-      { id: "stable-1", role: "user", queuePosition: 0 } as DisplayMessage,
+      { id: "stable-1", role: "user", queuePosition: 0 },
     ]);
     expect(updated[0]?.queuePosition).toBe(2);
   });
@@ -53,9 +53,7 @@ describe("handleMessageQueued", () => {
     // queued row the client can neither cancel nor steer.
     const ctx = makeCtx({
       pendingQueuedMessageIds: [],
-      getOptimisticSends: () => [
-        { id: "cmid-1", role: "user" } as DisplayMessage,
-      ],
+      getOptimisticSends: () => [{ id: "cmid-1", role: "user" }],
     });
 
     handleMessageQueued(
@@ -78,9 +76,7 @@ describe("handleMessageQueued", () => {
     // optimistic row, so it must not touch local state.
     const ctx = makeCtx({
       pendingQueuedMessageIds: [],
-      getOptimisticSends: () => [
-        { id: "mine-1", role: "user" } as DisplayMessage,
-      ],
+      getOptimisticSends: () => [{ id: "mine-1", role: "user" }],
     });
 
     handleMessageQueued(
@@ -316,7 +312,7 @@ describe("handleMessageRequeued", () => {
         id: "stable-1",
         role: "user",
         clientMessageId: "nonce-1",
-      } as DisplayMessage,
+      },
     ]);
     expect(updated[0]?.queueStatus).toBe("queued");
     expect(updated[0]?.queuePosition).toBe(1);

@@ -57,9 +57,9 @@ export function through(points: readonly Point[], closed: boolean): string {
   }
   const at = (i: number): Point => {
     if (closed) {
-      return points[(i + points.length) % points.length] as Point;
+      return points[(i + points.length) % points.length];
     }
-    return points[Math.min(Math.max(i, 0), points.length - 1)] as Point;
+    return points[Math.min(Math.max(i, 0), points.length - 1)];
   };
   const first = at(0);
   let d = `M ${round(first.x)} ${round(first.y)}`;

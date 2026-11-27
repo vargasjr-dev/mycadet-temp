@@ -954,10 +954,10 @@ export function installCadetDebugApi(
   chatApi: ChatDebugApi,
   flagsApi: CadetDebugFlagsApi,
 ): () => void {
-  const win = window as Omit<Window, typeof ROOT_NS> & {
+  const win: Omit<Window, typeof ROOT_NS> & {
     [ROOT_NS]?: CadetDebugRoot;
-  };
-  const existing: CadetDebugRoot = (win[ROOT_NS] ?? {}) as CadetDebugRoot;
+  } = window;
+  const existing: CadetDebugRoot = win[ROOT_NS] ?? {};
   existing[EVENTS_NS] = eventsDebugApi;
   existing[CHAT_NS] = chatApi;
   existing[API_NS] = assistantApi;

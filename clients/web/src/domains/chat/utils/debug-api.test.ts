@@ -104,9 +104,9 @@ function makeRefs(overrides: MakeRefsOverrides = {}): ChatDebugRefs {
     ...(pendingInteractions ?? {}),
   };
   return {
-    sanitizedMessagesRef: { current: [] } as MutableRefObject<DisplayMessage[]>,
-    transcriptItemsRef: { current: [] } as MutableRefObject<TranscriptItem[]>,
-    transcriptRef: { current: null as TranscriptHandle | null },
+    sanitizedMessagesRef: { current: [] },
+    transcriptItemsRef: { current: [] },
+    transcriptRef: { current: null },
 
     getAssistantId: () => "asst-1",
     getTurnState: () => turnState,
@@ -135,9 +135,9 @@ describe("createChatDebugApi.getClientMessages", () => {
 
   test("returns the underlying DisplayMessage objects untouched", () => {
     const message = fakeDisplayMessage({ ...textBody("hello world") });
-    const sanitizedMessagesRef = {
+    const sanitizedMessagesRef: MutableRefObject<DisplayMessage[]> = {
       current: [message],
-    } as MutableRefObject<DisplayMessage[]>;
+    };
     const api = createChatDebugApi(makeRefs({ sanitizedMessagesRef }));
     const result = api.getClientMessages();
     expect(result).toHaveLength(1);
@@ -149,9 +149,9 @@ describe("createChatDebugApi.getClientMessages", () => {
     const items: DisplayMessage[] = Array.from({ length: 30 }, (_, i) =>
       fakeDisplayMessage({ id: `id-${i}` }),
     );
-    const sanitizedMessagesRef = {
+    const sanitizedMessagesRef: MutableRefObject<DisplayMessage[]> = {
       current: items,
-    } as MutableRefObject<DisplayMessage[]>;
+    };
     const api = createChatDebugApi(makeRefs({ sanitizedMessagesRef }));
     const result = api.getClientMessages(5);
     expect(result).toHaveLength(5);
@@ -163,9 +163,9 @@ describe("createChatDebugApi.getClientMessages", () => {
     const items: DisplayMessage[] = Array.from({ length: 30 }, (_, i) =>
       fakeDisplayMessage({ id: `id-${i}` }),
     );
-    const sanitizedMessagesRef = {
+    const sanitizedMessagesRef: MutableRefObject<DisplayMessage[]> = {
       current: items,
-    } as MutableRefObject<DisplayMessage[]>;
+    };
     const api = createChatDebugApi(makeRefs({ sanitizedMessagesRef }));
     const result = api.getClientMessages();
     expect(result).toHaveLength(20);
@@ -176,9 +176,9 @@ describe("createChatDebugApi.getClientMessages", () => {
     const items: DisplayMessage[] = Array.from({ length: 5 }, (_, i) =>
       fakeDisplayMessage({ id: `id-${i}` }),
     );
-    const sanitizedMessagesRef = {
+    const sanitizedMessagesRef: MutableRefObject<DisplayMessage[]> = {
       current: items,
-    } as MutableRefObject<DisplayMessage[]>;
+    };
     const api = createChatDebugApi(makeRefs({ sanitizedMessagesRef }));
     const result = api.getClientMessages(20);
     expect(result).toHaveLength(5);
@@ -189,9 +189,9 @@ describe("createChatDebugApi.getClientMessages", () => {
     const items: DisplayMessage[] = Array.from({ length: 30 }, (_, i) =>
       fakeDisplayMessage({ id: `id-${i}` }),
     );
-    const sanitizedMessagesRef = {
+    const sanitizedMessagesRef: MutableRefObject<DisplayMessage[]> = {
       current: items,
-    } as MutableRefObject<DisplayMessage[]>;
+    };
     const api = createChatDebugApi(makeRefs({ sanitizedMessagesRef }));
     expect(api.getClientMessages(-1)).toHaveLength(20);
     expect(api.getClientMessages(NaN)).toHaveLength(20);
@@ -207,7 +207,7 @@ describe("createChatDebugApi.getClientMessages", () => {
       makeRefs({
         sanitizedMessagesRef: {
           current: [sanitizedOnly],
-        } as MutableRefObject<DisplayMessage[]>,
+        },
       }),
     );
     const result = api.getClientMessages();
@@ -240,9 +240,7 @@ describe("createChatDebugApi.getTranscriptItems", () => {
     ];
     const api = createChatDebugApi(
       makeRefs({
-        transcriptItemsRef: { current: items } as MutableRefObject<
-          TranscriptItem[]
-        >,
+        transcriptItemsRef: { current: items },
       }),
     );
     expect(api.getTranscriptItems()).toBe(items);
@@ -268,9 +266,7 @@ describe("createChatDebugApi.getTranscriptItems", () => {
     ];
     const api = createChatDebugApi(
       makeRefs({
-        transcriptItemsRef: { current: items } as MutableRefObject<
-          TranscriptItem[]
-        >,
+        transcriptItemsRef: { current: items },
       }),
     );
     const result = api.getTranscriptItems();
@@ -292,12 +288,10 @@ describe("createChatDebugApi.getTranscriptItems", () => {
       makeRefs({
         sanitizedMessagesRef: {
           current: [msg],
-        } as MutableRefObject<DisplayMessage[]>,
+        },
         // transcriptItemsRef intentionally empty — if the impl projected
         // from sanitizedMessagesRef, we'd get a non-empty result.
-        transcriptItemsRef: { current: [] } as MutableRefObject<
-          TranscriptItem[]
-        >,
+        transcriptItemsRef: { current: [] },
       }),
     );
     expect(api.getTranscriptItems()).toEqual([]);
@@ -454,7 +448,7 @@ describe("createChatDebugApi.thinkingIndicator", () => {
     for (const { field, expected } of cases) {
       const refs = makeRefs({
         turn: baseTurn,
-        uiContext: { [field]: true } as Partial<UIContext>,
+        uiContext: { [field]: true },
       });
       const api = createChatDebugApi(refs);
       const snapshot = api.thinkingIndicator();
@@ -677,7 +671,7 @@ describe("createChatDebugApi.help", () => {
       },
     };
     const originalLog = console.log;
-    console.log = consoleSpy.log as unknown as typeof console.log;
+    console.log = consoleSpy.log;
     api.help();
     console.log = originalLog;
 
@@ -937,7 +931,7 @@ describe("installCadetDebugApi", () => {
   });
 
   test("preserves sibling debug namespaces when uninstalling", () => {
-    const win = globalThis as unknown as { window: DebugWindow };
+    const win: { window: DebugWindow } = globalThis;
     win.window._cadetDebug = { other: "keep" };
 
     const api = createChatDebugApi(makeRefs());
@@ -1077,7 +1071,7 @@ describe("createChatDebugApi.getScrollState", () => {
               message: fakeDisplayMessage({ id: "a" }),
             },
           ],
-        } as MutableRefObject<TranscriptItem[]>,
+        },
         getScrollPagination: () => ({ hasMore: true, isLoadingOlder: false }),
       }),
     );
@@ -1152,7 +1146,7 @@ describe("createChatDebugApi.getScrollState", () => {
               message: fakeDisplayMessage({ id: "c" }),
             },
           ],
-        } as MutableRefObject<TranscriptItem[]>,
+        },
         getScrollPagination: () => ({ hasMore: true, isLoadingOlder: false }),
       }),
     );

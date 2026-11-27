@@ -15,11 +15,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 
-import type { Options } from "@/generated/daemon/sdk.gen";
 import type {
-  PluginsByNameGetData,
   PluginsByNameGetResponse,
-  PluginsByNameInspectGetData,
   PluginsByNameInspectGetResponse,
 } from "@/generated/daemon/types.gen";
 
@@ -161,13 +158,13 @@ function renderPluginDetail({ localClean = true }: RenderArgs = {}) {
   client.setQueryData(
     pluginsByNameGetQueryKey({
       path: { assistant_id: ASSISTANT_ID, name: NAME },
-    } as Options<PluginsByNameGetData>),
+    }),
     installedDetail(NAME),
   );
   client.setQueryData(
     pluginsByNameInspectGetQueryKey({
       path: { assistant_id: ASSISTANT_ID, name: NAME },
-    } as Options<PluginsByNameInspectGetData>),
+    }),
     inspectResponse(NAME, localClean),
   );
   const invalidateSpy = mock(client.invalidateQueries.bind(client));
@@ -225,7 +222,7 @@ describe("usePluginDetail", () => {
     client.setQueryData(
       pluginsByNameGetQueryKey({
         path: { assistant_id: ASSISTANT_ID, name: NAME },
-      } as Options<PluginsByNameGetData>),
+      }),
       installedDetail(NAME),
     );
     const invalidateSpy = mock(client.invalidateQueries.bind(client));

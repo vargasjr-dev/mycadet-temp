@@ -84,7 +84,7 @@ function makeConfig(): GatewayConfig {
     runtimeProxyRequireAuth: false,
     runtimeTimeoutMs: 30000,
     trustProxy: false,
-  } as unknown as GatewayConfig;
+  };
 }
 
 function makeSlackEvent(

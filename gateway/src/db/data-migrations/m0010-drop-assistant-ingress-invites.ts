@@ -31,7 +31,7 @@ import type { MigrationResult } from "./index.js";
 const log = getLogger("m0010-drop-assistant-ingress-invites");
 
 function getRawGatewayDb(): Database {
-  return (getGatewayDb() as unknown as { $client: Database }).$client;
+  return getGatewayDb().$client;
 }
 
 /** `one_time_migrations` key the runner records when m0009 completes. */

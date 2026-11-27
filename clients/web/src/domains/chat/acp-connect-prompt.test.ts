@@ -29,7 +29,7 @@ import { appendEventToMessages } from "@/domains/chat/transcript/rolling-snapsho
 import { makeCtx } from "@/domains/chat/utils/stream-handlers/test-helpers";
 import { clearUserScopedOverrides } from "@/utils/typed-storage";
 import type { DisplayMessage } from "@/domains/chat/types/types";
-import type { AssistantEvent } from "@/types/event-types";
+
 import type { ToolResultEvent } from "@mycadet/assistant-api";
 
 const MISSING_TOKEN = "acp_claude_oauth_missing";
@@ -247,11 +247,7 @@ describe("acp connect prompt — raised live, never by reseed", () => {
     // cold reload is the reseed hook's job (`extractWirePendingAcpConnect`),
     // not the reducer's.
     const messages: DisplayMessage[] = [];
-    appendEventToMessages(
-      messages,
-      missingTokenToolResult() as unknown as AssistantEvent,
-      1,
-    );
+    appendEventToMessages(messages, missingTokenToolResult(), 1);
 
     // Prompt still exactly as the live handler left it — the reducer didn't
     // clear it (survives mid-turn) and didn't re-raise it (no duplicate).
@@ -266,11 +262,7 @@ describe("acp connect prompt — raised live, never by reseed", () => {
     // it from the persisted marker; the reducer alone must stay a no-op so the
     // two paths don't double-raise.
     expect(useInteractionStore.getState().pendingAcpConnect).toBeNull();
-    appendEventToMessages(
-      [],
-      missingTokenToolResult() as unknown as AssistantEvent,
-      1,
-    );
+    appendEventToMessages([], missingTokenToolResult(), 1);
     expect(useInteractionStore.getState().pendingAcpConnect).toBeNull();
   });
 });

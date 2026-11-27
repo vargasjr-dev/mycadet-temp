@@ -548,13 +548,13 @@ describe("handleUserMessageEcho", () => {
           clientMessageId: "client-1",
           role: "user",
           isOptimistic: true,
-        } as DisplayMessage,
+        },
         {
           id: "client-2",
           clientMessageId: "client-2",
           role: "user",
           isOptimistic: true,
-        } as DisplayMessage,
+        },
       ],
     );
     expect(next.map((m) => m.id)).toEqual(["client-2"]);
@@ -588,7 +588,7 @@ describe("handleUserMessageEcho", () => {
               previewUrl: "blob:preview",
             },
           ],
-        } as DisplayMessage,
+        },
       ],
     );
     expect(next).toHaveLength(1);
@@ -626,7 +626,7 @@ describe("handleUserMessageEcho", () => {
               previewUrl: "blob:preview",
             },
           ],
-        } as DisplayMessage,
+        },
       ],
     );
     expect(next).toEqual([]);
@@ -654,8 +654,8 @@ describe("handleUserMessageEcho", () => {
     const next = applyEcho(
       { type: "user_message_echo", text: "Hello", messageId: "msg-1" },
       [
-        { id: "keep", role: "assistant" } as DisplayMessage,
-        { id: "opt-1", role: "user", isOptimistic: true } as DisplayMessage,
+        { id: "keep", role: "assistant" },
+        { id: "opt-1", role: "user", isOptimistic: true },
       ],
     );
     expect(next.map((m) => m.id)).toEqual(["keep"]);

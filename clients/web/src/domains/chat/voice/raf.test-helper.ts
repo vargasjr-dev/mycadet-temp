@@ -43,16 +43,16 @@ export function installRafTestHarness(): RafTestHarness {
   const originalRaf = globalThis.requestAnimationFrame;
   const originalCancelRaf = globalThis.cancelAnimationFrame;
 
-  globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+  globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
     requests += 1;
     const id = nextId++;
     callbacks.set(id, cb);
     return id;
-  }) as typeof globalThis.requestAnimationFrame;
-  globalThis.cancelAnimationFrame = ((id: number) => {
+  };
+  globalThis.cancelAnimationFrame = (id: number) => {
     canceled.push(id);
     callbacks.delete(id);
-  }) as typeof globalThis.cancelAnimationFrame;
+  };
 
   const fireFrame = (timestamp = performance.now()) => {
     const pending = [...callbacks.values()];

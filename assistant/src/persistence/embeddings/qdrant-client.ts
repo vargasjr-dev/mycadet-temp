@@ -288,7 +288,7 @@ export class CadetQdrantClient {
             .nullable();
           const namedParse = namedVectorsShape.safeParse(vectorsConfig);
           const currentSize = isUnnamedVectors
-            ? (vectorsConfig as { size?: number }).size
+            ? vectorsConfig.size
             : namedParse.success
               ? namedParse.data?.dense?.size
               : undefined;

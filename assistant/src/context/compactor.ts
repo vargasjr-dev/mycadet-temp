@@ -1932,7 +1932,7 @@ export async function runEmergencyCompaction(
       summaryChars: summaryText.length,
       prefixTruncated:
         prefix[0]?.content?.[0]?.type === "text" &&
-        (prefix[0].content[0] as { text: string }).text.includes("truncated"),
+        prefix[0].content[0].text.includes("truncated"),
     },
     "Applied emergency mid-turn compaction",
   );

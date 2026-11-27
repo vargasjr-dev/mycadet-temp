@@ -127,7 +127,7 @@ export function repairHistory(messages: Message[]): RepairResult {
           }
         }
         if (b.type === "web_search_tool_result") {
-          const id = (b as { tool_use_id: string }).tool_use_id;
+          const id = b.tool_use_id;
           if (!serverToolPairing.resolvedPairIds.has(id)) {
             orphanedWebSearchResultIds.add(id);
           }
@@ -140,9 +140,7 @@ export function repairHistory(messages: Message[]): RepairResult {
         for (const block of cleanedContent) {
           if (
             block.type === "web_search_tool_result" &&
-            orphanedWebSearchResultIds.has(
-              (block as { tool_use_id: string }).tool_use_id,
-            )
+            orphanedWebSearchResultIds.has(block.tool_use_id)
           ) {
             repairedContent.push(downgradeResult(block));
             stats.orphanToolResultsDowngraded++;

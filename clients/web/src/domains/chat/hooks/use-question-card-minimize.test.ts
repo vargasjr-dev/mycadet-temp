@@ -53,7 +53,7 @@ function finger(clientY: number): FakeTouch {
 const START_Y = 200;
 
 function setPointer(coarse: boolean): void {
-  window.matchMedia = ((query: string) => ({
+  window.matchMedia = (query: string) => ({
     matches: coarse && query.includes("coarse"),
     media: query,
     onchange: null,
@@ -62,7 +62,7 @@ function setPointer(coarse: boolean): void {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+  });
 }
 
 beforeEach(() => {

@@ -50,7 +50,7 @@ function makeTouchEvent(
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  window.matchMedia = ((query: string) => ({
+  window.matchMedia = (query: string) => ({
     matches: query.includes("coarse"),
     media: query,
     onchange: null,
@@ -59,11 +59,11 @@ beforeEach(() => {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+  });
 });
 
 afterEach(() => {
-  window.matchMedia = ((query: string) => ({
+  window.matchMedia = (query: string) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -72,7 +72,7 @@ afterEach(() => {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+  });
 });
 
 // ---------------------------------------------------------------------------

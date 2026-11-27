@@ -42,11 +42,11 @@ export function googleThoughtSignatureFromUnknown(
   if (!isObjectRecord(value)) {
     return undefined;
   }
-  const extra = (value as { extra_content?: unknown }).extra_content;
+  const extra = value.extra_content;
   if (!isObjectRecord(extra)) {
     return undefined;
   }
-  return googleObjectThoughtSignature((extra as { google?: unknown }).google);
+  return googleObjectThoughtSignature(extra.google);
 }
 
 export function toolUseMetadataFromChatCompletionsDelta(

@@ -100,12 +100,12 @@ async function fetchInstalled(
   // Older daemons return 404 when the list endpoint isn't implemented yet —
   // degrade to an empty installed list.
   if (status === 404) {
-    return { plugins: [] } as PluginsGetResponse;
+    return { plugins: [] };
   }
   if (!result.response?.ok) {
     throw new Error(t("usePluginsList.failureMessage", { ns: "intelligence" }));
   }
-  return result.data ?? ({ plugins: [] } as PluginsGetResponse);
+  return result.data ?? { plugins: [] };
 }
 
 /**

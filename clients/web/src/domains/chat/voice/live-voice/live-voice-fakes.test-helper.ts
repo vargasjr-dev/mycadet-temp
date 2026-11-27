@@ -77,8 +77,8 @@ export class FakeClient {
       set = new Set();
       this.handlers.set(event, set);
     }
-    set.add(handler as (payload: never) => void);
-    return () => set?.delete(handler as (payload: never) => void);
+    set.add(handler);
+    return () => set?.delete(handler);
   }
 
   async connect(args: LiveVoiceConnectArgs): Promise<void> {

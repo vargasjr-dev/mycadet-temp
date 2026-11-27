@@ -219,9 +219,7 @@ async function readParkedPromptTarget(
     });
     // A daemon that answers with no object leaves nothing to read the target
     // from, which is the same position as an unreachable one.
-    return result && typeof result === "object"
-      ? (result as ParkedPromptTarget)
-      : null;
+    return result && typeof result === "object" ? result : null;
   } catch (err) {
     log.warn(
       { err, requestId },
@@ -755,7 +753,7 @@ function channelOwnedByAnotherContact(
 function emitContactsChanged(): void {
   void ipcCallAssistant("emit_event", {
     body: { kind: "contacts_changed" },
-  } as unknown as Record<string, unknown>).catch(() => {});
+  }).catch(() => {});
 }
 
 /**

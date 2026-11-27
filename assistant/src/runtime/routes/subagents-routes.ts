@@ -140,7 +140,7 @@ export function parseSubagentMessages(
           typeof block.content === "string"
             ? block.content
             : Array.isArray(block.content)
-              ? (block.content as unknown[])
+              ? block.content
                   .filter((b): b is Record<string, unknown> => isRecord(b))
                   .map((b) => {
                     if (b.type === "text" && typeof b.text === "string") {

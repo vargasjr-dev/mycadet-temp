@@ -1,3 +1,4 @@
+import { requireElement } from "@/lib/require-element.test-helper";
 /**
  * Tests for the `ChatBody` layout behavior.
  *
@@ -399,7 +400,7 @@ describe("ChatBody — banner overlay suppression (LUM-1566)", () => {
       observe() {}
       unobserve() {}
       disconnect() {}
-    } as typeof ResizeObserver;
+    };
 
     try {
       const { rerender } = render(
@@ -525,10 +526,6 @@ describe("ChatBody — startersSlot rendering", () => {
   });
 });
 
-
-
-
-
 describe("ChatBody - the empty-state scroll container never carries alignment", () => {
   // Pins the scrollability STRUCTURE, not rendered geometry (happy-dom
   // performs no layout): with `justify-end` on the `overflow-y-auto`
@@ -538,7 +535,7 @@ describe("ChatBody - the empty-state scroll container never carries alignment", 
   // conditional alignment must live on the inner `min-h-full` wrapper.
 
   const outerOf = (container: HTMLElement) =>
-    container.firstElementChild as HTMLElement;
+    requireElement(container.firstElementChild, HTMLElement);
 
   afterEach(() => {
     keyboardOpen = false;
@@ -553,7 +550,7 @@ describe("ChatBody - the empty-state scroll container never carries alignment", 
     expect(outer.className).toContain("overflow-y-auto");
     expect(outer.className).not.toContain("justify-end");
 
-    const inner = outer.firstElementChild as HTMLElement;
+    const inner = requireElement(outer.firstElementChild, HTMLElement);
     expect(inner.className).toContain("min-h-full");
     expect(inner.className).toContain("justify-end");
   });
@@ -566,7 +563,7 @@ describe("ChatBody - the empty-state scroll container never carries alignment", 
     expect(outer.className).toContain("overflow-y-auto");
     expect(outer.className).not.toContain("[justify-content:safe_center]");
 
-    const inner = outer.firstElementChild as HTMLElement;
+    const inner = requireElement(outer.firstElementChild, HTMLElement);
     expect(inner.className).toContain("min-h-full");
     expect(inner.className).toContain("[justify-content:safe_center]");
   });

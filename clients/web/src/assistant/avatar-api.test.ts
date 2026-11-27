@@ -184,9 +184,7 @@ describe("fetchAvatarState", () => {
   });
 
   test("returns null on a transport throw", async () => {
-    client.get = mock(() =>
-      Promise.reject(new Error("network down")),
-    ) as typeof client.get;
+    client.get = mock(() => Promise.reject(new Error("network down")));
 
     expect(await fetchAvatarState("asst-1")).toBeNull();
   });
@@ -200,9 +198,7 @@ describe("fetchAvatarImageUrlResult", () => {
   });
 
   test("fetches the PNG via the daemon workspace file-content route as a blob", async () => {
-    URL.createObjectURL = mock(
-      () => "blob:avatar",
-    ) as typeof URL.createObjectURL;
+    URL.createObjectURL = mock(() => "blob:avatar");
     stubGet({
       data: new Blob([new Uint8Array([137, 80, 78, 71])], {
         type: "image/png",
@@ -252,9 +248,7 @@ describe("fetchAvatarImageUrlResult", () => {
   });
 
   test("a transport throw is failed", async () => {
-    client.get = mock(() =>
-      Promise.reject(new Error("network down")),
-    ) as typeof client.get;
+    client.get = mock(() => Promise.reject(new Error("network down")));
 
     expect(await fetchAvatarImageUrlResult("asst-1")).toEqual({
       status: "failed",
@@ -370,9 +364,7 @@ describe("uploadAvatarImage (manifest assistants)", () => {
   });
 
   test("returns false on a transport throw", async () => {
-    client.post = mock(() =>
-      Promise.reject(new Error("network down")),
-    ) as typeof client.post;
+    client.post = mock(() => Promise.reject(new Error("network down")));
 
     expect(await uploadAvatarImage("asst-1", pngFile())).toBe(false);
   });

@@ -348,7 +348,7 @@ export function createChannelReplySession(params: {
       coalesceTimer = undefined;
       flush();
     }, coalesceMs);
-    (coalesceTimer as { unref?: () => void }).unref?.();
+    coalesceTimer.unref?.();
   };
 
   const countSegmentBoundary = (): void => {

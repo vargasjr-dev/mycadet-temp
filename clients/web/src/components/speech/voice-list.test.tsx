@@ -111,20 +111,12 @@ const { useResolvedAssistantStore } =
   await import("@/stores/resolved-assistant-store");
 
 beforeAll(() => {
-  (
-    window.HTMLMediaElement.prototype as unknown as {
-      play: () => Promise<void>;
-    }
-  ).play = () => Promise.resolve();
-  (
-    window.HTMLMediaElement.prototype as unknown as { pause: () => void }
-  ).pause = () => {};
+  window.HTMLMediaElement.prototype.play = () => Promise.resolve();
+  window.HTMLMediaElement.prototype.pause = () => {};
 });
 
 function renderList() {
-  useResolvedAssistantStore
-    .getState()
-    .setAssistantId(ASSISTANT_ID);
+  useResolvedAssistantStore.getState().setAssistantId(ASSISTANT_ID);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -265,11 +257,7 @@ describe("VoiceList", () => {
 
   test("each row previews its own voice via the hosted sample", async () => {
     let played = "";
-    (
-      window.HTMLMediaElement.prototype as unknown as {
-        play: () => Promise<void>;
-      }
-    ).play = function (this: HTMLAudioElement) {
+    window.HTMLMediaElement.prototype.play = function (this: HTMLAudioElement) {
       played = this.src;
       return Promise.resolve();
     };

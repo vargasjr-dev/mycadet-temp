@@ -1094,7 +1094,7 @@ export function ChatComposer({
           }
           e.preventDefault();
           if (decision === "submit") {
-            onSubmit(e as unknown as FormEvent);
+            onSubmit(e);
           }
         }}
         placeholder={ghostSuffix ? "" : placeholder}

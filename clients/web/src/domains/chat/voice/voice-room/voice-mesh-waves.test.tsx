@@ -90,7 +90,7 @@ beforeEach(() => {
       x: 0,
       y: 0,
       toJSON: () => ({}),
-    } as DOMRect;
+    };
   };
 
   originalResizeObserver = globalThis.ResizeObserver;
@@ -99,7 +99,7 @@ beforeEach(() => {
       observe() {}
       unobserve() {}
       disconnect() {}
-    } as unknown as typeof ResizeObserver;
+    };
   }
 });
 

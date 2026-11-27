@@ -151,7 +151,7 @@ async function extractErrorMessage(
         parsed &&
         typeof parsed === "object" &&
         "detail" in parsed &&
-        typeof (parsed as { detail: unknown }).detail === "string"
+        typeof parsed.detail === "string"
       ) {
         return (parsed as { detail: string }).detail;
       }
@@ -159,7 +159,7 @@ async function extractErrorMessage(
         parsed &&
         typeof parsed === "object" &&
         "message" in parsed &&
-        typeof (parsed as { message: unknown }).message === "string"
+        typeof parsed.message === "string"
       ) {
         return (parsed as { message: string }).message;
       }

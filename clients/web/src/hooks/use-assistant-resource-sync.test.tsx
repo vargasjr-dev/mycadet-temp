@@ -167,7 +167,7 @@ describe("useAssistantResourceSync", () => {
     renderHook(() => useAssistantResourceSync(null), {
       wrapper: createWrapper(queryClient),
     });
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.assistantAvatar]));
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -178,7 +178,7 @@ describe("useAssistantResourceSync", () => {
     renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
-    emit(syncEvent([SYNC_TAGS.assistantAvatar]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.assistantAvatar]));
     await waitFor(() => {
       expect(spy).toHaveBeenCalledWith({
         queryKey: avatarQueryKey("asst-1"),
@@ -196,7 +196,7 @@ describe("useAssistantResourceSync", () => {
     renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
-    emit(syncEvent([SYNC_TAGS.assistantIdentity]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.assistantIdentity]));
     await waitFor(() => {
       const queryKeys = calls.map(
         (arg) => (arg as { queryKey: readonly unknown[] }).queryKey,
@@ -222,7 +222,7 @@ describe("useAssistantResourceSync", () => {
         SYNC_TAGS.assistantConfig,
         SYNC_TAGS.assistantSounds,
         SYNC_TAGS.assistantSchedules,
-      ]) as unknown as AssistantEvent,
+      ]),
     );
     await waitFor(() => {
       const queryKeys = calls.map(
@@ -257,7 +257,7 @@ describe("useAssistantResourceSync", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    emit(syncEvent([SYNC_TAGS.mcpList]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.mcpList]));
 
     await waitFor(() => {
       expect(sweepsFor(calls, mcpQueryKeys.list("asst-1"))).toHaveLength(1);
@@ -278,7 +278,7 @@ describe("useAssistantResourceSync", () => {
     renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
-    emit(syncEvent([SYNC_TAGS.assistantConfig]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.assistantConfig]));
     await waitFor(() => {
       const queryKeys = calls.map(
         ([arg]) => (arg as { queryKey: readonly unknown[] }).queryKey,
@@ -338,7 +338,7 @@ describe("useAssistantResourceSync", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    emit(syncEvent([SYNC_TAGS.appsList]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.appsList]));
 
     await waitFor(() => {
       expect(predicate).toBeDefined();
@@ -361,7 +361,7 @@ describe("useAssistantResourceSync", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    emit(syncEvent([SYNC_TAGS.documentsList]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.documentsList]));
 
     const claims = (queryKey: readonly unknown[]) =>
       predicates.some((p) => p({ queryKey }));
@@ -401,7 +401,7 @@ describe("useAssistantResourceSync", () => {
     renderHook(() => useAssistantResourceSync("asst-1"), {
       wrapper: createWrapper(queryClient),
     });
-    emit(syncEvent([SYNC_TAGS.pluginsList]) as unknown as AssistantEvent);
+    emit(syncEvent([SYNC_TAGS.pluginsList]));
     await waitFor(() => {
       const queryKeys = calls.map(
         (arg) => (arg as { queryKey: readonly unknown[] }).queryKey,
@@ -1024,7 +1024,7 @@ describe("useAssistantResourceSync", () => {
       ...syncEvent([SYNC_TAGS.assistantAvatar]),
       originClientId: getClientId(),
     };
-    emit(selfEvent as unknown as AssistantEvent);
+    emit(selfEvent);
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -1039,7 +1039,7 @@ describe("useAssistantResourceSync", () => {
       ...syncEvent([SYNC_TAGS.assistantAvatar]),
       originClientId: "other-client-id",
     };
-    emit(otherEvent as unknown as AssistantEvent);
+    emit(otherEvent);
     await waitFor(() => {
       expect(spy).toHaveBeenCalledWith({
         queryKey: avatarQueryKey("asst-1"),

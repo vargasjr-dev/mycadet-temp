@@ -16,11 +16,11 @@ const baseProps = {
 };
 
 function addressInput(): HTMLInputElement {
-  return screen.getByRole("textbox") as HTMLInputElement;
+  return screen.getByRole("textbox");
 }
 
 function saveButton(): HTMLButtonElement {
-  return screen.getByRole("button", { name: "Save" }) as HTMLButtonElement;
+  return screen.getByRole("button", { name: "Save" });
 }
 
 describe("ContactPromptCard defaultValue", () => {
@@ -257,7 +257,7 @@ describe("ContactPromptCard proposed name", () => {
   });
 
   function nameInput(): HTMLInputElement {
-    return screen.getByPlaceholderText("Name") as HTMLInputElement;
+    return screen.getByPlaceholderText("Name");
   }
 
   test("seeds an editable name field and submits what the guardian left", () => {

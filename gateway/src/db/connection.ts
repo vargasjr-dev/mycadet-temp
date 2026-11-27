@@ -28,10 +28,10 @@ async function pushSchemaNoPrompt(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pushSQLiteSchema types against LibSQLDatabase; BunSQLiteDatabase is duck-type compatible
   drizzleInstance: any,
 ): Promise<{ statementsToExecute: string[]; apply: () => Promise<void> }> {
-  const stdin = process.stdin as typeof process.stdin & {
+  const stdin: typeof process.stdin & {
     isTTY?: boolean;
     setRawMode?: (mode: boolean) => typeof process.stdin;
-  };
+  } = process.stdin;
   const origStdinTTY = stdin.isTTY;
   const origStdoutTTY = process.stdout.isTTY;
   const origSetRawMode = stdin.setRawMode;
@@ -222,7 +222,7 @@ export function getGatewayDb(): GatewayDb {
  * with Drizzle's query API. Only needed for data migrations and test cleanup.
  */
 function getRawDb(drizzleDb: GatewayDb): Database {
-  return (drizzleDb as unknown as { $client: Database }).$client;
+  return drizzleDb.$client;
 }
 
 /**

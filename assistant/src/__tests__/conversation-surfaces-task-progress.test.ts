@@ -548,7 +548,7 @@ describe("task_progress surface compatibility", () => {
       return;
     }
     const templateData = jsonObjectSchema.parse(
-      (updateMessage.data as CardSurfaceData).templateData,
+      updateMessage.data.templateData,
     );
     expect(templateData.status).toBe("completed");
   });

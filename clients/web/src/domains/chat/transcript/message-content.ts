@@ -363,7 +363,7 @@ export function isSubagentSpawnCall(toolCall: ChatMessageToolCall): boolean {
   if (input == null || typeof input !== "object") {
     return false;
   }
-  return (input as Record<string, unknown>).tool === "subagent_spawn";
+  return input.tool === "subagent_spawn";
 }
 
 /**
@@ -385,7 +385,7 @@ export function isRunWorkflowCall(toolCall: ChatMessageToolCall): boolean {
   if (input == null || typeof input !== "object") {
     return false;
   }
-  return (input as Record<string, unknown>).tool === "run_workflow";
+  return input.tool === "run_workflow";
 }
 
 /**
@@ -408,7 +408,7 @@ export function isAcpSpawnCall(toolCall: ChatMessageToolCall): boolean {
   if (input == null || typeof input !== "object") {
     return false;
   }
-  return (input as Record<string, unknown>).tool === "acp_spawn";
+  return input.tool === "acp_spawn";
 }
 
 /**
@@ -425,7 +425,7 @@ export function isBackgroundBashCall(toolCall: ChatMessageToolCall): boolean {
   if (input == null || typeof input !== "object") {
     return false;
   }
-  return (input as Record<string, unknown>).background === true;
+  return input.background === true;
 }
 
 /**
@@ -455,12 +455,12 @@ export function activityHasDedicatedCard(
  * non-empty `steps` array. Used by the activity-summary hoist-detection path.
  */
 export function isTaskProgressSurface(surface: Surface): boolean {
-  const data = surface.data as
+  const data:
     | { template?: string; templateData?: { steps?: unknown } }
-    | undefined;
+    | undefined = surface.data;
   return (
     data?.template === "task_progress" &&
     Array.isArray(data.templateData?.steps) &&
-    (data.templateData!.steps as unknown[]).length > 0
+    data.templateData!.steps.length > 0
   );
 }

@@ -86,8 +86,7 @@ beforeEach(() => {
     // The conversation on screen, which is what Edit puts beside the app.
     activeConversationId: CONV_ID,
     draftConversationIds: new Set(),
-    setEditingConversationId:
-      setEditingConversationIdMock as unknown as typeof conversationSnapshot.setEditingConversationId,
+    setEditingConversationId: setEditingConversationIdMock,
   });
   useSetupLocalAssistant(ASSISTANT_ID);
 });

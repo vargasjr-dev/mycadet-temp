@@ -307,10 +307,7 @@ async function handleHostBrowserResult({ body, headers }: RouteHandlerArgs) {
     throw new BadRequestError("Request body is required");
   }
 
-  const resolution = await resolveHostBrowserResultByRequestId(
-    body,
-    headers as Record<string, string | undefined> | undefined,
-  );
+  const resolution = await resolveHostBrowserResultByRequestId(body, headers);
   if (!resolution.ok) {
     if (resolution.code === "FORBIDDEN") {
       throw new ForbiddenError(resolution.message);

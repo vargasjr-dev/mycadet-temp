@@ -67,7 +67,7 @@ describe("NativeAppCard", () => {
   test("promotes the App Store listing on iOS", () => {
     setUserAgent(IPHONE_CHROME_UA);
     const open = mock(() => null);
-    window.open = open as typeof window.open;
+    window.open = open;
 
     render(<NativeAppCard />);
 
@@ -91,7 +91,7 @@ describe("NativeAppCard", () => {
     // the card still names the store rather than the generic downloads page.
     setUserAgent(IPHONE_SAFARI_UA);
     const open = mock(() => null);
-    window.open = open as typeof window.open;
+    window.open = open;
 
     render(<NativeAppCard />);
 
@@ -109,7 +109,7 @@ describe("NativeAppCard", () => {
   test("opens the Android listing and records the action", () => {
     setUserAgent(ANDROID_UA);
     const open = mock(() => null);
-    window.open = open as typeof window.open;
+    window.open = open;
     render(<NativeAppCard />);
 
     expect(screen.getByText("Get the Android App")).toBeDefined();
@@ -149,7 +149,7 @@ describe("NativeAppCard", () => {
         localStorage.getItem("app.mobileNudge.downloaded"),
       );
       return null;
-    }) as typeof window.open;
+    });
 
     render(<NativeAppCard />);
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
