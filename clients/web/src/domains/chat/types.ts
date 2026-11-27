@@ -18,6 +18,7 @@ export interface ChatError {
   message: string;
   code?: string;
   errorCategory?: string;
+  title?: string;
   /**
    * How the UI should surface this error.
    * - "inline" (default): render as a Notice banner in the composer area.

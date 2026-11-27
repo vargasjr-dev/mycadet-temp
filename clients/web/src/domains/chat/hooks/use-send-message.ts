@@ -75,9 +75,9 @@ import {
   clearPendingConfirmationsFromMessages,
   dismissInteractiveSurfaces,
   newTurnId,
-  resolvePostError,
   shouldCleanupSupersededInteractions,
 } from "@/domains/chat/utils/send-message-utils";
+import { classifySendFailure } from "@/domains/chat/utils/send-failure";
 import type { UIContext } from "@/domains/chat/turn-selectors";
 import { useComposerStore } from "@/domains/chat/composer-store";
 import { resolveDraftComposerConfiguration } from "@/domains/chat/utils/draft-composer-configuration";
@@ -455,12 +455,14 @@ export function useSendMessage({
         }
       }
       if (!postResult.ok) {
+        const failure = classifySendFailure(
+          postResult.status,
+          postResult.error.code,
+          postResult.error.detail,
+        );
         return failedSend({
-          message: resolvePostError(
-            postResult.error.code,
-            postResult.error.detail,
-            "Something went wrong. Please try again.",
-          ),
+          message: failure.message,
+          title: failure.title,
           ...(postResult.error.code ? { code: postResult.error.code } : {}),
         });
       }
@@ -971,6 +973,7 @@ export function useSendMessage({
             setError({
               message: result.error.message,
               ...(result.error.code ? { code: result.error.code } : {}),
+              ...(result.error.title ? { title: result.error.title } : {}),
               displayAs: "modal",
               restoreContent: content,
             });
