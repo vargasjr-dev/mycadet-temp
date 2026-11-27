@@ -526,7 +526,6 @@ export function registerSchedulesCommand(program: Command): void {
             profile?: string;
             clearProfile?: boolean;
             maxRunCost?: string;
-            clearMaxRunCost?: boolean;
             json?: boolean;
           },
           cmd: Command,
@@ -553,13 +552,6 @@ export function registerSchedulesCommand(program: Command): void {
           if (opts.clearTimeout && opts.timeoutMs != null) {
             fail(
               "--timeout-ms and --clear-timeout are mutually exclusive; pass --timeout-ms to set a timeout or --clear-timeout to remove it",
-            );
-            return;
-          }
-
-          if (opts.clearMaxRunCost && opts.maxRunCost != null) {
-            fail(
-              "--max-run-cost and --clear-max-run-cost are mutually exclusive; pass --max-run-cost to set a limit or --clear-max-run-cost to remove it",
             );
             return;
           }
@@ -663,10 +655,11 @@ export function registerSchedulesCommand(program: Command): void {
               );
               return;
             }
-            body.maxRunCostUsd = parsed;
-          }
-          if (opts.clearMaxRunCost) {
-            body.maxRunCostUsd = null;
+            if (parsed === 0) {
+              body.maxRunCostUsd = null;
+            } else {
+              body.maxRunCostUsd = parsed;
+            }
           }
 
           if (Object.keys(body).length === 0) {

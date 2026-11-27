@@ -1284,8 +1284,18 @@ export async function runDueSchedulesOnce(
     const overspendUsd = costGuard.finish();
     if (overspendUsd !== null && job.maxRunCostUsd !== null) {
       ok = false;
-      errorKind = "cost_limit";
-      errorMsg = describeOverspend(overspendUsd, job.maxRunCostUsd, isOneShot);
+      // First error wins: a run that already failed (a timeout, a provider
+      // error) keeps that reason, since it is what actually ended the run.
+      // cost_limit records only when the overspend is the first and only
+      // thing that went wrong.
+      if (errorKind === undefined) {
+        errorKind = "cost_limit";
+        errorMsg = describeOverspend(
+          overspendUsd,
+          job.maxRunCostUsd,
+          isOneShot,
+        );
+      }
     }
 
     if (ok) {

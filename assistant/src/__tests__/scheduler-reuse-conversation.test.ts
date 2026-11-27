@@ -724,4 +724,73 @@ describe("scheduler per-run spending limit", () => {
     expect(getScheduleRuns(schedule.id)[0].status).toBe("ok");
     expect(getSchedule(schedule.id)?.enabled).toBe(true);
   });
+
+  test("a run that times out and overspends keeps the timeout as the first error", async () => {
+    /**
+     * First error wins: the overspend is read after the run ends, so a run
+     * that already failed for another reason keeps that reason. The overspend
+     * text must not overwrite it, and the timeout path — not the cost stop —
+     * owns the outcome.
+     */
+
+    // GIVEN a recurring reuse schedule limited to $1.00 per run whose first
+    // run succeeds and creates the reused conversation
+    const rruleExpr = buildEveryMinuteRrule();
+    const schedule = await createSchedule({
+      name: "Timeout overspend",
+      cronExpression: rruleExpr,
+      message: "Do the thing",
+      syntax: "rrule",
+      expression: rruleExpr,
+      reuseConversation: true,
+    });
+    await updateSchedule(schedule.id, { maxRunCostUsd: 1 });
+    forceScheduleDue(schedule.id);
+    await runDueSchedulesOnce();
+
+    // AND a 1s turn timeout for the next firing
+    const originalConfig = loadRawConfig();
+    saveRawConfig({
+      ...originalConfig,
+      timeouts: {
+        ...z.object({}).passthrough().optional().parse(originalConfig.timeouts),
+        scheduleTurnTimeoutSec: 1,
+      },
+    });
+
+    try {
+      // WHEN the next run's turn never finishes but spends $2.50 while it runs
+      processMessageImpl = async (conversationId: string) => {
+        const { getSqlite } = await import("../persistence/db-connection.js");
+        const runId = getScheduleRuns(schedule.id)[0]?.id;
+        if (runId) {
+          getSqlite().run(
+            `INSERT INTO llm_usage_events
+               (id, created_at, cron_run_id, actor, provider, model,
+                input_tokens, output_tokens, estimated_cost_usd, pricing_status)
+             VALUES (?, ?, ?, 'main_agent', 'test', 'test-model', 0, 0, ?, 'priced')`,
+            [crypto.randomUUID(), Date.now(), runId, 2.5],
+          );
+        }
+        processedMessages.push({ conversationId, message: "Do the thing" });
+        return new Promise<never>(() => {});
+      };
+
+      forceScheduleDue(schedule.id);
+      await runDueSchedulesOnce();
+
+      // THEN the recorded error is the timeout, not the overspend
+      const runs = getScheduleRuns(schedule.id);
+      expect(runs).toHaveLength(2);
+      expect(runs[0].status).toBe("error");
+      expect(runs[0].error).toContain("time limit");
+      expect(runs[0].error).not.toContain("$2.50");
+
+      // AND the schedule is not paused — the cost stop never took the run
+      expect(getSchedule(schedule.id)?.enabled).toBe(true);
+    } finally {
+      saveRawConfig(originalConfig);
+      processMessageImpl = captureProcessedMessage;
+    }
+  }, 10_000);
 });

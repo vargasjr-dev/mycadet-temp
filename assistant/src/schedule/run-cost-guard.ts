@@ -72,7 +72,6 @@ export function startRunCostGuard(params: RunCostGuardParams): RunCostGuard {
   };
 
   const timer = setInterval(check, params.pollMs ?? RUN_COST_POLL_MS);
-  timer.unref?.();
 
   return {
     finish() {

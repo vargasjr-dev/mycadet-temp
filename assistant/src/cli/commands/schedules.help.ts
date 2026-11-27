@@ -291,11 +291,7 @@ Examples:
         {
           flags: "--max-run-cost <usd>",
           description:
-            "Most a single run may spend on LLM calls, in US dollars (at least 0.01)",
-        },
-        {
-          flags: "--clear-max-run-cost",
-          description: "Remove the per-run spending limit",
+            "Most a single run may spend on LLM calls, in US dollars (at least 0.01); 0 removes the limit",
         },
         {
           flags: "--json",
@@ -329,9 +325,7 @@ Options:
   --max-run-cost <usd>      Most a single run may spend on LLM calls, in US
                             dollars (at least 0.01). A run that goes over is
                             stopped and the schedule paused until you enable
-                            it again.
-  --clear-max-run-cost      Remove the spending limit (mutually exclusive with
-                            --max-run-cost).
+                            it again. Pass 0 to remove the limit.
   --json                    Output the updated schedule list as compact JSON.
 
 Arguments:
