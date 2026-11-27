@@ -746,6 +746,11 @@ function flattenContentPartsToStrings(params: unknown): boolean {
   return flattened;
 }
 
+const RESPONSE_TEXT_CONTENT = z.union([
+  z.string(),
+  z.array(z.object({ text: z.string() }).loose()),
+]);
+
 /**
  * Newer Mistral models (mistral-large-latest / large-4) return assistant
  * content as typed blocks — OpenAI's content-part shape,
@@ -756,19 +761,14 @@ function flattenContentPartsToStrings(params: unknown): boolean {
  * arrive via `delta.tool_calls`, reasoning via the reasoning fields).
  */
 function textFromResponseContent(content: unknown): string | null {
-  if (typeof content === "string") {
-    return content;
-  }
-  if (!Array.isArray(content)) {
+  const parsed = RESPONSE_TEXT_CONTENT.safeParse(content);
+  if (!parsed.success) {
     return null;
   }
-  const textPart = z.object({ text: z.string() }).loose();
-  const joined = content
-    .map((part) => {
-      const parsed = textPart.safeParse(part);
-      return parsed.success ? parsed.data.text : "";
-    })
-    .join("");
+  if (typeof parsed.data === "string") {
+    return parsed.data;
+  }
+  const joined = parsed.data.map((part) => part.text).join("");
   return joined.length > 0 ? joined : null;
 }
 
