@@ -245,12 +245,29 @@ test("recovery extracts the instance dir, restores the entry, wakes, and clears 
 
   const result = await restoreAssistant({ name: "retired-one" });
 
-  expect(result).toEqual({ ok: true, kind: "recovery" });
+  expect(result).toEqual({ ok: true, kind: "recovery", dryRun: false });
   expect(existsSync(staged.target)).toBe(true);
   expect(existsSync(join(staged.target, "workspace", "keep.txt"))).toBe(true);
   expect(existsSync(staged.archive)).toBe(false);
   expect(existsSync(staged.metadata)).toBe(false);
   expect(wake).toHaveBeenCalledTimes(1);
+});
+test("a recovery dry run checks the archive but changes nothing", async () => {
+  const staged = stageRetiredArchive("retired-dry", {
+    assistantId: "retired-dry",
+    cloud: "local",
+    port: 7830,
+  });
+  execSpy.mockClear();
+
+  const result = await restoreAssistant({ name: "retired-dry", dryRun: true });
+
+  expect(result).toEqual({ ok: true, kind: "recovery", dryRun: true });
+  expect(existsSync(staged.archive)).toBe(true);
+  expect(existsSync(staged.metadata)).toBe(true);
+  expect(existsSync(staged.target)).toBe(false);
+  expect(execSpy).not.toHaveBeenCalled();
+  expect(wake).not.toHaveBeenCalled();
 });
 test("recovery creates the target's parent directories when they do not exist", async () => {
   const name = "deep-nested-instance";
@@ -264,7 +281,7 @@ test("recovery creates the target's parent directories when they do not exist", 
 
   const result = await restoreAssistant({ name });
 
-  expect(result).toEqual({ ok: true, kind: "recovery" });
+  expect(result).toEqual({ ok: true, kind: "recovery", dryRun: false });
   expect(existsSync(nestedTarget)).toBe(true);
   expect(existsSync(join(nestedTarget, "workspace", "keep.txt"))).toBe(true);
   expect(existsSync(staged.archive)).toBe(false);

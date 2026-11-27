@@ -46,10 +46,12 @@ export async function restoreLocal(
  * Retire archives local instances only — a non-local metadata entry is a
  * structured refusal. Failures before extraction refuse; failures after the
  * archive is unpacked throw (the lockfile entry and extraction are already
- * on disk, so a retry surfaces the owned-target refusal).
+ * on disk, so a retry surfaces the owned-target refusal). A dry run stops
+ * after those checks.
  */
 export async function recoverRetired(
   name: string,
+  dryRun = false,
 ): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   const archivePath = getArchivePath(name);
   const metadataPath = getMetadataPath(name);
@@ -94,6 +96,8 @@ export async function recoverRetired(
         `Retire the current assistant first.`,
     };
   }
+
+  if (dryRun) return { ok: true };
 
   // Extract and rename.
   //
