@@ -57,6 +57,7 @@ function schedule(
     retryBackoffMs: 1000,
     timeoutMs: null,
     inferenceProfile: null,
+    maxRunCostUsd: null,
     groupId: null,
     createdFromConversationId: null,
     createdFromConversationExists: false,
