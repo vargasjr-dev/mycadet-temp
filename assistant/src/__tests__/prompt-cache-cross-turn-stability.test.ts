@@ -643,9 +643,11 @@ describe("prompt cache cross-turn stability: volatile first turn", () => {
 
   test("Anthropic: a volatile turn start keeps one TTL across its tool loop", async () => {
     // Marking one boundary at two TTLs bills two writes for a single reusable
-    // prefix. A volatile turn start can only ever be read back within its own
-    // turn, so it takes the short TTL on the opening request and must keep it
-    // once tool results arrive, rather than being upgraded to the long TTL.
+    // prefix. The volatile message's bytes are frozen once it enters history
+    // (turn 1's payload recurs byte-identically as a prefix of turn 2's), so
+    // the entry written here is readable across turns too — the breakpoint
+    // takes the CONFIGURED TTL on the opening request and must keep it once
+    // tool results arrive, rather than flipping TTLs at the same boundary.
     const provider = new AnthropicProvider("sk-ant-test", "claude-sonnet-4-6");
     const opening = calls[0].messages;
 
@@ -674,8 +676,43 @@ describe("prompt cache cross-turn stability: volatile first turn", () => {
     );
     const toolLoopTtls = anthropicTurnStartTtls(lastAnthropicParams);
 
-    expect(openingTtls).toEqual(["5m"]);
+    expect(openingTtls).toEqual(["1h"]);
     expect(toolLoopTtls).toEqual(openingTtls);
+  });
+
+  test("Anthropic: the advancing tail follows the configured TTL, not a hardcoded 5m", async () => {
+    // During a tool loop the last block of the last message carries its own
+    // breakpoint so the next iteration's anchor stays reachable. It used to
+    // hardcode 5m, which defeated a caller's configured cacheTtl: turn
+    // content was re-created wholesale whenever the next request came after
+    // the 5-minute window. The final iteration's entry must survive that gap
+    // when "1h" is configured.
+    const provider = new AnthropicProvider("sk-ant-test", "claude-sonnet-4-6");
+    const opening = calls[0].messages;
+
+    await provider.sendMessage(
+      [
+        ...opening,
+        {
+          role: "assistant",
+          content: [{ type: "tool_use", id: "t1", name: "echo", input: {} }],
+        },
+        {
+          role: "user",
+          content: [{ type: "tool_result", tool_use_id: "t1", content: "ok" }],
+        },
+      ],
+      {
+        systemPrompt: "system prompt",
+        config: { cacheTtl: "1h" },
+      },
+    );
+
+    const messages = lastAnthropicParams?.messages ?? [];
+    const last = messages[messages.length - 1];
+    const lastBlockTtl =
+      last.content[last.content.length - 1]?.cache_control?.ttl;
+    expect(lastBlockTtl).toBe("1h");
   });
 
   test("Anthropic: a stable turn start still takes the long TTL", async () => {
