@@ -62,8 +62,7 @@ import {
 } from "./http/middleware/cors.js";
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { checkAuthRateLimit } from "./http/middleware/rate-limit.js";
-import { createRouter, type GetClientIp } from "./http/router.js";
-import { ROUTES } from "./http/routes/index.js";
+import { dispatchRoute, type GetClientIp } from "./http/router.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
 import { ensureCloudIdentityIds } from "./cloud-identity.js";
@@ -132,15 +131,6 @@ export async function startServer(): Promise<() => void> {
   // spelling of each socket and discards the id, the same mirror the route
   // table keeps for tunnel/status. Daemon-only sockets (speech relay) get no
   // mirror: they are never browser-reachable.
-  // ── Route table ──
-  // One routes array, owned by the routes barrel: every HTTP route is
-  // declared in a per-domain ROUTES array and concatenated there, in
-  // dispatch order (the runtime-proxy catch-all last). Routes are matched
-  // top-to-bottom; auth middleware is applied declaratively per route.
-  const router = createRouter(ROUTES, {
-    authRateLimiter,
-    trustProxy: config.trustProxy,
-  });
 
   /** Stamp the assistant version header on a response. */
   function stampVersion<T extends Response>(res: T): T {
@@ -439,7 +429,7 @@ export async function startServer(): Promise<() => void> {
 
     // ── Route table dispatch ──
     try {
-      const response = await router(req, url, resolveClientIp, svr);
+      const response = await dispatchRoute(req, url, resolveClientIp, svr);
       if (response !== null) {
         if (extensionOrigin) {
           return withExtensionCorsHeaders(response, extensionOrigin);

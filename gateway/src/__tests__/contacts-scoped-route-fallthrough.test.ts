@@ -16,7 +16,7 @@ import "./test-preload.js";
 
 import { AuthRateLimiter } from "../auth-rate-limiter.js";
 import type { RouteDefinition } from "../http/routes/types.js";
-import { createRouter } from "../http/router.js";
+import { dispatchForTest } from "../http/router.js";
 import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
 
 // ---------------------------------------------------------------------------
@@ -66,7 +66,7 @@ function makeContactsRouter() {
     path: /^\//,
     handler: () => Response.json({ marker: "runtime-proxy" }),
   });
-  return createRouter(routes, { authRateLimiter: new AuthRateLimiter() });
+  return dispatchForTest(routes, new AuthRateLimiter());
 }
 
 const contactsRouter = makeContactsRouter();

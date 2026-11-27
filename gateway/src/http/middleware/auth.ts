@@ -425,13 +425,16 @@ export function createAuthMiddleware(
  * Eliminates the repeated `if (res.status === 401) { ... }` boilerplate.
  */
 export function wrapWithAuthFailureTracking(
-  handler: (req: Request) => Promise<Response> | Response,
+  handler: (
+    req: Request,
+  ) => Promise<Response | undefined> | Response | undefined,
   authRateLimiter: AuthRateLimiter,
   getClientIp: GetClientIp,
   failureStatuses: readonly number[] = [401],
-): (req: Request) => Promise<Response> {
-  return async (req: Request): Promise<Response> => {
+): (req: Request) => Promise<Response | undefined> {
+  return async (req: Request): Promise<Response | undefined> => {
     const res = await handler(req);
+    if (!res) return undefined;
     if (failureStatuses.includes(res.status)) {
       authRateLimiter.recordFailure(getClientIp());
     }

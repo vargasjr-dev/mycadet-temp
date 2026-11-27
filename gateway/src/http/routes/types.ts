@@ -34,8 +34,6 @@ export type RouteHandler = (
   req: Request,
   params: RouteParams,
   getClientIp: GetClientIp,
-  /** The Bun server — always present; every route is dispatched from the
-   * bound Bun.serve. WS handlers call server.upgrade() through it. */
   server: Server<unknown>,
 ) => Promise<Response | undefined> | Response | undefined;
 

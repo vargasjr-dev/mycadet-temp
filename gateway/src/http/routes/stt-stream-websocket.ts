@@ -160,9 +160,6 @@ export const closeSttStreamWebsocket = (
 
 export const ROUTES: RouteDefinition[] = [
   {
-    // One entry covers both spellings: the direct path and the
-    // assistant-scoped mirror (the captured assistant id is unused — the
-    // handler authenticates the caller on its own terms).
     path: /^\/(?:assistants\/([^/]+)\/)?stt\/stream\/?$/,
     upgradesOnly: true,
     handler: (req, _params, _getClientIp, server) =>

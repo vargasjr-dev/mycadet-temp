@@ -28,7 +28,7 @@ mock.module("../auth/token-exchange.js", () => ({
 }));
 
 const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createRouter } = await import("../http/router.js");
+const { dispatchForTest } = await import("../http/router.js");
 
 const { ROUTES } = await import("../http/routes/vercel-control-plane-proxy.js");
 
@@ -86,7 +86,7 @@ function makeVercelRouter() {
       handler: () => Response.json({ ok: true, route: "delete" }),
     },
   ];
-  return createRouter(routes, { authRateLimiter: new AuthRateLimiter() });
+  return dispatchForTest(routes, new AuthRateLimiter());
 }
 
 async function dispatch(

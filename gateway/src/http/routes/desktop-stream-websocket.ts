@@ -87,9 +87,6 @@ export const closeDesktopStreamWebsocket = (
 
 export const ROUTES: RouteDefinition[] = [
   {
-    // One entry covers both spellings: the direct path and the
-    // assistant-scoped mirror (the captured assistant id is unused — the
-    // handler authenticates the caller on its own terms).
     path: /^\/(?:assistants\/([^/]+)\/)?desktop\/stream\/?$/,
     upgradesOnly: true,
     handler: async (req, _params, _getClientIp, server) =>

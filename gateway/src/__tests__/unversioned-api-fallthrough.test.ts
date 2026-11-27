@@ -4,7 +4,7 @@ import { AuthRateLimiter } from "../auth-rate-limiter.js";
 import type { RouteDefinition } from "../http/routes/types.js";
 
 /** Dynamic import AFTER module setup so the router always loads fresh. */
-const { createRouter } = await import("../http/router.js");
+const { dispatchForTest } = await import("../http/router.js");
 
 const ROUTES: RouteDefinition[] = [
   {
@@ -26,8 +26,8 @@ const ROUTES: RouteDefinition[] = [
   },
 ];
 
-function makeRouter(): ReturnType<typeof createRouter> {
-  return createRouter(ROUTES, { authRateLimiter: new AuthRateLimiter() });
+function makeRouter() {
+  return dispatchForTest(ROUTES, new AuthRateLimiter());
 }
 
 async function dispatch(

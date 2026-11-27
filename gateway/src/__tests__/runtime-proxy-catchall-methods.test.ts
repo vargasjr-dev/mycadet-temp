@@ -36,7 +36,7 @@ mock.module("../config.js", () => ({
 }));
 
 const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createRouter } = await import("../http/router.js");
+const { dispatchForTest } = await import("../http/router.js");
 const { ROUTES } = await import("../http/routes/index.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
@@ -69,8 +69,8 @@ afterEach(() => {
   capturedUrl = null;
 });
 
-function makeRouter(): ReturnType<typeof createRouter> {
-  return createRouter(ROUTES, { authRateLimiter: new AuthRateLimiter() });
+function makeRouter() {
+  return dispatchForTest(ROUTES, new AuthRateLimiter());
 }
 
 describe("the runtime-proxy catch-all serves every verb", () => {

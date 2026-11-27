@@ -34,7 +34,7 @@ mock.module("../auth/token-exchange.js", () => ({
 }));
 
 const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createRouter } = await import("../http/router.js");
+const { dispatchForTest } = await import("../http/router.js");
 
 // ---------------------------------------------------------------------------
 // Registration pinning — the route table index.ts spreads
@@ -114,7 +114,7 @@ function makeInviteRouter() {
       handler: () => Response.json({ ok: true, route: "revoke" }),
     },
   ];
-  return createRouter(routes, { authRateLimiter: new AuthRateLimiter() });
+  return dispatchForTest(routes, new AuthRateLimiter());
 }
 
 async function dispatch(
