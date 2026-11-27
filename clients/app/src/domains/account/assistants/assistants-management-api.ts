@@ -222,7 +222,8 @@ export async function getAssistantHealth(
 
 export async function fetchRuntimeVersion(
   assistantId: string,
-): Promise<string | null> {  const response = await fetch(scoped(assistantId, "/"));
+): Promise<string | null> {
+  const response = await fetch(scoped(assistantId, "/"));
   if (!response.ok) {
     throw new Error(`The assistant read failed (${response.status})`);
   }

@@ -66,16 +66,18 @@ export function AssistantHealthBadge({ assistantId }: { assistantId: string }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 text-body-medium-lighter text-[var(--content-default)]"
-      title={
-        health.checks.map((check) => `${check.name}: ${check.detail}`).join("\n")
-      }
+      title={health.checks
+        .map((check) => `${check.name}: ${check.detail}`)
+        .join("\n")}
     >
       <span
         className={`h-2 w-2 rounded-full ${health.ok ? "bg-[var(--system-positive-strong)]" : "bg-[var(--system-negative-strong)]"}`}
       />
       {health.ok
         ? t("assistantsPage.healthHealthy")
-        : t("assistantsPage.healthUnhealthy", { detail: failing?.detail ?? "" })}
+        : t("assistantsPage.healthUnhealthy", {
+            detail: failing?.detail ?? "",
+          })}
     </span>
   );
 }

@@ -279,7 +279,12 @@
       "updated": "Доступ администратора обновлён.",
       "updateFailed": "Не удалось обновить доступ администратора.",
       "notAvailable": "Доступ администратора применяется только к ассистентам, размещённым в облаке."
-    }
+    },
+    "healthSection": "Состояние",
+    "healthHealthy": "Здоров",
+    "healthUnhealthy": "Проблемы — {{detail}}",
+    "healthChecking": "Проверяем состояние...",
+    "healthUnknown": "Состояние неизвестно"
   },
   "vellumMigration": {
     "title": "Импорт из Vellum",
