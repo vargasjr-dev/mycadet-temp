@@ -1,5 +1,3 @@
-import type { ClientOs } from "@app/runtime/client-os";
-
 /**
  * True when the renderer runs inside the Electron host. Safe to call
  * server-side / before hydration — falls through to `false` when `window`

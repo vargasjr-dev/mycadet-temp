@@ -262,5 +262,3 @@ function isFormattableLocale(tag: string): boolean {
     return false;
   }
 }
-
-export { i18next };

@@ -30,8 +30,6 @@ const COMPLETION_NAVIGATE_DELAY_MS = 800;
 const POLL_INTERVAL_MS = 3000;
 const MAX_HATCH_WAIT_MS = 300_000;
 
-type HatchResult = Awaited<ReturnType<typeof hatchAssistant>>;
-
 // The hatch promise's coalescing lives in the operation (module-level there);
 // this screen holds only the avatar traits so every remount riding the same
 // hatch renders the SAME assistant. Released on failure (a retry regenerates)

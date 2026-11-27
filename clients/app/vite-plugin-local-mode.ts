@@ -1,5 +1,4 @@
 import http from "node:http";
-import https from "node:https";
 import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";

@@ -120,7 +120,7 @@ export async function doctorHistoryRetrieve(args: {
 }
 
 /** Start a doctor session; answers the session record. */
-export async function doctorSessionsCreate(args?: {
+export async function doctorSessionsCreate(_args?: {
   path?: Record<string, never>;
 }): Promise<OperatorResult<z.infer<typeof DoctorSessionSchema>>> {
   const result = await dial("/v1/assistant/doctor/sessions/", {
