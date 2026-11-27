@@ -355,7 +355,7 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("resolves an unquoted multi-word display name", async () => {
+  test("a display name doesn't resolve; only the id does (#868)", async () => {
     // Assistant whose display name has a space; passed as separate argv tokens.
     writeFileSync(
       join(testDir, "cadet", "lockfile.json"),
@@ -377,23 +377,30 @@ describe("pair command", () => {
       }),
     );
 
-    const calls: Array<[string, RequestInit | undefined]> = [];
-    const origFetch = globalThis.fetch;
-    stubPairingGateway(calls);
-    const logSpy = spyOn(console, "log").mockImplementation(() => {});
+    const errors: string[] = [];
+    const errSpy = spyOn(console, "error").mockImplementation(
+      (...a: unknown[]) => {
+        errors.push(a.join(" "));
+      },
+    );
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
     process.argv = ["bun", "cadet", "pair", "My", "Assistant", "--json"];
     try {
-      await pair();
+      await expect(pair()).rejects.toThrow("exit:1");
     } finally {
-      logSpy.mockRestore();
-      globalThis.fetch = origFetch;
+      errSpy.mockRestore();
+      exitSpy.mockRestore();
     }
 
-    // Resolution succeeded (no exit), so the challenge was minted.
-    expect(mintCalls).toHaveLength(1);
-    expect(mintCalls[0]?.args.slice(-2)).toEqual(["pairing", "mint"]);
-    expect(calls).toHaveLength(0);
+    expect(errors.join("\n")).toContain(
+      "No assistant found with name or ID 'My Assistant'.",
+    );
+    expect(mintCalls).toHaveLength(0);
   });
 
   test("rejects an unknown --flag before any network call", async () => {
@@ -875,8 +882,10 @@ describe("pair command", () => {
         deviceCode: "device-code",
         userCode: "ABCD-EFGH",
         verificationUri: `${PUBLIC_URL}/assistant/pair`,
+        publicBaseUrl: PUBLIC_URL,
         expiresAt: "2026-06-04T00:10:00.000Z",
         expiresInSeconds: 600,
+        intervalSeconds: 5,
       })}\n`,
       exitCode: 0,
     });
