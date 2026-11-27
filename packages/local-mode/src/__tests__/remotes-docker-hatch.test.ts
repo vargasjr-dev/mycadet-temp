@@ -15,6 +15,7 @@ import {
   type ServiceName,
 } from "../remotes/docker/statefulset";
 import {
+  ensureDockerInstalled,
   hatchDocker,
   pullImage,
   resolveDockerProviderCredentialSetupAction,
@@ -290,6 +291,20 @@ describe("CADET_AVATAR_DEVICE passthrough", () => {
     expect(args.some((a) => a.startsWith(`${AVATAR_DEVICE_ENV_VAR}=`))).toBe(
       false,
     );
+  });
+});
+
+describe("ensureDockerInstalled", () => {
+  test("installs nothing when Docker already answers", async () => {
+    const exec = spyOn(execModule, "exec").mockResolvedValue(undefined);
+    const execOutput = spyOn(execModule, "execOutput").mockResolvedValue("");
+
+    await ensureDockerInstalled();
+
+    expect(exec).toHaveBeenCalledWith("docker", ["info"]);
+    expect(execOutput).not.toHaveBeenCalledWith("colima", ["version"]);
+    exec.mockRestore();
+    execOutput.mockRestore();
   });
 });
 
