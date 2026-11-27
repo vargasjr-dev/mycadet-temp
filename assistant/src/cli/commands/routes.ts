@@ -125,7 +125,7 @@ export function registerRoutesCommand(program: Command): void {
         const summary = `${discovered.length} ${countLabel}`;
         const firstPublicUrl = discovered.find((r) => r.publicUrl)?.publicUrl;
         if (firstPublicUrl) {
-          const publicBase = firstPublicUrl.replace(/\/x\/.*$/, "");
+          const publicBase = firstPublicUrl.replace(/\/v1\/x\/.*$/, "");
           log.info(`  ${summary} • Public base: ${publicBase}`);
         } else {
           log.info(`  ${summary}`);

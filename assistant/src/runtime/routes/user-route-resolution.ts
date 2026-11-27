@@ -59,6 +59,14 @@ export function isRouteTestPath(relPath: string): boolean {
   );
 }
 
+/**
+ * The URL path a route is actually served at. `/x/<path>` is its name, but
+ * like every API route it lives under `/v1/`.
+ */
+export function userRouteUrlPath(routePath: string): string {
+  return `/v1/x/${routePath}`;
+}
+
 /** Path segment reserved for plugin-namespaced routes under `/x/`. */
 export const PLUGIN_ROUTE_SEGMENT = "plugins";
 

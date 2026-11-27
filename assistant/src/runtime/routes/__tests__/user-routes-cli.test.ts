@@ -13,10 +13,13 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { setIngressPublicBaseUrl } from "../../../config/env.js";
+import { setDbReady } from "../../../daemon/daemon-readiness.js";
 import {
   getWorkspacePluginsDir,
   getWorkspaceRoutesDir,
 } from "../../../util/layout.js";
+import { RuntimeHttpServer } from "../../http-server.js";
 import { BadRequestError } from "../errors.js";
 import type { RouteHandlerArgs } from "../types.js";
 import { ROUTES } from "../user-routes-cli.js";
@@ -25,6 +28,7 @@ interface RouteEntry {
   routePath: string;
   methods: string[];
   filePath: string;
+  publicUrl: string | null;
 }
 
 const listHandler = ROUTES.find((r) => r.operationId === "user_routes_list")!
@@ -191,5 +195,39 @@ describe("routes inspect", () => {
 
   test("rejects a body missing path with BadRequestError", async () => {
     await expect(inspectHandler({ body: {} })).rejects.toThrow(BadRequestError);
+  });
+});
+
+describe("public URL", () => {
+  let server: RuntimeHttpServer;
+
+  beforeEach(async () => {
+    setDbReady(true);
+    server = new RuntimeHttpServer({ port: 0 });
+    await server.start();
+    setIngressPublicBaseUrl(`http://127.0.0.1:${server.actualPort}`);
+  });
+
+  afterEach(async () => {
+    setIngressPublicBaseUrl(undefined);
+    await server.stop();
+  });
+
+  test("the URL list and inspect print actually serves the route", async () => {
+    writeWorkspaceRoute("ping.ts");
+    const { routes } = await listHandler();
+    const { route } = await inspectHandler({ body: { path: "ping" } });
+
+    for (const url of [routes[0].publicUrl, route.publicUrl]) {
+      const res = await fetch(url!, {
+        headers: {
+          "x-cadet-subject": "actor:self:test-principal",
+          "x-cadet-principal-type": "actor",
+          "x-cadet-scope-profile": "actor_client_v1",
+        },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ok: true });
+    }
   });
 });
