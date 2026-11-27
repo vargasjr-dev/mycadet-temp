@@ -1,0 +1,37 @@
+name: Measure the rebrand LoC
+
+# The deletion scoreboard (/admin/loc on vargasjr.dev) reads the snapshot
+# this workflow publishes to the data/loc branch. Daily; main is never touched.
+on:
+  schedule:
+    - cron: "30 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: loc-measurement
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the rebrand point's tree must resolve
+
+      - name: Publish the snapshot to data/loc
+        run: |
+          git config user.name "vargasjr-dev[bot]"
+          git config user.email "hello@vargasjr.dev"
+          git fetch origin data/loc 2>/dev/null || true
+          git checkout -B data/loc origin/data/loc 2>/dev/null || git checkout --orphan data/loc
+          git rm -rq . 2>/dev/null || true
+          git checkout origin/main -- scripts/loc-since-rebrand.py
+          python3 scripts/loc-since-rebrand.py . --out meta/loc-since-rebrand.json
+          git add meta/loc-since-rebrand.json
+          git commit -m "the rebrand deletion scoreboard, measured $(date -u +%F)" || echo "no change"
+          git push origin data/loc
