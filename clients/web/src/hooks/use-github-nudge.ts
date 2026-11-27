@@ -30,29 +30,9 @@ export const GITHUB_MIN_USER_MESSAGES = 5;
 // Public readers (non-React, for cross-module prerequisite checks)
 // ---------------------------------------------------------------------------
 
-export function readGitHubNudgeStarred(): boolean {
-  return useNudgeStore.getState().githubStarred;
-}
-
-export function readGitHubBannerDismissedAt(): number {
-  return useNudgeStore.getState().githubBannerDismissedAt;
-}
-
-export function readGitHubUserMessagesSeen(): number {
-  return useNudgeStore.getState().githubUserMessagesSeen;
-}
-
 // ---------------------------------------------------------------------------
 // First-seen timestamp
 // ---------------------------------------------------------------------------
-
-export function ensureGitHubFirstSeenAt(): void {
-  useNudgeStore.getState().ensureGitHubFirstSeenAt();
-}
-
-export function incrementGitHubUserMessagesSeen(delta: number): void {
-  useNudgeStore.getState().incrementGitHubUserMessagesSeen(delta);
-}
 
 // ---------------------------------------------------------------------------
 // Hook
