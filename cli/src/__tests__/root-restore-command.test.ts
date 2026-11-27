@@ -80,27 +80,53 @@ test("cloud restore delegates through the same operation", async () => {
 
 test("without --from the command recovers the retired assistant", async () => {
   process.argv = ["bun", "cadet", "restore", "retired-one"];
-  restoreOp.mockResolvedValue({ ok: true, kind: "recovery" });
+  restoreOp.mockResolvedValue({ ok: true, kind: "recovery", dryRun: false });
   await restore();
-  expect(restoreOp).toHaveBeenCalledWith({ name: "retired-one" });
+  expect(restoreOp).toHaveBeenCalledWith({ name: "retired-one", dryRun: false });
 });
 
-for (const topology of ["local", "docker", "cloud"] as const) {
-  test(`${topology} rejects removed --version before lookup or mutation`, async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "restore",
-      "test",
-      "--from",
-      file,
-      "--version",
-      "0.12.10",
-    ];
-    await expect(restore()).rejects.toThrow(
-      "Unknown restore option: --version",
-    );
-    expect(lookup).not.toHaveBeenCalled();
-    expect(restoreOp).not.toHaveBeenCalled();
+/** Run restore() expecting a usage error; returns the exit code and stderr. */
+async function runExpectingUsageError(
+  args: string[],
+): Promise<{ code: unknown; stderr: string }> {
+  process.argv = ["bun", "cadet", "restore", ...args];
+  const stderr: string[] = [];
+  const write = spyOn(process.stderr, "write").mockImplementation((chunk) => {
+    stderr.push(String(chunk));
+    return true;
   });
+  const exit = spyOn(process, "exit").mockImplementation((code) => {
+    throw new Error(`exit:${code}`);
+  });
+  let code: unknown;
+  try {
+    await restore();
+  } catch (error) {
+    code = error instanceof Error ? error.message : error;
+  } finally {
+    write.mockRestore();
+    exit.mockRestore();
+  }
+  return { code, stderr: stderr.join("") };
 }
+
+test("rejects removed --version before lookup or mutation", async () => {
+  const result = await runExpectingUsageError([
+    "test",
+    "--from",
+    file,
+    "--version",
+    "0.12.10",
+  ]);
+  expect(result.code).toBe("exit:1");
+  expect(result.stderr).toContain("unknown option '--version'");
+  expect(lookup).not.toHaveBeenCalled();
+  expect(restoreOp).not.toHaveBeenCalled();
+});
+
+test("--from without a path is an error, not a recovery", async () => {
+  const result = await runExpectingUsageError(["retired-one", "--from"]);
+  expect(result.code).toBe("exit:1");
+  expect(result.stderr).toContain("'--from <path>' argument missing");
+  expect(restoreOp).not.toHaveBeenCalled();
+});

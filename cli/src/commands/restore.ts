@@ -1,78 +1,10 @@
 import { existsSync, statSync } from "fs";
 
+import { Command } from "commander";
+
 import { findAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "@mycadet/local-mode/contract";
 import { cliCommand, restoreAssistant } from "@mycadet/local-mode";
-
-function printUsage(): void {
-  console.log(
-    `Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`,
-  );
-  console.log("");
-  console.log(
-    "Restore all persistent roots from a tar archive into an assistant.",
-  );
-  console.log(
-    "Without --from, recovers a retired assistant from its archive in",
-  );
-  console.log("$XDG_DATA_HOME/cadet/retired/ and starts it again.");
-  console.log("");
-  console.log("Arguments:");
-  console.log("  <name>               Name of the assistant to restore into");
-  console.log("");
-  console.log("Options:");
-  console.log("  --from <path>        Path to the .tar.gz file (required)");
-  console.log(
-    "  --dry-run            Show what would change without applying (data-only)",
-  );
-  console.log("");
-  console.log("Examples:");
-  console.log(`  ${cliCommand()} restore my-retired-assistant`);
-  console.log(`  ${cliCommand()} restore my-assistant --from backup.tar.gz`);
-  console.log(
-    `  ${cliCommand()} restore my-cloud-assistant --from backup.tar.gz`,
-  );
-  console.log(
-    `  ${cliCommand()} restore my-assistant --from backup.tar.gz --dry-run`,
-  );
-}
-
-function parseArgs(argv: string[]): {
-  name: string | undefined;
-  fromPath: string | undefined;
-  dryRun: boolean;
-  help: boolean;
-} {
-  const args = argv.slice(3);
-
-  if (args.includes("--help") || args.includes("-h")) {
-    return {
-      name: undefined,
-      fromPath: undefined,
-      dryRun: false,
-      help: true,
-    };
-  }
-
-  let fromPath: string | undefined;
-  const dryRun = args.includes("--dry-run");
-  const positionals: string[] = [];
-
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--from" && args[i + 1]) {
-      fromPath = args[i + 1];
-      i++; // skip the value
-    } else if (args[i] === "--dry-run") {
-      // already handled above
-    } else if (args[i].startsWith("-")) {
-      throw new Error(`Unknown restore option: ${args[i]}`);
-    } else {
-      positionals.push(args[i]);
-    }
-  }
-
-  return { name: positionals[0], fromPath, dryRun, help: false };
-}
 
 function fail(message: string): never {
   console.error(message);
@@ -132,77 +64,119 @@ function printImportReport(imported: {
   }
 }
 
-export const restore = Object.assign(
-  async function restore(): Promise<void> {
-    const { name, fromPath, dryRun, help } = parseArgs(process.argv);
+/** The `cadet restore` action: restore a backup, or recover a retired assistant. */
+async function restoreFlow(
+  name: string,
+  opts: { from?: string; dryRun?: boolean },
+): Promise<void> {
+  const fromPath = opts.from;
+  const dryRun = opts.dryRun ?? false;
 
-    if (help) {
-      printUsage();
-      process.exit(0);
+  // Without --from: recover a retired assistant from its retire archive.
+  let entry: LockfileAssistant;
+  if (fromPath) {
+    // Look up the instance
+    const found = findAssistant(name);
+    if (!found) {
+      console.error(`Error: No assistant found with name '${name}'.`);
+      console.error(`Run '${cliCommand()} ps' to see available assistants.`);
+      process.exit(1);
     }
+    entry = found;
 
-    if (!name) {
-      console.error("Error: <name> is required.");
-      console.error("");
-      printUsage();
+    // Verify .tar.gz file exists
+    if (!existsSync(fromPath)) {
+      console.error(`Error: File not found: ${fromPath}`);
       process.exit(1);
     }
 
-    // Without --from: recover a retired assistant from its retire archive.
-    let entry: LockfileAssistant;
-    if (fromPath) {
-      // Look up the instance
-      const found = findAssistant(name);
-      if (!found) {
-        console.error(`Error: No assistant found with name '${name}'.`);
-        console.error(`Run '${cliCommand()} ps' to see available assistants.`);
-        process.exit(1);
-      }
-      entry = found;
+    const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
+    console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
+  }
 
-      // Verify .tar.gz file exists
-      if (!existsSync(fromPath)) {
-        console.error(`Error: File not found: ${fromPath}`);
-        process.exit(1);
-      }
+  const result = fromPath
+    ? await restoreAssistant({
+        entry: entry!,
+        fromPath,
+        dryRun,
+        log: (line) => console.log(line),
+      })
+    : await restoreAssistant({ name, dryRun });
 
-      const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
-      console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
-    }
+  if (!result.ok) fail(result.error);
 
-    const result = fromPath
-      ? await restoreAssistant({
-          entry: entry!,
-          fromPath,
-          dryRun,
-          log: (line) => console.log(line),
-        })
-      : await restoreAssistant({ name });
+  if (result.kind === "recovery") {
+    console.log(
+      result.dryRun
+        ? `Retired archive for '${name}' is ready; restore would unpack it and start the assistant. No changes were made.`
+        : `✅ Recovered assistant '${name}'.`,
+    );
+    return;
+  }
 
-    if (!result.ok) fail(result.error);
+  if (result.kind === "cloud") {
+    if (result.dryRun) printPreflight(result.preflight);
+    else printImportReport(result.import);
+    return;
+  }
 
-    if (result.kind === "recovery") {
-      console.log(`✅ Recovered assistant '${name}'.`);
-      return;
-    }
+  if (result.dryRun)
+    console.log(
+      "Root archive is valid; restore would replace workspace, gateway security, CES security and CES data. No services were stopped.",
+    );
+  else {
+    console.log("Restore complete.");
+    console.log(`Previous state retained at ${result.recoveryPath}`);
+  }
+}
 
-    if (result.kind === "cloud") {
-      if (result.dryRun) printPreflight(result.preflight);
-      else printImportReport(result.import);
-      return;
-    }
+const DESCRIPTION =
+  "Restore persistent roots from tar, or recover a retired assistant";
 
-    if (result.dryRun)
-      console.log(
-        "Root archive is valid; restore would replace workspace, gateway security, CES security and CES data. No services were stopped.",
-      );
-    else {
-      console.log("Restore complete.");
-      console.log(`Previous state retained at ${result.recoveryPath}`);
-    }
+/**
+ * The `cadet restore` command — commander owns the argument and flag
+ * parsing (the hand-rolled loop silently dropped a valueless `--from` and
+ * fell through to recovery); this module keeps the execute layer.
+ */
+export function registerRestoreCommand(program: Command): void {
+  program
+    .command("restore")
+    .description(DESCRIPTION)
+    .argument(
+      "<name>",
+      "The assistant to restore into, or the retired assistant to recover",
+    )
+    .option("--from <path>", "Path to a .tar.gz backup to restore")
+    .option("--dry-run", "Show what would change without applying it")
+    .addHelpText(
+      "after",
+      `
+With --from, restores all persistent roots from the archive into an existing
+assistant. Without --from, recovers a retired assistant from its archive in
+$XDG_DATA_HOME/cadet/retired/ and starts it again.
+
+Examples:
+  $ ${cliCommand()} restore my-retired-assistant
+  $ ${cliCommand()} restore my-retired-assistant --dry-run
+  $ ${cliCommand()} restore my-assistant --from backup.tar.gz
+  $ ${cliCommand()} restore my-assistant --from backup.tar.gz --dry-run`,
+    )
+    .action(restoreFlow);
+}
+
+/**
+ * Compat runner for the restore suites: the tests set process.argv and call
+ * `restore()` the way the pre-commander entry did. Builds the restore
+ * command standalone and parses the argv after the command word.
+ */
+export const restore = Object.assign(
+  async function restore(): Promise<void> {
+    const program = new Command();
+    program.name(cliCommand());
+    registerRestoreCommand(program);
+    await program.parseAsync(["restore", ...process.argv.slice(3)], {
+      from: "user",
+    });
   },
-  {
-    description:
-      "Restore persistent roots from tar, or recover a retired assistant",
-  },
+  { description: DESCRIPTION },
 );

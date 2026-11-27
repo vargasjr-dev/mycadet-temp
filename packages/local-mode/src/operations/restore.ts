@@ -17,7 +17,7 @@ export type {
  * The restore OPERATION: unpack an assistant's data to its machine
  */
 type RestoreAssistantResult =
-  | { ok: true; kind: "recovery" }
+  | { ok: true; kind: "recovery"; dryRun: boolean }
   | { ok: true; kind: "cloud"; dryRun: true; preflight: CloudRestorePreflight }
   | { ok: true; kind: "cloud"; dryRun: false; import: CloudRestoreImport }
   | { ok: true; kind: "roots"; dryRun: boolean; recoveryPath?: string }
@@ -45,7 +45,7 @@ export async function restoreAssistant(
         "restoreAssistant requires a name or an entry with fromPath",
       );
     }
-    return recoverAssistant(opts.name);
+    return recoverAssistant(opts.name, opts.dryRun ?? false);
   }
   if (!opts.entry) {
     throw new TypeError("restoreAssistant requires an entry with fromPath");
@@ -105,7 +105,10 @@ export async function restoreAssistant(
  * $XDG_DATA_HOME/cadet/retired/ — extraction, lockfile restore, and the
  * wake. Retire archives local instances only.
  */
-async function recoverAssistant(name: string): Promise<RestoreAssistantResult> {
-  const result = await recoverRetired(name);
-  return result.ok ? { ok: true, kind: "recovery" } : result;
+async function recoverAssistant(
+  name: string,
+  dryRun: boolean,
+): Promise<RestoreAssistantResult> {
+  const result = await recoverRetired(name, dryRun);
+  return result.ok ? { ok: true, kind: "recovery", dryRun } : result;
 }
