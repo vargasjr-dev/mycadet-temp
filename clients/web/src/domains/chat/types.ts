@@ -19,6 +19,20 @@ export interface ChatError {
   code?: string;
   errorCategory?: string;
   /**
+   * The blocking dialog's title when `displayAs` is "modal". The send path
+   * classifies failures by HTTP status (see classifySendFailure): 4xx
+   * rejections render "Message blocked", 5xx classes get their own honest
+   * titles. Omitted = the modal's own default.
+   */
+  title?: string;
+  /**
+   * True when the failure is about the assistant's model access (LLM-level
+   * 401/403) rather than a rejection of the user's message: the send path
+   * keeps the optimistic conversation + user message and surfaces the
+   * provider error as an assistant message instead of rolling back.
+   */
+  keepMessageAndConversation?: boolean;
+  /**
    * How the UI should surface this error.
    * - "inline" (default): render as a Notice banner in the composer area.
    * - "modal": render as a blocking dialog. Used when the POST failed before

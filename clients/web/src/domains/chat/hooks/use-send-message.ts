@@ -75,9 +75,9 @@ import {
   clearPendingConfirmationsFromMessages,
   dismissInteractiveSurfaces,
   newTurnId,
-  resolvePostError,
   shouldCleanupSupersededInteractions,
 } from "@/domains/chat/utils/send-message-utils";
+import { classifySendFailure } from "@/domains/chat/utils/send-failure";
 import type { UIContext } from "@/domains/chat/turn-selectors";
 import { useComposerStore } from "@/domains/chat/composer-store";
 import { resolveDraftComposerConfiguration } from "@/domains/chat/utils/draft-composer-configuration";
@@ -455,12 +455,15 @@ export function useSendMessage({
         }
       }
       if (!postResult.ok) {
+        const failure = classifySendFailure(
+          postResult.status,
+          postResult.error.code,
+          postResult.error.detail,
+        );
         return failedSend({
-          message: resolvePostError(
-            postResult.error.code,
-            postResult.error.detail,
-            "Something went wrong. Please try again.",
-          ),
+          message: failure.message,
+          title: failure.title,
+          keepMessageAndConversation: failure.keepMessageAndConversation,
           ...(postResult.error.code ? { code: postResult.error.code } : {}),
         });
       }
@@ -956,6 +959,34 @@ export function useSendMessage({
         );
 
         if (result.status === "failed") {
+          useConversationStore
+            .getState()
+            .removeProcessingConversationId(activeConversationId);
+          // An LLM-level auth failure (the assistant answered but its model
+          // access was rejected) is not a rejection of the user's message:
+          // keep the optimistic conversation + user message, and surface the
+          // provider's error as an assistant message — the same shape the
+          // usual provider-error rendering uses. A retry re-sends under the
+          // same clientMessageId, which the daemon dedupes, so nothing
+          // double-posts.
+          if (result.error.keepMessageAndConversation) {
+            if (!isHidden && sendScopeIsCurrent()) {
+              addOptimisticSend({
+                id: crypto.randomUUID(),
+                isOptimistic: true,
+                role: "assistant",
+                textSegments: [result.error.message],
+                contentOrder: [{ type: "text", id: "0" }],
+                contentBlocks: [{ type: "text", text: result.error.message }],
+                timestamp: Date.now(),
+              });
+            }
+            // Consume the failure here and return void — sendMessage's
+            // inferred return type is what the consumers type as
+            // `Promise<void>`; leaking the failure object would break every
+            // send-site signature.
+            return;
+          }
           // Roll back every piece of optimistic state we just set up: the
           // optimistic send, the processing flag on the conversation, the
           // prepended draft conversation in the sidebar, and the cleared
@@ -963,14 +994,12 @@ export function useSendMessage({
           setOptimisticSends((prev) =>
             prev.filter((m) => m.id !== userMessage.id),
           );
-          useConversationStore
-            .getState()
-            .removeProcessingConversationId(activeConversationId);
           if (isDraft) {
             removeConversation(queryClient, assistantId, activeConversationId);
             setError({
               message: result.error.message,
               ...(result.error.code ? { code: result.error.code } : {}),
+              ...(result.error.title ? { title: result.error.title } : {}),
               displayAs: "modal",
               restoreContent: content,
             });

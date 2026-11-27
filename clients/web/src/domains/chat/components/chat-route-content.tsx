@@ -796,6 +796,7 @@ export function ChatMainPanel({
     error?.displayAs === "modal" ? (
       <SendErrorModal
         open
+        title={error.title}
         message={error.message}
         onClose={() => {
           if (typeof error.restoreContent === "string") {
