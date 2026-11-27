@@ -302,7 +302,7 @@ describe("the shell's assistant commands", () => {
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Retire" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    const deleteCall = request.mock.calls.find(([url, init]) =>
+    const deleteCall = request.mock.calls.find(([url]) =>
       String(url).includes("/retire/"),
     );
     expect(String(deleteCall?.[0])).toBe("/v1/assistants/assistant-1/retire/");

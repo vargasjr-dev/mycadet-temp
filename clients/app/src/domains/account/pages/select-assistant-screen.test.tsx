@@ -27,9 +27,6 @@ const routers: ReturnType<typeof createMemoryRouter>[] = [];
 // The retire mutation's csrf bootstrap reads this cookie; seed it so no
 // test fetch is spent (or delayed) on a session probe.
 document.cookie = "csrftoken=test; path=/";
-const host = {
-  baseUrl: "https://host.example/admin/proxy/",
-};
 const detail = {
   id: "assistant-2",
   status: "active",
@@ -381,7 +378,7 @@ test("the row's menu retires the assistant and refreshes the list", async () => 
   await screen.findByRole("radio", { name: /^Two/ });
   expect(screen.queryByRole("radio", { name: /^One/ })).toBeNull();
   // The retire DELETE runs through the same-origin cloud client.
-  const deleteCall = request.mock.calls.find(([url, init]) =>
+  const deleteCall = request.mock.calls.find(([url]) =>
     String(url).includes("/retire/"),
   );
   expect(String(deleteCall?.[0])).toBe("/v1/assistants/assistant-1/retire/");

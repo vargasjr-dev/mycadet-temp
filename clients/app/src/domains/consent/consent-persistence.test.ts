@@ -5,7 +5,6 @@ import {
   PRIVACY_CONSENT_VERSION,
   TOS_CONSENT_VERSION,
   clearConsentForUser,
-  persistConsentForUser,
   readConsentCurrency,
   restoreConsentForUser,
   saveConsent,

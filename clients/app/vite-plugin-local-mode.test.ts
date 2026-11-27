@@ -144,7 +144,6 @@ function dispatch(
 }
 
 const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-const PAST = new Date(Date.now() - 60_000).toISOString();
 
 function writeToken(assistantId: string, over: Record<string, unknown>): void {
   const tokenPath = guardianTokenPath(assistantId);

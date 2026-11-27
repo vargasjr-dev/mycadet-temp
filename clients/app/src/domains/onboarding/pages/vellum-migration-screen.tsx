@@ -18,7 +18,6 @@ import type {
   VellumMigrationConfirmInfo,
   VellumMigrationProbe,
   VellumMigrationRunState,
-  VellumMigrationStepEvent,
 } from "@mycadet/ipc-contract";
 import { Button } from "@mycadet/design-library/components/button";
 
@@ -41,7 +40,7 @@ export function VellumMigrationScreen() {
   const [phase, setPhase] = useState<Phase>("preparing");
   const [info, setInfo] = useState<VellumMigrationConfirmInfo | null>(null);
   const [neverAgain, setNeverAgain] = useState(false);
-  const [steps, setSteps] = useState<StepRow[]>([]);
+  const [steps] = useState<StepRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const offerRef = useRef<VellumMigrationProbe | null>(null);
 
@@ -84,42 +83,6 @@ export function VellumMigrationScreen() {
       disposed = true;
     };
   }, [t]);
-
-  const onStep = (event: VellumMigrationStepEvent) => {
-    setSteps((prev) => {
-      const next = [...prev];
-      if (event.kind === "start") {
-        next.push({
-          key: `${event.step}:${next.length}`,
-          name: event.step,
-          status: "running",
-        });
-      } else if (event.kind === "done") {
-        const idx = next.length - 1;
-        if (idx >= 0 && next[idx].name === event.step) {
-          next[idx] = {
-            ...next[idx],
-            status:
-              event.status === "completed"
-                ? "completed"
-                : event.status === "skipped"
-                  ? "skipped"
-                  : "failed",
-            summary: event.summary,
-            warning: event.issues.find((i) => i.severity === "warning")
-              ?.message,
-          };
-        }
-      } else {
-        const idx = next.length - 1;
-        if (idx >= 0 && next[idx].name === event.step) {
-          next[idx] = { ...next[idx], summary: describeItem(event) };
-        }
-      }
-      return next;
-    });
-  };
-
   const onState = (state: VellumMigrationRunState) => {
     if (state.state === "done") {
       setPhase("done");
@@ -283,16 +246,4 @@ export function VellumMigrationScreen() {
       </div>
     </AccountShell>
   );
-}
-
-function describeItem(
-  event: Extract<VellumMigrationStepEvent, { kind: "item" }>,
-): string {
-  const { item } = event;
-  if (item.status === "progress" && item.progress) {
-    const { bytes, totalBytes } = item.progress;
-    const soFar = formatSize(bytes);
-    return totalBytes ? `${soFar} / ${formatSize(totalBytes)}` : soFar;
-  }
-  return item.summary ? `${item.name} — ${item.summary}` : item.name;
 }

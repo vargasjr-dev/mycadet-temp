@@ -8,10 +8,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 
 import * as allauthClient from "@app/lib/auth/auth-config-client";
-import type {
-  AllauthResult,
-  AuthConfiguration,
-} from "@app/lib/auth/auth-config-client";
+import type { AllauthResult } from "@app/lib/auth/auth-response";
+import type { AuthConfiguration } from "@app/lib/auth/auth-config-schema";
 
 const authConfig = {
   result: null as AllauthResult<AuthConfiguration> | null,

@@ -68,6 +68,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",
     "capacitor-plugin-safe-area": "5.0.0",
+    "eslint": "10.2.0",
     "tailwindcss": "4.1.8",
     "typescript": "5.9.3",
     "vite": "8.0.11"
@@ -80,6 +81,7 @@
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "lint": "eslint . --max-warnings 156"
   }
 }

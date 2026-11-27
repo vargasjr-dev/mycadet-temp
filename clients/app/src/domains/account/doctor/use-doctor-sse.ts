@@ -80,19 +80,6 @@ function waitForDoctorReconnect(
   });
 }
 
-async function readDoctorReplayGap(response: Response): Promise<boolean> {
-  if (response.status !== 409) {
-    return false;
-  }
-
-  const body = (await response
-    .clone()
-    .json()
-    .catch(() => null)) as { code?: unknown } | null;
-
-  return body?.code === DOCTOR_REPLAY_GAP_CODE;
-}
-
 function getSseEventId(event: unknown): string | null {
   if (!event || typeof event !== "object" || Array.isArray(event)) {
     return null;
