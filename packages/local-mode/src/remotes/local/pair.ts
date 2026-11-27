@@ -17,10 +17,10 @@ import { join } from "node:path";
  * shim so the mint runs the identical gateway build the daemon runs, with
  * the instance-pinned CADET_WORKSPACE_DIR / GATEWAY_SECURITY_DIR the
  * server was given (the file-backed pairing store must resolve identically
- * in both processes). Inlined at its single caller: this is pair-local
- * plumbing, not shared machinery.
+ * in both processes). `cadet devices` runs the gateway's `devices` command
+ * the same way.
  */
-function gatewayPairInvocation(entry: LocalAssistant): {
+export function gatewayPairInvocation(entry: LocalAssistant): {
   cwd: string;
   env: Record<string, string | undefined>;
 } {

@@ -2,12 +2,41 @@ import { spawn } from "node:child_process";
 
 import type { CliInvocation } from "./util";
 import { resolveCliInvocation } from "./cli-invocation";
+import { execOutput } from "./exec";
+import type { DockerAssistant, LocalAssistant } from "./lockfile-contract";
+import { dockerResourceNames } from "./remotes/docker/common";
+import { gatewayPairInvocation } from "./remotes/local/pair";
+
+/**
+ * Run the gateway's own `devices` command (`gateway devices list --json`,
+ * `gateway devices revoke <id>`) for a local or Docker assistant, the same
+ * way `cadet pair` runs `gateway pairing mint`, and return its stdout.
+ */
+export function runGatewayDevicesCommand(
+  entry: LocalAssistant | DockerAssistant,
+  args: string[],
+): Promise<string> {
+  if (entry.cloud === "docker") {
+    const container = dockerResourceNames(entry.assistantId).gatewayContainer;
+    return execOutput(
+      "docker",
+      ["exec", container, "bun", "run", "gateway", "devices", ...args],
+      { timeoutMs: 30_000 },
+    );
+  }
+  const invocation = gatewayPairInvocation(entry);
+  return execOutput("gateway", ["devices", ...args], {
+    cwd: invocation.cwd,
+    env: invocation.env,
+    timeoutMs: 30_000,
+  });
+}
 
 // Fast loopback HTTP calls; well under the lifecycle-op timeouts.
 const DEVICES_TIMEOUT_MS = 30_000;
 
 /**
- * Mirrors one row of the gateway's `GET /v1/devices` response. The gateway
+ * Mirrors one row of the gateway's `devices list --json` output. The gateway
  * stores only the HASHED device id, so `hashedDeviceId` is both the display
  * identifier and the revocation key.
  */
@@ -109,7 +138,7 @@ function toText(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }
 
-function parseDeviceRecords(stdout: string): DeviceRecord[] | null {
+export function parseDeviceRecords(stdout: string): DeviceRecord[] | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(stdout);

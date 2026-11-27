@@ -142,14 +142,18 @@ afterEach(() => {
  * Run `gateway pairing <args>` through the commander program, pinning the
  * exit code the way the CLI exits: the action's process.exit.
  */
-async function runPairing(args: string[]): Promise<number> {
+function runPairing(args: string[]): Promise<number> {
+  return runGatewayCli(["pairing", ...args]);
+}
+
+async function runGatewayCli(args: string[]): Promise<number> {
   const exitSpy = spyOn(process, "exit").mockImplementation(
     (code?: number): never => {
       throw new Error(`exit:${code}`);
     },
   );
   try {
-    await buildGatewayCliProgram().parseAsync(["pairing", ...args], {
+    await buildGatewayCliProgram().parseAsync(args, {
       from: "user",
     });
     return 0;
@@ -289,6 +293,35 @@ describe("gateway pairing mint --device-id", () => {
       .from(actorTokenRecords)
       .all();
     expect(rows.length).toBeGreaterThan(0);
+  });
+
+  test("devices list --json prints the minted device with its full record", async () => {
+    await runPairing([
+      "mint",
+      "--platform",
+      "cli",
+      "--device-id",
+      "device-1",
+      "--client-reported-name",
+      "box",
+    ]);
+
+    const code = await runGatewayCli(["devices", "list", "--json"]);
+
+    expect(code).toBe(0);
+    expect(lastLoggedPayload()).toEqual({
+      devices: [
+        {
+          hashedDeviceId: expect.any(String),
+          platform: "cli",
+          pairingUserAgent: null,
+          clientReportedName: "box",
+          issuedAt: expect.any(Number),
+          expiresAt: expect.any(Number),
+          lastUsedAt: null,
+        },
+      ],
+    });
   });
 
   test("needs no saved ingress url — a self-exchange renders no link", async () => {

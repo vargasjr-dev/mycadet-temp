@@ -236,7 +236,12 @@ export {
   pairingCancel,
 } from "./pair";
 export type { PairingFailureReason } from "./pair";
-export { runDevicesList, runDevicesRevoke } from "./devices";
+export {
+  parseDeviceRecords,
+  runDevicesList,
+  runDevicesRevoke,
+  runGatewayDevicesCommand,
+} from "./devices";
 export type { DeviceRecord } from "./devices";
 export { stripVersionPrefix } from "./version";
 export { upgradeAssistant } from "./operations/upgrade";

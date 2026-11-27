@@ -119,8 +119,13 @@ export function buildGatewayCliProgram(
   devices
     .command("list")
     .description("List devices")
-    .action(async () => {
+    .option("--json", "Machine-readable JSON")
+    .action(async (opts: { json?: boolean }) => {
       const list = await handleListDevices();
+      if (opts.json) {
+        console.log(JSON.stringify({ devices: list }));
+        process.exit(0);
+      }
       if (list.length === 0) {
         console.log("No devices found.");
         process.exit(0);
