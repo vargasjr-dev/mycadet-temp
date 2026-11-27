@@ -5,13 +5,13 @@ import {
   appBridge,
   bundleConfirmBridge,
   commandsBridge,
-  createNotificationsBridge,
   deepLinksBridge,
   downloadsBridge,
   hotkeysBridge,
   launchAtLoginBridge,
   mainWindowBridge,
   mainWindowSetTitleBarOverlay,
+  notificationsBridge,
   textBridge,
   textUndoInFrontApp,
   updateBridge,
@@ -26,8 +26,7 @@ import {
 } from "./preload/features/diagnostics";
 import {
   helperApps,
-  helperHotkeyChord,
-  helperHotkeyHold,
+  helperHotkey,
   helperInput,
   helperSurface,
 } from "./preload/features/helper";
@@ -44,62 +43,53 @@ import { fileOpenSurfaces } from "./file-open-preload";
 /**
  * The shared desktop preload: one static object assembling every bridge
  * surface by importing the surface objects themselves — no install step, no
- * composition order to reason about, and no per-client core (the cores were
- * identical up to platform deltas, which branch here via `process.platform`).
- *
- * The platform deltas live as spreads at the seams the contract marks
- * optional: macOS's raw-keyboard helper (hotkey hold flavor, apps, input),
- * its permission-setup guide and text undo, and Windows' native title-bar
- * overlay. A real preload runs once per platform, so branching at compose
- * time is exact. The only per-composition construction left is the
- * notifications bridge, which owns a publisher-session identity.
+ * composition order to reason about, no per-client core, and no platform
+ * branches. Every surface ships every method on every platform; the main
+ * process serves what its platform supports (the shared main modules
+ * register their channels everywhere, with internal guards where a
+ * capability is platform-specific).
  */
-export const composeDesktopPreload = (): Partial<CadetBridge> => {
-  // Branch at compose time, not module load: a real preload runs once per
-  // platform, and the parity tests recompose under a mocked platform.
-  const isMacOS = process.platform === "darwin";
-  const isWin32 = process.platform === "win32";
-  return {
-    platform: "electron",
-    app: appBridge,
-    commands: commandsBridge,
-    mainWindow: {
-      ...mainWindowBridge,
-      ...(isWin32 ? { setTitleBarOverlay: mainWindowSetTitleBarOverlay } : {}),
-    },
-    text: {
-      ...textBridge,
-      ...(isMacOS ? { undoInFrontApp: textUndoInFrontApp } : {}),
-    },
-    auth: authBridge,
-    hotkeys: hotkeysBridge,
-    launchAtLogin: launchAtLoginBridge,
-    deepLinks: deepLinksBridge,
-    update: updateBridge,
-    vellumMigration: vellumMigrationBridge,
-    bundleConfirm: bundleConfirmBridge,
-    downloads: downloadsBridge,
-    notifications: createNotificationsBridge(),
-    share: shareBridge,
-    diagnostics: diagnosticsBridge,
-    feedback: feedbackBridge,
-    companion: companionBridge,
-    menu: menuBridge,
-    ...presenceSurfaces,
-    ...auxiliaryWindowSurfaces,
-    ...fileOpenSurfaces,
-    helper: {
-      ...helperSurface,
-      hotkey: isMacOS ? helperHotkeyHold : helperHotkeyChord,
-      ...(isMacOS ? { apps: helperApps, input: helperInput } : {}),
-    },
-    permissions: {
-      ...permissionsSurface,
-      ...(isMacOS ? { setup: permissionSetup } : {}),
-    },
-    voiceActivity: voiceActivitySurface,
-  };
-};
+export const composeDesktopPreload = (): Partial<CadetBridge> => ({
+  platform: "electron",
+  app: appBridge,
+  commands: commandsBridge,
+  mainWindow: {
+    ...mainWindowBridge,
+    setTitleBarOverlay: mainWindowSetTitleBarOverlay,
+  },
+  text: {
+    ...textBridge,
+    undoInFrontApp: textUndoInFrontApp,
+  },
+  auth: authBridge,
+  hotkeys: hotkeysBridge,
+  launchAtLogin: launchAtLoginBridge,
+  deepLinks: deepLinksBridge,
+  update: updateBridge,
+  vellumMigration: vellumMigrationBridge,
+  bundleConfirm: bundleConfirmBridge,
+  downloads: downloadsBridge,
+  notifications: notificationsBridge,
+  share: shareBridge,
+  diagnostics: diagnosticsBridge,
+  feedback: feedbackBridge,
+  companion: companionBridge,
+  menu: menuBridge,
+  ...presenceSurfaces,
+  ...auxiliaryWindowSurfaces,
+  ...fileOpenSurfaces,
+  helper: {
+    ...helperSurface,
+    hotkey: helperHotkey,
+    apps: helperApps,
+    input: helperInput,
+  },
+  permissions: {
+    ...permissionsSurface,
+    setup: permissionSetup,
+  },
+  voiceActivity: voiceActivitySurface,
+});
 
 // Every desktop shim's preload is a one-line import of this module: it
 // composes the bridge and exposes it under the contract's key.

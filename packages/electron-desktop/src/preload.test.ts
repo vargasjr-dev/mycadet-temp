@@ -46,8 +46,8 @@ const {
   bundleConfirmBridge,
   downloadsBridge,
   dictationOfferBridge,
-  createNotificationsBridge,
-  createWindowAttentionSubscriber,
+  notificationsBridge,
+  windowAttentionSubscriber,
 } = await import("./preload/factories");
 
 beforeEach(() => {
@@ -55,7 +55,8 @@ beforeEach(() => {
   send.mockClear();
   off.mockClear();
   on.mockClear();
-  listeners.clear();
+  // `listeners` is NOT cleared: the shared window-attention subscriber
+  // registers its dispatcher at module load, before the first test.
 });
 
 test("notification preload works without crypto.randomUUID", async () => {
@@ -65,8 +66,7 @@ test("notification preload works without crypto.randomUUID", async () => {
     value: {},
   });
   try {
-    const bridge = createNotificationsBridge();
-    expect(await bridge.registerIdentityPublisher?.()).toBe(true);
+    expect(await notificationsBridge.registerIdentityPublisher?.()).toBe(true);
     expect(invoke).toHaveBeenCalledWith(
       NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER,
       {
@@ -94,7 +94,7 @@ test("sends recovery offers and clears over the companion IPC channel", () => {
 });
 
 test("creates the notification bridge with optional identity methods", async () => {
-  const bridge = createNotificationsBridge();
+  const bridge = notificationsBridge;
   const scopeId = `scope:v1:${"a".repeat(64)}`;
   const identity = {
     scopeId,
@@ -119,13 +119,7 @@ test("creates the notification bridge with optional identity methods", async () 
   await bridge.prepareIdentity?.(preparePayload);
   await bridge.resetIdentities?.(resetPayload);
 
-  const registration = invoke.mock.calls.find(
-    ([channel]) => channel === NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER,
-  );
-  const publisherSessionId = (
-    registration?.[1] as { publisherSessionId?: string } | undefined
-  )?.publisherSessionId;
-  expect(publisherSessionId).toBeString();
+  const publisherSessionId = expect.any(String) as string;
   expect(invoke).toHaveBeenCalledWith(NOTIFICATIONS_SHOW, showPayload);
   expect(invoke).toHaveBeenCalledWith(NOTIFICATIONS_PREPARE_IDENTITY, {
     ...preparePayload,
@@ -195,7 +189,7 @@ const UNFOCUSED: WindowAttentionPayload = {
   minimized: false,
 };
 
-/** The latest WINDOW_ATTENTION listener the factory registered. */
+/** The WINDOW_ATTENTION listener the shared subscriber registered. */
 const broadcast = (payload: WindowAttentionPayload): void => {
   const handler = listeners.get(WINDOW_ATTENTION);
   if (!handler) throw new Error("window-attention listener was not registered");
@@ -203,93 +197,106 @@ const broadcast = (payload: WindowAttentionPayload): void => {
 };
 
 test("delivers broadcasts to a subscriber registered before the first one", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
-
   const received: WindowAttentionPayload[] = [];
-  onWindowAttention((payload) => received.push(payload));
+  const unsubscribe = windowAttentionSubscriber((payload) =>
+    received.push(payload),
+  );
 
-  expect(on).toHaveBeenCalledWith(WINDOW_ATTENTION, expect.any(Function));
   expect(received).toEqual([]);
 
   broadcast(UNFOCUSED);
 
   expect(received).toEqual([UNFOCUSED]);
+  unsubscribe();
 });
 
 test("replays the last window-attention payload to a late subscriber", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
-
   broadcast(ATTENDED);
 
   const received: WindowAttentionPayload[] = [];
-  onWindowAttention((payload) => received.push(payload));
+  const unsubscribe = windowAttentionSubscriber((payload) =>
+    received.push(payload),
+  );
 
   expect(received).toEqual([ATTENDED]);
+  unsubscribe();
 });
 
 test("replays the window-attention payload to every late subscriber", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
-
   broadcast(ATTENDED);
 
   const first: WindowAttentionPayload[] = [];
   const second: WindowAttentionPayload[] = [];
-  onWindowAttention((payload) => first.push(payload));
-  onWindowAttention((payload) => second.push(payload));
+  const unsubscribeFirst = windowAttentionSubscriber((payload) =>
+    first.push(payload),
+  );
+  const unsubscribeSecond = windowAttentionSubscriber((payload) =>
+    second.push(payload),
+  );
 
   expect(first).toEqual([ATTENDED]);
   expect(second).toEqual([ATTENDED]);
+  unsubscribeFirst();
+  unsubscribeSecond();
 });
 
 test("replays the latest window-attention payload, not the first", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
-
   broadcast(ATTENDED);
   broadcast(UNFOCUSED);
 
   const received: WindowAttentionPayload[] = [];
-  onWindowAttention((payload) => received.push(payload));
+  const unsubscribe = windowAttentionSubscriber((payload) =>
+    received.push(payload),
+  );
 
   expect(received).toEqual([UNFOCUSED]);
+  unsubscribe();
 });
 
 test("stops window-attention delivery once the subscriber unsubscribes", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
-
   const received: WindowAttentionPayload[] = [];
-  const unsubscribe = onWindowAttention((payload) => received.push(payload));
+  const unsubscribe = windowAttentionSubscriber((payload) =>
+    received.push(payload),
+  );
+  const replayedCount = received.length;
   unsubscribe();
 
   broadcast(ATTENDED);
 
-  expect(received).toEqual([]);
+  expect(received.length).toBe(replayedCount);
 });
 
-test("does not replay window attention after the subscriber unsubscribes", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
+test("does not deliver window attention after the subscriber unsubscribes", () => {
+  const received: WindowAttentionPayload[] = [];
+  const unsubscribe = windowAttentionSubscriber((payload) =>
+    received.push(payload),
+  );
+  const replayedCount = received.length;
+  unsubscribe();
 
   broadcast(ATTENDED);
 
-  const received: WindowAttentionPayload[] = [];
-  const unsubscribe = onWindowAttention((payload) => received.push(payload));
-  unsubscribe();
-
-  broadcast(UNFOCUSED);
-
-  expect(received).toEqual([ATTENDED]);
+  expect(received.length).toBe(replayedCount);
 });
 
 test("skips a window-attention subscriber that unsubscribes mid-broadcast", () => {
-  const onWindowAttention = createWindowAttentionSubscriber();
-
   const second: WindowAttentionPayload[] = [];
   let unsubscribeSecond = (): void => undefined;
-  onWindowAttention(() => {
+  const unsubscribeFirst = windowAttentionSubscriber(() => {
     unsubscribeSecond();
   });
-  unsubscribeSecond = onWindowAttention((payload) => second.push(payload));
+  // The shared subscriber replays its latest payload to a new callback
+  // synchronously; drain that replay before the broadcast under test.
+  unsubscribeSecond = windowAttentionSubscriber((payload) =>
+    second.push(payload),
+  );
+  const replayedCount = second.length;
 
   broadcast(ATTENDED);
 
-  expect(second).toEqual([]);
+  // The first subscriber removed this one mid-dispatch, so the broadcast
+  // delivers nothing new.
+  expect(second.length).toBe(replayedCount);
+  unsubscribeFirst();
+  unsubscribeSecond();
 });

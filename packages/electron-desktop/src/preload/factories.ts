@@ -159,57 +159,66 @@ export const updateBridge: CadetBridge["update"] = {
 };
 
 /**
- * The one surface built per composition: it owns a publisher-session identity
- * (a per-preload random ID) whose registration is awaited by the identity
- * methods, so it cannot be a shared module-level object.
+ * The shared window-attention subscriber: one IPC listener with a
+ * latest-payload replay buffer, for the one preload that owns it.
  */
-export const createNotificationsBridge = (): CadetBridge["notifications"] => {
-  // Sandboxed Electron preload can omit randomUUID. This ID only separates
-  // publisher sessions on the same sender and is never a credential.
-  const publisherSessionId =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-  const publisherRegistration = ipcRenderer
-    .invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
-      publisherSessionId,
-    })
-    .then(
-      (registered) => registered === true,
-      () => false,
-    );
+export const windowAttentionSubscriber: CadetBridge["notifications"]["onWindowAttention"] =
+  subscribeWithReplay<WindowAttentionPayload>(WINDOW_ATTENTION);
+
+/**
+ * The notification presenter and identity-memory IPC. The publisher-session
+ * identity is memoized lazily on first use — one identity per preload module,
+ * so the object itself can be a shared const.
+ */
+export const notificationsBridge: CadetBridge["notifications"] = (() => {
+  let session: { id: string; registration: Promise<boolean> } | null = null;
+  const ensureSession = (): { id: string; registration: Promise<boolean> } => {
+    if (!session) {
+      // Sandboxed Electron preload can omit randomUUID. This ID only
+      // separates publisher sessions on the same sender and is never a
+      // credential.
+      const id =
+        globalThis.crypto?.randomUUID?.() ??
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      const registration = ipcRenderer
+        .invoke(NOTIFICATIONS_REGISTER_IDENTITY_PUBLISHER, {
+          publisherSessionId: id,
+        })
+        .then(
+          (registered) => registered === true,
+          () => false,
+        );
+      session = { id, registration };
+    }
+    return session;
+  };
   return {
     show: (payload) =>
       ipcRenderer.invoke(NOTIFICATIONS_SHOW, payload) as Promise<{
         success: boolean;
         errorMessage?: string;
       }>,
-    registerIdentityPublisher: () => publisherRegistration,
+    registerIdentityPublisher: () => ensureSession().registration,
     prepareIdentity: async (payload) => {
-      await publisherRegistration;
+      const { id, registration } = ensureSession();
+      await registration;
       await ipcRenderer.invoke(NOTIFICATIONS_PREPARE_IDENTITY, {
         ...payload,
-        publisherSessionId,
+        publisherSessionId: id,
       });
     },
     resetIdentities: async (payload) => {
-      await publisherRegistration;
+      const { id, registration } = ensureSession();
+      await registration;
       await ipcRenderer.invoke(NOTIFICATIONS_RESET_IDENTITIES, {
         ...payload,
-        publisherSessionId,
+        publisherSessionId: id,
       });
     },
     onAction: subscribe<NotificationActionEvent>(NOTIFICATIONS_ACTION),
-    onWindowAttention: createWindowAttentionSubscriber(),
+    onWindowAttention: windowAttentionSubscriber,
   };
-};
-
-/**
- * Built per composition: each subscriber keeps its own latest-payload replay
- * state, so a shared instance would cross-talk between compositions.
- */
-export function createWindowAttentionSubscriber(): CadetBridge["notifications"]["onWindowAttention"] {
-  return subscribeWithReplay<WindowAttentionPayload>(WINDOW_ATTENTION);
-}
+})();
 
 /** Renderer side of the vellum migration feature. */
 export const vellumMigrationBridge: CadetBridge["vellumMigration"] = {

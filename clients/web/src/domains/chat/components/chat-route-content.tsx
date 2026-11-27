@@ -14,7 +14,7 @@
  * - `useComposerSubmit` — submit logic, focus management
  * - `DiskPressureBannerSlot` — localStorage-backed dismiss/suppress
  * - `useRuleEditorBridge` — viewer-store → rule-editor bridge
- * - `useChatBannerSlots` — nudge/queued banner assembly
+ * - `useChatBannerSlots` — queued-drawer slot assembly
  */
 
 import {
@@ -134,7 +134,6 @@ import { routes } from "@/utils/routes";
 
 import type { UseDiskPressureMonitorResult } from "@/assistant/use-disk-pressure-monitor";
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
-import { useAppNudges } from "@/domains/chat/hooks/use-app-nudges";
 import { useGhostTextSuggestion } from "@/domains/chat/hooks/use-ghost-text-suggestion";
 import {
   handleConfirmationSubmit,
@@ -152,7 +151,6 @@ import {
   useOpenAppFromChat,
 } from "@/domains/chat/hooks/use-open-app-from-chat";
 import { useVoiceInput } from "@/domains/chat/hooks/use-voice-input";
-import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { shouldMintNewChatDraft } from "@/domains/chat/utils/conversation-selection";
@@ -395,9 +393,6 @@ export function ChatMainPanel({
   const openedAppState = useViewerStore.use.openedAppState();
   const isAppMinimized = useViewerStore.use.isAppMinimized();
 
-  // Conversation count (for nudges — TanStack Query deduped)
-  const { conversations } = useConversationListQuery(assistantId, true);
-
   // -------------------------------------------------------------------------
   // UI-scoped hooks
   // -------------------------------------------------------------------------
@@ -614,16 +609,6 @@ export function ChatMainPanel({
   useEffect(() => {
     cancelEditing();
   }, [activeConversationId, cancelEditing]);
-
-  // -------------------------------------------------------------------------
-  // Nudges + ghost text
-  // -------------------------------------------------------------------------
-  const nudges = useAppNudges(
-    messages,
-    conversations.length,
-    liveAssistantMessageId,
-    activeConversationId,
-  );
 
   const lastCompleteAssistantMsgId = useMemo<string | null>(() => {
     const last = messages[messages.length - 1];
@@ -1066,8 +1051,7 @@ export function ChatMainPanel({
   // -------------------------------------------------------------------------
   // Banner slots (nudge, queued)
   // -------------------------------------------------------------------------
-  const { mainBannerSlot, mainQueuedDrawerSlot } = useChatBannerSlots({
-    nudges,
+  const { mainQueuedDrawerSlot } = useChatBannerSlots({
     queuedMessages,
     onCancelQueuedMessage: handleCancelQueuedMessage,
     onCancelAllQueued: handleCancelAllQueued,
@@ -1084,13 +1068,7 @@ export function ChatMainPanel({
     activeConversation?.historyOrphaned === true ? (
       <OrphanedHistoryNotice />
     ) : null;
-  const mainBannerWithNotices =
-    orphanedHistoryBanner || mainBannerSlot ? (
-      <>
-        {orphanedHistoryBanner}
-        {mainBannerSlot}
-      </>
-    ) : undefined;
+  const mainBannerWithNotices = orphanedHistoryBanner || undefined;
 
   // -------------------------------------------------------------------------
   // JSX construction

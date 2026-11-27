@@ -77,10 +77,14 @@ export const helperSurface: CadetBridge["helper"] = {
 };
 
 /**
- * macOS's hotkey flavor: the helper watches the raw keyboard, so the voice
- * key rides a modifier hold and the chords a call answers register directly.
+ * The helper's hotkey surface. Every method ships on every platform — the
+ * main process serves what its helper supports: macOS's raw-keyboard watcher
+ * answers the modifier hold the voice key rides, the chords a call answers,
+ * and front-selection reads; the Linux and Windows sidecars answer the voice
+ * mode's bare-modifier chord plus registration-state events; `onEvent` is
+ * universal.
  */
-export const helperHotkeyHold: NonNullable<CadetBridge["helper"]["hotkey"]> = {
+export const helperHotkey: NonNullable<CadetBridge["helper"]["hotkey"]> = {
   onEvent: subscribe<HotkeyEvent>(HELPER_HOTKEY_EVENT),
   setModifierHold: (hold: ModifierHold) =>
     ipcRenderer.invoke(HELPER_HOTKEY_SET_MODIFIER_HOLD, hold),
@@ -88,14 +92,6 @@ export const helperHotkeyHold: NonNullable<CadetBridge["helper"]["hotkey"]> = {
     ipcRenderer.invoke(HELPER_HOTKEY_SET_CHORDS, binding),
   readFrontSelection: (): Promise<HotkeySelectionResult> =>
     ipcRenderer.invoke(HELPER_HOTKEY_READ_FRONT_SELECTION),
-};
-
-/**
- * The Linux and Windows hotkey flavor: the helper serves the voice mode's
- * bare-modifier chord registered through the sidecar.
- */
-export const helperHotkeyChord: NonNullable<CadetBridge["helper"]["hotkey"]> = {
-  onEvent: subscribe<HotkeyEvent>(HELPER_HOTKEY_EVENT),
   setVoiceModeChord: (activator) =>
     ipcRenderer.invoke(HELPER_HOTKEY_SET_VOICE_MODE_CHORD, activator),
   onRegistrationChange: subscribe<boolean>(HELPER_HOTKEY_REGISTRATION_EVENT),

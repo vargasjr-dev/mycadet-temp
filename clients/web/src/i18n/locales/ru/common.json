@@ -121,16 +121,6 @@
   "detailPanelStopButton": {
     "tooltip": "Стоп"
   },
-  "desktopAppBanner": {
-    "ariaLabelMacOS": "Скачать приложение для macOS",
-    "ariaLabelWindows": "Скачать приложение для Windows",
-    "ctaAriaLabelMacOS": "Скачать приложение для macOS",
-    "ctaAriaLabelWindows": "Скачать приложение для Windows",
-    "ctaLabel": "Скачать",
-    "subtitle": "Работа с компьютером · доступ к терминалу · нативная автоматизация",
-    "titleMacOS": "Установите приложение для macOS",
-    "titleWindows": "Установите приложение для Windows"
-  },
   "discordSetupConnectStep": {
     "instructions": "Вставьте токен бота, скопированный со страницы Bot.",
     "verificationNoticeTitle": "Игнорируйте страницу «Verify your App»",
@@ -196,16 +186,6 @@
   },
   "managedServicesBanner": {
     "body": "Управляемые сервисы тарифицируются и списываются с баланса аккаунта Cadet. <link>Смотреть цены</link>"
-  },
-  "nativeAppBanner": {
-    "bannerAria": "Скачать приложение {appName}",
-    "bannerAriaGeneric": "Скачать приложение Cadet",
-    "download": "Скачать",
-    "downloadAppAria": "Скачать приложение {appName}",
-    "downloadAppAriaGeneric": "Скачать приложение Cadet",
-    "subtitle": "Push-уведомления · биометрический вход · тактильная отдача",
-    "title": "Приложение {appName}",
-    "titleGeneric": "Приложение Cadet"
   },
   "notFound": {
     "badge": "Ошибка 404",

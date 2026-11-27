@@ -326,14 +326,6 @@
   "dictationOverlayPage": {
     "stopRecording": "Detener grabación"
   },
-  "discordNudgeBanner": {
-    "ariaLabel": "Únete a la comunidad de Discord de Cadet",
-    "ctaLong": "Unirse a Discord",
-    "ctaShort": "Unirse",
-    "subtitleLong": "Habla con el equipo: comparte comentarios, solicita funciones y obtén respuestas más rápido",
-    "subtitleShort": "Comparte comentarios, solicita funciones y obtén respuestas más rápido",
-    "title": "¡Únete a nuestra comunidad!"
-  },
   "discordSetupConnectStep": {
     "instructions": "Pega el token del bot que copiaste de la página Bot.",
     "verificationNoticeTitle": "Ignora la página \"Verify your App\"",
@@ -406,38 +398,11 @@
     "modeAria": "Cómo mostrar este archivo",
     "source": "Fuente"
   },
-  "githubNudgeBanner": {
-    "ariaLabel": "Cadet es de código abierto en GitHub",
-    "ctaAriaLabel": "Dar una estrella a Cadet en GitHub",
-    "ctaLabel": "Danos una estrella",
-    "subtitle": "Danos una estrella en GitHub o contribuye",
-    "title": "Cadet es de código abierto"
-  },
   "lazyBoundary": {
     "loadError": "Esta sección no se pudo cargar. Recarga la página para intentarlo de nuevo."
   },
   "localNotification": {
     "goToConversation": "Ir a la conversación"
-  },
-  "desktopAppBanner": {
-    "ariaLabelMacOS": "Descargar la app de macOS",
-    "ariaLabelWindows": "Descargar la app de Windows",
-    "ctaAriaLabelMacOS": "Descargar la app de macOS",
-    "ctaAriaLabelWindows": "Descargar la app de Windows",
-    "ctaLabel": "Descargar",
-    "subtitle": "Uso del ordenador · acceso a terminal · automatización nativa",
-    "titleMacOS": "Consigue la app de macOS",
-    "titleWindows": "Consigue la app de Windows"
-  },
-  "nativeAppBanner": {
-    "bannerAria": "Descargar la app de {appName}",
-    "bannerAriaGeneric": "Descargar la app móvil de Cadet",
-    "download": "Descargar",
-    "downloadAppAria": "Descargar la app de {appName}",
-    "downloadAppAriaGeneric": "Descargar la app móvil de Cadet",
-    "subtitle": "Notificaciones push · inicio biométrico · háptica",
-    "title": "Obtén la app de {appName}",
-    "titleGeneric": "Obtén la app de Cadet"
   },
   "notFound": {
     "backToAssistant": "Volver a tu asistente",
@@ -445,9 +410,6 @@
     "body": "La página que buscas no existe o puede haberse movido.",
     "goBack": "Atrás",
     "title": "Página no encontrada"
-  },
-  "nudgeChatBanner": {
-    "dismissAria": "Descartar"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "Tu asistente aún no tiene identificador; reclama uno para poder mencionarlo.",

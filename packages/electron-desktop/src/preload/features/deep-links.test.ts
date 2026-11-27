@@ -41,7 +41,8 @@ test("contributes deep-link delivery and launch-at-login IPC", async () => {
   expect(invoke).toHaveBeenCalledWith("cadet:launchAtLogin:get");
   expect(invoke).toHaveBeenCalledWith("cadet:launchAtLogin:set", true);
 
-  const [channel, handler] = on.mock.calls[0] ?? [];
+  const [channel, handler] =
+    on.mock.calls.find(([c]) => c === "cadet:deepLinks:event") ?? [];
   if (channel !== "cadet:deepLinks:event" || !handler) {
     throw new Error("Deep-link event handler was not registered");
   }

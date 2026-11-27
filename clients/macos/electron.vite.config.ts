@@ -17,7 +17,7 @@ import { resolveVersion } from "../../packages/shared/version";
 // No renderer config: the MAIN window renders the @mycadet/app standalone
 // bundle over the custom `app://` protocol in every build — `bun run dev`
 // packs the same dists from the source trees and serves them through the
-// same handler (see clients/README.md). The auxiliary windows still render
+// same handler. The auxiliary windows still render
 // web routes off clients/web's build.
 //
 // Dependencies that must be bundled inline rather than externalized as

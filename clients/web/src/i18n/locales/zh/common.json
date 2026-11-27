@@ -328,14 +328,6 @@
   "dictationOverlayPage": {
     "stopRecording": "停止录音"
   },
-  "discordNudgeBanner": {
-    "ariaLabel": "加入 Cadet Discord 社区",
-    "ctaLong": "加入 Discord",
-    "ctaShort": "加入",
-    "subtitleLong": "与团队交流 - 分享反馈、请求功能、更快获得答案",
-    "subtitleShort": "分享反馈、请求功能、更快获得答案",
-    "title": "加入我们的社区！"
-  },
   "discordSetupConnectStep": {
     "instructions": "粘贴您从“机器人”页面复制的机器人令牌。",
     "verificationNoticeTitle": "请忽略“验证您的应用”页面",
@@ -408,38 +400,11 @@
     "modeAria": "如何显示此文件",
     "source": "源码"
   },
-  "githubNudgeBanner": {
-    "ariaLabel": "Cadet 在 GitHub 上开源",
-    "ctaAriaLabel": "在 GitHub 上为 Cadet 点赞",
-    "ctaLabel": "为我们点赞",
-    "subtitle": "在 GitHub 上为我们点赞或贡献代码",
-    "title": "Cadet 是开源的"
-  },
   "lazyBoundary": {
     "loadError": "此部分无法加载。请重新加载页面重试。"
   },
   "localNotification": {
     "goToConversation": "前往对话"
-  },
-  "desktopAppBanner": {
-    "ariaLabelMacOS": "下载 macOS 应用",
-    "ariaLabelWindows": "下载 Windows 应用",
-    "ctaAriaLabelMacOS": "下载 macOS 应用",
-    "ctaAriaLabelWindows": "下载 Windows 应用",
-    "ctaLabel": "下载",
-    "subtitle": "电脑使用 · 终端访问 · 原生自动化",
-    "titleMacOS": "获取 macOS 应用",
-    "titleWindows": "获取 Windows 应用"
-  },
-  "nativeAppBanner": {
-    "bannerAria": "下载 {appName} 应用",
-    "bannerAriaGeneric": "下载 Cadet 移动应用",
-    "download": "下载",
-    "downloadAppAria": "下载 {appName} 应用",
-    "downloadAppAriaGeneric": "下载 Cadet 移动应用",
-    "subtitle": "推送通知 · 生物识别登录 · 触觉反馈",
-    "title": "获取 {appName} 应用",
-    "titleGeneric": "获取 Cadet 应用"
   },
   "notFound": {
     "backToAssistant": "返回您的助手",
@@ -447,9 +412,6 @@
     "body": "您要查找的页面不存在或可能已移动。",
     "goBack": "返回",
     "title": "页面未找到"
-  },
-  "nudgeChatBanner": {
-    "dismissAria": "关闭"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "您的助手尚未设置句柄，请设置一个以便提及。",

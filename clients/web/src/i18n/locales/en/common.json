@@ -328,14 +328,6 @@
   "dictationOverlayPage": {
     "stopRecording": "Stop recording"
   },
-  "discordNudgeBanner": {
-    "ariaLabel": "Join the Cadet Discord community",
-    "ctaLong": "Join Discord",
-    "ctaShort": "Join",
-    "subtitleLong": "Talk to the team - share feedback, request features, get answers faster",
-    "subtitleShort": "Share feedback, request features, get answers faster",
-    "title": "Join our community!"
-  },
   "discordSetupConnectStep": {
     "instructions": "Paste the bot token you copied from the Bot page.",
     "verificationNoticeTitle": "Ignore the \"Verify your App\" page",
@@ -408,38 +400,11 @@
     "modeAria": "How to show this file",
     "source": "Source"
   },
-  "githubNudgeBanner": {
-    "ariaLabel": "Cadet is open source on GitHub",
-    "ctaAriaLabel": "Star Cadet on GitHub",
-    "ctaLabel": "Star us",
-    "subtitle": "Star us on GitHub or contribute",
-    "title": "Cadet is open source"
-  },
   "lazyBoundary": {
     "loadError": "This section couldn't load. Reload the page to try again."
   },
   "localNotification": {
     "goToConversation": "Go to Conversation"
-  },
-  "desktopAppBanner": {
-    "ariaLabelMacOS": "Download the macOS app",
-    "ariaLabelWindows": "Download the Windows app",
-    "ctaAriaLabelMacOS": "Download macOS app",
-    "ctaAriaLabelWindows": "Download Windows app",
-    "ctaLabel": "Download",
-    "subtitle": "Computer use · terminal access · native automation",
-    "titleMacOS": "Get the macOS app",
-    "titleWindows": "Get the Windows app"
-  },
-  "nativeAppBanner": {
-    "bannerAria": "Download the {appName} app",
-    "bannerAriaGeneric": "Download the Cadet mobile app",
-    "download": "Download",
-    "downloadAppAria": "Download {appName} app",
-    "downloadAppAriaGeneric": "Download Cadet mobile app",
-    "subtitle": "Push notifications · biometric login · haptics",
-    "title": "Get the {appName} app",
-    "titleGeneric": "Get the Cadet app"
   },
   "notFound": {
     "backToAssistant": "Back to your assistant",
@@ -447,9 +412,6 @@
     "body": "The page you're looking for doesn't exist or may have moved.",
     "goBack": "Go back",
     "title": "Page not found"
-  },
-  "nudgeChatBanner": {
-    "dismissAria": "Dismiss"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "Your assistant doesn't have a handle yet - claim one to make it mentionable.",
