@@ -1,5 +1,6 @@
 import type { Server } from "bun";
 
+import { isWebsocketUpgradeRequest } from "./utils.js";
 import type { RouteDefinition } from "./routes/types.js";
 import type { AuthRateLimiter } from "../auth-rate-limiter.js";
 import {
@@ -8,7 +9,6 @@ import {
 } from "./middleware/auth.js";
 
 export type GetClientIp = () => string;
-export type GetRawPeerIp = () => string;
 
 /** Params extracted from a regex path match (capture groups). */
 export type RouteParams = string[];
@@ -48,13 +48,11 @@ export function createRouter(
     getClientIp: GetClientIp,
     server?: Server<unknown>,
   ) => {
-    const getRawPeerIp: GetRawPeerIp = () =>
-      server?.requestIP(req)?.address ?? "unknown";
-
     const dispatchAt = async (pathname: string): Promise<Response | null> => {
       for (const route of table) {
         const matchResult = matchRoute(route, pathname, req.method);
         if (!matchResult) continue;
+        if (route.upgradesOnly && !isWebsocketUpgradeRequest(req)) continue;
 
         // Precondition guard (e.g. "is integration configured?")
         if (route.precondition) {
@@ -67,13 +65,7 @@ export function createRouter(
         switch (auth) {
           case "none":
           case "custom":
-            return route.handler(
-              req,
-              matchResult.params,
-              getClientIp,
-              getRawPeerIp,
-              server,
-            );
+            return route.handler(req, matchResult.params, getClientIp, server);
 
           case "edge": {
             const { requireEdgeAuth } = createAuthMiddleware(
@@ -82,13 +74,7 @@ export function createRouter(
             );
             const authError = await requireEdgeAuth(req);
             if (authError) return authError;
-            return route.handler(
-              req,
-              matchResult.params,
-              getClientIp,
-              getRawPeerIp,
-              server,
-            );
+            return route.handler(req, matchResult.params, getClientIp, server);
           }
 
           case "edge-scoped": {
@@ -98,13 +84,7 @@ export function createRouter(
             );
             const authError = await requireEdgeAuthWithScope(req, route.scope!);
             if (authError) return authError;
-            return route.handler(
-              req,
-              matchResult.params,
-              getClientIp,
-              getRawPeerIp,
-              server,
-            );
+            return route.handler(req, matchResult.params, getClientIp, server);
           }
 
           case "edge-guardian": {
@@ -114,25 +94,12 @@ export function createRouter(
             );
             const authError = await requireEdgeGuardianAuth(req);
             if (authError) return authError;
-            return route.handler(
-              req,
-              matchResult.params,
-              getClientIp,
-              getRawPeerIp,
-              server,
-            );
+            return route.handler(req, matchResult.params, getClientIp, server);
           }
 
           case "track-failures": {
             return wrapWithAuthFailureTracking(
-              (r) =>
-                route.handler(
-                  r,
-                  matchResult.params,
-                  getClientIp,
-                  getRawPeerIp,
-                  server,
-                ),
+              (r) => route.handler(r, matchResult.params, getClientIp, server),
               authRateLimiter,
               getClientIp,
               route.trackFailureStatuses,
@@ -215,8 +182,8 @@ export function expandRoute(route: RouteDefinition): RouteDefinition[] {
       expanded.push({
         ...variant,
         path: scopedPath,
-        handler: (req, params, getClientIp, getRawPeerIp) =>
-          variant.handler(req, params.slice(1), getClientIp, getRawPeerIp),
+        handler: (req, params, getClientIp) =>
+          variant.handler(req, params.slice(1), getClientIp),
       });
     }
   }

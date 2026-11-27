@@ -1,4 +1,5 @@
 import { Server, ServerWebSocket } from "bun";
+import type { RouteDefinition } from "./types.js";
 import {
   buildWsUpstreamUrl,
   forwardedIdentityHeaders,
@@ -322,3 +323,20 @@ export function closeLiveVoiceWebsocket(
     upstream.close(code, reason);
   }
 }
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/live-voice",
+    upgradesOnly: true,
+    handler: async (req, _params, _getClientIp, server) =>
+      (await handleLiveVoiceWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+  {
+    path: /^\/assistants\/([^/]+)\/live-voice\/?$/,
+    upgradesOnly: true,
+    handler: async (req, _params, _getClientIp, server) =>
+      (await handleLiveVoiceWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+];

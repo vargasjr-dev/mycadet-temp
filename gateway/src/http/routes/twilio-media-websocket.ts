@@ -3,6 +3,7 @@ import {
   forwardedIdentityHeaders,
 } from "@mycadet/assistant-client";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
+import type { RouteDefinition } from "./types.js";
 
 import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
@@ -292,3 +293,11 @@ export function closeTwilioMediaStream(
     upstream.close(code, reason);
   }
 }
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: new RegExp(`^${TWILIO_MEDIA_STREAM_WEBHOOK_PATH}(/.*)?$`),
+    handler: (req, _params, _getClientIp, server) =>
+      handleTwilioMediaWs(req, server!) ?? new Response(null, { status: 101 }),
+  },
+];

@@ -596,19 +596,19 @@ export function closeSpeechRelayWebsocket(
 export const ROUTES: RouteDefinition[] = [
   {
     path: "/speech/stt/stream",
-    handler: async (req, _params, _getClientIp, _getRawPeerIp, server) =>
+    handler: async (req, _params, _getClientIp, server) =>
       (await handleSpeechRelaySttWs(req, server!)) ??
       new Response(null, { status: 101 }),
   },
   {
     path: "/v2/speech/stt/stream",
-    handler: async (req, _params, _getClientIp, _getRawPeerIp, server) =>
+    handler: async (req, _params, _getClientIp, server) =>
       (await handleSpeechRelaySttV2Ws(req, server!)) ??
       new Response(null, { status: 101 }),
   },
   {
     path: "/speech/tts/stream",
-    handler: async (req, _params, _getClientIp, _getRawPeerIp, server) =>
+    handler: async (req, _params, _getClientIp, server) =>
       (await handleSpeechRelayTtsWs(req, server!)) ??
       new Response(null, { status: 101 }),
   },

@@ -17,22 +17,14 @@ import {
   pruneOldLogFiles,
   type LogFileConfig,
 } from "./logger.js";
-import {
-  bindCloudIdentityCredentialCache,
-  ensureCloudIdentityIds,
-} from "./cloud-identity.js";
+import { bindCloudIdentityCredentialCache } from "./cloud-identity.js";
 import { startDiscordGateway } from "./discord/lifecycle.js";
 import { startSlackGateway } from "./slack/lifecycle.js";
 import { startSleepWakeDetector } from "./sleep-wake-detector.js";
 import { startIpcServer } from "./ipc/server.js";
 import { initGatewayDb } from "./db/connection.js";
 import { startTunnelClient } from "./tunnel/lifecycle.js";
-import {
-  markDraining,
-  markPostAssistantReadyComplete,
-  startServer,
-} from "./server.js";
-import { runPostAssistantReady } from "./post-assistant-ready.js";
+import { markDraining, startServer } from "./server.js";
 import { startInboundEventExpirationCleanup } from "./channels/inbound-event.js";
 import { startEmail } from "./email/lifecycle.js";
 import { startTelegram } from "./telegram/lifecycle.js";
@@ -91,28 +83,18 @@ async function main() {
   // Instantiate caches for credential and config file reads.
   // Handlers read dynamic credentials and config.json values from these
   // caches at call time, with automatic TTL refresh.
+  //
+  // The cloud-identity resolver shares this cache so a vault outage can
+  // still retry its validate call with last-good secrets; binding it here
+  // (where the cache is built) keeps that dependency at the composition
+  // root. The warm-up itself is startServer's — see server.ts.
   const credentialCache = getCredentials();
   bindCloudIdentityCredentialCache(credentialCache);
-  void ensureCloudIdentityIds();
 
-  // Bind the HTTP server as a lifecycle task: start now (so /healthz and
-  // /readyz observe the bound process during post-assistant-ready work),
-  // stop via the returned thunk at the drain window's end.
-  const stopServer = startServer();
-
-  // Complete post-assistant-ready startup work after binding /healthz.
-  // All non-health routes stay closed until this returns. When the assistant
-  // is not migration-ready within the bounded wait, this still returns (so
-  // traffic opens) while the deferred tasks keep retrying in the background —
-  // see post-assistant-ready.ts.
-  try {
-    await runPostAssistantReady();
-    markPostAssistantReadyComplete();
-  } catch (err) {
-    log.error({ err }, "Post-assistant-ready startup work failed");
-    stopServer();
-    process.exit(1);
-  }
+  // Bind the HTTP server as a lifecycle task: startServer binds, completes
+  // the post-assistant-ready work (so /healthz and /readyz observe the bound
+  // process throughout), and returns the thunk the drain window calls last.
+  const stopServer = await startServer();
 
   const tasks: (() => StopTask | Promise<StopTask>)[] = [
     startCredentialWatcher,

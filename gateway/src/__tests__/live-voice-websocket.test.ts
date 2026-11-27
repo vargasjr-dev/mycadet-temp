@@ -662,35 +662,36 @@ describe("live voice gateway boundary", () => {
     expect(source).not.toContain('from "assistant/');
   });
 
-  test("gateway index routes live voice websocket upgrades before the runtime proxy", async () => {
-    const source = readFileSync(
-      new URL("../index.ts", import.meta.url),
+  test("gateway route table routes live voice websocket upgrades before the runtime proxy", async () => {
+    // The upgrade is dispatched by the declarative route table: the
+    // live-voice route module owns the handler, and the barrel places the WS
+    // routes ahead of the runtime-proxy catch-all.
+    const routeModule = readFileSync(
+      new URL("../http/routes/live-voice-websocket.ts", import.meta.url),
       "utf8",
     );
 
-    expect(source).toContain("handleLiveVoiceWs");
-    expect(source).toContain("isLiveVoiceSocketData(ws)");
-    expect(source).toContain("openLiveVoiceWebsocket(ws)");
+    expect(routeModule).toContain('path: "/live-voice"');
+    expect(routeModule).toContain("handleLiveVoiceWs(req, server!)");
 
-    const liveVoiceRouteIndex = source.indexOf(
-      'url.pathname === "/v1/live-voice"',
+    const barrel = readFileSync(
+      new URL("../http/routes/index.ts", import.meta.url),
+      "utf8",
     );
-    const runtimeProxyDispatchIndex = source.indexOf(
-      "const response = await router(req, url, resolveClientIp, svr);",
-    );
+
+    const liveVoiceRouteIndex = barrel.indexOf("...liveVoiceRoutes");
+    const runtimeProxyDispatchIndex = barrel.indexOf("...runtimeProxyRoutes");
 
     expect(liveVoiceRouteIndex).toBeGreaterThan(-1);
     expect(runtimeProxyDispatchIndex).toBeGreaterThan(-1);
     expect(liveVoiceRouteIndex).toBeLessThan(runtimeProxyDispatchIndex);
-
-    expect(source).toContain("handleLiveVoiceWs(req, server)");
-    expect(source).toContain('url.pathname === "/v1/stt/stream"');
-    expect(source).toContain("handleSttStreamWs(req, server)");
   });
 
   test("gateway websocket lifecycle dispatches live voice socket data", async () => {
+    // The Bun websocket lifecycle (open/message/close on socket data) lives
+    // in server.ts since startServer became a lifecycle task.
     const source = readFileSync(
-      new URL("../index.ts", import.meta.url),
+      new URL("../server.ts", import.meta.url),
       "utf8",
     );
 

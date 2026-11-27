@@ -1,5 +1,11 @@
 import type { RouteDefinition } from "./types.js";
 import { ROUTES as speechRelayRoutes } from "./speech-relay-websocket.js";
+import { ROUTES as twilioMediaRoutes } from "./twilio-media-websocket.js";
+import { ROUTES as pluginWebhookWsRoutes } from "./plugin-webhook-websocket.js";
+import { ROUTES as sttStreamRoutes } from "./stt-stream-websocket.js";
+import { ROUTES as watchStreamRoutes } from "./watch-stream-websocket.js";
+import { ROUTES as desktopStreamRoutes } from "./desktop-stream-websocket.js";
+import { ROUTES as liveVoiceRoutes } from "./live-voice-websocket.js";
 import { ROUTES as webhookRoutes } from "./webhook-routes.js";
 import { ROUTES as audioRoutes } from "./audio-proxy.js";
 import { ROUTES as runtimeHealthRoutes } from "./runtime-health-proxy.js";
@@ -42,8 +48,17 @@ import { ROUTES as runtimeProxyRoutes } from "./runtime-proxy.js";
 
 /** The full route table, in dispatch order — the runtime-proxy catch-all last. */
 export const ROUTES: readonly RouteDefinition[] = [
-  ...webhookRoutes,
+  // WebSocket routes first: the plugin ingress declares its WS half and HTTP
+  // half on the same pattern, and the upgrade must be claimed before the HTTP
+  // half's any-method entry.
   ...speechRelayRoutes,
+  ...twilioMediaRoutes,
+  ...pluginWebhookWsRoutes,
+  ...sttStreamRoutes,
+  ...watchStreamRoutes,
+  ...desktopStreamRoutes,
+  ...liveVoiceRoutes,
+  ...webhookRoutes,
   ...audioRoutes,
   ...runtimeHealthRoutes,
   ...psRoutes,

@@ -3,7 +3,7 @@ import type { Server } from "bun";
 import type { z } from "zod";
 
 import type { Scope } from "../../auth/types.js";
-import type { GetClientIp, GetRawPeerIp, RouteParams } from "../router.js";
+import type { GetClientIp, RouteParams } from "../router.js";
 
 /**
  * Auth strategy for a route:
@@ -34,7 +34,6 @@ export type RouteHandler = (
   req: Request,
   params: RouteParams,
   getClientIp: GetClientIp,
-  getRawPeerIp: GetRawPeerIp,
   /** The Bun server, for the rare route that upgrades to a WebSocket. */
   server?: Server<unknown>,
 ) => Promise<Response> | Response;
@@ -104,6 +103,13 @@ export interface RouteDefinition {
    * or null to continue to the handler.
    */
   precondition?: () => Response | null;
+  /**
+   * Claim only genuine WebSocket upgrades; anything else falls through to a
+   * later route (the HTTP half declared on the same path). WebSocket routes
+   * whose handler answers plain requests itself (426 upgrade-required) leave
+   * this unset and claim every method instead.
+   */
+  upgradesOnly?: boolean;
   /**
    * The route's handler — a plain function that reads the config, credential,
    * and config-file singletons at request time. Importing a ROUTES module

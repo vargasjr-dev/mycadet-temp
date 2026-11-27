@@ -293,7 +293,6 @@ export async function handlePluginWebhook(
   path: string,
 ): Promise<Response> {
   const config = getConfig();
-  const resolve = resolveCachedPluginIngress;
   const credentials = getCredentials();
   // HMAC payloads can sign the public request URL. Read through the cache so
   // a tunnel registering a public base is picked up without a restart.
@@ -303,7 +302,7 @@ export async function handlePluginWebhook(
     try {
       // WebSocket routes are declared here but upgraded elsewhere; serving one
       // over plain HTTP would be a different thing than was declared.
-      match = findDeclaredRoute(resolve(), plugin, path, "http");
+      match = findDeclaredRoute(resolveCachedPluginIngress(), plugin, path, "http");
     } catch (err) {
       log.error({ err, plugin }, "Failed to resolve plugin ingress");
       return Response.json({ error: "Internal server error" }, { status: 500 });

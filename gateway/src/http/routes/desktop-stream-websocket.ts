@@ -6,6 +6,7 @@
  */
 
 import { Server, ServerWebSocket } from "bun";
+import type { RouteDefinition } from "./types.js";
 
 import {
   closeRuntimeAudioStream,
@@ -83,3 +84,20 @@ export const closeDesktopStreamWebsocket = (
   code: number,
   reason: string,
 ) => closeRuntimeAudioStream({ ws, code, reason, label });
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/desktop/stream",
+    upgradesOnly: true,
+    handler: async (req, _params, _getClientIp, server) =>
+      (await handleDesktopStreamWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+  {
+    path: /^\/assistants\/([^/]+)\/desktop\/stream\/?$/,
+    upgradesOnly: true,
+    handler: async (req, _params, _getClientIp, server) =>
+      (await handleDesktopStreamWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+];

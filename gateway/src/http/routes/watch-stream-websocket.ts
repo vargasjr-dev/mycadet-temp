@@ -20,6 +20,7 @@
  */
 
 import { Server, ServerWebSocket } from "bun";
+import type { RouteDefinition } from "./types.js";
 
 import {
   closeRuntimeAudioStream,
@@ -169,3 +170,20 @@ export const closeWatchStreamWebsocket = (
   code: number,
   reason: string,
 ) => closeRuntimeAudioStream({ ws, code, reason, label });
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/watch/stream",
+    upgradesOnly: true,
+    handler: async (req, _params, _getClientIp, server) =>
+      (await handleWatchStreamWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+  {
+    path: /^\/assistants\/([^/]+)\/watch\/stream\/?$/,
+    upgradesOnly: true,
+    handler: async (req, _params, _getClientIp, server) =>
+      (await handleWatchStreamWs(req, server!)) ??
+      new Response(null, { status: 101 }),
+  },
+];

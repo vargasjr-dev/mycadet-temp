@@ -24,7 +24,9 @@ import {
   findServableRoute,
   resolveCachedPluginIngress,
 } from "../../channels/plugin-ingress-approvals.js";
+import { PLUGIN_WEBHOOK_PATH_PATTERN } from "../../channels/plugin-ingress.js";
 import type { IngressSigner } from "../../channels/plugin-ingress.js";
+import type { RouteDefinition } from "./types.js";
 import { getConfig, type GatewayConfig } from "../../config.js";
 import { getCredentials } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
@@ -389,3 +391,13 @@ export function closePluginWebhookWebsocket(
     "Plugin webhook WS closed",
   );
 }
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: PLUGIN_WEBHOOK_PATH_PATTERN,
+    upgradesOnly: true,
+    handler: async (req, params, _getClientIp, server) =>
+      (await handlePluginWebhookWs(req, server!, params[0]!, params[1]!)) ??
+      new Response(null, { status: 101 }),
+  },
+];

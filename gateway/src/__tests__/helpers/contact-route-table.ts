@@ -10,9 +10,8 @@ import { mock } from "bun:test";
 import { expandRoute } from "../../http/router.js";
 import "../test-preload.js";
 
-const actualProxyModule = await import(
-  "../../http/routes/contacts-control-plane-proxy.js"
-);
+const actualProxyModule =
+  await import("../../http/routes/contacts-control-plane-proxy.js");
 const actualPromptModule = await import("../../http/routes/contact-prompt.js");
 
 const marker = (name: string) => async () => Response.json({ marker: name });
@@ -42,9 +41,8 @@ mock.module("../../http/routes/contact-prompt.js", () => ({
   handleContactRecordSubmit: marker("handleContactRecordSubmit"),
 }));
 
-const { ROUTES: contactRoutes } = await import(
-  "../../http/routes/contacts-control-plane-route-table.js"
-);
+const { ROUTES: contactRoutes } =
+  await import("../../http/routes/contacts-control-plane-route-table.js");
 
 type FlatContactRoute = ReturnType<typeof expandRoute>[number];
 
@@ -60,11 +58,12 @@ export async function markedHandlerName(
     new Request("http://gateway.local/"),
     ["p0"],
     () => "127.0.0.1",
-    () => "127.0.0.1",
   );
   const body = (await res.json()) as { marker?: string };
   if (!body.marker) {
-    throw new Error(`route handler returned no marker: ${JSON.stringify(body)}`);
+    throw new Error(
+      `route handler returned no marker: ${JSON.stringify(body)}`,
+    );
   }
   return body.marker;
 }

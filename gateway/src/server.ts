@@ -1,34 +1,29 @@
 import { randomBytes } from "node:crypto";
 import type { Server, ServerWebSocket } from "bun";
-import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import { getAuthRateLimiter } from "./auth-rate-limiter.js";
 import { loadConfig } from "./config.js";
 import { CircuitBreakerOpenError } from "./runtime/client.js";
 import {
   closeTwilioMediaStream,
-  handleTwilioMediaWs,
   isMediaStreamSocketData,
   messageTwilioMediaStream,
   openTwilioMediaWebsocket,
 } from "./http/routes/twilio-media-websocket.js";
 import {
   closeSttStreamWebsocket,
-  handleSttStreamWs,
   isSttStreamSocketData,
   messageSttStreamWebsocket,
   openSttStreamWebsocket,
 } from "./http/routes/stt-stream-websocket.js";
 import {
   closeWatchStreamWebsocket,
-  handleWatchStreamWs,
   isWatchStreamSocketData,
   messageWatchStreamWebsocket,
   openWatchStreamWebsocket,
 } from "./http/routes/watch-stream-websocket.js";
 import {
   closeDesktopStreamWebsocket,
-  handleDesktopStreamWs,
   isDesktopStreamSocketData,
   messageDesktopStreamWebsocket,
   openDesktopStreamWebsocket,
@@ -41,19 +36,16 @@ import {
 } from "./http/routes/speech-relay-websocket.js";
 import {
   closeLiveVoiceWebsocket,
-  handleLiveVoiceWs,
   isLiveVoiceSocketData,
   messageLiveVoiceWebsocket,
   openLiveVoiceWebsocket,
 } from "./http/routes/live-voice-websocket.js";
 import {
   closePluginWebhookWebsocket,
-  handlePluginWebhookWs,
   isPluginWebhookSocketData,
   messagePluginWebhookWebsocket,
   openPluginWebhookWebsocket,
 } from "./http/routes/plugin-webhook-websocket.js";
-import { PLUGIN_WEBHOOK_PATH_PATTERN } from "./channels/plugin-ingress.js";
 import { getLogger } from "./logger.js";
 import { buildSchema } from "./schema.js";
 import {
@@ -73,12 +65,13 @@ import { checkAuthRateLimit } from "./http/middleware/rate-limit.js";
 import { createRouter, type GetClientIp } from "./http/router.js";
 import { ROUTES } from "./http/routes/index.js";
 import { refreshRouteSchema } from "./ipc/route-schema-cache.js";
+import { runPostAssistantReady } from "./post-assistant-ready.js";
+import { ensureCloudIdentityIds } from "./cloud-identity.js";
 import {
   APP_VERSION,
   VERSION_HEADER_NAME,
   VERSION_HEADER_VALUE,
 } from "./version.js";
-import { isWebsocketUpgradeRequest } from "./http/utils.js";
 
 let draining = false;
 let postAssistantReadyComplete = false;
@@ -130,7 +123,7 @@ function getClientIp(
   return addr ? addr.address : "unknown";
 }
 
-export function startServer(): () => void {
+export async function startServer(): Promise<() => void> {
   const config = loadConfig();
 
   // Assistant-scoped mirrors of the browser stream sockets: the scoped data
@@ -139,30 +132,6 @@ export function startServer(): () => void {
   // spelling of each socket and discards the id, the same mirror the route
   // table keeps for tunnel/status. Daemon-only sockets (speech relay) get no
   // mirror: they are never browser-reachable.
-  const SCOPED_WS_MIRRORS: Array<{
-    pattern: RegExp;
-    upgrade: (
-      req: Request,
-      server: Parameters<typeof handleSttStreamWs>[1],
-    ) => Promise<Response | undefined> | Response | undefined;
-  }> = [
-    {
-      pattern: /^\/v1\/assistants\/[^/]+\/live-voice\/?$/,
-      upgrade: handleLiveVoiceWs,
-    },
-    {
-      pattern: /^\/v1\/assistants\/[^/]+\/stt\/stream\/?$/,
-      upgrade: handleSttStreamWs,
-    },
-    {
-      pattern: /^\/v1\/assistants\/[^/]+\/watch\/stream\/?$/,
-      upgrade: handleWatchStreamWs,
-    },
-    {
-      pattern: /^\/v1\/assistants\/[^/]+\/desktop\/stream\/?$/,
-      upgrade: handleDesktopStreamWs,
-    },
-  ];
   // ── Route table ──
   // One routes array, owned by the routes barrel: every HTTP route is
   // declared in a per-domain ROUTES array and concatenated there, in
@@ -462,78 +431,6 @@ export function startServer(): () => void {
       return rateLimitResponse;
     }
 
-    // ── Pre-router: WebSocket upgrades ──
-    // Bun's WS upgrade needs `server.upgrade()` which doesn't return
-    // a Response, so these can't go through the route table.
-    if (
-      url.pathname === TWILIO_MEDIA_STREAM_WEBHOOK_PATH ||
-      url.pathname.startsWith(`${TWILIO_MEDIA_STREAM_WEBHOOK_PATH}/`)
-    ) {
-      const upgradeResult = handleTwilioMediaWs(req, server);
-      if (upgradeResult !== undefined) return upgradeResult;
-      return undefined;
-    }
-
-    // Plugin ingress declared as `websocket`. Claimed only for a genuine
-    // upgrade — a plain request to the same path stays with the route table,
-    // where the HTTP half 404s it for not being an approved HTTP route.
-    if (isWebsocketUpgradeRequest(req)) {
-      const match = url.pathname.match(PLUGIN_WEBHOOK_PATH_PATTERN);
-      if (match) {
-        const upgradeResult = await handlePluginWebhookWs(
-          req,
-          server,
-          match[1]!,
-          match[2]!,
-        );
-        if (upgradeResult !== undefined) return upgradeResult;
-        return undefined;
-      }
-    }
-
-    if (isWebsocketUpgradeRequest(req)) {
-      for (const mirror of SCOPED_WS_MIRRORS) {
-        if (!mirror.pattern.test(url.pathname)) continue;
-        const upgradeResult = await mirror.upgrade(req, server);
-        if (upgradeResult !== undefined) return upgradeResult;
-        return undefined;
-      }
-    }
-
-    if (url.pathname === "/v1/stt/stream") {
-      const upgradeResult = handleSttStreamWs(req, server);
-      if (upgradeResult !== undefined) return upgradeResult;
-      return undefined;
-    }
-
-    // Reachable both ways: directly on a self-hosted ingress with an actor
-    // edge JWT, and through the tunnel on a cloud assistant, which is
-    // why it is in `TUNNEL_ALLOWED_PATHS`. The handler authorizes each shape on
-    // its own terms and admits only the guardian either way. A paired
-    // assistant has no transport at all and never reaches here.
-    if (url.pathname === "/v1/watch/stream") {
-      const upgradeResult = await handleWatchStreamWs(req, server);
-      if (upgradeResult !== undefined) {
-        return upgradeResult;
-      }
-      return undefined;
-    }
-
-    // Guardian-only through the same gate as the watch stream.
-    if (url.pathname === "/v1/desktop/stream") {
-      const upgradeResult = await handleDesktopStreamWs(req, server);
-      if (upgradeResult !== undefined) {
-        return upgradeResult;
-      }
-      return undefined;
-    }
-
-    if (url.pathname === "/v1/live-voice") {
-      const upgradeResult = await handleLiveVoiceWs(req, server);
-      if (upgradeResult !== undefined) return upgradeResult;
-      return undefined;
-    }
-
     // Attach a trace ID to every non-healthcheck request for
     // end-to-end correlation across webhook -> runtime -> reply.
     if (!req.headers.has("x-trace-id")) {
@@ -595,10 +492,32 @@ export function startServer(): () => void {
 
   void refreshRouteSchema();
 
+  // Warm the platform identity binding (assistant ↔ owner ids) while the
+  // server is up but routes are still closed: the first authenticated
+  // request then reads an in-memory id instead of paying the validate
+  // round-trip. Self-gating — a gateway with no assistant API key and no
+  // platform base URL does zero cloud I/O — so this stays remote-agnostic.
+  // Fire-and-forget: single-flight inside, and any resolve that beats it
+  // awaits the same promise.
+  void ensureCloudIdentityIds();
+
   log.info({ port: server.port }, "Gateway HTTP server listening");
 
-  // The lifecycle stop thunk: the drain window calls this, and the
-  // post-assistant-ready failure path calls it before exiting.
+  // Complete post-assistant-ready startup work after binding /healthz. All
+  // non-health routes stay closed until this returns. When the assistant is
+  // not migration-ready within the bounded wait, this still returns (so
+  // traffic opens) while the deferred tasks keep retrying in the background —
+  // see post-assistant-ready.ts.
+  try {
+    await runPostAssistantReady();
+    markPostAssistantReadyComplete();
+  } catch (err) {
+    log.error({ err }, "Post-assistant-ready startup work failed");
+    server.stop(true);
+    process.exit(1);
+  }
+
+  // The lifecycle stop thunk: the drain window calls this.
   return () => {
     server.stop(true);
   };

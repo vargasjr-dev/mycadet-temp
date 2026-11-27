@@ -21,6 +21,7 @@
  */
 
 import { Server, ServerWebSocket } from "bun";
+import type { RouteDefinition } from "./types.js";
 import { z } from "zod";
 
 import {
@@ -156,3 +157,18 @@ export const closeSttStreamWebsocket = (
   code: number,
   reason: string,
 ) => closeRuntimeAudioStream({ ws, code, reason, label });
+
+export const ROUTES: RouteDefinition[] = [
+  {
+    path: "/stt/stream",
+    upgradesOnly: true,
+    handler: (req, _params, _getClientIp, server) =>
+      handleSttStreamWs(req, server!) ?? new Response(null, { status: 101 }),
+  },
+  {
+    path: /^\/assistants\/([^/]+)\/stt\/stream\/?$/,
+    upgradesOnly: true,
+    handler: (req, _params, _getClientIp, server) =>
+      handleSttStreamWs(req, server!) ?? new Response(null, { status: 101 }),
+  },
+];
