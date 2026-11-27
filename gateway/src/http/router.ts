@@ -37,7 +37,7 @@ export function createRouter(
   req: Request,
   url: URL,
   getClientIp: GetClientIp,
-  server?: Server<unknown>,
+  server: Server<unknown>,
 ) => Promise<Response | null> {
   const { authRateLimiter } = deps;
   const table: RouteDefinition[] = routes.flatMap(expandRoute);
@@ -46,7 +46,7 @@ export function createRouter(
     req: Request,
     url: URL,
     getClientIp: GetClientIp,
-    server?: Server<unknown>,
+    server: Server<unknown>,
   ) => {
     const dispatchAt = async (pathname: string): Promise<Response | null> => {
       for (const route of table) {
@@ -62,10 +62,20 @@ export function createRouter(
 
         const auth = route.auth ?? "none";
 
+        // Meta handler: a WS upgrade handler returns undefined once
+        // server.upgrade() has succeeded — Bun ignores whatever we return
+        // then, so the inert 101 is the convention for "upgraded".
+        const fromHandler = (
+          result: Response | undefined | Promise<Response | undefined>,
+        ) =>
+          Promise.resolve(result).then((res) => res ?? INERT_UPGRADE_FALLBACK);
+
         switch (auth) {
           case "none":
           case "custom":
-            return route.handler(req, matchResult.params, getClientIp, server);
+            return fromHandler(
+              route.handler(req, matchResult.params, getClientIp, server),
+            );
 
           case "edge": {
             const { requireEdgeAuth } = createAuthMiddleware(
@@ -74,7 +84,9 @@ export function createRouter(
             );
             const authError = await requireEdgeAuth(req);
             if (authError) return authError;
-            return route.handler(req, matchResult.params, getClientIp, server);
+            return fromHandler(
+              route.handler(req, matchResult.params, getClientIp, server),
+            );
           }
 
           case "edge-scoped": {
@@ -84,7 +96,9 @@ export function createRouter(
             );
             const authError = await requireEdgeAuthWithScope(req, route.scope!);
             if (authError) return authError;
-            return route.handler(req, matchResult.params, getClientIp, server);
+            return fromHandler(
+              route.handler(req, matchResult.params, getClientIp, server),
+            );
           }
 
           case "edge-guardian": {
@@ -94,12 +108,17 @@ export function createRouter(
             );
             const authError = await requireEdgeGuardianAuth(req);
             if (authError) return authError;
-            return route.handler(req, matchResult.params, getClientIp, server);
+            return fromHandler(
+              route.handler(req, matchResult.params, getClientIp, server),
+            );
           }
 
           case "track-failures": {
             return wrapWithAuthFailureTracking(
-              (r) => route.handler(r, matchResult.params, getClientIp, server),
+              (r) =>
+                fromHandler(
+                  route.handler(r, matchResult.params, getClientIp, server),
+                ),
               authRateLimiter,
               getClientIp,
               route.trackFailureStatuses,
@@ -182,8 +201,8 @@ export function expandRoute(route: RouteDefinition): RouteDefinition[] {
       expanded.push({
         ...variant,
         path: scopedPath,
-        handler: (req, params, getClientIp) =>
-          variant.handler(req, params.slice(1), getClientIp),
+        handler: (req, params, getClientIp, server) =>
+          variant.handler(req, params.slice(1), getClientIp, server),
       });
     }
   }
@@ -246,3 +265,6 @@ function matchRoute(
   if (!match) return null;
   return { params: match.slice(1) };
 }
+
+/** Returned when a handler resolves to undefined (a completed WS upgrade). */
+const INERT_UPGRADE_FALLBACK = new Response(null, { status: 101 });

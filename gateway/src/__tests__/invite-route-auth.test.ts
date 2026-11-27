@@ -45,10 +45,7 @@ const { buildMarkedContactRoutes, markedHandlerName } =
 
 describe("invite route registrations (contact route table)", () => {
   test("all five invite routes use edge-scoped auth with the original runtime scopes", async () => {
-    const expectedScopeByHandler: Record<
-      string,
-      RouteDefinition["scope"]
-    > = {
+    const expectedScopeByHandler: Record<string, RouteDefinition["scope"]> = {
       handleListInvites: "settings.read",
       handleCreateInvite: "settings.write",
       handleRedeemInvite: "settings.write",
@@ -130,9 +127,9 @@ async function dispatch(
     method,
     headers: { authorization: `Bearer ${token}` },
   });
-  // No `server` argument: the loopback fallback requires a server to resolve
-  // the peer IP, so auth outcomes here are purely token/scope-driven.
-  return makeInviteRouter()(req, url, () => "203.0.113.9");
+  // The server stub never resolves a peer, so auth outcomes here stay
+  // purely token/scope-driven.
+  return makeInviteRouter()(req, url, () => "203.0.113.9", serverStub());
 }
 
 const WRITE_ROUTES: Array<[string, string]> = [
@@ -193,3 +190,6 @@ describe("invite route scope enforcement (behavioral)", () => {
     expect(res?.status).toBe(401);
   });
 });
+
+/** The router now requires the Bun server; tests don't exercise peer IPs. */
+const serverStub = () => ({ requestIP: () => null }) as never;

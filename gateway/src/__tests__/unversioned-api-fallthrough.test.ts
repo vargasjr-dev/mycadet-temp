@@ -36,7 +36,7 @@ async function dispatch(
 ): Promise<Response | null> {
   const url = new URL(`http://gateway.local${path}`);
   const req = new Request(url, { method });
-  return makeRouter()(req, url, () => "203.0.113.9");
+  return makeRouter()(req, url, () => "203.0.113.9", serverStub());
 }
 
 describe("unversioned api routing (P7: the /v1 prefix is optional)", () => {
@@ -84,3 +84,6 @@ describe("unversioned api routing (P7: the /v1 prefix is optional)", () => {
     expect(await dispatch("POST", "/v1/ps")).toBeNull();
   });
 });
+
+/** The router now requires the Bun server; tests don't exercise peer IPs. */
+const serverStub = () => ({ requestIP: () => null }) as never;

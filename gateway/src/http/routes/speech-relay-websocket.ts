@@ -597,19 +597,16 @@ export const ROUTES: RouteDefinition[] = [
   {
     path: "/speech/stt/stream",
     handler: async (req, _params, _getClientIp, server) =>
-      (await handleSpeechRelaySttWs(req, server!)) ??
-      new Response(null, { status: 101 }),
+      await handleSpeechRelaySttWs(req, server),
   },
   {
     path: "/v2/speech/stt/stream",
     handler: async (req, _params, _getClientIp, server) =>
-      (await handleSpeechRelaySttV2Ws(req, server!)) ??
-      new Response(null, { status: 101 }),
+      await handleSpeechRelaySttV2Ws(req, server),
   },
   {
     path: "/speech/tts/stream",
     handler: async (req, _params, _getClientIp, server) =>
-      (await handleSpeechRelayTtsWs(req, server!)) ??
-      new Response(null, { status: 101 }),
+      await handleSpeechRelayTtsWs(req, server),
   },
 ];

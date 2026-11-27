@@ -71,12 +71,16 @@ function makeContactsRouter() {
 
 const contactsRouter = makeContactsRouter();
 
+/** The router now requires the Bun server; tests don't exercise peer IPs. */
+const serverStub = () => ({ requestIP: () => null }) as never;
+
 async function dispatch(method: string, path: string) {
   const url = new URL(`http://gateway.local${path}`);
   const res = await contactsRouter(
     new Request(url, { method }),
     url,
     () => "203.0.113.9",
+    serverStub(),
   );
   expect(res).not.toBeNull();
   return (await res!.json()) as { marker: string };

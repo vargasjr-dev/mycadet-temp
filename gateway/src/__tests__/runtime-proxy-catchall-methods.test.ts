@@ -95,6 +95,7 @@ describe("the runtime-proxy catch-all serves every verb", () => {
       }),
       url,
       () => "203.0.113.9",
+      serverStub(),
     );
 
     // The dispatch reached the proxy (not the router's 404 miss) and the
@@ -118,13 +119,12 @@ describe("the runtime-proxy catch-all serves every verb", () => {
       new Request(url, { method: "DELETE" }),
       url,
       () => "203.0.113.9",
+      serverStub(),
     );
 
     expect(response).not.toBeNull();
     expect(response!.status).toBe(204);
-    expect(capturedUrl).toBe(
-      "http://localhost:7821/v1/messages/queued/q-1",
-    );
+    expect(capturedUrl).toBe("http://localhost:7821/v1/messages/queued/q-1");
   });
 
   test("a GET keeps falling through (the spelling the web has always used)", async () => {
@@ -141,6 +141,7 @@ describe("the runtime-proxy catch-all serves every verb", () => {
       new Request(url, { method: "GET" }),
       url,
       () => "203.0.113.9",
+      serverStub(),
     );
 
     expect(response).not.toBeNull();
@@ -150,3 +151,6 @@ describe("the runtime-proxy catch-all serves every verb", () => {
     );
   });
 });
+
+/** The router now requires the Bun server; tests don't exercise peer IPs. */
+const serverStub = () => ({ requestIP: () => null }) as never;

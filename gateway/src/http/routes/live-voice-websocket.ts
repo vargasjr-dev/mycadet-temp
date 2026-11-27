@@ -326,17 +326,12 @@ export function closeLiveVoiceWebsocket(
 
 export const ROUTES: RouteDefinition[] = [
   {
-    path: "/live-voice",
+    // One entry covers both spellings: the direct path and the
+    // assistant-scoped mirror (the captured assistant id is unused — the
+    // handler authenticates the caller on its own terms).
+    path: /^\/(?:assistants\/([^/]+)\/)?live-voice\/?$/,
     upgradesOnly: true,
     handler: async (req, _params, _getClientIp, server) =>
-      (await handleLiveVoiceWs(req, server!)) ??
-      new Response(null, { status: 101 }),
-  },
-  {
-    path: /^\/assistants\/([^/]+)\/live-voice\/?$/,
-    upgradesOnly: true,
-    handler: async (req, _params, _getClientIp, server) =>
-      (await handleLiveVoiceWs(req, server!)) ??
-      new Response(null, { status: 101 }),
+      await handleLiveVoiceWs(req, server),
   },
 ];

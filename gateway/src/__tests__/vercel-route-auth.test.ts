@@ -35,8 +35,7 @@ const { ROUTES } = await import("../http/routes/vercel-control-plane-proxy.js");
 describe("vercel control-plane route registrations", () => {
   test("GET/POST/DELETE use edge-scoped auth with settings scopes", () => {
     const routeObjects = ROUTES.filter(
-      (route: RouteDefinition) =>
-        route.path === "/integrations/vercel/config",
+      (route: RouteDefinition) => route.path === "/integrations/vercel/config",
     );
     expect(routeObjects).toHaveLength(3);
 
@@ -99,7 +98,7 @@ async function dispatch(
     method,
     headers: { authorization: `Bearer ${token}` },
   });
-  return makeVercelRouter()(req, url, () => "203.0.113.9");
+  return makeVercelRouter()(req, url, () => "203.0.113.9", serverStub());
 }
 
 describe("vercel control-plane scope enforcement", () => {
@@ -142,3 +141,6 @@ describe("vercel control-plane scope enforcement", () => {
     },
   );
 });
+
+/** The router now requires the Bun server; tests don't exercise peer IPs. */
+const serverStub = () => ({ requestIP: () => null }) as never;

@@ -671,8 +671,11 @@ describe("live voice gateway boundary", () => {
       "utf8",
     );
 
-    expect(routeModule).toContain('path: "/live-voice"');
-    expect(routeModule).toContain("handleLiveVoiceWs(req, server!)");
+    // The direct path and the assistant-scoped mirror are one folded regex.
+    expect(routeModule).toContain("(?:assistants\\/([^/]+)\\/)?live-voice");
+    expect(routeModule).not.toContain('path: "/live-voice"');
+    expect(routeModule).toContain("upgradesOnly: true");
+    expect(routeModule).toContain("handleLiveVoiceWs(req, server)");
 
     const barrel = readFileSync(
       new URL("../http/routes/index.ts", import.meta.url),

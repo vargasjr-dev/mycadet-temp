@@ -48,9 +48,6 @@ import { ROUTES as runtimeProxyRoutes } from "./runtime-proxy.js";
 
 /** The full route table, in dispatch order — the runtime-proxy catch-all last. */
 export const ROUTES: readonly RouteDefinition[] = [
-  // WebSocket routes first: the plugin ingress declares its WS half and HTTP
-  // half on the same pattern, and the upgrade must be claimed before the HTTP
-  // half's any-method entry.
   ...speechRelayRoutes,
   ...twilioMediaRoutes,
   ...pluginWebhookWsRoutes,
