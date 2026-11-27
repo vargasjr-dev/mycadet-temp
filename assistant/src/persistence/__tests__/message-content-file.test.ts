@@ -177,9 +177,9 @@ describe("resolveMessageContentBlocks", () => {
       textBlock("kept as-is"),
       { type: "some_retired_block_kind", payload: 1 },
     ];
-    expect(resolveMessageContentBlocks(JSON.stringify(historical))).toEqual(
-      historical,
-    );
+    expect<unknown[]>(
+      resolveMessageContentBlocks(JSON.stringify(historical)),
+    ).toEqual(historical);
   });
 
   test("validates ui_surface blocks without entering the repair path", () => {
@@ -206,9 +206,9 @@ describe("resolveMessageContentBlocks", () => {
     ];
     expect(contentBlockArraySchema.safeParse(surfaceRow).success).toBe(true);
     // `data` stays opaque and internal riders survive the round trip.
-    expect(resolveMessageContentBlocks(JSON.stringify(surfaceRow))).toEqual(
-      surfaceRow,
-    );
+    expect<unknown[]>(
+      resolveMessageContentBlocks(JSON.stringify(surfaceRow)),
+    ).toEqual(surfaceRow);
   });
 
   test("validates an LLM-emitted surface with an arbitrary display value", () => {
@@ -232,9 +232,9 @@ describe("resolveMessageContentBlocks", () => {
       },
     ];
     expect(contentBlockArraySchema.safeParse(llmSurfaceRow).success).toBe(true);
-    expect(resolveMessageContentBlocks(JSON.stringify(llmSurfaceRow))).toEqual(
-      llmSurfaceRow,
-    );
+    expect<unknown[]>(
+      resolveMessageContentBlocks(JSON.stringify(llmSurfaceRow)),
+    ).toEqual(llmSurfaceRow);
   });
 
   test("wraps type-less values in a text block carrying the payload", () => {

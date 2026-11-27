@@ -233,7 +233,7 @@ describe("ChannelReadinessService", () => {
       "carrier_pigeon" as ChannelId,
     );
 
-    expect(snapshot.channel).toBe("carrier_pigeon");
+    expect<string>(snapshot.channel).toBe("carrier_pigeon");
     expect(snapshot.ready).toBe(false);
     expect(snapshot.reasons).toEqual([
       {
