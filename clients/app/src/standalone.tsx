@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   createBrowserRouter,
-  Navigate,
   Outlet,
   useLocation,
   useNavigate,

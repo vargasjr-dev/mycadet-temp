@@ -28,7 +28,6 @@ export function SignupShell({ children }: { children?: ReactNode }) {
         <div className="signup__logo">
           <img
             src={publicAsset("/cadet-logo-white.svg")}
-            // eslint-disable-next-line local/no-untranslated-strings -- brand name
             alt="Cadet"
             width={82}
             height={25}

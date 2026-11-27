@@ -7,14 +7,8 @@ mock.module("@app/i18n/system-locale", () => ({
   systemLocales: () => preferred,
 }));
 
-const {
-  changeLocale,
-  currentLocale,
-  formatLocale,
-  initI18n,
-  resolveInitialLocale,
-} = await import("@app/i18n/i18n");
-const { t } = await import("@app/i18n");
+const { changeLocale, formatLocale, initI18n, resolveInitialLocale } =
+  await import("@app/i18n/i18n");
 const LOCALE_KEY = "device:locale";
 
 beforeEach(() => {

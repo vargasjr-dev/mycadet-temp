@@ -545,7 +545,7 @@ export function DoctorPanel() {
     if (store.historyDismissed && !store.sessionId) {
       useDoctorPanelStore.setState({ historyDismissed: false });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: the module store outlives the mount
+    // Mount-only: the module store outlives the mount, so the deps list is stable.
   }, []);
 
   // Reset any session this page's previous mount left parked in the
@@ -680,9 +680,7 @@ export function DoctorPanel() {
           </div>
           <button
             type="button"
-            onClick={() =>
-              startMutation.mutate()
-            }
+            onClick={() => startMutation.mutate()}
             disabled={starting}
             className="flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--primary-base)] px-5 py-2.5 text-body-medium-default text-[var(--content-inset)] transition-colors hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >

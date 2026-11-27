@@ -10,7 +10,6 @@ import {
   setBiometricEnabled,
   storeBiometricToken,
 } from "@app/runtime/native-biometric";
-import { nativeAuthContext } from "@app/runtime/native-auth-context";
 const DEFAULT_POST_AUTH_DESTINATION = routes.assistant;
 
 interface NativeAuthPlugin {

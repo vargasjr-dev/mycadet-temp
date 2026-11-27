@@ -1023,8 +1023,11 @@ export class AnthropicProvider implements Provider {
     // cost without a future hit.
     const disableTurnStartCache = config?.disableTurnStartCache === true;
     // When true, the latest user message carries per-turn-volatile content
-    // (e.g. an injected memory block), so the long-TTL anchor must skip it and
-    // land on the most recent stable user message instead. See the breakpoint
+    // (e.g. an injected memory block that is strip-and-replaced on the
+    // latest message each turn). The volatile block itself is only ever
+    // marked by the advancing-tail breakpoint; the turn-start anchor still
+    // lands on the latest message but at the configured TTL, since the
+    // message's bytes are frozen once it enters history. See the breakpoint
     // block below.
     const mutableLatestUserMessage = config?.mutableLatestUserMessage === true;
     // Full prompt-caching opt-out: send no cache breakpoints at all and strip
@@ -1095,9 +1098,16 @@ export class AnthropicProvider implements Provider {
       const cacheControl = isHaiku
         ? { type: "ephemeral" as const }
         : { type: "ephemeral" as const, ttl: cacheTtl };
+      // Same TTL as the anchors: the "short" breakpoints below (volatile
+      // turn-start, advancing tail) used to hardcode 5m, which defeated a
+      // caller's configured `cacheTtl` — with "1h" configured, turn content
+      // was re-created wholesale whenever a reply came more than 5 minutes
+      // later. The configured TTL is the caller's opt-in to the write
+      // premium for exactly this reuse window; the two variables remain
+      // separate to document the two breakpoint roles.
       const tailCacheControl = isHaiku
         ? { type: "ephemeral" as const }
-        : { type: "ephemeral" as const, ttl: "5m" as const };
+        : { type: "ephemeral" as const, ttl: cacheTtl };
 
       let params: Anthropic.MessageStreamParams = {
         model: this.model,
@@ -1254,14 +1264,18 @@ export class AnthropicProvider implements Provider {
       };
       const turnStartIdx = findUserTextMsgIdx(msgs.length - 1);
       // Turn-start anchor. A volatile turn start (`mutableLatestUserMessage`:
-      // the message carries a per-turn block that will not recur next turn)
-      // takes the SHORT TTL instead of the long one. The long TTL would buy
-      // nothing: the bytes change next turn, so that entry can never be read
-      // across turns, and the only reads it can serve are this turn's tool-loop
-      // iterations, which the short TTL already serves, refreshing on each
-      // hit. Marking the same boundary at two different TTLs across a turn
-      // bills two writes for one reusable prefix, the long one at the higher
-      // write multiplier.
+      // the message carries a per-turn block that is strip-and-replaced on
+      // the LATEST message each turn) still keeps the configured TTL. The
+      // message's bytes are frozen once it enters history — turn N's payload
+      // recurs byte-identically as a prefix of turn N+1's (see
+      // prompt-cache-cross-turn-stability.test.ts) — so the entry written
+      // here is readable across turns, not just by this turn's tool-loop
+      // iterations, and a hardcoded short TTL would force a full rewrite of
+      // everything after the previous turn's anchor whenever a reply came
+      // after that short window. Keeping one TTL at this boundary across the
+      // turn also avoids billing two writes for one reusable prefix (the
+      // long one at the higher write multiplier), and matches the configured
+      // `cacheTtl` instead of overriding it.
       //
       // The signal is turn-scoped, not request-scoped: it describes the
       // turn-starting user message, so it holds for every request in the turn
@@ -1296,17 +1310,19 @@ export class AnthropicProvider implements Provider {
         }
       }
 
-      // Advancing tail: place a short-lived 5m cache breakpoint on the last
-      // block of the last message. This caches the growing tail cheaply
-      // without conflicting with the long-TTL breakpoints above. It fires
-      // during tool-use loops, where the tail falls after the turn-starting
-      // user message: without it the next iteration's anchor can land far
-      // ahead of the last written boundary and Anthropic's ~20-block cache
-      // lookback can't bridge the gap, forcing a full re-creation of the
-      // prefix. On a first-of-turn request the tail IS the turn-start message,
-      // which the anchor above already marks, so no bridge is needed. Skip
-      // thinking/redacted_thinking blocks — Anthropic doesn't allow
-      // cache_control on those types.
+      // Advancing tail: place a cache breakpoint on the last block of the
+      // last message at the configured TTL. This caches the growing tail so
+      // the next tool-loop iteration's anchor doesn't land far ahead of the
+      // last written boundary — Anthropic's ~20-block cache lookback can't
+      // bridge the gap, forcing a full re-creation of the prefix. At the
+      // configured (long) TTL the final iteration's entry also survives the
+      // gap to the next human turn, so turn content isn't re-created
+      // wholesale when a reply comes after a short-lived TTL would have
+      // expired. It fires during tool-use loops, where the tail falls after
+      // the turn-starting user message; on a first-of-turn request the tail
+      // IS the turn-start message, which the anchor above already marks, so
+      // no bridge is needed. Skip thinking/redacted_thinking blocks —
+      // Anthropic doesn't allow cache_control on those types.
       if (
         !disableCache &&
         turnStartIdx >= 0 &&

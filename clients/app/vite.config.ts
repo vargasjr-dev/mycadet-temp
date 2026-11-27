@@ -67,7 +67,10 @@ export default defineConfig(({ mode, command }) => {
           ? [
               {
                 find: "@mycadet/app/contracts",
-                replacement: path.resolve(APP_SRC, "contracts.ts"),
+                replacement: path.resolve(
+                  APP_SRC,
+                  "assistant/resolution-contract.ts",
+                ),
               },
               {
                 find: "@mycadet/app",
@@ -137,7 +140,10 @@ export default defineConfig(({ mode, command }) => {
             lib: {
               entry: {
                 index: path.resolve(APP_SRC, "index.ts"),
-                contracts: path.resolve(APP_SRC, "contracts.ts"),
+                contracts: path.resolve(
+                  APP_SRC,
+                  "assistant/resolution-contract.ts",
+                ),
               },
               formats: ["es"],
               fileName: (_format: string, name: string) => `${name}.js`,
