@@ -12,7 +12,6 @@
  * Tests use temp workspaces (mkdtemp) — never `~/.cadet/`. Sample content
  * uses generic placeholders (Alice, Bob, user@example.com).
  */
-
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -25,6 +24,8 @@ import {
   mock,
   test,
 } from "bun:test";
+
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 
 // ---------------------------------------------------------------------------
 // Module-level mocks (registered before importing the module under test).
@@ -121,10 +122,7 @@ const { memoryJobs } =
 const { writePage } = await import("../page-store.js");
 const { memoryV2ReembedJob } = await import("../reembed-job.js");
 
-// The handler ignores its config argument (the fan-out reads only the
-// workspace) — a bare cast keeps the suite from materializing the full
-// default config.
-const TEST_CONFIG = {} as Parameters<typeof memoryV2ReembedJob>[1];
+const TEST_CONFIG = AssistantConfigSchema.parse({});
 
 function makeJob(payload: Record<string, unknown> = {}) {
   return {

@@ -53,6 +53,7 @@ import {
 import { z } from "zod";
 
 import { installFastTimers } from "../../../../../__tests__/fast-timers.js";
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import { CONSOLIDATION_ALLOWED_TOOLS } from "../consolidation-tool-surface.js";
 
 // The job's pacing (settle windows, retry/backoff waits) runs on production
@@ -253,23 +254,18 @@ const { invalidatePageIndex } = await import("../page-index.js");
 const { formatBufferTimestamp, formatRememberEntry } =
   await import("../../buffer-format.js");
 
-// The handler only reads `config.memory.enabled`, `config.memory.v2.enabled`,
-// `config.memory.v2.consolidation_prompt_path`, and
-// `config.memory.v2.consolidation_max_entries_per_run`, so a minimal
-// stand-in covers those call sites without materializing the full default
-// config.
-const CONFIG = {
+const CONFIG = AssistantConfigSchema.parse({
   memory: {
     enabled: true,
     v2: { enabled: true, consolidation_prompt_path: null },
   },
-} as Parameters<typeof memoryV2ConsolidateJob>[1];
+});
 
 /** CONFIG plus a per-run entry cap for the chunked-cutoff tests. */
 function configWithMaxEntries(
   maxEntries: number | null,
 ): Parameters<typeof memoryV2ConsolidateJob>[1] {
-  return {
+  return AssistantConfigSchema.parse({
     memory: {
       enabled: true,
       v2: {
@@ -278,20 +274,20 @@ function configWithMaxEntries(
         consolidation_max_entries_per_run: maxEntries,
       },
     },
-  } as Parameters<typeof memoryV2ConsolidateJob>[1];
+  });
 }
-const CONFIG_DISABLED = {
+const CONFIG_DISABLED = AssistantConfigSchema.parse({
   memory: {
     enabled: true,
     v2: { enabled: false, consolidation_prompt_path: null },
   },
-} as Parameters<typeof memoryV2ConsolidateJob>[1];
-const CONFIG_MEMORY_DISABLED = {
+});
+const CONFIG_MEMORY_DISABLED = AssistantConfigSchema.parse({
   memory: {
     enabled: false,
     v2: { enabled: true, consolidation_prompt_path: null },
   },
-} as Parameters<typeof memoryV2ConsolidateJob>[1];
+});
 
 function makeJob(): Parameters<typeof memoryV2ConsolidateJob>[0] {
   return {
@@ -749,11 +745,11 @@ describe("memoryV2ConsolidateJob — non-empty buffer", () => {
       join(tmpWorkspace, "custom-prompt.md"),
       "CUSTOM CONSOLIDATION at {{CUTOFF}}\n",
     );
-    const overrideConfig = {
+    const overrideConfig = AssistantConfigSchema.parse({
       memory: {
         v2: { enabled: true, consolidation_prompt_path: "custom-prompt.md" },
       },
-    } as Parameters<typeof memoryV2ConsolidateJob>[1];
+    });
 
     const result = await memoryV2ConsolidateJob(makeJob(), overrideConfig);
 

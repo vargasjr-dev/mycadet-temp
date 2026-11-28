@@ -56,7 +56,7 @@ export function repairMemoryGraphEventDate(
   if (createdYear !== REPAIR_CREATED_YEAR) {
     return null;
   }
-  if (!CORRUPT_EVENT_YEARS.includes(eventYear as 2024 | 2025)) {
+  if (!CORRUPT_EVENT_YEARS.some((year) => year === eventYear)) {
     return null;
   }
 

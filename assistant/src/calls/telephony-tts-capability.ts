@@ -145,11 +145,8 @@ export function fishAudioReferenceIdConfigured(): boolean {
       resolved.provider === "fish-audio"
         ? resolved.providerConfig
         : config.services?.tts?.providers?.["fish-audio"];
-    return Boolean(
-      (
-        providerConfig as { referenceId?: string } | undefined
-      )?.referenceId?.trim(),
-    );
+    const referenceId = providerConfig?.referenceId;
+    return typeof referenceId === "string" && referenceId.trim().length > 0;
   } catch {
     return false;
   }

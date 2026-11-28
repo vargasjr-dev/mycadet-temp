@@ -105,7 +105,9 @@ function parseCategories(raw: string | undefined): Set<Category> {
   const requested = raw
     .split(",")
     .map((s) => s.trim().toLowerCase())
-    .filter((s): s is Category => ALL_CATEGORIES.includes(s as Category));
+    .filter((s): s is Category =>
+      ALL_CATEGORIES.some((category) => category === s),
+    );
   return requested.length > 0 ? new Set(requested) : new Set(ALL_CATEGORIES);
 }
 

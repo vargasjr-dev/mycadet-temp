@@ -17,7 +17,6 @@ import {
 import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { conversations, messages } from "../persistence/schema/index.js";
-import type { PluginHooks } from "../plugins/types.js";
 
 await initializeDb();
 
@@ -36,7 +35,7 @@ registerPluginHooks("test-message-deleted-spy", {
       createdAt: ctx.createdAt,
     });
   },
-} as PluginHooks);
+});
 
 /** Poll until the fire-and-forget hook chain has delivered `count` calls for
  * `ids`. Counting (and asserting, below) only these tests' own message ids

@@ -17,7 +17,19 @@ await initializeDb();
 const STALE_ID = "conv-prune-job-stale";
 const FRESH_ID = "conv-prune-job-fresh";
 
-const JOB = { payload: {} } as unknown as MemoryJob;
+const JOB: MemoryJob = {
+  id: "prune-old-conversations-test",
+  type: "prune_old_conversations",
+  payload: {},
+  status: "running",
+  attempts: 0,
+  deferrals: 0,
+  runAfter: 0,
+  lastError: null,
+  startedAt: null,
+  createdAt: 0,
+  updatedAt: 0,
+};
 const CONFIG = AssistantConfigSchema.parse({
   memory: { cleanup: { conversationRetentionDays: 30 } },
 });

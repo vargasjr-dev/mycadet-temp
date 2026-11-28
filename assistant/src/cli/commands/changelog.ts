@@ -42,15 +42,17 @@ import {
  * upstream API may add stays compatible because we read by name and ignore
  * the rest.
  */
-interface GitHubRelease {
-  tag_name: string;
-  name: string | null;
-  body: string | null;
-  published_at: string | null;
-  html_url: string;
-  draft: boolean;
-  prerelease: boolean;
-}
+const githubReleaseSchema = z.looseObject({
+  tag_name: z.string(),
+  name: z.string().nullable(),
+  body: z.string().nullable(),
+  published_at: z.string().nullable(),
+  html_url: z.string(),
+  draft: z.boolean(),
+  prerelease: z.boolean(),
+});
+
+type GitHubRelease = z.infer<typeof githubReleaseSchema>;
 
 /**
  * Cache shape persisted under `<workspace>/data/changelog-cache.json`.
@@ -62,11 +64,13 @@ interface GitHubRelease {
  *   TTL — first `show <tag>` populates, subsequent calls short-circuit
  *   the fetch.
  */
-interface CacheStore {
-  fetchedAt: string;
-  recent: GitHubRelease[];
-  byTag: Record<string, GitHubRelease>;
-}
+const cacheStoreSchema = z.object({
+  fetchedAt: z.string(),
+  recent: z.array(githubReleaseSchema),
+  byTag: z.record(z.string(), githubReleaseSchema),
+});
+
+type CacheStore = z.infer<typeof cacheStoreSchema>;
 
 // ── Config ───────────────────────────────────────────────────────────
 
@@ -92,18 +96,7 @@ function readCache(): CacheStore | null {
     if (!existsSync(path)) {
       return null;
     }
-    const parsed = JSON.parse(
-      readFileSync(path, "utf-8"),
-    ) as Partial<CacheStore>;
-    if (
-      typeof parsed.fetchedAt !== "string" ||
-      !Array.isArray(parsed.recent) ||
-      typeof parsed.byTag !== "object" ||
-      parsed.byTag === null
-    ) {
-      return null;
-    }
-    return parsed as CacheStore;
+    return cacheStoreSchema.parse(JSON.parse(readFileSync(path, "utf-8")));
   } catch {
     return null;
   }
@@ -172,19 +165,7 @@ async function fetchReleaseList(limit: number): Promise<GitHubRelease[]> {
     const text = await res.text().catch(() => "");
     throw new Error(describeGithubError(res.status, text));
   }
-  return z
-    .array(
-      z.looseObject({
-        tag_name: z.string(),
-        name: z.union([z.null(), z.string()]),
-        body: z.union([z.null(), z.string()]),
-        published_at: z.union([z.null(), z.string()]),
-        html_url: z.string(),
-        draft: z.boolean(),
-        prerelease: z.boolean(),
-      }),
-    )
-    .parse(await res.json());
+  return z.array(githubReleaseSchema).parse(await res.json());
 }
 
 async function fetchReleaseByTag(tag: string): Promise<GitHubRelease | null> {
@@ -197,17 +178,7 @@ async function fetchReleaseByTag(tag: string): Promise<GitHubRelease | null> {
     const text = await res.text().catch(() => "");
     throw new Error(describeGithubError(res.status, text));
   }
-  return z
-    .looseObject({
-      tag_name: z.string(),
-      name: z.union([z.null(), z.string()]),
-      body: z.union([z.null(), z.string()]),
-      published_at: z.union([z.null(), z.string()]),
-      html_url: z.string(),
-      draft: z.boolean(),
-      prerelease: z.boolean(),
-    })
-    .parse(await res.json());
+  return githubReleaseSchema.parse(await res.json());
 }
 
 // ── Cache-aware loaders ──────────────────────────────────────────────

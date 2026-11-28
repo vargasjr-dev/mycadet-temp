@@ -140,7 +140,10 @@ let persistedThreads = new Map<
     archivedAt: number | null;
   }
 >();
-let threadPlacement = { isPinned: false, groupId: null as string | null };
+let threadPlacement: { isPinned: boolean; groupId: string | null } = {
+  isPinned: false,
+  groupId: null,
+};
 let persistedSeed = true;
 mock.module("../../persistence/conversation-crud.js", () => ({
   getConversation: (id: string) =>

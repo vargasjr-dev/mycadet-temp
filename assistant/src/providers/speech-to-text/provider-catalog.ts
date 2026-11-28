@@ -322,9 +322,7 @@ const CATALOG: ReadonlyMap<string, SttProviderEntry> = new Map<
  * Returns `undefined` when the ID is not present in the catalog (e.g. an
  * unknown runtime value that passed schema validation).
  */
-export function getProviderEntry(
-  id: SttProviderId,
-): SttProviderEntry | undefined {
+export function getProviderEntry(id: string): SttProviderEntry | undefined {
   return CATALOG.get(id);
 }
 
@@ -362,7 +360,7 @@ export function pinnedListeningLanguage(
   configuredLanguage: string | undefined,
 ): string | undefined {
   const providerHonorsLanguagePin =
-    getProviderEntry(provider as SttProviderId)?.languageSelection === "manual";
+    getProviderEntry(provider)?.languageSelection === "manual";
   if (!providerHonorsLanguagePin || configuredLanguage?.trim() === "multi") {
     return undefined;
   }
@@ -483,7 +481,7 @@ export function sttCatalogKeyFor(
  * `model` on it is a configuration error rather than a silent no-op.
  */
 export function listProviderModelFamilies(
-  id: SttProviderId,
+  id: string,
 ): readonly SttModelFamily[] {
   const base = CATALOG.get(id);
   if (!base || base.variantOf !== undefined) {

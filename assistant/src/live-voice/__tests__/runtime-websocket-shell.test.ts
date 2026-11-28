@@ -308,7 +308,10 @@ describe("RuntimeHttpServer live voice WebSocket shell", () => {
       conversationId: "conversation-after-error",
     });
     expect(typeof ready.sessionId).toBe("string");
-    expect(ready.seq as number).toBeGreaterThan(error.seq as number);
+    if (typeof ready.seq !== "number" || typeof error.seq !== "number") {
+      throw new Error("Expected numeric sequence numbers on both frames");
+    }
+    expect(ready.seq).toBeGreaterThan(error.seq);
   });
 
   test("releases the session lock when the WebSocket closes", async () => {

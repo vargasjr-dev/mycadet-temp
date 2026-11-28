@@ -12,6 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 process.env.DISABLE_HTTP_AUTH = "true";
@@ -231,7 +232,9 @@ function makeDeps(
   return {
     sendMessageDeps: {
       getOrCreateConversation: async () => conversation,
-      assistantEventHub: { publish: async () => {} } as never,
+      assistantEventHub: Object.assign(new AssistantEventHub(), {
+        publish: async () => {},
+      }),
       resolveAttachments: () => [],
     },
   };

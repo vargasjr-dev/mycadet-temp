@@ -6,7 +6,6 @@
  * detects the file change and invokes {@link handleCancelSignal}, which
  * reads the payload and aborts the target conversation.
  */
-
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -17,6 +16,7 @@ import { getSubagentManager } from "../subagent/index.js";
 import { createAbortReason } from "../util/abort-reasons.js";
 import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 
 const log = getLogger("signal:cancel");
 
@@ -33,8 +33,8 @@ export function handleCancelSignal(): void {
 
   try {
     const content = readFileSync(join(getSignalsDir(), "cancel"), "utf-8");
-    const parsed = JSON.parse(content) as { conversationId?: string };
-    const { conversationId } = parsed;
+    const parsed: unknown = JSON.parse(content);
+    const conversationId = getObjectProperty(parsed, "conversationId");
 
     if (!conversationId || typeof conversationId !== "string") {
       log.warn("Cancel signal missing conversationId");

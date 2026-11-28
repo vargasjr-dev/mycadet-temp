@@ -5,10 +5,10 @@
  * never leaks raw JSON or HTTP status noise into a conversation or the UI.
  */
 
-import type { SttError, SttProviderId } from "../stt/types.js";
+import type { SttError } from "../stt/types.js";
 import { getProviderEntry } from "./speech-to-text/provider-catalog.js";
 
-function sttProviderLabel(providerId?: SttProviderId): string {
+function sttProviderLabel(providerId?: string): string {
   const displayName = providerId
     ? getProviderEntry(providerId)?.displayName
     : undefined;
@@ -19,10 +19,7 @@ function sttProviderLabel(providerId?: SttProviderId): string {
  * Friendly, model-actionable copy for a normalized STT failure. Names the
  * provider (when known) so the model can point the user at the right fix.
  */
-export function describeSttFailure(
-  err: SttError,
-  providerId?: SttProviderId,
-): string {
+export function describeSttFailure(err: SttError, providerId?: string): string {
   // Adapters that already produce user-facing, provider-appropriate copy
   // (cloud speech: reconnect the cloud, top up Cadet credits) mark the
   // error so its remediation survives verbatim instead of being rewritten to

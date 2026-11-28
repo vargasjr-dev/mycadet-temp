@@ -99,9 +99,10 @@ export function getCatalogProvider(id: string): TtsProviderCatalogEntry {
  * @throws if the ID is not in the catalog.
  */
 export function getProviderDefinition(id: string): TtsProviderDefinition {
-  const definition = (
-    DEFINITIONS as Record<string, TtsProviderDefinition | undefined>
-  )[id];
+  const definitionsById: Readonly<
+    Partial<Record<string, TtsProviderDefinition>>
+  > = DEFINITIONS;
+  const definition = definitionsById[id];
   if (!definition) {
     const known = listCatalogProviderIds();
     throw new Error(

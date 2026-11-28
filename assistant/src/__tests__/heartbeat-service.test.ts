@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import { hasSetConstructs } from "../schedule/recurrence-engine.js";
+import { getObjectProperty } from "../util/object.js";
 
 const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 
@@ -353,7 +354,7 @@ describe("HeartbeatService", () => {
   let processMessageCalls: Array<{
     conversationId: string;
     content: string;
-    options?: { callSite?: string };
+    options?: unknown;
   }>;
 
   afterEach(() => {
@@ -379,12 +380,11 @@ describe("HeartbeatService", () => {
     computeNextRunAtCallCount = 0;
 
     // Default processMessage mock: capture calls for assertions.
-    setTestProcessMessage(async (...args: unknown[]) => {
-      processMessageCalls.push({
-        conversationId: args[0] as string,
-        content: args[1] as string,
-        options: (args[2] as { callSite?: string } | undefined) ?? undefined,
-      });
+    setTestProcessMessage(async (conversationId, content, options) => {
+      if (typeof conversationId !== "string" || typeof content !== "string") {
+        throw new Error("Expected a conversation id and heartbeat prompt");
+      }
+      processMessageCalls.push({ conversationId, content, options });
       return { messageId: "msg-1" };
     });
 
@@ -790,7 +790,9 @@ describe("HeartbeatService", () => {
     await service.runOnce();
 
     expect(processMessageCalls).toHaveLength(1);
-    expect(processMessageCalls[0].options?.callSite).toBe("heartbeatAgent");
+    expect(getObjectProperty(processMessageCalls[0].options, "callSite")).toBe(
+      "heartbeatAgent",
+    );
     const resolved = resolveCallSiteConfig("heartbeatAgent", llm);
     expect(resolved.speed).toBe("fast");
   });

@@ -20,7 +20,6 @@ import {
   ensureRetrospectiveCursorColumn,
   getRetrospectiveState,
 } from "../plugins/defaults/memory/memory-retrospective-state.js";
-import type { PluginHooks } from "../plugins/types.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 await initializeDb();
@@ -29,7 +28,7 @@ await initializeDb();
 // the delete primitive's dispatch reaches the cursor bookkeeping.
 registerPluginHooks("default-memory", {
   "message-deleted": memoryMessageDeleted,
-} as PluginHooks);
+});
 
 const CONV_ID = "conv-retry-discard-test";
 

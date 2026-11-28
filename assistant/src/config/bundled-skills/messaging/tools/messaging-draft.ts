@@ -14,7 +14,7 @@ export async function run(
   input: Record<string, unknown>,
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const action = input.action as string;
+  const action = input.action;
 
   switch (action) {
     case "create": {

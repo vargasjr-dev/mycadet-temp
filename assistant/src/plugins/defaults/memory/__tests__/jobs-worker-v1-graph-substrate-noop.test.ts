@@ -159,7 +159,7 @@ function handlerFor(type: string) {
   return entry.handler;
 }
 
-function fakeJob(type: string): MemoryJob {
+function fakeJob(type: MemoryJob["type"]): MemoryJob {
   return {
     id: `job-${type}`,
     type,
@@ -172,7 +172,7 @@ function fakeJob(type: string): MemoryJob {
     startedAt: null,
     createdAt: 0,
     updatedAt: 0,
-  } as MemoryJob;
+  };
 }
 
 function v1Config(): AssistantConfig {

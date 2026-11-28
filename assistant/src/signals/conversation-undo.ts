@@ -8,7 +8,6 @@
  * the undo, and writes `signals/conversation-undo.result` so the CLI
  * receives feedback.
  */
-
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -16,6 +15,7 @@ import { getIsContainerized } from "../config/env-registry.js";
 import { undoLastMessage } from "../daemon/handlers/conversations.js";
 import { getSignalsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 
 const log = getLogger("signal:conversation-undo");
 
@@ -53,19 +53,17 @@ export async function handleConversationUndoSignal(): Promise<void> {
       join(getSignalsDir(), "conversation-undo"),
       "utf-8",
     );
-    const parsed = JSON.parse(content) as {
-      conversationId?: string;
-      requestId?: string;
-    };
-    const { conversationId, requestId } = parsed;
-    parsedRequestId = requestId;
+    const parsed: unknown = JSON.parse(content);
+    const conversationId = getObjectProperty(parsed, "conversationId");
+    const requestId = getObjectProperty(parsed, "requestId");
+    parsedRequestId = typeof requestId === "string" ? requestId : undefined;
 
     if (!conversationId || typeof conversationId !== "string") {
       log.warn("Undo signal missing conversationId");
       writeResult({
         ok: false,
         error: "Missing conversationId",
-        requestId: requestId ?? null,
+        requestId: parsedRequestId ?? null,
       });
       return;
     }

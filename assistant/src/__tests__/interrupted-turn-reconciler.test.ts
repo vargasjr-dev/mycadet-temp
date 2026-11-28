@@ -285,7 +285,10 @@ describe("resumeInterruptedConversations", () => {
 
     const wakeCalls: string[] = [];
     const wakeMock = mock(async (opts: Record<string, unknown>) => {
-      wakeCalls.push(opts.conversationId as string);
+      if (typeof opts.conversationId !== "string") {
+        throw new Error("Expected the conversation id passed to wake");
+      }
+      wakeCalls.push(opts.conversationId);
       return { invoked: true, producedToolCalls: false };
     });
     mock.module("../runtime/agent-wake.js", () => ({

@@ -24,7 +24,7 @@ import { HookFunction } from "../plugin-api/types.js";
 import { isFirstPartyDefaultPlugin } from "../plugins/defaults/main.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import { getDiscoveredUserPluginNames } from "../plugins/mtime-cache.js";
-import type { HookEntry } from "../plugins/types.js";
+import type { HookEntry, PluginHooks } from "../plugins/types.js";
 import { collectUserHookEntries } from "./hook-loader.js";
 
 // ─── Internal state ──────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ const hookRegistry = new Map<
  */
 export function registerPluginHooks(
   pluginName: string,
-  hooks: Record<string, HookFunction>,
+  hooks: PluginHooks,
 ): void {
   for (const [hookName, fn] of Object.entries(hooks)) {
     if (typeof fn !== "function") {

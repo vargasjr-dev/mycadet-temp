@@ -224,9 +224,9 @@ describe("SttStreamSession", () => {
       expect(allFrames.some((f) => f.type === "closed")).toBe(true);
 
       // Verify monotonic sequence numbers.
-      const seqs = allFrames
-        .filter((f) => typeof f.seq === "number")
-        .map((f) => f.seq as number);
+      const seqs = allFrames.flatMap((f) =>
+        typeof f.seq === "number" ? [f.seq] : [],
+      );
       for (let i = 1; i < seqs.length; i++) {
         expect(seqs[i]).toBeGreaterThan(seqs[i - 1]);
       }
@@ -493,9 +493,9 @@ describe("SttStreamSession", () => {
       session.handleMessage(JSON.stringify({ type: "stop" }));
 
       const allFrames = ws.frames;
-      const seqs = allFrames
-        .filter((f) => typeof f.seq === "number")
-        .map((f) => f.seq as number);
+      const seqs = allFrames.flatMap((f) =>
+        typeof f.seq === "number" ? [f.seq] : [],
+      );
 
       // Verify strict monotonic ordering.
       for (let i = 1; i < seqs.length; i++) {

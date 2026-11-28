@@ -9,7 +9,7 @@ import { runInPluginContext } from "../../../plugins/plugin-execution-context.js
 // Bun process, so these mocks cannot leak elsewhere.
 // ---------------------------------------------------------------------------
 
-const received = { plugin: null as string | null };
+const received: { plugin: string | null } = { plugin: null };
 
 mock.module("../plugin-index.js", () => ({
   computeEmbedding: async () => ({

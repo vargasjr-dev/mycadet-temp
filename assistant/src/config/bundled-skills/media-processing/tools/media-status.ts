@@ -22,7 +22,7 @@ export async function run(
     typeof input.asset_id === "string" ? input.asset_id : undefined;
   const filePath =
     typeof input.file_path === "string" ? input.file_path : undefined;
-  const statusFilter = input.status_filter as MediaAssetStatus | undefined;
+  const statusFilter = input.status_filter;
 
   // Query by asset ID
   if (assetId) {
@@ -61,13 +61,16 @@ export async function run(
       "indexed",
       "failed",
     ];
-    if (!validStatuses.includes(statusFilter)) {
+    const status = validStatuses.find(
+      (candidate) => candidate === statusFilter,
+    );
+    if (!status) {
       return {
         content: `Invalid status filter: ${statusFilter}. Valid values: ${validStatuses.join(", ")}`,
         isError: true,
       };
     }
-    const assets = getMediaAssetsByStatus(statusFilter);
+    const assets = getMediaAssetsByStatus(status);
     const results = assets.map((asset) => ({
       asset,
       stages: getProcessingStagesForAsset(asset.id),

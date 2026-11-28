@@ -1,12 +1,7 @@
 import { z } from "zod";
 
 import { listProviderModelFamilies } from "../../providers/speech-to-text/provider-catalog.js";
-import {
-  STT_ROLES,
-  type SttRole,
-  sttRoleCapabilityGap,
-} from "../../stt/roles.js";
-import type { SttProviderId } from "../../stt/types.js";
+import { STT_ROLES, sttRoleCapabilityGap } from "../../stt/roles.js";
 
 /**
  * Valid STT provider identifiers. New providers append here and register
@@ -37,13 +32,8 @@ const STT_PROVIDER_ALIASES: Record<
  * (forgiving aliases like `whisper` map to `openai-whisper`). Exported for tooling
  * that validates provider ids outside the schema parse.
  */
-export function normalizeSttProviderId(
-  value: string,
-): (typeof VALID_STT_PROVIDERS)[number] {
-  return (
-    STT_PROVIDER_ALIASES[value] ??
-    (value as (typeof VALID_STT_PROVIDERS)[number])
-  );
+export function normalizeSttProviderId(value: string): string {
+  return STT_PROVIDER_ALIASES[value] ?? value;
 }
 
 /**
@@ -70,9 +60,7 @@ export const SttProvidersSchema = z
       if (model === undefined) {
         continue;
       }
-      const families: readonly string[] = listProviderModelFamilies(
-        providerId as SttProviderId,
-      );
+      const families: readonly string[] = listProviderModelFamilies(providerId);
       if (families.length === 0) {
         continue;
       }
@@ -127,7 +115,8 @@ const SttRolesSchema = z
     }),
   )
   .check((ctx) => {
-    for (const [role, selection] of Object.entries(ctx.value)) {
+    for (const role of STT_ROLES) {
+      const selection = ctx.value[role];
       if (selection === undefined) {
         continue;
       }
@@ -149,7 +138,7 @@ const SttRolesSchema = z
         });
         continue;
       }
-      const gap = sttRoleCapabilityGap(role as SttRole, selection);
+      const gap = sttRoleCapabilityGap(role, selection);
       if (gap !== null) {
         ctx.issues.push({
           code: "custom",

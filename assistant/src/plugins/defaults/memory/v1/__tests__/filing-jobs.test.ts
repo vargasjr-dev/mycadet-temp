@@ -57,7 +57,15 @@ function makeJob(payload: Record<string, unknown> = {}): MemoryJob {
     id: "job-1",
     type: "pkb_filing",
     payload,
-  } as unknown as MemoryJob;
+    status: "running",
+    attempts: 0,
+    deferrals: 0,
+    runAfter: 0,
+    lastError: null,
+    startedAt: null,
+    createdAt: 0,
+    updatedAt: 0,
+  };
 }
 
 function writePkbBuffer(content: string): void {

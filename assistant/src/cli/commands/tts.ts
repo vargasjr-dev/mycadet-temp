@@ -24,7 +24,6 @@ import { ttsHelp } from "./tts.help.js";
 // ---------------------------------------------------------------------------
 
 const VALID_USE_CASES = ["message-playback", "phone-call"] as const;
-type TtsUseCaseCli = (typeof VALID_USE_CASES)[number];
 
 // ---------------------------------------------------------------------------
 // MIME type → file extension mapping (presentation-layer concern)
@@ -115,14 +114,16 @@ export function registerTtsCommand(program: Command): void {
           }
 
           // Validate --use-case
-          if (!VALID_USE_CASES.includes(opts.useCase as TtsUseCaseCli)) {
+          const useCase = VALID_USE_CASES.find(
+            (candidate) => candidate === opts.useCase,
+          );
+          if (useCase === undefined) {
             emitError(
               `Invalid --use-case: '${opts.useCase}'. Must be one of: ${VALID_USE_CASES.join(", ")}.`,
             );
             process.exitCode = 1;
             return;
           }
-          const useCase = opts.useCase as TtsUseCaseCli;
 
           // Call the daemon via IPC.
           const r = await cliIpcCall<{

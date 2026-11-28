@@ -4,6 +4,7 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
 import { z } from "zod";
 
 import { MESSAGE_KEYS } from "../../i18n/index.js";
@@ -338,11 +339,11 @@ const NON_USER_KIND_CASES: Array<{
 ];
 
 const warnCalls: unknown[] = [];
-const rlog = {
+const rlog = Object.assign(pino({ enabled: false }), {
   warn: (...args: unknown[]) => {
     warnCalls.push(args);
   },
-} as any;
+});
 
 async function run(
   overrides: Partial<Parameters<typeof emitAssistantReplyNotification>[0]> = {},
