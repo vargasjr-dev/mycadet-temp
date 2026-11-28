@@ -16,7 +16,7 @@ mock.module("electron", () =>
 
 // The mac helper's bundle folder name is per-environment, resolved from a
 // sidecar file (with a plist-discovery walk as fallback) — see the module
-// header. Defaults resolve `cadet-mac-helper.app`.
+// header. Defaults resolve `Cadet.app`.
 let helperExecutableName = "cadet-mac-helper";
 let helperBundleName = "cadet-mac-helper";
 mock.module("node:fs", () => ({

@@ -38,19 +38,20 @@ fi
 ENV="${CADET_ENVIRONMENT:-local}"
 if [ "$ENV" = "production" ]; then
   HELPER_BUNDLE_ID="ai.mycadet.android.mac-helper"
-  HELPER_DISPLAY_NAME="Cadet Helper"
+  HELPER_DISPLAY_NAME="Cadet"
 else
   ENV_CAP="$(printf '%s' "${ENV:0:1}" | tr '[:lower:]' '[:upper:]')${ENV:1}"
   HELPER_BUNDLE_ID="ai.mycadet.android-${ENV}.mac-helper"
-  HELPER_DISPLAY_NAME="Cadet Helper ${ENV_CAP}"
+  HELPER_DISPLAY_NAME="Cadet ${ENV_CAP}"
 fi
 
 # Name the .app folder AND the executable per environment. The helper is
 # spawned directly (execve, not via LaunchServices); the Privacy & Security
 # list shows the .app folder name, not CFBundleName/CFBundleDisplayName or
-# the executable filename. Naming both the folder and the binary after the
-# env display name ("Cadet Helper", "Cadet Helper Dev", …) is what makes
-# the Settings entry read correctly.
+# the executable filename. The folder and binary carry the app's own name
+# ("Cadet", "Cadet Dev", …) so the permission prompt and the Settings row
+# read as Cadet — the helper is Cadet's own process, not a second app —
+# while the per-env suffix keeps side-by-side installs on distinct rows.
 HELPER_BUNDLE_NAME="$HELPER_DISPLAY_NAME"
 HELPER_EXEC_NAME="$HELPER_DISPLAY_NAME"
 OUTPUT_BUNDLE="$OUTPUT_DIR/$HELPER_BUNDLE_NAME.app"
@@ -84,12 +85,14 @@ BUILD_ARGS+=(
   -Xlinker "$RENDERED_PLIST"
 )
 
-# Clear any bare binary / `cadet-mac-helper.app` outputs so a rebuild never
+# Clear any bare binary / legacy-named .app outputs so a rebuild never
 # leaves an orphan bundle on disk next to the per-env one; the corresponding
 # TCC row in Settings persists until manually toggled off (or
-# `tccutil reset Accessibility ai.mycadet.android.mac-helper`).
+# `tccutil reset Accessibility ai.mycadet.android.mac-helper`). The
+# "Cadet Helper*" glob covers the pre-rename helper identity's folders.
 rm -f "$OUTPUT_DIR/hotkey-helper" "$OUTPUT_DIR/cadet-mac-helper" "$OUTPUT_DIR/Info.plist"
 rm -rf "$OUTPUT_DIR/cadet-mac-helper.app"
+rm -rf "$OUTPUT_DIR"/"Cadet Helper"*.app
 xcrun swift build "${BUILD_ARGS[@]}"
 BUILD_DIR="$(xcrun swift build "${BUILD_ARGS[@]}" --show-bin-path)"
 
