@@ -265,6 +265,12 @@ mock.module("../skills/install-meta.js", () => ({
     return mockInstallMetas[skillId] ?? null;
   },
   touchSkillLastUsed: (skillDir: string, today: string) => {
+    const parts = skillDir.split("/");
+    const skillId = parts[parts.length - 1];
+    // Mirror the real no-op: a skill without install-meta is never stamped.
+    if (!mockInstallMetas[skillId]) {
+      return false;
+    }
     recordedLastUsedTouches.push({ skillDir, today });
     return true;
   },
@@ -288,7 +294,7 @@ const { projectSkillTools, resetSkillToolProjection } =
 function makeSkill(
   id: string,
   dir?: string,
-  source: SkillSummary["source"] = "managed",
+  source: SkillSummary["source"] = "workspace",
 ): SkillSummary {
   return {
     id,
@@ -815,7 +821,7 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     sessionState = new Map<string, string>();
   });
 
-  test("managed skill load stamps lastUsedAt with today's date and its directory", () => {
+  test("catalog-installed skill load stamps lastUsedAt with today's date and its directory", () => {
     mockCatalog = [makeSkill("homemade")];
     mockManifests = { homemade: makeManifest(["hm_run"]) };
     mockInstallMetas = {
@@ -832,7 +838,7 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     ]);
   });
 
-  test("stamps managed skills regardless of origin", () => {
+  test("stamps installed skills regardless of origin", () => {
     // origin: "custom" skills are stamped too.
     mockCatalog = [makeSkill("homemade")];
     mockManifests = { homemade: makeManifest(["hm_run"]) };
@@ -849,7 +855,7 @@ describe("lastUsedAt stamping on cloud-skill load", () => {
     expect(recordedLastUsedTouches[0].skillDir).toBe("/skills/homemade");
   });
 
-  test("instruction-only managed skill (no TOOLS.json) is stamped", () => {
+  test("instruction-only installed skill (no TOOLS.json) is stamped", () => {
     mockCatalog = [makeSkill("catalog-skill")];
     // No manifest — instruction-only managed skill.
     mockInstallMetas = {

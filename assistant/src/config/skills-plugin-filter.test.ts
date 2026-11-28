@@ -13,7 +13,7 @@ function makeSkill(
     description: `Skill ${id}`,
     directoryPath: `/skills/${id}`,
     skillFilePath: `/skills/${id}/SKILL.md`,
-    source: "managed",
+    source: "workspace",
     ...overrides,
   };
 }
@@ -58,7 +58,7 @@ describe("filterSkillsByEnabledPlugins", () => {
   test("retains non-plugin skills even when the set is empty", () => {
     const skills = [
       makeSkill("bundled-one", { source: "bundled" }),
-      makeSkill("managed-one", { source: "managed" }),
+      makeSkill("user-one", { source: "workspace" }),
       makeSkill("workspace-one", { source: "workspace" }),
       makePluginSkill("from-a", "a"),
     ];
@@ -67,7 +67,7 @@ describe("filterSkillsByEnabledPlugins", () => {
 
     expect(result.map((s) => s.id)).toEqual([
       "bundled-one",
-      "managed-one",
+      "user-one",
       "workspace-one",
     ]);
   });

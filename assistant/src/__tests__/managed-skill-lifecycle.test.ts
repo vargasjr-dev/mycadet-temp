@@ -92,7 +92,7 @@ Run the custom lifecycle verification procedure.
     const catalog = loadSkillCatalog();
     const catalogSkill = catalog.find((s) => s.id === skillId);
     expect(catalogSkill).toBeDefined();
-    expect(catalogSkill!.source).toBe("managed");
+    expect(catalogSkill!.source).toBe("workspace");
     expect(catalogSkill!.displayName).toBe("E2E Custom Skill");
 
     const loadResult = await skillLoadTool.execute(

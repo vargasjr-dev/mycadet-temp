@@ -18,17 +18,18 @@ import type { OwnerInfo, ToolContext, ToolExecutionResult } from "../types.js";
 /**
  * A shortlisted skill enriched with its catalog name, description, and source.
  * `source` lets the caller see whether an existing skill of ANY origin already
- * covers the goal — a bundled/plugin/workspace match (or a person-authored
- * managed one) is not the retrospective's to overwrite or duplicate.
+ * covers the goal — a bundled/plugin/workspace match is not the retrospective's
+ * to overwrite or duplicate.
  *
- * `author` is the install-meta provenance of a `source: "managed"` hit
- * (`"assistant"` = a skill the assistant authored and may overwrite;
- * `"user"` = a person wrote it, off-limits). It is undefined for non-managed
- * sources and for managed skills with no recorded author, so the caller can
- * distinguish its OWN managed skills from a user's without re-reading meta.
+ * `author` is the install-meta provenance of a catalog-installed
+ * (`source: "workspace"`) hit (`"assistant"` = a skill the assistant authored
+ * and may overwrite; `"user"` = a person wrote it, off-limits). It is undefined
+ * for bundled/plugin sources and for workspace skills with no recorded author,
+ * so the caller can distinguish its OWN installed skills from a user's without
+ * re-reading meta.
  *
  * `current` is the skill as stored, present only on a hit the caller may
- * refine (managed, assistant-authored) and only for the retrospective. A
+ * refine (workspace, assistant-authored) and only for the retrospective. A
  * refinement is a whole-file overwrite and the pass has no other read path:
  * its `skill_load` grant covers skill-management alone, and loading would
  * stamp `lastUsedAt` and count as usage. Fields are spelled as
@@ -158,11 +159,11 @@ export async function executeFindSimilarSkills(
     if (outOfScope(skill)) {
       continue;
     }
-    // Join install-meta authorship for managed hits so the caller can tell its
-    // OWN skills (overwritable) from a user's. Best-effort: an absent/failed
-    // meta read leaves `author` undefined rather than throwing.
+    // Join install-meta authorship for catalog-installed hits so the caller
+    // can tell its OWN skills (overwritable) from a user's. Best-effort: an
+    // absent/failed meta read leaves `author` undefined rather than throwing.
     const author =
-      skill.source === "managed"
+      skill.source === "workspace"
         ? readCloudSkillAuthor(hit.skillId)
         : undefined;
     // Only a refinable hit pays for the disk read, and a failed read drops

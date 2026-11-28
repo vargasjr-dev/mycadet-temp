@@ -36,11 +36,7 @@ import type { SkillToolManifest } from "./../../skills/tool-manifest.js";
 import { formatSkillInputSchema } from "./format-input-schema.js";
 
 /** Skill sources eligible for inline command expansion in v1. */
-const INLINE_COMMAND_ELIGIBLE_SOURCES = new Set([
-  "bundled",
-  "managed",
-  "workspace",
-]);
+const INLINE_COMMAND_ELIGIBLE_SOURCES = new Set(["bundled", "workspace"]);
 
 /** Matches raw `` !`...` `` inline command tokens in a skill body. */
 const INLINE_COMMAND_TOKEN_PATTERN = /!`[^`]*`/g;
