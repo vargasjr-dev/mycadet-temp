@@ -207,7 +207,7 @@ describe("messagesHaveUserActivity", () => {
     role: string,
     content: Array<Record<string, unknown>>,
   ): Pick<MessageRow, "role" | "content"> {
-    return { role, content } as unknown as Pick<MessageRow, "role" | "content">;
+    return { role, content };
   }
 
   test("a user text row counts as user activity", () => {

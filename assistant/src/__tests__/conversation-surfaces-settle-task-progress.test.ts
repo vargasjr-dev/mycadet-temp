@@ -19,7 +19,6 @@ import { z } from "zod";
 
 import { UISurfaceUpdateEvent } from "../api/events/ui-surface-update.js";
 import type { AssistantEvent } from "../api/index.js";
-import { CardSurfaceData } from "../api/surfaces.js";
 import { SurfaceType } from "../api/surfaces.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
@@ -111,9 +110,7 @@ describe("settleRunningTaskProgressSurfaces", () => {
 
     const updates = updatesFor(sent, surfaceId);
     expect(updates).toHaveLength(1);
-    const templateData = jsonObjectSchema.parse(
-      (updates[0].data as CardSurfaceData).templateData,
-    );
+    const templateData = jsonObjectSchema.parse(updates[0].data.templateData);
     expect(templateData.status).toBe("pending");
     expect(templateData.steps).toEqual([
       { label: "Draft email", status: "completed" },

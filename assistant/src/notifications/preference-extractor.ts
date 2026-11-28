@@ -18,6 +18,7 @@ import {
 } from "../providers/provider-send-message.js";
 import { getLogger } from "../util/logger.js";
 import { isObjectRecord } from "../util/object.js";
+import { isObjectRecord } from "../util/object.js";
 import type { AppliesWhenConditions } from "./preferences-store.js";
 
 const log = getLogger("notification-preference-extractor");
@@ -206,10 +207,10 @@ function validateExtractionOutput(
     }
 
     const appliesWhen: AppliesWhenConditions = {};
-    if (p.appliesWhen && typeof p.appliesWhen === "object") {
-      const aw = p.appliesWhen as Record<string, unknown>;
-      if (aw.timeRange && typeof aw.timeRange === "object") {
-        const tr = aw.timeRange as Record<string, unknown>;
+    const aw = p.appliesWhen;
+    if (isObjectRecord(aw)) {
+      const tr = aw.timeRange;
+      if (isObjectRecord(tr)) {
         appliesWhen.timeRange = {
           after: typeof tr.after === "string" ? tr.after : undefined,
           before: typeof tr.before === "string" ? tr.before : undefined,

@@ -38,7 +38,10 @@ beforeEach(() => {
   clearConnectedClients();
 });
 
-async function extractArchive(bytes: Uint8Array): Promise<string> {
+async function extractArchive(bytes: unknown): Promise<string> {
+  if (!(bytes instanceof Uint8Array)) {
+    throw new TypeError("Expected archive bytes");
+  }
   const extractDir = mkdtempSync(join(tmpdir(), "log-export-routes-"));
   const archivePath = join(extractDir, "archive.tar.gz");
   writeFileSync(archivePath, bytes);
@@ -68,7 +71,7 @@ describe("POST /v1/export - connected clients", () => {
       const result = await exportRoute.handler({ body: {} });
       expect(result).toBeInstanceOf(Uint8Array);
 
-      const dir = await extractArchive(result as Uint8Array);
+      const dir = await extractArchive(result);
       try {
         const clientsList = z
           .looseObject({
@@ -118,7 +121,7 @@ describe("POST /v1/export - connected clients", () => {
       const result = await exportRoute.handler({ body: {} });
       expect(result).toBeInstanceOf(Uint8Array);
 
-      const dir = await extractArchive(result as Uint8Array);
+      const dir = await extractArchive(result);
       try {
         expect(existsSync(join(dir, "clients-list.json"))).toBe(false);
         const errorArtifact = z
@@ -170,7 +173,7 @@ describe("POST /v1/export - conversation-scoped daemon logs", () => {
       // THEN the archive is produced
       expect(result).toBeInstanceOf(Uint8Array);
 
-      const dir = await extractArchive(result as Uint8Array);
+      const dir = await extractArchive(result);
       try {
         // AND the full daily log is retained, including the untagged failure
         const exportedLogPath = join(dir, "daemon-logs", logFileName);
@@ -230,7 +233,7 @@ describe("POST /v1/export - LLM usage events", () => {
     const result = await exportRoute.handler({ body: { full: true } });
     expect(result).toBeInstanceOf(Uint8Array);
 
-    const dir = await extractArchive(result as Uint8Array);
+    const dir = await extractArchive(result);
     try {
       const rows = z
         .array(jsonObjectSchema)

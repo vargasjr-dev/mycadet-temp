@@ -6,7 +6,6 @@ import {
   getCatalogProvider,
   listCatalogProviderIds,
 } from "../tts/provider-catalog.js";
-import type { TtsProviderId } from "../tts/types.js";
 
 /**
  * Parity guard: daemon TTS provider catalog vs client TTS catalog JSON.
@@ -162,7 +161,7 @@ describe("TTS catalog parity: daemon vs client", () => {
 
     for (const clientEntry of clientCatalog.providers) {
       try {
-        const daemonEntry = getCatalogProvider(clientEntry.id as TtsProviderId);
+        const daemonEntry = getCatalogProvider(clientEntry.id);
         const expected = deriveCredentialMetadata(daemonEntry);
         if (clientEntry.credentialMode !== expected.credentialMode) {
           violations.push(
@@ -198,7 +197,7 @@ describe("TTS catalog parity: daemon vs client", () => {
       }
 
       try {
-        const daemonEntry = getCatalogProvider(clientEntry.id as TtsProviderId);
+        const daemonEntry = getCatalogProvider(clientEntry.id);
         const expected = deriveCredentialMetadata(daemonEntry);
         if (clientEntry.apiKeyProviderName !== expected.apiKeyProviderName) {
           violations.push(
@@ -234,7 +233,7 @@ describe("TTS catalog parity: daemon vs client", () => {
       }
 
       try {
-        const daemonEntry = getCatalogProvider(clientEntry.id as TtsProviderId);
+        const daemonEntry = getCatalogProvider(clientEntry.id);
         const expected = deriveCredentialMetadata(daemonEntry);
         if (clientEntry.credentialNamespace !== expected.credentialNamespace) {
           violations.push(
@@ -270,7 +269,7 @@ describe("TTS catalog parity: daemon vs client", () => {
 
     for (const clientEntry of clientCatalog.providers) {
       try {
-        const daemonEntry = getCatalogProvider(clientEntry.id as TtsProviderId);
+        const daemonEntry = getCatalogProvider(clientEntry.id);
         if (clientEntry.displayName !== daemonEntry.displayName) {
           violations.push(
             `Provider "${clientEntry.id}": client displayName="${clientEntry.displayName}" ` +

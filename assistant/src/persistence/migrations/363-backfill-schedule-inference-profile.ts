@@ -104,7 +104,7 @@ function backfillWakeRows(raw: Database): void {
     return;
   }
 
-  const selectTarget = raw.prepare(
+  const selectTarget = raw.prepare<DurableProfileFields, [string]>(
     `SELECT conversation_type AS conversationType,
             inference_profile AS inferenceProfile,
             inference_profile_session_id AS inferenceProfileSessionId,
@@ -119,10 +119,7 @@ function backfillWakeRows(raw: Database): void {
   for (const row of rows) {
     // A target deleted since the wake was created reads as null and falls
     // through to the default, the same value the firing would resolve.
-    const target =
-      (selectTarget.get(
-        row.wakeConversationId,
-      ) as DurableProfileFields | null) ?? null;
+    const target = selectTarget.get(row.wakeConversationId) ?? null;
     const profile = resolveWakeScheduleInferenceProfile(target);
     if (profile === null) {
       continue;

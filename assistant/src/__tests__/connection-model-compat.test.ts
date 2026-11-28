@@ -8,17 +8,14 @@ import {
 describe("isConnectionCompatibleWithModel", () => {
   test("non-oauth_subscription connections are always compatible", () => {
     expect(
-      isConnectionCompatibleWithModel(
-        { auth: { type: "api_key" } as never },
-        "o3",
-      ),
+      isConnectionCompatibleWithModel({ auth: { type: "api_key" } }, "o3"),
     ).toBe(true);
   });
 
   test("oauth_subscription is compatible with Codex models", () => {
     expect(
       isConnectionCompatibleWithModel(
-        { auth: { type: "oauth_subscription" } as never },
+        { auth: { type: "oauth_subscription" } },
         "gpt-5.5",
       ),
     ).toBe(true);
@@ -27,7 +24,7 @@ describe("isConnectionCompatibleWithModel", () => {
   test("oauth_subscription is incompatible with non-Codex models", () => {
     expect(
       isConnectionCompatibleWithModel(
-        { auth: { type: "oauth_subscription" } as never },
+        { auth: { type: "oauth_subscription" } },
         "o3",
       ),
     ).toBe(false);
@@ -36,7 +33,7 @@ describe("isConnectionCompatibleWithModel", () => {
   test("undefined model is always compatible", () => {
     expect(
       isConnectionCompatibleWithModel(
-        { auth: { type: "oauth_subscription" } as never },
+        { auth: { type: "oauth_subscription" } },
         undefined,
       ),
     ).toBe(true);
@@ -45,9 +42,9 @@ describe("isConnectionCompatibleWithModel", () => {
 
 describe("describeSubscriptionModelIncompatibility", () => {
   const subscriptionConn = {
-    auth: { type: "oauth_subscription" as const } as never,
+    auth: { type: "oauth_subscription" as const },
   };
-  const apiKeyConn = { auth: { type: "api_key" as const } as never };
+  const apiKeyConn = { auth: { type: "api_key" as const } };
 
   test("returns message when all candidates are oauth_subscription and model is incompatible", () => {
     const msg = describeSubscriptionModelIncompatibility(

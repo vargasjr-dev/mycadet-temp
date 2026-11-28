@@ -948,7 +948,9 @@ export class OpenAIResponsesProvider implements Provider {
         return undefined;
       }
       const last = content[content.length - 1];
-      return last && STAMPABLE_PART_TYPES.has(last.type as string)
+      return last &&
+        typeof last.type === "string" &&
+        STAMPABLE_PART_TYPES.has(last.type)
         ? last
         : undefined;
     };

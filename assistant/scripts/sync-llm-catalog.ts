@@ -98,7 +98,7 @@ function projectModel(model: CatalogModel): Record<string, unknown> {
   return projected;
 }
 
-function projectProvider(entry: ProviderCatalogEntry): Record<string, unknown> {
+function projectProvider(entry: ProviderCatalogEntry) {
   const projected: Record<string, unknown> = {
     id: entry.id,
     displayName: entry.displayName,
@@ -128,11 +128,10 @@ function projectProvider(entry: ProviderCatalogEntry): Record<string, unknown> {
     projected.featureFlag = entry.featureFlag;
   }
   projected.defaultModel = entry.defaultModel;
-  projected.models = entry.models.map(projectModel);
   // NOTE: `apiKeyUrl` intentionally omitted — clients use
   // `credentialsGuide.url` instead. Daemon callers still read it from
   // PROVIDER_CATALOG directly.
-  return projected;
+  return { ...projected, models: entry.models.map(projectModel) };
 }
 
 // ---------------------------------------------------------------------------
@@ -181,7 +180,7 @@ async function main() {
   }
 
   const modelCount = generated.providers.reduce(
-    (n, p) => n + (p.models as unknown[]).length,
+    (n, p) => n + p.models.length,
     0,
   );
   console.log(

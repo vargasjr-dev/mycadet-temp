@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 
 import { ensureConversationExists } from "../persistence/conversation-crud.js";
 import { initializeDb } from "../persistence/db-init.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 beforeAll(async () => {
   await initializeDb();
@@ -67,10 +68,13 @@ describe("subagent_spawn fork parameter", () => {
 
     // Populate the store with a fake parent conversation.
     clearConversations();
-    setConversation("parent-conv-1", {
-      messages: FAKE_PARENT_MESSAGES,
-      getCurrentSystemPrompt: () => "You are a helpful assistant.",
-    } as any);
+    setConversation(
+      "parent-conv-1",
+      asConversation({
+        messages: FAKE_PARENT_MESSAGES,
+        getCurrentSystemPrompt: () => "You are a helpful assistant.",
+      }),
+    );
 
     try {
       const result = await executeSubagentSpawn(
@@ -116,10 +120,13 @@ describe("subagent_spawn fork parameter", () => {
       };
 
       clearConversations();
-      setConversation("parent-conv-role", {
-        messages: FAKE_PARENT_MESSAGES,
-        getCurrentSystemPrompt: () => "Parent prompt.",
-      } as any);
+      setConversation(
+        "parent-conv-role",
+        asConversation({
+          messages: FAKE_PARENT_MESSAGES,
+          getCurrentSystemPrompt: () => "Parent prompt.",
+        }),
+      );
 
       try {
         const result = await executeSubagentSpawn(
@@ -157,10 +164,13 @@ describe("subagent_spawn fork parameter", () => {
     };
 
     clearConversations();
-    setConversation("parent-conv-no-role", {
-      messages: FAKE_PARENT_MESSAGES,
-      getCurrentSystemPrompt: () => "Parent prompt.",
-    } as any);
+    setConversation(
+      "parent-conv-no-role",
+      asConversation({
+        messages: FAKE_PARENT_MESSAGES,
+        getCurrentSystemPrompt: () => "Parent prompt.",
+      }),
+    );
 
     try {
       const result = await executeSubagentSpawn(
@@ -195,10 +205,13 @@ describe("subagent_spawn fork parameter", () => {
     };
 
     clearConversations();
-    setConversation("parent-conv-silent", {
-      messages: FAKE_PARENT_MESSAGES,
-      getCurrentSystemPrompt: () => "Parent prompt.",
-    } as any);
+    setConversation(
+      "parent-conv-silent",
+      asConversation({
+        messages: FAKE_PARENT_MESSAGES,
+        getCurrentSystemPrompt: () => "Parent prompt.",
+      }),
+    );
 
     try {
       // No send_result_to_user specified — fork should default to false
@@ -231,10 +244,13 @@ describe("subagent_spawn fork parameter", () => {
     };
 
     clearConversations();
-    setConversation("parent-conv-visible", {
-      messages: FAKE_PARENT_MESSAGES,
-      getCurrentSystemPrompt: () => "Parent prompt.",
-    } as any);
+    setConversation(
+      "parent-conv-visible",
+      asConversation({
+        messages: FAKE_PARENT_MESSAGES,
+        getCurrentSystemPrompt: () => "Parent prompt.",
+      }),
+    );
 
     try {
       const result = await executeSubagentSpawn(
@@ -349,10 +365,13 @@ describe("subagent_spawn fork parameter", () => {
     };
 
     clearConversations();
-    setConversation("spawn-mode-parent", {
-      messages: FAKE_PARENT_MESSAGES,
-      getCurrentSystemPrompt: () => "You are a helpful assistant.",
-    } as any);
+    setConversation(
+      "spawn-mode-parent",
+      asConversation({
+        messages: FAKE_PARENT_MESSAGES,
+        getCurrentSystemPrompt: () => "You are a helpful assistant.",
+      }),
+    );
 
     try {
       await executeSubagentSpawn(
@@ -480,10 +499,13 @@ describe("subagent_spawn fork parameter", () => {
     };
 
     clearConversations();
-    setConversation("parent-conv-copy", {
-      messages: originalMessages,
-      getCurrentSystemPrompt: () => "Prompt.",
-    } as any);
+    setConversation(
+      "parent-conv-copy",
+      asConversation({
+        messages: originalMessages,
+        getCurrentSystemPrompt: () => "Prompt.",
+      }),
+    );
 
     try {
       await executeSubagentSpawn(

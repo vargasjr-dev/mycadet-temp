@@ -48,16 +48,16 @@ const pointer = async (...args: string[]) => {
   run("xdotool", ...args);
   await Bun.sleep(200);
 };
-const geometry = () => {
+const geometry = (): [number, number, number, number] => {
   const info = run("xwininfo", "-name", "Theme smoke");
+  const read = (label: string) =>
+    Number(new RegExp(`${label}:\\s+(-?\\d+)`).exec(info)?.[1]);
   return [
-    "Absolute upper-left X",
-    "Absolute upper-left Y",
-    "Width",
-    "Height",
-  ].map((label) =>
-    Number(new RegExp(`${label}:\\s+(-?\\d+)`).exec(info)?.[1]),
-  ) as [number, number, number, number];
+    read("Absolute upper-left X"),
+    read("Absolute upper-left Y"),
+    read("Width"),
+    read("Height"),
+  ];
 };
 const state = () => run("xprop", "-name", "Theme smoke", "_NET_WM_STATE");
 const button = async (offset: number) => {

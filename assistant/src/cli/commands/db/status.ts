@@ -505,14 +505,13 @@ function readMigrationSummary(mainDbPath: string): MigrationSummary | null {
     // Crashed (started or rolling_back) checkpoints.
     let crashed: string[] = [];
     try {
-      crashed = (
-        db
-          .query<{ key: string }, []>(
-            `SELECT key FROM memory_checkpoints
+      crashed = db
+        .query<{ key: string }, []>(
+          `SELECT key FROM memory_checkpoints
              WHERE value = 'started' OR value = 'rolling_back'`,
-          )
-          .all() as { key: string }[]
-      ).map((r) => r.key);
+        )
+        .all()
+        .map((r) => r.key);
     } catch {
       // No table yet.
     }

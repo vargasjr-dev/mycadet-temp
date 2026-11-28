@@ -43,7 +43,7 @@
  */
 
 import { basename } from "node:path";
-import type { Database, Statement } from "bun:sqlite";
+import type { Database, SQLQueryBindings, Statement } from "bun:sqlite";
 
 import { observeSqliteStatementError } from "../daemon/sqlite-corruption-watchdog.js";
 import { getLogger } from "../util/logger.js";
@@ -216,9 +216,9 @@ export interface SlowQueryWatcherOptions {
 
 /** Fluent handle returned by {@link Database.label}; tags any slow-query log. */
 export interface LabeledQueries {
-  query(sql: string, ...rest: unknown[]): Statement;
-  prepare(sql: string, ...rest: unknown[]): Statement;
-  run(sql: string, ...params: unknown[]): ReturnType<Database["run"]>;
+  query: Database["query"];
+  prepare: Database["prepare"];
+  run: Database["run"];
 }
 
 declare module "bun:sqlite" {
@@ -317,17 +317,18 @@ export function wrapSqliteForSlowQueryLogging(
   const UNLABELED = "";
   const proxiesByStmt = new WeakMap<Statement, Map<string, Statement>>();
 
-  const wrapStatement = (
-    stmt: Statement,
+  const wrapStatement = <Row, Params extends SQLQueryBindings[]>(
+    stmt: Statement<Row, Params>,
     sql: string,
     label: string | undefined,
-  ): Statement => {
+  ): Statement<Row, Params> => {
     const cacheKey = label ?? UNLABELED;
     let byLabel = proxiesByStmt.get(stmt);
     if (byLabel) {
       const cached = byLabel.get(cacheKey);
       if (cached) {
-        return cached;
+        // Each proxy preserves the native statement's result and bindings.
+        return cached as Statement<Row, Params>;
       }
     } else {
       byLabel = new Map();
@@ -399,15 +400,19 @@ export function wrapSqliteForSlowQueryLogging(
   // surfaces at step time and is caught in the execution closures above.) A
   // `query()` that delegates through the wrapped `prepare()` may notify twice;
   // the observer's per-database debounce collapses that to one report.
-  const createStatement = (
-    create: (...a: unknown[]) => Statement,
+  const createStatement = <
+    Row,
+    Params extends SQLQueryBindings[],
+    Args extends unknown[],
+  >(
+    create: (sql: string, ...args: Args) => Statement<Row, Params>,
     sql: string,
     label: string | undefined,
-    rest: unknown[],
-  ): Statement => {
-    let stmt: Statement;
+    args: Args,
+  ): Statement<Row, Params> => {
+    let stmt: Statement<Row, Params>;
     try {
-      stmt = create(sql, ...rest);
+      stmt = create(sql, ...args);
     } catch (err) {
       notifyError(err, sql, label);
       throw err;
@@ -416,40 +421,35 @@ export function wrapSqliteForSlowQueryLogging(
   };
 
   const makeQuery =
-    (label: string | undefined) =>
-    (sql: string, ...rest: unknown[]): Statement =>
-      createStatement(
-        originalQuery as (...a: unknown[]) => Statement,
-        sql,
-        label,
-        rest,
-      );
+    (label: string | undefined): Database["query"] =>
+    <Row, Params extends SQLQueryBindings | SQLQueryBindings[]>(
+      sql: string,
+      ...args: []
+    ) =>
+      createStatement(originalQuery<Row, Params>, sql, label, args);
 
   const makePrepare =
-    (label: string | undefined) =>
-    (sql: string, ...rest: unknown[]): Statement =>
-      createStatement(
-        originalPrepare as (...a: unknown[]) => Statement,
-        sql,
-        label,
-        rest,
-      );
+    (label: string | undefined): Database["prepare"] =>
+    <Row, Params extends SQLQueryBindings | SQLQueryBindings[]>(
+      sql: string,
+      ...params: [Params?]
+    ) =>
+      createStatement(originalPrepare<Row, Params>, sql, label, params);
 
   // `Database.run(sql, ...params)` is a native shortcut that does not route
   // through `.prepare()`, so it is timed directly here. `sql` is an argument
   // (not fixed per closure), so one closure per label reads it from the call.
   const makeRun =
-    (label: string | undefined) =>
-    (sql: string, ...params: unknown[]): unknown => {
-      const call = originalRun as (...a: unknown[]) => unknown;
+    (label: string | undefined): Database["run"] =>
+    (sql, ...params) => {
       if (timing) {
-        return call(sql, ...params);
+        return originalRun(sql, ...params);
       }
       timing = true;
       const start = now();
-      let result: unknown;
+      let result: ReturnType<Database["run"]> | undefined;
       try {
-        result = call(sql, ...params);
+        result = originalRun(sql, ...params);
         return result;
       } catch (err) {
         notifyError(err, sql, label);
@@ -463,13 +463,13 @@ export function wrapSqliteForSlowQueryLogging(
       }
     };
 
-  sqlite.query = makeQuery(undefined) as typeof sqlite.query;
-  sqlite.prepare = makePrepare(undefined) as typeof sqlite.prepare;
-  sqlite.run = makeRun(undefined) as typeof sqlite.run;
+  sqlite.query = makeQuery(undefined);
+  sqlite.prepare = makePrepare(undefined);
+  sqlite.run = makeRun(undefined);
   sqlite.label = (label: string): LabeledQueries => ({
     query: makeQuery(label),
     prepare: makePrepare(label),
-    run: makeRun(label) as LabeledQueries["run"],
+    run: makeRun(label),
   });
 
   return sqlite;

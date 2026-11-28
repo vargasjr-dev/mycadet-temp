@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { asConversation } from "../__tests__/helpers/mock-conversation.js";
 import type { ModeSessionSummary } from "../api/mode-session.js";
 import type { ModeSessionWriteResult } from "../persistence/conversation-mode-sessions.js";
 import { BrowserModeSessionProducer } from "./browser-mode-session.js";
@@ -577,10 +578,13 @@ describe("ConversationModeSessionCoordinator", () => {
     const handle = activateSource(coordinator, store.session());
     coordinator.claimTurn("turn-origin", handle, 110);
     const signal = new AbortController();
-    setConversation("conv-123", {
-      modeSessions: coordinator,
-      getTurnOrRestingTrust: () => undefined,
-    } as unknown as import("./conversation.js").Conversation);
+    setConversation(
+      "conv-123",
+      asConversation({
+        modeSessions: coordinator,
+        getTurnOrRestingTrust: () => undefined,
+      }),
+    );
     try {
       const result = askQuestionTool.execute(
         {

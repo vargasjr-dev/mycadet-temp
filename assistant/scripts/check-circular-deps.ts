@@ -18,6 +18,8 @@
 import { execSync } from "node:child_process";
 import { resolve } from "node:path";
 
+import { getObjectProperty } from "../src/util/object.js";
+
 const assistantRoot = resolve(import.meta.dirname, "..");
 const tsConfig = resolve(assistantRoot, "tsconfig.json");
 
@@ -81,21 +83,19 @@ try {
   });
   cycles = parseCycles(output) ?? [];
 } catch (error: unknown) {
-  const execError = error as {
-    stdout?: string;
-    stderr?: string;
-    status?: number;
-  };
-  cycles = (execError.stdout && parseCycles(execError.stdout)) ?? null;
+  const stdout = getObjectProperty(error, "stdout");
+  const stderr = getObjectProperty(error, "stderr");
+  const status = getObjectProperty(error, "status");
+  cycles = typeof stdout === "string" ? parseCycles(stdout) : null;
   if (cycles === null) {
     // Not a parseable madge answer — surface whatever it said and die.
-    if (execError.stdout) {
-      process.stdout.write(execError.stdout);
+    if (typeof stdout === "string") {
+      process.stdout.write(stdout);
     }
-    if (execError.stderr) {
-      process.stderr.write(execError.stderr);
+    if (typeof stderr === "string") {
+      process.stderr.write(stderr);
     }
-    process.exit(execError.status ?? 1);
+    process.exit(typeof status === "number" ? status : 1);
   }
 }
 

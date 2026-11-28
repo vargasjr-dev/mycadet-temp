@@ -167,7 +167,7 @@ const DEEPGRAM_CREDENTIALS_GUIDE: SttCredentialsGuide = {
  * 3. Wire up the adapter in `daemon-batch-transcriber.ts` (and/or a
  *    future realtime adapter) for the boundaries the provider supports.
  */
-const CATALOG: ReadonlyMap<SttProviderId, SttProviderEntry> = new Map<
+const CATALOG: ReadonlyMap<string, SttProviderEntry> = new Map<
   SttProviderId,
   SttProviderEntry
 >([
@@ -378,7 +378,7 @@ export function pinnedListeningLanguage(
  * Convenience wrapper around `getProviderEntry` for callers that only need
  * the credential mapping. Returns `undefined` when the provider is unknown.
  */
-export function getCredentialProvider(id: SttProviderId): string | undefined {
+export function getCredentialProvider(id: string): string | undefined {
   return CATALOG.get(id)?.credentialProvider;
 }
 
@@ -387,10 +387,7 @@ export function getCredentialProvider(id: SttProviderId): string | undefined {
  *
  * Returns `false` for unknown provider IDs.
  */
-export function supportsBoundary(
-  id: SttProviderId,
-  boundary: SttBoundaryId,
-): boolean {
+export function supportsBoundary(id: string, boundary: SttBoundaryId): boolean {
   return CATALOG.get(id)?.supportedBoundaries.has(boundary) ?? false;
 }
 
@@ -403,7 +400,7 @@ export function supportsBoundary(
  * problem. This names the provider and, where one exists, the batch-capable
  * provider on the same credential, so acting on it needs no catalog reading.
  */
-export function batchBoundaryGapReason(id: SttProviderId): string {
+export function batchBoundaryGapReason(id: string): string {
   const entry = CATALOG.get(id);
   const label = entry?.displayName ?? id;
   const alternative = entry
@@ -427,7 +424,7 @@ export function batchBoundaryGapReason(id: SttProviderId): string {
  * whether to request speaker labels from the provider's streaming or
  * batch configuration.
  */
-export function supportsDiarization(id: SttProviderId): boolean {
+export function supportsDiarization(id: string): boolean {
   return CATALOG.get(id)?.supportsDiarization ?? false;
 }
 
@@ -492,9 +489,9 @@ export function listProviderModelFamilies(
   if (!base || base.variantOf !== undefined) {
     return [];
   }
-  const families = [...CATALOG.values()]
-    .filter((entry) => entry.variantOf === id && entry.variantModel)
-    .map((entry) => entry.variantModel as SttModelFamily);
+  const families = [...CATALOG.values()].flatMap((entry) =>
+    entry.variantOf === id && entry.variantModel ? [entry.variantModel] : [],
+  );
   return families.length > 0
     ? [base.baseModelFamily ?? "nova-3", ...families]
     : [];
@@ -566,7 +563,7 @@ export function supportsProviderTurnDetection(id: SttProviderId): boolean {
  * Return all canonical provider IDs in deterministic (insertion) order.
  */
 export function listProviderIds(): readonly SttProviderId[] {
-  return [...CATALOG.keys()];
+  return [...CATALOG.values()].map((entry) => entry.id);
 }
 
 /**

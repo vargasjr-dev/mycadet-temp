@@ -124,16 +124,14 @@ describe("STT provider catalog", () => {
 
   test("batchBoundaryGapReason falls back to generic guidance for an unknown provider", () => {
     // No catalog entry means no credential to search a batch-capable peer on.
-    const reason = batchBoundaryGapReason("nonexistent" as never);
+    const reason = batchBoundaryGapReason("nonexistent");
     expect(reason).toContain("nonexistent is streaming-only");
     expect(reason).toContain("supports batch transcription");
   });
 
   test("supportsBoundary returns false for unknown provider IDs", () => {
     // Cast to bypass type checking for the test
-    expect(supportsBoundary("nonexistent" as never, "daemon-batch")).toBe(
-      false,
-    );
+    expect(supportsBoundary("nonexistent", "daemon-batch")).toBe(false);
   });
 
   // -----------------------------------------------------------------------
@@ -210,7 +208,7 @@ describe("STT provider catalog", () => {
   });
 
   test("getCredentialProvider returns undefined for unknown ID", () => {
-    expect(getCredentialProvider("nonexistent" as never)).toBeUndefined();
+    expect(getCredentialProvider("nonexistent")).toBeUndefined();
   });
 
   // -----------------------------------------------------------------------
@@ -245,7 +243,7 @@ describe("STT provider catalog", () => {
   });
 
   test("supportsDiarization helper returns false for unknown provider IDs", () => {
-    expect(supportsDiarization("nonexistent" as never)).toBe(false);
+    expect(supportsDiarization("nonexistent")).toBe(false);
   });
 });
 

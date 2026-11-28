@@ -9,6 +9,7 @@ import {
 import type { Message } from "../providers/types.js";
 import { SubagentManager } from "../subagent/manager.js";
 import type { SubagentConfig, SubagentState } from "../subagent/types.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 /** Minimal shape matching the private CloudSubagent interface for test injection. */
 interface FakeCloudSubagent {
@@ -309,9 +310,12 @@ describe("SubagentManager fork spawn", () => {
     const parentPrompt = "Resolved parent system prompt.";
 
     // Populate the store with a mock parent conversation.
-    setConversation("parent-sess-1", {
-      getCurrentSystemPrompt: () => parentPrompt,
-    } as any);
+    setConversation(
+      "parent-sess-1",
+      asConversation({
+        getCurrentSystemPrompt: () => parentPrompt,
+      }),
+    );
 
     // Simulate the fallback logic from spawn():
     const config: SubagentConfig = makeConfig({

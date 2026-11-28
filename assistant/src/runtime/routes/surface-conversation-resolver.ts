@@ -27,6 +27,7 @@ import {
 } from "../../daemon/conversation-surface-state.js";
 import { isRowVisibleToUntrustedActor } from "../../daemon/message-provenance.js";
 import { rawAll, rawGet } from "../../persistence/raw-query.js";
+import { isObjectRecord } from "../../util/object.js";
 
 /**
  * Resolve the {@link Conversation} that owns the given surface.
@@ -183,9 +184,12 @@ export function findPersistedSurfaceState(
     if (!Array.isArray(blocks)) {
       continue;
     }
-    for (const block of blocks) {
-      const b = block as Record<string, unknown>;
-      if (b.type !== "ui_surface" || b.surfaceId !== surfaceId) {
+    for (const b of blocks) {
+      if (
+        !isObjectRecord(b) ||
+        b.type !== "ui_surface" ||
+        b.surfaceId !== surfaceId
+      ) {
         continue;
       }
       // Serve verbatim: preserve the persisted `surfaceType` string and

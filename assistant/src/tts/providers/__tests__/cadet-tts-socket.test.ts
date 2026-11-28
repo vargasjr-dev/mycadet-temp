@@ -79,20 +79,23 @@ function sentJson(ws: MockWebSocket): Array<Record<string, unknown>> {
 
 describe("synthesizeOverCadetTtsSocket", () => {
   let mockWs: MockWebSocket;
-  let originalWebSocket: unknown;
+  const originalWebSocket = globalThis.WebSocket;
 
   beforeEach(() => {
     mockWs = new MockWebSocket();
-    originalWebSocket = (globalThis as Record<string, unknown>).WebSocket;
-    (globalThis as Record<string, unknown>).WebSocket = class {
-      constructor(_url: string) {
-        return mockWs;
-      }
-    };
+    Reflect.set(
+      globalThis,
+      "WebSocket",
+      class {
+        constructor(_url: string) {
+          return mockWs;
+        }
+      },
+    );
   });
 
   afterEach(() => {
-    (globalThis as Record<string, unknown>).WebSocket = originalWebSocket;
+    globalThis.WebSocket = originalWebSocket;
   });
 
   function startSession(

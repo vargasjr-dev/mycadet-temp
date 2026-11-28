@@ -1,10 +1,10 @@
-type PackageManifest = {
-  dependencies?: Record<string, string>;
-};
+import { z } from "zod";
 
-const manifest = (await Bun.file(
-  new URL("../package.json", import.meta.url),
-).json()) as PackageManifest;
+const manifest = z
+  .object({
+    dependencies: z.record(z.string(), z.string()).optional(),
+  })
+  .parse(await Bun.file(new URL("../package.json", import.meta.url)).json());
 
 const workspaceDependencies = Object.entries(manifest.dependencies ?? {})
   .filter(([, version]) => version.startsWith("workspace:"))

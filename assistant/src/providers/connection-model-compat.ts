@@ -12,6 +12,8 @@
 import type { ProviderConnection } from "./inference/auth.js";
 import { isCodexSubscriptionModel } from "./openai/codex-models.js";
 
+type ConnectionAuthKind = { auth: Pick<ProviderConnection["auth"], "type"> };
+
 /**
  * Whether `connection` can serve a request for `model` during
  * auto-resolution.
@@ -29,7 +31,7 @@ import { isCodexSubscriptionModel } from "./openai/codex-models.js";
  * regardless of model.
  */
 export function isConnectionCompatibleWithModel(
-  connection: Pick<ProviderConnection, "auth">,
+  connection: ConnectionAuthKind,
   model: string | undefined,
 ): boolean {
   if (connection.auth.type !== "oauth_subscription") {
@@ -50,7 +52,7 @@ export function isConnectionCompatibleWithModel(
  * should fall through to their existing generic error).
  */
 export function describeSubscriptionModelIncompatibility(
-  candidates: Pick<ProviderConnection, "auth">[],
+  candidates: ConnectionAuthKind[],
   model: string | undefined,
 ): string | null {
   if (!model || candidates.length === 0) {

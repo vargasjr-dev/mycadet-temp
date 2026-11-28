@@ -19,7 +19,6 @@ import {
 import {
   DEFAULT_PROVIDER_CHOICES,
   type DefaultProviderConfig,
-  type LLMProvider,
 } from "./schemas/llm.js";
 
 /**
@@ -43,7 +42,7 @@ const StoredDefaultBlobSchema = z
  * column.
  */
 export const DefaultProviderSelectionSchema = z.object({
-  provider: z.enum(DEFAULT_PROVIDER_CHOICES as [LLMProvider, ...LLMProvider[]]),
+  provider: z.enum(DEFAULT_PROVIDER_CHOICES),
   connectionName: z.string().min(1).optional(),
 });
 

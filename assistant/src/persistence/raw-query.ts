@@ -52,10 +52,10 @@ export function rawGet<T>(
   ...params: SqlParam[]
 ): T | null {
   return (
-    (getSqlite()
+    getSqlite()
       .label(label)
-      .query(sql)
-      .get(...params) as T) ?? null
+      .query<T, SqlParam[]>(sql)
+      .get(...params) ?? null
   );
 }
 
@@ -67,8 +67,8 @@ export function rawAll<T>(
 ): T[] {
   return getSqlite()
     .label(label)
-    .query(sql)
-    .all(...params) as T[];
+    .query<T, SqlParam[]>(sql)
+    .all(...params);
 }
 
 /**
@@ -132,8 +132,8 @@ export function rawMemoryAll<T>(
 ): T[] {
   return memorySqlite()
     .label(label)
-    .query(sql)
-    .all(...params) as T[];
+    .query<T, SqlParam[]>(sql)
+    .all(...params);
 }
 
 /** {@link rawRun} against the memory connection. */

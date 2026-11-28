@@ -154,8 +154,11 @@ export async function migrateStripThinkingFromConsolidated(
   } // empty table — nothing to sweep
 
   const watermarkRow = raw
-    .query(`SELECT value FROM memory_checkpoints WHERE key = ?`)
-    .get(WATERMARK_KEY) as { value: string } | undefined;
+    .query<
+      { value: string },
+      [string]
+    >(`SELECT value FROM memory_checkpoints WHERE key = ?`)
+    .get(WATERMARK_KEY);
   let lo = watermarkRow ? Number.parseInt(watermarkRow.value, 10) || 0 : 0;
 
   const setWatermark = raw.query(

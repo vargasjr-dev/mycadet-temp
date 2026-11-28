@@ -12,6 +12,7 @@ import {
   sandboxPolicy,
 } from "../tools/shared/filesystem/path-policy.js";
 import { getErrorCode } from "../util/error-details.js";
+import { isObjectRecord } from "../util/object.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -822,7 +823,10 @@ export function contentBlocksToDrafts(
   const drafts: AssistantAttachmentDraft[] = [];
 
   for (let i = 0; i < blocks.length; i++) {
-    const b = blocks[i] as Record<string, unknown>;
+    const b = blocks[i];
+    if (!isObjectRecord(b)) {
+      continue;
+    }
     const toolName = toolNames?.get(i);
     if (b.type === "image") {
       const src = b.source as ImageBlock["source"];
@@ -877,19 +881,21 @@ export function cleanAssistantContent(content: readonly unknown[]): {
       // Drop placeholder sentinel text blocks. These are injected by the
       // Anthropic provider to preserve role alternation in outbound requests
       // and must never be persisted or rendered to users.
-      const b = block as Record<string, unknown>;
-      if (b.type !== "text") {
+      if (!isObjectRecord(block) || block.type !== "text") {
         return true;
       }
-      const text = b.text;
+      const text = block.text;
       return typeof text !== "string" || !isPlaceholderSentinelText(text);
     })
     .map((block) => {
-      const b = block as Record<string, unknown>;
-      if (b.type !== "text") {
+      if (
+        !isObjectRecord(block) ||
+        block.type !== "text" ||
+        typeof block.text !== "string"
+      ) {
         return block;
       }
-      const text = b.text as string;
+      const text = block.text;
 
       // Extract cadet:// markdown links (non-destructive — links stay in text)
       if (text.includes("cadet://")) {
@@ -905,7 +911,7 @@ export function cleanAssistantContent(content: readonly unknown[]): {
       const result = parseDirectives(text);
       directives.push(...result.directiveRequests);
       warnings.push(...result.parseWarnings);
-      return { ...b, text: result.cleanText };
+      return { ...block, text: result.cleanText };
     });
 
   return { cleanedContent, directives, warnings };

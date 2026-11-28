@@ -45,7 +45,7 @@ describe("INTERACTIVE_INTERFACES", () => {
   test("does NOT include chrome-extension", () => {
     // Chrome extensions don't render SSE-backed prompter UI, so they must
     // stay out of the interactive set even though they have an InterfaceId.
-    expect(INTERACTIVE_INTERFACES.has("chrome-extension" as never)).toBe(false);
+    expect(INTERACTIVE_INTERFACES.has("chrome-extension")).toBe(false);
   });
 
   test("includes desktop clients", () => {

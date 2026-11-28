@@ -74,11 +74,12 @@ type ContactRow = {
 
 function contactRow(id: string): ContactRow | null {
   return (
-    (getSqlite()
-      .prepare(
-        "SELECT display_name, notes, user_file, contact_type FROM contacts WHERE id = ?",
-      )
-      .get(id) as ContactRow | undefined) ?? null
+    getSqlite()
+      .prepare<
+        ContactRow,
+        [string]
+      >("SELECT display_name, notes, user_file, contact_type FROM contacts WHERE id = ?")
+      .get(id) ?? null
   );
 }
 
@@ -91,11 +92,12 @@ type ChannelRow = {
 
 function channelByAddress(type: string, address: string): ChannelRow | null {
   return (
-    (getSqlite()
-      .prepare(
-        "SELECT id, contact_id, is_primary, external_chat_id FROM contact_channels WHERE type = ? AND address = ? COLLATE NOCASE",
-      )
-      .get(type, address) as ChannelRow | undefined) ?? null
+    getSqlite()
+      .prepare<
+        ChannelRow,
+        [string, string]
+      >("SELECT id, contact_id, is_primary, external_chat_id FROM contact_channels WHERE type = ? AND address = ? COLLATE NOCASE")
+      .get(type, address) ?? null
   );
 }
 
@@ -103,13 +105,12 @@ function metadataRow(
   contactId: string,
 ): { species: string; metadata: string | null } | null {
   return (
-    (getSqlite()
-      .prepare(
-        "SELECT species, metadata FROM assistant_contact_metadata WHERE contact_id = ?",
-      )
-      .get(contactId) as
-      | { species: string; metadata: string | null }
-      | undefined) ?? null
+    getSqlite()
+      .prepare<
+        { species: string; metadata: string | null },
+        [string]
+      >("SELECT species, metadata FROM assistant_contact_metadata WHERE contact_id = ?")
+      .get(contactId) ?? null
   );
 }
 

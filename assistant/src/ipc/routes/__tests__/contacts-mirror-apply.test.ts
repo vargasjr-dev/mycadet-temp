@@ -38,17 +38,18 @@ function channelRow(id: string): {
   external_chat_id: string | null;
 } | null {
   return (
-    (getSqlite()
-      .prepare(
-        "SELECT contact_id, is_primary, external_chat_id FROM contact_channels WHERE id = ?",
-      )
-      .get(id) as
-      | {
+    getSqlite()
+      .prepare<
+        {
           contact_id: string;
           is_primary: number;
           external_chat_id: string | null;
-        }
-      | undefined) ?? null
+        },
+        [string]
+      >(
+        "SELECT contact_id, is_primary, external_chat_id FROM contact_channels WHERE id = ?",
+      )
+      .get(id) ?? null
   );
 }
 

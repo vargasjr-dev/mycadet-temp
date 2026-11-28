@@ -177,12 +177,6 @@ import { Conversation } from "../daemon/conversation.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
 import { waitFor } from "./helpers/wait-for.js";
 
-type ConversationWithWorkspaceDeps = Conversation & {
-  getWorkspaceGitService?: (_workspaceDir: string) => {
-    ensureInitialized: () => Promise<void>;
-  };
-};
-
 function makeConversation(): Conversation {
   const provider = {
     name: "mock",
@@ -206,10 +200,9 @@ function makeConversation(): Conversation {
   // Bypass real workspace git init: with "/tmp" as the workspace dir, a real
   // ensureInitialized() walks all of /tmp and can exceed the 2s waitForPendingRun
   // budget on CI where parallel tests churn /tmp subdirectories.
-  (conversation as ConversationWithWorkspaceDeps).getWorkspaceGitService =
-    () => ({
-      ensureInitialized: async () => {},
-    });
+  conversation.getWorkspaceGitService = () => ({
+    ensureInitialized: async () => {},
+  });
   return conversation;
 }
 

@@ -116,8 +116,10 @@ function readPersistedSlackMeta(): SlackMessageMetadata | null {
   if (raw === undefined) {
     return null;
   }
-  expect(typeof raw).toBe("string");
-  return readSlackMetadata(raw as string);
+  if (typeof raw !== "string") {
+    throw new Error("Expected persisted Slack metadata to be a string");
+  }
+  return readSlackMetadata(raw);
 }
 
 // ---------------------------------------------------------------------------

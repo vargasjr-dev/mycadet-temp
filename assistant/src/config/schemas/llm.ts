@@ -10,7 +10,7 @@ import {
   PROVIDER_CATALOG,
 } from "../../providers/model-catalog.js";
 import { isCodexSubscriptionModel } from "../../providers/openai/codex-models.js";
-import { isPlainObject } from "../../util/object.js";
+import { getObjectProperty, isPlainObject } from "../../util/object.js";
 import {
   DEFAULT_PROFILE_KEYS,
   DEFAULT_PROFILE_PROVIDERS,
@@ -1115,7 +1115,7 @@ export const LLMSchema = z
       // (d) A mix must not also carry model config — the resolved config comes
       // entirely from the chosen constituent.
       for (const key of MIX_DISALLOWED_CONFIG_KEYS) {
-        if ((profile as Record<string, unknown>)[key] !== undefined) {
+        if (getObjectProperty(profile, key) !== undefined) {
           ctx.addIssue({
             code: "custom",
             path: ["profiles", name, key],

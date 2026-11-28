@@ -108,6 +108,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms);
     // Never hold the process (or a test runner) open on a pending backoff.
-    (timer as { unref?: () => void }).unref?.();
+    timer.unref?.();
   });
 }

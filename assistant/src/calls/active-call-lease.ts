@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { isTerminalState } from "./call-state-machine.js";
 import type { CallSession } from "./types.js";
 
@@ -45,8 +46,9 @@ function loadLeaseFile(): ActiveCallLeaseFile {
 
   try {
     const raw = readFileSync(path, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<ActiveCallLeaseFile>;
+    const parsed: unknown = JSON.parse(raw);
     if (
+      !isObjectRecord(parsed) ||
       parsed.version !== ACTIVE_CALL_LEASES_VERSION ||
       !Array.isArray(parsed.leases)
     ) {
@@ -64,8 +66,9 @@ function loadLeaseFile(): ActiveCallLeaseFile {
       version: ACTIVE_CALL_LEASES_VERSION,
       leases: parsed.leases
         .filter(
-          (lease): lease is ActiveCallLease =>
-            typeof lease?.callSessionId === "string" &&
+          (lease: unknown): lease is ActiveCallLease =>
+            isObjectRecord(lease) &&
+            typeof lease.callSessionId === "string" &&
             (typeof lease.providerCallSid === "string" ||
               lease.providerCallSid == null) &&
             typeof lease.updatedAt === "number",

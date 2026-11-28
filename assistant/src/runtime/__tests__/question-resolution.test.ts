@@ -4,10 +4,9 @@
  * through. Focuses on the discriminated outcome (resolved / not_found / invalid)
  * that lets each caller map to its own surface.
  */
-
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { QuestionPromptResult } from "../../permissions/question-prompter.js";
+import { getObjectProperty } from "../../util/object.js";
 import * as pendingInteractions from "../pending-interactions.js";
 import { resolvePendingQuestion } from "../question-resolution.js";
 
@@ -33,9 +32,9 @@ afterEach(() => pendingInteractions.clear());
 
 describe("resolvePendingQuestion", () => {
   test("resolved: submits, fires rpcResolve, and consumes the interaction", () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion("req-1", [{ id: "q1", options: ["a", "b"] }], (v) =>
-      resolved.push(v as QuestionPromptResult),
+      resolved.push(v),
     );
 
     const outcome = resolvePendingQuestion("req-1", {
@@ -47,19 +46,19 @@ describe("resolvePendingQuestion", () => {
       status: "resolved",
       conversationId: "conv-1",
     });
-    expect(resolved[0].overall).toBe("completed");
+    expect(getObjectProperty(resolved[0], "overall")).toBe("completed");
     expect(pendingInteractions.get("req-1")).toBeUndefined();
   });
 
   test("close: reports every question skipped, overall closed", () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-1",
       [
         { id: "q1", options: ["a"] },
         { id: "q2", options: ["b"] },
       ],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     const outcome = resolvePendingQuestion("req-1", { kind: "close" });
@@ -74,14 +73,14 @@ describe("resolvePendingQuestion", () => {
   });
 
   test("chat_reply: the typed text answers the first question, the rest stay unanswered", () => {
-    const resolved: QuestionPromptResult[] = [];
+    const resolved: unknown[] = [];
     registerQuestion(
       "req-1",
       [
         { id: "q1", options: ["a"] },
         { id: "q2", options: ["b"] },
       ],
-      (v) => resolved.push(v as QuestionPromptResult),
+      (v) => resolved.push(v),
     );
 
     const outcome = resolvePendingQuestion("req-1", {
