@@ -348,11 +348,10 @@ export const skillLoadTool = {
         "Skipped inline command expansion during read-only skill load",
       );
     } else if (hasInlineCommands) {
-      if (skill.source === "extra" || skill.source === "plugin") {
-        // Third-party skill roots — `extra` dirs and skills shipped inside
-        // installed plugins — are out of scope for inline command expansion.
-        // Their bodies are untrusted, so reject explicitly rather than
-        // executing shell from them.
+      if (skill.source === "plugin") {
+        // Plugin-resident skills are third-party skill roots that are out of
+        // scope for inline command expansion. Their bodies are untrusted, so
+        // reject explicitly rather than executing shell from them.
         return {
           content: `Error: skill "${skill.id}" contains inline command expansions but inline commands are not supported for third-party (${skill.source}) skill sources.`,
           isError: true,
@@ -436,10 +435,7 @@ export const skillLoadTool = {
               inlineCommandStub,
             );
           } else if (childHasInlineCommands) {
-            if (
-              childLoaded.skill.source === "extra" ||
-              childLoaded.skill.source === "plugin"
-            ) {
+            if (childLoaded.skill.source === "plugin") {
               return {
                 content: `Error: included skill "${childId}" contains inline command expansions but inline commands are not supported for third-party (${childLoaded.skill.source}) skill sources.`,
                 isError: true,

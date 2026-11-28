@@ -25,14 +25,7 @@ export const SkillEntryConfigSchema = z
   .describe("Configuration for an individual skill");
 
 const SkillsLoadConfigSchema = z
-  .object({
-    extraDirs: z
-      .array(
-        z.string({ error: "skills.load.extraDirs values must be strings" }),
-      )
-      .default([])
-      .describe("Additional directories to search for skill definitions"),
-  })
+  .object({})
   .describe("Controls how skills are discovered and loaded");
 
 const SkillsInstallConfigSchema = z

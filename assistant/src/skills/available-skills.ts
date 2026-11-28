@@ -90,8 +90,7 @@ export async function listInstalledSkills(): Promise<ResolvedSkillEntry[]> {
     };
     if (
       summary.source === "managed" ||
-      summary.source === "workspace" ||
-      summary.source === "extra"
+      summary.source === "workspace"
     ) {
       entry.installMeta = readInstallMeta(summary.directoryPath);
     }

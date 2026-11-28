@@ -2,7 +2,6 @@ import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 
 import { getIsContainerized } from "../config/env-registry.js";
-import { getConfig } from "../config/loader.js";
 import {
   loadSkillCatalog,
   resolveSkillSelector,
@@ -254,7 +253,6 @@ import type {
 } from "@mycadet/gateway-client";
 
 function buildFileContext(): ClassifyRiskFileContext {
-  const config = getConfig();
   return {
     hooksDir: resolveRealPath(getWorkspaceHooksDir()),
     pluginsDir: resolveRealPath(getWorkspacePluginsDir()),
@@ -262,9 +260,7 @@ function buildFileContext(): ClassifyRiskFileContext {
     routesDir: resolveRealPath(getWorkspaceRoutesDir()),
     workflowsDir: resolveRealPath(getWorkspaceWorkflowsDir()),
     monitoringDir: resolveRealPath(getMonitoringDataDir()),
-    skillSourceDirs: getSkillRoots(config.skills.load.extraDirs).map(
-      resolveRealPath,
-    ),
+    skillSourceDirs: getSkillRoots().map(resolveRealPath),
   };
 }
 

@@ -113,7 +113,7 @@ describe("collectSkillInventory", () => {
     expect(entry).toBeDefined();
     // A skill under `<workspace>/skills/` is a user-installed ("managed")
     // catalog entry; assert it carries one of the user-authored sources.
-    expect(["managed", "workspace", "extra"]).toContain(entry!.source);
+    expect(["managed", "workspace"]).toContain(entry!.source);
     expect(typeof entry!.state).toBe("string");
     expect(entry!.lastUpdated).toBe("2026-07-19T10:00:00.000Z");
     expect(entry!.fingerprint).toBe(HASH_A);

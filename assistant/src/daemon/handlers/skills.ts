@@ -332,7 +332,7 @@ function getCatalogCategoryMap(): Map<string, string> {
 
 /** Map the old `source` field to the new `kind` axis. */
 function deriveKind(
-  source: "bundled" | "managed" | "workspace" | "extra" | "catalog" | "plugin",
+  source: "bundled" | "managed" | "workspace" | "catalog" | "plugin",
 ): SlimSkillResponse["kind"] {
   if (source === "bundled") {
     return "bundled";
@@ -347,7 +347,7 @@ function deriveKind(
   if (source === "plugin") {
     return "bundled";
   }
-  return "installed"; // managed, workspace, extra
+  return "installed"; // managed, workspace
 }
 
 /** Map a resolved skill to its `origin`, using install-meta.json when available. */
