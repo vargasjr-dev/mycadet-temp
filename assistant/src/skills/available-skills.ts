@@ -88,10 +88,7 @@ export async function listInstalledSkills(): Promise<ResolvedSkillEntry[]> {
       source: summary.source,
       state: stateById.get(summary.id) ?? "unavailable",
     };
-    if (
-      summary.source === "managed" ||
-      summary.source === "workspace"
-    ) {
+    if (summary.source === "managed" || summary.source === "workspace") {
       entry.installMeta = readInstallMeta(summary.directoryPath);
     }
     return entry;

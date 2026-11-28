@@ -79,11 +79,7 @@ const SkillMetadataSchema = z
  *   default at `plugins/defaults/<dir>/skills/<id>/SKILL.md`, attributed back
  *   to the owning plugin via its `owner` descriptor.
  */
-export type SkillSource =
-  | "bundled"
-  | "managed"
-  | "workspace"
-  | "plugin";
+export type SkillSource = "bundled" | "managed" | "workspace" | "plugin";
 
 export interface SkillSummary {
   id: string;
@@ -911,9 +907,7 @@ function skillSummaryFromDefinition(
   };
 }
 
-export function loadSkillCatalog(
-  workspaceSkillsDir?: string,
-): SkillSummary[] {
+export function loadSkillCatalog(workspaceSkillsDir?: string): SkillSummary[] {
   const catalog: SkillSummary[] = [];
   const seenIds = new Set<string>();
 
@@ -941,10 +935,7 @@ export function loadSkillCatalog(
   for (const skill of pluginSkills) {
     if (seenIds.has(skill.id)) {
       const existingIndex = catalog.findIndex((s) => s.id === skill.id);
-      if (
-        existingIndex !== -1 &&
-        catalog[existingIndex].source === "bundled"
-      ) {
+      if (existingIndex !== -1 && catalog[existingIndex].source === "bundled") {
         log.info(
           { id: skill.id, pluginName: skill.owner?.id },
           "Plugin skill overrides bundled skill",
