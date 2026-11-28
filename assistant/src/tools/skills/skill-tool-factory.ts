@@ -79,13 +79,8 @@ export function createSkillTool(
         schema,
       );
       if (!validation.ok) {
-        // A parameter shape with its own redirect (e.g. a file path passed to
-        // `subagent_read`) answers with that redirect: the generic "Unknown
-        // parameter" list names the accepted keys but not the tool the caller
-        // is actually reaching for. Redirects describe first-party tools, so
-        // only bundled skills consult them. A workspace or
-        // plugin skill that reuses a bundled tool name keeps the generic error,
-        // which is the one that matches its own manifest.
+        // Input-shape redirects (e.g. a file path passed to `subagent_read`)
+        // exist only for bundled tools; other sources keep the generic error.
         const misuse = bundled
           ? bundledToolInputMisuseMessage(entry.name, coercedInput)
           : undefined;

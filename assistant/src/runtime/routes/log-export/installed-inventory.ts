@@ -28,6 +28,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { listAllPlugins } from "../../../cli/lib/list-installed-plugins.js";
+import type { SkillSource } from "../../../config/skills.js";
 import { listInstalledSkills } from "../../../skills/available-skills.js";
 import { parseJsonRecord } from "../../../util/json.js";
 import { getLogger } from "../../../util/logger.js";
@@ -40,8 +41,7 @@ const INSTALL_META_FILENAME = "install-meta.json";
 export interface SkillInventoryEntry {
   /** Catalog id (directory name). */
   name: string;
-  /** `bundled` | `workspace` | `plugin`. */
-  source: string;
+  source: SkillSource;
   /** Resolved availability: `enabled` | `disabled` | `unavailable`. */
   state: string;
   /** `install-meta.json` `installedAt` (ISO 8601), or `null` when unrecorded. */
@@ -95,7 +95,7 @@ export async function collectSkillInventory(): Promise<SkillInventoryEntry[]> {
     const meta = skill.installMeta ?? null;
     return {
       name: skill.id,
-      source: skill.source ?? "unknown",
+      source: skill.source,
       state: skill.state,
       lastUpdated: meta?.installedAt ?? null,
       fingerprint: meta?.contentHash ?? null,

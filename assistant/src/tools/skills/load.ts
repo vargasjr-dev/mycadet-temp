@@ -32,11 +32,18 @@ import type {
   ToolDefinition,
   ToolExecutionResult,
 } from "../types.js";
+import { SKILL_SOURCE_VALUES } from "./../../config/skills.js";
 import type { SkillToolManifest } from "./../../skills/tool-manifest.js";
 import { formatSkillInputSchema } from "./format-input-schema.js";
 
-/** Skill sources eligible for inline command expansion in v1. */
-const INLINE_COMMAND_ELIGIBLE_SOURCES = new Set(["bundled", "workspace"]);
+/**
+ * Skill sources eligible for inline command expansion: everything but
+ * `plugin` (third-party skill code never expands shell commands). A future
+ * source added to SKILL_SOURCE_VALUES opts in here unless excluded.
+ */
+const INLINE_COMMAND_ELIGIBLE_SOURCES = new Set(
+  SKILL_SOURCE_VALUES.filter((s) => s !== "plugin"),
+);
 
 /** Matches raw `` !`...` `` inline command tokens in a skill body. */
 const INLINE_COMMAND_TOKEN_PATTERN = /!`[^`]*`/g;
@@ -355,9 +362,8 @@ export const skillLoadTool = {
       }
 
       if (!INLINE_COMMAND_ELIGIBLE_SOURCES.has(skill.source)) {
-        // Defensive: reject any other unknown sources that somehow have
-        // inline commands. Should not happen with current SkillSource values,
-        // but fail closed if a new source type is added without updating this.
+        // The eligible set covers every current source but plugin; this only
+        // fires if a future source is added without deciding its stance.
         return {
           content: `Error: skill "${skill.id}" contains inline command expansions but source "${skill.source}" is not eligible for inline command expansion.`,
           isError: true,

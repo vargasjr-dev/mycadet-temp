@@ -52,16 +52,8 @@ export async function runSkillToolScript(
     });
   }
 
-  // Host execution dynamically imports the executor into the daemon process —
-  // full host code execution with no sandbox boundary. This is a first-party
-  // capability reserved for bundled skills, which ship trusted, in-repo
-  // executors. A non-bundled skill (workspace, plugin) that
-  // declares `execution_target: host` must be refused: otherwise an
-  // attacker-planted TOOLS.json — e.g. written into a cloud skill dir via
-  // scaffold_cloud_skill companion files, or shipped in a third-party skill —
-  // could get arbitrary code imported into the host process and auto-approved
-  // under the low-risk threshold. Non-bundled skills must run their tools in the
-  // sandbox (handled above); host execution here is a hard, fail-closed deny.
+  // Host execution imports the executor into the daemon process with no
+  // sandbox, so it is reserved for trusted bundled skills. Fail closed.
   if (options?.target === "host" && !options?.bundled) {
     return {
       content: `Skill tool "${executorPath}" requests host execution, which is only permitted for first-party bundled skills. Non-bundled skills must declare execution_target: "sandbox".`,
