@@ -177,6 +177,12 @@ export {
   SSE_REPLAY_RING_AGE_LIMIT_MS,
   SSE_REPLAY_RING_COUNT_LIMIT,
 } from "./constants/sse-replay.js";
+export {
+  INTERFACE_IDS,
+  interfaceIdSchema,
+  isInterfaceId,
+  type InterfaceId,
+} from "../channels/types.js";
 export { DEFAULT_TOOL_EXECUTION_TIMEOUT_SEC } from "./constants/tool-execution.js";
 export {
   ACP_CLAUDE_AUTH_REQUIRED_CODE,

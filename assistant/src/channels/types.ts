@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import {
   type ChannelId,
   isChannelId,
@@ -178,16 +180,34 @@ export const CHANNEL_METADATA: Partial<Record<ChannelId, ChannelInfo>> = {
   },
 };
 
-import {
-  isInterfaceId as isCanonicalInterfaceId,
-  type InterfaceId,
-} from "@mycadet/service-contracts/interfaces";
+export const INTERFACE_IDS = [
+  "macos",
+  "windows",
+  "linux",
+  "ios",
+  "android",
+  "cli",
+  "telegram",
+  "phone",
+  "web",
+  "whatsapp",
+  "slack",
+  "email",
+  "chrome-extension",
+  "discord",
+  // Turns injected by workspace custom routes (webhook receivers, cron jobs,
+  // device/service callbacks). Non-interactive — permission prompts route
+  // through the guardian system, not an interactive client — and non-host-proxy.
+  "route",
+  // Turns a plugin-brought channel delivered through the gateway. One id for
+  // every plugin, matching the `plugin` channel; which plugin it was is in
+  // `sourceMetadata.plugin`.
+  "plugin",
+] as const;
 
-export {
-  INTERFACE_IDS,
-  isInterfaceId,
-  type InterfaceId,
-} from "@mycadet/service-contracts/interfaces";
+export type InterfaceId = (typeof INTERFACE_IDS)[number];
+
+export const interfaceIdSchema = z.enum(INTERFACE_IDS);
 
 /**
  * Interface IDs that older clients or persisted data may still use.
@@ -200,12 +220,24 @@ const LEGACY_INTERFACE_ALIASES: Record<string, InterfaceId> = {
   cadet: "web",
 };
 
+/**
+ * Strict type guard — returns `true` only for canonical `InterfaceId`
+ * values. Legacy aliases like `"cadet"` return `false`; use
+ * `parseInterfaceId` to accept and normalize those.
+ */
+export function isInterfaceId(value: unknown): value is InterfaceId {
+  return (
+    typeof value === "string" &&
+    INTERFACE_IDS.some((candidate: string) => candidate === value)
+  );
+}
+
 export function parseInterfaceId(value: unknown): InterfaceId | null {
-  if (isCanonicalInterfaceId(value)) {
-    return value;
-  }
   if (typeof value !== "string") {
     return null;
+  }
+  if (isInterfaceId(value)) {
+    return value;
   }
   const alias = LEGACY_INTERFACE_ALIASES[value];
   if (alias) {

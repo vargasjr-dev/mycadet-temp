@@ -2,7 +2,7 @@ import {
   CLIENT_METADATA_HEADERS,
   sanitizeClientMetadataValue,
 } from "@mycadet/service-contracts/client-metadata";
-import { interfaceIdSchema } from "@mycadet/service-contracts/interfaces";
+import { interfaceIdSchema } from "@mycadet/assistant-api";
 
 import {
   detectBrowserInfo,

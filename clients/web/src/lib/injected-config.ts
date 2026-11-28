@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { interfaceIdSchema } from "@mycadet/service-contracts/interfaces";
+import { interfaceIdSchema } from "@mycadet/assistant-api";
 
 /**
  * The runtime config a shell injects (`window.__CADET_CONFIG__`). This schema

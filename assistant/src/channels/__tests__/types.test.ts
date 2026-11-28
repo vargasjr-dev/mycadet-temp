@@ -4,6 +4,7 @@ import {
   CLIENT_OS_VALUES,
   INTERACTIVE_INTERFACES,
   INTERFACE_IDS,
+  interfaceIdSchema,
   type InterfaceId,
   isInterfaceId,
   parseClientOs,
@@ -26,6 +27,7 @@ describe("INTERFACE_IDS", () => {
       "windows",
       "linux",
       "ios",
+      "android",
       "cli",
       "telegram",
       "phone",
@@ -38,6 +40,17 @@ describe("INTERFACE_IDS", () => {
         true,
       );
     }
+  });
+});
+
+describe("interfaceIdSchema", () => {
+  test("accepts the canonical set and rejects everything else", () => {
+    expect(interfaceIdSchema.safeParse("linux").success).toBe(true);
+    expect(interfaceIdSchema.safeParse("android").success).toBe(true);
+    expect(interfaceIdSchema.safeParse("toaster").success).toBe(false);
+    expect(interfaceIdSchema.safeParse(undefined).success).toBe(false);
+    // Legacy aliases are not canonical — parseInterfaceId normalizes those.
+    expect(interfaceIdSchema.safeParse("cadet").success).toBe(false);
   });
 });
 
