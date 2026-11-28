@@ -2,6 +2,7 @@ import {
   type ChannelId,
   isChannelId,
 } from "@mycadet/service-contracts/channels";
+import { z } from "zod";
 
 import {
   HOST_PROXY_SUPPORT,
@@ -183,6 +184,7 @@ export const INTERFACE_IDS = [
   "windows",
   "linux",
   "ios",
+  "android",
   "cli",
   "telegram",
   "phone",
@@ -203,6 +205,8 @@ export const INTERFACE_IDS = [
 ] as const;
 
 export type InterfaceId = (typeof INTERFACE_IDS)[number];
+
+export const interfaceIdSchema = z.enum(INTERFACE_IDS);
 
 /**
  * Interface IDs that older clients or persisted data may still use.
@@ -231,8 +235,8 @@ export function parseInterfaceId(value: unknown): InterfaceId | null {
   if (typeof value !== "string") {
     return null;
   }
-  if (INTERFACE_IDS.some((candidate: string) => candidate === value)) {
-    return value as InterfaceId;
+  if (isInterfaceId(value)) {
+    return value;
   }
   const alias = LEGACY_INTERFACE_ALIASES[value];
   if (alias) {

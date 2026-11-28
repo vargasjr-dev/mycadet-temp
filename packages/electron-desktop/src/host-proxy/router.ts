@@ -48,16 +48,6 @@ export interface HostProxyRuntime {
 
 export interface HostProxyClientIdentity {
   interfaceId: string;
-  /** Opt in only when the bundled CU executor supports window-only observations. */
-  supportsWindowCapture?: boolean;
-  /** Opt in only when the bundled CU executor runs `computer_use_sequence`. */
-  supportsSequence?: boolean;
-  /**
-   * Opt in only when this client can draw the assistant's marks on the
-   * surface a call is being shown. The overlay is a window the client opens
-   * for itself, so a client without one answers the request with nothing.
-   */
-  supportsCoachmarks?: boolean;
 }
 
 export function createHostProxyClientHeaders(
@@ -72,11 +62,6 @@ export function createHostProxyClientHeaders(
       ...posterClientHeaders(),
       "X-Cadet-Interface-Id": identity.interfaceId,
       "X-Cadet-Machine-Name": hostname(),
-      ...(identity.supportsWindowCapture
-        ? { "X-Cadet-Cu-Window-Capture": "1" }
-        : {}),
-      ...(identity.supportsSequence ? { "X-Cadet-Cu-Sequence": "1" } : {}),
-      ...(identity.supportsCoachmarks ? { "X-Cadet-Cu-Annotate": "1" } : {}),
     }),
   };
 }

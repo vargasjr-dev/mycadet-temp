@@ -84,7 +84,7 @@ let fakeRepo = "";
 let handler: ((r: Request) => Promise<Response>) | undefined;
 
 const register = async (): Promise<void> => {
-  registerAppProtocol();
+  registerAppProtocol("macos");
   const [, h] = protocolHandle.mock.calls.at(-1) as unknown as [
     string,
     (r: Request) => Promise<Response>,

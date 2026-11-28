@@ -146,6 +146,12 @@ import { WorkflowProgressEventSchema } from "./events/workflow-progress.js";
 import { WorkflowStartedEventSchema } from "./events/workflow-started.js";
 
 export {
+  INTERFACE_IDS,
+  type InterfaceId,
+  interfaceIdSchema,
+  isInterfaceId,
+} from "../channels/types.js";
+export {
   APP_MUTATION_TOOL_NAMES,
   APP_MUTATION_TOOLS,
   type AppMutationTool,

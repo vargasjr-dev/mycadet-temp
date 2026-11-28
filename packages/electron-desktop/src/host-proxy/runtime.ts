@@ -14,16 +14,6 @@ export interface HostProxyRuntimeSources {
   /** The client's interface id — rides the SSE headers. */
   interfaceId: string;
   /**
-   * Capability flags the shell's build ships, opt into the SSE headers.
-   * Absent flags stay off — a client without the surface answers the
-   * daemon's request with nothing.
-   */
-  supports?: {
-    windowCapture?: boolean;
-    sequence?: boolean;
-    coachmarks?: boolean;
-  };
-  /**
    * The client's shell executor: bash on Linux, PowerShell on Windows,
    * bash on macOS. Absent, the shared adapter answers — it picks the
    * host's shell itself.
@@ -50,15 +40,9 @@ export interface HostProxyRuntimeSources {
 export const createHostProxyRuntime = (
   sources: HostProxyRuntimeSources,
 ): HostProxyRuntime => {
-  const { interfaceId, supports, bashExecutor, hostCu, teardown, logger } =
-    sources;
+  const { interfaceId, bashExecutor, hostCu, teardown, logger } = sources;
   const browserExecutor = new HostBrowserExecutor();
-  const clientHeaders = createHostProxyClientHeaders({
-    interfaceId,
-    ...(supports?.windowCapture ? { supportsWindowCapture: true } : {}),
-    ...(supports?.sequence ? { supportsSequence: true } : {}),
-    ...(supports?.coachmarks ? { supportsCoachmarks: true } : {}),
-  });
+  const clientHeaders = createHostProxyClientHeaders({ interfaceId });
   return {
     ...clientHeaders,
     executors: {

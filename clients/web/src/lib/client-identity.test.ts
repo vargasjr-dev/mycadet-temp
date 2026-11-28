@@ -300,46 +300,47 @@ describe("client-identity", () => {
     expect(headers["x-cadet-browser-version"]).toBe("126");
   });
 
-  test("an embedded desktop shell reports its interface with the host-proxy opt-out", async () => {
+  test("an embedded desktop shell still registers as web — the shell's interface rides the turn", async () => {
     const original = window.__CADET_CONFIG__;
     window.__CADET_CONFIG__ = { interfaceId: "windows" };
     try {
       const mod = await freshImport();
       const headers = mod.getClientRegistrationHeaders();
 
-      expect(headers["X-Cadet-Interface-Id"]).toBe("windows");
-      // The renderer serves no host tools — the shell's main process owns
-      // that registration — so the desktop identity advertises nothing.
-      expect(headers["X-Cadet-Host-Proxy"]).toBe("0");
+      // Registration is the transport, not the shell: the hub derives
+      // subscriber capabilities server-side from this id, and a renderer
+      // serves no host tools.
+      expect(headers["X-Cadet-Interface-Id"]).toBe("web");
+      expect(mod.getClientInterfaceId()).toBe("windows");
     } finally {
       window.__CADET_CONFIG__ = original;
     }
   });
 
-  test("a foreign injected interface falls back to web with no opt-out", async () => {
+  test("a foreign injected interface falls back to web", async () => {
     const original = window.__CADET_CONFIG__;
     window.__CADET_CONFIG__ = { interfaceId: "toaster" };
     try {
       const mod = await freshImport();
-      const headers = mod.getClientRegistrationHeaders();
-
-      expect(headers["X-Cadet-Interface-Id"]).toBe("web");
-      expect(headers["X-Cadet-Host-Proxy"]).toBeUndefined();
+      expect(mod.getClientInterfaceId()).toBe("web");
+      expect(mod.getClientRegistrationHeaders()["X-Cadet-Interface-Id"]).toBe(
+        "web",
+      );
     } finally {
       window.__CADET_CONFIG__ = original;
     }
   });
 
   test("linux and macos shells report their interface the same way", async () => {
-    const original = window.__CADET_CONFIG__;
-    window.__CADET_CONFIG__ = { interfaceId: "linux" };
-    try {
-      const mod = await freshImport();
-      expect(mod.getClientRegistrationHeaders()["X-Cadet-Interface-Id"]).toBe(
-        "linux",
-      );
-    } finally {
-      window.__CADET_CONFIG__ = original;
+    for (const id of ["linux", "macos", "ios", "android", "cli"] as const) {
+      const original = window.__CADET_CONFIG__;
+      window.__CADET_CONFIG__ = { interfaceId: id };
+      try {
+        const mod = await freshImport();
+        expect(mod.getClientInterfaceId()).toBe(id);
+      } finally {
+        window.__CADET_CONFIG__ = original;
+      }
     }
   });
 });

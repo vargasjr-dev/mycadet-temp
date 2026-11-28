@@ -38,7 +38,7 @@ import {
 } from "@/domains/chat/prechat";
 import { mapRuntimeToDisplayMessage } from "@/domains/chat/utils/map-runtime-message";
 import { pickConversationIdWireField } from "@/lib/backwards-compat/conversation-id-wire-field";
-import { getRegisteredInterfaceId } from "@/lib/client-identity";
+import { getClientInterfaceId } from "@/lib/client-identity";
 import { getVisibleAppIdForSend } from "@/domains/chat/utils/visible-app-context";
 import { getEffectiveTimezone } from "@/utils/effective-timezone";
 import { detectClientOs } from "@/runtime/platform-detection";
@@ -546,15 +546,9 @@ export async function postChatMessage(
   const body: MessagesPostData["body"] = {
     content,
     sourceChannel: "cadet",
-    // `interface` identifies the connection's client: the desktop shell's
-    // interface when this renderer runs embedded in one (turns record the
-    // desktop client the user is actually using), "web" in a plain browser.
-    // It carries IDENTITY only — host-proxy/transport capability derives
-    // from the SSE registration's interface, where this client opts out via
-    // `X-Cadet-Host-Proxy: 0` (see `lib/client-identity.ts`) — and the real
-    // platform also travels in `clientOs` below, feeding the assistant's
-    // per-turn `client_os` context.
-    interface: getRegisteredInterfaceId(),
+    // The embedding shell's interface — turns record the desktop client the
+    // user is actually using. "web" in a plain browser.
+    interface: getClientInterfaceId(),
     clientOs: detectClientOs(),
   };
   // Read the effective timezone LIVE at send time (not from cached state) so

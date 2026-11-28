@@ -69,18 +69,19 @@ test("adds host_cu when the shell contributes one, and tears it down", () => {
   expect(didTeardown).toBe(true);
 });
 
-test("the shell's capability flags ride the SSE headers", () => {
+test("the SSE headers carry identity and negotiate no capabilities", () => {
   const runtime = createHostProxyRuntime({
     interfaceId: "test-shell",
-    supports: { windowCapture: true, sequence: true, coachmarks: true },
     bashExecutor: unavailableExecutor,
     logger: console,
   });
 
   expect(runtime.sseClientHeaders()).toMatchObject({
     "X-Cadet-Interface-Id": "test-shell",
-    "X-Cadet-Cu-Window-Capture": "1",
-    "X-Cadet-Cu-Sequence": "1",
-    "X-Cadet-Cu-Annotate": "1",
   });
+  expect(runtime.sseClientHeaders()).not.toHaveProperty(
+    "X-Cadet-Cu-Window-Capture",
+  );
+  expect(runtime.sseClientHeaders()).not.toHaveProperty("X-Cadet-Cu-Sequence");
+  expect(runtime.sseClientHeaders()).not.toHaveProperty("X-Cadet-Cu-Annotate");
 });
