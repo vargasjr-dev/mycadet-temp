@@ -11,7 +11,8 @@
 
 import {
   deleteMessageById,
-  getMessages,
+  getConversationMessageTail,
+  getMessagesAfter,
 } from "../persistence/conversation-crud.js";
 import { getLogger } from "../util/logger.js";
 import { getOrCreateConversation } from "./conversation-store.js";
@@ -85,9 +86,9 @@ export async function runPointerMessageTurn(
       }
     };
 
-    // Snapshot message IDs before the agent loop so we can diff
-    // afterwards to find exactly which messages this run created,
-    // avoiding positional heuristics that break under concurrency.
+    // Snapshot the conversation's last row before the agent loop so the
+    // post-run read can start from that bound, avoiding positional
+    // heuristics that break under concurrency.
     //
     // Caveat: the diff captures *all* new messages in the
     // conversation during the loop window, not just those from
@@ -99,9 +100,13 @@ export async function runPointerMessageTurn(
     // fail fact-check — narrow enough to accept.  A future
     // improvement could tag messages with a per-run correlation
     // ID so rollback only targets its own output.
-    const preRunMessageIds = new Set(
-      getMessages(conversationId).map((m) => m.id),
-    );
+    //
+    // Bounded reads: `getConversationMessageTail(id, 1)` probes the tip and
+    // `getMessagesAfter` reads only what the run added. The old pre-run
+    // snapshot pulled every row of the conversation (a full walk of a
+    // 46k-row history) just to build an id set the diff only compared
+    // against.
+    const preRunLastId = getConversationMessageTail(conversationId, 1)[0]?.id;
 
     let agentLoopError: string | undefined;
     let generatedText = "";
@@ -128,13 +133,17 @@ export async function runPointerMessageTurn(
       },
     });
 
-    // Identify messages created during this run by diffing against
-    // the pre-run snapshot. This captures all messages added to the
-    // conversation during the loop window, which may include messages
-    // from concurrent pointer events (see over-capture caveat above).
-    const postRunMessages = getMessages(conversationId);
+    // Identify messages created during this run by reading from the pre-run
+    // bound. This captures all messages added to the conversation during the
+    // loop window, which may include messages from concurrent pointer events
+    // (see over-capture caveat above). A `null` ref reads everything — the
+    // empty pre-run case.
+    const postRunMessages = getMessagesAfter(
+      conversationId,
+      preRunLastId ?? null,
+    );
     const createdMessageIds = postRunMessages
-      .filter((m) => !preRunMessageIds.has(m.id) && m.id !== messageId)
+      .filter((m) => m.id !== messageId)
       .map((m) => m.id);
 
     if (agentLoopError) {

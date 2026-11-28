@@ -44,6 +44,11 @@ const mockGetMessages = mock((_conversationId: string) => [
 mock.module("../persistence/conversation-crud.js", () => ({
   setConversationProcessingStartedAt: () => {},
   isConversationProcessing: () => false,
+  // The handler reads a bounded tail; the fixture fits any window, so the
+  // tail is just the fixture in insertion order.
+  getConversationMessageTail: mock((_conversationId: string, _limit: number) =>
+    mockGetMessages("conv-test"),
+  ),
   getMessages: mockGetMessages,
   getConversation: (_id: string) => null,
   reserveMessage: mock(async () => ({ id: "msg-reserve" })),

@@ -20,7 +20,7 @@ import { Mutex } from "../util/mutex.js";
 import { stripThinkingTags, truncateTitle } from "../util/short-title.js";
 import {
   getConversation,
-  getMessages,
+  getConversationMessageTail,
   type MessageRow,
   updateConversationTitle,
 } from "./conversation-crud.js";
@@ -320,8 +320,10 @@ export async function regenerateConversationTitle(
     return { title: conversation.title ?? UNTITLED_FALLBACK, updated: false };
   }
 
-  const allMessages = getMessages(conversationId);
-  const recentMessages = allMessages.slice(-3);
+  // Bounded tail read — the title regenerates from the last three rows, and
+  // a full `getMessages` here walked every row of the conversation (the
+  // dominant per-title cost on large histories) to reach the same window.
+  const recentMessages = getConversationMessageTail(conversationId, 3);
   if (recentMessages.length === 0) {
     return { title: conversation.title ?? UNTITLED_FALLBACK, updated: false };
   }

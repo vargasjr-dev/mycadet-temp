@@ -10,8 +10,10 @@ import { DEFAULT_LOCALE } from "../i18n/index.js";
 import { editChannelMessage } from "../messaging/providers/index.js";
 import { getAttachmentMetadataForMessage } from "../persistence/attachments-store.js";
 import {
+  getConversationMessageTail,
+  getMessagesAfter,
   getMessageById,
-  getMessages,
+  type MessageRow,
   parseMessageMetadata,
 } from "../persistence/conversation-crud.js";
 import { isReactionMessageMetadata } from "../persistence/conversation-types.js";
@@ -289,7 +291,7 @@ export type DeliverReplyOptions = {
   onMessageTs?: (ts: string) => void | Promise<void>;
 };
 
-type PersistedMessage = ReturnType<typeof getMessages>[number];
+type PersistedMessage = ReturnType<typeof getConversationMessageTail>[number];
 
 /**
  * A row read that contributes nothing to deliver. Spelled out rather than
@@ -402,24 +404,38 @@ export function findAssistantReplyMessageIdForTurn(
   conversationId: string,
   userMessageId: string,
 ): string | undefined {
-  const msgs = getMessages(conversationId);
-  const userIndex = msgs.findIndex((msg) => msg.id === userMessageId);
-  if (userIndex === -1) {
-    return undefined;
-  }
-
-  let turnEndIndex = msgs.length;
-  for (let i = userIndex + 1; i < msgs.length; i++) {
-    const msg = msgs[i];
-    if (msg.role === "user" && !isToolResultUserMessage(msg)) {
-      turnEndIndex = i;
+  // Chunked forward reads, not `getMessages`: the turn lives at (or near)
+  // the conversation's recent end, and a full read here walked every row
+  // after the user row to reach it. Each chunk resumes from the previous
+  // chunk's last id; the scan stops at the turn's end (the next real user
+  // row) or at a cap no sane turn approaches.
+  const CHUNK = 200;
+  const MAX_ROWS = 5000;
+  const candidateRows: MessageRow[] = [];
+  let ref: string | null = userMessageId;
+  let scanned = 0;
+  let turnEnded = false;
+  while (!turnEnded && scanned < MAX_ROWS) {
+    const rows = getMessagesAfter(conversationId, ref, CHUNK);
+    if (rows.length === 0) {
       break;
+    }
+    scanned += rows.length;
+    for (const msg of rows) {
+      if (msg.role === "user" && !isToolResultUserMessage(msg)) {
+        turnEnded = true;
+        break;
+      }
+      candidateRows.push(msg);
+    }
+    if (!turnEnded) {
+      ref = rows[rows.length - 1].id;
     }
   }
 
   let sentinelRowId: string | undefined;
-  for (let i = turnEndIndex - 1; i > userIndex; i--) {
-    const msg = msgs[i];
+  for (let i = candidateRows.length - 1; i >= 0; i--) {
+    const msg = candidateRows[i];
     if (msg.role === "assistant") {
       const { rendered, replyAttachments } = readPersistedAssistantReply(msg);
       if (hasRealDeliverableReply(rendered, replyAttachments)) {
@@ -547,21 +563,37 @@ export async function deliverReplyViaCallback(
     return;
   }
 
-  const msgs = getMessages(conversationId);
-  for (let i = msgs.length - 1; i >= 0; i--) {
-    if (msgs[i].role !== "assistant") {
-      continue;
+  // Bounded tail read with widen, not `getMessages`: delivery targets the
+  // nearest assistant row that carries a deliverable reply, which lives at
+  // the conversation's recent end — a full read walked every row to reach it.
+  // Rows already attempted are not retried after a widen, so a transient
+  // delivery failure still falls through to the next-older row exactly once.
+  const attempted = new Set<string>();
+  const TAIL = 64;
+  const MAX_TAIL = 1024;
+  let tailLimit = TAIL;
+  for (;;) {
+    const msgs = getConversationMessageTail(conversationId, tailLimit);
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role !== "assistant" || attempted.has(msgs[i].id)) {
+        continue;
+      }
+      attempted.add(msgs[i].id);
+      const delivered = await deliverPersistedAssistantMessageViaCallback(
+        conversationId,
+        msgs[i],
+        externalChatId,
+        callbackUrl,
+        assistantId,
+        options,
+      );
+      if (delivered) {
+        return;
+      }
     }
-    const delivered = await deliverPersistedAssistantMessageViaCallback(
-      conversationId,
-      msgs[i],
-      externalChatId,
-      callbackUrl,
-      assistantId,
-      options,
-    );
-    if (delivered) {
-      break;
+    if (msgs.length < tailLimit || tailLimit >= MAX_TAIL) {
+      return;
     }
+    tailLimit = Math.min(tailLimit * 4, MAX_TAIL);
   }
 }

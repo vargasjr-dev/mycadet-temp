@@ -121,6 +121,7 @@ import {
   findMessageIdByClientMessageId,
   getConversation,
   getConversationPersistedSeq,
+  getConversationMessageTail,
   getMessages,
   getMessagesPaginated,
   hasMessages,
@@ -3506,6 +3507,46 @@ const suggestionResponseSchema = z.object({
   stale: z.boolean().optional(),
 });
 
+/**
+ * The consolidated display turns a reply suggestion reads, from a bounded
+ * tail read instead of `getMessages`. The staleness check and the suggestion
+ * anchor both live at the conversation's recent end, but a full read here was
+ * the dominant main-thread cost on large conversations: a 46k-row / ~237 MB
+ * conversation blocked the event loop ~15s per poll, long enough for the
+ * gateway's upstream deadline to 503 the client.
+ *
+ * The window must hold the last assistant turn in full (a turn is a run of
+ * rows consolidated by its first row's id, so a window that slices mid-run
+ * would read the wrong turn id as "latest") plus the last text-bearing
+ * assistant row and its preceding user row. A tip-adjacent window normally
+ * holds all three with room to spare; when it is full and its oldest
+ * surviving row still opens an assistant run — or it holds no assistant turn
+ * at all — widen and retry, bounded.
+ */
+function readSuggestionTurnsBounded(conversationId: string): MessageRow[] {
+  const initial = 128;
+  const max = 4096;
+  let limit = initial;
+  for (;;) {
+    const tail = getConversationMessageTail(conversationId, limit);
+    const filtered = tail.filter(displayRowFilter(conversationId));
+    const turns = consolidateDisplayTurns(filtered).messages;
+    if (tail.length < limit || limit >= max) {
+      // The window holds the whole conversation (or we hit the cap), so its
+      // answer is final whatever it is.
+      return turns;
+    }
+    const oldest = filtered[0];
+    if (oldest?.role === "assistant" || turns.length === 0) {
+      // Full window that may have sliced an assistant run below it, or one
+      // that has not reached any assistant turn yet.
+      limit = Math.min(limit * 4, max);
+      continue;
+    }
+    return turns;
+  }
+}
+
 export async function handleGetSuggestion(
   { queryParams }: RouteHandlerArgs,
   deps: {
@@ -3545,12 +3586,8 @@ export async function handleGetSuggestion(
   // Consolidated the way `/messages` consolidates, because the `messageId` a
   // client asks about came from there. A merged run of assistant rows takes
   // the first row's id, so comparing against raw rows would call every
-  // multi-row turn stale.
-  const rawMessages = consolidateDisplayTurns(
-    getMessages(resolvedConversationId).filter(
-      displayRowFilter(resolvedConversationId),
-    ),
-  ).messages;
+  // multi-row turn stale. Reads a bounded tail — see the helper.
+  const rawMessages = readSuggestionTurnsBounded(resolvedConversationId);
   if (rawMessages.length === 0) {
     return noSuggestion;
   }

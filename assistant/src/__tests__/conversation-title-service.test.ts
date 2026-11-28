@@ -78,6 +78,10 @@ mock.module("../persistence/conversation-crud.js", () => ({
   setConversationProcessingStartedAt: () => {},
   isConversationProcessing: () => false,
   getConversation: mockGetConversation,
+  // The service reads a bounded tail; the fixture fits any window.
+  getConversationMessageTail: mock((_conversationId: string, _limit: number) =>
+    mockGetMessages(),
+  ),
   getMessages: mockGetMessages,
   updateConversationTitle: mockUpdateConversationTitle,
   reserveMessage: mock(async () => ({ id: "msg-reserve" })),
