@@ -426,7 +426,7 @@ function readHeaderValue(
   const getter = typeof get === "function" ? get.bind(headers) : undefined;
   for (const name of names) {
     const raw = getter
-      ? (getter(name) as string | null)
+      ? getter(name)
       : (asRecord(headers)?.[name] ?? asRecord(headers)?.[name.toLowerCase()]);
     if (typeof raw === "string" && raw.length > 0) {
       return raw;

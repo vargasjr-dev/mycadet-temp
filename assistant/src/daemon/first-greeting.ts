@@ -137,15 +137,15 @@ export const CANNED_FIRST_GREETING = ["Hey,", "", buildInvite("grounded")].join(
   "\n",
 );
 
-const VALID_TONES = new Set<string>([
+const VALID_TONES: readonly Tone[] = [
   "grounded",
   "warm",
   "energetic",
   "poetic",
-]);
+];
 
 function resolveTone(raw?: string): Tone {
-  return raw && VALID_TONES.has(raw) ? (raw as Tone) : "grounded";
+  return VALID_TONES.find((tone) => tone === raw) ?? "grounded";
 }
 
 export function buildScanFirstMessage(
@@ -166,7 +166,7 @@ function buildPersonalizedGreeting(ctx: OnboardingGreetingContext): string {
   if (
     !name &&
     !assistant &&
-    !VALID_TONES.has(ctx.tone) &&
+    !VALID_TONES.some((candidate) => candidate === ctx.tone) &&
     !ctx.googleConnected
   ) {
     return CANNED_FIRST_GREETING;

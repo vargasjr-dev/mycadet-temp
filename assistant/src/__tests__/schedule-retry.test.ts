@@ -604,7 +604,14 @@ describe("execute-mode failure notifications", () => {
     scheduler.stop();
 
     expect(emitted).toHaveLength(2);
-    const keys = emitted.map((signal) => signal.dedupeKey as string).sort();
+    const keys = emitted
+      .map((signal) => {
+        if (typeof signal.dedupeKey !== "string") {
+          throw new Error("Expected a dedupe key on each emitted signal");
+        }
+        return signal.dedupeKey;
+      })
+      .sort();
     expect(keys[0]).toMatch(
       /^activity-failed:cause:PROVIDER_INVALID_KEY:balanced:\d{4}-\d{2}-\d{2}$/,
     );

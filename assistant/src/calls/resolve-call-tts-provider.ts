@@ -156,15 +156,8 @@ export async function resolveCallTtsProvider(
     const audioFormat: CallAudioFormat = options?.requiresPcmAudio
       ? "pcm"
       : (() => {
-          const configuredFormat = (
-            resolved.providerConfig as { format?: string }
-          ).format;
-          return (
-            configuredFormat &&
-            ["mp3", "wav", "opus"].includes(configuredFormat)
-              ? configuredFormat
-              : "mp3"
-          ) as Exclude<CallAudioFormat, "pcm">;
+          const format = resolved.providerConfig.format;
+          return format === "wav" || format === "opus" ? format : "mp3";
         })();
 
     return { provider, useSynthesizedPath, audioFormat };

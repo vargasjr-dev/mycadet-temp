@@ -23,6 +23,7 @@ import { join } from "node:path";
 import { getDeviceIdOverride } from "../config/env-registry.js";
 import { getWorkspaceDir } from "./layout.js";
 import { getLogger } from "./logger.js";
+import { isObjectRecord } from "./object.js";
 import { isPlainObject } from "./object.js";
 
 const log = getLogger("device-id");
@@ -44,14 +45,13 @@ function readDeviceIdFromFile(filePath: string): string | null {
     return null;
   }
 
-  const raw = JSON.parse(readFileSync(filePath, "utf-8"));
+  const raw: unknown = JSON.parse(readFileSync(filePath, "utf-8"));
   if (
-    raw &&
-    typeof raw === "object" &&
+    isObjectRecord(raw) &&
     typeof raw.deviceId === "string" &&
     raw.deviceId.length > 0
   ) {
-    return raw.deviceId as string;
+    return raw.deviceId;
   }
   return null;
 }
@@ -133,7 +133,7 @@ export function getDeviceId(): string {
     let existing: Record<string, unknown> = {};
     try {
       if (existsSync(filePath)) {
-        const raw = JSON.parse(readFileSync(filePath, "utf-8"));
+        const raw: unknown = JSON.parse(readFileSync(filePath, "utf-8"));
         if (isPlainObject(raw)) {
           existing = raw;
         }

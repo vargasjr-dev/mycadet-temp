@@ -41,7 +41,19 @@ function remainingIds(): string[] {
 }
 
 function job(payload: Record<string, unknown> = {}): MemoryJob {
-  return { payload } as unknown as MemoryJob;
+  return {
+    id: "prune-old-tool-invocations-test",
+    type: "prune_old_tool_invocations",
+    payload,
+    status: "running",
+    attempts: 0,
+    deferrals: 0,
+    runAfter: 0,
+    lastError: null,
+    startedAt: null,
+    createdAt: 0,
+    updatedAt: 0,
+  };
 }
 
 function config(retentionDays: number): AssistantConfig {

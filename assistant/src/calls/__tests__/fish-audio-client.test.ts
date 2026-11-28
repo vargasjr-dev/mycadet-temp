@@ -32,7 +32,10 @@ beforeEach(() => {
   capturedBody = "";
   globalThis.fetch = fetchMock(
     mock(async (_input: RequestInfo | URL, init?: RequestInit) => {
-      capturedBody = init?.body as string;
+      if (typeof init?.body !== "string") {
+        throw new Error("Expected a JSON request body");
+      }
+      capturedBody = init.body;
       return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
     }),
   );

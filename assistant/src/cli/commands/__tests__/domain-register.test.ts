@@ -7,16 +7,24 @@
  *   - --json outputs structured response
  *   - error responses are surfaced correctly
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+
+import type { CliIpcCallResult } from "../../../ipc/cli-client.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
 
-let mockIpcCallFn = mock(() => Promise.resolve({ ok: true, result: {} }));
+type IpcHandler = (
+  method: string,
+  ...args: unknown[]
+) => Promise<CliIpcCallResult>;
+
+let mockIpcCallFn = mock<IpcHandler>(() =>
+  Promise.resolve({ ok: true, result: {} }),
+);
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
@@ -35,7 +43,9 @@ mock.module("../../../ipc/cli-client.js", () => ({
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  mockIpcCallFn = mock(() => Promise.resolve({ ok: true, result: {} }));
+  mockIpcCallFn = mock<IpcHandler>(() =>
+    Promise.resolve({ ok: true, result: {} }),
+  );
   process.exitCode = 0;
 });
 
@@ -84,7 +94,7 @@ async function runDomainCommand(...args: string[]) {
 
 describe("assistant domain register", () => {
   test("calls domain_register with subdomain param", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -106,7 +116,7 @@ describe("assistant domain register", () => {
   });
 
   test("registration without subdomain sends empty body", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -128,7 +138,7 @@ describe("assistant domain register", () => {
   });
 
   test("--json outputs structured response", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -155,13 +165,13 @@ describe("assistant domain register", () => {
   });
 
   test("IPC error with --json outputs error envelope", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: false,
         error: "This assistant already has a registered domain.",
         statusCode: 400,
       }),
-    ) as unknown as typeof mockIpcCallFn;
+    );
 
     const output = await runDomainCommand(
       "domain",
@@ -176,20 +186,20 @@ describe("assistant domain register", () => {
   });
 
   test("IPC error without --json calls exitFromIpcResult", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: false,
         error: "Platform credentials not configured",
         statusCode: 401,
       }),
-    ) as unknown as typeof mockIpcCallFn;
+    );
 
     await runDomainCommand("domain", "register", "velly");
     expect(process.exitCode).not.toBe(0);
   });
 
   test("--email-username is included in IPC body", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -216,7 +226,7 @@ describe("assistant domain register", () => {
   });
 
   test("email error in response is surfaced as warning", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -244,7 +254,7 @@ describe("assistant domain register", () => {
   });
 
   test("--json includes email_error in output", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -278,7 +288,7 @@ describe("assistant domain register", () => {
   });
 
   test("without --email-username behavior is unchanged", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: {

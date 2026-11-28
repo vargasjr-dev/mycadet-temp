@@ -26,7 +26,6 @@ import {
 } from "../llm-resolver.js";
 import {
   isDefaultProviderChoice,
-  type LLMCallSite,
   LLMCallSiteEnum,
   LLMSchema,
   type ProfileEntry,
@@ -234,12 +233,11 @@ describe("resolver integration", () => {
     const anchor = capturedStringSchema.parse(
       CODE_DEFAULT_PROFILE_ENTRIES.balanced.model,
     );
-    for (const callSite of Object.keys(CALL_SITE_DEFAULTS)) {
+    for (const key of Object.keys(CALL_SITE_DEFAULTS)) {
+      const callSite = LLMCallSiteEnum.parse(key);
       // No site pins a profile anymore, so every site resolves the anchor's
       // model; only its knobs (effort, temperature, caps) differ.
-      expect(resolveCallSiteConfig(callSite as LLMCallSite, llm).model).toBe(
-        anchor,
-      );
+      expect(resolveCallSiteConfig(callSite, llm).model).toBe(anchor);
     }
   });
 
@@ -253,9 +251,10 @@ describe("resolver integration", () => {
       activeProfile: "balanced",
       profiles: managedStubs(),
     });
-    for (const callSite of Object.keys(CALL_SITE_DEFAULTS)) {
-      expect(resolveCallSiteConfig(callSite as LLMCallSite, stubbed)).toEqual(
-        resolveCallSiteConfig(callSite as LLMCallSite, seeded),
+    for (const key of Object.keys(CALL_SITE_DEFAULTS)) {
+      const callSite = LLMCallSiteEnum.parse(key);
+      expect(resolveCallSiteConfig(callSite, stubbed)).toEqual(
+        resolveCallSiteConfig(callSite, seeded),
       );
     }
   });

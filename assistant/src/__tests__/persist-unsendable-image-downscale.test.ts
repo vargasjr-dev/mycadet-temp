@@ -140,15 +140,12 @@ describe("persistUnsendableImageDowngrades (downscalable host)", () => {
     // THEN the nested block stays an image, rewritten to the downscaled payload
     expect(rewritten).toBe(1);
     const [content] = storedContent(conv.id);
-    const toolResult = content.find((b) => b.type === "tool_result") as {
-      contentBlocks?: ContentBlock[];
-    };
-    const nested = toolResult.contentBlocks?.[0];
-    expect(nested?.type).toBe("image");
-    expect(
-      base64Source((nested as Extract<ContentBlock, { type: "image" }>).source)
-        .data,
-    ).toBe(SHRUNK_DATA);
+    const toolResult = content.find((block) => block.type === "tool_result");
+    const nested = toolResult?.contentBlocks?.[0];
+    if (nested?.type !== "image") {
+      throw new Error("Expected the rewritten tool result to contain an image");
+    }
+    expect(base64Source(nested.source).data).toBe(SHRUNK_DATA);
   });
 
   /** The resize replaces the block's whole source, so a reference-backed image

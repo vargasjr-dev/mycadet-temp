@@ -42,6 +42,7 @@ import type {
 import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import { getObjectProperty } from "../../../../../util/object.js";
 
 // Provider stub. Each test sets `providerStub` to control the response;
@@ -107,19 +108,15 @@ const { messages, conversations } =
   await import("../../../../../persistence/schema/index.js");
 const { memoryV2SweepJob } = await import("../sweep-job.js");
 
-// The handler reads `config.memory.v2.enabled` and `sweep_enabled`, so we
-// hand it a minimal stand-in instead of materializing the full default
-// config — which would otherwise pull in heavy schemas this test doesn't
-// exercise.
-const CONFIG = {
+const CONFIG = AssistantConfigSchema.parse({
   memory: { v2: { enabled: true, sweep_enabled: true } },
-} as Parameters<typeof memoryV2SweepJob>[1];
-const CONFIG_V2_OFF = {
+});
+const CONFIG_V2_OFF = AssistantConfigSchema.parse({
   memory: { v2: { enabled: false, sweep_enabled: true } },
-} as Parameters<typeof memoryV2SweepJob>[1];
-const CONFIG_SWEEP_OFF = {
+});
+const CONFIG_SWEEP_OFF = AssistantConfigSchema.parse({
   memory: { v2: { enabled: true, sweep_enabled: false } },
-} as Parameters<typeof memoryV2SweepJob>[1];
+});
 
 function makeJob(): Parameters<typeof memoryV2SweepJob>[0] {
   return {

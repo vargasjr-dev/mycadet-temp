@@ -78,7 +78,6 @@ import type { MemoryJobType } from "../persistence/jobs-store.js";
 import { enqueueMemoryJob } from "../persistence/jobs-store.js";
 import { memoryJobs } from "../persistence/schema/index.js";
 import memoryConversationDeleted from "../plugins/defaults/memory/hooks/conversation-deleted.js";
-import type { PluginHooks } from "../plugins/types.js";
 
 await initializeDb();
 
@@ -86,7 +85,7 @@ await initializeDb();
 // so the delete primitives' dispatch reaches the plugin's job sweep.
 registerPluginHooks("default-memory", {
   "conversation-deleted": memoryConversationDeleted,
-} as PluginHooks);
+});
 
 /** Poll until `read()` returns a defined value or the timeout elapses. */
 async function waitFor<T>(
@@ -410,7 +409,7 @@ describe("delete paths dispatch the conversation-deleted hook", () => {
       "conversation-deleted": async (ctx: { conversationId: string }) => {
         deletedConversations.push(ctx.conversationId);
       },
-    } as PluginHooks);
+    });
   });
 
   afterAll(() => {

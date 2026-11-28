@@ -9,6 +9,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { isObjectRecord } from "../../../../util/object.js";
 import { type MapOutput, mapSegments } from "../services/gemini-map.js";
 import { analyzeVideoDirectly } from "../services/gemini-video.js";
 import type { PreprocessManifest } from "../services/preprocess.js";
@@ -117,7 +118,7 @@ export async function run(
 
   const mode =
     (typeof input.mode === "string" ? input.mode : undefined) ?? "keyframes";
-  const contextObj = input.context as Record<string, unknown> | undefined;
+  const contextObj = isObjectRecord(input.context) ? input.context : undefined;
   const model = typeof input.model === "string" ? input.model : undefined;
   const concurrency =
     typeof input.concurrency === "number" ? input.concurrency : undefined;

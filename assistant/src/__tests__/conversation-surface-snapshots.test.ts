@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { ConversationSurfaceSnapshot } from "../daemon/conversation-surface-snapshots.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
+import { isObjectRecord } from "../util/object.js";
 
 let getMessagesImpl: (conversationId: string) => Array<{
   id: string;
@@ -515,7 +516,11 @@ describe("listConversationSurfaceSnapshots", () => {
     expect(snapshot).toBeDefined();
     expect(snapshot?.data).not.toBe(liveData);
     snapshot!.data.title = "mutated";
-    (snapshot!.data.templateData as { title?: string }).title = "mutated";
+    const templateData = snapshot!.data.templateData;
+    if (!isObjectRecord(templateData)) {
+      throw new Error("Expected the snapshot to have template data");
+    }
+    templateData.title = "mutated";
     expect(surfaceState.get("surf_abc")?.data).toEqual(liveData);
   });
 
