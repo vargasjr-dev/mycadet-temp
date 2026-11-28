@@ -1,9 +1,8 @@
-import { z } from "zod";
-
 import {
   type ChannelId,
   isChannelId,
 } from "@mycadet/service-contracts/channels";
+import { z } from "zod";
 
 import {
   HOST_PROXY_SUPPORT,
