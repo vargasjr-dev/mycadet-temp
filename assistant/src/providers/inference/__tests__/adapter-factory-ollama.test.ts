@@ -17,10 +17,17 @@ interface RetryOptions {
 function retryOptions(adapter: unknown): RetryOptions {
   let node = adapter;
   for (let depth = 0; node && depth < 8; depth++) {
-    const { options, inner } = node as {
-      options?: RetryOptions;
-      inner?: unknown;
-    };
+    const { options, inner } = z
+      .looseObject({
+        options: z
+          .object({
+            credentialSource: z.string().optional(),
+            connectionName: z.string().optional(),
+          })
+          .optional(),
+        inner: z.unknown(),
+      })
+      .parse(node);
     if (options) {
       return options;
     }

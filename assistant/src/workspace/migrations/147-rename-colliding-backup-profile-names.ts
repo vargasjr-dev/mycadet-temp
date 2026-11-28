@@ -265,7 +265,8 @@ function rewriteConfigReferences(
     if (!Array.isArray(entry.mix)) {
       continue;
     }
-    for (const armValue of entry.mix as unknown[]) {
+    const arms: unknown[] = entry.mix;
+    for (const armValue of arms) {
       const arm = asObject(armValue);
       if (
         arm !== null &&

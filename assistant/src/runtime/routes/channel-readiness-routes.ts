@@ -5,7 +5,6 @@
  * POST  /v1/channels/readiness/refresh  — invalidate cache and refresh readiness
  */
 
-import type { ChannelId } from "@mycadet/service-contracts/channels";
 import { CHANNEL_IDS } from "@mycadet/service-contracts/channels";
 import { z } from "zod";
 
@@ -20,6 +19,7 @@ import {
   CHECK_KINDS,
   SETUP_STATUSES,
 } from "../channel-readiness-types.js";
+import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 async function enrichSnapshots(
@@ -56,7 +56,10 @@ async function enrichSnapshots(
 async function handleGetChannelReadiness({
   queryParams = {},
 }: RouteHandlerArgs) {
-  const channel = (queryParams.channel as ChannelId | undefined) ?? undefined;
+  const channel = parseBody(
+    z.enum(CHANNEL_IDS).optional(),
+    queryParams.channel ?? undefined,
+  );
   const includeRemote = queryParams.includeRemote !== "false";
 
   const service = getReadinessService();
@@ -70,7 +73,10 @@ async function handleGetChannelReadiness({
  * POST /v1/channels/readiness/refresh
  */
 async function handleRefreshChannelReadiness({ body = {} }: RouteHandlerArgs) {
-  const channel = (body.channel as ChannelId | undefined) ?? undefined;
+  const channel = parseBody(
+    z.enum(CHANNEL_IDS).optional(),
+    body.channel ?? undefined,
+  );
   const includeRemote =
     body.includeRemote !== undefined ? Boolean(body.includeRemote) : true;
 

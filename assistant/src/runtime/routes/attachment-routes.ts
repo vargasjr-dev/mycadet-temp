@@ -213,7 +213,10 @@ async function handleMultipartUpload(
   const syntheticReq = new Request("http://localhost", {
     method: "POST",
     headers: { "content-type": headers["content-type"] ?? "" },
-    body: rawBody.buffer as ArrayBuffer,
+    body:
+      rawBody.buffer instanceof ArrayBuffer
+        ? new Uint8Array(rawBody.buffer, rawBody.byteOffset, rawBody.byteLength)
+        : rawBody.slice(),
   });
 
   let formData: FormData;
@@ -329,13 +332,7 @@ async function handleJsonUpload(
     );
   }
 
-  const { filename, mimeType, data, filePath } = body as {
-    filename?: string;
-    mimeType?: string;
-    data?: string;
-    filePath?: string;
-    trustedSource?: boolean;
-  };
+  const { filename, mimeType, data, filePath } = body;
 
   if (!filename || typeof filename !== "string") {
     throw new BadRequestError("filename is required");
@@ -435,7 +432,7 @@ async function handleJsonUpload(
         filename,
         mimeType,
         data,
-        filePath ?? undefined,
+        typeof filePath === "string" ? filePath : undefined,
       );
     } catch (err) {
       if (err instanceof AttachmentUploadError) {

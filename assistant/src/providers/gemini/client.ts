@@ -135,6 +135,13 @@ function clampThinkingLevelToFloor(
  * `includeThoughts` is gated on `streamThinking` so callers that opted out of
  * streaming thoughts don't pay for thought tokens in the response.
  */
+const geminiThinkingLevelSchema = z.enum([
+  "minimal",
+  "low",
+  "medium",
+  "high",
+] satisfies ThinkingLevelName[]);
+
 function buildThinkingConfig(
   thinking: Record<string, unknown> | undefined,
   model: string,
@@ -155,14 +162,9 @@ function buildThinkingConfig(
   }
 
   const result: genai.ThinkingConfig = {};
-  if (
-    typeof thinking.level === "string" &&
-    thinking.level in THINKING_LEVEL_BY_NAME
-  ) {
-    const clamped = clampThinkingLevelToFloor(
-      thinking.level as ThinkingLevelName,
-      floor,
-    );
+  const level = geminiThinkingLevelSchema.safeParse(thinking.level);
+  if (level.success) {
+    const clamped = clampThinkingLevelToFloor(level.data, floor);
     result.thinkingLevel = THINKING_LEVEL_BY_NAME[clamped];
   } else if (isGeminiProModel(model)) {
     result.thinkingLevel =

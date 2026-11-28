@@ -386,17 +386,15 @@ async function guardProfileAvailability({
   allowUnavailable: boolean;
 }): Promise<ConnectionAvailability | null> {
   const availability = await computeProfileAvailability(entry);
-  if (!isUnavailable(availability)) {
+  if (!availability || !isUnavailable(availability)) {
     return null;
   }
-  // isUnavailable() is only true for a non-null verdict.
-  const verdict = availability as ConnectionAvailability;
   if (allowUnavailable) {
-    return verdict;
+    return availability;
   }
   throw new BadRequestError(
     await describeUnavailableProfile({
-      availability: verdict,
+      availability,
       provider: String(entry.provider),
       model: typeof entry.model === "string" ? entry.model : undefined,
       repair,

@@ -104,7 +104,7 @@ export async function embedMediaJob(job: MemoryJob): Promise<void> {
 
 export async function embedAttachmentJob(job: MemoryJob): Promise<void> {
   const messageId = asString(job.payload.messageId);
-  const blockIndex = job.payload.blockIndex as number;
+  const blockIndex = job.payload.blockIndex;
   if (!messageId || typeof blockIndex !== "number") {
     return;
   }

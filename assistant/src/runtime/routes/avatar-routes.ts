@@ -132,21 +132,21 @@ async function handleSetAvatarAccent({ body, headers }: RouteHandlerArgs) {
 }
 
 function handleRenderFromTraits({ body, headers }: RouteHandlerArgs) {
-  const traits = body as CharacterTraits | undefined;
+  const parsed = z
+    .looseObject({
+      bodyShape: z.string().min(1),
+      eyeStyle: z.string().min(1),
+      color: z.string().min(1),
+    })
+    .safeParse(body);
 
-  if (
-    !traits ||
-    typeof traits !== "object" ||
-    !traits.bodyShape ||
-    !traits.eyeStyle ||
-    !traits.color
-  ) {
+  if (!parsed.success) {
     throw new BadRequestError(
       "Missing required fields: bodyShape, eyeStyle, color",
     );
   }
 
-  const result = setCharacter(traits, changeOptions(headers));
+  const result = setCharacter(parsed.data, changeOptions(headers));
 
   if (!result.ok) {
     switch (result.reason) {

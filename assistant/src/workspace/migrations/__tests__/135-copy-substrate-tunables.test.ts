@@ -13,10 +13,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { MemoryConfigSchema } from "../../../config/schemas/memory.js";
 import { MemoryV2ConfigSchema } from "../../../config/schemas/memory-v2.js";
-import {
-  resolveSubstrateTuning,
-  type SubstrateTuning,
-} from "../../../plugins/defaults/memory/substrate/tuning.js";
+import { resolveSubstrateTuning } from "../../../plugins/defaults/memory/substrate/tuning.js";
+import { isPlainObject } from "../../../util/object.js";
 import { copySubstrateTunablesMigration as MIG } from "../135-copy-substrate-tunables.js";
 
 let workspaceDir: string;
@@ -25,14 +23,14 @@ let configPath: string;
 /** The shipped `memory.v2` defaults, i.e. the effective value of an unset key. */
 const V2_SCHEMA_DEFAULTS = MemoryV2ConfigSchema.parse({});
 
-function pick<T>(
+function pick(
   substrate: Record<string, unknown>,
   key: string,
-  fallback: T,
-): T {
+  fallback: unknown,
+): unknown {
   // Presence, not truthiness: `resolveSubstrateTuning` falls back only on
   // `undefined`, so an explicit `null` counts as set.
-  return key in substrate ? (substrate[key] as T) : fallback;
+  return key in substrate ? substrate[key] : fallback;
 }
 
 /**
@@ -44,9 +42,7 @@ function pick<T>(
  * one on a migrated workspace — that agreement is what lets the fallback be
  * removed later without changing anyone's behavior.
  */
-function resolveSubstrateOnly(
-  substrate: Record<string, unknown>,
-): SubstrateTuning {
+function resolveSubstrateOnly(substrate: Record<string, unknown>) {
   const d = V2_SCHEMA_DEFAULTS;
   return {
     sweep_enabled: pick(substrate, "sweep_enabled", d.sweep_enabled),
@@ -274,9 +270,11 @@ describe("135-copy-substrate-tunables", () => {
 
     const parsed = MemoryConfigSchema.parse(memory());
     const withFallback = resolveSubstrateTuning(parsed);
-    const substrateOnly = resolveSubstrateOnly(
-      memory().substrate as Record<string, unknown>,
-    );
+    const substrate = memory().substrate;
+    if (!isPlainObject(substrate)) {
+      throw new Error("Expected migrated substrate settings");
+    }
+    const substrateOnly = resolveSubstrateOnly(substrate);
 
     // The load-bearing claim: after the copy, the substrate namespace plus the
     // shipped defaults reproduce the resolver's substrate→v2 fallback exactly.

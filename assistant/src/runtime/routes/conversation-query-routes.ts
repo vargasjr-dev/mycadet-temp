@@ -129,10 +129,7 @@ import {
   InternalError,
   NotFoundError,
 } from "./errors.js";
-import {
-  type LlmContextSummary,
-  normalizeLlmContextPayloads,
-} from "./llm-context-normalization.js";
+import { normalizeLlmContextPayloads } from "./llm-context-normalization.js";
 import { assertLlmRequestLoggingEnabled } from "./llm-request-logs-access.js";
 import { parseBody } from "./parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
@@ -254,7 +251,9 @@ function replaceInferenceProfileConfig(
   mergeInferenceProfileContextWindow(existingProfile, fragment, updatedProfile);
 }
 
-function attachEstimatedCost(summary: LlmContextSummary): LlmContextSummary {
+function attachEstimatedCost(
+  summary: LlmContextSummaryResponse,
+): LlmContextSummaryResponse {
   const { provider, model, inputTokens, outputTokens } = summary;
   if (!model || inputTokens == null || outputTokens == null) {
     return summary;
@@ -299,7 +298,7 @@ function applyStoredProviderToLlmContextResult(
   const mergedSummary = normalized.summary
     ? { ...normalized.summary, provider }
     : { provider };
-  const summary = attachEstimatedCost(mergedSummary as LlmContextSummary);
+  const summary = attachEstimatedCost(mergedSummary);
   return { ...normalized, summary };
 }
 
@@ -529,10 +528,10 @@ const MemoryWireConfigSchema = z
  * is `.nullable().optional()`. Used to express PATCH body semantics where any
  * field can be `null` (meaning "delete via deep-merge") or omitted (unchanged).
  */
-function nullablePartial(schema: z.ZodObject<z.ZodRawShape>) {
+function nullablePartial(schema: z.ZodObject<Record<string, z.ZodType>>) {
   const shape: Record<string, z.ZodType> = {};
   for (const [key, value] of Object.entries(schema.shape)) {
-    shape[key] = (value as z.ZodType).nullable().optional();
+    shape[key] = value.nullable().optional();
   }
   return z.object(shape);
 }

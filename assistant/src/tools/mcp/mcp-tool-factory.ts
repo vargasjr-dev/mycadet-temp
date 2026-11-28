@@ -117,12 +117,7 @@ export function createMcpTool(
     ): Promise<ToolExecutionResult> {
       try {
         // Strip injected activity before sending to MCP server
-        const { activity: _activity, ...mcpInput } = input as Record<
-          string,
-          unknown
-        > & {
-          activity?: unknown;
-        };
+        const { activity: _activity, ...mcpInput } = input;
         const forwardInput = serverDefinesActivity ? input : mcpInput;
         const result = await manager.callTool(
           serverId,

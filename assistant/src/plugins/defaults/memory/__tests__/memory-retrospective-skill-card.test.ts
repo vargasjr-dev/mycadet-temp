@@ -425,11 +425,15 @@ describe("memory-retrospective skill card", () => {
     expect(skillCardJobUpserts).toHaveLength(1);
     const deferred = skillCardJobUpserts[0]!.payload;
     expect(deferred.skills).toEqual([skillA]);
+    const deferredSkills: unknown = deferred.skills;
+    if (!Array.isArray(deferredSkills)) {
+      throw new Error("Expected a list of deferred skills");
+    }
 
     // Skill B's creation-site enqueue merges into that pending row.
     const merged = {
       ...deferred,
-      skills: [...(deferred.skills as unknown[]), skillB],
+      skills: [...deferredSkills, skillB],
     };
 
     // The run finishes; the deferred job fires with the merged payload.

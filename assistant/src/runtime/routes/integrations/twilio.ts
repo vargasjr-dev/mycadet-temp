@@ -118,12 +118,14 @@ async function handleGetTwilioConfig() {
 export async function handleSetTwilioCredentials({
   body = {},
 }: RouteHandlerArgs) {
-  const { accountSid, authToken } = body as {
-    accountSid?: string;
-    authToken?: string;
-  };
+  const { accountSid, authToken } = body;
 
-  if (!accountSid || !authToken) {
+  if (
+    typeof accountSid !== "string" ||
+    !accountSid ||
+    typeof authToken !== "string" ||
+    !authToken
+  ) {
     throw new BadRequestError("accountSid and authToken are required");
   }
 
@@ -250,18 +252,21 @@ export async function handleProvisionTwilioNumber({ body }: RouteHandlerArgs) {
     throw new BadRequestError("Request body is required");
   }
 
-  const { country: rawCountry, areaCode } = body as {
-    country?: string;
-    areaCode?: string;
-  };
+  const { country: rawCountry, areaCode } = body;
   const { accountSid, authToken } = await getTwilioCredentials();
+  if (rawCountry != null && typeof rawCountry !== "string") {
+    throw new BadRequestError("country must be a string");
+  }
+  if (areaCode != null && typeof areaCode !== "string") {
+    throw new BadRequestError("areaCode must be a string");
+  }
   const country = rawCountry ?? "US";
 
   const available = await searchAvailableNumbers(
     accountSid,
     authToken,
     country,
-    areaCode,
+    areaCode ?? undefined,
   );
   if (available.length === 0) {
     throw new BadRequestError(
@@ -298,9 +303,9 @@ export async function handleProvisionTwilioNumber({ body }: RouteHandlerArgs) {
 export async function handleAssignTwilioNumber({
   body = {},
 }: RouteHandlerArgs) {
-  const { phoneNumber } = body as { phoneNumber?: string };
+  const { phoneNumber } = body;
 
-  if (!phoneNumber) {
+  if (typeof phoneNumber !== "string" || !phoneNumber) {
     throw new BadRequestError("phoneNumber is required");
   }
 
@@ -341,10 +346,11 @@ async function handleReleaseTwilioNumber({ body }: RouteHandlerArgs) {
     throw new BadRequestError("Request body is required");
   }
 
-  const { phoneNumber: requestedNumber } = body as {
-    phoneNumber?: string;
-  };
+  const { phoneNumber: requestedNumber } = body;
   const twilio = { ...getConfig().twilio };
+  if (requestedNumber != null && typeof requestedNumber !== "string") {
+    throw new BadRequestError("phoneNumber must be a string");
+  }
   const phoneNumber = requestedNumber || twilio.phoneNumber || "";
 
   if (!phoneNumber) {

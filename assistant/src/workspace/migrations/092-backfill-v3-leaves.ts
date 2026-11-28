@@ -30,9 +30,23 @@ function readAssignments(workspaceDir: string): Record<string, string[]> {
     throw err;
   }
   const parsed: unknown = JSON.parse(raw);
-  return parsed && typeof parsed === "object"
-    ? (parsed as Record<string, string[]>)
-    : {};
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {};
+  }
+  const assignments: Record<string, string[]> = {};
+  for (const [slug, leaves] of Object.entries(parsed)) {
+    if (
+      Array.isArray(leaves) &&
+      leaves.every((leaf): leaf is string => typeof leaf === "string")
+    ) {
+      Object.defineProperty(assignments, slug, {
+        value: leaves,
+        enumerable: true,
+        configurable: true,
+      });
+    }
+  }
+  return assignments;
 }
 
 interface SplitPage {

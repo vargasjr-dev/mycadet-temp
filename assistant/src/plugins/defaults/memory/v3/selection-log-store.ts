@@ -1,5 +1,7 @@
 import type { SQLQueryBindings } from "bun:sqlite";
 
+import { z } from "zod";
+
 /**
  * Read-side store for the inspector's Memory V3 panel. Reads the persisted
  * `memory_v3_selections` rows for a turn (by the turn's message ids) and
@@ -459,9 +461,9 @@ export function summarizeSelections(conversationId: string): SelectionSummary {
         .all(conversationId)
     : [];
 
-  const bySource = Object.fromEntries(
-    SELECTION_SOURCES.map((source) => [source, 0]),
-  ) as Record<SelectionSource, number>;
+  const bySource = z
+    .record(z.enum(SELECTION_SOURCES), z.number())
+    .parse(Object.fromEntries(SELECTION_SOURCES.map((source) => [source, 0])));
   const turns = new Set<number>();
   const slugs = new Set<string>();
   for (const row of rows) {

@@ -20,7 +20,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
 import { getWorkspaceRoutesDir } from "../../../util/layout.js";
-import type { RouteHandlerArgs, RouteResponse } from "../types.js";
+import { type RouteHandlerArgs, RouteResponse } from "../types.js";
 import { ROUTES } from "../user-routes.js";
 
 /** A path whose single segment is percent-encoded on the wire. */
@@ -50,8 +50,17 @@ interface EchoBody {
   clientId: string | null;
 }
 
-const getHandler = ROUTES.find((r) => r.operationId === "user_route_get")!
-  .handler as (args: RouteHandlerArgs) => Promise<RouteResponse>;
+async function getHandler(args: RouteHandlerArgs): Promise<RouteResponse> {
+  const route = ROUTES.find((route) => route.operationId === "user_route_get");
+  if (!route) {
+    throw new Error("Expected the user route GET handler");
+  }
+  const result = await route.handler(args);
+  if (!(result instanceof RouteResponse)) {
+    throw new Error("Expected a RouteResponse");
+  }
+  return result;
+}
 
 const IDENTITY_HEADERS_IN: Record<string, string> = {
   "x-cadet-principal-type": "actor",
