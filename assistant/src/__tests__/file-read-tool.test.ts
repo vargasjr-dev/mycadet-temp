@@ -145,10 +145,11 @@ describe("file_read image support", () => {
     expect(result.content).toContain("Image loaded");
     expect(result.content).toContain("image/jpeg");
     expect(getObjectProperty(result, "contentBlocks")).toBeDefined();
-    expect((result as any).contentBlocks[0].type).toBe("image");
-    expect((result as any).contentBlocks[0].source.media_type).toBe(
-      "image/jpeg",
-    );
+    const block = result.contentBlocks?.[0];
+    if (block?.type !== "image") {
+      throw new Error("Expected an image content block");
+    }
+    expect(block.source.media_type).toBe("image/jpeg");
   });
 
   test("returns image content block for .png file", async () => {

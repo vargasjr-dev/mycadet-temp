@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { CommentRecord } from "../documents/document-comments-store.js";
 
-let listCommentsMock = mock((..._args: unknown[]) => [] as CommentRecord[]);
+let listCommentsMock = mock((..._args: unknown[]): CommentRecord[] => []);
 
 mock.module("../documents/document-comments-store.js", () => ({
   listComments: (...args: unknown[]) => listCommentsMock(...args),
@@ -58,7 +58,7 @@ const injector = findInjector("document-comments");
 
 describe("document-comments injector", () => {
   beforeEach(() => {
-    listCommentsMock = mock(() => [] as CommentRecord[]);
+    listCommentsMock = mock(() => []);
   });
 
   test("returns null when no active documents exist", async () => {

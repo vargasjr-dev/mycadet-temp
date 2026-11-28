@@ -362,7 +362,7 @@ describe("Slack edit propagation", () => {
 
     const after = readMessageRow(seeded.messageId);
     const outer = jsonObjectSchema.parse(JSON.parse(after.metadata!));
-    const slackMeta = readSlackMetadata(outer.slackMeta as string);
+    const slackMeta = readSlackMetadata(z.string().parse(outer.slackMeta));
     expect(slackMeta?.threadTs).toBe(threadTs);
   });
 
@@ -385,9 +385,11 @@ describe("Slack edit propagation", () => {
     const afterFirst = readMessageRow(seeded.messageId);
     expect(afterFirst.content).toBe("first edit");
     const firstSlackMeta = readSlackMetadata(
-      jsonObjectSchema.parse(JSON.parse(afterFirst.metadata!)).slackMeta as
-        | string
-        | null,
+      z
+        .string()
+        .parse(
+          jsonObjectSchema.parse(JSON.parse(afterFirst.metadata!)).slackMeta,
+        ),
     );
     expect(firstSlackMeta).not.toBeNull();
     const firstEditedAt = firstSlackMeta!.editedAt!;
@@ -408,9 +410,11 @@ describe("Slack edit propagation", () => {
     const afterSecond = readMessageRow(seeded.messageId);
     expect(afterSecond.content).toBe("second edit");
     const secondSlackMeta = readSlackMetadata(
-      jsonObjectSchema.parse(JSON.parse(afterSecond.metadata!)).slackMeta as
-        | string
-        | null,
+      z
+        .string()
+        .parse(
+          jsonObjectSchema.parse(JSON.parse(afterSecond.metadata!)).slackMeta,
+        ),
     );
     expect(secondSlackMeta).not.toBeNull();
     expect(secondSlackMeta!.editedAt!).toBeGreaterThan(firstEditedAt);

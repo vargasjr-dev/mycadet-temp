@@ -205,9 +205,9 @@ describe("hasQualifyingUserMessageAfter", () => {
 describe("messagesHaveUserActivity", () => {
   function row(
     role: string,
-    content: Array<Record<string, unknown>>,
+    content: MessageRow["content"],
   ): Pick<MessageRow, "role" | "content"> {
-    return { role, content } as unknown as Pick<MessageRow, "role" | "content">;
+    return { role, content };
   }
 
   test("a user text row counts as user activity", () => {

@@ -535,10 +535,9 @@ async function main() {
   const isCheck = process.argv.includes("--check");
 
   // Read package version
-  const pkg = JSON.parse(readFileSync(PKG_PATH, "utf-8")) as {
-    version: string;
-  };
-  const version = pkg.version;
+  const { version } = z
+    .object({ version: z.string() })
+    .parse(JSON.parse(readFileSync(PKG_PATH, "utf-8")));
 
   // Collect routes from the assembled shared route table
   const allRoutes: RouteEntry[] = collectRoutes();

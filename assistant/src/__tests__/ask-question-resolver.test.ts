@@ -5,7 +5,6 @@
  * shared `resolvePendingQuestion` core, mapping the decision's answer-token /
  * free text / deny action onto a batch submission.
  */
-
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { GuardianRequestWire } from "@mycadet/gateway-client";
@@ -16,8 +15,8 @@ import type {
   ResolverDecision,
 } from "../approvals/guardian-request-resolvers.js";
 import { getResolver } from "../approvals/guardian-request-resolvers.js";
-import type { QuestionPromptResult } from "../permissions/question-prompter.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
+import { getObjectProperty } from "../util/object.js";
 
 const resolver = getResolver("pending_question");
 
@@ -100,64 +99,56 @@ afterEach(() => pendingInteractions.clear());
 
 describe("pending_question resolver — ask_question branch", () => {
   test("an answer-option token resolves the interaction with that option", async () => {
-    const resolved: QuestionPromptResult[] = [];
-    registerQuestion("req-q1", ["apple", "banana"], (v) =>
-      resolved.push(v as QuestionPromptResult),
-    );
+    const resolved: unknown[] = [];
+    registerQuestion("req-q1", ["apple", "banana"], (v) => resolved.push(v));
 
     const result = await resolver!.resolve(
       makeContext({ action: "approve_once", userText: "answer_1" }),
     );
 
     expect(result).toEqual({ ok: true, applied: true });
-    expect(resolved[0]?.entries).toEqual([
+    expect(getObjectProperty(resolved[0], "entries")).toEqual([
       { questionId: "q1", decision: "option", optionId: "banana" },
     ]);
     expect(pendingInteractions.get("req-q1")).toBeUndefined();
   });
 
   test("the skip token resolves the interaction as skipped", async () => {
-    const resolved: QuestionPromptResult[] = [];
-    registerQuestion("req-q1", ["apple", "banana"], (v) =>
-      resolved.push(v as QuestionPromptResult),
-    );
+    const resolved: unknown[] = [];
+    registerQuestion("req-q1", ["apple", "banana"], (v) => resolved.push(v));
 
     const result = await resolver!.resolve(
       makeContext({ action: "reject", userText: "answer_skip" }),
     );
 
     expect(result).toEqual({ ok: true, applied: true });
-    expect(resolved[0]?.entries).toEqual([
+    expect(getObjectProperty(resolved[0], "entries")).toEqual([
       { questionId: "q1", decision: "skipped" },
     ]);
   });
 
   test("free text resolves as a free_text answer", async () => {
-    const resolved: QuestionPromptResult[] = [];
-    registerQuestion("req-q1", ["apple", "banana"], (v) =>
-      resolved.push(v as QuestionPromptResult),
-    );
+    const resolved: unknown[] = [];
+    registerQuestion("req-q1", ["apple", "banana"], (v) => resolved.push(v));
 
     const result = await resolver!.resolve(
       makeContext({ action: "approve_once", userText: "a ripe mango" }),
     );
 
     expect(result).toEqual({ ok: true, applied: true });
-    expect(resolved[0]?.entries).toEqual([
+    expect(getObjectProperty(resolved[0], "entries")).toEqual([
       { questionId: "q1", decision: "free_text", text: "a ripe mango" },
     ]);
   });
 
   test("a deny decision with no text skips the question", async () => {
-    const resolved: QuestionPromptResult[] = [];
-    registerQuestion("req-q1", ["apple", "banana"], (v) =>
-      resolved.push(v as QuestionPromptResult),
-    );
+    const resolved: unknown[] = [];
+    registerQuestion("req-q1", ["apple", "banana"], (v) => resolved.push(v));
 
     const result = await resolver!.resolve(makeContext({ action: "reject" }));
 
     expect(result).toEqual({ ok: true, applied: true });
-    expect(resolved[0]?.entries).toEqual([
+    expect(getObjectProperty(resolved[0], "entries")).toEqual([
       { questionId: "q1", decision: "skipped" },
     ]);
   });

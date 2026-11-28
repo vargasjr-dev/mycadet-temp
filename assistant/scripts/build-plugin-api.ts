@@ -40,6 +40,8 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { z } from "zod";
+
 import {
   PLUGIN_API_EXPORTS,
   PLUGIN_API_REGISTRY_KEY,
@@ -53,11 +55,11 @@ const API_EXTRACTOR = join(NODE_MODULES, ".bin", "api-extractor");
 /** The published types reference `z.*`, so the package declares the same `zod`
  * version the assistant resolved — read from the installed package so it can
  * never drift from the contract the rollup was generated against. */
-const ZOD_VERSION = (
-  JSON.parse(
-    readFileSync(join(NODE_MODULES, "zod", "package.json"), "utf8"),
-  ) as { version: string }
-).version;
+const { version: ZOD_VERSION } = z
+  .object({ version: z.string() })
+  .parse(
+    JSON.parse(readFileSync(join(NODE_MODULES, "zod", "package.json"), "utf8")),
+  );
 
 interface Args {
   version: string;
@@ -116,12 +118,12 @@ function emitContract(pkgDir: string, dest: string): boolean {
   return existsSync(join(dest, "index.d.ts"));
 }
 
-interface ContractPackageJson {
-  name: string;
-  version?: string;
-  type?: string;
-  exports?: Record<string, unknown>;
-}
+const contractPackageSchema = z.object({
+  name: z.string(),
+  version: z.string().optional(),
+  type: z.string().optional(),
+  exports: z.record(z.string(), z.unknown()).optional(),
+});
 
 /** Write a `package.json` for an emitted contract whose `types`/`exports`
  * resolve to the `.d.ts` files (not the unpublished `src/*.ts`). API
@@ -129,9 +131,9 @@ interface ContractPackageJson {
  * `package.json`, so without this it would follow `exports` back to source
  * and reject the `.ts`. Subpath keys map to same-named `.d.ts` siblings. */
 function writeContractManifest(srcManifestPath: string, destDir: string): void {
-  const orig = JSON.parse(
-    readFileSync(srcManifestPath, "utf8"),
-  ) as ContractPackageJson;
+  const orig = contractPackageSchema.parse(
+    JSON.parse(readFileSync(srcManifestPath, "utf8")),
+  );
   const origExports = orig.exports ?? { ".": "./src/index.ts" };
   const exports: Record<string, string> = {};
   for (const key of Object.keys(origExports)) {

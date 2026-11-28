@@ -25,6 +25,7 @@ import {
   setConversation,
 } from "../daemon/conversation-registry.js";
 import { ROUTES } from "../runtime/routes/conversation-query-routes.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 const deleteRoute = ROUTES.find(
   (route) => route.operationId === "messages_queued_delete",
@@ -68,9 +69,9 @@ function seedConversation(
     conversationId,
     queue,
     removeQueuedMessage: (requestId: string) =>
-      queue.removeByRequestId(requestId) !== undefined,
+      queue.removeByRequestId(requestId),
   };
-  setConversation(conversationId, conversation as never);
+  setConversation(conversationId, asConversation(conversation));
   registered.push(conversationId);
   return { events, queue };
 }

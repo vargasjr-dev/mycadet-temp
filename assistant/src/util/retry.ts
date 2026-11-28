@@ -1,3 +1,4 @@
+import { getErrorCode } from "./error-details.js";
 import { getObjectProperty } from "./object.js";
 /**
  * Shared retry utilities with exponential backoff + jitter.
@@ -113,13 +114,13 @@ export function isRetryableNetworkError(error: unknown): boolean {
     "EPIPE",
   ]);
 
-  const code = (error as NodeJS.ErrnoException).code;
+  const code = getErrorCode(error);
   if (code && retryableCodes.has(code)) {
     return true;
   }
 
   if (error.cause instanceof Error) {
-    const causeCode = (error.cause as NodeJS.ErrnoException).code;
+    const causeCode = getErrorCode(error.cause);
     if (causeCode && retryableCodes.has(causeCode)) {
       return true;
     }

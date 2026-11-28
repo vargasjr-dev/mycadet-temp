@@ -132,7 +132,15 @@ export function migrateNormalizeUserFileByPrincipal(database: DrizzleDb): void {
     // classification is a regex that SQLite's GLOB can't express cleanly
     // (unbounded digit count, date-pattern exclusion), and keeping the
     // logic in one place avoids SQL/JS drift.
-    const selectCandidates = raw.prepare(/*sql*/ `
+    const selectCandidates = raw.prepare<
+      {
+        user_file: string;
+        display_name: string;
+        created_at: number;
+        id: string;
+      },
+      [string]
+    >(/*sql*/ `
       SELECT user_file, display_name, created_at, id FROM contacts
       WHERE principal_id = ? AND user_file IS NOT NULL
       `);
@@ -145,12 +153,7 @@ export function migrateNormalizeUserFileByPrincipal(database: DrizzleDb): void {
       `);
 
     for (const { principal_id } of principals) {
-      const candidates = selectCandidates.all(principal_id) as Array<{
-        user_file: string;
-        display_name: string;
-        created_at: number;
-        id: string;
-      }>;
+      const candidates = selectCandidates.all(principal_id);
       if (candidates.length === 0) {
         continue;
       }

@@ -206,10 +206,10 @@ function validateExtractionOutput(
     }
 
     const appliesWhen: AppliesWhenConditions = {};
-    if (p.appliesWhen && typeof p.appliesWhen === "object") {
-      const aw = p.appliesWhen as Record<string, unknown>;
-      if (aw.timeRange && typeof aw.timeRange === "object") {
-        const tr = aw.timeRange as Record<string, unknown>;
+    const aw = p.appliesWhen;
+    if (isObjectRecord(aw)) {
+      const tr = aw.timeRange;
+      if (isObjectRecord(tr)) {
         appliesWhen.timeRange = {
           after: typeof tr.after === "string" ? tr.after : undefined,
           before: typeof tr.before === "string" ? tr.before : undefined,

@@ -72,7 +72,7 @@ export const BACKGROUND_CONVERSATION_TYPES = [
 export function isBackgroundConversationType(
   t: ConversationType | string | null | undefined,
 ): boolean {
-  return (BACKGROUND_CONVERSATION_TYPES as readonly string[]).includes(t ?? "");
+  return BACKGROUND_CONVERSATION_TYPES.some((type) => type === t);
 }
 
 /**

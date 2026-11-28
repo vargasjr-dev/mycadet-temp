@@ -18,18 +18,20 @@ export function migrateDropMemoryItemsTables(database: DrizzleDb): void {
   // Guard: verify tables are safe to drop (empty or already migrated).
   try {
     const row = raw
-      .prepare(
-        /*sql*/ `SELECT COUNT(*) as cnt FROM memory_items WHERE status = 'active'`,
-      )
-      .get() as { cnt: number } | undefined;
+      .prepare<
+        { cnt: number },
+        []
+      >(/*sql*/ `SELECT COUNT(*) as cnt FROM memory_items WHERE status = 'active'`)
+      .get();
 
     if (row && row.cnt > 0) {
       // Tables have active rows — only drop if the migration checkpoint exists.
       const checkpoint = raw
-        .prepare(/*sql*/ `SELECT value FROM memory_checkpoints WHERE key = ?`)
-        .get("graph_bootstrap:migrated_tool_items") as
-        | { value: string }
-        | undefined;
+        .prepare<
+          { value: string },
+          [string]
+        >(/*sql*/ `SELECT value FROM memory_checkpoints WHERE key = ?`)
+        .get("graph_bootstrap:migrated_tool_items");
 
       if (!checkpoint?.value) {
         // Data exists but hasn't been migrated — skip the drop to prevent data loss.

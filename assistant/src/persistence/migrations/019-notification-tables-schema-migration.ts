@@ -28,10 +28,11 @@ export function migrateNotificationTablesSchema(database: DrizzleDb): void {
   // Check if the old schema is present: the legacy notification_events table
   // had a `notification_type` column that the new schema does not.
   const hasOldSchema = raw
-    .query(
-      `SELECT COUNT(*) as cnt FROM pragma_table_info('notification_events') WHERE name = 'notification_type'`,
-    )
-    .get() as { cnt: number } | undefined;
+    .query<
+      { cnt: number },
+      []
+    >(`SELECT COUNT(*) as cnt FROM pragma_table_info('notification_events') WHERE name = 'notification_type'`)
+    .get();
 
   if (hasOldSchema && hasOldSchema.cnt > 0) {
     try {

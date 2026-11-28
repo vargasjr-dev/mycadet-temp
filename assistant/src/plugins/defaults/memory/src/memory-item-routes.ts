@@ -126,7 +126,7 @@ const SORT_COLUMN_MAP = {
 // ---------------------------------------------------------------------------
 
 function isValidType(value: string): value is MemoryType {
-  return (VALID_TYPES as string[]).includes(value);
+  return VALID_TYPES.some((type) => type === value);
 }
 
 function isValidSortField(value: string): value is SortField {

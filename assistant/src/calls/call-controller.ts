@@ -33,7 +33,7 @@ import {
   createAudioStoreSink,
   synthesizeAndEmit,
 } from "../tts/synthesis-stream.js";
-import type { TtsProvider, TtsProviderId } from "../tts/types.js";
+import type { TtsProvider } from "../tts/types.js";
 import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 import type { CallAudioFormat } from "./audio-store.js";
@@ -1862,7 +1862,7 @@ export class CallController {
         // generic recovery message via native TTS instead — the
         // caller still hears *something*, but not the LLM's text
         // rendered in a mismatched voice.
-        const catalogEntry = getCatalogProvider(provider.id as TtsProviderId);
+        const catalogEntry = getCatalogProvider(provider.id);
         if (!catalogEntry.allowNativeFallback) {
           log.error(
             { err, provider: provider.id, errName, errCode },

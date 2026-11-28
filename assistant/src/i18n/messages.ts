@@ -77,5 +77,5 @@ export function t(
 }
 
 export function isMessageKey(value: string): value is MessageKey {
-  return (Object.values(MESSAGE_KEYS) as string[]).includes(value);
+  return Object.values(MESSAGE_KEYS).some((key) => key === value);
 }

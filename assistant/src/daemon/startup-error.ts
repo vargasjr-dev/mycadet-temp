@@ -1,4 +1,5 @@
 import { getErrorCode } from "../util/error-details.js";
+import { getObjectProperty } from "../util/object.js";
 /**
  * Structured startup error reporting for daemon processes.
  *
@@ -53,7 +54,7 @@ function categorizeDaemonError(err: unknown): DaemonStartupError {
   }
 
   const code = getErrorCode(err) ?? "";
-  const name = (err as { name?: string }).name ?? "";
+  const name = getObjectProperty(err, "name");
   const message =
     err instanceof Error
       ? err.message

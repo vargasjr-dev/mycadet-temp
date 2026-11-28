@@ -141,7 +141,10 @@ export function relocatedMemoryRowCount(
   conversationId: string,
 ): number {
   const { n } = getMemorySqlite()!
-    .query(`SELECT COUNT(*) AS n FROM ${table} WHERE conversation_id = ?`)
-    .get(conversationId) as { n: number };
+    .query<
+      { n: number },
+      [string]
+    >(`SELECT COUNT(*) AS n FROM ${table} WHERE conversation_id = ?`)
+    .get(conversationId)!;
   return n;
 }

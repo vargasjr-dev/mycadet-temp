@@ -28,6 +28,7 @@ import { DynamicPageSurfaceData } from "../api/surfaces.js";
 import { FormSurfaceDataSchema } from "../api/surfaces.js";
 import { SurfaceData } from "../api/surfaces.js";
 import { SurfaceType } from "../api/surfaces.js";
+import { isObjectRecord } from "../util/object.js";
 import { booleanParam, recordParam, stringParam } from "../util/wire-params.js";
 
 /** The ui_surface block shape every surface probe matches on. */
@@ -533,14 +534,16 @@ export function markSurfaceCompleted(
         continue;
       }
       for (const block of msg.content) {
-        if (!uiSurfaceBlockSchema.safeParse(block).success) {
+        if (
+          !isObjectRecord(block) ||
+          !uiSurfaceBlockSchema.safeParse(block).success
+        ) {
           continue;
         }
         // Mutation boundary: the block is mutated in place, so the schema
         // view above only gates it; the write goes through the record.
-        const b = block as Record<string, unknown>;
-        b.completed = true;
-        b.completionSummary = summary;
+        block.completed = true;
+        block.completionSummary = summary;
         break outer;
       }
     }

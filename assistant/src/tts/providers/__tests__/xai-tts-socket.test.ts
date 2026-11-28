@@ -109,24 +109,30 @@ describe("synthesizeOverXaiTtsSocket", () => {
     url: string;
     options?: { headers?: Record<string, string> };
   }[];
-  let originalWebSocket: unknown;
+  const originalWebSocket = globalThis.WebSocket;
 
   beforeEach(() => {
     mockWs = new MockWebSocket();
     constructorCalls = [];
-    originalWebSocket = (globalThis as Record<string, unknown>).WebSocket;
 
     const ws = mockWs;
-    (globalThis as Record<string, unknown>).WebSocket = class {
-      constructor(url: string, options?: { headers?: Record<string, string> }) {
-        constructorCalls.push({ url, options });
-        return ws;
-      }
-    };
+    Reflect.set(
+      globalThis,
+      "WebSocket",
+      class {
+        constructor(
+          url: string,
+          options?: { headers?: Record<string, string> },
+        ) {
+          constructorCalls.push({ url, options });
+          return ws;
+        }
+      },
+    );
   });
 
   afterEach(() => {
-    (globalThis as Record<string, unknown>).WebSocket = originalWebSocket;
+    globalThis.WebSocket = originalWebSocket;
   });
 
   function makeOptions(

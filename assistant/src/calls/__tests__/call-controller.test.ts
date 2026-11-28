@@ -3362,9 +3362,12 @@ describe("call-controller", () => {
         supportedFormats: ["mp3", "wav", "opus"],
       },
       async synthesize() {
-        const err = new Error("Deepgram TTS returned 503: service unavailable");
-        (err as Error & { code?: string }).code = "DEEPGRAM_TTS_HTTP_ERROR";
-        throw err;
+        throw Object.assign(
+          new Error("Deepgram TTS returned 503: service unavailable"),
+          {
+            code: "DEEPGRAM_TTS_HTTP_ERROR",
+          },
+        );
       },
     };
     _setTtsProviderForTests(deepgramFailing);

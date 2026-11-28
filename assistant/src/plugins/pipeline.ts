@@ -56,7 +56,16 @@ function isPlainObject(value: object): boolean {
   return prototype === Object.prototype || prototype === null;
 }
 
-function cloneHookValue<T>(value: T, seen = new WeakMap<object, unknown>()): T {
+function cloneHookValue<T>(value: T): T {
+  // The clone preserves the input shape while copying containers. TypeScript
+  // cannot relate a recursively visited member back to the generic type.
+  return cloneHookData(value, new WeakMap()) as T;
+}
+
+function cloneHookData(
+  value: unknown,
+  seen: WeakMap<object, unknown>,
+): unknown {
   if (value === null || typeof value !== "object") {
     return value;
   }
@@ -66,38 +75,38 @@ function cloneHookValue<T>(value: T, seen = new WeakMap<object, unknown>()): T {
 
   const existing = seen.get(value);
   if (existing !== undefined) {
-    return existing as T;
+    return existing;
   }
 
   if (Array.isArray(value)) {
     const copy: unknown[] = [];
     seen.set(value, copy);
     for (const item of value) {
-      copy.push(cloneHookValue(item, seen));
+      copy.push(cloneHookData(item, seen));
     }
-    return copy as T;
+    return copy;
   }
 
   if (value instanceof Date) {
-    return new Date(value.getTime()) as T;
+    return new Date(value.getTime());
   }
 
   if (value instanceof Map) {
     const copy = new Map();
     seen.set(value, copy);
     for (const [key, mapValue] of value) {
-      copy.set(cloneHookValue(key, seen), cloneHookValue(mapValue, seen));
+      copy.set(cloneHookData(key, seen), cloneHookData(mapValue, seen));
     }
-    return copy as T;
+    return copy;
   }
 
   if (value instanceof Set) {
     const copy = new Set();
     seen.set(value, copy);
     for (const item of value) {
-      copy.add(cloneHookValue(item, seen));
+      copy.add(cloneHookData(item, seen));
     }
-    return copy as T;
+    return copy;
   }
 
   if (!isPlainObject(value)) {
@@ -107,12 +116,10 @@ function cloneHookValue<T>(value: T, seen = new WeakMap<object, unknown>()): T {
   const copy: Record<PropertyKey, unknown> = {};
   seen.set(value, copy);
   for (const key of Reflect.ownKeys(value)) {
-    copy[key] = cloneHookValue(
-      (value as Record<PropertyKey, unknown>)[key],
-      seen,
-    );
+    const property: unknown = Reflect.get(value, key);
+    copy[key] = cloneHookData(property, seen);
   }
-  return copy as T;
+  return copy;
 }
 
 // ─── Hook output sanitization ────────────────────────────────────────────────
@@ -394,6 +401,6 @@ export async function runHook<TInput extends object>(
 
 /** A string-valued field off a hook context, when it carries one. */
 function extractStringField(ctx: unknown, field: string): string | undefined {
-  const value = (ctx as Record<string, unknown> | null)?.[field];
+  const value = getObjectProperty(ctx, field);
   return typeof value === "string" ? value : undefined;
 }
