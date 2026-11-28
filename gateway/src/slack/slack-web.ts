@@ -1,5 +1,6 @@
 import { fetchImpl } from "../fetch.js";
 import { getLogger } from "../logger.js";
+import { parseRetryAfterMs } from "../util/retryable-fetch.js";
 import {
   slackHistoryMessageSchema,
   type SlackHistoryMessage,
@@ -63,7 +64,7 @@ export type FetchSlackHistoryResult = {
   ok: boolean;
 };
 
-/** Slack rate-limit handling — wait this long after a 429 before retrying. */
+/** Rate-limit window logged for a 429 that carries no usable Retry-After. */
 const RATE_LIMIT_FALLBACK_MS = 5_000;
 
 /**
@@ -101,10 +102,9 @@ async function callSlackApi(
   }
 
   if (resp.status === 429) {
-    const retryHeader = resp.headers.get("retry-after");
-    const waitMs = retryHeader
-      ? Number.parseInt(retryHeader, 10) * 1_000
-      : RATE_LIMIT_FALLBACK_MS;
+    const waitMs =
+      parseRetryAfterMs(resp.headers.get("retry-after")) ??
+      RATE_LIMIT_FALLBACK_MS;
     abort?.abort();
     log.warn(
       { url: redact(url), waitMs },

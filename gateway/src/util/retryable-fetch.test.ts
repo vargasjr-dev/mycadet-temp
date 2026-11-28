@@ -4,6 +4,7 @@ import type { ConfigFileCache } from "../config-file-cache.js";
 import {
   computeRetryDelayMs,
   isRetryableHttpStatus,
+  parseRetryAfterMs,
   retryableFetch,
 } from "./retryable-fetch.js";
 
@@ -51,6 +52,30 @@ describe("isRetryableHttpStatus", () => {
     expect(isRetryableHttpStatus(400)).toBe(false);
     expect(isRetryableHttpStatus(401)).toBe(false);
     expect(isRetryableHttpStatus(404)).toBe(false);
+  });
+});
+
+describe("parseRetryAfterMs", () => {
+  test("parses numeric seconds", () => {
+    expect(parseRetryAfterMs("120")).toBe(120_000);
+  });
+
+  test("parses an HTTP-date as the delta to the target time", () => {
+    const target = new Date(Date.now() + 5_000).toUTCString();
+    const delay = parseRetryAfterMs(target)!;
+    expect(delay).toBeGreaterThan(3_000);
+    expect(delay).toBeLessThanOrEqual(5_000);
+  });
+
+  test("clamps to the setTimeout ceiling", () => {
+    expect(parseRetryAfterMs("99999999999")).toBe(MAX_DELAY_MS);
+  });
+
+  test("is undefined for an absent, zero, negative, unparseable, or elapsed hint", () => {
+    const past = new Date(Date.now() - 10_000).toUTCString();
+    for (const header of [null, "", "0", "-5", "soon", past]) {
+      expect(parseRetryAfterMs(header)).toBeUndefined();
+    }
   });
 });
 

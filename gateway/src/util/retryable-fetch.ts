@@ -10,31 +10,48 @@ export function isRetryableHttpStatus(status: number): boolean {
 const MAX_RETRY_DELAY_MS = 2_147_483_647;
 
 /**
+ * The wait a Retry-After hint asks for, in milliseconds: numeric seconds
+ * (e.g. "120") or an HTTP-date (e.g. "Fri, 31 Dec 1999 23:59:59 GMT"), clamped
+ * to the setTimeout ceiling. Undefined for an absent hint and for a zero,
+ * negative, unparseable, or already-elapsed one.
+ */
+export function parseRetryAfterMs(
+  retryAfterHeader: string | null,
+): number | undefined {
+  if (!retryAfterHeader) {
+    return undefined;
+  }
+
+  const seconds = Number(retryAfterHeader);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return Math.min(seconds * 1000, MAX_RETRY_DELAY_MS);
+  }
+
+  const targetTime = new Date(retryAfterHeader).getTime();
+  if (Number.isFinite(targetTime)) {
+    const delayMs = targetTime - Date.now();
+    if (delayMs > 0) {
+      return Math.min(delayMs, MAX_RETRY_DELAY_MS);
+    }
+  }
+  return undefined;
+}
+
+/**
  * Delay before the next retry attempt (1-based).
  *
- * A Retry-After hint takes precedence: numeric seconds (e.g. "120") or an
- * HTTP-date (e.g. "Fri, 31 Dec 1999 23:59:59 GMT"), clamped to the setTimeout
- * ceiling. Without a usable hint, exponential backoff from initialBackoffMs
- * with additive jitter of 0-50%.
+ * A usable Retry-After hint ({@link parseRetryAfterMs}) takes precedence.
+ * Without one, exponential backoff from initialBackoffMs with additive jitter
+ * of 0-50%.
  */
 export function computeRetryDelayMs(
   attempt: number,
   initialBackoffMs: number,
   retryAfterHeader: string | null,
 ): number {
-  if (retryAfterHeader) {
-    const seconds = Number(retryAfterHeader);
-    if (Number.isFinite(seconds) && seconds > 0) {
-      return Math.min(seconds * 1000, MAX_RETRY_DELAY_MS);
-    }
-
-    const targetTime = new Date(retryAfterHeader).getTime();
-    if (Number.isFinite(targetTime)) {
-      const delayMs = targetTime - Date.now();
-      if (delayMs > 0) {
-        return Math.min(delayMs, MAX_RETRY_DELAY_MS);
-      }
-    }
+  const hinted = parseRetryAfterMs(retryAfterHeader);
+  if (hinted !== undefined) {
+    return hinted;
   }
 
   const exponential = initialBackoffMs * Math.pow(2, attempt - 1);
