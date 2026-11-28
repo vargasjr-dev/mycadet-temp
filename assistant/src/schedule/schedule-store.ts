@@ -211,6 +211,7 @@ interface InsertScheduleParams {
   retryBackoffMs?: number;
   timeoutMs?: number | null;
   inferenceProfile?: string | null;
+  maxRunCostUsd?: number | null;
   groupId?: string | null;
   createdFromConversationId?: string | null;
   sourceKey?: string | null;
@@ -374,7 +375,7 @@ async function insertSchedule(
     retryBackoffMs,
     timeoutMs,
     inferenceProfile,
-    maxRunCostUsd: null,
+    maxRunCostUsd: params.maxRunCostUsd ?? null,
     groupId,
     createdFromConversationId,
     createdBy: params.createdBy ?? "agent",

@@ -140,6 +140,10 @@ The pin governs the agent turns a schedule runs: an execute-mode run, a wake-mod
 
 Workflow-mode schedules are the exception: each step of a workflow resolves its own model, so a workflow schedule's pin does not govern its runs.
 
+## Spending Limit
+
+Pass `max_run_cost_usd` on create or update to cap what a single run may spend on LLM calls, in US dollars (at least 0.01). The scheduler checks a running schedule's spend as it goes; a run that goes over is stopped, the schedule is paused, and the user is notified, so a task stuck in a loop cannot keep spending on every firing. Set one when the user mentions a budget ("no more than a dollar a run"), and consider suggesting one for a frequent schedule that does open-ended work. Pass `max_run_cost_usd: null` on update to remove the limit. A paused schedule stays paused until the user enables it again; do not re-enable it on your own. The limit governs execute-mode runs.
+
 ## Conversation Group
 
 Conversations created by a schedule's runs land in the sidebar's Scheduled section by default. Pass `group` (a group name or id) on create or update to file them into a custom sidebar group instead, e.g. a "Briefs" group for a morning digest. The group must already exist (create it with the conversation-groups skill); pass `group: null` on update to revert to the default. If the group is later deleted, runs fall back to the Scheduled section. Changing the group affects future runs only; move an existing conversation with `conversation_move_to_group`.

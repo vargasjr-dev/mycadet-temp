@@ -82,12 +82,21 @@ export function startRunCostGuard(params: RunCostGuardParams): RunCostGuard {
   };
 }
 
+/** Render a schedule's per-run spending limit for CLI and tool output. */
+export function formatScheduleMaxRunCost(limitUsd: number | null): string {
+  return limitUsd === null ? "no limit" : `$${limitUsd.toFixed(2)}`;
+}
+
 /**
  * Validate a requested `maxRunCostUsd`: null clears the limit, otherwise a
  * finite number of at least {@link MIN_RUN_COST_LIMIT_USD}. Returns an error
- * message, or null when the value is acceptable.
+ * message naming `field` (the caller's spelling of the parameter), or null
+ * when the value is acceptable.
  */
-export function validateMaxRunCostUsd(value: unknown): string | null {
+export function validateMaxRunCostUsd(
+  value: unknown,
+  field = "maxRunCostUsd",
+): string | null {
   if (value === null) {
     return null;
   }
@@ -96,7 +105,7 @@ export function validateMaxRunCostUsd(value: unknown): string | null {
     !Number.isFinite(value) ||
     value < MIN_RUN_COST_LIMIT_USD
   ) {
-    return `maxRunCostUsd must be null or a number of at least ${MIN_RUN_COST_LIMIT_USD}`;
+    return `${field} must be null or a number of at least ${MIN_RUN_COST_LIMIT_USD}`;
   }
   return null;
 }

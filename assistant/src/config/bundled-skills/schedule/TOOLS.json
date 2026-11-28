@@ -108,6 +108,10 @@
             "type": "integer",
             "description": "For script mode: maximum time in milliseconds the shell command may run before it is killed. Defaults to 60000 (60s). Allowed range: 1000 to 1800000."
           },
+          "max_run_cost_usd": {
+            "type": "number",
+            "description": "Most a single run may spend on LLM calls, in US dollars (at least 0.01). A run that goes over is stopped, and the schedule is paused until the user enables it again. Applies to execute-mode runs. Omit for no limit."
+          },
           "inference_profile": {
             "type": "string",
             "description": "Inference profile (a key from llm.profiles) the schedule's LLM-executed runs should use, e.g. to run a heavy task on a cheaper model. When omitted, the schedule is pinned to the user's current default profile so its model does not change later. Must name a configured profile. Workflow-mode schedules resolve a model per workflow step, so the pin does not govern their runs."
@@ -230,6 +234,10 @@
           "timeout_ms": {
             "type": ["integer", "null"],
             "description": "For script mode: maximum time in milliseconds the shell command may run before it is killed (default 60000, range 1000 to 1800000). Pass null to clear a custom timeout and revert to the default."
+          },
+          "max_run_cost_usd": {
+            "type": ["number", "null"],
+            "description": "Most a single run may spend on LLM calls, in US dollars (at least 0.01). A run that goes over is stopped, and the schedule is paused until the user enables it again. Applies to execute-mode runs. Pass null to remove the limit."
           },
           "inference_profile": {
             "type": ["string", "null"],

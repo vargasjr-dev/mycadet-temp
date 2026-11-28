@@ -533,6 +533,13 @@ async function handleCreateSchedule(body: Record<string, unknown>) {
     }
   }
 
+  const limitError = validateMaxRunCostUsd(body.maxRunCostUsd ?? null);
+  if (limitError) {
+    throw new BadRequestError(limitError);
+  }
+  const maxRunCostUsd =
+    typeof body.maxRunCostUsd === "number" ? body.maxRunCostUsd : null;
+
   if (!name) {
     throw new BadRequestError("name is required");
   }
@@ -587,6 +594,7 @@ async function handleCreateSchedule(body: Record<string, unknown>) {
         expression: normalized.expression,
         syntax: normalized.syntax,
         inferenceProfile,
+        maxRunCostUsd,
       });
       log.info(
         { id: job.id, name: job.name, workflowName },
@@ -626,6 +634,7 @@ async function handleCreateSchedule(body: Record<string, unknown>) {
         syntax: normalized.syntax,
         timeoutMs,
         inferenceProfile,
+        maxRunCostUsd,
       });
       log.info({ id: job.id, name: job.name }, "Script schedule created");
       return { schedule: serializeSchedule(job, new Map()) };
@@ -648,6 +657,7 @@ async function handleCreateSchedule(body: Record<string, unknown>) {
       expression: normalized.expression,
       syntax: normalized.syntax,
       inferenceProfile,
+      maxRunCostUsd,
     });
     log.info({ id: job.id, name: job.name }, "Schedule created");
     return { schedule: serializeSchedule(job, new Map()) };
@@ -1157,6 +1167,13 @@ export const ROUTES: RouteDefinition[] = [
         .nullable()
         .describe(
           "Inference profile (llm.profiles key) the schedule's runs use. Omitted or null pins the schedule to the currently resolved default profile, so its model does not move when that default changes. Workflow-mode schedules resolve a model per workflow step, so the pin is recorded but does not govern their runs.",
+        )
+        .optional(),
+      maxRunCostUsd: z
+        .number()
+        .nullable()
+        .describe(
+          "Most a single LLM-executed run may spend, in USD (at least 0.01). A run that goes over is stopped and the schedule paused. Omitted or null means no limit.",
         )
         .optional(),
     }),

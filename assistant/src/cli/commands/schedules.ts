@@ -100,6 +100,22 @@ interface ListScheduleRunsResponse {
   runs: ScheduleRunRecord[];
 }
 
+/**
+ * Read a `--max-run-cost` value: a number of US dollars, where 0 means no
+ * limit (sent as null). Range checks are the route's.
+ */
+function parseMaxRunCostFlag(
+  value: string,
+): { usd: number | null } | { error: string } {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return {
+      error: `--max-run-cost must be a number of US dollars, got "${value}"`,
+    };
+  }
+  return { usd: parsed === 0 ? null : parsed };
+}
+
 export function registerSchedulesCommand(program: Command): void {
   registerCommand(program, {
     name: schedulesHelp.name,
@@ -410,6 +426,7 @@ export function registerSchedulesCommand(program: Command): void {
             timeoutMs?: string;
             timezone?: string;
             profile?: string;
+            maxRunCost?: string;
             enabled: boolean;
             json?: boolean;
           },
@@ -485,6 +502,19 @@ export function registerSchedulesCommand(program: Command): void {
           }
           if (opts.profile != null) {
             body.inferenceProfile = opts.profile;
+          }
+          if (opts.maxRunCost != null) {
+            const limit = parseMaxRunCostFlag(opts.maxRunCost);
+            if ("error" in limit) {
+              if (opts.json) {
+                writeOutput(cmd, { ok: false, error: limit.error });
+              } else {
+                log.error(limit.error);
+              }
+              process.exitCode = 1;
+              return;
+            }
+            body.maxRunCostUsd = limit.usd;
           }
 
           const result = await cliIpcCall<GetScheduleResponse>(
@@ -648,18 +678,12 @@ export function registerSchedulesCommand(program: Command): void {
             body.inferenceProfile = null;
           }
           if (opts.maxRunCost != null) {
-            const parsed = Number(opts.maxRunCost);
-            if (!Number.isFinite(parsed)) {
-              fail(
-                `--max-run-cost must be a number of US dollars, got "${opts.maxRunCost}"`,
-              );
+            const limit = parseMaxRunCostFlag(opts.maxRunCost);
+            if ("error" in limit) {
+              fail(limit.error);
               return;
             }
-            if (parsed === 0) {
-              body.maxRunCostUsd = null;
-            } else {
-              body.maxRunCostUsd = parsed;
-            }
+            body.maxRunCostUsd = limit.usd;
           }
 
           if (Object.keys(body).length === 0) {

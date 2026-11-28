@@ -1256,6 +1256,43 @@ describe("POST /schedules — create", () => {
     expect(listSchedules()[0].inferenceProfile).toBe("cost-optimized");
   });
 
+  test("persists a spending limit set at creation and serializes it", async () => {
+    const result = await postCreate({
+      name: "Limited digest",
+      description: "Digest with a per-run spending limit",
+      expression: "0 * * * *",
+      message: "write the digest",
+      maxRunCostUsd: 1.5,
+    });
+    expect(result.schedule).toMatchObject({ maxRunCostUsd: 1.5 });
+    expect(listSchedules()[0].maxRunCostUsd).toBe(1.5);
+  });
+
+  test("creates without a spending limit by default", async () => {
+    await postCreate({
+      name: "Unlimited digest",
+      description: "Digest without a limit",
+      expression: "0 * * * *",
+      message: "write the digest",
+    });
+    expect(listSchedules()[0].maxRunCostUsd).toBeNull();
+  });
+
+  test("rejects an invalid spending limit and creates nothing", async () => {
+    for (const invalid of [0.001, -1, "5"]) {
+      await expect(
+        postCreate({
+          name: "Bad limit",
+          description: "Digest with an invalid limit",
+          expression: "0 * * * *",
+          message: "write the digest",
+          maxRunCostUsd: invalid,
+        }),
+      ).rejects.toThrow("maxRunCostUsd must be null or a number of at least");
+    }
+    expect(listSchedules()).toHaveLength(0);
+  });
+
   // The endpoint validates inferenceProfile once, before branching on mode, so
   // every mode it accepts has to honour the value it just validated.
   test("persists a valid inferenceProfile on a workflow-mode create", async () => {

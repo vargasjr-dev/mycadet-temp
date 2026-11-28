@@ -135,6 +135,11 @@ export function SkillsReferenceScheduleContent() {
               changing your default model later does not change what your
               existing schedules cost
             </li>
+            <li>
+              A schedule can have a spending limit per run. A run that goes over
+              it is stopped, the schedule is paused until you turn it back on,
+              and you get a notification
+            </li>
           </ul>
         </section>
 
@@ -152,6 +157,12 @@ export function SkillsReferenceScheduleContent() {
               <strong>Persistent across conversations.</strong> Schedules
               persist across conversations: set it once and it runs until you
               cancel it.
+            </li>
+            <li>
+              <strong>Cap what a schedule can spend.</strong> Tell the assistant
+              a budget (&ldquo;no more than a dollar a run&rdquo;) and it sets a
+              per-run spending limit, so a task that gets stuck in a loop
+              can&apos;t keep spending every time it fires.
             </li>
             <li>
               <strong>Simple reminders.</strong> For simple reminders, just say

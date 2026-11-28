@@ -782,6 +782,140 @@ describe("schedule_create / schedule_update timeout_ms", () => {
   });
 });
 
+// ── per-run spending limit ──────────────────────────────────────────
+
+describe("schedule_create / schedule_update / schedule_list max_run_cost_usd", () => {
+  beforeEach(() => {
+    getSqlite().run("DELETE FROM cron_runs");
+    getSqlite().run("DELETE FROM cron_jobs");
+  });
+
+  function storedLimit(id: string): number | null {
+    return getSqlite()
+      .query<
+        { max_run_cost_usd: number | null },
+        SQLQueryBindings[]
+      >("SELECT max_run_cost_usd FROM cron_jobs WHERE id = ?")
+      .get(id)!.max_run_cost_usd;
+  }
+
+  test("persists a limit set at creation and reports it", async () => {
+    // WHEN a schedule is created with a $1.50 limit
+    const result = await executeScheduleCreate(
+      {
+        name: "Inbox digest",
+        expression: "0 9 * * *",
+        message: "Summarize my inbox",
+        max_run_cost_usd: 1.5,
+      },
+      ctx,
+    );
+
+    // THEN the limit is stored and echoed back to the model
+    expect(result.isError).toBe(false);
+    expect(result.content).toContain("Max run cost: $1.50");
+    expect(storedLimit(getFirstScheduleRow().id)).toBe(1.5);
+  });
+
+  test("creates without a limit when none is given", async () => {
+    const result = await executeScheduleCreate(
+      {
+        name: "Unlimited digest",
+        expression: "0 9 * * *",
+        message: "Summarize my inbox",
+      },
+      ctx,
+    );
+
+    expect(result.isError).toBe(false);
+    expect(result.content).not.toContain("Max run cost");
+    expect(storedLimit(getFirstScheduleRow().id)).toBeNull();
+  });
+
+  test("rejects a limit below the minimum on create and stores nothing", async () => {
+    const result = await executeScheduleCreate(
+      {
+        name: "Too small",
+        expression: "0 9 * * *",
+        message: "hi",
+        max_run_cost_usd: 0.001,
+      },
+      ctx,
+    );
+
+    // THEN the error names the parameter the model sent
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain(
+      "max_run_cost_usd must be null or a number",
+    );
+    const count = getSqlite()
+      .query<{ n: number }, []>("SELECT COUNT(*) AS n FROM cron_jobs")
+      .get()!;
+    expect(count.n).toBe(0);
+  });
+
+  test("updates, lists, and clears the limit", async () => {
+    // GIVEN a schedule without a limit
+    await executeScheduleCreate(
+      {
+        name: "Adjustable digest",
+        expression: "0 9 * * *",
+        message: "Summarize my inbox",
+      },
+      ctx,
+    );
+    const { id } = getFirstScheduleRow();
+
+    // WHEN a $2.00 limit is set
+    const updated = await executeScheduleUpdate(
+      { job_id: id, max_run_cost_usd: 2 },
+      ctx,
+    );
+
+    // THEN it is stored, reported, and shown by schedule_list
+    expect(updated.isError).toBe(false);
+    expect(updated.content).toContain("Max run cost: $2.00");
+    expect(storedLimit(id)).toBe(2);
+    const listed = await executeScheduleList({ job_id: id }, ctx);
+    expect(listed.content).toContain("Max run cost: $2.00");
+
+    // AND WHEN the limit is cleared with null
+    const cleared = await executeScheduleUpdate(
+      { job_id: id, max_run_cost_usd: null },
+      ctx,
+    );
+
+    // THEN no limit remains
+    expect(cleared.isError).toBe(false);
+    expect(cleared.content).toContain("Max run cost: no limit");
+    expect(storedLimit(id)).toBeNull();
+  });
+
+  test("rejects a limit below the minimum on update", async () => {
+    await executeScheduleCreate(
+      {
+        name: "Guarded digest",
+        expression: "0 9 * * *",
+        message: "Summarize my inbox",
+        max_run_cost_usd: 1,
+      },
+      ctx,
+    );
+    const { id } = getFirstScheduleRow();
+
+    const result = await executeScheduleUpdate(
+      { job_id: id, max_run_cost_usd: 0 },
+      ctx,
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain(
+      "max_run_cost_usd must be null or a number",
+    );
+    expect(storedLimit(id)).toBe(1);
+  });
+});
+
 // ── schedule_list ───────────────────────────────────────────────────
 
 describe("schedule_list tool", () => {

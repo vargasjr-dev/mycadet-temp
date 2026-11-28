@@ -153,6 +153,11 @@ Examples:
             "Inference profile (llm.profiles key) the schedule's runs use; when omitted the schedule is pinned to your current default profile",
         },
         {
+          flags: "--max-run-cost <usd>",
+          description:
+            "Most a single run may spend on LLM calls, in US dollars (at least 0.01); omit or pass 0 for no limit",
+        },
+        {
           flags: "--no-enabled",
           description: "Create the schedule in a disabled state",
         },
@@ -174,6 +179,10 @@ Options:
                             runs use. When omitted, the schedule is pinned to
                             your current default profile so its model stays
                             put when that default changes.
+  --max-run-cost <usd>      Most a single run may spend on LLM calls, in US
+                            dollars (at least 0.01). A run that goes over is
+                            stopped and the schedule paused until you enable
+                            it again. Omit for no limit.
   --no-enabled              Create the schedule disabled. Defaults to enabled.
   --json                    Output the updated schedule list as compact JSON.
 

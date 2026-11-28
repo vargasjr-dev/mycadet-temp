@@ -6,6 +6,10 @@ import { validateScheduleInferenceProfile } from "../../schedule/inference-profi
 import { formatIntegrationSummary } from "../../schedule/integration-status.js";
 import { validateRruleSetLines } from "../../schedule/recurrence-engine.js";
 import { normalizeScheduleSyntax } from "../../schedule/recurrence-types.js";
+import {
+  formatScheduleMaxRunCost,
+  validateMaxRunCostUsd,
+} from "../../schedule/run-cost-guard.js";
 import { validateScriptTimeoutMs } from "../../schedule/run-script.js";
 import type {
   RoutingIntent,
@@ -76,6 +80,7 @@ export const scheduleCreateInputSchema = z.looseObject({
   retry_backoff_ms: nullAsOmitted(z.int()),
   timeout_ms: z.int().optional(),
   inference_profile: z.string().optional(),
+  max_run_cost_usd: nullAsOmitted(z.number()),
   group: nullAsOmitted(z.string()),
 });
 
@@ -121,6 +126,7 @@ export async function executeScheduleCreate(
   const workflowName = parsed.workflow_name?.trim() ?? null;
   const workflowArgs = input.workflow_args;
   const inferenceProfile = parsed.inference_profile;
+  const maxRunCostUsd = parsed.max_run_cost_usd ?? null;
 
   // Validated workflow capability manifest, resolved only for workflow mode.
   // Left null for non-workflow modes so `createSchedule` persists no manifest.
@@ -138,6 +144,11 @@ export async function executeScheduleCreate(
     if (profileError) {
       return { content: `Error: ${profileError}`, isError: true };
     }
+  }
+
+  const limitError = validateMaxRunCostUsd(maxRunCostUsd, "max_run_cost_usd");
+  if (limitError) {
+    return { content: `Error: ${limitError}`, isError: true };
   }
 
   // Sidebar group for run conversations; null = default system:scheduled.
@@ -280,6 +291,7 @@ export async function executeScheduleCreate(
           workflowArgs,
           capabilities,
           inferenceProfile,
+          maxRunCostUsd,
           groupId,
           createdFromConversationId: context.conversationId,
         },
@@ -301,6 +313,9 @@ export async function executeScheduleCreate(
           `  Mode: ${job.mode}`,
           ...(job.inferenceProfile
             ? [`  Inference profile: ${job.inferenceProfile}`]
+            : []),
+          ...(job.maxRunCostUsd !== null
+            ? [`  Max run cost: ${formatScheduleMaxRunCost(job.maxRunCostUsd)}`]
             : []),
           ...(groupName ? [`  Conversation group: ${groupName}`] : []),
           `  Fire at: ${fireDate}`,
@@ -384,6 +399,7 @@ export async function executeScheduleCreate(
         workflowArgs,
         capabilities,
         inferenceProfile,
+        maxRunCostUsd,
         groupId,
         createdFromConversationId: context.conversationId,
       },
@@ -412,6 +428,9 @@ export async function executeScheduleCreate(
         `  Mode: ${job.mode}`,
         ...(job.inferenceProfile
           ? [`  Inference profile: ${job.inferenceProfile}`]
+          : []),
+        ...(job.maxRunCostUsd !== null
+          ? [`  Max run cost: ${formatScheduleMaxRunCost(job.maxRunCostUsd)}`]
           : []),
         ...(groupName ? [`  Conversation group: ${groupName}`] : []),
         `  Schedule: ${scheduleDescription}${

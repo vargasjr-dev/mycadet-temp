@@ -11,6 +11,10 @@ import {
   detectScheduleSyntax,
   normalizeScheduleSyntax,
 } from "../../schedule/recurrence-types.js";
+import {
+  formatScheduleMaxRunCost,
+  validateMaxRunCostUsd,
+} from "../../schedule/run-cost-guard.js";
 import { validateScriptTimeoutMs } from "../../schedule/run-script.js";
 import type {
   RoutingIntent,
@@ -75,6 +79,7 @@ export const scheduleUpdateInputSchema = z.looseObject({
   retry_backoff_ms: z.int().optional(),
   timeout_ms: z.int().nullable().optional(),
   inference_profile: z.string().nullable().optional(),
+  max_run_cost_usd: z.number().nullable().optional(),
   group: z.string().nullable().optional(),
 });
 
@@ -229,6 +234,18 @@ export async function executeScheduleUpdate(
     }
   }
 
+  // Per-run spending limit (null removes it)
+  if (parsed.max_run_cost_usd !== undefined) {
+    const limitError = validateMaxRunCostUsd(
+      parsed.max_run_cost_usd,
+      "max_run_cost_usd",
+    );
+    if (limitError) {
+      return { content: `Error: ${limitError}`, isError: true };
+    }
+    updates.maxRunCostUsd = parsed.max_run_cost_usd;
+  }
+
   // Sidebar group for run conversations (null clears it, reverting to the
   // default system:scheduled). Applies to conversations created by future
   // runs; existing conversations stay where they are.
@@ -381,6 +398,7 @@ export async function executeScheduleUpdate(
         `  Syntax: ${job.syntax}`,
         `  Mode: ${job.mode}`,
         `  Inference profile: ${formatScheduleInferenceProfile(job.inferenceProfile)}`,
+        `  Max run cost: ${formatScheduleMaxRunCost(job.maxRunCostUsd)}`,
         `  Schedule: ${scheduleDescription}${job.timezone ? ` (${job.timezone})` : ""}`,
         `  Enabled: ${job.enabled}`,
         `  Next run: ${job.enabled ? formatLocalDate(job.nextRunAt) : "n/a (disabled)"}`,

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { formatScheduleInferenceProfile } from "../../schedule/inference-profile.js";
 import { hasSetConstructs } from "../../schedule/recurrence-engine.js";
+import { formatScheduleMaxRunCost } from "../../schedule/run-cost-guard.js";
 import {
   describeCronExpression,
   formatLocalDate,
@@ -103,6 +104,7 @@ export async function executeScheduleList(
       `  Quiet: ${job.quiet}`,
       `  Reuse conversation: ${job.reuseConversation}`,
       `  Inference profile: ${formatScheduleInferenceProfile(job.inferenceProfile)}`,
+      `  Max run cost: ${formatScheduleMaxRunCost(job.maxRunCostUsd)}`,
       `  Message: ${job.message}`,
     );
 
