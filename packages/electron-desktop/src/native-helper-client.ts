@@ -17,20 +17,20 @@ import log from "./app-logger";
  */
 
 /**
- * The mac helper bundle's folder name is per-environment (e.g. "Cadet
- * Helper", "Cadet Helper Dev"). macOS System Settings → Privacy & Security
- * renders the .app folder name — not CFBundleName/CFBundleDisplayName, and
- * not the binary's filename — when listing the helper's grants, so the
- * runtime resolves the folder from the sidecar that build-mac-helper.sh
- * writes alongside the bundle (`.cadet-mac-helper.bundle-name`).
+ * The mac helper bundle's folder name is per-environment (e.g. "Cadet",
+ * "Cadet Dev"). macOS System Settings → Privacy & Security renders the .app
+ * folder name — not CFBundleName/CFBundleDisplayName, and not the binary's
+ * filename — when listing the helper's grants, so the runtime resolves the
+ * folder from the sidecar that build-mac-helper.sh writes alongside the
+ * bundle (`.cadet-mac-helper.bundle-name`).
  *
  * When the sidecar is absent, discovery walks `<bin>/` for any `.app` folder
  * whose Info.plist matches the expected CFBundleExecutable, then falls back
- * to `cadet-mac-helper.app`.
+ * to `Cadet.app`.
  */
 const SIDECAR_NAME = ".cadet-mac-helper.bundle-name";
-const DEFAULT_HELPER_BUNDLE_NAME = "cadet-mac-helper";
-const DEFAULT_HELPER_EXECUTABLE = "cadet-mac-helper";
+const DEFAULT_HELPER_BUNDLE_NAME = "Cadet";
+const DEFAULT_HELPER_EXECUTABLE = "Cadet";
 
 const readSidecarBundleName = (binDir: string): string | null => {
   const sidecarPath = path.join(binDir, SIDECAR_NAME);

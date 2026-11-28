@@ -27,8 +27,8 @@ const appId =
 // `bin/` alongside the bundle.
 const helperBundleName =
   env === "production"
-    ? "Cadet Helper"
-    : `Cadet Helper ${env.charAt(0).toUpperCase() + env.slice(1)}`;
+    ? "Cadet"
+    : `Cadet ${env.charAt(0).toUpperCase() + env.slice(1)}`;
 
 // The Communication Notifications entitlement is restricted: an app that
 // declares it without an authorizing provisioning profile is killed at launch.
