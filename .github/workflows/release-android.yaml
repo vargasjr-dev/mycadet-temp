@@ -143,7 +143,7 @@ jobs:
           CADET_ANDROID_REQUIRE_SIGNING: "true"
           CADET_ANDROID_KEYSTORE_PATH: /tmp/cadet-android-upload.jks
           CADET_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
-          CADET_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          CADET_ANDROID_KEY_ALIAS: cadet-upload
           CADET_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
         run: ./gradlew ":app:bundle${{ steps.config.outputs.flavor }}Release"
 
