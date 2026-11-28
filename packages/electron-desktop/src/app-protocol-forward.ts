@@ -78,19 +78,23 @@ async function resolveWebDistRoot(): Promise<string> {
   return cliWebDist();
 }
 
-export function registerAppProtocol(): void {
+export function registerAppProtocol(interfaceId?: string): void {
   const appDistRoot = resolveAppDistRoot();
   const appIndexHtml = path.join(appDistRoot, "index.html");
   // Read only when injecting an assistant document. A hatch or
   // selection can change the served assistant after protocol registration.
-  // The assistant identity is the config's whole cargo: the base URL is
+  // The assistant identity is the config's whole cargo — the base URL is
   // the window's own origin (single origin) and the device id is the
-  // client's own, so the host stamps neither.
+  // client's own, so the host stamps neither — plus the shell's own
+  // interface id, which the embedded web client reports so the connection
+  // reads as the desktop client it is (capability advertisement stays with
+  // the main process's host-proxy registration, opted out by the client
+  // via `X-Cadet-Host-Proxy: 0`).
   const configJson = () =>
-    JSON.stringify(servedConfigFromLockfile(readLockfile())).replace(
-      /</g,
-      "\\u003c",
-    );
+    JSON.stringify({
+      ...(interfaceId ? { interfaceId } : {}),
+      ...servedConfigFromLockfile(readLockfile()),
+    }).replace(/</g, "\\u003c");
 
   const respond = async (request: Request): Promise<Response> => {
     if (new URL(request.url).host !== APP_HOST) {

@@ -312,6 +312,8 @@ export function handleSubscribeAssistantEvents(
   );
   const sseWatchdog = headers?.["x-cadet-sse-watchdog"]?.trim() === "1";
 
+  const clientCapabilities = registrationCapabilities(interfaceId, headers);
+
   if (clientId && !interfaceId) {
     log.error(
       { clientId, rawInterfaceId: headers?.["x-cadet-interface-id"] },
@@ -432,23 +434,7 @@ export function handleSubscribeAssistantEvents(
             type: "client" as const,
             clientId,
             interfaceId,
-            capabilities: [
-              ...ALL_CAPABILITIES.filter((cap) =>
-                supportsHostProxy(interfaceId, cap),
-              ),
-              ...(interfaceId === "macos" &&
-              headers?.["x-cadet-cu-window-capture"] === "1"
-                ? ["host_cu_window_capture" as const]
-                : []),
-              ...(interfaceId === "macos" &&
-              headers?.["x-cadet-cu-sequence"] === "1"
-                ? ["host_cu_sequence" as const]
-                : []),
-              ...(interfaceId === "macos" &&
-              headers?.["x-cadet-cu-annotate"] === "1"
-                ? ["host_cu_annotate" as const]
-                : []),
-            ],
+            capabilities: clientCapabilities,
             machineName: rawMachineName?.trim() || undefined,
             actorPrincipalId,
             clientVersion,
@@ -521,7 +507,12 @@ export function handleSubscribeAssistantEvents(
         if (lastSeenSeq != null) {
           const window = getReplayWindow(
             lastSeenSeq,
-            replaySubscriberFor(clientId, interfaceId, actorPrincipalId),
+            replaySubscriberFor(
+              clientId,
+              interfaceId,
+              actorPrincipalId,
+              headers,
+            ),
             filter.conversationId,
           );
           if (window !== null) {
@@ -598,6 +589,39 @@ function readClientIdentity(headers: Record<string, string> | undefined): {
 }
 
 /**
+ * The host-proxy capabilities a client registration advertises, from the
+ * registration's interface id and headers.
+ *
+ * A shell's embedded web client reports the shell's desktop interface for
+ * identity (turn channel, client lists) but serves no host tools — the
+ * Electron main process opens its own registration for those. Its
+ * `X-Cadet-Host-Proxy: 0` opt-out keeps this derivation from advertising
+ * host capabilities for a connection that cannot answer them (the ambiguity
+ * the renderer's old always-"web" registration existed to avoid).
+ */
+export function registrationCapabilities(
+  interfaceId: InterfaceId | null,
+  headers: Record<string, string> | undefined,
+): HostProxyCapability[] {
+  if (interfaceId == null || headers?.["x-cadet-host-proxy"] === "0") {
+    return [];
+  }
+  return [
+    ...ALL_CAPABILITIES.filter((cap) => supportsHostProxy(interfaceId, cap)),
+    ...(interfaceId === "macos" &&
+    headers?.["x-cadet-cu-window-capture"] === "1"
+      ? ["host_cu_window_capture" as const]
+      : []),
+    ...(interfaceId === "macos" && headers?.["x-cadet-cu-sequence"] === "1"
+      ? ["host_cu_sequence" as const]
+      : []),
+    ...(interfaceId === "macos" && headers?.["x-cadet-cu-annotate"] === "1"
+      ? ["host_cu_annotate" as const]
+      : []),
+  ];
+}
+
+/**
  * The identity a replay filter checks targeted events against: the client a
  * live SSE subscription with these headers would register, or a process
  * subscriber when the caller names no client. Shared by the reconnect replay
@@ -607,6 +631,7 @@ function replaySubscriberFor(
   clientId: string | null,
   interfaceId: InterfaceId | null,
   actorPrincipalId: string | undefined,
+  headers: Record<string, string> | undefined,
 ): SubscriberIdentity {
   if (!clientId || !interfaceId) {
     return { type: "process" };
@@ -615,9 +640,7 @@ function replaySubscriberFor(
     type: "client",
     clientId,
     interfaceId,
-    capabilities: ALL_CAPABILITIES.filter((cap) =>
-      supportsHostProxy(interfaceId, cap),
-    ),
+    capabilities: registrationCapabilities(interfaceId, headers),
     actorPrincipalId,
   };
 }
@@ -677,7 +700,7 @@ function handleEventsTail({
     readClientIdentity(headers);
   const window = getReplayWindow(
     fromSeq,
-    replaySubscriberFor(clientId, interfaceId, actorPrincipalId),
+    replaySubscriberFor(clientId, interfaceId, actorPrincipalId, headers),
     conversationId,
   );
   if (window === null) {

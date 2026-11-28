@@ -299,4 +299,47 @@ describe("client-identity", () => {
     expect(headers["x-cadet-browser-family"]).toBe("chrome");
     expect(headers["x-cadet-browser-version"]).toBe("126");
   });
+
+  test("an embedded desktop shell reports its interface with the host-proxy opt-out", async () => {
+    const original = window.__CADET_CONFIG__;
+    window.__CADET_CONFIG__ = { interfaceId: "windows" };
+    try {
+      const mod = await freshImport();
+      const headers = mod.getClientRegistrationHeaders();
+
+      expect(headers["X-Cadet-Interface-Id"]).toBe("windows");
+      // The renderer serves no host tools — the shell's main process owns
+      // that registration — so the desktop identity advertises nothing.
+      expect(headers["X-Cadet-Host-Proxy"]).toBe("0");
+    } finally {
+      window.__CADET_CONFIG__ = original;
+    }
+  });
+
+  test("a foreign injected interface falls back to web with no opt-out", async () => {
+    const original = window.__CADET_CONFIG__;
+    window.__CADET_CONFIG__ = { interfaceId: "toaster" };
+    try {
+      const mod = await freshImport();
+      const headers = mod.getClientRegistrationHeaders();
+
+      expect(headers["X-Cadet-Interface-Id"]).toBe("web");
+      expect(headers["X-Cadet-Host-Proxy"]).toBeUndefined();
+    } finally {
+      window.__CADET_CONFIG__ = original;
+    }
+  });
+
+  test("linux and macos shells report their interface the same way", async () => {
+    const original = window.__CADET_CONFIG__;
+    window.__CADET_CONFIG__ = { interfaceId: "linux" };
+    try {
+      const mod = await freshImport();
+      expect(mod.getClientRegistrationHeaders()["X-Cadet-Interface-Id"]).toBe(
+        "linux",
+      );
+    } finally {
+      window.__CADET_CONFIG__ = original;
+    }
+  });
 });

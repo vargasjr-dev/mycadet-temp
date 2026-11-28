@@ -38,6 +38,7 @@ import {
 } from "@/domains/chat/prechat";
 import { mapRuntimeToDisplayMessage } from "@/domains/chat/utils/map-runtime-message";
 import { pickConversationIdWireField } from "@/lib/backwards-compat/conversation-id-wire-field";
+import { getRegisteredInterfaceId } from "@/lib/client-identity";
 import { getVisibleAppIdForSend } from "@/domains/chat/utils/visible-app-context";
 import { getEffectiveTimezone } from "@/utils/effective-timezone";
 import { detectClientOs } from "@/runtime/platform-detection";
@@ -545,12 +546,15 @@ export async function postChatMessage(
   const body: MessagesPostData["body"] = {
     content,
     sourceChannel: "cadet",
-    // `interface` is the transport surface, not the OS: the web, mobile, and
-    // desktop apps run this renderer, so the transport is always "web". The
-    // daemon keys host-proxy/transport capability off this value, so it must
-    // NOT carry the OS. The real platform travels in `clientOs` below and only
-    // feeds the assistant's per-turn `client_os` context.
-    interface: "web",
+    // `interface` identifies the connection's client: the desktop shell's
+    // interface when this renderer runs embedded in one (turns record the
+    // desktop client the user is actually using), "web" in a plain browser.
+    // It carries IDENTITY only — host-proxy/transport capability derives
+    // from the SSE registration's interface, where this client opts out via
+    // `X-Cadet-Host-Proxy: 0` (see `lib/client-identity.ts`) — and the real
+    // platform also travels in `clientOs` below, feeding the assistant's
+    // per-turn `client_os` context.
+    interface: getRegisteredInterfaceId(),
     clientOs: detectClientOs(),
   };
   // Read the effective timezone LIVE at send time (not from cached state) so
