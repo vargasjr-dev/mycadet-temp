@@ -255,7 +255,7 @@ function unwrapImageParagraphs(node: Root | Element): void {
       lifted.push(child);
     }
   }
-  node.children = lifted as Element["children"];
+  node.children = lifted;
 }
 
 function isImageOnlyParagraph(paragraph: Element): boolean {
@@ -300,7 +300,7 @@ function stripStructuralWhitespace(node: Root | Element): void {
       isInlineContent(prev) &&
       isInlineContent(next)
     );
-  }) as Element["children"];
+  });
 }
 
 function isInlineContent(node: RootContent | ElementContent): boolean {

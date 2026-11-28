@@ -91,9 +91,7 @@ describe("Invariant 1: secrets never enter LLM context", () => {
       // PR 23 added redaction to confirmation_request payloads via redactSensitiveFields
       test(`${tc.label}: secret redacted from confirmation payload`, () => {
         const payload = { ...tc.input };
-        const redacted = redactSensitiveFields(
-          payload as Record<string, unknown>,
-        );
+        const redacted = redactSensitiveFields(payload);
 
         // The 'value' key is in SENSITIVE_KEYS and gets redacted
         if ("value" in payload && payload.value != null) {
@@ -105,9 +103,7 @@ describe("Invariant 1: secrets never enter LLM context", () => {
       // PR 22 added recursive redaction in tool executor lifecycle events
       test(`${tc.label}: secret redacted from lifecycle event`, () => {
         const input = { ...tc.input };
-        const redacted = redactSensitiveFields(
-          input as Record<string, unknown>,
-        );
+        const redacted = redactSensitiveFields(input);
         if ("value" in input && input.value != null) {
           expect(redacted.value).toBe("<redacted />");
           expect(redacted.value).not.toBe(tc.forbiddenValue);

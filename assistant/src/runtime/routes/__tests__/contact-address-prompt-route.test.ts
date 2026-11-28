@@ -212,10 +212,10 @@ describe("contacts_prompt binding target", () => {
       body: { operation: "delete", contactId: "ct_9" },
     });
 
-    const result = (await Promise.race([
+    const result = await Promise.race([
       addressPrompt.handler({ body: { channel: "email" } }),
       new Promise((resolve) => setTimeout(() => resolve("parked"), 50)),
-    ])) as unknown;
+    ]);
 
     // Parking is the success signal here: a refusal would settle immediately.
     expect(result).toBe("parked");

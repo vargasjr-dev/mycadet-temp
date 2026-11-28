@@ -16,6 +16,7 @@ import {
 
 import { resolveCloudCallbackRegistrationContext } from "../inbound/cloud-callback-registration.js";
 import { isPublicIngressDisabled } from "../inbound/public-ingress-urls.js";
+import { isObjectRecord } from "../util/object.js";
 import { getIsCloud } from "./env-registry.js";
 import { getConfig, loadRawConfig } from "./loader.js";
 
@@ -31,14 +32,12 @@ export function hasIngressConfigured(
 ): boolean {
   try {
     const raw = loadRawConfig();
-    const ingress = (raw?.ingress ?? {}) as Record<string, unknown>;
+    const ingress = isObjectRecord(raw?.ingress) ? raw.ingress : {};
     const effectiveBaseUrl = options.twilio
       ? (resolveTwilioPublicBaseUrl(ingress) ?? "")
       : (normalizePublicBaseUrl(ingress.publicBaseUrl) ?? "");
-    const enabled =
-      (ingress.enabled as boolean | undefined) ??
-      (effectiveBaseUrl ? true : false);
-    return enabled && effectiveBaseUrl.trim().length > 0;
+    const enabled = ingress.enabled ?? (effectiveBaseUrl ? true : false);
+    return Boolean(enabled) && effectiveBaseUrl.trim().length > 0;
   } catch {
     return false;
   }

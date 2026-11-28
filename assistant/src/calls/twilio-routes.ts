@@ -13,11 +13,11 @@
  * daemon cannot transcribe or speak gets audible `<Say>` setup-required
  * TwiML and a `<Hangup/>` instead of a doomed stream.
  */
-
 import {
   buildTwilioMediaStreamUrl,
   TWILIO_PUBLIC_BASE_URL_PLACEHOLDER,
 } from "@mycadet/service-contracts/twilio-ingress";
+import { z } from "zod";
 
 import {
   BadRequestError,
@@ -503,13 +503,15 @@ export async function handleStatusCallback(req: Request): Promise<Response> {
  * Internal voice-webhook handler for gateway→runtime forwarding.
  * Accepts JSON body `{ params, originalUrl? }` from the gateway.
  */
+const internalCallbackBody = z.object({
+  params: z.record(z.string(), z.string()).default({}),
+  originalUrl: z.string().optional(),
+});
+
 export async function handleInternalVoiceWebhook({
   body = {},
 }: RouteHandlerArgs): Promise<RouteResponse> {
-  const { params = {}, originalUrl } = body as {
-    params?: Record<string, string>;
-    originalUrl?: string;
-  };
+  const { params, originalUrl } = internalCallbackBody.parse(body);
 
   // Extract callSessionId from the original URL query string
   let callSessionId: string | null = null;
@@ -532,7 +534,7 @@ export async function handleInternalVoiceWebhook({
 export function handleInternalStatusCallback({
   body = {},
 }: RouteHandlerArgs): RouteResponse {
-  const { params = {} } = body as { params?: Record<string, string> };
+  const { params } = internalCallbackBody.parse(body);
   processStatusCallback(params);
   return new RouteResponse(null, {});
 }

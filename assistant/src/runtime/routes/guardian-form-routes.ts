@@ -27,6 +27,10 @@ const RequestIdParams = z.object({
   requestId: z.string().describe("The pending form's id."),
 });
 
+const ResolveParams = RequestIdParams.extend({
+  error: z.string().optional(),
+}).catchall(z.unknown());
+
 const ClaimParams = RequestIdParams.extend({
   kind: z
     .string()
@@ -48,12 +52,7 @@ const ClaimParams = RequestIdParams.extend({
 export function resolveFormFromCallback({ body = {} }: RouteHandlerArgs): {
   resolved: boolean;
 } {
-  const {
-    requestId,
-    error,
-    ...rest
-  }: { requestId: string; error?: string } & Record<string, unknown> =
-    body as never;
+  const { requestId, error, ...rest } = ResolveParams.parse(body);
 
   const result: GuardianFormResult = error
     ? { ...rest, ok: false, error }
@@ -111,7 +110,7 @@ export const GUARDIAN_FORM_ROUTES: RouteDefinition[] = [
     description:
       "Called by the writer once it has committed (or failed). Fields other than requestId and error are passed through to the parked caller untouched; an error makes the outcome a failure.",
     tags: ["guardian-forms"],
-    requestBody: RequestIdParams.catchall(z.unknown()),
+    requestBody: ResolveParams,
     responseBody: z.object({ resolved: z.boolean() }),
   },
 ];

@@ -8,11 +8,13 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const platform = input.platform as string | undefined;
+  const platform =
+    typeof input.platform === "string" ? input.platform : undefined;
 
   try {
     const provider = await resolveProvider(platform);
-    const account = input.account as string | undefined;
+    const account =
+      typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     const info = await provider.testConnection(conn);
     return ok(JSON.stringify(info, null, 2));

@@ -30,7 +30,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 // ── Param validation ─────────────────────────────────────────────────
 
 const BrowserExecuteParams = z.object({
-  operation: z.enum(BROWSER_OPERATIONS as unknown as [string, ...string[]]),
+  operation: z.enum(BROWSER_OPERATIONS),
   input: z.record(z.string(), z.unknown()).default({}),
   sessionId: z.string().min(1).default("default"),
   conversationId: z.string().min(1).optional(),

@@ -711,7 +711,7 @@ export const hostShellTool = {
         clearTimeout(timer);
         context.signal?.removeEventListener("abort", onAbort);
         let hint = "";
-        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        if (("code" in err ? err.code : undefined) === "ENOENT") {
           hint = !existsSync(workingDir)
             ? `. The working directory does not exist: ${workingDir}`
             : ". The command was not found - check that it is installed and in PATH.";

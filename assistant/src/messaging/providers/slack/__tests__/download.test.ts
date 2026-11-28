@@ -98,8 +98,7 @@ describe("downloadSlackFile", () => {
       "xoxb-test-token",
     );
     expect(calls.length).toBe(1);
-    const auth = (calls[0].init?.headers as Record<string, string>)
-      ?.Authorization;
+    const auth = new Headers(calls[0].init?.headers).get("authorization");
     expect(auth).toBe("Bearer xoxb-test-token");
     expect(calls[0].init?.redirect).toBe("manual");
     expect(result).not.toBeNull();
@@ -136,9 +135,8 @@ describe("downloadSlackFile", () => {
     );
     expect(calls.length).toBe(2);
     expect(calls[0].init?.redirect).toBe("manual");
-    const secondAuth = (calls[1].init?.headers as Record<string, string>)
-      ?.Authorization;
-    expect(secondAuth).toBeUndefined();
+    const secondAuth = new Headers(calls[1].init?.headers).get("authorization");
+    expect(secondAuth).toBeNull();
     expect(calls[1].url).toBe(
       "https://files-edge.slack.com/files-tmb/T-F1-abc/cdn-signed?t=1700000000",
     );

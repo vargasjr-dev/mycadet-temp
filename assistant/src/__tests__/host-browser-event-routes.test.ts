@@ -213,7 +213,7 @@ describe("resolveHostBrowserSessionInvalidated", () => {
 
   test("rejects frames whose targetId is not a string", () => {
     const resolution = resolveHostBrowserSessionInvalidated({
-      targetId: 42 as unknown as string,
+      targetId: 42,
     });
 
     expect(resolution.ok).toBe(false);

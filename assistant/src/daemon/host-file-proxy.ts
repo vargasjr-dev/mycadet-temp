@@ -242,17 +242,17 @@ export class HostFileProxy {
     const meta = interaction.metadata ?? {};
     if (
       meta.operation === "read" &&
+      typeof meta.path === "string" &&
       !response.isError &&
       typeof response.imageData === "string" &&
       response.imageData.length > 0
     ) {
-      interaction.rpcResolve(
-        readImageBase64(response.imageData, meta.path as string),
-      );
+      interaction.rpcResolve(readImageBase64(response.imageData, meta.path));
       return;
     }
     if (
       meta.operation === "read" &&
+      typeof meta.path === "string" &&
       !response.isError &&
       typeof response.audioData === "string" &&
       response.audioData.length > 0 &&
@@ -260,11 +260,7 @@ export class HostFileProxy {
       response.audioMimeType.length > 0
     ) {
       interaction.rpcResolve(
-        readAudioBase64(
-          response.audioData,
-          meta.path as string,
-          response.audioMimeType,
-        ),
+        readAudioBase64(response.audioData, meta.path, response.audioMimeType),
       );
       return;
     }
@@ -290,7 +286,7 @@ export class HostFileProxy {
                 : {}),
             },
             conversationId,
-            { targetClientId: entry.targetClientId as string | undefined },
+            { targetClientId: entry.targetClientId },
           );
         }
       } catch {

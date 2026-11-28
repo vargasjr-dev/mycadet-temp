@@ -117,8 +117,8 @@ export function findSubstrateShadowing(
   if (segments.length !== 3 || segments[0] !== "memory") {
     return undefined;
   }
-  const [, namespace, key] = segments as [string, string, string];
-  if (namespace !== "v2") {
+  const [, namespace, key] = segments;
+  if (namespace !== "v2" || key === undefined) {
     return undefined;
   }
   const twin = SUBSTRATE_TWIN_BY_V2_KEY[key];

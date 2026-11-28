@@ -76,7 +76,7 @@ async function handleHostCuResult({ body, headers }: RouteHandlerArgs) {
   }
 
   await assertHostProxyResultBinding({
-    headers: headers as Record<string, string | undefined> | undefined,
+    headers: headers,
     targetClientId: peeked.targetClientId,
     targetConnectionId: peeked.targetConnectionId,
     targetActorPrincipalId: peeked.targetActorPrincipalId,

@@ -650,10 +650,10 @@ export class CdpInspectClient implements ScopedCdpClient {
     }
 
     try {
-      return (await attached.transport.send<T>(method, params, {
+      return await attached.transport.send<T>(method, params, {
         sessionId: attached.sessionId,
         signal,
-      })) as T;
+      });
     } catch (err) {
       if (signal?.aborted) {
         throw new CdpError("aborted", "Aborted during send", {

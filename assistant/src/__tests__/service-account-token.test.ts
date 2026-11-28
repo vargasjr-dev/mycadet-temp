@@ -172,10 +172,7 @@ describe("service-account-token", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock(async () => {
       fetchCallCount += 1;
-      return {
-        ok: true,
-        json: async () => ({ access_token: "new-token", expires_in: 3600 }),
-      } as Response;
+      return Response.json({ access_token: "new-token", expires_in: 3600 });
     });
 
     try {
@@ -200,13 +197,10 @@ describe("service-account-token", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchMock(async () => {
       fetchCallCount += 1;
-      return {
-        ok: true,
-        json: async () => ({
-          access_token: `token-${fetchCallCount}`,
-          expires_in: 3600,
-        }),
-      } as Response;
+      return Response.json({
+        access_token: `token-${fetchCallCount}`,
+        expires_in: 3600,
+      });
     });
 
     try {

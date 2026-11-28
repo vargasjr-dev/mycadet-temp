@@ -398,7 +398,7 @@ function unwrapOrThrow(
 ): QuickJSHandle {
   // evalCode / evalCodeAsync return a SuccessOrFail; a bare handle is success.
   if (result && typeof result === "object" && "error" in result) {
-    const errorHandle = (result as { error: QuickJSHandle }).error;
+    const errorHandle = result.error;
     try {
       throw vmErrorToTyped(vm, errorHandle);
     } finally {

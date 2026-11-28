@@ -2,8 +2,6 @@ import { THINKING_LEVELS, type ThinkingLevel } from "../config/schemas/llm.js";
 
 type ThinkingConfigRecord = Record<string, unknown>;
 
-const THINKING_LEVEL_SET: ReadonlySet<string> = new Set(THINKING_LEVELS);
-
 function isRecord(value: unknown): value is ThinkingConfigRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -13,11 +11,11 @@ function pickGeminiExtras(thinking: ThinkingConfigRecord): {
   streamThinking?: boolean;
 } {
   const extras: { level?: ThinkingLevel; streamThinking?: boolean } = {};
-  if (
-    typeof thinking.level === "string" &&
-    THINKING_LEVEL_SET.has(thinking.level)
-  ) {
-    extras.level = thinking.level as ThinkingLevel;
+  const level = THINKING_LEVELS.find(
+    (candidate) => candidate === thinking.level,
+  );
+  if (level !== undefined) {
+    extras.level = level;
   }
   if (typeof thinking.streamThinking === "boolean") {
     extras.streamThinking = thinking.streamThinking;

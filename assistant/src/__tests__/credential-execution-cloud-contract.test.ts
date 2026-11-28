@@ -95,7 +95,7 @@ describe("three-container pod contract", () => {
     const allMethods = Object.values(CesRpcMethod);
     expect(allMethods.length).toBeGreaterThanOrEqual(6);
     for (const method of allMethods) {
-      const schema = CesRpcSchemas[method as keyof typeof CesRpcSchemas];
+      const schema = CesRpcSchemas[method];
       expect(schema).toBeDefined();
       expect(schema.request).toBeDefined();
       expect(schema.response).toBeDefined();

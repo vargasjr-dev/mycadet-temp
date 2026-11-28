@@ -760,19 +760,15 @@ async function handleUpdateSchedule(
   body: Record<string, unknown>,
   headers?: Record<string, string>,
 ) {
-  if (
-    "mode" in body &&
-    !VALID_MODES.includes(body.mode as (typeof VALID_MODES)[number])
-  ) {
+  const mode = VALID_MODES.find((candidate) => candidate === body.mode);
+  if ("mode" in body && mode === undefined) {
     throw new BadRequestError(
       `Invalid mode: must be one of ${VALID_MODES.join(", ")}`,
     );
   }
   if (
     "routingIntent" in body &&
-    !VALID_ROUTING_INTENTS.includes(
-      body.routingIntent as (typeof VALID_ROUTING_INTENTS)[number],
-    )
+    !VALID_ROUTING_INTENTS.some((intent) => intent === body.routingIntent)
   ) {
     throw new BadRequestError(
       `Invalid routingIntent: must be one of ${VALID_ROUTING_INTENTS.join(", ")}`,
@@ -790,8 +786,7 @@ async function handleUpdateSchedule(
   // exist — the updateSchedule call below surfaces that as NotFound.
   const existing = getSchedule(id);
   if (existing) {
-    const resultingMode =
-      "mode" in body ? (body.mode as string) : existing.mode;
+    const resultingMode = mode ?? existing.mode;
     await assertWakeMutationAllowed(existing, resultingMode, headers);
     if (resultingMode === "workflow") {
       const resultingWorkflowName =

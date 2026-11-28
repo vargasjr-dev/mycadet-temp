@@ -231,8 +231,8 @@ export function parseInterfaceId(value: unknown): InterfaceId | null {
   if (typeof value !== "string") {
     return null;
   }
-  if (INTERFACE_IDS.some((candidate: string) => candidate === value)) {
-    return value as InterfaceId;
+  if (isInterfaceId(value)) {
+    return value;
   }
   const alias = LEGACY_INTERFACE_ALIASES[value];
   if (alias) {
@@ -268,9 +268,7 @@ export function parseClientOs(value: unknown): ClientOs | null {
   if (typeof value !== "string") {
     return null;
   }
-  return CLIENT_OS_VALUES.some((candidate: string) => candidate === value)
-    ? (value as ClientOs)
-    : null;
+  return CLIENT_OS_VALUES.find((candidate) => candidate === value) ?? null;
 }
 
 /**

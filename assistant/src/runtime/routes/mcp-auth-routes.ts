@@ -157,7 +157,10 @@ function handleMcpAuthStatus({
   | { status: "pending"; auth_url: string }
   | { status: "complete" }
   | { status: "error"; error: string } {
-  const { serverId } = pathParams as { serverId: string };
+  const serverId = pathParams?.serverId;
+  if (!serverId) {
+    return { status: "error", error: "Missing server ID" };
+  }
   const serverConfig = readEffectiveMcpConfig(loadWorkspaceMcpConfig()).servers[
     serverId
   ];
@@ -256,9 +259,9 @@ async function handleMcpList(_args: {
   body?: Record<string, unknown>;
 }): Promise<{ servers: McpServerEntry[] }> {
   const servers = loadWorkspaceMcpConfig().servers;
-  const configEntries = (
-    Object.entries(servers) as [string, McpServerConfig][]
-  ).filter(([, config]) => config && typeof config === "object");
+  const configEntries = Object.entries(servers).filter(
+    ([, config]) => config && typeof config === "object",
+  );
   const manager = getMcpServerManager();
 
   const workspaceEntries: McpServerEntry[] = await Promise.all(
@@ -466,7 +469,7 @@ async function handleMcpUpdate({
   }
 
   if (headers !== undefined) {
-    const transport = server.transport as Record<string, unknown> | undefined;
+    const transport: Record<string, unknown> | undefined = server.transport;
     if (
       transport &&
       (transport.type === "sse" || transport.type === "streamable-http")

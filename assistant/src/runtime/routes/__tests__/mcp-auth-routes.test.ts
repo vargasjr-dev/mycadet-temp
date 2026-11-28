@@ -27,7 +27,7 @@ describe("mcp-auth route body validation", () => {
   test("internal_mcp_auth_start rejects a missing serverId", async () => {
     await expect(
       routeFor("internal_mcp_auth_start").handler({
-        body: {} as Record<string, unknown>,
+        body: {},
       }),
     ).rejects.toThrow(BadRequestError);
   });
@@ -51,7 +51,7 @@ describe("mcp-auth route body validation", () => {
   test("internal_mcp_add rejects a body missing transportType", async () => {
     await expect(
       routeFor("internal_mcp_add").handler({
-        body: { name: "srv" } as Record<string, unknown>,
+        body: { name: "srv" },
       }),
     ).rejects.toThrow(BadRequestError);
   });
@@ -59,7 +59,7 @@ describe("mcp-auth route body validation", () => {
   test("internal_mcp_remove rejects a missing name", async () => {
     await expect(
       routeFor("internal_mcp_remove").handler({
-        body: {} as Record<string, unknown>,
+        body: {},
       }),
     ).rejects.toThrow(BadRequestError);
   });

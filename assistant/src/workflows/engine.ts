@@ -966,10 +966,10 @@ export async function executeWorkflow(
         cached &&
         cached.callHash === hash &&
         cached.status === "completed" &&
-        cached.result &&
-        typeof (cached.result as { source?: unknown }).source === "string"
+        isObjectRecord(cached.result) &&
+        typeof cached.result.source === "string"
       ) {
-        source = (cached.result as { source: string }).source;
+        source = cached.result.source;
       } else {
         const saved = library.getWorkflow(childName);
         if (!saved) {

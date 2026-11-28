@@ -470,7 +470,7 @@ export class PermissionChecker {
       };
     } catch (err) {
       if (err instanceof Error) {
-        (err as Error & { riskLevel?: string }).riskLevel = riskLevel;
+        Object.assign(err, { riskLevel });
       }
       throw err;
     }

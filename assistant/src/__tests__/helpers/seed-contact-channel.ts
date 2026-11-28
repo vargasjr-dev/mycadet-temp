@@ -13,11 +13,7 @@
 import { isChannelId } from "@mycadet/service-contracts/channels";
 
 import { upsertContact } from "../../contacts/contact-store.js";
-import type {
-  ChannelPolicy,
-  ChannelStatus,
-  ContactRole,
-} from "../../contacts/types.js";
+import type { ChannelStatus, ContactRole } from "../../contacts/types.js";
 import { setMemberVerdict } from "../../runtime/member-verdict-cache.js";
 import {
   gatewayAclByChannelId,
@@ -95,7 +91,7 @@ export function seedContactChannel(params: {
       contactId: contact.id,
       channelId: channel.id,
       status: status,
-      policy: (params.policy ?? "allow") as ChannelPolicy,
+      policy: params.policy ?? "allow",
     });
   }
 

@@ -3,6 +3,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { createAbortReason } from "../../util/abort-reasons.js";
 import { explicitTools } from "../tool-manifest.js";
 import type { ToolContext, ToolExecutionResult } from "../types.js";
@@ -61,9 +63,18 @@ function resolveSkillExecutor(toolName: string): string {
   ];
   for (const relative of manifests) {
     const manifestPath = join(BUNDLED_SKILLS_DIR, relative);
-    const parsed = JSON.parse(readFileSync(manifestPath, "utf8")) as {
-      tools?: Array<{ name?: string; executor?: string }>;
-    };
+    const parsed = z
+      .looseObject({
+        tools: z
+          .array(
+            z.looseObject({
+              name: z.string().optional(),
+              executor: z.string().optional(),
+            }),
+          )
+          .optional(),
+      })
+      .parse(JSON.parse(readFileSync(manifestPath, "utf8")));
     for (const tool of parsed.tools ?? []) {
       if (tool.name === toolName && typeof tool.executor === "string") {
         return join(dirname(manifestPath), tool.executor);

@@ -189,6 +189,7 @@ interface WaitForIdleCall {
 type RunOptions = NonNullable<Parameters<Conversation["runAgentLoop"]>[2]>;
 
 interface FakeConversation {
+  allowedToolNames?: Set<string>;
   conversationId: string;
   /** Per-conversation profile pin an escalated leg follows; absent = none. */
   inferenceProfile?: string | null;
@@ -2153,11 +2154,7 @@ describe("startVoiceTurn tool-event forwarding", () => {
         toolUseId: "toolu-1",
       },
     ]);
-    (
-      fakeConversation as typeof fakeConversation & {
-        allowedToolNames?: Set<string>;
-      }
-    ).allowedToolNames = new Set(["web_search"]);
+    fakeConversation.allowedToolNames = new Set(["web_search"]);
 
     const starts: Array<{ toolName: string; detail?: unknown }> = [];
     await startVoiceTurn({

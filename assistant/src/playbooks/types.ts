@@ -54,6 +54,8 @@ export function parsePlaybookStatement(statement: string): Playbook | null {
   }
 }
 
-function isValidAutonomyLevel(value: unknown): value is PlaybookAutonomyLevel {
+export function isValidAutonomyLevel(
+  value: unknown,
+): value is PlaybookAutonomyLevel {
   return value === "auto" || value === "draft" || value === "notify";
 }

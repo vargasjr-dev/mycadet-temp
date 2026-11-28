@@ -12,10 +12,6 @@ import { z } from "zod";
 import { PendingToolQuestionSchema } from "../../api/responses/conversation-message.js";
 import { syncTerminalGuardianRequestStatus } from "../../approvals/guardian-request-status-sync.js";
 import { findConversation } from "../../daemon/conversation-registry.js";
-import type {
-  SecretDelivery,
-  SecretPromptResult,
-} from "../../permissions/secret-prompt-types.js";
 import type { UserDecision } from "../../permissions/types.js";
 import { getConversationByKey } from "../../persistence/conversation-key-store.js";
 import {
@@ -45,8 +41,8 @@ function canonicalizeConfirmDecision(params: {
  * POST /v1/confirm — resolve a pending confirmation by requestId.
  */
 function handleConfirm({ body }: RouteHandlerArgs) {
-  const requestId = body?.requestId as string | undefined;
-  const decision = body?.decision as string | undefined;
+  const requestId = body?.requestId;
+  const decision = body?.decision;
 
   if (!requestId || typeof requestId !== "string") {
     throw new BadRequestError("requestId is required");
@@ -121,8 +117,8 @@ function handleConfirm({ body }: RouteHandlerArgs) {
  * POST /v1/secret — resolve a pending secret request by requestId.
  */
 function handleSecret({ body }: RouteHandlerArgs) {
-  const requestId = body?.requestId as string | undefined;
-  const delivery = body?.delivery as string | undefined;
+  const requestId = body?.requestId;
+  const delivery = body?.delivery;
 
   if (!requestId || typeof requestId !== "string") {
     throw new BadRequestError("requestId is required");
@@ -133,8 +129,11 @@ function handleSecret({ body }: RouteHandlerArgs) {
   // undefined) so the request settles cleanly rather than 400-ing and stranding
   // the pending interaction.
   const isCancel = delivery === "none";
-  const rawValue = isCancel ? undefined : (body?.value as string | undefined);
+  const rawValue = isCancel ? undefined : body?.value;
 
+  if (rawValue !== undefined && typeof rawValue !== "string") {
+    throw new BadRequestError("value must be a string");
+  }
   const value =
     rawValue === undefined ? undefined : normalizeSecretValue(rawValue);
   if (value !== undefined && value !== rawValue) {
@@ -195,9 +194,9 @@ function handleSecret({ body }: RouteHandlerArgs) {
     requestId,
     value === undefined ? "cancelled" : "answered",
   );
-  (resolved?.rpcResolve as ((r: SecretPromptResult) => void) | undefined)?.({
+  resolved?.rpcResolve?.({
     value: value ?? null,
-    delivery: (effectiveDelivery as SecretDelivery) ?? "store",
+    delivery: effectiveDelivery ?? "store",
     // A missing value here is a deliberate user cancel (the client dismissed
     // the prompt), distinct from the timeout path. Tag it so downstream callers
     // can treat it as a valid outcome rather than a failure.

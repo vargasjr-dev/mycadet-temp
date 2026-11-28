@@ -128,11 +128,7 @@ export function normalizeCapabilityManifest(
   const tools = Array.isArray(obj.tools)
     ? obj.tools
         .map((t) =>
-          typeof t === "string"
-            ? t
-            : isObjectRecord(t)
-              ? (t.name as string | undefined)
-              : undefined,
+          typeof t === "string" ? t : isObjectRecord(t) ? t.name : undefined,
         )
         .filter((n): n is string => typeof n === "string")
     : [];

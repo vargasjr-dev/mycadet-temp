@@ -194,7 +194,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       expect(ctx.hostCuProxy).toBeDefined();
       // Dispatched for real: the request reached the wire, not an error result.
       expect(sentMessages).toHaveLength(1);
-      const sent = sentMessages[0] as { type?: string; requestId?: string };
+      const sent: { type?: string; requestId?: string } = sentMessages[0];
       expect(sent.type).toBe("host_cu_request");
 
       proxy.processObservation(sent.requestId!, { axTree: "window Safari" });
@@ -354,26 +354,26 @@ describe("surfaceProxyResolver — CU tool routing", () => {
       const activateSource = mock(() => {
         throw new Error("disabled tracking must not activate a source");
       });
-      (
-        ctx as unknown as {
-          computerUseModeSessions: Conversation["computerUseModeSessions"];
-        }
-      ).computerUseModeSessions = new ComputerUseModeSessionProducer(
-        {
-          activateSource,
-          beginDraining: mock(() => false),
-          claimTurn: mock(() => undefined),
-          getTurnOwner: mock(() => undefined),
-          recordActivity: mock(() => false),
-          retireSource: mock(() => false),
-        },
-        () => false,
-      );
+      Object.assign(ctx, {
+        computerUseModeSessions: new ComputerUseModeSessionProducer(
+          {
+            activateSource,
+            beginDraining: mock(() => false),
+            claimTurn: mock(() => undefined),
+            getTurnOwner: mock(() => undefined),
+            recordActivity: mock(() => false),
+            retireSource: mock(() => false),
+          },
+          () => false,
+        ),
+      });
 
       const resultPromise = surfaceProxyResolver(ctx, "computer_use_click", {
         element_id: 42,
       });
-      const sent = sentMessages[0] as { requestId: string; type: string };
+      const sent = z
+        .looseObject({ requestId: z.string(), type: z.string() })
+        .parse(sentMessages[0]);
       expect(sent.type).toBe("host_cu_request");
       expect(activateSource).not.toHaveBeenCalled();
 
@@ -402,7 +402,9 @@ describe("surfaceProxyResolver — CU tool routing", () => {
           element_id: 42,
         });
         expect(sentMessages).toHaveLength(1);
-        const sent = sentMessages[0] as { requestId: string };
+        const sent = z
+          .looseObject({ requestId: z.string() })
+          .parse(sentMessages[0]);
         proxy.processObservation(sent.requestId, {
           executionResult: "clicked",
         });

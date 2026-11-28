@@ -220,9 +220,9 @@ export function resolveTokenHeader(
       valuePrefix?: unknown;
     } =>
       isObjectRecord(t) &&
-      (t as { injectionType?: unknown }).injectionType === "header" &&
-      typeof (t as { headerName?: unknown }).headerName === "string" &&
-      (t as { headerName: string }).headerName.trim() !== "",
+      t.injectionType === "header" &&
+      typeof t.headerName === "string" &&
+      t.headerName.trim() !== "",
   );
   if (headerTemplates.length === 0) {
     return null;

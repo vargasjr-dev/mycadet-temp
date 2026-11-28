@@ -76,11 +76,10 @@ function getAllowedRequestHostPatterns(
           if (
             entry &&
             typeof entry === "object" &&
-            typeof (entry as { hostPattern?: unknown }).hostPattern === "string"
+            "hostPattern" in entry &&
+            typeof entry.hostPattern === "string"
           ) {
-            const hostPattern = (
-              entry as { hostPattern: string }
-            ).hostPattern.trim();
+            const hostPattern = entry.hostPattern.trim();
             if (hostPattern) {
               patterns.push(hostPattern);
             }
@@ -624,9 +623,7 @@ export async function handleRequest({ body = {} }: RouteHandlerArgs) {
         !Array.isArray(rawBody) &&
         !isBinaryOAuthBody(rawBody)
       ) {
-        for (const [key, value] of Object.entries(
-          rawBody as Record<string, unknown>,
-        )) {
+        for (const [key, value] of Object.entries(rawBody)) {
           const existing = query[key];
           const strValue = String(value);
           if (existing !== undefined) {

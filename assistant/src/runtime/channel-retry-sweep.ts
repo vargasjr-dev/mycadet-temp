@@ -34,6 +34,7 @@ import {
   recordDeliveryFailure,
   recordProcessingFailure,
 } from "../persistence/delivery-status.js";
+import { parseJsonRecord } from "../util/json.js";
 import { getLogger } from "../util/logger.js";
 import { isObjectRecord } from "../util/object.js";
 import {
@@ -298,7 +299,7 @@ export async function sweepFailedEvents(
 
     let payload: Record<string, unknown>;
     try {
-      payload = JSON.parse(event.rawPayload) as Record<string, unknown>;
+      payload = parseJsonRecord(event.rawPayload);
     } catch {
       recordProcessingFailure(
         event.id,
@@ -310,7 +311,9 @@ export async function sweepFailedEvents(
     const content =
       typeof payload.content === "string" ? payload.content.trim() : "";
     const attachmentIds = Array.isArray(payload.attachmentIds)
-      ? (payload.attachmentIds as string[])
+      ? payload.attachmentIds.filter(
+          (id): id is string => typeof id === "string",
+        )
       : undefined;
     const sourceChannel = parseChannelId(payload.sourceChannel);
     if (!sourceChannel) {
@@ -674,7 +677,7 @@ export async function sweepFailedEvents(
 
     let payload: Record<string, unknown>;
     try {
-      payload = JSON.parse(event.rawPayload) as Record<string, unknown>;
+      payload = parseJsonRecord(event.rawPayload);
     } catch {
       recordDeliveryFailure(
         event.id,

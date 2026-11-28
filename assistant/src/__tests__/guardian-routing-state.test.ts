@@ -391,7 +391,7 @@ describe("channel-retry-sweep routing state", () => {
     let capturedOptions: { isInteractive?: boolean } | undefined;
 
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedOptions = options as { isInteractive?: boolean };
+      capturedOptions = options;
       const messageId = `message-tc-sweep-${Date.now()}`;
       const db = getDb();
       db.insert(messages)
@@ -414,7 +414,7 @@ describe("channel-retry-sweep routing state", () => {
     let capturedOptions: { isInteractive?: boolean } | undefined;
 
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedOptions = options as { isInteractive?: boolean };
+      capturedOptions = options;
       const messageId = `message-tc-no-binding-${Date.now()}`;
       const db = getDb();
       db.insert(messages)
@@ -437,7 +437,7 @@ describe("channel-retry-sweep routing state", () => {
     let capturedOptions: { isInteractive?: boolean } | undefined;
 
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedOptions = options as { isInteractive?: boolean };
+      capturedOptions = options;
       const messageId = `message-guardian-sweep-${Date.now()}`;
       const db = getDb();
       db.insert(messages)
@@ -460,7 +460,7 @@ describe("channel-retry-sweep routing state", () => {
     let capturedOptions: { isInteractive?: boolean } | undefined;
 
     await sweepFailedEvents(async (conversationId, _content, options) => {
-      capturedOptions = options as { isInteractive?: boolean };
+      capturedOptions = options;
       const messageId = `message-unknown-sweep-${Date.now()}`;
       const db = getDb();
       db.insert(messages)

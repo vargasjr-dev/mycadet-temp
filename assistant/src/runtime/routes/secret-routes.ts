@@ -78,8 +78,8 @@ const WRITABLE_CADET_CREDENTIAL_FIELDS = [
 ] as const;
 
 function isWritableCadetCredentialField(field: string): boolean {
-  return (WRITABLE_CADET_CREDENTIAL_FIELDS as readonly string[]).includes(
-    field,
+  return WRITABLE_CADET_CREDENTIAL_FIELDS.some(
+    (writableField) => writableField === field,
   );
 }
 

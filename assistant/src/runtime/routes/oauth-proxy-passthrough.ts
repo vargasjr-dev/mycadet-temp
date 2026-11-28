@@ -515,7 +515,7 @@ function hasUnauthorizedStatus(err: unknown): boolean {
     typeof err === "object" &&
     err !== null &&
     "status" in err &&
-    (err as { status: unknown }).status === 401
+    err.status === 401
   );
 }
 

@@ -135,7 +135,7 @@ export class ExtensionCdpClient implements ScopedCdpClient {
         (typeof parsedError === "object" &&
           parsedError !== null &&
           "message" in parsedError &&
-          typeof (parsedError as { message: unknown }).message === "string" &&
+          typeof parsedError.message === "string" &&
           (parsedError as { message: string }).message) ||
         `CDP error for ${method}`;
 
@@ -245,7 +245,7 @@ function classifyHostBrowserError(parsed: unknown): CdpErrorCode {
   if (!("code" in parsed)) {
     return "cdp_error";
   }
-  const code = (parsed as { code: unknown }).code;
+  const code = parsed.code;
   if (typeof code !== "string") {
     return "cdp_error";
   }

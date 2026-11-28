@@ -8,6 +8,7 @@ import { readFile } from "node:fs/promises";
 
 import JSZip from "jszip";
 
+import { parseJsonRecord } from "../util/json.js";
 import { isObjectRecord } from "../util/object.js";
 import type { SignatureJson } from "./bundle-signer.js";
 
@@ -132,7 +133,7 @@ export async function verifyBundleSignature(
     };
   }
   const manifestText = await manifestFile.async("text");
-  const manifest = JSON.parse(manifestText) as Record<string, unknown>;
+  const manifest = parseJsonRecord(manifestText);
 
   const signingPayload = sortKeysDeep({
     content_hashes: computedHashes,

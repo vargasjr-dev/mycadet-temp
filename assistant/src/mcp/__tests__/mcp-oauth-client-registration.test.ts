@@ -82,7 +82,7 @@ async function register(issuer = "https://mcp.unabyss.com"): Promise<void> {
   const provider = newProvider();
   await provider.startCallbackServer();
   await seedDiscovery(provider, issuer);
-  await provider.saveClientInformation(REGISTRATION as never);
+  await provider.saveClientInformation(REGISTRATION);
   provider.stopCallbackServer();
 }
 
@@ -102,7 +102,7 @@ describe("McpOAuthProvider client registration reuse", () => {
 
     // Returning the stored value is what keeps the server from accruing a
     // fresh client record on every `assistant mcp auth`.
-    expect(await next.clientInformation()).toEqual(REGISTRATION as never);
+    expect(await next.clientInformation()).toEqual(REGISTRATION);
   });
 
   test("no stored registration means the SDK registers", async () => {
@@ -141,7 +141,7 @@ describe("McpOAuthProvider client registration reuse", () => {
     await seedDiscovery(first, "https://mcp.unabyss.com", true);
     await first.saveClientInformation({
       client_id: CLIENT_METADATA_URL,
-    } as never);
+    });
 
     const next = newProvider();
     await next.startCallbackServer();
@@ -149,7 +149,7 @@ describe("McpOAuthProvider client registration reuse", () => {
 
     expect(await next.clientInformation()).toEqual({
       client_id: CLIENT_METADATA_URL,
-    } as never);
+    });
   });
 
   test("a stored metadata client falls back when the server stops advertising support", async () => {
@@ -159,7 +159,7 @@ describe("McpOAuthProvider client registration reuse", () => {
     await seedDiscovery(first, "https://mcp.unabyss.com", true);
     await first.saveClientInformation({
       client_id: CLIENT_METADATA_URL,
-    } as never);
+    });
 
     const next = newProvider();
     await next.startCallbackServer();
@@ -177,7 +177,7 @@ describe("McpOAuthProvider client registration reuse", () => {
     const silent = newProvider();
     await seedDiscovery(silent, "https://mcp.unabyss.com");
 
-    expect(await silent.clientInformation()).toEqual(REGISTRATION as never);
+    expect(await silent.clientInformation()).toEqual(REGISTRATION);
   });
 
   test("a registration stored before bindings existed is kept", async () => {
@@ -193,7 +193,7 @@ describe("McpOAuthProvider client registration reuse", () => {
 
     expect(await provider.clientInformation()).toEqual({
       client_id: "legacy",
-    } as never);
+    });
   });
 
   test("invalidating the client drops its binding too", async () => {

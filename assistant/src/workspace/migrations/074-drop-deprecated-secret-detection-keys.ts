@@ -7,6 +7,7 @@ import {
 import { join } from "node:path";
 
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const log = getLogger(
@@ -47,11 +48,11 @@ export const dropDeprecatedSecretDetectionKeysMigration: WorkspaceMigration = {
 
     let config: Record<string, unknown>;
     try {
-      const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      const raw: unknown = JSON.parse(readFileSync(configPath, "utf-8"));
+      if (!isPlainObject(raw)) {
         return;
       }
-      config = raw as Record<string, unknown>;
+      config = raw;
     } catch {
       return;
     }
@@ -118,8 +119,5 @@ function appendNotice(workspaceDir: string, previousAction: string): void {
 }
 
 function readObject(value: unknown): Record<string, unknown> | null {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
+  return isPlainObject(value) ? value : null;
 }

@@ -229,9 +229,7 @@ describe("secret routes cloud proxy registry sync", () => {
     await notifyCesOfAssistantApiKeyUpdate(
       "ast-managed-key",
       undefined,
-      fakeLogger as unknown as Parameters<
-        typeof notifyCesOfAssistantApiKeyUpdate
-      >[2],
+      fakeLogger,
     );
 
     expect(warns.some((m) => m.includes("no CES client is connected"))).toBe(

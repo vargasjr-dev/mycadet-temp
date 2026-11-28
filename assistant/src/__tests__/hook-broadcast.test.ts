@@ -49,7 +49,7 @@ function buildPlugin(
 ): Plugin {
   return {
     manifest: { name, version: "1.0.0" },
-    hooks: { "user-prompt-submit": hook as HookFunction },
+    hooks: { "user-prompt-submit": hook },
   };
 }
 
@@ -135,10 +135,7 @@ describe("user-prompt-submit broadcast capability", () => {
     );
 
     // A context without a conversationId — the emit path must tolerate it.
-    await runHook(
-      "user-prompt-submit",
-      baseCtx({ conversationId: undefined as unknown as string }),
-    );
+    await runHook("user-prompt-submit", baseCtx({ conversationId: undefined }));
 
     const events = emittedHookEvents();
     expect(events).toHaveLength(1);

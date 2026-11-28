@@ -254,11 +254,10 @@ describe("host_file_read image support", () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain("Image loaded");
     expect(result.content).toContain("image/png");
-    expect((result as any).contentBlocks).toBeDefined();
-    expect((result as any).contentBlocks[0].type).toBe("image");
-    expect((result as any).contentBlocks[0].source.media_type).toBe(
-      "image/png",
-    );
+    expect(result.contentBlocks?.[0]).toMatchObject({
+      type: "image",
+      source: { media_type: "image/png" },
+    });
   });
 
   test("returns correct media type for .jpg file", async () => {
@@ -274,11 +273,10 @@ describe("host_file_read image support", () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain("Image loaded");
     expect(result.content).toContain("image/jpeg");
-    expect((result as any).contentBlocks).toBeDefined();
-    expect((result as any).contentBlocks[0].type).toBe("image");
-    expect((result as any).contentBlocks[0].source.media_type).toBe(
-      "image/jpeg",
-    );
+    expect(result.contentBlocks?.[0]).toMatchObject({
+      type: "image",
+      source: { media_type: "image/jpeg" },
+    });
   });
 
   test("returns error for non-existent image path", async () => {
@@ -305,7 +303,7 @@ describe("host_file_read image support", () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain("hello world");
     expect(result.content).toContain("second line");
-    expect((result as any).contentBlocks).toBeUndefined();
+    expect(result.contentBlocks).toBeUndefined();
   });
 
   test("passes target_client_id to HostFileProxy.instance.request", async () => {

@@ -214,7 +214,7 @@ export function lineageMessageFilter(segments: LineageSegment[]): SQL {
           or(eq(messages.id, id), lt(messages.id, id)),
         ),
       ),
-    ) as SQL;
+    )!;
   });
   return clauses.length === 1 ? clauses[0]! : or(...clauses)!;
 }
@@ -229,10 +229,7 @@ export function lineageMessagesAfterFilter(
   segments: LineageSegment[],
   after: LineageBound,
 ): SQL {
-  return and(
-    lineageMessageFilter(segments),
-    messagesAfterBoundFilter(after),
-  ) as SQL;
+  return and(lineageMessageFilter(segments), messagesAfterBoundFilter(after))!;
 }
 
 /**
@@ -243,5 +240,5 @@ export function messagesAfterBoundFilter(after: LineageBound): SQL {
   return or(
     gt(messages.createdAt, after.createdAt),
     and(eq(messages.createdAt, after.createdAt), gt(messages.id, after.id)),
-  ) as SQL;
+  )!;
 }

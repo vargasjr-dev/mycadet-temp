@@ -76,12 +76,12 @@ mock.module("../ipc/gateway-client.js", () => ({
       ok: true,
       didWrite: true,
       channel: {
-        id: (params?.contactChannelId as string) ?? "ch1",
+        id: params?.contactChannelId ?? "ch1",
         contactId: "c1",
         type: "phone",
         address: "addr",
         status: "revoked",
-        revokedReason: (params?.reason as string) ?? null,
+        revokedReason: params?.reason ?? null,
       },
     };
   },

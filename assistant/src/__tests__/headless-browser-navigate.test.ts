@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 // ── Mocks ────────────────────────────────────────────────────────────
 
 // ── Fake CdpClient ───────────────────────────────────────────────────
@@ -527,8 +529,10 @@ describe("executeBrowserNavigate", () => {
       if (c.method !== "Runtime.evaluate") {
         return false;
       }
-      const expr = (c.params as { expression?: string } | undefined)
-        ?.expression;
+      const expr = z
+        .looseObject({ expression: z.string().optional() })
+        .optional()
+        .parse(c.params)?.expression;
       return (
         typeof expr === "string" &&
         expr.includes("readyState") &&

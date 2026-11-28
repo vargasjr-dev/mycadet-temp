@@ -410,7 +410,7 @@ function buildClassifyRiskParams(
     // Count credential references attached to this invocation.
     let credentialRefCount: number | undefined;
     if (Array.isArray(input.credential_ids)) {
-      const validIds = (input.credential_ids as unknown[]).filter(
+      const validIds = input.credential_ids.filter(
         (id) => typeof id === "string" && id.length > 0,
       );
       if (validIds.length > 0) {

@@ -486,10 +486,7 @@ const pendingQuestionResolver: GuardianRequestResolver = {
         callSessionId: request.callSessionId,
         pendingQuestionId: request.pendingQuestionId,
         answerText,
-        answerCallOk:
-          "ok" in (answerResult as Record<string, unknown>)
-            ? (answerResult as Record<string, unknown>).ok
-            : false,
+        answerCallOk: "ok" in answerResult ? answerResult.ok : false,
       },
       "Pending question resolver: decision applied",
     );

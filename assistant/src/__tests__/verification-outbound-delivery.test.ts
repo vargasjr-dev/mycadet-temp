@@ -165,7 +165,7 @@ describe("startOutbound delivers from inside the action", () => {
     // The user snowflake has to be resolved to a channel before the send, and
     // both are bare digits, so an unresolved delivery does not fail loudly.
     await startOutbound({
-      channel: "discord" as never,
+      channel: "discord",
       destination: "900000000000000042",
     });
 

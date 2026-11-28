@@ -8,8 +8,8 @@
  *
  * Pure; the only dependency is the shared escape-sequence strip.
  */
-
 import { stripAnsiSequences } from "../util/ansi.js";
+import { getObjectProperty } from "../util/object.js";
 
 export function deriveFailureError(ackMessage: string, stderr: string): string {
   const clean = stripAnsiSequences(stderr).trim();
@@ -49,14 +49,17 @@ function lastJsonErrorMessage(text: string): string | null {
       continue;
     }
     try {
-      const parsed = JSON.parse(candidate) as { error?: { message?: unknown } };
+      const parsed: unknown = JSON.parse(candidate);
       // A valid top-level object: skip past its end so we don't restart
       // candidates at its nested braces. Otherwise a nested error.message
       // (e.g. a JSON-RPC error.data payload) would shadow the outer adapter
       // error. Only reached on a successful parse, so a stray unmatched brace
       // that balances-but-fails-to-parse still lets inner objects be scanned.
       i += candidate.length - 1;
-      const message = parsed.error?.message;
+      const message = getObjectProperty(
+        getObjectProperty(parsed, "error"),
+        "message",
+      );
       if (typeof message === "string" && message.length > 0) {
         found = message;
       }

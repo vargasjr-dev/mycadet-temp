@@ -166,6 +166,7 @@ import {
 import { parseJsonRecord } from "../../util/json.js";
 import { getWorkspaceDir, getWorkspacePromptPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { safeStringSlice } from "../../util/unicode.js";
 import { assistantEventHub, broadcastMessage } from "../assistant-event-hub.js";
 import { getCurrentSeq } from "../assistant-stream-state.js";
@@ -371,7 +372,7 @@ type RiskThreshold = (typeof VALID_RISK_THRESHOLDS)[number];
 function isValidRiskThreshold(value: unknown): value is RiskThreshold {
   return (
     typeof value === "string" &&
-    VALID_RISK_THRESHOLDS.includes(value as RiskThreshold)
+    VALID_RISK_THRESHOLDS.some((threshold) => threshold === value)
   );
 }
 
@@ -759,7 +760,9 @@ function extractNotificationDiscriminators(
     };
   }
 
-  const acp = meta.acpNotification as Record<string, unknown> | undefined;
+  const acp = isObjectRecord(meta.acpNotification)
+    ? meta.acpNotification
+    : undefined;
   if (acp && typeof acp.acpSessionId === "string") {
     discriminators.acpNotification = {
       acpSessionId: acp.acpSessionId,

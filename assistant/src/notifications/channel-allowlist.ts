@@ -28,15 +28,18 @@ export function intersectChannelAllowlist(
   allowlist: readonly string[],
   available: readonly NotificationChannel[],
 ): NotificationChannel[] {
-  const availableSet = new Set<string>(available);
+  const availableByName = new Map<string, NotificationChannel>(
+    available.map((channel) => [channel, channel]),
+  );
   const seen = new Set<string>();
   const selected: NotificationChannel[] = [];
   for (const channel of allowlist) {
-    if (!availableSet.has(channel) || seen.has(channel)) {
+    const availableChannel = availableByName.get(channel);
+    if (availableChannel === undefined || seen.has(channel)) {
       continue;
     }
     seen.add(channel);
-    selected.push(channel as NotificationChannel);
+    selected.push(availableChannel);
   }
   return selected;
 }

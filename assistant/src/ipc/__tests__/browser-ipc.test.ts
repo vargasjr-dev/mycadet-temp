@@ -89,7 +89,7 @@ function browserLifecycle() {
         turnId: input.turnId,
         lifecycle: input.lifecycle === "status" ? "action" : input.lifecycle,
         owner: { id: "browser-session", mode: "browser" as const },
-      } as BrowserOperationToken;
+      };
     },
     finishOperation(
       token: BrowserOperationToken | undefined,

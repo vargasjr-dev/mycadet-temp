@@ -235,14 +235,24 @@ function awaitRouteApproval(args: {
 }
 
 async function spawnSession({ body, abortSignal }: RouteHandlerArgs) {
-  const agent = body?.agent as string | undefined;
-  const task = body?.task as string | undefined;
-  const conversationId = body?.conversationId as string | undefined;
-  const cwd = (body?.cwd as string | undefined) ?? process.cwd();
+  const agent = body?.agent;
+  const task = body?.task;
+  const conversationId = body?.conversationId;
+  const cwd = body?.cwd ?? process.cwd();
   const model = body?.model ?? undefined;
 
-  if (!agent || !task || !conversationId) {
+  if (
+    typeof agent !== "string" ||
+    !agent ||
+    typeof task !== "string" ||
+    !task ||
+    typeof conversationId !== "string" ||
+    !conversationId
+  ) {
     throw new BadRequestError("agent, task, and conversationId are required");
+  }
+  if (typeof cwd !== "string") {
+    throw new BadRequestError("cwd must be a string when provided");
   }
   if (model !== undefined && typeof model !== "string") {
     throw new BadRequestError("model must be a string when provided");
@@ -326,10 +336,13 @@ async function spawnSession({ body, abortSignal }: RouteHandlerArgs) {
 }
 
 async function steerSession({ pathParams, body }: RouteHandlerArgs) {
-  const id = pathParams?.id as string;
-  const instruction = body?.instruction as string | undefined;
+  const id = pathParams?.id;
+  if (!id) {
+    throw new BadRequestError("ACP session id is required");
+  }
+  const instruction = body?.instruction;
 
-  if (!instruction) {
+  if (typeof instruction !== "string" || !instruction) {
     throw new BadRequestError("instruction is required");
   }
 
@@ -473,7 +486,10 @@ async function approveThenResume(args: {
 }
 
 async function cancelSession({ pathParams }: RouteHandlerArgs) {
-  const id = pathParams?.id as string;
+  const id = pathParams?.id;
+  if (!id) {
+    throw new BadRequestError("ACP session id is required");
+  }
   const manager = getAcpSessionManager();
   try {
     await manager.cancel(id);
@@ -492,7 +508,10 @@ async function cancelSession({ pathParams }: RouteHandlerArgs) {
 }
 
 function closeSession({ pathParams }: RouteHandlerArgs) {
-  const id = pathParams?.id as string;
+  const id = pathParams?.id;
+  if (!id) {
+    throw new BadRequestError("ACP session id is required");
+  }
   const manager = getAcpSessionManager();
   try {
     manager.close(id);
@@ -602,7 +621,10 @@ function bulkDeleteSessions({ queryParams }: RouteHandlerArgs) {
 }
 
 function deleteSession({ pathParams }: RouteHandlerArgs) {
-  const id = pathParams?.id as string;
+  const id = pathParams?.id;
+  if (!id) {
+    throw new BadRequestError("ACP session id is required");
+  }
   const manager = getAcpSessionManager();
 
   try {

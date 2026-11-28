@@ -99,12 +99,28 @@ installThresholdReaderMock();
 
 // Capture tool-audit terminal calls so tests can assert on denied/error outcomes
 // the way they previously asserted on emitted lifecycle events.
-const auditCalls = {
-  denied: [] as any[],
-  error: [] as any[],
-  executed: [] as any[],
-  prompted: [] as any[],
-  decided: [] as any[],
+const auditCalls: {
+  denied: Array<
+    Parameters<
+      typeof import("../persistence/tool-audit.js").recordToolDenied
+    >[0]
+  >;
+  error: Array<
+    Parameters<typeof import("../persistence/tool-audit.js").recordToolError>[0]
+  >;
+  executed: Array<
+    Parameters<
+      typeof import("../persistence/tool-audit.js").recordToolExecuted
+    >[0]
+  >;
+  prompted: Array<unknown>;
+  decided: Array<{ entry: unknown; outcome: string }>;
+} = {
+  denied: [],
+  error: [],
+  executed: [],
+  prompted: [],
+  decided: [],
 };
 mock.module("../persistence/tool-audit.js", () => ({
   recordToolDenied: (e: any) => auditCalls.denied.push(e),
