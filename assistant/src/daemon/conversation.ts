@@ -14,7 +14,6 @@
  * - conversation-workspace.ts    — refreshWorkspaceTopLevelContext
  * - conversation-usage.ts        — recordUsage
  */
-
 import type { TrustClass } from "@mycadet/gateway-client";
 import { ChannelId } from "@mycadet/service-contracts/channels";
 
@@ -117,6 +116,7 @@ import { ToolDefinition } from "../tools/tool-types.js";
 import type { OnboardingContext } from "../types/onboarding-context.js";
 import type { AbortReason } from "../util/abort-reasons.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
 import type { WorkspaceGitService } from "../workspace/git-service.js";
 import type { commitTurnChanges } from "../workspace/turn-commit.js";
@@ -1981,7 +1981,10 @@ export class Conversation {
         continue;
       }
       for (const block of msg.content) {
-        const b = block as unknown as Record<string, unknown>;
+        if (!isObjectRecord(block)) {
+          continue;
+        }
+        const b: Record<string, unknown> = block;
         if (b.type === "ui_surface" && typeof b.surfaceId === "string") {
           this.surfaceState.set(b.surfaceId, restoreSurfaceStateEntry(b));
         }

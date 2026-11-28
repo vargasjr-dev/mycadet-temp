@@ -9,6 +9,7 @@ import { readFile } from "node:fs/promises";
 
 import JSZip from "jszip";
 
+import { parseJsonRecord } from "../util/json.js";
 import { isObjectRecord } from "../util/object.js";
 
 export interface SignatureJson {
@@ -103,7 +104,7 @@ export async function signBundle(
     throw new Error("Bundle is missing manifest.json");
   }
   const manifestText = await manifestFile.async("text");
-  const manifest = JSON.parse(manifestText) as Record<string, unknown>;
+  const manifest = parseJsonRecord(manifestText);
 
   // 3. Construct canonical signing payload with sorted keys
   const signingPayload = sortKeysDeep({

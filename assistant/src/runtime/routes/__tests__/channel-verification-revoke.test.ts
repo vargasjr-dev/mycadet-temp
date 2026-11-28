@@ -28,12 +28,16 @@ const ipcCallPersistentMock = mock(
       ok: true,
       didWrite: true,
       channel: {
-        id: (params?.contactChannelId as string) ?? "ch1",
+        id:
+          typeof params?.contactChannelId === "string"
+            ? params.contactChannelId
+            : "ch1",
         contactId: "c1",
         type: "telegram",
         address: "addr",
         status: "revoked",
-        revokedReason: (params?.reason as string) ?? null,
+        revokedReason:
+          typeof params?.reason === "string" ? params.reason : null,
       },
     };
   },
@@ -156,9 +160,9 @@ describe("verification revoke relay", () => {
   });
 
   test("relays the downgrade outcome to the gateway and tears down sessions locally", async () => {
-    const result = (await revokeHandler({
+    const result = await revokeHandler({
       body: { channel: "telegram" },
-    })) as { success: boolean; bound: boolean; channel: string };
+    });
 
     // ACL downgrade relayed to the gateway (source of truth).
     expect(ipcCalls).toEqual([
@@ -178,8 +182,7 @@ describe("verification revoke relay", () => {
     // Invalidation emitted explicitly on relay success.
     expect(notifyContactsChangedMock).toHaveBeenCalledTimes(1);
 
-    expect(result.success).toBe(true);
-    expect(result.bound).toBe(false);
+    expect(result).toMatchObject({ success: true, bound: false });
   });
 
   test("emits the invalidation on a successful relay", async () => {
@@ -195,11 +198,11 @@ describe("verification revoke relay", () => {
       async () => ({ ok: "nope" }) as never,
     );
 
-    let thrown: Error | undefined;
+    let thrown: unknown;
     try {
       await revokeHandler({ body: { channel: "telegram" } });
     } catch (err) {
-      thrown = err as Error;
+      thrown = err;
     }
 
     expect(thrown).toBeDefined();
@@ -212,7 +215,10 @@ describe("verification revoke relay", () => {
       ok: false,
       didWrite: false,
       channel: {
-        id: (params?.contactChannelId as string) ?? "ch1",
+        id:
+          typeof params?.contactChannelId === "string"
+            ? params.contactChannelId
+            : "ch1",
         contactId: "c1",
         type: "telegram",
         address: "addr",
@@ -221,11 +227,11 @@ describe("verification revoke relay", () => {
       },
     }));
 
-    let thrown: Error | undefined;
+    let thrown: unknown;
     try {
       await revokeHandler({ body: { channel: "telegram" } });
     } catch (err) {
-      thrown = err as Error;
+      thrown = err;
     }
 
     expect(thrown).toBeDefined();
@@ -238,15 +244,14 @@ describe("verification revoke relay", () => {
       errorCode: "CONFLICT",
     });
 
-    let thrown: { statusCode?: number; message: string } | undefined;
+    let thrown: unknown;
     try {
       await revokeHandler({ body: { channel: "telegram" } });
     } catch (err) {
-      thrown = err as { statusCode?: number; message: string };
+      thrown = err;
     }
 
-    expect(thrown).toBeDefined();
-    expect(thrown!.statusCode).toBe(409);
+    expect(thrown).toMatchObject({ statusCode: 409 });
     // Session teardown ran before the relay rejected.
     expect(cancelOutboundMock).toHaveBeenCalledTimes(1);
     expect(revokePendingSessionsMock).toHaveBeenCalledTimes(1);
@@ -255,15 +260,14 @@ describe("verification revoke relay", () => {
   test("no binding present: tears down sessions and skips the relay", async () => {
     guardianBinding = null;
 
-    const result = (await revokeHandler({
+    const result = await revokeHandler({
       body: { channel: "telegram" },
-    })) as { success: boolean; bound: boolean };
+    });
 
     expect(ipcCalls).toEqual([]);
     expect(cancelOutboundMock).toHaveBeenCalledTimes(1);
     expect(revokePendingSessionsMock).toHaveBeenCalledTimes(1);
-    expect(result.success).toBe(true);
-    expect(result.bound).toBe(false);
+    expect(result).toMatchObject({ success: true, bound: false });
   });
 
   test("skips the relay when the gateway delivery is already revoked", async () => {

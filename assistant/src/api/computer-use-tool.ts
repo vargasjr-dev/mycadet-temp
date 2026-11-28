@@ -15,7 +15,7 @@ export function resolveComputerUseToolName(
   if (name !== "skill_execute" || input === null || typeof input !== "object") {
     return undefined;
   }
-  const tool = (input as Record<string, unknown>).tool;
+  const tool = "tool" in input ? input.tool : undefined;
   return typeof tool === "string" && tool.startsWith("computer_use_")
     ? tool
     : undefined;

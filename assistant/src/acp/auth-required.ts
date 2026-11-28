@@ -50,7 +50,7 @@ export function isAcpAuthRequired(err: unknown): boolean {
   return (
     typeof err === "object" &&
     err !== null &&
-    (err as { code?: unknown }).code === AUTH_REQUIRED_CODE
+    ("code" in err ? err.code : undefined) === AUTH_REQUIRED_CODE
   );
 }
 
@@ -119,7 +119,10 @@ export function requestErrorReason(err: unknown): string {
   ) {
     return message;
   }
-  const details = (data as { details?: unknown }).details;
+  const details =
+    typeof data === "object" && data !== null && "details" in data
+      ? data.details
+      : undefined;
   if (typeof details === "string" && details.length > 0) {
     return details;
   }

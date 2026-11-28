@@ -160,7 +160,7 @@ function makeContext(conversationId: string): ToolContext {
     workingDir: "/tmp",
     trustClass: "guardian",
     signal: new AbortController().signal,
-  } as unknown as ToolContext;
+  };
 }
 
 /**

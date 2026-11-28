@@ -112,11 +112,7 @@ export function resolvePendingQuestion(
     input.kind === "close" ? "cancelled" : "answered",
   );
 
-  (
-    interaction.rpcResolve as
-      | ((value: QuestionPromptResult) => void)
-      | undefined
-  )?.(result);
+  interaction.rpcResolve?.(result);
 
   return {
     status: "resolved",

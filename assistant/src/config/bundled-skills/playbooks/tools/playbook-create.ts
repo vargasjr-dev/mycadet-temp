@@ -6,9 +6,9 @@ import {
   isMemoryEnabled,
 } from "../../../../persistence/jobs-store.js";
 import { memoryGraphNodes } from "../../../../persistence/schema/index.js";
-import type {
-  Playbook,
-  PlaybookAutonomyLevel,
+import {
+  isValidAutonomyLevel,
+  type Playbook,
 } from "../../../../playbooks/types.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import {
@@ -22,8 +22,6 @@ import type {
   ToolExecutionResult,
 } from "../../../../tools/types.js";
 import { safeStringSlice } from "../../../../util/unicode.js";
-
-const VALID_AUTONOMY_LEVELS = new Set<string>(["auto", "draft", "notify"]);
 
 export async function executePlaybookCreate(
   input: Record<string, unknown>,
@@ -50,11 +48,9 @@ export async function executePlaybookCreate(
   const channel = typeof input.channel === "string" ? input.channel : "*";
   const category =
     typeof input.category === "string" ? input.category : "general";
-  const autonomyLevel: PlaybookAutonomyLevel =
-    typeof input.autonomy_level === "string" &&
-    VALID_AUTONOMY_LEVELS.has(input.autonomy_level)
-      ? (input.autonomy_level as PlaybookAutonomyLevel)
-      : "draft";
+  const autonomyLevel = isValidAutonomyLevel(input.autonomy_level)
+    ? input.autonomy_level
+    : "draft";
   const priority = typeof input.priority === "number" ? input.priority : 0;
 
   const playbook: Playbook = {

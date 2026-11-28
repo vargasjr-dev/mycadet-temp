@@ -190,11 +190,11 @@ const CHANNEL_STATUS_VALUES: readonly ChannelStatus[] = [
 const CHANNEL_POLICY_VALUES: readonly ChannelPolicy[] = ["allow", "deny"];
 
 function isChannelStatus(value: string): value is ChannelStatus {
-  return (CHANNEL_STATUS_VALUES as readonly string[]).includes(value);
+  return CHANNEL_STATUS_VALUES.some((status) => status === value);
 }
 
 function isChannelPolicy(value: string): value is ChannelPolicy {
-  return (CHANNEL_POLICY_VALUES as readonly string[]).includes(value);
+  return CHANNEL_POLICY_VALUES.some((policy) => policy === value);
 }
 
 /**

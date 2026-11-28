@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Guard test: the event hub exposed to workspace plugins through
  * `@mycadet/plugin-api` must not let an in-process plugin drive privileged
@@ -43,7 +44,7 @@ function subscribeHostClient(clientId: string, sink: AssistantEventEnvelope[]) {
     callback: (event) => {
       sink.push(event);
     },
-  } as Parameters<typeof rawHub.subscribe>[0]);
+  });
 }
 
 describe("plugin-facing assistantEventHub facade", () => {
@@ -62,8 +63,8 @@ describe("plugin-facing assistantEventHub facade", () => {
       } catch (err) {
         rejected = err;
       }
-      expect(rejected).toBeInstanceOf(Error);
-      expect((rejected as Error).message).toMatch(/host-proxy control events/);
+      assert(rejected instanceof Error);
+      expect(rejected.message).toMatch(/host-proxy control events/);
     }
   });
 
@@ -189,8 +190,8 @@ describe("plugin-facing assistantEventHub facade", () => {
       } catch (err) {
         rejected = err;
       }
-      expect(rejected).toBeInstanceOf(Error);
-      expect((rejected as Error).message).toMatch(/host-proxy control events/);
+      assert(rejected instanceof Error);
+      expect(rejected.message).toMatch(/host-proxy control events/);
       expect(received).toHaveLength(0);
     } finally {
       sub.dispose();
@@ -240,7 +241,7 @@ describe("plugin-facing assistantEventHub facade", () => {
       callback: (event) => {
         received.push(event);
       },
-    } as Parameters<typeof pluginHub.subscribe>[0]);
+    });
     try {
       await rawHub.publish(envelope("host_bash_request"), {
         targetCapability: "host_bash",
@@ -296,7 +297,7 @@ describe("plugin-facing assistantEventHub facade", () => {
     });
     const pluginSub = pluginHub.subscribe({
       type: "process",
-      filter: filter as { conversationId?: string },
+      filter: filter,
       callback: () => {},
     });
     const hostSub = subscribeHostClient("facade-filter-client", []);
@@ -330,8 +331,8 @@ describe("plugin-facing assistantEventHub facade", () => {
       } catch (err) {
         rejected = err;
       }
-      expect(rejected).toBeInstanceOf(Error);
-      expect((rejected as Error).message).toMatch(/host-proxy control events/);
+      assert(rejected instanceof Error);
+      expect(rejected.message).toMatch(/host-proxy control events/);
     } finally {
       String.prototype.startsWith = originalStartsWith;
     }

@@ -12,7 +12,7 @@ const spawnCalls: {
 const spawnSpy = mock((...args: Parameters<typeof realChildProcess.spawn>) => {
   const opts = args[2] as { env?: Record<string, string> } | undefined;
   spawnCalls.push({
-    command: args[0] as string,
+    command: args[0],
     args: args[1] as string[],
     env: opts?.env ? { ...opts.env } : undefined,
   });

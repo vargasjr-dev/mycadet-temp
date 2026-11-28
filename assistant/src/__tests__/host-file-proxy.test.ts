@@ -474,26 +474,21 @@ describe("HostFileProxy", () => {
       const addCalls: string[] = [];
       const removeCalls: string[] = [];
 
-      const s = source as any;
       const origAdd = source.addEventListener.bind(source);
       const origRemove = source.removeEventListener.bind(source);
-      s.addEventListener = (
-        type: string,
-
-        ...rest: any[]
+      source.addEventListener = (
+        ...args: Parameters<EventTarget["addEventListener"]>
       ) => {
-        addCalls.push(type);
+        addCalls.push(args[0]);
 
-        return (origAdd as any)(type, ...rest);
+        return origAdd(...args);
       };
-      s.removeEventListener = (
-        type: string,
-
-        ...rest: any[]
+      source.removeEventListener = (
+        ...args: Parameters<EventTarget["removeEventListener"]>
       ) => {
-        removeCalls.push(type);
+        removeCalls.push(args[0]);
 
-        return (origRemove as any)(type, ...rest);
+        return origRemove(...args);
       };
       return { signal: source, addCalls, removeCalls };
     }

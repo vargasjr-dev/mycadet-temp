@@ -168,7 +168,7 @@ const CREDENTIAL_STORE_UNREACHABLE =
 // ---------------------------------------------------------------------------
 
 async function handleCredentialsList({ body }: RouteHandlerArgs) {
-  const search = (body as { search?: string } | undefined)?.search;
+  const search = typeof body?.search === "string" ? body.search : undefined;
   try {
     const credentials = await listSettingsCredentials(search);
     return { credentials };
@@ -236,7 +236,7 @@ async function handleCredentialsReveal({ body, headers }: RouteHandlerArgs) {
   // reveal-derived chat authority below; the reveal itself works without
   // it (Settings rows, direct terminal use) — those calls just create no
   // authority for any conversation's transcript.
-  const rawNonce = (body as { revealNonce?: unknown }).revealNonce;
+  const rawNonce = body.revealNonce;
   const revealNonce =
     typeof rawNonce === "string" && rawNonce.length > 0 ? rawNonce : undefined;
 

@@ -26,7 +26,6 @@
  * to typed blocks here — a raw `{ ref }` value is never interpreted
  * anywhere else.
  */
-
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 
@@ -36,6 +35,7 @@ import { contentBlockSchema } from "../providers/content-block-schema.js";
 import type { ContentBlock } from "../providers/types.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty, isObjectRecord } from "../util/object.js";
 
 const log = getLogger("message-content-file");
 
@@ -205,8 +205,8 @@ function safeJson(value: unknown): string {
  * serialized payload.
  */
 function coerceLegacyBlock(block: unknown): ContentBlock {
-  if (typeof block === "object" && block !== null) {
-    const rec = block as Record<string, unknown>;
+  if (isObjectRecord(block)) {
+    const rec = block;
     if (rec.type === "text") {
       return {
         type: "text",
@@ -234,9 +234,9 @@ function coerceLegacyBlock(block: unknown): ContentBlock {
           : {}),
       };
     }
-    if (typeof rec.type === "string") {
-      return block as ContentBlock;
-    }
+  }
+  if (typeof getObjectProperty(block, "type") === "string") {
+    return block as ContentBlock;
   }
   return { type: "text", text: safeJson(block) };
 }

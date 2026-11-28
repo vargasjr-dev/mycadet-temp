@@ -91,10 +91,10 @@ async function runReadiness(): Promise<
     stt: { provider: "deepgram", providers: {} },
     tts: { provider: "fish-audio", providers: {} },
   });
-  const services = getConfig().services as {
+  const services: {
     stt: unknown;
     tts: unknown;
-  };
+  } = getConfig().services;
   services.stt = { provider: sttProvider, providers: {} };
   services.tts = { provider: ttsProvider, providers: ttsProviders };
   return resolveLiveVoiceCredentialReadiness();

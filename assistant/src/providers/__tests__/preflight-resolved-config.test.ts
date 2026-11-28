@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 let connectionsByName: Record<string, unknown> = {};
@@ -52,8 +53,8 @@ async function preflightError(
     await preflightResolvedConfig(config, { profileName: "custom-fast" });
     return undefined;
   } catch (err) {
-    expect(err).toBeInstanceOf(ConnectionResolutionError);
-    return err as ConnectionResolutionError;
+    assert(err instanceof ConnectionResolutionError);
+    return err;
   }
 }
 

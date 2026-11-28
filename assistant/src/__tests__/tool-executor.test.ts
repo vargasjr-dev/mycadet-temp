@@ -1346,7 +1346,7 @@ describe("ToolExecutor thrown-value rendering", () => {
   function throwingTool(name: string, thrown: unknown): void {
     getToolOverride = (n: string) =>
       n === name
-        ? ({
+        ? {
             name,
             description: "throwing tool",
             category: "test",
@@ -1356,7 +1356,7 @@ describe("ToolExecutor thrown-value rendering", () => {
             execute: async () => {
               throw thrown;
             },
-          } as Tool)
+          }
         : undefined;
   }
 

@@ -412,7 +412,7 @@ async function spawnReservedSubagent(args: {
         ...(context.toolUseId ? { parentToolUseId: context.toolUseId } : {}),
         ...forkFields,
       },
-      sendToClient as (msg: unknown) => void,
+      sendToClient,
       // The turn's cancellation signal guards the manager's own async setup:
       // a user who stops the turn while the child conversation is being
       // bootstrapped runs the parent's abort sweep before this child is in the

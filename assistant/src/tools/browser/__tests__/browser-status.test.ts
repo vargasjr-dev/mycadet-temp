@@ -102,7 +102,7 @@ function makeContext(overrides: Partial<ToolContext> = {}): ToolContext {
     conversationId: "test-conversation",
     trustClass: "guardian",
     ...overrides,
-  } as ToolContext;
+  };
 }
 
 describe("executeBrowserStatus", () => {

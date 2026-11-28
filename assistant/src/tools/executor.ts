@@ -370,9 +370,10 @@ export class ToolExecutor {
       // tool attempts that fail mid-permission-evaluation.
       if (
         err instanceof Error &&
-        typeof (err as Error & { riskLevel?: string }).riskLevel === "string"
+        "riskLevel" in err &&
+        typeof err.riskLevel === "string"
       ) {
-        riskLevel = (err as Error & { riskLevel?: string }).riskLevel!;
+        riskLevel = err.riskLevel!;
       }
 
       const durationMs = Date.now() - startTime;

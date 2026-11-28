@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 /**
  * Tests for OpenAI's Codex device-code authorization client.
  *
@@ -5,7 +6,6 @@
  * real protocol shapes (string `interval`, 403 pending bodies, terminal error
  * codes) without network or wall-clock waits.
  */
-
 import { describe, expect, test } from "bun:test";
 
 import type { OAuth2Config } from "../oauth2.js";
@@ -137,11 +137,11 @@ describe("requestDeviceCode", () => {
       }),
     ]);
 
-    const err = (await requestDeviceCode(CLIENT_ID, { fetchImpl }).catch(
+    const err = await requestDeviceCode(CLIENT_ID, { fetchImpl }).catch(
       (e: unknown) => e,
-    )) as DeviceAuthError;
+    );
 
-    expect(err).toBeInstanceOf(DeviceAuthError);
+    assert(err instanceof DeviceAuthError);
     expect(err.code).toBe("deviceauth_disabled");
     expect(err.message).toBe("Device auth is off.");
   });
@@ -188,12 +188,12 @@ describe("pollForAuthorizationCode", () => {
       }),
     ]);
 
-    const err = (await pollForAuthorizationCode(pendingRequest(), {
+    const err = await pollForAuthorizationCode(pendingRequest(), {
       fetchImpl,
       sleep: noSleep,
-    }).catch((e: unknown) => e)) as DeviceAuthError;
+    }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(DeviceAuthError);
+    assert(err instanceof DeviceAuthError);
     expect(err.code).toBe("deviceauth_not_enabled");
     expect(err.message).toBe(
       "Device code authorization is disabled for this account.",
@@ -207,7 +207,7 @@ describe("pollForAuthorizationCode", () => {
       jsonResponse(403, PENDING_BODY),
     ]);
 
-    const err = (await pollForAuthorizationCode(
+    const err = await pollForAuthorizationCode(
       pendingRequest({ expiresAt: new Date(clock + 10_000).toISOString() }),
       {
         fetchImpl,
@@ -216,10 +216,10 @@ describe("pollForAuthorizationCode", () => {
           clock += 6_000;
         },
       },
-    ).catch((e: unknown) => e)) as DeviceAuthError;
+    ).catch((e: unknown) => e);
 
     expect(calls).toHaveLength(2);
-    expect(err).toBeInstanceOf(DeviceAuthError);
+    assert(err instanceof DeviceAuthError);
     expect(err.code).toBe("expired_token");
   });
 
@@ -246,13 +246,13 @@ describe("pollForAuthorizationCode", () => {
     controller.abort();
     const { fetchImpl } = queuedFetch([]);
 
-    const err = (await pollForAuthorizationCode(pendingRequest(), {
+    const err = await pollForAuthorizationCode(pendingRequest(), {
       fetchImpl,
       sleep: noSleep,
       signal: controller.signal,
-    }).catch((e: unknown) => e)) as DeviceAuthError;
+    }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(DeviceAuthError);
+    assert(err instanceof DeviceAuthError);
     expect(err.code).toBe("aborted");
   });
 
@@ -260,15 +260,15 @@ describe("pollForAuthorizationCode", () => {
     const controller = new AbortController();
     const { fetchImpl, calls } = queuedFetch([jsonResponse(403, PENDING_BODY)]);
 
-    const err = (await pollForAuthorizationCode(pendingRequest(), {
+    const err = await pollForAuthorizationCode(pendingRequest(), {
       fetchImpl,
       sleep: async () => {
         controller.abort();
       },
       signal: controller.signal,
-    }).catch((e: unknown) => e)) as DeviceAuthError;
+    }).catch((e: unknown) => e);
 
-    expect(err).toBeInstanceOf(DeviceAuthError);
+    assert(err instanceof DeviceAuthError);
     expect(err.code).toBe("aborted");
     expect(calls.length).toBe(1);
   });
@@ -338,13 +338,13 @@ describe("completeDeviceAuth", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = fetchImpl;
     try {
-      const err = (await completeDeviceAuth(OAUTH_CONFIG, pendingRequest(), {
+      const err = await completeDeviceAuth(OAUTH_CONFIG, pendingRequest(), {
         fetchImpl,
         sleep: noSleep,
         signal: controller.signal,
-      }).catch((e: unknown) => e)) as DeviceAuthError;
+      }).catch((e: unknown) => e);
 
-      expect(err).toBeInstanceOf(DeviceAuthError);
+      assert(err instanceof DeviceAuthError);
       expect(err.code).toBe("aborted");
     } finally {
       globalThis.fetch = originalFetch;

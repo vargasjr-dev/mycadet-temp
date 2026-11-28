@@ -378,7 +378,7 @@ function attachUpdateSubcommand(parent: Command): void {
             }
             authInput = { type: "api_key", credential: opts.credential };
           } else {
-            authInput = storedAuth as unknown as Record<string, unknown>;
+            authInput = { ...storedAuth };
           }
         }
         if (typeof authInput === "string") {

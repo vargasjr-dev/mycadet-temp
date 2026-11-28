@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { runSkillToolScript } from "../tools/skills/skill-script-runner.js";
 import type { ToolContext } from "../tools/types.js";
 
@@ -140,9 +142,9 @@ describe("runSkillToolScript sandbox — success", () => {
     );
 
     expect(result.isError).toBe(false);
-    const parsed = JSON.parse(result.content) as {
-      pluginName: string | null;
-    };
+    const parsed = z
+      .looseObject({ pluginName: z.union([z.null(), z.string()]) })
+      .parse(JSON.parse(result.content));
     expect(parsed.pluginName).toBe("psk-demo");
   }, 15_000);
 });

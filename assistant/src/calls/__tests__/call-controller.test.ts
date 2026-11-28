@@ -4200,8 +4200,7 @@ describe("call-controller", () => {
       // The schema enum rejects unknown providers, so this state can only be
       // produced by mutating the loader's cached config directly.
       const cfg = getConfig();
-      (cfg.services.tts as { provider: string }).provider =
-        "not-a-real-provider";
+      Object.assign(cfg.services.tts, { provider: "not-a-real-provider" });
 
       const result = await resolveCallTtsProvider();
       expect(result.provider).toBeNull();

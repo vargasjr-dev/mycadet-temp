@@ -405,7 +405,7 @@ export function executeDocumentUpdate(
     return invalidInput('mode must be "replace" or "append"');
   }
   const content = input.content;
-  const mode = (input.mode as "replace" | "append" | undefined) ?? "append";
+  const mode = input.mode ?? "append";
 
   if (!canAccessDocument(surfaceId, context)) {
     return documentNotFound(surfaceId);

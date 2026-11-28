@@ -111,7 +111,7 @@ export class RouteHostClient {
       const envelope: IpcEnvelope = {
         id,
         method: ROUTE_INVOKE_METHOD,
-        params: params as unknown as Record<string, unknown>,
+        params: { ...params },
       };
       if (body && body.byteLength > 0) {
         envelope.headers = { "content-length": String(body.byteLength) };

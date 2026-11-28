@@ -61,7 +61,7 @@ function generateNumericSecret(digits: number = 6): string {
 }
 
 function isInterceptable(s: VerificationSessionWire): boolean {
-  return (INTERCEPTABLE_STATUSES as readonly string[]).includes(s.status);
+  return INTERCEPTABLE_STATUSES.some((candidate) => candidate === s.status);
 }
 
 const OUTBOUND_LIVE_STATUSES = ["pending_bootstrap", "awaiting_response"];

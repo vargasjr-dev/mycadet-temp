@@ -23,8 +23,7 @@ setBroadcastOverrideForTesting((msg: AssistantEvent) =>
 
 const _piStore = new Map<string, { rpcResolve?: (value: unknown) => void }>();
 mock.module("../runtime/pending-interactions.js", () => ({
-  register: (id: string, entry: object) =>
-    _piStore.set(id, entry as { rpcResolve?: (value: unknown) => void }),
+  register: (id: string, entry: object) => _piStore.set(id, entry),
   resolve: (id: string) => {
     const e = _piStore.get(id);
     _piStore.delete(id);

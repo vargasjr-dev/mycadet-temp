@@ -38,10 +38,24 @@ mock.module("../persistence/tool-usage-store.js", () => ({
 
 // Capture tool-audit terminal calls so the policy-block test can assert on the
 // recorded denial the way it previously asserted on an emitted lifecycle event.
-const auditCalls = {
-  denied: [] as any[],
-  error: [] as any[],
-  executed: [] as any[],
+const auditCalls: {
+  denied: Array<
+    Parameters<
+      typeof import("../persistence/tool-audit.js").recordToolDenied
+    >[0]
+  >;
+  error: Array<
+    Parameters<typeof import("../persistence/tool-audit.js").recordToolError>[0]
+  >;
+  executed: Array<
+    Parameters<
+      typeof import("../persistence/tool-audit.js").recordToolExecuted
+    >[0]
+  >;
+} = {
+  denied: [],
+  error: [],
+  executed: [],
 };
 mock.module("../persistence/tool-audit.js", () => ({
   recordToolDenied: (e: any) => auditCalls.denied.push(e),
@@ -730,7 +744,7 @@ describe("ToolExecutor verification control-plane policy gate", () => {
       e.reason?.includes("restricted to guardian users"),
     );
     expect(denied).toBeDefined();
-    expect(denied.toolName).toBe("bash");
+    expect(denied?.toolName).toBe("bash");
   });
 
   test("non-guardian blocked from web_fetch to verification endpoint", async () => {

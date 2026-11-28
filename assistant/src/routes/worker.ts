@@ -150,9 +150,7 @@ async function handleInvoke(
       };
     }
     const request = reconstructRequest(params, body);
-    const response = (await (handler as (req: Request) => unknown)(
-      request,
-    )) as Response;
+    const response = (await handler(request)) as Response;
     return { ok: true, response };
   };
   const outcome = await (params.pluginName

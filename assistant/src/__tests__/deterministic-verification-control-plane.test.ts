@@ -9,6 +9,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { z } from "zod";
+
 import { fetchMock } from "./helpers/fetch-mock.js";
 
 // ---------------------------------------------------------------------------
@@ -238,7 +240,7 @@ describe("Verification control messages are deterministic (guard)", () => {
               : input.url;
         if (init?.method === "POST" && init.body) {
           try {
-            const body = JSON.parse(init.body as string);
+            const body = JSON.parse(z.string().parse(init.body));
             if (body.chatId && body.text) {
               deliveredReplies.push({ chatId: body.chatId, text: body.text });
             }

@@ -189,25 +189,24 @@ function makeTestConversation() {
       _options: unknown,
     ) => undefined,
   );
+  const initialContext: {
+    trustContext: MessagingConversationContext["trustContext"];
+    authContext: unknown;
+  } = { trustContext: undefined, authContext: undefined };
   const conversation = {
+    ...initialContext,
     conversationId: messagingCtx.conversationId,
     usageStats: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
-    trustContext: undefined,
-    authContext: undefined,
     isProcessing: () => false,
     setAssistantId: () => {},
     setTrustContext: (
       trustContext: MessagingConversationContext["trustContext"],
     ) => {
       messagingCtx.trustContext = trustContext;
-      (
-        conversation as {
-          trustContext: MessagingConversationContext["trustContext"];
-        }
-      ).trustContext = trustContext;
+      conversation.trustContext = trustContext;
     },
     setAuthContext: (authContext: unknown) => {
-      (conversation as { authContext: unknown }).authContext = authContext;
+      conversation.authContext = authContext;
     },
     ensureActorScopedHistory: async () => {},
     setChannelCapabilities: () => {},

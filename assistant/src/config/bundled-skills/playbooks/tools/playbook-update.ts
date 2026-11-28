@@ -6,9 +6,9 @@ import {
   isMemoryEnabled,
 } from "../../../../persistence/jobs-store.js";
 import { memoryGraphNodes } from "../../../../persistence/schema/index.js";
-import type {
-  Playbook,
-  PlaybookAutonomyLevel,
+import {
+  isValidAutonomyLevel,
+  type Playbook,
 } from "../../../../playbooks/types.js";
 import { parsePlaybookStatement } from "../../../../playbooks/types.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
@@ -22,8 +22,6 @@ import type {
   ToolExecutionResult,
 } from "../../../../tools/types.js";
 import { safeStringSlice } from "../../../../util/unicode.js";
-
-const VALID_AUTONOMY_LEVELS = new Set<string>(["auto", "draft", "notify"]);
 
 export async function executePlaybookUpdate(
   input: Record<string, unknown>,
@@ -86,11 +84,9 @@ export async function executePlaybookUpdate(
         typeof input.action === "string"
           ? input.action
           : currentPlaybook.action,
-      autonomyLevel:
-        typeof input.autonomy_level === "string" &&
-        VALID_AUTONOMY_LEVELS.has(input.autonomy_level)
-          ? (input.autonomy_level as PlaybookAutonomyLevel)
-          : currentPlaybook.autonomyLevel,
+      autonomyLevel: isValidAutonomyLevel(input.autonomy_level)
+        ? input.autonomy_level
+        : currentPlaybook.autonomyLevel,
       priority:
         typeof input.priority === "number"
           ? input.priority

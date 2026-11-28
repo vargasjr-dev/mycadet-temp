@@ -630,7 +630,7 @@ export const shellTool = {
 
         resolve({
           content: `Error spawning command: ${err.message}${
-            (err as NodeJS.ErrnoException).code === "ENOENT"
+            ("code" in err ? err.code : undefined) === "ENOENT"
               ? ". The command was not found - check that it is installed and in PATH."
               : ""
           }`,

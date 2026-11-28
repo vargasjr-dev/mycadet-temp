@@ -853,7 +853,7 @@ export class HostCuProxy {
                 : {}),
             },
             conversationId,
-            { targetClientId: entry.targetClientId as string | undefined },
+            { targetClientId: entry.targetClientId },
           );
         }
       } catch {

@@ -494,16 +494,19 @@ describe("HostBrowserProxy", () => {
     function spySignal(source: AbortSignal): Spied {
       const addCalls: string[] = [];
       const removeCalls: string[] = [];
-      const s = source as any;
       const origAdd = source.addEventListener.bind(source);
       const origRemove = source.removeEventListener.bind(source);
-      s.addEventListener = (type: string, ...rest: any[]) => {
-        addCalls.push(type);
-        return (origAdd as any)(type, ...rest);
+      source.addEventListener = (
+        ...args: Parameters<EventTarget["addEventListener"]>
+      ) => {
+        addCalls.push(args[0]);
+        return origAdd(...args);
       };
-      s.removeEventListener = (type: string, ...rest: any[]) => {
-        removeCalls.push(type);
-        return (origRemove as any)(type, ...rest);
+      source.removeEventListener = (
+        ...args: Parameters<EventTarget["removeEventListener"]>
+      ) => {
+        removeCalls.push(args[0]);
+        return origRemove(...args);
       };
       return { signal: source, addCalls, removeCalls };
     }

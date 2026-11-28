@@ -100,9 +100,7 @@ const pendingFlows = createPendingFlowRegistry<ClaudeFlowState>();
 async function handleStartAuth(args: RouteHandlerArgs): Promise<StartResponse> {
   pendingFlows.cleanupExpired();
 
-  const preferManual = Boolean(
-    (args.body as { preferManual?: boolean } | undefined)?.preferManual,
-  );
+  const preferManual = Boolean(args.body?.preferManual);
 
   return getIsContainerized() || preferManual
     ? handleStartManualAuth()
@@ -177,7 +175,7 @@ function handleStartManualAuth(): StartResponse {
  * plus an explicit `state` is also accepted.
  */
 async function handleExchange(args: RouteHandlerArgs): Promise<{ ok: true }> {
-  const body = (args.body ?? {}) as { code?: string; state?: string };
+  const body: { code?: string; state?: string } = args.body ?? {};
   const rawCode = (body.code ?? "").trim();
   let code = rawCode;
   let state = (body.state ?? "").trim();
@@ -253,8 +251,9 @@ function handleAuthStatus({ pathParams }: RouteHandlerArgs): {
   status: PendingFlowStatus;
   error?: string;
 } {
-  const { state } = pathParams as { state: string };
-  const report = pendingFlows.readStatus(state);
+  const state = pathParams?.state;
+  const report =
+    state === undefined ? undefined : pendingFlows.readStatus(state);
 
   if (!report) {
     throw new NotFoundError(

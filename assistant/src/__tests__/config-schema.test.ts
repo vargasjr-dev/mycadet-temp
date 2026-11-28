@@ -1983,7 +1983,7 @@ describe("resolveTtsConfig", () => {
     // structuredClone prevents mutation from leaking into Zod's shared
     // default objects (Zod 4 stores defaults by reference).
     const config = structuredClone(AssistantConfigSchema.parse({}));
-    (config.services.tts as { provider: string }).provider = "aws-polly";
+    Object.assign(config.services.tts, { provider: "aws-polly" });
     const resolved = resolveTtsConfig(config);
     expect(resolved).toHaveProperty("provider", "aws-polly");
     expect(resolved.providerConfig).toEqual({});
@@ -1991,7 +1991,7 @@ describe("resolveTtsConfig", () => {
 
   test("unknown provider resolution is deterministic across repeated calls", () => {
     const config = structuredClone(AssistantConfigSchema.parse({}));
-    (config.services.tts as { provider: string }).provider = "nonexistent";
+    Object.assign(config.services.tts, { provider: "nonexistent" });
     const first = resolveTtsConfig(config);
     const second = resolveTtsConfig(config);
     expect(first).toEqual(second);

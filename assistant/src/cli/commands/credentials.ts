@@ -24,25 +24,21 @@ function printCredentialHuman(output: Record<string, unknown>): void {
   if (output.usageDescription) {
     log.info(`    Description: ${output.usageDescription}`);
   }
-  if (
-    Array.isArray(output.allowedTools) &&
-    (output.allowedTools as string[]).length > 0
-  ) {
-    log.info(
-      `    Tools:       ${(output.allowedTools as string[]).join(", ")}`,
-    );
+  if (Array.isArray(output.allowedTools) && output.allowedTools.length > 0) {
+    log.info(`    Tools:       ${output.allowedTools.join(", ")}`);
   }
   if (
     Array.isArray(output.allowedDomains) &&
-    (output.allowedDomains as string[]).length > 0
+    output.allowedDomains.length > 0
   ) {
-    log.info(
-      `    Domains:     ${(output.allowedDomains as string[]).join(", ")}`,
-    );
+    log.info(`    Domains:     ${output.allowedDomains.join(", ")}`);
   }
   log.info(`    Created:     ${output.createdAt}`);
   log.info(`    Updated:     ${output.updatedAt}`);
-  if ((output.injectionTemplateCount as number) > 0) {
+  if (
+    typeof output.injectionTemplateCount === "number" &&
+    output.injectionTemplateCount > 0
+  ) {
     log.info(`    Templates:   ${output.injectionTemplateCount}`);
   }
 
@@ -136,10 +132,7 @@ export function registerCredentialsCommand(program: Command): void {
           const r =
             await cliIpcCall<CredentialsStatusResponse>("credentials_status");
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
 
           const info = r.result!;

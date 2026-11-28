@@ -512,8 +512,8 @@ export class HostTransferProxy {
       log.warn({ requestId }, "No pending host transfer request for response");
       return;
     }
-    const transferId = interaction.metadata?.transferId as string | undefined;
-    if (transferId) {
+    const transferId = interaction.metadata?.transferId;
+    if (typeof transferId === "string" && transferId) {
       this.transfers.delete(transferId);
     }
 
@@ -665,8 +665,8 @@ export class HostTransferProxy {
     if (!interaction) {
       return;
     }
-    const transferId = interaction.metadata?.transferId as string | undefined;
-    if (transferId) {
+    const transferId = interaction.metadata?.transferId;
+    if (typeof transferId === "string" && transferId) {
       this.transfers.delete(transferId);
     }
     pendingInteractions.resolve(requestId, "cancelled");
@@ -726,8 +726,8 @@ export class HostTransferProxy {
 
   dispose(): void {
     for (const entry of pendingInteractions.getByKind("host_transfer")) {
-      const transferId = entry.metadata?.transferId as string | undefined;
-      if (transferId) {
+      const transferId = entry.metadata?.transferId;
+      if (typeof transferId === "string" && transferId) {
         this.transfers.delete(transferId);
       }
       pendingInteractions.resolve(entry.requestId, "cancelled");

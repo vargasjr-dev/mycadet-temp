@@ -164,14 +164,14 @@ describe("extractWorkflowMeta", () => {
   test("rejects a computed meta without executing it (no host eval)", () => {
     // A function call in the literal must NOT run in the host process — it
     // simply fails to JSON-parse and is rejected.
-    (globalThis as Record<string, unknown>).__pwned = false;
+    Reflect.set(globalThis, "__pwned", false);
     expect(() =>
       extractWorkflowMeta(
         `export const meta = { name: (((globalThis).__pwned = true), "n"), description: "d" };`,
       ),
     ).toThrow();
     expect(globalThis).toHaveProperty("__pwned", false);
-    delete (globalThis as Record<string, unknown>).__pwned;
+    Reflect.deleteProperty(globalThis, "__pwned");
   });
 });
 

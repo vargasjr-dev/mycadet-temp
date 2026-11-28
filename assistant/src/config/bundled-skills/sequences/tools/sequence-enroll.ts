@@ -5,6 +5,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { isPlainObject } from "../../../../util/object.js";
 import { err, ok } from "./shared.js";
 
 export async function run(
@@ -12,13 +13,13 @@ export async function run(
   toolContext: ToolContext,
 ): Promise<ToolExecutionResult> {
   const sequenceId = input.sequence_id;
-  const emails = input.emails as string | string[];
-  const context = input.context as Record<string, unknown> | undefined;
+  const emails = input.emails;
+  const context = isPlainObject(input.context) ? input.context : undefined;
 
   if (typeof sequenceId !== "string" || !sequenceId) {
     return err("sequence_id is required.");
   }
-  if (!emails) {
+  if ((!Array.isArray(emails) && typeof emails !== "string") || !emails) {
     return err("emails is required (string or array).");
   }
   throwIfCancelled(toolContext);
@@ -31,7 +32,7 @@ export async function run(
 
     // Support comma-separated string or array
     const emailList = Array.isArray(emails)
-      ? emails
+      ? emails.filter((email): email is string => typeof email === "string")
       : emails
           .split(",")
           .map((e) => e.trim())

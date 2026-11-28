@@ -129,9 +129,9 @@ function isIpcStreamingResponse(value: unknown): value is IpcStreamingResponse {
     value != null &&
     typeof value === "object" &&
     "stream" in value &&
-    (value as IpcStreamingResponse).stream instanceof ReadableStream &&
+    value.stream instanceof ReadableStream &&
     "headers" in value &&
-    typeof (value as IpcStreamingResponse).headers === "object"
+    typeof value.headers === "object"
   );
 }
 
@@ -140,9 +140,9 @@ function isIpcBinaryResponse(value: unknown): value is IpcBinaryResponse {
     value != null &&
     typeof value === "object" &&
     "binary" in value &&
-    (value as IpcBinaryResponse).binary instanceof Uint8Array &&
+    value.binary instanceof Uint8Array &&
     "headers" in value &&
-    typeof (value as IpcBinaryResponse).headers === "object"
+    typeof value.headers === "object"
   );
 }
 

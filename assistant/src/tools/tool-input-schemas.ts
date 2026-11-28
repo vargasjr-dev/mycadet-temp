@@ -46,7 +46,9 @@ import { watchRetroReportInputSchema } from "./watch/watch-retro-report.js";
  *   optional-with-`.catch(undefined)` here; the derivation marks them
  *   required via `advertiseRequired`.
  */
-export const TOOL_INPUT_SCHEMAS: Readonly<Record<string, z.ZodType>> = {
+export const TOOL_INPUT_SCHEMAS: Readonly<
+  Record<string, z.ZodType<Record<string, unknown>>>
+> = {
   ask_question: askQuestionInputSchema,
   bash: shellInputSchema,
   file_edit: fileEditInputSchema,
@@ -83,7 +85,5 @@ export function parseToolInput(
   if (!result.success) {
     return { ok: false, message: formatToolInputError(name, result.error) };
   }
-  // Every registry schema is an object schema, so the parsed value is a
-  // plain record; `z.ZodType`'s output is just too wide to say so statically.
-  return { ok: true, data: result.data as Record<string, unknown> };
+  return { ok: true, data: result.data };
 }

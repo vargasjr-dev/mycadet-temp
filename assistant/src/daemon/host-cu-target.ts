@@ -106,7 +106,7 @@ export function resolveHostCuTarget(args: {
     if (rejection) {
       return {
         kind: "error",
-        result: rejection as { content: string; isError: true },
+        result: rejection,
       };
     }
     return { kind: "resolved", targetClientId: args.targetClientId };
@@ -120,10 +120,7 @@ export function resolveHostCuTarget(args: {
   if (resolved.kind === "ambiguous") {
     return {
       kind: "error",
-      result: ambiguousSameUserError(capability) as {
-        content: string;
-        isError: true;
-      },
+      result: ambiguousSameUserError(capability),
     };
   }
   if (resolved.kind === "match") {

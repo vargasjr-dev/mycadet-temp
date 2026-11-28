@@ -236,7 +236,7 @@ function buildHistory(messageCount: number, skillIds: string[]): Message[] {
   for (const msg of [...msgs]) {
     for (const block of msg.content) {
       if (block.type === "tool_use" && block.name === "skill_load") {
-        const skillId = (block.input as Record<string, string>).skill_id;
+        const skillId = block.input.skill_id;
         msgs.push({
           role: "user",
           content: [

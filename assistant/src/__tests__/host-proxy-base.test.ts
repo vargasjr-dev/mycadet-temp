@@ -211,12 +211,11 @@ describe("HostProxyBase", () => {
       const origRemove = controller.signal.removeEventListener.bind(
         controller.signal,
       );
-      (controller.signal as any).removeEventListener = (
-        type: string,
-        ...rest: any[]
+      controller.signal.removeEventListener = (
+        ...args: Parameters<EventTarget["removeEventListener"]>
       ) => {
-        removeCalls.push(type);
-        return (origRemove as any)(type, ...rest);
+        removeCalls.push(args[0]);
+        return origRemove(...args);
       };
 
       const promise = proxy.send(
@@ -249,8 +248,8 @@ describe("HostProxyBase", () => {
       p1.catch(() => {});
       p2.catch(() => {});
 
-      const beforeIds = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => requestIdSchema.parse(m.requestId),
+      const beforeIds = sentMessages.map((m) =>
+        requestIdSchema.parse(m.requestId),
       );
       expect(beforeIds).toHaveLength(2);
 
@@ -266,9 +265,7 @@ describe("HostProxyBase", () => {
       // Cancel envelopes broadcast for each pending request.
       const cancelMessages = sentMessages
         .slice(2)
-        .filter((m) => m.type === "test_cancel") as Array<
-        Record<string, unknown>
-      >;
+        .filter((m) => m.type === "test_cancel");
       expect(cancelMessages).toHaveLength(2);
       const cancelIds = cancelMessages.map((m) =>
         requestIdSchema.parse(m.requestId),

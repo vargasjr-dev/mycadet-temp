@@ -81,7 +81,7 @@ describe("AnthropicProvider — error message formatting (JARVIS-390)", () => {
       await provider.sendMessage([userMsg("hi")]);
       throw new Error("expected sendMessage to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
+      assert(err instanceof ProviderError);
       assert(err instanceof Error);
       const message = err.message;
       expect(message).toBe("Anthropic API error: Request was aborted.");
@@ -123,8 +123,8 @@ describe("AnthropicProvider — semantic reason stamping", () => {
       await provider.sendMessage([userMsg("hi")]);
       throw new Error("expected sendMessage to throw");
     } catch (err) {
-      expect(err).toBeInstanceOf(ProviderError);
-      return err as ProviderError;
+      assert(err instanceof ProviderError);
+      return err;
     }
   }
 

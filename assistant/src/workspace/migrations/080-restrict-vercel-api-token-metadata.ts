@@ -101,17 +101,15 @@ export const restrictVercelApiTokenMetadataMigration: WorkspaceMigration = {
       : [];
 
     // Find the Vercel API token record.
-    const vercelIdx = credentials.findIndex(
-      (c: unknown) =>
+    const vercelRecord = credentials.find(
+      (c: unknown): c is Record<string, unknown> =>
         isPlainObject(c) && c.service === "vercel" && c.field === "api_token",
     );
 
-    if (vercelIdx === -1) {
+    if (!vercelRecord) {
       // No Vercel credential — nothing to repair.
       return;
     }
-
-    const vercelRecord = credentials[vercelIdx] as Record<string, unknown>;
 
     // Check if already matches target policy.
     if (alreadyMatchesTarget(vercelRecord)) {

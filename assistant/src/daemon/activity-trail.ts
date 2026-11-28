@@ -30,11 +30,11 @@ export type DaemonActivityKind =
   | "git_compaction";
 
 /** Conversation types a turn label carries; anything else is "other". */
-const TURN_CONVERSATION_TYPES = new Set([
+const TURN_CONVERSATION_TYPES = [
   "standard",
   "background",
   "scheduled",
-]);
+] as const;
 
 export interface DaemonActivityLabel {
   kind: DaemonActivityKind;
@@ -86,9 +86,9 @@ export function turnConversationType(
   if (value === undefined) {
     return "standard";
   }
-  return TURN_CONVERSATION_TYPES.has(value)
-    ? (value as "standard" | "background" | "scheduled")
-    : "other";
+  return (
+    TURN_CONVERSATION_TYPES.find((candidate) => candidate === value) ?? "other"
+  );
 }
 
 /**

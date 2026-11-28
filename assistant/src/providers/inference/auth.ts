@@ -156,7 +156,7 @@ export const ROUTING_IDENTITY_PROVIDERS: ReadonlySet<string> = new Set([
 ]);
 
 export const ConnectionProviderSchema = z
-  .enum(VALID_CONNECTION_PROVIDERS as readonly [string, ...string[]])
+  .enum(VALID_CONNECTION_PROVIDERS)
   .meta({ id: "ConnectionProvider" });
 
 // ---------------------------------------------------------------------------

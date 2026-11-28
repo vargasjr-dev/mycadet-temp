@@ -507,7 +507,9 @@ describe("HostCuProxy", () => {
         acceptedCallback,
       );
       expect(acceptedCallback).toHaveBeenCalledTimes(1);
-      const requestId = (sentMessages[0] as { requestId: string }).requestId;
+      const requestId = z
+        .looseObject({ requestId: z.string() })
+        .parse(sentMessages[0]).requestId;
       proxy.processObservation(requestId, { executionResult: "Clicked" });
       await pending;
     });
@@ -1425,8 +1427,8 @@ describe("HostCuProxy", () => {
       p1.catch(() => {}); // Expected rejection on dispose
       p2.catch(() => {}); // Expected rejection on dispose
 
-      const requestIds = (sentMessages as Array<Record<string, unknown>>).map(
-        (m) => messageIdSchema.parse(m.requestId),
+      const requestIds = sentMessages.map((m) =>
+        messageIdSchema.parse(m.requestId),
       );
       expect(requestIds).toHaveLength(2);
 
@@ -1520,16 +1522,19 @@ describe("HostCuProxy", () => {
     function spySignal(source: AbortSignal): Spied {
       const addCalls: string[] = [];
       const removeCalls: string[] = [];
-      const s = source as any;
       const origAdd = source.addEventListener.bind(source);
       const origRemove = source.removeEventListener.bind(source);
-      s.addEventListener = (type: string, ...rest: any[]) => {
-        addCalls.push(type);
-        return (origAdd as any)(type, ...rest);
+      source.addEventListener = (
+        ...args: Parameters<EventTarget["addEventListener"]>
+      ) => {
+        addCalls.push(args[0]);
+        return origAdd(...args);
       };
-      s.removeEventListener = (type: string, ...rest: any[]) => {
-        removeCalls.push(type);
-        return (origRemove as any)(type, ...rest);
+      source.removeEventListener = (
+        ...args: Parameters<EventTarget["removeEventListener"]>
+      ) => {
+        removeCalls.push(args[0]);
+        return origRemove(...args);
       };
       return { signal: source, addCalls, removeCalls };
     }
@@ -1935,7 +1940,9 @@ describe("HostCuProxy", () => {
         undefined,
         "user-1",
       );
-      const sent = sentMessages.at(-1) as { requestId: string };
+      const sent = z
+        .looseObject({ requestId: z.string() })
+        .parse(sentMessages.at(-1));
       proxy.processObservation(sent.requestId, observation);
       return await pending;
     }
@@ -1960,10 +1967,9 @@ describe("HostCuProxy", () => {
       connect();
       for (const target of [undefined, "mac-1"]) {
         const pending = observe({ capture_window_id: 12 }, target);
-        const sent = sentMessages.at(-1) as {
-          requestId: string;
-          targetClientId: string;
-        };
+        const sent = z
+          .looseObject({ requestId: z.string(), targetClientId: z.string() })
+          .parse(sentMessages.at(-1));
         expect(sent.targetClientId).toBe("mac-1");
         expect(sentOptions.at(-1)).toEqual({
           targetClientId: "mac-1",

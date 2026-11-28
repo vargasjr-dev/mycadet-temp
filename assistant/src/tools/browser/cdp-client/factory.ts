@@ -1330,7 +1330,7 @@ function extractDiscoveryCode(underlying: unknown): string | undefined {
     return undefined;
   }
   if (typeof underlying === "object" && "code" in underlying) {
-    const code = (underlying as Record<string, unknown>).code;
+    const code = underlying.code;
     if (typeof code === "string") {
       return code;
     }

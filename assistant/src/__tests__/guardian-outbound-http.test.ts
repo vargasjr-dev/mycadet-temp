@@ -71,7 +71,7 @@ globalThis.fetch = fetchMock(
           text: z.string(),
           assistantId: z.string().optional(),
         })
-        .parse(JSON.parse(init.body as string));
+        .parse(JSON.parse(z.string().parse(init.body)));
       telegramDeliverCalls.push(body);
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }

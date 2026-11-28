@@ -4,8 +4,9 @@
  * Validates zip bundles before they are opened, returning structured results
  * with block-level (reject) and warn-level (flag) findings.
  */
-
 import JSZip from "jszip";
+
+import { parseJsonRecord } from "../util/json.js";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -212,7 +213,7 @@ async function scanArchiveStructure(
   let manifest: Record<string, unknown>;
   try {
     const manifestText = await manifestFile.async("text");
-    manifest = JSON.parse(manifestText) as Record<string, unknown>;
+    manifest = parseJsonRecord(manifestText);
   } catch {
     findings.push({
       category: "archive",

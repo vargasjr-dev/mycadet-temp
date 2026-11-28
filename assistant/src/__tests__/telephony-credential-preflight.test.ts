@@ -87,7 +87,7 @@ beforeAll(() => {
   // cannot be seeded through config.json; mutate the loader's cached config
   // object directly. No test in this file writes the config file, so the
   // mutation persists for the whole suite.
-  (getConfig().services.stt as { provider: string }).provider = "acme-stt";
+  Object.assign(getConfig().services.stt, { provider: "acme-stt" });
 });
 
 afterAll(() => {
@@ -230,7 +230,7 @@ describe("resolveTelephonyCredentialReadiness", () => {
     if (readiness.status !== "not-ready") {
       throw new Error("expected not-ready");
     }
-    expect(fallbackScanCalls).toEqual(["fish-audio" as TtsProviderId]);
+    expect(fallbackScanCalls).toEqual(["fish-audio"]);
     expect(readiness.missing).toEqual([
       {
         kind: "tts",

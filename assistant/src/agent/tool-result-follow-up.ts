@@ -37,7 +37,10 @@ export function buildToolResultFollowUp(
   if (pairing.deferredUseIds.size === 0 || targetIndex < 0) {
     return [...resultBlocks, ...additionalContextBlocks];
   }
-  const target = resultBlocks[targetIndex] as ToolResultContent;
+  const target = resultBlocks[targetIndex];
+  if (target?.type !== "tool_result") {
+    return [...resultBlocks, ...additionalContextBlocks];
+  }
   const folded: ToolResultContent = {
     ...target,
     content: [target.content, ...additionalContextBlocks.map((b) => b.text)]

@@ -171,7 +171,7 @@ export function normalizeActivationKey(
   // Legacy: direct enum match
   const lower = trimmed.toLowerCase();
   if (VALID_ACTIVATION_KEYS.some((candidate: string) => candidate === lower)) {
-    return { ok: true, value: lower as ActivationKey };
+    return { ok: true, value: lower };
   }
 
   // Legacy: natural-language match

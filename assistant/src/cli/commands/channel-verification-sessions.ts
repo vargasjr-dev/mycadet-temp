@@ -101,10 +101,7 @@ export function registerChannelVerificationSessionsCommand(
             },
           });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           writeOutput(cmd, r.result);
         },
@@ -125,10 +122,7 @@ export function registerChannelVerificationSessionsCommand(
             body: { channel },
           });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           writeOutput(cmd, r.result);
         },
@@ -155,10 +149,7 @@ export function registerChannelVerificationSessionsCommand(
             },
           });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           writeOutput(cmd, r.result);
         },
@@ -179,10 +170,7 @@ export function registerChannelVerificationSessionsCommand(
             body: { channel },
           });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           writeOutput(cmd, r.result);
         },
@@ -203,10 +191,7 @@ export function registerChannelVerificationSessionsCommand(
             body: { channel },
           });
           if (!r.ok) {
-            return exitFromIpcResult(
-              r as { ok: false; error?: string; statusCode?: number },
-              cmd,
-            );
+            return exitFromIpcResult(r, cmd);
           }
           writeOutput(cmd, r.result);
         },
