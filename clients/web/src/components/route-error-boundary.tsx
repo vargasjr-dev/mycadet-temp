@@ -1,10 +1,11 @@
 import { Loader2, RotateCcw } from "lucide-react";
-import { isRouteErrorResponse, useRouteError } from "react-router";
+import { isRouteErrorResponse, useNavigate, useRouteError } from "react-router";
 
 import { Button } from "@mycadet/design-library/components/button";
 
 import { useTranslation } from "@/i18n";
 import { isChunkLoadError } from "@/lib/chunk-errors";
+import { routes } from "@/utils/routes";
 
 /**
  * Single error boundary used at every level of the route tree. Picks
@@ -30,6 +31,7 @@ import { isChunkLoadError } from "@/lib/chunk-errors";
  */
 export function RouteErrorBoundary() {
   const error = useRouteError();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   if (isChunkLoadError(error)) {
@@ -81,9 +83,15 @@ export function RouteErrorBoundary() {
         {heading}
       </h1>
       <p className="max-w-md text-[var(--content-secondary)]">{message}</p>
-      {status !== 404 && (
+      {status !== 404 ? (
         <Button variant="primary" onClick={() => window.location.reload()}>
           {t("routeErrorBoundary.reload")}
+        </Button>
+      ) : (
+        // Same escape as the dedicated not-found page: reloading a 404
+        // re-runs the same match, so offer the way out instead.
+        <Button variant="primary" onClick={() => navigate(routes.assistant)}>
+          {t("notFound.backToAssistant")}
         </Button>
       )}
     </div>

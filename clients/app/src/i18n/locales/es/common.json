@@ -567,7 +567,8 @@
   },
   "routeErrorBoundary": {
     "chunkFailBody": "Esta sección no se pudo cargar. Probablemente un fallo de red o una versión antigua. Recarga la página para intentarlo de nuevo.",
-    "reload": "Recargar"
+    "reload": "Recargar",
+    "chooseAssistant": "Elige un asistente"
   },
   "runtimeUpgradeBanner": {
     "confirmMessage": "¿Actualizar a la versión {version}? El asistente no estará disponible brevemente durante la actualización.",

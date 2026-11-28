@@ -50,6 +50,13 @@ test("a missing route response uses the full page error UI", async () => {
   expect(
     screen.queryByRole("button", { name: t("routeErrorBoundary.reload") }),
   ).toBeNull();
+  // The escape path is the assistant selection screen.
+  const escape = screen.getByRole("button", {
+    name: t("routeErrorBoundary.chooseAssistant"),
+  });
+  escape.click();
+  const router = routers[routers.length - 1];
+  expect(router.state.location.pathname).toBe("/account/select-assistant");
 });
 
 test("a non-404 full page failure still offers the reload", async () => {
