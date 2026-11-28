@@ -18,7 +18,6 @@ import {
 } from "../providers/provider-send-message.js";
 import { getLogger } from "../util/logger.js";
 import { isObjectRecord } from "../util/object.js";
-import { isObjectRecord } from "../util/object.js";
 import type { AppliesWhenConditions } from "./preferences-store.js";
 
 const log = getLogger("notification-preference-extractor");

@@ -205,7 +205,7 @@ describe("hasQualifyingUserMessageAfter", () => {
 describe("messagesHaveUserActivity", () => {
   function row(
     role: string,
-    content: Array<Record<string, unknown>>,
+    content: MessageRow["content"],
   ): Pick<MessageRow, "role" | "content"> {
     return { role, content };
   }
