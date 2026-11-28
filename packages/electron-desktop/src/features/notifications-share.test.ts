@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // its own process, so the stamp is safe to hold for the whole file.
 Object.defineProperty(process, "platform", { value: "win32" });
 import { electronMock } from "../../test-setup";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
