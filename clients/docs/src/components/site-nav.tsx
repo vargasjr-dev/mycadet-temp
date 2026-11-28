@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Ellipsis } from "lucide-react";
 
 import { navItems } from "@/lib/nav-items";
+import { logoSrc } from "@/lib/environment-brand";
 
 /**
  * Ported from mycadet-cloud's SiteNav. The session-aware account CTA
@@ -17,18 +18,10 @@ export function SiteNav() {
       <div className="nav-brand">
         <Link href="/" aria-label="Cadet home">
           <Image
-            src="/docs/mycadet-logo.svg"
+            src={logoSrc("mycadet-logo")}
             alt="Cadet logo"
             width={32}
             height={32}
-            className="brand-logo brand-logo-prod"
-          />
-          <Image
-            src="/docs/mycadet-logo-dev.svg"
-            alt="Cadet logo"
-            width={32}
-            height={32}
-            className="brand-logo brand-logo-dev"
           />
         </Link>
       </div>

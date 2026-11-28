@@ -4,8 +4,6 @@ import path from "path";
 import { ReleaseMarkdown } from "./release-markdown";
 
 export interface RoadmapFlowStep {
-  /** Leading status word (`## Release …`), when the heading carries one. */
-  status: string | null;
   title: string;
   body: string;
   id: string;
@@ -21,32 +19,6 @@ export function slugifyStepTitle(title: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-}
-
-/**
- * Status words a step heading may open with — `## Release Migrate from
- * Vellum Desktop Support` is a Release step titled "Migrate from Vellum
- * Desktop Support". The chip renders as a pill; the plain title rides the
- * TOC and the anchor id.
- */
-const STEP_STATUSES = [
-  "Release",
-  "Shipped",
-  "Building",
-  "Planned",
-  "Exploring",
-] as const;
-
-function splitStepStatus(title: string): {
-  status: string | null;
-  title: string;
-} {
-  for (const status of STEP_STATUSES) {
-    if (title.startsWith(`${status} `)) {
-      return { status, title: title.slice(status.length + 1).trim() };
-    }
-  }
-  return { status: null, title };
 }
 
 /**
@@ -74,8 +46,7 @@ export function parseRoadmapFlow(md: string): RoadmapFlow {
     const newline = trimmed.indexOf("\n");
     const raw = (newline === -1 ? trimmed : trimmed.slice(0, newline)).trim();
     const body = newline === -1 ? "" : trimmed.slice(newline + 1).trim();
-    const { status, title } = splitStepStatus(raw);
-    steps.push({ status, title, body, id: slugifyStepTitle(title) });
+    steps.push({ title: raw, body, id: slugifyStepTitle(raw) });
   }
   return { intro, steps };
 }
@@ -108,11 +79,6 @@ export function RoadmapFlowView() {
               {index + 1}
             </span>
             <h3 className="mb-2 mt-0 font-sans text-lg font-semibold text-stone-900 dark:text-stone-100">
-              {step.status && (
-                <span className="mr-2 inline-block rounded-full bg-stone-100 px-2 py-0.5 align-middle text-[11px] font-semibold tracking-wider text-stone-500 uppercase dark:bg-zinc-800 dark:text-stone-400">
-                  {step.status}
-                </span>
-              )}
               {step.title}
             </h3>
             <ReleaseMarkdown content={step.body} />

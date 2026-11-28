@@ -4,7 +4,7 @@ import { Sun, Moon, Monitor } from "lucide-react";
 import { useCallback, useSyncExternalStore } from "react";
 
 type Theme = "light" | "system" | "dark";
-type StoredTheme = Theme | "velvet";
+type StoredTheme = Theme;
 
 /* Theme state lives under BOTH `device:theme` (the assistant SPA's key, read
  * first by the pre-hydration bootstrap in src/app/layout.tsx) and
@@ -19,12 +19,7 @@ const THEMES: { value: Theme; icon: typeof Sun; label: string }[] = [
 ];
 
 function isValidStoredTheme(value: string | null): value is StoredTheme {
-  return (
-    value === "light" ||
-    value === "dark" ||
-    value === "system" ||
-    value === "velvet"
-  );
+  return value === "light" || value === "dark" || value === "system";
 }
 
 function getStoredTheme(): StoredTheme {

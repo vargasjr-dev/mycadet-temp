@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 
+import { brandEnvironment } from "@/lib/environment-brand";
+
 // Same asset as the marketing app's /favicon.svg, served under this app's
 // /docs prefix so the icon resolves even when the marketing backend is not
 // in front (e.g. direct pod access or a preview environment).
@@ -16,30 +18,15 @@ export const metadata: Metadata = {
 /* Pre-hydration theme bootstrap. Mirrors the key precedence of the assistant
  * SPA's inline shell-init script in clients/web/index.html (`device:theme`
  * first, then the
- * shared `cadet_theme` key, then system preference; platform-only "velvet"
- * counts as dark) since both apps share one origin. Stamps
+ * shared `cadet_theme` key, then system preference) since both apps share
+ * one origin. Stamps
  * BOTH `.dark` (docs-theme.css) and `data-theme` (design-library tokens) to
  * avoid a light-mode flash for dark users. */
-/* Pre-hydration brand bootstrap: the dev deployment stamps data-env="dev"
- * on <html> so the chrome wears the dev mark and the dev accent (the pink
- * every platform's dev icon build wears). Runs before paint, same pattern
- * as the theme bootstrap below; prod stays untouched. */
-const brandInitScript = `
-(function() {
-  try {
-    var host = window.location.hostname;
-    if (host === "dev.mycadet.ai" || host.indexOf(".dev.mycadet.ai") > 0) {
-      document.documentElement.setAttribute("data-env", "dev");
-    }
-  } catch (e) {}
-})();
-`;
-
 const themeInitScript = `
 (function() {
   try {
     var theme = localStorage.getItem('device:theme') || localStorage.getItem('cadet_theme') || 'system';
-    var isDark = theme === 'velvet' || theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   } catch (e) {}
@@ -48,9 +35,12 @@ const themeInitScript = `
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-env={brandEnvironment() === "production" ? undefined : brandEnvironment()}
+    >
       <body className="font-sans">
-        <script dangerouslySetInnerHTML={{ __html: brandInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
       </body>

@@ -9,6 +9,7 @@ import { DocsNavCta } from "@/app/docs/_components/docs-nav-cta";
 import { DocsSearch } from "@/app/docs/_components/docs-search";
 import { DocsThemePicker } from "@/app/docs/_components/docs-theme-picker";
 import { DocsMobileMenuButton } from "@/app/docs/_components/docs-mobile-menu-button";
+import { logoSrc } from "@/lib/environment-brand";
 
 import { CodeBlockCopy } from "@/app/docs/_components/code-block-copy";
 
@@ -41,20 +42,11 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                   className="hidden md:flex items-center gap-2 no-underline"
                 >
                   <Image
-                    src="/docs/cadet-logo.svg"
+                    src={logoSrc("cadet-logo")}
                     alt="Cadet"
                     width={26}
                     height={26}
                     unoptimized
-                    className="brand-logo brand-logo-prod"
-                  />
-                  <Image
-                    src="/docs/cadet-logo-dev.svg"
-                    alt="Cadet"
-                    width={26}
-                    height={26}
-                    unoptimized
-                    className="brand-logo brand-logo-dev"
                   />
                   <span className="docs-brand-wordmark">Cadet</span>
                 </a>

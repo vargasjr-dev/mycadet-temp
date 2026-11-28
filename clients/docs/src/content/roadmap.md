@@ -1,6 +1,6 @@
 This roadmap is the bridge between today's [architecture](/docs/architecture) and achieving the Cadet [Vision](/docs/vision).
 
-## Release Migrate from Vellum Desktop Support
+## Migrate from Vellum Desktop Support
 
 We already have a [Vellum to Cadet](https://github.com/vargasjr-dev/vellum-to-cadet) 
 migration package that old Vellum Assistant users have been using to migrate their
