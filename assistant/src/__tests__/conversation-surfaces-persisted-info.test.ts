@@ -36,7 +36,7 @@ async function seedRows(
 ): Promise<void> {
   ensureConversationExists(conversationId, "cadet");
   for (const r of rows) {
-    const blocks = [...r.content] as Array<Record<string, unknown>>;
+    const blocks = [...r.content];
     // Production rows always pair cards with a model-readable sibling (the
     // persistence layer's visibility guard throws otherwise) — declare the
     // same assumption for card-only fixtures.

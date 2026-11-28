@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Deepgram realtime streaming STT adapter.
  *
@@ -280,6 +282,42 @@ interface DeepgramStreamResponse {
   /** Start offset of the audio segment in seconds. */
   start?: number;
 }
+
+const transcriptFrameSchema = z.object({
+  type: z.string().optional(),
+  is_final: z.boolean().optional(),
+  speech_final: z.boolean().optional(),
+  from_finalize: z.boolean().optional(),
+  start: z.number().optional(),
+  duration: z.number().optional(),
+  channel: z
+    .object({
+      languages: z.array(z.string()).optional(),
+      alternatives: z
+        .array(
+          z.object({
+            transcript: z.string().optional(),
+            confidence: z.number().optional(),
+            speaker: z.number().optional(),
+            languages: z.array(z.string()).optional(),
+            words: z
+              .array(
+                z.object({
+                  word: z.string().optional(),
+                  confidence: z.number().optional(),
+                  speaker: z.number().optional(),
+                  start: z.number().optional(),
+                  end: z.number().optional(),
+                  language: z.string().optional(),
+                }),
+              )
+              .optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+}) satisfies z.ZodType<DeepgramStreamResponse>;
 
 // ---------------------------------------------------------------------------
 // Minimal WebSocket interface
@@ -726,21 +764,24 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
       return;
     }
 
-    let frame: DeepgramStreamResponse;
+    let decoded: unknown;
     try {
-      frame = JSON.parse(raw) as DeepgramStreamResponse;
+      decoded = JSON.parse(raw);
     } catch {
       log.debug("Dropped non-JSON Deepgram frame");
       return;
     }
 
-    if (!isObjectRecord(frame)) {
+    if (!isObjectRecord(decoded)) {
       return;
     }
 
     // Deepgram uses `type: "Results"` for transcript frames.
-    if (frame.type === "Results") {
-      this.handleTranscriptFrame(frame);
+    if (decoded.type === "Results") {
+      const result = transcriptFrameSchema.safeParse(decoded);
+      if (result.success) {
+        this.handleTranscriptFrame(result.data);
+      }
       return;
     }
 
@@ -748,7 +789,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
     // it confirms the previous is_final segment is a natural boundary.
     // In utterance-boundary mode it flushes any withheld segments; in
     // pass-through mode finals were already emitted on is_final=true.
-    if (frame.type === "UtteranceEnd") {
+    if (decoded.type === "UtteranceEnd") {
       log.debug("Received UtteranceEnd signal");
       this.flushPendingUtterance();
       return;
@@ -757,7 +798,7 @@ export class DeepgramRealtimeTranscriber implements StreamingTranscriber {
     // Metadata and other frame types are informational for this adapter;
     // surface them to a wrapping adapter that may care (e.g. relay control
     // frames).
-    this.onUnhandledFrame?.(frame);
+    this.onUnhandledFrame?.(decoded);
   }
 
   /**

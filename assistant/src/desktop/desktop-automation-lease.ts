@@ -35,7 +35,12 @@ export class DesktopAutomationLease {
     private readonly deps: {
       enabled: () => boolean;
       ready: () => boolean;
-      manager: () => DesktopSessionManager;
+      manager: () => Pick<
+        DesktopSessionManager,
+        | "acquireAutomationSlot"
+        | "releaseAutomationSlot"
+        | "ensureDesktopRunning"
+      > & { browser: Pick<DesktopSessionManager["browser"], "release"> };
       notify: () => Promise<unknown>;
     } = {
       enabled: isVirtualDesktopEnabled,

@@ -63,10 +63,12 @@ export const sttFluxProviderToModelFamilyMigration: WorkspaceMigration = {
 
     let config: Record<string, unknown>;
     try {
-      config = JSON.parse(readFileSync(configPath, "utf8")) as Record<
-        string,
-        unknown
-      >;
+      const parsed: unknown = JSON.parse(readFileSync(configPath, "utf8"));
+      const record = asRecord(parsed);
+      if (!record) {
+        return;
+      }
+      config = record;
     } catch {
       // A config that does not parse is the loader's problem to report, not
       // this migration's to guess at.

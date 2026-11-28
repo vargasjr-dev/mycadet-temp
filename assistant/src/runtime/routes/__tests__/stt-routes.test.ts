@@ -75,9 +75,9 @@ function getRoute(endpoint: string) {
   return route;
 }
 
-function makeArgs(body: unknown): RouteHandlerArgs {
+function makeArgs(body: Record<string, unknown>): RouteHandlerArgs {
   return {
-    body: body as Record<string, unknown>,
+    body,
     headers: {},
   };
 }
@@ -96,8 +96,10 @@ async function expectRouteError(
     await fn();
     throw new Error("Expected RouteError to be thrown");
   } catch (err) {
-    expect(err).toBeInstanceOf(RouteError);
-    const re = err as InstanceType<typeof RouteError>;
+    if (!(err instanceof RouteError)) {
+      throw err;
+    }
+    const re = err;
     expect(re.statusCode).toBe(statusCode);
     if (code) {
       expect(re.code).toBe(code);

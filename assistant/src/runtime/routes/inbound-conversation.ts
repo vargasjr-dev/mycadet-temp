@@ -26,11 +26,7 @@ import { BadRequestError } from "./errors.js";
 import type { RouteHandlerArgs } from "./types.js";
 
 export function handleDeleteConversation({ body = {} }: RouteHandlerArgs) {
-  const { sourceChannel, conversationExternalId, sourceThreadId } = body as {
-    sourceChannel?: string;
-    conversationExternalId?: string;
-    sourceThreadId?: string;
-  };
+  const { sourceChannel, conversationExternalId, sourceThreadId } = body;
 
   if (!sourceChannel || typeof sourceChannel !== "string") {
     throw new BadRequestError("sourceChannel is required");
@@ -39,6 +35,9 @@ export function handleDeleteConversation({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError("conversationExternalId is required");
   }
 
+  if (sourceThreadId != null && typeof sourceThreadId !== "string") {
+    throw new BadRequestError("sourceThreadId must be a string");
+  }
   const normalizedThreadId = sourceThreadId?.trim() || undefined;
 
   const scopedKey = buildScopedConversationKey(

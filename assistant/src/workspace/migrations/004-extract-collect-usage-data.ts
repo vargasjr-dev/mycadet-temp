@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isObjectRecord } from "../../util/object.js";
 import { isPlainObject } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
@@ -25,10 +26,8 @@ export const extractCollectUsageDataMigration: WorkspaceMigration = {
       return; // Malformed config — skip
     }
 
-    const flagValues = config.assistantFeatureFlagValues as
-      | Record<string, unknown>
-      | undefined;
-    if (!flagValues || typeof flagValues !== "object") {
+    const flagValues = config.assistantFeatureFlagValues;
+    if (!isObjectRecord(flagValues)) {
       return;
     }
 
@@ -87,10 +86,10 @@ export const extractCollectUsageDataMigration: WorkspaceMigration = {
 
     // Restore the feature flag value
     const FLAG_KEY = "feature_flags.collect-usage-data.enabled";
-    const flagValues = (config.assistantFeatureFlagValues ?? {}) as Record<
-      string,
-      unknown
-    >;
+    const existingFlagValues = config.assistantFeatureFlagValues;
+    const flagValues = isObjectRecord(existingFlagValues)
+      ? existingFlagValues
+      : {};
     flagValues[FLAG_KEY] = value;
     config.assistantFeatureFlagValues = flagValues;
 

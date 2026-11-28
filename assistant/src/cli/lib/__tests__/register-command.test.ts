@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { Command } from "commander";
 
-import { type CommandTransport, registerCommand } from "../register-command.js";
+import { registerCommand } from "../register-command.js";
 
 describe("registerCommand", () => {
   test("registers a command with the correct name and description", () => {
@@ -48,27 +48,26 @@ describe("registerCommand", () => {
     expect(result.name()).toBe("ret-cmd");
   });
 
-  test.each([
-    ["ipc" as CommandTransport],
-    ["local" as CommandTransport],
-    ["bootstrap" as CommandTransport],
-  ])("accepts transport value: %s", (transport) => {
-    const parent = new Command();
-    let buildCalled = false;
+  test.each(["ipc", "local", "bootstrap"] as const)(
+    "accepts transport value: %s",
+    (transport) => {
+      const parent = new Command();
+      let buildCalled = false;
 
-    const result = registerCommand(parent, {
-      name: `cmd-${transport}`,
-      transport,
-      description: `Command with transport ${transport}`,
-      build: () => {
-        buildCalled = true;
-      },
-    });
+      const result = registerCommand(parent, {
+        name: `cmd-${transport}`,
+        transport,
+        description: `Command with transport ${transport}`,
+        build: () => {
+          buildCalled = true;
+        },
+      });
 
-    expect(buildCalled).toBe(true);
-    expect(result.name()).toBe(`cmd-${transport}`);
-    expect(result.description()).toBe(`Command with transport ${transport}`);
-  });
+      expect(buildCalled).toBe(true);
+      expect(result.name()).toBe(`cmd-${transport}`);
+      expect(result.description()).toBe(`Command with transport ${transport}`);
+    },
+  );
 
   test("attaches the command as a subcommand of parent", () => {
     const parent = new Command("program");

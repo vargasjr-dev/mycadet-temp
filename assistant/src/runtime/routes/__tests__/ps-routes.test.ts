@@ -54,24 +54,19 @@ mock.module("../../../util/process-tree.js", () => ({
   }),
 }));
 
-const { ROUTES } = await import("../ps-routes.js");
+const { ROUTES, psResponseSchema } = await import("../ps-routes.js");
 
 function getHandler() {
   const route = ROUTES.find((r) => r.operationId === "ps");
   if (!route) {
     throw new Error("ps route not registered");
   }
-  return route.handler as () => Promise<{
-    processes: Array<{
-      name: string;
-      status: string;
-      origin: string;
-      info?: string;
-      pid?: number;
-      children?: unknown[];
-    }>;
-  }>;
+  return async () => psResponseSchema.parse(await route.handler({}));
 }
+
+type ProcessNode = Awaited<
+  ReturnType<ReturnType<typeof getHandler>>
+>["processes"][number];
 
 describe("ps route handler", () => {
   test("maps the process tree to running ProcessEntry nodes", async () => {
@@ -130,10 +125,10 @@ describe("ps route handler", () => {
     const walk = (n: {
       name: string;
       origin: string;
-      children?: unknown[];
+      children?: ProcessNode[];
     }) => {
       byName.set(n.name, n.origin);
-      for (const c of (n.children ?? []) as Array<typeof n>) {
+      for (const c of n.children ?? []) {
         walk(c);
       }
     };
@@ -153,11 +148,11 @@ describe("ps route handler", () => {
       status: string;
       info?: string;
       pid?: number;
-      children?: unknown[];
+      children?: ProcessNode[];
     }): void => {
       expect(n.status).toBe("running");
       expect(n.info).toMatch(/^pid \d+$/);
-      for (const c of (n.children ?? []) as Array<typeof n>) {
+      for (const c of n.children ?? []) {
         walk(c);
       }
     };

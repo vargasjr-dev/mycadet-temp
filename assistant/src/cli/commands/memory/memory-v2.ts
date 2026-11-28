@@ -330,9 +330,8 @@ export function registerMemoryV2Command(memory: Command): void {
         key: keyof MemoryV2SimulateRouterResult["effectiveConfig"],
       ): string => {
         const eff = payload.effectiveConfig[key];
-        const override = (
-          payload.overrides as Record<string, number | null | undefined>
-        )[key];
+        const override =
+          key === "max_page_ids" ? undefined : payload.overrides[key];
         const effStr = eff === null ? "null" : String(eff);
         if (override === undefined) {
           return `  ${key}: ${effStr}`;

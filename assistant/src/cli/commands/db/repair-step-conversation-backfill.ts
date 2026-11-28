@@ -19,7 +19,6 @@
  *
  * Idempotent: existing conversation rows are skipped without modification.
  */
-
 import { randomUUID } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -28,6 +27,10 @@ import { Database } from "bun:sqlite";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import type {
+  DiskMessageRecord,
+  DiskMeta,
+} from "../../../persistence/disk-conversation-schemas.js";
 import { getWorkspaceDir } from "../../../util/layout.js";
 import type { RepairContext, RepairStep, StepResult } from "./repair-steps.js";
 
@@ -48,33 +51,6 @@ const WARNING_CAP_TOTAL = 500;
 // ---------------------------------------------------------------------------
 // On-disk record shapes
 // ---------------------------------------------------------------------------
-
-interface DiskMeta {
-  id: string;
-  title?: string;
-  type?: string;
-  channel?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface DiskToolCall {
-  name?: string;
-  input?: unknown;
-}
-
-interface DiskToolResult {
-  content?: unknown;
-}
-
-interface DiskMessageRecord {
-  role: string;
-  ts?: string;
-  content?: string;
-  toolCalls?: DiskToolCall[];
-  toolResults?: DiskToolResult[];
-  attachments?: unknown[];
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -140,6 +116,9 @@ async function runConversationBackfill(
   const { conversations, messages } =
     await import("../../../persistence/schema/conversations.js");
   const schema = await import("../../../persistence/schema/index.js");
+
+  const { diskConversationMessageSchema, diskConversationMetaSchema } =
+    await import("../../../persistence/disk-conversation-schemas.js");
 
   // Open RW so we can insert recovered rows. Mirror the daemon's pragmas
   // for consistent journal/FK behavior.
@@ -210,7 +189,9 @@ async function runConversationBackfill(
 
         let meta: DiskMeta;
         try {
-          meta = JSON.parse(readFileSync(metaPath, "utf-8")) as DiskMeta;
+          meta = diskConversationMetaSchema.parse(
+            JSON.parse(readFileSync(metaPath, "utf-8")),
+          );
         } catch (err) {
           pushWarning(`${entry}: malformed meta.json: ${String(err)}`);
           skipped++;
@@ -245,7 +226,9 @@ async function runConversationBackfill(
                 continue;
               }
               try {
-                messageRecords.push(JSON.parse(trimmed) as DiskMessageRecord);
+                messageRecords.push(
+                  diskConversationMessageSchema.parse(JSON.parse(trimmed)),
+                );
               } catch {
                 pushWarning(`${entry}: malformed JSONL line in messages.jsonl`);
               }

@@ -1080,7 +1080,7 @@ export function getConfig(): AssistantConfig {
         const seed = structuredClone(config);
         // Drop the deployment-context embedding provider so it is never
         // persisted (see above); the schema default re-applies in memory.
-        delete (seed.memory.embeddings as { provider?: unknown }).provider;
+        Reflect.deleteProperty(seed.memory.embeddings, "provider");
         // Nothing under memory.v3 is persisted at seed time.
         //
         // The tuning knobs are globally-shipped defaults: freezing them to

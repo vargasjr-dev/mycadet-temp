@@ -1,3 +1,10 @@
+type TunnelProbeResponse = {
+  readonly ok: boolean;
+  readonly status: number;
+  readonly body: { cancel(): Promise<void> } | null;
+  json(): Promise<unknown>;
+};
+
 /**
  * Reachability probe for the public URL a tunnel exposes.
  *
@@ -99,7 +106,7 @@ export async function probeTunnel(args: {
   /** Id recorded when this URL was saved; omit to skip the identity check. */
   expectedAssistantId?: string;
   timeoutMs?: number;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: (url: string, init?: RequestInit) => Promise<TunnelProbeResponse>;
 }): Promise<TunnelProbeResult> {
   if (args.publicBaseUrl.trim().length === 0) {
     return { kind: "unreachable", detail: "no public base URL" };
@@ -167,7 +174,9 @@ function unreachable(detail: string, base: string): TunnelProbeResult {
  * An unread fetch body pins its socket until GC under Bun and undici, and the
  * probe runs on every settings mount, resume, and manual refresh.
  */
-async function discardBody(response: Response | undefined): Promise<void> {
+async function discardBody(
+  response: TunnelProbeResponse | undefined,
+): Promise<void> {
   try {
     await response?.body?.cancel();
   } catch {
@@ -236,7 +245,7 @@ type ServedConfigReading =
  * pairing app, and no answer is no evidence.
  */
 async function readServedConfig(
-  response: Response | undefined,
+  response: TunnelProbeResponse | undefined,
 ): Promise<ServedConfigReading> {
   if (response === undefined) {
     return { kind: "unanswered" };

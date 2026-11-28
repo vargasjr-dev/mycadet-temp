@@ -9,10 +9,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { AssistantConfigSchema } from "../config/schema.js";
 import { resolveRoutingIdentity } from "../providers/routing-identity.js";
 import { collapseProviderConnectionsMigration } from "../workspace/migrations/133-collapse-provider-connections.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 let workspaceDir: string;
 
@@ -27,8 +30,13 @@ function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
 }
 
-function readLlm(): Record<string, any> {
-  return readConfig().llm as Record<string, any>;
+function readLlm() {
+  return z
+    .looseObject({
+      profiles: z.record(z.string(), jsonObjectSchema).optional(),
+      callSites: jsonObjectSchema.optional(),
+    })
+    .parse(readConfig().llm);
 }
 
 function run(): void {
@@ -85,7 +93,7 @@ describe("133-collapse-provider-connections migration", () => {
     const llm = readLlm();
     expect(llm.default).toBeUndefined();
     expect(llm.defaultProvider).toEqual({ provider: "cadet" });
-    expect(llm.profiles["my-managed"]).toEqual({
+    expect(llm.profiles?.["my-managed"]).toEqual({
       source: "user",
       provider: "cadet",
       model: "claude-opus-4-8",
@@ -140,12 +148,12 @@ describe("133-collapse-provider-connections migration", () => {
     run();
     const llm = readLlm();
     expect(llm.defaultProvider).toEqual({ provider: "anthropic" });
-    expect(llm.profiles.byok).toEqual({
+    expect(llm.profiles?.byok).toEqual({
       source: "user",
       provider: "anthropic",
       model: "claude-opus-4-8",
     });
-    expect(llm.callSites.commitMessage).toEqual({
+    expect(llm.callSites?.commitMessage).toEqual({
       provider: "openai",
       model: "gpt-5.4-mini",
     });
@@ -172,14 +180,14 @@ describe("133-collapse-provider-connections migration", () => {
     });
     run();
     const llm = readLlm();
-    expect(llm.profiles.codex).toEqual({
+    expect(llm.profiles?.codex).toEqual({
       source: "user",
       provider: "chatgpt",
       model: "gpt-5.5",
     });
     // A non-Codex model on the subscription row cannot become a chatgpt
     // identity (the schema strips incompatible identity pairs on read).
-    expect(llm.profiles["non-codex"]).toEqual({
+    expect(llm.profiles?.["non-codex"]).toEqual({
       source: "user",
       provider: "openai",
       model: "gpt-5.5-pro",
@@ -200,7 +208,7 @@ describe("133-collapse-provider-connections migration", () => {
       },
     });
     run();
-    expect(readLlm().profiles.stale).toEqual({
+    expect(readLlm().profiles?.stale).toEqual({
       source: "user",
       provider: "anthropic",
       model: "claude-2.1-retired",
@@ -238,8 +246,8 @@ describe("133-collapse-provider-connections migration", () => {
       provider: "openai",
       connectionName: "work-openai",
     });
-    expect(llm.profiles.endpoint.provider_connection).toBe("lm-studio");
-    expect(llm.profiles["second-key"].provider_connection).toBe(
+    expect(llm.profiles?.endpoint?.provider_connection).toBe("lm-studio");
+    expect(llm.profiles?.["second-key"]?.provider_connection).toBe(
       "anthropic-work",
     );
   });
@@ -264,12 +272,12 @@ describe("133-collapse-provider-connections migration", () => {
     });
     run();
     const llm = readLlm();
-    expect(llm.profiles.stamped).toEqual({
+    expect(llm.profiles?.stamped).toEqual({
       source: "user",
       provider: "cadet",
       model: "claude-opus-4-8",
     });
-    expect(llm.profiles.encoded).toEqual({
+    expect(llm.profiles?.encoded).toEqual({
       source: "user",
       provider: "cadet",
       model: "accounts/fireworks/models/minimax-m3",
@@ -290,7 +298,7 @@ describe("133-collapse-provider-connections migration", () => {
       },
     });
     run();
-    expect(readLlm().profiles.routed).toEqual({
+    expect(readLlm().profiles?.routed).toEqual({
       source: "user",
       provider: "cadet",
       model: "accounts/fireworks/models/minimax-m3",
@@ -311,7 +319,7 @@ describe("133-collapse-provider-connections migration", () => {
       },
     });
     run();
-    expect(readLlm().profiles.together).toEqual({
+    expect(readLlm().profiles?.together).toEqual({
       source: "user",
       provider: "cadet",
       model: "MiniMaxAI/MiniMax-M3",
@@ -377,11 +385,11 @@ describe("133-collapse-provider-connections migration", () => {
     });
     run();
     const llm = readLlm();
-    expect(llm.callSites.commitMessage).toEqual({
+    expect(llm.callSites?.commitMessage).toEqual({
       provider: "anthropic",
       model: "claude-haiku-4-5-20251001",
     });
-    expect(llm.callSites.mainAgent).toEqual({
+    expect(llm.callSites?.mainAgent).toEqual({
       provider: "openai",
       model: "gpt-5.4",
     });
@@ -437,7 +445,7 @@ describe("133-collapse-provider-connections migration", () => {
     const llm = readLlm();
     expect(llm.activeProfile).toBe("my-managed");
     expect(llm.profileOrder).toEqual(["my-managed"]);
-    expect(llm.profiles["my-managed"]).toEqual({
+    expect(llm.profiles?.["my-managed"]).toEqual({
       source: "user",
       provider: "cadet",
       model: "claude-opus-4-8",

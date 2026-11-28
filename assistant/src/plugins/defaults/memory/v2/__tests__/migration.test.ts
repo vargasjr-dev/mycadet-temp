@@ -221,11 +221,12 @@ function insertEdge(
 
 /** Build a `Provider` that returns canned text per call. */
 function buildStubProvider(textPerCall: string[] | string): Provider {
-  const queue = Array.isArray(textPerCall) ? [...textPerCall] : null;
+  const queue = typeof textPerCall === "string" ? null : [...textPerCall];
   return {
     name: "stub",
     sendMessage: async () => {
-      const text = queue ? (queue.shift() ?? "") : (textPerCall as string);
+      const text =
+        typeof textPerCall === "string" ? textPerCall : (queue?.shift() ?? "");
       return {
         content: [{ type: "text", text }],
         model: "stub-model",

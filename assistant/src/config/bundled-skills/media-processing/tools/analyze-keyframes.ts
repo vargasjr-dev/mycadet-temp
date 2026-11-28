@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { z } from "zod";
+
 import { getMediaAssetById } from "../../../../persistence/media-store.js";
 import { throwIfCancelled } from "../../../../plugin-api/tool-cancellation.js";
 import { getProviderKeyAsync } from "../../../../security/secure-keys.js";
@@ -55,10 +57,23 @@ export async function mapSegmentsForAsset(
   const pipelineDir = join(dirname(asset.filePath), "pipeline", assetId);
   const manifestPath = join(pipelineDir, "manifest.json");
 
-  let manifest: PreprocessManifest;
+  let manifest: Pick<PreprocessManifest, "segments">;
   try {
     const raw = await readFile(manifestPath, "utf-8");
-    manifest = JSON.parse(raw) as PreprocessManifest;
+    manifest = z
+      .object({
+        segments: z.array(
+          z.object({
+            id: z.string(),
+            startSeconds: z.number(),
+            endSeconds: z.number(),
+            framePaths: z.array(z.string()),
+            frameTimestamps: z.array(z.number()),
+            transcript: z.string().optional(),
+          }),
+        ),
+      })
+      .parse(JSON.parse(raw));
   } catch {
     throw new Error(
       "No preprocess manifest found. Run extract_keyframes first.",

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { getObjectProperty } from "../util/object.js";
 import { dropWebFetchModeMigration } from "../workspace/migrations/131-drop-web-fetch-mode.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,7 +89,7 @@ describe("131-drop-web-fetch-mode", () => {
 
     dropWebFetchModeMigration.run(workspaceDir);
 
-    const services = readConfig().services as any;
+    const services = jsonObjectSchema.parse(readConfig().services);
     expect(services["web-fetch"]).toEqual({ provider: "default" });
     expect(services["web-search"]).toEqual({
       mode: "managed",

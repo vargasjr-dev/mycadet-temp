@@ -123,7 +123,7 @@ function pushStepsUpdate(
   }
   const card = stored.data;
   const updatedTemplateData = {
-    ...(card.templateData as Record<string, unknown>),
+    ...card.templateData,
     steps: updatedSteps,
   };
   const updatedData = { ...card, templateData: updatedTemplateData };

@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { z } from "zod";
 
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "../../prompts/cache-boundary.js";
 import { isAbortReason } from "../../util/abort-reasons.js";
@@ -315,12 +316,13 @@ export class OpenAIResponsesProvider implements Provider {
       typeof configObj?.verbosity === "string"
         ? configObj?.verbosity
         : undefined;
-    const usageAttributionHeaders = configObj?.usageAttributionHeaders as
-      | Record<string, string>
-      | undefined;
-    const perRequestHeaders = configObj?.requestHeaders as
-      | Record<string, string>
-      | undefined;
+    const headerSchema = z.record(z.string(), z.string());
+    const usageAttributionHeaders = headerSchema.safeParse(
+      configObj?.usageAttributionHeaders,
+    ).data;
+    const perRequestHeaders = headerSchema.safeParse(
+      configObj?.requestHeaders,
+    ).data;
     const disableCache = configObj?.disableCache === true;
     const disableTurnStartCache = configObj?.disableTurnStartCache === true;
     const promptCacheKey =

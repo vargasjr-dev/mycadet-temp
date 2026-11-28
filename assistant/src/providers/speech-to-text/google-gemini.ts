@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 import type { SttTranscribeResult } from "../../stt/types.js";
+import { getObjectProperty } from "../../util/object.js";
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
 const DEFAULT_TIMEOUT_MS = 60_000;
@@ -86,7 +87,7 @@ export class GoogleGeminiProvider {
 
       // Preserve status code context for normalizeSttError() category mapping.
       // The @google/genai SDK throws ApiError with a `status` property.
-      const status = (error as { status?: number }).status;
+      const status = getObjectProperty(error, "status");
       const message = error instanceof Error ? error.message : String(error);
 
       if (status != null) {

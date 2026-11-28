@@ -38,7 +38,6 @@
  * The `overwrite` strategy never reaches here — it discards local edits and is
  * a plain re-install at the pin.
  */
-
 import { execFile } from "node:child_process";
 import {
   mkdirSync,
@@ -55,6 +54,7 @@ import {
   copyPreservedUserState,
   PRESERVED_ENTRIES,
 } from "../../plugins/plugin-tree-walk.js";
+import { isObjectRecord } from "../../util/object.js";
 import { computeFingerprint } from "./plugin-fingerprint.js";
 
 const execFileAsync = promisify(execFile);
@@ -217,12 +217,10 @@ async function threeWayMergeFile(
       // silently corrupted; surface those as errors. A resolving flag never
       // leaves conflicts, so any non-zero exit there is likewise a real
       // failure.
-      const e = err as {
-        stdout?: Buffer;
-        code?: unknown;
-        killed?: boolean;
-        signal?: string | null;
-      };
+      if (!isObjectRecord(err)) {
+        throw err;
+      }
+      const e = err;
       const isConflictExit =
         strategy === "assistant" &&
         e.killed !== true &&

@@ -220,7 +220,7 @@ describe("logWebSearchBackendFailure", () => {
       warn: (obj: Record<string, unknown>, msg?: string) => {
         calls.push([obj, msg ?? ""]);
       },
-    } as unknown as Parameters<typeof logWebSearchBackendFailure>[0];
+    };
 
     const secretQuery = "super secret user query text";
     logWebSearchBackendFailure(fakeLogger, {

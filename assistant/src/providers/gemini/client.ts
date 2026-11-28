@@ -1,5 +1,6 @@
 import type * as genai from "@google/genai";
 import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { z } from "zod";
 
 import {
   THINKING_LEVELS,
@@ -10,6 +11,7 @@ import { ToolDefinition } from "../../tools/tool-types.js";
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { ProviderError, type ProviderErrorReason } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
+import { isPlainObject } from "../../util/object.js";
 import {
   DAILY_LIMIT_PATTERNS,
   FREE_TIER_DAILY_LIMIT_PATTERNS,
@@ -187,10 +189,7 @@ function geminiModelSupportsThinking(model: string): boolean {
 function stripGeminiHttpOptions(
   config: genai.GenerateContentConfig,
 ): genai.GenerateContentConfig {
-  const { httpOptions: _httpOptions, ...rest } =
-    config as genai.GenerateContentConfig & {
-      httpOptions?: unknown;
-    };
+  const { httpOptions: _httpOptions, ...rest } = config;
   return rest;
 }
 
@@ -442,13 +441,14 @@ export class GeminiProvider implements Provider {
         : undefined;
     const modelOverride =
       typeof configObj?.model === "string" ? configObj?.model : undefined;
-    const usageAttributionHeaders = configObj?.usageAttributionHeaders as
-      | Record<string, string>
-      | undefined;
+    const usageAttributionHeaders = z
+      .record(z.string(), z.string())
+      .safeParse(configObj?.usageAttributionHeaders).data;
     const activeModel = modelOverride ?? this.model;
+    const thinking = configObj?.thinking;
     const thinkingConfig = geminiModelSupportsThinking(activeModel)
       ? buildThinkingConfig(
-          configObj?.thinking as Record<string, unknown> | undefined,
+          isPlainObject(thinking) ? thinking : undefined,
           activeModel,
         )
       : undefined;

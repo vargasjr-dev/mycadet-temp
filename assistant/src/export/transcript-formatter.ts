@@ -1,8 +1,9 @@
+import { z } from "zod";
+
 /**
  * Markdown transcript formatting for conversation messages, including
  * inline subagent conversation sections when present in message metadata.
  */
-
 import { formatLocalTimestamp } from "../daemon/date-context.js";
 import {
   getMessages,
@@ -10,16 +11,16 @@ import {
 } from "../persistence/conversation-crud.js";
 import { truncate } from "../util/truncate.js";
 
-interface ContentBlock {
-  type: string;
-  text?: string;
-  name?: string;
-  input?: Record<string, unknown>;
-  content?: string;
-  tool_use_id?: string;
-  is_error?: boolean;
-  source?: { media_type?: string; filename?: string };
-}
+const transcriptBlockSchema = z.object({
+  type: z.string(),
+  text: z.string().optional(),
+  name: z.string().optional(),
+  input: z.unknown().optional(),
+  content: z.unknown().optional(),
+  is_error: z.boolean().optional(),
+  source: z.object({ filename: z.string().optional() }).optional(),
+});
+type ContentBlock = z.infer<typeof transcriptBlockSchema>;
 
 function extractTranscriptText(blocks: ContentBlock[]): string {
   const parts: string[] = [];
@@ -39,7 +40,9 @@ function extractTranscriptText(blocks: ContentBlock[]): string {
         if (block.is_error) {
           parts.push(`[Error: ${block.content ?? ""}]`);
         } else {
-          parts.push(`[Result: ${truncate(block.content ?? "", 500)}]`);
+          parts.push(
+            `[Result: ${truncate(typeof block.content === "string" ? block.content : (JSON.stringify(block.content) ?? ""), 500)}]`,
+          );
         }
         break;
       case "server_tool_use":
@@ -107,14 +110,19 @@ function formatSubagentMessages(
 }
 
 function parseContent(raw: string | unknown[]): ContentBlock[] {
-  if (Array.isArray(raw)) {
-    return raw as ContentBlock[];
-  }
+  let entries: unknown;
   try {
-    return JSON.parse(raw) as ContentBlock[];
+    entries = Array.isArray(raw) ? raw : JSON.parse(raw);
   } catch {
-    return [{ type: "text", text: raw }];
+    return typeof raw === "string" ? [{ type: "text", text: raw }] : [];
   }
+  if (!Array.isArray(entries)) {
+    return typeof raw === "string" ? [{ type: "text", text: raw }] : [];
+  }
+  return entries.flatMap((entry) => {
+    const parsed = transcriptBlockSchema.safeParse(entry);
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 type TranscriptMessage = ReturnType<typeof getMessages>[number];

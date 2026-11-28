@@ -5,8 +5,9 @@
  * `input_audio` content parts, while every other model keeps the
  * text-placeholder serialization byte-for-byte.
  */
-
 import { describe, expect, test } from "bun:test";
+
+import { z } from "zod";
 
 import type { ContentBlock } from "../../types.js";
 import { OpenAIChatCompletionsProvider } from "../chat-completions-provider.js";
@@ -36,12 +37,18 @@ function makeStream(chunks: MockChunk[]): AsyncIterable<MockChunk> {
   };
 }
 
-type CapturedParams = {
-  messages: Array<{
-    role: string;
-    content: string | Array<Record<string, unknown>>;
-  }>;
-};
+const capturedParamsSchema = z.object({
+  messages: z.array(
+    z.object({
+      role: z.string(),
+      content: z
+        .union([z.string(), z.array(z.record(z.string(), z.unknown()))])
+        .optional()
+        .nullable(),
+    }),
+  ),
+});
+type CapturedParams = z.infer<typeof capturedParamsSchema>;
 
 /** Swap `create` for a canned stream that records the request params. */
 function stubCreateCapture(provider: OpenAIChatCompletionsProvider): {
@@ -55,7 +62,7 @@ function stubCreateCapture(provider: OpenAIChatCompletionsProvider): {
       return makeStream(OK_CHUNKS);
     },
   });
-  return { params: () => captured as CapturedParams };
+  return { params: () => capturedParamsSchema.parse(captured) };
 }
 
 // In the catalog with `supportsAudioInput: true` (Baseten's Inkling).
@@ -83,9 +90,9 @@ function audioFileBlock(mediaType: string, data = "QUJDRA=="): ContentBlock {
 }
 
 function userContentParts(params: CapturedParams): Record<string, unknown>[] {
-  return params.messages
-    .filter((m) => m.role === "user" && Array.isArray(m.content))
-    .flatMap((m) => m.content as Array<Record<string, unknown>>);
+  return params.messages.flatMap((m) =>
+    m.role === "user" && Array.isArray(m.content) ? m.content : [],
+  );
 }
 
 describe("chat-completions input_audio serialization", () => {

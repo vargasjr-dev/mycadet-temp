@@ -181,7 +181,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
         () => {
           attachCalls++;
           proxy = new HostCuProxy();
-          (ctx as { hostCuProxy?: unknown }).hostCuProxy = proxy;
+          ctx.hostCuProxy = proxy;
         },
       );
 

@@ -52,11 +52,13 @@ interface ProcessEntry {
 }
 
 const processOriginSchema = z
-  .string()
-  .regex(/^(workspace|plugin:.+)$/)
+  .union([
+    z.literal("workspace"),
+    z.templateLiteral(["plugin:", z.string().min(1)]),
+  ])
   .describe(
     "Process origin: 'workspace' for the daemon and its subsystems, or 'plugin:<name>' for a process spawned from a plugin (e.g. 'plugin:default-memory', 'plugin:cognee').",
-  ) as z.ZodType<ProcessOrigin>;
+  );
 
 const processEntrySchema: z.ZodType<ProcessEntry> = z
   .lazy(() =>
@@ -76,7 +78,7 @@ const processEntrySchema: z.ZodType<ProcessEntry> = z
   )
   .meta({ id: "ProcessEntry" });
 
-const psResponseSchema = z.object({
+export const psResponseSchema = z.object({
   processes: z.array(processEntrySchema),
 });
 

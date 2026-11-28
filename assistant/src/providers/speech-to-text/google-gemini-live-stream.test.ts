@@ -129,9 +129,7 @@ function installMockClient(
     },
   };
 
-  (transcriber as unknown as { client: { live: typeof mockLive } }).client = {
-    live: mockLive,
-  };
+  Object.assign(transcriber["client"].live, mockLive);
 
   return { capturedCalls };
 }

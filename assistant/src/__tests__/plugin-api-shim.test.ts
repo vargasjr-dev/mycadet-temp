@@ -13,7 +13,6 @@
  * the generator (`buildShimSource`) directly so we don't need to
  * update assertions every time an export is added.
  */
-
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
@@ -31,6 +30,7 @@ import {
   ensurePluginApiShim,
   pluginApiFallbackEntry,
 } from "../plugins/ensure-plugin-api-shim.js";
+import { getObjectProperty } from "../util/object.js";
 
 const SHIM_REL_PATH = "node_modules/@mycadet/plugin-api";
 
@@ -106,9 +106,7 @@ describe("ensurePluginApiShim", () => {
     // namespace on globalThis. By the time this test runs (any earlier
     // test in the file has already imported it), the registry must be
     // populated.
-    const namespace = (globalThis as Record<symbol, unknown>)[
-      PLUGIN_API_REGISTRY_KEY
-    ];
+    const namespace = getObjectProperty(globalThis, PLUGIN_API_REGISTRY_KEY);
     expect(namespace).toBeDefined();
     // Exports list is non-null but may be empty until runtime exports
     // migrate in later PRs.

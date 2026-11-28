@@ -8,6 +8,8 @@ import assert from "node:assert/strict";
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { AssistantConfigSchema } from "../../config/schema.js";
+
 const dbSentinel = { __mock: "db" };
 mock.module("../../persistence/db-connection.js", () => ({
   getDb: () => dbSentinel,
@@ -58,7 +60,7 @@ import { tryResolveProviderForConnectionName } from "../connection-resolution.js
 import type { ProvidersConfig } from "../registry.js";
 import { ConnectionResolutionError } from "../routing-identity.js";
 
-const config = {} as unknown as ProvidersConfig;
+const config: ProvidersConfig = AssistantConfigSchema.parse({});
 const cadetConn: Connection = {
   name: "cadet",
   provider: "cadet",

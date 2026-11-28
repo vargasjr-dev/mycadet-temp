@@ -209,7 +209,7 @@ describe("task-progress-context injection", () => {
       logger: makeLogger(),
     };
 
-    await userPromptSubmit(ctx as never);
+    await userPromptSubmit(ctx);
 
     expect(ctx.latestMessages).not.toBe(latestMessages);
     expect(ctx.latestMessages.map((message) => message.role)).toEqual([
@@ -262,7 +262,7 @@ describe("task-progress-context injection", () => {
       logger: makeLogger(),
     };
 
-    await postCompact(ctx as never);
+    await postCompact(ctx);
 
     const tail = ctx.history[ctx.history.length - 1];
     expect(tail?.role).toBe("user");
@@ -374,7 +374,7 @@ describe("task-progress-context injection", () => {
       logger,
     };
 
-    await userPromptSubmit(ctx as never);
+    await userPromptSubmit(ctx);
 
     expect(ctx.latestMessages).toBe(latestMessages);
     expect(logger.warn).toHaveBeenCalled();

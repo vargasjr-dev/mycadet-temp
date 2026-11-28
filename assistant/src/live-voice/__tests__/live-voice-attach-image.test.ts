@@ -70,7 +70,7 @@ function createSessionHarness() {
   };
 
   const transcriber = new MockStreamingTranscriber();
-  const startVoiceTurn: LiveVoiceTurnStarter = mock(
+  const startVoiceTurn = mock<LiveVoiceTurnStarter>(
     async (_options: VoiceTurnOptions) => ({
       turnId: "bridge-turn-1",
       abort: mock(),
@@ -95,9 +95,7 @@ async function speakAndRelease(
   harness.transcriber.emit({ type: "final", text });
   await harness.session.handleClientFrame({ type: "ptt_release" });
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (
-      (harness.startVoiceTurn as ReturnType<typeof mock>).mock.calls.length > 0
-    ) {
+    if (harness.startVoiceTurn.mock.calls.length > 0) {
       return;
     }
     await new Promise((resolve) => setTimeout(resolve, 5));
@@ -105,12 +103,12 @@ async function speakAndRelease(
 }
 
 function turnOptionsAt(
-  startVoiceTurn: LiveVoiceTurnStarter,
+  startVoiceTurn: Awaited<
+    ReturnType<typeof createSessionHarness>
+  >["startVoiceTurn"],
   index: number,
 ): VoiceTurnOptions | undefined {
-  return (startVoiceTurn as ReturnType<typeof mock>).mock.calls[index]?.[0] as
-    | VoiceTurnOptions
-    | undefined;
+  return startVoiceTurn.mock.calls[index]?.[0];
 }
 
 describe("live-voice attach_image frame", () => {

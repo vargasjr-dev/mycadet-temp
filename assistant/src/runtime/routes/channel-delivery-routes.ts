@@ -20,9 +20,13 @@ export function handleListDeadLetters() {
 }
 
 export function handleReplayDeadLetters({ body = {} }: RouteHandlerArgs) {
-  const { eventIds } = body as { eventIds?: string[] };
+  const { eventIds } = body;
 
-  if (!Array.isArray(eventIds) || eventIds.length === 0) {
+  if (
+    !Array.isArray(eventIds) ||
+    eventIds.length === 0 ||
+    !eventIds.every((id): id is string => typeof id === "string")
+  ) {
     throw new BadRequestError("eventIds array is required");
   }
 
@@ -35,11 +39,7 @@ export function handleReplayDeadLetters({ body = {} }: RouteHandlerArgs) {
 // ---------------------------------------------------------------------------
 
 export function handleChannelDeliveryAck({ body = {} }: RouteHandlerArgs) {
-  const { sourceChannel, conversationExternalId, externalMessageId } = body as {
-    sourceChannel?: string;
-    conversationExternalId?: string;
-    externalMessageId?: string;
-  };
+  const { sourceChannel, conversationExternalId, externalMessageId } = body;
 
   if (!sourceChannel || typeof sourceChannel !== "string") {
     throw new BadRequestError("sourceChannel is required");

@@ -5,7 +5,6 @@ import { getConfig } from "../../config/loader.js";
 import {
   addMessage,
   createConversation,
-  type MessageRole,
 } from "../../persistence/conversation-crud.js";
 import {
   getConversationByKey,
@@ -28,23 +27,24 @@ const log = getLogger("conversations-import-routes");
 
 // -- Types --
 
-interface ImportMessage {
-  role: MessageRole;
-  content: string | Array<{ type: string; text: string }>;
-  createdAt?: number;
-}
-
-interface ImportConversation {
-  sourceKey?: string;
-  title: string;
-  createdAt?: number;
-  updatedAt?: number;
-  messages: ImportMessage[];
-}
-
-interface ImportPayload {
-  conversations: ImportConversation[];
-}
+const importConversationSchema = z.object({
+  sourceKey: z.string().optional(),
+  title: z.string(),
+  createdAt: z.number().optional(),
+  updatedAt: z.number().optional(),
+  messages: z.array(
+    z.object({
+      role: z.string(),
+      content: z.union([
+        z.string(),
+        z.array(z.object({ type: z.string(), text: z.string() })),
+      ]),
+      createdAt: z.number().optional(),
+    }),
+  ),
+});
+type ImportConversation = z.infer<typeof importConversationSchema>;
+type ImportMessage = ImportConversation["messages"][number];
 
 // -- Helpers (ported from CLI) --
 
@@ -106,7 +106,7 @@ async function handleConversationsImport({ body }: RouteHandlerArgs) {
     throw new BadRequestError("conversations array required");
   }
 
-  const payload = body as unknown as ImportPayload;
+  const conversations: unknown[] = body.conversations;
   const db = getDb();
   const memoryConfig = getConfig().memory;
 
@@ -116,14 +116,20 @@ async function handleConversationsImport({ body }: RouteHandlerArgs) {
   const errors: Array<{ index: number; sourceKey?: string; error: string }> =
     [];
 
-  for (let idx = 0; idx < payload.conversations.length; idx++) {
-    const conv = payload.conversations[idx];
+  for (let idx = 0; idx < conversations.length; idx++) {
+    const entry = conversations[idx];
 
-    if (!conv || typeof conv !== "object") {
+    if (!entry || typeof entry !== "object") {
       errors.push({ index: idx, error: "invalid conversation entry" });
       continue;
     }
 
+    const parsed = importConversationSchema.safeParse(entry);
+    if (!parsed.success) {
+      errors.push({ index: idx, error: "invalid conversation entry" });
+      continue;
+    }
+    const conv = parsed.data;
     try {
       // Dedup via sourceKey
       if (conv.sourceKey) {
@@ -134,8 +140,9 @@ async function handleConversationsImport({ body }: RouteHandlerArgs) {
         }
       }
 
-      const messages = conv.messages.filter((msg) =>
-        isRenderableRole(msg.role),
+      const messages = conv.messages.filter(
+        (msg): msg is ImportMessage & { role: "user" | "assistant" } =>
+          isRenderableRole(msg.role),
       );
 
       const { convCreatedAt, convUpdatedAt, messageTimestamps } =
@@ -261,26 +268,7 @@ export const ROUTES: RouteDefinition[] = [
       "derived from the `sourceKey` prefix (e.g. `chatgpt:abc123` -> " +
       "`import:chatgpt`), or `import:unknown` when no prefix is present.",
     tags: ["conversations"],
-    requestBody: z.object({
-      conversations: z.array(
-        z.object({
-          sourceKey: z.string().optional(),
-          title: z.string(),
-          createdAt: z.number().optional(),
-          updatedAt: z.number().optional(),
-          messages: z.array(
-            z.object({
-              role: z.string(),
-              content: z.union([
-                z.string(),
-                z.array(z.object({ type: z.string(), text: z.string() })),
-              ]),
-              createdAt: z.number().optional(),
-            }),
-          ),
-        }),
-      ),
-    }),
+    requestBody: z.object({ conversations: z.array(importConversationSchema) }),
     responseBody: z.object({
       ok: z.boolean(),
       imported: z.number(),

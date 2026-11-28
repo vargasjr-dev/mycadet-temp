@@ -131,20 +131,12 @@ export const stripPersistedMemoryV3TuningDefaultsMigration: WorkspaceMigration =
       let changed = false;
 
       for (const leaf of TUNING_LEAVES) {
-        const container =
-          leaf.parent === null
-            ? v3
-            : isPlainObject(v3[leaf.parent])
-              ? (v3[leaf.parent] as Record<string, unknown>)
-              : undefined;
+        const parent = leaf.parent === null ? v3 : v3[leaf.parent];
+        const container = isPlainObject(parent) ? parent : undefined;
         if (container === undefined || !(leaf.key in container)) {
           continue;
         }
-        if (
-          (leaf.defaults as ReadonlyArray<unknown>).includes(
-            container[leaf.key],
-          )
-        ) {
+        if (leaf.defaults.some((value) => value === container[leaf.key])) {
           delete container[leaf.key];
           changed = true;
         }

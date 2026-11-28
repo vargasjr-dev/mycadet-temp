@@ -65,15 +65,13 @@ mock.module("../../v1/graph/retriever.js", () => ({
 // Programmable embedding + Qdrant state. Mirrors the pattern in
 // `memory/v2/__tests__/injection.test.ts` so we drive the real
 // `injectMemoryV2Block` end-to-end without a live backend.
-const qdrantState = {
-  queryResponses: {
-    dense: [] as Array<{
-      points: Array<{ score?: number; payload: Record<string, unknown> }>;
-    }>,
-    sparse: [] as Array<{
-      points: Array<{ score?: number; payload: Record<string, unknown> }>;
-    }>,
-  },
+type QdrantResponse = {
+  points: Array<{ score?: number; payload: Record<string, unknown> }>;
+};
+const qdrantState: {
+  queryResponses: Record<"dense" | "sparse", QdrantResponse[]>;
+} = {
+  queryResponses: { dense: [], sparse: [] },
 };
 
 class MockQdrantClient {

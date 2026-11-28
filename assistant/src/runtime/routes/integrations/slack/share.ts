@@ -44,11 +44,7 @@ export async function handleShareToSlackChannel({
     throw new ServiceUnavailableError("No Slack token configured");
   }
 
-  const { appId, channelId, message } = body as {
-    appId?: string;
-    channelId?: string;
-    message?: string;
-  };
+  const { appId, channelId, message } = body;
 
   if (!appId || !channelId) {
     throw new BadRequestError("Missing required fields: appId, channelId");

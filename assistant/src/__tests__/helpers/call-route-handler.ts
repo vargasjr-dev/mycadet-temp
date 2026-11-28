@@ -6,6 +6,7 @@
 import { RouteError } from "../../runtime/routes/errors.js";
 import type { RouteHandlerArgs } from "../../runtime/routes/types.js";
 import { RouteResponse } from "../../runtime/routes/types.js";
+import { isPlainObject } from "../../util/object.js";
 
 export async function callHandler(
   handler: (args: RouteHandlerArgs) => Promise<unknown>,
@@ -27,7 +28,8 @@ export async function callHandler(
   if (req.method !== "GET" && req.method !== "HEAD") {
     if (contentType.includes("application/json")) {
       try {
-        body = (await req.clone().json()) as Record<string, unknown>;
+        const parsed: unknown = await req.clone().json();
+        body = isPlainObject(parsed) ? parsed : undefined;
       } catch {
         /* no body or invalid JSON */
       }
@@ -57,7 +59,17 @@ export async function callHandler(
       result instanceof Uint8Array ||
       typeof result === "string"
     ) {
-      return new Response(result as BodyInit, { status: successStatus });
+      const responseBody =
+        result instanceof Uint8Array
+          ? result.buffer instanceof ArrayBuffer
+            ? new Uint8Array(
+                result.buffer,
+                result.byteOffset,
+                result.byteLength,
+              )
+            : result.slice()
+          : result;
+      return new Response(responseBody, { status: successStatus });
     }
     return Response.json(result, { status: successStatus });
   } catch (err) {

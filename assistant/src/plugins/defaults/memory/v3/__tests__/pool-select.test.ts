@@ -1176,7 +1176,7 @@ describe("selectPool: cataloged thinking and forced-tool compatibility", () => {
       "test-key",
       "moonshotai/kimi-k2.6-20260420",
     );
-    (kimi as unknown as { client: unknown }).client = {
+    Object.assign(kimi["client"], {
       chat: {
         completions: {
           create: async (params: unknown) => {
@@ -1208,7 +1208,7 @@ describe("selectPool: cataloged thinking and forced-tool compatibility", () => {
           },
         },
       },
-    };
+    });
 
     // The profile layer injects the thinking effort onto the call config in
     // production; emulate that here so the forced tool_choice rides alongside

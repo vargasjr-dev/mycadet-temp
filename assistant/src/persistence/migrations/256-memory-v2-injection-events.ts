@@ -1,4 +1,5 @@
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import type { DrizzleDb } from "../db-connection.js";
 import { getSqliteFrom } from "../db-connection.js";
 
@@ -91,10 +92,12 @@ export function migrateMemoryV2InjectionEvents(database: DrizzleDb): void {
   for (const row of rows) {
     let concepts: Array<{ slug?: unknown; source?: unknown }>;
     try {
-      concepts = JSON.parse(row.concepts_json) as Array<{
-        slug?: unknown;
-        source?: unknown;
-      }>;
+      const decoded: unknown = JSON.parse(row.concepts_json);
+      if (!Array.isArray(decoded)) {
+        parseFailures += 1;
+        continue;
+      }
+      concepts = decoded.filter(isObjectRecord);
     } catch {
       parseFailures += 1;
       continue;

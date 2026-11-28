@@ -104,7 +104,7 @@ const { appendFeedItem, getHomeFeedPath } =
  * the result in a Response-like object so existing test assertions
  * (res.status / res.json()) keep working.
  */
-function fakeResponse(body: unknown, status = 200) {
+function fakeResponse(body: Record<string, unknown>, status = 200) {
   return { status, json: async () => body };
 }
 
@@ -126,7 +126,7 @@ async function handleGetHomeFeed(req: Request) {
 }
 
 async function handlePatchFeedItem(req: Request, itemId: string) {
-  let body: unknown;
+  let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
@@ -135,7 +135,7 @@ async function handlePatchFeedItem(req: Request, itemId: string) {
   try {
     const result = await _handlePatchFeedItem({
       pathParams: { id: itemId },
-      body: body as Record<string, unknown>,
+      body: body,
     });
     return fakeResponse(result);
   } catch (err) {

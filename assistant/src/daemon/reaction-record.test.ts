@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
-import type { ProviderMessageMetadata } from "../messaging/provider-message-metadata.js";
+import { providerMessageMetadataSchema } from "../messaging/provider-message-metadata.js";
 import { readSlackMetadataFromMessageMetadata } from "../messaging/providers/slack/message-metadata.js";
 import type { QueuedReactionRecord } from "./reaction-record.js";
 
@@ -66,9 +66,9 @@ describe("persistReactionRecords", () => {
     expect(row.metadata?.messageKind).toBe("reaction");
     expect(row.metadata?.provenanceTrustClass).toBe("guardian");
     expect(row.metadata?.provenanceSourceChannel).toBe("discord");
-    const envelope = JSON.parse(
-      String(row.metadata?.providerMeta),
-    ) as ProviderMessageMetadata;
+    const envelope = providerMessageMetadataSchema.parse(
+      JSON.parse(String(row.metadata?.providerMeta)),
+    );
     expect(envelope.source).toBe("discord");
     expect(envelope.eventKind).toBe("reaction");
     expect(envelope.reaction).toEqual({
@@ -87,9 +87,9 @@ describe("persistReactionRecords", () => {
     ]);
     const row = persisted[0]!;
     expect(row.metadata?.slackMeta).toBeUndefined();
-    const envelope = JSON.parse(
-      String(row.metadata?.providerMeta),
-    ) as ProviderMessageMetadata;
+    const envelope = providerMessageMetadataSchema.parse(
+      JSON.parse(String(row.metadata?.providerMeta)),
+    );
     expect(envelope.source).toBe("slack");
     expect(envelope.conversationExternalId).toBe("C1");
     expect(envelope.eventKind).toBe("reaction");

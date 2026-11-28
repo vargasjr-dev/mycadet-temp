@@ -24,6 +24,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { mockUnownedModeSessions } from "../../__tests__/helpers/mock-conversation.js";
 import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import { setHubPublishOverrideForTesting } from "../../runtime/assistant-event-hub.js";
 
@@ -442,9 +443,7 @@ describe("handleSurfaceAction — launch_conversation dispatch", () => {
 
     const settleStructuralWait = mock(() => true);
     const ctx = makeContext({
-      modeSessions: {
-        settleStructuralWait,
-      } as unknown as Conversation["modeSessions"],
+      modeSessions: mockUnownedModeSessions({ settleStructuralWait }),
     });
     registerCardSurface(ctx, "surface-pending");
     // Simulate `ui_show` having stamped a pending entry for this surface

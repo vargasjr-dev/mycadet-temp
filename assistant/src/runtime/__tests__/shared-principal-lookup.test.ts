@@ -292,7 +292,7 @@ describe("resolveSharedPrincipalFresh", () => {
   });
 
   test.each([
-    ["an unreachable gateway", { ok: false } as ReadResult],
+    ["an unreachable gateway", { ok: false } satisfies ReadResult],
     [
       "a could-not-vouch verdict",
       verdict({ trustClass: "unknown", resolutionFailed: true }),

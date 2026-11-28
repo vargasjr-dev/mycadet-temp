@@ -253,7 +253,9 @@ describe("oauth request body encoding", () => {
       "Content-Type": "application/octet-stream",
     });
     expect(Buffer.isBuffer(parsed)).toBe(true);
-    expect(Buffer.from(parsed as Uint8Array).equals(PNG_MAGIC)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(parsed)).equals(PNG_MAGIC),
+    ).toBe(true);
   });
 
   test("forwards a binary @file to the route handler as a Buffer", async () => {
@@ -280,7 +282,9 @@ describe("oauth request body encoding", () => {
       .parse(handleRequestCalls[0]);
     expect(Buffer.isBuffer(call.body.parsed_data)).toBe(true);
     expect(
-      Buffer.from(call.body.parsed_data as Uint8Array).equals(PNG_MAGIC),
+      Buffer.from(z.instanceof(Uint8Array).parse(call.body.parsed_data)).equals(
+        PNG_MAGIC,
+      ),
     ).toBe(true);
   });
 

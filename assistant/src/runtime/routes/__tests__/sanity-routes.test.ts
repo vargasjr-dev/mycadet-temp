@@ -17,6 +17,7 @@ import {
   test,
 } from "bun:test";
 
+import { fetchMock } from "../../../__tests__/helpers/fetch-mock.js";
 import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 // ---------------------------------------------------------------------------
 // Module mocks — must appear before any imports of the module under test
@@ -79,11 +80,9 @@ function mockFetch(url: string | URL | Request): Promise<Response> {
     throw new Error(`Unexpected fetch: ${urlStr}`);
   }
   const result = mockFetchImpl(urlStr);
-  return Promise.resolve({
-    ok: result.status >= 200 && result.status < 300,
-    status: result.status,
-    json: async () => result.json(),
-  } as Response);
+  const response = new Response(null, { status: result.status });
+  response.json = async () => result.json();
+  return Promise.resolve(response);
 }
 
 beforeEach(() => {
@@ -93,11 +92,11 @@ beforeEach(() => {
   delete secureKeys[SANITY_TOKEN];
   mockFetchImpl = undefined;
 
-  (globalThis as any).fetch = mockFetch;
+  globalThis.fetch = fetchMock(mockFetch);
 });
 
 afterEach(() => {
-  (globalThis as any).fetch = originalFetch;
+  globalThis.fetch = originalFetch;
 });
 
 // ---------------------------------------------------------------------------

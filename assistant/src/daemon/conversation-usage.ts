@@ -150,9 +150,10 @@ function isUsageAttributionSnapshot(
 ): attribution is UsageAttributionSnapshot {
   return (
     attribution != null &&
-    typeof (attribution as UsageAttributionSnapshot).resolvedProvider ===
-      "string" &&
-    typeof (attribution as UsageAttributionSnapshot).resolvedModel === "string"
+    "resolvedProvider" in attribution &&
+    typeof attribution.resolvedProvider === "string" &&
+    "resolvedModel" in attribution &&
+    typeof attribution.resolvedModel === "string"
   );
 }
 

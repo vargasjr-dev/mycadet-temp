@@ -248,8 +248,11 @@ export const repairSeedPinnedMemoryV3LiveMigration: WorkspaceMigration = {
     }
 
     // Narrow-write: only the one leaf changes; the shape was validated above.
-    const memory = config.memory as Record<string, unknown>;
-    const v3 = memory.v3 as Record<string, unknown>;
+    const memory = config.memory;
+    const v3 = isPlainObject(memory) ? memory.v3 : undefined;
+    if (!isPlainObject(v3)) {
+      return;
+    }
     v3.live = true;
     writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
   },

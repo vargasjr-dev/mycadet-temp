@@ -2,7 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 
 import type { MemoryConfig } from "../../../config/schemas/memory.js";
 import { MemoryConfigSchema } from "../../../config/schemas/memory.js";
-import { isPlainObject } from "../../../util/object.js";
+import { getObjectProperty, isPlainObject } from "../../../util/object.js";
 import { getLogger } from "./logging.js";
 import { getWorkspaceConfigPath } from "./paths.js";
 
@@ -77,7 +77,7 @@ function parseMemorySlice(raw: Record<string, unknown>): MemoryConfig {
     if (issue.path.length === 0) {
       return structuredClone(MemoryConfigSchema.parse({}));
     }
-    deleteLeaf(cleaned, issue.path as (string | number)[]);
+    deleteLeaf(cleaned, issue.path);
   }
 
   const retry = MemoryConfigSchema.safeParse(cleaned);
@@ -90,21 +90,18 @@ function parseMemorySlice(raw: Record<string, unknown>): MemoryConfig {
 }
 
 /** Delete the leaf at `path`, tolerating already-missing ancestors. */
-function deleteLeaf(
-  obj: Record<string, unknown>,
-  path: (string | number)[],
-): void {
+function deleteLeaf(obj: Record<string, unknown>, path: PropertyKey[]): void {
   let node: unknown = obj;
   for (const key of path.slice(0, -1)) {
     if (node === null || typeof node !== "object") {
       return;
     }
-    node = (node as Record<string | number, unknown>)[key];
+    node = getObjectProperty(node, key);
   }
   if (node === null || typeof node !== "object") {
     return;
   }
-  delete (node as Record<string | number, unknown>)[path.at(-1)!];
+  Reflect.deleteProperty(node, path.at(-1)!);
 }
 
 /**

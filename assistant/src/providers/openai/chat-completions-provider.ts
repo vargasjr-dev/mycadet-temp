@@ -407,9 +407,10 @@ function carriesReasoningOptOut(params: unknown): boolean {
 }
 
 function stripReasoningParams(params: unknown): void {
-  const p = params as Record<string, unknown>;
-  delete p.reasoning_effort;
-  delete p.reasoning;
+  if (params !== null && typeof params === "object") {
+    Reflect.deleteProperty(params, "reasoning_effort");
+    Reflect.deleteProperty(params, "reasoning");
+  }
 }
 
 /**
@@ -509,15 +510,14 @@ type AssistantReasoningExtras = {
 
 function assistantReasoningExtras(
   msg: OpenAI.Chat.Completions.ChatCompletionMessageParam,
-): AssistantReasoningExtras | null {
+): (AssistantReasoningExtras & { role: "assistant" }) | null {
   if (msg.role !== "assistant") {
     return null;
   }
   // The wire may carry reasoning fields the SDK's assistant-message type lags
   // on; callers mutate through this view (strip/backfill), so it must alias
   // msg rather than a zod copy.
-  return msg as OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam &
-    AssistantReasoningExtras;
+  return msg;
 }
 
 function paramsMessages(
@@ -767,11 +767,7 @@ function textFromResponseContent(content: unknown): string | null {
     return null;
   }
   const joined = content
-    .map((part) =>
-      RESPONSE_TEXT_PART.safeParse(part).success
-        ? (part as { text: string }).text
-        : "",
-    )
+    .map((part) => RESPONSE_TEXT_PART.safeParse(part).data?.text ?? "")
     .join("");
   return joined.length > 0 ? joined : null;
 }
@@ -1086,7 +1082,7 @@ export class OpenAIChatCompletionsProvider implements Provider {
 
       if (tools && tools.length > 0) {
         params.tools = tools.map((t) => {
-          let parameters = t.input_schema as OpenAI.FunctionParameters;
+          let parameters: OpenAI.FunctionParameters = { ...t.input_schema };
           if (this.coerceObjectArgsToJsonString) {
             const coerced = coerceObjectParamsToJsonString(t.input_schema);
             parameters = coerced.parameters;
@@ -1987,11 +1983,11 @@ export class OpenAIChatCompletionsProvider implements Provider {
       }
     }
 
-    const result: OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam =
-      {
-        role: "assistant",
-        content: textParts.length > 0 ? textParts.join("") : null,
-      };
+    const result: OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam &
+      AssistantReasoningExtras = {
+      role: "assistant",
+      content: textParts.length > 0 ? textParts.join("") : null,
+    };
 
     if (toolCalls.length > 0) {
       applyGemini3UnsignedToolCallFallback(toolCalls, model);
@@ -2003,12 +1999,7 @@ export class OpenAIChatCompletionsProvider implements Provider {
     // does not reject an extra key. Empty-field presence for DeepSeek is a
     // one-shot retry, not the default serialization.
     if (reasoningParts.length > 0 && this.assistantReasoningField) {
-      (
-        result as OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam & {
-          reasoning?: string;
-          reasoning_content?: string;
-        }
-      )[this.assistantReasoningField] = reasoningParts.join("");
+      result[this.assistantReasoningField] = reasoningParts.join("");
     }
 
     // An assistant message must carry `content` or `tool_calls`. A turn with

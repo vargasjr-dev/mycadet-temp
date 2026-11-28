@@ -5,7 +5,9 @@ import {
 
 import { applyTaskProgressContext } from "../src/apply-task-progress-context.js";
 
-const postCompact: HookFunction<PostCompactContext> = async (ctx) => {
+const postCompact: HookFunction<
+  Pick<PostCompactContext, "conversationId" | "history" | "logger">
+> = async (ctx) => {
   try {
     ctx.history = applyTaskProgressContext(ctx.conversationId, ctx.history);
   } catch (err) {

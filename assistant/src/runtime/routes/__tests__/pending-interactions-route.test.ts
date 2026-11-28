@@ -17,7 +17,10 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
-import type { QuestionEntry } from "../../../api/events/question-request.js";
+import {
+  type QuestionEntry,
+  QuestionEntrySchema,
+} from "../../../api/events/question-request.js";
 import * as pendingInteractions from "../../pending-interactions.js";
 import type { RouteDefinition } from "../types.js";
 
@@ -46,11 +49,14 @@ function findHandler(operationId: string): RouteDefinition["handler"] {
 
 const handler = findHandler("pending_interactions");
 
-interface ScopedResponse {
-  pendingConfirmation: unknown;
-  pendingSecret: unknown;
-  pendingQuestion: { requestId: string; entries: QuestionEntry[] } | null;
-}
+const scopedResponseSchema = z.object({
+  pendingConfirmation: z.unknown(),
+  pendingSecret: z.unknown(),
+  pendingQuestion: z
+    .object({ requestId: z.string(), entries: z.array(QuestionEntrySchema) })
+    .nullable(),
+});
+type ScopedResponse = z.infer<typeof scopedResponseSchema>;
 
 async function listForConversation(
   conversationId: string,
@@ -58,7 +64,7 @@ async function listForConversation(
   const result = await handler({
     queryParams: { conversationId },
   });
-  return result as ScopedResponse;
+  return scopedResponseSchema.parse(result);
 }
 
 const ENTRIES: QuestionEntry[] = [
@@ -126,9 +132,11 @@ describe("pending-interactions, conversation-scoped", () => {
 
   test("names the key even when the conversation cannot be resolved", async () => {
     // GIVEN a conversationKey that maps to no conversation
-    const result = (await handler({
-      queryParams: { conversationKey: "no-such-key" },
-    })) as ScopedResponse;
+    const result = scopedResponseSchema.parse(
+      await handler({
+        queryParams: { conversationKey: "no-such-key" },
+      }),
+    );
 
     // THEN the early return still states all three kinds, so this path is not
     // mistaken for an assistant that predates the field
