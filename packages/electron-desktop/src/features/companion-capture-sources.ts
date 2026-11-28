@@ -12,7 +12,12 @@
  * saying where they are. The helper reads the window server's own list
  * (`CaptureSources.swift`), which carries bounds, owner and title in one
  * call, and the shell polls the same call to keep the frame on a window the
- * user is moving.
+ * user is moving. Measured against Electron 42's types (PR 3 of the
+ * helper-simplifying plan): `DesktopCapturerSource` carries only
+ * `appIcon`, `display_id`, `id`, `name`, `thumbnail` — no bounds, no
+ * owner pid, no bundle id, no on-screen flag. The list, the frame
+ * captures, and the accessibility lookups all stay with the helper, whose
+ * resident replacements the identity-fix PR carries forward.
  *
  * **A Chrome tab is a window with a step in front.** Chrome's scripting
  * interface lists tabs by Chrome's own window id and a tab index, neither of
