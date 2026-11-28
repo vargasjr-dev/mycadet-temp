@@ -45,7 +45,7 @@ export function startDiskPressureGuardForLifecycle(): void {
         runDeferredDiskPressureStartupSample,
         0,
       );
-      (diskPressureStartupSampleTimer as { unref?: () => void }).unref?.();
+      diskPressureStartupSampleTimer.unref?.();
     }
   } catch (err) {
     log.warn(

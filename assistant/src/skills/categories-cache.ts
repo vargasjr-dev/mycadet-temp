@@ -2,19 +2,30 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { parse as parseYaml } from "yaml";
+import { z } from "zod";
 
 import { resolveCloudBaseUrl } from "../config/env.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import { getRepoSkillsDir } from "./catalog-install.js";
 
 const log = getLogger("categories-cache");
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-export interface SkillCategoryDef {
-  slug: string;
-  label: string;
-  description: string;
-  icon: string;
+const skillCategorySchema = z.looseObject({
+  slug: z.string(),
+  label: z.string(),
+  description: z.string(),
+  icon: z.string(),
+});
+
+export type SkillCategoryDef = z.infer<typeof skillCategorySchema>;
+
+function readCategories(categories: unknown[]): SkillCategoryDef[] {
+  return categories.flatMap((category) => {
+    const parsed = skillCategorySchema.safeParse(category);
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 let cachedCategories: SkillCategoryDef[] | null = null;
@@ -33,18 +44,14 @@ async function fetchCategories(): Promise<SkillCategoryDef[]> {
     );
   }
 
-  const data = (await response.json()) as {
-    categories: SkillCategoryDef[];
-  };
-  if (!Array.isArray(data.categories)) {
+  const data: unknown = await response.json();
+  const categories = getObjectProperty(data, "categories");
+  if (!Array.isArray(categories)) {
     throw new Error(
       "Platform categories response has invalid categories array",
     );
   }
-  return data.categories.filter(
-    (c): c is SkillCategoryDef =>
-      !!c && typeof c.slug === "string" && typeof c.label === "string",
-  );
+  return readCategories(categories);
 }
 
 function readLocalCategories(repoSkillsDir: string): SkillCategoryDef[] {
@@ -53,14 +60,12 @@ function readLocalCategories(repoSkillsDir: string): SkillCategoryDef[] {
       join(repoSkillsDir, "skill-categories-catalog.yaml"),
       "utf-8",
     );
-    const parsed = parseYaml(raw) as { categories?: SkillCategoryDef[] };
-    if (!Array.isArray(parsed?.categories)) {
+    const parsed: unknown = parseYaml(raw);
+    const categories = getObjectProperty(parsed, "categories");
+    if (!Array.isArray(categories)) {
       return [];
     }
-    return parsed.categories.filter(
-      (c): c is SkillCategoryDef =>
-        !!c && typeof c.slug === "string" && typeof c.label === "string",
-    );
+    return readCategories(categories);
   } catch {
     return [];
   }

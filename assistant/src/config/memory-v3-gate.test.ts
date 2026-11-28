@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { memoryTier } from "./memory-tier.js";
+import type { MemoryGateConfig } from "./memory-v3-gate.js";
 import {
   isMemoryEnabled,
   isMemoryV1Active,
@@ -11,7 +12,6 @@ import {
   isV3TierActive,
   usesConceptPageMemory,
 } from "./memory-v3-gate.js";
-import type { AssistantConfig } from "./schema.js";
 
 describe("usesConceptPageMemory", () => {
   test("false when memory is explicitly disabled, even with v3 live", () => {
@@ -57,7 +57,7 @@ function makeConfig(
   v2Enabled: TriState,
   v3Live: TriState,
   skillImprovement?: boolean,
-): AssistantConfig {
+): MemoryGateConfig {
   return {
     memory: {
       ...(enabled === undefined ? {} : { enabled }),
@@ -67,7 +67,7 @@ function makeConfig(
         ? {}
         : { retrospective: { skillImprovement } }),
     },
-  } as AssistantConfig;
+  };
 }
 
 describe("tier predicate truth table", () => {
@@ -233,7 +233,7 @@ describe("tier predicate truth table", () => {
   }
 
   test("empty config: memory on, v1 is the live tier", () => {
-    const config = {} as AssistantConfig;
+    const config = {};
     expect(isMemoryEnabled(config)).toBe(true);
     expect(isMemoryV1Active(config)).toBe(true);
     expect(isV2InjectionEngineActive(config)).toBe(false);
@@ -343,6 +343,6 @@ describe("v3 tier is one condition", () => {
 
   test("false when v3 is not live, and on an empty config", () => {
     expect(isV3TierActive(makeConfig(undefined, undefined, false))).toBe(false);
-    expect(isV3TierActive({} as AssistantConfig)).toBe(false);
+    expect(isV3TierActive({})).toBe(false);
   });
 });

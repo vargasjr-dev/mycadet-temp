@@ -2,6 +2,7 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 
 import { AssistantConfig } from "../../config/schema.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import {
   resolveBackendDimension,
   selectEmbeddingBackend,
@@ -99,10 +100,8 @@ export async function readConceptPageCollectionDim(
   }
 
   const info = await client.getCollection(MEMORY_V2_COLLECTION);
-  const vectors = info.config?.params?.vectors as
-    | Record<string, { size?: number } | undefined>
-    | undefined;
-  const size = vectors?.dense?.size;
+  const vectors = info.config?.params?.vectors;
+  const size = getObjectProperty(getObjectProperty(vectors, "dense"), "size");
   if (typeof size !== "number") {
     throw new Error(
       `v2 concept-page collection "${MEMORY_V2_COLLECTION}" exists but its dense-vector size is unreadable`,

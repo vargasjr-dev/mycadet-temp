@@ -9,6 +9,8 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { mock } from "bun:test";
 
+import { readInstallMeta } from "../skills/install-meta.js";
+
 const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
 import {
@@ -125,10 +127,8 @@ describe("clawhubInstall staging", () => {
         "# Staged Skill\n",
       );
       expect(existsSync(join(stagedSkillDir, "install-meta.json"))).toBe(true);
-      const meta = JSON.parse(
-        readFileSync(join(stagedSkillDir, "install-meta.json"), "utf-8"),
-      ) as SkillInstallMeta;
-      expect(meta.author).toBe("user");
+      const meta = readInstallMeta(stagedSkillDir);
+      expect(meta?.author).toBe("user");
     } finally {
       Bun.spawn = originalSpawn;
       rmSync(projectRoot, { recursive: true, force: true });
@@ -168,8 +168,11 @@ describe("content hash verification", () => {
   }
 
   function readSkillInstallMeta(slug: string): SkillInstallMeta {
-    const metaPath = join(TEST_DIR, "skills", slug, "install-meta.json");
-    return JSON.parse(readFileSync(metaPath, "utf-8")) as SkillInstallMeta;
+    const meta = readInstallMeta(join(TEST_DIR, "skills", slug));
+    if (!meta) {
+      throw new Error(`Missing install metadata for ${slug}`);
+    }
+    return meta;
   }
 
   test("malformed integrity JSON is handled gracefully", () => {

@@ -4,7 +4,10 @@
 
 import { z } from "zod";
 
-import { DictationRequestSchema } from "../../api/requests/dictation.js";
+import {
+  DictationContextSchema,
+  DictationRequestSchema,
+} from "../../api/requests/dictation.js";
 import {
   type ProfileResolution,
   resolveProfile,
@@ -14,7 +17,6 @@ import {
   expandSnippets,
 } from "../../daemon/dictation-text-processing.js";
 import { detectDictationModeHeuristic } from "../../daemon/handlers/dictation.js";
-import type { DictationContext } from "../../daemon/message-types/shared.js";
 import {
   createTimeout,
   extractToolUse,
@@ -55,13 +57,17 @@ function sanitizeWindowTitle(title: string | undefined): string {
   );
 }
 
-interface DictationBody {
-  transcription: string;
-  context: DictationContext;
-  profileId?: string;
-}
+const dictationBodySchema = DictationRequestSchema.extend({
+  context: DictationContextSchema.extend({
+    bundleIdentifier: z.string().optional(),
+    appName: z.string().optional(),
+    windowTitle: z.string().optional(),
+    selectedText: z.string().optional(),
+  }),
+});
+type DictationBody = z.infer<typeof dictationBodySchema>;
 
-function buildAppMetadataBlock(context: DictationContext): string {
+function buildAppMetadataBlock(context: DictationBody["context"]): string {
   const windowTitle = sanitizeWindowTitle(context.windowTitle);
   return [
     "<app_metadata>",
@@ -159,8 +165,8 @@ async function handleDictation(body: DictationBody): Promise<DictationResult> {
   );
 
   const resolution = resolveProfile(
-    body.context.bundleIdentifier,
-    body.context.appName,
+    body.context.bundleIdentifier ?? "",
+    body.context.appName ?? "",
     body.profileId,
   );
   const { profile, source: profileSource } = resolution;
@@ -263,7 +269,13 @@ async function classifyDictation(
   const mode = detectDictationModeHeuristic({
     type: "dictation_request",
     transcription: body.transcription,
-    context: body.context,
+    context: {
+      bundleIdentifier: body.context.bundleIdentifier ?? "",
+      appName: body.context.appName ?? "",
+      windowTitle: body.context.windowTitle ?? "",
+      cursorInTextField: body.context.cursorInTextField ?? false,
+      selectedText: body.context.selectedText,
+    },
   });
   return mode === "action" ? "action" : "dictation";
 }
@@ -413,15 +425,17 @@ export const ROUTES: RouteDefinition[] = [
       profileSource: z.string().describe("How the profile was resolved"),
     }),
     handler: async ({ body = {} }: RouteHandlerArgs) => {
-      const { transcription, context, profileId } =
-        body as unknown as DictationBody;
-      if (!transcription) {
+      if (!body.transcription) {
         throw new BadRequestError("transcription is required");
       }
-      if (!context) {
+      if (!body.context) {
         throw new BadRequestError("context is required");
       }
-      return handleDictation({ transcription, context, profileId });
+      const parsed = dictationBodySchema.safeParse(body);
+      if (!parsed.success) {
+        throw new BadRequestError("Invalid dictation request");
+      }
+      return handleDictation(parsed.data);
     },
   },
 ];

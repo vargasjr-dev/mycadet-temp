@@ -1,10 +1,10 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { z } from "zod";
 
 import type { SkillToolEntry } from "../skills/tool-manifest.js";
+import { parseToolManifestFile } from "../skills/tool-manifest.js";
 import {
   bundledToolInputAliases,
   bundledToolInputRepairs,
@@ -16,15 +16,12 @@ const FIND_TOOL = "find_similar_skills";
 
 /** The real manifest entries the repairs describe. */
 function manifestEntry(name: string): SkillToolEntry {
-  const manifest = JSON.parse(
-    readFileSync(
-      join(
-        import.meta.dir,
-        "../config/bundled-skills/skill-management/TOOLS.json",
-      ),
-      "utf-8",
+  const manifest = parseToolManifestFile(
+    join(
+      import.meta.dir,
+      "../config/bundled-skills/skill-management/TOOLS.json",
     ),
-  ) as { tools: SkillToolEntry[] };
+  );
   const entry = manifest.tools.find((t) => t.name === name);
   if (!entry) {
     throw new Error(`${name} is missing from the skill-management TOOLS.json`);

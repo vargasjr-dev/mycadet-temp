@@ -22,15 +22,27 @@ export function desktopChromePath(): string {
 export function resolveDesktopBinaries(
   which: (name: string) => string | null = Bun.which,
 ) {
-  const resolved = {} as Record<keyof typeof DESKTOP_BINARIES, string>;
-  for (const [role, names] of Object.entries(DESKTOP_BINARIES)) {
+  const resolve = (names: readonly string[]): string => {
     const path = names.map((name) => which(name)).find(Boolean);
     if (!path) {
       throw new Error(`Desktop component is missing: ${names[0]}`);
     }
-    resolved[role as keyof typeof DESKTOP_BINARIES] = path;
-  }
-  return resolved;
+    return path;
+  };
+  return {
+    xServer: resolve(DESKTOP_BINARIES.xServer),
+    windowManager: resolve(DESKTOP_BINARIES.windowManager),
+    python: resolve(DESKTOP_BINARIES.python),
+    compositor: resolve(DESKTOP_BINARIES.compositor),
+    panel: resolve(DESKTOP_BINARIES.panel),
+    sessionBus: resolve(DESKTOP_BINARIES.sessionBus),
+    clipboard: resolve(DESKTOP_BINARIES.clipboard),
+    terminal: resolve(DESKTOP_BINARIES.terminal),
+    fileManager: resolve(DESKTOP_BINARIES.fileManager),
+    wallpaper: resolve(DESKTOP_BINARIES.wallpaper),
+    input: resolve(DESKTOP_BINARIES.input),
+    capture: resolve(DESKTOP_BINARIES.capture),
+  } satisfies Record<keyof typeof DESKTOP_BINARIES, string>;
 }
 
 function desktopSystemDependenciesReady(): boolean {

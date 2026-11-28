@@ -19,17 +19,12 @@ import {
   type UsageAggregationFilter,
 } from "../../persistence/llm-usage-store.js";
 import { validateTimezone } from "../../persistence/usage-buckets.js";
-import {
-  type GroupByDimension,
-  USAGE_GROUP_BY_DIMENSIONS,
-} from "../../persistence/usage-types.js";
+import { USAGE_GROUP_BY_DIMENSIONS } from "../../persistence/usage-types.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { parseEpochMillisRange } from "./epoch-millis-range.js";
 import { BadRequestError } from "./errors.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
-const VALID_GROUP_BY = new Set<string>(USAGE_GROUP_BY_DIMENSIONS);
-const VALID_SERIES_GROUP_BY = new Set<string>(USAGE_SERIES_GROUP_BY_DIMENSIONS);
 const GROUP_BY_DESCRIPTION = USAGE_GROUP_BY_DIMENSIONS.join(", ");
 const SERIES_GROUP_BY_DESCRIPTION = USAGE_SERIES_GROUP_BY_DIMENSIONS.join(", ");
 const SCHEDULE_ID_FILTER_DESCRIPTION =
@@ -136,18 +131,17 @@ function handleUsageBreakdown({ queryParams }: RouteHandlerArgs) {
       `Missing required query parameter: "groupBy" (one of: ${GROUP_BY_DESCRIPTION})`,
     );
   }
-  if (!VALID_GROUP_BY.has(groupBy)) {
+  const dimension = USAGE_GROUP_BY_DIMENSIONS.find(
+    (value) => value === groupBy,
+  );
+  if (!dimension) {
     throw new BadRequestError(
       `Invalid "groupBy" value: "${groupBy}". Must be one of: ${GROUP_BY_DESCRIPTION}`,
     );
   }
 
   const filter = parseUsageAggregationFilter(qp);
-  const breakdown = getUsageGroupBreakdown(
-    range,
-    groupBy as GroupByDimension,
-    filter,
-  );
+  const breakdown = getUsageGroupBreakdown(range, dimension, filter);
   return { breakdown };
 }
 
@@ -167,7 +161,10 @@ function handleUsageSeries({ queryParams }: RouteHandlerArgs) {
       `Missing required query parameter: "groupBy" (one of: ${SERIES_GROUP_BY_DESCRIPTION})`,
     );
   }
-  if (!VALID_SERIES_GROUP_BY.has(groupBy)) {
+  const dimension = USAGE_SERIES_GROUP_BY_DIMENSIONS.find(
+    (value) => value === groupBy,
+  );
+  if (!dimension) {
     throw new BadRequestError(
       `Invalid "groupBy" value: "${groupBy}". Must be one of: ${SERIES_GROUP_BY_DESCRIPTION}`,
     );
@@ -177,7 +174,7 @@ function handleUsageSeries({ queryParams }: RouteHandlerArgs) {
   const filter = parseUsageAggregationFilter(qp);
   const buckets = getUsageGroupedSeries(
     range,
-    groupBy as Exclude<GroupByDimension, "conversation">,
+    dimension,
     granularity,
     tz,
     { fillEmpty: true },

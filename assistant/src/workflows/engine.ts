@@ -52,12 +52,12 @@
  * whose `call_hash` matches is replayed from cache WITHOUT calling the leaf
  * runner (longest-unchanged-prefix replay).
  */
-
 import { createHash } from "node:crypto";
 
 import type { WorkflowsConfig } from "../config/schemas/workflows.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import type { ResolvedCapabilities } from "./capabilities.js";
 import { deterministicStringify } from "./deterministic-stringify.js";
 import type * as JournalStore from "./journal-store.js";
@@ -571,17 +571,15 @@ export function extractWorkflowMeta(scriptSource: string): WorkflowMeta {
   }
 
   if (
-    !parsed ||
-    typeof parsed !== "object" ||
-    typeof (parsed as Record<string, unknown>).name !== "string" ||
-    typeof (parsed as Record<string, unknown>).description !== "string"
+    !isObjectRecord(parsed) ||
+    typeof parsed.name !== "string" ||
+    typeof parsed.description !== "string"
   ) {
     throw new WorkflowScriptError(
       "Workflow script `meta` must have string `name` and `description` fields.",
     );
   }
-  const m = parsed as Record<string, unknown>;
-  return { name: m.name as string, description: m.description as string };
+  return { name: parsed.name, description: parsed.description };
 }
 
 /**

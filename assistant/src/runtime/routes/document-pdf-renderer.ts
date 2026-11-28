@@ -143,7 +143,8 @@ export async function renderMarkdownToPDF(
   const innerHtml = marked.parse(markdown, {
     gfm: true,
     breaks: true,
-  }) as string;
+    async: false,
+  });
   const fullHtml = wrapInPrintTemplate(innerHtml);
 
   const pw = await importPlaywright();

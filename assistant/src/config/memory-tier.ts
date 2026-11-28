@@ -2,8 +2,8 @@ import {
   isMemoryEnabled,
   isMemoryV3Live,
   isV2InjectionEngineActive,
+  type MemoryGateConfig,
 } from "./memory-v3-gate.js";
-import type { AssistantConfig } from "./schema.js";
 
 export type MemoryTier = "off" | "v1" | "v2" | "v3";
 
@@ -22,7 +22,7 @@ export type MemoryTier = "off" | "v1" | "v2" | "v3";
  *   (see {@link isV2InjectionEngineActive}).
  * - `"v1"` otherwise (memory on, neither v2 nor v3 selected).
  */
-export function memoryTier(config: AssistantConfig): MemoryTier {
+export function memoryTier(config: MemoryGateConfig): MemoryTier {
   if (!isMemoryEnabled(config)) {
     return "off";
   }

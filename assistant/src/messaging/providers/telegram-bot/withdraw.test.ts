@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 // the production call signature.
 type CallTelegramBotApi = typeof import("./api.js").callTelegramBotApi;
 
-const callTelegramBotApiMock = mock<CallTelegramBotApi>(
-  async () => ({}) as never,
-);
+const callTelegramBotApiMock = mock<
+  (...args: Parameters<CallTelegramBotApi>) => Promise<Record<string, never>>
+>(async () => ({}));
 
 mock.module("./api.js", () => ({
   callTelegramBotApi: (method: string, body: Record<string, unknown>) =>
@@ -20,7 +20,7 @@ const callsTo = (method: string) =>
 
 beforeEach(() => {
   callTelegramBotApiMock.mockReset();
-  callTelegramBotApiMock.mockImplementation(async () => ({}) as never);
+  callTelegramBotApiMock.mockImplementation(async () => ({}));
 });
 
 describe("withdrawTelegramApprovalCard", () => {
@@ -105,14 +105,12 @@ describe("withdrawTelegramApprovalCard", () => {
   });
 
   test("still posts the status reply when both keyboard edits fail", async () => {
-    callTelegramBotApiMock.mockImplementation(
-      async (method: string): Promise<never> => {
-        if (method === "editMessageReplyMarkup") {
-          throw new Error("Bad Request: message to edit not found");
-        }
-        return {} as never;
-      },
-    );
+    callTelegramBotApiMock.mockImplementation(async (method: string) => {
+      if (method === "editMessageReplyMarkup") {
+        throw new Error("Bad Request: message to edit not found");
+      }
+      return {};
+    });
 
     await withdrawTelegramApprovalCard({
       chatId: "chat-1",

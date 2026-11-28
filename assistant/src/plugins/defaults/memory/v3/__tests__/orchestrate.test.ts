@@ -14,7 +14,6 @@
  * are real, built from tiny inline fixtures so the pool assembly is exercised
  * end-to-end.
  */
-
 import {
   afterAll,
   beforeEach,
@@ -27,6 +26,7 @@ import {
 
 import type { Message, Provider, ProviderResponse } from "@mycadet/plugin-api";
 
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import { runWithLatencySubSpans } from "../../../../../daemon/turn-latency-sub-spans.js";
 import {
   MEMORY_CONTEXT_PHASE_KEY,
@@ -172,7 +172,7 @@ async function customLanes(pages: Record<Slug, string>): Promise<Lanes> {
   return { sectionIndex, needle, edgeGraph };
 }
 
-const config = {} as never;
+const config = AssistantConfigSchema.parse({});
 
 /**
  * Orchestrate deps with empty stable-prefix lanes unless overridden. Mirrors

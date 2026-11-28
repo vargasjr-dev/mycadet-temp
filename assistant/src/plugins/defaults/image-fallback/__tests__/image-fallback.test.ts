@@ -185,8 +185,9 @@ function makeCtx(
     latestMessages,
     originalMessages: Object.freeze([...latestMessages]),
     logger,
+    broadcast: () => {},
     ...overrides,
-  } as UserPromptSubmitContext;
+  };
 }
 
 function textOf(block: ContentBlock | undefined): string {
@@ -213,8 +214,9 @@ function makeCompactCtx(
     isNonInteractive: false,
     modelProfileKey: "text-only",
     logger,
+    broadcast: () => {},
     ...overrides,
-  } as PostCompactContext;
+  };
 }
 
 function makeToolCtx(
@@ -227,9 +229,12 @@ function makeToolCtx(
     additionalContext: null,
     model: "text-only-model",
     maxInputTokens: 100_000,
+    callSite: "mainAgent",
+    supportsDynamicUi: true,
     logger,
+    broadcast: () => {},
     ...overrides,
-  } as PostToolUseContext;
+  };
 }
 
 // ─── Setup ──────────────────────────────────────────────────────────────────
@@ -1101,7 +1106,8 @@ describe("image-fallback conversation-deleted hook", () => {
     return {
       conversationId,
       logger,
-    } as unknown as ConversationDeletedContext;
+      broadcast: () => {},
+    };
   }
 
   test("a deleted conversation's captions no longer serve cache hits", async () => {

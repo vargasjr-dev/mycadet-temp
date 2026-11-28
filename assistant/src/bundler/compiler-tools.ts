@@ -5,7 +5,6 @@
  * on first compile to $CADET_WORKSPACE_DIR/compiler-tools/. Follows the
  * same pattern as EmbeddingRuntimeManager.
  */
-
 import { createHash } from "node:crypto";
 import {
   chmodSync,
@@ -20,6 +19,7 @@ import { basename, join } from "node:path";
 
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import { PromiseGuard } from "../util/promise-guard.js";
 
 const log = getLogger("compiler-tools");
@@ -100,19 +100,17 @@ async function fetchNpmIntegrity(
     );
   }
 
-  const data = (await response.json()) as {
-    dist?: { integrity?: string; shasum?: string };
-  };
+  const data: unknown = await response.json();
+  const dist = getObjectProperty(data, "dist");
+  const integrity = getObjectProperty(dist, "integrity");
+  const shasum = getObjectProperty(dist, "shasum");
 
-  if (
-    typeof data.dist?.integrity === "string" &&
-    data.dist.integrity.length > 0
-  ) {
-    return data.dist.integrity;
+  if (typeof integrity === "string" && integrity.length > 0) {
+    return integrity;
   }
 
-  if (typeof data.dist?.shasum === "string" && data.dist.shasum.length > 0) {
-    return `sha1-${Buffer.from(data.dist.shasum, "hex").toString("base64")}`;
+  if (typeof shasum === "string" && shasum.length > 0) {
+    return `sha1-${Buffer.from(shasum, "hex").toString("base64")}`;
   }
 
   throw new Error(`Missing npm integrity metadata for ${pkg}@${version}`);

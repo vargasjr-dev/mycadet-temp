@@ -651,7 +651,11 @@ describe("memoryV2ConsolidateJob — non-empty buffer", () => {
       trustClass: "guardian",
     });
     expect(typeof runnerLastArgs?.timeoutMs).toBe("number");
-    expect((runnerLastArgs?.timeoutMs as number) > 0).toBe(true);
+    const timeoutMs = runnerLastArgs?.timeoutMs;
+    if (typeof timeoutMs !== "number") {
+      throw new Error("Expected a numeric timeout");
+    }
+    expect(timeoutMs).toBeGreaterThan(0);
 
     // The prompt must contain the rendered consolidation body with the
     // cutoff substituted in. Asserting the placeholder is GONE catches a

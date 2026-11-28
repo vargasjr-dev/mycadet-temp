@@ -698,11 +698,13 @@ async function handleCreateProfile({ body = {} }: RouteHandlerArgs) {
   return {
     ok: true as const,
     name,
-    entry: (resolveDefaultProfileForProvider(
-      getConfig().llm.profiles,
-      name,
-      getConfig().llm.default,
-    ) ?? entry) as Record<string, unknown>,
+    entry: {
+      ...(resolveDefaultProfileForProvider(
+        getConfig().llm.profiles,
+        name,
+        getConfig().llm.default,
+      ) ?? entry),
+    },
     warnings,
     verify: verifyProfileCommand(name),
   };
@@ -838,11 +840,13 @@ async function handleUpdateProfile({
   return {
     ok: true as const,
     name,
-    entry: (resolveDefaultProfileForProvider(
-      getConfig().llm.profiles,
-      name,
-      getConfig().llm.default,
-    ) ?? merged) as Record<string, unknown>,
+    entry: {
+      ...(resolveDefaultProfileForProvider(
+        getConfig().llm.profiles,
+        name,
+        getConfig().llm.default,
+      ) ?? merged),
+    },
     warnings,
     verify: verifyProfileCommand(name),
   };

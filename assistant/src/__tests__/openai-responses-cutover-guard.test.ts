@@ -177,7 +177,12 @@ describe("OpenAI Responses API cutover guard", () => {
       ).trim();
     } catch (err) {
       // Exit code 1 means no matches
-      if ((err as { status?: number }).status === 1) {
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "status" in err &&
+        err.status === 1
+      ) {
         return;
       }
       throw err;

@@ -42,9 +42,7 @@ const availabilitySchema = z.object({
 
 const defaultProviderStatusSchema = z
   .object({
-    provider: z
-      .enum(DEFAULT_PROVIDER_CHOICES as [string, ...string[]])
-      .nullable(),
+    provider: z.enum(DEFAULT_PROVIDER_CHOICES).nullable(),
     /** Explicit connection pin, when the persisted value carries one. */
     connectionName: z.string().optional(),
     /** The connection the default resolves to (explicit pin or convention). */

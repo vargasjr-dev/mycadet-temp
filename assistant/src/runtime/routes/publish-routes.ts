@@ -38,7 +38,10 @@ const log = getLogger("publish-routes");
 // ---------------------------------------------------------------------------
 
 async function handlePublish({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = pathParams?.id;
+  if (appId === undefined) {
+    throw new NotFoundError("App not found");
+  }
   const app = getApp(appId);
   if (!app) {
     throw new NotFoundError(`App not found: ${appId}`);
@@ -138,7 +141,10 @@ async function handlePublish({ pathParams }: RouteHandlerArgs) {
 }
 
 function handleUnpublish({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = pathParams?.id;
+  if (appId === undefined) {
+    throw new NotFoundError("App not found");
+  }
   const published = getActivePublishedPageByAppId(appId);
   if (!published) {
     return { success: false, error: "No active deployment found" };
@@ -149,7 +155,10 @@ function handleUnpublish({ pathParams }: RouteHandlerArgs) {
 }
 
 function handlePublishStatus({ pathParams }: RouteHandlerArgs) {
-  const appId = pathParams?.id as string;
+  const appId = pathParams?.id;
+  if (appId === undefined) {
+    throw new NotFoundError("App not found");
+  }
   const published = getActivePublishedPageByAppId(appId);
   if (!published) {
     return { published: false };

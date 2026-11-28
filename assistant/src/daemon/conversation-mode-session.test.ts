@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import { asConversation } from "../__tests__/helpers/mock-conversation.js";
-import type { ModeSessionSummary } from "../api/mode-session.js";
+import {
+  type ModeSessionSummary,
+  ModeSessionSummarySchema,
+} from "../api/mode-session.js";
 import type { ModeSessionWriteResult } from "../persistence/conversation-mode-sessions.js";
 import { BrowserModeSessionProducer } from "./browser-mode-session.js";
 import {
@@ -12,7 +15,7 @@ import {
 function activeSession(
   overrides: Partial<ModeSessionSummary> = {},
 ): ModeSessionSummary {
-  return {
+  return ModeSessionSummarySchema.parse({
     id: "session-123",
     conversationId: "conv-123",
     mode: "computer_use",
@@ -26,7 +29,7 @@ function activeSession(
     endReason: null,
     revision: 1,
     ...overrides,
-  } as ModeSessionSummary;
+  });
 }
 
 function createDependencies(initial = activeSession()) {
@@ -98,23 +101,21 @@ function createDependencies(initial = activeSession()) {
         revision: current.revision + 1,
       })),
     finalize: (input) =>
-      staleOrMutate(
-        input.expectedRevision,
-        (current) =>
-          ({
-            ...current,
-            revision: current.revision + 1,
-            status: input.status,
-            endedAt: input.endedAt,
-            endReason: input.endReason,
-            lastActivityAt: Math.max(
-              current.lastActivityAt,
-              input.lastActivityAt ?? current.lastActivityAt,
-            ),
-            ...(input.lastOwnedMessageId !== undefined
-              ? { lastOwnedMessageId: input.lastOwnedMessageId }
-              : {}),
-          }) as ModeSessionSummary,
+      staleOrMutate(input.expectedRevision, (current) =>
+        ModeSessionSummarySchema.parse({
+          ...current,
+          revision: current.revision + 1,
+          status: input.status,
+          endedAt: input.endedAt,
+          endReason: input.endReason,
+          lastActivityAt: Math.max(
+            current.lastActivityAt,
+            input.lastActivityAt ?? current.lastActivityAt,
+          ),
+          ...(input.lastOwnedMessageId !== undefined
+            ? { lastOwnedMessageId: input.lastOwnedMessageId }
+            : {}),
+        }),
       ),
     stampMessage: (messageId, owner) => {
       if (stampFailures.has(messageId)) {
@@ -603,7 +604,9 @@ describe("ConversationModeSessionCoordinator", () => {
           toolUseId: "tool-question",
           signal: signal.signal,
           isInteractive: true,
-        } as import("../tools/types.js").ToolContext,
+          workingDir: "/tmp",
+          trustClass: "guardian",
+        },
       );
       const [question] = pendingInteractions.getByConversation("conv-123");
       expect(question?.kind).toBe("question");

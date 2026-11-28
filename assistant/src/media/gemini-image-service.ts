@@ -1,4 +1,5 @@
 import { ApiError, GoogleGenAI } from "@google/genai";
+import { z } from "zod";
 
 import {
   type CloudProxyCredentials,
@@ -96,16 +97,33 @@ async function generateImageViaProxy(
     throw new Error(`Cloud proxy request failed (${response.status}): ${body}`);
   }
 
-  const data = (await response.json()) as {
-    candidates?: Array<{
-      content?: {
-        parts?: Array<{
-          text?: string;
-          inlineData?: { mimeType?: string; data?: string };
-        }>;
-      };
-    }>;
-  };
+  const data = z
+    .object({
+      candidates: z
+        .array(
+          z.object({
+            content: z
+              .object({
+                parts: z
+                  .array(
+                    z.object({
+                      text: z.string().optional(),
+                      inlineData: z
+                        .object({
+                          mimeType: z.string().optional(),
+                          data: z.string().optional(),
+                        })
+                        .optional(),
+                    }),
+                  )
+                  .optional(),
+              })
+              .optional(),
+          }),
+        )
+        .optional(),
+    })
+    .parse(await response.json());
 
   const images: GeneratedImage[] = [];
   let text: string | undefined;

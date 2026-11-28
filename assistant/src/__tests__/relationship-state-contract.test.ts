@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { RelationshipStateSchema } from "../api/responses/home.js";
 import {
   type Capability,
   DEFAULT_CAPABILITIES,
@@ -79,7 +80,7 @@ describe("relationship state contract", () => {
       };
 
       const serialized = JSON.stringify(original);
-      const parsed = JSON.parse(serialized) as RelationshipState;
+      const parsed = RelationshipStateSchema.parse(JSON.parse(serialized));
 
       expect(parsed).toEqual(original);
       // Re-serialize and compare strings to guarantee no hidden fields leak
@@ -101,7 +102,9 @@ describe("relationship state contract", () => {
         updatedAt: "2026-04-13T00:00:00.000Z",
       };
 
-      const parsed = JSON.parse(JSON.stringify(original)) as RelationshipState;
+      const parsed = RelationshipStateSchema.parse(
+        JSON.parse(JSON.stringify(original)),
+      );
       expect(parsed).toEqual(original);
       expect(parsed.userName).toBeUndefined();
     });

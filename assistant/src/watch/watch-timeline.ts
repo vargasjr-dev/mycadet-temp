@@ -503,8 +503,7 @@ function readNewestEntries(
       desc(watchTimelineEntries.id),
     )
     .limit(limit)
-    .all()
-    .map((row) => ({ ...row, kind: row.kind as WatchEntryKind }));
+    .all();
   rows.reverse();
   return rows;
 }

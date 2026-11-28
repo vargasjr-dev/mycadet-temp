@@ -225,10 +225,8 @@ async function handleUploadAvatarImage({ body, headers }: RouteHandlerArgs) {
 }
 
 async function handleSetAvatar({ body, headers }: RouteHandlerArgs) {
-  const imagePath = (body as Record<string, unknown>)?.imagePath as
-    | string
-    | undefined;
-  if (!imagePath) {
+  const imagePath = body?.imagePath;
+  if (typeof imagePath !== "string" || !imagePath) {
     throw new BadRequestError("imagePath is required");
   }
   // Path safety: imagePath must resolve inside the workspace dir.

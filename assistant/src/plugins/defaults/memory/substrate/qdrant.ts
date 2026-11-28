@@ -381,17 +381,8 @@ async function reconcileSparseIndexOnDisk(
   info: Awaited<ReturnType<QdrantRestClient["getCollection"]>>,
   onDisk: boolean,
 ): Promise<void> {
-  const sparseParams = (
-    info.config?.params as
-      | {
-          sparse_vectors?: Record<
-            string,
-            { index?: { on_disk?: boolean | null } | null } | undefined
-          >;
-        }
-      | undefined
-  )?.sparse_vectors;
-  if (!sparseParams) {
+  const sparseParams = getObjectProperty(info.config?.params, "sparse_vectors");
+  if (!isObjectRecord(sparseParams)) {
     return;
   }
 
@@ -400,7 +391,10 @@ async function reconcileSparseIndexOnDisk(
   const drifted = REQUIRED_SPARSE_VECTORS.filter(
     (name) =>
       name in sparseParams &&
-      (sparseParams[name]?.index?.on_disk ?? false) !== onDisk,
+      (getObjectProperty(
+        getObjectProperty(sparseParams[name], "index"),
+        "on_disk",
+      ) ?? false) !== onDisk,
   );
   if (drifted.length === 0) {
     return;
@@ -649,18 +643,18 @@ export async function pruneSlugsWithPrefixExcept(
         ...(offset !== undefined ? { offset } : {}),
       });
       for (const point of result.points) {
-        const payload = point.payload as {
-          slug?: unknown;
-          kind?: unknown;
-        } | null;
-        const slug = payload?.slug;
+        const payload = point.payload;
+        const slug = getObjectProperty(payload, "slug");
         if (typeof slug !== "string") {
           continue;
         }
         if (!slug.startsWith(prefix)) {
           continue;
         }
-        if (requiredKind !== undefined && payload?.kind !== requiredKind) {
+        if (
+          requiredKind !== undefined &&
+          getObjectProperty(payload, "kind") !== requiredKind
+        ) {
           continue;
         }
         const suffix = slug.slice(prefix.length);
@@ -669,10 +663,10 @@ export async function pruneSlugsWithPrefixExcept(
         }
       }
       const next = result.next_page_offset;
-      if (next == null) {
+      if (typeof next !== "string" && typeof next !== "number") {
         break;
       }
-      offset = typeof next === "string" ? next : (next as number);
+      offset = next;
     }
 
     if (stalePointIds.length === 0) {
@@ -757,10 +751,10 @@ export async function backfillKindOnPointsWithPrefix(
         pointIds.push(point.id);
       }
       const next = result.next_page_offset;
-      if (next == null) {
+      if (typeof next !== "string" && typeof next !== "number") {
         break;
       }
-      offset = typeof next === "string" ? next : (next as number);
+      offset = next;
     }
 
     if (pointIds.length === 0) {

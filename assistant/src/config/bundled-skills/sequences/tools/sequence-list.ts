@@ -13,7 +13,11 @@ export async function run(
   input: Record<string, unknown>,
   _context: ToolContext,
 ): Promise<ToolExecutionResult> {
-  const status = input.status as SequenceStatus | undefined;
+  const statuses = ["active", "paused", "archived"] satisfies SequenceStatus[];
+  const status = statuses.find((candidate) => candidate === input.status);
+  if (input.status !== undefined && !status) {
+    return err("Invalid status.");
+  }
 
   try {
     const seqs = listSequences(status ? { status } : undefined);

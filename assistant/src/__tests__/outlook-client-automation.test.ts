@@ -178,19 +178,30 @@ describe("Outlook client — automation and delta APIs", () => {
     });
   });
 
+  function deltaMessage(
+    overrides: Pick<OutlookMessage, "id" | "subject" | "isRead">,
+  ): OutlookMessage {
+    return {
+      conversationId: "thread-1",
+      parentFolderId: "inbox-id",
+      bodyPreview: "",
+      body: { contentType: "text", content: "" },
+      toRecipients: [],
+      ccRecipients: [],
+      receivedDateTime: "2026-01-01T12:00:00Z",
+      hasAttachments: false,
+      categories: [],
+      flag: { flagStatus: "notFlagged" },
+      ...overrides,
+    };
+  }
+
   // ── listMessagesDelta ─────────────────────────────────────────────────
 
   describe("listMessagesDelta", () => {
     test("initial fetch without deltaLink uses folder path with $select and $top", async () => {
       const deltaResponse: OutlookDeltaResponse<OutlookMessage> = {
-        value: [
-          {
-            id: "msg-1",
-            subject: "Hello",
-            isRead: false,
-            parentFolderId: "inbox-id",
-          } as OutlookMessage,
-        ],
+        value: [deltaMessage({ id: "msg-1", subject: "Hello", isRead: false })],
         "@odata.deltaLink":
           "https://graph.microsoft.com/v1.0/me/mailFolders/inbox-id/messages/delta?$deltatoken=abc123",
       };
@@ -215,14 +226,7 @@ describe("Outlook client — automation and delta APIs", () => {
 
     test("follow-up fetch with deltaLink parses URL and uses query params", async () => {
       const deltaResponse: OutlookDeltaResponse<OutlookMessage> = {
-        value: [
-          {
-            id: "msg-2",
-            subject: "Update",
-            isRead: true,
-            parentFolderId: "inbox-id",
-          } as OutlookMessage,
-        ],
+        value: [deltaMessage({ id: "msg-2", subject: "Update", isRead: true })],
         "@odata.deltaLink":
           "https://graph.microsoft.com/v1.0/me/mailFolders/inbox-id/messages/delta?$deltatoken=def456",
       };

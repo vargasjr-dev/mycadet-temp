@@ -195,10 +195,15 @@ export class ConversationGraphMemory {
         return;
       }
 
-      const snapshot = JSON.parse(json) as InContextTrackerSnapshot & {
-        initialized: boolean;
-        needsReload?: boolean;
-      };
+      const snapshot = z
+        .object({
+          inContext: z.array(z.string()),
+          log: z.array(z.object({ nodeId: z.string(), turn: z.number() })),
+          currentTurn: z.number(),
+          initialized: z.boolean(),
+          needsReload: z.boolean().optional(),
+        })
+        .parse(JSON.parse(json));
       this.initialized = snapshot.initialized;
       this.needsReload = snapshot.needsReload ?? false;
       this.tracker.restoreFrom(snapshot);

@@ -164,11 +164,8 @@ async function handleGetCallSite({ pathParams = {} }: RouteHandlerArgs) {
       ...(typeof maxInputTokens === "number" ? { maxInputTokens } : {}),
     },
     resolutionChain,
-    shippedDefault: CALL_SITE_DEFAULTS[callSite] as Record<string, unknown>,
-    userPin: (llm.callSites?.[callSite] ?? null) as Record<
-      string,
-      unknown
-    > | null,
+    shippedDefault: { ...CALL_SITE_DEFAULTS[callSite] },
+    userPin: llm.callSites?.[callSite] ? { ...llm.callSites[callSite] } : null,
     ...(resolutionError ? { resolutionError } : {}),
   };
 }

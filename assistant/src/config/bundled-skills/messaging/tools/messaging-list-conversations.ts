@@ -10,7 +10,9 @@ export async function run(
 ): Promise<ToolExecutionResult> {
   const platform =
     typeof input.platform === "string" ? input.platform : undefined;
-  const types = input.types as string[] | undefined;
+  const types = Array.isArray(input.types)
+    ? input.types.filter((type): type is string => typeof type === "string")
+    : undefined;
   const limit = typeof input.limit === "number" ? input.limit : undefined;
 
   try {

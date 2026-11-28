@@ -399,8 +399,9 @@ function resolveOverrideOrDefault(
   // owner and drop the winner's connection (it belongs to the replaced
   // provider; dispatch auto-resolves an absent connection by provider).
   const applicableProvider =
-    (winnerFragment.provider as string | undefined) ??
-    CODE_DEFAULT_BASE.provider;
+    typeof winnerFragment.provider === "string"
+      ? winnerFragment.provider
+      : CODE_DEFAULT_BASE.provider;
   // A routing-identity winner serves any model its route can dispatch —
   // identity + model is the complete shape, so no provider implication.
   const winnerServesModel = (model: string): boolean =>

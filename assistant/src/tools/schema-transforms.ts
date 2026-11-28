@@ -89,16 +89,16 @@ export function injectActivityField(
       return def;
     }
 
-    const schema = def.input_schema as Record<string, unknown> | undefined;
+    const schema = def.input_schema;
     if (
       !isObjectRecord(schema) ||
       schema.type !== "object" ||
-      !schema.properties
+      !isObjectRecord(schema.properties)
     ) {
       return def;
     }
 
-    const properties = schema.properties as Record<string, unknown>;
+    const properties = schema.properties;
 
     if (schemaDefinesProperty(schema, "activity")) {
       // Activity is already defined somewhere in the schema (top-level properties
@@ -156,11 +156,7 @@ export function schemaDefinesProperty(
   }
 
   // Check direct properties
-  if (
-    s.properties &&
-    typeof s.properties === "object" &&
-    propertyName in (s.properties as Record<string, unknown>)
-  ) {
+  if (isObjectRecord(s.properties) && propertyName in s.properties) {
     return true;
   }
 
@@ -200,7 +196,7 @@ export function stripActivityField(
   definitions: ToolDefinition[],
 ): ToolDefinition[] {
   return definitions.map((def) => {
-    const schema = def.input_schema as Record<string, unknown> | undefined;
+    const schema = def.input_schema;
     if (
       !isObjectRecord(schema) ||
       schema.type !== "object" ||

@@ -889,7 +889,7 @@ describe("processChannelMessageInBackground — admission (queue if busy)", () =
             idleWaiters.delete(notify);
             resolve(false);
           }, timeoutMs);
-          (timer as { unref?: () => void }).unref?.();
+          timer.unref?.();
           idleWaiters.add(notify);
         }),
     };

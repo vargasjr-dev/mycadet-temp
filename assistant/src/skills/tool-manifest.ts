@@ -134,15 +134,10 @@ function parseToolEntry(raw: unknown, prefix: string): SkillToolEntry {
   const risk = entry.risk as SkillToolEntry["risk"];
 
   // input_schema
-  if (
-    !("input_schema" in entry) ||
-    entry.input_schema == null ||
-    typeof entry.input_schema !== "object" ||
-    Array.isArray(entry.input_schema)
-  ) {
+  if (!("input_schema" in entry) || !isPlainObject(entry.input_schema)) {
     throw new Error(`${prefix}: missing or non-object "input_schema"`);
   }
-  const input_schema = entry.input_schema as Record<string, unknown>;
+  const input_schema = entry.input_schema;
 
   // executor
   if (!("executor" in entry) || typeof entry.executor !== "string") {

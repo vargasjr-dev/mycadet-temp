@@ -1,8 +1,9 @@
 import { Database } from "bun:sqlite";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import * as dbConnection from "../../../../../persistence/db-connection.js";
 import {
   type DrizzleDb,
   getSqliteFrom,
@@ -254,14 +255,18 @@ describe("activation-store", () => {
 });
 
 describe("activation-store — degraded memory database", () => {
-  // Install a connection with no underlying sqlite client so the store's
-  // memory-DB accessor resolves to null: reads report no state and writes
-  // no-op rather than throwing into the turn.
+  let memorySqliteSpy: ReturnType<typeof mockUnavailableMemory>;
+
+  function mockUnavailableMemory() {
+    return spyOn(dbConnection, "getMemorySqlite").mockReturnValue(null);
+  }
+
   beforeEach(() => {
-    setStoredDb("memory", { $client: null } as unknown as DrizzleDb, () => {});
+    memorySqliteSpy = mockUnavailableMemory();
   });
+
   afterEach(() => {
-    clearStoredDb("memory");
+    memorySqliteSpy.mockRestore();
   });
 
   test("hydrate reports no state and save/fork no-op without throwing", async () => {

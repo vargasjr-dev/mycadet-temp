@@ -46,7 +46,7 @@ function mapRowToComment(
     anchorEnd: row.anchorEnd,
     anchorText: row.anchorText,
     parentCommentId: row.parentCommentId,
-    status: row.status as CommentRecord["status"],
+    status: row.status,
     resolvedBy: row.resolvedBy,
     resolvedAt: row.resolvedAt,
     createdAt: row.createdAt,

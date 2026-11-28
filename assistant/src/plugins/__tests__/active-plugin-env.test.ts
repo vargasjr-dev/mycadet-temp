@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
+import { asConversation } from "../../__tests__/helpers/mock-conversation.js";
 import type { SkillSummary } from "../../config/skills.js";
 import * as skills from "../../config/skills.js";
 import type { Conversation } from "../../daemon/conversation.js";
@@ -36,9 +37,9 @@ function bundledSkill(id: string): SkillSummary {
 }
 
 function conversationWithSkills(skillIds: string[]): Conversation {
-  return {
+  return asConversation({
     skillProjectionState: new Map(skillIds.map((id) => [id, "v1:hash"])),
-  } as Conversation;
+  });
 }
 
 describe("uniqueActivePluginOwner", () => {

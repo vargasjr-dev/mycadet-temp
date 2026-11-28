@@ -5,17 +5,13 @@
  * clear-all reset, and both degrade to a no-op when the memory connection is
  * unavailable.
  */
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import type { ConversationDeletedContext } from "@mycadet/plugin-api";
 
-import type { DrizzleDb } from "../../../../persistence/db-connection.js";
+import * as dbConnection from "../../../../persistence/db-connection.js";
 import { getMemorySqlite } from "../../../../persistence/db-connection.js";
 import { initializeDb } from "../../../../persistence/db-init.js";
-import {
-  clearStoredDb,
-  setStoredDb,
-} from "../../../../persistence/db-singleton.js";
 import {
   clearAllConversationMemoryTables,
   CONVERSATION_KEYED_MEMORY_TABLES,
@@ -108,14 +104,18 @@ describe("conversation memory purge", () => {
 });
 
 describe("conversation memory purge without a memory database", () => {
-  // Install a connection with no underlying sqlite client so
-  // getMemorySqlite() resolves to null without mocking any module.
+  let memorySqliteSpy: ReturnType<typeof mockUnavailableMemory>;
+
+  function mockUnavailableMemory() {
+    return spyOn(dbConnection, "getMemorySqlite").mockReturnValue(null);
+  }
+
   beforeEach(() => {
-    setStoredDb("memory", { $client: null } as unknown as DrizzleDb, () => {});
+    memorySqliteSpy = mockUnavailableMemory();
   });
 
   afterEach(() => {
-    clearStoredDb("memory");
+    memorySqliteSpy.mockRestore();
   });
 
   test("the purge no-ops without throwing when the memory DB is unavailable", () => {

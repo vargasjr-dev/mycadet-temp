@@ -149,7 +149,7 @@ export function isDoordashCommand(
   if (name !== "bash" && name !== "host_bash") {
     return false;
   }
-  const cmd = input.command as string | undefined;
+  const cmd = typeof input.command === "string" ? input.command : undefined;
   return !!cmd && doordashCommandToStep(cmd) !== undefined;
 }
 
@@ -161,7 +161,7 @@ export function markDoordashStepInProgress(
   ctx: Conversation,
   input: Record<string, unknown>,
 ): void {
-  const cmd = input.command as string | undefined;
+  const cmd = typeof input.command === "string" ? input.command : undefined;
   const stepLabel = cmd ? doordashCommandToStep(cmd) : null;
   if (!stepLabel) {
     return;
@@ -192,7 +192,7 @@ export function updateDoordashProgress(
   input: Record<string, unknown>,
   isError: boolean,
 ): void {
-  const cmd = input.command as string | undefined;
+  const cmd = typeof input.command === "string" ? input.command : undefined;
   if (!cmd || !doordashCommandToStep(cmd)) {
     return;
   }

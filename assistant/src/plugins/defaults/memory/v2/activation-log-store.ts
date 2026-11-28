@@ -112,6 +112,49 @@ export interface MemoryV2ConceptRowRecord {
   lane?: string;
 }
 
+const activationConceptsSchema = z.array(
+  z.looseObject({
+    slug: z.string(),
+    finalActivation: z.number(),
+    ownActivation: z.number(),
+    priorActivation: z.number(),
+    simUser: z.number(),
+    simAssistant: z.number(),
+    simNow: z.number(),
+    simUserRerankBoost: z.number().default(0),
+    simAssistantRerankBoost: z.number().default(0),
+    inRerankPool: z.boolean().default(false),
+    spreadContribution: z.number(),
+    source: z.union([
+      z.enum([
+        "prior_state",
+        "ann_top50",
+        "both",
+        "router",
+        "always_candidate",
+        "carry_over",
+        "tier1",
+        "tier2",
+      ]),
+      z.templateLiteral(["tier3:", z.number()]),
+    ]),
+    status: z.enum([
+      "in_context",
+      "injected",
+      "not_injected",
+      "page_missing",
+      "corrupt",
+    ]),
+    lane: z.string().optional(),
+  }),
+) satisfies z.ZodType<MemoryV2ConceptRowRecord[]>;
+
+export function parseActivationConcepts(
+  json: string,
+): MemoryV2ConceptRowRecord[] {
+  return activationConceptsSchema.parse(JSON.parse(json));
+}
+
 export interface MemoryV2ConfigSnapshot {
   d: number;
   c_user: number;
@@ -258,7 +301,7 @@ export function getMemoryV2ActivationLogByMessageIds(
       | "errored"
       | "router"
       | "v3_shadow",
-    concepts: JSON.parse(row.concepts_json) as MemoryV2ConceptRowRecord[],
+    concepts: parseActivationConcepts(row.concepts_json),
     config: z
       .looseObject({
         d: z.number(),

@@ -245,9 +245,8 @@ function findHookOutputIssues<TInput extends object>(
   // `.optional()` lets an absent field skip validation, but it also lets a
   // hook REPLACE a required field with an explicit `undefined` — which the
   // loop would then fold back and dereference. Reject present-but-undefined.
-  const rec = ctx as Record<string, unknown>;
   for (const key of Object.keys(schema.shape)) {
-    if (key in rec && rec[key] === undefined) {
+    if (key in ctx && getObjectProperty(ctx, key) === undefined) {
       issues.push(`${key}: replaced with undefined`);
     }
   }

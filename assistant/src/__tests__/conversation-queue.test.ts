@@ -3481,13 +3481,15 @@ describe("Regression: cancel semantics and error channel split", () => {
     // Replace setTimeout with a zero-delay version so the 4000ms
     // raceWithTimeout fires instantly instead of waiting real time.
     const origSetTimeout = globalThis.setTimeout;
-    globalThis.setTimeout = ((
-      fn: TimerHandler,
-      _ms?: number,
-      ...args: unknown[]
-    ) => {
-      return origSetTimeout(fn, 0, ...args);
-    }) as typeof setTimeout;
+    globalThis.setTimeout = new Proxy(origSetTimeout, {
+      apply(
+        _target,
+        _receiver,
+        [fn, , ...args]: Parameters<typeof setTimeout>,
+      ) {
+        return origSetTimeout(fn, 0, ...args);
+      },
+    });
 
     try {
       const conversation = makeConversation();

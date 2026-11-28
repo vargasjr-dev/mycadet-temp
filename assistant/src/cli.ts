@@ -11,6 +11,8 @@ import {
 import { dirname, join } from "node:path";
 import * as readline from "node:readline";
 
+import { z } from "zod";
+
 import type { AssistantEvent } from "./api/index.js";
 import {
   type MainScreenLayout,
@@ -180,13 +182,15 @@ export async function startCli(): Promise<void> {
         const checkResult = (): void => {
           try {
             const raw = readFileSync(resultPath, "utf-8");
-            const parsed = JSON.parse(raw) as {
-              ok?: boolean;
-              accepted?: boolean;
-              requestId?: string;
-              error?: string;
-              message?: string;
-            };
+            const parsed = z
+              .object({
+                ok: z.boolean().optional(),
+                accepted: z.boolean().optional(),
+                requestId: z.string().optional(),
+                error: z.string().optional(),
+                message: z.string().optional(),
+              })
+              .parse(JSON.parse(raw));
             if (parsed.requestId === requestId) {
               const ok = parsed.ok === true && parsed.accepted !== false;
               settle({ ok, error: parsed.error, message: parsed.message });
@@ -614,12 +618,14 @@ export async function startCli(): Promise<void> {
         const onResult = (): void => {
           try {
             const raw = readFileSync(resultPath, "utf-8");
-            const result = JSON.parse(raw) as {
-              ok?: boolean;
-              removedCount?: number;
-              requestId?: string;
-              error?: string;
-            };
+            const result = z
+              .object({
+                ok: z.boolean().optional(),
+                removedCount: z.number().optional(),
+                requestId: z.string().optional(),
+                error: z.string().optional(),
+              })
+              .parse(JSON.parse(raw));
             if (result.requestId !== requestId) {
               return;
             }

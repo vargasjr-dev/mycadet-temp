@@ -12,7 +12,18 @@ export async function run(
 ): Promise<ToolExecutionResult> {
   const sequenceId =
     typeof input.sequence_id === "string" ? input.sequence_id : undefined;
-  const status = input.status as EnrollmentStatus | undefined;
+  const statuses = [
+    "active",
+    "paused",
+    "completed",
+    "replied",
+    "cancelled",
+    "failed",
+  ] satisfies EnrollmentStatus[];
+  const status = statuses.find((candidate) => candidate === input.status);
+  if (input.status !== undefined && !status) {
+    return err("Invalid status.");
+  }
 
   try {
     const enrollments = listEnrollments({ sequenceId, status });

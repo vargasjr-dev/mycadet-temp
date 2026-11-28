@@ -289,12 +289,18 @@ interface MockTransport extends CallTransport {
 }
 
 function createMockTransport(): MockTransport {
-  const state = {
-    sentTokens: [] as Array<{ token: string; last: boolean }>,
-    systemCopyTokens: [] as string[],
-    sentPlayUrls: [] as string[],
+  let endReason: string | undefined;
+  const state: Pick<
+    MockTransport,
+    "sentTokens" | "systemCopyTokens" | "sentPlayUrls"
+  > & {
+    _endCalled: boolean;
+    _cancelPendingSpeechCount: number;
+  } = {
+    sentTokens: [],
+    systemCopyTokens: [],
+    sentPlayUrls: [],
     _endCalled: false,
-    _endReason: undefined as string | undefined,
     _cancelPendingSpeechCount: 0,
   };
 
@@ -312,7 +318,7 @@ function createMockTransport(): MockTransport {
       return state._endCalled;
     },
     get endReason() {
-      return state._endReason;
+      return endReason;
     },
     get cancelPendingSpeechCount() {
       return state._cancelPendingSpeechCount;
@@ -332,7 +338,7 @@ function createMockTransport(): MockTransport {
     },
     endSession(reason?: string) {
       state._endCalled = true;
-      state._endReason = reason;
+      endReason = reason;
     },
     cancelPendingSpeech() {
       state._cancelPendingSpeechCount++;

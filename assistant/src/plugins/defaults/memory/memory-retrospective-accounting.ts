@@ -30,7 +30,6 @@
 // skipped. A trailing card simply stays past the cursor, invisible to
 // accounting; once newer real messages arrive it is copied into the next
 // run's fork as inert prefix context.
-
 import { and, eq, like, or } from "drizzle-orm";
 
 import {
@@ -49,6 +48,7 @@ import {
   resolveMessagesAfterBound,
 } from "../../../persistence/message-cursor.js";
 import { messages } from "../../../persistence/schema/index.js";
+import { getObjectProperty } from "../../../util/object.js";
 import { SKILL_CARD_MESSAGE_KIND } from "./memory-retrospective-constants.js";
 
 /**
@@ -75,11 +75,7 @@ function isSkillCardMessage(row: { metadata: string | null }): boolean {
   }
   try {
     const meta: unknown = JSON.parse(row.metadata);
-    return (
-      !!meta &&
-      typeof meta === "object" &&
-      (meta as Record<string, unknown>).kind === SKILL_CARD_MESSAGE_KIND
-    );
+    return getObjectProperty(meta, "kind") === SKILL_CARD_MESSAGE_KIND;
   } catch {
     return false;
   }

@@ -19,7 +19,7 @@ export const watchTimelineEntries = sqliteTable("watch_timeline_entries", {
   /** Milliseconds since the session started. */
   atMs: integer("at_ms").notNull(),
   /** `narration` or `observation`. */
-  kind: text("kind").notNull(),
+  kind: text("kind", { enum: ["narration", "observation"] }).notNull(),
   text: text("text").notNull(),
   axTree: text("ax_tree"),
   axDiff: text("ax_diff"),

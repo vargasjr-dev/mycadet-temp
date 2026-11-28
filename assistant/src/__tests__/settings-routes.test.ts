@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
 import { z } from "zod";
 
+import { parseToolManifestFile } from "../skills/tool-manifest.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Guardian identity resolves via the gateway delivery cache, not the local
@@ -55,7 +56,6 @@ import type { RouteHandlerArgs } from "../runtime/routes/types.js";
 import { registerSkillTools, unregisterSkillTools } from "../tools/registry.js";
 import { createSkillToolsFromManifest } from "../tools/skills/skill-tool-factory.js";
 import { RiskLevel } from "../tools/tool-types.js";
-import type { SkillToolManifest } from "./../skills/tool-manifest.js";
 import { createGuardianBinding } from "./helpers/create-guardian-binding.js";
 
 await initializeDb();
@@ -74,9 +74,7 @@ test("permission simulation resolves the bundled computer-use target from input"
     reason: "Test decision",
   });
   const skillDir = join(getBundledSkillsDir(), "computer-use");
-  const manifest = JSON.parse(
-    readFileSync(join(skillDir, "TOOLS.json"), "utf8"),
-  ) as SkillToolManifest;
+  const manifest = parseToolManifestFile(join(skillDir, "TOOLS.json"));
   const skillId = "simulation-computer-use";
   registerSkillTools(
     skillId,

@@ -71,6 +71,16 @@ async function handleImageGenerationGenerate(
     throw new BadRequestError("Edit mode requires at least one source image");
   }
 
+  const parsedSources = z
+    .array(SourceImageSchema)
+    .optional()
+    .safeParse(sourceImages);
+  if (!parsedSources.success) {
+    throw new BadRequestError(
+      "sourceImages must contain image data and MIME types",
+    );
+  }
+
   // Resolve config
   const config = getConfig();
   const svc = config.services["image-generation"];
@@ -113,9 +123,7 @@ async function handleImageGenerationGenerate(
     const result = await generateImage(provider, credentials, {
       prompt,
       mode: resolvedMode,
-      sourceImages: sourceImages as
-        | Array<{ mimeType: string; dataBase64: string }>
-        | undefined,
+      sourceImages: parsedSources.data,
       model: resolvedModel ?? svc.model,
       variants: clampedVariants,
     });

@@ -900,10 +900,7 @@ function stripNullLeaves(value: unknown): unknown {
 }
 
 function readPlainObject(value: unknown): Record<string, unknown> | null {
-  if (value == null || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
+  return isPlainObject(value) ? value : null;
 }
 
 /**

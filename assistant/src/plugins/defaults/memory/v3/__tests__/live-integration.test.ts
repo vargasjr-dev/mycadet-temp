@@ -20,7 +20,6 @@
  * block is FROZEN into history, prior turns' blocks are never re-rendered or
  * stripped (the cache contract). The provider is stubbed (no network).
  */
-
 import { Database } from "bun:sqlite";
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -32,6 +31,7 @@ import type {
 } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
 import { wrapMemoryBlock } from "../../memory-marker.js";
@@ -146,7 +146,7 @@ function makeEntries(): PageIndexEntry[] {
   }));
 }
 
-const config = {} as never;
+const config = AssistantConfigSchema.parse({});
 
 async function buildLanes(): Promise<{
   sectionIndex: SectionIndex;

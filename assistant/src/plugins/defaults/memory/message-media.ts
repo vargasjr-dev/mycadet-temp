@@ -59,7 +59,7 @@ export function extractMediaBlockMeta(
   raw: string | ContentBlock[],
 ): Array<{ type: "image"; index: number }> {
   try {
-    const parsed = Array.isArray(raw) ? raw : (JSON.parse(raw) as unknown);
+    const parsed: unknown = Array.isArray(raw) ? raw : JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       return [];
     }

@@ -138,7 +138,12 @@ describe("no X-Actor-Token in production code", () => {
       ).trim();
     } catch (err) {
       // Exit code 1 means no matches — that's the happy path.
-      if ((err as { status?: number }).status === 1) {
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "status" in err &&
+        err.status === 1
+      ) {
         return;
       }
       throw err;
@@ -195,7 +200,12 @@ describe("no legacy gateway-origin proof in production code", () => {
         { encoding: "utf-8", cwd: PROJECT_ROOT },
       ).trim();
     } catch (err) {
-      if ((err as { status?: number }).status === 1) {
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "status" in err &&
+        err.status === 1
+      ) {
         return;
       }
       throw err;

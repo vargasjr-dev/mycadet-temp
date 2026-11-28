@@ -6,6 +6,7 @@ import {
   exitCodeFromIpcResult,
   exitFromIpcResult,
 } from "../../ipc/cli-client.js";
+import { isPlainObject } from "../../util/object.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { registerCommand } from "../lib/register-command.js";
 import { log } from "../logger.js";
@@ -242,10 +243,11 @@ export function registerNotificationsCommand(program: Command): void {
             let deepLinkMetadata: Record<string, unknown> | undefined;
             if (opts.deepLinkMetadata != null) {
               try {
-                deepLinkMetadata = JSON.parse(opts.deepLinkMetadata) as Record<
-                  string,
-                  unknown
-                >;
+                const parsed: unknown = JSON.parse(opts.deepLinkMetadata);
+                if (!isPlainObject(parsed)) {
+                  throw new Error("deep-link-metadata must be a JSON object");
+                }
+                deepLinkMetadata = parsed;
               } catch {
                 writeOutput(cmd, {
                   ok: false,

@@ -2,7 +2,7 @@ import { QdrantClient as QdrantRestClient } from "@qdrant/js-client-rest";
 import { v5 as uuidv5 } from "uuid";
 
 import { getLogger } from "../../util/logger.js";
-import { getObjectProperty } from "../../util/object.js";
+import { getObjectProperty, isObjectRecord } from "../../util/object.js";
 import type { SparseEmbedding } from "./embedding-types.js";
 
 const log = getLogger("messages-lexical-index");
@@ -309,7 +309,7 @@ export class MessagesLexicalIndex {
       using: "sparse",
       limit,
       with_payload: true,
-      filter: filter as Record<string, unknown> | undefined,
+      filter,
     };
 
     let results;
@@ -326,10 +326,7 @@ export class MessagesLexicalIndex {
     }
 
     return (results.points ?? []).map((point) => ({
-      messageId: String(
-        (point.payload as Record<string, unknown> | undefined)?.message_id ??
-          "",
-      ),
+      messageId: String(getObjectProperty(point.payload, "message_id") ?? ""),
       score: point.score ?? 0,
     }));
   }
@@ -444,21 +441,19 @@ export class MessagesLexicalIndex {
   private async reconcileSparseIndexOnDisk(): Promise<void> {
     try {
       const info = await this.client.getCollection(this.collection);
-      const sparseParams = (
-        info.config?.params as
-          | {
-              sparse_vectors?: Record<
-                string,
-                { index?: { on_disk?: boolean | null } | null } | undefined
-              >;
-            }
-          | undefined
-      )?.sparse_vectors;
-      if (!sparseParams || !("sparse" in sparseParams)) {
+      const sparseParams = getObjectProperty(
+        info.config?.params,
+        "sparse_vectors",
+      );
+      if (!isObjectRecord(sparseParams) || !("sparse" in sparseParams)) {
         return;
       }
 
-      const current = sparseParams.sparse?.index?.on_disk ?? false;
+      const current =
+        getObjectProperty(
+          getObjectProperty(sparseParams.sparse, "index"),
+          "on_disk",
+        ) ?? false;
       if (current === this.onDisk) {
         return;
       }

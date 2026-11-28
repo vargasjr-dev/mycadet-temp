@@ -1230,10 +1230,9 @@ describe("renderSlackTranscript — replayable content-block preservation", () =
       contentBlocks: [
         { type: "text", text: "reply body" },
         // ui_surface is local-only UI scaffolding and must not leak into
-        // the replayable output. Typed as a generic shape here because
-        // ui_surface is not part of the Anthropic ContentBlock union.
-        { type: "ui_surface", foo: "bar" } as never,
-      ] as never,
+        // the replayable output.
+        { type: "ui_surface", surfaceId: "fixture-card", surfaceType: "card" },
+      ],
     };
     const out = renderSlackTranscript([base]);
     expect(out).toEqual([
@@ -1337,8 +1336,8 @@ describe("renderSlackTranscript — replayable content-block preservation", () =
           name: "web_search",
           input: { q: "x" },
         },
-        { type: "ui_surface", foo: "bar" } as never,
-      ] as never,
+        { type: "ui_surface", surfaceId: "fixture-card", surfaceType: "card" },
+      ],
     };
     const out = renderSlackTranscript([base]);
     expect(out).toEqual([

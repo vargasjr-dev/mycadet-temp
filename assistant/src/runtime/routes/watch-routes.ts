@@ -81,13 +81,11 @@ export function parseWatchCaptureTarget(
       error: "Only one of captureDisplayId and captureWindowId may be given",
     };
   }
-  if (displayRaw === null && windowRaw === null) {
+  const raw = displayRaw ?? windowRaw;
+  if (raw === null) {
     return {};
   }
-  const [name, raw] =
-    displayRaw !== null
-      ? (["captureDisplayId", displayRaw] as const)
-      : (["captureWindowId", windowRaw as string] as const);
+  const name = displayRaw !== null ? "captureDisplayId" : "captureWindowId";
   const id = /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : Number.NaN;
   if (!Number.isSafeInteger(id)) {
     return { error: `Invalid query parameter: ${name} must be a whole number` };

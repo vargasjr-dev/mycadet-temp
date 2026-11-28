@@ -5,7 +5,6 @@
 import { mapGatewayIpcConnectError } from "../../ipc/gateway-ipc-errors.js";
 import { isObjectRecord } from "../../util/object.js";
 import { requireBoundGuardian } from "../auth/require-bound-guardian.js";
-import type { HttpErrorCode } from "../http-errors.js";
 import { httpError } from "../http-errors.js";
 import type { HTTPRouteDefinition } from "../http-router-types.js";
 import { RouteError } from "./errors.js";
@@ -184,7 +183,17 @@ export function routeDefinitionsToHTTPRoutes(
           result instanceof Uint8Array ||
           result instanceof ReadableStream
         ) {
-          return new Response(result as BodyInit, {
+          const body =
+            result instanceof Uint8Array
+              ? result.buffer instanceof ArrayBuffer
+                ? new Uint8Array(
+                    result.buffer,
+                    result.byteOffset,
+                    result.byteLength,
+                  )
+                : result.slice()
+              : result;
+          return new Response(body, {
             status,
             headers: responseHeaders,
           });
@@ -199,7 +208,7 @@ export function routeDefinitionsToHTTPRoutes(
         const mapped = mapGatewayIpcConnectError(err);
         if (mapped instanceof RouteError) {
           return httpError(
-            mapped.code as HttpErrorCode,
+            mapped.code,
             mapped.message,
             mapped.statusCode,
             mapped.details,

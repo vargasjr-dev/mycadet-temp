@@ -9,6 +9,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../../../__tests__/helpers/fetch-mock.js";
 import { jsonObjectSchema } from "../../../../__tests__/helpers/json-object-schema.js";
 import {
   ClickHouseCompactionLogStore,
@@ -26,11 +27,16 @@ function createWriter(overrides?: {
   fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>;
 }): { writer: ClickHouseCompactionLogStore; requests: CapturedRequest[] } {
   const requests: CapturedRequest[] = [];
-  const fetchImpl = (overrides?.fetchImpl ??
-    (async (url: string, init?: RequestInit) => {
+  const fetchImpl = fetchMock(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (overrides?.fetchImpl) {
+        return overrides.fetchImpl(url, init);
+      }
       requests.push({ url: new URL(url), body: String(init?.body ?? "") });
       return new Response("", { status: 200 });
-    })) as typeof fetch;
+    },
+  );
   const writer = new ClickHouseCompactionLogStore(
     { database: "analytics", table: "compaction_logs", user: "writer" },
     {

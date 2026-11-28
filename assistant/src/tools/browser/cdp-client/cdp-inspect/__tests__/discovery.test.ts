@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { fetchMock } from "../../../../../__tests__/helpers/fetch-mock.js";
 import {
   buildBrowserWsUrl,
   DevToolsDiscoveryError,
@@ -42,9 +43,14 @@ function startFakeDevTools(): FakeDevTools {
       return handler(req);
     },
   });
+  const port = server.port;
+  if (port === undefined) {
+    server.stop(true);
+    throw new Error("Expected a TCP port for the fake DevTools server");
+  }
   return {
     server,
-    port: server.port as number,
+    port,
     setHandler: (h) => {
       handler = h;
     },
@@ -74,10 +80,10 @@ describe("probeDevToolsJsonVersion — loopback enforcement", () => {
   test("rejects non-loopback host with non_loopback and does not fetch", async () => {
     const originalFetch = globalThis.fetch;
     let fetchCallCount = 0;
-    globalThis.fetch = (async (...args: unknown[]) => {
+    globalThis.fetch = fetchMock(async (...args: Parameters<typeof fetch>) => {
       fetchCallCount += 1;
-      return originalFetch(...(args as Parameters<typeof fetch>));
-    }) as typeof fetch;
+      return originalFetch(...args);
+    });
 
     try {
       await expect(
@@ -99,10 +105,10 @@ describe("probeDevToolsJsonVersion — loopback enforcement", () => {
   test("rejects public DNS hostname before fetching", async () => {
     const originalFetch = globalThis.fetch;
     let fetchCallCount = 0;
-    globalThis.fetch = (async (...args: unknown[]) => {
+    globalThis.fetch = fetchMock(async (...args: Parameters<typeof fetch>) => {
       fetchCallCount += 1;
-      return originalFetch(...(args as Parameters<typeof fetch>));
-    }) as typeof fetch;
+      return originalFetch(...args);
+    });
 
     try {
       await expect(
@@ -141,10 +147,10 @@ describe("probeDevToolsJsonVersion — loopback enforcement", () => {
   test("listDevToolsTargets also rejects non-loopback before fetch", async () => {
     const originalFetch = globalThis.fetch;
     let fetchCallCount = 0;
-    globalThis.fetch = (async (...args: unknown[]) => {
+    globalThis.fetch = fetchMock(async (...args: Parameters<typeof fetch>) => {
       fetchCallCount += 1;
-      return originalFetch(...(args as Parameters<typeof fetch>));
-    }) as typeof fetch;
+      return originalFetch(...args);
+    });
 
     try {
       await expect(
@@ -746,7 +752,10 @@ describe("pickDefaultTarget", () => {
     try {
       pickDefaultTarget([]);
     } catch (e) {
-      expect((e as DevToolsDiscoveryError).code).toBe("no_targets");
+      if (!(e instanceof DevToolsDiscoveryError)) {
+        throw e;
+      }
+      expect(e.code).toBe("no_targets");
     }
   });
 
@@ -827,7 +836,10 @@ describe("buildBrowserWsUrl", () => {
     try {
       buildBrowserWsUrl("evil.com", 9222);
     } catch (e) {
-      expect((e as DevToolsDiscoveryError).code).toBe("non_loopback");
+      if (!(e instanceof DevToolsDiscoveryError)) {
+        throw e;
+      }
+      expect(e.code).toBe("non_loopback");
     }
   });
 });

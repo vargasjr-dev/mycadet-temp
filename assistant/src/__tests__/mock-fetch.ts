@@ -1,3 +1,4 @@
+import { getObjectProperty } from "../util/object.js";
 import { fetchMock } from "./helpers/fetch-mock.js";
 /**
  * Global test utility for mocking `globalThis.fetch`.
@@ -45,9 +46,7 @@ export function mockFetch(
           return false;
         }
         for (const [key, val] of Object.entries(e.init)) {
-          if (
-            (actualInit as Record<string, unknown> | undefined)?.[key] !== val
-          ) {
+          if (getObjectProperty(actualInit, key) !== val) {
             return false;
           }
         }

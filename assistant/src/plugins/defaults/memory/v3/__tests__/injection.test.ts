@@ -128,12 +128,8 @@ function makeDb() {
 mock.module("../../../../../persistence/db-connection.js", () => ({
   ...realDbConnection,
   getDb: () => (injectionMockActive ? testDb : realDbConnection.getDb()),
-  getSqliteFrom: (db: unknown) =>
-    injectionMockActive
-      ? testSqlite
-      : realDbConnection.getSqliteFrom(
-          db as Parameters<typeof realDbConnection.getSqliteFrom>[0],
-        ),
+  getSqliteFrom: (db: Parameters<typeof realDbConnection.getSqliteFrom>[0]) =>
+    injectionMockActive ? testSqlite : realDbConnection.getSqliteFrom(db),
   getMemorySqlite: () =>
     injectionMockActive ? memorySqlite : realDbConnection.getMemorySqlite(),
   getMemoryDb: () =>
@@ -296,7 +292,7 @@ const GUARDIAN_TRUST = {
 function commitSectionsBlock(block: InjectionBlock | null): void {
   const commit = block?.meta?.[MEMORY_V3_COMMIT_META_KEY];
   if (typeof commit === "function") {
-    (commit as () => void)();
+    commit();
   }
 }
 
@@ -305,14 +301,16 @@ function commitSectionsBlock(block: InjectionBlock | null): void {
 function produceSectionsWithoutCommit(
   conversationId: string,
   turnIndex: number,
-  trust: { sourceChannel: string; trustClass: string } = GUARDIAN_TRUST,
+  trust: Parameters<
+    typeof memoryV3Injector.produce
+  >[0]["trust"] = GUARDIAN_TRUST,
 ) {
   seedMemoryConfig();
   return memoryV3Injector.produce({
     requestId: "req-1",
     conversationId,
     turnIndex,
-    trust: trust as never,
+    trust,
   });
 }
 
@@ -345,14 +343,16 @@ function persistBlockMetadata(conversationId: string, blockText: string): void {
 function producePointer(
   conversationId: string,
   turnIndex: number,
-  trust: { sourceChannel: string; trustClass: string } = GUARDIAN_TRUST,
+  trust: Parameters<
+    typeof memoryV3Injector.produce
+  >[0]["trust"] = GUARDIAN_TRUST,
 ) {
   seedMemoryConfig();
   return memoryV3PointerInjector.produce({
     requestId: "req-1",
     conversationId,
     turnIndex,
-    trust: trust as never,
+    trust,
   });
 }
 
@@ -960,7 +960,10 @@ describe("memoryV3Injector: frozen net-new sections", () => {
   test("untrusted remote actor → both injectors produce null, no orchestration, nothing recorded", async () => {
     liveEnabled = true;
     turnResults.set(0, result(["page-a"]));
-    const untrusted = { sourceChannel: "telegram", trustClass: "unknown" };
+    const untrusted = {
+      sourceChannel: "telegram",
+      trustClass: "unknown",
+    } as const;
 
     expect(
       await produceSectionsWithoutCommit("conv-1", 0, untrusted),
@@ -1308,7 +1311,7 @@ describe("memoryV3Injector: run-messages replacement (Slack transcript)", () => 
       requestId: "req-1",
       conversationId,
       turnIndex,
-      trust: GUARDIAN_TRUST as never,
+      trust: GUARDIAN_TRUST,
       replacesRunMessages: true,
     });
   }
@@ -1319,7 +1322,7 @@ describe("memoryV3Injector: run-messages replacement (Slack transcript)", () => 
       requestId: "req-1",
       conversationId,
       turnIndex,
-      trust: GUARDIAN_TRUST as never,
+      trust: GUARDIAN_TRUST,
       replacesRunMessages: true,
     });
   }

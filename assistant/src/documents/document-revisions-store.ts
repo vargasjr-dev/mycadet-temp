@@ -147,9 +147,7 @@ export function listDocumentRevisions(
     .where(eq(documentRevisions.surfaceId, surfaceId))
     .orderBy(desc(documentRevisions.revision))
     .all()
-    .map((row) =>
-      mapRowToSummary({ ...row, author: row.author as DocumentRevisionAuthor }),
-    );
+    .map(mapRowToSummary);
 }
 
 /** One snapshot with its body, or `null` when it does not exist. */
@@ -171,10 +169,7 @@ export function getDocumentRevision(
     return null;
   }
   return {
-    ...mapRowToSummary({
-      ...row,
-      author: row.author as DocumentRevisionAuthor,
-    }),
+    ...mapRowToSummary(row),
     content: row.content,
   };
 }

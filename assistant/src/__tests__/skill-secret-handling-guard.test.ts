@@ -98,7 +98,12 @@ function findViolations(): Violation[] {
     }).trim();
     skillFiles = output.split("\n").filter((f) => f.length > 0);
   } catch (err) {
-    if ((err as { status?: number }).status === 1) {
+    if (
+      err !== null &&
+      typeof err === "object" &&
+      "status" in err &&
+      err.status === 1
+    ) {
       return []; // no SKILL.md files found
     }
     throw err;

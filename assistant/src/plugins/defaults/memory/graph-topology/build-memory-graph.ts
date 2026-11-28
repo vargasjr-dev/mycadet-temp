@@ -165,7 +165,10 @@ export function assembleMemoryGraph(input: AssembleMemoryGraphInput): {
           continue;
         }
         emitted.add(key);
-        const [a, b] = key.split("\t") as [string, string];
+        const [a, b] = key.split("\t");
+        if (a === undefined || b === undefined) {
+          continue;
+        }
         edges.push({ source: a, target: b, kind: "learned", directed: false });
         bump(a);
         bump(b);

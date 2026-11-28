@@ -181,7 +181,7 @@ export function startDiskPressureGuard(): DiskPressureStatus {
     state.timer = setInterval(() => {
       void evaluateDiskPressureNow();
     }, DISK_PRESSURE_CHECK_INTERVAL_MS);
-    (state.timer as { unref?: () => void }).unref?.();
+    state.timer.unref?.();
   }
 
   return cloneStatus(state.status);

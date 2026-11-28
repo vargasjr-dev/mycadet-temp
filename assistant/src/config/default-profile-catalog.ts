@@ -705,7 +705,7 @@ function resolveAgainstBody(
   const merged: ProfileEntry = { ...body };
   for (const field of WORKSPACE_OWNED_DEFAULT_FIELDS) {
     if (field in workspace) {
-      (merged as Record<string, unknown>)[field] = workspace[field];
+      Object.assign(merged, { [field]: workspace[field] });
     }
   }
   return merged;

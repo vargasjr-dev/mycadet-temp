@@ -7,6 +7,10 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
 import { getBundledSkillsDir } from "../config/skills.js";
+import {
+  parseToolManifestFile,
+  type SkillToolEntry,
+} from "../skills/tool-manifest.js";
 import { computeSkillVersionHash } from "../skills/version-hash.js";
 import { resolveSubagentRole } from "../subagent/role-resolution.js";
 import type { SubagentRole } from "../subagent/types.js";
@@ -17,7 +21,6 @@ import {
 } from "../tools/skills/skill-tool-factory.js";
 import { RiskLevel } from "../tools/tool-types.js";
 import type { ToolContext } from "../tools/types.js";
-import type { SkillToolEntry } from "./../skills/tool-manifest.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -630,12 +633,9 @@ describe("createSkillTool — required/type/enum validation", () => {
  * layer that has to surface the redirect: nothing downstream of it runs.
  */
 function subagentReadEntry(): SkillToolEntry {
-  const manifest = JSON.parse(
-    readFileSync(
-      join(import.meta.dir, "../config/bundled-skills/subagent/TOOLS.json"),
-      "utf-8",
-    ),
-  ) as { tools: SkillToolEntry[] };
+  const manifest = parseToolManifestFile(
+    join(import.meta.dir, "../config/bundled-skills/subagent/TOOLS.json"),
+  );
   const entry = manifest.tools.find((t) => t.name === "subagent_read");
   if (!entry) {
     throw new Error("subagent_read is missing from the subagent TOOLS.json");
@@ -770,12 +770,9 @@ describe("createSkillTool: parameter misuse redirects", () => {
 
 /** The subagent skill's real `subagent_spawn` manifest entry. */
 function subagentSpawnEntry(): SkillToolEntry {
-  const manifest = JSON.parse(
-    readFileSync(
-      join(import.meta.dir, "../config/bundled-skills/subagent/TOOLS.json"),
-      "utf-8",
-    ),
-  ) as { tools: SkillToolEntry[] };
+  const manifest = parseToolManifestFile(
+    join(import.meta.dir, "../config/bundled-skills/subagent/TOOLS.json"),
+  );
   const entry = manifest.tools.find((t) => t.name === "subagent_spawn");
   if (!entry) {
     throw new Error("subagent_spawn is missing from the subagent TOOLS.json");

@@ -18,9 +18,9 @@
  * The logger is stubbed so the default-scorer failure path stays quiet; the
  * ranking tests never reach it because they inject a fake scorer.
  */
-
 import { describe, expect, mock, test } from "bun:test";
 
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import type { ScoredSlug } from "../candidate-match.js";
 
 // Spread the real logger module so we override ONLY `getLogger`. The matcher's
@@ -249,7 +249,7 @@ const persistentError = () => new Error("qdrant collection not found");
 // A config stub — the stubbed `simBatch` ignores it, but `nearestExistingSkills`
 // reads `opts.config ?? getConfig()`, and passing one keeps the test off the
 // real config loader.
-const fakeConfig = {} as never;
+const fakeConfig = AssistantConfigSchema.parse({});
 
 describe("nearestExistingSkills — default scorer retries transient failures", () => {
   test("a transient error that succeeds on retry yields the hit, not []", async () => {
