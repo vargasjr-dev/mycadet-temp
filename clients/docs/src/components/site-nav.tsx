@@ -17,12 +17,7 @@ export function SiteNav() {
     <header className="nav">
       <div className="nav-brand">
         <Link href="/" aria-label="Cadet home">
-          <Image
-            src={logoSrc("mycadet-logo")}
-            alt="Cadet logo"
-            width={32}
-            height={32}
-          />
+          <Image src={logoSrc()} alt="Cadet logo" width={32} height={32} />
         </Link>
       </div>
       <nav className="nav-links">

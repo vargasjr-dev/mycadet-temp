@@ -42,7 +42,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
                   className="hidden md:flex items-center gap-2 no-underline"
                 >
                   <Image
-                    src={logoSrc("cadet-logo")}
+                    src={logoSrc()}
                     alt="Cadet"
                     width={26}
                     height={26}
