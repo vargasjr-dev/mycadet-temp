@@ -1159,7 +1159,7 @@ describe("maintainJob skill usage-prune", () => {
       displayName: id,
       description: "",
       installed: true,
-      source: "managed",
+      source: "workspace",
       state: "enabled",
     };
   }

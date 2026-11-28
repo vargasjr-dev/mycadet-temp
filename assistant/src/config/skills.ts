@@ -72,14 +72,15 @@ const SkillMetadataSchema = z
  * Origin of a skill in the merged catalog.
  *
  * - `bundled`: ships inside the assistant binary under `bundled-skills/`.
- * - `managed`: installed into `$CADET_WORKSPACE_DIR/skills/` from our catalog.
- * - `workspace`: user-authored skill living in a conversation's working dir.
+ * - `workspace`: user-visible skill under `$CADET_WORKSPACE_DIR/skills/` —
+ *   hand-authored or installed from the catalog (install-meta.json records
+ *   the install provenance).
  * - `plugin`: shipped on disk inside a plugin: an installed one at
  *   `<workspaceDir>/plugins/<name>/skills/<id>/SKILL.md`, or an in-process
  *   default at `plugins/defaults/<dir>/skills/<id>/SKILL.md`, attributed back
  *   to the owning plugin via its `owner` descriptor.
  */
-export type SkillSource = "bundled" | "managed" | "workspace" | "plugin";
+export type SkillSource = "bundled" | "workspace" | "plugin";
 
 export interface SkillSummary {
   id: string;
@@ -737,8 +738,8 @@ export function discoverDefaultPluginResidentSkills(
  * Default-plugin skills sit BELOW installed-plugin skills: an installed plugin
  * shipping a skill of the same id shadows the default one, so a user can
  * replace a first-party skill by installing a plugin that redefines it, the
- * same direction as the catalog's overall extra → bundled → plugin → managed →
- * workspace ordering. Shadowed defaults are dropped here rather than left for
+ * same direction as the catalog's overall bundled → plugin → workspace
+ * ordering. Shadowed defaults are dropped here rather than left for
  * the catalog's first-wins `seenIds` pass, which would otherwise let whichever
  * group is emitted first win.
  *
@@ -859,7 +860,7 @@ function discoverInstalledPluginResidentSkills(): SkillSummary[] {
  * restriction, so the input is returned unchanged (all globally-enabled
  * plugins apply). When a set is given, a plugin-contributed skill
  * (`owner.kind === "plugin"`) survives only if its owning plugin id is in the
- * set; non-plugin skills (bundled/managed/workspace/extra) are always retained.
+ * set; non-plugin skills (bundled/workspace) are always retained.
  *
  * Pure: returns the same array reference when there is no restriction, and a
  * filtered copy otherwise, so callers can pass a cached catalog without
@@ -907,7 +908,7 @@ function skillSummaryFromDefinition(
   };
 }
 
-export function loadSkillCatalog(workspaceSkillsDir?: string): SkillSummary[] {
+export function loadSkillCatalog(): SkillSummary[] {
   const catalog: SkillSummary[] = [];
   const seenIds = new Set<string>();
 
@@ -926,11 +927,10 @@ export function loadSkillCatalog(workspaceSkillsDir?: string): SkillSummary[] {
   }
 
   // Discover skills shipped on disk inside plugins, in-process defaults and
-  // installed plugins alike. They sit above bundled but below managed and
-  // workspace so a user-authored filesystem skill can override a
-  // plugin-provided skill by declaring the same id under
-  // `$CADET_WORKSPACE_DIR/skills/`. Precedence *within* the plugin source
-  // (installed over default) is resolved by the discovery pass.
+  // installed plugins alike. They sit above bundled but below workspace so a
+  // user filesystem skill can override a plugin-provided skill by declaring
+  // the same id under `$CADET_WORKSPACE_DIR/skills/`. Precedence *within* the
+  // plugin source (installed over default) is resolved by the discovery pass.
   const pluginSkills = discoverPluginResidentSkills();
   for (const skill of pluginSkills) {
     if (seenIds.has(skill.id)) {
@@ -953,108 +953,42 @@ export function loadSkillCatalog(workspaceSkillsDir?: string): SkillSummary[] {
     catalog.push(skill);
   }
 
-  // Load managed (user) skills, which take precedence over bundled skills with the same ID
+  // Load workspace skills last, so they override bundled and plugin skills
+  // with the same id (user filesystem skills always win).
   const skillsDir = getWorkspaceSkillsDir();
-  const directories = discoverSkillDirectories(skillsDir);
+  if (existsSync(skillsDir)) {
+    const directories = discoverSkillDirectories(skillsDir);
 
-  for (const directory of directories) {
-    const skill = readSkillFromDirectory(directory, skillsDir, "managed");
-    if (!skill) {
-      continue;
-    }
-
-    if (seenIds.has(skill.id)) {
-      // If the existing entry is bundled or plugin-contributed, the
-      // user skill overrides it. Only another `managed` or `workspace` entry
-      // (already at or above managed precedence) is treated as a true
-      // duplicate.
-      const existingIndex = catalog.findIndex((s) => s.id === skill.id);
-      if (
-        existingIndex !== -1 &&
-        (catalog[existingIndex].bundled ||
-          catalog[existingIndex].source === "plugin")
-      ) {
-        log.info(
-          {
-            id: skill.id,
-            directory,
-            overriding: catalog[existingIndex].source,
-          },
-          "User skill overrides existing catalog entry",
-        );
-        catalog[existingIndex] = skillSummaryFromDefinition(skill, "managed");
-        continue;
-      }
-      log.warn({ id: skill.id, directory }, "Skipping duplicate skill id");
-      continue;
-    }
-
-    seenIds.add(skill.id);
-    catalog.push(skillSummaryFromDefinition(skill, "managed"));
-  }
-
-  // Load workspace skills with highest precedence
-  if (workspaceSkillsDir && existsSync(workspaceSkillsDir)) {
-    const workspaceDirs = discoverSkillDirectories(workspaceSkillsDir);
-
-    for (const directory of workspaceDirs) {
-      const skillFilePath = join(directory, "SKILL.md");
-      if (!existsSync(skillFilePath)) {
+    for (const directory of directories) {
+      const skill = readSkillFromDirectory(directory, skillsDir, "workspace");
+      if (!skill) {
         continue;
       }
 
-      try {
-        const stat = statSync(skillFilePath);
-        if (!stat.isFile()) {
+      if (seenIds.has(skill.id)) {
+        // The user skill overrides any existing entry (bundled or plugin).
+        const existingIndex = catalog.findIndex((s) => s.id === skill.id);
+        if (existingIndex !== -1) {
+          log.info(
+            {
+              id: skill.id,
+              directory,
+              overriding: catalog[existingIndex].source,
+            },
+            "User skill overrides existing catalog entry",
+          );
+          catalog[existingIndex] = skillSummaryFromDefinition(
+            skill,
+            "workspace",
+          );
           continue;
         }
-
-        const content = readFileSync(skillFilePath, "utf-8");
-        const parsed = parseFrontmatter(content, skillFilePath);
-        if (!parsed) {
-          continue;
-        }
-
-        const id = basename(directory);
-        const workspaceSkill: SkillSummary = {
-          id,
-          name: parsed.name,
-          displayName: parsed.displayName ?? parsed.name,
-          description: parsed.description,
-          directoryPath: directory,
-          skillFilePath,
-          icon: parsed.icon,
-          emoji: parsed.emoji,
-
-          source: "workspace",
-          toolManifest: detectToolManifest(directory),
-          includes: parsed.includes,
-          activationHints: parsed.activationHints,
-          avoidWhen: parsed.avoidWhen,
-          category: parsed.category,
-          alwaysCandidate: parsed.alwaysCandidate,
-          platforms: parsed.platforms,
-          inlineCommandExpansions: parsed.inlineCommandExpansions,
-        };
-
-        if (seenIds.has(id)) {
-          // Workspace skills override any existing skill
-          const existingIndex = catalog.findIndex((s) => s.id === id);
-          if (existingIndex !== -1) {
-            log.info(
-              { id, directory },
-              "Workspace skill overrides existing skill",
-            );
-            catalog[existingIndex] = workspaceSkill;
-            continue;
-          }
-        }
-
-        seenIds.add(id);
-        catalog.push(workspaceSkill);
-      } catch (err) {
-        log.warn({ err, directory }, "Failed to read workspace skill");
+        log.warn({ id: skill.id, directory }, "Skipping duplicate skill id");
+        continue;
       }
+
+      seenIds.add(skill.id);
+      catalog.push(skillSummaryFromDefinition(skill, "workspace"));
     }
   }
 
@@ -1193,10 +1127,7 @@ function loadSkillDefinition(skill: SkillSummary): SkillLookupResult {
   return { skill: loaded };
 }
 
-export function resolveSkillSelector(
-  selector: string,
-  workspaceSkillsDir?: string,
-): SkillSelectorResult {
+export function resolveSkillSelector(selector: string): SkillSelectorResult {
   const needle = selector.trim();
   if (!needle) {
     return {
@@ -1205,7 +1136,7 @@ export function resolveSkillSelector(
     };
   }
 
-  const catalog = loadSkillCatalog(workspaceSkillsDir);
+  const catalog = loadSkillCatalog();
   if (catalog.length === 0) {
     return {
       error: `No skills are available. Add skill directories under ${getWorkspaceDirDisplay()}/skills/.`,
@@ -1255,11 +1186,8 @@ export function resolveSkillSelector(
   };
 }
 
-export function loadSkillBySelector(
-  selector: string,
-  workspaceSkillsDir?: string,
-): SkillLookupResult {
-  const resolved = resolveSkillSelector(selector, workspaceSkillsDir);
+export function loadSkillBySelector(selector: string): SkillLookupResult {
+  const resolved = resolveSkillSelector(selector);
   if (!resolved.skill) {
     return {
       error: resolved.error ?? "Failed to resolve skill selector.",

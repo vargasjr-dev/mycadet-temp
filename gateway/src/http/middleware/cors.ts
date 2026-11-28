@@ -99,10 +99,11 @@ export function extensionCorsHeaders(origin: string): Record<string, string> {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     // All headers the extension service worker sends across these routes:
     //   /v1/pair          → content-type, x-cadet-interface-id
-    //   /v1/events (SSE)  → accept, x-cadet-client-id, x-cadet-interface-id
+    //   /v1/events (SSE)  → accept, x-cadet-client-id, x-cadet-interface-id,
+    //                       x-cadet-host-proxy (the embedded-renderer opt-out)
     //   /v1/host-browser-* → content-type, authorization
     "Access-Control-Allow-Headers":
-      "Accept, Authorization, Content-Type, X-Cadet-Client-Id, X-Cadet-Interface-Id, X-Cadet-Client-Version, X-Cadet-Sse-Watchdog",
+      "Accept, Authorization, Content-Type, X-Cadet-Client-Id, X-Cadet-Interface-Id, X-Cadet-Host-Proxy, X-Cadet-Client-Version, X-Cadet-Sse-Watchdog",
     "Access-Control-Allow-Private-Network": "true",
     "Access-Control-Max-Age": "86400",
   };

@@ -7,7 +7,6 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
@@ -116,16 +115,16 @@ Skill body
     expect(catalog.map((skill) => skill.id)).toEqual(["first", "second"]);
   });
 
-  test("managed skill overrides bundled skill with the same id", () => {
+  test("workspace skill overrides bundled skill with the same id", () => {
     writeSkill(
       "skill-management",
       "Custom Skill Management",
-      "Managed override",
+      "Workspace override",
     );
 
     const skill = loadSkillCatalog().find((s) => s.id === "skill-management");
     expect(skill).toBeDefined();
-    expect(skill!.source).toBe("managed");
+    expect(skill!.source).toBe("workspace");
     expect(skill!.name).toBe("Custom Skill Management");
     expect(skill!.bundled).toBeUndefined();
   });
@@ -185,19 +184,13 @@ Skill body
 });
 
 describe("workspace skills", () => {
-  const WORKSPACE_DIR = join(
-    tmpdir(),
-    `cadet-workspace-test-${crypto.randomUUID()}`,
-  );
-  const workspaceSkillsDir = join(WORKSPACE_DIR, ".cadet", "skills");
-
   function writeWorkspaceSkill(
     skillId: string,
     name: string,
     description: string,
     body: string = "Workspace skill body",
   ): void {
-    const skillDir = join(workspaceSkillsDir, skillId);
+    const skillDir = join(TEST_DIR, "skills", skillId);
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(
       join(skillDir, "SKILL.md"),
@@ -207,7 +200,6 @@ describe("workspace skills", () => {
 
   beforeEach(() => {
     mkdirSync(join(TEST_DIR, "skills"), { recursive: true });
-    mkdirSync(workspaceSkillsDir, { recursive: true });
   });
 
   afterEach(() => {
@@ -219,39 +211,19 @@ describe("workspace skills", () => {
     if (existsSync(outsideDir)) {
       rmSync(outsideDir, { recursive: true, force: true });
     }
-    if (existsSync(WORKSPACE_DIR)) {
-      rmSync(WORKSPACE_DIR, { recursive: true, force: true });
-    }
   });
 
-  test("workspace skills appear in catalog when workspaceSkillsDir is provided", () => {
-    writeWorkspaceSkill("ws-skill", "Workspace Skill", "A workspace skill");
-
-    const catalog = loadSkillCatalog(workspaceSkillsDir);
-    const wsSkills = catalog.filter((s) => s.source === "workspace");
-    expect(wsSkills).toHaveLength(1);
-    expect(wsSkills[0].id).toBe("ws-skill");
-  });
-
-  test("resolveSkillSelector finds workspace skills when workspaceSkillsDir is provided", () => {
+  test("resolveSkillSelector finds workspace skills", () => {
     writeWorkspaceSkill(
       "ws-resolve",
       "Workspace Resolve",
       "Resolvable workspace skill",
     );
 
-    const result = resolveSkillSelector("ws-resolve", workspaceSkillsDir);
+    const result = resolveSkillSelector("ws-resolve");
     expect(result.skill).toBeDefined();
     expect(result.skill!.id).toBe("ws-resolve");
     expect(result.skill!.source).toBe("workspace");
-  });
-
-  test("resolveSkillSelector does not find workspace skills without workspaceSkillsDir", () => {
-    writeWorkspaceSkill("ws-hidden", "Hidden Workspace", "Should not be found");
-
-    const result = resolveSkillSelector("ws-hidden");
-    expect(result.skill).toBeUndefined();
-    expect(result.error).toBeDefined();
   });
 
   test("loadSkillBySelector loads workspace skill body without isOutsideSkillsRoot rejection", () => {
@@ -262,24 +234,12 @@ describe("workspace skills", () => {
       "Full workspace body here",
     );
 
-    const result = loadSkillBySelector("ws-load", workspaceSkillsDir);
+    const result = loadSkillBySelector("ws-load");
     expect(result.error).toBeUndefined();
     expect(result.skill).toBeDefined();
     expect(result.skill!.id).toBe("ws-load");
     expect(result.skill!.body).toBe("Full workspace body here");
     expect(result.skill!.source).toBe("workspace");
-  });
-
-  test("workspace skill overrides managed skill with the same id", () => {
-    writeSkill("shared-id", "Managed Shared", "Managed version");
-    writeWorkspaceSkill("shared-id", "Workspace Shared", "Workspace version");
-
-    const skill = loadSkillCatalog(workspaceSkillsDir).find(
-      (s) => s.id === "shared-id",
-    );
-    expect(skill).toBeDefined();
-    expect(skill!.source).toBe("workspace");
-    expect(skill!.name).toBe("Workspace Shared");
   });
 });
 
@@ -435,28 +395,18 @@ describe("plugin-resident skills", () => {
   });
 
   test("workspace skill overrides a plugin-resident skill with the same id", () => {
-    const WORKSPACE_DIR = join(
-      tmpdir(),
-      `cadet-workspace-test-${crypto.randomUUID()}`,
-    );
-    const workspaceSkillsDir = join(WORKSPACE_DIR, ".cadet", "skills");
-    mkdirSync(join(workspaceSkillsDir, "shared-id"), { recursive: true });
+    const wsSkillDir = join(TEST_DIR, "skills", "shared-id");
+    mkdirSync(wsSkillDir, { recursive: true });
     writeFileSync(
-      join(workspaceSkillsDir, "shared-id", "SKILL.md"),
+      join(wsSkillDir, "SKILL.md"),
       `---\nname: "Workspace Wins"\ndescription: "Workspace version"\n---\n\nbody\n`,
     );
     writePluginSkill("caveman", "shared-id", "Plugin Loses", "Plugin version");
 
-    try {
-      const skill = loadSkillCatalog(workspaceSkillsDir).find(
-        (s) => s.id === "shared-id",
-      );
-      expect(skill).toBeDefined();
-      expect(skill!.source).toBe("workspace");
-      expect(skill!.name).toBe("Workspace Wins");
-    } finally {
-      rmSync(WORKSPACE_DIR, { recursive: true, force: true });
-    }
+    const skill = loadSkillCatalog().find((s) => s.id === "shared-id");
+    expect(skill).toBeDefined();
+    expect(skill!.source).toBe("workspace");
+    expect(skill!.name).toBe("Workspace Wins");
   });
 });
 

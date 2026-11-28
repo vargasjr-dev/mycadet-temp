@@ -19,7 +19,7 @@ function makeSkill(id: string, includes?: string[]): SkillSummary {
     directoryPath: `/skills/${id}`,
     skillFilePath: `/skills/${id}/SKILL.md`,
 
-    source: "managed",
+    source: "workspace",
     includes,
   };
 }

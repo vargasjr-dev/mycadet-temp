@@ -5,12 +5,12 @@
  * these tests exercise the input validation, the catalog name/description join,
  * and the `limit` pass-through without Qdrant. Coverage:
  *   - Maps each shortlist hit to its catalog name/description/source and score.
- *   - Joins install-meta `author` onto managed hits (and omits it elsewhere).
+ *   - Joins install-meta `author` onto catalog-installed hits (and omits it elsewhere).
  *   - Drops a shortlist hit whose id is absent from the catalog.
  *   - Passes `limit` through to the shortlist (and defaults when omitted).
  *   - Rejects a missing/blank goal and a non-positive-integer limit.
  *
- * Managed-author resolution reads install-meta off the filesystem, so the
+ * Author resolution reads install-meta off the filesystem, so the
  * `readInstallMeta` seam is mocked to key off the skill id (its dir basename).
  */
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
@@ -23,7 +23,7 @@ import type { SkillSource } from "../../config/skills.js";
 import type { StoredCloudSkill } from "../../skills/cloud-store.js";
 import type { OwnerInfo } from "../types.js";
 
-// Map managed skill id → recorded author, consulted by the mocked
+// Map catalog-installed skill id → recorded author, consulted by the mocked
 // `readInstallMeta` below. Tests set entries to drive the author join.
 const installMetaAuthors: Record<string, "assistant" | "user" | undefined> = {};
 
@@ -78,7 +78,7 @@ describe("find_similar_skills — enrichment", () => {
               id: "deploy-web",
               name: "Deploy Web",
               description: "Ship the web app to prod",
-              source: "managed",
+              source: "workspace",
             },
             {
               id: "clean-disk",
@@ -97,7 +97,7 @@ describe("find_similar_skills — enrichment", () => {
           skill_id: "deploy-web",
           name: "Deploy Web",
           description: "Ship the web app to prod",
-          source: "managed",
+          source: "workspace",
           score: 0.91,
         },
         {
@@ -111,7 +111,7 @@ describe("find_similar_skills — enrichment", () => {
     });
   });
 
-  test("joins install-meta author onto managed hits, omits it elsewhere", async () => {
+  test("joins install-meta author onto catalog-installed hits, omits it elsewhere", async () => {
     installMetaAuthors["mine"] = "assistant";
     installMetaAuthors["theirs"] = "user";
     // `untagged` and `bundled-hit` intentionally have no install-meta entry.
@@ -132,20 +132,20 @@ describe("find_similar_skills — enrichment", () => {
               {
                 id: "mine",
                 name: "Mine",
-                description: "Assistant-authored managed skill",
-                source: "managed",
+                description: "Assistant-authored catalog-installed skill",
+                source: "workspace",
               },
               {
                 id: "theirs",
                 name: "Theirs",
-                description: "User-authored managed skill",
-                source: "managed",
+                description: "User-authored catalog-installed skill",
+                source: "workspace",
               },
               {
                 id: "untagged",
                 name: "Untagged",
-                description: "Managed skill with no recorded author",
-                source: "managed",
+                description: "Catalog-installed skill with no recorded author",
+                source: "workspace",
               },
               {
                 id: "bundled-hit",
@@ -168,13 +168,13 @@ describe("find_similar_skills — enrichment", () => {
         .parse(JSON.parse(result.content).skills);
       const byId = Object.fromEntries(skills.map((s) => [s.skill_id, s]));
 
-      // Managed `author:"assistant"` → overwritable by the retrospective.
+      // Catalog-installed `author:"assistant"` → overwritable by the retrospective.
       expect(byId["mine"].author).toBe("assistant");
-      // Managed `author:"user"` → off-limits; the signal lets the caller skip.
+      // Catalog-installed `author:"user"` → off-limits; the signal lets the caller skip.
       expect(byId["theirs"].author).toBe("user");
-      // Managed but untagged → author omitted (undefined survives as absent key).
+      // Catalog-installed but untagged → author omitted (undefined survives as absent key).
       expect("author" in byId["untagged"]).toBe(false);
-      // Non-managed source → author never read.
+      // Bundled/plugin source → author never read.
       expect("author" in byId["bundled-hit"]).toBe(false);
     } finally {
       delete installMetaAuthors["mine"];
@@ -243,13 +243,13 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
         id: "weekly-export",
         name: "Weekly Report Export",
         description: "Export the weekly usage report",
-        source: "managed",
+        source: "workspace",
       },
       {
         id: "user-skill",
         name: "User Skill",
         description: "A person wrote this",
-        source: "managed",
+        source: "workspace",
       },
       {
         id: "clean-disk",
@@ -294,7 +294,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
     { skillId: "clean-disk", score: 0.7 },
   ];
 
-  test("the retrospective gets the skill as it is, in scaffold argument names, only for its own managed hits", async () => {
+  test("the retrospective gets the skill as it is, in scaffold argument names, only for its own catalog-installed hits", async () => {
     installMetaAuthors["weekly-export"] = "assistant";
     installMetaAuthors["user-skill"] = "user";
 
@@ -401,7 +401,7 @@ describe("find_similar_skills: current skill for a refinable hit", () => {
             id: "indented",
             name: "Indented",
             description: "Opens with a code block",
-            source: "managed",
+            source: "workspace",
           }),
       },
     );
@@ -666,7 +666,7 @@ describe("find_similar_skills cancellation", () => {
             id: "deploy-web",
             name: "Deploy Web",
             description: "Ship the web app",
-            source: "managed",
+            source: "workspace",
           }),
       },
     );
@@ -692,7 +692,7 @@ describe("find_similar_skills cancellation", () => {
               id: "deploy-web",
               name: "Deploy Web",
               description: "Ship the web app",
-              source: "managed",
+              source: "workspace",
             }),
         },
       ),

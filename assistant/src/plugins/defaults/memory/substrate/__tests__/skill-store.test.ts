@@ -125,7 +125,7 @@ mock.module("../../../../../config/skill-state.js", () => ({
       .map((summary) => ({
         summary,
         state:
-          summary.source === "managed" ||
+          summary.source === "workspace" ||
           summary.source === "bundled" ||
           summary.source === "plugin"
             ? "enabled"
@@ -211,7 +211,7 @@ function makeSummary(overrides: Partial<SkillSummary> = {}): SkillSummary {
     description: "Does an example thing A",
     directoryPath: "/tmp/skills/example-skill-a",
     skillFilePath: "/tmp/skills/example-skill-a/SKILL.md",
-    source: "managed",
+    source: "workspace",
     ...overrides,
   };
 }
@@ -617,7 +617,7 @@ Write a local article draft.
           description: "Writes local geo articles",
           directoryPath: skillDir,
           skillFilePath: join(skillDir, "SKILL.md"),
-          source: "managed",
+          source: "workspace",
           activationHints: ["user asks for local article drafts"],
           avoidWhen: ["user only wants citation extraction"],
         },

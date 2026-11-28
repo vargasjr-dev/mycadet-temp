@@ -48,9 +48,9 @@ export interface ResolvedSkillEntry {
    */
   state: "enabled" | "disabled" | "unavailable" | "available";
   /**
-   * Install metadata for user-installed skills (`managed` / `workspace` /
-   * `extra` sources): `null` when the directory has no install-meta file,
-   * unset for sources that never carry one (bundled, plugin, remote).
+   * Install metadata for user-installed skills (the `workspace` source):
+   * `null` when the directory has no install-meta file, unset for sources
+   * that never carry one (bundled, plugin, remote).
    */
   installMeta?: SkillInstallMeta | null;
 }
@@ -88,7 +88,7 @@ export async function listInstalledSkills(): Promise<ResolvedSkillEntry[]> {
       source: summary.source,
       state: stateById.get(summary.id) ?? "unavailable",
     };
-    if (summary.source === "managed" || summary.source === "workspace") {
+    if (summary.source === "workspace") {
       entry.installMeta = readInstallMeta(summary.directoryPath);
     }
     return entry;

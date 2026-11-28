@@ -367,16 +367,17 @@ export async function executeScaffoldCloudSkill(
   // Ownership backstop (retrospective origin only): the retrospective may author
   // a skill ONLY if it owns it. Fail closed on either of two collisions.
   if (fromRetrospective) {
-    // (1) A non-managed catalog entry (bundled, plugin, workspace, extra) owns
-    // this id. Creating a cloud skill with that id SHADOWS the catalog entry,
-    // and an overwrite under the cloud dir would never touch it — either way
-    // the retrospective must not stand on a skill it did not author. This covers
-    // create AND overwrite. The prompt directs the model to skip when an
-    // existing skill of any source already covers the procedure; this enforces
-    // it.
+    // (1) A bundled or plugin catalog entry owns this id. Creating a cloud
+    // skill with that id SHADOWS the catalog entry, and an overwrite under
+    // the cloud dir would never touch it — either way the retrospective must
+    // not stand on a skill it did not author. This covers create AND
+    // overwrite. Workspace-owned ids fall through to (2), which fails closed
+    // on hand-authored, user-authored, and unverifiable skills alike. The
+    // prompt directs the model to skip when an existing skill of any source
+    // already covers the procedure; this enforces it.
     const loadCatalog = deps.loadCatalog ?? (() => loadSkillCatalog());
     const nonManagedOwner = loadCatalog().find(
-      (s) => s.id === id && s.source !== "managed",
+      (s) => s.id === id && (s.source === "bundled" || s.source === "plugin"),
     );
     if (nonManagedOwner) {
       return {

@@ -70,10 +70,6 @@ import { registerCompanionSurfaceSync } from "./companion-menu";
 import { install as installShare } from "./features/share";
 import { install as installVoiceModeChord } from "./features/voice-mode-chord";
 import {
-  createHelperToastFactory,
-  resolveHelperToastBinaryPath,
-} from "./helper-toast-factory";
-import {
   provisionCliForCurrentUser,
   resolveCliPathFlowOptions,
 } from "./win32-cli/cli-path-flow";
@@ -104,16 +100,6 @@ export interface DesktopAppInputs {
    * move-to-Applications relaunch).
    */
   precheck?: () => boolean | Promise<boolean>;
-  /**
-   * The shell's toast-helper identity: the supervised sidecar's executable
-   * name, its dev-override env var, and the sidecar client name it registers
-   * under. The package resolves the binary and builds the factory; absent a
-   * helper binary, notifications fall back to the shared default.
-   */
-  helperToastExecutable?: string;
-  helperToastOverrideEnvVar?: string;
-  helperToastName?: string;
-
   /**
    * The update feed's platform — a plain string the shell passes. The
    * package never derives an OS from `process.platform` and never names
@@ -268,7 +254,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // Every build mode — packaged or dev — serves the renderer over the
       // app protocol (dev reads the source-tree dists), so the handler and
       // the gateway guard register unconditionally.
-      registerAppProtocol();
+      registerAppProtocol(inputs.interfaceId);
       installGatewayRequestGuard({
         appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
         resolveAllowedOrigin,
@@ -290,27 +276,13 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       const retryProbe = installConnectivityProbe();
       installConnectivityIpc(retryProbe);
 
-      // The toast factory: the classic shells' helper identity resolves to
-      // a supervised sidecar client where the binary ships; macOS passes
-      // its own native factory. An explicit `notifications.create` wins.
-      const helperPath = inputs.helperToastExecutable
-        ? resolveHelperToastBinaryPath({
-            executable: inputs.helperToastExecutable,
-            overrideEnvVar:
-              inputs.helperToastOverrideEnvVar ?? "CADET_HELPER_TOAST_PATH",
-          })
-        : null;
+      // The toast factory: Electron's own presenter delivers everywhere; the
+      // native notifier addon overrides where it ships (macOS Communication
+      // Notifications), and falls through to the shared default where it
+      // cannot run.
       configureNotifications({
         ensureVisible: ensureMainWindow,
         logger: log,
-        ...(helperPath
-          ? {
-              create: createHelperToastFactory({
-                helperPath,
-                name: inputs.helperToastName ?? "cadet-helper",
-              }),
-            }
-          : {}),
         ...nativeNotificationOverrides(),
       });
       installNativeNotifier();

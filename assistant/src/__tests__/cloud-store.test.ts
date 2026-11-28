@@ -274,7 +274,7 @@ describe("buildSkillMarkdown", () => {
       "---\nname: 'path\\\\name'\ndescription: 'has \\n in it'\n---\n\nBody.\n",
     );
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "single-quote-test");
     expect(skill).toBeDefined();
     // Backslashes should be preserved literally, not interpreted as escape sequences
@@ -352,7 +352,7 @@ describe("createCloudSkill", () => {
     });
     expect(result.created).toBe(true);
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "kept")!;
     expect(skill.description).toBe("V2");
     expect(skill.emoji).toBe("📊");
@@ -407,9 +407,7 @@ describe("createCloudSkill", () => {
     expect(fm.metadata.cadet["always-candidate"]).toBe(true);
     expect(fm.metadata.cadet.emoji).toBe("📊");
     expect(fm.metadata.cadet.category).toBe("productivity");
-    const skill = loadSkillCatalog(join(TEST_DIR, "skills")).find(
-      (s) => s.id === "hand-edited",
-    )!;
+    const skill = loadSkillCatalog().find((s) => s.id === "hand-edited")!;
     expect(skill.displayName).toBe("Hand Edited Skill");
     expect(skill.platforms).toEqual(["macos"]);
     expect(skill.alwaysCandidate).toBe(true);
@@ -440,7 +438,7 @@ describe("createCloudSkill", () => {
       category: "",
     });
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "patched")!;
     expect(skill.emoji).toBe("🚀");
     expect(skill.activationHints).toEqual(["new hint"]);
@@ -466,7 +464,7 @@ describe("createCloudSkill", () => {
     );
     expect(content).toContain("category: development");
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "categorized-skill");
     expect(skill).toBeDefined();
     expect(skill!.category).toBe("development");
@@ -480,7 +478,7 @@ describe("createCloudSkill", () => {
       bodyMarkdown: "Body.",
     });
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "no-category");
     expect(skill).toBeDefined();
     expect(skill!.category).toBeUndefined();
@@ -540,7 +538,7 @@ describe("createCloudSkill", () => {
 
     expect(existsSync(join(TEST_DIR, "skills", "SKILLS.md"))).toBe(false);
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "discovered-skill");
     expect(skill).toBeDefined();
     expect(skill!.name).toBe("Discovered");
@@ -1156,7 +1154,7 @@ describe("deleteCloudSkill", () => {
     expect(result.deleted).toBe(true);
     expect(existsSync(join(TEST_DIR, "skills", "to-delete"))).toBe(false);
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     expect(catalog.find((s) => s.id === "to-delete")).toBeUndefined();
   });
 
@@ -1194,7 +1192,7 @@ describe("deleteCloudSkill", () => {
     expect(indexContent).toContain("- keep-index");
     expect(indexContent).toContain("- survivor");
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     expect(catalog.find((s) => s.id === "keep-index")).toBeUndefined();
   });
 
@@ -1406,7 +1404,7 @@ describe("YAML metadata round-trip", () => {
     });
 
     // Load it back via loadSkillCatalog
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "yaml-roundtrip-all");
     expect(skill).toBeDefined();
 
@@ -1432,7 +1430,7 @@ describe("YAML metadata round-trip", () => {
       avoidWhen: ["local-only changes"],
     });
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "hints-roundtrip");
     expect(skill).toBeDefined();
     expect(skill!.activationHints).toEqual([
@@ -1468,7 +1466,7 @@ describe("YAML metadata round-trip", () => {
       ].join("\n"),
     );
 
-    const catalog = loadSkillCatalog(join(TEST_DIR, "skills"));
+    const catalog = loadSkillCatalog();
     const skill = catalog.find((s) => s.id === "yaml-nested-test");
     expect(skill).toBeDefined();
 
