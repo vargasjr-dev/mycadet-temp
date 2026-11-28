@@ -276,10 +276,6 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       const retryProbe = installConnectivityProbe();
       installConnectivityIpc(retryProbe);
 
-      // The toast factory: Electron's own presenter delivers everywhere; the
-      // native notifier addon overrides where it ships (macOS Communication
-      // Notifications), and falls through to the shared default where it
-      // cannot run.
       configureNotifications({
         ensureVisible: ensureMainWindow,
         logger: log,
