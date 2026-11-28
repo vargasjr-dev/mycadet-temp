@@ -83,7 +83,7 @@ export function createSkillTool(
         // `subagent_read`) answers with that redirect: the generic "Unknown
         // parameter" list names the accepted keys but not the tool the caller
         // is actually reaching for. Redirects describe first-party tools, so
-        // only bundled skills consult them. A managed, workspace, extra, or
+        // only bundled skills consult them. A workspace or
         // plugin skill that reuses a bundled tool name keeps the generic error,
         // which is the one that matches its own manifest.
         const misuse = bundled

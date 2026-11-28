@@ -40,7 +40,7 @@ const INSTALL_META_FILENAME = "install-meta.json";
 export interface SkillInventoryEntry {
   /** Catalog id (directory name). */
   name: string;
-  /** `bundled` | `managed` | `workspace` | `extra` | `plugin`. */
+  /** `bundled` | `workspace` | `plugin`. */
   source: string;
   /** Resolved availability: `enabled` | `disabled` | `unavailable`. */
   state: string;

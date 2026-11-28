@@ -61,9 +61,10 @@ interface CustomSlimSkill extends SlimSkillBase {
 }
 
 /**
- * Managed skill authored by the assistant's retrospective. Identical shape to a
- * custom skill — it stays managed/deletable — but carries a distinct origin so
- * the UI badges it as "Assistant's Memory" instead of "Custom".
+ * Catalog-installed skill authored by the assistant's retrospective. Identical
+ * shape to a custom skill — it stays installed/deletable — but carries a
+ * distinct origin so the UI badges it as "Assistant's Memory" instead of
+ * "Custom".
  */
 interface AssistantMemorySlimSkill extends SlimSkillBase {
   origin: "assistant-memory";

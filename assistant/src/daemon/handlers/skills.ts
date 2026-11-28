@@ -332,7 +332,7 @@ function getCatalogCategoryMap(): Map<string, string> {
 
 /** Map the old `source` field to the new `kind` axis. */
 function deriveKind(
-  source: "bundled" | "managed" | "workspace" | "catalog" | "plugin",
+  source: "bundled" | "workspace" | "catalog" | "plugin",
 ): SlimSkillResponse["kind"] {
   if (source === "bundled") {
     return "bundled";
@@ -347,7 +347,7 @@ function deriveKind(
   if (source === "plugin") {
     return "bundled";
   }
-  return "installed"; // managed, workspace
+  return "installed"; // workspace
 }
 
 /** Map a resolved skill to its `origin`, using install-meta.json when available. */
@@ -655,8 +655,8 @@ function findSkillById(
 }
 
 /**
- * Whether a skill currently resolves locally (bundled, managed, workspace, or
- * extra). Callers that serve data ABOUT a skill use this to keep to the same
+ * Whether a skill currently resolves locally (bundled, workspace, or plugin).
+ * Callers that serve data ABOUT a skill use this to keep to the same
  * current-resource boundary as the file routes, so a deleted skill stops
  * answering even when durable artifacts about it survive elsewhere.
  */

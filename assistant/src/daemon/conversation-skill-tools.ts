@@ -151,13 +151,14 @@ function loadManifestForSkill(skill: SkillSummary): SkillToolManifest | null {
 }
 
 /**
- * Stamp `lastUsedAt` (day-debounced) on a newly-loaded managed skill's
- * install metadata. Only managed skills carry install metadata; bundled,
- * workspace, and plugin skills are skipped. Best-effort: the underlying
- * write never throws.
+ * Stamp `lastUsedAt` (day-debounced) on a newly-loaded catalog-installed
+ * skill's install metadata. Only workspace skills carry install metadata
+ * (bundled and plugin skills never do, and hand-authored workspace skills
+ * have none for the write to update); `touchSkillLastUsed` no-ops when the
+ * directory has no meta. Best-effort: the underlying write never throws.
  */
 function stampCloudSkillUsage(skill: SkillSummary): void {
-  if (skill.source !== "managed") {
+  if (skill.source !== "workspace") {
     return;
   }
   try {

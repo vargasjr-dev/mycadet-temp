@@ -24,10 +24,6 @@ export const SkillEntryConfigSchema = z
   })
   .describe("Configuration for an individual skill");
 
-const SkillsLoadConfigSchema = z
-  .object({})
-  .describe("Controls how skills are discovered and loaded");
-
 const SkillsInstallConfigSchema = z
   .object({
     nodeManager: z
@@ -105,7 +101,6 @@ export const SkillsConfigSchema = z
       .record(z.string(), SkillEntryConfigSchema)
       .default({})
       .describe("Map of skill names to their per-skill configuration"),
-    load: SkillsLoadConfigSchema.default(SkillsLoadConfigSchema.parse({})),
     install: SkillsInstallConfigSchema.default(
       SkillsInstallConfigSchema.parse({}),
     ),

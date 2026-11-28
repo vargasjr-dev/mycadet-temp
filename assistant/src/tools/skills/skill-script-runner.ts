@@ -55,7 +55,7 @@ export async function runSkillToolScript(
   // Host execution dynamically imports the executor into the daemon process —
   // full host code execution with no sandbox boundary. This is a first-party
   // capability reserved for bundled skills, which ship trusted, in-repo
-  // executors. A non-bundled skill (managed, workspace, plugin, extra) that
+  // executors. A non-bundled skill (workspace, plugin) that
   // declares `execution_target: host` must be refused: otherwise an
   // attacker-planted TOOLS.json — e.g. written into a cloud skill dir via
   // scaffold_cloud_skill companion files, or shipped in a third-party skill —

@@ -33,7 +33,7 @@ function makeSkill(
     description: `Test skill ${id}`,
     directoryPath,
     skillFilePath: join(directoryPath, "SKILL.md"),
-    source: "managed",
+    source: "workspace",
     includes,
   };
 }

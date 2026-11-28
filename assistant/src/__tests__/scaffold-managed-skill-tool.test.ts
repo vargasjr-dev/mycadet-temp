@@ -1348,22 +1348,47 @@ describe("scaffold_cloud_skill tool", () => {
     expect(mockRefreshSkillCapabilityMemories).not.toHaveBeenCalled();
   });
 
-  test("retrospective refuses an id owned by a plugin or workspace skill", async () => {
-    for (const source of ["plugin", "workspace"] as const) {
-      const result = await executeScaffoldCloudSkill(
-        {
-          skill_id: "covered-proc",
-          name: "Covered",
-          description: "Shadow attempt",
-          body_markdown: "Body.",
-          activation_hints: HINTS,
-        },
-        makeRetrospectiveContext(),
-        catalogSeam({ id: "covered-proc", source }),
-      );
-      expect(result.isError).toBe(true);
-      expect(result.content).toContain(`owned by a ${source} skill`);
-    }
+  test("retrospective refuses an id owned by a plugin skill", async () => {
+    const result = await executeScaffoldCloudSkill(
+      {
+        skill_id: "covered-proc",
+        name: "Covered",
+        description: "Shadow attempt",
+        body_markdown: "Body.",
+        activation_hints: HINTS,
+      },
+      makeRetrospectiveContext(),
+      catalogSeam({ id: "covered-proc", source: "plugin" }),
+    );
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain("owned by a plugin skill");
+  });
+
+  test("retrospective refuses an id owned by a hand-authored workspace skill", async () => {
+    // A workspace catalog entry is a real directory under the cloud skills
+    // root, so the ownership backstop reaches the disk fail-closed branch:
+    // no install-meta author tag means the skill is not verifiably the
+    // retrospective's own.
+    const dir = join(TEST_DIR, "skills", "covered-proc");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "SKILL.md"),
+      '---\nname: "Covered"\ndescription: "Hand-authored"\n---\n\nBody.\n',
+    );
+
+    const result = await executeScaffoldCloudSkill(
+      {
+        skill_id: "covered-proc",
+        name: "Covered",
+        description: "Shadow attempt",
+        body_markdown: "Body.",
+        activation_hints: HINTS,
+      },
+      makeRetrospectiveContext(),
+      catalogSeam({ id: "covered-proc", source: "workspace" }),
+    );
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain("not verifiably assistant-authored");
   });
 
   test("retrospective fails closed on an existing managed skill with missing install-meta", async () => {
@@ -1394,7 +1419,7 @@ describe("scaffold_cloud_skill tool", () => {
         overwrite: true,
       },
       makeRetrospectiveContext(),
-      catalogSeam({ id: "no-meta", source: "managed" }),
+      catalogSeam({ id: "no-meta", source: "workspace" }),
     );
 
     expect(result.isError).toBe(true);
@@ -1428,7 +1453,7 @@ describe("scaffold_cloud_skill tool", () => {
         overwrite: true,
       },
       makeRetrospectiveContext(),
-      catalogSeam({ id: "corrupt-meta", source: "managed" }),
+      catalogSeam({ id: "corrupt-meta", source: "workspace" }),
     );
 
     expect(result.isError).toBe(true);

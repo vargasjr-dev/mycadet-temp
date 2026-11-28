@@ -74,13 +74,13 @@ describe("listInstalledSkills", () => {
         alwaysCandidate: true,
       }),
       makeSummary({
-        id: "managed-off",
-        source: "managed",
-        directoryPath: "/skills/managed-off",
+        id: "workspace-off",
+        source: "workspace",
+        directoryPath: "/skills/workspace-off",
       }),
     ];
     setConfig("skills", {
-      entries: { "managed-off": { enabled: false } },
+      entries: { "workspace-off": { enabled: false } },
       allowBundled: null,
     });
 
@@ -88,7 +88,7 @@ describe("listInstalledSkills", () => {
       await import("../skills/available-skills.js");
     const entries = await listInstalledSkills();
 
-    expect(entries.map((e) => e.id)).toEqual(["bundled-on", "managed-off"]);
+    expect(entries.map((e) => e.id)).toEqual(["bundled-on", "workspace-off"]);
     const bundled = entries[0]!;
     expect(bundled).toMatchObject({
       id: "bundled-on",
@@ -150,33 +150,33 @@ describe("listInstalledSkills", () => {
     };
     catalogFixture = [
       makeSummary({
-        id: "cloud-skill",
-        source: "managed",
-        directoryPath: "/skills/cloud-skill",
-      }),
-      makeSummary({
         id: "workspace-skill",
         source: "workspace",
         directoryPath: "/skills/workspace-skill",
       }),
+      makeSummary({
+        id: "untagged-workspace-skill",
+        source: "workspace",
+        directoryPath: "/skills/untagged-workspace-skill",
+      }),
       makeSummary({ id: "bundled-skill", source: "bundled" }),
       makeSummary({ id: "plugin-skill", source: "plugin" }),
     ];
-    installMetaByDir = { "/skills/cloud-skill": meta };
+    installMetaByDir = { "/skills/workspace-skill": meta };
 
     const { listInstalledSkills } =
       await import("../skills/available-skills.js");
     const entries = await listInstalledSkills();
     const byId = new Map(entries.map((e) => [e.id, e]));
 
-    expect(byId.get("cloud-skill")!.installMeta).toEqual(meta);
+    expect(byId.get("workspace-skill")!.installMeta).toEqual(meta);
     // Read but absent on disk → null.
-    expect(byId.get("workspace-skill")!.installMeta).toBeNull();
+    expect(byId.get("untagged-workspace-skill")!.installMeta).toBeNull();
     // Never read for sources that don't carry install-meta.
     expect(byId.get("bundled-skill")!.installMeta).toBeUndefined();
     expect(byId.get("plugin-skill")!.installMeta).toBeUndefined();
     expect(readInstallMetaCalls.sort()).toEqual([
-      "/skills/cloud-skill",
+      "/skills/untagged-workspace-skill",
       "/skills/workspace-skill",
     ]);
   });

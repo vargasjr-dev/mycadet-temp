@@ -130,7 +130,7 @@ function makeSummary(overrides: Partial<SkillSummary>): SkillSummary {
     directoryPath,
     skillFilePath: join(directoryPath, "SKILL.md"),
     source: overrides.source ?? "bundled",
-    bundled: overrides.source !== "managed",
+    bundled: overrides.source === "bundled",
     category: overrides.category,
   };
 }
@@ -175,8 +175,8 @@ describe("listSkills — category precedence", () => {
 });
 
 describe("listSkills — origin derivation", () => {
-  test("managed skill authored by the assistant reports the assistant-memory origin", () => {
-    mockSummaries = [makeSummary({ id: "retro-note", source: "managed" })];
+  test("catalog-installed skill authored by the assistant reports the assistant-memory origin", () => {
+    mockSummaries = [makeSummary({ id: "retro-note", source: "workspace" })];
     mockCachedCatalog = [];
     mockInstallMeta = {
       origin: "custom",
@@ -186,12 +186,12 @@ describe("listSkills — origin derivation", () => {
 
     const [skill] = listSkills();
     expect(skill.origin).toBe("assistant-memory");
-    // Stays an installed (managed) skill so it remains deletable.
+    // Stays an installed skill so it remains deletable.
     expect(skill.kind).toBe("installed");
   });
 
-  test("managed skill without an assistant author keeps its custom origin", () => {
-    mockSummaries = [makeSummary({ id: "hand-rolled", source: "managed" })];
+  test("workspace skill without an assistant author keeps its custom origin", () => {
+    mockSummaries = [makeSummary({ id: "hand-rolled", source: "workspace" })];
     mockCachedCatalog = [];
     mockInstallMeta = {
       origin: "custom",
@@ -205,8 +205,8 @@ describe("listSkills — origin derivation", () => {
 
   // An install-meta.json origin outside the known set degrades to "custom", and
   // every listSkills() entry is a defined response.
-  test("managed skill with an unknown origin degrades to custom, never undefined", () => {
-    mockSummaries = [makeSummary({ id: "weird-origin", source: "managed" })];
+  test("workspace skill with an unknown origin degrades to custom, never undefined", () => {
+    mockSummaries = [makeSummary({ id: "weird-origin", source: "workspace" })];
     mockCachedCatalog = [];
     mockInstallMeta = {
       origin: "some-unhandled-origin" as never,

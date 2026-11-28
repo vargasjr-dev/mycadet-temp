@@ -456,7 +456,7 @@ function defaultDeps(config: AssistantConfig): MaintainJobDeps {
     loadCoreSet: () => realLoadCoreSet(workspaceDir),
     invalidateLanes: realInvalidateLanes,
     listCloudSkills: async () =>
-      (await listInstalledSkills()).filter((s) => s.source === "managed"),
+      (await listInstalledSkills()).filter((s) => s.installMeta !== null),
     deleteSkill: async (skillId) => {
       const result = await executeDeleteCloudSkill(
         { skill_id: skillId },
