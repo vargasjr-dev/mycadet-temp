@@ -21,6 +21,7 @@ import {
   getWorkspacePromptPath,
 } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
 import { cleanupBootstrapFiles } from "./bootstrap-cleanup.js";
 import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "./cache-boundary.js";
@@ -89,13 +90,11 @@ function hasStandardConversations(): boolean {
         return false;
       }
       try {
-        const meta = JSON.parse(
+        const meta: unknown = JSON.parse(
           readFileSync(join(convDir, entry.name, "meta.json"), "utf-8"),
-        ) as { type?: unknown };
-        return (
-          typeof meta.type !== "string" ||
-          !HIDDEN_CONVERSATION_TYPES.has(meta.type)
         );
+        const type = getObjectProperty(meta, "type");
+        return typeof type !== "string" || !HIDDEN_CONVERSATION_TYPES.has(type);
       } catch {
         return true;
       }

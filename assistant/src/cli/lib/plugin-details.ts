@@ -307,7 +307,10 @@ async function readRemotePlugin(
   source: PluginMatchSource,
   fetchFn: FetchLike,
 ): Promise<RemotePlugin> {
-  const [owner, repo] = source.repo.split("/", 2) as [string, string];
+  const [owner, repo] = source.repo.split("/", 2);
+  if (!owner || !repo) {
+    return { manifest: emptyManifest(), readme: null };
+  }
   const entries = await listDirSafe(
     owner,
     repo,

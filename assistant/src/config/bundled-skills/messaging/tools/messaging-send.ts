@@ -57,12 +57,19 @@ export async function run(
 ): Promise<ToolExecutionResult> {
   const platform =
     typeof input.platform === "string" ? input.platform : undefined;
-  const conversationId = input.conversation_id as string;
-  const text = input.text as string;
+  const conversationId =
+    typeof input.conversation_id === "string"
+      ? input.conversation_id
+      : undefined;
+  const text = typeof input.text === "string" ? input.text : undefined;
   const subject = typeof input.subject === "string" ? input.subject : undefined;
   const inReplyTo =
     typeof input.in_reply_to === "string" ? input.in_reply_to : undefined;
-  const attachmentPaths = input.attachment_paths as string[] | undefined;
+  const attachmentPaths = Array.isArray(input.attachment_paths)
+    ? input.attachment_paths.filter(
+        (candidate): candidate is string => typeof candidate === "string",
+      )
+    : undefined;
   const threadId =
     typeof input.thread_id === "string" ? input.thread_id : undefined;
 

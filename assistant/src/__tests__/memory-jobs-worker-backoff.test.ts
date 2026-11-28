@@ -58,13 +58,21 @@ describe("memory jobs worker adaptive poll interval", () => {
     // Collect pending timer callbacks so we can fire them manually
     const pendingCallbacks: Array<() => void> = [];
 
-    globalThis.setTimeout = ((fn: () => void, delay?: number) => {
-      if (delay !== undefined && delay >= POLL_INTERVAL_MIN_MS) {
-        timeoutDelays.push(delay);
-        pendingCallbacks.push(fn);
-      }
-      return 999 as unknown as ReturnType<typeof setTimeout>;
-    }) as typeof setTimeout;
+    const timerHandle = originalSetTimeout(() => {}, 0);
+    originalClearTimeout(timerHandle);
+    globalThis.setTimeout = new Proxy(originalSetTimeout, {
+      apply(
+        _target,
+        _receiver,
+        [fn, delay, ...args]: Parameters<typeof setTimeout>,
+      ) {
+        if (delay !== undefined && delay >= POLL_INTERVAL_MIN_MS) {
+          timeoutDelays.push(delay);
+          pendingCallbacks.push(() => fn(...args));
+        }
+        return timerHandle;
+      },
+    });
     globalThis.clearTimeout = () => {};
 
     try {

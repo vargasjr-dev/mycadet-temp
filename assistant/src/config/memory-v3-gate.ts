@@ -1,4 +1,9 @@
-import type { AssistantConfig } from "./schema.js";
+/** The optional configuration fields read by the memory tier gates. */
+export interface MemoryGateConfig {
+  memory?: ConceptPageMemoryGateConfig & {
+    retrospective?: { skillImprovement?: boolean };
+  };
+}
 
 /**
  * Whether memory as a whole is on — the user-facing master switch. Memory is
@@ -8,9 +13,7 @@ import type { AssistantConfig } from "./schema.js";
  * `memory` slice, so callers holding only the plugin-resolved slice (e.g. the
  * memory plugin's `getMemoryConfig()`) can gate without the full config.
  */
-export function isMemoryEnabled(
-  config: Pick<AssistantConfig, "memory">,
-): boolean {
+export function isMemoryEnabled(config: MemoryGateConfig): boolean {
   return config.memory?.enabled !== false;
 }
 
@@ -29,9 +32,7 @@ export function isMemoryEnabled(
  * the two agree on every tier EXCEPT memory-off, where the bare substrate
  * check reports "v1" and would keep v1 running.
  */
-export function isMemoryV1Active(
-  config: Pick<AssistantConfig, "memory">,
-): boolean {
+export function isMemoryV1Active(config: MemoryGateConfig): boolean {
   return isMemoryEnabled(config) && !usesConceptPageMemory(config.memory);
 }
 
@@ -43,7 +44,7 @@ export function isMemoryV1Active(
  * ONLY correct way to ask "should v2 select this turn" — a direct
  * `memory.v2.enabled` read misbehaves under v3.
  */
-export function isV2InjectionEngineActive(config: AssistantConfig): boolean {
+export function isV2InjectionEngineActive(config: MemoryGateConfig): boolean {
   return (
     isMemoryEnabled(config) &&
     config.memory?.v2?.enabled === true &&
@@ -58,7 +59,9 @@ export function isV2InjectionEngineActive(config: AssistantConfig): boolean {
  * explicit opt-out suppresses concept-page reconcile work even where the
  * default would allow it.
  */
-export function isMemoryV2ExplicitlyDisabled(config: AssistantConfig): boolean {
+export function isMemoryV2ExplicitlyDisabled(
+  config: MemoryGateConfig,
+): boolean {
   return config.memory?.v2?.enabled === false;
 }
 
@@ -68,7 +71,7 @@ export function isMemoryV2ExplicitlyDisabled(config: AssistantConfig): boolean {
  * assistants are switched on at creation via a workspace migration, while
  * existing assistants stay on v2 until the value is set explicitly.
  */
-export function isMemoryV3Live(config: AssistantConfig): boolean {
+export function isMemoryV3Live(config: MemoryGateConfig): boolean {
   return config.memory?.v3?.live === true;
 }
 
@@ -90,7 +93,7 @@ export function isMemoryV3Live(config: AssistantConfig): boolean {
  * Ask {@link isSkillImprovementActive} for it so an operator can stop managed
  * skill authoring without turning off ordinary retrospective memory capture.
  */
-export function isV3TierActive(config: AssistantConfig): boolean {
+export function isV3TierActive(config: MemoryGateConfig): boolean {
   return isMemoryEnabled(config) && isMemoryV3Live(config);
 }
 
@@ -100,7 +103,7 @@ export function isV3TierActive(config: AssistantConfig): boolean {
  * substrate, and it honors the retrospective-specific opt-out without
  * disabling ordinary retrospective fact retention.
  */
-export function isSkillImprovementActive(config: AssistantConfig): boolean {
+export function isSkillImprovementActive(config: MemoryGateConfig): boolean {
   return (
     isV3TierActive(config) &&
     config.memory?.retrospective?.skillImprovement !== false

@@ -249,12 +249,9 @@ function replaceInferenceProfileConfig(
   }
   const fragmentTopLevel = { ...fragment };
   delete fragmentTopLevel.contextWindow;
-  profiles[name] = { ...nextProfile, ...fragmentTopLevel };
-  mergeInferenceProfileContextWindow(
-    existingProfile,
-    fragment,
-    profiles[name] as Record<string, unknown>,
-  );
+  const updatedProfile = { ...nextProfile, ...fragmentTopLevel };
+  profiles[name] = updatedProfile;
+  mergeInferenceProfileContextWindow(existingProfile, fragment, updatedProfile);
 }
 
 function attachEstimatedCost(summary: LlmContextSummary): LlmContextSummary {

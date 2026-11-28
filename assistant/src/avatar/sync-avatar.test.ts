@@ -814,20 +814,27 @@ describe("syncAvatarToCloud", () => {
   test("arms an unref'd timer that re-uploads at the TTL without a caller", async () => {
     const armed: Array<{ delay: number; fire: () => void }> = [];
     const realSetTimeout = globalThis.setTimeout;
-    const spy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      fn: () => void,
-      delay?: number,
-    ) => {
-      if (
-        delay !== undefined &&
-        delay > AVATAR_SYNC_KEY_TTL_MS - 1000 &&
-        delay <= AVATAR_SYNC_KEY_TTL_MS
-      ) {
-        armed.push({ delay, fire: fn });
-        return { unref: () => undefined } as unknown as NodeJS.Timeout;
-      }
-      return realSetTimeout(fn, delay);
-    }) as typeof setTimeout);
+    const handle = realSetTimeout(() => {}, 0);
+    clearTimeout(handle);
+    const spy = spyOn(globalThis, "setTimeout").mockImplementation(
+      new Proxy(realSetTimeout, {
+        apply(
+          _target,
+          _receiver,
+          [fn, delay, ...args]: Parameters<typeof setTimeout>,
+        ) {
+          if (
+            delay !== undefined &&
+            delay > AVATAR_SYNC_KEY_TTL_MS - 1000 &&
+            delay <= AVATAR_SYNC_KEY_TTL_MS
+          ) {
+            armed.push({ delay, fire: () => fn(...args) });
+            return handle;
+          }
+          return realSetTimeout(fn, delay, ...args);
+        },
+      }),
+    );
     try {
       syncAvatarToCloud();
       await settle();

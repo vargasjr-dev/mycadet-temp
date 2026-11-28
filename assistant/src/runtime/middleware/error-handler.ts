@@ -5,7 +5,6 @@
 import { mapGatewayIpcConnectError } from "../../ipc/gateway-ipc-errors.js";
 import { ConfigError, ProviderNotConfiguredError } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
-import type { HttpErrorCode } from "../http-errors.js";
 import { httpError } from "../http-errors.js";
 import { RouteError } from "../routes/errors.js";
 
@@ -39,7 +38,7 @@ export async function withErrorHandling(
     if (mapped instanceof RouteError) {
       log.warn({ err: mapped, endpoint }, "Runtime HTTP route error");
       return httpError(
-        mapped.code as HttpErrorCode,
+        mapped.code,
         mapped.message,
         mapped.statusCode,
         mapped.details,

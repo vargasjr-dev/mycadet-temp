@@ -10,38 +10,43 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { z } from "zod";
+
 import { getLogger } from "../util/logger.js";
+import { isPlainObject } from "../util/object.js";
 
 const log = getLogger("install-meta");
 
 // ─── SkillInstallMeta type ──────────────────────────────────────────────────
 
-export interface SkillInstallMeta {
-  origin: "cadet" | "clawhub" | "skillssh" | "custom";
-  installedAt: string; // ISO 8601
-  installedBy?: string; // actorPrincipalId from auth context (identifies who initiated the install)
-  backfilledBy?: string; // set by migration that backfilled this file (e.g. "migration-026")
-  version?: string; // semver if known
-  slug?: string; // registry slug
-  sourceRepo?: string; // GitHub repo (e.g. "vercel-labs/agent-skills")
-  contentHash?: string; // SHA-256 content hash (v2:hex format)
+const skillInstallMetaSchema = z.looseObject({
+  origin: z.enum(["cadet", "clawhub", "skillssh", "custom"]),
+  installedAt: z.string(), // ISO 8601
+  installedBy: z.string().optional(), // actorPrincipalId from auth context (identifies who initiated the install)
+  backfilledBy: z.string().optional(), // set by migration that backfilled this file (e.g. "migration-026")
+  version: z.string().optional(), // semver if known
+  slug: z.string().optional(), // registry slug
+  sourceRepo: z.string().optional(), // GitHub repo (e.g. "vercel-labs/agent-skills")
+  contentHash: z.string().optional(), // SHA-256 content hash (v2:hex format)
   // Authorship provenance. Drives prune protection: only "assistant"-authored
   // skills are eligible for the usage-based prune; "user" and untagged skills
   // are protected. Set by install/scaffold callers, never defaulted here.
-  author?: "assistant" | "user";
+  author: z.enum(["assistant", "user"]).optional(),
   // Conversation whose trace the retrospective distilled this skill from (the
   // fork's parent). The durable lineage record for retrospective-authored
   // skills.
-  sourceConversationId?: string;
+  sourceConversationId: z.string().optional(),
   // Retrospective background (fork) conversation that authored this skill.
   // That conversation is GC'd once superseded, so this id is a debugging
   // breadcrumb only — `sourceConversationId` is the durable lineage.
-  retrospectiveConversationId?: string;
+  retrospectiveConversationId: z.string().optional(),
   // Day-granularity stamp of the last time the skill was loaded (ISO 8601).
   // Stamped by `touchSkillLastUsed` on the cloud-skill activation path; the
   // usage-based prune reads its date portion as the last-used signal.
-  lastUsedAt?: string;
-}
+  lastUsedAt: z.string().optional(),
+});
+
+export type SkillInstallMeta = z.infer<typeof skillInstallMetaSchema>;
 
 // ─── Atomic write helper ────────────────────────────────────────────────────
 
@@ -90,7 +95,9 @@ export function readInstallMeta(skillDir: string): SkillInstallMeta | null {
   const metaPath = join(skillDir, INSTALL_META_FILENAME);
   if (existsSync(metaPath)) {
     try {
-      return JSON.parse(readFileSync(metaPath, "utf-8")) as SkillInstallMeta;
+      return skillInstallMetaSchema.parse(
+        JSON.parse(readFileSync(metaPath, "utf-8")),
+      );
     } catch {
       // Malformed install-meta.json (partial write, manual edit, etc.) —
       // fall through to the legacy version.json path so we don't lose
@@ -105,11 +112,8 @@ export function readInstallMeta(skillDir: string): SkillInstallMeta | null {
   }
 
   try {
-    const raw = JSON.parse(readFileSync(legacyPath, "utf-8")) as Record<
-      string,
-      unknown
-    >;
-    return inferFromLegacyVersionJson(raw);
+    const raw: unknown = JSON.parse(readFileSync(legacyPath, "utf-8"));
+    return isPlainObject(raw) ? inferFromLegacyVersionJson(raw) : null;
   } catch {
     return null;
   }

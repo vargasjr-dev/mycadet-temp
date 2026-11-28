@@ -245,7 +245,8 @@ setBroadcastOverrideForTesting(
         .parse(frame.data)
         ?.metadata?.find((m) => m.label === "Source")?.value;
       probe.surfaceBroadcasts.push({
-        surfaceId: frame.surfaceId as string | undefined,
+        surfaceId:
+          typeof frame.surfaceId === "string" ? frame.surfaceId : undefined,
         source,
       });
       return;

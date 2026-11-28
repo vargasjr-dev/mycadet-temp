@@ -63,7 +63,10 @@ function servePageHeaders(): Record<string, string> {
 // ---------------------------------------------------------------------------
 
 function handleServePage({ pathParams }: RouteHandlerArgs): string {
-  const appId = pathParams?.appId as string;
+  const appId = pathParams?.appId;
+  if (appId === undefined) {
+    throw new NotFoundError("App not found");
+  }
   const source = resolveAppSource(appId);
   if (!source) {
     throw new NotFoundError("App not found");
@@ -316,7 +319,10 @@ async function handleShareApp({ rawBody }: RouteHandlerArgs): Promise<{
 }
 
 function handleDownloadSharedApp({ pathParams }: RouteHandlerArgs): Uint8Array {
-  const shareToken = pathParams?.token as string;
+  const shareToken = pathParams?.token;
+  if (shareToken === undefined) {
+    throw new NotFoundError("Shared app not found");
+  }
   const record = getSharedAppLink(shareToken);
   if (!record) {
     throw new NotFoundError("Shared app not found");
@@ -328,7 +334,10 @@ function handleDownloadSharedApp({ pathParams }: RouteHandlerArgs): Uint8Array {
 }
 
 function handleGetSharedAppMetadata({ pathParams }: RouteHandlerArgs) {
-  const shareToken = pathParams?.token as string;
+  const shareToken = pathParams?.token;
+  if (shareToken === undefined) {
+    throw new NotFoundError("Shared app not found");
+  }
   const record = getSharedAppLink(shareToken);
   if (!record) {
     throw new NotFoundError("Shared app not found");
@@ -364,7 +373,10 @@ function handleGetSharedAppMetadata({ pathParams }: RouteHandlerArgs) {
 }
 
 function handleDeleteSharedApp({ pathParams }: RouteHandlerArgs) {
-  const shareToken = pathParams?.token as string;
+  const shareToken = pathParams?.token;
+  if (shareToken === undefined) {
+    throw new NotFoundError("Shared app not found");
+  }
   const deleted = deleteSharedAppLinkByToken(shareToken);
   if (!deleted) {
     throw new NotFoundError("Shared app not found");

@@ -212,7 +212,7 @@ registerHook("voice_config_update", (_name, input) => {
   // Coerce the value to the correct type before broadcasting, matching
   // the validation logic in the tool's execute method.
   const raw = input.value;
-  let coerced: string | boolean | number = raw as string;
+  let coerced = raw;
   if (setting === "conversation_timeout") {
     coerced = typeof raw === "number" ? raw : Number(raw);
   } else if (setting === "tts_voice_id" && typeof raw === "string") {
@@ -221,6 +221,13 @@ registerHook("voice_config_update", (_name, input) => {
     coerced = raw.trim();
   } else if (setting === "tts_provider" && typeof raw === "string") {
     coerced = raw.trim();
+  }
+  if (
+    typeof coerced !== "string" &&
+    typeof coerced !== "boolean" &&
+    typeof coerced !== "number"
+  ) {
+    return;
   }
   broadcastMessage({
     type: "client_settings_update",

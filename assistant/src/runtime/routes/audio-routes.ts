@@ -19,7 +19,7 @@ import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
  * returns a Uint8Array. For in-progress streaming entries, returns a
  * ReadableStream<Uint8Array>.
  */
-function handleGetAudio({
+export function handleGetAudio({
   pathParams,
 }: RouteHandlerArgs): Uint8Array | ReadableStream<Uint8Array> {
   const audioId = pathParams?.audioId;

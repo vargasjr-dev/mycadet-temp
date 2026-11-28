@@ -33,6 +33,7 @@ import type { Message, Provider, ProviderResponse } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { z } from "zod";
 
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
 import type { PageIndexEntry } from "../../substrate/page-index.js";
@@ -190,7 +191,7 @@ async function buildLanes(): Promise<{
   return { sectionIndex, needle, edgeGraph };
 }
 
-const config = {} as never;
+const config = AssistantConfigSchema.parse({});
 const CONV = "conv-xyz";
 
 function makeTurn(

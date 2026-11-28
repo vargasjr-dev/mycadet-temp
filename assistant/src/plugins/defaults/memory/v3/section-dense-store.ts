@@ -760,10 +760,10 @@ export async function listSectionArticles(
       }
     }
     const next = result.next_page_offset;
-    if (next == null) {
+    if (typeof next !== "string" && typeof next !== "number") {
       break;
     }
-    offset = typeof next === "string" ? next : (next as number);
+    offset = next;
   }
 
   return [...articles];

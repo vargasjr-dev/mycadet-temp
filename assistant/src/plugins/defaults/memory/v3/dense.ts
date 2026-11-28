@@ -17,6 +17,7 @@
 
 import { AssistantConfig } from "../../../../config/schema.js";
 import { isEmbeddingDimensionAvailable } from "../../../../persistence/embeddings/embedding-backend.js";
+import { getObjectProperty } from "../../../../util/object.js";
 import { embedWithBackend } from "../embeddings.js";
 import { getLogger } from "../logging.js";
 import {
@@ -114,12 +115,8 @@ export async function denseLaneScored(
   const seen = new Set<Slug>();
   const hits: DenseHitScored[] = [];
   for (const point of points) {
-    const payload = point.payload as
-      | { article?: unknown; ordinal?: unknown }
-      | null
-      | undefined;
-    const article = payload?.article;
-    const ordinal = payload?.ordinal;
+    const article = getObjectProperty(point.payload, "article");
+    const ordinal = getObjectProperty(point.payload, "ordinal");
     if (typeof article !== "string" || typeof ordinal !== "number") {
       continue;
     }

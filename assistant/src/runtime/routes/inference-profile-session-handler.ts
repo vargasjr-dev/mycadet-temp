@@ -11,7 +11,6 @@
  * route equivalents delegate to these functions rather than duplicating the
  * logic.
  */
-
 import { randomUUID } from "node:crypto";
 
 import { getUserSelectableProfilesForProvider } from "../../config/default-profile-catalog.js";
@@ -32,6 +31,7 @@ import {
   computeProfileAvailability,
   isUnavailable,
 } from "../../providers/inference/connection-availability.js";
+import { isPlainObject } from "../../util/object.js";
 import { publishConversationInferenceProfileChanged } from "../sync/resource-sync-events.js";
 import { BadRequestError, NotFoundError } from "./errors.js";
 import { describeUnavailableProfile } from "./inference-profile-availability-guard.js";
@@ -165,8 +165,11 @@ export async function setInferenceProfileSession({
   }
 
   const selectable: Record<string, unknown> = profiles;
-  const selected = selectable[profile] as Record<string, unknown>;
-  if (!profileSupportsTextGeneration(selected, selectable)) {
+  const selected = selectable[profile];
+  if (
+    !isPlainObject(selected) ||
+    !profileSupportsTextGeneration(selected, selectable)
+  ) {
     throw new BadRequestError(nonTextConversationProfileMessage(profile));
   }
 

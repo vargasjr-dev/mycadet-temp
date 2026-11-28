@@ -30,22 +30,19 @@ export type InputValidationResult =
   | InputValidationSuccess
   | InputValidationFailure;
 
-type SupportedType =
-  | "string"
-  | "number"
-  | "integer"
-  | "boolean"
-  | "array"
-  | "object";
-
-const SUPPORTED_TYPES: ReadonlySet<string> = new Set([
+const SUPPORTED_TYPES = [
   "string",
   "number",
   "integer",
   "boolean",
   "array",
   "object",
-]);
+] as const;
+type SupportedType = (typeof SUPPORTED_TYPES)[number];
+
+function isSupportedType(value: unknown): value is SupportedType {
+  return SUPPORTED_TYPES.some((type) => type === value);
+}
 
 function matchesType(value: unknown, type: SupportedType): boolean {
   switch (type) {
@@ -406,8 +403,8 @@ function validateObjectInput(
     if (Array.isArray(declaredType)) {
       continue;
     }
-    if (typeof declaredType === "string" && SUPPORTED_TYPES.has(declaredType)) {
-      const type = declaredType as SupportedType;
+    if (isSupportedType(declaredType)) {
+      const type = declaredType;
       if (
         type === "array" &&
         (typeof value === "string" || isPlainObject(value))
@@ -450,21 +447,17 @@ function validateObjectInput(
       }
 
       // 2b. Array items.type — per-element check.
-      if (type === "array" && isPlainObject(rawSubSchema.items)) {
-        const itemType = rawSubSchema.items.type;
-        if (
-          typeof itemType === "string" &&
-          SUPPORTED_TYPES.has(itemType) &&
-          Array.isArray(value)
-        ) {
-          const itemTypeName = itemType as SupportedType;
+      const itemSchema = rawSubSchema.items;
+      if (type === "array" && isPlainObject(itemSchema)) {
+        const itemType = itemSchema.type;
+        if (isSupportedType(itemType) && Array.isArray(value)) {
+          const itemTypeName = itemType;
           value.forEach((element, index) => {
             if (!matchesType(element, itemTypeName)) {
               errors.push(
                 `${key}[${index}] must be ${typeArticle(itemTypeName)} ${itemTypeName}`,
               );
             } else if (itemTypeName === "object" && isPlainObject(element)) {
-              const itemSchema = rawSubSchema.items as Record<string, unknown>;
               const nested = validateObjectInput(
                 element,
                 itemSchema,

@@ -342,7 +342,13 @@ mock.module("../../daemon/identity-helpers.js", () => ({
 }));
 
 // Conversation persistence (used by callee verification code posting).
-const mockAddMessage = jest.fn(async () => ({}));
+const mockAddMessage = jest.fn(
+  async (
+    ..._args: Parameters<
+      typeof import("../../persistence/conversation-crud.js").addMessage
+    >
+  ) => ({}),
+);
 mock.module("../../persistence/conversation-crud.js", () => ({
   addMessage: mockAddMessage,
 }));
@@ -436,6 +442,7 @@ mock.module("../access-request-wait.js", () => ({
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
 
 import { revokeScopedApprovalGrantsForContext } from "../../approvals/scoped-approval-grants.js";
+import { getObjectProperty } from "../../util/object.js";
 import { postPointerMessageSafe } from "../call-pointer-messages.js";
 import { routeSetup } from "../call-setup-router.js";
 import { speakSystemPrompt } from "../call-speech-output.js";
@@ -473,7 +480,7 @@ function createMockWs() {
         closeCode = code;
         closeReason = reason;
       },
-    } as unknown as import("bun").ServerWebSocket<unknown>,
+    },
     get sent() {
       return sent;
     },
@@ -2190,11 +2197,11 @@ describe("setup flows over the media-stream transport", () => {
     session: MediaStreamCallSession,
     text: string,
   ): void {
-    (
-      session as unknown as {
-        handleTranscriptFinal(text: string, durationMs: number): void;
-      }
-    ).handleTranscriptFinal(text, 500);
+    const callback = getObjectProperty(session, "handleTranscriptFinal");
+    if (typeof callback !== "function") {
+      throw new Error("Expected the transcript callback");
+    }
+    callback.call(session, text, 500);
   }
 
   /**
@@ -2202,9 +2209,11 @@ describe("setup flows over the media-stream transport", () => {
    * onTranscriptPartial callback wiring.
    */
   function deliverPartial(session: MediaStreamCallSession, text: string): void {
-    (
-      session as unknown as { handleTranscriptPartial(text: string): void }
-    ).handleTranscriptPartial(text);
+    const callback = getObjectProperty(session, "handleTranscriptPartial");
+    if (typeof callback !== "function") {
+      throw new Error("Expected the transcript callback");
+    }
+    callback.call(session, text);
   }
 
   function enterDigits(session: MediaStreamCallSession, digits: string): void {
@@ -2406,8 +2415,7 @@ describe("setup flows over the media-stream transport", () => {
 
       // The generated code is posted to the initiating conversation.
       expect(mockAddMessage).toHaveBeenCalledTimes(1);
-      const [postedConvId, , postedContent] = mockAddMessage.mock
-        .calls[0] as unknown as [string, string, string];
+      const [postedConvId, , postedContent] = mockAddMessage.mock.calls[0];
       expect(postedConvId).toBe("conv-origin-2");
       const code = /: (\d{4})/.exec(postedContent)?.[1];
       expect(code).toBeDefined();

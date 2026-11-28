@@ -1,7 +1,8 @@
+import { z } from "zod";
+
 /**
  * Thin wrapper around the Vercel REST API for deploying static HTML pages.
  */
-
 import { ProviderError } from "../util/errors.js";
 
 export async function deployHtmlToVercel(opts: {
@@ -46,7 +47,9 @@ export async function deployHtmlToVercel(opts: {
     );
   }
 
-  const data = (await response.json()) as { url: string; id: string };
+  const data = z
+    .object({ url: z.string(), id: z.string() })
+    .parse(await response.json());
 
   let publicUrl = data.url;
   if (!publicUrl.startsWith("https://")) {

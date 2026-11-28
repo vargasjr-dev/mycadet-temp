@@ -1080,15 +1080,9 @@ describe("getSkillCapability", () => {
     expect(first).not.toBeNull();
     const originalContent = first!.content;
 
-    // Frozen entries throw in strict mode when mutated; suppress so we can
-    // prove cache invariance even if a future refactor swaps freeze for a
-    // plain clone.
-    try {
-      (first as unknown as { id: string }).id = "tampered";
-      (first as unknown as { content: string }).content = "tampered";
-    } catch {
-      // expected under Object.freeze
-    }
+    // Attempt mutation without throwing if the cached entry is frozen.
+    Reflect.set(first!, "id", "tampered");
+    Reflect.set(first!, "content", "tampered");
 
     const second = getSkillCapability("example-skill-a");
     expect(second?.id).toBe("example-skill-a");

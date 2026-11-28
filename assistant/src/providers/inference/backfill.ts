@@ -68,8 +68,8 @@ export function runProviderConnectionsBackfill(db: DrizzleDb): void {
 
 function backfillConfigProfiles(db: DrizzleDb): void {
   const raw = loadRawConfig();
-  const llm = raw.llm as Record<string, unknown> | undefined;
-  if (!llm) {
+  const llm = raw.llm;
+  if (!isObjectRecord(llm)) {
     return;
   }
 

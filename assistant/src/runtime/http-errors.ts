@@ -17,8 +17,7 @@
  *
  * The union covers every `code` a `RouteError` subclass in `routes/errors.ts`
  * carries. A `RouteError` constructed directly names its own code, which the
- * union need not hold, so the adapters' `err.code as HttpErrorCode` is a wire
- * passthrough rather than a checked narrowing.
+ * union need not hold. The HTTP response can carry either.
  */
 export type HttpErrorCode =
   | "BAD_REQUEST"
@@ -62,7 +61,7 @@ export type HttpErrorCode =
  */
 export interface HttpErrorResponse {
   error: {
-    code: HttpErrorCode;
+    code: string;
     message: string;
     details?: unknown;
   };
@@ -73,13 +72,13 @@ export interface HttpErrorResponse {
 /**
  * Build a `Response` with the standard error envelope.
  *
- * @param code    A stable, machine-readable error code from `HttpErrorCode`.
+ * @param code    A stable, machine-readable error code.
  * @param message A human-readable description of the error.
  * @param status  The HTTP status code (e.g. 400, 404, 500).
  * @param details Optional structured payload with endpoint-specific context.
  */
 export function httpError(
-  code: HttpErrorCode,
+  code: string,
   message: string,
   status: number,
   details?: unknown,

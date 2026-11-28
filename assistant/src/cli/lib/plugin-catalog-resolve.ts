@@ -55,7 +55,10 @@ export function resolveSourceFromMatch(
         parsed.error.issues.map((i) => i.message).join("; "),
     );
   }
-  const [owner, repoName] = parsed.data.repo.split("/", 2) as [string, string];
+  const [owner, repoName] = parsed.data.repo.split("/", 2);
+  if (!owner || !repoName) {
+    throw new Error(`Invalid catalog repository: ${parsed.data.repo}`);
+  }
   return {
     kind: "github",
     owner,

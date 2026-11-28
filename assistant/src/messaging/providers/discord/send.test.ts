@@ -315,7 +315,10 @@ describe("sendDiscordReply", () => {
     }
 
     expect(thrown).toBeInstanceOf(DiscordPartialSendError);
-    const partial = thrown as InstanceType<typeof DiscordPartialSendError>;
+    if (!(thrown instanceof DiscordPartialSendError)) {
+      throw thrown;
+    }
+    const partial = thrown;
     expect(partial.chunksSent).toBe(1);
     expect(partial.lastMessageId).toBe("msg-1");
     // The delivered prefix plus the named remainder reassemble the text, so
@@ -355,8 +358,14 @@ describe("sendDiscordReply", () => {
 describe("sendDiscordAttachments", () => {
   test("uploads with the documented multipart form", async () => {
     const result = await sendDiscordAttachments({ channelId: "C1" }, [
-      { id: "a1", filename: "report.pdf", mimeType: "application/pdf" },
-    ] as never);
+      {
+        id: "a1",
+        filename: "report.pdf",
+        mimeType: "application/pdf",
+        sizeBytes: 1,
+        kind: "file",
+      },
+    ]);
 
     expect(result.allFailed).toBe(false);
     expect(calls).toHaveLength(1);
@@ -364,8 +373,10 @@ describe("sendDiscordAttachments", () => {
       "https://discord.com/api/v10/channels/C1/messages",
     );
 
-    const form = calls[0].body as FormData;
-    expect(form).toBeInstanceOf(FormData);
+    const form = calls[0].body;
+    if (!(form instanceof FormData)) {
+      throw new Error("Expected a multipart form");
+    }
     // Files ride as `files[n]`, with the JSON body moved to `payload_json`
     // and each file declared in `attachments` keyed by the same n.
     expect(form.get("files[0]")).toBeInstanceOf(Blob);
@@ -381,8 +392,14 @@ describe("sendDiscordAttachments", () => {
     stubFetch(413, { message: "Request entity too large" });
 
     const result = await sendDiscordAttachments({ channelId: "C1" }, [
-      { id: "a1", filename: "huge.bin" },
-    ] as never);
+      {
+        id: "a1",
+        filename: "huge.bin",
+        mimeType: "application/octet-stream",
+        sizeBytes: 1,
+        kind: "file",
+      },
+    ]);
 
     expect(result.allFailed).toBe(true);
     expect(result.failureCount).toBe(1);
@@ -397,8 +414,14 @@ describe("sendDiscordAttachments", () => {
 
   test("does not upload an attachment whose content is gone", async () => {
     const result = await sendDiscordAttachments({ channelId: "C1" }, [
-      { id: "missing", filename: "ghost.txt" },
-    ] as never);
+      {
+        id: "missing",
+        filename: "ghost.txt",
+        mimeType: "text/plain",
+        sizeBytes: 1,
+        kind: "file",
+      },
+    ]);
 
     expect(result.allFailed).toBe(true);
     // Only the failure notice, never a zero-byte upload.

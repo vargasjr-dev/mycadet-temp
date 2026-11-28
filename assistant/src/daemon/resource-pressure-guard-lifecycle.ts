@@ -47,7 +47,7 @@ export function startResourcePressureGuardForLifecycle(): void {
         runDeferredResourcePressureStartupSample,
         0,
       );
-      (resourcePressureStartupSampleTimer as { unref?: () => void }).unref?.();
+      resourcePressureStartupSampleTimer.unref?.();
     }
   } catch (err) {
     log.warn(

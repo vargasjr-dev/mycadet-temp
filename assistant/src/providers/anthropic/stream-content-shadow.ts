@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isObjectRecord } from "../../util/object.js";
 import { isPlainObject } from "../../util/object.js";
 import {
   UNPARSEABLE_TOOL_ARGS_SDK_MESSAGE,
@@ -104,7 +105,7 @@ export class StreamContentShadow {
           return;
         }
         const block = this.blocks.get(event.index);
-        const delta = event.delta as Record<string, unknown> | undefined;
+        const delta = isObjectRecord(event.delta) ? event.delta : undefined;
         if (block === undefined || delta === undefined) {
           return;
         }

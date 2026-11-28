@@ -257,7 +257,7 @@ export function startResourcePressureGuard(): ResourcePressureStatus {
     state.timer = setInterval(() => {
       evaluateResourcePressureNow();
     }, RESOURCE_PRESSURE_SAMPLE_INTERVAL_MS);
-    (state.timer as { unref?: () => void }).unref?.();
+    state.timer.unref?.();
   }
 
   return cloneStatus(state.status);

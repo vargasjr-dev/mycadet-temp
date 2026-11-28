@@ -4,7 +4,6 @@
  * All routes served by both the HTTP server and the IPC server via the
  * shared ROUTES array.
  */
-
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
@@ -24,6 +23,7 @@ import { resolveScheduleTimezone } from "../../schedule/schedule-timezone.js";
 import { readTextFileSync } from "../../util/fs.js";
 import { getWorkspacePromptPath } from "../../util/layout.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, InternalError } from "./errors.js";
 import {
@@ -307,7 +307,7 @@ export const ROUTES: RouteDefinition[] = [
       try {
         const raw = loadRawConfig();
         raw.heartbeat = {
-          ...((raw.heartbeat as Record<string, unknown>) ?? {}),
+          ...(isObjectRecord(raw.heartbeat) ? raw.heartbeat : {}),
           ...heartbeatPatch,
         };
         saveRawConfig(raw);

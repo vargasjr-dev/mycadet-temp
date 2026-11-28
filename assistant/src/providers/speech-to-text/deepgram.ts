@@ -1,4 +1,5 @@
 import type { SttTranscribeResult } from "../../stt/types.js";
+import { getObjectProperty } from "../../util/object.js";
 
 const DEFAULT_BASE_URL = "https://api.deepgram.com";
 const DEFAULT_MODEL = "nova-2";
@@ -187,9 +188,19 @@ export class DeepgramProvider {
       );
     }
 
-    const result = (await response.json()) as DeepgramResponse;
-    const transcript =
-      result?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+    const result: unknown = await response.json();
+    const channels = getObjectProperty(
+      getObjectProperty(result, "results"),
+      "channels",
+    );
+    const alternatives = getObjectProperty(
+      getObjectProperty(channels, 0),
+      "alternatives",
+    );
+    const transcript = getObjectProperty(
+      getObjectProperty(alternatives, 0),
+      "transcript",
+    );
 
     return { text: typeof transcript === "string" ? transcript.trim() : "" };
   }
@@ -209,24 +220,4 @@ export class DeepgramProvider {
     }
     return `${this.baseUrl}/v1/listen?${params.toString()}`;
   }
-}
-
-// ---------------------------------------------------------------------------
-// Response shape (subset relevant to transcript extraction)
-// ---------------------------------------------------------------------------
-
-interface DeepgramAlternative {
-  transcript?: string;
-}
-
-interface DeepgramChannel {
-  alternatives?: DeepgramAlternative[];
-}
-
-interface DeepgramResults {
-  channels?: DeepgramChannel[];
-}
-
-interface DeepgramResponse {
-  results?: DeepgramResults;
 }

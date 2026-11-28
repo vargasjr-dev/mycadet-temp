@@ -109,10 +109,8 @@ export async function run(
     return { content: "system_prompt is required.", isError: true };
   }
 
-  const outputSchema = input.output_schema as
-    | Record<string, unknown>
-    | undefined;
-  if (!outputSchema) {
+  const outputSchema = input.output_schema;
+  if (!isObjectRecord(outputSchema) || Array.isArray(outputSchema)) {
     return { content: "output_schema is required.", isError: true };
   }
 

@@ -10,6 +10,7 @@ import { CadetCloudClient } from "../../cloud/client.js";
 import { getApexDomain } from "../../config/env.js";
 import { getConfig, setConfigSection } from "../../config/loader.js";
 import { getLogger } from "../../util/logger.js";
+import { getObjectProperty } from "../../util/object.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadRequestError, RouteError, UnauthorizedError } from "./errors.js";
 import { parseBody } from "./parse-body.js";
@@ -70,11 +71,9 @@ async function fetchDomains(
   );
 
   if (!response.ok) {
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
-    const detail = respBody.detail ?? `HTTP ${response.status}`;
+    const respBody: unknown = await response.json().catch(() => null);
+    const detail =
+      getObjectProperty(respBody, "detail") ?? `HTTP ${response.status}`;
     throw new RouteError(String(detail), "LIST_FAILED", response.status);
   }
 
@@ -122,22 +121,17 @@ async function handleDomainRegister({ body = {} }: RouteHandlerArgs) {
   );
 
   if (!response.ok) {
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
-    const firstFieldError = ["subdomain", "email_username"].reduce<
-      string | undefined
-    >(
-      (found, field) =>
-        found ??
-        (Array.isArray(respBody[field])
-          ? (respBody[field][0] as string)
-          : undefined),
-      undefined,
-    );
+    const respBody: unknown = await response.json().catch(() => null);
+    const firstFieldError = ["subdomain", "email_username"]
+      .map((field) => getObjectProperty(respBody, field))
+      .map((messages) =>
+        Array.isArray(messages) ? getObjectProperty(messages, 0) : undefined,
+      )
+      .find((error) => error != null);
     const detail =
-      respBody.detail ?? firstFieldError ?? `HTTP ${response.status}`;
+      getObjectProperty(respBody, "detail") ??
+      firstFieldError ??
+      `HTTP ${response.status}`;
     throw new BadRequestError(String(detail));
   }
 
@@ -212,11 +206,9 @@ async function handleDomainVerificationStatus({ body = {} }: RouteHandlerArgs) {
   );
 
   if (!response.ok) {
-    const respBody = (await response.json().catch(() => ({}))) as Record<
-      string,
-      unknown
-    >;
-    const detail = respBody.detail ?? `HTTP ${response.status}`;
+    const respBody: unknown = await response.json().catch(() => null);
+    const detail =
+      getObjectProperty(respBody, "detail") ?? `HTTP ${response.status}`;
     throw new RouteError(
       String(detail),
       "VERIFICATION_STATUS_FAILED",

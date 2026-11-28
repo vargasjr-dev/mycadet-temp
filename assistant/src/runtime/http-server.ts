@@ -66,7 +66,7 @@ import {
 } from "./auth/middleware.js";
 import { sweepFailedEvents } from "./channel-retry-sweep.js";
 import type { HostCaptureTarget } from "./host-observe.js";
-import { httpError, type HttpErrorCode } from "./http-errors.js";
+import { httpError } from "./http-errors.js";
 import { HttpRouter } from "./http-router.js";
 import type { RuntimeHttpServerOptions } from "./http-types.js";
 import {
@@ -83,7 +83,10 @@ import {
   TWILIO_WEBHOOK_RE,
   validateTwilioWebhook,
 } from "./middleware/twilio-validation.js";
-import { ROUTES as AUDIO_ROUTES } from "./routes/audio-routes.js";
+import {
+  handleGetAudio,
+  ROUTES as AUDIO_ROUTES,
+} from "./routes/audio-routes.js";
 import { RouteError } from "./routes/errors.js";
 import {
   startGuardianExpirySweep,
@@ -881,7 +884,7 @@ export class RuntimeHttpServer {
       const audioDef = AUDIO_ROUTES.find((r) => r.operationId === "audio_get")!;
       const args = { pathParams: { audioId: audioMatch[1] } };
       try {
-        const result = await audioDef.handler(args);
+        const result = handleGetAudio(args);
         const headers =
           typeof audioDef.responseHeaders === "function"
             ? audioDef.responseHeaders(args)
@@ -891,15 +894,18 @@ export class RuntimeHttpServer {
             headers,
           });
         }
-        return new Response(result as BodyInit, { headers });
+        const body =
+          result.buffer instanceof ArrayBuffer
+            ? new Uint8Array(
+                result.buffer,
+                result.byteOffset,
+                result.byteLength,
+              )
+            : result.slice();
+        return new Response(body, { headers });
       } catch (err) {
         if (err instanceof RouteError) {
-          return httpError(
-            err.code as HttpErrorCode,
-            err.message,
-            err.statusCode,
-            err.details,
-          );
+          return httpError(err.code, err.message, err.statusCode, err.details);
         }
         throw err;
       }

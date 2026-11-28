@@ -76,7 +76,12 @@ describe("service-contracts import discipline", () => {
       ).trim();
     } catch (err) {
       // Exit code 1 means no matches — happy path
-      if ((err as { status?: number }).status === 1) {
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "status" in err &&
+        err.status === 1
+      ) {
         return;
       }
       throw err;
@@ -144,7 +149,12 @@ describe("service-contracts import discipline", () => {
       ).trim();
     } catch (err) {
       // Exit code 1 means no matches — happy path
-      if ((err as { status?: number }).status === 1) {
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "status" in err &&
+        err.status === 1
+      ) {
         return;
       }
       throw err;

@@ -22,9 +22,10 @@ import { z } from "zod";
 import type { DrizzleDb } from "../../../../../persistence/db-connection.js";
 import { messages } from "../../../../../persistence/schema/index.js";
 import { memorySqliteOrNull } from "../../memory-db.js";
-import type {
-  MemoryV2ConceptRowRecord,
-  MemoryV2ConfigSnapshot,
+import {
+  type MemoryV2ConceptRowRecord,
+  type MemoryV2ConfigSnapshot,
+  parseActivationConcepts,
 } from "../activation-log-store.js";
 
 export interface OracleTurn {
@@ -131,7 +132,7 @@ export function extractOracleTurns(
     let concepts: MemoryV2ConceptRowRecord[];
     let loggedConfig: MemoryV2ConfigSnapshot;
     try {
-      concepts = JSON.parse(row.concepts_json) as MemoryV2ConceptRowRecord[];
+      concepts = parseActivationConcepts(row.concepts_json);
       loggedConfig = z
         .looseObject({
           d: z.number(),

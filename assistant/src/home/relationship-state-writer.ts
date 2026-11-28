@@ -16,9 +16,10 @@
  * points here catch every error and log a warning instead. Internal helpers use a narrow `safeRead` wrapper so
  * a missing or unreadable file degrades gracefully to an empty string.
  */
-
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { z } from "zod";
 
 import { getGuardianDelivery } from "../contacts/guardian-delivery-reader.js";
 import { listConnections } from "../oauth/oauth-store.js";
@@ -130,15 +131,26 @@ function readOnboardingSidecar(): OnboardingContext | null {
     if (!existsSync(path)) {
       return null;
     }
-    const parsed = JSON.parse(readFileSync(path, "utf-8")) as OnboardingContext;
-    if (
-      !parsed ||
-      !Array.isArray(parsed.tools) ||
-      !Array.isArray(parsed.tasks)
-    ) {
-      return null;
-    }
-    return parsed;
+    return z
+      .looseObject({
+        tools: z.array(z.string()),
+        tasks: z.array(z.string()),
+        tone: z.string().default(""),
+        userName: z.string().optional(),
+        occupation: z.string().optional(),
+        assistantName: z.string().optional(),
+        priorAssistants: z.array(z.string()).optional(),
+        googleConnected: z.boolean().optional(),
+        googleScopes: z.array(z.string()).optional(),
+        cohort: z.string().optional(),
+        websiteUrl: z.string().optional(),
+        contentSourceUrl: z.string().optional(),
+        bootstrapTemplate: z.string().optional(),
+        initialMessage: z.string().optional(),
+        skills: z.array(z.string()).optional(),
+        researchFindings: z.array(z.string()).optional(),
+      })
+      .parse(JSON.parse(readFileSync(path, "utf-8")));
   } catch (err) {
     log.warn({ err }, "Failed to read onboarding-context.json sidecar");
     return null;

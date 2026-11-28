@@ -1,3 +1,4 @@
+import { isObjectRecord } from "../../util/object.js";
 /**
  * Some OpenAI-compatible models (notably minimax-m3 served via Fireworks)
  * collapse nested *object*-typed tool arguments to `{}` during their
@@ -14,11 +15,6 @@
  * is gated to the affected providers so other models keep native object
  * passthrough.
  */
-
-interface ObjectSchemaLike {
-  type?: unknown;
-  properties?: Record<string, { type?: unknown; description?: string }>;
-}
 
 function isObjectTyped(prop: { type?: unknown }): boolean {
   if (prop?.type === "object") {
@@ -48,10 +44,10 @@ export interface CoercedToolSchema {
 export function coerceObjectParamsToJsonString(
   inputSchema: unknown,
 ): CoercedToolSchema {
-  const schema = inputSchema as ObjectSchemaLike | undefined;
-  if (!schema || schema.type !== "object" || !schema.properties) {
+  const schema = isObjectRecord(inputSchema) ? inputSchema : {};
+  if (schema.type !== "object" || !isObjectRecord(schema.properties)) {
     return {
-      parameters: (inputSchema as Record<string, unknown>) ?? {},
+      parameters: schema,
       objectKeys: [],
     };
   }
@@ -59,7 +55,7 @@ export function coerceObjectParamsToJsonString(
   const objectKeys: string[] = [];
   const properties: Record<string, unknown> = {};
   for (const [key, prop] of Object.entries(schema.properties)) {
-    if (isObjectTyped(prop)) {
+    if (isObjectRecord(prop) && isObjectTyped(prop)) {
       objectKeys.push(key);
       properties[key] = {
         type: "string",

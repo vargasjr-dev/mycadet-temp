@@ -7,6 +7,7 @@ import {
   type Document,
   DOMParser,
   type Element,
+  type Node,
   XMLSerializer,
 } from "@xmldom/xmldom";
 
@@ -89,7 +90,7 @@ function writeManagedConfig(
     for (const file of Array.from(
       document.getElementsByTagNameNS("*", "file"),
     )) {
-      if ((file.parentNode as Element | null)?.localName !== "menu") {
+      if (!isElement(file.parentNode) || file.parentNode.localName !== "menu") {
         continue;
       }
       const name = file.textContent?.trim();
@@ -127,7 +128,7 @@ function configureWorkspaceSections(document: Document): void {
   for (const menu of Array.from(document.getElementsByTagNameNS("*", "menu"))) {
     if (
       !menu.hasAttribute("id") &&
-      (menu.parentNode as Element | null)?.localName !== "action"
+      (!isElement(menu.parentNode) || menu.parentNode.localName !== "action")
     ) {
       child(menu, "manageDesktops").textContent = "no";
     }
@@ -181,12 +182,16 @@ function parseXml(contents: string, sourcePath: string): Document {
   return document;
 }
 
+function isElement(node: Node | null): node is Element {
+  return node?.nodeType === 1;
+}
+
 function xmlBase(element: Element): string {
   const ancestors: Element[] = [];
   for (
     let node: Element | null = element;
     node;
-    node = node.parentNode?.nodeType === 1 ? (node.parentNode as Element) : null
+    node = isElement(node.parentNode) ? node.parentNode : null
   ) {
     ancestors.unshift(node);
   }
@@ -202,8 +207,7 @@ function xmlBase(element: Element): string {
 
 function child(parent: Element, name: string): Element {
   const existing = Array.from(parent.childNodes).find(
-    (node): node is Element =>
-      node.nodeType === 1 && (node as Element).localName === name,
+    (node): node is Element => isElement(node) && node.localName === name,
   );
   if (existing) {
     return existing;

@@ -35,11 +35,11 @@ function makeMsg(
     role,
     content: resolveMessageContentBlocks(content),
     createdAt: Date.now(),
-    displayOrder: 0,
-    seen: 1,
+    clientMessageId: null,
+    finalized: 1,
     metadata: null,
     ...overrides,
-  } as MessageRow;
+  };
 }
 
 describe("isToolResultOnlyUserMessage", () => {

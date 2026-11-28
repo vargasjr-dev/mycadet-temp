@@ -9,8 +9,22 @@ import { randomUUID } from "node:crypto";
 import { readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { z } from "zod";
+
 import { ensureDir, pathExists } from "../util/fs.js";
 import { getWorkspaceDir } from "../util/layout.js";
+
+const draftSchema = z.looseObject({
+  id: z.string(),
+  platform: z.string(),
+  conversationId: z.string(),
+  text: z.string(),
+  threadId: z.string().optional(),
+  subject: z.string().optional(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+}) satisfies z.ZodType<Draft>;
 
 export interface Draft {
   id: string;
@@ -69,7 +83,7 @@ export function listDrafts(platform: string): Draft[] {
   for (const file of files) {
     try {
       const content = readFileSync(join(dir, file), "utf-8");
-      drafts.push(JSON.parse(content) as Draft);
+      drafts.push(draftSchema.parse(JSON.parse(content)));
     } catch {
       // Skip malformed files
     }

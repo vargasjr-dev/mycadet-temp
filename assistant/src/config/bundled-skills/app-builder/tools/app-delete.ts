@@ -10,5 +10,8 @@ export async function run(
   context: ToolContext,
 ): Promise<ToolExecutionResult> {
   throwIfCancelled(context);
-  return executeAppDelete({ app_id: input.app_id as string });
+  if (typeof input.app_id !== "string") {
+    return { content: "app_id must be a string.", isError: true };
+  }
+  return executeAppDelete({ app_id: input.app_id });
 }

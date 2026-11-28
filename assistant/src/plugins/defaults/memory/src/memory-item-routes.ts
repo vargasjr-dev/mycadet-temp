@@ -284,11 +284,7 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
     sourceConversations: z
       .array(z.string())
       .parse(JSON.parse(row.sourceConversations)),
-    sourceType: row.sourceType as
-      | "direct"
-      | "inferred"
-      | "observed"
-      | "told-by-other",
+    sourceType: row.sourceType,
     narrativeRole: row.narrativeRole,
     partOfStory: row.partOfStory,
     imageRefs: row.imageRefs

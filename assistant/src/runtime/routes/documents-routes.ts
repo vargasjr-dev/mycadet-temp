@@ -192,14 +192,7 @@ export const ROUTES: RouteDefinition[] = [
         content,
         wordCount,
         baseRevision,
-      } = (body ?? {}) as {
-        surfaceId?: string;
-        conversationId?: string;
-        title?: string;
-        content?: string;
-        wordCount?: number;
-        baseRevision?: number | null;
-      };
+      } = body ?? {};
 
       if (!surfaceId || typeof surfaceId !== "string") {
         throw new BadRequestError("surfaceId is required");
@@ -218,7 +211,9 @@ export const ROUTES: RouteDefinition[] = [
       }
       if (
         baseRevision != null &&
-        (!Number.isInteger(baseRevision) || baseRevision < 0)
+        (typeof baseRevision !== "number" ||
+          !Number.isInteger(baseRevision) ||
+          baseRevision < 0)
       ) {
         throw new BadRequestError(
           "baseRevision must be a non-negative integer",
@@ -271,10 +266,7 @@ export const ROUTES: RouteDefinition[] = [
     }),
     responseBody: documentPayloadSchema,
     handler: ({ body, headers }) => {
-      const { conversationId, title } = (body ?? {}) as {
-        conversationId?: string;
-        title?: string;
-      };
+      const { conversationId, title } = body ?? {};
       if (!conversationId || typeof conversationId !== "string") {
         throw new BadRequestError("conversationId is required");
       }
@@ -315,8 +307,8 @@ export const ROUTES: RouteDefinition[] = [
     }),
     responseBody: z.object({ success: z.literal(true) }),
     handler: ({ pathParams, body }) => {
-      const { conversationId } = (body ?? {}) as { conversationId?: string };
-      if (!conversationId) {
+      const { conversationId } = body ?? {};
+      if (typeof conversationId !== "string" || !conversationId) {
         throw new BadRequestError("conversationId is required");
       }
       const doc = getDocumentById(pathParams!.id);

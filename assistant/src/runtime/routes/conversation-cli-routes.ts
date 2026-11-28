@@ -24,6 +24,7 @@ import { listConversations } from "../../persistence/conversation-queries.js";
 import type { ConversationCreateType } from "../../persistence/conversation-types.js";
 import { getBindingByConversation } from "../../persistence/external-conversation-store.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { withSqliteRetry } from "../../util/sqlite-retry.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { BadGatewayError, BadRequestError, NotFoundError } from "./errors.js";
@@ -230,11 +231,10 @@ function isSlackDetachGatewayResponse(
   value: unknown,
 ): value is SlackDetachGatewayResponse {
   return (
-    value != null &&
-    typeof value === "object" &&
-    typeof (value as SlackDetachGatewayResponse).detached === "boolean" &&
-    typeof (value as SlackDetachGatewayResponse).channelId === "string" &&
-    typeof (value as SlackDetachGatewayResponse).threadTs === "string"
+    isObjectRecord(value) &&
+    typeof value.detached === "boolean" &&
+    typeof value.channelId === "string" &&
+    typeof value.threadTs === "string"
   );
 }
 

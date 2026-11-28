@@ -6,10 +6,7 @@
 
 import { z } from "zod";
 
-import {
-  type AttentionFilterState,
-  listConversationAttention,
-} from "../../persistence/conversation-attention-store.js";
+import { listConversationAttention } from "../../persistence/conversation-attention-store.js";
 import {
   getAssistantMessageIdsInTurn,
   getConversation,
@@ -73,14 +70,18 @@ function handleListConversationAttention({
       ? rawBefore
       : undefined;
 
-  if (!["seen", "unseen", "all"].includes(stateParam)) {
+  if (
+    stateParam !== "seen" &&
+    stateParam !== "unseen" &&
+    stateParam !== "all"
+  ) {
     throw new BadRequestError(
       "Invalid state parameter. Must be seen, unseen, or all.",
     );
   }
 
   const attentionStates = listConversationAttention({
-    state: stateParam as AttentionFilterState,
+    state: stateParam,
     sourceChannel: channel,
     source: sourceParam !== "all" ? sourceParam : undefined,
     limit: limit + 1,

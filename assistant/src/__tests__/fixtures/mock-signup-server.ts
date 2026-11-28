@@ -419,7 +419,11 @@ export function createMockSignupServer(): MockSignupServer {
         port: 0,
         fetch: handleRequest,
       });
-      const port = server.port as number;
+      const port = server.port;
+      if (port === undefined) {
+        server.stop(true);
+        throw new Error("Expected the mock signup server to bind a TCP port");
+      }
       return { port, url: `http://localhost:${port}` };
     },
 

@@ -3,18 +3,10 @@
  * the dedicated memory database unavailable, writes are best-effort no-ops
  * and reads return empty/zero results — nothing throws mid-turn.
  *
- * Unavailability is simulated by installing a connection with no underlying
- * sqlite client into the `memory` singleton slot, so `getMemorySqlite()`
- * resolves to null without mocking any module (module mocks would leak into
- * other test files in the same run).
  */
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import type { DrizzleDb } from "../../../../persistence/db-connection.js";
-import {
-  clearStoredDb,
-  setStoredDb,
-} from "../../../../persistence/db-singleton.js";
+import * as dbConnection from "../../../../persistence/db-connection.js";
 import {
   backfillMemoryRecallLogMessageId,
   getMemoryRecallLogByMessageIds,
@@ -37,12 +29,18 @@ import {
 // listPages returns [] for a workspace with no concepts directory.
 const WORKSPACE = "/tmp/memory-log-stores-degraded-nonexistent-workspace";
 
+let memorySqliteSpy: ReturnType<typeof mockUnavailableMemory>;
+
+function mockUnavailableMemory() {
+  return spyOn(dbConnection, "getMemorySqlite").mockReturnValue(null);
+}
+
 beforeEach(() => {
-  setStoredDb("memory", { $client: null } as unknown as DrizzleDb, () => {});
+  memorySqliteSpy = mockUnavailableMemory();
 });
 
 afterEach(() => {
-  clearStoredDb("memory");
+  memorySqliteSpy.mockRestore();
 });
 
 describe("memory log stores without a memory database", () => {
@@ -94,7 +92,7 @@ describe("memory log stores without a memory database", () => {
   });
 
   test("oracle extraction returns no turns", () => {
-    expect(extractOracleTurns({} as DrizzleDb)).toEqual([]);
+    expect(extractOracleTurns(dbConnection.getDb())).toEqual([]);
   });
 });
 

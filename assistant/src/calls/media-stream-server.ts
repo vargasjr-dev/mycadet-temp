@@ -42,7 +42,6 @@
  */
 
 import { GATEWAY_TUNNEL_LOST_WS_CLOSE_CODE } from "@mycadet/service-contracts/ingress";
-import type { ServerWebSocket } from "bun";
 
 import { revokeScopedApprovalGrantsForContext } from "../approvals/scoped-approval-grants.js";
 import { getAssistantName } from "../daemon/identity-helpers.js";
@@ -212,7 +211,7 @@ export class MediaStreamCallSession {
     resolveTelephonySynthesisLanguage(this.sttSession.currentLanguage());
 
   constructor(
-    ws: ServerWebSocket<unknown>,
+    ws: ConstructorParameters<typeof MediaStreamOutput>[0],
     callSessionId: string,
     sttConfig?: MediaStreamSttSessionConfig,
   ) {

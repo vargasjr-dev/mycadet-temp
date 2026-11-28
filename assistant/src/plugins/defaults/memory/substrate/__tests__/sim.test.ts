@@ -17,7 +17,10 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { AssistantConfig } from "../../../../../config/schema.js";
+import {
+  AssistantConfig,
+  AssistantConfigSchema,
+} from "../../../../../config/schema.js";
 
 // ---------------------------------------------------------------------------
 // Module-level mocks (registered before `await import("../sim.js")`).
@@ -168,16 +171,11 @@ function configWithWeights(
   denseWeight: number,
   sparseWeight: number,
 ): AssistantConfig {
-  // Only the fields sim.ts touches are populated; the rest of AssistantConfig
-  // is irrelevant here because `embedWithBackend` is mocked.
-  return {
-    memory: {
-      v2: {
-        dense_weight: denseWeight,
-        sparse_weight: sparseWeight,
-      },
-    },
-  } as unknown as AssistantConfig;
+  const config = AssistantConfigSchema.parse({});
+  // The overshoot case deliberately exercises weights a config file rejects.
+  config.memory.substrate.dense_weight = denseWeight;
+  config.memory.substrate.sparse_weight = sparseWeight;
+  return config;
 }
 
 /**
@@ -242,9 +240,10 @@ describe("effectiveWeights", () => {
     min?: number,
     full?: number,
   ): AssistantConfig {
-    return {
-      memory: { v2: { min_sparse_spread: min, full_sparse_spread: full } },
-    } as unknown as AssistantConfig;
+    const config = AssistantConfigSchema.parse({});
+    config.memory.substrate.min_sparse_spread = min;
+    config.memory.substrate.full_sparse_spread = full;
+    return config;
   }
   const baseConfig = configWithSpreadOverrides();
 

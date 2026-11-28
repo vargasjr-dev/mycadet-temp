@@ -60,12 +60,15 @@ import type {
   ProviderResponse,
 } from "@mycadet/plugin-api";
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { z } from "zod";
 
 import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
 import { requireTextBlock } from "../../../../../__tests__/helpers/require-text-block.js";
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
+import { contentBlockArraySchema } from "../../../../../providers/content-block-schema.js";
 import {
   MEMORY_POINTER_PREFIX,
   MEMORY_POINTER_SUFFIX,
@@ -170,12 +173,8 @@ function makeDb() {
 mock.module("../../../../../persistence/db-connection.js", () => ({
   ...realDbConnection,
   getDb: () => (carryMockActive ? testDb : realDbConnection.getDb()),
-  getSqliteFrom: (db: unknown) =>
-    carryMockActive
-      ? testSqlite
-      : realDbConnection.getSqliteFrom(
-          db as Parameters<typeof realDbConnection.getSqliteFrom>[0],
-        ),
+  getSqliteFrom: (db: Parameters<typeof realDbConnection.getSqliteFrom>[0]) =>
+    carryMockActive ? testSqlite : realDbConnection.getSqliteFrom(db),
   getMemorySqlite: () =>
     carryMockActive ? memorySqlite : realDbConnection.getMemorySqlite(),
   getMemoryDb: () =>
@@ -258,7 +257,7 @@ async function scriptedObserveTurn(conversationId: string, turnIndex: number) {
     {
       sectionIndex: lanes.sectionIndex,
       needle: lanes.needle,
-      denseConfig: {} as never,
+      denseConfig: AssistantConfigSchema.parse({}),
       edgeGraph: lanes.edgeGraph,
       coreSlugs: lanes.coreSlugs,
       hotSlugs: lanes.hotSlugs,
@@ -998,6 +997,13 @@ async function retryTurn(
  *  invert, so the layout is [sections, pointer, ...]). A row older than
  *  `historyStrippedAt` (a compaction's marker) skips metadata rehydration,
  *  as `loadFromDb` does. */
+const historySchema = z.array(
+  z.object({
+    role: z.enum(["user", "assistant"]),
+    content: contentBlockArraySchema,
+  }),
+);
+
 function rehydrateFromDb(
   convId: string,
   historyStrippedAt: number | null = null,
@@ -1027,7 +1033,7 @@ function rehydrateFromDb(
       : null;
   const newest = newestCopyIndexes(rows.map(blockOf));
   return rows.map((row, index) => {
-    let content = JSON.parse(row.content) as ContentBlock[];
+    let content = contentBlockArraySchema.parse(JSON.parse(row.content));
     if (row.role === "user" && row.metadata && !preStripped(row)) {
       const meta = jsonObjectSchema.parse(JSON.parse(row.metadata));
       const pointer = meta[MEMORY_V3_POINTER_BLOCK_METADATA_KEY];
@@ -1352,7 +1358,7 @@ describe("memory-v3 carry integration — cache contract", () => {
     // Turn 7's strip touched EXACTLY the pruned sections: turn 1's block lost
     // core-beta's and hot-one's leads (byte-exact remainder); turn 2's block
     // is untouched.
-    const after7 = JSON.parse(records[6]!.snapshot) as Message[];
+    const after7 = historySchema.parse(JSON.parse(records[6]!.snapshot));
     const turn1Block = requireTextBlock(after7[0]!.content[0]).text;
     expect(turn1Block).toBe(
       wrapMemoryBlock(
@@ -1483,7 +1489,7 @@ describe("memory-v3 carry integration — restart contract", () => {
 
   test("after a pruned lead is re-injected, a restart rehydrates the live layer byte-identically: one copy, on the re-injecting turn's message", () => {
     expect(finalRehydratedJson).toBe(finalLiveJson);
-    const rehydrated = JSON.parse(finalRehydratedJson) as Message[];
+    const rehydrated = historySchema.parse(JSON.parse(finalRehydratedJson));
     const entry = render("core-beta", "");
     const carriers = rehydrated
       .map((message, index) => ({
@@ -1515,7 +1521,7 @@ describe("memory-v3 carry integration — restart contract", () => {
   });
 
   test("pruned sections are absent from the rehydrated history (metadata stays intact)", () => {
-    const rehydrated = JSON.parse(restartRehydratedJson) as Message[];
+    const rehydrated = historySchema.parse(JSON.parse(restartRehydratedJson));
     const blockText = rehydrated
       .flatMap((m) => m.content)
       .filter((b): b is { type: "text"; text: string } => b.type === "text")

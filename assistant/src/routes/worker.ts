@@ -61,8 +61,12 @@ const pidPath = getProcPidPath(ROUTE_HOST_PROC_NAME);
 
 /** Normalize framing's `Uint8Array` body into a `BodyInit`-safe `ArrayBuffer`. */
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  if (bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength) {
-    return bytes.buffer as ArrayBuffer;
+  if (
+    bytes.buffer instanceof ArrayBuffer &&
+    bytes.byteOffset === 0 &&
+    bytes.byteLength === bytes.buffer.byteLength
+  ) {
+    return bytes.buffer;
   }
   return bytes.slice().buffer;
 }

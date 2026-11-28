@@ -34,6 +34,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { asConversation } from "../../../../__tests__/helpers/mock-conversation.js";
 import { AgentLoop } from "../../../../agent/loop.js";
+import { AssistantConfigSchema } from "../../../../config/schema.js";
 import type { Conversation } from "../../../../daemon/conversation.js";
 import type { TrustContext } from "../../../../daemon/trust-context-types.js";
 import {
@@ -276,7 +277,7 @@ await initializeDb();
 
 // ── Fixtures ─────────────────────────────────────────────────────────
 
-const chainConfig = {
+const chainConfig = AssistantConfigSchema.parse({
   memory: {
     v2: { enabled: true },
     retrospective: {
@@ -289,7 +290,7 @@ const chainConfig = {
     },
   },
   ui: {},
-} as unknown as Parameters<typeof runForkBasedRetrospective>[1];
+});
 
 const PRIOR_FACT = "User's cat is named Mochi";
 

@@ -1,6 +1,8 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
+import { z } from "zod";
+
 import { getWorkspaceSkillsDir } from "../util/layout.js";
 import {
   commitStagedSkillInstall,
@@ -17,13 +19,17 @@ import type {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export interface SkillsShSearchResult {
-  id: string; // e.g. "vercel-labs/agent-skills/vercel-react-best-practices"
-  skillId: string; // e.g. "vercel-react-best-practices"
-  name: string;
-  installs: number;
-  source: string; // e.g. "vercel-labs/agent-skills"
-}
+const searchResultSchema = z.object({
+  id: z.string(),
+  skillId: z.string(),
+  name: z.string(),
+  installs: z.number(),
+  source: z.string(),
+});
+const searchResponseSchema = z.object({
+  skills: z.array(searchResultSchema).nullish(),
+});
+export type SkillsShSearchResult = z.infer<typeof searchResultSchema>;
 
 export interface ResolvedSkillSource {
   owner: string;
@@ -98,9 +104,22 @@ export async function searchSkillsRegistry(
     );
   }
 
-  const data = (await response.json()) as { skills: SkillsShSearchResult[] };
+  const data = searchResponseSchema.parse(await response.json());
   return data.skills ?? [];
 }
+
+const auditResponseSchema = z.record(
+  z.string(),
+  z.record(
+    z.string(),
+    z.object({
+      risk: z.enum(["safe", "low", "medium", "high", "critical", "unknown"]),
+      alerts: z.number().optional(),
+      score: z.number().optional(),
+      analyzedAt: z.string(),
+    }),
+  ),
+);
 
 export async function fetchSkillAudits(
   source: string,
@@ -126,7 +145,7 @@ export async function fetchSkillAudits(
     );
   }
 
-  return (await response.json()) as AuditResponse;
+  return auditResponseSchema.parse(await response.json());
 }
 
 // ─── Source resolution ──────────────────────────────────────────────────────
@@ -180,11 +199,13 @@ export function resolveSkillSource(source: string): ResolvedSkillSource {
 
 // ─── GitHub fetch ───────────────────────────────────────────────────────────
 
-export interface GitHubContentsEntry {
-  name: string;
-  type: "file" | "dir";
-  download_url: string | null;
-}
+export const githubContentsEntrySchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  download_url: z.string().nullable().default(null),
+  size: z.number().optional(),
+});
+export const githubContentsListingSchema = z.array(githubContentsEntrySchema);
 
 /** Build common headers for GitHub API requests (User-Agent + optional auth). */
 export function githubHeaders(): Record<string, string> {
@@ -199,10 +220,9 @@ export function githubHeaders(): Record<string, string> {
   return headers;
 }
 
-export interface GitHubTreeEntry {
-  path: string;
-  type: "blob" | "tree";
-}
+const githubTreeSchema = z.object({
+  tree: z.array(z.object({ path: z.string(), type: z.string() })),
+});
 
 /**
  * Search the repo tree for a directory containing `<slug>/SKILL.md`.
@@ -229,7 +249,7 @@ export async function findSkillDirInTree(
     );
   }
 
-  const data = (await response.json()) as { tree: GitHubTreeEntry[] };
+  const data = githubTreeSchema.parse(await response.json());
   const suffix = `${skillSlug}/SKILL.md`;
   const match = data.tree.find(
     (entry) =>
@@ -283,15 +303,15 @@ export async function fetchSkillFromGitHub(
       );
     }
 
-    const entries = (await response.json()) as GitHubContentsEntry[];
-    if (!Array.isArray(entries)) {
+    const listing: unknown = await response.json();
+    if (!Array.isArray(listing)) {
       throw new Error(
         `Expected a directory listing for ${subpath}/ but got a single file`,
       );
     }
 
     const files: SkillFiles = {};
-    for (const entry of entries) {
+    for (const entry of githubContentsListingSchema.parse(listing)) {
       const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
 
       if (entry.type === "dir") {
@@ -359,15 +379,15 @@ export async function fetchSkillFromGitHub(
   // successful, we can use it directly instead of re-fetching.
   let files: SkillFiles;
   if (skillDirPath === conventionalPath && probeResponse.ok) {
-    const entries = (await probeResponse.json()) as GitHubContentsEntry[];
-    if (!Array.isArray(entries)) {
+    const listing: unknown = await probeResponse.json();
+    if (!Array.isArray(listing)) {
       throw new Error(
         `Expected a directory listing for ${conventionalPath}/ but got a single file`,
       );
     }
     // Fetch the directory contents from the already-parsed probe response
     const result: SkillFiles = {};
-    for (const entry of entries) {
+    for (const entry of githubContentsListingSchema.parse(listing)) {
       if (entry.type === "dir") {
         const subFiles = await fetchDir(
           `${conventionalPath}/${entry.name}`,

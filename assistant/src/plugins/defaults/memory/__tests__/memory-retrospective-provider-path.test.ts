@@ -21,8 +21,9 @@
  *     memory-writing `tool_use` (`remember` / `scaffold_cloud_skill`) or
  *     replied and stopped on its own (a completed no-findings review).
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { AssistantConfigSchema } from "../../../../config/schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock state. Reset between tests.
@@ -385,7 +386,7 @@ function makeForkConversationDouble(): Conversation {
 // ---------------------------------------------------------------------------
 
 function makeConfig(): Parameters<typeof memoryRetrospectiveJob>[1] {
-  return {
+  return AssistantConfigSchema.parse({
     memory: {
       v2: { enabled: true },
       retrospective: {
@@ -402,7 +403,7 @@ function makeConfig(): Parameters<typeof memoryRetrospectiveJob>[1] {
       userTimezone: undefined,
       detectedTimezone: undefined,
     },
-  } as unknown as Parameters<typeof memoryRetrospectiveJob>[1];
+  });
 }
 
 const stubConfig = makeConfig();

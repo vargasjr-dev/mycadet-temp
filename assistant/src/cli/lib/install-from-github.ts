@@ -1074,10 +1074,9 @@ function normalizeInstalledManifest(
   const manifestPath = join(stagingDir, "package.json");
   const base = upstreamPkg ?? readPackageJson(manifestPath) ?? {};
 
-  const peer =
-    typeof base.peerDependencies === "object" && base.peerDependencies !== null
-      ? (base.peerDependencies as Record<string, unknown>)
-      : {};
+  const peer = isPlainObject(base.peerDependencies)
+    ? base.peerDependencies
+    : {};
   const existingRange = peer["@mycadet/plugin-api"];
 
   const manifest: PackageManifest = {
@@ -1092,8 +1091,8 @@ function normalizeInstalledManifest(
     },
   };
 
-  if (typeof manifest.scripts === "object" && manifest.scripts !== null) {
-    const scripts = { ...(manifest.scripts as Record<string, unknown>) };
+  if (isPlainObject(manifest.scripts)) {
+    const scripts = { ...manifest.scripts };
     delete scripts.postinstall;
     if (Object.keys(scripts).length === 0) {
       delete manifest.scripts;

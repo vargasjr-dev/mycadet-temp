@@ -145,9 +145,13 @@ export async function run(
     };
   }
 
-  const prompt = input.prompt as string;
-  const mode = (input.mode as "generate" | "edit") ?? "generate";
-  const sourcePaths = input.source_paths as string[] | undefined;
+  const prompt = typeof input.prompt === "string" ? input.prompt : "";
+  const mode = input.mode === "edit" ? "edit" : "generate";
+  const sourcePaths = Array.isArray(input.source_paths)
+    ? input.source_paths.filter(
+        (path): path is string => typeof path === "string",
+      )
+    : undefined;
   const model =
     typeof modelOverride === "string" && modelOverride
       ? modelOverride

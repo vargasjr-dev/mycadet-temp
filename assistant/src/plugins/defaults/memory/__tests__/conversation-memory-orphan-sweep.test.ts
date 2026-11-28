@@ -5,18 +5,14 @@
  * deleted; rows for live conversations are kept; and the sweep no-ops when the
  * memory connection is unavailable.
  */
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import type { DrizzleDb } from "../../../../persistence/db-connection.js";
+import * as dbConnection from "../../../../persistence/db-connection.js";
 import {
   getDb,
   getMemorySqlite,
 } from "../../../../persistence/db-connection.js";
 import { initializeDb } from "../../../../persistence/db-init.js";
-import {
-  clearStoredDb,
-  setStoredDb,
-} from "../../../../persistence/db-singleton.js";
 import { conversations } from "../../../../persistence/schema/index.js";
 import { sweepOrphanConversationMemoryTables } from "../conversation-memory-orphan-sweep.js";
 import { CONVERSATION_KEYED_MEMORY_TABLES } from "../conversation-memory-purge.js";
@@ -81,12 +77,18 @@ describe("relocated memory orphan sweep", () => {
 });
 
 describe("relocated memory orphan sweep without a memory database", () => {
+  let memorySqliteSpy: ReturnType<typeof mockUnavailableMemory>;
+
+  function mockUnavailableMemory() {
+    return spyOn(dbConnection, "getMemorySqlite").mockReturnValue(null);
+  }
+
   beforeEach(() => {
-    setStoredDb("memory", { $client: null } as unknown as DrizzleDb, () => {});
+    memorySqliteSpy = mockUnavailableMemory();
   });
 
   afterEach(() => {
-    clearStoredDb("memory");
+    memorySqliteSpy.mockRestore();
   });
 
   test("no-ops without throwing when the memory DB is unavailable", async () => {

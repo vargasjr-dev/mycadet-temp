@@ -32,6 +32,7 @@ import type {
 } from "@mycadet/plugin-api";
 
 import { requireTextBlock } from "../../../../../__tests__/helpers/require-text-block.js";
+import { AssistantConfigSchema } from "../../../../../config/schema.js";
 import type { ToolDefinition } from "../../llm-helpers.js";
 
 // ---------------------------------------------------------------------------
@@ -225,10 +226,7 @@ function makePage(
   };
 }
 
-// Default config object — mirrors the schema defaults but trimmed to the
-// fields the router actually reads. Cast through `as unknown` because the
-// production type is a heavy nested schema; we only exercise the v2.router
-// branch in this test file.
+// Real default config with the router settings varied by these tests.
 function makeConfig(overrides?: {
   maxPageIds?: number;
   batchSize?: number | null;
@@ -236,7 +234,7 @@ function makeConfig(overrides?: {
   tier2Size?: number | null;
   historicalPairsMaxChars?: number | null;
 }) {
-  return {
+  return AssistantConfigSchema.parse({
     memory: {
       v2: {
         enabled: true,
@@ -251,7 +249,7 @@ function makeConfig(overrides?: {
         },
       },
     },
-  } as unknown as Parameters<typeof runRouter>[0]["config"];
+  });
 }
 
 const COMMON_PARAMS: Pick<

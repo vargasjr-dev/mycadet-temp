@@ -69,7 +69,9 @@ export const documentComments = sqliteTable(
     // Self-referential parent link (threaded replies). The FK to
     // document_comments(id) ON DELETE CASCADE is enforced at the DB level.
     parentCommentId: text("parent_comment_id"),
-    status: text("status").notNull().default("open"),
+    status: text("status", { enum: ["open", "resolved"] })
+      .notNull()
+      .default("open"),
     resolvedBy: text("resolved_by"),
     resolvedAt: integer("resolved_at"),
     createdAt: integer("created_at").notNull(),
@@ -93,7 +95,7 @@ export const documentRevisions = sqliteTable(
     title: text("title").notNull(),
     content: text("content").notNull(),
     wordCount: integer("word_count").notNull().default(0),
-    author: text("author").notNull(),
+    author: text("author", { enum: ["user", "assistant"] }).notNull(),
     createdAt: integer("created_at").notNull(),
   },
   (table) => [primaryKey({ columns: [table.surfaceId, table.revision] })],

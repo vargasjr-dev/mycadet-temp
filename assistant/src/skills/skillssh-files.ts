@@ -25,7 +25,10 @@ import {
 } from "./catalog-files.js";
 import type { SkillFileProvider } from "./skill-file-provider.js";
 import { SkillFileEntry } from "./skill-file-types.js";
-import type { GitHubContentsEntry } from "./skillssh-registry.js";
+import {
+  githubContentsEntrySchema,
+  githubContentsListingSchema,
+} from "./skillssh-registry.js";
 import {
   findSkillDirInTree,
   githubHeaders,
@@ -188,14 +191,14 @@ async function listGitHubDir(
     );
   }
 
-  const entries = (await response.json()) as GitHubContentsEntry[];
-  if (!Array.isArray(entries)) {
+  const listing: unknown = await response.json();
+  if (!Array.isArray(listing)) {
     return [];
   }
 
   const result: SkillFileEntry[] = [];
 
-  for (const entry of entries) {
+  for (const entry of githubContentsListingSchema.parse(listing)) {
     // Skip hidden files/dirs (same as walkSkillDir)
     if (entry.name.startsWith(".")) {
       continue;
@@ -331,9 +334,7 @@ export function createSkillsShProvider(): SkillFileProvider {
           return null;
         }
 
-        const entry = (await response.json()) as GitHubContentsEntry & {
-          size?: number;
-        };
+        const entry = githubContentsEntrySchema.parse(await response.json());
 
         // Ensure it's a file, not a directory
         if (entry.type !== "file") {

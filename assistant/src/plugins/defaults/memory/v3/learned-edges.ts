@@ -165,7 +165,10 @@ export function computeLearnedEdgeGraph(opts: LearnedEdgesOptions): EdgeGraph {
     if (mass < minCount) {
       continue;
     }
-    const [a, b] = key.split("\t") as [Slug, Slug];
+    const [a, b] = key.split("\t");
+    if (a === undefined || b === undefined) {
+      continue;
+    }
     const pab = mass / total;
     const pa = uni.get(a)! / total;
     const pb = uni.get(b)! / total;

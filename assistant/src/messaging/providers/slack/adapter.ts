@@ -768,8 +768,8 @@ export const slackProvider: MessagingProvider = {
 
     // Resolve DM user names and cache channel mappings
     for (const conv of conversations) {
-      if (conv.type === "dm" && conv.metadata?.dmUserId) {
-        const dmUserId = conv.metadata.dmUserId as string;
+      const dmUserId = conv.metadata?.dmUserId;
+      if (conv.type === "dm" && typeof dmUserId === "string" && dmUserId) {
         conv.name = await resolveUserName(auth, dmUserId);
       }
     }
