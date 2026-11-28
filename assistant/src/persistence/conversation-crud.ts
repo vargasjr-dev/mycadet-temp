@@ -2936,6 +2936,12 @@ export function listConversationAttachments(
   conversationId: string,
   options: { sightFrames?: "only" | "exclude"; limit: number; offset: number },
 ): { attachments: ConversationAttachmentListing[]; total: number } {
+  // `IN (SELECT message_id FROM message_attachments)` narrows the messages
+  // side to rows that actually carry an attachment link BEFORE the join, so
+  // the scan probes a handful of linked ids instead of walking every message
+  // row of the conversation. The old shape materialized the full
+  // conversation (46k rows / ~237 MB on a large history) to return a page
+  // of a few attachments; the link set is orders of magnitude smaller.
   const rows = getDb()
     .select({
       id: attachments.id,
@@ -2960,6 +2966,12 @@ export function listConversationAttachments(
         lineageFilter(conversationId),
         eq(messages.finalized, 1),
         excludesToolResultRows(),
+        inArray(
+          messages.id,
+          getDb()
+            .select({ id: messageAttachments.messageId })
+            .from(messageAttachments),
+        ),
       ),
     )
     // `(createdAt, id)` before position and the link's own id after it:
@@ -3130,6 +3142,7 @@ export function countMessagesAfter(
 export function getMessagesAfter(
   conversationId: string,
   after: MessagesAfterRef,
+  limit?: number,
 ): MessageRow[] {
   const db = getDb();
   const segments = resolveLineage(conversationId);
@@ -3140,7 +3153,7 @@ export function getMessagesAfter(
   // Secondary `asc(messages.id)` mirrors the bound's tie-breaker, so callers
   // tracking `cutoffMessageId` across runs see a consistent ordering when
   // multiple rows share a millisecond timestamp.
-  return db
+  const query = db
     .select()
     .from(messages)
     .where(
@@ -3148,12 +3161,45 @@ export function getMessagesAfter(
         ? lineageMessageFilter(segments)
         : lineageMessagesAfterFilter(segments, start.bound),
     )
-    .orderBy(asc(messages.createdAt), asc(messages.id))
+    .orderBy(asc(messages.createdAt), asc(messages.id));
+  // `limit` bounds chunked scans: a caller walking rows-after in pieces
+  // resumes from each chunk's last id, so no read is wider than the chunk.
+  return (limit === undefined ? query : query.limit(limit))
     .all()
     .map(parseMessage);
 }
 
-/** Read a bounded conversation window in insertion order, including timestamp ties. */
+/**
+ * Bounded tail read: the last `limit` message rows the conversation's lineage
+ * owns, in the same order `getMessages` would produce them.
+ *
+ * Reads backward from the table tip (`rowid DESC` + `LIMIT`): a conversation's
+ * newest rows are its most recently inserted, so a backward scan reaches them
+ * immediately regardless of how many rows the conversation holds — the cost is
+ * the window, not the conversation. Same-millisecond ties keep insertion
+ * (rowid) order, matching `getMessages`' documented tie behavior.
+ *
+ * Use it on interactive paths that only need the conversation's recent end
+ * (staleness checks, "latest assistant turn" lookups); callers that genuinely
+ * consume the whole history stay on `getMessages`.
+ */
+export function getConversationMessageTail(
+  conversationId: string,
+  limit: number,
+): MessageRow[] {
+  return getDb()
+    .select()
+    .from(messages)
+    .where(lineageFilter(conversationId))
+    .orderBy(sql`rowid DESC`)
+    .limit(limit)
+    .all()
+    .reverse()
+    .map(parseMessage);
+}
+
+/**
+ * Read a bounded conversation window in insertion order, including timestamp ties. */
 export function getRecentConversationMessages(
   conversationId: string,
   limit: number,

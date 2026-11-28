@@ -23,6 +23,7 @@ import { handleGetSuggestion } from "../conversation-routes.js";
 const PRIVATE = JSON.stringify({ assistantTextVisibility: "private" });
 
 let rows: MessageRow[] = [];
+const tailLimitsRequested: number[] = [];
 const spies: Array<{ mockRestore: () => void }> = [];
 
 function row(
@@ -62,8 +63,16 @@ function deps(cache: Map<string, string>) {
 
 beforeEach(() => {
   rows = [];
+  tailLimitsRequested.length = 0;
   spies.push(
-    spyOn(conversationCrud, "getMessages").mockImplementation(() => rows),
+    // The handler reads a bounded tail now; emulate it over the fixture and
+    // record how wide each read asked to be.
+    spyOn(conversationCrud, "getConversationMessageTail").mockImplementation(
+      (_conversationId, limit) => {
+        tailLimitsRequested.push(limit);
+        return rows.slice(-limit);
+      },
+    ),
     spyOn(conversationCrud, "getConversation").mockImplementation(
       () => ({ id: "conv-1", source: "user" }) as never,
     ),
@@ -174,5 +183,32 @@ describe("reply suggestions across a consolidated turn", () => {
       suggestion: "Anything else?",
       messageId: "assistant-only",
     });
+  });
+
+  test("a window that slices a long run mid-turn widens and still resolves the turn id", async () => {
+    // A single run longer than the initial tail window: the first read
+    // (128 rows) cannot see the run's first row, so the last turn's id would
+    // be wrong unless the read widens. The client holds the run's FIRST row
+    // id and must not be called stale.
+    rows.push(row("user-0", "user", text("start")));
+    for (let i = 1; i <= 200; i++) {
+      rows.push(row(`assistant-${i}`, "assistant", text(`part ${i}`), PRIVATE));
+    }
+    const cache = new Map([["assistant-1", "Sounds good"]]);
+
+    const result = await handleGetSuggestion(
+      {
+        queryParams: { conversationId: "conv-1", messageId: "assistant-1" },
+      },
+      deps(cache),
+    );
+
+    expect(result.stale).toBeUndefined();
+    expect(result).toMatchObject({
+      suggestion: "Sounds good",
+      messageId: "assistant-1",
+    });
+    // The first window was full and mid-run, so a widening read followed it.
+    expect(tailLimitsRequested).toEqual([128, 512]);
   });
 });

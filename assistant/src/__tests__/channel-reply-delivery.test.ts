@@ -132,6 +132,13 @@ mock.module("../persistence/conversation-crud.js", () => ({
   }),
   getConversationOriginInterface: () => null,
   getConversationOriginChannel: () => null,
+  getConversationMessageTail: (_conversationId: string, limit: number) =>
+    conversationMessages
+      .map((m) => ({
+        ...m,
+        content: resolveMessageContentBlocks(m.content),
+      }))
+      .slice(-limit),
   getMessages: () =>
     conversationMessages.map((m) => ({
       ...m,
