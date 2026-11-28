@@ -87,12 +87,12 @@ const NARRATIVE_TOOL_SCHEMA = {
           properties: {
             id: { type: "string" as const },
             narrativeRole: {
-              type: ["string", "null"] as unknown as "string",
+              type: ["string", "null"],
               description:
                 "inciting-incident, turning-point, foreshadowing, thesis, resolution, or null to remove",
             },
             partOfStory: {
-              type: ["string", "null"] as unknown as "string",
+              type: ["string", "null"],
               description:
                 "Short name for the narrative arc, or null to remove",
             },

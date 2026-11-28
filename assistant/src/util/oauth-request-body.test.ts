@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   findContentTypeHeader,
   isBinaryOAuthContentType,
@@ -109,14 +111,18 @@ describe("parseRequestBodyBytes", () => {
   test("keeps invalid UTF-8 as a Buffer", () => {
     const parsed = parseRequestBodyBytes(png, "multipart/related; boundary=b");
     expect(Buffer.isBuffer(parsed)).toBe(true);
-    expect(Buffer.from(parsed as Uint8Array).equals(png)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(parsed)).equals(png),
+    ).toBe(true);
   });
 
   test("keeps a PDF Content-Type as a Buffer even when the bytes are ASCII", () => {
     const asciiPdf = Buffer.from("%PDF-1.4 simple", "ascii");
     const parsed = parseRequestBodyBytes(asciiPdf, "application/pdf");
     expect(Buffer.isBuffer(parsed)).toBe(true);
-    expect(Buffer.from(parsed as Uint8Array).equals(asciiPdf)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(parsed)).equals(asciiPdf),
+    ).toBe(true);
   });
 
   test("keeps valid UTF-8 multipart as the exact string", () => {

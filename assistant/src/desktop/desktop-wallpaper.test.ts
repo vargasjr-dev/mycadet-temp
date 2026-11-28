@@ -221,10 +221,14 @@ test("renders in a child without invoking the assistant's native rasterizer", as
   const render = mock(() => {
     throw new Error("Rendering must not run on the assistant event loop");
   });
-  __setResvgCacheForTests({
-    available: true,
-    Resvg: render as unknown as ReturnType<typeof getResvg>,
-  });
+  const NativeResvg = getResvg();
+  class UnexpectedParentResvg extends NativeResvg {
+    constructor(...args: ConstructorParameters<typeof NativeResvg>) {
+      render();
+      super(...args);
+    }
+  }
+  __setResvgCacheForTests({ available: true, Resvg: UnexpectedParentResvg });
   const png = await renderCurrentDesktopWallpaper(1600, 900);
   expect(render).not.toHaveBeenCalled();
   const metadata = await sharp(png!).metadata();

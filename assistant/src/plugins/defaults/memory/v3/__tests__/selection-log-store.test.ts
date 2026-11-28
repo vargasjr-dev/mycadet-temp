@@ -31,6 +31,7 @@ import { z } from "zod";
 import { setConfig } from "../../../../../__tests__/helpers/set-config.js";
 import { ensureMemoryV3SelectionsSchema } from "../../../../../persistence/migrations/338-move-memory-v3-selections-to-memory-db.js";
 import * as schema from "../../../../../persistence/schema/index.js";
+import { ConceptPageSchema } from "../../substrate/types.js";
 import {
   ensureMemoryV3PoolsSchema,
   ensureMemoryV3SelectionsSectionKeyOnce,
@@ -146,10 +147,8 @@ function stampPool(
 mock.module("../../../../../persistence/db-connection.js", () => ({
   ...realDb,
   getDb: () => (storeMockActive ? testDb : realDb.getDb()),
-  getSqliteFrom: (db: unknown) =>
-    storeMockActive
-      ? testSqlite
-      : realDb.getSqliteFrom(db as Parameters<typeof realDb.getSqliteFrom>[0]),
+  getSqliteFrom: (db: Parameters<typeof realDb.getSqliteFrom>[0]) =>
+    storeMockActive ? testSqlite : realDb.getSqliteFrom(db),
   getMemorySqlite: () =>
     storeMockActive
       ? memoryDbAvailable
@@ -165,9 +164,11 @@ mock.module("../../substrate/page-store.js", () => ({
   ...realPageStore,
   readPage: async (workspaceDir: string, slug: string) =>
     storeMockActive && pageBodies.has(slug)
-      ? ({ body: pageBodies.get(slug)! } as unknown as Awaited<
-          ReturnType<typeof realPageStore.readPage>
-        >)
+      ? ConceptPageSchema.parse({
+          slug,
+          frontmatter: {},
+          body: pageBodies.get(slug),
+        })
       : realPageStore.readPage(workspaceDir, slug),
 }));
 

@@ -166,15 +166,13 @@ function ensureObj(
   parent: Record<string, unknown>,
   key: string,
 ): Record<string, unknown> {
-  if (
-    !(key in parent) ||
-    parent[key] == null ||
-    typeof parent[key] !== "object" ||
-    Array.isArray(parent[key])
-  ) {
-    parent[key] = {};
+  const existing = parent[key];
+  if (isPlainObject(existing)) {
+    return existing;
   }
-  return parent[key] as Record<string, unknown>;
+  const created: Record<string, unknown> = {};
+  parent[key] = created;
+  return created;
 }
 
 /** Extract legacy provider selection from calls.voice.ttsProvider. */

@@ -47,7 +47,6 @@
  * raster, the accent or the spec does, which is when there is a different
  * render to offer.
  */
-
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -64,6 +63,7 @@ import {
 import { detectMediaType } from "../tools/shared/filesystem/image-read.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 import { backfillAccent } from "./accent-backfill.js";
 import { readAvatarState } from "./avatar-manifest.js";
 import {
@@ -138,10 +138,8 @@ function syncStatePath(): string {
 function readPersistedKey(): SyncedKey | null {
   try {
     const parsed: unknown = JSON.parse(readFileSync(syncStatePath(), "utf-8"));
-    const { key, syncedAt } = (parsed ?? {}) as {
-      key?: unknown;
-      syncedAt?: unknown;
-    };
+    const key = getObjectProperty(parsed, "key");
+    const syncedAt = getObjectProperty(parsed, "syncedAt");
     if (typeof key !== "string" || typeof syncedAt !== "number") {
       return null;
     }

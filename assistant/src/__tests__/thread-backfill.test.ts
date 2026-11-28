@@ -23,6 +23,7 @@ import {
   test,
 } from "bun:test";
 
+import { contentBlockArraySchema } from "../providers/content-block-schema.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ---------------------------------------------------------------------------
@@ -998,7 +999,7 @@ describe("triggerSlackThreadBackfillIfNeeded — gap detection and persistence",
       row.content.includes("uploaded the diagram"),
     );
     expect(imageRow).toBeDefined();
-    const blocks = JSON.parse(imageRow!.content) as Message["content"];
+    const blocks = contentBlockArraySchema.parse(JSON.parse(imageRow!.content));
     const textBlock = blocks.find(
       (block): block is Extract<Message["content"][number], { type: "text" }> =>
         block.type === "text",
@@ -1069,7 +1070,7 @@ describe("triggerSlackThreadBackfillIfNeeded — gap detection and persistence",
     );
     expect(botRow).toBeDefined();
     expect(botRow?.role).toBe("assistant");
-    const blocks = JSON.parse(botRow!.content) as Message["content"];
+    const blocks = contentBlockArraySchema.parse(JSON.parse(botRow!.content));
     const textBlock = blocks.find(
       (block): block is Extract<Message["content"][number], { type: "text" }> =>
         block.type === "text",

@@ -68,14 +68,6 @@ const MAX_EXPORT_MESSAGE_ROWS = 10_000;
 export const MAX_EXPORT_LLM_REQUEST_LOG_ROWS = 2_000;
 const MAX_EXPORT_LLM_USAGE_EVENT_ROWS = 10_000;
 
-interface ExportRequestBody {
-  auditLimit?: number;
-  conversationId?: string;
-  full?: boolean;
-  startTime?: number;
-  endTime?: number;
-}
-
 /**
  * Collect audit data, daemon log files, and a sanitized config snapshot,
  * then package everything into a tar.gz archive.
@@ -87,7 +79,7 @@ async function handleExport({
   body = {},
 }: RouteHandlerArgs): Promise<Uint8Array> {
   const { conversationId, full, startTime, endTime, auditLimit } =
-    body as ExportRequestBody;
+    exportRequestBody.parse(body);
 
   const staging = mkdtempSync(join(tmpdir(), "cadet-export-"));
 

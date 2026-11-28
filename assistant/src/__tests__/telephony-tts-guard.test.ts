@@ -259,7 +259,7 @@ function createRelay(requiresPcmAudio: boolean) {
       sentPlayUrls.push(url);
     },
     endSession: () => {},
-  } as CallTransport;
+  };
   return { relay, sentTokens, sentPlayUrls };
 }
 

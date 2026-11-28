@@ -62,9 +62,12 @@ function fakeTransport(
     };
   }
   if (opts.binds) {
-    (
-      transport as { bindsChatOnProactiveSend?: boolean }
-    ).bindsChatOnProactiveSend = true;
+    Object.defineProperty(transport, "bindsChatOnProactiveSend", {
+      value: true,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
   }
   return transport;
 }

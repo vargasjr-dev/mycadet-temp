@@ -38,7 +38,7 @@ function isSystemNoticeBlock(
   if (block.type !== "text") {
     return false;
   }
-  const text = (block as { text?: string }).text ?? "";
+  const text = typeof block.text === "string" ? block.text : "";
   return (
     text.startsWith("<system_notice>") && text.endsWith("</system_notice>")
   );
@@ -437,7 +437,7 @@ export interface DiscardedAssistantTail {
 export function extractUserPromptText(content: ContentBlock[]): string {
   return content
     .filter((block) => block.type === "text" && !isSystemNoticeBlock(block))
-    .map((block) => (block as { text?: string }).text ?? "")
+    .map((block) => (block.type === "text" ? block.text : ""))
     .join("\n")
     .trim();
 }

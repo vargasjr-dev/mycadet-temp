@@ -47,6 +47,24 @@ import { hasPluginManifest } from "../util/plugin-manifest.js";
 
 const log = getLogger("app-store");
 
+const storedAppSchema = z.looseObject({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  preview: z.string().optional(),
+  schemaJson: z.string(),
+  htmlDefinition: z.string().default(""),
+  version: z.string().optional(),
+  pages: z.record(z.string(), z.string()).optional(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  formatVersion: z.number().optional(),
+  dirName: z.string().optional(),
+  conversationIds: z.array(z.string()).optional(),
+  inheritedConversationIds: z.array(z.string()).optional(),
+}) satisfies z.ZodType<AppDefinition>;
+
 export interface AppDefinition {
   id: string;
   name: string;
@@ -569,7 +587,7 @@ export function getApp(id: string): AppDefinition | null {
     return null;
   }
   const raw = readFileSync(filePath, "utf-8");
-  const app = JSON.parse(raw) as AppDefinition;
+  const app = storedAppSchema.parse(JSON.parse(raw));
   /* An emoji icon reads back as the registry name it maps to, so every client
      draws the same glyph set. */
   app.icon = bridgeEmojiAppIcon(app.icon);
@@ -621,7 +639,7 @@ export function listApps(): AppDefinition[] {
     const filePath = join(dir, entry);
     try {
       const raw = readFileSync(filePath, "utf-8");
-      const app = JSON.parse(raw) as AppDefinition;
+      const app = storedAppSchema.parse(JSON.parse(raw));
       /* An emoji from before the icon registry reads back as its registry name
      (see app-icons.ts), so every client draws the same glyph set. */
       app.icon = bridgeEmojiAppIcon(app.icon);

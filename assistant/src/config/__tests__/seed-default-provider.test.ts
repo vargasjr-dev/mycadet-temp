@@ -16,6 +16,8 @@ import {
   test,
 } from "bun:test";
 
+import { z } from "zod";
+
 const WORKSPACE_DIR = process.env.CADET_WORKSPACE_DIR!;
 const CONFIG_PATH = join(WORKSPACE_DIR, "config.json");
 
@@ -54,8 +56,18 @@ function writeConfig(obj: unknown): void {
 }
 
 function readLLM(): RawLLM {
-  return (JSON.parse(readFileSync(CONFIG_PATH, "utf-8")) as { llm: RawLLM })
-    .llm;
+  return z
+    .object({
+      llm: z.looseObject({
+        default: z
+          .object({
+            provider: z.string(),
+            provider_connection: z.string().optional(),
+          })
+          .optional(),
+      }),
+    })
+    .parse(JSON.parse(readFileSync(CONFIG_PATH, "utf-8"))).llm;
 }
 
 function seed(

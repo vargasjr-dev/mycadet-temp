@@ -56,13 +56,8 @@ function answersFrom(
   response: ProviderResponse,
 ): Record<string, unknown> | null {
   const raw = response.rawResponse;
-  if (
-    isObjectRecord(raw) &&
-    "answers" in raw &&
-    typeof raw.answers === "object" &&
-    raw.answers !== null
-  ) {
-    return raw.answers as Record<string, unknown>;
+  if (isObjectRecord(raw) && isObjectRecord(raw.answers)) {
+    return raw.answers;
   }
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") {

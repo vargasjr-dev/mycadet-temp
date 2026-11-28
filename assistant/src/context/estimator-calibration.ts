@@ -68,7 +68,7 @@ function applyEwmaUpdate(provider: string, model: string, ratio: number): void {
  */
 export function recordEstimate(
   provider: string,
-  model: string,
+  model: string | null | undefined,
   estimated: number,
   actual: number,
 ): void {
@@ -81,8 +81,7 @@ export function recordEstimate(
   }
 
   // A provider can echo back a usage report with no model field (some
-  // OpenAI-compatible providers omit it), leaving `model` null/undefined at
-  // runtime despite its static type. Normalize to the per-provider aggregate
+  // OpenAI-compatible providers omit it), leaving `model` null or undefined. Normalize to the per-provider aggregate
   // key rather than dereferencing it — an unhandled throw here crashes the
   // whole process.
   const safeModel = model ?? "";
@@ -137,7 +136,10 @@ export function getCalibrationSnapshot(): Array<{
     samples: number;
   }> = [];
   for (const [k, state] of CALIBRATIONS) {
-    const [provider, model] = k.split("::", 2) as [string, string];
+    const [provider, model] = k.split("::", 2);
+    if (model === undefined) {
+      continue;
+    }
     out.push({
       provider,
       model,

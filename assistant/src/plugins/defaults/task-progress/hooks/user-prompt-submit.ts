@@ -5,7 +5,9 @@ import {
 
 import { applyTaskProgressContext } from "../src/apply-task-progress-context.js";
 
-const userPromptSubmit: HookFunction<UserPromptSubmitContext> = async (ctx) => {
+const userPromptSubmit: HookFunction<
+  Pick<UserPromptSubmitContext, "conversationId" | "latestMessages" | "logger">
+> = async (ctx) => {
   try {
     ctx.latestMessages = applyTaskProgressContext(
       ctx.conversationId,

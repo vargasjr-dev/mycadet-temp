@@ -5,7 +5,6 @@
  * discovery and inspection endpoints for CLI consumption. The filesystem
  * scanning logic that was previously in the CLI command is now here.
  */
-
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
@@ -14,6 +13,7 @@ import { z } from "zod";
 import { getConfig } from "../../config/loader.js";
 import { getPublicBaseUrl } from "../../inbound/public-ingress-urls.js";
 import { getWorkspaceDir, getWorkspaceRoutesDir } from "../../util/layout.js";
+import { isObjectRecord } from "../../util/object.js";
 import { LOCAL_PRINCIPALS } from "../auth/route-policy.js";
 import { NotFoundError } from "./errors.js";
 import { parseBody } from "./parse-body.js";
@@ -64,10 +64,10 @@ async function inspectModule(
   filePath: string,
 ): Promise<{ methods: HttpMethod[]; description?: string }> {
   const stat = statSync(filePath);
-  const mod = (await import(`${filePath}?t=${stat.mtimeMs}`)) as Record<
-    string,
-    unknown
-  >;
+  const mod: unknown = await import(`${filePath}?t=${stat.mtimeMs}`);
+  if (!isObjectRecord(mod)) {
+    return { methods: [] };
+  }
 
   const methods: HttpMethod[] = [];
   for (const method of HTTP_METHODS) {

@@ -154,7 +154,7 @@ export function parseSystemOneOverride(
   return {
     questions: parsed.questions,
     ...(parsed.state !== undefined
-      ? { state: parsed.state as JevJsonValue }
+      ? { state: z.json().parse(parsed.state) }
       : {}),
   };
 }
@@ -456,7 +456,7 @@ export class JevProvider implements Provider {
           typeof parsed.model === "string" && parsed.model.length > 0
             ? parsed.model
             : request.model,
-        answers: parsed.answers as Record<string, JevJsonValue>,
+        answers: z.record(z.string(), z.json()).parse(parsed.answers),
         ...(usage
           ? {
               usage: {

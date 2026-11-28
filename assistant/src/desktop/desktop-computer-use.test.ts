@@ -347,12 +347,12 @@ describe("virtual desktop computer use", () => {
 test("native dispatch consumes observations while preserving CU history, images, and loop warnings", async () => {
   const warning = "Accessibility is unavailable. Use screenshot coordinates.";
   const backend = driver(warning);
-  const manager = {
-    browser: { release: async () => {} },
-    acquireAutomationSlot: () => ({ ok: true }),
+  const manager = Object.assign(new sessionManager.DesktopSessionManager(), {
+    acquireAutomationSlot: () => ({ ok: true }) as const,
     releaseAutomationSlot: () => {},
     ensureDesktopRunning: async () => {},
-  } as unknown as sessionManager.DesktopSessionManager;
+  });
+  Object.assign(manager.browser, { release: async () => {} });
   const lease = new DesktopAutomationLease({
     enabled: () => true,
     ready: () => true,

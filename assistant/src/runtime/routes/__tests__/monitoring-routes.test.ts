@@ -10,9 +10,9 @@
  *     the next boot).
  *   - status reports the monitor process and the latest sample.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import type { ResourceSample } from "../../../monitoring/resource-sample-types.js";
 import { getMonitoringPidPath } from "../../../util/layout.js";
 
@@ -24,7 +24,7 @@ let stopImpl: () => { status: "running" | "not_running"; pid?: number };
 let monitoringProbe: { status: "running" | "not_running"; pid?: number } = {
   status: "not_running",
 };
-let latestSample: ResourceSample | null = null;
+let latestSample: Partial<ResourceSample> | null = null;
 
 mock.module("../../../monitoring/control.js", () => ({
   MonitoringWorkerSpawnError: FakeSpawnError,
@@ -53,7 +53,7 @@ function handler(operationId: string) {
   if (!route) {
     throw new Error(`route ${operationId} not registered`);
   }
-  return route.handler as () => Promise<Record<string, unknown>>;
+  return async () => jsonObjectSchema.parse(await route.handler({}));
 }
 
 beforeEach(() => {
@@ -216,7 +216,7 @@ describe("monitoring_status", () => {
       },
       events: null,
       disk: null,
-    } as ResourceSample;
+    };
 
     const res = await handler("monitoring_status")();
 

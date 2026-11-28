@@ -26,8 +26,8 @@ function stubProvider(chunks: MockChunk[]): OpenAIChatCompletionsProvider {
     "test-key",
     "google/gemini-3.8-flash",
   );
-  (provider as unknown as { client: unknown }).client = {
-    baseURL: "https://openrouter.example.com/api/v1",
+  provider["client"].baseURL = "https://openrouter.example.com/api/v1";
+  Object.assign(provider["client"], {
     chat: {
       completions: {
         create: async () => ({
@@ -39,7 +39,7 @@ function stubProvider(chunks: MockChunk[]): OpenAIChatCompletionsProvider {
         }),
       },
     },
-  };
+  });
   return provider;
 }
 

@@ -90,7 +90,7 @@ export async function embedMediaJob(job: MemoryJob): Promise<void> {
 
   // Determine modality from mediaType
   const input: EmbeddingInput = {
-    type: asset.mediaType as "image" | "audio" | "video",
+    type: asset.mediaType,
     data: fileData,
     mimeType: asset.mimeType,
   };

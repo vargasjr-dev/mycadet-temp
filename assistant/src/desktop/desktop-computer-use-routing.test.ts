@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 
@@ -14,7 +13,7 @@ import {
   createSkillToolsFromManifest,
 } from "../tools/skills/skill-tool-factory.js";
 import { sensitiveToolReach } from "../tools/tool-approval-handler.js";
-import type { SkillToolManifest } from "./../skills/tool-manifest.js";
+import { parseToolManifestFile } from "./../skills/tool-manifest.js";
 import * as computerUse from "./desktop-computer-use.js";
 import { shouldUseVirtualDesktop } from "./virtual-desktop-feature.js";
 
@@ -200,9 +199,7 @@ for (const platform of [true, false]) {
     test(`bundled tool policy and dispatch agree for ${platform ? "platform" : "local"} ${clientOs}`, async () => {
       process.env.IS_CLOUD = String(platform);
       const skillDir = join(getBundledSkillsDir(), "computer-use");
-      const manifest = JSON.parse(
-        readFileSync(join(skillDir, "TOOLS.json"), "utf8"),
-      ) as SkillToolManifest;
+      const manifest = parseToolManifestFile(join(skillDir, "TOOLS.json"));
       const tools = createSkillToolsFromManifest(
         manifest.tools,
         skillDir,

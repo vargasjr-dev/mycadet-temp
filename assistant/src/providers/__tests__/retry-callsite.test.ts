@@ -442,7 +442,7 @@ describe("RetryProvider — callSite resolution", () => {
     const config = seen?.config;
     assert(config, "Expected provider configuration");
     expect(config.model).toBe(capturedStringSchema.parse(expected.model));
-    expect(config.max_tokens).toBe(expected.maxTokens as number);
+    expect(config.max_tokens).toBe(expected.maxTokens);
   });
 
   test("latency-sensitive live-voice call sites keep their low-effort, no-thinking tuning", async () => {

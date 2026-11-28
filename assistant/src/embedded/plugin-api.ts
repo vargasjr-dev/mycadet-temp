@@ -34,7 +34,7 @@ export const PLUGIN_API_REGISTRY_KEY = Symbol.for("cadet.plugin-api");
 // `PLUGIN_API_EXPORTS` to know which bindings to re-export; the shim's
 // generated body then reads `globalThis[PLUGIN_API_REGISTRY_KEY]` to grab
 // the live module namespace.
-(globalThis as Record<symbol, unknown>)[PLUGIN_API_REGISTRY_KEY] = pluginApi;
+Reflect.set(globalThis, PLUGIN_API_REGISTRY_KEY, pluginApi);
 
 /** Names of the runtime exports the workspace shim should re-bind. */
 export const PLUGIN_API_EXPORTS: readonly string[] = Object.freeze(

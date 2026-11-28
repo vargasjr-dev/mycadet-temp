@@ -27,18 +27,20 @@ const PAIRING_EDGE_REMOTE = "docker";
 
 type Route = { status?: number; body?: string; reject?: unknown };
 
-/** `typeof fetch` carries extras (e.g. `preconnect`) a stub has no use for. */
-function asFetch(
-  stub: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
-): typeof fetch {
-  return stub as typeof fetch;
+type ProbeFetch = NonNullable<Parameters<typeof probeTunnel>[0]["fetchImpl"]>;
+
+function asFetch(stub: ProbeFetch): ProbeFetch {
+  return stub;
 }
 
 /**
  * A hand-rolled response rather than a real one, so `body.cancel()` is
  * observable and stays callable after a failed `json()`.
  */
-function stubResponse(route: Route, onCancel: () => void): Response {
+function stubResponse(
+  route: Route,
+  onCancel: () => void,
+): Awaited<ReturnType<ProbeFetch>> {
   const status = route.status ?? 200;
   const text = route.body ?? "";
   return {
@@ -50,12 +52,12 @@ function stubResponse(route: Route, onCancel: () => void): Response {
       },
     },
     json: async (): Promise<unknown> => JSON.parse(text),
-  } as unknown as Response;
+  };
 }
 
 /** Serves canned responses per path, recording requests and body cancels. */
 function stubFetch(routes: { healthz?: Route; config?: Route }): {
-  fetchImpl: typeof fetch;
+  fetchImpl: ProbeFetch;
   urls: string[];
   cancelled: string[];
 } {
@@ -443,7 +445,7 @@ describe("probeTunnel", () => {
           remote: PAIRING_EDGE_REMOTE,
           assistantId: "asst_1",
         }),
-      } as unknown as Response),
+      }),
     );
     await expect(
       probeTunnel({ publicBaseUrl: BASE, fetchImpl }),

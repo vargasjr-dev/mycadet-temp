@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { WORKSPACE_MIGRATIONS } from "../workspace/migrations/registry.js";
 import { getLastWorkspaceMigrationId } from "../workspace/migrations/runner.js";
+import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // Migration files expose no API to other code (see migrations AGENTS.md);
 // the registry is the one sanctioned importer, so the test exercises the
@@ -47,8 +48,10 @@ function readConfig(): Record<string, unknown> {
   return JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8"));
 }
 
-function webSearch(config: Record<string, unknown>): Record<string, any> {
-  return (config.services as Record<string, any>)["web-search"];
+function webSearch(config: Record<string, unknown>): Record<string, unknown> {
+  return jsonObjectSchema.parse(
+    jsonObjectSchema.parse(config.services)["web-search"],
+  );
 }
 
 // ---------------------------------------------------------------------------

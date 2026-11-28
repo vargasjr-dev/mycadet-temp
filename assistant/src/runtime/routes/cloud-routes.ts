@@ -299,10 +299,7 @@ async function handleCloudDisconnect(
 async function handleCallbackRoutesRegister(
   args: RouteHandlerArgs,
 ): Promise<CallbackRouteRegisterResponse> {
-  const { path, type } = (args.body ?? {}) as {
-    path?: string;
-    type?: string;
-  };
+  const { path, type } = args.body ?? {};
 
   if (!path || typeof path !== "string") {
     throw new BadRequestError("path is required");
@@ -337,19 +334,12 @@ async function handleCallbackRoutesRegister(
 async function handleCallbackRoutesList(
   _args: RouteHandlerArgs,
 ): Promise<CallbackRoutesListResponse> {
-  const routes = (await fetchCloudJson(
+  const routes = await fetchCloudJson(
     "/v1/internal/gateway/callback-routes/",
     "callback routes",
-  )) as Array<{
-    id: string;
-    assistant_id: string;
-    type: string;
-    callback_path: string;
-    callback_url: string;
-    source_identifier: string | null;
-  }>;
+  );
 
-  return { routes };
+  return CallbackRoutesListResponseSchema.parse({ routes });
 }
 
 /** Default per-request timeout for cloud fetches. */

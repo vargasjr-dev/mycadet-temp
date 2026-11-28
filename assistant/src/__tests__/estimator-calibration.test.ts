@@ -200,16 +200,11 @@ describe("estimator calibration", () => {
   test("an undefined model is tolerated and folded into the per-provider aggregate", () => {
     // Some OpenAI-compatible providers (opencode/OpenRouter) omit `model` in
     // their usage report, so `recordEstimate` can be called with a runtime
-    // undefined despite the static `string` type. It must not throw — an
+    // undefined. It must not throw — an
     // unhandled rejection here crashes the whole assistant process — and the
     // sample should still land on the per-provider aggregate key.
     expect(() =>
-      recordEstimate(
-        "openrouter",
-        undefined as unknown as string,
-        100_000,
-        120_000,
-      ),
+      recordEstimate("openrouter", undefined, 100_000, 120_000),
     ).not.toThrow();
     expect(getCorrection("openrouter", "")).toBeCloseTo(1.2, 5);
 

@@ -63,19 +63,18 @@ function isIdempotent(method: string): boolean {
 async function request<T>(
   connection: OAuthConnection,
   path: string,
-  options?: RequestInit,
+  options?: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  },
   query?: Record<string, string | string[]>,
 ): Promise<T> {
   const method = (options?.method ?? "GET").toUpperCase();
   const canRetry = isIdempotent(method);
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const extraHeaders =
-      options?.headers &&
-      typeof options.headers === "object" &&
-      !Array.isArray(options.headers)
-        ? (options.headers as Record<string, string>)
-        : {};
+    const extraHeaders = options?.headers;
     const resp: OAuthConnectionResponse = await connection.request({
       method,
       path,
@@ -84,7 +83,7 @@ async function request<T>(
         "Content-Type": "application/json",
         ...extraHeaders,
       },
-      body: options?.body ? JSON.parse(options.body as string) : undefined,
+      body: options?.body ? JSON.parse(options.body) : undefined,
     });
 
     if (resp.status < 200 || resp.status >= 300) {

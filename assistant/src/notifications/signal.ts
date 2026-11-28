@@ -37,13 +37,9 @@ export const NOTIFICATION_SOURCE_CHANNELS = [
 export type NotificationSourceChannel =
   (typeof NOTIFICATION_SOURCE_CHANNELS)[number]["id"];
 
-/** Typed tuple of all source channel IDs — usable with `z.enum()`. */
 const NOTIFICATION_SOURCE_CHANNEL_IDS = NOTIFICATION_SOURCE_CHANNELS.map(
   (c) => c.id,
-) as unknown as readonly [
-  NotificationSourceChannel,
-  ...NotificationSourceChannel[],
-];
+);
 
 export const NotificationSourceChannelSchema = z.enum(
   NOTIFICATION_SOURCE_CHANNEL_IDS,

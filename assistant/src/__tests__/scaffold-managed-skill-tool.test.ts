@@ -1283,7 +1283,7 @@ describe("scaffold_cloud_skill tool", () => {
     const lookup = mock(() => ({ forkParentConversationId: "source-conv" }));
     const context = makeRetrospectiveContext();
     // Some runtime callers construct a partial context without a conversation.
-    delete (context as { conversationId?: string }).conversationId;
+    Reflect.deleteProperty(context, "conversationId");
 
     const result = await executeScaffoldCloudSkill(
       {

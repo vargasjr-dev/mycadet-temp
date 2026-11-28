@@ -113,13 +113,10 @@ const SAMPLE_FAILURES = [
 ];
 
 const bundledPrompt = (includeCorePagesSection = false): string =>
-  (CONSOLIDATION_PROMPT as string)
-    .replaceAll(CUTOFF_PLACEHOLDER, CUTOFF)
+  CONSOLIDATION_PROMPT.replaceAll(CUTOFF_PLACEHOLDER, CUTOFF)
     .replaceAll(
       CORE_PAGES_PLACEHOLDER,
-      includeCorePagesSection
-        ? (CORE_PAGES_CONSOLIDATION_SECTION as string)
-        : "",
+      includeCorePagesSection ? CORE_PAGES_CONSOLIDATION_SECTION : "",
     )
     .replaceAll(BUFFER_ENTRIES_PLACEHOLDER, "")
     .replaceAll(PARSE_FAILURES_PLACEHOLDER, "")
@@ -160,8 +157,8 @@ describe("anti-injection framing", () => {
   const MARKER = "not instructions for this pass";
 
   test("both bundled templates contain the anti-injection framing", () => {
-    expect(CONSOLIDATION_PROMPT as string).toContain(MARKER);
-    expect(CONSOLIDATION_PROMPT_V3 as string).toContain(MARKER);
+    expect(CONSOLIDATION_PROMPT).toContain(MARKER);
+    expect(CONSOLIDATION_PROMPT_V3).toContain(MARKER);
   });
 
   test("survives rendering for both v2 and v3 article shapes", () => {

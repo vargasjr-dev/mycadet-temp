@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Database } from "bun:sqlite";
 
+import { getObjectProperty } from "../../util/object.js";
 import type { WorkspaceMigration } from "./types.js";
 
 /**
@@ -111,8 +112,8 @@ function isMemoryV2Disabled(workspaceDir: string): boolean {
   }
   try {
     const raw = JSON.parse(readFileSync(configPath, "utf-8"));
-    const memory = (raw as { memory?: { v2?: { enabled?: unknown } } })?.memory;
-    return memory?.v2?.enabled === false;
+    const v2 = getObjectProperty(getObjectProperty(raw, "memory"), "v2");
+    return getObjectProperty(v2, "enabled") === false;
   } catch {
     return false;
   }

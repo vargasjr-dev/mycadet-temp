@@ -24,6 +24,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { AssistantConfigSchema } from "../../../../config/schema.js";
+import { contentBlockArraySchema } from "../../../../providers/content-block-schema.js";
 
 // ---------------------------------------------------------------------------
 // Mock state. Reset between tests.
@@ -321,7 +322,7 @@ function rememberToolUseResponse(): ProviderResponse {
 function makeForkConversationDouble(): Conversation {
   const messages: Message[] = (messageStores[FORK_ID] ?? []).map((row) => ({
     role: row.role as Message["role"],
-    content: JSON.parse(row.content) as Message["content"],
+    content: contentBlockArraySchema.parse(JSON.parse(row.content)),
   }));
   const realLoop = new AgentLoop({
     provider: fakeProvider,

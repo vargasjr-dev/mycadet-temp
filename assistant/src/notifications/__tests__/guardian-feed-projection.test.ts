@@ -32,10 +32,7 @@ let listGuardianRequestsStub: () => Promise<unknown[]> = async () => [];
 let getGuardianRequestStub: (id: string) => Promise<unknown> = async () => null;
 mock.module("../../channels/gateway-guardian-requests.js", () => ({
   ...actualGateway,
-  listGuardianRequests: (...args: unknown[]) =>
-    (listGuardianRequestsStub as (...a: unknown[]) => Promise<unknown[]>)(
-      ...args,
-    ),
+  listGuardianRequests: () => listGuardianRequestsStub(),
   getGuardianRequest: (id: string) => getGuardianRequestStub(id),
 }));
 

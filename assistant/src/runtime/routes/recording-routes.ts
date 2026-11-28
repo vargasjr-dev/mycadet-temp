@@ -14,7 +14,7 @@
 
 import { z } from "zod";
 
-import { RecordingOptions } from "../../api/events/recording.js";
+import { RecordingOptionsSchema } from "../../api/events/recording.js";
 import {
   getActiveRestartToken,
   handleRecordingPause,
@@ -46,10 +46,11 @@ async function handleStartRecording({ body }: RouteHandlerArgs) {
     throw new BadRequestError("conversationId is required");
   }
 
-  const recordingId = handleRecordingStart(
-    body.conversationId,
-    body.options as RecordingOptions | undefined,
-  );
+  const options = RecordingOptionsSchema.optional().safeParse(body.options);
+  if (!options.success) {
+    throw new BadRequestError("Invalid recording options");
+  }
+  const recordingId = handleRecordingStart(body.conversationId, options.data);
 
   if (!recordingId) {
     const idle = isRecordingIdle();
@@ -166,16 +167,29 @@ async function handlePostRecordingStatus({ body }: RouteHandlerArgs) {
     throw new BadRequestError("status is required");
   }
 
-  if (
-    !VALID_RECORDING_STATUSES.includes(
-      body.status as (typeof VALID_RECORDING_STATUSES)[number],
-    )
-  ) {
+  const status = VALID_RECORDING_STATUSES.find(
+    (value) => value === body.status,
+  );
+  if (!status) {
     throw new BadRequestError(`Invalid status: ${body.status}`);
   }
 
+  const details = z
+    .object({
+      filePath: z.string().optional(),
+      durationMs: z.number().optional(),
+      error: z.string().optional(),
+      attachToConversationId: z.string().optional(),
+      operationToken: z.string().optional(),
+    })
+    .safeParse(body);
+  if (!details.success) {
+    throw new BadRequestError("Invalid recording status fields");
+  }
   const msg: RecordingStatus = {
-    ...(body as Omit<RecordingStatus, "type">),
+    ...details.data,
+    conversationId: body.conversationId,
+    status,
     type: "recording_status",
   };
 

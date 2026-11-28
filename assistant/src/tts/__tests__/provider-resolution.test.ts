@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { AssistantConfigSchema } from "../../config/schema.js";
 import {
   _resetTtsProviderOverridesForTests,
   _setTtsProviderForTests,
@@ -87,9 +88,7 @@ describe("TTS provider resolution", () => {
 
 describe("managed TTS provider resolution", () => {
   const configWith = (tts: Record<string, unknown>) =>
-    ({ services: { tts } }) as unknown as Parameters<
-      typeof resolveTtsConfig
-    >[0];
+    AssistantConfigSchema.parse({ services: { tts } });
 
   test("resolves a BYOK provider", () => {
     const config = configWith({ provider: "deepgram", providers: {} });

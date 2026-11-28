@@ -6,14 +6,9 @@ import { detectVisionNotSupported } from "../chat-completions-provider.js";
 
 function buildApiError(
   status: number,
-  body: unknown,
+  body: Record<string, unknown>,
 ): InstanceType<typeof OpenAI.APIError> {
-  return new OpenAI.APIError(
-    status,
-    body as Record<string, unknown>,
-    undefined,
-    new Headers(),
-  );
+  return new OpenAI.APIError(status, body, undefined, new Headers());
 }
 
 describe("detectVisionNotSupported", () => {

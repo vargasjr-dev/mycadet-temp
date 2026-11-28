@@ -18,6 +18,12 @@ import { eq } from "drizzle-orm";
 
 import { getDb } from "../../persistence/db-connection.js";
 import {
+  diskConversationMessageSchema,
+  diskConversationMetaSchema,
+  type DiskMessageRecord,
+  type DiskMeta,
+} from "../../persistence/disk-conversation-schemas.js";
+import {
   conversations,
   messages,
 } from "../../persistence/schema/conversations.js";
@@ -25,33 +31,6 @@ import { getLogger } from "../../util/logger.js";
 import type { WorkspaceMigration } from "./types.js";
 
 const log = getLogger("workspace-migrations");
-
-interface DiskMeta {
-  id: string;
-  title?: string;
-  type?: string;
-  channel?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface DiskToolCall {
-  name?: string;
-  input?: unknown;
-}
-
-interface DiskToolResult {
-  content?: unknown;
-}
-
-interface DiskMessageRecord {
-  role: string;
-  ts?: string;
-  content?: string;
-  toolCalls?: DiskToolCall[];
-  toolResults?: DiskToolResult[];
-  attachments?: unknown[];
-}
 
 function parseEpochMs(isoString: string | undefined): number | null {
   if (!isoString) {
@@ -147,7 +126,9 @@ export const recoverConversationsFromDiskViewMigration: WorkspaceMigration = {
 
       let meta: DiskMeta;
       try {
-        meta = JSON.parse(readFileSync(metaPath, "utf-8")) as DiskMeta;
+        meta = diskConversationMetaSchema.parse(
+          JSON.parse(readFileSync(metaPath, "utf-8")),
+        );
       } catch (err) {
         log.warn(`Skipping ${entry}: malformed meta.json: ${err}`);
         skipped++;
@@ -185,7 +166,9 @@ export const recoverConversationsFromDiskViewMigration: WorkspaceMigration = {
               continue;
             }
             try {
-              messageRecords.push(JSON.parse(trimmed) as DiskMessageRecord);
+              messageRecords.push(
+                diskConversationMessageSchema.parse(JSON.parse(trimmed)),
+              );
             } catch {
               log.warn(
                 `Skipping malformed JSONL line in ${entry}/messages.jsonl`,

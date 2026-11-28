@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { jsonObjectSchema } from "../../../../../__tests__/helpers/json-object-schema.js";
 import { getMemoryWorkerPidPath } from "../../../../../util/layout.js";
 
 class FakeSpawnError extends Error {}
@@ -61,7 +62,7 @@ function handler(operationId: string) {
   if (!route) {
     throw new Error(`route ${operationId} not registered`);
   }
-  return route.handler as () => Promise<Record<string, unknown>>;
+  return async () => jsonObjectSchema.parse(await route.handler({}));
 }
 
 beforeEach(() => {

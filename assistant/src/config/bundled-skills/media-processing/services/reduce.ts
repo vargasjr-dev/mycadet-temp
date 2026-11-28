@@ -14,6 +14,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { z } from "zod";
+
 import { getMediaAssetById } from "../../../../persistence/media-store.js";
 import {
   createTimeout,
@@ -21,7 +23,6 @@ import {
   getConfiguredProvider,
   userMessage,
 } from "../../../../providers/provider-send-message.js";
-import type { MapOutput } from "./gemini-map.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,7 +58,7 @@ const REDUCE_TIMEOUT_MS = 120_000;
 /**
  * Load map-output.json for an asset from its pipeline directory.
  */
-async function loadMapOutput(assetId: string): Promise<MapOutput> {
+async function loadMapOutput(assetId: string) {
   const asset = getMediaAssetById(assetId);
   if (!asset) {
     throw new Error(`Media asset not found: ${assetId}`);
@@ -75,14 +76,33 @@ async function loadMapOutput(assetId: string): Promise<MapOutput> {
     );
   }
 
-  return JSON.parse(raw) as MapOutput;
+  return z
+    .object({
+      assetId: z.string(),
+      model: z.string(),
+      segmentCount: z.number(),
+      successCount: z.number(),
+      failedCount: z.number(),
+      skippedCount: z.number(),
+      segments: z.array(
+        z.object({
+          segmentId: z.string(),
+          startSeconds: z.number(),
+          endSeconds: z.number(),
+          result: z.unknown(),
+        }),
+      ),
+    })
+    .parse(JSON.parse(raw));
 }
 
 /**
  * Format map output segments into a text document for Claude.
  * Strips image data - text only.
  */
-function formatMapOutputAsText(mapOutput: MapOutput): string {
+function formatMapOutputAsText(
+  mapOutput: Awaited<ReturnType<typeof loadMapOutput>>,
+): string {
   const lines: string[] = [];
 
   lines.push(`Video Analysis Data (asset: ${mapOutput.assetId})`);
@@ -156,7 +176,21 @@ async function persistReduceCost(
   };
   try {
     const raw = await readFile(costPath, "utf-8");
-    existing = JSON.parse(raw) as ReduceCostData;
+    existing = z
+      .object({
+        totalInputTokens: z.number(),
+        totalOutputTokens: z.number(),
+        entries: z.array(
+          z.object({
+            query: z.string(),
+            model: z.string(),
+            inputTokens: z.number(),
+            outputTokens: z.number(),
+            timestamp: z.string(),
+          }),
+        ),
+      })
+      .parse(JSON.parse(raw));
   } catch {
     // First query - start fresh
   }

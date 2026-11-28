@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { z } from "zod";
+
 import {
   decodeJsonSafeOAuthBody,
   decodeOAuthResponseBytes,
@@ -33,13 +35,19 @@ describe("decodeOAuthResponseBytes", () => {
       "application/octet-stream",
     );
     expect(Buffer.isBuffer(body)).toBe(true);
-    expect(Buffer.from(body as Uint8Array).equals(PNG_MAGIC)).toBe(true);
-    expect(Buffer.from(body as Uint8Array).includes(0xff)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(body)).equals(PNG_MAGIC),
+    ).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(body)).includes(0xff),
+    ).toBe(true);
   });
 
   test("treats Google Drive media downloads as raw bytes", () => {
     const body = decodeOAuthResponseBytes(PNG_MAGIC, "application/pdf");
-    expect(Buffer.from(body as Uint8Array).equals(PNG_MAGIC)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(body)).equals(PNG_MAGIC),
+    ).toBe(true);
   });
 
   test("returns null for an empty body", () => {
@@ -71,7 +79,9 @@ describe("decodeJsonSafeOAuthBody", () => {
     const encoded = jsonSafeOAuthBody(PNG_MAGIC);
     const decoded = decodeJsonSafeOAuthBody(encoded);
     expect(Buffer.isBuffer(decoded)).toBe(true);
-    expect(Buffer.from(decoded as Uint8Array).equals(PNG_MAGIC)).toBe(true);
+    expect(
+      Buffer.from(z.instanceof(Uint8Array).parse(decoded)).equals(PNG_MAGIC),
+    ).toBe(true);
   });
 
   test("leaves JSON and text envelopes unchanged", () => {

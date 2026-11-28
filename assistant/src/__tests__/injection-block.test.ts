@@ -84,12 +84,12 @@ describe("assembleInjectionBlock", () => {
     const regularNode = makeScoredNode({
       id: "regular",
       content: "Had coffee with friend",
-    } as Partial<MemoryNode> & { content: string });
+    });
     const eventNode = makeScoredNode({
       id: "event",
       content: "Dentist appointment",
       eventDate: Date.now() + 2 * 24 * 60 * 60 * 1000,
-    } as Partial<MemoryNode> & { content: string });
+    });
 
     const result = assembleInjectionBlock([regularNode, eventNode]);
     const lines = result.split("\n");

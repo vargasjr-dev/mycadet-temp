@@ -1,7 +1,6 @@
 import { afterEach, expect, mock, test } from "bun:test";
 
 import { DesktopAutomationLease } from "./desktop-automation-lease.js";
-import type { DesktopSessionManager } from "./desktop-session-manager.js";
 
 const context = {
   conversationId: "conv-123",
@@ -28,13 +27,12 @@ function fixture() {
     notify,
     enabled: () => enabled,
     ready: () => ready,
-    manager: () =>
-      ({
-        browser: { release: releaseBrowser },
-        acquireAutomationSlot: () => ({ ok: true }),
-        releaseAutomationSlot: released,
-        ensureDesktopRunning: started,
-      }) as unknown as DesktopSessionManager,
+    manager: () => ({
+      browser: { release: releaseBrowser },
+      acquireAutomationSlot: () => ({ ok: true }),
+      releaseAutomationSlot: released,
+      ensureDesktopRunning: started,
+    }),
   });
   cleanups.push(lease);
   return {

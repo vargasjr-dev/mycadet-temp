@@ -162,7 +162,7 @@ async function handleSynthesizeCliTts({ body }: RouteHandlerArgs) {
   }
 
   const useCase: TtsUseCase =
-    (body.useCase as TtsUseCase | undefined) ?? "message-playback";
+    body.useCase === "phone-call" ? "phone-call" : "message-playback";
   const voiceId =
     body.voiceId && typeof body.voiceId === "string" ? body.voiceId : undefined;
 

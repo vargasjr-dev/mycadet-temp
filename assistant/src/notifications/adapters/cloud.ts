@@ -14,7 +14,7 @@
  */
 import { CadetCloudClient } from "../../cloud/client.js";
 import { getLogger } from "../../util/logger.js";
-import { getObjectProperty } from "../../util/object.js";
+import { getObjectProperty, isObjectRecord } from "../../util/object.js";
 import {
   isRetryableNetworkError,
   isRetryableStatus,
@@ -236,11 +236,7 @@ export class CloudPushAdapter implements ChannelAdapter {
         // one device push was dispatched; an unparseable or ambiguous body
         // counts as not accepted (a duplicate client banner beats a lost
         // notification).
-        const parsedBody = responseBody as {
-          accepted_platforms?: unknown;
-          skipped?: unknown;
-          tokens_sent?: unknown;
-        } | null;
+        const parsedBody = isObjectRecord(responseBody) ? responseBody : null;
         const remotePushAccepted =
           parsedBody != null &&
           !parsedBody.skipped &&

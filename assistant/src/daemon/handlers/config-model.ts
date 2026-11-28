@@ -11,6 +11,7 @@ import {
   type ProviderCatalogEntry,
 } from "../../providers/model-catalog.js";
 import { getConfiguredProviders } from "../../providers/provider-availability.js";
+import { getObjectProperty } from "../../util/object.js";
 import { CONFIG_RELOAD_DEBOUNCE_MS, log } from "./shared.js";
 
 // ---------------------------------------------------------------------------
@@ -104,10 +105,10 @@ export function setImageGenModel(modelId: string, ctx: ModelSetContext): void {
   // selected slug (including google/ and openai/ prefixes). Rewriting either
   // would silently move the user onto a BYOK provider they may hold no key
   // for.
-  const services = raw.services as
-    | Record<string, { provider?: string }>
-    | undefined;
-  const currentProvider = services?.["image-generation"]?.provider;
+  const currentProvider = getObjectProperty(
+    getObjectProperty(raw.services, "image-generation"),
+    "provider",
+  );
   if (currentProvider !== "cadet" && currentProvider !== "openrouter") {
     setServiceField(
       raw,

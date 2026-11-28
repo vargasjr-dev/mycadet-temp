@@ -8,8 +8,6 @@
 // failures through `classifyWebSearchFailure` so the same friendly message
 // propagates to every client via `WebSearchMetadata.errorMessage`.
 
-import type { Logger } from "pino";
-
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { truncateForLog } from "../../util/logger.js";
 import { isPlainObject } from "../../util/object.js";
@@ -264,7 +262,7 @@ export interface WebSearchBackendFailureMeta {
  * provider/HTTP context and must never be surfaced to users.
  */
 export function logWebSearchBackendFailure(
-  log: Logger,
+  log: { warn(fields: Record<string, unknown>, message: string): void },
   meta: WebSearchBackendFailureMeta,
 ): void {
   log.warn(
