@@ -17,12 +17,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # One build per environment: the snapshot bakes its environment's brand
-  # (data-env + the logo src) from DOCS_BRAND_ENV, and the cloud's
-  # github-handler routes each artifact to the matching twin's bucket —
-  # `docs-frontend` → the prod bucket, `docs-frontend-dev` → the dev one.
-  # A new serving twin joins by adding its environment to the matrix and
-  # the handler's artifact map.
   build-and-publish:
     strategy:
       matrix:
@@ -55,38 +49,11 @@ jobs:
         working-directory: clients/docs
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-          DOCS_BRAND_ENV: ${{ matrix.brand }}
+          CADET_ENVIRONMENT: ${{ matrix.brand }}
         run: bun run build
 
       - name: Assemble the marketing snapshot
-        run: |
-          SITE=docs-frontend-site
-          mkdir -p "$SITE/_next"
-          # Every prerendered page the cloud web twin serves from the
-          # bucket: the marketing routes, the /docs index, the /docs/*
-          # tree, and the not-found page (the mirror's 404 fallback).
-          # A glob, so a future page can't be forgotten here. The
-          # /plugins/[name] detail pages are dynamic — those stay on the
-          # docs-site service until they go client-rendered.
-          cp clients/docs/.next/server/app/*.html "$SITE/"
-          # The not-found page publishes under its fallback name (the
-          # mirror serves it when a bucket path misses).
-          if [ -f "$SITE/_not-found.html" ]; then
-            mv "$SITE/_not-found.html" "$SITE/404.html"
-          fi
-          cp -R clients/docs/.next/server/app/docs "$SITE/docs"
-          # The app's public assets under the /docs ingress prefix
-          # (favicons, QRs) — placed at SITE/docs/ so the object paths
-          # match the URLs that reference them. The docs page tree above
-          # already created SITE/docs, so copy the CONTENTS in: a plain
-          # `cp -R public/docs SITE/docs` would nest a second docs/ inside
-          # and every asset would 404 one level deep.
-          cp -R clients/docs/public/docs/. "$SITE/docs/"
-          # Content-hashed client chunks, referenced as /docs/_next/* (the
-          # app's assetPrefix). Uploaded append-only bucket-side so older
-          # builds' references keep resolving.
-          cp -R clients/docs/.next/static "$SITE/_next/"
-          echo "$GITHUB_SHA" > "$SITE/VERSION"
+        run: clients/docs/scripts/assemble-snapshot.sh
 
       - name: Upload the snapshot artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
