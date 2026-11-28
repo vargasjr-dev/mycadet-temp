@@ -31,9 +31,6 @@ const installBridge = (interfaceId: string): void => {
   const teardown = installHostProxyBridge(
     createHostProxyRuntime({
       interfaceId,
-      // The client can draw on its own companion surface, capture the
-      // screen around it, and walk its element tree in order.
-      supports: { windowCapture: true, sequence: true, coachmarks: true },
       hostCu: { executor: cu.host_cu, teardown: cu.teardown },
       logger: log,
     }),

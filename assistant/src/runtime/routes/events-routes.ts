@@ -28,7 +28,10 @@ import { parseInterfaceId, supportsHostProxy } from "../../channels/types.js";
 import { notifyContactsChanged } from "../../contacts/notify-contacts-changed.js";
 import { getConversation } from "../../persistence/conversation-crud.js";
 import { getOrCreateConversation } from "../../persistence/conversation-key-store.js";
-import { HostProxyCapability } from "../../types/host-capabilities.js";
+import {
+  HOST_PROXY_CAPABILITIES,
+  type HostProxyCapability,
+} from "../../types/host-capabilities.js";
 import { getLogger } from "../../util/logger.js";
 import { formatSseFrame, formatSseHeartbeat } from "../assistant-event.js";
 import type {
@@ -58,14 +61,6 @@ import { startActorPrincipalHeal } from "./sse-actor-principal-heal.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("events-routes");
-
-const ALL_CAPABILITIES: HostProxyCapability[] = [
-  "host_bash",
-  "host_file",
-  "host_cu",
-  "host_browser",
-  "host_ui_snapshot",
-];
 
 /**
  * Resolution of the event-loop delay histogram, per
@@ -312,7 +307,7 @@ export function handleSubscribeAssistantEvents(
   );
   const sseWatchdog = headers?.["x-cadet-sse-watchdog"]?.trim() === "1";
 
-  const clientCapabilities = registrationCapabilities(interfaceId, headers);
+  const clientCapabilities = registrationCapabilities(interfaceId);
 
   if (clientId && !interfaceId) {
     log.error(
@@ -507,12 +502,7 @@ export function handleSubscribeAssistantEvents(
         if (lastSeenSeq != null) {
           const window = getReplayWindow(
             lastSeenSeq,
-            replaySubscriberFor(
-              clientId,
-              interfaceId,
-              actorPrincipalId,
-              headers,
-            ),
+            replaySubscriberFor(clientId, interfaceId, actorPrincipalId),
             filter.conversationId,
           );
           if (window !== null) {
@@ -589,49 +579,33 @@ function readClientIdentity(headers: Record<string, string> | undefined): {
 }
 
 /**
- * The host-proxy capabilities a client registration advertises, from the
- * registration's interface id and headers.
- *
- * A shell's embedded web client reports the shell's desktop interface for
- * identity (turn channel, client lists) but serves no host tools — the
- * Electron main process opens its own registration for those. Its
- * `X-Cadet-Host-Proxy: 0` opt-out keeps this derivation from advertising
- * host capabilities for a connection that cannot answer them (the ambiguity
- * the renderer's old always-"web" registration existed to avoid).
+ * The host-proxy capabilities a client registration advertises, derived
+ * server-side purely from the registration's interface id (the
+ * `HOST_PROXY_SUPPORT` table). Clients negotiate nothing: a renderer
+ * registers as `web` and answers no host tools, while each desktop shell's
+ * own registration carries its shell's full grant.
  */
 export function registrationCapabilities(
   interfaceId: InterfaceId | null,
-  headers: Record<string, string> | undefined,
 ): HostProxyCapability[] {
-  if (interfaceId == null || headers?.["x-cadet-host-proxy"] === "0") {
+  if (interfaceId == null) {
     return [];
   }
-  return [
-    ...ALL_CAPABILITIES.filter((cap) => supportsHostProxy(interfaceId, cap)),
-    ...(interfaceId === "macos" &&
-    headers?.["x-cadet-cu-window-capture"] === "1"
-      ? ["host_cu_window_capture" as const]
-      : []),
-    ...(interfaceId === "macos" && headers?.["x-cadet-cu-sequence"] === "1"
-      ? ["host_cu_sequence" as const]
-      : []),
-    ...(interfaceId === "macos" && headers?.["x-cadet-cu-annotate"] === "1"
-      ? ["host_cu_annotate" as const]
-      : []),
-  ];
+  return HOST_PROXY_CAPABILITIES.filter((cap) =>
+    supportsHostProxy(interfaceId, cap),
+  );
 }
 
 /**
  * The identity a replay filter checks targeted events against: the client a
- * live SSE subscription with these headers would register, or a process
- * subscriber when the caller names no client. Shared by the reconnect replay
+ * live SSE subscription would register, or a process subscriber when the
+ * caller names no client. Shared by the reconnect replay
  * and the tail route so both deliver exactly what live fanout would have.
  */
 function replaySubscriberFor(
   clientId: string | null,
   interfaceId: InterfaceId | null,
   actorPrincipalId: string | undefined,
-  headers: Record<string, string> | undefined,
 ): SubscriberIdentity {
   if (!clientId || !interfaceId) {
     return { type: "process" };
@@ -640,7 +614,7 @@ function replaySubscriberFor(
     type: "client",
     clientId,
     interfaceId,
-    capabilities: registrationCapabilities(interfaceId, headers),
+    capabilities: registrationCapabilities(interfaceId),
     actorPrincipalId,
   };
 }
@@ -700,7 +674,7 @@ function handleEventsTail({
     readClientIdentity(headers);
   const window = getReplayWindow(
     fromSeq,
-    replaySubscriberFor(clientId, interfaceId, actorPrincipalId, headers),
+    replaySubscriberFor(clientId, interfaceId, actorPrincipalId),
     conversationId,
   );
   if (window === null) {

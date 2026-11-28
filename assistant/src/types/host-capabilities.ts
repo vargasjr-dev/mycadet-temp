@@ -46,10 +46,9 @@ export type HostProxyInterfaceId = "macos" | "windows" | "linux";
  * desktop-only call sites use still rejects it. Clients absent from this table
  * (web, ios, android, and every messaging transport) provide none.
  *
- * Windows and Linux run the same host proxy as macOS. The
- * negotiated CU capabilities ride the host_cu transport and are claimed per
- * connection; only the macOS native helper answers them, so a
- * request elsewhere would reach that helper as an unknown action.
+ * Windows and Linux run the same host proxy as macOS. Only the macOS native
+ * helper answers the CU capabilities, so a request elsewhere would reach that
+ * helper as an unknown action.
  *
  * macOS additionally provisions its `host_browser` proxy via the assistant
  * event hub. When no extension is connected, browser tools fall through to
