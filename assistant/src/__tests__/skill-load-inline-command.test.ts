@@ -275,9 +275,8 @@ describe("skill_load inline command expansion", () => {
         ),
         "utf-8",
       );
-      // The eligible sources set must include bundled, managed, workspace but NOT plugin
+      // The eligible sources set must include bundled and workspace but NOT plugin
       expect(loadSrc).toContain('"bundled"');
-      expect(loadSrc).toContain('"managed"');
       expect(loadSrc).toContain('"workspace"');
       expect(loadSrc).toContain('skill.source === "plugin"');
     });

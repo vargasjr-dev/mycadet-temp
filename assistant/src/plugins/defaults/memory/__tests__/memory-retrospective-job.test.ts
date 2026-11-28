@@ -2589,8 +2589,8 @@ describe("memoryRetrospectiveJob", () => {
     );
 
     // The dedup directive keys overwrite eligibility on the `author` signal:
-    // overwrite only `source: "managed"` AND `author: "assistant"`.
-    expect(instructionText).toContain('source: "managed"');
+    // overwrite only `source: "workspace"` AND `author: "assistant"`.
+    expect(instructionText).toContain('source: "workspace"');
     expect(instructionText).toContain('author: "assistant"');
 
     // Ordinary facts stay plain remembers — the instruction carries no
