@@ -39,6 +39,7 @@ import { markCurrentProcessAsMainDaemon } from "../runtime/process-role.js";
 import { reconcilePluginSchedules } from "../schedule/plugin-schedule-reconciler.js";
 import { recoverStaleSchedules } from "../schedule/schedule-recovery.js";
 import { startScheduler } from "../schedule/scheduler.js";
+import { ensureWorkspaceSeedSkills } from "../skills/workspace-seed.js";
 import { getSubagentManager } from "../subagent/index.js";
 import {
   ensureDataDir,
@@ -163,6 +164,7 @@ export async function runDaemon(): Promise<void> {
 
   log.info("Daemon startup: initializing DB");
   ensurePromptFiles();
+  ensureWorkspaceSeedSkills();
 
   // DB must be initialized before workspace migrations because some
   // workspace migrations (e.g. 009-backfill-conversation-disk-view)

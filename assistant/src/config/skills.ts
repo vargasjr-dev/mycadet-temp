@@ -80,7 +80,9 @@ const SkillMetadataSchema = z
  *   default at `plugins/defaults/<dir>/skills/<id>/SKILL.md`, attributed back
  *   to the owning plugin via its `owner` descriptor.
  */
-export type SkillSource = "bundled" | "workspace" | "plugin";
+export const SKILL_SOURCE_VALUES = ["bundled", "workspace", "plugin"] as const;
+
+export type SkillSource = (typeof SKILL_SOURCE_VALUES)[number];
 
 export interface SkillSummary {
   id: string;
@@ -178,9 +180,8 @@ export interface SkillToolManifestMeta {
 export function getBundledSkillsDir(): string {
   const dir = import.meta.dir;
 
-  // In compiled Bun binaries, import.meta.dir points into the virtual
-  // /$bunfs/ filesystem where non-JS assets don't exist.  Fall back to
-  // the macOS .app bundle Resources dir or next to the binary.
+  // In compiled Bun binaries import.meta.dir points into the virtual /$bunfs/
+  // filesystem; fall back to the macOS .app Resources dir or next to the binary.
   if (isBunVirtualPath(dir)) {
     const execDir = dirname(process.execPath);
     // macOS .app bundle: binary is in Contents/MacOS/, resources in Contents/Resources/
@@ -272,10 +273,8 @@ export function parseFrontmatter(
         icon = parsedMeta.icon;
         emoji = parsedMeta.cadet?.emoji ?? parsedMeta.emoji;
       } else {
-        // Zod validation failed — fall back to raw parsed object so we don't
-        // lose all metadata because of a single bad field value.  We coerce
-        // critical array fields so downstream code that iterates them
-        // (e.g. `.join()`, `for...of`, `.some()`) won't crash.
+        // Zod failed — fall back to raw parsed fields (coercing arrays) so
+        // one bad value doesn't lose the rest of the metadata.
         log.warn(
           { err: zodResult.error, skillFilePath },
           "Metadata failed schema validation; falling back to raw object",
@@ -800,11 +799,8 @@ function discoverInstalledPluginResidentSkills(): SkillSummary[] {
     }
     const pluginDir = join(pluginsDir, entry.name);
 
-    // A directory under `plugins/` with no supported manifest is not a plugin the
-    // runtime can load, so its skills are never surfaced. This is an easy
-    // footgun — a plugin dropped in without its manifest looks installed but
-    // silently contributes nothing — so warn loudly with the path rather than
-    // skipping in silence, to make the misconfiguration diagnosable.
+    // A plugin dir with no loadable manifest looks installed but silently
+    // contributes nothing — warn loudly so the misconfiguration is diagnosable.
     if (!hasPluginManifest(pluginDir)) {
       log.warn(
         { pluginDir },
@@ -813,21 +809,14 @@ function discoverInstalledPluginResidentSkills(): SkillSummary[] {
       continue;
     }
 
-    // Honor the `.disabled` sentinel the runtime plugin scan checks
-    // (`plugins/mtime-cache.ts`): a disabled plugin contributes no hooks or
-    // tools, so its resident skills must not be loadable either.
+    // A disabled plugin contributes no hooks or tools, so its resident
+    // skills must not be loadable either.
     if (existsSync(join(pluginDir, ".disabled"))) {
       continue;
     }
 
-    // Mirror the plugin loader: a directory contributes its resident skills
-    // when it carries a loadable manifest (parseable `package.json` with a
-    // non-empty `name`). The manifest `name` need not equal the directory name
-    // — the loader imposes no such match — so a plugin installed under a
-    // marketplace slug or GitHub path leaf that differs from its `package.json`
-    // `name` still surfaces its skills, matching the hooks and tools the
-    // runtime already loads from it. A parseable manifest still rejects staging
-    // dirs and malformed clones the loader would itself refuse.
+    // Mirror the plugin loader's manifest gate, so a plugin surfaces exactly
+    // the skills the runtime already loads hooks/tools from.
     if (!hasLoadablePluginManifest(pluginDir)) {
       continue;
     }
@@ -926,11 +915,8 @@ export function loadSkillCatalog(): SkillSummary[] {
     catalog.push(skill);
   }
 
-  // Discover skills shipped on disk inside plugins, in-process defaults and
-  // installed plugins alike. They sit above bundled but below workspace so a
-  // user filesystem skill can override a plugin-provided skill by declaring
-  // the same id under `$CADET_WORKSPACE_DIR/skills/`. Precedence *within* the
-  // plugin source (installed over default) is resolved by the discovery pass.
+  // Plugin skills sit above bundled but below workspace: a user skill under
+  // $CADET_WORKSPACE_DIR/skills/ can override a plugin-provided id.
   const pluginSkills = discoverPluginResidentSkills();
   for (const skill of pluginSkills) {
     if (seenIds.has(skill.id)) {
@@ -1084,9 +1070,8 @@ function loadSkillDefinition(skill: SkillSummary): SkillLookupResult {
   if (skill.bundled) {
     loaded = readBundledSkillFromDirectory(skill.directoryPath);
   } else if (skill.source === "workspace" || skill.source === "plugin") {
-    // Workspace and plugin-resident skills live outside
-    // $CADET_WORKSPACE_DIR/skills, so use the skill's parent directory as the
-    // root to avoid the isOutsideSkillsRoot rejection.
+    // Not under $CADET_WORKSPACE_DIR/skills — use the skill's own parent as
+    // the root to avoid the isOutsideSkillsRoot rejection.
     loaded = readSkillFromDirectory(
       skill.directoryPath,
       dirname(skill.directoryPath),
@@ -1110,11 +1095,8 @@ function loadSkillDefinition(skill: SkillSummary): SkillLookupResult {
     "{workspaceDir}",
     getWorkspaceDirDisplay(),
   );
-  // Re-parse inline command expansions after placeholder substitution.
-  // The initial parse (during SKILL.md parsing) produces byte offsets against
-  // the pre-substitution body. Since {baseDir} and {workspaceDir} replacements
-  // change the body length, those offsets become stale. Re-parsing ensures the
-  // offsets match the final body that renderInlineCommands will operate on.
+  // Re-parse inline commands after placeholder substitution: the first
+  // parse's byte offsets went stale once the body length changed.
   if (
     loaded.inlineCommandExpansions &&
     loaded.inlineCommandExpansions.length > 0

@@ -38,6 +38,8 @@ mock.module("../util/logger.js", () => ({
 
 const { loadSkillCatalog, loadSkillBySelector, resolveSkillSelector } =
   await import("../config/skills.js");
+const { ensureWorkspaceSeedSkills } =
+  await import("../skills/workspace-seed.js");
 
 /** Return only user-installed skills (filters out bundled skills that ship with the source tree). */
 function loadUserSkillCatalog() {
@@ -778,20 +780,26 @@ describe("always-candidate frontmatter parsing", () => {
     expect(wf?.alwaysCandidate).toBe(true);
   });
 
-  test("the bundled visualize skill is flagged always-candidate", () => {
+  test("the seeded visualize skill is flagged always-candidate", () => {
+    ensureWorkspaceSeedSkills();
     const viz = loadSkillCatalog().find((s) => s.id === "visualize");
     expect(viz?.alwaysCandidate).toBe(true);
+    expect(viz?.bundled).toBeUndefined();
+    expect(viz?.source).toBe("workspace");
   });
 
-  test("every always-candidate bundled skill's card fits its budget", async () => {
+  test("every always-candidate skill's card fits its budget", async () => {
     // The card is pinned into the selector's stable prefix every turn, and
     // `buildSkillContent` hard-truncates at the budget — a skill that overruns
     // silently loses its last activation hints and its avoid-when list, which
     // is exactly the guidance the pinning was added to deliver.
+    ensureWorkspaceSeedSkills();
     const { ALWAYS_CANDIDATE_CARD_CHARS, buildSkillContent } =
       await import("../plugins/defaults/memory/substrate/skill-content.js");
     const pinned = loadSkillCatalog().filter(
-      (skill) => skill.bundled && skill.alwaysCandidate === true,
+      (skill) =>
+        (skill.bundled || skill.source === "workspace") &&
+        skill.alwaysCandidate === true,
     );
     expect(pinned.length).toBeGreaterThan(0);
 

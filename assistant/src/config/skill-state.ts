@@ -38,19 +38,9 @@ export function resolveSkillStates(
     const configKey = skill.id;
     const entry = entries[configKey];
 
-    // Determine enabled state
-    let isEnabled: boolean;
-    if (entry && typeof entry.enabled === "boolean") {
-      isEnabled = entry.enabled;
-    } else {
-      // Default: bundled, workspace (hand-authored or catalog-installed),
-      // and plugin-contributed skills are enabled. Explicit config entries
-      // can disable any of them.
-      isEnabled =
-        skill.source === "bundled" ||
-        skill.source === "plugin" ||
-        skill.source === "workspace";
-    }
+    // Explicit boolean wins; everything else defaults to enabled.
+    const isEnabled =
+      !entry || typeof entry.enabled !== "boolean" || entry.enabled;
 
     if (!isEnabled) {
       results.push({
