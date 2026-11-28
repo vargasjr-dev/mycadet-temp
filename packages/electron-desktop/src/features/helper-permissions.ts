@@ -4,10 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { z } from "zod";
 
-import {
-  getMacHelperAppPath,
-  getSharedHelperClient,
-} from "../native-helper-client";
+import { getMacHelperAppPath } from "../native-helper-client";
 
 export type HelperPermissionKind =
   | "speechRecognition"
@@ -37,19 +34,10 @@ const REQUEST_FLAGS: Record<HelperPermissionKind, string> = {
   screen: "--request-screen-recording",
 };
 
-/** The helper's own status over the shared client. */
-export const queryHelperPermission = async (
-  kind: HelperPermissionKind,
-): Promise<HelperPermissionStatus> => {
-  const result = await getSharedHelperClient().call("permission.status", {
-    kind,
-  });
-  return HELPER_PERMISSION_STATUS_SCHEMA.parse(result).status;
-};
-
 /**
- * A freshly spawned helper instance re-reads its own TCC status — the answer
- * to give right after the user flips a toggle in System Settings.
+ * The helper's own status, from a freshly spawned instance of it — a fresh
+ * launch re-reads its TCC status, the answer to give right after the user
+ * flips a toggle in System Settings.
  */
 export const queryFreshHelperPermission = async (
   kind: HelperPermissionKind,

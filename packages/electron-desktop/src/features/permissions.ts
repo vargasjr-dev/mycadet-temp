@@ -35,15 +35,12 @@ import { getSharedHelperClient } from "../native-helper-client";
 import { describeError, permissionsStrategy } from "./permissions-strategy";
 
 /**
- * Provider backed by the native helper sidecar (`permissions.state` and
- * `text.insert` RPC methods). Registered at composition time; until a
- * sidecar exists, helper-backed kinds are unavailable instead of faking
- * a status.
+ * Provider backed by the native helper sidecar's `text.insert` RPC method.
+ * Registered at composition time; until a sidecar exists, helper-backed
+ * insertion is unavailable instead of faking a result. Permission statuses
+ * were the helper's too, until they moved to the shell's own reads.
  */
 export interface PermissionsNativeProvider {
-  queryPermissions(): Promise<
-    Partial<Record<SystemPermissionKind, SystemPermissionStatus>>
-  >;
   insertText(text: string): Promise<{ status: string; reason?: string }>;
 }
 
@@ -55,24 +52,12 @@ export const configurePermissionsNative = (
   nativeProvider = provider;
 };
 
-const nativeStatusSchema = z.object({
-  microphone: z.enum(SYSTEM_PERMISSION_STATUSES).optional(),
-  screen: z.enum(SYSTEM_PERMISSION_STATUSES).optional(),
-  speechRecognition: z.enum(SYSTEM_PERMISSION_STATUSES).optional(),
-  notifications: z.enum(SYSTEM_PERMISSION_STATUSES).optional(),
-});
-
 const nativeInsertionSchema = z.object({
   status: z.string(),
   reason: z.string().nullable().optional(),
 });
 
 const createNativeProvider = (): PermissionsNativeProvider => ({
-  async queryPermissions() {
-    return nativeStatusSchema.parse(
-      await getSharedHelperClient().call("permissions.state"),
-    );
-  },
   async insertText(text) {
     const result = nativeInsertionSchema.parse(
       await getSharedHelperClient().call("text.insert", { text }),
@@ -145,27 +130,23 @@ const allWindowsWebContents = () =>
 
 class PermissionsService {
   private lastStateJson: string | null = null;
-  // Probe result plus the native status seen when probing. Dropped when the
-  // native status changes or the window regains focus, since the per-app
-  // toggle is invisible to the helper and the user may have changed it.
-  private notificationProbe: {
-    status: SystemPermissionStatus;
-    nativeStatus: SystemPermissionStatus | undefined;
-  } | null = null;
+  // Probe result, dropped when the window regains focus, since the per-app
+  // toggle is invisible to the app's own read and the user may have changed
+  // it.
+  private notificationProbe: { status: SystemPermissionStatus } | null = null;
 
   constructor(private readonly shell: PermissionsShellInputs = {}) {}
 
   async state(): Promise<SystemPermissionsState> {
-    const native = await this.readNativeStatuses();
     if (!this.shell.readStatus) {
       return Object.fromEntries(
-        SYSTEM_PERMISSION_KINDS.map((kind) => [kind, this.item(kind, native)]),
+        SYSTEM_PERMISSION_KINDS.map((kind) => [kind, this.item(kind)]),
       ) as SystemPermissionsState;
     }
     return Object.fromEntries(
       await Promise.all(
         SYSTEM_PERMISSION_KINDS.map(async (kind) => {
-          const item = await this.readItem(kind, native);
+          const item = await this.readItem(kind);
           return [kind, item] as const;
         }),
       ),
@@ -189,10 +170,8 @@ class PermissionsService {
     if (this.shell.request) {
       await this.shell.request(kind, context);
     } else if (kind === "notifications") {
-      const native = await this.readNativeStatuses();
       this.notificationProbe = {
         status: await this.probeNotifications(),
-        nativeStatus: native.notifications,
       };
     } else {
       await this.openSettings(kind);
@@ -230,25 +209,8 @@ class PermissionsService {
     return this.shell.settingsUris?.[kind];
   }
 
-  private async readNativeStatuses(): Promise<
-    Partial<Record<SystemPermissionKind, SystemPermissionStatus>>
-  > {
-    if (!nativeProvider) {
-      return {};
-    }
-    try {
-      return await nativeProvider.queryPermissions();
-    } catch (err) {
-      log.warn("[permissions] native permission query failed:", err);
-      return {};
-    }
-  }
-
-  private item(
-    kind: SystemPermissionKind,
-    native: Partial<Record<SystemPermissionKind, SystemPermissionStatus>>,
-  ): SystemPermissionStateItem {
-    const status = this.defaultStatus(kind, native);
+  private item(kind: SystemPermissionKind): SystemPermissionStateItem {
+    const status = this.defaultStatus(kind);
     return this.assemble(kind, status);
   }
 
@@ -256,13 +218,12 @@ class PermissionsService {
   // the shared chain.
   private async readItem(
     kind: SystemPermissionKind,
-    native: Partial<Record<SystemPermissionKind, SystemPermissionStatus>>,
   ): Promise<SystemPermissionStateItem> {
     let status: SystemPermissionStatus;
     let error: string | undefined;
     try {
       const answer = await this.shell.readStatus?.(kind);
-      status = answer ?? this.defaultStatus(kind, native);
+      status = answer ?? this.defaultStatus(kind);
     } catch (err) {
       status = "unknown";
       error = describeError(err);
@@ -290,26 +251,16 @@ class PermissionsService {
     };
   }
 
-  private defaultStatus(
-    kind: SystemPermissionKind,
-    native: Partial<Record<SystemPermissionKind, SystemPermissionStatus>>,
-  ): SystemPermissionStatus {
+  private defaultStatus(kind: SystemPermissionKind): SystemPermissionStatus {
     if (NOT_APPLICABLE_KINDS.has(kind)) {
       return "not-applicable";
     }
     const probe = this.notificationProbe;
-    if (
-      kind === "notifications" &&
-      probe &&
-      probe.nativeStatus === native.notifications
-    ) {
+    if (kind === "notifications" && probe) {
       return probe.status;
     }
-    if (native[kind]) {
-      return native[kind];
-    }
     // Screen is deliberately absent: Electron often reports it as granted
-    // without trusting the OS's real answer, so only the helper's
+    // without trusting the OS's real answer, so only the shell's
     // consent-store read is trusted.
     if (kind === "microphone") {
       return mapMediaStatus(systemPreferences.getMediaAccessStatus(kind));

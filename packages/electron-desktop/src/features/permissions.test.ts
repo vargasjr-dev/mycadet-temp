@@ -112,19 +112,19 @@ beforeEach(() => {
   permissionsInstall();
 });
 
-test("uses the helper sidecar for permission states and text insertion", async () => {
+test("statuses come from the app's own reads; insertion rides the helper", async () => {
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
     {
       microphone: { status: "granted" },
-      speechRecognition: { status: "denied" },
-      notifications: { status: "granted" },
+      speechRecognition: { status: "unknown" },
+      notifications: { status: "unknown" },
     },
   );
   await expect(handlers.get(TEXT_INSERT)!(["hello"])).resolves.toEqual({
     status: "inserted",
   });
 
-  expect(helperCall).toHaveBeenCalledWith("permissions.state");
+  expect(helperCall).not.toHaveBeenCalledWith("permissions.state");
   expect(helperCall).toHaveBeenCalledWith("text.insert", { text: "hello" });
 });
 
@@ -149,15 +149,19 @@ test("reports kinds without an OS answer as not-applicable and opens screen capt
   );
 });
 
-test("reports helper screen capture consent with a settings link", async () => {
-  helperCall.mockImplementation(async () => ({ screen: "denied" }));
+test("reports the shell's screen capture consent with a settings link", async () => {
+  strategyInputs = {
+    ...strategyInputs,
+    readStatus: async (kind) => (kind === "screen" ? "denied" : undefined),
+  };
+  handlers.clear();
+  permissionsInstall();
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
     { screen: { status: "denied", canRequest: false, canOpenSettings: true } },
   );
 });
 
 test("requests notifications by probing instead of opening settings", async () => {
-  helperCall.mockImplementation(async () => ({ notifications: "unknown" }));
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
     { notifications: { status: "unknown", canRequest: true } },
   );
@@ -168,20 +172,30 @@ test("requests notifications by probing instead of opening settings", async () =
   ).resolves.toMatchObject({ status: "denied", canOpenSettings: true });
   expect(openExternal).not.toHaveBeenCalled();
 
-  // A Settings change seen by the helper supersedes the probe result.
-  helperCall.mockImplementation(async () => ({ notifications: "granted" }));
+  // The probe's answer stands in later reads, not just the request's.
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
-    { notifications: { status: "granted", canRequest: false } },
+    { notifications: { status: "denied" } },
   );
 });
 
 test("regaining focus drops the notification probe result", async () => {
-  helperCall.mockImplementation(async () => ({ notifications: "granted" }));
+  // The real shell read mirrors the OS: it answers denied while the toggle
+  // is off, granted once the user flips it. The probe only supersedes a
+  // read until focus resets it.
+  let shellNotificationsStatus: SystemPermissionStatus = "denied";
+  strategyInputs = {
+    ...strategyInputs,
+    readStatus: async (kind) =>
+      kind === "notifications" ? shellNotificationsStatus : undefined,
+  };
+  handlers.clear();
+  permissionsInstall();
   notificationOutcome = "failed";
   await expect(
     handlers.get(PERMISSIONS_REQUEST)!(["notifications"]),
   ).resolves.toMatchObject({ status: "denied" });
 
+  shellNotificationsStatus = "granted";
   onFocus!();
   await expect(handlers.get(PERMISSIONS_GET_STATE)!([])).resolves.toMatchObject(
     { notifications: { status: "granted" } },
@@ -201,7 +215,6 @@ test("the automation settings request opens the shell's privacy pane", async () 
 // The presentation argument degrades rather than rejects: a renderer that
 // mangles it still gets its permission request through.
 test("a malformed presentation degrades to a plain request", async () => {
-  helperCall.mockImplementation(async () => ({ notifications: "unknown" }));
   const malformed = {
     presentation: "assistant",
     identity: { scopeId: "scope" },

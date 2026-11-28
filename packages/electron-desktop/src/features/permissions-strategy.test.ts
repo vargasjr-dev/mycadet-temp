@@ -97,8 +97,8 @@ mock.module("../apple-script-executor", () => ({
 }));
 
 mock.module("./helper-permissions", () => ({
-  queryFreshHelperPermission: async () => "granted",
-  queryHelperPermission: async () => helperInputMonitoringStatus,
+  queryFreshHelperPermission: async (kind: string) =>
+    kind === "inputMonitoring" ? helperInputMonitoringStatus : "granted",
   requestHelperPermission: async (kind: string) => {
     helperCalls.push(`request ${kind}`);
   },

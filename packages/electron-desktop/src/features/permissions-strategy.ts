@@ -18,9 +18,7 @@ export const describeError = (err: unknown): string =>
 import { runAppleScript } from "../apple-script-executor";
 import {
   queryFreshHelperPermission,
-  queryHelperPermission,
   requestHelperPermission,
-  type HelperPermissionKind,
 } from "./helper-permissions";
 import log from "../app-logger";
 import {
@@ -48,14 +46,31 @@ const SETTINGS_PANES: Record<SystemPermissionKind, string> = {
 const AUTOMATION_PROBE_SCRIPT =
   'tell application "System Events" to get name of first process';
 
-const HELPER_PERMISSION_KINDS = new Set<SystemPermissionKind>([
-  "speechRecognition",
-  "inputMonitoring",
-]);
-
-const isHelperPermissionKind = (
+const readStatus = async (
   kind: SystemPermissionKind,
-): kind is HelperPermissionKind => HELPER_PERMISSION_KINDS.has(kind);
+): Promise<SystemPermissionStatus> => {
+  switch (kind) {
+    case "accessibility":
+      return systemPreferences.isTrustedAccessibilityClient(false)
+        ? "granted"
+        : "denied";
+    // The helper's grant, not the app's: the helper takes every capture.
+    case "screen":
+      return await readScreenRecordingPermission();
+    case "microphone":
+      return systemPreferences.getMediaAccessStatus("microphone");
+    // Both read the helper's consent-store from a fresh launch of it: a
+    // running helper reads its grant once, so a long-lived answer can
+    // trail a toggle the user just flipped.
+    case "speechRecognition":
+    case "inputMonitoring":
+      return await queryFreshHelperPermission(kind);
+    case "automation":
+      return automationStatus.current;
+    case "notifications":
+      return notificationStatus.current;
+  }
+};
 
 const isAutomationDeniedError = (err: unknown): boolean => {
   const message = describeError(err).toLowerCase();
@@ -201,32 +216,6 @@ const automationStatus: { current: SystemPermissionStatus } = {
 };
 
 const helperRequests = new Set<SystemPermissionKind>();
-
-const readStatus = async (
-  kind: SystemPermissionKind,
-): Promise<SystemPermissionStatus> => {
-  switch (kind) {
-    case "accessibility":
-      return systemPreferences.isTrustedAccessibilityClient(false)
-        ? "granted"
-        : "denied";
-    // The helper's grant, not the app's: the helper takes every capture.
-    case "screen":
-      return await readScreenRecordingPermission();
-    case "microphone":
-      return systemPreferences.getMediaAccessStatus("microphone");
-    case "speechRecognition":
-      return await queryFreshHelperPermission(kind);
-    case "inputMonitoring":
-      return isHelperPermissionKind(kind)
-        ? await queryHelperPermission(kind)
-        : "unknown";
-    case "automation":
-      return automationStatus.current;
-    case "notifications":
-      return notificationStatus.current;
-  }
-};
 
 const requestAutomation = async (): Promise<void> => {
   // AppleEvents has no harmless read API; only probe after an explicit user
