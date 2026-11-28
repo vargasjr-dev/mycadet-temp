@@ -75,6 +75,11 @@ export interface UpdateSchedulePayload {
    * currently resolved default. Send a profile key to move the schedule.
    */
   inferenceProfile?: string | null;
+  /**
+   * Most a single run may spend on LLM calls, in USD (at least 0.01). Send
+   * `null` to remove the limit.
+   */
+  maxRunCostUsd?: number | null;
 }
 
 export async function updateSchedule(

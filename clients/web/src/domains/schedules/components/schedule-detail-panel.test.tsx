@@ -9,6 +9,13 @@
  *  - a workflow-mode schedule presents no governing pin, since a workflow's
  *    own steps resolve their models independently of the schedule's.
  *
+ * Spending-limit field (execute-mode schedules only):
+ *  - shows the limit, or that there is none;
+ *  - entering an amount PATCHes it, emptying the field removes it, and an
+ *    amount below the minimum is refused without a PATCH;
+ *  - while the schedule is off and has a limit, a note explains that going
+ *    over the limit pauses it and how to resume.
+ *
  * Plugin-sourced treatment: sourced schedules hide the Delete affordance and
  * show plugin attribution in its place; user-created schedules keep the Delete
  * button. An off schedule states why alongside that attribution. Run now is
@@ -456,5 +463,170 @@ describe("ScheduleDetailPanel pending one-shot cancel", () => {
       expect(cancelCalls).toEqual(["schedule-1"]);
     });
     expect(onDeleted).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ScheduleDetailPanel spending limit", () => {
+  /** An execute schedule like the others here, built without a cast. */
+  function limitSchedule(
+    overrides: Parameters<typeof makeSchedule>[0] = {},
+  ): PanelSchedule {
+    return makeSchedule({
+      id: "sched-1",
+      inferenceProfile: "thrifty",
+      ...overrides,
+    });
+  }
+  function limitButton(): HTMLElement | undefined {
+    return Array.from(document.querySelectorAll<HTMLElement>("button")).find(
+      (button) =>
+        button.getAttribute("aria-label") === "Change the limit per run",
+    );
+  }
+
+  function limitInput(): HTMLInputElement | null {
+    return document.querySelector<HTMLInputElement>(
+      'input[aria-label="Limit per run"]',
+    );
+  }
+
+  function enterLimit(text: string, key = "Enter") {
+    fireEvent.click(limitButton()!);
+    const input = limitInput()!;
+    fireEvent.change(input, { target: { value: text } });
+    fireEvent.keyDown(input, { key });
+  }
+
+  test("a schedule without a limit says so", async () => {
+    renderPanel(limitSchedule());
+    await waitFor(() => {
+      expect(limitButton()?.textContent).toContain("No limit");
+    });
+    expect(renderedText()).toContain("Limit per run");
+  });
+
+  test("a schedule with a limit shows it as currency", async () => {
+    renderPanel(limitSchedule({ maxRunCostUsd: 1.5 }));
+    await waitFor(() => {
+      expect(limitButton()?.textContent).toContain("1.50");
+    });
+  });
+
+  test("entering an amount patches that schedule with it", async () => {
+    renderPanel(limitSchedule());
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+
+    enterLimit("2.5");
+
+    await waitFor(() => {
+      expect(patchCalls).toHaveLength(1);
+    });
+    expect(patchCalls[0]).toEqual({
+      id: "sched-1",
+      body: { maxRunCostUsd: 2.5 },
+    });
+  });
+
+  test("emptying the field removes the limit", async () => {
+    renderPanel(limitSchedule({ maxRunCostUsd: 1.5 }));
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+
+    enterLimit("");
+
+    await waitFor(() => {
+      expect(patchCalls).toHaveLength(1);
+    });
+    expect(patchCalls[0].body).toEqual({ maxRunCostUsd: null });
+  });
+
+  test("an amount below the minimum is refused and patches nothing", async () => {
+    renderPanel(limitSchedule());
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+
+    enterLimit("0.001");
+
+    await waitFor(() => {
+      expect(renderedText()).toContain("Enter an amount of at least $0.01");
+    });
+    expect(limitInput()).not.toBeNull();
+    expect(patchCalls).toHaveLength(0);
+  });
+
+  test("Escape discards the edit", async () => {
+    renderPanel(limitSchedule());
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+
+    enterLimit("3", "Escape");
+
+    await waitFor(() => {
+      expect(limitInput()).toBeNull();
+    });
+    expect(patchCalls).toHaveLength(0);
+  });
+
+  test("re-entering the limit already in force patches nothing", async () => {
+    renderPanel(limitSchedule({ maxRunCostUsd: 1.5 }));
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+
+    enterLimit("1.5");
+
+    await waitFor(() => {
+      expect(limitInput()).toBeNull();
+    });
+    expect(patchCalls).toHaveLength(0);
+  });
+
+  test("a schedule whose runs the limit does not govern shows no limit", async () => {
+    renderPanel(limitSchedule({ mode: "script" }));
+    await waitFor(() => {
+      expect(renderedText()).toContain("Details");
+    });
+    expect(renderedText()).not.toContain("Limit per run");
+  });
+
+  test("a one-shot that already fired shows its limit read-only", async () => {
+    renderPanel(
+      limitSchedule({ isOneShot: true, maxRunCostUsd: 2 }),
+      /* isPast */ true,
+    );
+    await waitFor(() => {
+      expect(renderedText()).toContain("Limit per run");
+    });
+    expect(renderedText()).toContain("2.00");
+    expect(limitButton()).toBeUndefined();
+  });
+
+  test("an off schedule with a limit explains how the limit pauses it", async () => {
+    renderPanel(limitSchedule({ enabled: false, maxRunCostUsd: 1 }));
+    await waitFor(() => {
+      expect(renderedText()).toContain(
+        "A run that goes over this limit is stopped",
+      );
+    });
+  });
+
+  test("the pause note stays hidden while the schedule is on or has no limit", async () => {
+    renderPanel(limitSchedule({ maxRunCostUsd: 1 }));
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+    expect(renderedText()).not.toContain("A run that goes over this limit");
+    cleanup();
+
+    renderPanel(limitSchedule({ enabled: false }));
+    await waitFor(() => {
+      expect(limitButton()).toBeDefined();
+    });
+    expect(renderedText()).not.toContain("A run that goes over this limit");
   });
 });

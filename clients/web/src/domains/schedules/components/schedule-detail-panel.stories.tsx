@@ -28,6 +28,7 @@ const SCHEDULE: ScheduleDetailPanelProps["schedule"] = {
   retryBackoffMs: 1000,
   timeoutMs: null,
   inferenceProfile: "balanced",
+  maxRunCostUsd: null,
   groupId: null,
   createdFromConversationId: null,
   createdFromConversationExists: false,
@@ -128,4 +129,55 @@ export const PendingOneShot: Story = {
     },
   },
   decorators: [withPanelBox, withQueryCache(seedCache)],
+};
+
+const PAUSED_RUN_STARTED_AT = Date.now() - 3_600_000;
+
+const seedPausedRuns: SeedQueryCache = (client) => {
+  client.setQueryData(
+    schedulesByIdRunsGetQueryKey({
+      path: { assistant_id: ASSISTANT_ID, id: SCHEDULE.id },
+    }),
+    {
+      runs: [
+        {
+          id: "run-over-limit",
+          jobId: SCHEDULE.id,
+          status: "error",
+          startedAt: PAUSED_RUN_STARTED_AT,
+          finishedAt: PAUSED_RUN_STARTED_AT + 95_000,
+          durationMs: 95_000,
+          output: null,
+          error:
+            "This run spent $2.50, over its $1.00 spending limit, so it was stopped. The schedule is paused until you enable it again.",
+          conversationId: null,
+          conversationExists: false,
+          conversationArchivedAt: null,
+          conversations: [],
+          estimatedCostUsd: 2.5,
+          createdAt: PAUSED_RUN_STARTED_AT,
+        },
+      ],
+      nextCursor: null,
+    },
+  );
+};
+
+/**
+ * An execute schedule paused after a run went over its spending limit: the
+ * limit sits in the Details card with the note on how to resume, and the
+ * over-limit run's reason shows in its history.
+ */
+export const PausedBySpendLimit: Story = {
+  args: {
+    schedule: {
+      ...SCHEDULE,
+      mode: "execute",
+      enabled: false,
+      maxRunCostUsd: 1,
+      lastRunAt: PAUSED_RUN_STARTED_AT,
+      lastStatus: "error",
+    },
+  },
+  decorators: [withPanelBox, withQueryCache(seedPausedRuns)],
 };

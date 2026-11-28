@@ -25,6 +25,7 @@ import {
   fetchScheduleRuns,
   runScheduleNow,
   updateSchedule,
+  type UpdateSchedulePayload,
 } from "@/domains/settings/api/schedules";
 import { ModelProfileRow } from "@/domains/settings/components/model-profile-row";
 import { ModelProfileSelect } from "@/domains/settings/components/model-profile-select";
@@ -45,7 +46,7 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { navigateToConversation } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
-import { Button, Skeleton, cn } from "@mycadet/design-library";
+import { Button, Input, Skeleton, cn } from "@mycadet/design-library";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { toast } from "@mycadet/design-library/components/toast";
 
@@ -70,6 +71,64 @@ function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
+/** Schedule fields the detail panel edits in place. */
+type EditableScheduleField = "inferenceProfile" | "maxRunCostUsd";
+
+/**
+ * Optimistic edit of one field of one schedule: the cached list shows the new
+ * value at once, a failure restores that field alone (a snapshot of the whole
+ * list would undo a toggle or another schedule's edit that landed while this
+ * was in flight) and says so, and the list is refetched either way.
+ */
+function useScheduleFieldMutation<F extends EditableScheduleField>({
+  assistantId,
+  scheduleId,
+  field,
+  toPayload,
+  errorContext,
+  failureMessage,
+}: {
+  assistantId: string;
+  scheduleId: string;
+  field: F;
+  toPayload: (value: Schedule[F]) => UpdateSchedulePayload;
+  errorContext: string;
+  failureMessage: string;
+}) {
+  const queryClient = useQueryClient();
+  const schedulesQueryKey = schedulesGetQueryKey({
+    path: { assistant_id: assistantId },
+  });
+  const writeField = (value: Schedule[F]) =>
+    queryClient.setQueryData<Schedule[]>(schedulesQueryKey, (rows) =>
+      rows?.map((row) =>
+        row.id === scheduleId ? { ...row, [field]: value } : row,
+      ),
+    );
+
+  return useMutation({
+    mutationFn: (value: Schedule[F]) =>
+      updateSchedule(assistantId, scheduleId, toPayload(value)),
+    onMutate: async (value) => {
+      await queryClient.cancelQueries({ queryKey: schedulesQueryKey });
+      const previous = queryClient
+        .getQueryData<Schedule[]>(schedulesQueryKey)
+        ?.find((row) => row.id === scheduleId);
+      writeField(value);
+      return { previous: previous ? { value: previous[field] } : undefined };
+    },
+    onError: (error, _value, context) => {
+      if (context?.previous) {
+        writeField(context.previous.value);
+      }
+      captureError(error, { context: errorContext });
+      toast.error(failureMessage);
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: schedulesQueryKey }),
+  });
+}
+
 /**
  * The schedule's pinned inference profile, and the control that changes it.
  *
@@ -92,44 +151,13 @@ function ScheduleModelProfileField({
   isPast: boolean;
 }) {
   const { t } = useTranslation("schedules");
-  const queryClient = useQueryClient();
-  const schedulesQueryKey = schedulesGetQueryKey({
-    path: { assistant_id: assistantId },
-  });
-
-  const profileMutation = useMutation({
-    mutationFn: (inferenceProfile: string) =>
-      updateSchedule(assistantId, schedule.id, { inferenceProfile }),
-    onMutate: async (inferenceProfile) => {
-      await queryClient.cancelQueries({ queryKey: schedulesQueryKey });
-      const previousProfile = queryClient
-        .getQueryData<Schedule[]>(schedulesQueryKey)
-        ?.find((row) => row.id === schedule.id)?.inferenceProfile;
-      queryClient.setQueryData<Schedule[]>(schedulesQueryKey, (rows) =>
-        rows?.map((row) =>
-          row.id === schedule.id ? { ...row, inferenceProfile } : row,
-        ),
-      );
-      return { previousProfile };
-    },
-    onError: (error, _inferenceProfile, context) => {
-      // Restore the profile alone. A snapshot of the whole list would undo a
-      // toggle or another schedule's edit that landed while this was in flight.
-      const previousProfile = context?.previousProfile;
-      if (previousProfile !== undefined) {
-        queryClient.setQueryData<Schedule[]>(schedulesQueryKey, (rows) =>
-          rows?.map((row) =>
-            row.id === schedule.id
-              ? { ...row, inferenceProfile: previousProfile }
-              : row,
-          ),
-        );
-      }
-      captureError(error, { context: "schedule_update_inference_profile" });
-      toast.error(t("scheduleDetail.modelChangeFailed"));
-    },
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: schedulesQueryKey }),
+  const profileMutation = useScheduleFieldMutation({
+    assistantId,
+    scheduleId: schedule.id,
+    field: "inferenceProfile",
+    toPayload: (inferenceProfile) => ({ inferenceProfile }),
+    errorContext: "schedule_update_inference_profile",
+    failureMessage: t("scheduleDetail.modelChangeFailed"),
   });
 
   if (schedule.mode === "workflow") {
@@ -190,6 +218,140 @@ function ScheduleModelProfileField({
         />
       }
     />
+  );
+}
+
+/** Smallest per-run limit the daemon accepts, in USD. */
+const MIN_SPEND_LIMIT_USD = 0.01;
+
+/**
+ * Parse what the user typed into the limit field: empty clears the limit
+ * (null); otherwise a number of at least {@link MIN_SPEND_LIMIT_USD}.
+ * Undefined when the text is neither.
+ */
+function parseSpendLimitDraft(draft: string): number | null | undefined {
+  const trimmed = draft.trim();
+  if (trimmed === "") {
+    return null;
+  }
+  const value = Number(trimmed);
+  return Number.isFinite(value) && value >= MIN_SPEND_LIMIT_USD
+    ? value
+    : undefined;
+}
+
+/**
+ * The schedule's per-run spending limit, and the control that changes it.
+ *
+ * Shown for execute-mode schedules only, since the limit governs their
+ * LLM-executed runs; on any other mode it would claim a setting that does
+ * nothing. A one-shot that has already fired shows its limit read-only, like
+ * its model. While the schedule is off, a note explains that going over the
+ * limit pauses it and how to resume, since an over-limit run is one way it
+ * gets turned off.
+ */
+function ScheduleSpendLimitField({
+  schedule,
+  assistantId,
+  isPast,
+}: {
+  schedule: Schedule;
+  assistantId: string;
+  isPast: boolean;
+}) {
+  const { t } = useTranslation("schedules");
+  // The text being typed, or null while the field is not being edited.
+  const [draft, setDraft] = useState<string | null>(null);
+  const limitMutation = useScheduleFieldMutation({
+    assistantId,
+    scheduleId: schedule.id,
+    field: "maxRunCostUsd",
+    toPayload: (maxRunCostUsd) => ({ maxRunCostUsd }),
+    errorContext: "schedule_update_max_run_cost",
+    failureMessage: t("scheduleDetail.spendLimitChangeFailed"),
+  });
+
+  if (schedule.mode !== "execute") {
+    return null;
+  }
+
+  const limit = schedule.maxRunCostUsd;
+  const limitLabel =
+    limit == null
+      ? t("scheduleDetail.noSpendLimit")
+      : formatScheduleCost(limit);
+  const parsedDraft = draft === null ? undefined : parseSpendLimitDraft(draft);
+  const draftInvalid = draft !== null && parsedDraft === undefined;
+
+  const commitDraft = () => {
+    if (parsedDraft === undefined) {
+      return;
+    }
+    if (parsedDraft !== limit) {
+      limitMutation.mutate(parsedDraft);
+    }
+    setDraft(null);
+  };
+
+  let value: ReactNode;
+  if (isPast) {
+    value = limitLabel;
+  } else if (draft === null) {
+    value = (
+      <Button
+        variant="ghost"
+        size="compact"
+        aria-label={t("scheduleDetail.spendLimitEditAria")}
+        loading={limitMutation.isPending}
+        onClick={() => setDraft(limit == null ? "" : String(limit))}
+        // The negative margin cancels the button's own padding, so its
+        // value lines up with the values above and below it.
+        className="-mr-2"
+      >
+        {limitLabel}
+      </Button>
+    );
+  } else {
+    value = (
+      <Input
+        type="number"
+        inputMode="decimal"
+        min={MIN_SPEND_LIMIT_USD}
+        step={MIN_SPEND_LIMIT_USD}
+        autoFocus
+        aria-label={t("scheduleDetail.spendLimit")}
+        aria-invalid={draftInvalid}
+        placeholder={t("scheduleDetail.noSpendLimit")}
+        leftIcon={<span aria-hidden="true">$</span>}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commitDraft}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            commitDraft();
+          } else if (event.key === "Escape") {
+            setDraft(null);
+          }
+        }}
+        wrapperClassName="w-32"
+      />
+    );
+  }
+
+  return (
+    <>
+      <InfoRow label={t("scheduleDetail.spendLimit")} value={value} />
+      {draftInvalid ? (
+        <p className="text-body-small-lighter text-[var(--system-negative-strong)]">
+          {t("scheduleDetail.spendLimitInvalid")}
+        </p>
+      ) : null}
+      {!schedule.enabled && limit != null ? (
+        <p className="text-body-small-lighter text-[var(--content-tertiary)]">
+          {t("scheduleDetail.spendLimitPausedNote")}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -590,6 +752,11 @@ export function ScheduleDetailPanel({
               ) : null}
               <InfoRow label={t("scheduleDetail.mode")} value={schedule.mode} />
               <ScheduleModelProfileField
+                schedule={schedule}
+                assistantId={assistantId}
+                isPast={isPast}
+              />
+              <ScheduleSpendLimitField
                 schedule={schedule}
                 assistantId={assistantId}
                 isPast={isPast}
