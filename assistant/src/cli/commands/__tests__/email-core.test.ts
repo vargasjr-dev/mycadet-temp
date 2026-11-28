@@ -9,16 +9,19 @@
  *   - unregister calls email_unregister with --confirm
  *   - download calls email_download with messageId
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+
+import type { CliIpcCallResult } from "../../../ipc/cli-client.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
 
-let mockIpcCallFn = mock(() => Promise.resolve({ ok: true, result: {} }));
+let mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
+  Promise.resolve({ ok: true, result: {} }),
+);
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
@@ -44,7 +47,9 @@ mock.module("../../../ipc/cli-client.js", () => ({
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  mockIpcCallFn = mock(() => Promise.resolve({ ok: true, result: {} }));
+  mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
+    Promise.resolve({ ok: true, result: {} }),
+  );
   process.exitCode = 0;
 });
 
@@ -58,7 +63,7 @@ afterEach(() => {
 
 describe("email register", () => {
   test("calls email_register with username param", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -103,7 +108,7 @@ describe("email register", () => {
   });
 
   test("--json outputs structured response", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -167,13 +172,13 @@ describe("email register", () => {
       process.exitCode = 10;
     });
 
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: false,
         error: "Daemon down",
         statusCode: undefined,
       }),
-    ) as any;
+    );
 
     mock.module("../../../ipc/cli-client.js", () => ({
       cliIpcCall: mockIpcCallFn,
@@ -213,7 +218,7 @@ describe("email register", () => {
 
 describe("email send", () => {
   test("calls email_send with to/text/subject params", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { delivery_id: "del_abc", status: "accepted" },
@@ -262,7 +267,7 @@ describe("email send", () => {
   });
 
   test("includes cc/bcc when provided", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { delivery_id: "del_abc", status: "accepted" },
@@ -314,7 +319,7 @@ describe("email send", () => {
   });
 
   test("reply_to param forwarded", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { delivery_id: "del_abc", status: "accepted" },
@@ -367,7 +372,7 @@ describe("email send", () => {
 
 describe("email list", () => {
   test("calls email_list with no params when no filters", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { results: [], count: 0 },
@@ -399,7 +404,7 @@ describe("email list", () => {
   });
 
   test("passes direction param when --direction given", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { results: [], count: 0 },
@@ -441,7 +446,7 @@ describe("email list", () => {
   });
 
   test("passes limit and since params", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { results: [], count: 0 },
@@ -494,7 +499,7 @@ describe("email list", () => {
 
 describe("email status", () => {
   test("calls email_status", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: {
@@ -541,7 +546,7 @@ describe("email status", () => {
 
 describe("email unregister", () => {
   test("--confirm calls email_unregister", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: { unregistered: "bot@mycadet.bot" },
@@ -583,7 +588,7 @@ describe("email unregister", () => {
 
 describe("email download", () => {
   test("calls email_download with messageId", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<() => Promise<CliIpcCallResult>>(() =>
       Promise.resolve({
         ok: true,
         result: {

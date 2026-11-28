@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { isObjectRecord } from "../../../util/object.js";
 import type { SparseEmbedding } from "../../embeddings/embedding-types.js";
 
 // Capture the batched upserts into the lexical index singleton.
@@ -177,10 +178,7 @@ async function callBackfillRoute(
  */
 function setMemoryEnabled(enabled: boolean): void {
   const raw = loadRawConfig();
-  const memory =
-    raw.memory && typeof raw.memory === "object"
-      ? (raw.memory as Record<string, unknown>)
-      : {};
+  const memory = isObjectRecord(raw.memory) ? raw.memory : {};
   saveRawConfig({ ...raw, memory: { ...memory, enabled } });
   invalidateConfigCache();
 }

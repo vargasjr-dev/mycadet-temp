@@ -216,7 +216,7 @@ describe("extractUserPromptText", () => {
         },
         { type: "tool_result", tool_use_id: "t1", content: "ignored" },
         { type: "text", text: "line two" },
-      ] as never),
+      ]),
     ).toBe("line one\nline two");
   });
 

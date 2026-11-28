@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "os";
 import { dirname, join } from "path";
 
+import type { ImageGenerationResult } from "../media/types.js";
 import { credentialKey } from "../security/credential-key.js";
 import { __resetRegistryForTesting, getTool } from "../tools/registry.js";
 import type { ToolContext } from "../tools/types.js";
@@ -30,7 +31,7 @@ function setKey(provider: string, value: string | undefined): void {
     secureKeys.set(credentialKey(provider, "api_key"), value);
   }
 }
-let mockGenerateResult = {
+let mockGenerateResult: ImageGenerationResult = {
   images: [{ mimeType: "image/png", dataBase64: "generated-data" }],
   text: "A beautiful image",
   resolvedModel: "gemini-3.1-flash-image-preview",
@@ -424,7 +425,7 @@ describe("image-studio skill script wrapper", () => {
         { mimeType: "image/png", dataBase64: "img1" },
         { mimeType: "image/png", dataBase64: "img2" },
       ],
-      text: undefined as unknown as string,
+      text: undefined,
       resolvedModel: "gemini-3.1-flash-image-preview",
     };
 
@@ -537,7 +538,7 @@ describe("image-studio skill script wrapper", () => {
           mimeType: "image/png",
           dataBase64: "img1",
           title: "Twilight Gremlin!",
-        } as never,
+        },
       ],
       text: "",
       resolvedModel: "gemini-3.1-flash-image-preview",
@@ -557,7 +558,7 @@ describe("image-studio skill script wrapper", () => {
         { mimeType: "image/png", dataBase64: "img1" },
         { mimeType: "image/png", dataBase64: "img2" },
       ],
-      text: undefined as unknown as string,
+      text: undefined,
       resolvedModel: "gemini-3.1-flash-image-preview",
     };
 

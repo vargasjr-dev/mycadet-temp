@@ -12,6 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { Message } from "../providers/types.js";
 import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
@@ -138,7 +139,11 @@ mock.module("../ipc/gateway-client.js", () => ({
 import { getEffectiveEnabledPluginSet } from "../daemon/conversation-tool-setup.js";
 import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockMessageQueue,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 function makeConversation() {
   const runAgentLoop = mock(async () => undefined);
@@ -146,22 +151,15 @@ function makeConversation() {
     id: "persisted-user-id",
     deduplicated: false,
   }));
-  const messages: unknown[] = [];
+  const messages: Message[] = [];
   let processing = false;
-  let enabledPlugins: string[] | null = null;
-  const conversation = {
+  const conversation = asConversation({
     conversationId: "conv-plugins-test",
     messages,
-    get enabledPlugins(): string[] | null {
-      return enabledPlugins;
-    },
-    set enabledPlugins(value: string[] | null) {
-      enabledPlugins = value;
-    },
     abortController: null,
     currentRequestId: undefined,
     modeSessions: mockUnownedModeSessions(),
-    queue: { length: 0 },
+    queue: mockMessageQueue({ length: 0 }),
     setTrustContext: () => {},
     replayActivityState: () => {},
     emitConfirmationStateChanged: () => {},
@@ -177,8 +175,8 @@ function makeConversation() {
     },
     // Mirrors the real Conversation.setEnabledPlugins, which persists to the
     // row via setConversationEnabledPlugins as it updates the live instance.
-    setEnabledPlugins: (plugins: string[] | null) => {
-      enabledPlugins = plugins;
+    setEnabledPlugins: (plugins: string[] | null): void => {
+      conversation.enabledPlugins = plugins;
       setConversationEnabledPluginsMock("conv-plugins-test", plugins);
     },
     hasAnyPendingConfirmation: () => false,
@@ -189,13 +187,13 @@ function makeConversation() {
     setPreactivatedSkillIds: () => {},
     drainQueue: async (_reason?: string) => {},
     kickDrainQueue(
-      this: { drainQueue: (reason?: string) => unknown },
+      this: { drainQueue: (reason?: string) => Promise<void> },
       reason: string = "loop_complete",
       _origin?: string,
     ) {
       return this.drainQueue(reason);
     },
-    warmPromptCache: () => {},
+    warmPromptCache: async () => {},
     getMessages: () => messages,
     assistantId: "self",
     trustContext: undefined,
@@ -204,7 +202,8 @@ function makeConversation() {
     setHostCuProxy: () => {},
     addPreactivatedSkillId: () => {},
     usageStats: { inputTokens: 1000, outputTokens: 500, estimatedCost: 0.05 },
-  } as unknown as import("../daemon/conversation.js").Conversation;
+  });
+  conversation.enabledPlugins = null;
   return { conversation, runAgentLoop };
 }
 

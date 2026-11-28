@@ -290,14 +290,23 @@ const { WEB_SEARCH_BACKEND_FAILURE_MESSAGE } =
   await import("../tools/network/web-search-error.js");
 
 function executeWebSearch(input: Record<string, unknown>) {
-  return webSearchTool.execute(input, {} as never);
+  return webSearchTool.execute(input, {
+    conversationId: "web-search-test",
+    workingDir: "/tmp",
+    trustClass: "guardian",
+  });
 }
 
 function executeWebSearchWithSignal(
   input: Record<string, unknown>,
   signal: AbortSignal,
 ) {
-  return webSearchTool.execute(input, { signal } as never);
+  return webSearchTool.execute(input, {
+    conversationId: "web-search-test",
+    workingDir: "/tmp",
+    trustClass: "guardian",
+    signal,
+  });
 }
 
 // ---------------------------------------------------------------------------

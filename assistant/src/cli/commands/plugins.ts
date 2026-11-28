@@ -6,7 +6,6 @@
  * {@link ../lib}.
  */
 
-import { createRequire } from "node:module";
 import { join } from "node:path";
 
 import type { Command } from "commander";
@@ -16,7 +15,7 @@ import { stripAnsiAndControlChars } from "../../util/ansi.js";
 import { getWorkspacePluginsDir } from "../../util/layout.js";
 import { getCliLogger } from "../../util/logger.js";
 import { truncate } from "../../util/truncate.js";
-import { resolveBundledCliModule } from "../bundled-modules.js";
+import { importBundledCliModule } from "../bundled-modules.js";
 import { yellow } from "../lib/cli-colors.js";
 import { applyCommandHelp, subcommand } from "../lib/cli-command-help.js";
 import { confirmPrompt } from "../lib/confirm-prompt.js";
@@ -57,100 +56,55 @@ import type { PluginUninstallWarningKey } from "../lib/uninstall-plugin.js";
 import type { PluginUpgradeResult } from "../lib/upgrade-plugin.js";
 import { PLUGINS_SEARCH_INSTALL_HINT, pluginsHelp } from "./plugins.help.js";
 
-const loadModule = createRequire(import.meta.url);
-
-/** Lazy accessors: each getter loads its implementation module on first use. */
+/** Lazily import the implementation for the requested subcommand. */
 const libs = {
-  get catalogCache() {
-    return resolveBundledCliModule(
+  catalogCache: () =>
+    importBundledCliModule(
       "pluginCatalogCache",
-      () =>
-        loadModule(
-          "../lib/plugin-catalog-cache.js",
-        ) as typeof import("../lib/plugin-catalog-cache.js"),
-    );
-  },
-  get diff() {
-    return resolveBundledCliModule(
-      "pluginDiff",
-      () =>
-        loadModule(
-          "../lib/diff-plugin.js",
-        ) as typeof import("../lib/diff-plugin.js"),
-    );
-  },
-  get inspect() {
-    return resolveBundledCliModule(
+      () => import("../lib/plugin-catalog-cache.js"),
+    ),
+  diff: () =>
+    importBundledCliModule("pluginDiff", () => import("../lib/diff-plugin.js")),
+  inspect: () =>
+    importBundledCliModule(
       "pluginInspect",
-      () =>
-        loadModule(
-          "../lib/inspect-plugin.js",
-        ) as typeof import("../lib/inspect-plugin.js"),
-    );
-  },
-  get installGitHub() {
-    return resolveBundledCliModule(
+      () => import("../lib/inspect-plugin.js"),
+    ),
+  installGitHub: () =>
+    importBundledCliModule(
       "pluginInstallGitHub",
-      () =>
-        loadModule(
-          "../lib/install-from-github.js",
-        ) as typeof import("../lib/install-from-github.js"),
-    );
-  },
-  get installPlatform() {
-    return resolveBundledCliModule(
+      () => import("../lib/install-from-github.js"),
+    ),
+  installPlatform: () =>
+    importBundledCliModule(
       "pluginInstallPlatform",
-      () =>
-        loadModule(
-          "../lib/install-from-cloud.js",
-        ) as typeof import("../lib/install-from-cloud.js"),
-    );
-  },
-  get installed() {
-    return resolveBundledCliModule(
+      () => import("../lib/install-from-cloud.js"),
+    ),
+  installed: () =>
+    importBundledCliModule(
       "pluginInstalled",
-      () =>
-        loadModule(
-          "../lib/list-installed-plugins.js",
-        ) as typeof import("../lib/list-installed-plugins.js"),
-    );
-  },
-  get search() {
-    return resolveBundledCliModule(
+      () => import("../lib/list-installed-plugins.js"),
+    ),
+  search: () =>
+    importBundledCliModule(
       "pluginSearch",
-      () =>
-        loadModule(
-          "../lib/search-plugins.js",
-        ) as typeof import("../lib/search-plugins.js"),
-    );
-  },
-  get surfaces() {
-    return resolveBundledCliModule(
+      () => import("../lib/search-plugins.js"),
+    ),
+  surfaces: () =>
+    importBundledCliModule(
       "pluginSurfaces",
-      () =>
-        loadModule(
-          "../lib/plugin-surfaces.js",
-        ) as typeof import("../lib/plugin-surfaces.js"),
-    );
-  },
-  get uninstall() {
-    return resolveBundledCliModule(
+      () => import("../lib/plugin-surfaces.js"),
+    ),
+  uninstall: () =>
+    importBundledCliModule(
       "pluginUninstall",
-      () =>
-        loadModule(
-          "../lib/uninstall-plugin.js",
-        ) as typeof import("../lib/uninstall-plugin.js"),
-    );
-  },
-  get upgrade() {
-    return resolveBundledCliModule(
+      () => import("../lib/uninstall-plugin.js"),
+    ),
+  upgrade: () =>
+    importBundledCliModule(
       "pluginUpgrade",
-      () =>
-        loadModule(
-          "../lib/upgrade-plugin.js",
-        ) as typeof import("../lib/upgrade-plugin.js"),
-    );
-  },
+      () => import("../lib/upgrade-plugin.js"),
+    ),
 };
 
 const log = getCliLogger("plugins");
@@ -218,7 +172,9 @@ export function registerPluginsCommand(program: Command): void {
               let catalogResolved = false;
               try {
                 match = (
-                  await libs.catalogCache.getPluginCatalog(DEFAULT_PLUGIN_REF, {
+                  await (
+                    await libs.catalogCache()
+                  ).getPluginCatalog(DEFAULT_PLUGIN_REF, {
                     fetch: globalThis.fetch.bind(globalThis),
                   })
                 ).matches.find((candidate) => candidate.name === nameOrUrl);
@@ -234,7 +190,9 @@ export function registerPluginsCommand(program: Command): void {
                 process.exitCode = 1;
                 return;
               }
-              result = await libs.installPlatform.installPluginViaPlatform(
+              result = await (
+                await libs.installPlatform()
+              ).installPluginViaPlatform(
                 { name: nameOrUrl, force: opts.force },
                 { fetch: globalThis.fetch.bind(globalThis), confirmStaged },
               );
@@ -253,7 +211,9 @@ export function registerPluginsCommand(program: Command): void {
                 );
                 untrusted = true;
               }
-              result = await libs.installGitHub.installPlugin(installOpts, {
+              result = await (
+                await libs.installGitHub()
+              ).installPlugin(installOpts, {
                 fetch: globalThis.fetch.bind(globalThis),
                 confirmStaged,
               });
@@ -276,33 +236,45 @@ export function registerPluginsCommand(program: Command): void {
             console.log(
               `Installed ${label} "${result.name}" (${result.fileCount} file${result.fileCount === 1 ? "" : "s"})${pinned} → ${result.target}`,
             );
-            const { skills } = libs.surfaces.detectPluginSurfaces(
+            const { skills } = (await libs.surfaces()).detectPluginSurfaces(
               result.target,
             );
-            const setupSkill = libs.surfaces.findPluginSetupSkill(
+            const setupSkill = (await libs.surfaces()).findPluginSetupSkill(
               result.name,
               skills,
             );
             if (setupSkill !== undefined) {
-              console.log(libs.surfaces.formatPluginSetupHint(setupSkill));
+              console.log(
+                (await libs.surfaces()).formatPluginSetupHint(setupSkill),
+              );
             }
           } catch (err) {
-            if (err instanceof libs.installGitHub.PluginInstallDeclinedError) {
+            if (
+              err instanceof
+              (await libs.installGitHub()).PluginInstallDeclinedError
+            ) {
               // The consent gate already printed the outcome and set the exit
               // code; the install was aborted with nothing left on disk.
               return;
             }
-            if (err instanceof libs.installGitHub.PluginAlreadyInstalledError) {
+            if (
+              err instanceof
+              (await libs.installGitHub()).PluginAlreadyInstalledError
+            ) {
               console.error(`${err.message}\nPass --force to overwrite.`);
               process.exitCode = 1;
               return;
             }
-            if (err instanceof libs.installGitHub.PluginNotFoundError) {
+            if (
+              err instanceof (await libs.installGitHub()).PluginNotFoundError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
             }
-            if (err instanceof libs.installGitHub.InvalidPluginNameError) {
+            if (
+              err instanceof (await libs.installGitHub()).InvalidPluginNameError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
@@ -315,9 +287,9 @@ export function registerPluginsCommand(program: Command): void {
       );
 
       subcommand(plugins, "list").action(
-        (opts: { json?: boolean; all?: boolean }) => {
+        async (opts: { json?: boolean; all?: boolean }) => {
           if (opts.all) {
-            const all = libs.installed.listAllPlugins();
+            const all = (await libs.installed()).listAllPlugins();
 
             if (opts.json) {
               process.stdout.write(JSON.stringify(all, null, 2) + "\n");
@@ -361,7 +333,7 @@ export function registerPluginsCommand(program: Command): void {
             return;
           }
 
-          const installed = libs.installed.listInstalledPlugins();
+          const installed = (await libs.installed()).listInstalledPlugins();
 
           if (opts.json) {
             process.stdout.write(JSON.stringify(installed, null, 2) + "\n");
@@ -399,7 +371,9 @@ export function registerPluginsCommand(program: Command): void {
       subcommand(plugins, "inspect").action(
         async (name: string, opts: { json?: boolean }) => {
           try {
-            const inspection = await libs.inspect.inspectPlugin(
+            const inspection = await (
+              await libs.inspect()
+            ).inspectPlugin(
               { name },
               { fetch: globalThis.fetch.bind(globalThis) },
             );
@@ -427,12 +401,16 @@ export function registerPluginsCommand(program: Command): void {
               console.log(line);
             }
           } catch (err) {
-            if (err instanceof libs.inspect.PluginInspectNotFoundError) {
+            if (
+              err instanceof (await libs.inspect()).PluginInspectNotFoundError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
             }
-            if (err instanceof libs.installGitHub.InvalidPluginNameError) {
+            if (
+              err instanceof (await libs.installGitHub()).InvalidPluginNameError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
@@ -447,7 +425,9 @@ export function registerPluginsCommand(program: Command): void {
       subcommand(plugins, "diff").action(
         async (name: string, opts: { json?: boolean }) => {
           try {
-            const result = await libs.diff.diffPlugin(
+            const result = await (
+              await libs.diff()
+            ).diffPlugin(
               { name },
               { fetch: globalThis.fetch.bind(globalThis) },
             );
@@ -473,9 +453,9 @@ export function registerPluginsCommand(program: Command): void {
             }
           } catch (err) {
             if (
-              err instanceof libs.uninstall.PluginNotInstalledError ||
-              err instanceof libs.diff.PluginDiffUnavailableError ||
-              err instanceof libs.installGitHub.InvalidPluginNameError
+              err instanceof (await libs.uninstall()).PluginNotInstalledError ||
+              err instanceof (await libs.diff()).PluginDiffUnavailableError ||
+              err instanceof (await libs.installGitHub()).InvalidPluginNameError
             ) {
               console.error(err.message);
               process.exitCode = 1;
@@ -491,12 +471,16 @@ export function registerPluginsCommand(program: Command): void {
       subcommand(plugins, "search").action(
         async (query: string, opts: { json?: boolean }) => {
           try {
-            libs.search.assertValidSearchPattern(query);
-            const catalog = await libs.catalogCache.getPluginCatalog(
-              DEFAULT_PLUGIN_REF,
-              { fetch: globalThis.fetch.bind(globalThis) },
+            (await libs.search()).assertValidSearchPattern(query);
+            const catalog = await (
+              await libs.catalogCache()
+            ).getPluginCatalog(DEFAULT_PLUGIN_REF, {
+              fetch: globalThis.fetch.bind(globalThis),
+            });
+            const matches = (await libs.search()).filterPluginCatalog(
+              catalog,
+              query,
             );
-            const matches = libs.search.filterPluginCatalog(catalog, query);
             const result = { query, ref: catalog.ref, matches };
 
             if (opts.json) {
@@ -535,12 +519,16 @@ export function registerPluginsCommand(program: Command): void {
             );
             console.log(PLUGINS_SEARCH_INSTALL_HINT);
           } catch (err) {
-            if (err instanceof libs.search.InvalidSearchPatternError) {
+            if (
+              err instanceof (await libs.search()).InvalidSearchPatternError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
             }
-            if (err instanceof libs.search.PluginCatalogUnavailableError) {
+            if (
+              err instanceof (await libs.search()).PluginCatalogUnavailableError
+            ) {
               console.error(
                 "The plugin catalog is temporarily unavailable. Try again shortly.",
               );
@@ -610,7 +598,7 @@ export function registerPluginsCommand(program: Command): void {
                 { name, error: daemon.error },
                 "uninstall could not reach the daemon; running shutdown + removal locally",
               );
-              result = await libs.uninstall.uninstallPlugin({ name });
+              result = await (await libs.uninstall()).uninstallPlugin({ name });
             } else {
               // The daemon reached a decision (not installed, bad name, …);
               // surface it rather than silently retrying locally.
@@ -627,16 +615,20 @@ export function registerPluginsCommand(program: Command): void {
             );
             for (const warning of result.warnings ?? []) {
               console.warn(
-                `Warning: ${libs.uninstall.resolvePluginUninstallWarning(warning)}`,
+                `Warning: ${(await libs.uninstall()).resolvePluginUninstallWarning(warning)}`,
               );
             }
           } catch (err) {
-            if (err instanceof libs.installGitHub.InvalidPluginNameError) {
+            if (
+              err instanceof (await libs.installGitHub()).InvalidPluginNameError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
             }
-            if (err instanceof libs.uninstall.PluginNotInstalledError) {
+            if (
+              err instanceof (await libs.uninstall()).PluginNotInstalledError
+            ) {
               console.error(err.message);
               process.exitCode = 1;
               return;
@@ -725,7 +717,8 @@ export function registerPluginsCommand(program: Command): void {
             // upgrade while it's stopped, and the new code is picked up on the
             // daemon's next start. A daemon-side decision (not installed, not
             // upgradable, …) is surfaced rather than silently retried locally.
-            const preUpgradeScheduleNames = listInstalledScheduleNames(name);
+            const preUpgradeScheduleNames =
+              await listInstalledScheduleNames(name);
             const daemon = await cliIpcCall<PluginUpgradeResult>(
               "plugins_upgrade",
               {
@@ -757,7 +750,9 @@ export function registerPluginsCommand(program: Command): void {
                   force: Boolean(opts.force),
                   json: Boolean(opts.json),
                 });
-              result = await libs.upgrade.upgradePlugin(
+              result = await (
+                await libs.upgrade()
+              ).upgradePlugin(
                 {
                   name,
                   dryRun: opts.dryRun,
@@ -800,16 +795,19 @@ export function registerPluginsCommand(program: Command): void {
               );
             }
           } catch (err) {
-            if (err instanceof libs.installGitHub.PluginInstallDeclinedError) {
+            if (
+              err instanceof
+              (await libs.installGitHub()).PluginInstallDeclinedError
+            ) {
               // The consent gate already printed the outcome and set the exit
               // code; the upgrade was aborted with the live install untouched.
               return;
             }
             if (
-              err instanceof libs.uninstall.PluginNotInstalledError ||
-              err instanceof libs.upgrade.PluginNotUpgradableError ||
-              err instanceof libs.upgrade.PluginMergeBaselineError ||
-              err instanceof libs.installGitHub.InvalidPluginNameError
+              err instanceof (await libs.uninstall()).PluginNotInstalledError ||
+              err instanceof (await libs.upgrade()).PluginNotUpgradableError ||
+              err instanceof (await libs.upgrade()).PluginMergeBaselineError ||
+              err instanceof (await libs.installGitHub()).InvalidPluginNameError
             ) {
               console.error(err.message);
               process.exitCode = 1;
@@ -884,7 +882,9 @@ async function resolveInstallOptions(
 
   // Without the old manifest's git history there is no rollback surface: the
   // only reviewed revision of a plugin is the one the live catalog pins now.
-  const catalog = await libs.catalogCache.getPluginCatalog(DEFAULT_PLUGIN_REF, {
+  const catalog = await (
+    await libs.catalogCache()
+  ).getPluginCatalog(DEFAULT_PLUGIN_REF, {
     fetch: globalThis.fetch.bind(globalThis),
   });
   const match = catalog.matches.find((candidate) => candidate.name === name);
@@ -947,7 +947,9 @@ async function resolveDirectInstallOptions(
   // from the answer. Falls back to the guess when the remote can't be listed.
   let { path, ref, defaultName } = parsed;
   if (parsed.ambiguousTreeSegments) {
-    const resolved = await libs.installGitHub.resolveTreeRefPath(
+    const resolved = await (
+      await libs.installGitHub()
+    ).resolveTreeRefPath(
       parsed.owner,
       parsed.repo,
       parsed.ambiguousTreeSegments,
@@ -961,9 +963,9 @@ async function resolveDirectInstallOptions(
   const requested = opts.name ?? defaultName;
   let name: string;
   try {
-    name = libs.installGitHub.sanitizePluginName(requested);
+    name = (await libs.installGitHub()).sanitizePluginName(requested);
   } catch (err) {
-    if (err instanceof libs.installGitHub.InvalidPluginNameError) {
+    if (err instanceof (await libs.installGitHub()).InvalidPluginNameError) {
       console.error(
         opts.name
           ? err.message
@@ -1020,7 +1022,7 @@ async function buildDeclaredScheduleListing(
   rows: string[];
   schedules: readonly PluginScheduleSurface[];
 } | null> {
-  const { schedules } = libs.surfaces.detectPluginSurfaces(pluginDir);
+  const { schedules } = (await libs.surfaces()).detectPluginSurfaces(pluginDir);
   if (schedules.length === 0) {
     return null;
   }
@@ -1169,9 +1171,11 @@ function formatScheduleRows(
  * install path cannot be probed at all (for example an unsanitized name);
  * the upgrade itself surfaces such errors, this snapshot never does.
  */
-function listInstalledScheduleNames(name: string): ReadonlySet<string> {
+async function listInstalledScheduleNames(
+  name: string,
+): Promise<ReadonlySet<string>> {
   try {
-    const surfaces = libs.surfaces.detectPluginSurfaces(
+    const surfaces = (await libs.surfaces()).detectPluginSurfaces(
       join(getWorkspacePluginsDir(), name),
     );
     return new Set(surfaces.schedules.map((s) => s.name));

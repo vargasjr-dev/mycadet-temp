@@ -26,7 +26,7 @@ function cloneSurfaceData(value: unknown): Record<string, unknown> {
   try {
     return structuredClone(record);
   } catch {
-    return JSON.parse(JSON.stringify(record)) as Record<string, unknown>;
+    return coerceSurfaceDataRecord(JSON.parse(JSON.stringify(record)));
   }
 }
 

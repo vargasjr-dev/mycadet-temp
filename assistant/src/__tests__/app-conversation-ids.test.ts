@@ -17,6 +17,7 @@ import {
   setConversation,
   setSubagentConversation,
 } from "../daemon/conversation-registry.js";
+import { asConversation } from "./helpers/mock-conversation.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -34,7 +35,7 @@ const registeredTopLevel: string[] = [];
 const registeredSubagents: [string, RegistryConversation][] = [];
 
 function stubConversation(parentConversationId?: string): RegistryConversation {
-  return { parentConversationId } as unknown as RegistryConversation;
+  return asConversation({ parentConversationId });
 }
 
 /** Register a resident top-level conversation, optionally forked from a parent. */

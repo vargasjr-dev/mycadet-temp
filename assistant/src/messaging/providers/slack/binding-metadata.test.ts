@@ -24,11 +24,14 @@ function makeBinding(
   return {
     sourceChannel: "slack",
     externalChatId: "C0CHANNEL",
+    conversationId: "conv-1",
+    createdAt: 0,
+    updatedAt: 0,
     externalUserId: null,
     displayName: null,
     username: null,
     ...overrides,
-  } as ExternalConversationBinding;
+  };
 }
 
 describe("buildSlackBindingMetadata sourceLink", () => {

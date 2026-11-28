@@ -85,8 +85,5 @@ export function resolveTelephonyLanguageVoice(
     config,
     providerId as TtsProviderId,
   );
-  return resolveLanguageVoiceOverride(
-    providerConfig.languageVoices as Record<string, string> | undefined,
-    language,
-  );
+  return resolveLanguageVoiceOverride(providerConfig.languageVoices, language);
 }

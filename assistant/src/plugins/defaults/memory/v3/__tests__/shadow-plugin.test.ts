@@ -744,7 +744,7 @@ async function produce(conversationId: string, turnIndex: number) {
   });
   const commit = block?.meta?.[MEMORY_V3_COMMIT_META_KEY];
   if (typeof commit === "function") {
-    (commit as () => void)();
+    commit();
   }
   return block;
 }

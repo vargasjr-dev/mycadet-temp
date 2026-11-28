@@ -34,16 +34,9 @@ import {
 // ── Types ────────────────────────────────────────────────────────────
 
 export type SignalType =
-  | "macos_notification_view"
-  | "macos_conversation_opened"
-  | "ios_conversation_opened"
-  | "web_bulk_mark_read"
-  | "telegram_inbound_message"
-  | "telegram_callback"
-  | "slack_inbound_message"
-  | "slack_callback";
-
-export type Confidence = "explicit" | "inferred";
+  typeof conversationAttentionEvents.$inferSelect.signalType;
+export type Confidence =
+  typeof conversationAttentionEvents.$inferSelect.confidence;
 
 export interface AttentionEvent {
   id: string;
@@ -127,8 +120,8 @@ function rowToEvent(
     id: row.id,
     conversationId: row.conversationId,
     sourceChannel: row.sourceChannel,
-    signalType: row.signalType as SignalType,
-    confidence: row.confidence as Confidence,
+    signalType: row.signalType,
+    confidence: row.confidence,
     source: row.source,
     evidenceText: row.evidenceText,
     metadataJson: row.metadataJson,
@@ -147,8 +140,8 @@ function rowToState(
     lastSeenAssistantMessageId: row.lastSeenAssistantMessageId,
     lastSeenAssistantMessageAt: row.lastSeenAssistantMessageAt,
     lastSeenEventAt: row.lastSeenEventAt,
-    lastSeenConfidence: row.lastSeenConfidence as Confidence | null,
-    lastSeenSignalType: row.lastSeenSignalType as SignalType | null,
+    lastSeenConfidence: row.lastSeenConfidence,
+    lastSeenSignalType: row.lastSeenSignalType,
     lastSeenSourceChannel: row.lastSeenSourceChannel,
     lastSeenSource: row.lastSeenSource,
     lastSeenEvidenceText: row.lastSeenEvidenceText,
@@ -664,7 +657,7 @@ export function listConversationAttention(
     );
   }
 
-  let query = db
+  const baseQuery = db
     .select({
       conversationId: conversationAssistantAttentionState.conversationId,
       latestAssistantMessageId:
@@ -690,14 +683,17 @@ export function listConversationAttention(
     })
     .from(conversationAssistantAttentionState);
 
-  // Only join conversations table when filtering by source or sourceChannel
-  if (source || sourceChannel) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    query = (query as any).innerJoin(
-      conversations,
-      eq(conversationAssistantAttentionState.conversationId, conversations.id),
-    );
-  }
+  // Only join conversations when filtering by source or sourceChannel.
+  const query =
+    source || sourceChannel
+      ? baseQuery.innerJoin(
+          conversations,
+          eq(
+            conversationAssistantAttentionState.conversationId,
+            conversations.id,
+          ),
+        )
+      : baseQuery;
 
   const rows = (conditions.length > 0 ? query.where(and(...conditions)) : query)
     .orderBy(desc(conversationAssistantAttentionState.latestAssistantMessageAt))

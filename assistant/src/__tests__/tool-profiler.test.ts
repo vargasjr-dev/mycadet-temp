@@ -101,12 +101,14 @@ describe("ToolProfiler", () => {
 
 /**
  * A `process.memoryUsage` replacement that reproduces the Bun 1.3.11
- * `SystemError: Failed to get memory usage, errno: 2` syscall failure. Cast to
- * the real signature because an always-throwing arrow infers a `never` return.
+ * `SystemError: Failed to get memory usage, errno: 2` syscall failure.
  */
-const throwingMemoryUsage = (() => {
-  throw new Error("Failed to get memory usage, errno: 2");
-}) as unknown as typeof process.memoryUsage;
+const throwingMemoryUsage: typeof process.memoryUsage = Object.assign(
+  () => {
+    throw new Error("Failed to get memory usage, errno: 2");
+  },
+  { rss: process.memoryUsage.rss },
+);
 
 describe("ToolProfiler RSS sampling failures", () => {
   let profiler: ToolProfiler;

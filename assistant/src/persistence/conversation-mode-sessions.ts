@@ -7,11 +7,12 @@ import {
   type ModeSessionSummary,
   ModeSessionSummarySchema,
 } from "../api/mode-session.js";
-import { type DrizzleDb, getDb } from "./db-connection.js";
+import { type DrizzleDb, getDb, getSqliteFrom } from "./db-connection.js";
 import {
   readMessageSentAt,
   readModeSessionMetadata,
 } from "./message-metadata.js";
+import { rawChanges } from "./raw-query.js";
 import { conversationModeSessions, messages } from "./schema/index.js";
 
 export type ModeSessionWriteFailureReason =
@@ -325,7 +326,8 @@ export function listConversationModeSessionsByIds(
 export function recoverActiveConversationModeSessions(
   options?: ModeSessionStoreOptions,
 ): number {
-  const result = (options?.db ?? getDb())
+  const database = options?.db ?? getDb();
+  database
     .update(conversationModeSessions)
     .set({
       status: "interrupted",
@@ -334,8 +336,8 @@ export function recoverActiveConversationModeSessions(
       revision: sql`${conversationModeSessions.revision} + 1`,
     })
     .where(eq(conversationModeSessions.status, "active"))
-    .run() as unknown as { changes: number };
-  return result.changes;
+    .run();
+  return rawChanges(getSqliteFrom(database));
 }
 
 /** Recompute replaceable row boundaries after destructive transcript edits. */
@@ -434,8 +436,7 @@ export function repairConversationModeSessionBoundaries(
         ) {
           continue;
         }
-        const result = tx
-          .update(conversationModeSessions)
+        tx.update(conversationModeSessions)
           .set({
             firstIncludedAt,
             firstIncludedMessageId,
@@ -450,8 +451,8 @@ export function repairConversationModeSessionBoundaries(
               eq(conversationModeSessions.revision, session.revision),
             ),
           )
-          .run() as unknown as { changes: number };
-        repaired += result.changes;
+          .run();
+        repaired += rawChanges(getSqliteFrom(database));
       }
       return repaired;
     },

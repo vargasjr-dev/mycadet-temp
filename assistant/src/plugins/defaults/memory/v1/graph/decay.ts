@@ -169,7 +169,7 @@ export function runDecayTick(): DecayTickResult {
     }
 
     // -- Fidelity downgrade --
-    const currentFidelity = row.fidelity as Fidelity;
+    const currentFidelity = row.fidelity;
     const fidelityElapsedDays = (now - row.lastConsolidated) / msPerDay;
     const newFidelity = computeFidelityLevel(
       currentFidelity,

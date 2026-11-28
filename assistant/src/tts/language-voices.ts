@@ -1,4 +1,5 @@
 import { localizedOrDefault } from "../util/language-subtag.js";
+import { isObjectRecord } from "../util/object.js";
 
 /**
  * Look up a per-language voice override in a provider config's
@@ -8,16 +9,16 @@ import { localizedOrDefault } from "../util/language-subtag.js";
  * the map has no entry for it, or the entry is blank.
  */
 export function resolveLanguageVoiceOverride(
-  languageVoices: Readonly<Record<string, string>> | undefined,
+  languageVoices: unknown,
   language: string | undefined,
 ): string | undefined {
-  if (!languageVoices) {
+  if (!isObjectRecord(languageVoices)) {
     return undefined;
   }
-  const voice = localizedOrDefault<string | undefined>(
+  const voice = localizedOrDefault<unknown>(
     languageVoices,
     language,
     undefined,
   );
-  return voice?.trim() || undefined;
+  return typeof voice === "string" ? voice.trim() || undefined : undefined;
 }

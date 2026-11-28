@@ -14,7 +14,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import type pino from "pino";
+import pino from "pino";
 import { z } from "zod";
 
 import { UISurfaceUpdateEvent } from "../api/events/ui-surface-update.js";
@@ -29,12 +29,7 @@ import {
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
-const noopLogger = {
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  debug: () => {},
-} as unknown as pino.Logger;
+const noopLogger = pino({ enabled: false });
 
 function makeContext(sent: AssistantEvent[] = []): Conversation {
   return asConversation({

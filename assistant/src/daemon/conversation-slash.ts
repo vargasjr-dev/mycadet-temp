@@ -12,6 +12,7 @@ import { orderProfileKeys } from "../config/profile-order.js";
 import { getConversationOverrideProfile } from "../persistence/conversation-crud.js";
 import { PROVIDER_CATALOG } from "../providers/model-catalog.js";
 import { getConfiguredProviders } from "../providers/provider-availability.js";
+import { isPlainObject } from "../util/object.js";
 
 export type SlashResolution =
   | { kind: "passthrough"; content: string }
@@ -206,10 +207,7 @@ async function resolveModelCommand(
   // the in-process cache so the very next `getConfig()` reflects the switch;
   // the file watcher will also pick this up but its debounce can lag a tick.
   const raw = loadRawConfig();
-  const llm: Record<string, unknown> =
-    raw.llm != null && typeof raw.llm === "object" && !Array.isArray(raw.llm)
-      ? (raw.llm as Record<string, unknown>)
-      : {};
+  const llm = isPlainObject(raw.llm) ? raw.llm : {};
   llm.activeProfile = target;
   raw.llm = llm;
   saveRawConfig(raw);

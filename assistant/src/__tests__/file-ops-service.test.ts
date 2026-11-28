@@ -311,7 +311,11 @@ describe("FileSystemOps.readFileSafe", () => {
 
     const result = await fileReadTool.execute(
       { path: join(dir, "big.txt"), offset: 2001, limit: 2000 },
-      { workingDir: dir } as never,
+      {
+        workingDir: dir,
+        conversationId: "file-ops-test",
+        trustClass: "guardian",
+      },
     );
     expect(result.isError).toBe(true);
     expect(result.content).toContain("no longer takes");
@@ -325,7 +329,11 @@ describe("FileSystemOps.readFileSafe", () => {
 
     const result = await fileReadTool.execute(
       { path: join(dir, "big.txt"), offset: 1, max_chars: 4 },
-      { workingDir: dir } as never,
+      {
+        workingDir: dir,
+        conversationId: "file-ops-test",
+        trustClass: "guardian",
+      },
     );
     expect(result.isError).toBe(false);
     const [body] = result.content.split("\n\n[Truncated:");

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Google Calendar watcher provider — uses incremental sync for efficient change detection.
  *
@@ -5,7 +7,6 @@
  * Subsequent polls use the syncToken with events.list to detect new/updated events.
  * Falls back to listing recent upcoming events if the syncToken has expired (410 Gone).
  */
-
 import type { OAuthConnection } from "../../oauth/connection.js";
 import { resolveOAuthConnection } from "../../oauth/connection-resolver.js";
 import { getLogger } from "../../util/logger.js";
@@ -21,52 +22,53 @@ const GOOGLE_CALENDAR_BASE_URL = "https://www.googleapis.com/calendar/v3";
 // Local types & helpers used by the watcher provider
 // ---------------------------------------------------------------------------
 
-/** Event time - either a dateTime with timezone or a date for all-day events. */
-interface EventDateTime {
-  dateTime?: string;
-  date?: string;
-  timeZone?: string;
-}
+const eventDateTimeSchema = z.object({
+  dateTime: z.string().nullish(),
+  date: z.string().nullish(),
+  timeZone: z.string().nullish(),
+});
 
-/** Calendar event attendee. */
-interface EventAttendee {
-  email: string;
-  displayName?: string;
-  responseStatus?: "needsAction" | "declined" | "tentative" | "accepted";
-  self?: boolean;
-  organizer?: boolean;
-  optional?: boolean;
-}
+const calendarEventSchema = z.object({
+  id: z.string(),
+  status: z.enum(["confirmed", "tentative", "cancelled"]).nullish(),
+  summary: z.string().nullish(),
+  description: z.string().nullish(),
+  location: z.string().nullish(),
+  start: eventDateTimeSchema.nullish(),
+  end: eventDateTimeSchema.nullish(),
+  attendees: z
+    .array(
+      z.object({
+        email: z.string(),
+        displayName: z.string().nullish(),
+        responseStatus: z
+          .enum(["needsAction", "declined", "tentative", "accepted"])
+          .nullish(),
+        self: z.boolean().nullish(),
+        organizer: z.boolean().nullish(),
+        optional: z.boolean().nullish(),
+      }),
+    )
+    .nullish(),
+  organizer: z
+    .object({
+      email: z.string().nullish(),
+      displayName: z.string().nullish(),
+      self: z.boolean().nullish(),
+    })
+    .nullish(),
+  htmlLink: z.string().nullish(),
+  created: z.string().nullish(),
+  updated: z.string().nullish(),
+});
 
-/** Calendar event organizer. */
-interface EventOrganizer {
-  email?: string;
-  displayName?: string;
-  self?: boolean;
-}
+type CalendarEvent = z.infer<typeof calendarEventSchema>;
 
-/** A single Google Calendar event. */
-interface CalendarEvent {
-  id: string;
-  status?: "confirmed" | "tentative" | "cancelled";
-  summary?: string;
-  description?: string;
-  location?: string;
-  start?: EventDateTime;
-  end?: EventDateTime;
-  attendees?: EventAttendee[];
-  organizer?: EventOrganizer;
-  htmlLink?: string;
-  created?: string;
-  updated?: string;
-}
-
-/** Events list response. */
-interface CalendarEventsListResponse {
-  items?: CalendarEvent[];
-  nextPageToken?: string;
-  nextSyncToken?: string;
-}
+const calendarPageSchema = z.object({
+  items: z.array(calendarEventSchema).nullish(),
+  nextPageToken: z.string().nullish(),
+  nextSyncToken: z.string().nullish(),
+});
 
 class CalendarApiError extends Error {
   constructor(
@@ -93,7 +95,7 @@ async function listEvents(
     pageToken?: string;
     syncToken?: string;
   },
-): Promise<CalendarEventsListResponse> {
+): Promise<z.infer<typeof calendarPageSchema> | undefined> {
   const query: Record<string, string> = {};
 
   if (options?.timeMin) {
@@ -147,9 +149,9 @@ async function listEvents(
   }
 
   if (resp.status === 204 || resp.body === undefined) {
-    return undefined as unknown as CalendarEventsListResponse;
+    return undefined;
   }
-  return resp.body as CalendarEventsListResponse;
+  return calendarPageSchema.parse(resp.body);
 }
 
 const log = getLogger("watcher:google-calendar");
@@ -195,12 +197,6 @@ function eventToItem(event: CalendarEvent, eventType: string): WatcherItem {
   };
 }
 
-interface SyncResponse {
-  items?: CalendarEvent[];
-  nextPageToken?: string;
-  nextSyncToken?: string;
-}
-
 /**
  * Perform an incremental sync using the stored syncToken.
  * Follows pagination (nextPageToken) until the final page returns nextSyncToken.
@@ -209,7 +205,7 @@ interface SyncResponse {
 async function incrementalSync(
   connection: OAuthConnection,
   syncToken: string,
-): Promise<SyncResponse> {
+): Promise<z.infer<typeof calendarPageSchema>> {
   let allItems: CalendarEvent[] = [];
   let pageToken: string | undefined;
   let nextSyncToken: string | undefined;
@@ -249,12 +245,12 @@ async function incrementalSync(
       );
     }
 
-    const page = resp.body as SyncResponse;
+    const page = calendarPageSchema.parse(resp.body);
     if (page.items) {
       allItems = allItems.concat(page.items);
     }
-    pageToken = page.nextPageToken;
-    nextSyncToken = page.nextSyncToken;
+    pageToken = page.nextPageToken ?? undefined;
+    nextSyncToken = page.nextSyncToken ?? undefined;
   } while (pageToken);
 
   return { items: allItems, nextSyncToken };
@@ -320,9 +316,9 @@ async function fetchInitialSyncToken(
       );
     }
 
-    const page: CalendarEventsListResponse = resp.body ?? {};
-    syncToken = page.nextSyncToken;
-    pageToken = page.nextPageToken;
+    const page = calendarPageSchema.parse(resp.body ?? {});
+    syncToken = page.nextSyncToken ?? undefined;
+    pageToken = page.nextPageToken ?? undefined;
   } while (pageToken && !syncToken);
 
   return syncToken;
@@ -416,7 +412,7 @@ async function fallbackFetch(
     orderBy: "startTime",
   });
 
-  const items = (result.items ?? []).map((event) =>
+  const items = (result?.items ?? []).map((event) =>
     eventToItem(event, "new_calendar_event"),
   );
 

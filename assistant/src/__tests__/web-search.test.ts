@@ -35,7 +35,11 @@ async function executeWebSearch(
   provider: Provider,
 ) {
   setConfig("services", { "web-search": { provider } });
-  return webSearchTool.execute(input, {} as never);
+  return webSearchTool.execute(input, {
+    conversationId: "web-search-test",
+    workingDir: "/tmp",
+    trustClass: "guardian",
+  });
 }
 
 beforeEach(() => {

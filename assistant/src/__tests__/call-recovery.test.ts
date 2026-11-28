@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
+import pino from "pino";
+
 import {
   clearActiveCallLeases,
   listActiveCallLeases,
@@ -87,12 +89,7 @@ function createMockProvider(
 }
 
 /** Silent logger for tests */
-const silentLog = new Proxy<Record<string, unknown>>(
-  {},
-  {
-    get: () => () => {},
-  },
-) as unknown as ReturnType<typeof import("../util/logger.js").getLogger>;
+const silentLog = pino({ enabled: false });
 
 describe("listRecoverableCalls", () => {
   beforeEach(() => {

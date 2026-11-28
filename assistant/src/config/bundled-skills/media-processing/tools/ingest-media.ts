@@ -18,6 +18,7 @@ import type {
   ToolContext,
   ToolExecutionResult,
 } from "../../../../tools/types.js";
+import { isObjectRecord } from "../../../../util/object.js";
 import {
   FFPROBE_TIMEOUT_MS,
   spawnWithTimeout,
@@ -193,10 +194,7 @@ export async function run(
     basename(filePath);
 
   // Parse optional metadata
-  let metadata: Record<string, unknown> | undefined;
-  if (input.metadata && typeof input.metadata === "object") {
-    metadata = input.metadata as Record<string, unknown>;
-  }
+  const metadata = isObjectRecord(input.metadata) ? input.metadata : undefined;
 
   throwIfCancelled(context);
 

@@ -44,7 +44,7 @@ const logger = getLogger("messages-fts");
 function isSqliteCorruptionError(err: unknown): boolean {
   const code =
     err != null && typeof err === "object" && "code" in err
-      ? (err as { code: string }).code
+      ? err.code
       : undefined;
   return code === "SQLITE_CORRUPT_VTAB" || code === "SQLITE_CORRUPT";
 }

@@ -1,7 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
-
 import {
   awaitCesClientWithTimeout,
   DEFAULT_CES_STARTUP_TIMEOUT_MS,
@@ -10,7 +8,7 @@ import {
 describe("awaitCesClientWithTimeout", () => {
   test("clears the fallback timer when the CES client resolves first", async () => {
     const onTimeout = mock(() => {});
-    const client = { isReady: () => true } as unknown as CesClient;
+    const client = { isReady: () => true };
 
     const result = await awaitCesClientWithTimeout(Promise.resolve(client), {
       timeoutMs: 25,

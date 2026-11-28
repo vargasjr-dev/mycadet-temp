@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import type { Message } from "../providers/types.js";
 import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -170,7 +171,11 @@ import { CONVERSATION_BUSY_MESSAGE } from "../daemon/conversation-messaging.js";
 import type { AuthContext } from "../runtime/auth/types.js";
 import { handleSendMessage } from "../runtime/routes/conversation-routes.js";
 import { callHandler } from "./helpers/call-route-handler.js";
-import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
+import {
+  asConversation,
+  mockMessageQueue,
+  mockUnownedModeSessions,
+} from "./helpers/mock-conversation.js";
 
 const _testAuthContext: AuthContext = {
   subject: "actor:self:test-guardian",
@@ -228,16 +233,16 @@ function makeConversation() {
     summaryText: "Summary",
   }));
   const events: unknown[] = [];
-  const messages: unknown[] = [];
+  const messages: Message[] = [];
   let processing = false;
   let owner = 0;
-  const conversation = {
+  const conversation = asConversation({
     conversationId: "conv-slash-test",
     messages,
     abortController: null,
     currentRequestId: undefined,
     modeSessions: mockUnownedModeSessions(),
-    queue: { length: 0 },
+    queue: mockMessageQueue({ length: 0 }),
     setTrustContext: () => {},
     replayActivityState: () => {},
     emitConfirmationStateChanged: () => {},
@@ -279,13 +284,13 @@ function makeConversation() {
     // Forwards to drainQueue so tests that replace the drain observe the
     // route's queue kick through the guarded entry point.
     kickDrainQueue(
-      this: { drainQueue: (reason?: string) => unknown },
+      this: { drainQueue: (reason?: string) => Promise<void> },
       reason: string = "loop_complete",
       _origin?: string,
     ) {
       return this.drainQueue(reason);
     },
-    warmPromptCache: () => {},
+    warmPromptCache: async () => {},
     getMessages: () => messages,
     assistantId: "self",
     trustContext: undefined,
@@ -298,7 +303,7 @@ function makeConversation() {
       outputTokens: 500,
       estimatedCost: 0.05,
     },
-  } as unknown as import("../daemon/conversation.js").Conversation;
+  });
   return {
     conversation,
     persistUserMessage,

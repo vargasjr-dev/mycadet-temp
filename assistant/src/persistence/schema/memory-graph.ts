@@ -35,7 +35,11 @@ export const memoryGraphNodes = sqliteTable(
     /** JSON-serialized EmotionalCharge object. Read/written atomically. */
     emotionalCharge: text("emotional_charge").notNull(),
     /** vivid | clear | faded | gist | gone */
-    fidelity: text("fidelity").notNull().default("vivid"),
+    fidelity: text("fidelity", {
+      enum: ["vivid", "clear", "faded", "gist", "gone"],
+    })
+      .notNull()
+      .default("vivid"),
     /** 0–1. How sure the assistant is this is accurate. */
     confidence: real("confidence").notNull(),
     /** 0–1. How important. Subject to Ebbinghaus decay. */
@@ -53,7 +57,11 @@ export const memoryGraphNodes = sqliteTable(
     /** JSON array of conversation IDs. */
     sourceConversations: text("source_conversations").notNull().default("[]"),
     /** direct | inferred | observed | told-by-other */
-    sourceType: text("source_type").notNull().default("inferred"),
+    sourceType: text("source_type", {
+      enum: ["direct", "inferred", "observed", "told-by-other"],
+    })
+      .notNull()
+      .default("inferred"),
 
     // -- Narrative --
     narrativeRole: text("narrative_role"),
@@ -82,7 +90,17 @@ export const memoryGraphEdges = sqliteTable(
       .notNull()
       .references(() => memoryGraphNodes.id, { onDelete: "cascade" }),
     /** caused-by | reminds-of | contradicts | depends-on | part-of | supersedes | resolved-by */
-    relationship: text("relationship").notNull(),
+    relationship: text("relationship", {
+      enum: [
+        "caused-by",
+        "reminds-of",
+        "contradicts",
+        "depends-on",
+        "part-of",
+        "supersedes",
+        "resolved-by",
+      ],
+    }).notNull(),
     /** Connection strength 0–1. */
     weight: real("weight").notNull().default(1.0),
     /** Epoch ms. */
@@ -102,7 +120,7 @@ export const memoryGraphTriggers = sqliteTable(
       .notNull()
       .references(() => memoryGraphNodes.id, { onDelete: "cascade" }),
     /** temporal | semantic | event */
-    type: text("type").notNull(),
+    type: text("type", { enum: ["temporal", "semantic", "event"] }).notNull(),
 
     // -- Temporal --
     schedule: text("schedule"),

@@ -2,10 +2,11 @@
 // helpers schedule jobs unconditionally — regardless of `memory.enabled` or
 // the memory plugin's `.disabled` sentinel — and never touch Qdrant inline.
 // (The job worker drains the lexical types even while memory is disabled.)
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { eq } from "drizzle-orm";
+
+import { isObjectRecord } from "../../../util/object.js";
 
 // Spread the real lexical-index module and override only the singleton
 // accessors to return a fake that records any inline delete calls (there
@@ -68,10 +69,7 @@ function setMemoryPluginDisabled(disabled: boolean): void {
 
 function setMemoryEnabled(enabled: boolean): void {
   const raw = loadRawConfig();
-  const memory =
-    raw.memory && typeof raw.memory === "object"
-      ? (raw.memory as Record<string, unknown>)
-      : {};
+  const memory = isObjectRecord(raw.memory) ? raw.memory : {};
   saveRawConfig({ ...raw, memory: { ...memory, enabled } });
   invalidateConfigCache();
 }

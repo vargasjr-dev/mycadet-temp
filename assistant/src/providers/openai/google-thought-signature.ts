@@ -152,7 +152,7 @@ export function applyGemini3UnsignedToolCallFallback(
 }
 
 function paramsMessages(params: unknown): unknown[] | undefined {
-  const messages = (params as { messages?: unknown }).messages;
+  const messages = isObjectRecord(params) ? params.messages : undefined;
   return Array.isArray(messages) ? messages : undefined;
 }
 

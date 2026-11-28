@@ -8,13 +8,13 @@
  * Reads are best-effort: when the fincore binary is missing or fails, the
  * snapshot records null rather than failing.
  */
-
 import { execFile } from "node:child_process";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
 import { getDataDir, getDbPath } from "../util/layout.js";
+import { isObjectRecord } from "../util/object.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -43,18 +43,17 @@ export function parseFincoreJson(stdout: string): FileResidency[] {
   } catch {
     return [];
   }
-  const rows = (parsed as { fincore?: unknown[] })?.fincore;
+  const rows = isObjectRecord(parsed) ? parsed.fincore : undefined;
   if (!Array.isArray(rows)) {
     return [];
   }
 
   const out: FileResidency[] = [];
   for (const row of rows) {
-    const { res, size, file } = row as {
-      res?: unknown;
-      size?: unknown;
-      file?: unknown;
-    };
+    if (!isObjectRecord(row)) {
+      continue;
+    }
+    const { res, size, file } = row;
     const residentBytes = Number(res);
     const sizeBytes = Number(size);
     if (

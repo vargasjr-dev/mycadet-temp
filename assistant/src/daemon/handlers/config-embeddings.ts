@@ -12,6 +12,7 @@ import {
   clearEmbeddingBackendCache,
   getMemoryBackendStatus,
 } from "../../persistence/embeddings/embedding-backend.js";
+import { getObjectProperty } from "../../util/object.js";
 import type { ModelSetContext } from "./config-model.js";
 import { CONFIG_RELOAD_DEBOUNCE_MS, log } from "./shared.js";
 
@@ -91,7 +92,7 @@ export async function getEmbeddingConfigInfo(): Promise<{
   // Derive the provider-specific model from config
   const fieldName = PROVIDER_MODEL_FIELD[embeddingConfig.provider];
   const model = fieldName
-    ? (embeddingConfig as Record<string, unknown>)[fieldName]
+    ? getObjectProperty(embeddingConfig, fieldName)
     : null;
 
   return {

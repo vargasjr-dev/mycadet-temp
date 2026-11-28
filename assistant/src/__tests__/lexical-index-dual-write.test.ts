@@ -25,6 +25,8 @@ import {
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { isObjectRecord } from "../util/object.js";
+
 // Stub the segment indexer so the persist path's memory indexing runs cheaply.
 // The lexical enqueue is a separate call on the persist path and still fires.
 // Other exports are provided so any transitive importer of this module
@@ -146,10 +148,7 @@ function resetMemoryJobs(): void {
 
 function setMemoryEnabled(enabled: boolean): void {
   const raw = loadRawConfig();
-  const memory =
-    raw.memory && typeof raw.memory === "object"
-      ? (raw.memory as Record<string, unknown>)
-      : {};
+  const memory = isObjectRecord(raw.memory) ? raw.memory : {};
   saveRawConfig({ ...raw, memory: { ...memory, enabled } });
   invalidateConfigCache();
 }

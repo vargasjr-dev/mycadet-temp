@@ -41,7 +41,7 @@ export async function runCliCommand(
   const invokeCallback = (rest: unknown[]): void => {
     const callback = rest.find((arg) => typeof arg === "function");
     if (callback) {
-      (callback as () => void)();
+      callback();
     }
   };
   process.stdout.write = (chunk: unknown, ...rest: unknown[]) => {

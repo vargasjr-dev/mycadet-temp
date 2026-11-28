@@ -68,7 +68,7 @@ export function classifyError(err: unknown): ErrorCategory {
 
   // SDK APIError subclasses (Anthropic and OpenAI share the same shape)
   if (err != null && typeof err === "object" && "status" in err) {
-    const status = (err as { status?: number }).status;
+    const status = err.status;
     if (typeof status === "number") {
       if (status === 429) {
         return "retryable";

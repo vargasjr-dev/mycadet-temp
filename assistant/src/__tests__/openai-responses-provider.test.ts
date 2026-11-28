@@ -44,10 +44,10 @@ function expectOpenAIConstructorOptions(
 
 // Simulate OpenAI.APIError
 class FakeAPIError extends Error {
-  status: number;
+  status: number | undefined;
   headers: Record<string, string>;
   constructor(
-    status: number,
+    status: number | undefined,
     message: string,
     headers?: Record<string, string>,
   ) {
@@ -63,13 +63,13 @@ class FakeAPIError extends Error {
 // for suites that share this process.
 class FakeAPIConnectionError extends FakeAPIError {
   constructor() {
-    super(undefined as unknown as number, "Connection error.");
+    super(undefined, "Connection error.");
     this.name = "APIConnectionError";
   }
 }
 class FakeAPIUserAbortError extends FakeAPIError {
   constructor() {
-    super(undefined as unknown as number, "Request was aborted.");
+    super(undefined, "Request was aborted.");
     this.name = "APIUserAbortError";
   }
 }

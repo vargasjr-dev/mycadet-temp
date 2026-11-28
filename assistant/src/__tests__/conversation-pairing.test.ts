@@ -21,7 +21,7 @@ let mockExistingConversations: Record<
   string,
   {
     id: string;
-    source: string;
+    source: string | null;
     title: string | null;
     conversationType?: string;
   }
@@ -451,7 +451,7 @@ describe("pairDeliveryWithConversation", () => {
     // include the notification in their conversation history.
     mockExistingConversations["conv-inbound"] = {
       id: "conv-inbound",
-      source: null as unknown as string,
+      source: null,
       title: "Slack DM",
     };
     mockBindings["slack:D0ASABGUTQR"] = {
@@ -501,7 +501,7 @@ describe("pairDeliveryWithConversation", () => {
     // path intentionally skips the source check.
     mockExistingConversations["conv-inbound-null-source"] = {
       id: "conv-inbound-null-source",
-      source: null as unknown as string,
+      source: null,
       title: "Slack DM",
     };
     mockBindings["slack:D0CHATID123"] = {

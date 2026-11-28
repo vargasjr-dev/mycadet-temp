@@ -171,7 +171,7 @@ function insertItem(opts: {
   id: string;
   type: string;
   content: string;
-  fidelity?: string;
+  fidelity?: typeof memoryGraphNodes.$inferInsert.fidelity;
   significance?: number;
   created?: number;
   lastAccessed?: number;

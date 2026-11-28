@@ -407,15 +407,11 @@ const QUEUE_RESOLUTIONS = new Set([
 export function isJobQueueResolution(
   value: unknown,
 ): value is JobQueueResolution {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "queueResolution" in value &&
-    typeof getObjectProperty(value, "queueResolution") === "string" &&
-    QUEUE_RESOLUTIONS.has(
-      (value as { queueResolution: string }).queueResolution,
-    )
-  );
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const resolution = getObjectProperty(value, "queueResolution");
+  return typeof resolution === "string" && QUEUE_RESOLUTIONS.has(resolution);
 }
 
 /**

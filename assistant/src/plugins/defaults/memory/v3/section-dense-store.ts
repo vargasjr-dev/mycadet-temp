@@ -447,9 +447,7 @@ export async function ensureSectionCollection(
       // 409 = a concurrent caller created the collection — fall through to
       // ensure the payload index below rather than returning early.
       const status =
-        err instanceof Error && "status" in err
-          ? (err as { status: number }).status
-          : undefined;
+        err instanceof Error && "status" in err ? err.status : undefined;
       if (status !== 409) {
         throw err;
       }
