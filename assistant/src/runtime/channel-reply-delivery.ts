@@ -11,8 +11,8 @@ import { editChannelMessage } from "../messaging/providers/index.js";
 import { getAttachmentMetadataForMessage } from "../persistence/attachments-store.js";
 import {
   getConversationMessageTail,
-  getMessagesAfter,
   getMessageById,
+  getMessagesAfter,
   type MessageRow,
   parseMessageMetadata,
 } from "../persistence/conversation-crud.js";
