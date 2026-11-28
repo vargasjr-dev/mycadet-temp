@@ -74,19 +74,12 @@ const SkillMetadataSchema = z
  * - `bundled`: ships inside the assistant binary under `bundled-skills/`.
  * - `managed`: installed into `$CADET_WORKSPACE_DIR/skills/` from our catalog.
  * - `workspace`: user-authored skill living in a conversation's working dir.
- * - `extra`: third-party directory roots passed via `loadSkillCatalog`'s
- *   `extraDirs` argument (primarily for tests).
  * - `plugin`: shipped on disk inside a plugin: an installed one at
  *   `<workspaceDir>/plugins/<name>/skills/<id>/SKILL.md`, or an in-process
  *   default at `plugins/defaults/<dir>/skills/<id>/SKILL.md`, attributed back
  *   to the owning plugin via its `owner` descriptor.
  */
-export type SkillSource =
-  | "bundled"
-  | "managed"
-  | "workspace"
-  | "extra"
-  | "plugin";
+export type SkillSource = "bundled" | "managed" | "workspace" | "plugin";
 
 export interface SkillSummary {
   id: string;
@@ -914,88 +907,14 @@ function skillSummaryFromDefinition(
   };
 }
 
-export function loadSkillCatalog(
-  workspaceSkillsDir?: string,
-  extraDirs?: string[],
-): SkillSummary[] {
+export function loadSkillCatalog(workspaceSkillsDir?: string): SkillSummary[] {
   const catalog: SkillSummary[] = [];
   const seenIds = new Set<string>();
 
-  // Load extra directories first (lowest precedence, before bundled)
-  if (extraDirs) {
-    for (const dir of extraDirs) {
-      if (!existsSync(dir)) {
-        continue;
-      }
-      const dirs = discoverSkillDirectories(dir);
-      for (const directory of dirs) {
-        const skillFilePath = join(directory, "SKILL.md");
-        if (!existsSync(skillFilePath)) {
-          continue;
-        }
-
-        try {
-          const stat = statSync(skillFilePath);
-          if (!stat.isFile()) {
-            continue;
-          }
-
-          const content = readFileSync(skillFilePath, "utf-8");
-          const parsed = parseFrontmatter(content, skillFilePath);
-          if (!parsed) {
-            continue;
-          }
-
-          const id = basename(directory);
-          if (seenIds.has(id)) {
-            log.warn(
-              { id, directory },
-              "Skipping duplicate skill id from extraDirs",
-            );
-            continue;
-          }
-
-          seenIds.add(id);
-          catalog.push({
-            id,
-            name: parsed.name,
-            displayName: parsed.displayName ?? parsed.name,
-            description: parsed.description,
-            directoryPath: directory,
-            skillFilePath,
-            emoji: parsed.emoji,
-
-            source: "extra",
-            toolManifest: detectToolManifest(directory),
-            includes: parsed.includes,
-            activationHints: parsed.activationHints,
-            avoidWhen: parsed.avoidWhen,
-            category: parsed.category,
-            alwaysCandidate: parsed.alwaysCandidate,
-            platforms: parsed.platforms,
-            inlineCommandExpansions: parsed.inlineCommandExpansions,
-          });
-        } catch (err) {
-          log.warn({ err, directory }, "Failed to read skill from extraDirs");
-        }
-      }
-    }
-  }
-
-  // Load bundled skills (override extraDirs skills with same ID)
+  // Load bundled skills first
   const bundledSkills = loadBundledSkills();
   for (const skill of bundledSkills) {
     if (seenIds.has(skill.id)) {
-      // Bundled wins over extraDirs
-      const existingIndex = catalog.findIndex((s) => s.id === skill.id);
-      if (existingIndex !== -1 && catalog[existingIndex].source === "extra") {
-        log.info(
-          { id: skill.id, directory: skill.directoryPath },
-          "Bundled skill overrides extraDirs skill",
-        );
-        catalog[existingIndex] = skill;
-        continue;
-      }
       log.warn(
         { id: skill.id, directory: skill.directoryPath },
         "Skipping duplicate bundled skill id",
@@ -1007,7 +926,7 @@ export function loadSkillCatalog(
   }
 
   // Discover skills shipped on disk inside plugins, in-process defaults and
-  // installed plugins alike. They sit above bundled/extra but below managed and
+  // installed plugins alike. They sit above bundled but below managed and
   // workspace so a user-authored filesystem skill can override a
   // plugin-provided skill by declaring the same id under
   // `$CADET_WORKSPACE_DIR/skills/`. Precedence *within* the plugin source
@@ -1016,14 +935,10 @@ export function loadSkillCatalog(
   for (const skill of pluginSkills) {
     if (seenIds.has(skill.id)) {
       const existingIndex = catalog.findIndex((s) => s.id === skill.id);
-      if (
-        existingIndex !== -1 &&
-        (catalog[existingIndex].source === "bundled" ||
-          catalog[existingIndex].source === "extra")
-      ) {
+      if (existingIndex !== -1 && catalog[existingIndex].source === "bundled") {
         log.info(
           { id: skill.id, pluginName: skill.owner?.id },
-          "Plugin skill overrides bundled/extra skill",
+          "Plugin skill overrides bundled skill",
         );
         catalog[existingIndex] = skill;
         continue;
@@ -1049,7 +964,7 @@ export function loadSkillCatalog(
     }
 
     if (seenIds.has(skill.id)) {
-      // If the existing entry is bundled, extra, or plugin-contributed, the
+      // If the existing entry is bundled or plugin-contributed, the
       // user skill overrides it. Only another `managed` or `workspace` entry
       // (already at or above managed precedence) is treated as a true
       // duplicate.
@@ -1057,7 +972,6 @@ export function loadSkillCatalog(
       if (
         existingIndex !== -1 &&
         (catalog[existingIndex].bundled ||
-          catalog[existingIndex].source === "extra" ||
           catalog[existingIndex].source === "plugin")
       ) {
         log.info(

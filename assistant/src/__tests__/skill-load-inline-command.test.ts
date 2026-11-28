@@ -4,7 +4,7 @@
  * Validates that:
  * - Root skills with `!\`command\`` tokens get those tokens expanded exactly
  *   once at skill_load time, wrapped in <inline_skill_command> XML tags.
- * - When the skill source is "extra", skill_load rejects with a specific error.
+ * - When the skill source is "plugin", skill_load rejects with a specific error.
  * - Render failures produce stable inline stubs rather than raw stderr.
  */
 
@@ -246,21 +246,22 @@ describe("skill_load inline command expansion", () => {
     });
   });
 
-  // ── Extra source rejection ───────────────────────────────────────────
+  // ── Plugin source rejection ──────────────────────────────────────────
   //
-  // The SkillLoadTool checks `skill.source === "extra"` and rejects inline
+  // The SkillLoadTool checks `skill.source === "plugin"` and rejects inline
   // command expansion for third-party skill sources. Since `loadSkillBySelector`
-  // doesn't propagate `extraDirs` from config, extra-source skills can't be
-  // easily loaded through the tool in a unit test without deep mocking.
+  // doesn't surface plugin-resident skills in a unit-test catalog without deep
+  // mocking, plugin-source skills can't be easily loaded through the tool in a
+  // unit test.
   //
   // We verify the rejection logic exists by importing the tool class directly
-  // and confirming the code path rejects extra sources when inline commands
+  // and confirming the code path rejects plugin sources when inline commands
   // are present. The actual source-level guard is tested by checking that
   // workspace-source skills *do* expand (above) while the code explicitly
-  // gates on INLINE_COMMAND_ELIGIBLE_SOURCES which excludes "extra".
+  // gates on INLINE_COMMAND_ELIGIBLE_SOURCES which excludes "plugin".
 
-  describe("extra source rejection (code-level verification)", () => {
-    test("INLINE_COMMAND_ELIGIBLE_SOURCES does not include 'extra'", async () => {
+  describe("plugin source rejection (code-level verification)", () => {
+    test("INLINE_COMMAND_ELIGIBLE_SOURCES does not include 'plugin'", async () => {
       // Read the load.ts source to verify the eligible sources set
       const { readFileSync } = await import("node:fs");
       const { join: pjoin } = await import("node:path");
@@ -274,11 +275,11 @@ describe("skill_load inline command expansion", () => {
         ),
         "utf-8",
       );
-      // The eligible sources set must include bundled, managed, workspace but NOT extra
+      // The eligible sources set must include bundled, managed, workspace but NOT plugin
       expect(loadSrc).toContain('"bundled"');
       expect(loadSrc).toContain('"managed"');
       expect(loadSrc).toContain('"workspace"');
-      expect(loadSrc).toContain('skill.source === "extra"');
+      expect(loadSrc).toContain('skill.source === "plugin"');
     });
   });
 
