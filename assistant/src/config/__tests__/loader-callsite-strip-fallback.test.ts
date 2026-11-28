@@ -40,10 +40,9 @@ function writeConfig(obj: unknown): void {
 
 /**
  * Base config where the active profile resolves to a DIFFERENT model than the
- * `balanced` profile that the shipped `memoryV3SelectL2` call-site default
- * points at. This lets each test distinguish the two failure modes:
- *   - call-site default applied (fixed)  -> model "balanced-model"
- *   - silently downgraded to active      -> model "active-model"
+ * `balanced` profile. This lets each test distinguish the failure modes:
+ *   - active profile applied (prune fallback)  -> model "active-model"
+ *   - balanced anchor applied (no active set)  -> model "balanced-model"
  */
 function baseLlm(callSites: Record<string, unknown>): unknown {
   return {
@@ -77,11 +76,12 @@ describe("config recovery prunes call-site overrides emptied by a strip", () => 
     invalidateConfigCache();
   });
 
-  test("an undefined call-site profile ref falls back to the shipped default, not the active profile", () => {
+  test("an undefined call-site profile ref falls past the override rung to the active profile", () => {
     // The `.profile` ref is invalid (no such profile), so schema recovery
     // strips it. Before the fix this left `callSites.memoryV3SelectL2 = {}`,
-    // which the resolver treats as a present override and so skips the shipped
-    // `{profile:"balanced"}` default — silently resolving to the active profile.
+    // which the resolver treats as a present override. The prune keeps the
+    // chain honest: the site carries no override, so resolution proceeds down
+    // the single-winner chain to the active profile.
     writeConfig(baseLlm({ memoryV3SelectL2: { profile: "ghost-profile" } }));
 
     const config = getConfig();
@@ -89,10 +89,10 @@ describe("config recovery prunes call-site overrides emptied by a strip", () => 
     // The emptied call-site entry must be pruned entirely, not left as `{}`.
     expect(config.llm.callSites?.memoryV3SelectL2).toBeUndefined();
 
-    // Resolution now lands on the shipped call-site default (balanced), not the
-    // active profile ("active-model"), which is what the bug produced.
+    // With no override (rung 2) the chain lands on the active profile
+    // ("speedy" -> "active-model"), never on the stripped ghost ref.
     const resolved = resolveCallSiteConfig("memoryV3SelectL2", config.llm);
-    expect(resolved.model).toBe("balanced-model");
+    expect(resolved.model).toBe("active-model");
   });
 
   test("a valid sibling call-site override survives while the invalid one is pruned", () => {

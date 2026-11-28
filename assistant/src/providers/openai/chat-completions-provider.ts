@@ -746,10 +746,7 @@ function flattenContentPartsToStrings(params: unknown): boolean {
   return flattened;
 }
 
-const RESPONSE_TEXT_CONTENT = z.union([
-  z.string(),
-  z.array(z.object({ text: z.string() }).loose()),
-]);
+const RESPONSE_TEXT_PART = z.object({ text: z.string() }).loose();
 
 /**
  * Newer Mistral models (mistral-large-latest / large-4) return assistant
@@ -758,17 +755,24 @@ const RESPONSE_TEXT_CONTENT = z.union([
  * string, so concatenating a delta straight onto the running text yields
  * "[object Object]" while the HTTP 200 keeps health checks green. Join the
  * text of every part; non-text parts contribute nothing here (tool calls
- * arrive via `delta.tool_calls`, reasoning via the reasoning fields).
+ * arrive via `delta.tool_calls`, reasoning via the reasoning fields). The
+ * part check is per-part on purpose: one alien part in the array (a typed
+ * block of another kind) must not poison the text parts around it.
  */
 function textFromResponseContent(content: unknown): string | null {
-  const parsed = RESPONSE_TEXT_CONTENT.safeParse(content);
-  if (!parsed.success) {
+  if (typeof content === "string") {
+    return content;
+  }
+  if (!Array.isArray(content)) {
     return null;
   }
-  if (typeof parsed.data === "string") {
-    return parsed.data;
-  }
-  const joined = parsed.data.map((part) => part.text).join("");
+  const joined = content
+    .map((part) =>
+      RESPONSE_TEXT_PART.safeParse(part).success
+        ? (part as { text: string }).text
+        : "",
+    )
+    .join("");
   return joined.length > 0 ? joined : null;
 }
 

@@ -94,6 +94,15 @@ function textOf(block: unknown): string {
   return block.text;
 }
 
+// The unified `<turn_context>` block is always-on now (it must never go
+// silent), so it rides along in every assembled tail. These tests assert on
+// the OTHER blocks, so drop it before counting or indexing.
+function withoutTurnContext(content: Message["content"]): Message["content"] {
+  return content.filter(
+    (b) => !(b.type === "text" && textOf(b).startsWith("<turn_context>")),
+  );
+}
+
 describe("applyRuntimeInjections — workspace top-level context", () => {
   afterEach(() => {
     clearConversations();
@@ -107,9 +116,10 @@ describe("applyRuntimeInjections — workspace top-level context", () => {
     });
 
     expect(result).toHaveLength(1);
-    expect(result[0].content).toHaveLength(2);
-    expect(textOf(result[0].content[0])).toBe(sampleContext);
-    expect(textOf(result[0].content[1])).toBe("Hello");
+    const content = withoutTurnContext(result[0].content);
+    expect(content).toHaveLength(2);
+    expect(textOf(content[0])).toBe(sampleContext);
+    expect(textOf(content[1])).toBe("Hello");
   });
 
   test("does not inject when no workspace context is registered", async () => {
@@ -119,7 +129,7 @@ describe("applyRuntimeInjections — workspace top-level context", () => {
     });
 
     expect(result).toHaveLength(1);
-    expect(result[0].content).toHaveLength(1);
+    expect(withoutTurnContext(result[0].content)).toHaveLength(1);
   });
 
   test("does not re-inject when the workspace block is already present", async () => {
@@ -135,8 +145,9 @@ describe("applyRuntimeInjections — workspace top-level context", () => {
 
     // THEN presence detection skips the block to keep the prefix stable.
     expect(result).toHaveLength(2);
-    expect(result[1].content).toHaveLength(1);
-    expect(textOf(result[1].content[0])).toBe("Hello");
+    const tail = withoutTurnContext(result[1].content);
+    expect(tail).toHaveLength(1);
+    expect(textOf(tail[0])).toBe("Hello");
   });
 
   test("workspace context appears before active surface context in content", async () => {
@@ -153,11 +164,11 @@ describe("applyRuntimeInjections — workspace top-level context", () => {
 
     // Workspace is injected last (in applyRuntimeInjections order) so it
     // prepends to whatever was already prepended by activeSurface.
-    // Result: [workspace, activeSurface, original]
-    expect(result[0].content).toHaveLength(3);
+    // Result: [workspace, <turn_context>, activeSurface, original]
+    expect(result[0].content).toHaveLength(4);
     expect(textOf(result[0].content[0])).toBe(sampleContext);
-    expect(textOf(result[0].content[1])).toContain("<active_workspace>");
-    expect(textOf(result[0].content[2])).toBe("Hello");
+    expect(textOf(result[0].content[2])).toContain("<active_workspace>");
+    expect(textOf(result[0].content[3])).toBe("Hello");
   });
 
   test("app-backed active surface tells the model to load app-builder with the right argument", async () => {
@@ -178,7 +189,9 @@ describe("applyRuntimeInjections — workspace top-level context", () => {
       conversationId: FALLBACK_CONVERSATION_ID,
     });
 
-    const activeWorkspaceText = textOf(result[0].content[0]);
+    const activeWorkspaceText = result[0].content
+      .map(textOf)
+      .find((t) => t.includes("<active_workspace>"));
     expect(activeWorkspaceText).toContain('skill: "app-builder"');
     expect(activeWorkspaceText).not.toContain('id: "app-builder"');
   });
@@ -198,8 +211,9 @@ describe("applyRuntimeInjections — minimal mode skips workspace blocks", () =>
     });
 
     expect(result).toHaveLength(1);
-    expect(result[0].content).toHaveLength(1);
-    expect(textOf(result[0].content[0])).toBe("Hello");
+    const content = withoutTurnContext(result[0].content);
+    expect(content).toHaveLength(1);
+    expect(textOf(content[0])).toBe("Hello");
   });
 
   test("minimal mode skips active surface context", async () => {
@@ -214,8 +228,9 @@ describe("applyRuntimeInjections — minimal mode skips workspace blocks", () =>
     });
 
     expect(result).toHaveLength(1);
-    expect(result[0].content).toHaveLength(1);
-    expect(textOf(result[0].content[0])).toBe("Hello");
+    const content = withoutTurnContext(result[0].content);
+    expect(content).toHaveLength(1);
+    expect(textOf(content[0])).toBe("Hello");
   });
 
   test("full mode (default) still includes workspace blocks", async () => {
@@ -230,8 +245,8 @@ describe("applyRuntimeInjections — minimal mode skips workspace blocks", () =>
       conversationId: FALLBACK_CONVERSATION_ID,
     });
 
-    expect(result[0].content).toHaveLength(3);
+    expect(result[0].content).toHaveLength(4);
     expect(textOf(result[0].content[0])).toBe(sampleContext);
-    expect(textOf(result[0].content[1])).toContain("<active_workspace>");
+    expect(textOf(result[0].content[2])).toContain("<active_workspace>");
   });
 });

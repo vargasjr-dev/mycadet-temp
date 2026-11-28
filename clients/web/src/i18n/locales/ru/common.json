@@ -285,8 +285,5 @@
     "dragError": "Перетаскивание недоступно. Попробуйте из Finder.",
     "showInFinder": "Показать в Finder",
     "inputLabel": "Мониторинг ввода"
-  },
-  "assistantWakingGate": {
-    "title": "Ассистент просыпается"
   }
 }

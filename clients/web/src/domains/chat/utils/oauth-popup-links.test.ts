@@ -29,6 +29,7 @@ import {
 import { routes } from "@/utils/routes";
 
 const originalWindow = globalThis.window;
+const originalPlatform = navigator.platform;
 
 interface MockWindowOptions {
   origin?: string;
@@ -57,6 +58,12 @@ function setElectronPermissionsWindow(
   hostOS: "macos" | "windows",
   openSettings: (kind: string) => Promise<unknown>,
 ): void {
+  // detectElectronHostOS reads navigator.platform — the bridge carries no
+  // host marker — so the host OS is staged on the navigator, not window.cadet.
+  Object.defineProperty(navigator, "platform", {
+    value: hostOS === "windows" ? "Win32" : "MacIntel",
+    configurable: true,
+  });
   setMockWindow({
     open: null,
     cadet: {
@@ -79,6 +86,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  Object.defineProperty(navigator, "platform", {
+    value: originalPlatform,
+    configurable: true,
+  });
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: originalWindow,
