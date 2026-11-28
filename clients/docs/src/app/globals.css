@@ -1,2 +1,21 @@
 @import "tailwindcss";
 @import "@mycadet/design-library/tokens.css";
+
+/* ── Dev-environment brand ─────────────────────────────────────────────
+ * The dev deployment (dev.mycadet.ai) stamps data-env="dev" on <html>
+ * pre-hydration (app/layout.tsx); the chrome swaps to the dev mark and
+ * the dev accent — the pink every platform's dev icon build wears. CSS
+ * picks the brand, so static snapshot pages and the SSR service pages
+ * flip identically with no flash.
+ */
+.brand-logo-dev {
+  display: none;
+}
+
+[data-env="dev"] .brand-logo-dev {
+  display: block;
+}
+
+[data-env="dev"] .brand-logo-prod {
+  display: none;
+}

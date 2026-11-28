@@ -20,6 +20,21 @@ export const metadata: Metadata = {
  * counts as dark) since both apps share one origin. Stamps
  * BOTH `.dark` (docs-theme.css) and `data-theme` (design-library tokens) to
  * avoid a light-mode flash for dark users. */
+/* Pre-hydration brand bootstrap: the dev deployment stamps data-env="dev"
+ * on <html> so the chrome wears the dev mark and the dev accent (the pink
+ * every platform's dev icon build wears). Runs before paint, same pattern
+ * as the theme bootstrap below; prod stays untouched. */
+const brandInitScript = `
+(function() {
+  try {
+    var host = window.location.hostname;
+    if (host === "dev.mycadet.ai" || host.indexOf(".dev.mycadet.ai") > 0) {
+      document.documentElement.setAttribute("data-env", "dev");
+    }
+  } catch (e) {}
+})();
+`;
+
 const themeInitScript = `
 (function() {
   try {
@@ -35,6 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans">
+        <script dangerouslySetInnerHTML={{ __html: brandInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {children}
       </body>

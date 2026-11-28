@@ -32,6 +32,23 @@
   color: var(--green);
 }
 
+/* Dev twin: the production green gives way to the dev pink — a deeper
+ * pink on light grounds for legibility, the icon pink on dark. Filled
+ * buttons on the icon pink carry the logo's near-black instead of white. */
+[data-env="dev"] .marketing {
+  --green: #d6408e;
+  --green-dark: #b93a7b;
+}
+
+[data-env="dev"].dark .marketing {
+  --green: #ff88c9;
+  --green-dark: #f06ab5;
+}
+
+[data-env="dev"].dark .marketing .btn {
+  color: #101010;
+}
+
 /* ── Buttons ── */
 .marketing .btn {
   display: inline-block;
