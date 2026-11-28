@@ -63,10 +63,9 @@ export const extractFeatureFlagsToProtectedMigration: WorkspaceMigration = {
     }
 
     // Merge into existing assistantFeatureFlagValues if present
-    const existing = (config.assistantFeatureFlagValues ?? {}) as Record<
-      string,
-      boolean
-    >;
+    const flags = config.assistantFeatureFlagValues;
+    const existing =
+      flags !== null && typeof flags === "object" ? { ...flags } : {};
     config.assistantFeatureFlagValues = { ...existing, ...flagValues };
 
     const tmpConfigPath = configPath + ".tmp";

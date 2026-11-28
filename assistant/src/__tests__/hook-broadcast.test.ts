@@ -12,10 +12,11 @@
  *  - a hook that never broadcasts emits nothing;
  *  - `HookEventSchema` validates the emitted shape.
  */
-
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+
+import { isObjectRecord } from "../util/object.js";
 
 // The pipeline's `broadcast` emits through the shared hub. Stub it so tests can
 // assert exactly what each hook emits without a live event hub.
@@ -79,7 +80,8 @@ function baseCtx(
 /** The `hook_event` messages passed to the stubbed `broadcastMessage`. */
 function emittedHookEvents() {
   return broadcastMessageMock.mock.calls
-    .map((call) => call[0] as Record<string, unknown>)
+    .map((call) => call[0])
+    .filter(isObjectRecord)
     .filter((msg) => msg.type === "hook_event");
 }
 

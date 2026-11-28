@@ -90,12 +90,12 @@ export class StreamContentShadow {
           return;
         }
         const block = structuredClone(event.content_block);
-        if (block === null || typeof block !== "object") {
+        if (!isObjectRecord(block)) {
           return;
         }
-        this.blocks.set(event.index, block as ShadowBlock);
+        this.blocks.set(event.index, block);
         this.inFlightIndex = event.index;
-        if (this.tracksToolInput(block as ShadowBlock)) {
+        if (this.tracksToolInput(block)) {
           this.jsonBufs.set(event.index, "");
         }
         return;

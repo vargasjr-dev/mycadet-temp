@@ -142,9 +142,14 @@ async function handleWebhooksRegister(
     throw new BadRequestError("type is required");
   }
 
-  const webhookPath =
-    (pathOverride as string | undefined) ?? deriveWebhookPath(type);
-  const sourceIdentifier = source as string | undefined;
+  if (pathOverride != null && typeof pathOverride !== "string") {
+    throw new BadRequestError("path must be a string");
+  }
+  if (source != null && typeof source !== "string") {
+    throw new BadRequestError("source must be a string");
+  }
+  const webhookPath = pathOverride ?? deriveWebhookPath(type);
+  const sourceIdentifier = source ?? undefined;
 
   if (getIsCloud()) {
     const callbackUrl = await resolveClaimedPodWebhookUrl(
@@ -169,7 +174,7 @@ async function handleWebhooksRegister(
     );
   }
 
-  let ingressError: Error;
+  let ingressError: unknown;
   try {
     const baseUrl = getPublicBaseUrl(config);
     return {
@@ -179,7 +184,7 @@ async function handleWebhooksRegister(
       mode: "self-hosted",
     };
   } catch (err) {
-    ingressError = err as Error;
+    ingressError = err;
   }
 
   // No ingress configured. Fall back to the cloud gateway when this
@@ -189,7 +194,9 @@ async function handleWebhooksRegister(
     return registerWithPlatform(webhookPath, type, sourceIdentifier);
   }
 
-  throw new UnprocessableEntityError(ingressError.message);
+  throw new UnprocessableEntityError(
+    ingressError instanceof Error ? ingressError.message : String(ingressError),
+  );
 }
 
 async function handleWebhooksList(
@@ -227,14 +234,9 @@ async function handleWebhooksList(
     );
   }
 
-  const routes = (await response.json()) as Array<{
-    id: string;
-    assistant_id: string;
-    type: string;
-    callback_path: string;
-    callback_url: string;
-    source_identifier: string | null;
-  }>;
+  const routes = z
+    .array(WebhookCallbackRouteSchema)
+    .parse(await response.json());
 
   return { routes };
 }

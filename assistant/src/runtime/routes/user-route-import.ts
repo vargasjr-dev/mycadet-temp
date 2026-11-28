@@ -12,7 +12,6 @@
  * entry file's mtime moves, evict every source file in that tree before the
  * next import, so the new entry cannot pair with a stale helper.
  */
-
 import { statSync } from "node:fs";
 import { dirname, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -20,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { snapshotPluginSource } from "../../plugins/source-fingerprint.js";
 import { evictModule } from "../../plugins/surface-import.js";
 import { getWorkspaceRoutesDir } from "../../util/layout.js";
+import { isObjectRecord } from "../../util/object.js";
 
 /**
  * Directory whose source files must stay mutually consistent with this
@@ -104,5 +104,9 @@ export async function importRouteModule(
   filePath: string,
 ): Promise<Record<string, unknown>> {
   const mtimeMs = statSync(filePath).mtimeMs;
-  return (await import(`${filePath}?t=${mtimeMs}`)) as Record<string, unknown>;
+  const loaded: unknown = await import(`${filePath}?t=${mtimeMs}`);
+  if (!isObjectRecord(loaded)) {
+    throw new Error("Expected a route module namespace");
+  }
+  return loaded;
 }

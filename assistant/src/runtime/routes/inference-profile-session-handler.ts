@@ -26,7 +26,6 @@ import {
   setConversationInferenceProfileSession,
 } from "../../persistence/conversation-crud.js";
 import { resolveConversationId } from "../../persistence/conversation-key-store.js";
-import type { ConnectionAvailability } from "../../providers/inference/connection-availability.js";
 import {
   computeProfileAvailability,
   isUnavailable,
@@ -178,10 +177,10 @@ export async function setInferenceProfileSession({
   // active-profile setter does.
   const entry = selected;
   const availability = await computeProfileAvailability(entry);
-  if (isUnavailable(availability)) {
+  if (availability && isUnavailable(availability)) {
     throw new BadRequestError(
       await describeUnavailableProfile({
-        availability: availability as ConnectionAvailability,
+        availability,
         provider: String(entry.provider),
         model: typeof entry.model === "string" ? entry.model : undefined,
         repair: { kind: "repoint", profileName: profile },

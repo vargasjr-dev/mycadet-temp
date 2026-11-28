@@ -35,10 +35,14 @@ async function handleGetVercelConfig() {
 }
 
 async function handlePostVercelConfig({ body = {} }: RouteHandlerArgs) {
-  const { action, apiToken } = body as {
-    action?: "get" | "set" | "delete";
-    apiToken?: string;
-  };
+  const { action, apiToken } = body;
+  if (
+    (action === "set" || (action !== "get" && action !== "delete")) &&
+    apiToken !== undefined &&
+    typeof apiToken !== "string"
+  ) {
+    throw new BadRequestError("apiToken must be a string");
+  }
 
   switch (action) {
     case "delete":
@@ -47,7 +51,9 @@ async function handlePostVercelConfig({ body = {} }: RouteHandlerArgs) {
       return getVercelConfig();
     case "set":
     default: {
-      const result = await setVercelConfig(apiToken);
+      const result = await setVercelConfig(
+        typeof apiToken === "string" ? apiToken : undefined,
+      );
       if (!result.success) {
         throw new BadRequestError(
           result.error ?? "Failed to set Vercel config",

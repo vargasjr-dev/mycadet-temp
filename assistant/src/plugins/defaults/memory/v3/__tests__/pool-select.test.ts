@@ -1382,21 +1382,22 @@ describe("selectPool: TypeSafe System One", () => {
 
   test("drops the trailing current-message duplicate before trimming recent context", async () => {
     selectorMaxInputTokens = 8_000;
-    let payload: {
-      state: {
-        current_message: string;
-        recent_context: string;
-        situation?: string;
-      };
-    } | null = null;
+    const payloadSchema = z.object({
+      state: z.object({
+        current_message: z.string(),
+        recent_context: z.string(),
+        situation: z.string().optional(),
+      }),
+    });
+    let payload: z.infer<typeof payloadSchema> | null = null;
     providerStub = {
       name: "typesafe",
       defaultModel: "jev-latest",
       sendMessage: async (messages, options) => {
         providerCalls.push({ messages, options });
-        payload = JSON.parse(
-          renderedBlockSchema.parse(messages[0]!.content[0]).text,
-        ) as typeof payload;
+        payload = payloadSchema.parse(
+          JSON.parse(renderedBlockSchema.parse(messages[0]!.content[0]).text),
+        );
         return typesafeResponse({
           "1": noulAnswer(1),
           "2": noulAnswer(0),
@@ -1428,23 +1429,27 @@ describe("selectPool: TypeSafe System One", () => {
 
   test("preserves the current message and newest recent-context suffix when turn context is oversized", async () => {
     selectorMaxInputTokens = 8_000;
-    let payload: {
-      state: {
-        candidates: Record<string, { slug: string; text: string }>;
-        current_message: string;
-        recent_context: string;
-        situation?: string;
-      };
-      questions: Record<string, unknown>;
-    } | null = null;
+    const payloadSchema = z.object({
+      state: z.object({
+        candidates: z.record(
+          z.string(),
+          z.object({ slug: z.string(), text: z.string() }),
+        ),
+        current_message: z.string(),
+        recent_context: z.string(),
+        situation: z.string().optional(),
+      }),
+      questions: z.record(z.string(), z.unknown()),
+    });
+    let payload: z.infer<typeof payloadSchema> | null = null;
     providerStub = {
       name: "typesafe",
       defaultModel: "jev-latest",
       sendMessage: async (messages, options) => {
         providerCalls.push({ messages, options });
-        payload = JSON.parse(
-          renderedBlockSchema.parse(messages[0]!.content[0]).text,
-        ) as typeof payload;
+        payload = payloadSchema.parse(
+          JSON.parse(renderedBlockSchema.parse(messages[0]!.content[0]).text),
+        );
         const ids = Object.keys(payload!.state.candidates);
         return typesafeResponse(
           Object.fromEntries(ids.map((id) => [id, noulAnswer(1)])),

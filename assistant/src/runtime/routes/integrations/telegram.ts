@@ -7,7 +7,6 @@
  * POST   /v1/integrations/telegram/commands — register bot commands
  * POST   /v1/integrations/telegram/setup    — composite: set config + register commands
  */
-
 import { z } from "zod";
 
 import {
@@ -20,18 +19,34 @@ import {
 } from "../../../daemon/handlers/config-telegram.js";
 import { ACTOR_PRINCIPALS } from "../../auth/route-policy.js";
 import { BadRequestError } from "../errors.js";
+import { parseBody } from "../parse-body.js";
 import type { RouteDefinition, RouteHandlerArgs } from "../types.js";
 
 // ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
 
+const telegramTokenSchema = z.object({ botToken: z.string().optional() });
+const telegramCommandsSchema = z.object({
+  commands: z
+    .array(
+      z.object({
+        command: z.string(),
+        description: z.string(),
+      }),
+    )
+    .optional(),
+});
+const telegramSetupSchema = telegramTokenSchema.extend(
+  telegramCommandsSchema.shape,
+);
+
 async function handleGetTelegramConfig() {
   return getTelegramConfig();
 }
 
 async function handleSetTelegramConfig({ body = {} }: RouteHandlerArgs) {
-  const { botToken } = body as { botToken?: string };
+  const { botToken } = parseBody(telegramTokenSchema, body);
   const result = await setTelegramConfig(botToken);
   if (!result.success) {
     throw new BadRequestError(result.error ?? "Failed to set Telegram config");
@@ -44,9 +59,7 @@ async function handleClearTelegramConfig() {
 }
 
 async function handleSetTelegramCommands({ body = {} }: RouteHandlerArgs) {
-  const { commands } = body as {
-    commands?: Array<{ command: string; description: string }>;
-  };
+  const { commands } = parseBody(telegramCommandsSchema, body);
   const result = await setTelegramCommands(commands);
   if (!result.success) {
     throw new BadRequestError(
@@ -57,10 +70,7 @@ async function handleSetTelegramCommands({ body = {} }: RouteHandlerArgs) {
 }
 
 async function handleSetupTelegram({ body = {} }: RouteHandlerArgs) {
-  const { botToken, commands } = body as {
-    botToken?: string;
-    commands?: Array<{ command: string; description: string }>;
-  };
+  const { botToken, commands } = parseBody(telegramSetupSchema, body);
   const result = await setupTelegram(commands, botToken);
   if (!result.success) {
     throw new BadRequestError(result.error ?? "Telegram setup failed");

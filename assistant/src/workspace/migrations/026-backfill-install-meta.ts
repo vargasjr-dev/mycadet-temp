@@ -181,10 +181,17 @@ function inferInstallMeta(
   if (existsSync(versionJsonPath)) {
     let raw: Record<string, unknown>;
     try {
-      raw = JSON.parse(readFileSync(versionJsonPath, "utf-8")) as Record<
-        string,
-        unknown
-      >;
+      const parsed: unknown = JSON.parse(
+        readFileSync(versionJsonPath, "utf-8"),
+      );
+      if (
+        parsed === null ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        return buildFallbackMeta(skillDir, skillId, hasIntegrityEntry);
+      }
+      raw = { ...parsed };
     } catch {
       // Malformed version.json — treat as if it doesn't exist
       return buildFallbackMeta(skillDir, skillId, hasIntegrityEntry);

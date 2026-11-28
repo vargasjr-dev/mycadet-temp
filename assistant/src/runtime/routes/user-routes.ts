@@ -102,7 +102,11 @@ function synthesizeRequest(method: string, args: RouteHandlerArgs): Request {
 
   let body: BodyInit | undefined;
   if (args.rawBody) {
-    body = args.rawBody.buffer as ArrayBuffer;
+    const { buffer, byteOffset, byteLength } = args.rawBody;
+    body =
+      buffer instanceof ArrayBuffer
+        ? new Uint8Array(buffer, byteOffset, byteLength)
+        : args.rawBody.slice();
   } else if (args.body) {
     body = JSON.stringify(args.body);
     if (!headers.has("content-type")) {

@@ -241,9 +241,14 @@ export class UserRouteDispatcher {
       for (const [name, value] of result.headers) {
         responseHeaders.append(name, value);
       }
-      // `Uint8Array` is a valid body at runtime; the cast placates the DOM lib's
-      // `Uint8Array<ArrayBuffer>` vs `ArrayBufferLike` generic mismatch.
-      return new Response(result.body as BodyInit | null, {
+      const bytes = result.body;
+      const responseBody =
+        bytes === null
+          ? null
+          : bytes.buffer instanceof ArrayBuffer
+            ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+            : bytes.slice();
+      return new Response(responseBody, {
         status: result.status,
         headers: responseHeaders,
       });

@@ -11,7 +11,13 @@ export async function run(
   const platform =
     typeof input.platform === "string" ? input.platform : undefined;
   const types = Array.isArray(input.types)
-    ? input.types.filter((type): type is string => typeof type === "string")
+    ? input.types.filter(
+        (type) =>
+          type === "channel" ||
+          type === "dm" ||
+          type === "group" ||
+          type === "inbox",
+      )
     : undefined;
   const limit = typeof input.limit === "number" ? input.limit : undefined;
 
@@ -21,7 +27,7 @@ export async function run(
       typeof input.account === "string" ? input.account : undefined;
     const conn = await getProviderConnection(provider, account);
     const conversations = await provider.listConversations(conn, {
-      types: types as Array<"channel" | "dm" | "group" | "inbox"> | undefined,
+      types,
       limit,
     });
     return ok(JSON.stringify(conversations, null, 2));

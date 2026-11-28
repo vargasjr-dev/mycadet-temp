@@ -1057,13 +1057,13 @@ describe("processChannelMessageInBackground — admission (queue if busy)", () =
   });
 
   test("ingress row extensions reach processMessage", async () => {
-    let seenOptions: Record<string, unknown> | undefined;
+    let seenOptions: Parameters<MessageProcessor>[2];
     const processMessage: MessageProcessor = async (
       _conversationId,
       _content,
       options,
     ) => {
-      seenOptions = options as Record<string, unknown>;
+      seenOptions = options;
       return { messageId: "user-row-1" };
     };
 
@@ -1085,9 +1085,11 @@ describe("processChannelMessageInBackground — admission (queue if busy)", () =
 
     await flush();
 
-    expect(seenOptions?.slackReactionRowMeta).toBe('{"eventKind":"reaction"}');
-    expect(seenOptions?.clientMessageId).toBe("reaction:evt-wake-meta");
-    expect(seenOptions?.skipUserMessageIndexing).toBe(true);
+    expect(seenOptions).toMatchObject({
+      slackReactionRowMeta: '{"eventKind":"reaction"}',
+      clientMessageId: "reaction:evt-wake-meta",
+      skipUserMessageIndexing: true,
+    });
   });
 });
 

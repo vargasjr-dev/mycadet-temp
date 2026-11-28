@@ -7,9 +7,9 @@
  *   - stop signals the host and reports its prior state.
  *   - status reports the host process liveness.
  */
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import { jsonObjectSchema } from "../../../__tests__/helpers/json-object-schema.js";
 import { getProcPidPath } from "../../../util/layout.js";
 
 class FakeSpawnError extends Error {}
@@ -40,7 +40,7 @@ function handler(operationId: string) {
   if (!route) {
     throw new Error(`route ${operationId} not registered`);
   }
-  return route.handler as () => Promise<Record<string, unknown>>;
+  return async () => jsonObjectSchema.parse(await route.handler({}));
 }
 
 beforeEach(() => {

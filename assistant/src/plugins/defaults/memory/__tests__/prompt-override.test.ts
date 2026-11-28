@@ -12,6 +12,7 @@ import { homedir, tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { isObjectRecord } from "../../../../util/object.js";
 import {
   loadPromptOverride,
   MAX_PROMPT_OVERRIDE_BYTES,
@@ -22,7 +23,10 @@ import { resolveSelectorPrompt } from "../v3/pool-select.js";
 const warnCalls: Array<{ data: Record<string, unknown>; msg: string }> = [];
 const recordingLogger = {
   warn: (data: object, msg: string) => {
-    warnCalls.push({ data: data as Record<string, unknown>, msg });
+    if (!isObjectRecord(data)) {
+      throw new Error("Expected warning fields");
+    }
+    warnCalls.push({ data, msg });
   },
 };
 

@@ -45,7 +45,9 @@ export async function graphExtractJob(
   const afterTimestamp = lastTs ? parseInt(lastTs, 10) : undefined;
 
   const activeContextNodeIds = Array.isArray(job.payload.activeContextNodeIds)
-    ? (job.payload.activeContextNodeIds as string[])
+    ? job.payload.activeContextNodeIds.filter(
+        (id): id is string => typeof id === "string",
+      )
     : undefined;
 
   try {

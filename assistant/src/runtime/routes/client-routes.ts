@@ -144,7 +144,10 @@ export const ROUTES: RouteDefinition[] = [
       disconnected: z.number().describe("Number of disposed subscribers."),
     }),
     handler: ({ body }) => {
-      const { clientId } = body as { clientId: string };
+      const clientId = body?.clientId;
+      if (typeof clientId !== "string") {
+        throw new BadRequestError("clientId is required");
+      }
       const count = assistantEventHub.disposeClient(clientId);
       if (count === 0) {
         throw new NotFoundError(`No connected client with id "${clientId}"`);

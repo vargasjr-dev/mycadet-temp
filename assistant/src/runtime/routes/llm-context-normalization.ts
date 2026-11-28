@@ -1555,16 +1555,14 @@ function mergeSummaryFragments(
     return summary;
   }
 
-  for (const [key, value] of Object.entries(responseSummary) as [
-    keyof LlmContextSummary,
-    LlmContextSummary[keyof LlmContextSummary],
-  ][]) {
-    if (value !== undefined) {
-      summary[key] = value as never;
-    }
-  }
-
-  return summary;
+  return {
+    ...summary,
+    ...Object.fromEntries(
+      Object.entries(responseSummary).filter(
+        ([, value]) => value !== undefined,
+      ),
+    ),
+  };
 }
 
 function mergeNormalizedCandidates(

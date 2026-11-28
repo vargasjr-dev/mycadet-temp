@@ -9,8 +9,9 @@
  * A per-credential mutex prevents concurrent callers for the same credential
  * from racing to refresh. Callers for different credentials are independent.
  */
-
 import { createSign } from "node:crypto";
+
+import { z } from "zod";
 
 import {
   getSecureKeyAsync as _realGetKey,
@@ -53,22 +54,14 @@ export function parseServiceAccountKey(json: string): ServiceAccountKey | null {
   } catch {
     return null;
   }
-  if (!parsed || typeof parsed !== "object") {
-    return null;
-  }
-  const key = parsed as Record<string, unknown>;
-  if (
-    typeof key["client_email"] !== "string" ||
-    !key["client_email"] ||
-    typeof key["private_key"] !== "string" ||
-    !key["private_key"] ||
-    typeof key["token_uri"] !== "string" ||
-    !key["token_uri"]
-  ) {
-    return null;
-  }
-  // All required fields validated as non-empty strings above.
-  return parsed as ServiceAccountKey;
+  const result = z
+    .looseObject({
+      client_email: z.string().min(1),
+      private_key: z.string().min(1),
+      token_uri: z.string().min(1),
+    })
+    .safeParse(parsed);
+  return result.success ? result.data : null;
 }
 
 /** Per-credential in-flight mutex. Prevents concurrent exchange races per account. */
@@ -89,10 +82,12 @@ export async function getValidServiceAccountToken(
   const cached = await _getKey(cacheKey);
   if (cached) {
     try {
-      const blob = JSON.parse(cached) as {
-        access_token?: string;
-        expires_at?: number;
-      };
+      const blob = z
+        .object({
+          access_token: z.string().optional(),
+          expires_at: z.number().optional(),
+        })
+        .parse(JSON.parse(cached));
       if (blob.access_token) {
         if (!blob.expires_at) {
           return { ok: true, token: blob.access_token };
@@ -162,10 +157,12 @@ async function doExchange(
       return { ok: false, reason: "exchange_failed" };
     }
 
-    const data = (await resp.json()) as {
-      access_token?: string;
-      expires_in?: number;
-    };
+    const data = z
+      .object({
+        access_token: z.string().optional(),
+        expires_in: z.number().optional(),
+      })
+      .parse(await resp.json());
 
     if (!data.access_token) {
       log.error({ credential }, "Token exchange response missing access_token");

@@ -1,6 +1,8 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
+import { z } from "zod";
+
 import { DESKTOP_ACCESSIBILITY_SCRIPT } from "./desktop-accessibility-script.js";
 import {
   DESKTOP_DISPLAY,
@@ -8,20 +10,22 @@ import {
   DESKTOP_WIDTH,
 } from "./desktop-display.js";
 
-interface AccessibleElement {
-  bus: string;
-  path: string;
-  name: string;
-  role: string;
-  depth: number;
-  states: string[];
-  bounds: [number, number, number, number];
-}
-interface Snapshot {
-  busId: string;
-  nodes: AccessibleElement[];
-  truncated: boolean;
-}
+const accessibleElementSchema = z.object({
+  bus: z.string(),
+  path: z.string(),
+  name: z.string(),
+  role: z.string(),
+  depth: z.number(),
+  states: z.array(z.string()),
+  bounds: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+});
+type AccessibleElement = z.infer<typeof accessibleElementSchema>;
+
+const snapshotSchema = z.object({
+  busId: z.string(),
+  nodes: z.array(accessibleElementSchema),
+  truncated: z.boolean(),
+});
 type Query = (
   request: object,
   address: string,
@@ -90,12 +94,9 @@ export class DesktopAccessibility {
     this.observationId = undefined;
     this.address = address;
     try {
-      const snapshot = (await this.run(
-        { operation: "observe" },
-        address,
-        signal,
-      )) as Snapshot;
+      const raw = await this.run({ operation: "observe" }, address, signal);
       signal.throwIfAborted();
+      const snapshot = snapshotSchema.parse(raw);
       this.busId = snapshot.busId;
       const lines: string[] = [];
       for (const node of snapshot.nodes) {
@@ -149,12 +150,13 @@ export class DesktopAccessibility {
       );
     }
     try {
-      const current = (await this.run(
+      const raw = await this.run(
         { operation: "resolve", busId: this.busId, target },
         this.address,
         signal,
-      )) as AccessibleElement;
+      );
       signal.throwIfAborted();
+      const current = accessibleElementSchema.parse(raw);
       const point = center(current.bounds);
       if (point) {
         return point;

@@ -5,6 +5,7 @@ import { SYSTEM_PROMPT_CACHE_BOUNDARY } from "../../prompts/cache-boundary.js";
 import { isAbortReason } from "../../util/abort-reasons.js";
 import { ProviderError, type ProviderErrorReason } from "../../util/errors.js";
 import { getLogger } from "../../util/logger.js";
+import { isObjectRecord } from "../../util/object.js";
 import { extractRetryAfterMs } from "../../util/retry.js";
 import { clampProviderString } from "../content-block-size.js";
 import { fileBlockToProviderText } from "../file-block-text.js";
@@ -242,13 +243,6 @@ const STAMPABLE_PART_TYPES = new Set([
 /** OpenAI considers up to the latest 50 breakpoints for cache reads; markers
  *  beyond that budget are dead weight, so the marker ladder stops there. */
 const PROMPT_CACHE_MAX_BREAKPOINTS = 50;
-
-/** Minimal structural view of a Responses `input` message item. */
-interface ResponsesMessageItem {
-  type?: string;
-  role?: string;
-  content?: Array<Record<string, unknown>>;
-}
 
 /**
  * OpenAI Responses API transport.
@@ -937,20 +931,18 @@ export class OpenAIResponsesProvider implements Provider {
     input: unknown[],
     opts: { disableTurnStartCache: boolean },
   ): void {
-    const items = input as ResponsesMessageItem[];
-
     // The item's final content part when it can carry a marker
     // (STAMPABLE_PART_TYPES), else undefined. Selection and stamping both key
     // off this, so the selector never nominates an item the stamper would skip.
     const stampableLastPart = (
-      it: ResponsesMessageItem | undefined,
+      it: unknown,
     ): Record<string, unknown> | undefined => {
-      const content = it?.content;
+      const content = isObjectRecord(it) ? it.content : undefined;
       if (!Array.isArray(content) || content.length === 0) {
         return undefined;
       }
       const last = content[content.length - 1];
-      return last &&
+      return isObjectRecord(last) &&
         typeof last.type === "string" &&
         STAMPABLE_PART_TYPES.has(last.type)
         ? last
@@ -962,10 +954,8 @@ export class OpenAIResponsesProvider implements Provider {
     // or an image-only turn drops off the ladder and the whole prefix before it
     // re-bills every tool-loop iteration. Mirrors the Anthropic client's
     // findUserTextMsgIdx.
-    const isMarkableUserItem = (
-      it: ResponsesMessageItem | undefined,
-    ): boolean => {
-      if (it?.type !== "message" || it.role !== "user") {
+    const isMarkableUserItem = (it: unknown): boolean => {
+      if (!isObjectRecord(it) || it.type !== "message" || it.role !== "user") {
         return false;
       }
       const last = stampableLastPart(it);
@@ -980,11 +970,11 @@ export class OpenAIResponsesProvider implements Provider {
 
     const candidates: number[] = [];
     for (
-      let i = items.length - 1;
+      let i = input.length - 1;
       i >= 0 && candidates.length < PROMPT_CACHE_MAX_BREAKPOINTS;
       i--
     ) {
-      if (isMarkableUserItem(items[i])) {
+      if (isMarkableUserItem(input[i])) {
         candidates.push(i);
       }
     }
@@ -1001,7 +991,7 @@ export class OpenAIResponsesProvider implements Provider {
       if (opts.disableTurnStartCache && idx === candidates[0]) {
         continue;
       }
-      const last = stampableLastPart(items[idx]);
+      const last = stampableLastPart(input[idx]);
       if (last) {
         last.prompt_cache_breakpoint = { mode: "explicit" };
       }

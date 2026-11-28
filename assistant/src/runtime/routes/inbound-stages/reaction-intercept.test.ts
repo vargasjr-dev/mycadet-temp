@@ -438,14 +438,14 @@ describe("reaction intercept consumes the stamped verdict directly", () => {
       }),
     );
 
-    const url = new URL(dispatchedTurns[0].replyCallbackUrl as string);
+    const url = new URL(z.string().parse(dispatchedTurns[0].replyCallbackUrl));
     // Replaced, not merely present: the event arrived naming 1700000000.1.
     expect(url.searchParams.get("threadTs")).toBe("1699999999.9");
     expect(url.searchParams.get("channel")).toBe(SLACK_CHANNEL_ID);
     // The stored delivery payload names the same corrected destination.
     expect(
       new URL(
-        storedPayloads[0].payload.replyCallbackUrl as string,
+        z.string().parse(storedPayloads[0].payload.replyCallbackUrl),
       ).searchParams.get("threadTs"),
     ).toBe("1699999999.9");
   });
@@ -473,7 +473,7 @@ describe("reaction intercept consumes the stamped verdict directly", () => {
       }),
     );
 
-    const url = new URL(dispatchedTurns[0].replyCallbackUrl as string);
+    const url = new URL(z.string().parse(dispatchedTurns[0].replyCallbackUrl));
     // The target sits at the channel root, so the reply belongs there too,
     // never in a thread rooted at the reacted message.
     expect(url.searchParams.get("threadTs")).toBeNull();
@@ -564,7 +564,10 @@ describe("reaction intercept consumes the stamped verdict directly", () => {
       }),
     );
     expect(addMessageCalls).toBe(0);
-    const fallback = dispatchedTurns[0].onTurnLostToBusy as () => Promise<void>;
+    const fallback = dispatchedTurns[0].onTurnLostToBusy;
+    if (typeof fallback !== "function") {
+      throw new Error("Expected a busy-turn fallback");
+    }
     await fallback();
     // Exactly the row the passive path would have written.
     expect(addMessageCalls).toBe(1);

@@ -4,7 +4,6 @@
  *
  * Extracted from Conversation to keep the class focused on coordination.
  */
-
 import { v7 as uuidv7 } from "uuid";
 
 import {
@@ -76,6 +75,7 @@ import {
 import type { AuthContext } from "../runtime/auth/types.js";
 import { INTERRUPTED_TURN_NOTE_TEXT } from "../util/abort-reasons.js";
 import { getLogger } from "../util/logger.js";
+import { isObjectRecord } from "../util/object.js";
 import type { ConversationModeSessionCoordinator } from "./conversation-mode-session.js";
 import type {
   MessageQueue,
@@ -1333,11 +1333,9 @@ export async function persistQueuedMessageBody(
     // `os` when the caller didn't supply one — so header-less paths (CLI,
     // channel ingress) keep their OS attribution.
     const clientOs = parseClientOs(ctx.clientOs);
-    const callerClient =
-      metadataWithoutSlackInbound.client != null &&
-      typeof metadataWithoutSlackInbound.client === "object"
-        ? (metadataWithoutSlackInbound.client as Record<string, unknown>)
-        : null;
+    const callerClient = isObjectRecord(metadataWithoutSlackInbound.client)
+      ? metadataWithoutSlackInbound.client
+      : null;
     const clientEntries = {
       ...(clientOs ? { os: clientOs } : {}),
       ...(callerClient ?? {}),
