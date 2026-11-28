@@ -19,7 +19,7 @@ let saveDialogResult: SaveDialogResult = { canceled: true };
 const saveDialogCalls: Array<{ options: { defaultPath?: string } }> = [];
 
 const quitListeners: Array<() => void> = [];
-let userDataDir = "/nonexistent-user-data";
+const userDataDir = "/nonexistent-user-data";
 mock.module("electron", () =>
   electronMock({
     app: {
