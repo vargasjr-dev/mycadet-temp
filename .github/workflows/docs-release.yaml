@@ -62,6 +62,7 @@ jobs:
           cp clients/docs/.next/server/app/downloads.html "$SITE/"
           cp clients/docs/.next/server/app/pricing.html "$SITE/"
           cp clients/docs/.next/server/app/plugins.html "$SITE/"
+          cp clients/docs/.next/server/app/roadmap.html "$SITE/"
           cp clients/docs/.next/server/app/docs.html "$SITE/"
           cp clients/docs/.next/server/app/_not-found.html "$SITE/404.html"
           cp -R clients/docs/.next/server/app/docs "$SITE/docs"

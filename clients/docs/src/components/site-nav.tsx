@@ -21,6 +21,14 @@ export function SiteNav() {
             alt="Cadet logo"
             width={32}
             height={32}
+            className="brand-logo brand-logo-prod"
+          />
+          <Image
+            src="/docs/mycadet-logo-dev.svg"
+            alt="Cadet logo"
+            width={32}
+            height={32}
+            className="brand-logo brand-logo-dev"
           />
         </Link>
       </div>

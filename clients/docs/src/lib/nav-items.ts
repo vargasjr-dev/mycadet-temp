@@ -11,6 +11,7 @@ export const navItems: NavItem[] = [
   { href: "/downloads", label: "Download" },
   { href: "/pricing", label: "Pricing" },
   { href: "/plugins", label: "Plugins" },
+  { href: "/roadmap", label: "Roadmap" },
   { href: "/docs", label: "Docs" },
   { href: "https://discord.gg/ZABd9V2zM8", label: "Community", external: true },
 ];

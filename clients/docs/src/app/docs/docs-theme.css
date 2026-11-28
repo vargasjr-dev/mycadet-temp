@@ -9,33 +9,51 @@ html:has(.docs-shell) {
 .docs-shell {
   --docs-bg: #ffffff;
   --docs-sidebar-bg: #ffffff;
-  --docs-surface: var(--color-stone-50, #F6F5F4);
+  --docs-surface: var(--color-stone-50, #f6f5f4);
   --docs-surface-strong: #ffffff;
-  --docs-border: var(--color-stone-200, #E9E6E2);
-  --docs-border-strong: var(--color-moss-200, #CFCCC9);
-  --docs-text: var(--color-stone-900, #17191C);
-  --docs-text-muted: var(--color-stone-700, #5A6672);
-  --docs-text-subtle: var(--color-stone-600, #71808E);
+  --docs-border: var(--color-stone-200, #e9e6e2);
+  --docs-border-strong: var(--color-moss-200, #cfccc9);
+  --docs-text: var(--color-stone-900, #17191c);
+  --docs-text-muted: var(--color-stone-700, #5a6672);
+  --docs-text-subtle: var(--color-stone-600, #71808e);
   --docs-accent: #059669;
   --docs-accent-strong: #047857;
-  --docs-accent-soft: #ECFDF5;
+  --docs-accent-soft: #ecfdf5;
   --docs-overlay: rgba(23, 25, 28, 0.32);
   background: var(--docs-bg);
   color: var(--docs-text);
 }
 
+/* Dev twin: the docs accent goes pink the same way the marketing chrome
+ * does (deeper on light for legibility, the icon pink on dark). */
+[data-env="dev"] .docs-shell {
+  --docs-accent: #d6408e;
+  --docs-accent-strong: #b93a7b;
+  --docs-accent-soft: rgba(214, 64, 142, 0.12);
+}
+
+[data-env="dev"].dark .docs-shell {
+  --docs-accent: #ff88c9;
+  --docs-accent-strong: #f06ab5;
+  --docs-accent-soft: rgba(255, 136, 201, 0.15);
+}
+
+[data-env="dev"].dark .docs-nav-cta {
+  color: #101010 !important;
+}
+
 .dark .docs-shell {
   --docs-bg: var(--color-moss-950, #111214);
-  --docs-sidebar-bg: var(--color-moss-900, #17191C);
-  --docs-surface: var(--color-moss-700, #24292E);
-  --docs-surface-strong: var(--color-moss-700, #24292E);
-  --docs-border: var(--color-moss-600, #2D3339);
-  --docs-border-strong: var(--color-moss-500, #444D56);
-  --docs-text: var(--color-moss-50, #F6F5F4);
-  --docs-text-muted: var(--color-moss-100, #E5E7EB);
-  --docs-text-subtle: var(--color-moss-300, #B0B6BD);
-  --docs-accent: #34D399;
-  --docs-accent-strong: #6EE7B7;
+  --docs-sidebar-bg: var(--color-moss-900, #17191c);
+  --docs-surface: var(--color-moss-700, #24292e);
+  --docs-surface-strong: var(--color-moss-700, #24292e);
+  --docs-border: var(--color-moss-600, #2d3339);
+  --docs-border-strong: var(--color-moss-500, #444d56);
+  --docs-text: var(--color-moss-50, #f6f5f4);
+  --docs-text-muted: var(--color-moss-100, #e5e7eb);
+  --docs-text-subtle: var(--color-moss-300, #b0b6bd);
+  --docs-accent: #34d399;
+  --docs-accent-strong: #6ee7b7;
   --docs-accent-soft: rgba(16, 185, 129, 0.15);
   --docs-overlay: rgba(0, 0, 0, 0.52);
 }
@@ -322,7 +340,10 @@ html:has(.docs-shell) {
   color: var(--docs-text-muted, var(--docs-text));
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .docs-shell .docs-codeblock:hover .docs-codeblock-copy,
@@ -419,7 +440,9 @@ html:has(.docs-shell) {
   border: 1px solid var(--docs-border);
   border-radius: 12px;
   text-decoration: none !important;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .docs-nav-card:hover {
@@ -563,7 +586,10 @@ html:has(.docs-shell) {
   gap: 8px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    background-color 0.14s ease;
 }
 
 .docs-shell .docs-search-trigger:hover {
@@ -649,7 +675,11 @@ html:has(.docs-shell) {
   gap: 10px;
   border-bottom: 1px solid var(--docs-border);
   padding: 17px 18px 16px;
-  background: linear-gradient(180deg, var(--docs-surface) 0%, var(--docs-surface-strong) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--docs-surface) 0%,
+    var(--docs-surface-strong) 100%
+  );
 }
 
 .docs-shell .docs-search-spotlight-icon {
@@ -740,7 +770,9 @@ html:has(.docs-shell) {
   border-radius: 11px;
   padding: 11px 12px;
   cursor: pointer;
-  transition: background-color 150ms ease, transform 150ms ease;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
 }
 
 .docs-shell .docs-search-suggestion-item {
@@ -1167,10 +1199,18 @@ html:has(.docs-shell) {
 
 /* Staggered entrance */
 
-.docs-shell .privacy-card:nth-child(1) { animation-delay: 0s; }
-.docs-shell .privacy-card:nth-child(2) { animation-delay: 0.06s; }
-.docs-shell .privacy-card:nth-child(3) { animation-delay: 0.12s; }
-.docs-shell .privacy-card:nth-child(4) { animation-delay: 0.18s; }
+.docs-shell .privacy-card:nth-child(1) {
+  animation-delay: 0s;
+}
+.docs-shell .privacy-card:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.docs-shell .privacy-card:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.docs-shell .privacy-card:nth-child(4) {
+  animation-delay: 0.18s;
+}
 
 @keyframes privacyCardReveal {
   from {
