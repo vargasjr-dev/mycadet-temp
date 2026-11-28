@@ -248,6 +248,29 @@ jobs:
             exit 1
           fi
 
+          # Print what the installed profile ACTUALLY grants. A .mobileprovision
+          # is a CMS-signed, unencrypted plist — this metadata is not secret —
+          # and it is a snapshot: a portal grant made after the profile was
+          # downloaded does not appear here. When the portal shows a capability
+          # but the archive disagrees, re-download the profile and re-encode the
+          # secret.
+          describe_profile() {
+            local filename="$1" label="$2"
+            local plist
+            plist=$(security cms -D -i "$PROFILE_DIR/$filename" 2>/dev/null) || return 0
+            /usr/libexec/PlistBuddy -c "Print :Name" /dev/stdin <<< "$plist" 2>/dev/null \
+              | xargs -I{} echo "Profile $label: {}" || true
+            /usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" /dev/stdin <<< "$plist" 2>/dev/null \
+              | xargs -I{} echo "  application-identifier: {}" || true
+            /usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.security.application-groups" /dev/stdin <<< "$plist" 2>/dev/null \
+              | xargs -I{} echo "  application-groups: {}" || true
+            /usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.developer.usernotifications.communication" /dev/stdin <<< "$plist" 2>/dev/null \
+              | xargs -I{} echo "  communication-notifications: {}" || true
+            /usr/libexec/PlistBuddy -c "Print :ExpirationDate" /dev/stdin <<< "$plist" 2>/dev/null \
+              | xargs -I{} echo "  expires: {}" || true
+          }
+          describe_profile ios_distribution.mobileprovision "app"
+
           # A missing extension profile is tolerated: the App IDs and profiles
           # behind IOS_PROVISIONING_PROFILE_EXT* do not exist in the Apple
           # Developer portal yet. The archive fails either way, so exiting here
@@ -258,6 +281,7 @@ jobs:
           if install_profile "$EXT_PROFILE_KEY" ios_distribution_ext.mobileprovision; then
             echo "ext_profile_installed=true" >> "$GITHUB_OUTPUT"
             echo "Provisioning profile installed from ${{ steps.config.outputs.ext_profile_key }}"
+            describe_profile ios_distribution_ext.mobileprovision "VoiceActivity extension"
           else
             echo "ext_profile_installed=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Provisioning profile secret $EXT_PROFILE_KEY is empty, so the VoiceActivity extension profile was not installed and is omitted from ExportOptions.plist. THIS RELEASE WILL STILL FAIL: every app target embeds the extension, so 'xcodebuild archive' stops at signing with \"No profile for team ... matching '${{ steps.config.outputs.ext_profile_name }}' found ... (in target 'VoiceActivity ...')\". No iOS release of any environment can be produced until the portal setup lands. Fix: follow 'Manual Apple Developer portal setup' in clients/ios/README.md to create the App ID and profile, then add $EXT_PROFILE_KEY."
@@ -267,6 +291,7 @@ jobs:
           if install_profile "$SHARE_PROFILE_KEY" ios_distribution_share.mobileprovision; then
             echo "share_profile_installed=true" >> "$GITHUB_OUTPUT"
             echo "Provisioning profile installed from ${{ steps.config.outputs.share_profile_key }}"
+            describe_profile ios_distribution_share.mobileprovision "Share extension"
           else
             echo "share_profile_installed=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Provisioning profile secret $SHARE_PROFILE_KEY is empty, so the Share extension profile was not installed and is omitted from ExportOptions.plist. THIS RELEASE WILL STILL FAIL: every app target embeds the extension, so 'xcodebuild archive' stops at signing with \"No profile for team ... matching '${{ steps.config.outputs.share_profile_name }}' found ... (in target 'Share ...')\". No iOS release of any environment can be produced until the portal setup lands. Fix: follow 'Manual Apple Developer portal setup' in clients/ios/README.md to create the App ID and profile, then add $SHARE_PROFILE_KEY."
@@ -276,6 +301,7 @@ jobs:
           if install_profile "$NSE_PROFILE_KEY" ios_distribution_nse.mobileprovision; then
             echo "nse_profile_installed=true" >> "$GITHUB_OUTPUT"
             echo "Provisioning profile installed from ${{ steps.config.outputs.nse_profile_key }}"
+            describe_profile ios_distribution_nse.mobileprovision "NotificationService extension"
           else
             echo "nse_profile_installed=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Provisioning profile secret $NSE_PROFILE_KEY is empty, so the NotificationService extension profile was not installed and is omitted from ExportOptions.plist. THIS RELEASE WILL STILL FAIL: every app target embeds the extension, so 'xcodebuild archive' stops at signing with \"No profile for team ... matching '${{ steps.config.outputs.nse_profile_name }}' found ... (in target 'NotificationService ...')\". No iOS release of any environment can be produced until the portal setup lands. Fix: follow 'Manual Apple Developer portal setup' in clients/ios/README.md to create the App ID and profile, then add $NSE_PROFILE_KEY."
