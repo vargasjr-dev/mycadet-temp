@@ -849,6 +849,21 @@ describe("stripChannelCapabilityContext", () => {
   });
 });
 
+/**
+ * The unified `<turn_context>` block is always-on (it must never go silent),
+ * so it rides along in every assembled user tail. Tests below assert on the
+ * OTHER blocks, so drop it before counting or indexing.
+ */
+function withoutTurnContext(content: Message["content"]): Message["content"] {
+  return content.filter(
+    (b) =>
+      !(
+        b.type === "text" &&
+        textBlockSchema.parse(b).text.startsWith("<turn_context>")
+      ),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // applyRuntimeInjections with channelCapabilities
 // ---------------------------------------------------------------------------
@@ -877,11 +892,11 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
     });
 
     expect(result.length).toBe(1);
-    expect(result[0].content.length).toBe(2);
-    const injected = result[0].content[0];
-    expect(textBlockSchema.parse(injected).text).toContain(
-      "<channel_capabilities>",
+    expect(withoutTurnContext(result[0].content)).toHaveLength(2);
+    const injected = result[0].content.find((b) =>
+      textBlockSchema.parse(b).text.includes("<channel_capabilities>"),
     );
+    expect(injected).toBeDefined();
   });
 
   test("does not inject when channelCapabilities is null", async () => {
@@ -891,7 +906,7 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
     });
 
     expect(result.length).toBe(1);
-    expect(result[0].content.length).toBe(1);
+    expect(withoutTurnContext(result[0].content)).toHaveLength(1);
   });
 
   test("does not inject when channelCapabilities is omitted", async () => {
@@ -900,7 +915,7 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
     });
 
     expect(result.length).toBe(1);
-    expect(result[0].content.length).toBe(1);
+    expect(withoutTurnContext(result[0].content)).toHaveLength(1);
   });
 
   test("combines with other injections", async () => {
@@ -917,8 +932,8 @@ describe("applyRuntimeInjections with channelCapabilities", () => {
     });
 
     expect(result.length).toBe(1);
-    // channelCapabilities prepends
-    expect(result[0].content.length).toBe(2);
+    // channelCapabilities prepends above the always-on turn-context block.
+    expect(withoutTurnContext(result[0].content)).toHaveLength(2);
   });
 });
 
@@ -1673,11 +1688,14 @@ describe("applyRuntimeInjections with nowScratchpad", () => {
     });
 
     expect(result.length).toBe(1);
-    expect(result[0].content.length).toBe(2);
-    const injected = result[0].content[0];
-    const text = textBlockSchema.parse(injected).text;
-    expect(text).toContain("<NOW.md");
-    expect(text).toContain("Current focus: fix the bug");
+    expect(withoutTurnContext(result[0].content)).toHaveLength(2);
+    const injected = result[0].content.find((b) =>
+      textBlockSchema.parse(b).text.includes("<NOW.md"),
+    );
+    expect(injected).toBeDefined();
+    expect(textBlockSchema.parse(injected!).text).toContain(
+      "Current focus: fix the bug",
+    );
   });
 
   test("scratchpad appears before user's original text content", async () => {
@@ -1687,12 +1705,15 @@ describe("applyRuntimeInjections with nowScratchpad", () => {
       trust: GUARDIAN_TRUST_FIXTURE,
     });
 
-    // Scratchpad comes first (before user content)
-    expect(textOf(result[0].content[0])).toContain("<NOW.md");
-    // Original text is last
-    expect(textBlockSchema.parse(result[0].content[1]).text).toBe(
-      "What should I do?",
+    // Scratchpad sits between the turn-context block and the user content.
+    const contentBlocks = result[0].content.map(
+      (b) => textBlockSchema.parse(b).text,
     );
+    const scratchpadIndex = contentBlocks.findIndex((t) =>
+      t.includes("<NOW.md"),
+    );
+    expect(scratchpadIndex).toBeGreaterThan(0);
+    expect(contentBlocks[contentBlocks.length - 1]).toBe("What should I do?");
   });
 
   test("does not inject when the NOW.md file is absent", async () => {
@@ -1702,7 +1723,7 @@ describe("applyRuntimeInjections with nowScratchpad", () => {
     });
 
     expect(result.length).toBe(1);
-    expect(result[0].content.length).toBe(1);
+    expect(withoutTurnContext(result[0].content)).toHaveLength(1);
   });
 
   test("skipped in minimal mode", async () => {
@@ -2434,13 +2455,22 @@ describe("applyRuntimeInjections with unifiedTurnContext", () => {
     );
   });
 
-  test("does not inject when the timestamp snapshot is absent", async () => {
+  test("still emits a minimal block when the timestamp snapshot is absent", async () => {
+    // The block must never go silent: with no frozen snapshot it renders from
+    // fallbacks (wall-clock current_time, default interface) rather than
+    // vanishing.
     const { messages: result } = await applyRuntimeInjections(baseMessages, {
       conversationId: FALLBACK_CONVERSATION_ID,
     });
 
     expect(result).toHaveLength(1);
-    expect(result[0].content).toHaveLength(1);
+    expect(result[0].content).toHaveLength(2);
+    expect(textBlockSchema.parse(result[0].content[0]).text).toContain(
+      "<turn_context>",
+    );
+    expect(textBlockSchema.parse(result[0].content[1]).text).toBe(
+      "Hello there",
+    );
   });
 
   test("injected in full mode", async () => {
@@ -2718,12 +2748,15 @@ describe("applyRuntimeInjections blocks.unifiedTurnContext", () => {
     expect(result.blocks.unifiedTurnContext).toBeUndefined();
   });
 
-  test("does not capture when unifiedTurnContext option is absent", async () => {
+  test("captures the block even when no snapshot was frozen (never silent)", async () => {
+    // The block is no longer option-threaded: it is always captured for a
+    // user tail, rendering from fallbacks when the conversation has no frozen
+    // snapshot.
     const result = await applyRuntimeInjections(userTailMessages, {
       conversationId: FALLBACK_CONVERSATION_ID,
     });
 
-    expect(result.blocks.unifiedTurnContext).toBeUndefined();
+    expect(result.blocks.unifiedTurnContext).toContain("<turn_context>");
   });
 });
 

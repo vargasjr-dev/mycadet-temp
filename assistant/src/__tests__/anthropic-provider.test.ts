@@ -331,7 +331,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     const lastMsg = sent[sent.length - 1];
     expect(lastMsg.content[lastMsg.content.length - 1].cache_control).toEqual({
       type: "ephemeral",
-      ttl: "5m",
+      ttl: "1h",
     });
   });
 
@@ -382,7 +382,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     const lastMsg = sent[sent.length - 1];
     expect(lastMsg.content[lastMsg.content.length - 1].cache_control).toEqual({
       type: "ephemeral",
-      ttl: "5m",
+      ttl: "1h",
     });
   });
 
@@ -601,10 +601,11 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
       ttl: "1h",
     });
 
-    // Last message (tool_result) gets 5m advancing tail
+    // Last message (tool_result) gets the advancing tail at the configured
+    // TTL (default 1h)
     const lastMessage = sent[sent.length - 1];
     const lastBlock = lastMessage.content[lastMessage.content.length - 1];
-    expect(lastBlock.cache_control).toEqual({ type: "ephemeral", ttl: "5m" });
+    expect(lastBlock.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
   });
 
   test("turn-starting user message gets 1h cache on last block", async () => {
@@ -696,11 +697,12 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     const sent = lastStreamParams!.messages;
     const userMessages = sent.filter((m) => m.role === "user");
 
-    // Latest (turn-start) user message gets the cheap 5m tail bridge, never the
-    // 1h anchor — it's volatile.
+    // Latest (turn-start) user message gets the tail bridge, never the
+    // long-TTL anchor — it's volatile. The bridge TTL is the configured
+    // cacheTtl (default 1h), same as every other breakpoint.
     const latest = userMessages[userMessages.length - 1];
     const latestLast = latest.content[latest.content.length - 1];
-    expect(latestLast.cache_control).toEqual({ type: "ephemeral", ttl: "5m" });
+    expect(latestLast.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
 
     // Previous stable user message (Turn 1) becomes the primary 1h anchor.
     const prev = userMessages[userMessages.length - 2];
@@ -749,7 +751,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
 
     const turn2 = sent[2];
     const turn2Last = turn2.content[turn2.content.length - 1];
-    expect(turn2Last.cache_control).toEqual({ type: "ephemeral", ttl: "5m" });
+    expect(turn2Last.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
   });
 
   test("mutableLatestUserMessage: volatile first turn carries the 5m tail but no long-TTL anchor", async () => {
@@ -763,7 +765,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     // within its own turn, so the tool-loop calls that follow read the system
     // prompt, tools, and opening message back instead of re-writing them.
     const lastBlock = sent[0].content[sent[0].content.length - 1];
-    expect(lastBlock.cache_control).toEqual({ type: "ephemeral", ttl: "5m" });
+    expect(lastBlock.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
   });
 
   test("mutableLatestUserMessage: volatile first turn with disableTurnStartCache places no message breakpoint", async () => {
@@ -815,7 +817,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     // The volatile latest message gets the 5m tail bridge.
     const turn2 = findUser("Turn 2 (volatile)");
     const turn2Last = turn2.content[turn2.content.length - 1];
-    expect(turn2Last.cache_control).toEqual({ type: "ephemeral", ttl: "5m" });
+    expect(turn2Last.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
 
     // The previous stable user message — across the whole autonomous tail —
     // is the 1h anchor.
@@ -2536,7 +2538,7 @@ describe("AnthropicProvider — Cache-Control Characterization", () => {
     // Last message gets 5m advancing tail cache on its last block
     const lastMsg = sent[sent.length - 1];
     const lastBlock = lastMsg.content[lastMsg.content.length - 1];
-    expect(lastBlock.cache_control).toEqual({ type: "ephemeral", ttl: "5m" });
+    expect(lastBlock.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
   });
 
   // -----------------------------------------------------------------------

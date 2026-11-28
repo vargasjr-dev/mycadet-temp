@@ -67,7 +67,7 @@ describe("resolveEffectiveContextWindow", () => {
     expect(resolved.isLongContextEnabled).toBe(false);
   });
 
-  test("main agent active profile context override beats call-site profile defaults", () => {
+  test("the main agent's call-site profile pin beats the active profile (uniform chain)", () => {
     const llm = LLMSchema.parse({
       profiles: {
         active: {
@@ -90,12 +90,14 @@ describe("resolveEffectiveContextWindow", () => {
       },
     });
 
+    // #1105 made the winner chain identical for every site: the site pin
+    // (rung 2) outranks the active profile (rung 3), main agent included.
     const resolved = resolveEffectiveContextWindow({
       llm,
       callSite: "mainAgent",
     });
 
-    expect(resolved.maxInputTokens).toBe(150000);
+    expect(resolved.maxInputTokens).toBe(175000);
     expect(resolved.compactThreshold).toBe(0.8);
     expect(resolved.summaryBudgetRatio).toBe(0.05);
     expect(resolved.targetBudgetRatio).toBe(0.3);

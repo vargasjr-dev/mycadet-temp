@@ -55,6 +55,7 @@ describe("schedule_syntax column migration", () => {
         workflow_args_json TEXT,
         timeout_ms INTEGER,
         inference_profile TEXT,
+        max_run_cost_usd REAL,
         group_id TEXT,
         capabilities_json TEXT,
         description TEXT NOT NULL DEFAULT '',

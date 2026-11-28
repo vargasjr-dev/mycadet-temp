@@ -36,12 +36,28 @@ afterEach(() => {
 
 describe("chat utilities", () => {
   describe("formatVoiceError", () => {
+    // detectElectronHostOS reads navigator.platform — the bridge carries no
+    // host marker — so the host OS is staged on the navigator, not window.cadet.
+    const realPlatform = navigator.platform;
+    const setHostPlatform = (value: string) => {
+      Object.defineProperty(window.navigator, "platform", {
+        value,
+        configurable: true,
+      });
+    };
+
+    afterEach(() => {
+      Object.defineProperty(window.navigator, "platform", {
+        value: realPlatform,
+        configurable: true,
+      });
+    });
+
     test("names the Windows client in native dictation errors", () => {
-      (
-        window as unknown as {
-          cadet?: { platform: "electron"; hostOS: "windows" };
-        }
-      ).cadet = { platform: "electron", hostOS: "windows" };
+      (window as unknown as { cadet?: { platform: "electron" } }).cadet = {
+        platform: "electron",
+      };
+      setHostPlatform("Win32");
 
       expect(formatVoiceError("native-stt-no-transcript")).toBe(
         "Windows Native Dictation didn’t return a transcript. Check native speech recognition in system settings, then try again.",
@@ -49,11 +65,10 @@ describe("chat utilities", () => {
     });
 
     test("names the macOS client in native dictation errors", () => {
-      (
-        window as unknown as {
-          cadet?: { platform: "electron"; hostOS: "macos" };
-        }
-      ).cadet = { platform: "electron", hostOS: "macos" };
+      (window as unknown as { cadet?: { platform: "electron" } }).cadet = {
+        platform: "electron",
+      };
+      setHostPlatform("MacIntel");
 
       expect(formatVoiceError("native-stt-no-transcript")).toBe(
         "macOS Native Dictation didn’t return a transcript. Check native speech recognition in system settings, then try again.",

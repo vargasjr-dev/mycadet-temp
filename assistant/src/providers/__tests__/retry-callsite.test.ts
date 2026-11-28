@@ -384,10 +384,11 @@ describe("RetryProvider — callSite resolution", () => {
     expect(config.callSite).toBeUndefined();
   });
 
-  test("omits profile source attribution header when no profile is applied", async () => {
-    // `vision` has no default profile intent, so with no override/site pin the
-    // winner is the code-owned anchor — no named profile applies and the
-    // profile/source headers must be omitted.
+  test("stamps the balanced-anchor profile attribution on a direct model fragment", async () => {
+    // `vision` carries a direct provider/model fragment (no profile pin). The
+    // chain still needs a named winner, so it anchors at the code-owned
+    // `balanced` profile (source "default") and the attribution headers carry
+    // both the anchor profile and the fragment's resolved identity.
     setLlmConfig({
       callSites: {
         vision: {
@@ -415,16 +416,18 @@ describe("RetryProvider — callSite resolution", () => {
       "X-Cadet-LLM-Call-Site": "vision",
       "X-Cadet-Resolved-Provider": "openai",
       "X-Cadet-Resolved-Model": "gpt-default",
+      "X-Cadet-Inference-Profile": "balanced",
+      "X-Cadet-Inference-Profile-Source": "default",
     });
   });
 
-  test("falls back to the call site's default profile when llm.callSites[id] is absent", async () => {
+  test("anchors an unpinned call site at the default provider's balanced profile", async () => {
     // No `callSites.memoryRetrieval` entry and no workspace profiles: the
-    // winner is the call site's default profile intent (`cost-optimized`)
-    // resolved from the code-owned catalog.
+    // single-winner chain's last rung is the code-owned `balanced` anchor
+    // (#1105 retired the per-call-site default profile intents).
     setLlmConfig({});
 
-    const expected = CODE_DEFAULT_PROFILE_ENTRIES["cost-optimized"];
+    const expected = CODE_DEFAULT_PROFILE_ENTRIES.balanced;
     let seen: SendMessageOptions | undefined;
     const wrapped = new RetryProvider(
       makeProvider(capturedStringSchema.parse(expected.provider), (options) => {
@@ -442,27 +445,23 @@ describe("RetryProvider — callSite resolution", () => {
     expect(config.max_tokens).toBe(expected.maxTokens as number);
   });
 
-  test("latency-sensitive live-voice call sites reach OpenAI with reasoning off", async () => {
-    // The `latency-optimized` pin's whole value is time-to-first-token, and on
-    // an OpenAI upstream that depends entirely on disabled thinking being
-    // encoded as `effort: "none"`. OpenAI-compatible APIs reason by default
-    // when the field is absent, which pushes first-token past the verdict
-    // deadline the profile exists to beat.
-    //
-    // The profile declares `provider: "cadet"` (the provider-agnostic managed
-    // sentinel) and the real upstream comes from the model id, so the stub is
-    // named for that resolved upstream rather than the sentinel, matching what
-    // `createAdapterFromConnection` builds for a cloud route.
+  test("latency-sensitive live-voice call sites keep their low-effort, no-thinking tuning", async () => {
+    // The live-voice sites ship a tuning fragment (effort low, thinking
+    // disabled) layered over the chain's winner — the `balanced` anchor since
+    // #1105 retired the per-call-site profile pins. Time-to-first-token still
+    // comes from the tuning, not from a per-site profile.
     setLlmConfig({});
 
-    const expected = CODE_DEFAULT_PROFILE_ENTRIES["latency-optimized"];
+    const expected = CODE_DEFAULT_PROFILE_ENTRIES.balanced;
     for (const callSite of [
       "voiceFrontDoor",
       "voiceProgressNarration",
     ] as const) {
       let seen: SendMessageOptions | undefined;
+      // Balanced's model is a Fireworks id: the stub is named for that
+      // resolved upstream, whose transport strips thinking outright.
       const wrapped = new RetryProvider(
-        makeProvider("openai", (options) => {
+        makeProvider("fireworks", (options) => {
           seen = options;
         }),
       );
@@ -472,7 +471,8 @@ describe("RetryProvider — callSite resolution", () => {
       const config = seen?.config;
       assert(config, "Expected provider configuration");
       expect(config.model).toBe(capturedStringSchema.parse(expected.model));
-      expect(config.effort).toBe("none");
+      expect(config.effort).toBe("low");
+      expect(config.thinking).toBeUndefined();
     }
   });
 

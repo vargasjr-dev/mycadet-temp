@@ -273,7 +273,9 @@ describe("inference_send profile usability", () => {
     const err = await rejection({ ...hermes, status: "disabled" });
     expect(err).toBeInstanceOf(BadRequestError);
     expect(err.message).toContain("disabled");
-    expect(err.message).toContain("deepseek-v4p1-flash");
+    // The fallback named in the message is the chain's balanced anchor, not a
+    // per-call-site default.
+    expect(err.message).toContain("balanced");
   });
 
   test("rejects a profile that lost its provider", async () => {

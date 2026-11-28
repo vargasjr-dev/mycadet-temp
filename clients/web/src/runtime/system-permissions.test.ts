@@ -30,10 +30,19 @@ const presentation = {
   },
 };
 
+/** The navigator.platform the runner booted with, restored after each test. */
+const originalPlatform = navigator.platform;
+
 const installBridge = (
   hostOS: "macos" | "windows",
   request: (...args: unknown[]) => Promise<unknown>,
 ): void => {
+  // detectElectronHostOS reads navigator.platform — the bridge carries no
+  // host marker — so the host OS is staged on the navigator, not window.cadet.
+  Object.defineProperty(navigator, "platform", {
+    value: hostOS === "windows" ? "Win32" : "MacIntel",
+    configurable: true,
+  });
   window.cadet = {
     platform: "electron",
     hostOS,
@@ -45,6 +54,10 @@ const installBridge = (
 };
 
 afterEach(() => {
+  Object.defineProperty(navigator, "platform", {
+    value: originalPlatform,
+    configurable: true,
+  });
   delete window.cadet;
 });
 

@@ -340,7 +340,12 @@ Unrelated work remains blocked until disk usage drops below the critical thresho
       ...makeContext(),
     });
     const stripped = stripInjectionsForCompaction(first.messages);
-    expect(tailTexts(stripped)).toEqual(["find large files"]);
+    // The strip removes the warning (and the one-shot injection shells) but
+    // keeps the persistent <turn_context> block, so assert on the warning's
+    // absence and the user text's survival rather than the exact array.
+    const strippedTexts = tailTexts(stripped);
+    expect(strippedTexts).not.toContain(DISK_PRESSURE_WARNING_PROMPT);
+    expect(strippedTexts).toContain("find large files");
 
     const second = await applyRuntimeInjections(stripped, {
       ...makeContext(),

@@ -192,14 +192,15 @@ describe("resolveUsageAttribution", () => {
       callSite: "memoryRetrieval",
     });
 
-    // The winner is memoryRetrieval's default intent (activeProfile applies
-    // only to mainAgent); the call-site tweak still determines the resolved
-    // provider/model because it applies last.
+    // The direct model fragment carries no profile pin, so the single-winner
+    // chain (identical for every site) lands on the active profile; the
+    // call-site tweak still determines the resolved provider/model because it
+    // applies last.
     expect(snapshot).toMatchObject({
       activeProfile: "active",
       callSiteProfile: null,
-      appliedProfile: "cost-optimized",
-      profileSource: "default",
+      appliedProfile: "active",
+      profileSource: "active",
       resolvedProvider: "ollama",
       resolvedModel: "llama3.2",
     });
@@ -272,7 +273,7 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
     const snapshot = resolveUsageAttribution({
       callSite: "conversationSummarization",
     });
-    expect(snapshot.appliedProfile).toBe("cost-optimized");
+    expect(snapshot.appliedProfile).toBe("balanced");
     expect(snapshot.profileSource).toBe("default");
     expect(snapshot.resolvedProvider).toBe("anthropic");
   });
@@ -287,11 +288,13 @@ describe("resolveUsageAttribution — single-winner semantics", () => {
       appliedProfile: "mine",
       profileSource: "active",
     });
+    // The chain is identical for every site (#1105): with no site pin, rung 3
+    // (the active profile) wins on background sites too.
     expect(
       resolveUsageAttribution({ callSite: "conversationSummarization" }),
     ).toMatchObject({
-      appliedProfile: "cost-optimized",
-      profileSource: "default",
+      appliedProfile: "mine",
+      profileSource: "active",
     });
   });
 
