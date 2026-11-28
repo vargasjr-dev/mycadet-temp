@@ -882,11 +882,31 @@ export async function runDueSchedulesOnce(
           scheduleRunId: runId,
           scheduleId: job.id,
         });
-        await completeScheduleRun(runId, {
-          status: result.exitCode === 0 ? "ok" : "error",
-          output: result.stdout || undefined,
-          error: result.stderr || undefined,
-        });
+        // Status resolution defers while the script's background work runs:
+        // the row is written from the deferred outcome (full output once the
+        // background script ends, or the reaper's), not from the foreground
+        // exit alone. The worker does not wait for it — failure handling and
+        // one-shot completion below stay tied to the foreground result, and
+        // if the daemon restarts before the deferral settles, startup
+        // recovery resolves the row as before.
+        const finalize = result.background
+          ? result.background.then((bg) => ({
+              status:
+                result.exitCode === 0 ? ("ok" as const) : ("error" as const),
+              output: bg.stdout || undefined,
+              error: bg.stderr || undefined,
+            }))
+          : Promise.resolve({
+              status:
+                result.exitCode === 0 ? ("ok" as const) : ("error" as const),
+              output: result.stdout || undefined,
+              error: result.stderr || undefined,
+            });
+        void finalize
+          .then((final) => completeScheduleRun(runId, final))
+          .catch((err) =>
+            log.warn({ err, runId }, "Deferred script run completion failed"),
+          );
         if (result.exitCode === 0) {
           if (isOneShot) {
             await completeOneShot(job.id);

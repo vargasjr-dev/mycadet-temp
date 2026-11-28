@@ -22,6 +22,11 @@ const MIN_SCRIPT_TIMEOUT_MS = 1_000;
  */
 const MAX_SCRIPT_TIMEOUT_MS = 30 * 60 * 1000;
 /**
+ * How often to poll whether the script's process group still has live
+ * members while deferring run completion (ms).
+ */
+const BACKGROUND_POLL_MS = 500;
+/**
  * How long to wait for the output pipes to drain after the process group is
  * killed before giving up (ms). A pipe only reaches EOF once every process
  * holding its write end has exited, so a child that escaped the group via
@@ -30,10 +35,94 @@ const MAX_SCRIPT_TIMEOUT_MS = 30 * 60 * 1000;
  */
 const DRAIN_TIMEOUT_MS = 5_000;
 
+export interface ScriptBackgroundOutcome {
+  /** Full output drained once the background work ended (or was reaped). */
+  stdout: string;
+  stderr: string;
+  /**
+   * True when the grace expired with children still running and they were
+   * reaped (the script's own timeout budget); false when the group emptied
+   * on its own.
+   */
+  reaped: boolean;
+}
+
 export interface ScriptResult {
   exitCode: number;
   stdout: string;
   stderr: string;
+  /**
+   * Present only when the script left background children alive in its own
+   * process group at foreground exit (POSIX). The foreground shell is done,
+   * but the run's status resolution defers until the background script ends:
+   * this promise resolves once the group empties — with the full drained
+   * output — or after the script's timeout budget elapses, at which point
+   * whatever is still running is reaped (the same guarantee as the timeout
+   * path). Output captured at return time is withheld; the row is written
+   * from this outcome. Absent when nothing was left running (and always on
+   * Windows, where the tree is reaped as before).
+   */
+  background?: Promise<ScriptBackgroundOutcome>;
+}
+
+/**
+ * Poll whether the script's process group still has live members while
+ * deferring run completion. A missing pid (never spawned / already
+ * reaped) counts as not alive.
+ */
+function processGroupAlive(pgid: number | undefined): boolean {
+  if (pgid == null) {
+    return false;
+  }
+  try {
+    process.kill(-pgid, 0);
+    return true;
+  } catch (err) {
+    // ESRCH: no member left. EPERM: members exist without permission to
+    // signal them — still alive.
+    return (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      err.code === "EPERM"
+    );
+  }
+}
+
+/**
+ * Resolve a deferred run once the script's background work ends: poll the
+ * process group and, when it empties, drain the output the background
+ * children wrote. If the group is still alive after the grace (the script's
+ * timeout budget), reap it and settle as reaped — the same termination
+ * guarantee as the timeout path.
+ */
+function watchBackgroundGroup(
+  proc: Parameters<typeof terminateProcessTree>[0],
+  graceMs: number,
+  stdoutCollector: StreamCollector,
+  stderrCollector: StreamCollector,
+): Promise<ScriptBackgroundOutcome> {
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+    const settle = (reaped: boolean) => {
+      void drainStreams(stdoutCollector, stderrCollector).then(
+        ([stdout, stderr]) => resolve({ stdout, stderr, reaped }),
+      );
+    };
+    const poll = () => {
+      if (!processGroupAlive(proc.pid)) {
+        settle(false);
+        return;
+      }
+      if (Date.now() - startedAt >= graceMs) {
+        terminateProcessTree(proc);
+        settle(true);
+        return;
+      }
+      setTimeout(poll, BACKGROUND_POLL_MS).unref();
+    };
+    poll();
+  });
 }
 
 /**
@@ -54,6 +143,11 @@ export async function runScript(
     scheduleId: string;
     timeoutMs?: number;
     cwd?: string;
+    /**
+     * Bound the deferred background-completion wait instead of the script's
+     * own timeout budget.
+     */
+    backgroundGraceMs?: number;
   },
 ): Promise<ScriptResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -116,6 +210,33 @@ export async function runScript(
       "Script timed out",
     );
     return { exitCode: 124, stdout, stderr };
+  }
+
+  // A script may leave background children running in its process group
+  // (e.g. `long-job &`). Their work is not over when the foreground shell
+  // exits: the run's status resolution defers until the group empties, so
+  // the run row reflects the background script's lifetime instead of
+  // declaring an outcome the moment the foreground ended. The group sweep
+  // remains as the bounded fallback (the script's timeout budget), keeping
+  // the orphan-reaping guarantee; on Windows (no process groups) or when
+  // nothing is left running, resolution works as before.
+  const graceMs = options.backgroundGraceMs ?? timeoutMs;
+  if (process.platform !== "win32" && processGroupAlive(proc.pid)) {
+    log.info(
+      { command, exitCode },
+      "Script left background children running; deferring run completion",
+    );
+    return {
+      exitCode,
+      stdout: "",
+      stderr: "",
+      background: watchBackgroundGroup(
+        proc,
+        graceMs,
+        stdoutCollector,
+        stderrCollector,
+      ),
+    };
   }
 
   // Sweep anything the script left running. This reaps orphaned background

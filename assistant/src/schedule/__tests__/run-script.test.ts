@@ -34,20 +34,46 @@ async function waitUntilDead(pid: number): Promise<boolean> {
 }
 
 describe("runScript orphan reaping", () => {
-  test("reaps background children when the script exits normally", async () => {
+  test("background children survive the foreground exit; the run resolves when they end", async () => {
+    const pidFile = tmpdir() + `/run-defer-alive-${Date.now()}.pid`;
     const started = Date.now();
-    const result = await runScript("sleep 600 & echo $!", {
+    const result = await runScript("sleep 600 & echo $! > " + pidFile, {
       cwd: tmpdir(),
-      scheduleId: "sched-reap",
-      scheduleRunId: "run-reap",
+      scheduleId: "sched-defer",
+      scheduleRunId: "run-defer",
+      backgroundGraceMs: 1_000,
     });
-    // The backgrounded child holds the stdout pipe, so resolving quickly
-    // proves the group sweep closed it rather than the drain timeout firing.
+    // runScript returns at the foreground exit, while the background child
+    // (still in the process group) keeps running — the run is not over.
     expect(Date.now() - started).toBeLessThan(4_000);
     expect(result.exitCode).toBe(0);
-    const childPid = Number(result.stdout.trim());
+    expect(result.background).toBeDefined();
+    const childPid = Number((await Bun.file(pidFile).text()).trim());
     expect(childPid).toBeGreaterThan(0);
+    expect(() => process.kill(childPid, 0)).not.toThrow();
+
+    // The deferred resolution settles when the grace expires with the child
+    // still running: it is reaped (the same guarantee as the timeout path).
+    const outcome = await result.background!;
+    expect(outcome.reaped).toBe(true);
     expect(await waitUntilDead(childPid)).toBe(true);
+    await Bun.file(pidFile).delete();
+  });
+
+  test("a background child that ends on its own resolves the run with its output", async () => {
+    // The child must still be alive when the foreground shell exits (the
+    // 300ms sleep) or there is nothing left to defer.
+    const result = await runScript("(sleep 0.3; echo from-background) &", {
+      cwd: tmpdir(),
+      scheduleId: "sched-defer-natural",
+      scheduleRunId: "run-defer-natural",
+      backgroundGraceMs: 10_000,
+    });
+    expect(result.exitCode).toBe(0);
+    expect(result.background).toBeDefined();
+    const outcome = await result.background!;
+    expect(outcome.reaped).toBe(false);
+    expect(outcome.stdout).toContain("from-background");
   });
 
   test("resolves and keeps partial output when an escaped process holds the pipe open", async () => {
