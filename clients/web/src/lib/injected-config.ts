@@ -23,6 +23,15 @@ export const InjectedConfigSchema = z.object({
   assistantId: z.string().optional(),
   /** Serving assistant's display name, stamped by every host that fronts one assistant. */
   assistantName: z.string().optional(),
+  /**
+   * The shell's own interface id, stamped by the desktop hosts. When present
+   * (and a known desktop interface) this web client reports it as its
+   * registration interface — the connection IS the desktop client — while
+   * opting out of host-proxy capability advertisement (`X-Cadet-Host-Proxy:
+   * 0`), which stays with the main process's own registration. Absent in
+   * plain browsers, which keep the "web" identity.
+   */
+  interfaceId: z.string().optional(),
 });
 
 type InjectedConfig = z.infer<typeof InjectedConfigSchema>;

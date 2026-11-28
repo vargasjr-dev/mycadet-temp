@@ -268,7 +268,7 @@ export const startApp = async (inputs: DesktopAppInputs): Promise<void> => {
       // Every build mode — packaged or dev — serves the renderer over the
       // app protocol (dev reads the source-tree dists), so the handler and
       // the gateway guard register unconditionally.
-      registerAppProtocol();
+      registerAppProtocol(inputs.interfaceId);
       installGatewayRequestGuard({
         appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
         resolveAllowedOrigin,
