@@ -1,8 +1,9 @@
 import type { Server } from "bun";
 
+import { getAuthRateLimiter } from "../auth-rate-limiter.js";
 import { isWebsocketUpgradeRequest } from "./utils.js";
+import { ROUTES } from "./routes/index.js";
 import type { RouteDefinition } from "./routes/types.js";
-import type { AuthRateLimiter } from "../auth-rate-limiter.js";
 import {
   createAuthMiddleware,
   wrapWithAuthFailureTracking,
@@ -13,121 +14,115 @@ export type GetClientIp = () => string;
 /** Params extracted from a regex path match (capture groups). */
 export type RouteParams = string[];
 
-export interface RouterDeps {
-  authRateLimiter: AuthRateLimiter;
-  /**
-   * When true, a trusted reverse proxy is declared in front of the gateway, so
-   * the loopback auth fallback judges callers by the real client IP from
-   * X-Forwarded-For instead of the raw socket peer. Defaults to false.
-   */
-  trustProxy?: boolean;
-}
+/** Every route, expanded into the definitions the matcher consumes. */
+const table: RouteDefinition[] = ROUTES.flatMap(expandRoute);
 
 /**
- * Create a router function from a declarative route table.
- *
- * The returned function matches the first route whose path and method match,
- * applies auth middleware per the route's `auth` strategy, and calls the
- * handler. Returns null if no route matches.
+ * Match the request against the ROUTES table (imported from the routes
+ * barrel) and run the matching route's handler behind its `auth` strategy
+ * against the shared auth rate limiter. Returns null when no route matches
+ * (the caller owns the 404), and undefined only after a WebSocket upgrade
+ * has succeeded — coalesced to an inert 101 for the caller.
  */
-export function createRouter(
-  routes: ReadonlyArray<RouteDefinition>,
-  deps: RouterDeps,
-): (
+export async function dispatchRoute(
   req: Request,
   url: URL,
   getClientIp: GetClientIp,
-  server?: Server<unknown>,
-) => Promise<Response | null> {
-  const { authRateLimiter } = deps;
-  const table: RouteDefinition[] = routes.flatMap(expandRoute);
+  server: Server<unknown>,
+): Promise<Response | null> {
+  const pathname = withoutVersionPrefix(url.pathname);
 
-  return async (
-    req: Request,
-    url: URL,
-    getClientIp: GetClientIp,
-    server?: Server<unknown>,
-  ) => {
-    const dispatchAt = async (pathname: string): Promise<Response | null> => {
-      for (const route of table) {
-        const matchResult = matchRoute(route, pathname, req.method);
-        if (!matchResult) continue;
-        if (route.upgradesOnly && !isWebsocketUpgradeRequest(req)) continue;
+  for (const route of table) {
+    const matchResult = matchRoute(route, pathname, req.method);
+    if (!matchResult) continue;
+    if (route.upgradesOnly && !isWebsocketUpgradeRequest(req)) continue;
 
-        // Precondition guard (e.g. "is integration configured?")
-        if (route.precondition) {
-          const preconditionResponse = route.precondition();
-          if (preconditionResponse) return preconditionResponse;
-        }
+    // Precondition guard (e.g. "is integration configured?")
+    if (route.precondition) {
+      const preconditionResponse = route.precondition();
+      if (preconditionResponse) return preconditionResponse;
+    }
 
-        const auth = route.auth ?? "none";
+    const auth = route.auth ?? "none";
+    let handlerResult: Response | undefined;
 
-        switch (auth) {
-          case "none":
-          case "custom":
-            return route.handler(req, matchResult.params, getClientIp, server);
+    switch (auth) {
+      case "none":
+      case "custom":
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
 
-          case "edge": {
-            const { requireEdgeAuth } = createAuthMiddleware(
-              authRateLimiter,
-              getClientIp,
-            );
-            const authError = await requireEdgeAuth(req);
-            if (authError) return authError;
-            return route.handler(req, matchResult.params, getClientIp, server);
-          }
-
-          case "edge-scoped": {
-            const { requireEdgeAuthWithScope } = createAuthMiddleware(
-              authRateLimiter,
-              getClientIp,
-            );
-            const authError = await requireEdgeAuthWithScope(req, route.scope!);
-            if (authError) return authError;
-            return route.handler(req, matchResult.params, getClientIp, server);
-          }
-
-          case "edge-guardian": {
-            const { requireEdgeGuardianAuth } = createAuthMiddleware(
-              authRateLimiter,
-              getClientIp,
-            );
-            const authError = await requireEdgeGuardianAuth(req);
-            if (authError) return authError;
-            return route.handler(req, matchResult.params, getClientIp, server);
-          }
-
-          case "track-failures": {
-            return wrapWithAuthFailureTracking(
-              (r) => route.handler(r, matchResult.params, getClientIp, server),
-              authRateLimiter,
-              getClientIp,
-              route.trackFailureStatuses,
-            )(req);
-          }
-        }
+      case "edge": {
+        const { requireEdgeAuth } = createAuthMiddleware(
+          getAuthRateLimiter(),
+          getClientIp,
+        );
+        const authError = await requireEdgeAuth(req);
+        if (authError) return authError;
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
       }
 
-      return null;
-    };
+      case "edge-scoped": {
+        const { requireEdgeAuthWithScope } = createAuthMiddleware(
+          getAuthRateLimiter(),
+          getClientIp,
+        );
+        const authError = await requireEdgeAuthWithScope(req, route.scope!);
+        if (authError) return authError;
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
+      }
 
-    // The /v1 version prefix is optional (P7 of the one-url plan): route
-    // definitions read unversioned and the dispatcher strips one optional
-    // /v1 from the dial, so both spellings resolve to the same routes. The
-    // handler's `req` keeps the dial exactly as sent. The unversioned WS
-    // upgrade paths (stt, watch, live-voice, desktop) still arrive only in
-    // the /v1 spelling — their pre-router checks run before this router and
-    // move with the caller migration.
-    return dispatchAt(withoutVersionPrefix(url.pathname));
-  };
+      case "edge-guardian": {
+        const { requireEdgeGuardianAuth } = createAuthMiddleware(
+          getAuthRateLimiter(),
+          getClientIp,
+        );
+        const authError = await requireEdgeGuardianAuth(req);
+        if (authError) return authError;
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
+      }
+
+      case "track-failures": {
+        handlerResult = await wrapWithAuthFailureTracking(
+          (r) => route.handler(r, matchResult.params, getClientIp, server),
+          getAuthRateLimiter(),
+          getClientIp,
+          route.trackFailureStatuses,
+        )(req);
+        break;
+      }
+    }
+
+    if (handlerResult !== undefined) return handlerResult;
+    return INERT_UPGRADE_FALLBACK;
+  }
+
+  return null;
 }
 
-/**
- * Strip one optional leading `/v1` version segment (P7 of the one-url plan:
- * the version digit is leaving the URL path — match definitions read the
- * unversioned shape, and the dispatcher strips the prefix from
- * not-yet-migrated `/v1`-spelled dials so both spellings stay live).
- */
 export function withoutVersionPrefix(pathname: string): string {
   const stripped = pathname.replace(/^\/v1(?=\/|$)/, "");
   return stripped === "" ? "/" : stripped;
@@ -182,8 +177,8 @@ export function expandRoute(route: RouteDefinition): RouteDefinition[] {
       expanded.push({
         ...variant,
         path: scopedPath,
-        handler: (req, params, getClientIp) =>
-          variant.handler(req, params.slice(1), getClientIp),
+        handler: (req, params, getClientIp, server) =>
+          variant.handler(req, params.slice(1), getClientIp, server),
       });
     }
   }
@@ -246,3 +241,6 @@ function matchRoute(
   if (!match) return null;
   return { params: match.slice(1) };
 }
+
+/** Returned when a handler resolves to undefined (a completed WS upgrade). */
+const INERT_UPGRADE_FALLBACK = new Response(null, { status: 101 });

@@ -298,6 +298,6 @@ export const ROUTES: RouteDefinition[] = [
   {
     path: new RegExp(`^${TWILIO_MEDIA_STREAM_WEBHOOK_PATH}(/.*)?$`),
     handler: (req, _params, _getClientIp, server) =>
-      handleTwilioMediaWs(req, server!) ?? new Response(null, { status: 101 }),
+      handleTwilioMediaWs(req, server),
   },
 ];

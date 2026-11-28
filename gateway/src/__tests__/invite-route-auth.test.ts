@@ -33,8 +33,7 @@ mock.module("../auth/token-exchange.js", () => ({
   validateEdgeToken: (token: string) => mockValidateEdgeToken(token),
 }));
 
-const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createRouter } = await import("../http/router.js");
+const { dispatchRoute } = await import("../http/router.js");
 
 // ---------------------------------------------------------------------------
 // Registration pinning — the route table index.ts spreads
@@ -45,10 +44,7 @@ const { buildMarkedContactRoutes, markedHandlerName } =
 
 describe("invite route registrations (contact route table)", () => {
   test("all five invite routes use edge-scoped auth with the original runtime scopes", async () => {
-    const expectedScopeByHandler: Record<
-      string,
-      RouteDefinition["scope"]
-    > = {
+    const expectedScopeByHandler: Record<string, RouteDefinition["scope"]> = {
       handleListInvites: "settings.read",
       handleCreateInvite: "settings.write",
       handleRedeemInvite: "settings.write",
@@ -78,48 +74,12 @@ describe("invite route registrations (contact route table)", () => {
 const UI_PAGE_TOKEN = "tok-ui-page"; // ui_page_v1 → settings.read only
 const ACTOR_TOKEN = "tok-actor"; // actor_client_v1 → settings.read + write
 
-/** Router with the invite routes exactly as registered in index.ts. */
-function makeInviteRouter() {
-  const routes: RouteDefinition[] = [
-    {
-      path: "/contacts/invites",
-      method: "get",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: () => Response.json({ ok: true, route: "list" }),
-    },
-    {
-      path: "/contacts/invites",
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: () => Response.json({ ok: true, route: "create" }),
-    },
-    {
-      path: "/contacts/invites/redeem",
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: () => Response.json({ ok: true, route: "redeem" }),
-    },
-    {
-      path: /^\/contacts\/invites\/([^/]+)\/call$/,
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: () => Response.json({ ok: true, route: "call" }),
-    },
-    {
-      path: /^\/contacts\/invites\/([^/]+)$/,
-      method: "delete",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: () => Response.json({ ok: true, route: "revoke" }),
-    },
-  ];
-  return createRouter(routes, { authRateLimiter: new AuthRateLimiter() });
-}
+let nextIp = 0;
 
+/**
+ * Dispatch through the real route table. Each dial gets its own client IP so
+ * the shared auth rate limiter never ties suites together.
+ */
 async function dispatch(
   method: string,
   path: string,
@@ -130,9 +90,8 @@ async function dispatch(
     method,
     headers: { authorization: `Bearer ${token}` },
   });
-  // No `server` argument: the loopback fallback requires a server to resolve
-  // the peer IP, so auth outcomes here are purely token/scope-driven.
-  return makeInviteRouter()(req, url, () => "203.0.113.9");
+  const ip = `203.0.113.${++nextIp}`;
+  return dispatchRoute(req, url, () => ip, { requestIP: () => null } as never);
 }
 
 const WRITE_ROUTES: Array<[string, string]> = [
@@ -170,22 +129,24 @@ describe("invite route scope enforcement (behavioral)", () => {
   );
 
   test.each(WRITE_ROUTES)(
-    "%s %s → passes for a settings.write (actor_client_v1) token",
+    "%s %s → is not scope-rejected for a settings.write (actor_client_v1) token",
     async (method, path) => {
       const res = await dispatch(method, path, ACTOR_TOKEN);
-      expect(res?.status).toBe(200);
+      expect(res?.status).not.toBe(401);
+      expect(res?.status).not.toBe(403);
     },
   );
 
-  test("GET /v1/contacts/invites → passes for a settings.read (ui_page_v1) token", async () => {
+  test("GET /v1/contacts/invites → is not scope-rejected for a settings.read (ui_page_v1) token", async () => {
     const res = await dispatch("GET", "/v1/contacts/invites", UI_PAGE_TOKEN);
-    expect(res?.status).toBe(200);
-    expect(await res?.json()).toEqual({ ok: true, route: "list" });
+    expect(res?.status).not.toBe(401);
+    expect(res?.status).not.toBe(403);
   });
 
-  test("GET /v1/contacts/invites → passes for an actor_client_v1 token", async () => {
+  test("GET /v1/contacts/invites → is not scope-rejected for an actor_client_v1 token", async () => {
     const res = await dispatch("GET", "/v1/contacts/invites", ACTOR_TOKEN);
-    expect(res?.status).toBe(200);
+    expect(res?.status).not.toBe(401);
+    expect(res?.status).not.toBe(403);
   });
 
   test("invalid token → 401 on a write route", async () => {

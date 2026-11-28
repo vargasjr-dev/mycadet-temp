@@ -34,9 +34,8 @@ export type RouteHandler = (
   req: Request,
   params: RouteParams,
   getClientIp: GetClientIp,
-  /** The Bun server, for the rare route that upgrades to a WebSocket. */
-  server?: Server<unknown>,
-) => Promise<Response> | Response;
+  server: Server<unknown>,
+) => Promise<Response | undefined> | Response | undefined;
 
 /**
  * The single declaration of a gateway HTTP route — both the runtime dispatch

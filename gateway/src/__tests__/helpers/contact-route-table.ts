@@ -58,7 +58,9 @@ export async function markedHandlerName(
     new Request("http://gateway.local/"),
     ["p0"],
     () => "127.0.0.1",
+    { requestIP: () => null } as never,
   );
+  if (!res) throw new Error("handler returned undefined (treated as 101)");
   const body = (await res.json()) as { marker?: string };
   if (!body.marker) {
     throw new Error(

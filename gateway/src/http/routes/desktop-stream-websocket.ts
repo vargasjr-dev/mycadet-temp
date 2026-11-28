@@ -87,17 +87,9 @@ export const closeDesktopStreamWebsocket = (
 
 export const ROUTES: RouteDefinition[] = [
   {
-    path: "/desktop/stream",
+    path: /^\/(?:assistants\/([^/]+)\/)?desktop\/stream\/?$/,
     upgradesOnly: true,
     handler: async (req, _params, _getClientIp, server) =>
-      (await handleDesktopStreamWs(req, server!)) ??
-      new Response(null, { status: 101 }),
-  },
-  {
-    path: /^\/assistants\/([^/]+)\/desktop\/stream\/?$/,
-    upgradesOnly: true,
-    handler: async (req, _params, _getClientIp, server) =>
-      (await handleDesktopStreamWs(req, server!)) ??
-      new Response(null, { status: 101 }),
+      await handleDesktopStreamWs(req, server),
   },
 ];

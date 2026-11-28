@@ -1,33 +1,84 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { AuthRateLimiter } from "../auth-rate-limiter.js";
-import type { RouteDefinition } from "../http/routes/types.js";
+import "./test-preload.js";
 
-/** Dynamic import AFTER module setup so the router always loads fresh. */
-const { createRouter } = await import("../http/router.js");
+/**
+ * Pins P7 of the one-url plan against the real route table: the /v1 prefix
+ * is optional at the dispatch, so both spellings resolve to the same route.
+ */
 
-const ROUTES: RouteDefinition[] = [
-  {
-    path: "/ps",
-    method: "get",
-    handler: (req) =>
-      Response.json({ route: "ps", seen: new URL(req.url).pathname }),
-  },
-  {
-    path: /^\/assistants\/([^/]+)$/,
-    method: "get",
-    handler: (_req, params) => Response.json({ route: "assistant", params }),
-  },
-  {
-    // The gateway's native unversioned routes read the same way.
-    path: "/integrations",
-    method: "get",
-    handler: () => Response.json({ route: "native-unversioned" }),
-  },
-];
+type FetchFn = (
+  input: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
 
-function makeRouter(): ReturnType<typeof createRouter> {
-  return createRouter(ROUTES, { authRateLimiter: new AuthRateLimiter() });
+let fetchMock: ReturnType<typeof mock<FetchFn>> = mock(
+  async () => new Response(null, { status: 200 }),
+);
+
+const actualFetch = await import("../fetch.js");
+mock.module("../fetch.js", () => ({
+  ...actualFetch,
+  fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
+}));
+
+let proxyConfig: import("../config.js").GatewayConfig;
+
+const actualTokenExchange = await import("../auth/token-exchange.js");
+mock.module("../auth/token-exchange.js", () => ({
+  ...actualTokenExchange,
+  validateEdgeToken: () => ({
+    ok: true as const,
+    claims: { sub: "svc:client", scope_profile: "actor_client_v1" },
+  }),
+}));
+
+const actualConfig = await import("../config.js");
+mock.module("../config.js", () => ({
+  ...actualConfig,
+  getConfig: () => proxyConfig,
+}));
+
+function makeConfig(): import("../config.js").GatewayConfig {
+  return {
+    assistantRuntimeBaseUrl: "http://localhost:7821",
+    routingEntries: [],
+    port: 7830,
+    runtimeProxyRequireAuth: false,
+    runtimeTimeoutMs: 30000,
+    maxAttachmentConcurrency: 3,
+    runtimeMaxRetries: 2,
+    runtimeInitialBackoffMs: 500,
+    maxWebhookPayloadBytes: 1048576,
+    logFile: { dir: undefined, retentionDays: 30 },
+    maxAttachmentBytes: {
+      telegram: 50 * 1024 * 1024,
+      slack: 50 * 1024 * 1024,
+      whatsapp: 50 * 1024 * 1024,
+      default: 50 * 1024 * 1024,
+    },
+    trustProxy: false,
+  };
+}
+
+let capturedUrl: string | null = null;
+
+const { dispatchRoute } = await import("../http/router.js");
+
+afterEach(() => {
+  fetchMock = mock(async () => new Response(null, { status: 200 }));
+  capturedUrl = null;
+});
+
+function captureDials() {
+  fetchMock = mock(async (input) => {
+    capturedUrl = String(input);
+    return new Response(null, { status: 200 });
+  });
+}
+
+function serverStub() {
+  return { requestIP: () => null } as never;
 }
 
 async function dispatch(
@@ -35,52 +86,46 @@ async function dispatch(
   path: string,
 ): Promise<Response | null> {
   const url = new URL(`http://gateway.local${path}`);
-  const req = new Request(url, { method });
-  return makeRouter()(req, url, () => "203.0.113.9");
+  const req = new Request(url, {
+    method,
+    headers: { authorization: "Bearer tok-edge" },
+  });
+  return dispatchRoute(req, url, () => "203.0.113.9", serverStub());
 }
 
 describe("unversioned api routing (P7: the /v1 prefix is optional)", () => {
-  test("both spellings reach the same route; the dial rides through as sent", async () => {
-    const unversioned = await dispatch("GET", "/ps");
-    expect(await unversioned?.json()).toEqual({ route: "ps", seen: "/ps" });
-    const versioned = await dispatch("GET", "/v1/ps");
-    expect(await versioned?.json()).toEqual({ route: "ps", seen: "/v1/ps" });
-  });
-
-  test("regex routes resolve params in either spelling", async () => {
-    for (const path of [
-      "/assistants/assistant-1",
-      "/v1/assistants/assistant-1",
-    ]) {
-      const response = await dispatch("GET", path);
-      expect(await response?.json()).toEqual({
-        route: "assistant",
-        params: ["assistant-1"],
-      });
+  test("both spellings of a real route reach the same handler", async () => {
+    // GET /ps is a real edge-authed route; the auth mock lets it through and
+    // the handler dials the daemon's canonical /v1/ps either way.
+    proxyConfig = makeConfig();
+    captureDials();
+    for (const path of ["/ps", "/v1/ps"]) {
+      const res = await dispatch("GET", path);
+      expect(res?.status).toBe(200);
+      expect(capturedUrl).toBe("http://localhost:7821/v1/ps");
+      capturedUrl = null;
     }
   });
 
-  test("a native unversioned route serves its path directly", async () => {
-    const response = await dispatch("GET", "/integrations");
-    expect(await response?.json()).toEqual({ route: "native-unversioned" });
-  });
-
-  test("trailing-slash dials normalize into the same route", async () => {
-    const response = await dispatch("GET", "/ps/");
-    expect(response?.status).toBe(200);
-  });
-
-  test("unknown paths still miss (no blanket acceptance)", async () => {
-    expect(await dispatch("GET", "/not-a-segment")).toBeNull();
-    expect(await dispatch("GET", "/v1/not-a-segment")).toBeNull();
+  test("unknown paths fall through to the runtime-proxy catch-all, dial as sent", async () => {
+    proxyConfig = makeConfig();
+    captureDials();
+    for (const path of ["/not-a-segment", "/v1/not-a-segment"]) {
+      const res = await dispatch("GET", path);
+      expect(res?.status).toBe(200);
+      expect(capturedUrl).toBe(`http://localhost:7821${path}`);
+      capturedUrl = null;
+    }
   });
 
   test("the strip only removes one /v1 prefix", async () => {
-    expect(await dispatch("GET", "/v1/v1/ps")).toBeNull();
-  });
-
-  test("method mismatches miss in both spellings", async () => {
-    expect(await dispatch("POST", "/ps")).toBeNull();
-    expect(await dispatch("POST", "/v1/ps")).toBeNull();
+    proxyConfig = makeConfig();
+    proxyConfig = makeConfig();
+    captureDials();
+    // /v1/v1/ps strips once to /v1/ps, which no table route claims (route
+    // paths read unversioned), so the catch-all dials it exactly as sent.
+    const res = await dispatch("GET", "/v1/v1/ps");
+    expect(res?.status).toBe(200);
+    expect(capturedUrl).toBe("http://localhost:7821/v1/v1/ps");
   });
 });

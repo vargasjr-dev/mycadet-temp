@@ -173,17 +173,9 @@ export const closeWatchStreamWebsocket = (
 
 export const ROUTES: RouteDefinition[] = [
   {
-    path: "/watch/stream",
+    path: /^\/(?:assistants\/([^/]+)\/)?watch\/stream\/?$/,
     upgradesOnly: true,
     handler: async (req, _params, _getClientIp, server) =>
-      (await handleWatchStreamWs(req, server!)) ??
-      new Response(null, { status: 101 }),
-  },
-  {
-    path: /^\/assistants\/([^/]+)\/watch\/stream\/?$/,
-    upgradesOnly: true,
-    handler: async (req, _params, _getClientIp, server) =>
-      (await handleWatchStreamWs(req, server!)) ??
-      new Response(null, { status: 101 }),
+      await handleWatchStreamWs(req, server),
   },
 ];

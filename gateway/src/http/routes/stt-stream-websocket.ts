@@ -160,15 +160,9 @@ export const closeSttStreamWebsocket = (
 
 export const ROUTES: RouteDefinition[] = [
   {
-    path: "/stt/stream",
+    path: /^\/(?:assistants\/([^/]+)\/)?stt\/stream\/?$/,
     upgradesOnly: true,
     handler: (req, _params, _getClientIp, server) =>
-      handleSttStreamWs(req, server!) ?? new Response(null, { status: 101 }),
-  },
-  {
-    path: /^\/assistants\/([^/]+)\/stt\/stream\/?$/,
-    upgradesOnly: true,
-    handler: (req, _params, _getClientIp, server) =>
-      handleSttStreamWs(req, server!) ?? new Response(null, { status: 101 }),
+      handleSttStreamWs(req, server),
   },
 ];

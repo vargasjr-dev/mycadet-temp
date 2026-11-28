@@ -35,9 +35,7 @@ mock.module("../config.js", () => ({
   getConfig: () => proxyConfig,
 }));
 
-const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { createRouter } = await import("../http/router.js");
-const { ROUTES } = await import("../http/routes/index.js");
+const { dispatchRoute } = await import("../http/router.js");
 
 function makeConfig(overrides: Partial<GatewayConfig> = {}): GatewayConfig {
   return {
@@ -69,10 +67,6 @@ afterEach(() => {
   capturedUrl = null;
 });
 
-function makeRouter(): ReturnType<typeof createRouter> {
-  return createRouter(ROUTES, { authRateLimiter: new AuthRateLimiter() });
-}
-
 describe("the runtime-proxy catch-all serves every verb", () => {
   test("a POST the table doesn't mirror forwards to the daemon's flat path", async () => {
     proxyConfig = makeConfig();
@@ -87,7 +81,7 @@ describe("the runtime-proxy catch-all serves every verb", () => {
     const url = new URL(
       "http://gateway.local/v1/assistants/clear-bat-gzpuwp/messages",
     );
-    const response = await makeRouter()(
+    const response = await dispatchRoute(
       new Request(url, {
         method: "POST",
         body: JSON.stringify({ conversationId: "conv-1" }),
@@ -95,6 +89,7 @@ describe("the runtime-proxy catch-all serves every verb", () => {
       }),
       url,
       () => "203.0.113.9",
+      serverStub(),
     );
 
     // The dispatch reached the proxy (not the router's 404 miss) and the
@@ -114,17 +109,16 @@ describe("the runtime-proxy catch-all serves every verb", () => {
     const url = new URL(
       "http://gateway.local/v1/assistants/clear-bat-gzpuwp/messages/queued/q-1",
     );
-    const response = await makeRouter()(
+    const response = await dispatchRoute(
       new Request(url, { method: "DELETE" }),
       url,
       () => "203.0.113.9",
+      serverStub(),
     );
 
     expect(response).not.toBeNull();
     expect(response!.status).toBe(204);
-    expect(capturedUrl).toBe(
-      "http://localhost:7821/v1/messages/queued/q-1",
-    );
+    expect(capturedUrl).toBe("http://localhost:7821/v1/messages/queued/q-1");
   });
 
   test("a GET keeps falling through (the spelling the web has always used)", async () => {
@@ -137,10 +131,11 @@ describe("the runtime-proxy catch-all serves every verb", () => {
     const url = new URL(
       "http://gateway.local/v1/assistants/clear-bat-gzpuwp/messages?conversationId=conv-1",
     );
-    const response = await makeRouter()(
+    const response = await dispatchRoute(
       new Request(url, { method: "GET" }),
       url,
       () => "203.0.113.9",
+      serverStub(),
     );
 
     expect(response).not.toBeNull();
@@ -150,3 +145,6 @@ describe("the runtime-proxy catch-all serves every verb", () => {
     );
   });
 });
+
+/** The router now requires the Bun server; tests don't exercise peer IPs. */
+const serverStub = () => ({ requestIP: () => null }) as never;

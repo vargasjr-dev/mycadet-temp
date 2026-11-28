@@ -397,7 +397,6 @@ export const ROUTES: RouteDefinition[] = [
     path: PLUGIN_WEBHOOK_PATH_PATTERN,
     upgradesOnly: true,
     handler: async (req, params, _getClientIp, server) =>
-      (await handlePluginWebhookWs(req, server!, params[0]!, params[1]!)) ??
-      new Response(null, { status: 101 }),
+      await handlePluginWebhookWs(req, server, params[0]!, params[1]!),
   },
 ];
