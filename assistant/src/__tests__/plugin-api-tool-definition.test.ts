@@ -79,11 +79,15 @@ describe("ToolDefinition (public author-facing tool spec) ", () => {
         return { content: "ok", isError: false };
       },
     };
-    const result = await tool.execute?.({}, {
-      conversationId: "conv-abc",
-      workingDir: "/tmp",
-      signal: new AbortController().signal,
-    } as ToolContext);
+    const result = await tool.execute?.(
+      {},
+      {
+        conversationId: "conv-abc",
+        trustClass: "guardian",
+        workingDir: "/tmp",
+        signal: new AbortController().signal,
+      },
+    );
     expect(result?.isError).toBe(false);
   });
 });

@@ -258,10 +258,15 @@ describe("HeartbeatService", () => {
 
     onBroadcast = (msg) => {
       if (msg.type === "heartbeat_conversation_created") {
-        created.push({
-          conversationId: msg.conversationId as string,
-          title: msg.title as string,
-        });
+        if (
+          typeof msg.conversationId !== "string" ||
+          typeof msg.title !== "string"
+        ) {
+          throw new Error(
+            "Expected the heartbeat event to name the conversation",
+          );
+        }
+        created.push({ conversationId: msg.conversationId, title: msg.title });
         callbackFiredBeforeRunnerResolved = !runnerHasResolved;
       }
     };

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AssistantEventEnvelope } from "../api/index.js";
+import {
+  type AssistantEventEnvelope,
+  AssistantEventEnvelopeSchema,
+} from "../api/index.js";
 import {
   formatSseFrame,
   formatSseHeartbeat,
@@ -71,9 +74,9 @@ describe("formatSseFrame", () => {
   test("data line contains valid JSON matching the event", () => {
     const frame = formatSseFrame(baseEvent);
     const dataLine = frame.split("\n").find((l) => l.startsWith("data: "))!;
-    const parsed = JSON.parse(
-      dataLine.slice("data: ".length),
-    ) as AssistantEventEnvelope;
+    const parsed = AssistantEventEnvelopeSchema.parse(
+      JSON.parse(dataLine.slice("data: ".length)),
+    );
 
     expect(parsed.id).toBe(baseEvent.id);
     expect(parsed.conversationId).toBe(baseEvent.conversationId);

@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 import { setConfig } from "./helpers/set-config.js";
 
@@ -333,7 +334,9 @@ function makeDeps(
   return {
     sendMessageDeps: {
       getOrCreateConversation: async () => conversation,
-      assistantEventHub: { publish: async () => {} } as any,
+      assistantEventHub: Object.assign(new AssistantEventHub(), {
+        publish: async () => {},
+      }),
       resolveAttachments: () => [],
     },
   };
@@ -410,7 +413,7 @@ describe("handleSendMessage slash command interception", () => {
     });
 
     // The failure surfaces to the caller rather than silently 202-ing.
-    let caught: Error | undefined;
+    let caught: unknown;
     try {
       await callHandler(
         (args) => handleSendMessage(args, makeDeps(conversation)),
@@ -419,9 +422,9 @@ describe("handleSendMessage slash command interception", () => {
         202,
       );
     } catch (err) {
-      caught = err as Error;
+      caught = err;
     }
-    expect(caught?.message).toBe("disk full");
+    expect(caught).toMatchObject({ message: "disk full" });
 
     // Regression: without the guard `processing` stays stuck true, leaving
     // every later send queued forever; the queue must also be drained.

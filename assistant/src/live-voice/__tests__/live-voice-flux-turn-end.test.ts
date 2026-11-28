@@ -1595,10 +1595,10 @@ describe("LiveVoiceSession Flux end-of-turn during the STT dial", () => {
   test("a fully parked follow-up retains its guard when the next dial falls back", async () => {
     const abort = mock();
     const options = {
-      providerId: "deepgram-flux" as SttProviderId,
+      providerId: "deepgram-flux",
       fluxConfig: FLUX_ON,
       startVoiceTurn: async () => ({ turnId: "reply-turn", abort }),
-    };
+    } satisfies Parameters<typeof createHarness>[0];
     const { frames, session, transcribers } = createHarness(options);
     try {
       await session.start();

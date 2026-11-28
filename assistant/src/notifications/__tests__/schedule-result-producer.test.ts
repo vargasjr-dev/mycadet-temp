@@ -9,9 +9,12 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
 import type { AttentionState } from "../../persistence/conversation-attention-store.js";
 import type { MessageRow } from "../../persistence/conversation-crud.js";
 import type { ContentBlock } from "../../providers/types.js";
+import { getObjectProperty } from "../../util/object.js";
 
 // ── Module mocks ───────────────────────────────────────────────────────
 //
@@ -168,16 +171,16 @@ function makeAttentionState(
   };
 }
 
-const warnCalls: unknown[] = [];
+const warnCalls: unknown[][] = [];
 const infoCalls: unknown[] = [];
-const rlog = {
+const rlog = Object.assign(pino({ enabled: false }), {
   warn: (...args: unknown[]) => {
     warnCalls.push(args);
   },
   info: (...args: unknown[]) => {
     infoCalls.push(args);
   },
-} as any;
+});
 
 async function run(
   overrides: Partial<Parameters<typeof emitScheduleResultNotification>[0]> = {},
@@ -516,7 +519,8 @@ describe("emitScheduleResultNotification", () => {
     // Asserting the cause, not just that something warned: a re-import that
     // failed for an unrelated reason would also land in the catch.
     expect(warnCalls).toHaveLength(1);
-    expect((warnCalls[0] as any[])[0].err.message).toBe(
+    const loggedError = getObjectProperty(warnCalls[0]?.[0], "err");
+    expect(getObjectProperty(loggedError, "message")).toBe(
       "simulated pipeline failure",
     );
   });

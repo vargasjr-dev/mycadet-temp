@@ -17,33 +17,29 @@ export function installFastTimers(): () => void {
   const realSetTimeout = globalThis.setTimeout;
   const realSetInterval = globalThis.setInterval;
 
-  const fastSetTimeout: typeof setTimeout = ((
-    handler: (...args: unknown[]) => void,
-    _ms?: number,
-    ...args: unknown[]
+  // The microtask has no native timer to cancel. Return an inert handle for
+  // code that clears the timer or calls methods such as unref().
+  const handle = realSetTimeout(() => {}, 0);
+  clearTimeout(handle);
+  const runOnNextMicrotask = (
+    _target: typeof realSetTimeout | typeof realSetInterval,
+    _receiver: unknown,
+    [handler, , ...args]: Parameters<typeof realSetTimeout>,
   ) => {
-    Promise.resolve().then(() =>
-      typeof handler === "function" ? handler(...args) : undefined,
-    );
-    return 0 as unknown as ReturnType<typeof setTimeout>;
-  }) as typeof setTimeout;
+    if (typeof handler === "function") {
+      void Promise.resolve().then(() => handler(...args));
+    }
+    return handle;
+  };
 
-  const fastSetInterval: typeof setInterval = ((
-    handler: (...args: unknown[]) => void,
-    _ms?: number,
-    ...args: unknown[]
-  ) => {
-    // Intervals in accelerated time still fire, but only once per await —
-    // repeated firings come from whoever re-arms or polls. Tests that need
-    // true repetition should not use fast timers.
-    Promise.resolve().then(() =>
-      typeof handler === "function" ? handler(...args) : undefined,
-    );
-    return 0 as unknown as ReturnType<typeof setInterval>;
-  }) as typeof setInterval;
-
-  globalThis.setTimeout = fastSetTimeout;
-  globalThis.setInterval = fastSetInterval;
+  globalThis.setTimeout = new Proxy<typeof realSetTimeout>(realSetTimeout, {
+    apply: runOnNextMicrotask,
+  });
+  // An accelerated interval fires once. Tests that need true repetition
+  // should use the native clock.
+  globalThis.setInterval = new Proxy<typeof realSetInterval>(realSetInterval, {
+    apply: runOnNextMicrotask,
+  });
 
   return () => {
     globalThis.setTimeout = realSetTimeout;

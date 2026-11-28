@@ -960,29 +960,26 @@ export async function embedWithBackend(
         : undefined;
 
   // ── In-memory cache check (primary provider only) ──────────────
-  const cached: (number[] | null)[] = inputs.map((input) => {
-    const v = getFromVectorCache(
+  const cached = new Array<number[]>(inputs.length);
+  const uncachedIndices: number[] = [];
+  for (const [index, input] of inputs.entries()) {
+    const vector = getFromVectorCache(
       primaryProvider,
       primaryModel,
       input,
       vectorExtras,
     );
-    if (v && v.length === expectedDim) {
-      return v;
-    }
-    return null;
-  });
-  const uncachedIndices: number[] = [];
-  for (let i = 0; i < cached.length; i++) {
-    if (!cached[i]) {
-      uncachedIndices.push(i);
+    if (vector && vector.length === expectedDim) {
+      cached[index] = vector;
+    } else {
+      uncachedIndices.push(index);
     }
   }
   if (uncachedIndices.length === 0) {
     return {
       provider: primaryProvider,
       model: primaryModel,
-      vectors: cached as number[][],
+      vectors: cached,
     };
   }
 
@@ -1046,14 +1043,13 @@ export async function embedWithBackend(
       recordBillingSuccess();
 
       if (isPrimary) {
-        const merged = [...cached] as number[][];
         for (let i = 0; i < uncachedIndices.length; i++) {
-          merged[uncachedIndices[i]] = vectors[i];
+          cached[uncachedIndices[i]] = vectors[i];
         }
         return {
           provider: backend.provider,
           model: backend.model,
-          vectors: merged,
+          vectors: cached,
         };
       }
       return { provider: backend.provider, model: backend.model, vectors };

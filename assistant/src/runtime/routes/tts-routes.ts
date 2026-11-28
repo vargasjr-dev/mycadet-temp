@@ -52,7 +52,10 @@ function resolveTtsContentType(): string {
     const { provider, providerConfig } = resolveTtsConfig(config);
 
     if (provider === "fish-audio") {
-      const format = (providerConfig.format as string) ?? "mp3";
+      const format =
+        typeof providerConfig.format === "string"
+          ? providerConfig.format
+          : "mp3";
       return FISH_FORMAT_CONTENT_TYPE[format] ?? "audio/mpeg";
     }
 

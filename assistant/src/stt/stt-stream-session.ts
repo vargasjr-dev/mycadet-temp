@@ -44,7 +44,6 @@ import { getLogger } from "../util/logger.js";
 import { normalizeSttError } from "./daemon-batch-transcriber.js";
 import {
   type StreamingTranscriber,
-  type SttProviderId,
   type SttStreamServerEvent,
 } from "./types.js";
 
@@ -245,7 +244,7 @@ export class SttStreamSession {
       this.sendEvent({
         type: "error",
         category: sttErr.category,
-        message: describeSttFailure(sttErr, this.provider as SttProviderId),
+        message: describeSttFailure(sttErr, this.provider),
       });
       this.sendEvent({ type: "closed" });
       this.state = "closed";

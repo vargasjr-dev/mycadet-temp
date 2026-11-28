@@ -47,16 +47,17 @@ const WELL_FORMED = {
   ],
 } as const;
 
-const context = {} as ToolContext;
+const context: ToolContext = {
+  conversationId: "watch-retro-test",
+  workingDir: "/tmp",
+  trustClass: "guardian",
+};
 
-async function report(input: unknown): Promise<{
+async function report(input: Record<string, unknown>): Promise<{
   content: string;
   isError: boolean | undefined;
 }> {
-  const result = await executeWatchRetroReport(
-    input as Record<string, unknown>,
-    context,
-  );
+  const result = await executeWatchRetroReport(input, context);
   return { content: result.content, isError: result.isError };
 }
 

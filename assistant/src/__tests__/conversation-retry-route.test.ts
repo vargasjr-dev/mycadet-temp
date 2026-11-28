@@ -192,12 +192,19 @@ function makeConversation(opts: { processing?: boolean } = {}) {
     (_phase: string, _reason: string, _options?: unknown) => {},
   );
   const invalidateAllStructuralWaits = mock(() => 0);
+  const turn: {
+    currentRequestId?: string;
+    currentTurnSourceActorPrincipalId?: string;
+    abortController: AbortController | null;
+  } = {
+    currentRequestId: undefined,
+    currentTurnSourceActorPrincipalId: undefined,
+    abortController: null,
+  };
   const conversation = {
     conversationId: "conv-retry-test",
     trustContext: undefined,
-    currentRequestId: undefined as string | undefined,
-    currentTurnSourceActorPrincipalId: undefined as string | undefined,
-    abortController: null as AbortController | null,
+    ...turn,
     isProcessing: () => processing,
     setProcessing,
     setTrustContext,

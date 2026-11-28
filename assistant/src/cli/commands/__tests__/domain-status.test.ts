@@ -7,16 +7,24 @@
  *   - unknown subdomain shows helpful message
  *   - error responses are surfaced correctly
  */
-
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
+
+import type { CliIpcCallResult } from "../../../ipc/cli-client.js";
 
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
 
-let mockIpcCallFn = mock(() => Promise.resolve({ ok: true, result: {} }));
+type IpcHandler = (
+  method: string,
+  ...args: unknown[]
+) => Promise<CliIpcCallResult>;
+
+let mockIpcCallFn = mock<IpcHandler>(() =>
+  Promise.resolve({ ok: true, result: {} }),
+);
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before importing the module under test
@@ -35,7 +43,9 @@ mock.module("../../../ipc/cli-client.js", () => ({
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  mockIpcCallFn = mock(() => Promise.resolve({ ok: true, result: {} }));
+  mockIpcCallFn = mock<IpcHandler>(() =>
+    Promise.resolve({ ok: true, result: {} }),
+  );
   process.exitCode = 0;
 });
 
@@ -83,7 +93,7 @@ async function runDomainCommand(...args: string[]) {
 // ---------------------------------------------------------------------------
 
 function mockDomainStatusWithVerification() {
-  mockIpcCallFn = mock((method: string) => {
+  mockIpcCallFn = mock<IpcHandler>((method: string) => {
     if (method === "domain_status") {
       return Promise.resolve({
         ok: true,
@@ -109,7 +119,7 @@ function mockDomainStatusWithVerification() {
         message: "DNS records have been verified.",
       },
     });
-  }) as unknown as typeof mockIpcCallFn;
+  });
 }
 
 describe("assistant domain status", () => {
@@ -139,7 +149,7 @@ describe("assistant domain status", () => {
   });
 
   test("no domain registered shows helpful message", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: true,
         result: { results: [] },
@@ -151,13 +161,13 @@ describe("assistant domain status", () => {
   });
 
   test("IPC error with --json outputs error envelope", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: false,
         error: "Service unavailable",
         statusCode: 503,
       }),
-    ) as unknown as typeof mockIpcCallFn;
+    );
 
     const output = await runDomainCommand(
       "domain",
@@ -172,13 +182,13 @@ describe("assistant domain status", () => {
   });
 
   test("IPC error without --json calls exitFromIpcResult", async () => {
-    mockIpcCallFn = mock(() =>
+    mockIpcCallFn = mock<IpcHandler>(() =>
       Promise.resolve({
         ok: false,
         error: "Platform credentials not configured",
         statusCode: 401,
       }),
-    ) as unknown as typeof mockIpcCallFn;
+    );
 
     await runDomainCommand("domain", "status", "becky");
     expect(process.exitCode).not.toBe(0);

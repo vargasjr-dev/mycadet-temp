@@ -74,7 +74,7 @@ const PROVIDER_MODEL_INTENTS: Record<string, Record<ModelIntent, string>> = {
 
 const FALLBACK_DEFAULT_MODEL = "claude-opus-4-8";
 
-const MODEL_INTENTS = new Set<ModelIntent>([
+const MODEL_INTENTS: ReadonlySet<string> = new Set<ModelIntent>([
   "balanced",
   "cost-optimized",
   "latency-optimized",
@@ -115,7 +115,7 @@ for (const [intent, modelId] of Object.entries(PROVIDER_MODEL_INTENTS.openai)) {
 }
 
 export function isModelIntent(value: unknown): value is ModelIntent {
-  return typeof value === "string" && MODEL_INTENTS.has(value as ModelIntent);
+  return typeof value === "string" && MODEL_INTENTS.has(value);
 }
 
 export function getProviderDefaultModel(providerName: string): string {

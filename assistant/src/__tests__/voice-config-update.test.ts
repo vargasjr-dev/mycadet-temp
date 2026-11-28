@@ -72,10 +72,11 @@ function readConfig() {
 function makeContext(overrides?: Partial<ToolContext>): ToolContext {
   return {
     conversationId: "test-conv",
-    turnId: "test-turn",
+    trustClass: "guardian",
+    workingDir: "/tmp",
     sendToClient: overrides?.sendToClient ?? (() => {}),
     ...overrides,
-  } as ToolContext;
+  };
 }
 
 // ---------------------------------------------------------------------------
