@@ -24,8 +24,16 @@ html:has(.docs-shell) {
   color: var(--docs-text);
 }
 
-/* Dev twin: the docs accent goes pink the same way the marketing chrome
- * does (deeper on light for legibility, the icon pink on dark). */
+/* ── Environment brand ──────────────────────────────────────────────
+ * Each non-production environment's chrome wears the ground color its
+ * platform icon build wears (the desktop icon READMEs' sRGB table):
+ * dev pink #FF88C9, staging yellow #E9C91A, test info blue #467CC8,
+ * local teal #0E9B8B. On light grounds the accent deepens for
+ * legibility; on dark it reads as the ground itself. Filled buttons on
+ * the light grounds (yellow, pink) carry the logo's near-black instead
+ * of white; blue and teal keep white. `test` has no icon precedent yet
+ * — it borrows the design library's info blue.
+ */
 [data-env="dev"] .docs-shell {
   --docs-accent: #d6408e;
   --docs-accent-strong: #b93a7b;
@@ -40,6 +48,54 @@ html:has(.docs-shell) {
 
 [data-env="dev"].dark .docs-nav-cta {
   color: #101010 !important;
+}
+
+[data-env="staging"] .docs-shell {
+  --docs-accent: #a98606;
+  --docs-accent-strong: #8c6e05;
+  --docs-accent-soft: rgba(169, 134, 6, 0.12);
+}
+
+[data-env="staging"].dark .docs-shell {
+  --docs-accent: #e9c91a;
+  --docs-accent-strong: #c9ac0f;
+  --docs-accent-soft: rgba(233, 201, 26, 0.15);
+}
+
+[data-env="staging"].dark .docs-nav-cta {
+  color: #101010 !important;
+}
+
+[data-env="test"] .docs-shell {
+  --docs-accent: #3d6fb5;
+  --docs-accent-strong: #33619f;
+  --docs-accent-soft: rgba(61, 111, 181, 0.12);
+}
+
+[data-env="test"].dark .docs-shell {
+  --docs-accent: #6c99da;
+  --docs-accent-strong: #5587cf;
+  --docs-accent-soft: rgba(108, 153, 218, 0.15);
+}
+
+[data-env="test"].dark .docs-nav-cta {
+  color: #ffffff !important;
+}
+
+[data-env="local"] .docs-shell {
+  --docs-accent: #0b7a6e;
+  --docs-accent-strong: #096458;
+  --docs-accent-soft: rgba(11, 122, 110, 0.12);
+}
+
+[data-env="local"].dark .docs-shell {
+  --docs-accent: #17b3a2;
+  --docs-accent-strong: #109e90;
+  --docs-accent-soft: rgba(23, 179, 162, 0.15);
+}
+
+[data-env="local"].dark .docs-nav-cta {
+  color: #ffffff !important;
 }
 
 .dark .docs-shell {

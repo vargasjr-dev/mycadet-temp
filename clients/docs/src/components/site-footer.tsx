@@ -34,6 +34,7 @@ const COLUMNS: Array<{
       { label: "Download", href: "/downloads" },
       { label: "Pricing", href: "/pricing" },
       { label: "Plugins", href: "/plugins" },
+      { label: "Roadmap", href: "/roadmap" },
     ],
   },
   {

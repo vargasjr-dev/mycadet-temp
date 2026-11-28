@@ -32,9 +32,16 @@
   color: var(--green);
 }
 
-/* Dev twin: the production green gives way to the dev pink — a deeper
- * pink on light grounds for legibility, the icon pink on dark. Filled
- * buttons on the icon pink carry the logo's near-black instead of white. */
+/* ── Environment brand ──────────────────────────────────────────────
+ * Each non-production environment's chrome wears the ground color its
+ * platform icon build wears (the desktop icon READMEs' sRGB table):
+ * dev pink #FF88C9, staging yellow #E9C91A, test info blue #467CC8,
+ * local teal #0E9B8B. On light grounds the accent deepens for
+ * legibility; on dark it reads as the ground itself. Filled buttons on
+ * the light grounds (yellow, pink) carry the logo's near-black instead
+ * of white; blue and teal keep white. `test` has no icon precedent yet
+ * — it borrows the design library's info blue.
+ */
 [data-env="dev"] .marketing {
   --green: #d6408e;
   --green-dark: #b93a7b;
@@ -47,6 +54,48 @@
 
 [data-env="dev"].dark .marketing .btn {
   color: #101010;
+}
+
+[data-env="staging"] .marketing {
+  --green: #a98606;
+  --green-dark: #8c6e05;
+}
+
+[data-env="staging"].dark .marketing {
+  --green: #e9c91a;
+  --green-dark: #c9ac0f;
+}
+
+[data-env="staging"].dark .marketing .btn {
+  color: #101010;
+}
+
+[data-env="test"] .marketing {
+  --green: #3d6fb5;
+  --green-dark: #33619f;
+}
+
+[data-env="test"].dark .marketing {
+  --green: #6c99da;
+  --green-dark: #5587cf;
+}
+
+[data-env="test"].dark .marketing .btn {
+  color: #ffffff;
+}
+
+[data-env="local"] .marketing {
+  --green: #0b7a6e;
+  --green-dark: #096458;
+}
+
+[data-env="local"].dark .marketing {
+  --green: #17b3a2;
+  --green-dark: #109e90;
+}
+
+[data-env="local"].dark .marketing .btn {
+  color: #ffffff;
 }
 
 /* ── Buttons ── */

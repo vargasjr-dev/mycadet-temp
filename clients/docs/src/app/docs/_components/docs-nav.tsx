@@ -141,11 +141,6 @@ const NAV_ITEMS: DocsNavItem[] = [
         icon: icon(Scroll),
       },
       {
-        label: "Roadmap",
-        href: "/roadmap",
-        icon: icon(Calendar),
-      },
-      {
         label: "Glossary",
         href: "/docs/glossary",
         icon: icon(Book),
