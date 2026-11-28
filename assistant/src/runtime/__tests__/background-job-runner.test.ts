@@ -308,11 +308,11 @@ describe("runBackgroundJob", () => {
       "model_provider",
     );
     // A provider-scoped failure code keys the notification on the cause and
-    // the resolved provider scope, not the job. `heartbeatAgent` resolves the
-    // cost-optimized default profile, so every job failing on this code
-    // through that route collapses into one notification per UTC day.
+    // the resolved provider scope, not the job. Unpinned call sites inherit
+    // the balanced anchor, so every job failing on this code through that
+    // route collapses into one notification per UTC day.
     expect(capturedStringSchema.parse(emitCalls[0].dedupeKey)).toMatch(
-      /^activity-failed:cause:PROVIDER_BILLING:cost-optimized:\d{4}-\d{2}-\d{2}$/,
+      /^activity-failed:cause:PROVIDER_BILLING:balanced:\d{4}-\d{2}-\d{2}$/,
     );
   });
 
@@ -387,7 +387,7 @@ describe("runBackgroundJob", () => {
     expect(result.errorKind).toBe("model_provider");
     expect(emitCalls).toHaveLength(1);
     expect(capturedStringSchema.parse(emitCalls[0].dedupeKey)).toMatch(
-      /^activity-failed:cause:model_provider:cost-optimized:\d{4}-\d{2}-\d{2}$/,
+      /^activity-failed:cause:model_provider:balanced:\d{4}-\d{2}-\d{2}$/,
     );
   });
 

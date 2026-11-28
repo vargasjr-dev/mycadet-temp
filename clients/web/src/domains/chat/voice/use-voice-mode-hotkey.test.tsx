@@ -210,13 +210,12 @@ describe("useVoiceModeHotkey", () => {
   });
 
   describe("bare-modifier taps on the Windows desktop host", () => {
+    const realPlatform = navigator.platform;
     const setHostOS = (hostOS: string | undefined) => {
-      const w = window as unknown as { cadet?: { hostOS?: string } };
-      if (hostOS === undefined) {
-        delete w.cadet;
-      } else {
-        w.cadet = { hostOS };
-      }
+      Object.defineProperty(navigator, "platform", {
+        value: hostOS === "windows" ? "Win32" : realPlatform,
+        configurable: true,
+      });
     };
 
     afterEach(() => {
