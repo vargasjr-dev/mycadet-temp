@@ -570,7 +570,8 @@
   },
   "routeErrorBoundary": {
     "chunkFailBody": "This section couldn't load. Likely a network blip or a stale version. Reload the page to try again.",
-    "reload": "Reload"
+    "reload": "Reload",
+    "chooseAssistant": "Choose an assistant"
   },
   "runtimeUpgradeBanner": {
     "confirmMessage": "Update to version {version}? The assistant will be briefly unavailable during the update.",

@@ -569,7 +569,8 @@
   },
   "routeErrorBoundary": {
     "chunkFailBody": "此區段無法載入。可能是網路瞬斷或版本過舊。請重新載入頁面再試一次。",
-    "reload": "重新載入"
+    "reload": "重新載入",
+    "chooseAssistant": "選擇一個助理"
   },
   "runtimeUpgradeBanner": {
     "confirmMessage": "更新至版本 {version}？更新期間助理將暫時無法使用。",

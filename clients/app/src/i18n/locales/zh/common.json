@@ -569,7 +569,8 @@
   },
   "routeErrorBoundary": {
     "chunkFailBody": "此部分无法加载。可能是网络故障或版本过旧。请重新加载页面重试。",
-    "reload": "重新加载"
+    "reload": "重新加载",
+    "chooseAssistant": "选择一个助手"
   },
   "runtimeUpgradeBanner": {
     "confirmMessage": "更新到版本 {version}？更新期间助手将暂时不可用。",
