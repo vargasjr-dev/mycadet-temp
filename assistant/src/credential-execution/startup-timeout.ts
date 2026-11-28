@@ -1,11 +1,9 @@
-import { CesRpcClient as CesClient } from "@mycadet/ces-client/rpc-client";
-
 export const DEFAULT_CES_STARTUP_TIMEOUT_MS = 20_000;
 
-export async function awaitCesClientWithTimeout(
-  clientPromise: Promise<CesClient | undefined>,
+export async function awaitCesClientWithTimeout<T>(
+  clientPromise: Promise<T | undefined>,
   options: { timeoutMs?: number; onTimeout?: () => void } = {},
-): Promise<CesClient | undefined> {
+): Promise<T | undefined> {
   const { timeoutMs = DEFAULT_CES_STARTUP_TIMEOUT_MS, onTimeout = () => {} } =
     options;
 

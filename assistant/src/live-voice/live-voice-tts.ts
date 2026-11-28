@@ -86,7 +86,7 @@ export async function streamLiveVoiceTtsAudio(
   const voiceId =
     options.voiceId ??
     resolveLanguageVoiceOverride(
-      providerConfig.languageVoices as Record<string, string> | undefined,
+      providerConfig.languageVoices,
       options.language,
     );
   const useCase = options.useCase ?? "phone-call";

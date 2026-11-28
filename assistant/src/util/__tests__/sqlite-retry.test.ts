@@ -9,8 +9,7 @@ import { isRetryableSqliteError, withSqliteRetry } from "../sqlite-retry.js";
 
 function sqliteError(code: string): Error {
   const err = new Error(code);
-  (err as Error & { code: string }).code = code;
-  return err;
+  return Object.assign(err, { code });
 }
 
 describe("isRetryableSqliteError", () => {

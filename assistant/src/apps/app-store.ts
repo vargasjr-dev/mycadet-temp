@@ -41,6 +41,7 @@ import { rawAll } from "../persistence/raw-query.js";
 import { isPluginDisabled } from "../plugins/disabled-state.js";
 import { getDataDir, getWorkspacePluginsDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { isPlainObject } from "../util/object.js";
 import { isObjectRecord } from "../util/object.js";
 import { hasPluginManifest } from "../util/plugin-manifest.js";
 
@@ -151,13 +152,15 @@ export function inlineDistAssets(appDir: string, html: string): string {
   return html;
 }
 
-export interface AppRecord {
-  id: string;
-  appId: string;
-  data: Record<string, unknown>;
-  createdAt: number;
-  updatedAt: number;
-}
+const appRecordSchema = z.looseObject({
+  id: z.string(),
+  appId: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+
+export type AppRecord = z.infer<typeof appRecordSchema>;
 
 function validateId(id: string): void {
   if (
@@ -1015,7 +1018,7 @@ export function getAppRecord(
     return null;
   }
   const raw = readFileSync(filePath, "utf-8");
-  return JSON.parse(raw) as AppRecord;
+  return appRecordSchema.parse(JSON.parse(raw));
 }
 
 export function queryAppRecords(appId: string): AppRecord[] {
@@ -1032,7 +1035,7 @@ export function queryAppRecords(appId: string): AppRecord[] {
     }
     try {
       const raw = readFileSync(join(recordsDir, entry), "utf-8");
-      records.push(JSON.parse(raw) as AppRecord);
+      records.push(appRecordSchema.parse(JSON.parse(raw)));
     } catch {
       // skip malformed files
     }
@@ -1212,13 +1215,19 @@ export function addAppConversationId(
   // chain with no async gaps, Node/Bun's single-threaded event loop
   // guarantees no interleaving between the read and the write.
   const raw = readFileSync(jsonPath, "utf-8");
-  const parsed = JSON.parse(raw) as Record<string, unknown>;
-  const onDiskIds = Array.isArray(parsed.conversationIds)
-    ? (parsed.conversationIds as string[])
+  const rawApp: unknown = JSON.parse(raw);
+  if (!isPlainObject(rawApp)) {
+    return false;
+  }
+  const parsed = rawApp;
+  const onDiskIds: unknown[] = Array.isArray(parsed.conversationIds)
+    ? parsed.conversationIds
     : [];
   // An absent list means the record holds only direct associations.
-  const onDiskInherited = Array.isArray(parsed.inheritedConversationIds)
-    ? (parsed.inheritedConversationIds as string[])
+  const onDiskInherited: unknown[] = Array.isArray(
+    parsed.inheritedConversationIds,
+  )
+    ? parsed.inheritedConversationIds
     : [];
   const inherited = options?.inherited === true;
 

@@ -25,3 +25,10 @@ export function resolveBundledCliModule<K extends keyof BundledCliModules>(
 ): BundledCliModules[K] {
   return bundledCliModules?.[name] ?? fallback();
 }
+
+export async function importBundledCliModule<K extends keyof BundledCliModules>(
+  name: K,
+  fallback: () => Promise<BundledCliModules[K]>,
+): Promise<BundledCliModules[K]> {
+  return bundledCliModules?.[name] ?? fallback();
+}

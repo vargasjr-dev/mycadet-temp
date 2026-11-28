@@ -56,7 +56,10 @@ const SLOW_STREAM_FIXTURE_ROUTE = {
   // socket first, exercising the sendStreamingResponse early-return path.
   handler: async (params: Record<string, unknown> | undefined) => {
     slowStreamAborted = false;
-    const signal = (params as { abortSignal?: AbortSignal })?.abortSignal;
+    const signal =
+      params?.abortSignal instanceof AbortSignal
+        ? params.abortSignal
+        : undefined;
     signal?.addEventListener(
       "abort",
       () => {
@@ -86,7 +89,10 @@ const CANCEL_FIXTURE_ROUTE = {
   // test can call abort() and verify the signal is delivered to the handler.
   handler: async (params: Record<string, unknown> | undefined) => {
     cancelAborted = false;
-    const signal = (params as { abortSignal?: AbortSignal })?.abortSignal;
+    const signal =
+      params?.abortSignal instanceof AbortSignal
+        ? params.abortSignal
+        : undefined;
     return {
       stream: new ReadableStream<Uint8Array>({
         start(ctrl) {

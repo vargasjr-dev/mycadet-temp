@@ -4,7 +4,6 @@
  * Runs in the same process as the daemon. Always started on the
  * configured port (default: 7821).
  */
-
 import type { ServerWebSocket } from "bun";
 
 import {
@@ -59,6 +58,7 @@ import {
   startTelegramWebhookHealthSweep,
   stopTelegramWebhookHealthSweep,
 } from "../telegram/webhook-health.js";
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 import {
   authenticateRequest,
@@ -1163,7 +1163,7 @@ export async function startRuntimeHttpServer(): Promise<void> {
       "Daemon startup: runtime HTTP server listening",
     );
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "EADDRINUSE") {
+    if (getErrorCode(err) === "EADDRINUSE") {
       log.error(
         { err, port, hostname },
         "Runtime HTTP port already in use, aborting startup to avoid an HTTP-blind daemon",

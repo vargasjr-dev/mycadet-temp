@@ -98,8 +98,8 @@ export function rawExec(sql: string): void {
  * Useful after a Drizzle `.run()` call, since Drizzle's bun:sqlite adapter
  * returns void and discards the changes count.
  */
-export function rawChanges(): number {
-  return getSqlite().query<{ c: number }, []>("SELECT changes() AS c").get()!.c;
+export function rawChanges(sqlite = getSqlite()): number {
+  return sqlite.query<{ c: number }, []>("SELECT changes() AS c").get()!.c;
 }
 
 // ---------------------------------------------------------------------------

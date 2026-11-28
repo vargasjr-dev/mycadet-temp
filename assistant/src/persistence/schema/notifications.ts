@@ -130,6 +130,18 @@ export const notificationDeliveries = sqliteTable(
   ],
 );
 
+const ATTENTION_SIGNAL_TYPES = [
+  "macos_notification_view",
+  "macos_conversation_opened",
+  "ios_conversation_opened",
+  "web_bulk_mark_read",
+  "telegram_inbound_message",
+  "telegram_callback",
+  "slack_inbound_message",
+  "slack_callback",
+] as const;
+const ATTENTION_CONFIDENCES = ["explicit", "inferred"] as const;
+
 export const conversationAttentionEvents = sqliteTable(
   "conversation_attention_events",
   {
@@ -138,8 +150,8 @@ export const conversationAttentionEvents = sqliteTable(
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
     sourceChannel: text("source_channel").notNull(),
-    signalType: text("signal_type").notNull(),
-    confidence: text("confidence").notNull(),
+    signalType: text("signal_type", { enum: ATTENTION_SIGNAL_TYPES }).notNull(),
+    confidence: text("confidence", { enum: ATTENTION_CONFIDENCES }).notNull(),
     source: text("source").notNull(),
     evidenceText: text("evidence_text"),
     metadataJson: text("metadata_json").notNull().default("{}"),
@@ -170,8 +182,12 @@ export const conversationAssistantAttentionState = sqliteTable(
     lastSeenAssistantMessageId: text("last_seen_assistant_message_id"),
     lastSeenAssistantMessageAt: integer("last_seen_assistant_message_at"),
     lastSeenEventAt: integer("last_seen_event_at"),
-    lastSeenConfidence: text("last_seen_confidence"),
-    lastSeenSignalType: text("last_seen_signal_type"),
+    lastSeenConfidence: text("last_seen_confidence", {
+      enum: ATTENTION_CONFIDENCES,
+    }),
+    lastSeenSignalType: text("last_seen_signal_type", {
+      enum: ATTENTION_SIGNAL_TYPES,
+    }),
     lastSeenSourceChannel: text("last_seen_source_channel"),
     lastSeenSource: text("last_seen_source"),
     lastSeenEvidenceText: text("last_seen_evidence_text"),

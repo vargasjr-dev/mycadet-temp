@@ -257,11 +257,11 @@ describe("ContextWindowManager.reduceOverflowOneRung", () => {
     // constructor-time budget snapshot
     estimateReturns.push(240_000);
     reduceSteps = [makeStep(["emergency_compaction"])];
-    const resolvedTools = [
-      { name: "a" },
-      { name: "b" },
-      { name: "c" },
-    ] as unknown as ToolDefinition[];
+    const resolvedTools: ToolDefinition[] = ["a", "b", "c"].map((name) => ({
+      name,
+      description: name,
+      input_schema: { type: "object", properties: {} },
+    }));
     const manager = new ContextWindowManager({
       provider: makeProvider(),
       config: makeConfig(),

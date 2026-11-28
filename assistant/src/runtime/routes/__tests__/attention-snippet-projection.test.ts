@@ -3,11 +3,11 @@
  * the assistant row's own text: the newest row with content wins, walking
  * back over content-less rows inside the turn.
  */
-
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import type { MessageRow } from "../../../persistence/conversation-crud.js";
 import * as conversationCrud from "../../../persistence/conversation-crud.js";
+import type { ContentBlock } from "../../../providers/types.js";
 import { resolveAssistantSnippet } from "../conversation-attention-routes.js";
 
 let rows: MessageRow[] = [];
@@ -15,7 +15,7 @@ const spies: Array<{ mockRestore: () => void }> = [];
 
 function row(
   id: string,
-  content: unknown[],
+  content: ContentBlock[],
   metadata: string | null = null,
 ): MessageRow {
   return {
@@ -25,7 +25,9 @@ function row(
     content,
     createdAt: Date.now(),
     metadata,
-  } as unknown as MessageRow;
+    clientMessageId: null,
+    finalized: 1,
+  };
 }
 
 beforeEach(() => {

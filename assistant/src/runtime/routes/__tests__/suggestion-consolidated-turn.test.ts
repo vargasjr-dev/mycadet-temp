@@ -12,12 +12,12 @@
  * The real renderer and the real consolidation run here; only the two row
  * reads are stubbed.
  */
-
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import type { MessageRow } from "../../../persistence/conversation-crud.js";
 import * as conversationCrud from "../../../persistence/conversation-crud.js";
 import * as conversationKeyStore from "../../../persistence/conversation-key-store.js";
+import type { ContentBlock } from "../../../providers/types.js";
 import { handleGetSuggestion } from "../conversation-routes.js";
 
 const PRIVATE = JSON.stringify({ assistantTextVisibility: "private" });
@@ -28,7 +28,7 @@ const spies: Array<{ mockRestore: () => void }> = [];
 function row(
   id: string,
   role: string,
-  content: unknown[],
+  content: ContentBlock[],
   metadata: string | null = null,
 ): MessageRow {
   return {
@@ -37,16 +37,16 @@ function row(
     role,
     content,
     createdAt: Date.now(),
-    displayOrder: 0,
-    seen: 1,
     metadata,
-  } as unknown as MessageRow;
+    clientMessageId: null,
+    finalized: 1,
+  };
 }
 
-const text = (value: string): unknown[] => [{ type: "text", text: value }];
+const text = (value: string): ContentBlock[] => [{ type: "text", text: value }];
 
 /** What a gated turn's first row holds: private notes plus the delivered call. */
-const gatedCall = (notes: string, message: string): unknown[] => [
+const gatedCall = (notes: string, message: string): ContentBlock[] => [
   { type: "text", text: notes },
   {
     type: "tool_use",
@@ -68,7 +68,12 @@ beforeEach(() => {
       () => ({ id: "conv-1", source: "user" }) as never,
     ),
     spyOn(conversationKeyStore, "getConversationByKey").mockImplementation(
-      () => ({ conversationId: "conv-1" }) as never,
+      (conversationKey) => ({
+        id: "mapping-1",
+        conversationKey,
+        conversationId: "conv-1",
+        createdAt: 0,
+      }),
     ),
   );
 });

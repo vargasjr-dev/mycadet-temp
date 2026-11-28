@@ -90,7 +90,7 @@ function isAssetCancelled(assetId: string): boolean {
   if (!asset) {
     return true;
   }
-  return (asset.status as string) === "cancelled";
+  return asset.status === "cancelled";
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ export async function runPipeline(
   }
 
   // Check if asset is already cancelled before forcing processing
-  if ((asset.status as string) === "cancelled") {
+  if (asset.status === "cancelled") {
     return {
       assetId,
       completedStages: [],

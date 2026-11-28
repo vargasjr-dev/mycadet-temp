@@ -1,3 +1,9 @@
+import type {
+  memoryGraphEdges,
+  memoryGraphNodes,
+  memoryGraphTriggers,
+} from "../../../../persistence/schema/memory-graph.js";
+
 // ---------------------------------------------------------------------------
 // Memory Graph — Core type definitions
 // ---------------------------------------------------------------------------
@@ -14,7 +20,7 @@ export type MemoryType =
   | "shared"; // memories that belong to a relationship, not either party
 
 /** How detailed the memory is — degrades over time via consolidation. */
-export type Fidelity = "vivid" | "clear" | "faded" | "gist" | "gone";
+export type Fidelity = typeof memoryGraphNodes.$inferSelect.fidelity;
 
 /** Shape of emotional intensity decay over time. */
 export type DecayCurve =
@@ -24,11 +30,7 @@ export type DecayCurve =
   | "permanent"; // no decay (core identity markers)
 
 /** How the memory was originally acquired. */
-export type SourceType =
-  | "direct" // user explicitly stated it
-  | "inferred" // assistant derived it from context
-  | "observed" // assistant noticed a pattern
-  | "told-by-other"; // third party provided it
+export type SourceType = typeof memoryGraphNodes.$inferSelect.sourceType; // third party provided it
 
 /** Reference to an image stored in a conversation message. */
 export interface ImageRef {
@@ -196,13 +198,7 @@ export function capabilityKind(node: MemoryNode): CapabilityKind | null {
 
 /** Relationship type between two memory nodes. */
 export type EdgeRelationship =
-  | "caused-by"
-  | "reminds-of"
-  | "contradicts"
-  | "depends-on"
-  | "part-of"
-  | "supersedes"
-  | "resolved-by";
+  typeof memoryGraphEdges.$inferSelect.relationship;
 
 export interface MemoryEdge {
   id: string;
@@ -216,7 +212,7 @@ export interface MemoryEdge {
 }
 
 /** Trigger type determines how the trigger condition is evaluated. */
-export type TriggerType = "temporal" | "semantic" | "event";
+export type TriggerType = typeof memoryGraphTriggers.$inferSelect.type;
 
 export interface MemoryTrigger {
   id: string;

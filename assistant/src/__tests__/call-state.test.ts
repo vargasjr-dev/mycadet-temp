@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import type { CallController } from "../calls/call-controller.js";
+import { CallController } from "../calls/call-controller.js";
 import {
   fireCallCompletionNotifier,
   fireCallQuestionNotifier,
@@ -15,6 +15,32 @@ import {
   unregisterCallQuestionNotifier,
   unregisterCallTranscriptNotifier,
 } from "../calls/call-state.js";
+import { initializeDb } from "../persistence/db-init.js";
+
+await initializeDb();
+
+const controllers: CallController[] = [];
+
+function makeController(sessionId: string): CallController {
+  const controller = new CallController(
+    sessionId,
+    {
+      sendTextToken: () => {},
+      sendPlayUrl: () => {},
+      endSession: () => {},
+    },
+    null,
+    { progressNarrator: null },
+  );
+  controllers.push(controller);
+  return controller;
+}
+
+afterEach(() => {
+  for (const controller of controllers.splice(0)) {
+    controller.destroy();
+  }
+});
 
 describe("call-state", () => {
   // Clean up notifiers between tests
@@ -145,7 +171,7 @@ describe("call-state", () => {
   // ── Controller registry ─────────────────────────────────────────
 
   test("registerCallController + getCallController: retrieves controller", () => {
-    const fakeController = { id: "fake-ctrl" } as unknown as CallController;
+    const fakeController = makeController("fake-ctrl");
 
     registerCallController("test-session", fakeController);
 
@@ -154,7 +180,7 @@ describe("call-state", () => {
   });
 
   test("unregisterCallController: getCallController returns undefined after unregister", () => {
-    const fakeController = { id: "fake-ctrl-2" } as unknown as CallController;
+    const fakeController = makeController("fake-ctrl-2");
 
     registerCallController("test-session", fakeController);
     unregisterCallController("test-session");
@@ -169,8 +195,8 @@ describe("call-state", () => {
   });
 
   test("registering a new controller for same session overwrites the previous one", () => {
-    const first = { id: "first" } as unknown as CallController;
-    const second = { id: "second" } as unknown as CallController;
+    const first = makeController("first");
+    const second = makeController("second");
 
     registerCallController("test-session", first);
     registerCallController("test-session", second);

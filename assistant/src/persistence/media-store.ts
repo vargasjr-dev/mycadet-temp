@@ -17,14 +17,9 @@ import { processingStages } from "./schema/index.js";
 // Types
 // ---------------------------------------------------------------------------
 
-export type MediaAssetStatus =
-  | "registered"
-  | "processing"
-  | "indexed"
-  | "failed"
-  | "cancelled";
-export type MediaType = "video" | "audio" | "image";
-export type StageStatus = "pending" | "running" | "completed" | "failed";
+export type MediaAssetStatus = typeof mediaAssets.$inferSelect.status;
+export type MediaType = typeof mediaAssets.$inferSelect.mediaType;
+export type StageStatus = typeof processingStages.$inferSelect.status;
 
 export interface MediaAsset {
   id: string;
@@ -238,8 +233,8 @@ function parseAssetRow(row: typeof mediaAssets.$inferSelect): MediaAsset {
     mimeType: row.mimeType,
     durationSeconds: row.durationSeconds,
     fileHash: row.fileHash,
-    status: row.status as MediaAssetStatus,
-    mediaType: row.mediaType as MediaType,
+    status: row.status,
+    mediaType: row.mediaType,
     metadata,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -253,7 +248,7 @@ function parseStageRow(
     id: row.id,
     assetId: row.assetId,
     stage: row.stage,
-    status: row.status as StageStatus,
+    status: row.status,
     progress: row.progress,
     lastError: row.lastError,
     startedAt: row.startedAt,

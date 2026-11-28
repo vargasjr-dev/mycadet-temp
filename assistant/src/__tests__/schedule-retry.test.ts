@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import pino from "pino";
+
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // The scheduler's fresh-bootstrap path routes through `runBackgroundJob`,
@@ -851,9 +853,7 @@ describe("scheduler-recovery equivalence", () => {
     // Now run recovery's retry logic on the post-completeScheduleRun state
     const jobB = getSchedule(scheduleB.id)!;
     const decision = decideRetry(jobB);
-    const noopLogger = new Proxy(jsonObjectSchema.parse({}), {
-      get: () => () => {},
-    });
+    const noopLogger = pino({ enabled: false });
     await applyRetryDecision({
       job: jobB,
       isOneShot: false,
@@ -862,7 +862,7 @@ describe("scheduler-recovery equivalence", () => {
       failOneShotPermanently: () => {},
       resetRetryCount,
       emitAlert: () => {},
-      log: noopLogger as any,
+      log: noopLogger,
     });
 
     const stateA = getSchedule(scheduleA.id)!;
@@ -930,9 +930,7 @@ describe("scheduler-recovery equivalence", () => {
     // decideRetry + apply for first failure
     const jobB1 = getSchedule(scheduleB.id)!;
     const decision1 = decideRetry(jobB1);
-    const noopLogger = new Proxy(jsonObjectSchema.parse({}), {
-      get: () => () => {},
-    });
+    const noopLogger = pino({ enabled: false });
     await applyRetryDecision({
       job: jobB1,
       isOneShot: true,
@@ -946,7 +944,7 @@ describe("scheduler-recovery equivalence", () => {
       },
       resetRetryCount,
       emitAlert: () => {},
-      log: noopLogger as any,
+      log: noopLogger,
     });
 
     // Second failure (simulate claim + fire again)
@@ -972,7 +970,7 @@ describe("scheduler-recovery equivalence", () => {
       },
       resetRetryCount,
       emitAlert: () => {},
-      log: noopLogger as any,
+      log: noopLogger,
     });
 
     const stateA = getSchedule(scheduleA.id)!;

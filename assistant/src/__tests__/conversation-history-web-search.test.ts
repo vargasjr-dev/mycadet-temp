@@ -15,6 +15,8 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { contentBlockArraySchema } from "../providers/content-block-schema.js";
+
 // ── Module mocks (must precede imports of the module under test) ─────
 
 // ── DB layer mocks for session-history ───────────────────────────────
@@ -46,7 +48,7 @@ mock.module("../persistence/conversation-crud.js", () => ({
     updatedMessages.push({ id: messageId, content });
     const msg = dbMessages.find((m) => m.id === messageId);
     if (msg) {
-      msg.content = JSON.parse(content) as ContentBlock[];
+      msg.content = contentBlockArraySchema.parse(JSON.parse(content));
     }
   },
   relinkAttachments: () => 0,

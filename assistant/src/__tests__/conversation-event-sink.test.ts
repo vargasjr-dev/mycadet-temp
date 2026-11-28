@@ -26,7 +26,7 @@ describe("conversationEventSink", () => {
       type: "subagent_status_changed",
       subagentId: "sa-1",
       status: "running",
-    } as never);
+    });
 
     expect(published).toEqual([
       { type: "subagent_status_changed", conversationId: "conv-parent" },
@@ -37,12 +37,19 @@ describe("conversationEventSink", () => {
     published.length = 0;
     const sink = conversationEventSink("conv-parent");
 
-    sink({ type: "subagent_spawned", subagentId: "sa-1" } as never);
+    sink({
+      type: "subagent_spawned",
+      subagentId: "sa-1",
+      parentConversationId: "conv-parent",
+      label: "Worker",
+      objective: "Summarize the task",
+    });
     sink({
       type: "subagent_event",
       subagentId: "sa-1",
       conversationId: "conv-parent",
-    } as never);
+      event: { type: "assistant_text_delta", text: "Working" },
+    });
 
     expect(published.map((p) => p.conversationId)).toEqual([
       "conv-parent",

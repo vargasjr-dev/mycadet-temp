@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Outlook Calendar watcher provider — uses Microsoft Graph delta queries
  * for efficient change detection.
@@ -7,7 +9,6 @@
  * detect new/updated events. Falls back to a fresh delta query if the delta
  * token has expired (410 Gone).
  */
-
 import type { OAuthConnection } from "../../oauth/connection.js";
 import { resolveOAuthConnection } from "../../oauth/connection-resolver.js";
 import { getLogger } from "../../util/logger.js";
@@ -22,31 +23,47 @@ import type {
 // ---------------------------------------------------------------------------
 
 /** Microsoft Graph date+time pair. timeZone may be omitted when dateTime carries an offset. */
-interface OutlookDateTimeZone {
-  dateTime: string;
-  timeZone?: string;
-}
+const dateTimeZoneSchema = z.object({
+  dateTime: z.string(),
+  timeZone: z.string().nullish(),
+});
 
-/** A single calendar event from Microsoft Graph (subset used by watcher). */
-interface OutlookCalendarEvent {
-  id: string;
-  subject?: string;
-  bodyPreview?: string;
-  start?: OutlookDateTimeZone;
-  end?: OutlookDateTimeZone;
-  location?: { displayName?: string };
-  attendees?: Array<{
-    emailAddress: { address: string };
-    status?: { response: string };
-  }>;
-  organizer?: { emailAddress: { address: string; name?: string } };
-  isAllDay?: boolean;
-  isCancelled?: boolean;
-  showAs?: string;
-  webLink?: string;
-  createdDateTime?: string;
-  lastModifiedDateTime?: string;
-}
+const emailAddressSchema = z.object({
+  address: z.string(),
+  name: z.string().nullish(),
+});
+
+const outlookCalendarEventSchema = z.looseObject({
+  id: z.string(),
+  subject: z.string().nullish(),
+  bodyPreview: z.string().nullish(),
+  start: dateTimeZoneSchema.nullish(),
+  end: dateTimeZoneSchema.nullish(),
+  location: z.object({ displayName: z.string().nullish() }).nullish(),
+  attendees: z
+    .array(
+      z.object({
+        emailAddress: emailAddressSchema,
+        status: z.object({ response: z.string() }).nullish(),
+      }),
+    )
+    .nullish(),
+  organizer: z.object({ emailAddress: emailAddressSchema }).nullish(),
+  isAllDay: z.boolean().nullish(),
+  isCancelled: z.boolean().nullish(),
+  showAs: z.string().nullish(),
+  webLink: z.string().nullish(),
+  createdDateTime: z.string().nullish(),
+  lastModifiedDateTime: z.string().nullish(),
+});
+
+type OutlookCalendarEvent = z.infer<typeof outlookCalendarEventSchema>;
+
+const deltaPageSchema = z.object({
+  value: z.array(outlookCalendarEventSchema).nullish(),
+  "@odata.nextLink": z.string().nullish(),
+  "@odata.deltaLink": z.string().nullish(),
+});
 
 class OutlookCalendarApiError extends Error {
   constructor(
@@ -175,17 +192,13 @@ async function deltaSync(
       );
     }
 
-    const page = resp.body as {
-      value?: OutlookCalendarEvent[];
-      "@odata.nextLink"?: string;
-      "@odata.deltaLink"?: string;
-    };
+    const page = deltaPageSchema.parse(resp.body);
 
     if (page.value) {
       allItems.push(...page.value);
     }
 
-    newDeltaLink = page["@odata.deltaLink"];
+    newDeltaLink = page["@odata.deltaLink"] ?? undefined;
     currentUrl = page["@odata.nextLink"] ?? "";
   } while (currentUrl && !newDeltaLink);
 
@@ -238,18 +251,14 @@ async function initialDeltaQuery(
     );
   }
 
-  const firstPage = firstResp.body as {
-    value?: OutlookCalendarEvent[];
-    "@odata.nextLink"?: string;
-    "@odata.deltaLink"?: string;
-  };
+  const firstPage = deltaPageSchema.parse(firstResp.body);
 
   if (firstPage.value) {
     allItems.push(...firstPage.value);
   }
 
-  newDeltaLink = firstPage["@odata.deltaLink"];
-  nextLink = firstPage["@odata.nextLink"];
+  newDeltaLink = firstPage["@odata.deltaLink"] ?? undefined;
+  nextLink = firstPage["@odata.nextLink"] ?? undefined;
 
   // Follow pagination until we get a deltaLink
   while (nextLink && !newDeltaLink) {
@@ -278,18 +287,14 @@ async function initialDeltaQuery(
       );
     }
 
-    const page = resp.body as {
-      value?: OutlookCalendarEvent[];
-      "@odata.nextLink"?: string;
-      "@odata.deltaLink"?: string;
-    };
+    const page = deltaPageSchema.parse(resp.body);
 
     if (page.value) {
       allItems.push(...page.value);
     }
 
-    newDeltaLink = page["@odata.deltaLink"];
-    nextLink = page["@odata.nextLink"];
+    newDeltaLink = page["@odata.deltaLink"] ?? undefined;
+    nextLink = page["@odata.nextLink"] ?? undefined;
   }
 
   if (!newDeltaLink) {

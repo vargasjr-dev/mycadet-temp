@@ -185,12 +185,13 @@ export function extractRetryAfterMs(headers: unknown): number | undefined {
     return undefined;
   }
 
-  let raw: string | null | undefined;
-  if (typeof getObjectProperty(headers, "get") === "function") {
-    raw = (headers as { get(k: string): string | null }).get("retry-after");
-  } else if (typeof headers === "object") {
-    raw = (headers as Record<string, string>)["retry-after"];
-  }
+  const get = getObjectProperty(headers, "get");
+  const raw: unknown =
+    typeof get === "function"
+      ? Reflect.apply(get, headers, ["retry-after"])
+      : typeof headers === "object"
+        ? getObjectProperty(headers, "retry-after")
+        : undefined;
 
   if (typeof raw === "string") {
     return parseRetryAfterMs(raw);

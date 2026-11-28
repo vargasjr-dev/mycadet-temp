@@ -45,17 +45,14 @@ export function userMessage(text: string): Message {
 /**
  * Build a text content block carrying an ephemeral `cache_control` breakpoint
  * with a 1h TTL, marking a byte-stable prefix the provider KV cache should
- * persist across calls. The internal `TextContent` type omits the field (only
- * the Anthropic provider transforms it onto the wire, preserved through
- * `toAnthropicBlockSafe`), so we reach through a `Record` cast to keep the core
- * types provider-agnostic. The 1h TTL matches the provider's auto-applied
- * breakpoints; Haiku models have the `ttl` stripped provider-side.
+ * persist across calls. The Anthropic adapter preserves the extra metadata
+ * on the wire and drops the explicit TTL for Haiku models.
  */
 export function cachedTextBlock(text: string): ContentBlock {
-  const block: ContentBlock = { type: "text", text };
-  (block as unknown as Record<string, unknown>).cache_control = {
-    type: "ephemeral",
-    ttl: "1h",
+  const block = {
+    type: "text" as const,
+    text,
+    cache_control: { type: "ephemeral", ttl: "1h" },
   };
   return block;
 }

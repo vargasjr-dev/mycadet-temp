@@ -97,8 +97,14 @@ export const mediaAssets = sqliteTable("media_assets", {
   mimeType: text("mime_type").notNull(),
   durationSeconds: real("duration_seconds"),
   fileHash: text("file_hash").notNull(),
-  status: text("status").notNull().default("registered"), // registered | processing | indexed | failed
-  mediaType: text("media_type").notNull(), // video | audio | image
+  status: text("status", {
+    enum: ["registered", "processing", "indexed", "failed", "cancelled"],
+  })
+    .notNull()
+    .default("registered"),
+  mediaType: text("media_type", {
+    enum: ["video", "audio", "image"],
+  }).notNull(),
   metadata: text("metadata"), // JSON
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
@@ -110,7 +116,11 @@ export const processingStages = sqliteTable("processing_stages", {
     .notNull()
     .references(() => mediaAssets.id, { onDelete: "cascade" }),
   stage: text("stage").notNull(),
-  status: text("status").notNull().default("pending"), // pending | running | completed | failed
+  status: text("status", {
+    enum: ["pending", "running", "completed", "failed"],
+  })
+    .notNull()
+    .default("pending"),
   progress: integer("progress").notNull().default(0), // 0-100
   lastError: text("last_error"),
   startedAt: integer("started_at"),

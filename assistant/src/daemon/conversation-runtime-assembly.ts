@@ -2807,7 +2807,7 @@ export async function applyRuntimeInjections(
       }
     }
     if (!options.reinjection) {
-      (commit as () => void)();
+      commit();
     }
   }
 

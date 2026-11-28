@@ -27,7 +27,6 @@
  * platforms with strict AF_UNIX path limits (notably macOS), the server falls
  * back to a shorter deterministic path so CLI commands can still connect.
  */
-
 import { createServer, type Server, type Socket } from "node:net";
 
 import {
@@ -56,6 +55,7 @@ import type {
   RouteHandlerArgs,
 } from "../runtime/routes/types.js";
 import { RouteResponse } from "../runtime/routes/types.js";
+import { getErrorCode } from "../util/error-details.js";
 import { getLogger } from "../util/logger.js";
 import { mapGatewayIpcConnectError } from "./gateway-ipc-errors.js";
 import { ACTIVATION_SYNC_IPC_METHODS } from "./routes/activation-sync-ipc-routes.js";
@@ -767,7 +767,7 @@ function isEaddrInUse(err: unknown): boolean {
     typeof err === "object" &&
     err !== null &&
     "code" in err &&
-    (err as NodeJS.ErrnoException).code === "EADDRINUSE"
+    getErrorCode(err) === "EADDRINUSE"
   );
 }
 

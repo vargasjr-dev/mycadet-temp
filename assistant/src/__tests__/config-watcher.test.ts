@@ -10,6 +10,8 @@ import {
   test,
 } from "bun:test";
 
+import { AssistantConfigSchema } from "../config/schema.js";
+
 // ---------------------------------------------------------------------------
 // Temp directory scaffold
 // ---------------------------------------------------------------------------
@@ -319,9 +321,11 @@ describe("ConfigWatcher workspace file handlers", () => {
   });
 
   test("config.json change reloads MCP when tools.mcpGlobalMaxTools changes", async () => {
-    watcher.initFingerprint({
-      tools: { exclude: [], mcpGlobalMaxTools: 50 },
-    } as never);
+    watcher.initFingerprint(
+      AssistantConfigSchema.parse({
+        tools: { exclude: [], mcpGlobalMaxTools: 50 },
+      }),
+    );
     watcher.refreshConfigFromSources = async () => true;
     watcher.start();
     simulateFileChange(WORKSPACE_DIR, "config.json");
@@ -331,9 +335,11 @@ describe("ConfigWatcher workspace file handlers", () => {
   });
 
   test("config.json change does not reload MCP when the global max is unchanged", async () => {
-    watcher.initFingerprint({
-      tools: { exclude: [] },
-    } as never);
+    watcher.initFingerprint(
+      AssistantConfigSchema.parse({
+        tools: { exclude: [] },
+      }),
+    );
     watcher.refreshConfigFromSources = async () => true;
     watcher.start();
     simulateFileChange(WORKSPACE_DIR, "config.json");
@@ -481,12 +487,12 @@ describe("ConfigWatcher users directory watcher", () => {
 
 describe("ConfigWatcher fingerprinting", () => {
   test("configFingerprint returns JSON string of config", () => {
-    const config = { foo: "bar" } as any;
+    const config = AssistantConfigSchema.parse({});
     expect(watcher.configFingerprint(config)).toBe(JSON.stringify(config));
   });
 
   test("initFingerprint sets lastFingerprint", () => {
-    const config = { key: "value" } as any;
+    const config = AssistantConfigSchema.parse({});
     watcher.initFingerprint(config);
     expect(watcher.lastFingerprint).toBe(JSON.stringify(config));
   });

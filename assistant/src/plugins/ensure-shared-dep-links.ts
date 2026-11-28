@@ -51,13 +51,13 @@
  * user plugin is dynamic-imported. Never throws — failures are logged
  * per-dep and the daemon must never block startup.
  */
-
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, symlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { getWorkspaceDir } from "../util/layout.js";
 import { getLogger } from "../util/logger.js";
+import { getObjectProperty } from "../util/object.js";
 
 const log = getLogger("shared-dep-links");
 
@@ -83,10 +83,8 @@ function resolvePackageDir(name: string): string | null {
     const pkgPath = join(dir, "package.json");
     if (existsSync(pkgPath)) {
       try {
-        const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
-          name?: string;
-        };
-        if (pkg.name === name) {
+        const pkg: unknown = JSON.parse(readFileSync(pkgPath, "utf8"));
+        if (getObjectProperty(pkg, "name") === name) {
           return dir;
         }
       } catch {

@@ -456,11 +456,7 @@ export function upsertSkillUpdateReceiptJob(
       .run();
     return;
   }
-  enqueueMemoryJob(
-    "skill_update_receipt",
-    payload as unknown as Record<string, unknown>,
-    runAfter,
-  );
+  enqueueMemoryJob("skill_update_receipt", { ...payload }, runAfter);
 }
 
 /**

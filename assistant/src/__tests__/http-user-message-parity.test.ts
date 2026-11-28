@@ -13,6 +13,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { z } from "zod";
 
+import { AssistantEventHub } from "../runtime/assistant-event-hub.js";
 import { jsonObjectSchema } from "./helpers/json-object-schema.js";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -268,7 +269,9 @@ async function sendMessage(
             );
             return conversationObj;
           },
-          assistantEventHub: { publish: async () => {} } as any,
+          assistantEventHub: Object.assign(new AssistantEventHub(), {
+            publish: async () => {},
+          }),
           resolveAttachments: () => [],
         },
       }),
@@ -737,7 +740,9 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
         handleSendMessage(args, {
           sendMessageDeps: {
             getOrCreateConversation: async () => conversation,
-            assistantEventHub: { publish: async () => {} } as any,
+            assistantEventHub: Object.assign(new AssistantEventHub(), {
+              publish: async () => {},
+            }),
             resolveAttachments: () => [],
           },
         }),
@@ -825,7 +830,9 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
         handleSendMessage(args, {
           sendMessageDeps: {
             getOrCreateConversation: async () => conversation,
-            assistantEventHub: { publish: async () => {} } as any,
+            assistantEventHub: Object.assign(new AssistantEventHub(), {
+              publish: async () => {},
+            }),
             resolveAttachments: () => [],
           },
         }),
@@ -868,7 +875,9 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
         handleSendMessage(args, {
           sendMessageDeps: {
             getOrCreateConversation: async () => conversation,
-            assistantEventHub: { publish: async () => {} } as any,
+            assistantEventHub: Object.assign(new AssistantEventHub(), {
+              publish: async () => {},
+            }),
             resolveAttachments: () => [],
           },
         }),

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { z } from "zod";
 
 import { hasSetConstructs } from "../schedule/recurrence-engine.js";
-import { getObjectProperty } from "../util/object.js";
+import { getObjectProperty, isObjectRecord } from "../util/object.js";
 
 const testWorkspaceDir = process.env.CADET_WORKSPACE_DIR!;
 
@@ -200,8 +200,8 @@ mock.module("../util/logger.js", () => ({
     info: () => {},
     debug: () => {},
     warn: (...args: unknown[]) => {
-      if (args.length > 0 && typeof args[0] === "object" && args[0] !== null) {
-        loggerWarnCalls.push(args[0] as Record<string, unknown>);
+      if (isObjectRecord(args[0])) {
+        loggerWarnCalls.push(args[0]);
       }
     },
     error: () => {},

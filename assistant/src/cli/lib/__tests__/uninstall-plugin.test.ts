@@ -8,7 +8,6 @@
  * the rm target and the hook-resolution path stay in agreement, matching
  * production (where the override is omitted and both fall back to it).
  */
-
 import {
   existsSync,
   mkdirSync,
@@ -31,12 +30,16 @@ import {
   test,
 } from "bun:test";
 
-const deletePluginMcpOAuthCredentials = jest.fn(async () => ({
-  ok: true,
-  unreachable: false,
-  matchedKeys: [] as string[],
-  failedKeys: [] as string[],
-}));
+import type { PluginMcpOAuthCleanupResult } from "../../../mcp/mcp-oauth-provider.js";
+
+const deletePluginMcpOAuthCredentials = jest.fn(
+  async (): Promise<PluginMcpOAuthCleanupResult> => ({
+    ok: true,
+    unreachable: false,
+    matchedKeys: [],
+    failedKeys: [],
+  }),
+);
 
 mock.module("../../../mcp/mcp-oauth-provider.js", () => ({
   deletePluginMcpOAuthCredentials,

@@ -69,7 +69,6 @@ import {
 } from "../graph/tool-handlers.js";
 import type {
   CapabilityKind,
-  Fidelity,
   MemoryNode,
   MemoryType,
   NewNode,
@@ -276,7 +275,7 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
     lastConsolidated: row.lastConsolidated,
     eventDate: row.eventDate ?? null,
     emotionalCharge: JSON.parse(row.emotionalCharge),
-    fidelity: row.fidelity as Fidelity,
+    fidelity: row.fidelity,
     confidence: row.confidence,
     significance: row.significance,
     stability: row.stability,
@@ -558,12 +557,7 @@ async function handleGetMemoryStats(
 }
 
 async function handleCreateMemoryItem(body: Record<string, unknown>) {
-  const { kind, subject, statement, importance } = body as {
-    kind?: string;
-    subject?: string;
-    statement?: string;
-    importance?: number;
-  };
+  const { kind, subject, statement, importance } = body;
 
   if (typeof kind !== "string" || !isValidType(kind)) {
     throw new BadRequestError(
@@ -620,7 +614,7 @@ async function handleCreateMemoryItem(body: Record<string, unknown>) {
     },
     fidelity: "vivid",
     confidence: 0.95,
-    significance: importance ?? 0.8,
+    significance: typeof importance === "number" ? importance : 0.8,
     stability: 14,
     reinforcementCount: 0,
     lastReinforced: now,
@@ -648,13 +642,13 @@ async function handleUpdateMemoryItem(
     throw new NotFoundError("Memory item not found");
   }
 
-  const { subject, statement, kind, status, importance } = body as {
-    subject?: string;
-    statement?: string;
-    kind?: string;
-    status?: string;
-    importance?: number;
-  };
+  const { subject, statement, kind, status, importance } = body;
+  if (subject !== undefined && typeof subject !== "string") {
+    throw new BadRequestError("subject must be a string");
+  }
+  if (statement !== undefined && typeof statement !== "string") {
+    throw new BadRequestError("statement must be a string");
+  }
 
   const changes: Partial<Omit<MemoryNode, "id">> = {
     lastAccessed: Date.now(),
@@ -679,7 +673,7 @@ async function handleUpdateMemoryItem(
   }
 
   if (kind !== undefined) {
-    if (!isValidType(kind)) {
+    if (typeof kind !== "string" || !isValidType(kind)) {
       throw new BadRequestError(
         `Invalid kind "${kind}". Must be one of: ${VALID_TYPES.join(", ")}`,
       );
@@ -696,7 +690,7 @@ async function handleUpdateMemoryItem(
     }
   }
 
-  if (importance !== undefined) {
+  if (typeof importance === "number") {
     changes.significance = importance;
   }
 

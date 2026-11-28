@@ -27,7 +27,6 @@ import type {
   NewEdge,
   NewNode,
   NewTrigger,
-  SourceType,
 } from "./types.js";
 
 /**
@@ -76,7 +75,7 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
         originalIntensity: z.number(),
       })
       .parse(JSON.parse(row.emotionalCharge)),
-    fidelity: row.fidelity as Fidelity,
+    fidelity: row.fidelity,
     confidence: row.confidence,
     significance: row.significance,
     stability: row.stability,
@@ -85,7 +84,7 @@ function rowToNode(row: typeof memoryGraphNodes.$inferSelect): MemoryNode {
     sourceConversations: z
       .array(z.string())
       .parse(JSON.parse(row.sourceConversations)),
-    sourceType: row.sourceType as SourceType,
+    sourceType: row.sourceType,
     narrativeRole: row.narrativeRole,
     partOfStory: row.partOfStory,
     imageRefs: row.imageRefs
@@ -132,7 +131,7 @@ function rowToEdge(row: typeof memoryGraphEdges.$inferSelect): MemoryEdge {
     id: row.id,
     sourceNodeId: row.sourceNodeId,
     targetNodeId: row.targetNodeId,
-    relationship: row.relationship as MemoryEdge["relationship"],
+    relationship: row.relationship,
     weight: row.weight,
     created: row.created,
   };
@@ -144,7 +143,7 @@ function rowToTrigger(
   return {
     id: row.id,
     nodeId: row.nodeId,
-    type: row.type as MemoryTrigger["type"],
+    type: row.type,
     schedule: row.schedule,
     condition: row.condition,
     conditionEmbedding: row.conditionEmbedding
@@ -415,17 +414,15 @@ export function queryNodes(filters: NodeQueryFilters): MemoryNode[] {
     );
   }
 
-  let query = db
+  const query = db
     .select()
     .from(memoryGraphNodes)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(sql`${memoryGraphNodes.significance} DESC`);
 
-  if (filters.limit != null) {
-    query = query.limit(filters.limit) as typeof query;
-  }
-
-  return query.all().map(rowToNode);
+  return (filters.limit == null ? query : query.limit(filters.limit))
+    .all()
+    .map(rowToNode);
 }
 
 /**
@@ -759,7 +756,7 @@ export function applyDiff(
 
     // Update nodes
     for (const update of diff.updateNodes) {
-      const updates: Record<string, unknown> = {};
+      const updates: Partial<typeof memoryGraphNodes.$inferInsert> = {};
       const c = update.changes;
       if (c.content !== undefined) {
         updates.content = deduplicateParagraphs(c.content);
@@ -814,7 +811,7 @@ export function applyDiff(
               id: uuid(),
               nodeId: update.id,
               previousContent: current.content,
-              newContent: updates.content as string,
+              newContent: updates.content,
               source: opts?.source ?? "extraction",
               conversationId: opts?.conversationId ?? null,
               created: Date.now(),
