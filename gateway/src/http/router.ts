@@ -1,9 +1,6 @@
 import type { Server } from "bun";
 
-import {
-  getAuthRateLimiter,
-  type AuthRateLimiter,
-} from "../auth-rate-limiter.js";
+import { getAuthRateLimiter } from "../auth-rate-limiter.js";
 import { isWebsocketUpgradeRequest } from "./utils.js";
 import { ROUTES } from "./routes/index.js";
 import type { RouteDefinition } from "./routes/types.js";
@@ -21,10 +18,11 @@ export type RouteParams = string[];
 const table: RouteDefinition[] = ROUTES.flatMap(expandRoute);
 
 /**
- * Match the request against the route table and run the matching route's
- * handler behind its `auth` strategy. Returns null when no route matches
- * (the caller owns the 404), and resolves undefined only after a WebSocket
- * upgrade has succeeded — coalesced to an inert 101 for the caller.
+ * Match the request against the ROUTES table (imported from the routes
+ * barrel) and run the matching route's handler behind its `auth` strategy
+ * against the shared auth rate limiter. Returns null when no route matches
+ * (the caller owns the 404), and undefined only after a WebSocket upgrade
+ * has succeeded — coalesced to an inert 101 for the caller.
  */
 export async function dispatchRoute(
   req: Request,
@@ -32,52 +30,8 @@ export async function dispatchRoute(
   getClientIp: GetClientIp,
   server: Server<unknown>,
 ): Promise<Response | null> {
-  const matched = await dispatchAt(
-    table,
-    getAuthRateLimiter(),
-    req,
-    withoutVersionPrefix(url.pathname),
-    getClientIp,
-    server,
-  );
-  return matched === undefined ? INERT_UPGRADE_FALLBACK : matched;
-}
+  const pathname = withoutVersionPrefix(url.pathname);
 
-/**
- * Test-harness entry: the same engine over a custom table and limiter.
- * Production always goes through dispatchRoute.
- */
-export function dispatchForTest(
-  routes: ReadonlyArray<RouteDefinition>,
-  authRateLimiter: AuthRateLimiter,
-): (
-  req: Request,
-  url: URL,
-  getClientIp: GetClientIp,
-  server: Server<unknown>,
-) => Promise<Response | null> {
-  const expanded = routes.flatMap(expandRoute);
-  return async (req, url, getClientIp, server) => {
-    const matched = await dispatchAt(
-      expanded,
-      authRateLimiter,
-      req,
-      withoutVersionPrefix(url.pathname),
-      getClientIp,
-      server,
-    );
-    return matched === undefined ? INERT_UPGRADE_FALLBACK : matched;
-  };
-}
-
-async function dispatchAt(
-  table: ReadonlyArray<RouteDefinition>,
-  authRateLimiter: AuthRateLimiter,
-  req: Request,
-  pathname: string,
-  getClientIp: GetClientIp,
-  server: Server<unknown>,
-): Promise<Response | null | undefined> {
   for (const route of table) {
     const matchResult = matchRoute(route, pathname, req.method);
     if (!matchResult) continue;
@@ -90,51 +44,80 @@ async function dispatchAt(
     }
 
     const auth = route.auth ?? "none";
+    let handlerResult: Response | undefined;
 
     switch (auth) {
       case "none":
       case "custom":
-        return route.handler(req, matchResult.params, getClientIp, server);
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
 
       case "edge": {
         const { requireEdgeAuth } = createAuthMiddleware(
-          authRateLimiter,
+          getAuthRateLimiter(),
           getClientIp,
         );
         const authError = await requireEdgeAuth(req);
         if (authError) return authError;
-        return route.handler(req, matchResult.params, getClientIp, server);
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
       }
 
       case "edge-scoped": {
         const { requireEdgeAuthWithScope } = createAuthMiddleware(
-          authRateLimiter,
+          getAuthRateLimiter(),
           getClientIp,
         );
         const authError = await requireEdgeAuthWithScope(req, route.scope!);
         if (authError) return authError;
-        return route.handler(req, matchResult.params, getClientIp, server);
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
       }
 
       case "edge-guardian": {
         const { requireEdgeGuardianAuth } = createAuthMiddleware(
-          authRateLimiter,
+          getAuthRateLimiter(),
           getClientIp,
         );
         const authError = await requireEdgeGuardianAuth(req);
         if (authError) return authError;
-        return route.handler(req, matchResult.params, getClientIp, server);
+        handlerResult = await route.handler(
+          req,
+          matchResult.params,
+          getClientIp,
+          server,
+        );
+        break;
       }
 
       case "track-failures": {
-        return wrapWithAuthFailureTracking(
+        handlerResult = await wrapWithAuthFailureTracking(
           (r) => route.handler(r, matchResult.params, getClientIp, server),
-          authRateLimiter,
+          getAuthRateLimiter(),
           getClientIp,
           route.trackFailureStatuses,
         )(req);
+        break;
       }
     }
+
+    if (handlerResult !== undefined) return handlerResult;
+    return INERT_UPGRADE_FALLBACK;
   }
 
   return null;

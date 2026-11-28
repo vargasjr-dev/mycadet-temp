@@ -125,13 +125,6 @@ function getClientIp(
 export async function startServer(): Promise<() => void> {
   const config = loadConfig();
 
-  // Assistant-scoped mirrors of the browser stream sockets: the scoped data
-  // plane emits /v1/assistants/<id>/<route> — the same verbatim shape every
-  // scoped forwarder carries — so the upgrade pre-router admits the scoped
-  // spelling of each socket and discards the id, the same mirror the route
-  // table keeps for tunnel/status. Daemon-only sockets (speech relay) get no
-  // mirror: they are never browser-reachable.
-
   /** Stamp the assistant version header on a response. */
   function stampVersion<T extends Response>(res: T): T {
     res.headers.set(VERSION_HEADER_NAME, VERSION_HEADER_VALUE);

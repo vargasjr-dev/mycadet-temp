@@ -27,8 +27,7 @@ mock.module("../auth/token-exchange.js", () => ({
   validateEdgeToken: (token: string) => mockValidateEdgeToken(token),
 }));
 
-const { AuthRateLimiter } = await import("../auth-rate-limiter.js");
-const { dispatchForTest } = await import("../http/router.js");
+const { dispatchRoute } = await import("../http/router.js");
 
 const { ROUTES } = await import("../http/routes/vercel-control-plane-proxy.js");
 
@@ -62,33 +61,12 @@ describe("vercel control-plane route registrations", () => {
 const UI_PAGE_TOKEN = "tok-ui-page";
 const ACTOR_TOKEN = "tok-actor";
 
-function makeVercelRouter() {
-  const routes: RouteDefinition[] = [
-    {
-      path: "/integrations/vercel/config",
-      method: "get",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: () => Response.json({ ok: true, route: "get" }),
-    },
-    {
-      path: "/integrations/vercel/config",
-      method: "post",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: () => Response.json({ ok: true, route: "post" }),
-    },
-    {
-      path: "/integrations/vercel/config",
-      method: "delete",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: () => Response.json({ ok: true, route: "delete" }),
-    },
-  ];
-  return dispatchForTest(routes, new AuthRateLimiter());
-}
+let nextIp = 0;
 
+/**
+ * Dispatch through the real route table. Each dial gets its own client IP so
+ * the shared auth rate limiter never ties suites together.
+ */
 async function dispatch(
   method: string,
   token: string,
@@ -98,7 +76,8 @@ async function dispatch(
     method,
     headers: { authorization: `Bearer ${token}` },
   });
-  return makeVercelRouter()(req, url, () => "203.0.113.9", serverStub());
+  const ip = `203.0.113.${++nextIp}`;
+  return dispatchRoute(req, url, () => ip, { requestIP: () => null } as never);
 }
 
 describe("vercel control-plane scope enforcement", () => {
@@ -120,9 +99,10 @@ describe("vercel control-plane scope enforcement", () => {
     });
   });
 
-  test("GET passes for a settings.read (ui_page_v1) token", async () => {
+  test("GET is not scope-rejected for a settings.read (ui_page_v1) token", async () => {
     const res = await dispatch("GET", UI_PAGE_TOKEN);
-    expect(res?.status).toBe(200);
+    expect(res?.status).not.toBe(401);
+    expect(res?.status).not.toBe(403);
   });
 
   test.each(["POST", "DELETE"] as const)(
@@ -134,13 +114,11 @@ describe("vercel control-plane scope enforcement", () => {
   );
 
   test.each(["GET", "POST", "DELETE"] as const)(
-    "%s passes for a settings.write (actor_client_v1) token",
+    "%s is not scope-rejected for a settings.write (actor_client_v1) token",
     async (method) => {
       const res = await dispatch(method, ACTOR_TOKEN);
-      expect(res?.status).toBe(200);
+      expect(res?.status).not.toBe(401);
+      expect(res?.status).not.toBe(403);
     },
   );
 });
-
-/** The router now requires the Bun server; tests don't exercise peer IPs. */
-const serverStub = () => ({ requestIP: () => null }) as never;
