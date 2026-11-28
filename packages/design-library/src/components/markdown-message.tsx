@@ -581,7 +581,8 @@ const CURRENCY_AMOUNT =
  * So we first parse the markdown *structure* (GFM, but no math) and rewrite
  * currency only inside `text` nodes. Code spans, code blocks, and link/image
  * destinations are non-text nodes, so they are left byte-for-byte intact. A
- * `$` preceded by `$` (a `$$…$$` fence) or `\` (already escaped) is skipped.
+ * `$` preceded by `$` (a `$$…$$` fence) or `\` (already escaped) is skipped,
+ * and so is a `$` that opens a real equation (see {@link opensMathSpan}).
  */
 const structureParser = unified().use(remarkParse).use(remarkGfm);
 
@@ -671,9 +672,53 @@ function escapeCurrencyDollars(content: string): string {
       const prev =
         offset > 0 ? slice[offset - 1] : start > 0 ? content[start - 1] : "";
       if (prev === "$" || prev === "\\") return match;
+      // A `$` that opens a real equation is not a price: escaping it would
+      // kill the math and shift every later `$` pairing onto the prose.
+      if (opensMathSpan(slice, offset, offset + match.length)) return match;
       return `\\$${amount}`;
     }),
   );
+}
+
+/** TeX syntax no price carries: a command (`\frac`), a group, a script. */
+const MATH_SPAN_MARKER = /\\[a-zA-Z]|[{}^_]/;
+
+/** Digits, spaces, and arithmetic punctuation — the body of "$1 + 1". */
+const BARE_ARITHMETIC = /^[\d\s+\-*/().]*[+\-*/=<>][\d\s+\-*/().=<>]*$/;
+
+/**
+ * Whether the `$` opening the amount matched at `offset` actually opens an
+ * inline equation, judged from what follows it in this slice: a closing `$`
+ * whose intervening text proves TeX intent. The proof is TeX syntax itself
+ * (a command, brace group, or super/subscript — no price ever carries those,
+ * and `$1 + \frac{1}{p^s} + \cdots$` begins with a digit) or bare arithmetic
+ * with an operator (`$1 + 1$`). A closer that itself starts another amount is
+ * the signature of a price list, not an equation, so currency wins there:
+ * "$5 + $10 = $15", "$5 and $10", "$12K–$17K" all pair dollar-to-dollar.
+ *
+ * Escaping a math opener kills the equation — and worse, the orphaned closer
+ * then pairs with the next `$` in the paragraph, rendering the prose between
+ * them as mangled math with its spaces eaten. The scan is bounded by the
+ * text-node slice, which mirrors remark-math's own pairing: flat across soft
+ * line breaks, never across code or links (which end the slice).
+ */
+function opensMathSpan(
+  slice: string,
+  offset: number,
+  matchEnd: number,
+): boolean {
+  for (let i = matchEnd; i < slice.length; i += 1) {
+    if (slice[i] === "\\") {
+      i += 1; // an escaped char (e.g. a literal `\$`) is never a closer
+      continue;
+    }
+    if (slice[i] !== "$") continue;
+    const between = slice.slice(offset + 1, i);
+    if (MATH_SPAN_MARKER.test(between)) return true;
+    if (/^\d/.test(slice.slice(i + 1))) return false; // "$5 and $10"
+    return BARE_ARITHMETIC.test(between); // "$1 + 1$"
+  }
+  return false;
 }
 
 /**

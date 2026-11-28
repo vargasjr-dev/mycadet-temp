@@ -430,6 +430,53 @@ describe("MarkdownMessage", () => {
     expect(html).toContain("katex");
   });
 
+  test("a `$<digit>` opener of a real equation is not read as a price", () => {
+    // The Euler-product geometric series from the Riemann conversation:
+    // `$1 + \frac…` opens math, it is not a one-dollar bill. Escaping the
+    // opener killed the equation, and the orphaned closer then paired with
+    // the next `$` in the paragraph — KaTeX ate the prose's spaces
+    // ("isliterallyitsdefinition…") and the TeX leaked as raw text.
+    const html = renderToStaticMarkup(
+      createElement(MarkdownMessage, {
+        content:
+          "It's the same geometric series, because $1 + \\frac{1}{p^s} + \\left(\\frac{1}{p^s}\\right)^2 + \\cdots$ is literally its definition. The ratio just happens to be $\\frac{1}{p^s}$.",
+      }),
+    );
+
+    expect(html).toContain("katex");
+    // The prose between the equations stays prose, and the series' TeX never
+    // leaks as visible text: when the opener is mis-escaped the whole series
+    // renders raw ("$1 + \frac{1}{p^s} + \left(…"), the orphaned closer then
+    // pairs with the next `$`, and KaTeX eats the prose's spaces
+    // ("isliterallyitsdefinition…").
+    expect(html).not.toContain("$1 + \\frac{1}{p^s}");
+    expect(html).not.toContain("isliterally");
+  });
+
+  test("spaced bare arithmetic with a digit opener still renders as math", () => {
+    const html = renderToStaticMarkup(
+      createElement(MarkdownMessage, {
+        content: "The sum $1 + 1$ is math.",
+      }),
+    );
+
+    expect(html).toContain("katex");
+  });
+
+  test("itemized currency sums stay literal while real math renders", () => {
+    // Dollar-to-dollar amounts are a price list even with operators between
+    // them; the closing `$` of each pair starts the next amount.
+    const html = renderToStaticMarkup(
+      createElement(MarkdownMessage, {
+        content:
+          "Entry fee $5 + $10 = $15 at checkout, while $1 + 1 = 2$ is math.",
+      }),
+    );
+
+    expect(html).toContain("$5 + $10 = $15");
+    expect(html).toContain("katex");
+  });
+
   test("legitimate inline math still renders via KaTeX", () => {
     const html = renderToStaticMarkup(
       createElement(MarkdownMessage, {
