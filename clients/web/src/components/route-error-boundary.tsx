@@ -66,6 +66,11 @@ export function RouteErrorBoundary() {
       ? "The page you requested doesn't exist."
       : "An unexpected error occurred. Try reloading the page.";
 
+  // The raw error rides the console: the full-page variant is the one
+  // place a routing mystery surfaces, and the network tab can't see
+  // custom-scheme traffic. QA reads this line.
+  console.error(`Route error (status ${status ?? "unknown"})`, error);
+
   return (
     <div
       data-slot="route-error-boundary"
@@ -76,9 +81,11 @@ export function RouteErrorBoundary() {
         {heading}
       </h1>
       <p className="max-w-md text-[var(--content-secondary)]">{message}</p>
-      <Button variant="primary" onClick={() => window.location.reload()}>
-        {t("routeErrorBoundary.reload")}
-      </Button>
+      {status !== 404 && (
+        <Button variant="primary" onClick={() => window.location.reload()}>
+          {t("routeErrorBoundary.reload")}
+        </Button>
+      )}
     </div>
   );
 }

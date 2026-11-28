@@ -46,4 +46,18 @@ test("a missing route response uses the full page error UI", async () => {
     await screen.findByRole("heading", { name: "Page not found" }),
   ).toBeDefined();
   expect(document.querySelector('[data-variant="full-page"]')).not.toBeNull();
+  // A 404 has nothing to recover from — reloading re-runs the same match.
+  expect(
+    screen.queryByRole("button", { name: t("routeErrorBoundary.reload") }),
+  ).toBeNull();
+});
+
+test("a non-404 full page failure still offers the reload", async () => {
+  renderFailure(new Response(null, { status: 500 }));
+  expect(
+    await screen.findByRole("heading", { name: "Something went wrong" }),
+  ).toBeDefined();
+  expect(
+    screen.getByRole("button", { name: t("routeErrorBoundary.reload") }),
+  ).toBeDefined();
 });
