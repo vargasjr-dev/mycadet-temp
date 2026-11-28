@@ -18,7 +18,4 @@ startApp({
   platform: "win-electron",
   interfaceId: "windows",
   titleBarMode: "hiddenOverlay",
-  helperToastExecutable: "Cadet.WindowsHelper.exe",
-  helperToastOverrideEnvVar: "CADET_WINDOWS_HELPER_PATH",
-  helperToastName: "windows-helper",
 });
