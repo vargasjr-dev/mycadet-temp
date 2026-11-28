@@ -80,9 +80,7 @@ const SkillMetadataSchema = z
  *   default at `plugins/defaults/<dir>/skills/<id>/SKILL.md`, attributed back
  *   to the owning plugin via its `owner` descriptor.
  */
-export const SKILL_SOURCE_VALUES = ["bundled", "workspace", "plugin"] as const;
-
-export type SkillSource = (typeof SKILL_SOURCE_VALUES)[number];
+export type SkillSource = "bundled" | "workspace" | "plugin";
 
 export interface SkillSummary {
   id: string;

@@ -221,6 +221,7 @@ describe("listCatalogSkills", () => {
         activationHints: ["when remote"],
         avoidWhen: ["when local"],
         installed: false,
+        source: "workspace",
         state: "available",
       },
       {
@@ -230,6 +231,7 @@ describe("listCatalogSkills", () => {
         activationHints: undefined,
         avoidWhen: undefined,
         installed: false,
+        source: "workspace",
         state: "available",
       },
       {
@@ -239,6 +241,7 @@ describe("listCatalogSkills", () => {
         activationHints: undefined,
         avoidWhen: undefined,
         installed: false,
+        source: "workspace",
         state: "available",
       },
     ]);
@@ -278,6 +281,7 @@ describe("listCatalogSkills", () => {
         avoidWhen: undefined,
         platforms: [incompatiblePlatform],
         installed: false,
+        source: "workspace",
         state: "unavailable",
       },
     ]);

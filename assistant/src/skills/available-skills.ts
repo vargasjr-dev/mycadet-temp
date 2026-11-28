@@ -36,8 +36,11 @@ export interface ResolvedSkillEntry {
   platforms?: SkillPlatform[];
   /** True for locally installed skills; false for remote catalog entries. */
   installed: boolean;
-  /** Where the installed skill comes from. Remote catalog entries omit it. */
-  source?: SkillSource;
+  /**
+   * Where the skill lives locally, or — for remote catalog entries — where
+   * it installs to (always the workspace).
+   */
+  source: SkillSource;
   /**
    * Resolved availability:
    * - `enabled` / `disabled` — installed, per config and source defaults.
@@ -55,18 +58,13 @@ export interface ResolvedSkillEntry {
   installMeta?: SkillInstallMeta | null;
 }
 
-/** A locally installed entry: always carries its source. */
-export interface InstalledSkillEntry extends ResolvedSkillEntry {
-  source: SkillSource;
-}
-
 /**
  * The locally installed skill catalog with resolved states. Includes every
  * catalog entry — skills dropped by flag gating or the bundled allowlist are
  * reported with `state: "unavailable"` rather than omitted, so the returned
  * ids are the complete installed universe.
  */
-export async function listInstalledSkills(): Promise<InstalledSkillEntry[]> {
+export async function listInstalledSkills(): Promise<ResolvedSkillEntry[]> {
   const [{ loadSkillCatalog }, { resolveSkillStates }, { readInstallMeta }] =
     await Promise.all([
       import("../config/skills.js"),
@@ -81,7 +79,7 @@ export async function listInstalledSkills(): Promise<InstalledSkillEntry[]> {
     ]),
   );
   return catalog.map((summary) => {
-    const entry: InstalledSkillEntry = {
+    const entry: ResolvedSkillEntry = {
       id: summary.id,
       displayName: summary.displayName,
       description: summary.description,
@@ -127,6 +125,8 @@ export async function listCatalogSkills(): Promise<ResolvedSkillEntry[]> {
       avoidWhen: entry.metadata?.cadet?.["avoid-when"],
       platforms: entry.platforms,
       installed: false,
+      // Catalog entries install into the workspace skills dir.
+      source: "workspace",
       state: incompatible ? "unavailable" : "available",
     };
   });

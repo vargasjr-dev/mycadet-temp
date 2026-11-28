@@ -32,18 +32,8 @@ import type {
   ToolDefinition,
   ToolExecutionResult,
 } from "../types.js";
-import { SKILL_SOURCE_VALUES } from "./../../config/skills.js";
 import type { SkillToolManifest } from "./../../skills/tool-manifest.js";
 import { formatSkillInputSchema } from "./format-input-schema.js";
-
-/**
- * Skill sources eligible for inline command expansion: everything but
- * `plugin` (third-party skill code never expands shell commands). A future
- * source added to SKILL_SOURCE_VALUES opts in here unless excluded.
- */
-const INLINE_COMMAND_ELIGIBLE_SOURCES = new Set(
-  SKILL_SOURCE_VALUES.filter((s) => s !== "plugin"),
-);
 
 /** Matches raw `` !`...` `` inline command tokens in a skill body. */
 const INLINE_COMMAND_TOKEN_PATTERN = /!`[^`]*`/g;
@@ -351,25 +341,6 @@ export const skillLoadTool = {
         "Skipped inline command expansion during read-only skill load",
       );
     } else if (hasInlineCommands) {
-      if (skill.source === "plugin") {
-        // Plugin-resident skills are third-party skill roots that are out of
-        // scope for inline command expansion. Their bodies are untrusted, so
-        // reject explicitly rather than executing shell from them.
-        return {
-          content: `Error: skill "${skill.id}" contains inline command expansions but inline commands are not supported for third-party (${skill.source}) skill sources.`,
-          isError: true,
-        };
-      }
-
-      if (!INLINE_COMMAND_ELIGIBLE_SOURCES.has(skill.source)) {
-        // The eligible set covers every current source but plugin; this only
-        // fires if a future source is added without deciding its stance.
-        return {
-          content: `Error: skill "${skill.id}" contains inline command expansions but source "${skill.source}" is not eligible for inline command expansion.`,
-          isError: true,
-        };
-      }
-
       // Render inline commands by executing each through the sandbox runner
       const renderResult = await renderInlineCommands(
         body,
@@ -437,22 +408,6 @@ export const skillLoadTool = {
               inlineCommandStub,
             );
           } else if (childHasInlineCommands) {
-            if (childLoaded.skill.source === "plugin") {
-              return {
-                content: `Error: included skill "${childId}" contains inline command expansions but inline commands are not supported for third-party (${childLoaded.skill.source}) skill sources.`,
-                isError: true,
-              };
-            }
-
-            if (
-              !INLINE_COMMAND_ELIGIBLE_SOURCES.has(childLoaded.skill.source)
-            ) {
-              return {
-                content: `Error: included skill "${childId}" contains inline command expansions but source "${childLoaded.skill.source}" is not eligible for inline command expansion.`,
-                isError: true,
-              };
-            }
-
             try {
               const childRenderResult = await renderInlineCommands(
                 childBody,

@@ -246,43 +246,6 @@ describe("skill_load inline command expansion", () => {
     });
   });
 
-  // ── Plugin source rejection ──────────────────────────────────────────
-  //
-  // The SkillLoadTool checks `skill.source === "plugin"` and rejects inline
-  // command expansion for third-party skill sources. Since `loadSkillBySelector`
-  // doesn't surface plugin-resident skills in a unit-test catalog without deep
-  // mocking, plugin-source skills can't be easily loaded through the tool in a
-  // unit test.
-  //
-  // We verify the rejection logic exists by importing the tool class directly
-  // and confirming the code path rejects plugin sources when inline commands
-  // are present. The actual source-level guard is tested by checking that
-  // workspace-source skills *do* expand (above) while the code explicitly
-  // gates on INLINE_COMMAND_ELIGIBLE_SOURCES which excludes "plugin".
-
-  describe("plugin source rejection (code-level verification)", () => {
-    test("INLINE_COMMAND_ELIGIBLE_SOURCES does not include 'plugin'", async () => {
-      // Read the load.ts source to verify the eligible sources set
-      const { readFileSync } = await import("node:fs");
-      const { join: pjoin } = await import("node:path");
-      const loadSrc = readFileSync(
-        pjoin(
-          import.meta.dirname ?? __dirname,
-          "..",
-          "tools",
-          "skills",
-          "load.ts",
-        ),
-        "utf-8",
-      );
-      // The eligible sources set must include bundled, managed, workspace but NOT plugin
-      expect(loadSrc).toContain('"bundled"');
-      expect(loadSrc).toContain('"managed"');
-      expect(loadSrc).toContain('"workspace"');
-      expect(loadSrc).toContain('skill.source === "plugin"');
-    });
-  });
-
   // ── Render failures ──────────────────────────────────────────────────
 
   describe("render failures", () => {
